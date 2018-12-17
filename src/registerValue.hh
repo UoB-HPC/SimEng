@@ -1,0 +1,44 @@
+
+#ifndef __H_REGISTER_VALUE
+#define __H_REGISTER_VALUE
+
+#include <memory>
+
+/** A class that encapsulates a smart pointer to an arbitrary value, providing casting and
+ * data accessor functions. */
+class RegisterValue {
+    public:
+        RegisterValue();
+
+        /** Create a RegisterValue from an existing type. */
+        RegisterValue(std::shared_ptr<uint8_t> ptr);
+        
+        /** Create a new RegisterValue from a value of arbitrary type, zero-extending the allocated
+         * memory space to the specified number of bytes (defaulting to the size of the template type). */
+        template <class T>
+        RegisterValue(T value, uint8_t bytes = sizeof(T)) {
+            void* data = calloc(1, bytes);
+
+            T* view = (T*)data;
+            view[0] = value;
+
+            this->ptr = std::shared_ptr<uint8_t>((uint8_t*)data, free);
+        }
+
+        /** Read the encapsulated raw memory as a specified datatype. */
+        template <class T>
+        T get() {
+            return *getAsVector<T>();
+        }
+
+        /** Retrieve a pointer to the encapsulated raw memory, reinterpreted as the specified datatype. */
+        template <class T>
+        T* getAsVector() {
+            return reinterpret_cast<T*>(ptr.get());
+        }
+
+    private:
+        std::shared_ptr<uint8_t> ptr;
+};
+
+#endif
