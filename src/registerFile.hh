@@ -5,6 +5,8 @@
 
 #include <vector>
 
+namespace simeng {
+
 typedef short Register;
 
 class RegisterFile {
@@ -16,9 +18,11 @@ class RegisterFile {
         RegisterValue get(Register reg);
 
         /** Set a register as the specified value. */
-        void set(Register reg, RegisterValue value);
+        void set(Register reg, const RegisterValue &value);
     private:
         std::vector<RegisterValue> registers;
 };
+
+}
 
 #endif

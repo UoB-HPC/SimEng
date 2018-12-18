@@ -4,7 +4,7 @@
 #include <iostream>
 
 int main() {
-    auto registerFile = RegisterFile(32);
+    auto registerFile = simeng::RegisterFile(32);
 
     uint32_t hex[] = {
         0x320003E0, // orr w0, wzr, #1
@@ -17,7 +17,7 @@ int main() {
 
     while (pc >= 0 && pc < length) {
         // Fetch
-        auto macroop = A64Instruction::decode(&(hex[pc/pcIncrement]));
+        auto macroop = simeng::A64Instruction::decode(&(hex[pc/pcIncrement]));
 
         pc += pcIncrement;
 

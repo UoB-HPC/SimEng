@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <iostream>
 
+namespace simeng {
+
 std::vector<std::shared_ptr<Instruction>> A64Instruction::decode(void* test) {
     auto uop = std::make_shared<A64Instruction>(A64Instruction(test));
     std::vector<std::shared_ptr<Instruction>> macroOp{ uop };
@@ -50,12 +52,12 @@ bool A64Instruction::isOperandReady(int index) {
     return operands[index].ready;
 }
 
-void A64Instruction::rename(std::vector<Register> destinations, std::vector<Register> operands) {
+void A64Instruction::rename(const std::vector<Register> &destinations, const std::vector<Register> &operands) {
     destinationRegisters = destinations;
     sourceRegisters = operands;
 }
 
-void A64Instruction::supplyOperand(Register reg, RegisterValue value) {
+void A64Instruction::supplyOperand(Register reg, const RegisterValue &value) {
     if (canExecute()) {
         return;
     }
@@ -84,4 +86,6 @@ std::vector<RegisterValue> A64Instruction::getResults() {
     auto out = std::vector<RegisterValue>(results.size());
     std::transform(results.begin(), results.end(), out.begin(), [](A64Result item) { return item.value; });
     return out;
+}
+
 }

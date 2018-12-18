@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+namespace simeng {
+
 void A64Instruction::execute() {
     executed = true;
     switch(opcode) {
@@ -21,4 +23,6 @@ void A64Instruction::execute() {
             exception = ExecutionNotYetImplemented;
             return;
     }
+}
+
 }

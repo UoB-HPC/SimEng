@@ -4,6 +4,8 @@
 
 #include <memory>
 
+namespace simeng {
+
 /** A class that encapsulates a smart pointer to an arbitrary value, providing casting and
  * data accessor functions. */
 class RegisterValue {
@@ -40,5 +42,7 @@ class RegisterValue {
     private:
         std::shared_ptr<uint8_t> ptr;
 };
+
+}
 
 #endif

@@ -3,7 +3,7 @@
 
 #include "instruction.hh"
 
-#define ZERO_REGISTER -1
+namespace simeng {
 
 typedef struct {
     uint8_t sf;
@@ -37,22 +37,25 @@ class A64Instruction: public Instruction {
         A64Instruction(void* encoding);
         ~A64Instruction() {};
 
-        InstructionException getException();
+        InstructionException getException() override;
 
-        std::vector<Register> getOperandRegisters();
-        std::vector<Register> getDestinationRegisters();
+        std::vector<Register> getOperandRegisters() override;
+        std::vector<Register> getDestinationRegisters() override;
 
-        bool isOperandReady(int index);
+        bool isOperandReady(int index) override;
 
-        void rename(std::vector<Register> destinations, std::vector<Register> operands);
+        void rename(const std::vector<Register> &destinations, const std::vector<Register> &operands) override;
 
-        void supplyOperand(Register reg, RegisterValue value);
-        bool canExecute();
+        void supplyOperand(Register reg, const RegisterValue &value) override;
+        bool canExecute() override;
 
-        void execute();
-        bool canCommit();
+        void execute() override;
+        bool canCommit() override;
 
-        std::vector<RegisterValue> getResults();
+        std::vector<RegisterValue> getResults() override;
+
+
+        const static int ZERO_REGISTER = -1;
 
     private:
         A64Opcode opcode;
@@ -84,5 +87,7 @@ class A64Instruction: public Instruction {
 
         bool executed = false;
 };
+
+}
 
 #endif

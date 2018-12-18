@@ -8,13 +8,15 @@
 #define ONES(n) ((1 << (n)) - 1)
 #define ROR(x, shift, size) ((x >> shift) | (x << (size - shift)))
 
+namespace simeng {
+
 /********************
  * HELPER FUNCTIONS
  *******************/
 
 // Check for and mark WZR/XZR references
 Register FilterZR(Register reg) {
-    return (reg == 31 ? ZERO_REGISTER : reg);
+    return (reg == 31 ? A64Instruction::ZERO_REGISTER : reg);
 }
 
 uint64_t decodeBitMasks(uint8_t immN, uint8_t imms, uint8_t immr, bool immediate, int size) {
@@ -137,4 +139,6 @@ void A64Instruction::decodeA64DataRegister(uint32_t insn) {
 }
 void A64Instruction::decodeA64DataFPSIMD(uint32_t insn) {
     nyi();
+}
+
 }

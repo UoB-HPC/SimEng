@@ -1,5 +1,7 @@
 #include "registerFile.hh"
 
+namespace simeng {
+
 RegisterFile::RegisterFile(int registerCount) {
     registers = std::vector<RegisterValue>(registerCount);
 
@@ -12,6 +14,8 @@ RegisterValue RegisterFile::get(Register reg) {
     return registers[reg];
 }
 
-void RegisterFile::set(Register reg, RegisterValue value) {
+void RegisterFile::set(Register reg, const RegisterValue &value) {
     registers[reg] = value;
+}
+
 }

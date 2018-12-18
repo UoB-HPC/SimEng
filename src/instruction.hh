@@ -8,6 +8,8 @@
 
 typedef short InstructionException;
 
+namespace simeng {
+
 /** An abstract instruction definition.
  * Each supported ISA should provide an derived implementation of this class. */
 class Instruction {
@@ -25,10 +27,10 @@ class Instruction {
         virtual std::vector<Register> getDestinationRegisters() = 0;
 
         /** Override the destination and operand registers with renamed physical register tags. */
-        virtual void rename(std::vector<Register> destinations, std::vector<Register> operands) = 0;
+        virtual void rename(const std::vector<Register> &destinations, const std::vector<Register> &operands) = 0;
 
         /** Provide a value for the specified physical register. */
-        virtual void supplyOperand(Register reg, RegisterValue value) = 0;
+        virtual void supplyOperand(Register reg, const RegisterValue &value) = 0;
 
         /** Check whether the operand at index `i` has had a value supplied. */
         virtual bool isOperandReady(int i) = 0;
@@ -45,5 +47,7 @@ class Instruction {
         /** Retrieve the results to commit. */
         virtual std::vector<RegisterValue> getResults() = 0;
 };
+
+}
 
 #endif
