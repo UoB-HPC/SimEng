@@ -1,6 +1,7 @@
 #include "registerFile.hh"
 #include "A64Instruction.hh"
 
+#include <cstring>
 #include <iostream>
 
 int main() {
@@ -9,11 +10,16 @@ int main() {
     uint32_t hex[] = {
         0x320003E0, // orr w0, wzr, #1
         0x321F0001, // orr w1, w0, #2
+        0xB94003E0, // ldr w0, [sp],
+        0xF94003E0, // ldr x0, [sp]
     };
 
     auto pc = 0;
     auto length = sizeof(hex);
     const auto pcIncrement = 4;
+
+    unsigned char* memory = (unsigned char*)calloc(1024, 1);
+    memory[4] = 1;
 
     while (pc >= 0 && pc < length) {
         // Fetch
@@ -34,6 +40,21 @@ int main() {
         }
 
         // Execute
+        if (uop->isLoad()) {
+            auto addresses = uop->generateAddresses();
+            for (auto const &request : addresses) {
+                std::cout << "Loading " << (int)request.second << " bytes from " << std::hex << request.first << std::endl;
+                
+                // Pointer manipulation to generate a RegisterValue from an arbitrary memory address
+                auto buffer = malloc(request.second);
+                memcpy(buffer, memory + request.first, request.second);
+
+                auto ptr = std::shared_ptr<uint8_t>((uint8_t*)buffer, free);
+                auto data = simeng::RegisterValue(ptr);
+
+                uop->supplyData(request.first, data);
+            }
+        }
         uop->execute();
 
         // Writeback

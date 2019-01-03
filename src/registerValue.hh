@@ -3,6 +3,7 @@
 #define __H_REGISTER_VALUE
 
 #include <memory>
+#include <iostream>
 
 namespace simeng {
 
@@ -38,6 +39,10 @@ class RegisterValue {
         T* getAsVector() {
             return reinterpret_cast<T*>(ptr.get());
         }
+
+        /** Create a new RegisterValue of size `toBytes`, copying the first `fromBytes` bytes of this one.
+         * The remaining bytes of the new RegisterValue are zeroed. */
+        RegisterValue zeroExtend(uint8_t fromBytes, uint8_t toBytes) const;
 
     private:
         std::shared_ptr<uint8_t> ptr;

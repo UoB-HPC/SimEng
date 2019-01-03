@@ -44,8 +44,20 @@ class Instruction {
         /** Check whether the instruction has executed and has results ready to commit. */
         virtual bool canCommit() = 0;
 
-        /** Retrieve the results to commit. */
+        /** Retrieve register results to commit. */
         virtual std::vector<RegisterValue> getResults() = 0;
+
+        /** Generate memory addresses this instruction wishes to access. **/
+        virtual std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() = 0;
+
+        /** Provide data from a requested memory address. **/
+        virtual void supplyData(uint64_t address, RegisterValue data) = 0;
+
+        /** Is this a store operation? **/
+        virtual bool isStore() = 0;
+
+        /** Is this a load operation? **/
+        virtual bool isLoad() = 0;
 };
 
 }

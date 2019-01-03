@@ -132,7 +132,95 @@ void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
     nyi();
 }
 void A64Instruction::decodeA64LoadStore(uint32_t insn) {
-    nyi();
+    auto op1 = BITS(insn, 28, 2);
+    switch(op1) {
+        case 0b00: {
+            // ASIMD structures & exclusives
+            return nyi();
+        }
+        case 0b01: {
+            // Literal
+            return nyi();
+        }
+        case 0b10: {
+            // Pair
+            return nyi();
+        }
+        case 0b11: {
+            // Single register
+            auto op3_1 = BIT(insn, 24);
+            if (op3_1) { // Load/store register (unsigned immediate)
+                isLoad_ = true;
+                auto opc = BITS(insn, 22, 2);
+                auto Rt = (short)BITS(insn, 0, 5);
+                auto Rn = (short)BITS(insn, 5, 5);
+                auto imm = BITS(insn, 10, 12);
+                auto size = BITS(insn, 30, 2);
+                auto V = BIT(insn, 26);
+
+                if (V) { // ASIMD
+                    return nyi();
+                }
+
+                switch(opc) {
+                    case 0b01: { // LDRx (immediate)
+                        switch(size) {
+                            case 0b00: return nyi();
+                            case 0b01: return nyi();
+                            default: { // LDR (immediate) - 32 & 64 bit variants
+                                opcode = LDR_I;
+                                metadata.wback = false;
+                                metadata.postindex = false;
+                                metadata.scale = size;
+                                metadata.offset = imm << size;
+
+                                setDestinationRegisters(std::vector<Register> { Rt });
+                                setSourceRegisters(std::vector<Register> { Rn });
+
+                                return;
+                            }
+                        }
+                    }
+                    default:
+                        return nyi();
+                }
+            }
+
+            auto op5 = BITS(insn, 10, 2);
+            auto op4_5 = BIT(insn, 21);
+            if (op4_5) {
+                switch(op5) {
+                    case 0b00: { // Atomic memory operations
+                        return nyi();
+                    }
+                    case 0b10: { // Load/store register (register offset)
+                        return nyi();
+                    }
+                    default: { // Load/store register (pac)
+                        return nyi();
+                    }
+                }
+            }
+
+            switch(op5) {
+                case 0b00: { // Load/store register (unscaled immediate)
+                    return nyi();
+                }
+                case 0b01: { // Load/store register (immediate post-indexed)
+                    return nyi();
+                }
+                case 0b10: { // Load/store register (unprivileged)
+                    return nyi();
+                }
+                case 0b11: { // Load/store register (immediate pre-indexed)
+                    return nyi();
+                }
+            }
+
+            return nyi();
+        }
+    }
+    return nyi();
 }
 void A64Instruction::decodeA64DataRegister(uint32_t insn) {
     nyi();

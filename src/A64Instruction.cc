@@ -74,6 +74,17 @@ void A64Instruction::supplyOperand(Register reg, const RegisterValue &value) {
     }
 }
 
+void A64Instruction::supplyData(uint64_t address, RegisterValue data) {
+    for (int i = 0; i < memoryAddresses.size(); i++) {
+        if (memoryAddresses[i].first != address) {
+            continue;
+        }
+
+        memoryData[i] = data;
+        return;
+    }
+}
+
 bool A64Instruction::canExecute() {
     return (operandsPending == 0);
 }
@@ -86,6 +97,18 @@ std::vector<RegisterValue> A64Instruction::getResults() {
     auto out = std::vector<RegisterValue>(results.size());
     std::transform(results.begin(), results.end(), out.begin(), [](A64Result item) { return item.value; });
     return out;
+}
+
+bool A64Instruction::isStore() {
+    return isStore_;
+}
+bool A64Instruction::isLoad() {
+    return isLoad_;
+}
+
+void A64Instruction::setMemoryAddresses(const std::vector<std::pair<uint64_t, uint8_t>> &addresses) {
+    memoryData = std::vector<RegisterValue>(addresses.size());
+    memoryAddresses = addresses;
 }
 
 }

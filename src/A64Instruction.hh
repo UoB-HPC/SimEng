@@ -8,7 +8,13 @@ namespace simeng {
 typedef struct {
     uint8_t sf;
     uint8_t N;
-    uint64_t imm;
+    union {
+        uint64_t imm;
+        uint64_t offset;
+    };
+    bool wback;
+    bool postindex;
+    uint8_t scale;
 } A64DecodeMetadata;
 
 enum A64InstructionException {
@@ -19,6 +25,7 @@ enum A64InstructionException {
 };
 
 enum A64Opcode {
+    LDR_I,
     ORR_I
 };
 
@@ -54,6 +61,11 @@ class A64Instruction: public Instruction {
 
         std::vector<RegisterValue> getResults() override;
 
+        std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() override;
+        void supplyData(uint64_t address, RegisterValue data) override;
+
+        bool isStore() override;
+        bool isLoad() override;
 
         const static int ZERO_REGISTER = -1;
 
@@ -86,6 +98,15 @@ class A64Instruction: public Instruction {
         short operandsPending;
 
         bool executed = false;
+
+        // Metadata
+        bool isStore_ = false;
+        bool isLoad_ = false;
+
+        // Memory
+        void setMemoryAddresses(const std::vector<std::pair<uint64_t, uint8_t>> &addresses);
+        std::vector<std::pair<uint64_t, uint8_t>> memoryAddresses;
+        std::vector<RegisterValue> memoryData;
 };
 
 }

@@ -7,6 +7,10 @@ namespace simeng {
 void A64Instruction::execute() {
     executed = true;
     switch(opcode) {
+        case LDR_I: {
+            results[0].value = memoryData[0].zeroExtend(memoryAddresses[0].second, 8);
+            return;
+        }
         case ORR_I: {
             if (metadata.sf) {
                 auto value = operands[0].value.get<uint64_t>();
