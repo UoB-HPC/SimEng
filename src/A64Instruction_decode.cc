@@ -150,7 +150,6 @@ void A64Instruction::decodeA64LoadStore(uint32_t insn) {
             // Single register
             auto op3_1 = BIT(insn, 24);
             if (op3_1) { // Load/store register (unsigned immediate)
-                isLoad_ = true;
                 auto opc = BITS(insn, 22, 2);
                 auto Rt = (short)BITS(insn, 0, 5);
                 auto Rn = (short)BITS(insn, 5, 5);
@@ -161,9 +160,28 @@ void A64Instruction::decodeA64LoadStore(uint32_t insn) {
                 if (V) { // ASIMD
                     return nyi();
                 }
-
+                
                 switch(opc) {
+                    case 0b00: { // STRx (immediate)
+                        isStore_ = true;
+                        switch(size) {
+                            case 0b00: return nyi();
+                            case 0b01: return nyi();
+                            default: { // STR (immediate) - 32 & 64-bit variants
+                                opcode = STR_I;
+                                metadata.wback = false;
+                                metadata.postindex = false;
+                                metadata.scale = size;
+                                metadata.offset = imm << size;
+                                
+                                setSourceRegisters(std::vector<Register> { Rt, Rn });
+
+                                return;
+                            }
+                        }
+                    }
                     case 0b01: { // LDRx (immediate)
+                        isLoad_ = true;
                         switch(size) {
                             case 0b00: return nyi();
                             case 0b01: return nyi();

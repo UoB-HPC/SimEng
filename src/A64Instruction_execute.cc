@@ -23,6 +23,10 @@ void A64Instruction::execute() {
             }
             return;
         }
+        case STR_I: {
+            memoryData[0] = operands[0].value;
+            return;
+        }
         default:
             exception = ExecutionNotYetImplemented;
             return;

@@ -53,6 +53,12 @@ class Instruction {
         /** Provide data from a requested memory address. **/
         virtual void supplyData(uint64_t address, RegisterValue data) = 0;
 
+        /** Retrieve previously generated memory addresses. **/
+        virtual std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() = 0;
+
+        /** Retrieve supplied memory data. **/
+        virtual std::vector<RegisterValue> getData() = 0;
+
         /** Is this a store operation? **/
         virtual bool isStore() = 0;
 

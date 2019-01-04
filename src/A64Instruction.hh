@@ -26,7 +26,8 @@ enum A64InstructionException {
 
 enum A64Opcode {
     LDR_I,
-    ORR_I
+    ORR_I,
+    STR_I
 };
 
 typedef struct {
@@ -63,6 +64,10 @@ class A64Instruction: public Instruction {
 
         std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() override;
         void supplyData(uint64_t address, RegisterValue data) override;
+
+
+        std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() override;
+        std::vector<RegisterValue> getData() override;
 
         bool isStore() override;
         bool isLoad() override;

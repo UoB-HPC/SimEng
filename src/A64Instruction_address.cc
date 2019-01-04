@@ -11,13 +11,19 @@ std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
     }
 
     switch(opcode) {
+        case STR_I:
         case LDR_I: {
             if (metadata.wback) {
                 exception = ExecutionNotYetImplemented;
                 return {};
             }
 
-            auto address = operands[0].value.get<uint64_t>() + metadata.offset;
+            int baseOpIndex = 0;
+            if (opcode == STR_I) {
+                baseOpIndex = 1;
+            }
+
+            auto address = operands[baseOpIndex].value.get<uint64_t>() + metadata.offset;
             setMemoryAddresses({ { address, 1 << metadata.scale } });
             return memoryAddresses;
         }

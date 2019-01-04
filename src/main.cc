@@ -10,7 +10,8 @@ int main() {
     uint32_t hex[] = {
         0x320003E0, // orr w0, wzr, #1
         0x321F0001, // orr w1, w0, #2
-        0xB94003E0, // ldr w0, [sp],
+        0xB90003E1, // str w1, [sp]
+        0xB94003E0, // ldr w0, [sp]
         0xF94003E0, // ldr x0, [sp]
     };
 
@@ -54,8 +55,23 @@ int main() {
 
                 uop->supplyData(request.first, data);
             }
+        } else if (uop->isStore()) {
+            uop->generateAddresses();
         }
         uop->execute();
+
+        if (uop->isStore()) {
+            auto addresses = uop->getGeneratedAddresses();
+            auto data = uop->getData();
+            for (int i = 0; i < addresses.size(); i++) {
+                auto request = addresses[i];
+                std::cout << "Storing " << (int)request.second << " bytes to " << std::hex << request.first << std::endl;
+
+                // Copy data to memory
+                auto address = memory + request.first;
+                memcpy(address, data[i].getAsVector<void>(), request.second);
+            }
+        }
 
         // Writeback
         auto results = uop->getResults();

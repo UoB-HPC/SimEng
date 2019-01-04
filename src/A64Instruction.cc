@@ -111,4 +111,11 @@ void A64Instruction::setMemoryAddresses(const std::vector<std::pair<uint64_t, ui
     memoryAddresses = addresses;
 }
 
+std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::getGeneratedAddresses() {
+    return memoryAddresses;
+}
+std::vector<RegisterValue> A64Instruction::getData() {
+    return memoryData;
+}
+
 }
