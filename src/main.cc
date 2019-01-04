@@ -13,6 +13,9 @@ int main() {
         0xB90003E1, // str w1, [sp]
         0xB94003E0, // ldr w0, [sp]
         0xF94003E0, // ldr x0, [sp]
+        0x14000002, // b #8
+        0x320003E0, // orr w0, wzr, #1
+        0x32000002, // orr w2, w0, #1
     };
 
     auto pc = 0;
@@ -24,7 +27,7 @@ int main() {
 
     while (pc >= 0 && pc < length) {
         // Fetch
-        auto macroop = simeng::A64Instruction::decode(&(hex[pc/pcIncrement]));
+        auto macroop = simeng::A64Instruction::decode(&(hex[pc/pcIncrement]), pc);
 
         pc += pcIncrement;
 
@@ -71,6 +74,9 @@ int main() {
                 auto address = memory + request.first;
                 memcpy(address, data[i].getAsVector<void>(), request.second);
             }
+        } else if (uop->isBranch()) {
+            pc = uop->getBranchAddress();
+            std::cout << "Branch: setting PC to " << std::hex << pc << std::endl;
         }
 
         // Writeback

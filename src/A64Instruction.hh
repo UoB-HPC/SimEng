@@ -10,7 +10,7 @@ typedef struct {
     uint8_t N;
     union {
         uint64_t imm;
-        uint64_t offset;
+        int64_t offset;
     };
     bool wback;
     bool postindex;
@@ -24,7 +24,8 @@ enum A64InstructionException {
     ExecutionNotYetImplemented
 };
 
-enum A64Opcode {
+enum class A64Opcode {
+    B,
     LDR_I,
     ORR_I,
     STR_I
@@ -40,9 +41,9 @@ typedef struct {
 
 class A64Instruction: public Instruction {
     public:
-        static std::vector<std::shared_ptr<Instruction>> decode(void* encoding);
+        static std::vector<std::shared_ptr<Instruction>> decode(void* encoding, uint64_t instructionAddress);
 
-        A64Instruction(void* encoding);
+        A64Instruction(void* encoding, uint64_t instructionAddress);
         ~A64Instruction() {};
 
         InstructionException getException() override;
@@ -63,19 +64,23 @@ class A64Instruction: public Instruction {
         std::vector<RegisterValue> getResults() override;
 
         std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() override;
-        void supplyData(uint64_t address, RegisterValue data) override;
-
-
         std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() override;
+
+        void supplyData(uint64_t address, RegisterValue data) override;
         std::vector<RegisterValue> getData() override;
+
+        bool wasBranchMispredicted() override;
+        uint64_t getBranchAddress() override;
 
         bool isStore() override;
         bool isLoad() override;
+        bool isBranch() override;
 
         const static int ZERO_REGISTER = -1;
 
     private:
         A64Opcode opcode;
+        uint64_t instructionAddress;
         A64DecodeMetadata metadata;
 
         std::vector<Register> sourceRegisters;
@@ -107,11 +112,15 @@ class A64Instruction: public Instruction {
         // Metadata
         bool isStore_ = false;
         bool isLoad_ = false;
+        bool isBranch_ = false;
 
         // Memory
         void setMemoryAddresses(const std::vector<std::pair<uint64_t, uint8_t>> &addresses);
         std::vector<std::pair<uint64_t, uint8_t>> memoryAddresses;
         std::vector<RegisterValue> memoryData;
+
+        // Branches
+        uint64_t branchAddress;
 };
 
 }

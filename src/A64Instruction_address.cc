@@ -11,15 +11,15 @@ std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
     }
 
     switch(opcode) {
-        case STR_I:
-        case LDR_I: {
+        case A64Opcode::STR_I:
+        case A64Opcode::LDR_I: {
             if (metadata.wback) {
                 exception = ExecutionNotYetImplemented;
                 return {};
             }
 
             int baseOpIndex = 0;
-            if (opcode == STR_I) {
+            if (opcode == A64Opcode::STR_I) {
                 baseOpIndex = 1;
             }
 

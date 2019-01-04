@@ -47,23 +47,32 @@ class Instruction {
         /** Retrieve register results to commit. */
         virtual std::vector<RegisterValue> getResults() = 0;
 
-        /** Generate memory addresses this instruction wishes to access. **/
+        /** Generate memory addresses this instruction wishes to access. */
         virtual std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() = 0;
 
-        /** Provide data from a requested memory address. **/
+        /** Provide data from a requested memory address. */
         virtual void supplyData(uint64_t address, RegisterValue data) = 0;
 
-        /** Retrieve previously generated memory addresses. **/
+        /** Retrieve previously generated memory addresses. */
         virtual std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() = 0;
 
-        /** Retrieve supplied memory data. **/
+        /** Retrieve supplied memory data. */
         virtual std::vector<RegisterValue> getData() = 0;
 
-        /** Is this a store operation? **/
+        /** Check for misprediction. */
+        virtual bool wasBranchMispredicted() = 0;
+
+        /** Retrieve branch address. */
+        virtual uint64_t getBranchAddress() = 0;
+
+        /** Is this a store operation? */
         virtual bool isStore() = 0;
 
-        /** Is this a load operation? **/
+        /** Is this a load operation? */
         virtual bool isLoad() = 0;
+
+        /** Is this a branch operation? */
+        virtual bool isBranch() = 0;
 };
 
 }

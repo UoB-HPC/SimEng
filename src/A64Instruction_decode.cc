@@ -117,7 +117,7 @@ void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
             auto opc = BITS(insn, 29, 2);
             switch(opc) {
                 case 0b01:
-                    opcode = ORR_I;
+                    opcode = A64Opcode::ORR_I;
                     break;
                 default:
                     return nyi();
@@ -129,7 +129,29 @@ void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
     }
 }
 void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
-    nyi();
+    auto op0 = BITS(insn, 29, 3);
+    switch(op0) {
+        case 0b000:
+        case 0b100: { // Unconditional branch (immediate)
+            isBranch_ = true;
+            auto op = BIT(insn, 31);
+            int64_t imm = BITS(insn, 0, 25);
+            auto negative = BIT(insn, 25);
+
+            auto offset = (imm << 2) * (negative ? -1 : 1);
+
+            if (op) { // BL
+                return nyi();
+            }
+
+            opcode = A64Opcode::B;
+            metadata.offset = offset;
+        }
+        default: {
+            return nyi();
+        }
+    }
+    return nyi();
 }
 void A64Instruction::decodeA64LoadStore(uint32_t insn) {
     auto op1 = BITS(insn, 28, 2);
@@ -168,12 +190,12 @@ void A64Instruction::decodeA64LoadStore(uint32_t insn) {
                             case 0b00: return nyi();
                             case 0b01: return nyi();
                             default: { // STR (immediate) - 32 & 64-bit variants
-                                opcode = STR_I;
+                                opcode = A64Opcode::STR_I;
                                 metadata.wback = false;
                                 metadata.postindex = false;
                                 metadata.scale = size;
                                 metadata.offset = imm << size;
-                                
+
                                 setSourceRegisters(std::vector<Register> { Rt, Rn });
 
                                 return;
@@ -186,7 +208,7 @@ void A64Instruction::decodeA64LoadStore(uint32_t insn) {
                             case 0b00: return nyi();
                             case 0b01: return nyi();
                             default: { // LDR (immediate) - 32 & 64 bit variants
-                                opcode = LDR_I;
+                                opcode = A64Opcode::LDR_I;
                                 metadata.wback = false;
                                 metadata.postindex = false;
                                 metadata.scale = size;

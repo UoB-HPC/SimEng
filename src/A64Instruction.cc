@@ -6,13 +6,13 @@
 
 namespace simeng {
 
-std::vector<std::shared_ptr<Instruction>> A64Instruction::decode(void* test) {
-    auto uop = std::make_shared<A64Instruction>(A64Instruction(test));
+std::vector<std::shared_ptr<Instruction>> A64Instruction::decode(void* test, uint64_t instructionAddress) {
+    auto uop = std::make_shared<A64Instruction>(A64Instruction(test, instructionAddress));
     std::vector<std::shared_ptr<Instruction>> macroOp{ uop };
     return macroOp;
 }
 
-A64Instruction::A64Instruction(void* encoding) {
+A64Instruction::A64Instruction(void* encoding, uint64_t instructionAddress) : instructionAddress(instructionAddress) {
     uint32_t insn = *((uint32_t*) encoding);
     decodeA64(insn);
 }
@@ -85,6 +85,11 @@ void A64Instruction::supplyData(uint64_t address, RegisterValue data) {
     }
 }
 
+std::vector<RegisterValue> A64Instruction::getData() {
+    return memoryData;
+}
+
+
 bool A64Instruction::canExecute() {
     return (operandsPending == 0);
 }
@@ -99,12 +104,17 @@ std::vector<RegisterValue> A64Instruction::getResults() {
     return out;
 }
 
+
 bool A64Instruction::isStore() {
     return isStore_;
 }
 bool A64Instruction::isLoad() {
     return isLoad_;
 }
+bool A64Instruction::isBranch() {
+    return isBranch_;
+}
+
 
 void A64Instruction::setMemoryAddresses(const std::vector<std::pair<uint64_t, uint8_t>> &addresses) {
     memoryData = std::vector<RegisterValue>(addresses.size());
@@ -114,8 +124,16 @@ void A64Instruction::setMemoryAddresses(const std::vector<std::pair<uint64_t, ui
 std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::getGeneratedAddresses() {
     return memoryAddresses;
 }
-std::vector<RegisterValue> A64Instruction::getData() {
-    return memoryData;
+
+
+bool A64Instruction::wasBranchMispredicted() {
+    // TEMPORARY
+    // Needs replacing once branch prediction is implemented
+    return false;
 }
+uint64_t A64Instruction::getBranchAddress() {
+    return branchAddress;
+}
+
 
 }
