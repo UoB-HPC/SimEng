@@ -5,6 +5,12 @@
 
 namespace simeng {
 
+namespace A64RegisterType {
+    const uint8_t GENERAL = 0;
+    const uint8_t VECTOR = 1;
+    const uint8_t NZCV = 2;
+}
+
 typedef struct {
     uint8_t sf;
     uint8_t N;
@@ -29,10 +35,6 @@ enum class A64Opcode {
     LDR_I,
     ORR_I,
     STR_I
-};
-
-enum class A64RegisterType : uint8_t {
-    General, NZCV
 };
 
 

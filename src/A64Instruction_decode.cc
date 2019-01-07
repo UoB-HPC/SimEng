@@ -15,12 +15,12 @@ namespace simeng {
  *******************/
 
 constexpr Register GenReg(uint16_t tag) {
-    return { (uint8_t)A64RegisterType::General, tag };
+    return { A64RegisterType::GENERAL, tag };
 }
 
 // Check for and mark WZR/XZR references
 Register FilterZR(Register reg) {
-    return (reg.type == (uint8_t)A64RegisterType::General && reg.tag == 31
+    return (reg.type == A64RegisterType::GENERAL && reg.tag == 31
         ? A64Instruction::ZERO_REGISTER : reg);
 }
 
