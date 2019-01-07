@@ -14,9 +14,14 @@ namespace simeng {
  * HELPER FUNCTIONS
  *******************/
 
+constexpr Register GenReg(uint16_t tag) {
+    return { (uint8_t)A64RegisterType::General, tag };
+}
+
 // Check for and mark WZR/XZR references
 Register FilterZR(Register reg) {
-    return (reg == 31 ? A64Instruction::ZERO_REGISTER : reg);
+    return (reg.type == (uint8_t)A64RegisterType::General && reg.tag == 31
+        ? A64Instruction::ZERO_REGISTER : reg);
 }
 
 uint64_t decodeBitMasks(uint8_t immN, uint8_t imms, uint8_t immr, bool immediate, int size) {
@@ -107,8 +112,8 @@ void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
             auto imms = BITS(insn, 10, 6);
             auto immr = BITS(insn, 16, 6);
 
-            setDestinationRegisters(std::vector<Register> { Rd });
-            setSourceRegisters(std::vector<Register> { FilterZR(Rn) });
+            setDestinationRegisters(std::vector<Register> { GenReg(Rd) });
+            setSourceRegisters(std::vector<Register> { FilterZR(GenReg(Rn)) });
 
             metadata.sf = sf;
             metadata.N = N;
@@ -196,7 +201,7 @@ void A64Instruction::decodeA64LoadStore(uint32_t insn) {
                                 metadata.scale = size;
                                 metadata.offset = imm << size;
 
-                                setSourceRegisters(std::vector<Register> { Rt, Rn });
+                                setSourceRegisters(std::vector<Register> { GenReg(Rt), GenReg(Rn) });
 
                                 return;
                             }
@@ -214,8 +219,8 @@ void A64Instruction::decodeA64LoadStore(uint32_t insn) {
                                 metadata.scale = size;
                                 metadata.offset = imm << size;
 
-                                setDestinationRegisters(std::vector<Register> { Rt });
-                                setSourceRegisters(std::vector<Register> { Rn });
+                                setDestinationRegisters(std::vector<Register> { GenReg(Rt) });
+                                setSourceRegisters(std::vector<Register> { GenReg(Rn) });
 
                                 return;
                             }

@@ -31,6 +31,11 @@ enum class A64Opcode {
     STR_I
 };
 
+enum class A64RegisterType : uint8_t {
+    General, NZCV
+};
+
+
 typedef struct {
     RegisterValue value;
     bool ready;
@@ -44,7 +49,7 @@ class A64Instruction: public Instruction {
         static std::vector<std::shared_ptr<Instruction>> decode(void* encoding, uint64_t instructionAddress);
 
         A64Instruction(void* encoding, uint64_t instructionAddress);
-        ~A64Instruction() {};
+        // ~A64Instruction() {};
 
         InstructionException getException() override;
 
@@ -76,7 +81,7 @@ class A64Instruction: public Instruction {
         bool isLoad() override;
         bool isBranch() override;
 
-        const static int ZERO_REGISTER = -1;
+        static const Register ZERO_REGISTER;
 
     private:
         A64Opcode opcode;

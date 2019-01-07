@@ -6,6 +6,8 @@
 
 namespace simeng {
 
+const Register A64Instruction::ZERO_REGISTER = { (uint8_t)A64RegisterType::General, (uint16_t)-1 };
+
 std::vector<std::shared_ptr<Instruction>> A64Instruction::decode(void* test, uint64_t instructionAddress) {
     auto uop = std::make_shared<A64Instruction>(A64Instruction(test, instructionAddress));
     std::vector<std::shared_ptr<Instruction>> macroOp{ uop };
@@ -27,7 +29,7 @@ void A64Instruction::setSourceRegisters(std::vector<Register> registers) {
 
     for (auto i = 0; i < registers.size(); i++) {
         auto reg = registers[i];
-        if (reg == ZERO_REGISTER) {
+        if (reg == A64Instruction::ZERO_REGISTER) {
             // Any zero-register references should be marked as ready, and
             //  the corresponding operand value zeroed
             operands[i].value = RegisterValue(0, 8);

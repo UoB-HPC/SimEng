@@ -7,7 +7,14 @@
 
 namespace simeng {
 
-typedef short Register;
+// typedef short Register;
+struct Register {
+    uint8_t type;
+    uint16_t tag;
+
+    bool operator==(Register other);
+};
+std::ostream &operator<<(std::ostream &os, simeng::Register const &reg);
 
 class RegisterFile {
     public:
