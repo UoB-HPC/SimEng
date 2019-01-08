@@ -34,7 +34,9 @@ enum class A64Opcode {
     B,
     LDR_I,
     ORR_I,
-    STR_I
+    STR_I,
+    SUB_I,
+    SUBS_I,
 };
 
 

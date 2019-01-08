@@ -17,6 +17,9 @@ namespace simeng {
 constexpr Register GenReg(uint16_t tag) {
     return { A64RegisterType::GENERAL, tag };
 }
+constexpr Register NZCVReg() {
+    return { A64RegisterType::NZCV, 0 };
+}
 
 // Check for and mark WZR/XZR references
 Register FilterZR(Register reg) {
@@ -100,6 +103,38 @@ void A64Instruction::unallocated() {
 void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
     auto op0 = BITS(insn, 23, 3);
     switch(op0) {
+        case 0b010:
+        case 0b011: { // Add/subtract (immediate)
+            auto shift = BITS(insn, 22, 2);
+            if (shift >= 0b10) {
+                return unallocated();
+            }
+
+            auto sf = BIT(insn, 31);
+            auto op = BIT(insn, 30);
+            auto S = BIT(insn, 29);
+            auto Rd = BITS(insn, 0, 5);
+            auto Rn = BITS(insn, 5, 5);
+            auto imm = BITS(insn, 10, 12);
+
+            if (op) { // SUB(S)
+                opcode = (S ? A64Opcode::SUBS_I : A64Opcode::SUB_I);
+            } else { // ADD(S)
+                return nyi();
+            }
+
+            if (S) {
+                setDestinationRegisters(std::vector<Register> { GenReg(Rd), NZCVReg() });
+            } else {
+                setDestinationRegisters(std::vector<Register> { GenReg(Rd) });
+            }
+
+            setSourceRegisters(std::vector<Register> { FilterZR(GenReg(Rn)) });
+
+            metadata.sf = sf;
+            metadata.imm = (shift ? (imm << 12) : imm);
+            return;
+        }
         case 0b100: { // Logical (immediate)
             auto sf = BIT(insn, 31);
             auto N = BIT(insn, 22);

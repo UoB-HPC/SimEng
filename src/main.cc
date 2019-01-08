@@ -5,7 +5,7 @@
 #include <iostream>
 
 int main() {
-    auto registerFile = simeng::RegisterFile(32);
+    auto registerFile = simeng::RegisterFile({ 32, 32, 1 });
 
     uint32_t hex[] = {
         0x320003E0, // orr w0, wzr, #1
@@ -16,6 +16,7 @@ int main() {
         0x14000002, // b #8
         0x320003E0, // orr w0, wzr, #1
         0x32000002, // orr w2, w0, #1
+        0x71000420, // subs w0, w1, #1
     };
 
     auto pc = 0;
@@ -82,7 +83,7 @@ int main() {
         // Writeback
         auto results = uop->getResults();
         auto destinations = uop->getDestinationRegisters();
-        std::cout << "Results: ";
+        std::cout << "Results (" << std::hex << pc << "): ";
         for (auto i = 0; i < results.size(); i++) {
             auto reg = destinations[i];
             registerFile.set(reg, results[i]);

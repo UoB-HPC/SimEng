@@ -19,7 +19,7 @@ std::ostream &operator<<(std::ostream &os, simeng::Register const &reg);
 class RegisterFile {
     public:
         /** Initialise a RegisterFile with `registerCount` registers. */
-        RegisterFile(int registerCount);
+        RegisterFile(std::vector<uint16_t> registerFileSizes);
 
         /** Read the value of the specified register. */
         RegisterValue get(Register reg);
@@ -27,7 +27,7 @@ class RegisterFile {
         /** Set a register as the specified value. */
         void set(Register reg, const RegisterValue &value);
     private:
-        std::vector<RegisterValue> registers;
+        std::vector<std::vector<RegisterValue>> registerFiles;
 };
 
 }

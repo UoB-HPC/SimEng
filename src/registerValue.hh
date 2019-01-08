@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <iostream>
+#include <cassert>
 
 namespace simeng {
 
@@ -25,7 +26,7 @@ class RegisterValue {
             T* view = (T*)data;
             view[0] = value;
 
-            this->ptr = std::shared_ptr<uint8_t>((uint8_t*)data, free);
+            this->ptr = std::shared_ptr<uint8_t>(static_cast<uint8_t*>(data), free);
         }
 
         /** Read the encapsulated raw memory as a specified datatype. */
@@ -37,6 +38,7 @@ class RegisterValue {
         /** Retrieve a pointer to the encapsulated raw memory, reinterpreted as the specified datatype. */
         template <class T>
         T* getAsVector() {
+            assert(ptr != nullptr && "Attempted to access an uninitialised RegisterValue");
             return reinterpret_cast<T*>(ptr.get());
         }
 
