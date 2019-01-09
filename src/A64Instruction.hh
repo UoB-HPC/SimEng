@@ -21,6 +21,7 @@ typedef struct {
     bool wback;
     bool postindex;
     uint8_t scale;
+    uint8_t cond;
 } A64DecodeMetadata;
 
 enum A64InstructionException {
@@ -32,6 +33,7 @@ enum A64InstructionException {
 
 enum class A64Opcode {
     B,
+    B_cond,
     LDR_I,
     ORR_I,
     STR_I,
@@ -53,7 +55,6 @@ class A64Instruction: public Instruction {
         static std::vector<std::shared_ptr<Instruction>> decode(void* encoding, uint64_t instructionAddress);
 
         A64Instruction(void* encoding, uint64_t instructionAddress);
-        // ~A64Instruction() {};
 
         InstructionException getException() override;
 

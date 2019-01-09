@@ -1,8 +1,8 @@
 #include "A64Instruction.hh"
 #include <iostream>
 
-#define BITS(value, start, width) ((value >> start) & ((1 << width) - 1))
-#define BIT(value, start) ((value >> start) & 1)
+// #define bits(value, start, width) ((value >> start) & ((1 << width) - 1))
+// #define bit(value, start) ((value >> start) & 1)
 #define NOT(bits, length) (~bits & (1 << length - 1))
 #define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)
 #define ONES(n) ((1 << (n)) - 1)
@@ -14,11 +14,23 @@ namespace simeng {
  * HELPER FUNCTIONS
  *******************/
 
-constexpr Register GenReg(uint16_t tag) {
+constexpr bool bit(uint32_t value, uint8_t start) {
+    return (value >> start) & 1;
+}
+constexpr uint32_t bits(uint32_t value, uint8_t start, uint8_t width) {
+    return ((value >> start) & ((1 << width) - 1));
+}
+
+constexpr Register genReg(uint16_t tag) {
     return { A64RegisterType::GENERAL, tag };
 }
-constexpr Register NZCVReg() {
+constexpr Register nzcvReg() {
     return { A64RegisterType::NZCV, 0 };
+}
+constexpr int32_t signExtend(uint32_t value, int currentLength) {
+    uint32_t mask = (-1) << currentLength;
+    auto negative = bit(value, currentLength - 1);
+    return static_cast<int32_t>(value) | (negative ? mask : 0);
 }
 
 // Check for and mark WZR/XZR references
@@ -101,21 +113,21 @@ void A64Instruction::unallocated() {
 }
 
 void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
-    auto op0 = BITS(insn, 23, 3);
+    auto op0 = bits(insn, 23, 3);
     switch(op0) {
-        case 0b010:
+        case 0b010: [[fallthrough]];
         case 0b011: { // Add/subtract (immediate)
-            auto shift = BITS(insn, 22, 2);
+            auto shift = bits(insn, 22, 2);
             if (shift >= 0b10) {
                 return unallocated();
             }
 
-            auto sf = BIT(insn, 31);
-            auto op = BIT(insn, 30);
-            auto S = BIT(insn, 29);
-            auto Rd = BITS(insn, 0, 5);
-            auto Rn = BITS(insn, 5, 5);
-            auto imm = BITS(insn, 10, 12);
+            auto sf = bit(insn, 31);
+            auto op = bit(insn, 30);
+            auto S = bit(insn, 29);
+            auto Rd = bits(insn, 0, 5);
+            auto Rn = bits(insn, 5, 5);
+            auto imm = bits(insn, 10, 12);
 
             if (op) { // SUB(S)
                 opcode = (S ? A64Opcode::SUBS_I : A64Opcode::SUB_I);
@@ -124,37 +136,37 @@ void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
             }
 
             if (S) {
-                setDestinationRegisters(std::vector<Register> { GenReg(Rd), NZCVReg() });
+                setDestinationRegisters(std::vector<Register> { genReg(Rd), nzcvReg() });
             } else {
-                setDestinationRegisters(std::vector<Register> { GenReg(Rd) });
+                setDestinationRegisters(std::vector<Register> { genReg(Rd) });
             }
 
-            setSourceRegisters(std::vector<Register> { FilterZR(GenReg(Rn)) });
+            setSourceRegisters(std::vector<Register> { FilterZR(genReg(Rn)) });
 
             metadata.sf = sf;
             metadata.imm = (shift ? (imm << 12) : imm);
             return;
         }
         case 0b100: { // Logical (immediate)
-            auto sf = BIT(insn, 31);
-            auto N = BIT(insn, 22);
+            auto sf = bit(insn, 31);
+            auto N = bit(insn, 22);
             if (!sf && N) {
                 return unallocated();
             }
 
-            auto Rd = (short)BITS(insn, 0, 5);
-            auto Rn = (short)BITS(insn, 5, 5);
-            auto imms = BITS(insn, 10, 6);
-            auto immr = BITS(insn, 16, 6);
+            auto Rd = (short)bits(insn, 0, 5);
+            auto Rn = (short)bits(insn, 5, 5);
+            auto imms = bits(insn, 10, 6);
+            auto immr = bits(insn, 16, 6);
 
-            setDestinationRegisters(std::vector<Register> { GenReg(Rd) });
-            setSourceRegisters(std::vector<Register> { FilterZR(GenReg(Rn)) });
+            setDestinationRegisters(std::vector<Register> { genReg(Rd) });
+            setSourceRegisters(std::vector<Register> { FilterZR(genReg(Rn)) });
 
             metadata.sf = sf;
             metadata.N = N;
             metadata.imm = decodeBitMasks(N, imms, immr, true, (sf ? 64 : 32));
 
-            auto opc = BITS(insn, 29, 2);
+            auto opc = bits(insn, 29, 2);
             switch(opc) {
                 case 0b01:
                     opcode = A64Opcode::ORR_I;
@@ -169,16 +181,35 @@ void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
     }
 }
 void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
-    auto op0 = BITS(insn, 29, 3);
+    auto op0 = bits(insn, 29, 3);
     switch(op0) {
-        case 0b000:
+        case 0b010: { // Conditional branch (immediate)
+        isBranch_ = true;
+            auto op1 = bit(insn, 25);
+            auto o1 = bit(insn, 24);
+            auto o0 = bit(insn, 4);
+            if (op1 || o1 || o0) {
+                return unallocated();
+            }
+
+            opcode = A64Opcode::B_cond;
+            auto cond = bits(insn, 0, 4);
+            auto offset = bits(insn, 5, 19);
+            // std::cout << std::hex << offset << ", " << (offset << 2) << std::endl;
+            metadata.offset = signExtend(offset << 2, 21);
+            // std::cout << std::hex << metadata.offset << std::endl;
+            metadata.cond = cond;
+
+            setSourceRegisters({ nzcvReg() });
+            return;
+        }
+        case 0b000: [[fallthrough]];
         case 0b100: { // Unconditional branch (immediate)
             isBranch_ = true;
-            auto op = BIT(insn, 31);
-            int64_t imm = BITS(insn, 0, 25);
-            auto negative = BIT(insn, 25);
+            auto op = bit(insn, 31);
+            int64_t imm = bits(insn, 0, 26);
 
-            auto offset = (imm << 2) * (negative ? -1 : 1);
+            auto offset = signExtend(imm << 2, 28);
 
             if (op) { // BL
                 return nyi();
@@ -194,7 +225,7 @@ void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
     return nyi();
 }
 void A64Instruction::decodeA64LoadStore(uint32_t insn) {
-    auto op1 = BITS(insn, 28, 2);
+    auto op1 = bits(insn, 28, 2);
     switch(op1) {
         case 0b00: {
             // ASIMD structures & exclusives
@@ -210,14 +241,14 @@ void A64Instruction::decodeA64LoadStore(uint32_t insn) {
         }
         case 0b11: {
             // Single register
-            auto op3_1 = BIT(insn, 24);
+            auto op3_1 = bit(insn, 24);
             if (op3_1) { // Load/store register (unsigned immediate)
-                auto opc = BITS(insn, 22, 2);
-                auto Rt = (short)BITS(insn, 0, 5);
-                auto Rn = (short)BITS(insn, 5, 5);
-                auto imm = BITS(insn, 10, 12);
-                auto size = BITS(insn, 30, 2);
-                auto V = BIT(insn, 26);
+                auto opc = bits(insn, 22, 2);
+                auto Rt = (short)bits(insn, 0, 5);
+                auto Rn = (short)bits(insn, 5, 5);
+                auto imm = bits(insn, 10, 12);
+                auto size = bits(insn, 30, 2);
+                auto V = bit(insn, 26);
 
                 if (V) { // ASIMD
                     return nyi();
@@ -236,7 +267,7 @@ void A64Instruction::decodeA64LoadStore(uint32_t insn) {
                                 metadata.scale = size;
                                 metadata.offset = imm << size;
 
-                                setSourceRegisters(std::vector<Register> { GenReg(Rt), GenReg(Rn) });
+                                setSourceRegisters({ genReg(Rt), genReg(Rn) });
 
                                 return;
                             }
@@ -254,8 +285,8 @@ void A64Instruction::decodeA64LoadStore(uint32_t insn) {
                                 metadata.scale = size;
                                 metadata.offset = imm << size;
 
-                                setDestinationRegisters(std::vector<Register> { GenReg(Rt) });
-                                setSourceRegisters(std::vector<Register> { GenReg(Rn) });
+                                setDestinationRegisters({ genReg(Rt) });
+                                setSourceRegisters({ genReg(Rn) });
 
                                 return;
                             }
@@ -266,8 +297,8 @@ void A64Instruction::decodeA64LoadStore(uint32_t insn) {
                 }
             }
 
-            auto op5 = BITS(insn, 10, 2);
-            auto op4_5 = BIT(insn, 21);
+            auto op5 = bits(insn, 10, 2);
+            auto op4_5 = bit(insn, 21);
             if (op4_5) {
                 switch(op5) {
                     case 0b00: { // Atomic memory operations

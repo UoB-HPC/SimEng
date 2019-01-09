@@ -3,7 +3,7 @@ OBJDIR=./obj
 BUILDDIR=./build
 
 CXX=g++
-CXXFLAGS=-Wall -std=c++17
+CXXFLAGS=-Wall -std=c++17 -Ofast -g -pg
 
 SRCS=$(wildcard $(SRCDIR)/*.cc)
 OBJS=$(SRCS:$(SRCDIR)/%.cc=$(OBJDIR)/%.o)

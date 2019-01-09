@@ -42,7 +42,7 @@ void A64Instruction::setSourceRegisters(std::vector<Register> registers) {
 void A64Instruction::setDestinationRegisters(std::vector<Register> registers) {
     destinationRegisters = registers;
     results = std::vector<A64Result>(destinationRegisters.size());
-    std::cout << "Created results vector: " << results.size() << std::endl;
+    // std::cout << "Created results vector: " << results.size() << std::endl;
 }
 
 std::vector<Register> A64Instruction::getOperandRegisters() {
