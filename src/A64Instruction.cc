@@ -7,15 +7,26 @@
 namespace simeng {
 
 const Register A64Instruction::ZERO_REGISTER = { A64RegisterType::GENERAL, (uint16_t)-1 };
+std::unordered_map<uint32_t, A64Instruction> A64Instruction::decodeCache;
 
-std::vector<std::shared_ptr<Instruction>> A64Instruction::decode(void* test, uint64_t instructionAddress) {
-    auto uop = std::make_shared<A64Instruction>(A64Instruction(test, instructionAddress));
+std::vector<std::shared_ptr<Instruction>> A64Instruction::decode(void* insnPtr, uint64_t instructionAddress) {
+    uint32_t insn = *((uint32_t*) insnPtr);
+    
+    std::shared_ptr<A64Instruction> uop;
+    if (decodeCache.count(insn)) {
+        uop = std::make_shared<A64Instruction>(decodeCache[insn]);
+    } else {
+        auto decoded = A64Instruction(insn, instructionAddress);
+        decodeCache[insn] = decoded;
+        uop = std::make_shared<A64Instruction>(decoded);
+    }
+    // auto uop = std::make_shared<A64Instruction>(A64Instruction(insn, instructionAddress));
+
     std::vector<std::shared_ptr<Instruction>> macroOp{ uop };
     return macroOp;
 }
 
-A64Instruction::A64Instruction(void* encoding, uint64_t instructionAddress) : instructionAddress(instructionAddress) {
-    uint32_t insn = *((uint32_t*) encoding);
+A64Instruction::A64Instruction(uint32_t insn, uint64_t instructionAddress) : instructionAddress(instructionAddress) {
     decodeA64(insn);
 }
 
@@ -23,7 +34,7 @@ InstructionException A64Instruction::getException() {
     return exception;
 }
 
-void A64Instruction::setSourceRegisters(std::vector<Register> registers) {
+void A64Instruction::setSourceRegisters(const std::vector<Register> &registers) {
     operands = std::vector<A64Operand>(registers.size());
     operandsPending = registers.size();
 
@@ -39,16 +50,16 @@ void A64Instruction::setSourceRegisters(std::vector<Register> registers) {
     }
     sourceRegisters = registers;
 }
-void A64Instruction::setDestinationRegisters(std::vector<Register> registers) {
+void A64Instruction::setDestinationRegisters(const std::vector<Register> &registers) {
     destinationRegisters = registers;
     results = std::vector<A64Result>(destinationRegisters.size());
     // std::cout << "Created results vector: " << results.size() << std::endl;
 }
 
-std::vector<Register> A64Instruction::getOperandRegisters() {
+const std::vector<Register> &A64Instruction::getOperandRegisters() {
     return sourceRegisters;
 }
-std::vector<Register> A64Instruction::getDestinationRegisters() {
+const std::vector<Register> &A64Instruction::getDestinationRegisters() {
     return destinationRegisters;
 }
 bool A64Instruction::isOperandReady(int index) {
@@ -60,7 +71,7 @@ void A64Instruction::rename(const std::vector<Register> &destinations, const std
     sourceRegisters = operands;
 }
 
-void A64Instruction::supplyOperand(Register reg, const RegisterValue &value) {
+void A64Instruction::supplyOperand(const Register &reg, const RegisterValue &value) {
     if (canExecute()) {
         return;
     }
@@ -77,7 +88,7 @@ void A64Instruction::supplyOperand(Register reg, const RegisterValue &value) {
     }
 }
 
-void A64Instruction::supplyData(uint64_t address, RegisterValue data) {
+void A64Instruction::supplyData(uint64_t address, const RegisterValue &data) {
     for (int i = 0; i < memoryAddresses.size(); i++) {
         if (memoryAddresses[i].first != address) {
             continue;
@@ -106,7 +117,6 @@ std::vector<RegisterValue> A64Instruction::getResults() {
     std::transform(results.begin(), results.end(), out.begin(), [](A64Result item) { return item.value; });
     return out;
 }
-
 
 bool A64Instruction::isStore() {
     return isStore_;

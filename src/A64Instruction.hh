@@ -1,6 +1,8 @@
 #ifndef __H_A64_INSTRUCTION
 #define __H_A64_INSTRUCTION
 
+#include <unordered_map>
+
 #include "instruction.hh"
 
 namespace simeng {
@@ -54,18 +56,19 @@ class A64Instruction: public Instruction {
     public:
         static std::vector<std::shared_ptr<Instruction>> decode(void* encoding, uint64_t instructionAddress);
 
-        A64Instruction(void* encoding, uint64_t instructionAddress);
+        A64Instruction() {};
+        A64Instruction(uint32_t insn, uint64_t instructionAddress);
 
         InstructionException getException() override;
 
-        std::vector<Register> getOperandRegisters() override;
-        std::vector<Register> getDestinationRegisters() override;
+        const std::vector<Register> &getOperandRegisters() override;
+        const std::vector<Register> &getDestinationRegisters() override;
 
         bool isOperandReady(int index) override;
 
         void rename(const std::vector<Register> &destinations, const std::vector<Register> &operands) override;
 
-        void supplyOperand(Register reg, const RegisterValue &value) override;
+        void supplyOperand(const Register &reg, const RegisterValue &value) override;
         bool canExecute() override;
 
         void execute() override;
@@ -76,7 +79,7 @@ class A64Instruction: public Instruction {
         std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() override;
         std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() override;
 
-        void supplyData(uint64_t address, RegisterValue data) override;
+        void supplyData(uint64_t address, const RegisterValue &data) override;
         std::vector<RegisterValue> getData() override;
 
         bool wasBranchMispredicted() override;
@@ -87,6 +90,7 @@ class A64Instruction: public Instruction {
         bool isBranch() override;
 
         static const Register ZERO_REGISTER;
+        static std::unordered_map<uint32_t, A64Instruction> decodeCache;
 
     private:
         A64Opcode opcode;
@@ -111,8 +115,8 @@ class A64Instruction: public Instruction {
         void decodeA64DataRegister(uint32_t insn);
         void decodeA64DataFPSIMD(uint32_t insn);
 
-        void setSourceRegisters(std::vector<Register> registers);
-        void setDestinationRegisters(std::vector<Register> registers);
+        void setSourceRegisters(const std::vector<Register> &registers);
+        void setDestinationRegisters(const std::vector<Register> &registers);
 
         // Scheduling
         short operandsPending;

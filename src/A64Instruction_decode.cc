@@ -34,7 +34,7 @@ constexpr int32_t signExtend(uint32_t value, int currentLength) {
 }
 
 // Check for and mark WZR/XZR references
-Register FilterZR(Register reg) {
+const Register &FilterZR(const Register &reg) {
     return (reg.type == A64RegisterType::GENERAL && reg.tag == 31
         ? A64Instruction::ZERO_REGISTER : reg);
 }
