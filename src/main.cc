@@ -19,6 +19,7 @@ int main() {
     //     0x71000420, // subs w0, w1, #1
     // };
 
+    // Simple loop; counts down from 1024*1024
     uint32_t hex[] = {
         0x320C03E0, // orr w0, wzr, #1048576
         // 0x321603E0, // orr w0, wzr, #1024
@@ -28,7 +29,7 @@ int main() {
         0x54FFFFE1, // b.ne -4
     };
 
-    auto pc = 0;
+    uint64_t pc = 0;
     auto length = sizeof(hex);
     const auto pcIncrement = 4;
 
@@ -44,6 +45,9 @@ int main() {
         iterations++;
         // Fetch
         auto macroop = simeng::A64Instruction::decode(&(hex[pc/pcIncrement]), pc);
+        // std::cout << "0x" << pc << std::endl;
+
+        pc += pcIncrement;
 
         // Decode
         auto uop = macroop[0];
@@ -61,7 +65,7 @@ int main() {
         if (uop->isLoad()) {
             auto addresses = uop->generateAddresses();
             for (auto const &request : addresses) {
-                std::cout << "Loading " << (int)request.second << " bytes from " << std::hex << request.first << std::endl;
+                // std::cout << "Loading " << (int)request.second << " bytes from " << std::hex << request.first << std::endl;
                 
                 // Pointer manipulation to generate a RegisterValue from an arbitrary memory address
                 auto buffer = malloc(request.second);
@@ -77,17 +81,12 @@ int main() {
         }
         uop->execute();
 
-        auto results = uop->getResults();
-        // std::cout << "Results (" << std::hex << pc << "): ";
-
-        pc += pcIncrement;
-
         if (uop->isStore()) {
             auto addresses = uop->getGeneratedAddresses();
             auto data = uop->getData();
             for (int i = 0; i < addresses.size(); i++) {
                 auto request = addresses[i];
-                std::cout << "Storing " << (int)request.second << " bytes to " << std::hex << request.first << std::endl;
+                // std::cout << "Storing " << (int)request.second << " bytes to " << std::hex << request.first << std::endl;
 
                 // Copy data to memory
                 auto address = memory + request.first;
@@ -100,6 +99,8 @@ int main() {
 
         // Writeback
         
+        auto results = uop->getResults();
+        // std::cout << "Results (" << std::hex << pc << "): ";
         auto destinations = uop->getDestinationRegisters();
         for (auto i = 0; i < results.size(); i++) {
             auto reg = destinations[i];

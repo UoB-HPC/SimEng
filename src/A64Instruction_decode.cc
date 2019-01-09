@@ -14,19 +14,25 @@ namespace simeng {
  * HELPER FUNCTIONS
  *******************/
 
+// Extract bit `start` of `value`
 constexpr bool bit(uint32_t value, uint8_t start) {
     return (value >> start) & 1;
 }
+// Extract bits `start` to `start+width` of `value`
 constexpr uint32_t bits(uint32_t value, uint8_t start, uint8_t width) {
     return ((value >> start) & ((1 << width) - 1));
 }
 
+// Generate a general purpose register identifier with tag `tag`
 constexpr Register genReg(uint16_t tag) {
     return { A64RegisterType::GENERAL, tag };
 }
+// Generate a NZCV register identifier
 constexpr Register nzcvReg() {
     return { A64RegisterType::NZCV, 0 };
 }
+
+// Sign-extend a bitstring of length `currentLength`
 constexpr int32_t signExtend(uint32_t value, int currentLength) {
     uint32_t mask = (-1) << currentLength;
     auto negative = bit(value, currentLength - 1);
@@ -38,6 +44,7 @@ const Register &FilterZR(const Register &reg) {
     return (reg.type == A64RegisterType::GENERAL && reg.tag == 31
         ? A64Instruction::ZERO_REGISTER : reg);
 }
+
 
 uint64_t decodeBitMasks(uint8_t immN, uint8_t imms, uint8_t immr, bool immediate, int size) {
     if (immN) {

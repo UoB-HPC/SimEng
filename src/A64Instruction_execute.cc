@@ -88,7 +88,6 @@ void A64Instruction::execute() {
             return;
         }
         case A64Opcode::B_cond: {
-            // std::cout << instructionAddress << " + " << metadata.offset << std::endl;
             if (conditionHolds(metadata.cond, operands[0].value.get<uint8_t>())) {
                 branchAddress = instructionAddress + metadata.offset;
             } else {
@@ -103,11 +102,11 @@ void A64Instruction::execute() {
         case A64Opcode::ORR_I: {
             if (metadata.sf) {
                 auto value = operands[0].value.get<uint64_t>();
-                auto result = (value | (uint64_t)metadata.imm);
+                auto result = value | metadata.imm;
                 results[0].value = RegisterValue(result);
             } else {
                 auto value = operands[0].value.get<uint32_t>();
-                auto result = (value | (uint32_t)metadata.imm);
+                auto result = (value | static_cast<uint32_t>(metadata.imm));
                 results[0].value = RegisterValue(result, 8);
             }
             return;
@@ -127,10 +126,8 @@ void A64Instruction::execute() {
                 auto x = operands[0].value.get<uint32_t>();
                 auto y = ~static_cast<uint32_t>(metadata.imm);
                 auto [result, nzcv] = addWithCarry(x, y, true);
-                // std::cout << "SUBS: " << x << " + " << y << " = " << result << " (" << (int)nzcv << ")" << std::endl;
                 results[0].value = RegisterValue(result);
                 results[1].value = RegisterValue(nzcv);
-                
             }
             return;
         }
