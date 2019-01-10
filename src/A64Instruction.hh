@@ -8,135 +8,137 @@
 namespace simeng {
 
 namespace A64RegisterType {
-    const uint8_t GENERAL = 0;
-    const uint8_t VECTOR = 1;
-    const uint8_t NZCV = 2;
-}
+const uint8_t GENERAL = 0;
+const uint8_t VECTOR = 1;
+const uint8_t NZCV = 2;
+}  // namespace A64RegisterType
 
 typedef struct {
-    uint8_t sf;
-    uint8_t N;
-    union {
-        uint64_t imm;
-        int64_t offset;
-    };
-    bool wback;
-    bool postindex;
-    uint8_t scale;
-    uint8_t cond;
+  uint8_t sf;
+  uint8_t N;
+  union {
+    uint64_t imm;
+    int64_t offset;
+  };
+  bool wback;
+  bool postindex;
+  uint8_t scale;
+  uint8_t cond;
 } A64DecodeMetadata;
 
 enum A64InstructionException {
-    None = 0,
-    EncodingUnallocated,
-    EncodingNotYetImplemented,
-    ExecutionNotYetImplemented
+  None = 0,
+  EncodingUnallocated,
+  EncodingNotYetImplemented,
+  ExecutionNotYetImplemented
 };
 
 enum class A64Opcode {
-    B,
-    B_cond,
-    LDR_I,
-    ORR_I,
-    STR_I,
-    SUB_I,
-    SUBS_I,
+  B,
+  B_cond,
+  LDR_I,
+  ORR_I,
+  STR_I,
+  SUB_I,
+  SUBS_I,
 };
 
-
 typedef struct {
-    RegisterValue value;
-    bool ready;
+  RegisterValue value;
+  bool ready;
 } A64Operand;
 typedef struct {
-    RegisterValue value;
+  RegisterValue value;
 } A64Result;
 
-class A64Instruction: public Instruction {
-    public:
-        static std::vector<std::shared_ptr<Instruction>> decode(void* encoding, uint64_t instructionAddress);
+class A64Instruction : public Instruction {
+ public:
+  static std::vector<std::shared_ptr<Instruction>> decode(
+      void *encoding, uint64_t instructionAddress);
 
-        A64Instruction() {};
-        A64Instruction(uint32_t insn, uint64_t instructionAddress);
+  A64Instruction(){};
+  A64Instruction(uint32_t insn, uint64_t instructionAddress);
 
-        InstructionException getException() override;
+  InstructionException getException() override;
 
-        const std::vector<Register> &getOperandRegisters() override;
-        const std::vector<Register> &getDestinationRegisters() override;
+  const std::vector<Register> &getOperandRegisters() override;
+  const std::vector<Register> &getDestinationRegisters() override;
 
-        bool isOperandReady(int index) override;
+  bool isOperandReady(int index) override;
 
-        void rename(const std::vector<Register> &destinations, const std::vector<Register> &operands) override;
+  void rename(const std::vector<Register> &destinations,
+              const std::vector<Register> &operands) override;
 
-        void supplyOperand(const Register &reg, const RegisterValue &value) override;
-        bool canExecute() override;
+  void supplyOperand(const Register &reg, const RegisterValue &value) override;
+  bool canExecute() override;
 
-        void execute() override;
-        bool canCommit() override;
+  void execute() override;
+  bool canCommit() override;
 
-        std::vector<RegisterValue> getResults() override;
+  std::vector<RegisterValue> getResults() override;
 
-        std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() override;
-        std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() override;
+  std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() override;
+  std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() override;
 
-        void supplyData(uint64_t address, const RegisterValue &data) override;
-        std::vector<RegisterValue> getData() override;
+  void supplyData(uint64_t address, const RegisterValue &data) override;
+  std::vector<RegisterValue> getData() override;
 
-        bool wasBranchMispredicted() override;
-        uint64_t getBranchAddress() override;
+  bool wasBranchMispredicted() override;
+  uint64_t getBranchAddress() override;
 
-        bool isStore() override;
-        bool isLoad() override;
-        bool isBranch() override;
+  bool isStore() override;
+  bool isLoad() override;
+  bool isBranch() override;
 
-        static const Register ZERO_REGISTER;
-        static std::unordered_map<uint32_t, A64Instruction> decodeCache;
+  static const Register ZERO_REGISTER;
+  static std::unordered_map<uint32_t, A64Instruction> decodeCache;
 
-    private:
-        A64Opcode opcode;
-        uint64_t instructionAddress;
-        A64DecodeMetadata metadata;
+ private:
+  A64Opcode opcode;
+  uint64_t instructionAddress;
+  A64DecodeMetadata metadata;
 
-        std::vector<Register> sourceRegisters;
-        std::vector<Register> destinationRegisters;
+  std::vector<Register> sourceRegisters;
+  std::vector<Register> destinationRegisters;
 
-        std::vector<A64Operand> operands;
-        std::vector<A64Result> results;
+  std::vector<A64Operand> operands;
+  std::vector<A64Result> results;
 
-        A64InstructionException exception = None;
+  A64InstructionException exception = None;
 
-        // Decoding
-        void decodeA64(uint32_t encoding);
-        void nyi();
-        void unallocated();
-        void decodeA64DataImmediate(uint32_t insn);
-        void decodeA64BranchSystem(uint32_t insn);
-        void decodeA64LoadStore(uint32_t insn);
-        void decodeA64DataRegister(uint32_t insn);
-        void decodeA64DataFPSIMD(uint32_t insn);
+  // Decoding
+  void decodeA64(uint32_t encoding);
+  void nyi();
+  void unallocated();
+  void decodeA64DataImmediate(uint32_t insn);
+  void decodeA64BranchSystem(uint32_t insn);
+  void decodeA64LoadStore(uint32_t insn);
+  void decodeA64DataRegister(uint32_t insn);
+  void decodeA64DataFPSIMD(uint32_t insn);
 
-        void setSourceRegisters(const std::vector<Register> &registers);
-        void setDestinationRegisters(const std::vector<Register> &registers);
+  void setSourceRegisters(const std::vector<Register> &registers);
+  void setDestinationRegisters(const std::vector<Register> &registers);
 
-        // Scheduling
-        short operandsPending;
+  // Scheduling
+  short operandsPending;
 
-        bool executed = false;
+  bool executed = false;
 
-        // Metadata
-        bool isStore_ = false;
-        bool isLoad_ = false;
-        bool isBranch_ = false;
+  // Metadata
+  bool isStore_ = false;
+  bool isLoad_ = false;
+  bool isBranch_ = false;
 
-        // Memory
-        void setMemoryAddresses(const std::vector<std::pair<uint64_t, uint8_t>> &addresses);
-        std::vector<std::pair<uint64_t, uint8_t>> memoryAddresses;
-        std::vector<RegisterValue> memoryData;
+  // Memory
+  void setMemoryAddresses(
+      const std::vector<std::pair<uint64_t, uint8_t>> &addresses);
+  std::vector<std::pair<uint64_t, uint8_t>> memoryAddresses;
+  std::vector<RegisterValue> memoryData;
 
-        // Branches
-        uint64_t branchAddress;
+  // Branches
+  uint64_t branchAddress;
 };
 
-}
+}  // namespace simeng
 
 #endif
