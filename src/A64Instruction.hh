@@ -55,36 +55,36 @@ class A64Instruction : public Instruction {
   A64Instruction(){};
   A64Instruction(uint32_t insn, uint64_t instructionAddress);
 
-  InstructionException getException() override;
+  InstructionException getException() const override;
 
-  const std::vector<Register> &getOperandRegisters() override;
-  const std::vector<Register> &getDestinationRegisters() override;
+  const std::vector<Register> &getOperandRegisters() const override;
+  const std::vector<Register> &getDestinationRegisters() const override;
 
-  bool isOperandReady(int index) override;
+  bool isOperandReady(int index) const override;
 
   void rename(const std::vector<Register> &destinations,
               const std::vector<Register> &operands) override;
 
   void supplyOperand(const Register &reg, const RegisterValue &value) override;
-  bool canExecute() override;
+  bool canExecute() const override;
 
   void execute() override;
-  bool canCommit() override;
+  bool canCommit() const override;
 
-  std::vector<RegisterValue> getResults() override;
+  std::vector<RegisterValue> getResults() const override;
 
   std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() override;
-  std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() override;
+  std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() const override;
 
   void supplyData(uint64_t address, const RegisterValue &data) override;
-  std::vector<RegisterValue> getData() override;
+  std::vector<RegisterValue> getData() const override;
 
-  bool wasBranchMispredicted() override;
-  uint64_t getBranchAddress() override;
+  bool wasBranchMispredicted() const override;
+  uint64_t getBranchAddress() const override;
 
-  bool isStore() override;
-  bool isLoad() override;
-  bool isBranch() override;
+  bool isStore() const override;
+  bool isLoad() const override;
+  bool isBranch() const override;
 
   static const Register ZERO_REGISTER;
   static std::unordered_map<uint32_t, A64Instruction> decodeCache;

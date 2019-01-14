@@ -7,7 +7,6 @@
 
 namespace simeng {
 
-// typedef short Register;
 struct Register {
   uint8_t type;
   uint16_t tag;
@@ -18,7 +17,7 @@ std::ostream &operator<<(std::ostream &os, simeng::Register const &reg);
 
 class RegisterFile {
  public:
-  /** Initialise a RegisterFile with `registerCount` registers. */
+  /** Initialise multiple register groups. Each entry in `registerFileSizes` states the number of registers that should be available for the register type corresponding to the entry's index. */
   RegisterFile(std::vector<uint16_t> registerFileSizes);
 
   /** Read the value of the specified register. */

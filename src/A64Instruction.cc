@@ -35,14 +35,14 @@ A64Instruction::A64Instruction(uint32_t insn, uint64_t instructionAddress)
   decodeA64(insn);
 }
 
-InstructionException A64Instruction::getException() { return exception; }
+InstructionException A64Instruction::getException() const { return exception; }
 
 void A64Instruction::setSourceRegisters(
     const std::vector<Register> &registers) {
   operands = std::vector<RegisterValue>(registers.size());
   operandsPending = registers.size();
 
-  for (auto i = 0; i < registers.size(); i++) {
+  for (size_t i = 0; i < registers.size(); i++) {
     auto reg = registers[i];
     if (reg == A64Instruction::ZERO_REGISTER) {
       // Any zero-register references should be marked as ready, and
@@ -59,13 +59,13 @@ void A64Instruction::setDestinationRegisters(
   results = std::vector<A64Result>(destinationRegisters.size());
 }
 
-const std::vector<Register> &A64Instruction::getOperandRegisters() {
+const std::vector<Register> &A64Instruction::getOperandRegisters() const {
   return sourceRegisters;
 }
-const std::vector<Register> &A64Instruction::getDestinationRegisters() {
+const std::vector<Register> &A64Instruction::getDestinationRegisters() const {
   return destinationRegisters;
 }
-bool A64Instruction::isOperandReady(int index) {
+bool A64Instruction::isOperandReady(int index) const {
   return static_cast<bool>(operands[index]);
 }
 
@@ -84,7 +84,7 @@ void A64Instruction::supplyOperand(const Register &reg,
 
   // Iterate over operand registers, and copy value if the provided register
   // matches
-  for (auto i = 0; i < sourceRegisters.size(); i++) {
+  for (size_t i = 0; i < sourceRegisters.size(); i++) {
     if (sourceRegisters[i] == reg) {
       if (!operands[i]) {
         operands[i] = value;
@@ -96,23 +96,21 @@ void A64Instruction::supplyOperand(const Register &reg,
 }
 
 void A64Instruction::supplyData(uint64_t address, const RegisterValue &data) {
-  for (int i = 0; i < memoryAddresses.size(); i++) {
-    if (memoryAddresses[i].first != address) {
-      continue;
+  for (size_t i = 0; i < memoryAddresses.size(); i++) {
+    if (memoryAddresses[i].first == address) {
+      memoryData[i] = data;
+      return;
     }
-
-    memoryData[i] = data;
-    return;
   }
 }
 
-std::vector<RegisterValue> A64Instruction::getData() { return memoryData; }
+std::vector<RegisterValue> A64Instruction::getData() const { return memoryData; }
 
-bool A64Instruction::canExecute() { return (operandsPending == 0); }
+bool A64Instruction::canExecute() const { return (operandsPending == 0); }
 
-bool A64Instruction::canCommit() { return executed; }
+bool A64Instruction::canCommit() const { return executed; }
 
-std::vector<RegisterValue> A64Instruction::getResults() {
+std::vector<RegisterValue> A64Instruction::getResults() const {
   // Map from internal result format to RegisterValue vector
   auto out = std::vector<RegisterValue>(results.size());
   std::transform(results.begin(), results.end(), out.begin(),
@@ -120,9 +118,9 @@ std::vector<RegisterValue> A64Instruction::getResults() {
   return out;
 }
 
-bool A64Instruction::isStore() { return isStore_; }
-bool A64Instruction::isLoad() { return isLoad_; }
-bool A64Instruction::isBranch() { return isBranch_; }
+bool A64Instruction::isStore() const { return isStore_; }
+bool A64Instruction::isLoad() const { return isLoad_; }
+bool A64Instruction::isBranch() const { return isBranch_; }
 
 void A64Instruction::setMemoryAddresses(
     const std::vector<std::pair<uint64_t, uint8_t>> &addresses) {
@@ -131,15 +129,14 @@ void A64Instruction::setMemoryAddresses(
 }
 
 std::vector<std::pair<uint64_t, uint8_t>>
-A64Instruction::getGeneratedAddresses() {
+A64Instruction::getGeneratedAddresses() const {
   return memoryAddresses;
 }
 
-bool A64Instruction::wasBranchMispredicted() {
-  // TEMPORARY
-  // Needs replacing once branch prediction is implemented
+bool A64Instruction::wasBranchMispredicted() const {
+  // TODO: Replace once branch prediction is implemented
   return false;
 }
-uint64_t A64Instruction::getBranchAddress() { return branchAddress; }
+uint64_t A64Instruction::getBranchAddress() const { return branchAddress; }
 
 }  // namespace simeng

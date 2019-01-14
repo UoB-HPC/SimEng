@@ -54,7 +54,7 @@ int main() {
 
     // Issue
     auto registers = uop->getOperandRegisters();
-    for (auto i = 0; i < registers.size(); i++) {
+    for (size_t i = 0; i < registers.size(); i++) {
       auto reg = registers[i];
       if (!uop->isOperandReady(i)) {
         uop->supplyOperand(reg, registerFile.get(reg));
@@ -86,7 +86,7 @@ int main() {
     if (uop->isStore()) {
       auto addresses = uop->getGeneratedAddresses();
       auto data = uop->getData();
-      for (int i = 0; i < addresses.size(); i++) {
+      for (size_t i = 0; i < addresses.size(); i++) {
         auto request = addresses[i];
         // std::cout << "Storing " << (int)request.second << " bytes to " <<
         // std::hex << request.first << std::endl;
@@ -105,7 +105,7 @@ int main() {
     auto results = uop->getResults();
     // std::cout << "Results (" << std::hex << pc << "): ";
     auto destinations = uop->getDestinationRegisters();
-    for (auto i = 0; i < results.size(); i++) {
+    for (size_t i = 0; i < results.size(); i++) {
       auto reg = destinations[i];
       registerFile.set(reg, results[i]);
 

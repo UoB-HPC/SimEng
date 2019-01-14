@@ -1,8 +1,6 @@
 #include <iostream>
 #include "A64Instruction.hh"
 
-// #define bits(value, start, width) ((value >> start) & ((1 << width) - 1))
-// #define bit(value, start) ((value >> start) & 1)
 #define NOT(bits, length) (~bits & (1 << length - 1))
 #define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)
 #define ONES(n) ((1 << (n)) - 1)
@@ -33,12 +31,12 @@ constexpr Register nzcvReg() { return {A64RegisterType::NZCV, 0}; }
 // Sign-extend a bitstring of length `currentLength`
 constexpr int32_t signExtend(uint32_t value, int currentLength) {
   uint32_t mask = (-1) << currentLength;
-  auto negative = bit(value, currentLength - 1);
+  bool negative = bit(value, currentLength - 1);
   return static_cast<int32_t>(value) | (negative ? mask : 0);
 }
 
 // Check for and mark WZR/XZR references
-const Register &FilterZR(const Register &reg) {
+const Register &filterZR(const Register &reg) {
   return (reg.type == A64RegisterType::GENERAL && reg.tag == 31
               ? A64Instruction::ZERO_REGISTER
               : reg);
@@ -59,6 +57,8 @@ uint64_t decodeBitMasks(uint8_t immN, uint8_t imms, uint8_t immr,
   uint64_t wmask = ROR(welem, immr, size);
   return wmask;
 
+  // TODO: Fully implement 32/64-bit implementation (partial implementation below).
+
   // auto len = highestSetBit(CONCAT(immN, NOT(imms, 6), 6));
   // // if (len < 1) exit(418);
   // auto levels = 1 << (len - 1);
@@ -67,7 +67,7 @@ uint64_t decodeBitMasks(uint8_t immN, uint8_t imms, uint8_t immr,
   // auto R = immr & levels;
   // auto diff = S - R;
   // auto esize = ONES(len);
-
+  
   // uint64_t welem = ONES(S + 1);
   // uint64_t wmask = ROR(welem, R);
 }
@@ -77,12 +77,12 @@ uint64_t decodeBitMasks(uint8_t immN, uint8_t imms, uint8_t immr,
  *****************/
 
 void A64Instruction::decodeA64(uint32_t insn) {
-  auto op0 = (insn >> 25) & 0b1111;
-  auto op0_1 = (op0 >> 1) & 1;
-  auto op0_2 = (op0 >> 2) & 1;
+  uint8_t op0 = (insn >> 25) & 0b1111;
+  uint8_t op0_1 = (op0 >> 1) & 1;
+  uint8_t op0_2 = (op0 >> 2) & 1;
 
   if (op0_2) {
-    auto op0_0 = op0 & 1;
+    bool op0_0 = op0 & 1;
     if (op0_0) {
       if (op0_1) {
         // Data Processing -- Scalar Floating Point and Advanced SIMD
@@ -95,7 +95,7 @@ void A64Instruction::decodeA64(uint32_t insn) {
     return decodeA64LoadStore(insn);
   }
 
-  auto op0_3 = (op0 >> 3) & 1;
+  bool op0_3 = (op0 >> 3) & 1;
   if (op0_3) {
     if (op0_1) {
       // Branches, Exception Generating and System instructions
@@ -113,7 +113,7 @@ void A64Instruction::nyi() { exception = EncodingNotYetImplemented; }
 void A64Instruction::unallocated() { exception = EncodingUnallocated; }
 
 void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
-  auto op0 = bits(insn, 23, 3);
+  uint8_t op0 = bits(insn, 23, 3);
   switch (op0) {
     case 0b010:
       [[fallthrough]];
@@ -142,7 +142,7 @@ void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
         setDestinationRegisters(std::vector<Register>{genReg(Rd)});
       }
 
-      setSourceRegisters(std::vector<Register>{FilterZR(genReg(Rn))});
+      setSourceRegisters(std::vector<Register>{filterZR(genReg(Rn))});
 
       metadata.sf = sf;
       metadata.imm = (shift ? (imm << 12) : imm);
@@ -161,7 +161,7 @@ void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
       auto immr = bits(insn, 16, 6);
 
       setDestinationRegisters(std::vector<Register>{genReg(Rd)});
-      setSourceRegisters(std::vector<Register>{FilterZR(genReg(Rn))});
+      setSourceRegisters(std::vector<Register>{filterZR(genReg(Rn))});
 
       metadata.sf = sf;
       metadata.N = N;
@@ -182,7 +182,7 @@ void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
   }
 }
 void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
-  auto op0 = bits(insn, 29, 3);
+  uint8_t op0 = bits(insn, 29, 3);
   switch (op0) {
     case 0b010: {  // Conditional branch (immediate)
       isBranch_ = true;
@@ -227,7 +227,7 @@ void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
   return nyi();
 }
 void A64Instruction::decodeA64LoadStore(uint32_t insn) {
-  auto op1 = bits(insn, 28, 2);
+  uint8_t op1 = bits(insn, 28, 2);
   switch (op1) {
     case 0b00: {
       // ASIMD structures & exclusives

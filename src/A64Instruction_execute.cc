@@ -9,8 +9,7 @@ uint8_t nzcv(bool n, bool z, bool c, bool v) {
 
 std::tuple<uint64_t, uint8_t> addWithCarry(uint64_t x, uint64_t y,
                                            bool carryIn) {
-  auto result = static_cast<int64_t>(x) + static_cast<int64_t>(y) +
-                static_cast<int>(carryIn);
+  int64_t result = static_cast<int64_t>(x) + static_cast<int64_t>(y) + carryIn;
   bool n = (result < 0);
   bool z = (result == 0);
 
@@ -33,24 +32,11 @@ std::tuple<uint32_t, uint8_t> addWithCarry(uint32_t x, uint32_t y,
                                            bool carryIn) {
   uint64_t unsignedResult =
       static_cast<uint64_t>(x) + static_cast<int64_t>(y) + carryIn;
-  auto result = static_cast<int32_t>(x) + static_cast<int32_t>(y) + carryIn;
+  int32_t result = static_cast<int32_t>(x) + static_cast<int32_t>(y) + carryIn;
   bool n = (result < 0);
   bool z = (result == 0);
 
   bool c = unsignedResult != static_cast<uint64_t>(result);
-
-  // std::cout << z << std::endl;
-  // bool c = ((std::numeric_limits<uint32_t>::max() - x - carryIn) > y);
-  // bool c;
-  // if (carryIn && x + 1 == 0) {
-  //     // Implies `x` is max; with a carry set, it will definitely overflow
-  //     c = true;
-  // } else {
-  //     // We know x + carryIn <= max, so can safely subtract and compare
-  //     against y
-  //     // max > x + y + c == max - x > y + c
-  //     c = ((std::numeric_limits<uint32_t>::max() - x - carryIn) > y);
-  // }
 
   bool v = ((x < 0) != (result < 0));
 
@@ -63,7 +49,7 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
   }
 
   bool inverse = cond & 1;
-  auto upper = cond >> 1;
+  uint8_t upper = cond >> 1;
   bool n = (nzcv >> 3) & 1;
   bool z = (nzcv >> 2) & 1;
   bool c = (nzcv >> 1) & 1;
