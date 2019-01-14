@@ -18,7 +18,8 @@ class RegisterValue {
   RegisterValue(std::shared_ptr<uint8_t> ptr);
 
   /** Create a new RegisterValue from a value of arbitrary type, zero-extending
-   * the allocated memory space to the specified number of bytes (defaulting to the size of the template type). */
+   * the allocated memory space to the specified number of bytes (defaulting to
+   * the size of the template type). */
   template <class T>
   RegisterValue(T value, uint8_t bytes = sizeof(T)) {
     void* data = calloc(1, bytes);
@@ -48,7 +49,8 @@ class RegisterValue {
   operator bool() const;
 
   /** Create a new RegisterValue of size `toBytes`, copying the first
-   * `fromBytes` bytes of this one. The remaining bytes of the new RegisterValue are zeroed. */
+   * `fromBytes` bytes of this one. The remaining bytes of the new RegisterValue
+   * are zeroed. */
   RegisterValue zeroExtend(uint8_t fromBytes, uint8_t toBytes) const;
 
  private:

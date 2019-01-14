@@ -17,7 +17,9 @@ std::ostream &operator<<(std::ostream &os, simeng::Register const &reg);
 
 class RegisterFile {
  public:
-  /** Initialise multiple register groups. Each entry in `registerFileSizes` states the number of registers that should be available for the register type corresponding to the entry's index. */
+  /** Initialise multiple register groups. Each entry in `registerFileSizes`
+   * states the number of registers that should be available for the register
+   * type corresponding to the entry's index. */
   RegisterFile(std::vector<uint16_t> registerFileSizes);
 
   /** Read the value of the specified register. */

@@ -57,7 +57,8 @@ uint64_t decodeBitMasks(uint8_t immN, uint8_t imms, uint8_t immr,
   uint64_t wmask = ROR(welem, immr, size);
   return wmask;
 
-  // TODO: Fully implement 32/64-bit implementation (partial implementation below).
+  // TODO: Fully implement 32/64-bit implementation (partial implementation
+  // below).
 
   // auto len = highestSetBit(CONCAT(immN, NOT(imms, 6), 6));
   // // if (len < 1) exit(418);
@@ -67,7 +68,7 @@ uint64_t decodeBitMasks(uint8_t immN, uint8_t imms, uint8_t immr,
   // auto R = immr & levels;
   // auto diff = S - R;
   // auto esize = ONES(len);
-  
+
   // uint64_t welem = ONES(S + 1);
   // uint64_t wmask = ROR(welem, R);
 }

@@ -61,7 +61,8 @@ class Instruction {
   virtual void supplyData(uint64_t address, const RegisterValue &data) = 0;
 
   /** Retrieve previously generated memory addresses. */
-  virtual std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() const = 0;
+  virtual std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses()
+      const = 0;
 
   /** Retrieve supplied memory data. */
   virtual std::vector<RegisterValue> getData() const = 0;

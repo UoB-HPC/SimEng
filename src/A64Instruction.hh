@@ -74,7 +74,8 @@ class A64Instruction : public Instruction {
   std::vector<RegisterValue> getResults() const override;
 
   std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() override;
-  std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() const override;
+  std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses()
+      const override;
 
   void supplyData(uint64_t address, const RegisterValue &data) override;
   std::vector<RegisterValue> getData() const override;

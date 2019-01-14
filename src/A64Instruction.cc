@@ -104,7 +104,9 @@ void A64Instruction::supplyData(uint64_t address, const RegisterValue &data) {
   }
 }
 
-std::vector<RegisterValue> A64Instruction::getData() const { return memoryData; }
+std::vector<RegisterValue> A64Instruction::getData() const {
+  return memoryData;
+}
 
 bool A64Instruction::canExecute() const { return (operandsPending == 0); }
 
