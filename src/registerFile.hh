@@ -7,14 +7,22 @@
 
 namespace simeng {
 
+/** A generic register identifier. */
 struct Register {
+  /** An identifier representing the type of register - e.g. 0 = general, 1 =
+   * vector. Used to determine which register set to access. */
   uint8_t type;
+
+  /** A tag identifying the register. May correspond to either physical or
+   * architectural register, depending on point of usage. */
   uint16_t tag;
 
   bool operator==(Register other);
 };
 std::ostream &operator<<(std::ostream &os, simeng::Register const &reg);
 
+/** A processor register file set. Holds the physical registers for each
+ * register type. */
 class RegisterFile {
  public:
   /** Initialise multiple register groups. Each entry in `registerFileSizes`
@@ -29,6 +37,8 @@ class RegisterFile {
   void set(Register reg, const RegisterValue &value);
 
  private:
+  /** The set of register files. Each entry in the outer vector corresponds to a
+   * register type, according to its index. */
   std::vector<std::vector<RegisterValue>> registerFiles;
 };
 

@@ -35,7 +35,9 @@ A64Instruction::A64Instruction(uint32_t insn, uint64_t instructionAddress)
   decodeA64(insn);
 }
 
-InstructionException A64Instruction::getException() const { return exception; }
+InstructionException A64Instruction::getException() const {
+  return static_cast<InstructionException>(exception);
+}
 
 void A64Instruction::setSourceRegisters(
     const std::vector<Register> &registers) {

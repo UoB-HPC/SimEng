@@ -9,7 +9,7 @@
 namespace simeng {
 
 /** A class that encapsulates a smart pointer to an arbitrary value, providing
- * casting and data accessor functions. */
+ * casting and data accessor functions. Immutable. */
 class RegisterValue {
  public:
   RegisterValue();
@@ -54,6 +54,7 @@ class RegisterValue {
   RegisterValue zeroExtend(uint8_t fromBytes, uint8_t toBytes) const;
 
  private:
+  /** The underlying pointer each instance references. */
   std::shared_ptr<uint8_t> ptr;
 };
 

@@ -110,8 +110,12 @@ void A64Instruction::decodeA64(uint32_t insn) {
   return unallocated();
 }
 
-void A64Instruction::nyi() { exception = EncodingNotYetImplemented; }
-void A64Instruction::unallocated() { exception = EncodingUnallocated; }
+void A64Instruction::nyi() {
+  exception = A64InstructionException::EncodingNotYetImplemented;
+}
+void A64Instruction::unallocated() {
+  exception = A64InstructionException::EncodingUnallocated;
+}
 
 void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
   uint8_t op0 = bits(insn, 23, 3);

@@ -138,7 +138,7 @@ void A64Instruction::execute() {
       return;
     }
     default:
-      exception = ExecutionNotYetImplemented;
+      exception = A64InstructionException::ExecutionNotYetImplemented;
       return;
   }
 }
