@@ -23,8 +23,7 @@ std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
         baseOpIndex = 1;
       }
 
-      auto address =
-          operands[baseOpIndex].value.get<uint64_t>() + metadata.offset;
+      auto address = operands[baseOpIndex].get<uint64_t>() + metadata.offset;
       setMemoryAddresses({{address, 1 << metadata.scale}});
       return memoryAddresses;
     }

@@ -8,6 +8,8 @@ namespace simeng {
 RegisterValue::RegisterValue() { ptr = nullptr; }
 RegisterValue::RegisterValue(std::shared_ptr<uint8_t> ptr) : ptr(ptr) {}
 
+RegisterValue::operator bool() const { return (this->ptr != nullptr); }
+
 RegisterValue RegisterValue::zeroExtend(uint8_t fromBytes,
                                         uint8_t toBytes) const {
   assert(ptr != nullptr &&

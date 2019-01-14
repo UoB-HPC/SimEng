@@ -108,7 +108,7 @@ void A64Instruction::execute() {
       return;
     }
     case A64Opcode::B_cond: {
-      if (conditionHolds(metadata.cond, operands[0].value.get<uint8_t>())) {
+      if (conditionHolds(metadata.cond, operands[0].get<uint8_t>())) {
         branchAddress = instructionAddress + metadata.offset;
       } else {
         branchAddress = instructionAddress + 4;
@@ -121,29 +121,29 @@ void A64Instruction::execute() {
     }
     case A64Opcode::ORR_I: {
       if (metadata.sf) {
-        auto value = operands[0].value.get<uint64_t>();
+        auto value = operands[0].get<uint64_t>();
         auto result = value | metadata.imm;
         results[0].value = RegisterValue(result);
       } else {
-        auto value = operands[0].value.get<uint32_t>();
+        auto value = operands[0].get<uint32_t>();
         auto result = (value | static_cast<uint32_t>(metadata.imm));
         results[0].value = RegisterValue(result, 8);
       }
       return;
     }
     case A64Opcode::STR_I: {
-      memoryData[0] = operands[0].value;
+      memoryData[0] = operands[0];
       return;
     }
     case A64Opcode::SUBS_I: {
       if (metadata.sf) {
-        auto x = operands[0].value.get<uint64_t>();
+        auto x = operands[0].get<uint64_t>();
         auto y = ~metadata.imm;
         auto [result, nzcv] = addWithCarry(x, y, true);
         results[0].value = RegisterValue(result);
         results[1].value = RegisterValue(nzcv);
       } else {
-        auto x = operands[0].value.get<uint32_t>();
+        auto x = operands[0].get<uint32_t>();
         auto y = ~static_cast<uint32_t>(metadata.imm);
         auto [result, nzcv] = addWithCarry(x, y, true);
         results[0].value = RegisterValue(result);

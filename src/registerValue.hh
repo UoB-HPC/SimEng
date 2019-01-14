@@ -46,6 +46,9 @@ class RegisterValue {
     return reinterpret_cast<T*>(ptr.get());
   }
 
+  /** Check whether this RegisterValue has an assigned value or is null. */
+  operator bool() const;
+
   /** Create a new RegisterValue of size `toBytes`, copying the first
    * `fromBytes` bytes of this one.
    * The remaining bytes of the new RegisterValue are zeroed. */

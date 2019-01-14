@@ -45,10 +45,6 @@ enum class A64Opcode {
 
 typedef struct {
   RegisterValue value;
-  bool ready;
-} A64Operand;
-typedef struct {
-  RegisterValue value;
 } A64Result;
 
 class A64Instruction : public Instruction {
@@ -101,7 +97,7 @@ class A64Instruction : public Instruction {
   std::vector<Register> sourceRegisters;
   std::vector<Register> destinationRegisters;
 
-  std::vector<A64Operand> operands;
+  std::vector<RegisterValue> operands;
   std::vector<A64Result> results;
 
   A64InstructionException exception = None;
