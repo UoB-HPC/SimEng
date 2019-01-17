@@ -1,8 +1,6 @@
 #ifndef __H_A64_INSTRUCTION
 #define __H_A64_INSTRUCTION
 
-#include <unordered_map>
-
 #include "instruction.hh"
 
 namespace simeng {
@@ -20,11 +18,13 @@ const uint8_t NZCV = 2;
  * during operation - most fields are only used for some instructions. Variable
  * names match those from ARMv8 Reference Manual. Future versions (or
  * automatically generated versions) may use a heavily `union`-ed datastructure
- * to minimise footprint. Potential alternative approach: store the original
+ * to minimise footprint.
+ *
+ * Potential alternative approach: store the original
  * instruction word and only extract these values during execution? Pros:
  * reduced memory footprint, cleaner; cons: slight performance penalty as values
  * can't be cached during decoding. */
-typedef struct {
+struct A64DecodeMetadata {
   /** Size flag; 0 = 32-bit; 1 = 64-bit. */
   uint8_t sf;
   uint8_t N;
@@ -43,7 +43,7 @@ typedef struct {
   /** Condition code; identifies condition mode for instructions with
    * conditional behaviour. */
   uint8_t cond;
-} A64DecodeMetadata;
+};
 
 enum class A64InstructionException {
   None = 0,
@@ -63,21 +63,22 @@ enum class A64Opcode {
   SUBS_I,
 };
 
-typedef struct {
+struct A64Result {
   RegisterValue value;
-} A64Result;
+};
 
 /** A basic ARMv8-a implementation of the `Instruction` interface. */
 class A64Instruction : public Instruction {
  public:
-  static std::vector<std::shared_ptr<Instruction>> decode(
-      void *encoding, uint64_t instructionAddress);
-
   A64Instruction(){};
 
   /** Construct an instruction instance by decoding a provided instruction word.
    */
-  A64Instruction(uint32_t insn, uint64_t instructionAddress);
+  A64Instruction(uint32_t insn);
+
+  /** Supply an instruction address. Performed after construction to prevent
+   * values being cached. */
+  void setInstructionAddress(uint64_t address);
 
   /** Retrieve the identifier for the first exception that occurred during
    * decoding or execution. */
@@ -149,19 +150,10 @@ class A64Instruction : public Instruction {
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
 
-  /** A decoding cache, mapping an instruction word to a previously decoded
-   * instruction. Instructions should be added to the cache as they're decoded,
-   * to reduce the overhead of future decoding. */
-  static std::unordered_map<uint32_t, A64Instruction> decodeCache;
-
  private:
   /** This instruction's opcode. */
   A64Opcode opcode;
-
-  // TODO: Standardise this as part of the Instruction interface, and allow
-  // overriding. Currently, using the decoding cache means this will be
-  // incorrect if multiple instances of the same instruction word exist in a
-  // single program.
+  
   /** The location in memory of this instruction was decoded at. */
   uint64_t instructionAddress;
 

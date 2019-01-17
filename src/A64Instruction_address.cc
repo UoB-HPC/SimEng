@@ -14,7 +14,7 @@ std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
     case A64Opcode::STR_I:
     case A64Opcode::LDR_I: {
       if (metadata.wback) {
-        exception = ExecutionNotYetImplemented;
+        exception = A64InstructionException::ExecutionNotYetImplemented;
         return {};
       }
 

@@ -8,31 +8,11 @@ namespace simeng {
 
 const Register A64Instruction::ZERO_REGISTER = {A64RegisterType::GENERAL,
                                                 (uint16_t)-1};
-std::unordered_map<uint32_t, A64Instruction> A64Instruction::decodeCache;
 
-std::vector<std::shared_ptr<Instruction>> A64Instruction::decode(
-    void *insnPtr, uint64_t instructionAddress) {
-  // Dereference the instruction pointer to obtain the instruction word
-  uint32_t insn = *static_cast<uint32_t *>(insnPtr);
+A64Instruction::A64Instruction(uint32_t insn) { decodeA64(insn); }
 
-  std::shared_ptr<A64Instruction> uop;
-  if (decodeCache.count(insn)) {
-    // A decoding for this already exists, duplicate and return that
-    uop = std::make_shared<A64Instruction>(decodeCache[insn]);
-  } else {
-    // Generate a fresh decoding, and add to cache
-    auto decoded = A64Instruction(insn, instructionAddress);
-    decodeCache[insn] = decoded;
-    uop = std::make_shared<A64Instruction>(decoded);
-  }
-
-  // Bundle into a macro-op
-  return {uop};
-}
-
-A64Instruction::A64Instruction(uint32_t insn, uint64_t instructionAddress)
-    : instructionAddress(instructionAddress) {
-  decodeA64(insn);
+void A64Instruction::setInstructionAddress(uint64_t address) {
+  instructionAddress = address;
 }
 
 InstructionException A64Instruction::getException() const {

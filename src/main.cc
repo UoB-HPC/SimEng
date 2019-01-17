@@ -4,7 +4,13 @@
 #include <cstring>
 #include <iostream>
 
+#include "A64Architecture.hh"
+
 int main() {
+  // Create an ISA description
+  std::unique_ptr<simeng::Architecture> isa =
+      std::make_unique<simeng::A64Architecture>();
+
   auto registerFile = simeng::RegisterFile({32, 32, 1});
 
   // uint32_t hex[] = {
@@ -31,7 +37,6 @@ int main() {
 
   uint64_t pc = 0;
   auto length = sizeof(hex);
-  const auto pcIncrement = 4;
 
   unsigned char* memory = (unsigned char*)calloc(1024, 1);
   memory[4] = 1;
@@ -43,11 +48,13 @@ int main() {
 
   while (pc >= 0 && pc < length) {
     iterations++;
+
     // Fetch
-    auto macroop = simeng::A64Instruction::decode(&(hex[pc / pcIncrement]), pc);
+    auto insnPtr = reinterpret_cast<char*>(hex) + pc;
+    auto [macroop, bytesRead] = isa->predecode(insnPtr, 4, pc);
     // std::cout << "0x" << pc << std::endl;
 
-    pc += pcIncrement;
+    pc += bytesRead;
 
     // Decode
     auto uop = macroop[0];

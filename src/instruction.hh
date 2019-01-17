@@ -6,7 +6,7 @@
 
 #include <vector>
 
-typedef short InstructionException;
+using InstructionException = short;
 
 namespace simeng {
 
