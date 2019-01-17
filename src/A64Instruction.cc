@@ -59,19 +59,14 @@ void A64Instruction::rename(const std::vector<Register> &destinations,
 
 void A64Instruction::supplyOperand(const Register &reg,
                                    const RegisterValue &value) {
-  if (canExecute()) {
-    // All source operands are already present
-    return;
-  }
+  assert(!canExecute() && "Attempted to provide an operand to a ready-to-execute instruction");
 
   // Iterate over operand registers, and copy value if the provided register
   // matches
   for (size_t i = 0; i < sourceRegisters.size(); i++) {
     if (sourceRegisters[i] == reg) {
-      if (!operands[i]) {
-        operands[i] = value;
-        operandsPending--;
-      }
+      operands[i] = value;
+      operandsPending--;
       break;
     }
   }

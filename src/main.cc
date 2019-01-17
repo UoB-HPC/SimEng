@@ -3,6 +3,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <chrono>
 
 #include "A64Architecture.hh"
 

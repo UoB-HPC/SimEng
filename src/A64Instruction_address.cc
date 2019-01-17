@@ -5,10 +5,7 @@
 namespace simeng {
 
 std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
-  if (!isLoad() && !isStore()) {
-    // Not a load or store
-    return {};
-  }
+  assert((isLoad() || isStore()) && "generateAddresses called on non-load-or-store instruction");
 
   switch (opcode) {
     case A64Opcode::STR_I:
@@ -28,6 +25,7 @@ std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
       return memoryAddresses;
     }
     default:
+      exception = A64InstructionException::ExecutionNotYetImplemented;
       return {};
   }
 }

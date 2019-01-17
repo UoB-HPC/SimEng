@@ -1,5 +1,6 @@
 #include "A64Instruction.hh"
 
+#include <tuple>
 #include <iostream>
 #include <limits>
 
@@ -77,8 +78,8 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
     case 0b110:
       result = (n == v && z);
       break;  // GT/LE
-    case 0b111:
-      result = true;  // AL
+    default:  // 0b111, AL
+      result = true;
   }
 
   return (inverse ? !result : result);
@@ -87,6 +88,9 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
 namespace simeng {
 
 void A64Instruction::execute() {
+  assert(!executed && "Attempted to execute an instruction more than once");
+  assert(canExecute() && "Attempted to execute an instruction before all operands were provided");
+
   executed = true;
   switch (opcode) {
     case A64Opcode::B: {
