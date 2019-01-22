@@ -16,7 +16,8 @@ struct Register {
    * architectural register, depending on point of usage. */
   uint16_t tag;
 
-  bool operator==(Register other);
+  /** Check for equality of two register identifiers. */
+  bool operator==(Register other) const;
 };
 std::ostream& operator<<(std::ostream& os, simeng::Register const& reg);
 
@@ -30,7 +31,7 @@ class RegisterFile {
   RegisterFile(std::vector<uint16_t> registerFileSizes);
 
   /** Read the value of the specified register. */
-  RegisterValue get(Register reg);
+  RegisterValue get(Register reg) const;
 
   /** Set a register as the specified value. */
   void set(Register reg, const RegisterValue& value);

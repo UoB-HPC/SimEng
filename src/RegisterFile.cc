@@ -8,7 +8,7 @@ std::ostream& operator<<(std::ostream& os, Register const& reg) {
   return os << reg.tag;
 }
 
-bool Register::operator==(Register other) {
+bool Register::operator==(Register other) const {
   return (other.type == type && other.tag == tag);
 }
 
@@ -23,7 +23,7 @@ RegisterFile::RegisterFile(std::vector<uint16_t> registerFileSizes) {
   }
 }
 
-RegisterValue RegisterFile::get(Register reg) {
+RegisterValue RegisterFile::get(Register reg) const {
   return registerFiles[reg.type][reg.tag];
 }
 

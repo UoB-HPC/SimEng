@@ -22,6 +22,8 @@ class A64Architecture : public Architecture {
   /** Returns an ARMv8-a register file structure description. */
   std::vector<std::pair<uint8_t, uint16_t>> getRegisterFileStructure()
       const override;
+  
+  /** Determine whether the specified register can be renamed. */
   bool canRename(Register reg) const override;
 
  private:
