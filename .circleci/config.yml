@@ -1,7 +1,27 @@
 version: 2
 jobs:
   build:
+    # TODO: Add coverage for multiple compilers and operating systems
     docker:
       - image: buildpack-deps:bionic
     steps:
       - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            apt-get update -yqq
+            apt-get install -y cmake
+      - run:
+          name: Build SimEng
+          command: |
+            mkdir -p obj
+            cd obj
+            cmake .. \
+              -DCMAKE_BUILD_TYPE=Debug \
+              -DCMAKE_INSTALL_PREFIX=$PWD/../build
+            make
+            make install
+      - run:
+          # TODO: Run the SimEng test suite instead
+          name: Run SimEng
+          command: build/bin/simeng
