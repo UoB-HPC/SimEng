@@ -1,8 +1,7 @@
-#ifndef __H_INSTRUCTION
-#define __H_INSTRUCTION
+#pragma once
 
-#include "registerFile.hh"
-#include "registerValue.hh"
+#include "RegisterFile.hh"
+#include "RegisterValue.hh"
 
 #include <vector>
 
@@ -21,21 +20,21 @@ class Instruction {
   virtual InstructionException getException() const = 0;
 
   /** Retrieve a vector of source registers this instruction reads. */
-  virtual const std::vector<Register> &getOperandRegisters() const = 0;
+  virtual const std::vector<Register>& getOperandRegisters() const = 0;
 
   /** Retrieve a vector of destination registers this instruction will write to.
    * A register value of -1 signifies a Zero Register read, and should not be
    * renamed. */
-  virtual const std::vector<Register> &getDestinationRegisters() const = 0;
+  virtual const std::vector<Register>& getDestinationRegisters() const = 0;
 
   /** Override the destination and operand registers with renamed physical
    * register tags. */
-  virtual void rename(const std::vector<Register> &destinations,
-                      const std::vector<Register> &operands) = 0;
+  virtual void rename(const std::vector<Register>& destinations,
+                      const std::vector<Register>& operands) = 0;
 
   /** Provide a value for the specified physical register. */
-  virtual void supplyOperand(const Register &reg,
-                             const RegisterValue &value) = 0;
+  virtual void supplyOperand(const Register& reg,
+                             const RegisterValue& value) = 0;
 
   /** Check whether the operand at index `i` has had a value supplied. */
   virtual bool isOperandReady(int i) const = 0;
@@ -58,7 +57,7 @@ class Instruction {
   virtual std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() = 0;
 
   /** Provide data from a requested memory address. */
-  virtual void supplyData(uint64_t address, const RegisterValue &data) = 0;
+  virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
 
   /** Retrieve previously generated memory addresses. */
   virtual std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses()
@@ -84,5 +83,3 @@ class Instruction {
 };
 
 }  // namespace simeng
-
-#endif

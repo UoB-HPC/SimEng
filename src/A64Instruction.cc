@@ -20,7 +20,7 @@ InstructionException A64Instruction::getException() const {
 }
 
 void A64Instruction::setSourceRegisters(
-    const std::vector<Register> &registers) {
+    const std::vector<Register>& registers) {
   operands = std::vector<RegisterValue>(registers.size());
   operandsPending = registers.size();
 
@@ -36,30 +36,31 @@ void A64Instruction::setSourceRegisters(
   sourceRegisters = registers;
 }
 void A64Instruction::setDestinationRegisters(
-    const std::vector<Register> &registers) {
+    const std::vector<Register>& registers) {
   destinationRegisters = registers;
   results = std::vector<A64Result>(destinationRegisters.size());
 }
 
-const std::vector<Register> &A64Instruction::getOperandRegisters() const {
+const std::vector<Register>& A64Instruction::getOperandRegisters() const {
   return sourceRegisters;
 }
-const std::vector<Register> &A64Instruction::getDestinationRegisters() const {
+const std::vector<Register>& A64Instruction::getDestinationRegisters() const {
   return destinationRegisters;
 }
 bool A64Instruction::isOperandReady(int index) const {
   return static_cast<bool>(operands[index]);
 }
 
-void A64Instruction::rename(const std::vector<Register> &destinations,
-                            const std::vector<Register> &operands) {
+void A64Instruction::rename(const std::vector<Register>& destinations,
+                            const std::vector<Register>& operands) {
   destinationRegisters = destinations;
   sourceRegisters = operands;
 }
 
-void A64Instruction::supplyOperand(const Register &reg,
-                                   const RegisterValue &value) {
-  assert(!canExecute() && "Attempted to provide an operand to a ready-to-execute instruction");
+void A64Instruction::supplyOperand(const Register& reg,
+                                   const RegisterValue& value) {
+  assert(!canExecute() &&
+         "Attempted to provide an operand to a ready-to-execute instruction");
 
   // Iterate over operand registers, and copy value if the provided register
   // matches
@@ -72,7 +73,7 @@ void A64Instruction::supplyOperand(const Register &reg,
   }
 }
 
-void A64Instruction::supplyData(uint64_t address, const RegisterValue &data) {
+void A64Instruction::supplyData(uint64_t address, const RegisterValue& data) {
   for (size_t i = 0; i < memoryAddresses.size(); i++) {
     if (memoryAddresses[i].first == address) {
       memoryData[i] = data;
@@ -93,7 +94,7 @@ std::vector<RegisterValue> A64Instruction::getResults() const {
   // Map from internal result format to RegisterValue vector
   auto out = std::vector<RegisterValue>(results.size());
   std::transform(results.begin(), results.end(), out.begin(),
-                 [](const A64Result &item) { return item.value; });
+                 [](const A64Result& item) { return item.value; });
   return out;
 }
 
@@ -102,7 +103,7 @@ bool A64Instruction::isLoad() const { return isLoad_; }
 bool A64Instruction::isBranch() const { return isBranch_; }
 
 void A64Instruction::setMemoryAddresses(
-    const std::vector<std::pair<uint64_t, uint8_t>> &addresses) {
+    const std::vector<std::pair<uint64_t, uint8_t>>& addresses) {
   memoryData = std::vector<RegisterValue>(addresses.size());
   memoryAddresses = addresses;
 }

@@ -1,9 +1,9 @@
 #include "A64Instruction.hh"
-#include "registerFile.hh"
+#include "RegisterFile.hh"
 
+#include <chrono>
 #include <cstring>
 #include <iostream>
-#include <chrono>
 
 #include "A64Architecture.hh"
 
@@ -14,6 +14,7 @@ int main() {
 
   auto registerFile = simeng::RegisterFile({32, 32, 1});
 
+  // Simple program demonstrating various instructions
   // uint32_t hex[] = {
   //     0x320003E0, // orr w0, wzr, #1
   //     0x321F0001, // orr w1, w0, #2
@@ -53,7 +54,6 @@ int main() {
     // Fetch
     auto insnPtr = reinterpret_cast<char*>(hex) + pc;
     auto [macroop, bytesRead] = isa->predecode(insnPtr, 4, pc);
-    // std::cout << "0x" << pc << std::endl;
 
     pc += bytesRead;
 
@@ -73,9 +73,6 @@ int main() {
     if (uop->isLoad()) {
       auto addresses = uop->generateAddresses();
       for (auto const& request : addresses) {
-        // std::cout << "Loading " << (int)request.second << " bytes from " <<
-        // std::hex << request.first << std::endl;
-
         // Pointer manipulation to generate a RegisterValue from an arbitrary
         // memory address
         auto buffer = malloc(request.second);
@@ -96,8 +93,6 @@ int main() {
       auto data = uop->getData();
       for (size_t i = 0; i < addresses.size(); i++) {
         auto request = addresses[i];
-        // std::cout << "Storing " << (int)request.second << " bytes to " <<
-        // std::hex << request.first << std::endl;
 
         // Copy data to memory
         auto address = memory + request.first;
@@ -105,23 +100,16 @@ int main() {
       }
     } else if (uop->isBranch()) {
       pc = uop->getBranchAddress();
-      // std::cout << "Branch: setting PC to " << std::hex << pc << std::endl;
     }
 
     // Writeback
 
     auto results = uop->getResults();
-    // std::cout << "Results (" << std::hex << pc << "): ";
     auto destinations = uop->getDestinationRegisters();
     for (size_t i = 0; i < results.size(); i++) {
       auto reg = destinations[i];
       registerFile.set(reg, results[i]);
-
-      // std::cout << "r" << reg << " = " << std::hex <<
-      // results[i].get<uint64_t>() << " ";
     }
-
-    // std::cout << std::endl;
   }
 
   auto endTime = std::chrono::high_resolution_clock::now();

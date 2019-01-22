@@ -6,8 +6,6 @@
 
 namespace simeng {
 
-A64Architecture::A64Architecture(){};
-
 std::unordered_map<uint32_t, A64Instruction> A64Architecture::decodeCache;
 
 std::tuple<MacroOp, uint8_t> A64Architecture::predecode(

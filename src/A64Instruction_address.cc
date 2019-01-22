@@ -5,7 +5,8 @@
 namespace simeng {
 
 std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
-  assert((isLoad() || isStore()) && "generateAddresses called on non-load-or-store instruction");
+  assert((isLoad() || isStore()) &&
+         "generateAddresses called on non-load-or-store instruction");
 
   switch (opcode) {
     case A64Opcode::STR_I:

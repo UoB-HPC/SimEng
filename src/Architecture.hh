@@ -1,9 +1,8 @@
-#ifndef __H_ARCHITECTURE
-#define __H_ARCHITECTURE
+#pragma once
 
 #include <vector>
 
-#include "instruction.hh"
+#include "Instruction.hh"
 
 namespace simeng {
 
@@ -30,5 +29,3 @@ class Architecture {
 };
 
 }  // namespace simeng
-
-#endif

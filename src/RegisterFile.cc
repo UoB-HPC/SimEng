@@ -1,10 +1,10 @@
-#include "registerFile.hh"
+#include "RegisterFile.hh"
 
 #include <iostream>
 
 namespace simeng {
 
-std::ostream &operator<<(std::ostream &os, Register const &reg) {
+std::ostream& operator<<(std::ostream& os, Register const& reg) {
   return os << reg.tag;
 }
 
@@ -27,7 +27,7 @@ RegisterValue RegisterFile::get(Register reg) {
   return registerFiles[reg.type][reg.tag];
 }
 
-void RegisterFile::set(Register reg, const RegisterValue &value) {
+void RegisterFile::set(Register reg, const RegisterValue& value) {
   registerFiles[reg.type][reg.tag] = value;
 }
 

@@ -36,7 +36,7 @@ constexpr int32_t signExtend(uint32_t value, int currentLength) {
 }
 
 // Check for and mark WZR/XZR references
-const Register &filterZR(const Register &reg) {
+const Register& filterZR(const Register& reg) {
   return (reg.type == A64RegisterType::GENERAL && reg.tag == 31
               ? A64Instruction::ZERO_REGISTER
               : reg);
@@ -201,9 +201,8 @@ void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
       opcode = A64Opcode::B_cond;
       auto cond = bits(insn, 0, 4);
       auto offset = bits(insn, 5, 19);
-      // std::cout << std::hex << offset << ", " << (offset << 2) << std::endl;
+      
       metadata.offset = signExtend(offset << 2, 21);
-      // std::cout << std::hex << metadata.offset << std::endl;
       metadata.cond = cond;
 
       setSourceRegisters({nzcvReg()});
@@ -225,9 +224,7 @@ void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
       opcode = A64Opcode::B;
       metadata.offset = offset;
     }
-    default: {
-      return nyi();
-    }
+    default: { return nyi(); }
   }
   return nyi();
 }

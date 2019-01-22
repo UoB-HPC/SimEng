@@ -1,7 +1,6 @@
-#ifndef __H_REGISTER_FILE
-#define __H_REGISTER_FILE
+#pragma once
 
-#include "registerValue.hh"
+#include "RegisterValue.hh"
 
 #include <vector>
 
@@ -19,7 +18,7 @@ struct Register {
 
   bool operator==(Register other);
 };
-std::ostream &operator<<(std::ostream &os, simeng::Register const &reg);
+std::ostream& operator<<(std::ostream& os, simeng::Register const& reg);
 
 /** A processor register file set. Holds the physical registers for each
  * register type. */
@@ -34,7 +33,7 @@ class RegisterFile {
   RegisterValue get(Register reg);
 
   /** Set a register as the specified value. */
-  void set(Register reg, const RegisterValue &value);
+  void set(Register reg, const RegisterValue& value);
 
  private:
   /** The set of register files. Each entry in the outer vector corresponds to a
@@ -43,5 +42,3 @@ class RegisterFile {
 };
 
 }  // namespace simeng
-
-#endif

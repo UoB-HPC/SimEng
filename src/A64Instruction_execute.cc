@@ -1,8 +1,8 @@
 #include "A64Instruction.hh"
 
-#include <tuple>
 #include <iostream>
 #include <limits>
+#include <tuple>
 
 uint8_t nzcv(bool n, bool z, bool c, bool v) {
   return (n << 3) | (z << 2) | (c << 1) | v;
@@ -89,7 +89,9 @@ namespace simeng {
 
 void A64Instruction::execute() {
   assert(!executed && "Attempted to execute an instruction more than once");
-  assert(canExecute() && "Attempted to execute an instruction before all operands were provided");
+  assert(
+      canExecute() &&
+      "Attempted to execute an instruction before all operands were provided");
 
   executed = true;
   switch (opcode) {

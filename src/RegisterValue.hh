@@ -1,6 +1,5 @@
 
-#ifndef __H_REGISTER_VALUE
-#define __H_REGISTER_VALUE
+#pragma once
 
 #include <cassert>
 #include <iostream>
@@ -59,5 +58,3 @@ class RegisterValue {
 };
 
 }  // namespace simeng
-
-#endif

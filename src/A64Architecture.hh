@@ -1,7 +1,6 @@
-#ifndef __H_A64ARCHITECTURE
-#define __H_A64ARCHITECTURE
+#pragma once
 
-#include "architecture.hh"
+#include "Architecture.hh"
 
 #include <unordered_map>
 
@@ -12,7 +11,6 @@ namespace simeng {
 /* A basic ARMv8-a implementation of the `Architecture` interface. */
 class A64Architecture : public Architecture {
  public:
-  A64Architecture();
 
   /** Pre-decode instruction memory into a macro-op of `A64Instruction`
    * instances. Returns the macro-op generated and the number of bytes consumed
@@ -34,5 +32,3 @@ class A64Architecture : public Architecture {
 };
 
 }  // namespace simeng
-
-#endif

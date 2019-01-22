@@ -1,7 +1,6 @@
-#ifndef __H_A64_INSTRUCTION
-#define __H_A64_INSTRUCTION
+#pragma once
 
-#include "instruction.hh"
+#include "Instruction.hh"
 
 namespace simeng {
 
@@ -85,23 +84,23 @@ class A64Instruction : public Instruction {
   InstructionException getException() const override;
 
   /** Retrieve a vector of source registers this instruction reads. */
-  const std::vector<Register> &getOperandRegisters() const override;
+  const std::vector<Register>& getOperandRegisters() const override;
 
   /** Retrieve a vector of destination registers this instruction will write to.
    * A register value of -1 signifies a Zero Register read, and should not be
    * renamed. */
-  const std::vector<Register> &getDestinationRegisters() const override;
+  const std::vector<Register>& getDestinationRegisters() const override;
 
   /** Check whether the operand at index `i` has had a value supplied. */
   bool isOperandReady(int index) const override;
 
   /** Override the destination and operand registers with renamed physical
    * register tags. */
-  void rename(const std::vector<Register> &destinations,
-              const std::vector<Register> &operands) override;
+  void rename(const std::vector<Register>& destinations,
+              const std::vector<Register>& operands) override;
 
   /** Provide a value for the specified physical register. */
-  void supplyOperand(const Register &reg, const RegisterValue &value) override;
+  void supplyOperand(const Register& reg, const RegisterValue& value) override;
 
   /** Check whether all operand values have been supplied, and the instruction
    * is ready to execute. */
@@ -125,7 +124,7 @@ class A64Instruction : public Instruction {
       const override;
 
   /** Provide data from a requested memory address. */
-  void supplyData(uint64_t address, const RegisterValue &data) override;
+  void supplyData(uint64_t address, const RegisterValue& data) override;
 
   /** Retrieve supplied memory data. */
   std::vector<RegisterValue> getData() const override;
@@ -153,7 +152,7 @@ class A64Instruction : public Instruction {
  private:
   /** This instruction's opcode. */
   A64Opcode opcode;
-  
+
   /** The location in memory of this instruction was decoded at. */
   uint64_t instructionAddress;
 
@@ -208,11 +207,11 @@ class A64Instruction : public Instruction {
   /** Set the source registers of the instruction, and create a corresponding
    * operands vector. Zero register references will be pre-supplied with a value
    * of 0. */
-  void setSourceRegisters(const std::vector<Register> &registers);
+  void setSourceRegisters(const std::vector<Register>& registers);
 
   /** Set the destination registers for the instruction, and create a
    * corresponding results vector. */
-  void setDestinationRegisters(const std::vector<Register> &registers);
+  void setDestinationRegisters(const std::vector<Register>& registers);
 
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
@@ -234,7 +233,7 @@ class A64Instruction : public Instruction {
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
   void setMemoryAddresses(
-      const std::vector<std::pair<uint64_t, uint8_t>> &addresses);
+      const std::vector<std::pair<uint64_t, uint8_t>>& addresses);
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */
@@ -251,5 +250,3 @@ class A64Instruction : public Instruction {
 };
 
 }  // namespace simeng
-
-#endif
