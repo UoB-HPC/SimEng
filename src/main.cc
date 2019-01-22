@@ -51,6 +51,7 @@ int main() {
   while (pc >= 0 && pc < length) {
     iterations++;
 
+
     // Fetch
     auto insnPtr = reinterpret_cast<char*>(hex) + pc;
     auto [macroop, bytesRead] = isa->predecode(insnPtr, 4, pc);
