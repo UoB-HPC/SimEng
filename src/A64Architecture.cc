@@ -6,11 +6,6 @@
 
 namespace simeng {
 
-<<<<<<< HEAD
-=======
-// A64Architecture::A64Architecture(){};
-
->>>>>>> Begun adding core and unit classes. Fixed some bugs with pipeline buffer definition.
 std::unordered_map<uint32_t, A64Instruction> A64Architecture::decodeCache;
 
 std::tuple<MacroOp, uint8_t> A64Architecture::predecode(

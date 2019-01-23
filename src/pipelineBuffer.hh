@@ -16,7 +16,7 @@ class PipelineBuffer {
     const int length = 2;
 
     // Reserve a buffer large enough to hold 2 * width elements of type `T`
-    buffer = std::shared_ptr<T>( reinterpret_cast<T*>(malloc(sizeof(T) * width * length)), free );
+    buffer = std::unique_ptr<T>( reinterpret_cast<T*>(malloc(sizeof(T) * width * length)), free );
   };
   
   /** Tick the buffer and move head/tail pointers, or do nothing if it's stalled. */
@@ -53,7 +53,7 @@ class PipelineBuffer {
   unsigned short width;
 
   /** The buffer. */
-  std::shared_ptr<T> buffer;
+  std::unique_ptr<T> buffer;
 
   /** The offset of the head pointer; either 0 or 1. */
   bool headIsStart = 0;

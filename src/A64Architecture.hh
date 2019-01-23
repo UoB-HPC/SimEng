@@ -11,10 +11,6 @@ namespace simeng {
 /* A basic ARMv8-a implementation of the `Architecture` interface. */
 class A64Architecture : public Architecture {
  public:
-<<<<<<< HEAD
-=======
-//   A64Architecture();
->>>>>>> Begun adding core and unit classes. Fixed some bugs with pipeline buffer definition.
 
   /** Pre-decode instruction memory into a macro-op of `A64Instruction`
    * instances. Returns the macro-op generated and the number of bytes consumed
