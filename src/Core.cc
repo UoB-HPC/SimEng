@@ -4,13 +4,13 @@
 
 namespace simeng {
 
-Core::Core(char* insnPtr, unsigned int programByteLength, Architecture& isa) :
+Core::Core(char* insnPtr, unsigned int programByteLength, Architecture& isa, BranchPredictor& branchPredictor) :
   memory(static_cast<char*>(calloc(1024, 1))),
   registerFile({32, 32, 1}),
   fetchToDecodeBuffer(1, {}),
   decodeToExecuteBuffer(1, nullptr),
   executeToWritebackBuffer(1, nullptr),
-  fetchUnit(fetchToDecodeBuffer, insnPtr, programByteLength, isa),
+  fetchUnit(fetchToDecodeBuffer, insnPtr, programByteLength, isa, branchPredictor),
   decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, registerFile),
   executeUnit(decodeToExecuteBuffer, executeToWritebackBuffer, decodeUnit, memory),
   writebackUnit(executeToWritebackBuffer, registerFile)

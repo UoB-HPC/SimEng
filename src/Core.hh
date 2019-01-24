@@ -11,7 +11,7 @@ namespace simeng {
 
 class Core {
  public:
-  Core(char* insnPtr, unsigned int programByteLength, Architecture& isa);
+  Core(char* insnPtr, unsigned int programByteLength, Architecture& isa, BranchPredictor& branchPredictor);
   void tick();
 
   bool hasHalted() const;

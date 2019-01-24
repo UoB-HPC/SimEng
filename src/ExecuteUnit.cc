@@ -50,7 +50,7 @@ void ExecuteUnit::tick() {
       auto address = memory + request.first;
       memcpy(address, data[i].getAsVector<void>(), request.second);
     }
-  } else if (uop->isBranch()) {
+  } else if (uop->isBranch() && uop->wasBranchMispredicted()) {
     pc = uop->getBranchAddress();
     shouldFlush_ = true;
   }

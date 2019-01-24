@@ -6,6 +6,7 @@
 #include <iostream>
 
 #include "A64Architecture.hh"
+#include "AlwaysNotTakenPredictor.hh"
 #include "Core.hh"
 
 int main() {
@@ -52,7 +53,8 @@ int main() {
   auto insnPtr = reinterpret_cast<char*>(hex) + pc;
 
   auto arch = simeng::A64Architecture();
-  auto core = simeng::Core(insnPtr, length, arch);
+  auto predictor = simeng::AlwaysNotTakenPredictor();
+  auto core = simeng::Core(insnPtr, length, arch, predictor);
 
   while (!core.hasHalted()) {
 

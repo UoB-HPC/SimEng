@@ -17,7 +17,7 @@ class A64Architecture : public Architecture {
    * to produce it (always 4). */
   std::tuple<MacroOp, uint8_t> predecode(
       void* ptr, uint8_t bytesAvailable,
-      uint64_t instructionAddress) const override;
+      uint64_t instructionAddress, BranchPrediction prediction) const override;
 
   /** Returns an ARMv8-a register file structure description. */
   std::vector<std::pair<uint8_t, uint16_t>> getRegisterFileStructure()

@@ -6,7 +6,10 @@ set(SIMENG_SOURCES
     A64Instruction_address.cc
     A64Instruction_decode.cc
     A64Instruction_execute.cc
+    AlwaysNotTakenPredictor.cc
+    AlwaysNotTakenPredictor.hh
     Architecture.hh
+    BranchPredictor.hh
     Core.cc
     Core.hh
     DecodeUnit.cc

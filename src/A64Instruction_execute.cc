@@ -96,13 +96,16 @@ void A64Instruction::execute() {
   executed = true;
   switch (opcode) {
     case A64Opcode::B: {
+      branchTaken = true;
       branchAddress = instructionAddress + metadata.offset;
       return;
     }
     case A64Opcode::B_cond: {
       if (conditionHolds(metadata.cond, operands[0].get<uint8_t>())) {
+        branchTaken = true;
         branchAddress = instructionAddress + metadata.offset;
       } else {
+        branchTaken = false;
         branchAddress = instructionAddress + 4;
       }
       return;

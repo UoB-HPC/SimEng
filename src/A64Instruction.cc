@@ -9,7 +9,7 @@ namespace simeng {
 const Register A64Instruction::ZERO_REGISTER = {A64RegisterType::GENERAL,
                                                 (uint16_t)-1};
 
-A64Instruction::A64Instruction(uint32_t insn) { decodeA64(insn); }
+A64Instruction::A64Instruction(uint32_t insn, BranchPrediction prediction) : prediction(prediction) { decodeA64(insn); }
 
 void A64Instruction::setInstructionAddress(uint64_t address) {
   instructionAddress = address;
@@ -114,8 +114,8 @@ A64Instruction::getGeneratedAddresses() const {
 }
 
 bool A64Instruction::wasBranchMispredicted() const {
-  // TODO: Replace once branch prediction is implemented
-  return false;
+  // Flag as mispredicted if taken state was wrongly predicted, or taken and predicted target is wrong
+  return (branchTaken != prediction.taken || (branchTaken && prediction.target != branchAddress));
 }
 uint64_t A64Instruction::getBranchAddress() const { return branchAddress; }
 

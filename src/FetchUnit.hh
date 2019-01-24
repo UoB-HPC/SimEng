@@ -7,7 +7,7 @@ namespace simeng {
 
 class FetchUnit {
  public:
-  FetchUnit(PipelineBuffer<MacroOp>& toDecode, char* insnPtr, unsigned int programByteLength, Architecture& isa);
+  FetchUnit(PipelineBuffer<MacroOp>& toDecode, char* insnPtr, unsigned int programByteLength, Architecture& isa, BranchPredictor& branchPredictor);
 
   void tick();
   bool hasHalted() const;
@@ -20,6 +20,7 @@ class FetchUnit {
   char* insnPtr;
   unsigned int programByteLength;
   Architecture& isa;
+  BranchPredictor& branchPredictor;
 
   bool hasHalted_ = false;
 };

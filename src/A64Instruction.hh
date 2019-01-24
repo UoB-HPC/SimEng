@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Instruction.hh"
+#include "BranchPredictor.hh"
 
 namespace simeng {
 
@@ -73,7 +74,7 @@ class A64Instruction : public Instruction {
 
   /** Construct an instruction instance by decoding a provided instruction word.
    */
-  A64Instruction(uint32_t insn);
+  A64Instruction(uint32_t insn, BranchPrediction prediction);
 
   /** Supply an instruction address. Performed after construction to prevent
    * values being cached. */
@@ -245,8 +246,12 @@ class A64Instruction : public Instruction {
   std::vector<RegisterValue> memoryData;
 
   // Branches
+  /** The predicted branching result. */
+  BranchPrediction prediction;
   /** A branching address calculated by this instruction during execution. */
   uint64_t branchAddress;
+  /** Was the branch taken? */
+  bool branchTaken;
 };
 
 }  // namespace simeng

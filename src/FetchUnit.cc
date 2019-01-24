@@ -4,7 +4,7 @@
 
 namespace simeng {
 
-FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& toDecode, char* insnPtr, unsigned int programByteLength, Architecture& isa) : toDecode(toDecode), insnPtr(insnPtr), programByteLength(programByteLength), isa(isa) {
+FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& toDecode, char* insnPtr, unsigned int programByteLength, Architecture& isa, BranchPredictor& branchPredictor) : toDecode(toDecode), insnPtr(insnPtr), programByteLength(programByteLength), isa(isa), branchPredictor(branchPredictor) {
 };
 
 void FetchUnit::tick() {
@@ -18,9 +18,14 @@ void FetchUnit::tick() {
         return;
     }
 
-    auto [macroop, bytesRead] = isa.predecode(insnPtr + pc, 4, pc);
+    auto prediction = branchPredictor.predict(pc);
+    auto [macroop, bytesRead] = isa.predecode(insnPtr + pc, 4, pc, prediction);
 
-    pc += bytesRead;
+    if (!prediction.taken) {
+        pc += bytesRead;
+    } else {
+        pc = prediction.target;
+    }
 
     out[0] = macroop;
 
