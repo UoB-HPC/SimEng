@@ -16,43 +16,48 @@ class PipelineBuffer {
 
     // Reserve a buffer large enough to hold 2 * width elements of type `T`
     buffer = std::shared_ptr<T>( reinterpret_cast<T*>(malloc(sizeof(T) * width * length)), free );
-  };
+  }
 
   PipelineBuffer(int width, const T& initialValue) : PipelineBuffer(width) {
-    auto ptr = buffer.get();
-    for (size_t i = 0; i < width * length; i++) {
-      ptr[i] = initialValue;
-    }
-  };
+    fill(initialValue);
+  }
   
   /** Tick the buffer and move head/tail pointers, or do nothing if it's stalled. */
   void tick() {
     if (isStalled_) return;
 
     headIsStart = !headIsStart;
-  };
+  }
 
   /** Get a tail slots pointer. */
   T* getTailSlots() const {
     auto ptr = buffer.get();
     return &ptr[headIsStart * width];
-  };
+  }
 
   /** Get a head slots pointer. */
   T* getHeadSlots() const {
     auto ptr = buffer.get();
     return &ptr[!headIsStart * width];
-  };
+  }
 
   /** Check if the buffer is stalled. */
   bool isStalled() const {
     return isStalled_;
-  };
+  }
 
   /** Set the buffer's stall flag to `stalled`. */
   void stall(bool stalled) {
     isStalled_ = stalled;
-  };
+  }
+
+  /** Fill the buffer with a specified value. */
+  void fill(const T &value) {
+    auto ptr = buffer.get();
+    for (size_t i = 0; i < width * length; i++) {
+      ptr[i] = value;
+    }
+  }
 
  private:
   /** The width of each row of slots. */

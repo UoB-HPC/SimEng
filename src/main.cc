@@ -54,8 +54,7 @@ int main() {
   auto arch = simeng::A64Architecture();
   auto core = simeng::Core(insnPtr, length, arch);
 
-  while (!core.hasHalted() && iterations < 10) {
-    std::cout << "Cycle " << iterations << std::endl;
+  while (!core.hasHalted()) {
 
     core.tick();
     

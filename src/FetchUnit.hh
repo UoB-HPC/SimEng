@@ -11,6 +11,7 @@ class FetchUnit {
 
   void tick();
   bool hasHalted() const;
+  void updatePC(uint64_t address);
  private:
   PipelineBuffer<MacroOp>& toDecode;
 

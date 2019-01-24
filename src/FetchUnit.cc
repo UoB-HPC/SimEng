@@ -8,16 +8,17 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& toDecode, char* insnPtr, unsigned 
 };
 
 void FetchUnit::tick() {
-    std::cout << "Fetch: tick()" << std::endl;
+    if (toDecode.isStalled()) {
+        return;
+    }
 
     auto out = toDecode.getTailSlots();
     if (pc >= programByteLength) {
-        std::cout << "Fetch: halted" << std::endl;
         out[0] = {};
         return;
     }
 
-    auto [macroop, bytesRead] = isa.predecode(insnPtr, 4, pc);
+    auto [macroop, bytesRead] = isa.predecode(insnPtr + pc, 4, pc);
 
     pc += bytesRead;
 
@@ -30,6 +31,10 @@ void FetchUnit::tick() {
 
 bool FetchUnit::hasHalted() const {
     return hasHalted_;
+}
+
+void FetchUnit::updatePC(uint64_t address) {
+    pc = address;
 }
 
 } // namespace simeng

@@ -18,7 +18,7 @@ Core::Core(char* insnPtr, unsigned int programByteLength, Architecture& isa) :
 
 void Core::tick() {
 
-  // Writeback must be ticked at start of cycle
+  // Writeback must be ticked at start of cycle, to ensure decode reads the correct values
   writebackUnit.tick();
 
   // Tick units
@@ -30,6 +30,15 @@ void Core::tick() {
   fetchToDecodeBuffer.tick();
   decodeToExecuteBuffer.tick();
   executeToWritebackBuffer.tick();
+
+  // Check for flush
+  auto [shouldFlush, address] = executeUnit.shouldFlush();
+  if (shouldFlush) {
+    // std::cout << "Flushing! New address: " << std::hex << address << std::endl;
+    fetchUnit.updatePC(address);
+    fetchToDecodeBuffer.fill({});
+    decodeToExecuteBuffer.fill(nullptr);
+  }
 }
 
 bool Core::hasHalted() const {
