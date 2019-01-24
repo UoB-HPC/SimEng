@@ -13,10 +13,16 @@ class PipelineBuffer {
  public:
   /** Create a new pipeline buffer of width `width`. */
   PipelineBuffer(int width) : width(width) {
-    const int length = 2;
 
     // Reserve a buffer large enough to hold 2 * width elements of type `T`
-    buffer = std::unique_ptr<T>( reinterpret_cast<T*>(malloc(sizeof(T) * width * length)), free );
+    buffer = std::shared_ptr<T>( reinterpret_cast<T*>(malloc(sizeof(T) * width * length)), free );
+  };
+
+  PipelineBuffer(int width, const T& initialValue) : PipelineBuffer(width) {
+    auto ptr = buffer.get();
+    for (size_t i = 0; i < width * length; i++) {
+      ptr[i] = initialValue;
+    }
   };
   
   /** Tick the buffer and move head/tail pointers, or do nothing if it's stalled. */
@@ -53,13 +59,16 @@ class PipelineBuffer {
   unsigned short width;
 
   /** The buffer. */
-  std::unique_ptr<T> buffer;
+  std::shared_ptr<T> buffer;
 
   /** The offset of the head pointer; either 0 or 1. */
   bool headIsStart = 0;
 
   /** Whether the buffer is stalled or not. */
   bool isStalled_ = false;
+
+  
+  static const unsigned int length = 2;
 };
 
 } // namespace simeng
