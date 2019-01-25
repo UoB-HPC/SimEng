@@ -11,6 +11,7 @@ void FetchUnit::tick() {
     if (toDecode.isStalled()) {
         return;
     }
+    // std::cout << "PC = " << pc << std::endl;
 
     auto out = toDecode.getTailSlots();
     if (pc >= programByteLength) {
@@ -40,6 +41,7 @@ bool FetchUnit::hasHalted() const {
 
 void FetchUnit::updatePC(uint64_t address) {
     pc = address;
+    hasHalted_ = (pc >= programByteLength);
 }
 
 } // namespace simeng

@@ -9,10 +9,13 @@ namespace simeng {
 const Register A64Instruction::ZERO_REGISTER = {A64RegisterType::GENERAL,
                                                 (uint16_t)-1};
 
-A64Instruction::A64Instruction(uint32_t insn, BranchPrediction prediction) : prediction(prediction) { decodeA64(insn); }
+A64Instruction::A64Instruction(uint32_t insn) { decodeA64(insn); }
 
 void A64Instruction::setInstructionAddress(uint64_t address) {
   instructionAddress = address;
+}
+void A64Instruction::setBranchPrediction(BranchPrediction prediction) {
+  this->prediction = prediction;
 }
 
 InstructionException A64Instruction::getException() const {
@@ -102,6 +105,8 @@ bool A64Instruction::isStore() const { return isStore_; }
 bool A64Instruction::isLoad() const { return isLoad_; }
 bool A64Instruction::isBranch() const { return isBranch_; }
 
+uint64_t A64Instruction::getInstructionAddress() const { return instructionAddress; }
+
 void A64Instruction::setMemoryAddresses(
     const std::vector<std::pair<uint64_t, uint8_t>>& addresses) {
   memoryData = std::vector<RegisterValue>(addresses.size());
@@ -113,7 +118,21 @@ A64Instruction::getGeneratedAddresses() const {
   return memoryAddresses;
 }
 
+std::tuple<bool, uint64_t> A64Instruction::checkEarlyBranchMisprediction() const {
+  assert(!executed && "Early branch misprediction check shouldn't be called after execution");
+
+  if (!isBranch()) {
+    // Instruction isn't a branch; if predicted as taken, it will require a flush
+    return {prediction.taken, instructionAddress + 4};
+  }
+
+  // Not enough information to determine this was a misprediction
+  return {false, 0};
+}
+
 bool A64Instruction::wasBranchMispredicted() const {
+  assert(executed && "Branch misprediction check requires instruction to have executed");
+
   // Flag as mispredicted if taken state was wrongly predicted, or taken and predicted target is wrong
   return (branchTaken != prediction.taken || (branchTaken && prediction.target != branchAddress));
 }

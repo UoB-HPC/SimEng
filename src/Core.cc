@@ -32,12 +32,19 @@ void Core::tick() {
   executeToWritebackBuffer.tick();
 
   // Check for flush
-  auto [shouldFlush, address] = executeUnit.shouldFlush();
-  if (shouldFlush) {
-    // std::cout << "Flushing! New address: " << std::hex << address << std::endl;
-    fetchUnit.updatePC(address);
+  auto [executeShouldFlush, executeFlushAddress] = executeUnit.shouldFlush();
+  auto [decodeShouldFlush, decodeFlushAddress] = decodeUnit.shouldFlush();
+  if (executeShouldFlush) {
+    // Flush was requested at execute stage
+    // Update PC and wipe younger buffers (Fetch/Decode, Decode/Execute)
+    fetchUnit.updatePC(executeFlushAddress);
     fetchToDecodeBuffer.fill({});
     decodeToExecuteBuffer.fill(nullptr);
+  } else if (decodeShouldFlush) {
+    // Flush was requested at decode stage
+    // Update PC and wipe Fetch/Decode buffer.
+    fetchUnit.updatePC(decodeFlushAddress);
+    fetchToDecodeBuffer.fill({});
   }
 }
 
@@ -45,6 +52,8 @@ bool Core::hasHalted() const {
   bool decodePending = fetchToDecodeBuffer.getHeadSlots()[0].size() > 0;
   bool executePending = decodeToExecuteBuffer.getHeadSlots()[0] != nullptr;
   bool writebackPending = executeToWritebackBuffer.getHeadSlots()[0] != nullptr;
+
+  // std::cout << "hasHalted: " << fetchUnit.hasHalted() << !decodePending << !executePending << !writebackPending << std::endl;
 
   return (fetchUnit.hasHalted() && !decodePending && !writebackPending && !executePending);
 }

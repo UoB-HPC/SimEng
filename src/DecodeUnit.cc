@@ -8,13 +8,13 @@ namespace simeng {
 DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& fromFetch, PipelineBuffer<std::shared_ptr<Instruction>>& toExecute, RegisterFile& registerFile) : fromFetchBuffer(fromFetch), toExecuteBuffer(toExecute), registerFile(registerFile) {};
 
 void DecodeUnit::tick() {
-  // std::cout << "Decode: tick()" << std::endl;
+
   if (toExecuteBuffer.isStalled()) {
     fromFetchBuffer.stall(true);
-    // std::cout << "Decode: stalled" << std::endl;
     return;
   }
-
+  
+  shouldFlush_ = false;
   fromFetchBuffer.stall(false);
   
   auto macroOp = fromFetchBuffer.getHeadSlots()[0];
@@ -24,26 +24,35 @@ void DecodeUnit::tick() {
   auto out = toExecuteBuffer.getTailSlots();
 
   if (macroOp.size() == 0) {
-    // std::cout << "Decode: nop" << std::endl;
+    // Nothing to process
     out[0] = nullptr;
   } else {
-    out[0] = macroOp[0];
+    auto uop = macroOp[0];
+
+    // Check preliminary branch prediction results now that the instruction is decoded
+    // Identifies:
+    // - Non-branch instructions mistakenly predicted as branches
+    // - Incorrect targets for immediate branches
+    auto [misprediction, correctAddress] = uop->checkEarlyBranchMisprediction();
+    if (misprediction) {
+      shouldFlush_ = true;
+      pc = correctAddress;
+    }
+
+    out[0] = uop;
   }
 
   fromFetchBuffer.getHeadSlots()[0] = {};
 }
 
 void DecodeUnit::forwardOperands(std::vector<Register> registers, std::vector<RegisterValue> values) {
-  // std::cout << "Decode: forwarding" << std::endl;
   assert(registers.size() == values.size() && "Mismatched register and value vector sizes");
 
   auto uop = toExecuteBuffer.getTailSlots()[0];
   if (uop == nullptr) {
-    // std::cout << "Decode: forwarding was nop" << std::endl;
     return;
   }
   if (uop->canExecute()) {
-    // std::cout << "Decode: forwarding unnecessary" << std::endl;
     return;
   }
 
@@ -60,6 +69,10 @@ void DecodeUnit::forwardOperands(std::vector<Register> registers, std::vector<Re
       uop->supplyOperand(reg, registerFile.get(reg));
     }
   }
+}
+
+std::tuple<bool, uint64_t> DecodeUnit::shouldFlush() const {
+  return {shouldFlush_, pc};
 }
 
 } // namespace simeng

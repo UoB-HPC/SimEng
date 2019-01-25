@@ -31,6 +31,7 @@ int main() {
 
   // Simple loop; counts down from 1024*1024
   uint32_t hex[] = {
+      // 0x321E03E0,  // orr w0, wzr, #4
       0x320C03E0,  // orr w0, wzr, #1048576
       // 0x321603E0, // orr w0, wzr, #1024
       0x71000400,  // subs w0, w0, #1
@@ -57,7 +58,7 @@ int main() {
   auto core = simeng::Core(insnPtr, length, arch, predictor);
 
   while (!core.hasHalted()) {
-
+    // std::cout << "\nCycle " << iterations << std::endl;
     core.tick();
     
     iterations++;

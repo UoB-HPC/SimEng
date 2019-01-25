@@ -11,11 +11,15 @@ class DecodeUnit {
 
   void tick();
   void forwardOperands(std::vector<Register> destinations, std::vector<RegisterValue> values);
+  std::tuple<bool, uint64_t> shouldFlush() const;
  private:
   PipelineBuffer<MacroOp>& fromFetchBuffer;
   PipelineBuffer<std::shared_ptr<Instruction>>& toExecuteBuffer;
 
   RegisterFile& registerFile;
+
+  bool shouldFlush_;
+  uint64_t pc;
 };
 
 } // namespace simeng

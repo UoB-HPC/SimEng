@@ -21,11 +21,12 @@ std::tuple<MacroOp, uint8_t> A64Architecture::predecode(
     uop = std::make_shared<A64Instruction>(decodeCache[insn]);
   } else {
     // Generate a fresh decoding, and add to cache
-    auto decoded = A64Instruction(insn, prediction);
+    auto decoded = A64Instruction(insn);
     decodeCache[insn] = decoded;
     uop = std::make_shared<A64Instruction>(decoded);
   }
   uop->setInstructionAddress(instructionAddress);
+  uop->setBranchPrediction(prediction);
 
   // Bundle into a macro-op and return
   return {{uop}, 4};
