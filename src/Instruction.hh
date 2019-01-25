@@ -75,6 +75,9 @@ class Instruction {
   /** Retrieve branch address. */
   virtual uint64_t getBranchAddress() const = 0;
 
+  /** Was the branch taken? */
+  virtual bool wasBranchTaken() const = 0;
+
   /** Is this a store operation? */
   virtual bool isStore() const = 0;
 

@@ -20,7 +20,13 @@ void WritebackUnit::tick() {
     registerFile.set(reg, results[i]);
   }
 
+  instructionsRetired++;
+
   fromExecuteBuffer.getHeadSlots()[0] = nullptr;
+}
+
+int WritebackUnit::getInstructionsRetiredCount() const {
+  return instructionsRetired;
 }
 
 } // namespace simeng

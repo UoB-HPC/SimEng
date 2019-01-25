@@ -11,8 +11,8 @@ Core::Core(char* insnPtr, unsigned int programByteLength, Architecture& isa, Bra
   decodeToExecuteBuffer(1, nullptr),
   executeToWritebackBuffer(1, nullptr),
   fetchUnit(fetchToDecodeBuffer, insnPtr, programByteLength, isa, branchPredictor),
-  decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, registerFile),
-  executeUnit(decodeToExecuteBuffer, executeToWritebackBuffer, decodeUnit, memory),
+  decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, registerFile, branchPredictor),
+  executeUnit(decodeToExecuteBuffer, executeToWritebackBuffer, decodeUnit, branchPredictor, memory),
   writebackUnit(executeToWritebackBuffer, registerFile)
   {};
 
@@ -32,19 +32,25 @@ void Core::tick() {
   executeToWritebackBuffer.tick();
 
   // Check for flush
-  auto [executeShouldFlush, executeFlushAddress] = executeUnit.shouldFlush();
-  auto [decodeShouldFlush, decodeFlushAddress] = decodeUnit.shouldFlush();
-  if (executeShouldFlush) {
+  if (executeUnit.shouldFlush()) {
     // Flush was requested at execute stage
     // Update PC and wipe younger buffers (Fetch/Decode, Decode/Execute)
-    fetchUnit.updatePC(executeFlushAddress);
+    auto targetAddress = executeUnit.getFlushAddress();
+    
+    fetchUnit.updatePC(targetAddress);
     fetchToDecodeBuffer.fill({});
     decodeToExecuteBuffer.fill(nullptr);
-  } else if (decodeShouldFlush) {
+
+    flushes++;
+  } else if (decodeUnit.shouldFlush()) {
     // Flush was requested at decode stage
     // Update PC and wipe Fetch/Decode buffer.
-    fetchUnit.updatePC(decodeFlushAddress);
+    auto targetAddress = decodeUnit.getFlushAddress();
+
+    fetchUnit.updatePC(targetAddress);
     fetchToDecodeBuffer.fill({});
+
+    flushes++;
   }
 }
 
@@ -56,6 +62,13 @@ bool Core::hasHalted() const {
   // std::cout << "hasHalted: " << fetchUnit.hasHalted() << !decodePending << !executePending << !writebackPending << std::endl;
 
   return (fetchUnit.hasHalted() && !decodePending && !writebackPending && !executePending);
+}
+
+int Core::getFlushesCount() const {
+  return flushes;
+}
+int Core::getInstructionsRetiredCount() const {
+  return writebackUnit.getInstructionsRetiredCount();
 }
 
 }

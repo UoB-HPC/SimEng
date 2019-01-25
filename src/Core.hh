@@ -15,6 +15,8 @@ class Core {
   void tick();
 
   bool hasHalted() const;
+  int getFlushesCount() const;
+  int getInstructionsRetiredCount() const;
  private:
   char* memory;
 
@@ -28,6 +30,8 @@ class Core {
   DecodeUnit decodeUnit;
   ExecuteUnit executeUnit;
   WritebackUnit writebackUnit;
+
+  int flushes = 0;
 };
 
 } // namespace simeng

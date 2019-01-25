@@ -4,17 +4,122 @@
 #include <chrono>
 #include <cstring>
 #include <iostream>
+#include <iomanip>
+#include <string>
 
+#include "Architecture.hh"
 #include "A64Architecture.hh"
 #include "AlwaysNotTakenPredictor.hh"
+#include "StaticBTBPredictor.hh"
 #include "Core.hh"
 
-int main() {
-  // Create an ISA description
-  std::unique_ptr<simeng::Architecture> isa =
-      std::make_unique<simeng::A64Architecture>();
+namespace SimulationMode {
+const int Emulation = 0;
+const int InOrderPipelined = 1;
+} // namespace SimulationMode
 
+/** Simple "emulation-style" simulation; each instruction is fetched, decoded, and executed in a single cycle.
+ * 
+ * TODO: Make the `Core` model abstract and make this an implementation. */
+int emulationSimulation(char* insnPtr, uint64_t programByteLength, char* memory, simeng::Architecture& isa) {
+
+  uint64_t pc = 0;
   auto registerFile = simeng::RegisterFile({32, 32, 1});
+
+  int iterations = 0;
+  while (pc >= 0 && pc < programByteLength) {
+    iterations++;
+
+    // Fetch
+    auto [macroop, bytesRead] = isa.predecode(insnPtr + pc, 4, pc, {false, 0});
+
+    pc += bytesRead;
+
+    // Decode
+    auto uop = macroop[0];
+
+    // Issue
+    auto registers = uop->getOperandRegisters();
+    for (size_t i = 0; i < registers.size(); i++) {
+      auto reg = registers[i];
+      if (!uop->isOperandReady(i)) {
+        uop->supplyOperand(reg, registerFile.get(reg));
+      }
+    }
+
+    // Execute
+    if (uop->isLoad()) {
+      auto addresses = uop->generateAddresses();
+      for (auto const& request : addresses) {
+        // Pointer manipulation to generate a RegisterValue from an arbitrary
+        // memory address
+        auto buffer = malloc(request.second);
+        memcpy(buffer, memory + request.first, request.second);
+
+        auto ptr = std::shared_ptr<uint8_t>((uint8_t*)buffer, free);
+        auto data = simeng::RegisterValue(ptr);
+
+        uop->supplyData(request.first, data);
+      }
+    } else if (uop->isStore()) {
+      uop->generateAddresses();
+    }
+    uop->execute();
+
+    if (uop->isStore()) {
+      auto addresses = uop->getGeneratedAddresses();
+      auto data = uop->getData();
+      for (size_t i = 0; i < addresses.size(); i++) {
+        auto request = addresses[i];
+
+        // Copy data to memory
+        auto address = memory + request.first;
+        memcpy(address, data[i].getAsVector<void>(), request.second);
+      }
+    } else if (uop->isBranch()) {
+      pc = uop->getBranchAddress();
+    }
+
+    // Writeback
+
+    auto results = uop->getResults();
+    auto destinations = uop->getDestinationRegisters();
+    for (size_t i = 0; i < results.size(); i++) {
+      auto reg = destinations[i];
+      registerFile.set(reg, results[i]);
+    }
+  }
+
+  return iterations;
+}
+
+/** In-order pipeline simulation; each instruction is fetched, decoded, and executed in a single cycle. */
+int inOrderPipelinedSimulation(char* insnPtr, uint64_t programByteLength, char* memory, simeng::Architecture& isa) {
+  // auto predictor = simeng::AlwaysNotTakenPredictor();
+  auto predictor = simeng::StaticBTBPredictor(8);
+  auto core = simeng::Core(insnPtr, programByteLength, isa, predictor);
+
+  int iterations = 0;
+  while (!core.hasHalted()) {
+    // std::cout << "\nCycle " << iterations << std::endl;
+    core.tick();
+    
+    iterations++;
+  }
+
+  auto retired = core.getInstructionsRetiredCount();
+  auto ipc = retired / static_cast<double>(iterations);
+  std::cout << "Retired " << retired << " instructions (" << std::fixed << std::setprecision(2) << ipc << " IPC)\n";
+  std::cout << "Pipeline flushes: " << core.getFlushesCount() << "\n";
+
+  return iterations;
+}
+
+int main(int argc, char** argv) {
+  int mode = SimulationMode::InOrderPipelined;
+  if (argc > 1 && !strcmp(argv[1], "emulation")) {
+    mode = SimulationMode::Emulation;
+  }
 
   // Simple program demonstrating various instructions
   // uint32_t hex[] = {
@@ -39,95 +144,37 @@ int main() {
       // 0x71000400, // subs w0, w0, #1
       0x54FFFFE1,  // b.ne -4
   };
-
-  uint64_t pc = 0;
+  
+  auto insnPtr = reinterpret_cast<char*>(hex);
   auto length = sizeof(hex);
 
-  unsigned char* memory = (unsigned char*)calloc(1024, 1);
+  char* memory = (char*)calloc(1024, 1);
   memory[4] = 1;
-
-  std::cout << "Starting..." << std::endl;
+  
+  auto arch = simeng::A64Architecture();
 
   int iterations = 0;
+  
+  std::string modeString;
+  switch(mode) {
+    case SimulationMode::InOrderPipelined:
+      modeString = "In-Order Pipelined";
+      break;
+    default:
+      modeString = "Emulation";
+      break;
+  };
+  std::cout << "Running in " << modeString << " mode\n";
+  std::cout << "Starting..." << std::endl;
   auto startTime = std::chrono::high_resolution_clock::now();
 
-  auto insnPtr = reinterpret_cast<char*>(hex) + pc;
-
-  auto arch = simeng::A64Architecture();
-  auto predictor = simeng::AlwaysNotTakenPredictor();
-  auto core = simeng::Core(insnPtr, length, arch, predictor);
-
-  while (!core.hasHalted()) {
-    // std::cout << "\nCycle " << iterations << std::endl;
-    core.tick();
-    
-    iterations++;
+  if (mode == SimulationMode::InOrderPipelined) {
+    // In-Order Pipelined Mode
+    iterations = inOrderPipelinedSimulation(insnPtr, length, memory, arch);
+  } else {
+    // Emulation mode
+    iterations = emulationSimulation(insnPtr, length, memory, arch);
   }
-
-  // while (pc >= 0 && pc < length) {
-  //   iterations++;
-
-
-  //   // Fetch
-  //   auto insnPtr = reinterpret_cast<char*>(hex) + pc;
-  //   auto [macroop, bytesRead] = isa->predecode(insnPtr, 4, pc);
-
-  //   pc += bytesRead;
-
-  //   // Decode
-  //   auto uop = macroop[0];
-
-  //   // Issue
-  //   auto registers = uop->getOperandRegisters();
-  //   for (size_t i = 0; i < registers.size(); i++) {
-  //     auto reg = registers[i];
-  //     if (!uop->isOperandReady(i)) {
-  //       uop->supplyOperand(reg, registerFile.get(reg));
-  //     }
-  //   }
-
-  //   // Execute
-  //   if (uop->isLoad()) {
-  //     auto addresses = uop->generateAddresses();
-  //     for (auto const& request : addresses) {
-  //       // Pointer manipulation to generate a RegisterValue from an arbitrary
-  //       // memory address
-  //       auto buffer = malloc(request.second);
-  //       memcpy(buffer, memory + request.first, request.second);
-
-  //       auto ptr = std::shared_ptr<uint8_t>((uint8_t*)buffer, free);
-  //       auto data = simeng::RegisterValue(ptr);
-
-  //       uop->supplyData(request.first, data);
-  //     }
-  //   } else if (uop->isStore()) {
-  //     uop->generateAddresses();
-  //   }
-  //   uop->execute();
-
-  //   if (uop->isStore()) {
-  //     auto addresses = uop->getGeneratedAddresses();
-  //     auto data = uop->getData();
-  //     for (size_t i = 0; i < addresses.size(); i++) {
-  //       auto request = addresses[i];
-
-  //       // Copy data to memory
-  //       auto address = memory + request.first;
-  //       memcpy(address, data[i].getAsVector<void>(), request.second);
-  //     }
-  //   } else if (uop->isBranch()) {
-  //     pc = uop->getBranchAddress();
-  //   }
-
-  //   // Writeback
-
-  //   auto results = uop->getResults();
-  //   auto destinations = uop->getDestinationRegisters();
-  //   for (size_t i = 0; i < results.size(); i++) {
-  //     auto reg = destinations[i];
-  //     registerFile.set(reg, results[i]);
-  //   }
-  // }
 
   auto endTime = std::chrono::high_resolution_clock::now();
   auto duration =

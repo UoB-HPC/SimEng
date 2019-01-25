@@ -5,7 +5,7 @@
 
 namespace simeng {
 
-DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& fromFetch, PipelineBuffer<std::shared_ptr<Instruction>>& toExecute, RegisterFile& registerFile) : fromFetchBuffer(fromFetch), toExecuteBuffer(toExecute), registerFile(registerFile) {};
+DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& fromFetch, PipelineBuffer<std::shared_ptr<Instruction>>& toExecute, RegisterFile& registerFile, BranchPredictor& predictor) : fromFetchBuffer(fromFetch), toExecuteBuffer(toExecute), registerFile(registerFile), predictor(predictor) {};
 
 void DecodeUnit::tick() {
 
@@ -13,7 +13,7 @@ void DecodeUnit::tick() {
     fromFetchBuffer.stall(true);
     return;
   }
-  
+
   shouldFlush_ = false;
   fromFetchBuffer.stall(false);
   
@@ -37,6 +37,11 @@ void DecodeUnit::tick() {
     if (misprediction) {
       shouldFlush_ = true;
       pc = correctAddress;
+
+      if (!uop->isBranch()) {
+        // Non-branch incorrectly predicted as a branch; let the predictor know
+        predictor.update(uop->getInstructionAddress(), false, pc);
+      }
     }
 
     out[0] = uop;
@@ -71,8 +76,11 @@ void DecodeUnit::forwardOperands(std::vector<Register> registers, std::vector<Re
   }
 }
 
-std::tuple<bool, uint64_t> DecodeUnit::shouldFlush() const {
-  return {shouldFlush_, pc};
+bool DecodeUnit::shouldFlush() const {
+  return shouldFlush_;
+}
+uint64_t DecodeUnit::getFlushAddress() const {
+  return pc;
 }
 
 } // namespace simeng

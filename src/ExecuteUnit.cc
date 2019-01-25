@@ -5,7 +5,7 @@
 
 namespace simeng {
 
-ExecuteUnit::ExecuteUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode, PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback, DecodeUnit& decodeUnit, char* memory) : fromDecodeBuffer(fromDecode), toWritebackBuffer(toWriteback), decodeUnit(decodeUnit), memory(memory) {}
+ExecuteUnit::ExecuteUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode, PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback, DecodeUnit& decodeUnit, BranchPredictor& predictor, char* memory) : fromDecodeBuffer(fromDecode), toWritebackBuffer(toWriteback), decodeUnit(decodeUnit), predictor(predictor), memory(memory) {}
 
 void ExecuteUnit::tick() {
 
@@ -50,9 +50,13 @@ void ExecuteUnit::tick() {
       auto address = memory + request.first;
       memcpy(address, data[i].getAsVector<void>(), request.second);
     }
-  } else if (uop->isBranch() && uop->wasBranchMispredicted()) {
+  } else if (uop->isBranch()) {
     pc = uop->getBranchAddress();
-    shouldFlush_ = true;
+    predictor.update(uop->getInstructionAddress(), uop->wasBranchTaken(), pc);
+    
+    if (uop->wasBranchMispredicted()) {
+      shouldFlush_ = true;
+    }
   }
 
   // Operand forwarding; allows a dependent uop to execute next cycle
@@ -64,8 +68,11 @@ void ExecuteUnit::tick() {
   fromDecodeBuffer.getHeadSlots()[0] = nullptr;
 }
 
-std::tuple<bool, uint64_t> ExecuteUnit::shouldFlush() const {
-  return {shouldFlush_, pc};
+bool ExecuteUnit::shouldFlush() const {
+  return shouldFlush_;
+}
+uint64_t ExecuteUnit::getFlushAddress() const {
+  return pc;
 }
 
 } // namespace simeng

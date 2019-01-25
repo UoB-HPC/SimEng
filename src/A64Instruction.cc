@@ -137,5 +137,6 @@ bool A64Instruction::wasBranchMispredicted() const {
   return (branchTaken != prediction.taken || (branchTaken && prediction.target != branchAddress));
 }
 uint64_t A64Instruction::getBranchAddress() const { return branchAddress; }
+bool A64Instruction::wasBranchTaken() const { return branchTaken; }
 
 }  // namespace simeng

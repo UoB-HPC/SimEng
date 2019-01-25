@@ -13,12 +13,15 @@ class WritebackUnit {
   
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
+  int getInstructionsRetiredCount() const;
  private:
   /** A buffer of instructions to process, coming from the execute unit. */
   PipelineBuffer<std::shared_ptr<Instruction>>& fromExecuteBuffer;
 
   /** The register file to write results into. */
   RegisterFile& registerFile;
+
+  int instructionsRetired = 0;
 };
 
 } // namespace simeng

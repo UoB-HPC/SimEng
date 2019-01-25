@@ -25,6 +25,8 @@ set(SIMENG_SOURCES
     RegisterFile.hh
     RegisterValue.cc
     RegisterValue.hh
+    StaticBTBPredictor.cc
+    StaticBTBPredictor.hh
     WritebackUnit.cc
     WritebackUnit.hh
     main.cc

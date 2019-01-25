@@ -139,6 +139,9 @@ class A64Instruction : public Instruction {
   /** Check for misprediction. */
   bool wasBranchMispredicted() const override;
 
+  /** Was the branch taken? */
+  bool wasBranchTaken() const override;
+
   /** Retrieve branch address. */
   uint64_t getBranchAddress() const override;
 
