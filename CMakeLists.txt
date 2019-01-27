@@ -12,3 +12,7 @@ add_compile_options(-Wall)
 add_subdirectory(src)
 
 add_subdirectory(docs)
+
+# googletest
+add_subdirectory(lib/googletest)
+add_subdirectory(test)
