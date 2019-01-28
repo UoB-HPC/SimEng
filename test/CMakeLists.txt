@@ -13,7 +13,7 @@ set(SIMENG_SOURCES
     )
 
 include_directories("../src")
-add_executable(test ${TEST_SOURCES} ${SIMENG_SOURCES})
-target_link_libraries(test gtest_main)
+add_executable(alltests ${TEST_SOURCES} ${SIMENG_SOURCES})
+target_link_libraries(alltests gtest_main)
 
-add_test(NAME all_tests COMMAND test)
+add_test(NAME all_tests COMMAND alltests)

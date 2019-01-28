@@ -31,4 +31,4 @@ jobs:
           command: build/bin/simeng
       - run:
           name: Run SimEng tests
-          command: build/test/test
+          command: build/test/alltests
