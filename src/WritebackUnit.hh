@@ -21,6 +21,7 @@ class WritebackUnit {
   /** The register file to write results into. */
   RegisterFile& registerFile;
 
+  /** The number of instructions processed and retired by this stage. */
   int instructionsRetired = 0;
 };
 

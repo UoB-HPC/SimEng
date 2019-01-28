@@ -50,7 +50,7 @@ void DecodeUnit::tick() {
   fromFetchBuffer.getHeadSlots()[0] = {};
 }
 
-void DecodeUnit::forwardOperands(std::vector<Register> registers, std::vector<RegisterValue> values) {
+void DecodeUnit::forwardOperands(const std::vector<Register> &registers, const std::vector<RegisterValue> &values) {
   assert(registers.size() == values.size() && "Mismatched register and value vector sizes");
 
   auto uop = toExecuteBuffer.getTailSlots()[0];

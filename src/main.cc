@@ -10,7 +10,7 @@
 #include "Architecture.hh"
 #include "A64Architecture.hh"
 #include "AlwaysNotTakenPredictor.hh"
-#include "StaticBTBPredictor.hh"
+#include "BTBPredictor.hh"
 #include "Core.hh"
 
 namespace SimulationMode {
@@ -95,13 +95,13 @@ int emulationSimulation(char* insnPtr, uint64_t programByteLength, char* memory,
 
 /** In-order pipeline simulation; each instruction is fetched, decoded, and executed in a single cycle. */
 int inOrderPipelinedSimulation(char* insnPtr, uint64_t programByteLength, char* memory, simeng::Architecture& isa) {
-  // auto predictor = simeng::AlwaysNotTakenPredictor();
-  auto predictor = simeng::StaticBTBPredictor(8);
+  
+  auto predictor = simeng::BTBPredictor(8);
   auto core = simeng::Core(insnPtr, programByteLength, isa, predictor);
 
   int iterations = 0;
   while (!core.hasHalted()) {
-    // std::cout << "\nCycle " << iterations << std::endl;
+    // Tick the core until it detects the program has halted.
     core.tick();
     
     iterations++;

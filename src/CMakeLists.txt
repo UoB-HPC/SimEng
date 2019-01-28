@@ -10,6 +10,8 @@ set(SIMENG_SOURCES
     AlwaysNotTakenPredictor.hh
     Architecture.hh
     BranchPredictor.hh
+    BTBPredictor.cc
+    BTBPredictor.hh
     Core.cc
     Core.hh
     DecodeUnit.cc
@@ -25,8 +27,6 @@ set(SIMENG_SOURCES
     RegisterFile.hh
     RegisterValue.cc
     RegisterValue.hh
-    StaticBTBPredictor.cc
-    StaticBTBPredictor.hh
     WritebackUnit.cc
     WritebackUnit.hh
     main.cc
