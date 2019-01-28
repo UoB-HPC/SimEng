@@ -27,6 +27,8 @@ class Architecture {
    * registers. */
   virtual std::vector<std::pair<uint8_t, uint16_t>> getRegisterFileStructure()
       const = 0;
+  
+  /** Determine whether the specified register can be renamed. */
   virtual bool canRename(Register reg) const = 0;
 };
 

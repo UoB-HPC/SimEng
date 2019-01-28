@@ -5,7 +5,7 @@ namespace simeng {
 BTBPredictor::BTBPredictor(uint8_t bits) : bits(bits), btb(1 << bits), hasValue(1 << bits, false) {}
 
 BranchPrediction BTBPredictor::predict(uint64_t instructionAddress) {
-  // Simple hash; last `bits` bits of address
+  // Simple hash; lowest `bits` bits of address
   auto addressHash = hash(instructionAddress);
 
   return {hasValue[addressHash], btb[addressHash]};

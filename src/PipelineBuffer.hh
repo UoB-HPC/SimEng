@@ -18,6 +18,7 @@ class PipelineBuffer {
     buffer = std::shared_ptr<T>( reinterpret_cast<T*>(malloc(sizeof(T) * width * length)), free );
   }
 
+  /** Construct a pipeline buffer of width `width`, and fill all slots with `initialValue`. */
   PipelineBuffer(int width, const T& initialValue) : PipelineBuffer(width) {
     fill(initialValue);
   }
@@ -72,7 +73,7 @@ class PipelineBuffer {
   /** Whether the buffer is stalled or not. */
   bool isStalled_ = false;
 
-  
+  /** The number of stages in the pipeline. */  
   static const unsigned int length = 2;
 };
 

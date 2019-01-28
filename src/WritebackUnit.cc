@@ -16,8 +16,8 @@ void WritebackUnit::tick() {
   auto results = uop->getResults();
   auto destinations = uop->getDestinationRegisters();
   for (size_t i = 0; i < results.size(); i++) {
-    auto reg = destinations[i];
-    registerFile.set(reg, results[i]);
+    // Write results to register file
+    registerFile.set(destinations[i], results[i]);
   }
 
   instructionsRetired++;

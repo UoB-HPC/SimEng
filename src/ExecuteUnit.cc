@@ -13,14 +13,16 @@ void ExecuteUnit::tick() {
 
   auto uop = fromDecodeBuffer.getHeadSlots()[0];
   if (uop == nullptr) {
+    // NOP
+    // Forward a lack of results to trigger a register read.
     decodeUnit.forwardOperands({}, {});
 
+    // Wipe the output slot
     auto out = toWritebackBuffer.getTailSlots();
     out[0] = nullptr;
 
     return;
   }
-  // std::cout << "Execute: continuing" << std::endl;
   
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
@@ -52,9 +54,12 @@ void ExecuteUnit::tick() {
     }
   } else if (uop->isBranch()) {
     pc = uop->getBranchAddress();
+
+    // Update branch predictor with branch results
     predictor.update(uop->getInstructionAddress(), uop->wasBranchTaken(), pc);
     
     if (uop->wasBranchMispredicted()) {
+      // Misprediction; flush the pipeline
       shouldFlush_ = true;
     }
   }

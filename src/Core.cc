@@ -55,11 +55,10 @@ void Core::tick() {
 }
 
 bool Core::hasHalted() const {
+  // Core is considered to have halted when the fetch unit has halted, and there are no uops at the head of any buffer.
   bool decodePending = fetchToDecodeBuffer.getHeadSlots()[0].size() > 0;
   bool executePending = decodeToExecuteBuffer.getHeadSlots()[0] != nullptr;
   bool writebackPending = executeToWritebackBuffer.getHeadSlots()[0] != nullptr;
-
-  // std::cout << "hasHalted: " << fetchUnit.hasHalted() << !decodePending << !executePending << !writebackPending << std::endl;
 
   return (fetchUnit.hasHalted() && !decodePending && !writebackPending && !executePending);
 }

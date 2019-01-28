@@ -11,10 +11,11 @@ void FetchUnit::tick() {
     if (toDecode.isStalled()) {
         return;
     }
-    // std::cout << "PC = " << pc << std::endl;
 
     auto out = toDecode.getTailSlots();
     if (pc >= programByteLength) {
+        // PC is outside instruction memory region; do nothing
+        // Wipe the output slot
         out[0] = {};
         return;
     }
@@ -23,8 +24,10 @@ void FetchUnit::tick() {
     auto [macroop, bytesRead] = isa.predecode(insnPtr + pc, 4, pc, prediction);
 
     if (!prediction.taken) {
+        // Predicted as not taken; increment PC to next instruction
         pc += bytesRead;
     } else {
+        // Predicted as taken; set PC to predicted target address
         pc = prediction.target;
     }
 
