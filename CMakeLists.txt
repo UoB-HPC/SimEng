@@ -14,5 +14,6 @@ add_subdirectory(src)
 add_subdirectory(docs)
 
 # googletest
+enable_testing()
 add_subdirectory(lib/googletest)
 add_subdirectory(test)

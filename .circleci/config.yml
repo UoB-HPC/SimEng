@@ -25,10 +25,8 @@ jobs:
               -DCMAKE_BUILD_TYPE=Debug \
               -DCMAKE_INSTALL_PREFIX=$PWD/../build
             make
+            ctest --output-on-failure
             make install
       - run:
           name: Run SimEng
           command: build/bin/simeng
-      - run:
-          name: Run SimEng tests
-          command: build/test/alltests
