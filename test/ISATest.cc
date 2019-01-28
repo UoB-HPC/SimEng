@@ -1,6 +1,6 @@
-#include "RegisterFile.hh"
 #include "A64Architecture.hh"
 #include "A64Instruction.hh"
+#include "RegisterFile.hh"
 #include "gtest/gtest.h"
 
 namespace {
@@ -15,12 +15,12 @@ TEST(ISATest, CreateA64Arch) {
 
 // Test that we can set a value in a register file
 TEST(ISATest, CreateRegisterFile) {
-    auto registerFile = simeng::RegisterFile({32, 32, 1});
-    auto reg          = simeng::Register{ simeng::A64RegisterType::GENERAL, 0 };
+  auto registerFile = simeng::RegisterFile({32, 32, 1});
+  auto reg = simeng::Register{simeng::A64RegisterType::GENERAL, 0};
 
-    registerFile.set(reg, 42);
-    
-    EXPECT_TRUE(registerFile.get(reg));
+  registerFile.set(reg, 42);
+
+  EXPECT_TRUE(registerFile.get(reg));
 }
 
-} // namespace 
+}  // namespace
