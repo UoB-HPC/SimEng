@@ -10,3 +10,5 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_compile_options(-Wall)
 
 add_subdirectory(src)
+
+add_subdirectory(docs)
