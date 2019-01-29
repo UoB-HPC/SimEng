@@ -1,9 +1,16 @@
-version: 2
+version: 2.1
+
 jobs:
   build:
-    # TODO: Add coverage for multiple compilers and operating systems
+    parameters:
+      ubuntu:
+        type: string
+      packages:
+        type: string
+      cmake:
+        type: string
     docker:
-      - image: buildpack-deps:bionic
+      - image: buildpack-deps:<< parameters.ubuntu >>
     steps:
       - checkout
       - run:
@@ -15,7 +22,7 @@ jobs:
           name: Install dependencies
           command: |
             apt-get update -yqq
-            apt-get install -y cmake
+            apt-get install -y cmake << parameters.packages >>
       - run:
           name: Build SimEng
           command: |
@@ -23,10 +30,42 @@ jobs:
             cd obj
             cmake .. \
               -DCMAKE_BUILD_TYPE=Debug \
-              -DCMAKE_INSTALL_PREFIX=$PWD/../build
+              -DCMAKE_INSTALL_PREFIX=$PWD/../build \
+              << parameters.cmake >>
             make
             ctest --output-on-failure
             make install
       - run:
           name: Run SimEng
           command: build/bin/simeng
+
+workflows:
+  version: 2.1
+  build:
+    jobs:
+      - build:
+          name: gcc-8
+          ubuntu: bionic
+          packages: g++-8
+          cmake: -DCMAKE_C_COMPILER=gcc-8 -DCMAKE_CXX_COMPILER=g++-8
+      - build:
+          name: gcc-7
+          ubuntu: bionic
+          packages: g++-7
+          cmake: -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7
+          requires:
+            - gcc-8
+      - build:
+          name: clang-7
+          ubuntu: cosmic
+          packages: clang-7
+          cmake: -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7
+          requires:
+            - gcc-8
+      - build:
+          name: clang-5
+          ubuntu: bionic
+          packages: clang-5.0
+          cmake: -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0
+          requires:
+            - gcc-8
