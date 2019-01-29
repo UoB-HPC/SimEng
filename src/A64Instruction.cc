@@ -105,7 +105,9 @@ bool A64Instruction::isStore() const { return isStore_; }
 bool A64Instruction::isLoad() const { return isLoad_; }
 bool A64Instruction::isBranch() const { return isBranch_; }
 
-uint64_t A64Instruction::getInstructionAddress() const { return instructionAddress; }
+uint64_t A64Instruction::getInstructionAddress() const {
+  return instructionAddress;
+}
 
 void A64Instruction::setMemoryAddresses(
     const std::vector<std::pair<uint64_t, uint8_t>>& addresses) {
@@ -118,11 +120,15 @@ A64Instruction::getGeneratedAddresses() const {
   return memoryAddresses;
 }
 
-std::tuple<bool, uint64_t> A64Instruction::checkEarlyBranchMisprediction() const {
-  assert(!executed && "Early branch misprediction check shouldn't be called after execution");
+std::tuple<bool, uint64_t> A64Instruction::checkEarlyBranchMisprediction()
+    const {
+  assert(
+      !executed &&
+      "Early branch misprediction check shouldn't be called after execution");
 
   if (!isBranch()) {
-    // Instruction isn't a branch; if predicted as taken, it will require a flush
+    // Instruction isn't a branch; if predicted as taken, it will require a
+    // flush
     return {prediction.taken, instructionAddress + 4};
   }
 
@@ -131,10 +137,13 @@ std::tuple<bool, uint64_t> A64Instruction::checkEarlyBranchMisprediction() const
 }
 
 bool A64Instruction::wasBranchMispredicted() const {
-  assert(executed && "Branch misprediction check requires instruction to have executed");
+  assert(executed &&
+         "Branch misprediction check requires instruction to have executed");
 
-  // Flag as mispredicted if taken state was wrongly predicted, or taken and predicted target is wrong
-  return (branchTaken != prediction.taken || (branchTaken && prediction.target != branchAddress));
+  // Flag as mispredicted if taken state was wrongly predicted, or taken and
+  // predicted target is wrong
+  return (branchTaken != prediction.taken ||
+          (branchTaken && prediction.target != branchAddress));
 }
 uint64_t A64Instruction::getBranchAddress() const { return branchAddress; }
 bool A64Instruction::wasBranchTaken() const { return branchTaken; }

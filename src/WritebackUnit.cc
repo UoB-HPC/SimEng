@@ -4,10 +4,12 @@
 
 namespace simeng {
 
-WritebackUnit::WritebackUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromExecute, RegisterFile& registerFile) : fromExecuteBuffer(fromExecute), registerFile(registerFile) {}
+WritebackUnit::WritebackUnit(
+    PipelineBuffer<std::shared_ptr<Instruction>>& fromExecute,
+    RegisterFile& registerFile)
+    : fromExecuteBuffer(fromExecute), registerFile(registerFile) {}
 
 void WritebackUnit::tick() {
-
   auto uop = fromExecuteBuffer.getHeadSlots()[0];
   if (uop == nullptr) {
     return;
@@ -29,4 +31,4 @@ int WritebackUnit::getInstructionsRetiredCount() const {
   return instructionsRetired;
 }
 
-} // namespace simeng
+}  // namespace simeng

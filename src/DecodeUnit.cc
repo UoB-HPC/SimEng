@@ -1,14 +1,19 @@
 #include "DecodeUnit.hh"
 
-#include <iostream>
 #include <cassert>
+#include <iostream>
 
 namespace simeng {
 
-DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& fromFetch, PipelineBuffer<std::shared_ptr<Instruction>>& toExecute, RegisterFile& registerFile, BranchPredictor& predictor) : fromFetchBuffer(fromFetch), toExecuteBuffer(toExecute), registerFile(registerFile), predictor(predictor) {};
+DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
+                       PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
+                       RegisterFile& registerFile, BranchPredictor& predictor)
+    : fromFetchBuffer(fromFetch),
+      toExecuteBuffer(toExecute),
+      registerFile(registerFile),
+      predictor(predictor){};
 
 void DecodeUnit::tick() {
-
   if (toExecuteBuffer.isStalled()) {
     fromFetchBuffer.stall(true);
     return;
@@ -16,7 +21,7 @@ void DecodeUnit::tick() {
 
   shouldFlush_ = false;
   fromFetchBuffer.stall(false);
-  
+
   auto macroOp = fromFetchBuffer.getHeadSlots()[0];
 
   // Assume single uop per macro op for this version
@@ -25,33 +30,35 @@ void DecodeUnit::tick() {
 
   if (macroOp.size() == 0) {
     // Nothing to process
-    out[0] = nullptr;
-  } else {
-    auto uop = macroOp[0];
-
-    // Check preliminary branch prediction results now that the instruction is decoded
-    // Identifies:
-    // - Non-branch instructions mistakenly predicted as branches
-    // - Incorrect targets for immediate branches
-    auto [misprediction, correctAddress] = uop->checkEarlyBranchMisprediction();
-    if (misprediction) {
-      shouldFlush_ = true;
-      pc = correctAddress;
-
-      if (!uop->isBranch()) {
-        // Non-branch incorrectly predicted as a branch; let the predictor know
-        predictor.update(uop->getInstructionAddress(), false, pc);
-      }
-    }
-
-    out[0] = uop;
+    return;
   }
 
-  fromFetchBuffer.getHeadSlots()[0] = {};
+  auto uop = macroOp[0];
+
+  // Check preliminary branch prediction results now that the instruction is
+  // decoded. Identifies:
+  // - Non-branch instructions mistakenly predicted as branches
+  // - Incorrect targets for immediate branches
+  auto [misprediction, correctAddress] = uop->checkEarlyBranchMisprediction();
+  if (misprediction) {
+    shouldFlush_ = true;
+    pc = correctAddress;
+
+    if (!uop->isBranch()) {
+      // Non-branch incorrectly predicted as a branch; let the predictor know
+      predictor.update(uop->getInstructionAddress(), false, pc);
+    }
+  }
+
+  out[0] = uop;
+
+  fromFetchBuffer.getHeadSlots()[0].clear();
 }
 
-void DecodeUnit::forwardOperands(const std::vector<Register> &registers, const std::vector<RegisterValue> &values) {
-  assert(registers.size() == values.size() && "Mismatched register and value vector sizes");
+void DecodeUnit::forwardOperands(const std::vector<Register>& registers,
+                                 const std::vector<RegisterValue>& values) {
+  assert(registers.size() == values.size() &&
+         "Mismatched register and value vector sizes");
 
   auto uop = toExecuteBuffer.getTailSlots()[0];
   if (uop == nullptr) {
@@ -76,11 +83,7 @@ void DecodeUnit::forwardOperands(const std::vector<Register> &registers, const s
   }
 }
 
-bool DecodeUnit::shouldFlush() const {
-  return shouldFlush_;
-}
-uint64_t DecodeUnit::getFlushAddress() const {
-  return pc;
-}
+bool DecodeUnit::shouldFlush() const { return shouldFlush_; }
+uint64_t DecodeUnit::getFlushAddress() const { return pc; }
 
-} // namespace simeng
+}  // namespace simeng

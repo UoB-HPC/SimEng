@@ -2,7 +2,8 @@
 
 namespace simeng {
 
-BTBPredictor::BTBPredictor(uint8_t bits) : bits(bits), btb(1 << bits), hasValue(1 << bits, false) {}
+BTBPredictor::BTBPredictor(uint8_t bits)
+    : bits(bits), btb(1 << bits), hasValue(1 << bits, false) {}
 
 BranchPrediction BTBPredictor::predict(uint64_t instructionAddress) {
   // Simple hash; lowest `bits` bits of address
@@ -11,7 +12,8 @@ BranchPrediction BTBPredictor::predict(uint64_t instructionAddress) {
   return {hasValue[addressHash], btb[addressHash]};
 }
 
-void BTBPredictor::update(uint64_t instructionAddress, bool taken, uint64_t targetAddress) {
+void BTBPredictor::update(uint64_t instructionAddress, bool taken,
+                          uint64_t targetAddress) {
   auto addressHash = hash(instructionAddress);
 
   hasValue[addressHash] = taken;
@@ -23,4 +25,4 @@ uint64_t BTBPredictor::hash(uint64_t instructionAddress) {
   return instructionAddress & mask;
 }
 
-} // namespace simeng
+}  // namespace simeng

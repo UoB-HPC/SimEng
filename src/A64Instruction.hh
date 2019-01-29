@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Instruction.hh"
+
 #include "BranchPredictor.hh"
 
 namespace simeng {
@@ -80,7 +81,8 @@ class A64Instruction : public Instruction {
    * values being cached. */
   void setInstructionAddress(uint64_t address);
 
-  /** Supply a branch prediction. Performed after construction to prevent values being cached. */
+  /** Supply a branch prediction. Performed after construction to prevent values
+   * being cached. */
   void setBranchPrediction(BranchPrediction prediction);
 
   /** Retrieve the identifier for the first exception that occurred during
@@ -133,7 +135,9 @@ class A64Instruction : public Instruction {
   /** Retrieve supplied memory data. */
   std::vector<RegisterValue> getData() const override;
 
-  /** Early misprediction check; see if it's possible to determine whether the next instruction address was mispredicted without executing the instruction. */
+  /** Early misprediction check; see if it's possible to determine whether the
+   * next instruction address was mispredicted without executing the
+   * instruction. */
   std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
 
   /** Check for misprediction. */

@@ -9,7 +9,8 @@ namespace simeng {
 std::unordered_map<uint32_t, A64Instruction> A64Architecture::decodeCache;
 
 std::tuple<MacroOp, uint8_t> A64Architecture::predecode(
-    void* ptr, uint8_t bytesAvailable, uint64_t instructionAddress, BranchPrediction prediction) const {
+    void* ptr, uint8_t bytesAvailable, uint64_t instructionAddress,
+    BranchPrediction prediction) const {
   assert(bytesAvailable >= 4 && "Fewer than 4 bytes supplied to A64 decoder");
 
   // Dereference the instruction pointer to obtain the instruction word

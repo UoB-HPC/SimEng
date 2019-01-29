@@ -3,26 +3,27 @@
 
 #include <chrono>
 #include <cstring>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <string>
 
-#include "Architecture.hh"
 #include "A64Architecture.hh"
 #include "AlwaysNotTakenPredictor.hh"
+#include "Architecture.hh"
 #include "BTBPredictor.hh"
 #include "Core.hh"
 
 namespace SimulationMode {
 const int Emulation = 0;
 const int InOrderPipelined = 1;
-} // namespace SimulationMode
+}  // namespace SimulationMode
 
-/** Simple "emulation-style" simulation; each instruction is fetched, decoded, and executed in a single cycle.
- * 
+/** Simple "emulation-style" simulation; each instruction is fetched, decoded,
+ * and executed in a single cycle.
+ *
  * TODO: Make the `Core` model abstract and make this an implementation. */
-int emulationSimulation(char* insnPtr, uint64_t programByteLength, char* memory, simeng::Architecture& isa) {
-
+int emulationSimulation(char* insnPtr, uint64_t programByteLength, char* memory,
+                        simeng::Architecture& isa) {
   uint64_t pc = 0;
   auto registerFile = simeng::RegisterFile({32, 32, 1});
 
@@ -93,9 +94,10 @@ int emulationSimulation(char* insnPtr, uint64_t programByteLength, char* memory,
   return iterations;
 }
 
-/** In-order pipeline simulation; each instruction is fetched, decoded, and executed in a single cycle. */
-int inOrderPipelinedSimulation(char* insnPtr, uint64_t programByteLength, char* memory, simeng::Architecture& isa) {
-  
+/** In-order pipeline simulation; each instruction is fetched, decoded, and
+ * executed in a single cycle. */
+int inOrderPipelinedSimulation(char* insnPtr, uint64_t programByteLength,
+                               char* memory, simeng::Architecture& isa) {
   auto predictor = simeng::BTBPredictor(8);
   auto core = simeng::Core(insnPtr, programByteLength, isa, predictor);
 
@@ -103,13 +105,14 @@ int inOrderPipelinedSimulation(char* insnPtr, uint64_t programByteLength, char* 
   while (!core.hasHalted()) {
     // Tick the core until it detects the program has halted.
     core.tick();
-    
+
     iterations++;
   }
 
   auto retired = core.getInstructionsRetiredCount();
   auto ipc = retired / static_cast<double>(iterations);
-  std::cout << "Retired " << retired << " instructions (" << std::fixed << std::setprecision(2) << ipc << " IPC)\n";
+  std::cout << "Retired " << retired << " instructions (" << std::fixed
+            << std::setprecision(2) << ipc << " IPC)\n";
   std::cout << "Pipeline flushes: " << core.getFlushesCount() << "\n";
 
   return iterations;
@@ -144,19 +147,19 @@ int main(int argc, char** argv) {
       // 0x71000400, // subs w0, w0, #1
       0x54FFFFE1,  // b.ne -4
   };
-  
+
   auto insnPtr = reinterpret_cast<char*>(hex);
   auto length = sizeof(hex);
 
   char* memory = (char*)calloc(1024, 1);
   memory[4] = 1;
-  
+
   auto arch = simeng::A64Architecture();
 
   int iterations = 0;
-  
+
   std::string modeString;
-  switch(mode) {
+  switch (mode) {
     case SimulationMode::InOrderPipelined:
       modeString = "In-Order Pipelined";
       break;

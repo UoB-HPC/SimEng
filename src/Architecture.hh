@@ -1,10 +1,10 @@
 #pragma once
 
-#include <vector>
 #include <tuple>
+#include <vector>
 
-#include "Instruction.hh"
 #include "BranchPredictor.hh"
+#include "Instruction.hh"
 
 namespace simeng {
 
@@ -21,13 +21,14 @@ class Architecture {
    * it; a value of 0 indicates too few bytes were present for a valid decoding.
    */
   virtual std::tuple<MacroOp, uint8_t> predecode(
-      void* ptr, uint8_t bytesAvailable, uint64_t instructionAddress, BranchPrediction prediction) const = 0;
+      void* ptr, uint8_t bytesAvailable, uint64_t instructionAddress,
+      BranchPrediction prediction) const = 0;
 
   /** Returns a vector of {size, number} pairs describing the available
    * registers. */
   virtual std::vector<std::pair<uint8_t, uint16_t>> getRegisterFileStructure()
       const = 0;
-  
+
   /** Determine whether the specified register can be renamed. */
   virtual bool canRename(Register reg) const = 0;
 };

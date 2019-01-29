@@ -1,29 +1,31 @@
 #include "ExecuteUnit.hh"
 
-#include <iostream>
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 
-ExecuteUnit::ExecuteUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode, PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback, DecodeUnit& decodeUnit, BranchPredictor& predictor, char* memory) : fromDecodeBuffer(fromDecode), toWritebackBuffer(toWriteback), decodeUnit(decodeUnit), predictor(predictor), memory(memory) {}
+ExecuteUnit::ExecuteUnit(
+    PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
+    PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
+    DecodeUnit& decodeUnit, BranchPredictor& predictor, char* memory)
+    : fromDecodeBuffer(fromDecode),
+      toWritebackBuffer(toWriteback),
+      decodeUnit(decodeUnit),
+      predictor(predictor),
+      memory(memory) {}
 
 void ExecuteUnit::tick() {
-
   shouldFlush_ = false;
 
   auto uop = fromDecodeBuffer.getHeadSlots()[0];
   if (uop == nullptr) {
     // NOP
-    // Forward a lack of results to trigger a register read.
+    // Forward a lack of results to trigger reading other operands.
     decodeUnit.forwardOperands({}, {});
-
-    // Wipe the output slot
-    auto out = toWritebackBuffer.getTailSlots();
-    out[0] = nullptr;
-
     return;
   }
-  
+
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
     for (auto const& request : addresses) {
@@ -57,7 +59,7 @@ void ExecuteUnit::tick() {
 
     // Update branch predictor with branch results
     predictor.update(uop->getInstructionAddress(), uop->wasBranchTaken(), pc);
-    
+
     if (uop->wasBranchMispredicted()) {
       // Misprediction; flush the pipeline
       shouldFlush_ = true;
@@ -73,11 +75,7 @@ void ExecuteUnit::tick() {
   fromDecodeBuffer.getHeadSlots()[0] = nullptr;
 }
 
-bool ExecuteUnit::shouldFlush() const {
-  return shouldFlush_;
-}
-uint64_t ExecuteUnit::getFlushAddress() const {
-  return pc;
-}
+bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }
+uint64_t ExecuteUnit::getFlushAddress() const { return pc; }
 
-} // namespace simeng
+}  // namespace simeng

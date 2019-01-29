@@ -201,7 +201,7 @@ void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
       opcode = A64Opcode::B_cond;
       auto cond = bits(insn, 0, 4);
       auto offset = bits(insn, 5, 19);
-      
+
       metadata.offset = signExtend(offset << 2, 21);
       metadata.cond = cond;
 
@@ -224,7 +224,9 @@ void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
       opcode = A64Opcode::B;
       metadata.offset = offset;
     }
-    default: { return nyi(); }
+    default: {
+      return nyi();
+    }
   }
   return nyi();
 }

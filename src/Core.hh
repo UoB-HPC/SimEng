@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "FetchUnit.hh"
 #include "DecodeUnit.hh"
 #include "ExecuteUnit.hh"
+#include "FetchUnit.hh"
 #include "WritebackUnit.hh"
 
 namespace simeng {
@@ -12,10 +12,14 @@ namespace simeng {
 /** A simple scalar in-order pipelined core model. */
 class Core {
  public:
-  /** Construct a core model, providing an ISA and branch predictor to use, along with a pointer and size of instruction memory. */
-  Core(char* insnPtr, unsigned int programByteLength, Architecture& isa, BranchPredictor& branchPredictor);
+  /** Construct a core model, providing an ISA and branch predictor to use,
+   * along with a pointer and size of instruction memory. */
+  Core(char* insnPtr, unsigned int programByteLength, Architecture& isa,
+       BranchPredictor& branchPredictor);
 
-  /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks the buffers between them. Checks for and executes pipeline flushes at the end of each cycle. */
+  /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
+   * the buffers between them. Checks for and executes pipeline flushes at the
+   * end of each cycle. */
   void tick();
 
   /** Check whether the program has halted. */
@@ -26,6 +30,7 @@ class Core {
 
   /** Retrieve the number of instructions that retired. */
   int getInstructionsRetiredCount() const;
+
  private:
   /** A pointer to process memory. */
   char* memory;
@@ -58,4 +63,4 @@ class Core {
   int flushes = 0;
 };
 
-} // namespace simeng
+}  // namespace simeng

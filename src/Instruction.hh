@@ -66,7 +66,9 @@ class Instruction {
   /** Retrieve supplied memory data. */
   virtual std::vector<RegisterValue> getData() const = 0;
 
-  /** Early misprediction check; see if it's possible to determine whether the next instruction address was mispredicted without executing the instruction. */
+  /** Early misprediction check; see if it's possible to determine whether the
+   * next instruction address was mispredicted without executing the
+   * instruction. */
   virtual std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const = 0;
 
   /** Check for misprediction. */

@@ -1,27 +1,36 @@
 #pragma once
 
-#include "PipelineBuffer.hh"
 #include "Architecture.hh"
+#include "PipelineBuffer.hh"
 
 namespace simeng {
 
-/** A decode unit for an in-order pipeline. Splits pre-decoded macro-ops into uops, and reads operand values. */
+/** A decode unit for an in-order pipeline. Splits pre-decoded macro-ops into
+ * uops, and reads operand values. */
 class DecodeUnit {
  public:
-  /** Constructs a decode unit with references to input/output buffers, the register file, and the current branch predictor. */
-  DecodeUnit(PipelineBuffer<MacroOp>& fromFetch, PipelineBuffer<std::shared_ptr<Instruction>>& toExecute, RegisterFile& registerFile, BranchPredictor& predictor);
+  /** Constructs a decode unit with references to input/output buffers, the
+   * register file, and the current branch predictor. */
+  DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
+             PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
+             RegisterFile& registerFile, BranchPredictor& predictor);
 
-  /** Ticks the decode unit. Breaks macro-ops into uops, and performs early branch misprediction checks. */
+  /** Ticks the decode unit. Breaks macro-ops into uops, and performs early
+   * branch misprediction checks. */
   void tick();
 
-  /** Forwarded operands and performs register reads for the currently queued instruction. */
-  void forwardOperands(const std::vector<Register>& destinations, const std::vector<RegisterValue>& values);
+  /** Forwarded operands and performs register reads for the currently queued
+   * instruction. */
+  void forwardOperands(const std::vector<Register>& destinations,
+                       const std::vector<RegisterValue>& values);
 
   /** Check whether the core should be flushed this cycle. */
   bool shouldFlush() const;
 
-  /** Retrieve the target instruction address associated with the most recently discovered misprediction. */
+  /** Retrieve the target instruction address associated with the most recently
+   * discovered misprediction. */
   uint64_t getFlushAddress() const;
+
  private:
   /** A buffer of macro-ops to split into uops. */
   PipelineBuffer<MacroOp>& fromFetchBuffer;
@@ -41,4 +50,4 @@ class DecodeUnit {
   uint64_t pc;
 };
 
-} // namespace simeng
+}  // namespace simeng
