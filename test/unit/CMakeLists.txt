@@ -16,4 +16,4 @@ include_directories("../../src")
 add_executable(unittests ${TEST_SOURCES} ${SIMENG_SOURCES})
 target_link_libraries(unittests gtest_main)
 
-add_test(NAME all_tests COMMAND unittests)
+add_test(NAME unit_tests COMMAND unittests)

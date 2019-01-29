@@ -30,8 +30,8 @@ git submodule init
 git submodule update
 ```
 
-To run the tests, call the `alltests` executable from your build folder:
+To run the tests, call the `unittests` executable from your build folder:
 
 ```bash
-./test/alltests
+./test/unit/unittests
 ```
