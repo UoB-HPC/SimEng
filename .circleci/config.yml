@@ -7,6 +7,11 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Pull submodules
+          command: |
+            git submodule init
+            git submodule update
+      - run:
           name: Install dependencies
           command: |
             apt-get update -yqq
@@ -20,8 +25,8 @@ jobs:
               -DCMAKE_BUILD_TYPE=Debug \
               -DCMAKE_INSTALL_PREFIX=$PWD/../build
             make
+            ctest --output-on-failure
             make install
       - run:
-          # TODO: Run the SimEng test suite instead
           name: Run SimEng
           command: build/bin/simeng

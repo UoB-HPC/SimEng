@@ -12,3 +12,8 @@ add_compile_options(-Wall)
 add_subdirectory(src)
 
 add_subdirectory(docs)
+
+# googletest
+enable_testing()
+add_subdirectory(external/googletest EXCLUDE_FROM_ALL)
+add_subdirectory(test/unit)
