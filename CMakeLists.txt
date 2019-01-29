@@ -15,5 +15,5 @@ add_subdirectory(docs)
 
 # googletest
 enable_testing()
-add_subdirectory(lib/googletest)
-add_subdirectory(test)
+add_subdirectory(external/googletest)
+add_subdirectory(test/unit)
