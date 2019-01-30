@@ -13,10 +13,7 @@
 #include "BTBPredictor.hh"
 #include "Core.hh"
 
-namespace SimulationMode {
-const int Emulation = 0;
-const int InOrderPipelined = 1;
-}  // namespace SimulationMode
+enum class SimulationMode { Emulation, InOrderPipelined };
 
 /** Simple "emulation-style" simulation; each instruction is fetched, decoded,
  * and executed in a single cycle.
@@ -119,7 +116,7 @@ int inOrderPipelinedSimulation(char* insnPtr, uint64_t programByteLength,
 }
 
 int main(int argc, char** argv) {
-  int mode = SimulationMode::InOrderPipelined;
+  SimulationMode mode = SimulationMode::InOrderPipelined;
   if (argc > 1 && !strcmp(argv[1], "emulation")) {
     mode = SimulationMode::Emulation;
   }

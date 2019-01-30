@@ -16,7 +16,6 @@ void FetchUnit::tick() {
     return;
   }
 
-  auto out = toDecode.getTailSlots();
   if (hasHalted_) {
     // PC is outside instruction memory region; do nothing
     return;
@@ -33,6 +32,7 @@ void FetchUnit::tick() {
     pc = prediction.target;
   }
 
+  auto out = toDecode.getTailSlots();
   out[0] = macroop;
 
   if (pc >= programByteLength) {

@@ -13,8 +13,7 @@ class DecodeUnit {
    * register file, and the current branch predictor. */
   DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
              PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
-             const RegisterFile& registerFile,
-             BranchPredictor& predictor);
+             const RegisterFile& registerFile, BranchPredictor& predictor);
 
   /** Ticks the decode unit. Breaks macro-ops into uops, and performs early
    * branch misprediction checks. */

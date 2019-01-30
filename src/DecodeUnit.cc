@@ -27,8 +27,6 @@ void DecodeUnit::tick() {
   // Assume single uop per macro op for this version
   // TODO: Stall on multiple uops and siphon one per cycle, recording progress
   assert(macroOp.size() <= 1 && "Multiple uops per macro-op not yet supported");
-  
-  auto out = toExecuteBuffer.getTailSlots();
 
   if (macroOp.size() == 0) {
     // Nothing to process
@@ -52,6 +50,7 @@ void DecodeUnit::tick() {
     }
   }
 
+  auto out = toExecuteBuffer.getTailSlots();
   out[0] = uop;
 
   fromFetchBuffer.getHeadSlots()[0].clear();
