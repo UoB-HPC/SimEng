@@ -39,6 +39,45 @@ jobs:
           name: Run SimEng
           command: build/bin/simeng
 
+  check-format:
+    docker:
+      - image: buildpack-deps:bionic
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            echo deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main \
+              >> /etc/apt/sources.list
+            wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
+            apt-get update -yqq
+            apt-get install -y clang-format-8
+            ln -s /usr/bin/clang-format-8 /usr/bin/clang-format
+      - run:
+          name: Check code formatting
+          command: |
+            # Generate a formatting diff
+            git-clang-format-8 --diff origin/master --extensions cc,hh \
+              >FORMATTING
+
+            # Check whether any source files were modified
+            if grep 'no modified files to format' FORMATTING
+            then
+              exit 0
+            fi
+
+            # Check whether any formatting changes are necessary
+            if grep 'clang-format did not modify any files' FORMATTING
+            then
+              exit 0
+            fi
+
+            echo
+            echo "Code formatting issues detected (see below)."
+            echo
+            cat FORMATTING
+            exit 1
+
 workflows:
   version: 2.1
   build:
@@ -67,5 +106,9 @@ workflows:
           ubuntu: bionic
           packages: clang-5.0
           cmake: -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0
+          requires:
+            - gcc-8
+      - check-format:
+          name: formatting
           requires:
             - gcc-8
