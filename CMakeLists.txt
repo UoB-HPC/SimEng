@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.2)
+cmake_minimum_required(VERSION 3.8)
 project(SimEng)
 
 # Require and enable C++17 support, and disable compiler extensions.
