@@ -1,13 +1,13 @@
 #include "DecodeUnit.hh"
 
 #include <cassert>
-#include <iostream>
 
 namespace simeng {
 
 DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
                        PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
-                       RegisterFile& registerFile, BranchPredictor& predictor)
+                       const RegisterFile& registerFile,
+                       BranchPredictor& predictor)
     : fromFetchBuffer(fromFetch),
       toExecuteBuffer(toExecute),
       registerFile(registerFile),
@@ -26,6 +26,8 @@ void DecodeUnit::tick() {
 
   // Assume single uop per macro op for this version
   // TODO: Stall on multiple uops and siphon one per cycle, recording progress
+  assert(macroOp.size() <= 1 && "Multiple uops per macro-op not yet supported");
+  
   auto out = toExecuteBuffer.getTailSlots();
 
   if (macroOp.size() == 0) {

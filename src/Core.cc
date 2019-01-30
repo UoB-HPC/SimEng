@@ -1,11 +1,10 @@
 #include "Core.hh"
 
-#include <iostream>
-
 namespace simeng {
 
-Core::Core(char* insnPtr, unsigned int programByteLength, Architecture& isa,
-           BranchPredictor& branchPredictor)
+// TODO: Replace simple process memory space with memory hierarchy interface.
+Core::Core(const char* insnPtr, unsigned int programByteLength,
+           const Architecture& isa, BranchPredictor& branchPredictor)
     : memory(static_cast<char*>(calloc(1024, 1))),
       registerFile({32, 32, 1}),
       fetchToDecodeBuffer(1, {}),
@@ -70,8 +69,8 @@ bool Core::hasHalted() const {
           !executePending);
 }
 
-int Core::getFlushesCount() const { return flushes; }
-int Core::getInstructionsRetiredCount() const {
+uint64_t Core::getFlushesCount() const { return flushes; }
+uint64_t Core::getInstructionsRetiredCount() const {
   return writebackUnit.getInstructionsRetiredCount();
 }
 

@@ -16,7 +16,7 @@ class WritebackUnit {
 
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
-  int getInstructionsRetiredCount() const;
+  uint64_t getInstructionsRetiredCount() const;
 
  private:
   /** A buffer of instructions to process, coming from the execute unit. */
@@ -26,7 +26,7 @@ class WritebackUnit {
   RegisterFile& registerFile;
 
   /** The number of instructions processed and retired by this stage. */
-  int instructionsRetired = 0;
+  uint64_t instructionsRetired = 0;
 };
 
 }  // namespace simeng

@@ -14,8 +14,8 @@ class Core {
  public:
   /** Construct a core model, providing an ISA and branch predictor to use,
    * along with a pointer and size of instruction memory. */
-  Core(char* insnPtr, unsigned int programByteLength, Architecture& isa,
-       BranchPredictor& branchPredictor);
+  Core(const char* insnPtr, unsigned int programByteLength,
+       const Architecture& isa, BranchPredictor& branchPredictor);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -26,10 +26,10 @@ class Core {
   bool hasHalted() const;
 
   /** Retrieve the number of flushes that have occurred. */
-  int getFlushesCount() const;
+  uint64_t getFlushesCount() const;
 
   /** Retrieve the number of instructions that retired. */
-  int getInstructionsRetiredCount() const;
+  uint64_t getInstructionsRetiredCount() const;
 
  private:
   /** A pointer to process memory. */
@@ -53,14 +53,15 @@ class Core {
   /** The decode unit; decodes instructions into uops and reads operands. */
   DecodeUnit decodeUnit;
 
-  /** The execute unit; executes uops and forwards results to decode. */
+  /** The execute unit; executes uops and sends to writeback, also forwarding
+   * results to decode. */
   ExecuteUnit executeUnit;
 
   /** The writeback unit; writes uop results to the register file. */
   WritebackUnit writebackUnit;
 
   /** The number of times the pipeline has been flushed. */
-  int flushes = 0;
+  uint64_t flushes = 0;
 };
 
 }  // namespace simeng

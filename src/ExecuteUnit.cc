@@ -1,7 +1,6 @@
 #include "ExecuteUnit.hh"
 
 #include <cstring>
-#include <iostream>
 
 namespace simeng {
 

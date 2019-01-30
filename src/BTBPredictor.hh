@@ -35,7 +35,7 @@ class BTBPredictor : public BranchPredictor {
 
   /** Generate a BTB lookup hash for the specified address by trimming the
    * lowest `bits` bits. */
-  uint64_t hash(uint64_t instructionAddress);
+  uint64_t hash(uint64_t instructionAddress) const;
 };
 
 }  // namespace simeng

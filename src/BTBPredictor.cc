@@ -20,7 +20,7 @@ void BTBPredictor::update(uint64_t instructionAddress, bool taken,
   btb[addressHash] = targetAddress;
 }
 
-uint64_t BTBPredictor::hash(uint64_t instructionAddress) {
+uint64_t BTBPredictor::hash(uint64_t instructionAddress) const {
   uint64_t mask = (1 << bits) - 1;
   return instructionAddress & mask;
 }

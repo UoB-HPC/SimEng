@@ -21,7 +21,7 @@ class Architecture {
    * it; a value of 0 indicates too few bytes were present for a valid decoding.
    */
   virtual std::tuple<MacroOp, uint8_t> predecode(
-      void* ptr, uint8_t bytesAvailable, uint64_t instructionAddress,
+      const void* ptr, uint8_t bytesAvailable, uint64_t instructionAddress,
       BranchPrediction prediction) const = 0;
 
   /** Returns a vector of {size, number} pairs describing the available

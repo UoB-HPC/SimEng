@@ -1,11 +1,9 @@
 #include "FetchUnit.hh"
 
-#include <iostream>
-
 namespace simeng {
 
-FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& toDecode, char* insnPtr,
-                     unsigned int programByteLength, Architecture& isa,
+FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& toDecode, const char* insnPtr,
+                     unsigned int programByteLength, const Architecture& isa,
                      BranchPredictor& branchPredictor)
     : toDecode(toDecode),
       insnPtr(insnPtr),
@@ -19,7 +17,7 @@ void FetchUnit::tick() {
   }
 
   auto out = toDecode.getTailSlots();
-  if (pc >= programByteLength) {
+  if (hasHalted_) {
     // PC is outside instruction memory region; do nothing
     return;
   }

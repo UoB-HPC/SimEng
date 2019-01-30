@@ -68,7 +68,8 @@ class Instruction {
 
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the
-   * instruction. */
+   * instruction. Returns a {mispredicted, target} tuple representing whether
+   * the instruction was mispredicted, and the correct target address. */
   virtual std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const = 0;
 
   /** Check for misprediction. */

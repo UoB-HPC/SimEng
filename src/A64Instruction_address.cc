@@ -1,7 +1,5 @@
 #include "A64Instruction.hh"
 
-#include <iostream>
-
 namespace simeng {
 
 std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {

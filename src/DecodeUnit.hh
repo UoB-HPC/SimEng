@@ -13,13 +13,14 @@ class DecodeUnit {
    * register file, and the current branch predictor. */
   DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
              PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
-             RegisterFile& registerFile, BranchPredictor& predictor);
+             const RegisterFile& registerFile,
+             BranchPredictor& predictor);
 
   /** Ticks the decode unit. Breaks macro-ops into uops, and performs early
    * branch misprediction checks. */
   void tick();
 
-  /** Forwarded operands and performs register reads for the currently queued
+  /** Forwards operands and performs register reads for the currently queued
    * instruction. */
   void forwardOperands(const std::vector<Register>& destinations,
                        const std::vector<RegisterValue>& values);
@@ -38,7 +39,7 @@ class DecodeUnit {
   PipelineBuffer<std::shared_ptr<Instruction>>& toExecuteBuffer;
 
   /** A reference to the register file. */
-  RegisterFile& registerFile;
+  const RegisterFile& registerFile;
 
   /** A reference to the current branch predictor. */
   BranchPredictor& predictor;

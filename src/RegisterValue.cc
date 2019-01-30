@@ -1,7 +1,6 @@
 #include "RegisterValue.hh"
 
 #include <cstring>
-#include <iostream>
 
 namespace simeng {
 

@@ -2,7 +2,6 @@
 #pragma once
 
 #include <cassert>
-#include <iostream>
 #include <memory>
 
 namespace simeng {

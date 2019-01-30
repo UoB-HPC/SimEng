@@ -15,7 +15,7 @@ class A64Architecture : public Architecture {
    * instances. Returns the macro-op generated and the number of bytes consumed
    * to produce it (always 4). */
   std::tuple<MacroOp, uint8_t> predecode(
-      void* ptr, uint8_t bytesAvailable, uint64_t instructionAddress,
+      const void* ptr, uint8_t bytesAvailable, uint64_t instructionAddress,
       BranchPrediction prediction) const override;
 
   /** Returns an ARMv8-a register file structure description. */

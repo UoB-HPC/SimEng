@@ -1,7 +1,5 @@
 #include "WritebackUnit.hh"
 
-#include <iostream>
-
 namespace simeng {
 
 WritebackUnit::WritebackUnit(
@@ -27,7 +25,7 @@ void WritebackUnit::tick() {
   fromExecuteBuffer.getHeadSlots()[0] = nullptr;
 }
 
-int WritebackUnit::getInstructionsRetiredCount() const {
+uint64_t WritebackUnit::getInstructionsRetiredCount() const {
   return instructionsRetired;
 }
 

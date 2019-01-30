@@ -1,5 +1,4 @@
-#ifndef __H_PIPELINE_BUFFER
-#define __H_PIPELINE_BUFFER
+#pragma once
 
 #include <memory>
 
@@ -79,5 +78,3 @@ class PipelineBuffer {
 };
 
 }  // namespace simeng
-
-#endif

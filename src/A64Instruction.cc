@@ -1,7 +1,6 @@
 #include "A64Instruction.hh"
 
 #include <algorithm>
-#include <iostream>
 #include <vector>
 
 namespace simeng {
