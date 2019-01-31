@@ -1,10 +1,11 @@
 #pragma once
 
+#include "../Instruction.hh"
+#include "../PipelineBuffer.hh"
 #include "DecodeUnit.hh"
-#include "Instruction.hh"
-#include "PipelineBuffer.hh"
 
 namespace simeng {
+namespace inorder {
 
 /** An execute unit for an in-order pipeline. Executes instructions and forwards
  * results to the decode stage. */
@@ -53,4 +54,5 @@ class ExecuteUnit {
   uint64_t pc;
 };
 
+}  // namespace inorder
 }  // namespace simeng

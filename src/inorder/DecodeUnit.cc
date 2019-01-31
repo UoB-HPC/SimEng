@@ -3,6 +3,7 @@
 #include <cassert>
 
 namespace simeng {
+namespace inorder {
 
 DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
                        PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
@@ -87,4 +88,5 @@ void DecodeUnit::forwardOperands(const std::vector<Register>& registers,
 bool DecodeUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t DecodeUnit::getFlushAddress() const { return pc; }
 
+}  // namespace inorder
 }  // namespace simeng

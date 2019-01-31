@@ -1,6 +1,7 @@
 #include "WritebackUnit.hh"
 
 namespace simeng {
+namespace inorder {
 
 WritebackUnit::WritebackUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromExecute,
@@ -9,6 +10,7 @@ WritebackUnit::WritebackUnit(
 
 void WritebackUnit::tick() {
   auto uop = fromExecuteBuffer.getHeadSlots()[0];
+
   if (uop == nullptr) {
     return;
   }
@@ -29,4 +31,5 @@ uint64_t WritebackUnit::getInstructionsRetiredCount() const {
   return instructionsRetired;
 }
 
+}  // namespace inorder
 }  // namespace simeng

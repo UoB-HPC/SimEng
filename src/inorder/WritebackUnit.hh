@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Instruction.hh"
-#include "PipelineBuffer.hh"
+#include "../Instruction.hh"
+#include "../PipelineBuffer.hh"
 
 namespace simeng {
+namespace inorder {
 
 /** An in-order pipeline writeback unit. Responsible for handling writing
  * instruction results to the register file. */
@@ -29,4 +30,5 @@ class WritebackUnit {
   uint64_t instructionsRetired = 0;
 };
 
+}  // namespace inorder
 }  // namespace simeng
