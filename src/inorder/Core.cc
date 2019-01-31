@@ -1,6 +1,9 @@
 #include "Core.hh"
 
+#include <string>
+
 namespace simeng {
+namespace inorder {
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const char* insnPtr, unsigned int programByteLength,
@@ -19,6 +22,8 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
       writebackUnit(executeToWritebackBuffer, registerFile){};
 
 void Core::tick() {
+  ticks++;
+
   // Writeback must be ticked at start of cycle, to ensure decode reads the
   // correct values
   writebackUnit.tick();
@@ -69,9 +74,14 @@ bool Core::hasHalted() const {
           !executePending);
 }
 
-uint64_t Core::getFlushesCount() const { return flushes; }
-uint64_t Core::getInstructionsRetiredCount() const {
-  return writebackUnit.getInstructionsRetiredCount();
+std::map<std::string, std::string> Core::getStats() const {
+  auto retired = writebackUnit.getInstructionsRetiredCount();
+  auto ipc = retired / static_cast<float>(ticks);
+  return {{"cycles", std::to_string(ticks)},
+          {"retired", std::to_string(retired)},
+          {"ipc", std::to_string(ipc)},
+          {"flushes", std::to_string(flushes)}};
 }
 
+}  // namespace inorder
 }  // namespace simeng
