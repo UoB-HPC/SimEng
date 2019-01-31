@@ -12,6 +12,7 @@
 #include "Architecture.hh"
 #include "BTBPredictor.hh"
 #include "Core.hh"
+#include "inorder/Core.hh"
 
 enum class SimulationMode { Emulation, InOrderPipelined };
 
@@ -96,21 +97,26 @@ int emulationSimulation(char* insnPtr, uint64_t programByteLength, char* memory,
 int inOrderPipelinedSimulation(char* insnPtr, uint64_t programByteLength,
                                char* memory, simeng::Architecture& isa) {
   auto predictor = simeng::BTBPredictor(8);
-  auto core = simeng::Core(insnPtr, programByteLength, isa, predictor);
+  simeng::Core* core =
+      new simeng::inorder::Core(insnPtr, programByteLength, isa, predictor);
 
   int iterations = 0;
-  while (!core.hasHalted()) {
+  while (!core->hasHalted()) {
     // Tick the core until it detects the program has halted.
-    core.tick();
+    core->tick();
 
     iterations++;
   }
 
-  auto retired = core.getInstructionsRetiredCount();
-  auto ipc = retired / static_cast<double>(iterations);
-  std::cout << "Retired " << retired << " instructions (" << std::fixed
-            << std::setprecision(2) << ipc << " IPC)\n";
-  std::cout << "Pipeline flushes: " << core.getFlushesCount() << "\n";
+  auto stats = core->getStats();
+  for (const auto& [key, value] : stats) {
+    std::cout << key << ": " << value << "\n";
+  }
+  // auto retired = core->getInstructionsRetiredCount();
+  // auto ipc = retired / static_cast<double>(iterations);
+  // std::cout << "Retired " << retired << " instructions (" << std::fixed
+  //           << std::setprecision(2) << ipc << " IPC)\n";
+  // std::cout << "Pipeline flushes: " << core.getFlushesCount() << "\n";
 
   return iterations;
 }

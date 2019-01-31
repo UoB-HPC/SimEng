@@ -1,4 +1,6 @@
 set(SIMENG_SOURCES
+    inorder/Core.cc
+    inorder/Core.hh
     A64Architecture.cc
     A64Architecture.hh
     A64Instruction.cc
@@ -12,7 +14,6 @@ set(SIMENG_SOURCES
     BranchPredictor.hh
     BTBPredictor.cc
     BTBPredictor.hh
-    Core.cc
     Core.hh
     DecodeUnit.cc
     DecodeUnit.hh
