@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Architecture.hh"
-#include "PipelineBuffer.hh"
+#include "../Architecture.hh"
+#include "../PipelineBuffer.hh"
 
 namespace simeng {
+namespace inorder {
 
 /** A fetch and pre-decode unit for an in-order pipeline. Responsible for
  * reading instruction memory and maintaining the program counter. */
@@ -50,4 +51,5 @@ class FetchUnit {
   bool hasHalted_ = false;
 };
 
+}  // namespace inorder
 }  // namespace simeng

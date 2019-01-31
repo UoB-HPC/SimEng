@@ -3,6 +3,7 @@
 #include <cstring>
 
 namespace simeng {
+namespace inorder {
 
 ExecuteUnit::ExecuteUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
@@ -77,4 +78,5 @@ void ExecuteUnit::tick() {
 bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t ExecuteUnit::getFlushAddress() const { return pc; }
 
+}  // namespace inorder
 }  // namespace simeng

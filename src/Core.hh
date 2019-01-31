@@ -8,7 +8,7 @@ namespace simeng {
 /** An abstract core model. */
 class Core {
  public:
-  ~Core() {}
+  virtual ~Core() {}
 
   /** Tick the core. */
   virtual void tick() = 0;

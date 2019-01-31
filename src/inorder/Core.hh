@@ -4,10 +4,10 @@
 
 #include <vector>
 
-#include "../DecodeUnit.hh"
-#include "../ExecuteUnit.hh"
-#include "../FetchUnit.hh"
-#include "../WritebackUnit.hh"
+#include "DecodeUnit.hh"
+#include "ExecuteUnit.hh"
+#include "FetchUnit.hh"
+#include "WritebackUnit.hh"
 
 namespace simeng {
 namespace inorder {

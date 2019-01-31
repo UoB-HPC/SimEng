@@ -1,6 +1,16 @@
 set(SIMENG_SOURCES
     inorder/Core.cc
     inorder/Core.hh
+    inorder/DecodeUnit.cc
+    inorder/DecodeUnit.hh
+    inorder/ExecuteUnit.cc
+    inorder/ExecuteUnit.hh
+    inorder/FetchUnit.cc
+    inorder/FetchUnit.hh
+    inorder/WritebackUnit.cc
+    inorder/WritebackUnit.hh
+    emulation/Core.cc
+    emulation/Core.hh
     A64Architecture.cc
     A64Architecture.hh
     A64Instruction.cc
@@ -15,12 +25,6 @@ set(SIMENG_SOURCES
     BTBPredictor.cc
     BTBPredictor.hh
     Core.hh
-    DecodeUnit.cc
-    DecodeUnit.hh
-    ExecuteUnit.cc
-    ExecuteUnit.hh
-    FetchUnit.cc
-    FetchUnit.hh
     CMakeLists.txt
     Instruction.hh
     PipelineBuffer.hh
@@ -28,8 +32,6 @@ set(SIMENG_SOURCES
     RegisterFile.hh
     RegisterValue.cc
     RegisterValue.hh
-    WritebackUnit.cc
-    WritebackUnit.hh
     main.cc
     )
 

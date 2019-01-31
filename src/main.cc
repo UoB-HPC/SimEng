@@ -12,111 +12,20 @@
 #include "Architecture.hh"
 #include "BTBPredictor.hh"
 #include "Core.hh"
+#include "emulation/Core.hh"
 #include "inorder/Core.hh"
 
 enum class SimulationMode { Emulation, InOrderPipelined };
 
-/** Simple "emulation-style" simulation; each instruction is fetched, decoded,
- * and executed in a single cycle.
- *
- * TODO: Make the `Core` model abstract and make this an implementation. */
-int emulationSimulation(char* insnPtr, uint64_t programByteLength, char* memory,
-                        simeng::Architecture& isa) {
-  uint64_t pc = 0;
-  auto registerFile = simeng::RegisterFile({32, 32, 1});
-
+/** Tick the provided core model until it halts. */
+int simulate(simeng::Core& core) {
   int iterations = 0;
-  while (pc >= 0 && pc < programByteLength) {
-    iterations++;
-
-    // Fetch
-    auto [macroop, bytesRead] = isa.predecode(insnPtr + pc, 4, pc, {false, 0});
-
-    pc += bytesRead;
-
-    // Decode
-    auto uop = macroop[0];
-
-    // Issue
-    auto registers = uop->getOperandRegisters();
-    for (size_t i = 0; i < registers.size(); i++) {
-      auto reg = registers[i];
-      if (!uop->isOperandReady(i)) {
-        uop->supplyOperand(reg, registerFile.get(reg));
-      }
-    }
-
-    // Execute
-    if (uop->isLoad()) {
-      auto addresses = uop->generateAddresses();
-      for (auto const& request : addresses) {
-        // Pointer manipulation to generate a RegisterValue from an arbitrary
-        // memory address
-        auto buffer = malloc(request.second);
-        memcpy(buffer, memory + request.first, request.second);
-
-        auto ptr = std::shared_ptr<uint8_t>((uint8_t*)buffer, free);
-        auto data = simeng::RegisterValue(ptr);
-
-        uop->supplyData(request.first, data);
-      }
-    } else if (uop->isStore()) {
-      uop->generateAddresses();
-    }
-    uop->execute();
-
-    if (uop->isStore()) {
-      auto addresses = uop->getGeneratedAddresses();
-      auto data = uop->getData();
-      for (size_t i = 0; i < addresses.size(); i++) {
-        auto request = addresses[i];
-
-        // Copy data to memory
-        auto address = memory + request.first;
-        memcpy(address, data[i].getAsVector<void>(), request.second);
-      }
-    } else if (uop->isBranch()) {
-      pc = uop->getBranchAddress();
-    }
-
-    // Writeback
-
-    auto results = uop->getResults();
-    auto destinations = uop->getDestinationRegisters();
-    for (size_t i = 0; i < results.size(); i++) {
-      auto reg = destinations[i];
-      registerFile.set(reg, results[i]);
-    }
-  }
-
-  return iterations;
-}
-
-/** In-order pipeline simulation; each instruction is fetched, decoded, and
- * executed in a single cycle. */
-int inOrderPipelinedSimulation(char* insnPtr, uint64_t programByteLength,
-                               char* memory, simeng::Architecture& isa) {
-  auto predictor = simeng::BTBPredictor(8);
-  simeng::Core* core =
-      new simeng::inorder::Core(insnPtr, programByteLength, isa, predictor);
-
-  int iterations = 0;
-  while (!core->hasHalted()) {
+  while (!core.hasHalted()) {
     // Tick the core until it detects the program has halted.
-    core->tick();
+    core.tick();
 
     iterations++;
   }
-
-  auto stats = core->getStats();
-  for (const auto& [key, value] : stats) {
-    std::cout << key << ": " << value << "\n";
-  }
-  // auto retired = core->getInstructionsRetiredCount();
-  // auto ipc = retired / static_cast<double>(iterations);
-  // std::cout << "Retired " << retired << " instructions (" << std::fixed
-  //           << std::setprecision(2) << ipc << " IPC)\n";
-  // std::cout << "Pipeline flushes: " << core.getFlushesCount() << "\n";
 
   return iterations;
 }
@@ -154,39 +63,43 @@ int main(int argc, char** argv) {
   auto insnPtr = reinterpret_cast<char*>(hex);
   auto length = sizeof(hex);
 
-  char* memory = (char*)calloc(1024, 1);
-  memory[4] = 1;
-
   auto arch = simeng::A64Architecture();
+  auto predictor = simeng::BTBPredictor(8);
 
   int iterations = 0;
 
   std::string modeString;
+  std::unique_ptr<simeng::Core> core;
   switch (mode) {
-    case SimulationMode::InOrderPipelined:
+    case SimulationMode::InOrderPipelined: {
       modeString = "In-Order Pipelined";
+      core = std::make_unique<simeng::inorder::Core>(insnPtr, length, arch,
+                                                     predictor);
       break;
-    default:
+    }
+    default: {
       modeString = "Emulation";
+      core = std::make_unique<simeng::emulation::Core>(insnPtr, length, arch);
       break;
+    }
   };
   std::cout << "Running in " << modeString << " mode\n";
   std::cout << "Starting..." << std::endl;
   auto startTime = std::chrono::high_resolution_clock::now();
 
-  if (mode == SimulationMode::InOrderPipelined) {
-    // In-Order Pipelined Mode
-    iterations = inOrderPipelinedSimulation(insnPtr, length, memory, arch);
-  } else {
-    // Emulation mode
-    iterations = emulationSimulation(insnPtr, length, memory, arch);
-  }
+  iterations = simulate(*core);
 
   auto endTime = std::chrono::high_resolution_clock::now();
   auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)
           .count();
   auto hz = iterations / (static_cast<double>(duration) / 1000.0);
+
+  // Print stats
+  auto stats = core->getStats();
+  for (const auto& [key, value] : stats) {
+    std::cout << key << ": " << value << "\n";
+  }
 
   std::cout << "Finished " << iterations << " ticks in " << duration << "ms ("
             << hz << "Hz)" << std::endl;

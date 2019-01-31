@@ -1,6 +1,7 @@
 #include "FetchUnit.hh"
 
 namespace simeng {
+namespace inorder {
 
 FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& toDecode, const char* insnPtr,
                      unsigned int programByteLength, const Architecture& isa,
@@ -47,4 +48,5 @@ void FetchUnit::updatePC(uint64_t address) {
   hasHalted_ = (pc >= programByteLength);
 }
 
+}  // namespace inorder
 }  // namespace simeng

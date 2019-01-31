@@ -1,9 +1,10 @@
 #pragma once
 
-#include "Architecture.hh"
-#include "PipelineBuffer.hh"
+#include "../Architecture.hh"
+#include "../PipelineBuffer.hh"
 
 namespace simeng {
+namespace inorder {
 
 /** A decode unit for an in-order pipeline. Splits pre-decoded macro-ops into
  * uops, and reads operand values. */
@@ -50,4 +51,5 @@ class DecodeUnit {
   uint64_t pc;
 };
 
+}  // namespace inorder
 }  // namespace simeng
