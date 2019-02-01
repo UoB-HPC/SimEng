@@ -19,6 +19,8 @@ set(SIMENG_SOURCES
     outoforder/ExecuteUnit.hh
     outoforder/FetchUnit.cc
     outoforder/FetchUnit.hh
+    outoforder/RegisterAllocationTable.cc
+    outoforder/RegisterAllocationTable.hh
     outoforder/RenameUnit.cc
     outoforder/RenameUnit.hh
     outoforder/ReorderBuffer.cc
