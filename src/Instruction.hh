@@ -92,6 +92,9 @@ class Instruction {
 
   /** Get this instruction's instruction memory address. */
   virtual uint64_t getInstructionAddress() const = 0;
+
+  virtual void setSequenceId(uint64_t seqId) = 0;
+  virtual uint64_t getSequenceId() const = 0;
 };
 
 }  // namespace simeng

@@ -13,10 +13,16 @@ set(SIMENG_SOURCES
     outoforder/Core.hh
     outoforder/DecodeUnit.cc
     outoforder/DecodeUnit.hh
+    outoforder/DispatchIssueUnit.cc
+    outoforder/DispatchIssueUnit.hh
     outoforder/ExecuteUnit.cc
     outoforder/ExecuteUnit.hh
     outoforder/FetchUnit.cc
     outoforder/FetchUnit.hh
+    outoforder/RenameUnit.cc
+    outoforder/RenameUnit.hh
+    outoforder/ReorderBuffer.cc
+    outoforder/ReorderBuffer.hh
     outoforder/WritebackUnit.cc
     outoforder/WritebackUnit.hh
     emulation/Core.cc

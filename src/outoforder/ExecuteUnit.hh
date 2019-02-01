@@ -1,8 +1,9 @@
 #pragma once
 
+#include "../BranchPredictor.hh"
 #include "../Instruction.hh"
 #include "../PipelineBuffer.hh"
-#include "DecodeUnit.hh"
+#include "DispatchIssueUnit.hh"
 
 namespace simeng {
 namespace outoforder {
@@ -16,7 +17,8 @@ class ExecuteUnit {
    * process memory. */
   ExecuteUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
               PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
-              DecodeUnit& decodeUnit, BranchPredictor& predictor, char* memory);
+              DispatchIssueUnit& dispatchIssueUnit, BranchPredictor& predictor,
+              char* memory);
 
   /** Tick the execute unit. Executes the current instruction and forwards the
    * results back to the decode stage. */
@@ -37,7 +39,7 @@ class ExecuteUnit {
   PipelineBuffer<std::shared_ptr<Instruction>>& toWritebackBuffer;
 
   /** A reference to the decode unit, for forwarding operands. */
-  DecodeUnit& decodeUnit;
+  DispatchIssueUnit& dispatchIssueUnit;
 
   /** A reference to the branch predictor, for updating with prediction results.
    */

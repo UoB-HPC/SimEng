@@ -147,4 +147,7 @@ bool A64Instruction::wasBranchMispredicted() const {
 uint64_t A64Instruction::getBranchAddress() const { return branchAddress; }
 bool A64Instruction::wasBranchTaken() const { return branchTaken; }
 
+void A64Instruction::setSequenceId(uint64_t seqId) { sequenceId = seqId; };
+uint64_t A64Instruction::getSequenceId() const { return sequenceId; };
+
 }  // namespace simeng

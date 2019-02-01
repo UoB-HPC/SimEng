@@ -161,6 +161,9 @@ class A64Instruction : public Instruction {
   /** Get this instruction's instruction memory address. */
   uint64_t getInstructionAddress() const override;
 
+  void setSequenceId(uint64_t seqId) override;
+  uint64_t getSequenceId() const override;
+
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
    * automatically supplied as zero. */
@@ -268,6 +271,8 @@ class A64Instruction : public Instruction {
   uint64_t branchAddress;
   /** Was the branch taken? */
   bool branchTaken;
+
+  uint64_t sequenceId;
 };
 
 }  // namespace simeng

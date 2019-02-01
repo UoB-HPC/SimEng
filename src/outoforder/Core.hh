@@ -3,8 +3,11 @@
 #include "../Core.hh"
 
 #include "DecodeUnit.hh"
+#include "DispatchIssueUnit.hh"
 #include "ExecuteUnit.hh"
 #include "FetchUnit.hh"
+#include "RenameUnit.hh"
+#include "ReorderBuffer.hh"
 #include "WritebackUnit.hh"
 
 namespace simeng {
@@ -35,11 +38,20 @@ class Core : public simeng::Core {
   /** The core's register file. */
   RegisterFile registerFile;
 
+  /** The core's reorder buffer. */
+  ReorderBuffer reorderBuffer;
+
   /** The buffer between fetch and decode. */
   PipelineBuffer<MacroOp> fetchToDecodeBuffer;
 
-  /** The buffer between decode and execute. */
-  PipelineBuffer<std::shared_ptr<Instruction>> decodeToExecuteBuffer;
+  /** The buffer between decode and rename. */
+  PipelineBuffer<std::shared_ptr<Instruction>> decodeToRenameBuffer;
+
+  /** The buffer between rename and dispatch/issue. */
+  PipelineBuffer<std::shared_ptr<Instruction>> renameToDispatchBuffer;
+
+  /** The buffer between dispatch/issue and execute. */
+  PipelineBuffer<std::shared_ptr<Instruction>> issueToExecuteBuffer;
 
   /** The buffer between execute and writeback. */
   PipelineBuffer<std::shared_ptr<Instruction>> executeToWritebackBuffer;
@@ -49,6 +61,11 @@ class Core : public simeng::Core {
 
   /** The decode unit; decodes instructions into uops and reads operands. */
   DecodeUnit decodeUnit;
+
+  /** The rename unit; renames instruction registers. */
+  RenameUnit renameUnit;
+
+  DispatchIssueUnit dispatchIssueUnit;
 
   /** The execute unit; executes uops and sends to writeback, also forwarding
    * results to decode. */
