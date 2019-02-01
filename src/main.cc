@@ -14,8 +14,9 @@
 #include "Core.hh"
 #include "emulation/Core.hh"
 #include "inorder/Core.hh"
+#include "outoforder/Core.hh"
 
-enum class SimulationMode { Emulation, InOrderPipelined };
+enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
 /** Tick the provided core model until it halts. */
 int simulate(simeng::Core& core) {
@@ -32,8 +33,12 @@ int simulate(simeng::Core& core) {
 
 int main(int argc, char** argv) {
   SimulationMode mode = SimulationMode::InOrderPipelined;
-  if (argc > 1 && !strcmp(argv[1], "emulation")) {
-    mode = SimulationMode::Emulation;
+  if (argc > 1) {
+    if (!strcmp(argv[1], "emulation")) {
+      mode = SimulationMode::Emulation;
+    } else if ((!strcmp(argv[1], "outoforder"))) {
+      mode = SimulationMode::OutOfOrder;
+    }
   }
 
   // Simple program demonstrating various instructions
@@ -71,6 +76,12 @@ int main(int argc, char** argv) {
   std::string modeString;
   std::unique_ptr<simeng::Core> core;
   switch (mode) {
+    case SimulationMode::OutOfOrder: {
+      modeString = "Out-of-Order";
+      core = std::make_unique<simeng::outoforder::Core>(insnPtr, length, arch,
+                                                        predictor);
+      break;
+    }
     case SimulationMode::InOrderPipelined: {
       modeString = "In-Order Pipelined";
       core = std::make_unique<simeng::inorder::Core>(insnPtr, length, arch,

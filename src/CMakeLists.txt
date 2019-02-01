@@ -9,6 +9,16 @@ set(SIMENG_SOURCES
     inorder/FetchUnit.hh
     inorder/WritebackUnit.cc
     inorder/WritebackUnit.hh
+    outoforder/Core.cc
+    outoforder/Core.hh
+    outoforder/DecodeUnit.cc
+    outoforder/DecodeUnit.hh
+    outoforder/ExecuteUnit.cc
+    outoforder/ExecuteUnit.hh
+    outoforder/FetchUnit.cc
+    outoforder/FetchUnit.hh
+    outoforder/WritebackUnit.cc
+    outoforder/WritebackUnit.hh
     emulation/Core.cc
     emulation/Core.hh
     A64Architecture.cc
