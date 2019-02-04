@@ -23,7 +23,7 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
                  branchPredictor),
       renameUnit(decodeToRenameBuffer, renameToDispatchBuffer, reorderBuffer),
       dispatchIssueUnit(renameToDispatchBuffer, issueToExecuteBuffer,
-                        registerFile),
+                        registerFile, {128, 128, 128}),
       executeUnit(issueToExecuteBuffer, executeToWritebackBuffer,
                   dispatchIssueUnit, branchPredictor, memory),
       writebackUnit(executeToWritebackBuffer, registerFile){};
@@ -61,11 +61,22 @@ void Core::tick() {
     // Rename/Dispatch, Issue/Execute)
     auto targetAddress = executeUnit.getFlushAddress();
 
+    // Recover pending issued op and free destination register(s)
+    // TODO: Remove once renaming is in place
+    auto issueHead = issueToExecuteBuffer.getHeadSlots()[0];
+    if (issueHead != nullptr) {
+      for (const auto& reg : issueHead->getDestinationRegisters()) {
+        dispatchIssueUnit.setRegisterReady(reg);
+      }
+    }
+
     fetchUnit.updatePC(targetAddress);
     fetchToDecodeBuffer.fill({});
     decodeToRenameBuffer.fill(nullptr);
     renameToDispatchBuffer.fill(nullptr);
     issueToExecuteBuffer.fill(nullptr);
+
+    reorderBuffer.flush(executeUnit.getFlushSeqId());
 
     flushes++;
   } else if (decodeUnit.shouldFlush()) {
@@ -85,9 +96,6 @@ bool Core::hasHalted() const {
   // are no uops at the head of any buffer.
   bool decodePending = fetchToDecodeBuffer.getHeadSlots()[0].size() > 0;
   bool renamePending = decodeToRenameBuffer.getHeadSlots()[0] != nullptr;
-  // bool executePending = issueToExecuteBuffer.getHeadSlots()[0] != nullptr;
-  // bool writebackPending = executeToWritebackBuffer.getHeadSlots()[0] !=
-  // nullptr;
   bool commitPending = reorderBuffer.size() > 0;
 
   // std::cout << "hasHalted(): " << fetchUnit.hasHalted() << !decodePending

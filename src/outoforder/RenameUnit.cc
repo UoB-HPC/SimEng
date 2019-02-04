@@ -1,5 +1,7 @@
 #include "RenameUnit.hh"
 
+#include <iostream>
+
 namespace simeng {
 namespace outoforder {
 
@@ -16,9 +18,12 @@ void RenameUnit::tick() {
     return;
   }
 
+  auto sourceRegisters = uop->getOperandRegisters();
+
   reorderBuffer.reserve(uop);
 
   toDispatchBuffer.getTailSlots()[0] = uop;
+  fromDecodeBuffer.getHeadSlots()[0] = nullptr;
 }
 }  // namespace outoforder
 }  // namespace simeng

@@ -31,6 +31,8 @@ class ExecuteUnit {
    * discovered misprediction. */
   uint64_t getFlushAddress() const;
 
+  uint64_t getFlushSeqId() const;
+
  private:
   /** A buffer of instructions to execute. */
   PipelineBuffer<std::shared_ptr<Instruction>>& fromDecodeBuffer;
@@ -54,6 +56,8 @@ class ExecuteUnit {
   /** The target instruction address the PC should be reset to after this cycle.
    */
   uint64_t pc;
+
+  uint64_t flushAfter;
 };
 
 }  // namespace outoforder

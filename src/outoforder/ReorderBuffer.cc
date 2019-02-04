@@ -23,17 +23,23 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
   unsigned int n;
   for (n = 0; n < maxCommits; n++) {
-    // if (buffer[0] != nullptr && !buffer[0]->canCommit()) {
-    //   break;
-    // }
+    if (buffer[0] != nullptr && !buffer[0]->canCommit()) {
+      break;
+    }
     buffer.pop_front();
   }
 
   return n;
 }
 
-// TODO: Implement
-void ReorderBuffer::flush(uint64_t afterSeqId) {}
+void ReorderBuffer::flush(uint64_t afterSeqId) {
+  for (size_t i = 0; i < buffer.size(); i++) {
+    if (buffer[i]->getSequenceId() > afterSeqId) {
+      // TODO: Flag instruction as flushed, so other units can ignore it
+      buffer[i] = nullptr;
+    }
+  }
+}
 
 unsigned int ReorderBuffer::size() const { return buffer.size(); }
 

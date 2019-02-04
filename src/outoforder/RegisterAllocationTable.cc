@@ -27,7 +27,7 @@ RegisterAllocationTable::RegisterAllocationTable(
     }
 
     // Add remaining physical registers to free queue
-    for (size_t tag = archCount; tag < physCount; type++) {
+    for (size_t tag = archCount; tag < physCount; tag++) {
       freeQueues[type].push(tag);
     }
   }

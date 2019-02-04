@@ -64,6 +64,7 @@ void ExecuteUnit::tick() {
     if (uop->wasBranchMispredicted()) {
       // Misprediction; flush the pipeline
       shouldFlush_ = true;
+      flushAfter = uop->getSequenceId();
     }
   }
 
@@ -79,6 +80,7 @@ void ExecuteUnit::tick() {
 
 bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t ExecuteUnit::getFlushAddress() const { return pc; }
+uint64_t ExecuteUnit::getFlushSeqId() const { return flushAfter; }
 
 }  // namespace outoforder
 }  // namespace simeng
