@@ -47,6 +47,13 @@ class Instruction {
   virtual void execute() = 0;
 
   /** Check whether the instruction has executed and has results ready to
+   * write back. */
+  virtual bool hasExecuted() const = 0;
+
+  /** Mark the instruction as ready to commit. */
+  virtual void setCommitReady() = 0;
+
+  /** Check whether the instruction has written its values back and is ready to
    * commit. */
   virtual bool canCommit() const = 0;
 
@@ -93,7 +100,10 @@ class Instruction {
   /** Get this instruction's instruction memory address. */
   virtual uint64_t getInstructionAddress() const = 0;
 
+  /** Set this instruction's sequence ID. */
   virtual void setSequenceId(uint64_t seqId) = 0;
+
+  /** Retrieve this instruction's sequence ID. */
   virtual uint64_t getSequenceId() const = 0;
 };
 

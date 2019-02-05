@@ -2,12 +2,12 @@
 
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 
 namespace simeng {
 namespace outoforder {
 
-ReorderBuffer::ReorderBuffer(unsigned int maxSize) : maxSize(maxSize) {}
+ReorderBuffer::ReorderBuffer(unsigned int maxSize, RegisterAllocationTable& rat)
+    : rat(rat), maxSize(maxSize) {}
 
 void ReorderBuffer::reserve(std::shared_ptr<Instruction> insn) {
   assert(buffer.size() + 1 < maxSize &&
@@ -23,8 +23,15 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
   unsigned int n;
   for (n = 0; n < maxCommits; n++) {
-    if (buffer[0] != nullptr && !buffer[0]->canCommit()) {
-      break;
+    auto& uop = buffer[0];
+    if (uop != nullptr) {
+      if (!uop->canCommit()) {
+        break;
+      }
+      auto destinations = uop->getDestinationRegisters();
+      for (const auto& reg : destinations) {
+        rat.commit(reg);
+      }
     }
     buffer.pop_front();
   }
@@ -34,7 +41,12 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
 void ReorderBuffer::flush(uint64_t afterSeqId) {
   for (size_t i = 0; i < buffer.size(); i++) {
-    if (buffer[i]->getSequenceId() > afterSeqId) {
+    auto& uop = buffer[i];
+    if (uop->getSequenceId() > afterSeqId) {
+      for (const auto& reg : uop->getDestinationRegisters()) {
+        rat.rewind(reg);
+      }
+
       // TODO: Flag instruction as flushed, so other units can ignore it
       buffer[i] = nullptr;
     }

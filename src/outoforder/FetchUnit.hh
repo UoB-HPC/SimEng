@@ -6,7 +6,7 @@
 namespace simeng {
 namespace outoforder {
 
-/** A fetch and pre-decode unit for an in-order pipeline. Responsible for
+/** A fetch and pre-decode unit for an out-of-order pipeline. Responsible for
  * reading instruction memory and maintaining the program counter. */
 class FetchUnit {
  public:

@@ -6,15 +6,15 @@
 namespace simeng {
 namespace outoforder {
 
-/** A decode unit for an in-order pipeline. Splits pre-decoded macro-ops into
- * uops, and reads operand values. */
+/** A decode unit for an out-of-order pipeline. Splits pre-decoded macro-ops
+ * into uops. */
 class DecodeUnit {
  public:
   /** Constructs a decode unit with references to input/output buffers, the
    * register file, and the current branch predictor. */
   DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
              PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
-             const RegisterFile& registerFile, BranchPredictor& predictor);
+             BranchPredictor& predictor);
 
   /** Ticks the decode unit. Breaks macro-ops into uops, and performs early
    * branch misprediction checks. */
@@ -32,9 +32,6 @@ class DecodeUnit {
   PipelineBuffer<MacroOp>& fromFetchBuffer;
   /** A buffer for writing decoded uops into. */
   PipelineBuffer<std::shared_ptr<Instruction>>& toExecuteBuffer;
-
-  /** A reference to the register file. */
-  const RegisterFile& registerFile;
 
   /** A reference to the current branch predictor. */
   BranchPredictor& predictor;

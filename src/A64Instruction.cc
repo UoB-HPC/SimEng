@@ -90,7 +90,10 @@ std::vector<RegisterValue> A64Instruction::getData() const {
 
 bool A64Instruction::canExecute() const { return (operandsPending == 0); }
 
-bool A64Instruction::canCommit() const { return executed; }
+bool A64Instruction::hasExecuted() const { return executed; }
+
+void A64Instruction::setCommitReady() { canCommit_ = true; }
+bool A64Instruction::canCommit() const { return canCommit_; }
 
 std::vector<RegisterValue> A64Instruction::getResults() const {
   // Map from internal result format to RegisterValue vector

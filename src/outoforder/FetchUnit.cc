@@ -33,8 +33,7 @@ void FetchUnit::tick() {
     pc = prediction.target;
   }
 
-  auto out = toDecode.getTailSlots();
-  out[0] = macroop;
+  toDecode.getTailSlots()[0] = macroop;
 
   if (pc >= programByteLength) {
     hasHalted_ = true;

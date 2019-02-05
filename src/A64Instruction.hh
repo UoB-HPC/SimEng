@@ -116,6 +116,13 @@ class A64Instruction : public Instruction {
   void execute() override;
 
   /** Check whether the instruction has executed and has results ready to
+   * write back. */
+  bool hasExecuted() const override;
+
+  /** Mark the instruction as ready to commit. */
+  void setCommitReady() override;
+
+  /** Check whether the instruction has written its values back and is ready to
    * commit. */
   bool canCommit() const override;
 
@@ -161,7 +168,10 @@ class A64Instruction : public Instruction {
   /** Get this instruction's instruction memory address. */
   uint64_t getInstructionAddress() const override;
 
+  /** Set this instruction's sequence ID. */
   void setSequenceId(uint64_t seqId) override;
+
+  /** Retrieve this instruction's sequence ID. */
   uint64_t getSequenceId() const override;
 
   /** A special register value representing the zero register. If passed to
@@ -241,6 +251,9 @@ class A64Instruction : public Instruction {
   /** Whether or not this instruction has been executed. */
   bool executed = false;
 
+  /** Whether or not this instruction is ready to commit. */
+  bool canCommit_ = false;
+
   // Metadata
   /** Is this a store operation? */
   bool isStore_ = false;
@@ -272,6 +285,8 @@ class A64Instruction : public Instruction {
   /** Was the branch taken? */
   bool branchTaken;
 
+  /** This instruction's sequence ID; a higher ID represents a chronologically
+   * newer instruction. */
   uint64_t sequenceId;
 };
 

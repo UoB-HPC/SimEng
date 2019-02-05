@@ -1,17 +1,21 @@
 #include "Core.hh"
 
-#include <iostream>
 #include <string>
 
 namespace simeng {
 namespace outoforder {
 
+// TODO: Replace with config option
+const std::initializer_list<uint16_t> physicalRegisters = {34, 34, 34};
+
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const char* insnPtr, unsigned int programByteLength,
            const Architecture& isa, BranchPredictor& branchPredictor)
     : memory(static_cast<char*>(calloc(1024, 1))),
-      registerFile({32, 32, 1}),
-      reorderBuffer(16),
+      registerFile(physicalRegisters),
+      registerAllocationTable(isa.getRegisterFileStructure(),
+                              physicalRegisters),
+      reorderBuffer(16, registerAllocationTable),
       fetchToDecodeBuffer(1, {}),
       decodeToRenameBuffer(1, nullptr),
       renameToDispatchBuffer(1, nullptr),
@@ -19,11 +23,11 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
       executeToWritebackBuffer(1, nullptr),
       fetchUnit(fetchToDecodeBuffer, insnPtr, programByteLength, isa,
                 branchPredictor),
-      decodeUnit(fetchToDecodeBuffer, decodeToRenameBuffer, registerFile,
-                 branchPredictor),
-      renameUnit(decodeToRenameBuffer, renameToDispatchBuffer, reorderBuffer),
+      decodeUnit(fetchToDecodeBuffer, decodeToRenameBuffer, branchPredictor),
+      renameUnit(decodeToRenameBuffer, renameToDispatchBuffer, reorderBuffer,
+                 registerAllocationTable),
       dispatchIssueUnit(renameToDispatchBuffer, issueToExecuteBuffer,
-                        registerFile, {128, 128, 128}),
+                        registerFile, physicalRegisters),
       executeUnit(issueToExecuteBuffer, executeToWritebackBuffer,
                   dispatchIssueUnit, branchPredictor, memory),
       writebackUnit(executeToWritebackBuffer, registerFile){};
@@ -56,19 +60,10 @@ void Core::tick() {
 
   // Check for flush
   if (executeUnit.shouldFlush()) {
-    // Flush was requested at execute stage
+    // Flush was requested at execute stage.
     // Update PC and wipe younger buffers (Fetch/Decode, Decode/Rename,
     // Rename/Dispatch, Issue/Execute)
     auto targetAddress = executeUnit.getFlushAddress();
-
-    // Recover pending issued op and free destination register(s)
-    // TODO: Remove once renaming is in place
-    auto issueHead = issueToExecuteBuffer.getHeadSlots()[0];
-    if (issueHead != nullptr) {
-      for (const auto& reg : issueHead->getDestinationRegisters()) {
-        dispatchIssueUnit.setRegisterReady(reg);
-      }
-    }
 
     fetchUnit.updatePC(targetAddress);
     fetchToDecodeBuffer.fill({});
@@ -76,6 +71,7 @@ void Core::tick() {
     renameToDispatchBuffer.fill(nullptr);
     issueToExecuteBuffer.fill(nullptr);
 
+    // Flush everything younger than the bad instruction from the ROB
     reorderBuffer.flush(executeUnit.getFlushSeqId());
 
     flushes++;
@@ -97,9 +93,6 @@ bool Core::hasHalted() const {
   bool decodePending = fetchToDecodeBuffer.getHeadSlots()[0].size() > 0;
   bool renamePending = decodeToRenameBuffer.getHeadSlots()[0] != nullptr;
   bool commitPending = reorderBuffer.size() > 0;
-
-  // std::cout << "hasHalted(): " << fetchUnit.hasHalted() << !decodePending
-  //           << !renamePending << !commitPending << std::endl;
 
   return (fetchUnit.hasHalted() && !decodePending && !renamePending &&
           !commitPending);

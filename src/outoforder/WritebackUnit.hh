@@ -6,7 +6,7 @@
 namespace simeng {
 namespace outoforder {
 
-/** An in-order pipeline writeback unit. Responsible for handling writing
+/** An out-of-order pipeline writeback unit. Responsible for handling writing
  * instruction results to the register file. */
 class WritebackUnit {
  public:
@@ -17,6 +17,8 @@ class WritebackUnit {
 
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
+
+  /** Retrieve a count of the number of instructions retired. */
   uint64_t getInstructionsRetiredCount() const;
 
  private:

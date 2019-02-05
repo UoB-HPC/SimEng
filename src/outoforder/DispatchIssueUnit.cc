@@ -1,7 +1,5 @@
 #include "DispatchIssueUnit.hh"
 
-#include <iostream>
-
 namespace simeng {
 namespace outoforder {
 
@@ -21,16 +19,16 @@ DispatchIssueUnit::DispatchIssueUnit(
 };
 
 void DispatchIssueUnit::tick() {
-  auto uop = fromRenameBuffer.getHeadSlots()[0];
+  auto& uop = fromRenameBuffer.getHeadSlots()[0];
   if (uop == nullptr) {
     return;
   }
 
   // Register read
   // Identify remaining missing registers and supply values
-  auto sourceRegisters = uop->getOperandRegisters();
+  auto& sourceRegisters = uop->getOperandRegisters();
   for (size_t i = 0; i < sourceRegisters.size(); i++) {
-    auto reg = sourceRegisters[i];
+    const auto& reg = sourceRegisters[i];
 
     // If the operand hasn't already been supplied, and the scoreboard says it's
     // ready, read and supply the register value
@@ -40,13 +38,12 @@ void DispatchIssueUnit::tick() {
   }
 
   // Set scoreboard for all destination registers as not ready
-  auto destinationRegisters = uop->getDestinationRegisters();
+  auto& destinationRegisters = uop->getDestinationRegisters();
   for (const auto& reg : destinationRegisters) {
     scoreboard[reg.type][reg.tag] = false;
   }
 
-  // Add to RS
-  // reservationStation.push_back(uop);
+  // TODO: Add to RS
 
   toExecuteBuffer.getTailSlots()[0] = uop;
   fromRenameBuffer.getHeadSlots()[0] = nullptr;
@@ -58,7 +55,9 @@ void DispatchIssueUnit::forwardOperands(
   assert(registers.size() == values.size() &&
          "Mismatched register and value vector sizes");
 
-  auto uop = toExecuteBuffer.getTailSlots()[0];
+  // TODO: Replace with dependency matrix once RS is in-use
+
+  auto& uop = toExecuteBuffer.getTailSlots()[0];
   if (uop == nullptr) {
     return;
   }
@@ -67,7 +66,7 @@ void DispatchIssueUnit::forwardOperands(
   }
 
   for (size_t i = 0; i < registers.size(); i++) {
-    auto reg = registers[i];
+    const auto& reg = registers[i];
     // Flag scoreboard as ready now result is available
     scoreboard[reg.type][reg.tag] = true;
 

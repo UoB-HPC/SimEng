@@ -6,6 +6,7 @@
 #include "DispatchIssueUnit.hh"
 #include "ExecuteUnit.hh"
 #include "FetchUnit.hh"
+#include "RegisterAllocationTable.hh"
 #include "RenameUnit.hh"
 #include "ReorderBuffer.hh"
 #include "WritebackUnit.hh"
@@ -13,6 +14,8 @@
 namespace simeng {
 namespace outoforder {
 
+/** An out-of-order pipeline core model. Provides a 6-stage pipeline: Fetch,
+ * Decode, Rename, Dispatch/Issue, Execute, Writeback. */
 class Core : public simeng::Core {
  public:
   /** Construct a core model, providing an ISA and branch predictor to use,
@@ -37,6 +40,9 @@ class Core : public simeng::Core {
 
   /** The core's register file. */
   RegisterFile registerFile;
+
+  /** The core's register allocation table. */
+  RegisterAllocationTable registerAllocationTable;
 
   /** The core's reorder buffer. */
   ReorderBuffer reorderBuffer;
@@ -65,6 +71,9 @@ class Core : public simeng::Core {
   /** The rename unit; renames instruction registers. */
   RenameUnit renameUnit;
 
+  /** The dispatch/issue unit; dispatches instructions to the reservation
+   * station, reads operands, and issues ready instructions to the execution
+   * unit. */
   DispatchIssueUnit dispatchIssueUnit;
 
   /** The execute unit; executes uops and sends to writeback, also forwarding

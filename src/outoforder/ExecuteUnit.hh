@@ -8,8 +8,8 @@
 namespace simeng {
 namespace outoforder {
 
-/** An execute unit for an in-order pipeline. Executes instructions and forwards
- * results to the decode stage. */
+/** An execute unit for an out-of-order pipeline. Executes instructions and
+ * forwards results to the dispatch/issue stage. */
 class ExecuteUnit {
  public:
   /** Constructs an execute unit with references to an input and output buffer,
@@ -21,7 +21,7 @@ class ExecuteUnit {
               char* memory);
 
   /** Tick the execute unit. Executes the current instruction and forwards the
-   * results back to the decode stage. */
+   * results back to the dispatch/issue stage. */
   void tick();
 
   /** Query whether a branch misprediction was discovered this cycle. */
@@ -31,6 +31,8 @@ class ExecuteUnit {
    * discovered misprediction. */
   uint64_t getFlushAddress() const;
 
+  /** Retrieve the sequence ID associated with the most recently discovered
+   * misprediction. */
   uint64_t getFlushSeqId() const;
 
  private:
@@ -57,6 +59,8 @@ class ExecuteUnit {
    */
   uint64_t pc;
 
+  /** The sequence ID of the youngest instruction that should remain after the
+   * current flush. */
   uint64_t flushAfter;
 };
 
