@@ -1,5 +1,7 @@
 #pragma once
 
+#include <queue>
+
 #include "../BranchPredictor.hh"
 #include "../Instruction.hh"
 #include "../PipelineBuffer.hh"
@@ -7,6 +9,15 @@
 
 namespace simeng {
 namespace outoforder {
+
+/** An execution unit pipeline entry, containing an instruction, and an
+ * indication of when it's reached the front of the execution pipeline. */
+struct ExecutionUnitPipelineEntry {
+  /** The instruction queued for execution. */
+  std::shared_ptr<Instruction> insn;
+  /** The tick number this instruction will reach the front of the queue at. */
+  uint64_t readyAt;
+};
 
 /** An execute unit for an out-of-order pipeline. Executes instructions and
  * forwards results to the dispatch/issue stage. */
@@ -20,8 +31,9 @@ class ExecuteUnit {
               DispatchIssueUnit& dispatchIssueUnit, BranchPredictor& predictor,
               char* memory);
 
-  /** Tick the execute unit. Executes the current instruction and forwards the
-   * results back to the dispatch/issue stage. */
+  /** Tick the execute unit. Places incoming instructions into the pipeline and
+   * executes an instruction that has reached the head of the pipeline, if
+   * present. */
   void tick();
 
   /** Query whether a branch misprediction was discovered this cycle. */
@@ -36,6 +48,10 @@ class ExecuteUnit {
   uint64_t getFlushSeqId() const;
 
  private:
+  /** Execute the supplied uop, write it into the output buffer, and forward
+   * results back to dispatch/issue. */
+  void execute(std::shared_ptr<Instruction>& uop);
+
   /** A buffer of instructions to execute. */
   PipelineBuffer<std::shared_ptr<Instruction>>& fromIssueBuffer;
 
@@ -52,6 +68,8 @@ class ExecuteUnit {
   /** A pointer to process memory. */
   char* memory;
 
+  std::queue<ExecutionUnitPipelineEntry> pipeline;
+
   /** Whether the core should be flushed after this cycle. */
   bool shouldFlush_;
 
@@ -62,6 +80,9 @@ class ExecuteUnit {
   /** The sequence ID of the youngest instruction that should remain after the
    * current flush. */
   uint64_t flushAfter;
+
+  /** The number of times this unit has been ticked. */
+  uint64_t tickCounter;
 };
 
 }  // namespace outoforder

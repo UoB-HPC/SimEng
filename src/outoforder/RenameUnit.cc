@@ -16,6 +16,12 @@ RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
       freeRegistersNeeded(registerTypes, 0) {}
 
 void RenameUnit::tick() {
+  if (toDispatchBuffer.isStalled()) {
+    fromDecodeBuffer.stall(true);
+    return;
+  }
+  fromDecodeBuffer.stall(false);
+
   auto& uop = fromDecodeBuffer.getHeadSlots()[0];
   if (uop == nullptr) {
     return;
@@ -32,6 +38,7 @@ void RenameUnit::tick() {
     if (freeRegistersNeeded[type] != 0) {
       if (!rat.canAllocate(type, freeRegistersNeeded[type])) {
         fromDecodeBuffer.stall(true);
+        allocationStalls++;
         return;
       }
     }
@@ -65,5 +72,8 @@ void RenameUnit::tick() {
   toDispatchBuffer.getTailSlots()[0] = uop;
   fromDecodeBuffer.getHeadSlots()[0] = nullptr;
 }
+
+uint64_t RenameUnit::getAllocationStalls() const { return allocationStalls; }
+
 }  // namespace outoforder
 }  // namespace simeng

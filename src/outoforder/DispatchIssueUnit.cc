@@ -43,10 +43,31 @@ void DispatchIssueUnit::tick() {
     scoreboard[reg.type][reg.tag] = false;
   }
 
-  // TODO: Add to RS
-
-  toExecuteBuffer.getTailSlots()[0] = uop;
+  reservationStation.push_back(uop);
   fromRenameBuffer.getHeadSlots()[0] = nullptr;
+}
+
+void DispatchIssueUnit::issue() {
+  // Iterate over RS to find a ready uop to issue
+
+  const int maxIssue = 1;
+  int issued = 0;
+  auto it = reservationStation.begin();
+  while (it != reservationStation.end() && issued < maxIssue) {
+    auto& entry = *it;
+    if (entry->isFlushed()) {
+      it = reservationStation.erase(it);
+      continue;
+    }
+
+    if (entry->canExecute()) {
+      toExecuteBuffer.getTailSlots()[0] = entry;
+      issued++;
+      it = reservationStation.erase(it);
+    } else {
+      it++;
+    }
+  }
 }
 
 void DispatchIssueUnit::forwardOperands(
@@ -55,22 +76,30 @@ void DispatchIssueUnit::forwardOperands(
   assert(registers.size() == values.size() &&
          "Mismatched register and value vector sizes");
 
-  // TODO: Replace with dependency matrix once RS is in-use
-
-  auto& uop = toExecuteBuffer.getTailSlots()[0];
-  if (uop == nullptr) {
-    return;
-  }
-  if (uop->canExecute()) {
-    return;
-  }
-
-  for (size_t i = 0; i < registers.size(); i++) {
-    const auto& reg = registers[i];
+  for (const auto& reg : registers) {
     // Flag scoreboard as ready now result is available
     scoreboard[reg.type][reg.tag] = true;
+  }
 
-    uop->supplyOperand(reg, values[i]);
+  // TODO: Replace with dependency matrix
+  for (auto& uop : reservationStation) {
+    if (uop == nullptr) {
+      return;
+    }
+    if (uop->canExecute()) {
+      return;
+    }
+
+    const auto& sourceRegisters = uop->getOperandRegisters();
+    for (size_t i = 0; i < registers.size(); i++) {
+      for (size_t j = 0; j < sourceRegisters.size(); j++) {
+        const auto& reg = registers[i];
+
+        if (sourceRegisters[j] == reg && !uop->isOperandReady(j)) {
+          uop->supplyOperand(reg, values[i]);
+        }
+      }
+    }
   }
 }
 

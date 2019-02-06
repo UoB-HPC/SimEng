@@ -24,6 +24,10 @@ class RenameUnit {
    * space. */
   void tick();
 
+  /** Retrieve the number of cycles this unit stalled due to an inability to
+   * allocate enough destination registers. */
+  uint64_t getAllocationStalls() const;
+
  private:
   /** A buffer of instructions to rename. */
   PipelineBuffer<std::shared_ptr<Instruction>>& fromDecodeBuffer;
@@ -40,6 +44,10 @@ class RenameUnit {
   /** A table recording the numbers of each type of register needed to
    * successfully allocate destinations for an instruction. */
   std::vector<uint8_t> freeRegistersNeeded;
+
+  /** The number of cycles stalled due to inability to allocate enough
+   * destination registers. */
+  uint64_t allocationStalls = 0;
 };
 
 }  // namespace outoforder

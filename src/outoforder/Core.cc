@@ -6,7 +6,7 @@ namespace simeng {
 namespace outoforder {
 
 // TODO: Replace with config option
-const std::initializer_list<uint16_t> physicalRegisters = {34, 34, 34};
+const std::initializer_list<uint16_t> physicalRegisters = {128, 128, 128};
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const char* insnPtr, unsigned int programByteLength,
@@ -14,7 +14,7 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
     : memory(static_cast<char*>(calloc(1024, 1))),
       registerFile(physicalRegisters),
       registerAliasTable(isa.getRegisterFileStructure(), physicalRegisters),
-      reorderBuffer(16, registerAliasTable),
+      reorderBuffer(256, registerAliasTable),
       fetchToDecodeBuffer(1, {}),
       decodeToRenameBuffer(1, nullptr),
       renameToDispatchBuffer(1, nullptr),
@@ -44,6 +44,9 @@ void Core::tick() {
   renameUnit.tick();
   dispatchIssueUnit.tick();
   executeUnit.tick();
+
+  // Late tick for the dispatch/issue unit to issue newly ready uops
+  dispatchIssueUnit.issue();
 
   // Tick buffers
   // Each unit must have wiped the entries at the head of the buffer after use,
@@ -100,10 +103,12 @@ bool Core::hasHalted() const {
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = writebackUnit.getInstructionsRetiredCount();
   auto ipc = retired / static_cast<float>(ticks);
+  auto allocationStalls = renameUnit.getAllocationStalls();
   return {{"cycles", std::to_string(ticks)},
           {"retired", std::to_string(retired)},
           {"ipc", std::to_string(ipc)},
-          {"flushes", std::to_string(flushes)}};
+          {"flushes", std::to_string(flushes)},
+          {"allocationStalls", std::to_string(allocationStalls)}};
 }
 
 }  // namespace outoforder

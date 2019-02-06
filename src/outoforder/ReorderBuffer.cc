@@ -46,8 +46,7 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
       for (const auto& reg : uop->getDestinationRegisters()) {
         rat.rewind(reg);
       }
-
-      // TODO: Flag instruction as flushed, so other units can ignore it
+      uop->setFlushed();
       buffer[i] = nullptr;
     }
   }

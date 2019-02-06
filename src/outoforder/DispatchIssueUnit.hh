@@ -25,6 +25,10 @@ class DispatchIssueUnit {
    * instructions and sets scoreboard flags for destination registers. */
   void tick();
 
+  /** Identify the oldest ready instruction in the reservation station and issue
+   * it. */
+  void issue();
+
   /** Forwards operands and performs register reads for the currently queued
    * instruction. */
   void forwardOperands(const std::vector<Register>& destinations,

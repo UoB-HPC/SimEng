@@ -174,6 +174,12 @@ class A64Instruction : public Instruction {
   /** Retrieve this instruction's sequence ID. */
   uint64_t getSequenceId() const override;
 
+  /** Mark this instruction as flushed. */
+  void setFlushed() override;
+
+  /** Check whether this instruction has been flushed. */
+  bool isFlushed() const override;
+
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
    * automatically supplied as zero. */
@@ -288,6 +294,9 @@ class A64Instruction : public Instruction {
   /** This instruction's sequence ID; a higher ID represents a chronologically
    * newer instruction. */
   uint64_t sequenceId;
+
+  /** Has this instruction been flushed? */
+  bool flushed = false;
 };
 
 }  // namespace simeng
