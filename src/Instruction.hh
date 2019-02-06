@@ -105,6 +105,11 @@ class Instruction {
 
   /** Retrieve this instruction's sequence ID. */
   virtual uint64_t getSequenceId() const = 0;
+
+  /** Mark this instruction as flushed. */
+  virtual void setFlushed() = 0;
+  /** Check whether this instruction has been flushed. */
+  virtual bool isFlushed() const = 0;
 };
 
 }  // namespace simeng

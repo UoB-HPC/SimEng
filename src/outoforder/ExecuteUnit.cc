@@ -17,16 +17,47 @@ ExecuteUnit::ExecuteUnit(
       memory(memory) {}
 
 void ExecuteUnit::tick() {
+  tickCounter++;
   shouldFlush_ = false;
 
   auto& uop = fromIssueBuffer.getHeadSlots()[0];
-  if (uop == nullptr) {
-    // NOP
-    // Forward a lack of results to trigger reading other operands.
-    dispatchIssueUnit.forwardOperands({}, {});
+  if (uop != nullptr) {
+    // dispatchIssueUnit.forwardOperands({}, {});
+
+    // TODO: Retrieve latency from the instruction
+    const unsigned int latency = 1;
+
+    if (latency == 1 && pipeline.size() == 0) {
+      // Pipeline is empty and insn will execute this cycle; bypass
+      execute(uop);
+      return;
+    } else {
+      // Add insn to pipeline
+      pipeline.push({uop, tickCounter + latency - 1});
+      fromIssueBuffer.getHeadSlots()[0] = nullptr;
+    }
+  }
+
+  if (pipeline.size() == 0) {
     return;
   }
 
+  auto& head = pipeline.front();
+  while (head.insn->isFlushed()) {
+    pipeline.pop();
+
+    if (pipeline.size() == 0) {
+      return;
+    }
+    head = pipeline.front();
+  }
+  if (head.readyAt <= tickCounter) {
+    execute(head.insn);
+    pipeline.pop();
+  }
+}
+
+void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
     for (auto const& request : addresses) {
@@ -73,7 +104,6 @@ void ExecuteUnit::tick() {
                                     uop->getResults());
 
   toWritebackBuffer.getTailSlots()[0] = uop;
-  fromIssueBuffer.getHeadSlots()[0] = nullptr;
 }
 
 bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }

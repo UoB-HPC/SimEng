@@ -153,4 +153,7 @@ bool A64Instruction::wasBranchTaken() const { return branchTaken; }
 void A64Instruction::setSequenceId(uint64_t seqId) { sequenceId = seqId; };
 uint64_t A64Instruction::getSequenceId() const { return sequenceId; };
 
+void A64Instruction::setFlushed() { flushed = true; }
+bool A64Instruction::isFlushed() const { return flushed; }
+
 }  // namespace simeng
