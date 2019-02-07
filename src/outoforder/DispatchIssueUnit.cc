@@ -26,6 +26,9 @@ void DispatchIssueUnit::tick() {
     return;
   }
 
+  // Assume the uop will be ready
+  bool ready = true;
+
   // Register read
   // Identify remaining missing registers and supply values
   auto& sourceRegisters = uop->getOperandRegisters();
@@ -41,8 +44,13 @@ void DispatchIssueUnit::tick() {
         // This register isn't ready yet. Register this uop to the dependency
         // matrix for a more efficient lookup later
         dependencyMatrix[reg.type][reg.tag].push_back(uop);
+        ready = false;
       }
     }
+  }
+
+  if (ready) {
+    readyCount++;
   }
 
   // Set scoreboard for all destination registers as not ready
@@ -56,17 +64,21 @@ void DispatchIssueUnit::tick() {
 }
 
 void DispatchIssueUnit::issue() {
-  // Iterate over RS to find a ready uop to issue
-
   const int maxIssue = 1;
   int issued = 0;
   auto it = reservationStation.begin();
-  while (it != reservationStation.end() && issued < maxIssue) {
+
+  // Iterate over RS to find a ready uop to issue
+  while (issued < maxIssue && it != reservationStation.end() &&
+         readyCount > 0) {
     auto& entry = *it;
 
     if (entry->canExecute()) {
+      // Found a suitable entry; add to output, increment issue counter,
+      // decrement ready counter, and remove from RS
       toExecuteBuffer.getTailSlots()[0] = entry;
       issued++;
+      readyCount--;
       it = reservationStation.erase(it);
     } else {
       it++;
@@ -89,6 +101,9 @@ void DispatchIssueUnit::forwardOperands(
     const auto& dependents = dependencyMatrix[reg.type][reg.tag];
     for (auto& uop : dependents) {
       uop->supplyOperand(reg, values[i]);
+      if (uop->canExecute()) {
+        readyCount++;
+      }
     }
 
     // Clear the dependency list
@@ -105,6 +120,9 @@ void DispatchIssueUnit::purgeFlushed() {
   while (it != reservationStation.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {
+      if (entry->canExecute()) {
+        readyCount--;
+      }
       it = reservationStation.erase(it);
     } else {
       it++;
