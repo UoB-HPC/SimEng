@@ -87,6 +87,10 @@ void DispatchIssueUnit::issue() {
       toExecuteBuffer.getTailSlots()[0] = entry;
       issued++;
       readyCount--;
+
+      if (it != reservationStation.begin()) {
+        outOfOrderIssues++;
+      }
       it = reservationStation.erase(it);
     } else {
       it++;
@@ -149,6 +153,9 @@ void DispatchIssueUnit::purgeFlushed() {
 uint64_t DispatchIssueUnit::getRSStalls() const { return rsStalls; }
 uint64_t DispatchIssueUnit::getFrontendStalls() const { return frontendStalls; }
 uint64_t DispatchIssueUnit::getBackendStalls() const { return backendStalls; }
+uint64_t DispatchIssueUnit::getOutOfOrderIssueCount() const {
+  return outOfOrderIssues;
+}
 
 }  // namespace outoforder
 }  // namespace simeng

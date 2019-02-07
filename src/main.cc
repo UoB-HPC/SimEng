@@ -55,14 +55,26 @@ int main(int argc, char** argv) {
   // };
 
   // Simple loop; counts down from 1024*1024
+  // uint32_t hex[] = {
+  //     // 0x321E03E0,  // orr w0, wzr, #4
+  //     0x320C03E0,  // orr w0, wzr, #1048576
+  //     // 0x321603E0, // orr w0, wzr, #1024
+  //     0x71000400,  // subs w0, w0, #1
+  //     // 0x320003E0, // orr w0, wzr, #1
+  //     // 0x71000400, // subs w0, w0, #1
+  //     0x54FFFFE1,  // b.ne -4
+  // };
+
+  // Out-of-order test; counts down from 1024*1024, with an independent `orr` at
+  // the start of each branch. With an instruction latency of 2 or greater, the
+  // `orr` at the start of the next loop should issue/execute while the
+  // preceding branch is waiting on the result from the `subs`.
   uint32_t hex[] = {
       // 0x321E03E0,  // orr w0, wzr, #4
       0x320C03E0,  // orr w0, wzr, #1048576
-      // 0x321603E0, // orr w0, wzr, #1024
+      0x320003E1,  // orr w0, wzr, #1
       0x71000400,  // subs w0, w0, #1
-      // 0x320003E0, // orr w0, wzr, #1
-      // 0x71000400, // subs w0, w0, #1
-      0x54FFFFE1,  // b.ne -4
+      0x54FFFFC1,  // b.ne -8
   };
 
   auto insnPtr = reinterpret_cast<char*>(hex);

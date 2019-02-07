@@ -23,7 +23,7 @@ void ExecuteUnit::tick() {
   auto& uop = fromIssueBuffer.getHeadSlots()[0];
   if (uop != nullptr) {
     // TODO: Retrieve latency from the instruction
-    const unsigned int latency = 1;
+    const unsigned int latency = 2;
 
     if (latency == 1 && pipeline.size() == 0) {
       // Pipeline is empty and insn will execute this cycle; bypass
