@@ -108,6 +108,7 @@ class Instruction {
 
   /** Mark this instruction as flushed. */
   virtual void setFlushed() = 0;
+
   /** Check whether this instruction has been flushed. */
   virtual bool isFlushed() const = 0;
 };
