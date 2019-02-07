@@ -28,7 +28,7 @@ void ExecuteUnit::tick() {
     if (latency == 1 && pipeline.size() == 0) {
       // Pipeline is empty and insn will execute this cycle; bypass
       execute(uop);
-      fromDecodeBuffer.getHeadSlots()[0] = nullptr;
+      fromIssueBuffer.getHeadSlots()[0] = nullptr;
       return;
     } else {
       // Add insn to pipeline

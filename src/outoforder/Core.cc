@@ -5,8 +5,10 @@
 namespace simeng {
 namespace outoforder {
 
-// TODO: Replace with config option
+// TODO: Replace with config options
 const std::initializer_list<uint16_t> physicalRegisters = {128, 128, 128};
+const unsigned int robSize = 16;
+const unsigned int rsSize = 16;
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const char* insnPtr, unsigned int programByteLength,
@@ -14,7 +16,7 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
     : memory(static_cast<char*>(calloc(1024, 1))),
       registerFile(physicalRegisters),
       registerAliasTable(isa.getRegisterFileStructure(), physicalRegisters),
-      reorderBuffer(256, registerAliasTable),
+      reorderBuffer(robSize, registerAliasTable),
       fetchToDecodeBuffer(1, {}),
       decodeToRenameBuffer(1, nullptr),
       renameToDispatchBuffer(1, nullptr),
@@ -26,7 +28,7 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
       renameUnit(decodeToRenameBuffer, renameToDispatchBuffer, reorderBuffer,
                  registerAliasTable, physicalRegisters.size()),
       dispatchIssueUnit(renameToDispatchBuffer, issueToExecuteBuffer,
-                        registerFile, physicalRegisters),
+                        registerFile, physicalRegisters, rsSize),
       executeUnit(issueToExecuteBuffer, executeToWritebackBuffer,
                   dispatchIssueUnit, branchPredictor, memory),
       writebackUnit(executeToWritebackBuffer, registerFile){};
@@ -104,12 +106,22 @@ bool Core::hasHalted() const {
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = writebackUnit.getInstructionsRetiredCount();
   auto ipc = retired / static_cast<float>(ticks);
+
   auto allocationStalls = renameUnit.getAllocationStalls();
+  auto robStalls = renameUnit.getAllocationStalls();
+
+  auto rsStalls = dispatchIssueUnit.getRSStalls();
+  auto frontendStalls = dispatchIssueUnit.getFrontendStalls();
+  auto backendStalls = dispatchIssueUnit.getBackendStalls();
   return {{"cycles", std::to_string(ticks)},
           {"retired", std::to_string(retired)},
           {"ipc", std::to_string(ipc)},
           {"flushes", std::to_string(flushes)},
-          {"allocationStalls", std::to_string(allocationStalls)}};
+          {"rename.allocationStalls", std::to_string(allocationStalls)},
+          {"rename.robStalls", std::to_string(robStalls)},
+          {"dispatch.rsStalls", std::to_string(rsStalls)},
+          {"issue.frontendStalls", std::to_string(frontendStalls)},
+          {"issue.backendStalls", std::to_string(backendStalls)}};
 }
 
 }  // namespace outoforder

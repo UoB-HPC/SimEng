@@ -19,7 +19,8 @@ class DispatchIssueUnit {
   DispatchIssueUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
                     PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
                     const RegisterFile& registerFile,
-                    const std::vector<uint16_t>& physicalRegisterStructure);
+                    const std::vector<uint16_t>& physicalRegisterStructure,
+                    unsigned int maxReservationStationSize);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -40,6 +41,18 @@ class DispatchIssueUnit {
   /** Clear the RS of all flushed instructions. */
   void purgeFlushed();
 
+  /** Retrieve the number of cycles this unit stalled due to insufficient RS
+   * space. */
+  uint64_t getRSStalls() const;
+
+  /** Retrieve the number of cycles no instructions were issued due to an empty
+   * RS. */
+  uint64_t getFrontendStalls() const;
+
+  /** Retrieve the number of cycles no instructions were issued due to
+   * dependencies or a lack of available ports. */
+  uint64_t getBackendStalls() const;
+
  private:
   /** A buffer of instructions to dispatch and read operands for. */
   PipelineBuffer<std::shared_ptr<Instruction>>& fromRenameBuffer;
@@ -53,6 +66,9 @@ class DispatchIssueUnit {
   /** The register availability scoreboard. */
   std::vector<std::vector<bool>> scoreboard;
 
+  /** The maximum reservation station size. */
+  unsigned int maxReservationStationSize;
+
   /** The reservation station. Holds instructions until operands become
    * available. */
   std::deque<std::shared_ptr<Instruction>> reservationStation;
@@ -65,6 +81,16 @@ class DispatchIssueUnit {
 
   /** The number of instructions ready to execute. */
   unsigned int readyCount = 0;
+
+  /** The number of cycles stalled due to a full reservation station. */
+  uint64_t rsStalls = 0;
+
+  /** The number of cycles no instructions were issued due to an empty RS. */
+  uint64_t frontendStalls = 0;
+
+  /** The number of cycles no instructions were issued due to dependencies or a
+   * lack of available ports. */
+  uint64_t backendStalls = 0;
 };
 
 }  // namespace outoforder

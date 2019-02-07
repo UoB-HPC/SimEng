@@ -107,12 +107,13 @@ int main(int argc, char** argv) {
   auto hz = iterations / (static_cast<double>(duration) / 1000.0);
 
   // Print stats
+  std::cout << "\n";
   auto stats = core->getStats();
   for (const auto& [key, value] : stats) {
     std::cout << key << ": " << value << "\n";
   }
 
-  std::cout << "Finished " << iterations << " ticks in " << duration << "ms ("
+  std::cout << "\nFinished " << iterations << " ticks in " << duration << "ms ("
             << hz << "Hz)" << std::endl;
 
   return 0;
