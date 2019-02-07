@@ -75,6 +75,7 @@ void Core::tick() {
 
     // Flush everything younger than the bad instruction from the ROB
     reorderBuffer.flush(executeUnit.getFlushSeqId());
+    dispatchIssueUnit.purgeFlushed();
 
     flushes++;
   } else if (decodeUnit.shouldFlush()) {

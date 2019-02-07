@@ -37,6 +37,9 @@ class DispatchIssueUnit {
   /** Set the scoreboard entry for the provided register as ready. */
   void setRegisterReady(Register reg);
 
+  /** Clear the RS of all flushed instructions. */
+  void purgeFlushed();
+
  private:
   /** A buffer of instructions to dispatch and read operands for. */
   PipelineBuffer<std::shared_ptr<Instruction>>& fromRenameBuffer;
@@ -53,6 +56,12 @@ class DispatchIssueUnit {
   /** The reservation station. Holds instructions until operands become
    * available. */
   std::deque<std::shared_ptr<Instruction>> reservationStation;
+
+  /** A dependency matrix, containing all the instructions waiting on an
+   * operand. For a register `{type,tag}`, the vector of dependents may be found
+   * at `dependencyMatrix[type][tag]`. */
+  std::vector<std::vector<std::vector<std::shared_ptr<Instruction>>>>
+      dependencyMatrix;
 };
 
 }  // namespace outoforder

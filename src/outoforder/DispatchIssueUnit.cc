@@ -11,10 +11,12 @@ DispatchIssueUnit::DispatchIssueUnit(
     : fromRenameBuffer(fromRename),
       toExecuteBuffer(toExecute),
       registerFile(registerFile),
-      scoreboard(physicalRegisterStructure.size()) {
+      scoreboard(physicalRegisterStructure.size()),
+      dependencyMatrix(physicalRegisterStructure.size()) {
   // Initialise scoreboard
-  for (size_t i = 0; i < physicalRegisterStructure.size(); i++) {
-    scoreboard[i].assign(physicalRegisterStructure[i], true);
+  for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
+    scoreboard[type].assign(physicalRegisterStructure[type], true);
+    dependencyMatrix[type].resize(physicalRegisterStructure[type]);
   }
 };
 
@@ -30,10 +32,16 @@ void DispatchIssueUnit::tick() {
   for (size_t i = 0; i < sourceRegisters.size(); i++) {
     const auto& reg = sourceRegisters[i];
 
-    // If the operand hasn't already been supplied, and the scoreboard says it's
-    // ready, read and supply the register value
-    if (!uop->isOperandReady(i) && scoreboard[reg.type][reg.tag]) {
-      uop->supplyOperand(reg, registerFile.get(reg));
+    if (!uop->isOperandReady(i)) {
+      // The operand hasn't already been supplied
+      if (scoreboard[reg.type][reg.tag]) {
+        // The scoreboard says it's ready; read and supply the register value
+        uop->supplyOperand(reg, registerFile.get(reg));
+      } else {
+        // This register isn't ready yet. Register this uop to the dependency
+        // matrix for a more efficient lookup later
+        dependencyMatrix[reg.type][reg.tag].push_back(uop);
+      }
     }
   }
 
@@ -55,10 +63,6 @@ void DispatchIssueUnit::issue() {
   auto it = reservationStation.begin();
   while (it != reservationStation.end() && issued < maxIssue) {
     auto& entry = *it;
-    if (entry->isFlushed()) {
-      it = reservationStation.erase(it);
-      continue;
-    }
 
     if (entry->canExecute()) {
       toExecuteBuffer.getTailSlots()[0] = entry;
@@ -76,35 +80,36 @@ void DispatchIssueUnit::forwardOperands(
   assert(registers.size() == values.size() &&
          "Mismatched register and value vector sizes");
 
-  for (const auto& reg : registers) {
+  for (size_t i = 0; i < registers.size(); i++) {
+    const auto& reg = registers[i];
     // Flag scoreboard as ready now result is available
     scoreboard[reg.type][reg.tag] = true;
-  }
 
-  // TODO: Replace with dependency matrix
-  for (auto& uop : reservationStation) {
-    if (uop == nullptr) {
-      return;
-    }
-    if (uop->canExecute()) {
-      return;
+    // Supply the value to all dependent uops
+    const auto& dependents = dependencyMatrix[reg.type][reg.tag];
+    for (auto& uop : dependents) {
+      uop->supplyOperand(reg, values[i]);
     }
 
-    const auto& sourceRegisters = uop->getOperandRegisters();
-    for (size_t i = 0; i < registers.size(); i++) {
-      for (size_t j = 0; j < sourceRegisters.size(); j++) {
-        const auto& reg = registers[i];
-
-        if (sourceRegisters[j] == reg && !uop->isOperandReady(j)) {
-          uop->supplyOperand(reg, values[i]);
-        }
-      }
-    }
+    // Clear the dependency list
+    dependencyMatrix[reg.type][reg.tag].clear();
   }
 }
 
 void DispatchIssueUnit::setRegisterReady(Register reg) {
   scoreboard[reg.type][reg.tag] = true;
+}
+
+void DispatchIssueUnit::purgeFlushed() {
+  auto it = reservationStation.begin();
+  while (it != reservationStation.end()) {
+    auto& entry = *it;
+    if (entry->isFlushed()) {
+      it = reservationStation.erase(it);
+    } else {
+      it++;
+    }
+  }
 }
 
 }  // namespace outoforder

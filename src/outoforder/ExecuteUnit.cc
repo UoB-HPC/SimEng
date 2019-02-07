@@ -22,8 +22,6 @@ void ExecuteUnit::tick() {
 
   auto& uop = fromIssueBuffer.getHeadSlots()[0];
   if (uop != nullptr) {
-    // dispatchIssueUnit.forwardOperands({}, {});
-
     // TODO: Retrieve latency from the instruction
     const unsigned int latency = 1;
 
