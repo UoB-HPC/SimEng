@@ -28,6 +28,10 @@ class RenameUnit {
    * allocate enough destination registers. */
   uint64_t getAllocationStalls() const;
 
+  /** Retrieve the number of cycles this unit stalled due to insufficient ROB
+   * space. */
+  uint64_t getROBStalls() const;
+
  private:
   /** A buffer of instructions to rename. */
   PipelineBuffer<std::shared_ptr<Instruction>>& fromDecodeBuffer;
@@ -48,6 +52,9 @@ class RenameUnit {
   /** The number of cycles stalled due to inability to allocate enough
    * destination registers. */
   uint64_t allocationStalls = 0;
+
+  /** The number of cycles stalled due to insufficient ROB space. */
+  uint64_t robStalls = 0;
 };
 
 }  // namespace outoforder

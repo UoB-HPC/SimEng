@@ -20,10 +20,14 @@ void RenameUnit::tick() {
     fromDecodeBuffer.stall(true);
     return;
   }
-  fromDecodeBuffer.stall(false);
 
   auto& uop = fromDecodeBuffer.getHeadSlots()[0];
   if (uop == nullptr) {
+    return;
+  }
+  if (reorderBuffer.getFreeSpace() == 0) {
+    fromDecodeBuffer.stall(true);
+    robStalls++;
     return;
   }
 
@@ -43,6 +47,8 @@ void RenameUnit::tick() {
       }
     }
   }
+
+  fromDecodeBuffer.stall(false);
 
   // Allocate source registers
   auto& sourceRegisters = uop->getOperandRegisters();
@@ -74,6 +80,7 @@ void RenameUnit::tick() {
 }
 
 uint64_t RenameUnit::getAllocationStalls() const { return allocationStalls; }
+uint64_t RenameUnit::getROBStalls() const { return robStalls; }
 
 }  // namespace outoforder
 }  // namespace simeng

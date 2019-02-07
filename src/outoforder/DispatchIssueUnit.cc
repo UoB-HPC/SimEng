@@ -7,11 +7,13 @@ DispatchIssueUnit::DispatchIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
     PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
     const RegisterFile& registerFile,
-    const std::vector<uint16_t>& physicalRegisterStructure)
+    const std::vector<uint16_t>& physicalRegisterStructure,
+    unsigned int maxReservationStationSize)
     : fromRenameBuffer(fromRename),
       toExecuteBuffer(toExecute),
       registerFile(registerFile),
       scoreboard(physicalRegisterStructure.size()),
+      maxReservationStationSize(maxReservationStationSize),
       dependencyMatrix(physicalRegisterStructure.size()) {
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
@@ -25,6 +27,12 @@ void DispatchIssueUnit::tick() {
   if (uop == nullptr) {
     return;
   }
+  if (reservationStation.size() == maxReservationStationSize) {
+    fromRenameBuffer.stall(true);
+    rsStalls++;
+    return;
+  }
+  fromRenameBuffer.stall(false);
 
   // Assume the uop will be ready
   bool ready = true;
@@ -84,6 +92,14 @@ void DispatchIssueUnit::issue() {
       it++;
     }
   }
+
+  if (issued == 0) {
+    if (reservationStation.size() == 0) {
+      frontendStalls++;
+    } else {
+      backendStalls++;
+    }
+  }
 }
 
 void DispatchIssueUnit::forwardOperands(
@@ -129,6 +145,10 @@ void DispatchIssueUnit::purgeFlushed() {
     }
   }
 }
+
+uint64_t DispatchIssueUnit::getRSStalls() const { return rsStalls; }
+uint64_t DispatchIssueUnit::getFrontendStalls() const { return frontendStalls; }
+uint64_t DispatchIssueUnit::getBackendStalls() const { return backendStalls; }
 
 }  // namespace outoforder
 }  // namespace simeng

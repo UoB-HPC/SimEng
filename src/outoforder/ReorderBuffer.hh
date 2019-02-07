@@ -28,6 +28,9 @@ class ReorderBuffer {
   /** Retrieve the current size of the ROB. */
   unsigned int size() const;
 
+  /** Retrieve the current amount of free space in the ROB. */
+  unsigned int getFreeSpace() const;
+
  private:
   /** A reference to the register alias table. */
   RegisterAliasTable& rat;
