@@ -113,6 +113,7 @@ std::map<std::string, std::string> Core::getStats() const {
   auto rsStalls = dispatchIssueUnit.getRSStalls();
   auto frontendStalls = dispatchIssueUnit.getFrontendStalls();
   auto backendStalls = dispatchIssueUnit.getBackendStalls();
+  auto outOfOrderIssues = dispatchIssueUnit.getOutOfOrderIssueCount();
   return {{"cycles", std::to_string(ticks)},
           {"retired", std::to_string(retired)},
           {"ipc", std::to_string(ipc)},
@@ -121,7 +122,8 @@ std::map<std::string, std::string> Core::getStats() const {
           {"rename.robStalls", std::to_string(robStalls)},
           {"dispatch.rsStalls", std::to_string(rsStalls)},
           {"issue.frontendStalls", std::to_string(frontendStalls)},
-          {"issue.backendStalls", std::to_string(backendStalls)}};
+          {"issue.backendStalls", std::to_string(backendStalls)},
+          {"issue.outOfOrderIssues", std::to_string(outOfOrderIssues)}};
 }
 
 }  // namespace outoforder

@@ -53,6 +53,10 @@ class DispatchIssueUnit {
    * dependencies or a lack of available ports. */
   uint64_t getBackendStalls() const;
 
+  /** Retrieve the number of cycles no instructions were issued due to
+   * dependencies or a lack of available ports. */
+  uint64_t getOutOfOrderIssueCount() const;
+
  private:
   /** A buffer of instructions to dispatch and read operands for. */
   PipelineBuffer<std::shared_ptr<Instruction>>& fromRenameBuffer;
@@ -91,6 +95,9 @@ class DispatchIssueUnit {
   /** The number of cycles no instructions were issued due to dependencies or a
    * lack of available ports. */
   uint64_t backendStalls = 0;
+
+  /** The number of instructions issued out-of-order. */
+  uint64_t outOfOrderIssues = 0;
 };
 
 }  // namespace outoforder
