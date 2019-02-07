@@ -62,6 +62,9 @@ class DispatchIssueUnit {
    * at `dependencyMatrix[type][tag]`. */
   std::vector<std::vector<std::vector<std::shared_ptr<Instruction>>>>
       dependencyMatrix;
+
+  /** The number of instructions ready to execute. */
+  unsigned int readyCount = 0;
 };
 
 }  // namespace outoforder
