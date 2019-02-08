@@ -15,7 +15,7 @@ void WritebackUnit::tick() {
     return;
   }
 
-  auto results = uop->getResults();
+  auto& results = uop->getResults();
   auto& destinations = uop->getDestinationRegisters();
   for (size_t i = 0; i < results.size(); i++) {
     // Write results to register file

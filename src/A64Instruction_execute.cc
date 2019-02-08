@@ -110,18 +110,18 @@ void A64Instruction::execute() {
       return;
     }
     case A64Opcode::LDR_I: {
-      results[0].value = memoryData[0].zeroExtend(memoryAddresses[0].second, 8);
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 8);
       return;
     }
     case A64Opcode::ORR_I: {
       if (metadata.sf) {
         auto value = operands[0].get<uint64_t>();
         auto result = value | metadata.imm;
-        results[0].value = RegisterValue(result);
+        results[0] = RegisterValue(result);
       } else {
         auto value = operands[0].get<uint32_t>();
         auto result = (value | static_cast<uint32_t>(metadata.imm));
-        results[0].value = RegisterValue(result, 8);
+        results[0] = RegisterValue(result, 8);
       }
       return;
     }
@@ -134,14 +134,14 @@ void A64Instruction::execute() {
         auto x = operands[0].get<uint64_t>();
         auto y = ~metadata.imm;
         auto [result, nzcv] = addWithCarry(x, y, true);
-        results[0].value = RegisterValue(result);
-        results[1].value = RegisterValue(nzcv);
+        results[0] = RegisterValue(result);
+        results[1] = RegisterValue(nzcv);
       } else {
         auto x = operands[0].get<uint32_t>();
         auto y = ~static_cast<uint32_t>(metadata.imm);
         auto [result, nzcv] = addWithCarry(x, y, true);
-        results[0].value = RegisterValue(result);
-        results[1].value = RegisterValue(nzcv);
+        results[0] = RegisterValue(result);
+        results[1] = RegisterValue(nzcv);
       }
       return;
     }
