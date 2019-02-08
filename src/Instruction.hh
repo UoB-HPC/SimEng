@@ -57,8 +57,8 @@ class Instruction {
    * commit. */
   virtual bool canCommit() const = 0;
 
-  /** Retrieve register results to commit. */
-  virtual std::vector<RegisterValue> getResults() const = 0;
+  /** Retrieve register results. */
+  virtual const std::vector<RegisterValue>& getResults() const = 0;
 
   /** Generate memory addresses this instruction wishes to access. */
   virtual std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() = 0;

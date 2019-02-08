@@ -40,7 +40,7 @@ void A64Instruction::setSourceRegisters(
 void A64Instruction::setDestinationRegisters(
     const std::vector<Register>& registers) {
   destinationRegisters = registers;
-  results = std::vector<A64Result>(destinationRegisters.size());
+  results = std::vector<RegisterValue>(destinationRegisters.size());
 }
 
 const std::vector<Register>& A64Instruction::getOperandRegisters() const {
@@ -95,12 +95,8 @@ bool A64Instruction::hasExecuted() const { return executed; }
 void A64Instruction::setCommitReady() { canCommit_ = true; }
 bool A64Instruction::canCommit() const { return canCommit_; }
 
-std::vector<RegisterValue> A64Instruction::getResults() const {
-  // Map from internal result format to RegisterValue vector
-  auto out = std::vector<RegisterValue>(results.size());
-  std::transform(results.begin(), results.end(), out.begin(),
-                 [](const A64Result& item) { return item.value; });
-  return out;
+const std::vector<RegisterValue>& A64Instruction::getResults() const {
+  return results;
 }
 
 bool A64Instruction::isStore() const { return isStore_; }

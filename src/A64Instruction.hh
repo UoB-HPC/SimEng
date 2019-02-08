@@ -64,10 +64,6 @@ enum class A64Opcode {
   SUBS_I,
 };
 
-struct A64Result {
-  RegisterValue value;
-};
-
 /** A basic ARMv8-a implementation of the `Instruction` interface. */
 class A64Instruction : public Instruction {
  public:
@@ -126,8 +122,8 @@ class A64Instruction : public Instruction {
    * commit. */
   bool canCommit() const override;
 
-  /** Retrieve register results to commit. */
-  std::vector<RegisterValue> getResults() const override;
+  /** Retrieve register results. */
+  const std::vector<RegisterValue>& getResults() const override;
 
   /** Generate memory addresses this instruction wishes to access. */
   std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() override;
@@ -207,7 +203,7 @@ class A64Instruction : public Instruction {
 
   /** A vector of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
-  std::vector<A64Result> results;
+  std::vector<RegisterValue> results;
 
   /** The current exception state of this instruction. */
   A64InstructionException exception = A64InstructionException::None;
