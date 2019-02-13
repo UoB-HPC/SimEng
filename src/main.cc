@@ -43,15 +43,15 @@ int main(int argc, char** argv) {
 
   // Simple program demonstrating various instructions
   // uint32_t hex[] = {
-  //     0x320003E0, // orr w0, wzr, #1
-  //     0x321F0001, // orr w1, w0, #2
-  //     0xB90003E1, // str w1, [sp]
-  //     0xB94003E0, // ldr w0, [sp]
-  //     0xF94003E0, // ldr x0, [sp]
-  //     0x14000002, // b #8
-  //     0x320003E0, // orr w0, wzr, #1
-  //     0x32000002, // orr w2, w0, #1
-  //     0x71000420, // subs w0, w1, #1
+  //     0x320003E0,  // orr w0, wzr, #1
+  //     0x321F0001,  // orr w1, w0, #2
+  //     0xB90003E1,  // str w1, [sp]
+  //     0xB94003E0,  // ldr w0, [sp]
+  //     0xF94003E0,  // ldr x0, [sp]
+  //     0x14000002,  // b #8
+  //     0x320003E0,  // orr w0, wzr, #1
+  //     0x32000002,  // orr w2, w0, #1
+  //     0x71000420,  // subs w0, w1, #1
   // };
 
   // Simple loop; counts down from 1024*1024

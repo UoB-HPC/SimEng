@@ -6,6 +6,7 @@
 #include "DispatchIssueUnit.hh"
 #include "ExecuteUnit.hh"
 #include "FetchUnit.hh"
+#include "LoadStoreQueue.hh"
 #include "RegisterAliasTable.hh"
 #include "RenameUnit.hh"
 #include "ReorderBuffer.hh"
@@ -46,6 +47,9 @@ class Core : public simeng::Core {
 
   /** The core's register alias table. */
   RegisterAliasTable registerAliasTable;
+
+  /** The core's load/store queue. */
+  LoadStoreQueue loadStoreQueue;
 
   /** The core's reorder buffer. */
   ReorderBuffer reorderBuffer;

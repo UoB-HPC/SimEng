@@ -8,13 +8,13 @@ namespace outoforder {
 ExecuteUnit::ExecuteUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromIssue,
     PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
-    DispatchIssueUnit& dispatchIssueUnit, BranchPredictor& predictor,
-    char* memory)
+    DispatchIssueUnit& dispatchIssueUnit, LoadStoreQueue& lsq,
+    BranchPredictor& predictor)
     : fromIssueBuffer(fromIssue),
       toWritebackBuffer(toWriteback),
       dispatchIssueUnit(dispatchIssueUnit),
-      predictor(predictor),
-      memory(memory) {}
+      lsq(lsq),
+      predictor(predictor) {}
 
 void ExecuteUnit::tick() {
   tickCounter++;
@@ -59,29 +59,14 @@ void ExecuteUnit::tick() {
 
 void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   if (uop->isLoad()) {
-    auto addresses = uop->generateAddresses();
-    for (auto const& request : addresses) {
-      // Copy the data at the requested memory address into a RegisterValue
-      auto data = RegisterValue(memory + request.first, request.second);
-
-      uop->supplyData(request.first, data);
-    }
+    uop->generateAddresses();
+    lsq.startLoad(uop);
   } else if (uop->isStore()) {
     uop->generateAddresses();
   }
   uop->execute();
 
-  if (uop->isStore()) {
-    auto addresses = uop->getGeneratedAddresses();
-    auto data = uop->getData();
-    for (size_t i = 0; i < addresses.size(); i++) {
-      auto request = addresses[i];
-
-      // Copy data to memory
-      auto address = memory + request.first;
-      memcpy(address, data[i].getAsVector<char>(), request.second);
-    }
-  } else if (uop->isBranch()) {
+  if (uop->isBranch()) {
     pc = uop->getBranchAddress();
 
     // Update branch predictor with branch results

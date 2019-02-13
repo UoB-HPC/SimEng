@@ -59,13 +59,8 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   // TODO: Defer data read
   const auto& addresses = insn->getGeneratedAddresses();
   for (auto const& request : addresses) {
-    // Pointer manipulation to generate a RegisterValue from an arbitrary
-    // memory address
-    auto buffer = malloc(request.second);
-    memcpy(buffer, memory + request.first, request.second);
-
-    auto ptr = std::shared_ptr<uint8_t>((uint8_t*)buffer, free);
-    auto data = RegisterValue(ptr);
+    // Copy the data at the requested memory address into a RegisterValue
+    auto data = RegisterValue(memory + request.first, request.second);
 
     insn->supplyData(request.first, data);
   }
@@ -83,7 +78,7 @@ void LoadStoreQueue::commitStore() {
 
     // Copy data to memory
     auto address = memory + request.first;
-    memcpy(address, data[i].getAsVector<void>(), request.second);
+    memcpy(address, data[i].getAsVector<char>(), request.second);
   }
 
   // TODO: Search load queue for memory order violations and flush if discovered

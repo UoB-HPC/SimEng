@@ -6,6 +6,7 @@
 #include "../Instruction.hh"
 #include "../PipelineBuffer.hh"
 #include "DispatchIssueUnit.hh"
+#include "LoadStoreQueue.hh"
 
 namespace simeng {
 namespace outoforder {
@@ -28,8 +29,8 @@ class ExecuteUnit {
    * process memory. */
   ExecuteUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromIssue,
               PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
-              DispatchIssueUnit& dispatchIssueUnit, BranchPredictor& predictor,
-              char* memory);
+              DispatchIssueUnit& dispatchIssueUnit, LoadStoreQueue& lsq,
+              BranchPredictor& predictor);
 
   /** Tick the execute unit. Places incoming instructions into the pipeline and
    * executes an instruction that has reached the head of the pipeline, if
@@ -61,12 +62,12 @@ class ExecuteUnit {
   /** A reference to the decode unit, for forwarding operands. */
   DispatchIssueUnit& dispatchIssueUnit;
 
+  /** A reference to the load/store queue. */
+  LoadStoreQueue& lsq;
+
   /** A reference to the branch predictor, for updating with prediction results.
    */
   BranchPredictor& predictor;
-
-  /** A pointer to process memory. */
-  char* memory;
 
   /** The execution unit's internal pipeline, holding instructions until their
    * execution latency has expired and they are ready for their final results to

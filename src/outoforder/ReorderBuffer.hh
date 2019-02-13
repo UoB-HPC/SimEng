@@ -3,6 +3,7 @@
 #include <deque>
 
 #include "../Instruction.hh"
+#include "LoadStoreQueue.hh"
 #include "RegisterAliasTable.hh"
 
 namespace simeng {
@@ -14,7 +15,8 @@ class ReorderBuffer {
  public:
   /** Constructs a reorder buffer of maximum size `maxSize`, supplying a
    * reference to the register alias table. */
-  ReorderBuffer(unsigned int maxSize, RegisterAliasTable& rat);
+  ReorderBuffer(unsigned int maxSize, RegisterAliasTable& rat,
+                LoadStoreQueue& lsq);
 
   /** Add the provided instruction to the ROB. */
   void reserve(std::shared_ptr<Instruction> insn);
@@ -34,6 +36,10 @@ class ReorderBuffer {
  private:
   /** A reference to the register alias table. */
   RegisterAliasTable& rat;
+
+  /** A reference to the load/store queue. */
+  LoadStoreQueue& lsq;
+
   /** The maximum size of the ROB. */
   unsigned int maxSize;
 

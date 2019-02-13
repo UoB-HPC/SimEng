@@ -8,11 +8,12 @@ namespace outoforder {
 RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
                        PipelineBuffer<std::shared_ptr<Instruction>>& toDispatch,
                        ReorderBuffer& rob, RegisterAliasTable& rat,
-                       uint8_t registerTypes)
+                       LoadStoreQueue& lsq, uint8_t registerTypes)
     : fromDecodeBuffer(fromDecode),
       toDispatchBuffer(toDispatch),
       reorderBuffer(rob),
       rat(rat),
+      lsq(lsq),
       freeRegistersNeeded(registerTypes, 0) {}
 
 void RenameUnit::tick() {
@@ -29,6 +30,21 @@ void RenameUnit::tick() {
     fromDecodeBuffer.stall(true);
     robStalls++;
     return;
+  }
+
+  // If it's a memory op, make sure there's space in the respective queue
+  bool isLoad = uop->isLoad();
+  bool isStore = uop->isStore();
+  if (isLoad) {
+    if (lsq.getLoadQueueSpace() == 0 || lsq.getTotalSpace() == 0) {
+      fromDecodeBuffer.stall(true);
+      return;
+    }
+  } else if (isStore) {
+    if (lsq.getStoreQueueSpace() == 0 || lsq.getTotalSpace() == 0) {
+      fromDecodeBuffer.stall(true);
+      return;
+    }
   }
 
   auto& destinationRegisters = uop->getDestinationRegisters();
@@ -67,6 +83,13 @@ void RenameUnit::tick() {
 
   // Reserve a slot in the ROB for this uop
   reorderBuffer.reserve(uop);
+
+  // Add to the load/store queue if appropriate
+  if (isLoad) {
+    lsq.addLoad(uop);
+  } else if (isStore) {
+    lsq.addStore(uop);
+  }
 
   toDispatchBuffer.getTailSlots()[0] = uop;
   fromDecodeBuffer.getHeadSlots()[0] = nullptr;
