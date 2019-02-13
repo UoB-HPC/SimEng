@@ -9,6 +9,8 @@ namespace outoforder {
 const std::initializer_list<uint16_t> physicalRegisters = {128, 128, 128};
 const unsigned int robSize = 16;
 const unsigned int rsSize = 16;
+const unsigned int loadQueueSize = 16;
+const unsigned int storeQueueSize = 8;
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const char* insnPtr, unsigned int programByteLength,
@@ -16,7 +18,8 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
     : memory(static_cast<char*>(calloc(1024, 1))),
       registerFile(physicalRegisters),
       registerAliasTable(isa.getRegisterFileStructure(), physicalRegisters),
-      reorderBuffer(robSize, registerAliasTable),
+      loadStoreQueue(loadQueueSize, storeQueueSize, memory),
+      reorderBuffer(robSize, registerAliasTable, loadStoreQueue),
       fetchToDecodeBuffer(1, {}),
       decodeToRenameBuffer(1, nullptr),
       renameToDispatchBuffer(1, nullptr),
@@ -26,11 +29,11 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
                 branchPredictor),
       decodeUnit(fetchToDecodeBuffer, decodeToRenameBuffer, branchPredictor),
       renameUnit(decodeToRenameBuffer, renameToDispatchBuffer, reorderBuffer,
-                 registerAliasTable, physicalRegisters.size()),
+                 registerAliasTable, loadStoreQueue, physicalRegisters.size()),
       dispatchIssueUnit(renameToDispatchBuffer, issueToExecuteBuffer,
                         registerFile, physicalRegisters, rsSize),
       executeUnit(issueToExecuteBuffer, executeToWritebackBuffer,
-                  dispatchIssueUnit, branchPredictor, memory),
+                  dispatchIssueUnit, loadStoreQueue, branchPredictor),
       writebackUnit(executeToWritebackBuffer, registerFile){};
 
 Core::~Core() { free(memory); }

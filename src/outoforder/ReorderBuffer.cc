@@ -6,8 +6,9 @@
 namespace simeng {
 namespace outoforder {
 
-ReorderBuffer::ReorderBuffer(unsigned int maxSize, RegisterAliasTable& rat)
-    : rat(rat), maxSize(maxSize) {}
+ReorderBuffer::ReorderBuffer(unsigned int maxSize, RegisterAliasTable& rat,
+                             LoadStoreQueue& lsq)
+    : rat(rat), lsq(lsq), maxSize(maxSize) {}
 
 void ReorderBuffer::reserve(std::shared_ptr<Instruction> insn) {
   assert(buffer.size() < maxSize &&
@@ -24,14 +25,20 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
   unsigned int n;
   for (n = 0; n < maxCommits; n++) {
     auto& uop = buffer[0];
-    if (uop != nullptr) {
-      if (!uop->canCommit()) {
-        break;
-      }
-      const auto& destinations = uop->getDestinationRegisters();
-      for (const auto& reg : destinations) {
-        rat.commit(reg);
-      }
+    if (!uop->canCommit()) {
+      break;
+    }
+
+    const auto& destinations = uop->getDestinationRegisters();
+    for (const auto& reg : destinations) {
+      rat.commit(reg);
+    }
+
+    // If it's a memory op, commit the entry at the head of the respective queue
+    if (uop->isStore()) {
+      lsq.commitStore();
+    } else if (uop->isLoad()) {
+      lsq.commitLoad();
     }
     buffer.pop_front();
   }
@@ -40,15 +47,19 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 }
 
 void ReorderBuffer::flush(uint64_t afterSeqId) {
-  for (size_t i = 0; i < buffer.size(); i++) {
+  // Iterate backwards from the tail of the queue to find and remove ops newer
+  // than `afterSeqId`
+  for (size_t i = buffer.size() - 1; i >= 0; i--) {
     auto& uop = buffer[i];
-    if (uop->getSequenceId() > afterSeqId) {
-      for (const auto& reg : uop->getDestinationRegisters()) {
-        rat.rewind(reg);
-      }
-      uop->setFlushed();
-      buffer[i] = nullptr;
+    if (uop->getSequenceId() <= afterSeqId) {
+      break;
     }
+
+    for (const auto& reg : uop->getDestinationRegisters()) {
+      rat.rewind(reg);
+    }
+    uop->setFlushed();
+    buffer.pop_back();
   }
 }
 
