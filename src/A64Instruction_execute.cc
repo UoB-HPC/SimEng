@@ -94,6 +94,18 @@ void A64Instruction::execute() {
 
   executed = true;
   switch (opcode) {
+    case A64Opcode::ADD_I: {
+      if (metadata.sf) {
+        auto x = operands[0].get<uint64_t>();
+        auto y = metadata.imm;
+        results[0] = RegisterValue(x + y);
+      } else {
+        auto x = operands[0].get<uint32_t>();
+        auto y = static_cast<uint32_t>(metadata.imm);
+        results[0] = RegisterValue(x + y, 8);
+      }
+      return;
+    }
     case A64Opcode::B: {
       branchTaken = true;
       branchAddress = instructionAddress + metadata.offset;
@@ -129,6 +141,30 @@ void A64Instruction::execute() {
       memoryData[0] = operands[0];
       return;
     }
+    case A64Opcode::SUB_Shift: {
+      if (metadata.sf) {
+        auto x = operands[0].get<uint64_t>();
+        auto y = operands[1].get<uint64_t>();
+        results[0] = RegisterValue(x - y);
+      } else {
+        auto x = operands[0].get<uint32_t>();
+        auto y = operands[1].get<uint32_t>();
+        results[0] = RegisterValue(x - y, 8);
+      }
+      return;
+    }
+    case A64Opcode::SUB_I: {
+      if (metadata.sf) {
+        auto x = operands[0].get<uint64_t>();
+        auto y = metadata.imm;
+        results[0] = RegisterValue(x - y);
+      } else {
+        auto x = operands[0].get<uint32_t>();
+        auto y = static_cast<uint32_t>(metadata.imm);
+        results[0] = RegisterValue(x - y, 8);
+      }
+      return;
+    }
     case A64Opcode::SUBS_I: {
       if (metadata.sf) {
         auto x = operands[0].get<uint64_t>();
@@ -140,8 +176,20 @@ void A64Instruction::execute() {
         auto x = operands[0].get<uint32_t>();
         auto y = ~static_cast<uint32_t>(metadata.imm);
         auto [result, nzcv] = addWithCarry(x, y, true);
-        results[0] = RegisterValue(result);
+        results[0] = RegisterValue(result, 8);
         results[1] = RegisterValue(nzcv);
+      }
+      return;
+    }
+    case A64Opcode::TBNZ: {
+      uint64_t x = operands[0].get<uint64_t>();
+      uint64_t mask = 1 << (metadata.bitPos - 1);
+      if ((x & mask)) {
+        branchTaken = true;
+        branchAddress = instructionAddress + metadata.offset;
+      } else {
+        branchTaken = false;
+        branchAddress = instructionAddress + 4;
       }
       return;
     }

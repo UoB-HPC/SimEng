@@ -138,7 +138,7 @@ void A64Instruction::decodeA64DataImmediate(uint32_t insn) {
       if (op) {  // SUB(S)
         opcode = (S ? A64Opcode::SUBS_I : A64Opcode::SUB_I);
       } else {  // ADD(S)
-        return nyi();
+        opcode = (S ? A64Opcode::ADDS_I : A64Opcode::ADD_I);
       }
 
       if (S) {
@@ -223,10 +223,37 @@ void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
 
       opcode = A64Opcode::B;
       metadata.offset = offset;
+      return;
     }
-    default: {
-      return nyi();
+    case 0b001:
+      [[fallthrough]];
+    case 0b101: {
+      bool op1 = bit(insn, 25);
+      if (op1) {  // Test and branch (immediate)
+        isBranch_ = true;
+        auto b5 = bit(insn, 31);
+        auto op = bit(insn, 24);
+        uint8_t b40 = bits(insn, 19, 5);
+        int64_t imm = bits(insn, 5, 14);
+        auto Rt = bits(insn, 0, 5);
+
+        if (op) {  // TBNZ
+          opcode = A64Opcode::TBNZ;
+        } else {  // TBZ
+          return nyi();
+        }
+        metadata.sf = b5;
+        metadata.offset = signExtend(imm << 2, 16);
+        metadata.bitPos = b5 ? (b40 << 1) : b40;
+
+        setSourceRegisters({genReg(Rt)});
+
+        return;
+      } else {  // Compare and branch (immediate)
+        return nyi();
+      }
     }
+    default: { return nyi(); }
   }
   return nyi();
 }
@@ -343,7 +370,57 @@ void A64Instruction::decodeA64LoadStore(uint32_t insn) {
   }
   return nyi();
 }
-void A64Instruction::decodeA64DataRegister(uint32_t insn) { nyi(); }
+void A64Instruction::decodeA64DataRegister(uint32_t insn) {
+  auto op1 = bit(insn, 28);
+
+  bool op2_3 = bit(insn, 24);
+  if (op1) {
+    if (op2_3) {  // Data-processing (3 source)
+      return nyi();
+    } else {
+      return nyi();
+    }
+  } else {
+    if (op2_3) {
+      bool op2_0 = bit(insn, 21);
+      if (op2_0) {  // Add/subtract (extended register)
+        return nyi();
+      } else {  // Add/subtract (shifted register)
+        bool op = bit(insn, 30);
+        bool S = bit(insn, 29);
+
+        bool sf = bit(insn, 31);
+        auto Rd = bits(insn, 0, 5);
+        auto Rn = bits(insn, 5, 5);
+        auto imm = bits(insn, 10, 6);
+        auto Rm = bits(insn, 16, 5);
+        auto shift = bits(insn, 22, 2);
+
+        if (shift != 0) {
+          // TODO: Implement shift logic
+          return nyi();
+        }
+        if (S) {
+          return nyi();
+        } else {
+          if (op) {
+            opcode = A64Opcode::SUB_Shift;
+          } else {
+            return nyi();
+          }
+        }
+        metadata.sf = sf;
+        metadata.imm = imm;
+
+        setDestinationRegisters({genReg(Rd)});
+        setSourceRegisters({filterZR(genReg(Rn)), filterZR(genReg(Rm))});
+        return;
+      }
+    } else {  // Logical (shifted register)
+      return nyi();
+    }
+  }
+}
 void A64Instruction::decodeA64DataFPSIMD(uint32_t insn) { nyi(); }
 
 }  // namespace simeng

@@ -104,6 +104,7 @@ void LoadStoreQueue::purgeFlushed() {
     }
   }
 
+  it = storeQueue.begin();
   while (it != storeQueue.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {

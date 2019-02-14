@@ -14,8 +14,9 @@ const unsigned int storeQueueSize = 8;
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const char* insnPtr, unsigned int programByteLength,
-           const Architecture& isa, BranchPredictor& branchPredictor)
-    : memory(static_cast<char*>(calloc(1024, 1))),
+           const Architecture& isa, BranchPredictor& branchPredictor,
+           char* memory)
+    : memory(memory),
       registerFile(physicalRegisters),
       registerAliasTable(isa.getRegisterFileStructure(), physicalRegisters),
       loadStoreQueue(loadQueueSize, storeQueueSize, memory),
@@ -77,12 +78,11 @@ void Core::tick() {
     fetchUnit.updatePC(targetAddress);
     fetchToDecodeBuffer.fill({});
     decodeToRenameBuffer.fill(nullptr);
-    renameToDispatchBuffer.fill(nullptr);
-    issueToExecuteBuffer.fill(nullptr);
 
     // Flush everything younger than the bad instruction from the ROB
     reorderBuffer.flush(executeUnit.getFlushSeqId());
     dispatchIssueUnit.purgeFlushed();
+    loadStoreQueue.purgeFlushed();
 
     flushes++;
   } else if (decodeUnit.shouldFlush()) {
@@ -114,6 +114,8 @@ std::map<std::string, std::string> Core::getStats() const {
 
   auto allocationStalls = renameUnit.getAllocationStalls();
   auto robStalls = renameUnit.getAllocationStalls();
+  auto lqStalls = renameUnit.getLoadQueueStalls();
+  auto sqStalls = renameUnit.getStoreQueueStalls();
 
   auto rsStalls = dispatchIssueUnit.getRSStalls();
   auto frontendStalls = dispatchIssueUnit.getFrontendStalls();
@@ -125,6 +127,8 @@ std::map<std::string, std::string> Core::getStats() const {
           {"flushes", std::to_string(flushes)},
           {"rename.allocationStalls", std::to_string(allocationStalls)},
           {"rename.robStalls", std::to_string(robStalls)},
+          {"rename.lqStalls", std::to_string(lqStalls)},
+          {"rename.sqStalls", std::to_string(sqStalls)},
           {"dispatch.rsStalls", std::to_string(rsStalls)},
           {"issue.frontendStalls", std::to_string(frontendStalls)},
           {"issue.backendStalls", std::to_string(backendStalls)},
