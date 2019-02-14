@@ -46,6 +46,8 @@ struct A64DecodeMetadata {
   /** Condition code; identifies condition mode for instructions with
    * conditional behaviour. */
   uint8_t cond;
+  /** Bit position; used for bit testing instructions. */
+  uint8_t bitPos;
 };
 
 enum class A64InstructionException {
@@ -57,13 +59,17 @@ enum class A64InstructionException {
 
 /** A64 instruction opcode identifier. */
 enum class A64Opcode {
+  ADD_I,
+  ADDS_I,
   B,
   B_cond,
   LDR_I,
   ORR_I,
   STR_I,
+  SUB_Shift,
   SUB_I,
   SUBS_I,
+  TBNZ,
 };
 
 /** A basic ARMv8-a implementation of the `Instruction` interface. */
@@ -264,7 +270,7 @@ class A64Instruction : public Instruction {
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
-  short operandsPending;
+  short operandsPending = 0;
 
   /** Whether or not this instruction has been executed. */
   bool executed = false;

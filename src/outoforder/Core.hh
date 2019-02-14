@@ -22,7 +22,7 @@ class Core : public simeng::Core {
   /** Construct a core model, providing an ISA and branch predictor to use,
    * along with a pointer and size of instruction memory. */
   Core(const char* insnPtr, unsigned int programByteLength,
-       const Architecture& isa, BranchPredictor& branchPredictor);
+       const Architecture& isa, BranchPredictor& branchPredictor, char* memory);
 
   /** Deconstruct the core model and free the allocated process memory. */
   ~Core();

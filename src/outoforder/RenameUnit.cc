@@ -37,11 +37,13 @@ void RenameUnit::tick() {
   bool isStore = uop->isStore();
   if (isLoad) {
     if (lsq.getLoadQueueSpace() == 0 || lsq.getTotalSpace() == 0) {
+      lqStalls++;
       fromDecodeBuffer.stall(true);
       return;
     }
   } else if (isStore) {
     if (lsq.getStoreQueueSpace() == 0 || lsq.getTotalSpace() == 0) {
+      sqStalls++;
       fromDecodeBuffer.stall(true);
       return;
     }
@@ -97,6 +99,9 @@ void RenameUnit::tick() {
 
 uint64_t RenameUnit::getAllocationStalls() const { return allocationStalls; }
 uint64_t RenameUnit::getROBStalls() const { return robStalls; }
+
+uint64_t RenameUnit::getLoadQueueStalls() const { return lqStalls; }
+uint64_t RenameUnit::getStoreQueueStalls() const { return sqStalls; }
 
 }  // namespace outoforder
 }  // namespace simeng
