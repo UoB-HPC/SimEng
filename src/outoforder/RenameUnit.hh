@@ -17,7 +17,8 @@ class RenameUnit {
    * reorder buffer, and the register alias table. */
   RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
              PipelineBuffer<std::shared_ptr<Instruction>>& toDispatch,
-             ReorderBuffer& rob, RegisterAliasTable& rat);
+             ReorderBuffer& rob, RegisterAliasTable& rat,
+             uint8_t registerTypes);
 
   /** Ticks this unit. Renames registers of instructions, and allocates ROB
    * space. */
@@ -35,6 +36,10 @@ class RenameUnit {
 
   /** The register alias table. */
   RegisterAliasTable& rat;
+
+  /** A table recording the numbers of each type of register needed to
+   * successfully allocate destinations for an instruction. */
+  std::vector<uint8_t> freeRegistersNeeded;
 };
 
 }  // namespace outoforder
