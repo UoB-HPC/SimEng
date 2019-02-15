@@ -7,16 +7,15 @@
 namespace simeng {
 namespace outoforder {
 
-/** A Register Allocation Table (RAT) implementation. Contains information on
+/** A Register Alias Table (RAT) implementation. Contains information on
  * the current register renaming state. */
-class RegisterAllocationTable {
+class RegisterAliasTable {
  public:
   /** Construct a RAT, supplying a description of the architectural register
    * structure, and the corresponding numbers of physical registers that should
    * be available. */
-  RegisterAllocationTable(
-      std::vector<RegisterSetStructure> architecturalStructure,
-      std::vector<uint16_t> physicalStructure);
+  RegisterAliasTable(std::vector<RegisterFileStructure> architecturalStructure,
+                     std::vector<uint16_t> physicalStructure);
 
   /** Retrieve the current physical register assigned to the provided
    * architectural register. */

@@ -27,7 +27,7 @@ class Architecture {
 
   /** Returns a vector of {size, number} pairs describing the available
    * registers. */
-  virtual std::vector<RegisterSetStructure> getRegisterFileStructure()
+  virtual std::vector<RegisterFileStructure> getRegisterFileStructure()
       const = 0;
 
   /** Determine whether the specified register can be renamed. */

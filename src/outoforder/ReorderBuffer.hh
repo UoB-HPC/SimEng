@@ -3,7 +3,7 @@
 #include <deque>
 
 #include "../Instruction.hh"
-#include "RegisterAllocationTable.hh"
+#include "RegisterAliasTable.hh"
 
 namespace simeng {
 namespace outoforder {
@@ -13,8 +13,8 @@ namespace outoforder {
 class ReorderBuffer {
  public:
   /** Constructs a reorder buffer of maximum size `maxSize`, supplying a
-   * reference to the register allocation table. */
-  ReorderBuffer(unsigned int maxSize, RegisterAllocationTable& rat);
+   * reference to the register alias table. */
+  ReorderBuffer(unsigned int maxSize, RegisterAliasTable& rat);
 
   /** Add the provided instruction to the ROB. */
   void reserve(std::shared_ptr<Instruction> insn);
@@ -29,8 +29,8 @@ class ReorderBuffer {
   unsigned int size() const;
 
  private:
-  /** A reference to the register allocation table. */
-  RegisterAllocationTable& rat;
+  /** A reference to the register alias table. */
+  RegisterAliasTable& rat;
   /** The maximum size of the ROB. */
   unsigned int maxSize;
 

@@ -6,11 +6,11 @@
 namespace simeng {
 namespace outoforder {
 
-ReorderBuffer::ReorderBuffer(unsigned int maxSize, RegisterAllocationTable& rat)
+ReorderBuffer::ReorderBuffer(unsigned int maxSize, RegisterAliasTable& rat)
     : rat(rat), maxSize(maxSize) {}
 
 void ReorderBuffer::reserve(std::shared_ptr<Instruction> insn) {
-  assert(buffer.size() + 1 < maxSize &&
+  assert(buffer.size() < maxSize &&
          "Attempted to reserve entry in reorder buffer when already full");
   insn->setSequenceId(seqId);
   seqId++;
@@ -28,7 +28,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       if (!uop->canCommit()) {
         break;
       }
-      auto destinations = uop->getDestinationRegisters();
+      const auto& destinations = uop->getDestinationRegisters();
       for (const auto& reg : destinations) {
         rat.commit(reg);
       }

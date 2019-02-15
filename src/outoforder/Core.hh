@@ -6,7 +6,7 @@
 #include "DispatchIssueUnit.hh"
 #include "ExecuteUnit.hh"
 #include "FetchUnit.hh"
-#include "RegisterAllocationTable.hh"
+#include "RegisterAliasTable.hh"
 #include "RenameUnit.hh"
 #include "ReorderBuffer.hh"
 #include "WritebackUnit.hh"
@@ -41,8 +41,8 @@ class Core : public simeng::Core {
   /** The core's register file. */
   RegisterFile registerFile;
 
-  /** The core's register allocation table. */
-  RegisterAllocationTable registerAllocationTable;
+  /** The core's register alias table. */
+  RegisterAliasTable registerAliasTable;
 
   /** The core's reorder buffer. */
   ReorderBuffer reorderBuffer;
@@ -77,7 +77,7 @@ class Core : public simeng::Core {
   DispatchIssueUnit dispatchIssueUnit;
 
   /** The execute unit; executes uops and sends to writeback, also forwarding
-   * results to decode. */
+   * results to dispatch/issue. */
   ExecuteUnit executeUnit;
 
   /** The writeback unit; writes uop results to the register file. */

@@ -31,7 +31,7 @@ std::tuple<MacroOp, uint8_t> A64Architecture::predecode(
   return {{uop}, 4};
 }
 
-std::vector<RegisterSetStructure> A64Architecture::getRegisterFileStructure()
+std::vector<RegisterFileStructure> A64Architecture::getRegisterFileStructure()
     const {
   return {
       {8, 32},   // General purpose

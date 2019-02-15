@@ -1,12 +1,12 @@
-#include "RegisterAllocationTable.hh"
+#include "RegisterAliasTable.hh"
 
 #include <cassert>
 
 namespace simeng {
 namespace outoforder {
 
-RegisterAllocationTable::RegisterAllocationTable(
-    std::vector<RegisterSetStructure> architecturalStructure,
+RegisterAliasTable::RegisterAliasTable(
+    std::vector<RegisterFileStructure> architecturalStructure,
     std::vector<uint16_t> physicalRegisterCounts)
     : mappingTable(architecturalStructure.size()),
       historyTable(architecturalStructure.size()),
@@ -41,17 +41,17 @@ RegisterAllocationTable::RegisterAllocationTable(
   }
 };
 
-Register RegisterAllocationTable::getMapping(Register architectural) const {
+Register RegisterAliasTable::getMapping(Register architectural) const {
   auto tag = mappingTable[architectural.type][architectural.tag];
   return {architectural.type, tag};
 }
 
-bool RegisterAllocationTable::canAllocate(uint8_t type,
-                                          unsigned int quantity) const {
-  return (freeQueues[quantity].size() >= quantity);
+bool RegisterAliasTable::canAllocate(uint8_t type,
+                                     unsigned int quantity) const {
+  return (freeQueues[type].size() >= quantity);
 }
 
-Register RegisterAllocationTable::allocate(Register architectural) {
+Register RegisterAliasTable::allocate(Register architectural) {
   std::queue<uint16_t>& freeQueue = freeQueues[architectural.type];
   assert(freeQueue.size() > 0 &&
          "Attempted to allocate free register when none were available");
@@ -71,13 +71,13 @@ Register RegisterAllocationTable::allocate(Register architectural) {
   return {architectural.type, tag};
 }
 
-void RegisterAllocationTable::commit(Register physical) {
+void RegisterAliasTable::commit(Register physical) {
   // Find the register previously mapped to the same architectural register and
   // free it
   auto oldTag = historyTable[physical.type][physical.tag];
   freeQueues[physical.type].push(oldTag);
 }
-void RegisterAllocationTable::rewind(Register physical) {
+void RegisterAliasTable::rewind(Register physical) {
   // Find which architectural tag this referred to
   auto destinationTag = destinationTable[physical.type][physical.tag];
   // Rewind the mapping table to the old physical tag
@@ -86,7 +86,7 @@ void RegisterAllocationTable::rewind(Register physical) {
   // Add the rewound physical tag back to the free queue
   freeQueues[physical.type].push(physical.tag);
 }
-void RegisterAllocationTable::free(Register physical) {
+void RegisterAliasTable::free(Register physical) {
   freeQueues[physical.type].push(physical.tag);
 }
 

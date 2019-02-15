@@ -13,7 +13,7 @@ class DecodeUnit {
   /** Constructs a decode unit with references to input/output buffers, the
    * register file, and the current branch predictor. */
   DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
-             PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
+             PipelineBuffer<std::shared_ptr<Instruction>>& toDispatchIssue,
              BranchPredictor& predictor);
 
   /** Ticks the decode unit. Breaks macro-ops into uops, and performs early
@@ -31,7 +31,7 @@ class DecodeUnit {
   /** A buffer of macro-ops to split into uops. */
   PipelineBuffer<MacroOp>& fromFetchBuffer;
   /** A buffer for writing decoded uops into. */
-  PipelineBuffer<std::shared_ptr<Instruction>>& toExecuteBuffer;
+  PipelineBuffer<std::shared_ptr<Instruction>>& toDispatchIssueBuffer;
 
   /** A reference to the current branch predictor. */
   BranchPredictor& predictor;

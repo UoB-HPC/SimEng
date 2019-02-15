@@ -22,7 +22,7 @@ struct Register {
 std::ostream& operator<<(std::ostream& os, simeng::Register const& reg);
 
 /** Defines a set of registers in the register file. */
-struct RegisterSetStructure {
+struct RegisterFileStructure {
   /** The number of bytes per register. */
   uint8_t bytes;
   /** The number of registers. */

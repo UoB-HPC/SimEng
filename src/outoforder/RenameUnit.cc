@@ -5,7 +5,7 @@ namespace outoforder {
 
 RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
                        PipelineBuffer<std::shared_ptr<Instruction>>& toDispatch,
-                       ReorderBuffer& rob, RegisterAllocationTable& rat)
+                       ReorderBuffer& rob, RegisterAliasTable& rat)
     : fromDecodeBuffer(fromDecode),
       toDispatchBuffer(toDispatch),
       reorderBuffer(rob),

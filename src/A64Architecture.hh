@@ -19,7 +19,7 @@ class A64Architecture : public Architecture {
       BranchPrediction prediction) const override;
 
   /** Returns an ARMv8-a register file structure description. */
-  std::vector<RegisterSetStructure> getRegisterFileStructure() const override;
+  std::vector<RegisterFileStructure> getRegisterFileStructure() const override;
 
   /** Determine whether the specified register can be renamed. */
   bool canRename(Register reg) const override;

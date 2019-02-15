@@ -5,15 +5,16 @@
 namespace simeng {
 namespace outoforder {
 
-DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
-                       PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
-                       BranchPredictor& predictor)
+DecodeUnit::DecodeUnit(
+    PipelineBuffer<MacroOp>& fromFetch,
+    PipelineBuffer<std::shared_ptr<Instruction>>& toDispatchIssue,
+    BranchPredictor& predictor)
     : fromFetchBuffer(fromFetch),
-      toExecuteBuffer(toExecute),
+      toDispatchIssueBuffer(toDispatchIssue),
       predictor(predictor){};
 
 void DecodeUnit::tick() {
-  if (toExecuteBuffer.isStalled()) {
+  if (toDispatchIssueBuffer.isStalled()) {
     fromFetchBuffer.stall(true);
     return;
   }
@@ -49,7 +50,7 @@ void DecodeUnit::tick() {
     }
   }
 
-  toExecuteBuffer.getTailSlots()[0] = uop;
+  toDispatchIssueBuffer.getTailSlots()[0] = uop;
   fromFetchBuffer.getHeadSlots()[0].clear();
 }
 

@@ -6,11 +6,11 @@ namespace simeng {
 namespace outoforder {
 
 ExecuteUnit::ExecuteUnit(
-    PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
+    PipelineBuffer<std::shared_ptr<Instruction>>& fromIssue,
     PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
     DispatchIssueUnit& dispatchIssueUnit, BranchPredictor& predictor,
     char* memory)
-    : fromDecodeBuffer(fromDecode),
+    : fromIssueBuffer(fromIssue),
       toWritebackBuffer(toWriteback),
       dispatchIssueUnit(dispatchIssueUnit),
       predictor(predictor),
@@ -19,7 +19,7 @@ ExecuteUnit::ExecuteUnit(
 void ExecuteUnit::tick() {
   shouldFlush_ = false;
 
-  auto& uop = fromDecodeBuffer.getHeadSlots()[0];
+  auto& uop = fromIssueBuffer.getHeadSlots()[0];
   if (uop == nullptr) {
     // NOP
     // Forward a lack of results to trigger reading other operands.
@@ -73,7 +73,7 @@ void ExecuteUnit::tick() {
                                     uop->getResults());
 
   toWritebackBuffer.getTailSlots()[0] = uop;
-  fromDecodeBuffer.getHeadSlots()[0] = nullptr;
+  fromIssueBuffer.getHeadSlots()[0] = nullptr;
 }
 
 bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }

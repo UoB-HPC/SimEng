@@ -23,7 +23,6 @@ int simulate(simeng::Core& core) {
   int iterations = 0;
   while (!core.hasHalted()) {
     // Tick the core until it detects the program has halted.
-    // std::cout << "\nCycle " << iterations << std::endl;
     core.tick();
 
     iterations++;

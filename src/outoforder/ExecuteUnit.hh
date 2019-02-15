@@ -15,7 +15,7 @@ class ExecuteUnit {
   /** Constructs an execute unit with references to an input and output buffer,
    * the decode unit, the currently used branch predictor, and a pointer to
    * process memory. */
-  ExecuteUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
+  ExecuteUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromIssue,
               PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
               DispatchIssueUnit& dispatchIssueUnit, BranchPredictor& predictor,
               char* memory);
@@ -37,7 +37,7 @@ class ExecuteUnit {
 
  private:
   /** A buffer of instructions to execute. */
-  PipelineBuffer<std::shared_ptr<Instruction>>& fromDecodeBuffer;
+  PipelineBuffer<std::shared_ptr<Instruction>>& fromIssueBuffer;
 
   /** A buffer for writing executed instructions into. */
   PipelineBuffer<std::shared_ptr<Instruction>>& toWritebackBuffer;

@@ -2,7 +2,7 @@
 
 #include "../Instruction.hh"
 #include "../PipelineBuffer.hh"
-#include "RegisterAllocationTable.hh"
+#include "RegisterAliasTable.hh"
 #include "ReorderBuffer.hh"
 
 namespace simeng {
@@ -14,10 +14,10 @@ namespace outoforder {
 class RenameUnit {
  public:
   /** Construct a rename unit with a reference to input/output buffers, the
-   * reorder buffer, and the register allocation table. */
+   * reorder buffer, and the register alias table. */
   RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
              PipelineBuffer<std::shared_ptr<Instruction>>& toDispatch,
-             ReorderBuffer& rob, RegisterAllocationTable& rat);
+             ReorderBuffer& rob, RegisterAliasTable& rat);
 
   /** Ticks this unit. Renames registers of instructions, and allocates ROB
    * space. */
@@ -33,8 +33,8 @@ class RenameUnit {
   /** The reorder buffer. */
   ReorderBuffer& reorderBuffer;
 
-  /** The register allocation table. */
-  RegisterAllocationTable& rat;
+  /** The register alias table. */
+  RegisterAliasTable& rat;
 };
 
 }  // namespace outoforder
