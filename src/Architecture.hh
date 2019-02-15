@@ -5,6 +5,7 @@
 
 #include "BranchPredictor.hh"
 #include "Instruction.hh"
+#include "RegisterFile.hh"
 
 namespace simeng {
 
@@ -26,7 +27,7 @@ class Architecture {
 
   /** Returns a vector of {size, number} pairs describing the available
    * registers. */
-  virtual std::vector<std::pair<uint8_t, uint16_t>> getRegisterFileStructure()
+  virtual std::vector<RegisterSetStructure> getRegisterFileStructure()
       const = 0;
 
   /** Determine whether the specified register can be renamed. */

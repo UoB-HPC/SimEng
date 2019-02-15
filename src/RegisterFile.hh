@@ -21,6 +21,14 @@ struct Register {
 };
 std::ostream& operator<<(std::ostream& os, simeng::Register const& reg);
 
+/** Defines a set of registers in the register file. */
+struct RegisterSetStructure {
+  /** The number of bytes per register. */
+  uint8_t bytes;
+  /** The number of registers. */
+  uint16_t quantity;
+};
+
 /** A processor register file set. Holds the physical registers for each
  * register type. */
 class RegisterFile {

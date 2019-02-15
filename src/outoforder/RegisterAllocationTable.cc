@@ -6,7 +6,7 @@ namespace simeng {
 namespace outoforder {
 
 RegisterAllocationTable::RegisterAllocationTable(
-    std::vector<std::pair<uint8_t, uint16_t>> architecturalStructure,
+    std::vector<RegisterSetStructure> architecturalStructure,
     std::vector<uint16_t> physicalRegisterCounts)
     : mappingTable(architecturalStructure.size()),
       historyTable(architecturalStructure.size()),
@@ -17,7 +17,7 @@ RegisterAllocationTable::RegisterAllocationTable(
          "architectural register types");
 
   for (size_t type = 0; type < architecturalStructure.size(); type++) {
-    auto archCount = architecturalStructure[type].second;
+    auto archCount = architecturalStructure[type].quantity;
     auto physCount = physicalRegisterCounts[type];
     assert(archCount <= physCount &&
            "Cannot have fewer physical registers than architectural registers");

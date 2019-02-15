@@ -2,8 +2,6 @@
 
 #include <cassert>
 
-#include "A64Instruction.hh"
-
 namespace simeng {
 
 std::unordered_map<uint32_t, A64Instruction> A64Architecture::decodeCache;
@@ -33,8 +31,8 @@ std::tuple<MacroOp, uint8_t> A64Architecture::predecode(
   return {{uop}, 4};
 }
 
-std::vector<std::pair<uint8_t, uint16_t>>
-A64Architecture::getRegisterFileStructure() const {
+std::vector<RegisterSetStructure> A64Architecture::getRegisterFileStructure()
+    const {
   return {
       {8, 32},   // General purpose
       {16, 32},  // Vector

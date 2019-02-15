@@ -15,7 +15,7 @@ class RegisterAllocationTable {
    * structure, and the corresponding numbers of physical registers that should
    * be available. */
   RegisterAllocationTable(
-      std::vector<std::pair<uint8_t, uint16_t>> architecturalStructure,
+      std::vector<RegisterSetStructure> architecturalStructure,
       std::vector<uint16_t> physicalStructure);
 
   /** Retrieve the current physical register assigned to the provided
