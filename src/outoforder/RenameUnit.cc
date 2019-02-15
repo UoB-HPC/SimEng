@@ -1,5 +1,7 @@
 #include "RenameUnit.hh"
 
+#include <algorithm>
+
 namespace simeng {
 namespace outoforder {
 
@@ -22,6 +24,7 @@ void RenameUnit::tick() {
   auto& destinationRegisters = uop->getDestinationRegisters();
   // Count the number of each type of destination registers needed, and ensure
   // enough free registers exist to allocate them.
+  std::fill(freeRegistersNeeded.begin(), freeRegistersNeeded.end(), 0);
   for (const auto& reg : destinationRegisters) {
     freeRegistersNeeded[reg.type]++;
   }
@@ -29,12 +32,10 @@ void RenameUnit::tick() {
     if (freeRegistersNeeded[type] != 0) {
       if (!rat.canAllocate(type, freeRegistersNeeded[type])) {
         fromDecodeBuffer.stall(true);
-        std::fill(freeRegistersNeeded.begin(), freeRegistersNeeded.end(), 0);
         return;
       }
     }
   }
-  std::fill(freeRegistersNeeded.begin(), freeRegistersNeeded.end(), 0);
 
   // Allocate source registers
   auto& sourceRegisters = uop->getOperandRegisters();
