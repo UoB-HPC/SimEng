@@ -106,7 +106,20 @@ int main(int argc, char** argv) {
   //     0x37FFFE66,  //   tbnz w6, #31, #-52 (.start)
   // };
 
-  // // Some arbitrary values to sort
+  // Force a load/store ordering violation
+  // uint32_t hex[] = {
+  //     0x320003E0,  //   orr w0, wzr, #1
+  //     0x51000400,  //   sub w0, w0, #1
+
+  //     0x11000002,  //   add w2, w0, #0
+  //     0x11013001,  //   add w1, w0, #76
+
+  //     0xB9000041,  //   str w1, [x2]
+  //     0xB9400043,  //   ldr w3, [x2]
+  //     0xB9000443,  //   str w3, [x2, 4]
+  // };
+
+  // Some arbitrary values to sort
   // std::vector<int> memoryValues = {9,  6, 7, 20, 5,   0,  80, 2,  1,  6,
   //                                  17, 4, 3, 22, 117, 11, 4,  12, 10, 18};
   // memcpy(memory, memoryValues.data(), memoryValues.size() * sizeof(int));

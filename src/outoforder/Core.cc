@@ -69,18 +69,32 @@ void Core::tick() {
   reorderBuffer.commit(1);
 
   // Check for flush
-  if (executeUnit.shouldFlush()) {
+  if (executeUnit.shouldFlush() || reorderBuffer.shouldFlush()) {
     // Flush was requested at execute stage.
-    // Update PC and wipe younger buffers (Fetch/Decode, Decode/Rename,
-    // Rename/Dispatch, Issue/Execute)
-    auto targetAddress = executeUnit.getFlushAddress();
+    // Update PC and wipe in-order buffers (Fetch/Decode, Decode/Rename,
+    // Rename/Dispatch)
+
+    uint64_t targetAddress;
+    uint64_t lowestSeqId = std::numeric_limits<uint64_t>::max();
+    if (executeUnit.shouldFlush()) {
+      lowestSeqId = executeUnit.getFlushSeqId();
+      targetAddress = executeUnit.getFlushAddress();
+    }
+
+    if (reorderBuffer.shouldFlush() &&
+        reorderBuffer.getFlushSeqId() < lowestSeqId) {
+      // If the reorder buffer found an older instruction to flush up to, do
+      // that instead
+      lowestSeqId = reorderBuffer.getFlushSeqId();
+      targetAddress = reorderBuffer.getFlushAddress();
+    }
 
     fetchUnit.updatePC(targetAddress);
     fetchToDecodeBuffer.fill({});
     decodeToRenameBuffer.fill(nullptr);
 
     // Flush everything younger than the bad instruction from the ROB
-    reorderBuffer.flush(executeUnit.getFlushSeqId());
+    reorderBuffer.flush(lowestSeqId);
     dispatchIssueUnit.purgeFlushed();
     loadStoreQueue.purgeFlushed();
 

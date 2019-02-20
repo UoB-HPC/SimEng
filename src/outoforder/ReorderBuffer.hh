@@ -33,6 +33,18 @@ class ReorderBuffer {
   /** Retrieve the current amount of free space in the ROB. */
   unsigned int getFreeSpace() const;
 
+  /** Query whether a memory order violation was discovered in the most recent
+   * cycle. */
+  bool shouldFlush() const;
+
+  /** Retrieve the instruction address associated with the most recently
+   * discovered memory order violation. */
+  uint64_t getFlushAddress() const;
+
+  /** Retrieve the sequence ID associated with the most recently discovered
+   * memory order violation. */
+  uint64_t getFlushSeqId() const;
+
  private:
   /** A reference to the register alias table. */
   RegisterAliasTable& rat;
@@ -45,6 +57,18 @@ class ReorderBuffer {
 
   /** The buffer containing in-flight instructions. */
   std::deque<std::shared_ptr<Instruction>> buffer;
+
+  /** Whether the core should be flushed after the most recent commit. */
+  bool shouldFlush_ = false;
+
+  /** The target instruction address the PC should be reset to after the most
+   * recent commit.
+   */
+  uint64_t pc;
+
+  /** The sequence ID of the youngest instruction that should remain after the
+   * current flush. */
+  uint64_t flushAfter;
 
   /** The next available sequence ID. */
   uint64_t seqId = 0;

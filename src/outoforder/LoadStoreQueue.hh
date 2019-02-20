@@ -42,14 +42,19 @@ class LoadStoreQueue {
   void startLoad(const std::shared_ptr<Instruction>& insn);
 
   /** Commit and write the oldest store instruction to memory, removing it from
-   * the store queue. */
-  void commitStore();
+   * the store queue. Returns `true` if memory disambiguation has discovered a
+   * memory order violation during the commit. */
+  bool commitStore();
 
   /** Remove the oldest load instruction from the load queue. */
   void commitLoad();
 
   /** Remove all flushed instructions from the queues. */
   void purgeFlushed();
+
+  /** Retrieve the load instruction associated with the most recently discovered
+   * memory order violation. */
+  std::shared_ptr<Instruction> getViolatingLoad() const;
 
  private:
   /** The load queue: holds in-flight load instructions. */
@@ -84,6 +89,10 @@ class LoadStoreQueue {
 
   /** A pointer to process memory. */
   char* memory;
+
+  /** The load instruction associated with the most recently discovered memory
+   * order violation. */
+  std::shared_ptr<Instruction> violatingLoad = nullptr;
 };
 
 }  // namespace outoforder

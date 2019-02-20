@@ -253,7 +253,8 @@ void A64Instruction::decodeA64BranchSystem(uint32_t insn) {
         return nyi();
       }
     }
-    default: { return nyi(); }
+    default:
+      return nyi();
   }
   return nyi();
 }

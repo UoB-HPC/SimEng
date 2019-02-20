@@ -6,6 +6,14 @@
 namespace simeng {
 namespace outoforder {
 
+/** Check whether requests `a` and `b` overlap. */
+bool requestsOverlap(std::pair<uint64_t, uint8_t> a,
+                     std::pair<uint64_t, uint8_t> b) {
+  // Check whether one region ends before the other begins, implying no overlap,
+  // and negate
+  return !(a.first + a.second < b.first || b.first + b.second < a.first);
+}
+
 LoadStoreQueue::LoadStoreQueue(unsigned int maxCombinedSpace, char* memory)
     : maxCombinedSpace(maxCombinedSpace), combined(true), memory(memory){};
 
@@ -66,24 +74,47 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   }
 }
 
-void LoadStoreQueue::commitStore() {
+bool LoadStoreQueue::commitStore() {
   assert(storeQueue.size() > 0 &&
          "Attempted to commit a store from an empty queue");
 
   const auto& uop = storeQueue.front();
-  auto addresses = uop->getGeneratedAddresses();
-  auto data = uop->getData();
+  const auto& addresses = uop->getGeneratedAddresses();
+  const auto& data = uop->getData();
   for (size_t i = 0; i < addresses.size(); i++) {
-    auto request = addresses[i];
+    const auto& request = addresses[i];
 
     // Copy data to memory
-    auto address = memory + request.first;
+    const auto& address = memory + request.first;
     memcpy(address, data[i].getAsVector<char>(), request.second);
   }
 
-  // TODO: Search load queue for memory order violations and flush if discovered
+  for (const auto& load : loadQueue) {
+    // Find all loads ready to commit
+    // TODO: Partially ready loads also need disambiguation
+    if (load->canCommit()) {
+      const auto& loadedAddresses = load->getGeneratedAddresses();
+      // Iterate over store addresses
+      for (size_t storeIndex = 0; storeIndex < addresses.size(); storeIndex++) {
+        const auto& storeReq = addresses[storeIndex];
+        // Iterate over load addresses
+        for (size_t loadIndex = 0; loadIndex < loadedAddresses.size();
+             loadIndex++) {
+          const auto& loadReq = loadedAddresses[loadIndex];
+          // Check for overlapping requests, and flush if discovered
+          if (requestsOverlap(storeReq, loadReq)) {
+            violatingLoad = load;
+
+            storeQueue.pop_front();
+            return true;
+          }
+        }
+      }
+    }
+  }
 
   storeQueue.pop_front();
+  return false;
 }
 
 void LoadStoreQueue::commitLoad() {
@@ -113,6 +144,10 @@ void LoadStoreQueue::purgeFlushed() {
       it++;
     }
   }
+}
+
+std::shared_ptr<Instruction> LoadStoreQueue::getViolatingLoad() const {
+  return violatingLoad;
 }
 
 }  // namespace outoforder

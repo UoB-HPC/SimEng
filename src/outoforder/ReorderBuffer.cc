@@ -19,6 +19,7 @@ void ReorderBuffer::reserve(std::shared_ptr<Instruction> insn) {
 }
 
 unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
+  shouldFlush_ = false;
   size_t maxCommits =
       std::min(static_cast<size_t>(maxCommitSize), buffer.size());
 
@@ -36,7 +37,17 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
     // If it's a memory op, commit the entry at the head of the respective queue
     if (uop->isStore()) {
-      lsq.commitStore();
+      bool violationFound = lsq.commitStore();
+      if (violationFound) {
+        // Memory order violation found; aborting commits and flushing
+        auto load = lsq.getViolatingLoad();
+        shouldFlush_ = true;
+        flushAfter = load->getSequenceId() - 1;
+        pc = load->getInstructionAddress();
+
+        buffer.pop_front();
+        return n + 1;
+      }
     } else if (uop->isLoad()) {
       lsq.commitLoad();
     }
@@ -49,7 +60,8 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 void ReorderBuffer::flush(uint64_t afterSeqId) {
   // Iterate backwards from the tail of the queue to find and remove ops newer
   // than `afterSeqId`
-  for (size_t i = buffer.size() - 1; i >= 0; i--) {
+  size_t limit = buffer.size();
+  for (size_t i = limit - 1; i < limit; i--) {
     auto& uop = buffer[i];
     if (uop->getSequenceId() <= afterSeqId) {
       break;
@@ -68,6 +80,10 @@ unsigned int ReorderBuffer::size() const { return buffer.size(); }
 unsigned int ReorderBuffer::getFreeSpace() const {
   return maxSize - buffer.size();
 }
+
+bool ReorderBuffer::shouldFlush() const { return shouldFlush_; }
+uint64_t ReorderBuffer::getFlushAddress() const { return pc; }
+uint64_t ReorderBuffer::getFlushSeqId() const { return flushAfter; }
 
 }  // namespace outoforder
 }  // namespace simeng
