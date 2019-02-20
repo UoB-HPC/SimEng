@@ -71,6 +71,7 @@ int main(int argc, char** argv) {
   // preceding branch is waiting on the result from the `subs`.
   uint32_t hex[] = {
       // 0x321E03E0,  // orr w0, wzr, #4
+      // 0x321603E0,  // orr w0, wzr, #1024
       0x320C03E0,  // orr w0, wzr, #1048576
       0x320003E1,  // orr w0, wzr, #1
       0x71000400,  // subs w0, w0, #1

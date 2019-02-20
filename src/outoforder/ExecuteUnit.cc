@@ -41,15 +41,16 @@ void ExecuteUnit::tick() {
     return;
   }
 
-  auto& head = pipeline.front();
-  while (head.insn->isFlushed()) {
+  // Pop flushed instructions from the pipeline until a non-flushed instruction
+  // is found. If the pipeline ends up empty, return early.
+  while (pipeline.front().insn->isFlushed()) {
     pipeline.pop();
-
     if (pipeline.size() == 0) {
       return;
     }
-    head = pipeline.front();
   }
+
+  auto& head = pipeline.front();
   if (head.readyAt <= tickCounter) {
     execute(head.insn);
     pipeline.pop();

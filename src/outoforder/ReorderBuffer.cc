@@ -56,7 +56,7 @@ unsigned int ReorderBuffer::size() const { return buffer.size(); }
 
 unsigned int ReorderBuffer::getFreeSpace() const {
   return maxSize - buffer.size();
-};
+}
 
 }  // namespace outoforder
 }  // namespace simeng
