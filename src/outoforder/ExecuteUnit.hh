@@ -68,6 +68,9 @@ class ExecuteUnit {
   /** A pointer to process memory. */
   char* memory;
 
+  /** The execution unit's internal pipeline, holding instructions until their
+   * execution latency has expired and they are ready for their final results to
+   * be calculated and forwarded. */
   std::queue<ExecutionUnitPipelineEntry> pipeline;
 
   /** Whether the core should be flushed after this cycle. */
@@ -82,7 +85,7 @@ class ExecuteUnit {
   uint64_t flushAfter;
 
   /** The number of times this unit has been ticked. */
-  uint64_t tickCounter;
+  uint64_t tickCounter = 0;
 };
 
 }  // namespace outoforder

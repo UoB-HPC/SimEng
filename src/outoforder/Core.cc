@@ -33,6 +33,8 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
                   dispatchIssueUnit, branchPredictor, memory),
       writebackUnit(executeToWritebackBuffer, registerFile){};
 
+Core::~Core() { free(memory); }
+
 void Core::tick() {
   ticks++;
 

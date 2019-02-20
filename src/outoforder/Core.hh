@@ -23,6 +23,9 @@ class Core : public simeng::Core {
   Core(const char* insnPtr, unsigned int programByteLength,
        const Architecture& isa, BranchPredictor& branchPredictor);
 
+  /** Deconstruct the core model and free the allocated process memory. */
+  ~Core();
+
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
    * end of each cycle. */

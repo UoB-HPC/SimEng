@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <memory>
 
 namespace simeng {
@@ -13,18 +14,10 @@ namespace simeng {
 template <class T>
 class PipelineBuffer {
  public:
-  /** Create a new pipeline buffer of width `width`. */
-  PipelineBuffer(int width) : width(width) {
-    // Reserve a buffer large enough to hold 2 * width elements of type `T`
-    buffer = std::shared_ptr<T>(
-        reinterpret_cast<T*>(malloc(sizeof(T) * width * length)), free);
-  }
-
   /** Construct a pipeline buffer of width `width`, and fill all slots with
    * `initialValue`. */
-  PipelineBuffer(int width, const T& initialValue) : PipelineBuffer(width) {
-    fill(initialValue);
-  }
+  PipelineBuffer(int width, const T& initialValue)
+      : width(width), buffer(width * length, initialValue) {}
 
   /** Tick the buffer and move head/tail pointers, or do nothing if it's
    * stalled. */
@@ -35,14 +28,24 @@ class PipelineBuffer {
   }
 
   /** Get a tail slots pointer. */
-  T* getTailSlots() const {
-    auto ptr = buffer.get();
+  T* getTailSlots() {
+    T* ptr = buffer.data();
+    return &ptr[headIsStart * width];
+  }
+  /** Get a const tail slots pointer. */
+  const T* getTailSlots() const {
+    const T* ptr = buffer.data();
     return &ptr[headIsStart * width];
   }
 
   /** Get a head slots pointer. */
-  T* getHeadSlots() const {
-    auto ptr = buffer.get();
+  T* getHeadSlots() {
+    T* ptr = buffer.data();
+    return &ptr[!headIsStart * width];
+  }
+  /** Get a const head slots pointer. */
+  const T* getHeadSlots() const {
+    const T* ptr = buffer.data();
     return &ptr[!headIsStart * width];
   }
 
@@ -53,19 +56,14 @@ class PipelineBuffer {
   void stall(bool stalled) { isStalled_ = stalled; }
 
   /** Fill the buffer with a specified value. */
-  void fill(const T& value) {
-    auto ptr = buffer.get();
-    for (size_t i = 0; i < width * length; i++) {
-      ptr[i] = value;
-    }
-  }
+  void fill(const T& value) { std::fill(buffer.begin(), buffer.end(), value); }
 
  private:
   /** The width of each row of slots. */
   unsigned short width;
 
   /** The buffer. */
-  std::shared_ptr<T> buffer;
+  std::vector<T> buffer;
 
   /** The offset of the head pointer; either 0 or 1. */
   bool headIsStart = 0;
