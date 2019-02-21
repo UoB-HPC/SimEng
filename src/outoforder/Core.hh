@@ -58,11 +58,12 @@ class Core : public simeng::Core {
   /** The buffer between rename and dispatch/issue. */
   PipelineBuffer<std::shared_ptr<Instruction>> renameToDispatchBuffer;
 
-  /** The buffer between dispatch/issue and execute. */
-  PipelineBuffer<std::shared_ptr<Instruction>> issueToExecuteBuffer;
+  /** The issue ports; single-width buffers between issue and execute. */
+  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> issuePorts;
 
-  /** The buffer between execute and writeback. */
-  PipelineBuffer<std::shared_ptr<Instruction>> executeToWritebackBuffer;
+  /** The completion slots; single-width buffers between execute and writeback.
+   */
+  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots;
 
   /** The fetch unit; fetches instructions from memory. */
   FetchUnit fetchUnit;
@@ -78,9 +79,9 @@ class Core : public simeng::Core {
    * unit. */
   DispatchIssueUnit dispatchIssueUnit;
 
-  /** The execute unit; executes uops and sends to writeback, also forwarding
-   * results to dispatch/issue. */
-  ExecuteUnit executeUnit;
+  /** The set of execution units; executes uops and sends to writeback, also
+   * forwarding results to dispatch/issue. */
+  std::vector<ExecuteUnit> executionUnits;
 
   /** The writeback unit; writes uop results to the register file. */
   WritebackUnit writebackUnit;

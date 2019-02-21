@@ -5,12 +5,12 @@ namespace outoforder {
 
 DispatchIssueUnit::DispatchIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
-    PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
+    std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
     const RegisterFile& registerFile,
     const std::vector<uint16_t>& physicalRegisterStructure,
     unsigned int maxReservationStationSize)
     : fromRenameBuffer(fromRename),
-      toExecuteBuffer(toExecute),
+      issuePorts(issuePorts),
       registerFile(registerFile),
       scoreboard(physicalRegisterStructure.size()),
       maxReservationStationSize(maxReservationStationSize),
@@ -74,7 +74,7 @@ void DispatchIssueUnit::tick() {
 }
 
 void DispatchIssueUnit::issue() {
-  const int maxIssue = 1;
+  const int maxIssue = issuePorts.size();
   int issued = 0;
   auto it = reservationStation.begin();
 
@@ -86,7 +86,7 @@ void DispatchIssueUnit::issue() {
     if (entry->canExecute()) {
       // Found a suitable entry; add to output, increment issue counter,
       // decrement ready counter, and remove from RS
-      toExecuteBuffer.getTailSlots()[0] = entry;
+      issuePorts[issued].getTailSlots()[0] = entry;
       issued++;
       readyCount--;
 

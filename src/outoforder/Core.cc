@@ -12,6 +12,8 @@ const unsigned int rsSize = 16;
 const unsigned int loadQueueSize = 16;
 const unsigned int storeQueueSize = 8;
 const unsigned int frontendWidth = 2;
+const unsigned int executionUnitCount = 2;
+const unsigned int commitWidth = 2;
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const char* insnPtr, unsigned int programByteLength,
@@ -24,18 +26,22 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
       fetchToDecodeBuffer(frontendWidth, {}),
       decodeToRenameBuffer(frontendWidth, nullptr),
       renameToDispatchBuffer(frontendWidth, nullptr),
-      issueToExecuteBuffer(1, nullptr),
-      executeToWritebackBuffer(1, nullptr),
+      issuePorts(executionUnitCount, {1, nullptr}),
+      completionSlots(executionUnitCount, {1, nullptr}),
       fetchUnit(fetchToDecodeBuffer, insnPtr, programByteLength, isa,
                 branchPredictor),
       decodeUnit(fetchToDecodeBuffer, decodeToRenameBuffer, branchPredictor),
       renameUnit(decodeToRenameBuffer, renameToDispatchBuffer, reorderBuffer,
                  registerAliasTable, loadStoreQueue, physicalRegisters.size()),
-      dispatchIssueUnit(renameToDispatchBuffer, issueToExecuteBuffer,
-                        registerFile, physicalRegisters, rsSize),
-      executeUnit(issueToExecuteBuffer, executeToWritebackBuffer,
-                  dispatchIssueUnit, loadStoreQueue, branchPredictor),
-      writebackUnit(executeToWritebackBuffer, registerFile){};
+      dispatchIssueUnit(renameToDispatchBuffer, issuePorts, registerFile,
+                        physicalRegisters, rsSize),
+      writebackUnit(completionSlots, registerFile) {
+  for (size_t i = 0; i < executionUnitCount; i++) {
+    executionUnits.emplace_back(issuePorts[i], completionSlots[i],
+                                dispatchIssueUnit, loadStoreQueue,
+                                branchPredictor);
+  }
+};
 
 void Core::tick() {
   ticks++;
@@ -49,7 +55,10 @@ void Core::tick() {
   decodeUnit.tick();
   renameUnit.tick();
   dispatchIssueUnit.tick();
-  executeUnit.tick();
+  for (auto& eu : executionUnits) {
+    // Tick each execution unit
+    eu.tick();
+  }
 
   // Late tick for the dispatch/issue unit to issue newly ready uops
   dispatchIssueUnit.issue();
@@ -60,27 +69,34 @@ void Core::tick() {
   fetchToDecodeBuffer.tick();
   decodeToRenameBuffer.tick();
   renameToDispatchBuffer.tick();
-  issueToExecuteBuffer.tick();
-  executeToWritebackBuffer.tick();
+  for (auto& issuePort : issuePorts) {
+    issuePort.tick();
+  }
+  for (auto& completionSlot : completionSlots) {
+    completionSlot.tick();
+  }
 
-  // Commit a single instruction
-  reorderBuffer.commit(1);
+  // Commit instructions from ROB
+  reorderBuffer.commit(commitWidth);
 
   // Check for flush
-  if (executeUnit.shouldFlush() || reorderBuffer.shouldFlush()) {
-    // Flush was requested in an out-of-order stage
+  bool euFlush = false;
+  uint64_t targetAddress = 0;
+  uint64_t lowestSeqId = 0;
+  for (const auto& eu : executionUnits) {
+    if (eu.shouldFlush() && (!euFlush || eu.getFlushSeqId() < lowestSeqId)) {
+      euFlush = true;
+      lowestSeqId = eu.getFlushSeqId();
+      targetAddress = eu.getFlushAddress();
+    }
+  }
+  if (euFlush || reorderBuffer.shouldFlush()) {
+    // Flush was requested in an out-of-order stage.
     // Update PC and wipe in-order buffers (Fetch/Decode, Decode/Rename,
     // Rename/Dispatch)
 
-    uint64_t targetAddress;
-    uint64_t lowestSeqId = std::numeric_limits<uint64_t>::max();
-    if (executeUnit.shouldFlush()) {
-      lowestSeqId = executeUnit.getFlushSeqId();
-      targetAddress = executeUnit.getFlushAddress();
-    }
-
     if (reorderBuffer.shouldFlush() &&
-        reorderBuffer.getFlushSeqId() < lowestSeqId) {
+        (!euFlush || reorderBuffer.getFlushSeqId() < lowestSeqId)) {
       // If the reorder buffer found an older instruction to flush up to, do
       // that instead
       lowestSeqId = reorderBuffer.getFlushSeqId();
@@ -101,7 +117,7 @@ void Core::tick() {
   } else if (decodeUnit.shouldFlush()) {
     // Flush was requested at decode stage
     // Update PC and wipe Fetch/Decode buffer.
-    auto targetAddress = decodeUnit.getFlushAddress();
+    targetAddress = decodeUnit.getFlushAddress();
 
     fetchUnit.updatePC(targetAddress);
     fetchToDecodeBuffer.fill({});
