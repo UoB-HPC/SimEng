@@ -27,6 +27,8 @@ class DecodeUnit {
    * discovered misprediction. */
   uint64_t getFlushAddress() const;
 
+  uint64_t getEarlyFlushes() const;
+
  private:
   /** A buffer of macro-ops to split into uops. */
   PipelineBuffer<MacroOp>& fromFetchBuffer;
@@ -41,6 +43,8 @@ class DecodeUnit {
 
   /** The target instruction address the PC should be updated to upon flush. */
   uint64_t pc;
+
+  uint64_t earlyFlushes = 0;
 };
 
 }  // namespace outoforder

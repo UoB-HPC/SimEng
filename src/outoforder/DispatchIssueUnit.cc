@@ -23,52 +23,54 @@ DispatchIssueUnit::DispatchIssueUnit(
 };
 
 void DispatchIssueUnit::tick() {
-  auto& uop = fromRenameBuffer.getHeadSlots()[0];
-  if (uop == nullptr) {
-    return;
-  }
-  if (reservationStation.size() == maxReservationStationSize) {
-    fromRenameBuffer.stall(true);
-    rsStalls++;
-    return;
-  }
-  fromRenameBuffer.stall(false);
+  for (size_t slot = 0; slot < fromRenameBuffer.getWidth(); slot++) {
+    auto& uop = fromRenameBuffer.getHeadSlots()[slot];
+    if (uop == nullptr) {
+      continue;
+    }
+    if (reservationStation.size() == maxReservationStationSize) {
+      fromRenameBuffer.stall(true);
+      rsStalls++;
+      return;
+    }
+    fromRenameBuffer.stall(false);
 
-  // Assume the uop will be ready
-  bool ready = true;
+    // Assume the uop will be ready
+    bool ready = true;
 
-  // Register read
-  // Identify remaining missing registers and supply values
-  auto& sourceRegisters = uop->getOperandRegisters();
-  for (size_t i = 0; i < sourceRegisters.size(); i++) {
-    const auto& reg = sourceRegisters[i];
+    // Register read
+    // Identify remaining missing registers and supply values
+    auto& sourceRegisters = uop->getOperandRegisters();
+    for (size_t i = 0; i < sourceRegisters.size(); i++) {
+      const auto& reg = sourceRegisters[i];
 
-    if (!uop->isOperandReady(i)) {
-      // The operand hasn't already been supplied
-      if (scoreboard[reg.type][reg.tag]) {
-        // The scoreboard says it's ready; read and supply the register value
-        uop->supplyOperand(reg, registerFile.get(reg));
-      } else {
-        // This register isn't ready yet. Register this uop to the dependency
-        // matrix for a more efficient lookup later
-        dependencyMatrix[reg.type][reg.tag].push_back(uop);
-        ready = false;
+      if (!uop->isOperandReady(i)) {
+        // The operand hasn't already been supplied
+        if (scoreboard[reg.type][reg.tag]) {
+          // The scoreboard says it's ready; read and supply the register value
+          uop->supplyOperand(reg, registerFile.get(reg));
+        } else {
+          // This register isn't ready yet. Register this uop to the dependency
+          // matrix for a more efficient lookup later
+          dependencyMatrix[reg.type][reg.tag].push_back(uop);
+          ready = false;
+        }
       }
     }
-  }
 
-  if (ready) {
-    readyCount++;
-  }
+    if (ready) {
+      readyCount++;
+    }
 
-  // Set scoreboard for all destination registers as not ready
-  auto& destinationRegisters = uop->getDestinationRegisters();
-  for (const auto& reg : destinationRegisters) {
-    scoreboard[reg.type][reg.tag] = false;
-  }
+    // Set scoreboard for all destination registers as not ready
+    auto& destinationRegisters = uop->getDestinationRegisters();
+    for (const auto& reg : destinationRegisters) {
+      scoreboard[reg.type][reg.tag] = false;
+    }
 
-  reservationStation.push_back(uop);
-  fromRenameBuffer.getHeadSlots()[0] = nullptr;
+    reservationStation.push_back(uop);
+    fromRenameBuffer.getHeadSlots()[slot] = nullptr;
+  }
 }
 
 void DispatchIssueUnit::issue() {

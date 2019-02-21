@@ -27,6 +27,8 @@ class FetchUnit {
   /** Update the program counter to the specified address. */
   void updatePC(uint64_t address);
 
+  uint64_t getBranchStalls() const;
+
  private:
   /** An output buffer connecting this unit to the decode unit. */
   PipelineBuffer<MacroOp>& toDecode;
@@ -49,6 +51,9 @@ class FetchUnit {
    * instruction memory region, and set back to `false` if the PC is returned to
    * the instruction region. */
   bool hasHalted_ = false;
+
+  /** The number of cycles fetch terminated early due to a predicted branch. */
+  uint64_t branchStalls = 0;
 };
 
 }  // namespace outoforder

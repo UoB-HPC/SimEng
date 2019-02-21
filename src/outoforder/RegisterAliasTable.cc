@@ -51,6 +51,10 @@ bool RegisterAliasTable::canAllocate(uint8_t type,
   return (freeQueues[type].size() >= quantity);
 }
 
+unsigned int RegisterAliasTable::freeRegistersAvailable(uint8_t type) const {
+  return freeQueues[type].size();
+}
+
 Register RegisterAliasTable::allocate(Register architectural) {
   std::queue<uint16_t>& freeQueue = freeQueues[architectural.type];
   assert(freeQueue.size() > 0 &&

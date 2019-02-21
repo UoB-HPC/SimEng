@@ -28,6 +28,9 @@ class RegisterAliasTable {
   /** Allocate a physical register for the provided architectural register. */
   Register allocate(Register architectural);
 
+  /** Get the number of free registers available for allocation this cycle. */
+  unsigned int freeRegistersAvailable(uint8_t type) const;
+
   /** Commit the provided physical register. This register now holds the
    * committed state of the corresponding architectural register, and previous
    * physical register is freed. */

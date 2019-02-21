@@ -11,6 +11,7 @@ const unsigned int robSize = 16;
 const unsigned int rsSize = 16;
 const unsigned int loadQueueSize = 16;
 const unsigned int storeQueueSize = 8;
+const unsigned int frontendWidth = 2;
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const char* insnPtr, unsigned int programByteLength,
@@ -20,9 +21,9 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
       registerAliasTable(isa.getRegisterFileStructure(), physicalRegisters),
       loadStoreQueue(loadQueueSize, storeQueueSize, memory),
       reorderBuffer(robSize, registerAliasTable, loadStoreQueue),
-      fetchToDecodeBuffer(1, {}),
-      decodeToRenameBuffer(1, nullptr),
-      renameToDispatchBuffer(1, nullptr),
+      fetchToDecodeBuffer(frontendWidth, {}),
+      decodeToRenameBuffer(frontendWidth, nullptr),
+      renameToDispatchBuffer(frontendWidth, nullptr),
       issueToExecuteBuffer(1, nullptr),
       executeToWritebackBuffer(1, nullptr),
       fetchUnit(fetchToDecodeBuffer, insnPtr, programByteLength, isa,
@@ -112,20 +113,41 @@ void Core::tick() {
 bool Core::hasHalted() const {
   // Core is considered to have halted when the fetch unit has halted, and there
   // are no uops at the head of any buffer.
-  bool decodePending = fetchToDecodeBuffer.getHeadSlots()[0].size() > 0;
-  bool renamePending = decodeToRenameBuffer.getHeadSlots()[0] != nullptr;
-  bool commitPending = reorderBuffer.size() > 0;
+  if (!fetchUnit.hasHalted()) {
+    return false;
+  }
 
-  return (fetchUnit.hasHalted() && !decodePending && !renamePending &&
-          !commitPending);
+  if (reorderBuffer.size() > 0) {
+    return false;
+  }
+
+  auto decodeSlots = fetchToDecodeBuffer.getHeadSlots();
+  for (size_t slot = 0; slot < fetchToDecodeBuffer.getWidth(); slot++) {
+    if (decodeSlots[slot].size() > 0) {
+      return false;
+    }
+  }
+
+  auto renameSlots = decodeToRenameBuffer.getHeadSlots();
+  for (size_t slot = 0; slot < decodeToRenameBuffer.getWidth(); slot++) {
+    if (renameSlots[slot] != nullptr) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = writebackUnit.getInstructionsRetiredCount();
   auto ipc = retired / static_cast<float>(ticks);
 
+  auto branchStalls = fetchUnit.getBranchStalls();
+
+  auto earlyFlushes = decodeUnit.getEarlyFlushes();
+
   auto allocationStalls = renameUnit.getAllocationStalls();
-  auto robStalls = renameUnit.getAllocationStalls();
+  auto robStalls = renameUnit.getROBStalls();
   auto lqStalls = renameUnit.getLoadQueueStalls();
   auto sqStalls = renameUnit.getStoreQueueStalls();
 
@@ -137,6 +159,8 @@ std::map<std::string, std::string> Core::getStats() const {
           {"retired", std::to_string(retired)},
           {"ipc", std::to_string(ipc)},
           {"flushes", std::to_string(flushes)},
+          {"fetch.branchStalls", std::to_string(branchStalls)},
+          {"decode.earlyFlushes", std::to_string(earlyFlushes)},
           {"rename.allocationStalls", std::to_string(allocationStalls)},
           {"rename.robStalls", std::to_string(robStalls)},
           {"rename.lqStalls", std::to_string(lqStalls)},
@@ -145,7 +169,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"issue.frontendStalls", std::to_string(frontendStalls)},
           {"issue.backendStalls", std::to_string(backendStalls)},
           {"issue.outOfOrderIssues", std::to_string(outOfOrderIssues)}};
-}
+}  // namespace outoforder
 
 }  // namespace outoforder
 }  // namespace simeng
