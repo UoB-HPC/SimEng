@@ -4,28 +4,30 @@ namespace simeng {
 namespace outoforder {
 
 WritebackUnit::WritebackUnit(
-    PipelineBuffer<std::shared_ptr<Instruction>>& fromExecute,
+    std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots,
     RegisterFile& registerFile)
-    : fromExecuteBuffer(fromExecute), registerFile(registerFile) {}
+    : completionSlots(completionSlots), registerFile(registerFile) {}
 
 void WritebackUnit::tick() {
-  auto& uop = fromExecuteBuffer.getHeadSlots()[0];
+  for (size_t slot = 0; slot < completionSlots.size(); slot++) {
+    auto& uop = completionSlots[slot].getHeadSlots()[0];
 
-  if (uop == nullptr) {
-    return;
+    if (uop == nullptr) {
+      continue;
+    }
+
+    auto& results = uop->getResults();
+    auto& destinations = uop->getDestinationRegisters();
+    for (size_t i = 0; i < results.size(); i++) {
+      // Write results to register file
+      registerFile.set(destinations[i], results[i]);
+    }
+    uop->setCommitReady();
+
+    instructionsRetired++;
+
+    completionSlots[slot].getHeadSlots()[0] = nullptr;
   }
-
-  auto& results = uop->getResults();
-  auto& destinations = uop->getDestinationRegisters();
-  for (size_t i = 0; i < results.size(); i++) {
-    // Write results to register file
-    registerFile.set(destinations[i], results[i]);
-  }
-  uop->setCommitReady();
-
-  instructionsRetired++;
-
-  fromExecuteBuffer.getHeadSlots()[0] = nullptr;
 }
 
 uint64_t WritebackUnit::getInstructionsRetiredCount() const {

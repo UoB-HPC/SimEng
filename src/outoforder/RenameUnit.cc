@@ -27,7 +27,6 @@ void RenameUnit::tick() {
     freeRegistersAvailable[type] = rat.freeRegistersAvailable(type);
   }
 
-  int count = 0;
   for (size_t slot = 0; slot < fromDecodeBuffer.getWidth(); slot++) {
     auto& uop = fromDecodeBuffer.getHeadSlots()[slot];
     if (uop == nullptr) {

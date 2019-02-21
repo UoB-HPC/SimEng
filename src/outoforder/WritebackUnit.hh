@@ -12,7 +12,8 @@ class WritebackUnit {
  public:
   /** Constructs a writeback unit with references to an input buffer and
    * register file to write to. */
-  WritebackUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromExecute,
+  WritebackUnit(std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>&
+                    completionSlots,
                 RegisterFile& registerFile);
 
   /** Tick the writeback unit to perform its operation for this cycle. */
@@ -22,8 +23,9 @@ class WritebackUnit {
   uint64_t getInstructionsRetiredCount() const;
 
  private:
-  /** A buffer of instructions to process, coming from the execute unit. */
-  PipelineBuffer<std::shared_ptr<Instruction>>& fromExecuteBuffer;
+  /** Buffers of completed instructions to process, coming from the execute
+   * units. */
+  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots;
 
   /** The register file to write results into. */
   RegisterFile& registerFile;

@@ -16,11 +16,12 @@ class DispatchIssueUnit {
   /** Construc a dispatch/issue unit with references to input/output buffers,
    * the register file, and a description of the number of physical registers
    * the scoreboard needs to reflect. */
-  DispatchIssueUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
-                    PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
-                    const RegisterFile& registerFile,
-                    const std::vector<uint16_t>& physicalRegisterStructure,
-                    unsigned int maxReservationStationSize);
+  DispatchIssueUnit(
+      PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
+      std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
+      const RegisterFile& registerFile,
+      const std::vector<uint16_t>& physicalRegisterStructure,
+      unsigned int maxReservationStationSize);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -61,8 +62,8 @@ class DispatchIssueUnit {
   /** A buffer of instructions to dispatch and read operands for. */
   PipelineBuffer<std::shared_ptr<Instruction>>& fromRenameBuffer;
 
-  /** A buffer for writing ready instructions to. */
-  PipelineBuffer<std::shared_ptr<Instruction>>& toExecuteBuffer;
+  /** Ports to the execution units, for writing ready instructions to. */
+  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts;
 
   /** A reference to the physical register file. */
   const RegisterFile& registerFile;
