@@ -57,9 +57,9 @@ class RenameUnit {
   /** A reference to the load/store queue. */
   LoadStoreQueue& lsq;
 
-  /** A table recording the numbers of each type of register needed to
-   * successfully allocate destinations for an instruction. */
-  std::vector<uint8_t> freeRegistersNeeded;
+  /** A table recording the numbers of free physical registers for each register
+   * file. */
+  std::vector<uint8_t> freeRegistersAvailable;
 
   /** The number of cycles stalled due to inability to allocate enough
    * destination registers. */

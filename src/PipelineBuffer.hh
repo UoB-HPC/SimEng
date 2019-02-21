@@ -58,6 +58,9 @@ class PipelineBuffer {
   /** Fill the buffer with a specified value. */
   void fill(const T& value) { std::fill(buffer.begin(), buffer.end(), value); }
 
+  /** Get the width of the buffer slots. */
+  unsigned short getWidth() const { return width; }
+
  private:
   /** The width of each row of slots. */
   unsigned short width;
