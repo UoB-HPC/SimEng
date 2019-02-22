@@ -53,10 +53,11 @@ bool A64Instruction::isOperandReady(int index) const {
   return static_cast<bool>(operands[index]);
 }
 
-void A64Instruction::rename(const std::vector<Register>& destinations,
-                            const std::vector<Register>& operands) {
-  destinationRegisters = destinations;
-  sourceRegisters = operands;
+void A64Instruction::renameSource(uint8_t i, Register renamed) {
+  sourceRegisters[i] = renamed;
+}
+void A64Instruction::renameDestination(uint8_t i, Register renamed) {
+  destinationRegisters[i] = renamed;
 }
 
 void A64Instruction::supplyOperand(const Register& reg,

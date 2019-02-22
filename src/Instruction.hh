@@ -27,10 +27,13 @@ class Instruction {
    * renamed. */
   virtual const std::vector<Register>& getDestinationRegisters() const = 0;
 
-  /** Override the destination and operand registers with renamed physical
-   * register tags. */
-  virtual void rename(const std::vector<Register>& destinations,
-                      const std::vector<Register>& operands) = 0;
+  /** Override the specified source register with a renamed physical register.
+   */
+  virtual void renameSource(uint8_t i, Register renamed) = 0;
+
+  /** Override the specified destination register with a renamed physical
+   * register. */
+  virtual void renameDestination(uint8_t i, Register renamed) = 0;
 
   /** Provide a value for the specified physical register. */
   virtual void supplyOperand(const Register& reg,

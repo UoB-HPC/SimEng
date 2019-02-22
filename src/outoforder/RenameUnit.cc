@@ -52,25 +52,18 @@ void RenameUnit::tick() {
 
   // Allocate source registers
   auto& sourceRegisters = uop->getOperandRegisters();
-  std::vector<Register> renamedSources(sourceRegisters.size());
   for (size_t i = 0; i < sourceRegisters.size(); i++) {
     const auto& reg = sourceRegisters[i];
     if (!uop->isOperandReady(i)) {
-      renamedSources[i] = rat.getMapping(reg);
-    } else {
-      renamedSources[i] = reg;
+      uop->renameSource(i, rat.getMapping(reg));
     }
   }
 
   // Allocate destination registers
-  std::vector<Register> renamedDestinations(destinationRegisters.size());
   for (size_t i = 0; i < destinationRegisters.size(); i++) {
     const auto& reg = destinationRegisters[i];
-    renamedDestinations[i] = rat.allocate(reg);
+    uop->renameDestination(i, rat.allocate(reg));
   }
-
-  // Supply uop with renamed registers
-  uop->rename(renamedDestinations, renamedSources);
 
   // Reserve a slot in the ROB for this uop
   reorderBuffer.reserve(uop);

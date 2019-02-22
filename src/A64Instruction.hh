@@ -96,10 +96,13 @@ class A64Instruction : public Instruction {
   /** Check whether the operand at index `i` has had a value supplied. */
   bool isOperandReady(int index) const override;
 
-  /** Override the destination and operand registers with renamed physical
-   * register tags. */
-  void rename(const std::vector<Register>& destinations,
-              const std::vector<Register>& operands) override;
+  /** Override the specified source register with a renamed physical register.
+   */
+  void renameSource(uint8_t i, Register renamed) override;
+
+  /** Override the specified destination register with a renamed physical
+   * register. */
+  void renameDestination(uint8_t i, Register renamed) override;
 
   /** Provide a value for the specified physical register. */
   void supplyOperand(const Register& reg, const RegisterValue& value) override;
