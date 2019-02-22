@@ -16,9 +16,10 @@ namespace inorder {
 class Core : public simeng::Core {
  public:
   /** Construct a core model, providing an ISA and branch predictor to use,
-   * along with a pointer and size of instruction memory. */
+   * along with a pointer and size of instruction memory, and a pointer to
+   * process memory. */
   Core(const char* insnPtr, unsigned int programByteLength,
-       const Architecture& isa, BranchPredictor& branchPredictor);
+       const Architecture& isa, BranchPredictor& branchPredictor, char* memory);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the

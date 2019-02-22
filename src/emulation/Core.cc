@@ -6,8 +6,8 @@ namespace simeng {
 namespace emulation {
 
 Core::Core(const char* insnPtr, uint64_t programByteLength,
-           const Architecture& isa)
-    : memory(static_cast<char*>(calloc(1024, 1))),
+           const Architecture& isa, char* memory)
+    : memory(memory),
       insnPtr(insnPtr),
       programByteLength(programByteLength),
       isa(isa),
