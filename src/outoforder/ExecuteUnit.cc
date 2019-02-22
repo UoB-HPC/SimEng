@@ -22,19 +22,19 @@ void ExecuteUnit::tick() {
 
   auto& uop = fromIssueBuffer.getHeadSlots()[0];
   if (uop != nullptr) {
-    // TODO: Retrieve latency from the instruction
-    const unsigned int latency = 2;
+    if (!uop->isFlushed()) {
+      // TODO: Retrieve latency from the instruction
+      const unsigned int latency = 2;
 
-    if (latency == 1 && pipeline.size() == 0) {
-      // Pipeline is empty and insn will execute this cycle; bypass
-      execute(uop);
-      fromIssueBuffer.getHeadSlots()[0] = nullptr;
-      return;
-    } else {
-      // Add insn to pipeline
-      pipeline.push({uop, tickCounter + latency - 1});
-      fromIssueBuffer.getHeadSlots()[0] = nullptr;
+      if (latency == 1 && pipeline.size() == 0) {
+        // Pipeline is empty and insn will execute this cycle; bypass
+        execute(uop);
+      } else {
+        // Add insn to pipeline
+        pipeline.push({uop, tickCounter + latency - 1});
+      }
     }
+    fromIssueBuffer.getHeadSlots()[0] = nullptr;
   }
 
   if (pipeline.size() == 0) {
