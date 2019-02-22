@@ -46,7 +46,7 @@ void Core::tick() {
       memcpy(buffer, memory + request.first, request.second);
 
       auto ptr = std::shared_ptr<uint8_t>((uint8_t*)buffer, free);
-      auto data = simeng::RegisterValue(ptr);
+      auto data = simeng::RegisterValue(ptr, request.second);
 
       uop->supplyData(request.first, data);
     }
@@ -63,7 +63,7 @@ void Core::tick() {
 
       // Copy data to memory
       auto address = memory + request.first;
-      memcpy(address, data[i].getAsVector<void>(), request.second);
+      memcpy(address, data[i].getAsVector<char>(), request.second);
     }
   } else if (uop->isBranch()) {
     pc = uop->getBranchAddress();
