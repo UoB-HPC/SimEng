@@ -90,6 +90,7 @@ void Core::tick() {
     fetchUnit.updatePC(targetAddress);
     fetchToDecodeBuffer.fill({});
     decodeToRenameBuffer.fill(nullptr);
+    renameToDispatchBuffer.fill(nullptr);
 
     // Flush everything younger than the bad instruction from the ROB
     reorderBuffer.flush(lowestSeqId);
