@@ -27,6 +27,8 @@ class FetchUnit {
   /** Update the program counter to the specified address. */
   void updatePC(uint64_t address);
 
+  /** Retrieve the number of cycles fetch terminated early due to a predicted
+   * branch. */
   uint64_t getBranchStalls() const;
 
  private:

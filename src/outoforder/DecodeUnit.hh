@@ -27,6 +27,8 @@ class DecodeUnit {
    * discovered misprediction. */
   uint64_t getFlushAddress() const;
 
+  /** Retrieve the number of times that the decode unit requested a flush due to
+   * discovering a branch misprediction early. */
   uint64_t getEarlyFlushes() const;
 
  private:
@@ -44,6 +46,8 @@ class DecodeUnit {
   /** The target instruction address the PC should be updated to upon flush. */
   uint64_t pc;
 
+  /** The number of times that the decode unit requested a flush due to
+   * discovering a branch misprediction early. */
   uint64_t earlyFlushes = 0;
 };
 
