@@ -79,6 +79,10 @@ void Core::tick() {
   // Commit instructions from ROB
   reorderBuffer.commit(commitWidth);
 
+  flushIfNeeded();
+}
+
+void Core::flushIfNeeded() {
   // Check for flush
   bool euFlush = false;
   uint64_t targetAddress = 0;
@@ -185,7 +189,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"issue.frontendStalls", std::to_string(frontendStalls)},
           {"issue.backendStalls", std::to_string(backendStalls)},
           {"issue.outOfOrderIssues", std::to_string(outOfOrderIssues)}};
-}  // namespace outoforder
+}
 
 }  // namespace outoforder
 }  // namespace simeng

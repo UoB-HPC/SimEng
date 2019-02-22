@@ -37,6 +37,9 @@ class Core : public simeng::Core {
   std::map<std::string, std::string> getStats() const override;
 
  private:
+  /** Inspect units and flush pipelines if required. */
+  void flushIfNeeded();
+
   /** The core's register file. */
   RegisterFile registerFile;
 

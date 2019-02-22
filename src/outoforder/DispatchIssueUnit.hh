@@ -13,7 +13,7 @@ namespace outoforder {
  * once ready. */
 class DispatchIssueUnit {
  public:
-  /** Construc a dispatch/issue unit with references to input/output buffers,
+  /** Construct a dispatch/issue unit with references to input/output buffers,
    * the register file, and a description of the number of physical registers
    * the scoreboard needs to reflect. */
   DispatchIssueUnit(
