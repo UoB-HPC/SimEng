@@ -7,8 +7,9 @@ namespace inorder {
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const char* insnPtr, unsigned int programByteLength,
-           const Architecture& isa, BranchPredictor& branchPredictor)
-    : memory(static_cast<char*>(calloc(1024, 1))),
+           const Architecture& isa, BranchPredictor& branchPredictor,
+           char* memory)
+    : memory(memory),
       registerFile({32, 32, 1}),
       fetchToDecodeBuffer(1, {}),
       decodeToExecuteBuffer(1, nullptr),

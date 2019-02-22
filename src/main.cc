@@ -144,12 +144,13 @@ int main(int argc, char** argv) {
     case SimulationMode::InOrderPipelined: {
       modeString = "In-Order Pipelined";
       core = std::make_unique<simeng::inorder::Core>(insnPtr, length, arch,
-                                                     predictor);
+                                                     predictor, memory);
       break;
     }
     default: {
       modeString = "Emulation";
-      core = std::make_unique<simeng::emulation::Core>(insnPtr, length, arch);
+      core = std::make_unique<simeng::emulation::Core>(insnPtr, length, arch,
+                                                       memory);
       break;
     }
   };
@@ -174,6 +175,8 @@ int main(int argc, char** argv) {
 
   std::cout << "\nFinished " << iterations << " ticks in " << duration << "ms ("
             << hz << "Hz)" << std::endl;
+
+  free(memory);
 
   return 0;
 }
