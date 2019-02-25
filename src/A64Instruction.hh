@@ -85,13 +85,13 @@ class A64Instruction : public Instruction {
    * decoding or execution. */
   InstructionException getException() const override;
 
-  /** Retrieve a vector of source registers this instruction reads. */
-  const std::vector<Register>& getOperandRegisters() const override;
+  /** Retrieve the source registers this instruction reads. */
+  const span<Register> getOperandRegisters() const override;
 
-  /** Retrieve a vector of destination registers this instruction will write to.
+  /** Retrieve the destination registers this instruction will write to.
    * A register value of -1 signifies a Zero Register read, and should not be
    * renamed. */
-  const std::vector<Register>& getDestinationRegisters() const override;
+  const span<Register> getDestinationRegisters() const override;
 
   /** Check whether the operand at index `i` has had a value supplied. */
   bool isOperandReady(int index) const override;
@@ -126,7 +126,7 @@ class A64Instruction : public Instruction {
   bool canCommit() const override;
 
   /** Retrieve register results. */
-  const std::vector<RegisterValue>& getResults() const override;
+  const span<RegisterValue> getResults() const override;
 
   /** Generate memory addresses this instruction wishes to access. */
   std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() override;
@@ -185,6 +185,13 @@ class A64Instruction : public Instruction {
   static const Register ZERO_REGISTER;
 
  private:
+  /** The maximum number of source registers any supported A64 instruction can
+   * have. */
+  static const size_t MAX_SOURCE_REGISTERS = 4;
+  /** The maximum number of destination registers any supported A64 instruction
+   * can have. */
+  static const size_t MAX_DESTINATION_REGISTERS = 3;
+
   /** This instruction's opcode. */
   A64Opcode opcode;
 
@@ -194,19 +201,23 @@ class A64Instruction : public Instruction {
   /** Metadata for this instruction; used for operation logic */
   A64DecodeMetadata metadata;
 
-  /** A vector of source registers. */
-  std::vector<Register> sourceRegisters;
+  /** An array of source registers. */
+  std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
+  /** The number of source registers this instruction reads from. */
+  size_t sourceRegisterCount = 0;
 
-  /** A vector of destination registers. */
-  std::vector<Register> destinationRegisters;
+  /** An array of destination registers. */
+  std::array<Register, MAX_DESTINATION_REGISTERS> destinationRegisters;
+  /** The number of destination registers this instruction writes to. */
+  size_t destinationRegisterCount = 0;
 
-  /** A vector of provided operand values. Each entry corresponds to a
+  /** An array of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  std::vector<RegisterValue> operands;
+  std::array<RegisterValue, MAX_SOURCE_REGISTERS> operands;
 
-  /** A vector of generated output results. Each entry corresponds to a
+  /** An array of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
-  std::vector<RegisterValue> results;
+  std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results;
 
   /** The current exception state of this instruction. */
   A64InstructionException exception = A64InstructionException::None;

@@ -2,6 +2,7 @@
 
 #include "RegisterFile.hh"
 #include "RegisterValue.hh"
+#include "span.hh"
 
 #include <vector>
 
@@ -19,13 +20,13 @@ class Instruction {
    * decoding or execution. */
   virtual InstructionException getException() const = 0;
 
-  /** Retrieve a vector of source registers this instruction reads. */
-  virtual const std::vector<Register>& getOperandRegisters() const = 0;
+  /** Retrieve the source registers this instruction reads. */
+  virtual const span<Register> getOperandRegisters() const = 0;
 
-  /** Retrieve a vector of destination registers this instruction will write to.
+  /** Retrieve the destination registers this instruction will write to.
    * A register value of -1 signifies a Zero Register read, and should not be
    * renamed. */
-  virtual const std::vector<Register>& getDestinationRegisters() const = 0;
+  virtual const span<Register> getDestinationRegisters() const = 0;
 
   /** Override the specified source register with a renamed physical register.
    */
@@ -61,7 +62,7 @@ class Instruction {
   virtual bool canCommit() const = 0;
 
   /** Retrieve register results. */
-  virtual const std::vector<RegisterValue>& getResults() const = 0;
+  virtual const span<RegisterValue> getResults() const = 0;
 
   /** Generate memory addresses this instruction wishes to access. */
   virtual std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() = 0;

@@ -50,6 +50,7 @@ set(SIMENG_SOURCES
     RegisterFile.hh
     RegisterValue.cc
     RegisterValue.hh
+    span.hh
     main.cc
     )
 

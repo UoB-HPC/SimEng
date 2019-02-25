@@ -106,9 +106,8 @@ void DispatchIssueUnit::issue() {
   }
 }
 
-void DispatchIssueUnit::forwardOperands(
-    const std::vector<Register>& registers,
-    const std::vector<RegisterValue>& values) {
+void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
+                                        const span<RegisterValue>& values) {
   assert(registers.size() == values.size() &&
          "Mismatched register and value vector sizes");
 

@@ -1,6 +1,7 @@
 #include "A64Instruction.hh"
 
 #include <algorithm>
+#include <cassert>
 #include <vector>
 
 namespace simeng {
@@ -23,7 +24,10 @@ InstructionException A64Instruction::getException() const {
 
 void A64Instruction::setSourceRegisters(
     const std::vector<Register>& registers) {
-  operands = std::vector<RegisterValue>(registers.size());
+  assert(registers.size() <= MAX_SOURCE_REGISTERS &&
+         "Exceeded maximum source registers for an A64 instruction");
+
+  sourceRegisterCount = registers.size();
   operandsPending = registers.size();
 
   for (size_t i = 0; i < registers.size(); i++) {
@@ -34,20 +38,23 @@ void A64Instruction::setSourceRegisters(
       operands[i] = RegisterValue(0, 8);
       operandsPending--;
     }
+    sourceRegisters[i] = reg;
   }
-  sourceRegisters = registers;
 }
 void A64Instruction::setDestinationRegisters(
     const std::vector<Register>& registers) {
-  destinationRegisters = registers;
-  results = std::vector<RegisterValue>(destinationRegisters.size());
+  assert(registers.size() <= MAX_DESTINATION_REGISTERS &&
+         "Exceeded maximum destination registers for an A64 instruction");
+  destinationRegisterCount = registers.size();
+  std::copy(registers.begin(), registers.end(), destinationRegisters.begin());
 }
 
-const std::vector<Register>& A64Instruction::getOperandRegisters() const {
-  return sourceRegisters;
+const span<Register> A64Instruction::getOperandRegisters() const {
+  return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
 }
-const std::vector<Register>& A64Instruction::getDestinationRegisters() const {
-  return destinationRegisters;
+const span<Register> A64Instruction::getDestinationRegisters() const {
+  return {const_cast<Register*>(destinationRegisters.data()),
+          destinationRegisterCount};
 }
 bool A64Instruction::isOperandReady(int index) const {
   return static_cast<bool>(operands[index]);
@@ -67,7 +74,7 @@ void A64Instruction::supplyOperand(const Register& reg,
 
   // Iterate over operand registers, and copy value if the provided register
   // matches
-  for (size_t i = 0; i < sourceRegisters.size(); i++) {
+  for (size_t i = 0; i < sourceRegisterCount; i++) {
     if (sourceRegisters[i] == reg) {
       operands[i] = value;
       operandsPending--;
@@ -96,8 +103,8 @@ bool A64Instruction::hasExecuted() const { return executed; }
 void A64Instruction::setCommitReady() { canCommit_ = true; }
 bool A64Instruction::canCommit() const { return canCommit_; }
 
-const std::vector<RegisterValue>& A64Instruction::getResults() const {
-  return results;
+const span<RegisterValue> A64Instruction::getResults() const {
+  return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
 bool A64Instruction::isStore() const { return isStore_; }
