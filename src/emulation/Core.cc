@@ -40,13 +40,8 @@ void Core::tick() {
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
     for (auto const& request : addresses) {
-      // Pointer manipulation to generate a RegisterValue from an arbitrary
-      // memory address
-      auto buffer = malloc(request.second);
-      memcpy(buffer, memory + request.first, request.second);
-
-      auto ptr = std::shared_ptr<uint8_t>((uint8_t*)buffer, free);
-      auto data = simeng::RegisterValue(ptr, request.second);
+      // Copy the data at the requested memory address into a RegisterValue
+      auto data = simeng::RegisterValue(memory + request.first, request.second);
 
       uop->supplyData(request.first, data);
     }
