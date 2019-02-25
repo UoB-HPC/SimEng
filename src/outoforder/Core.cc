@@ -16,8 +16,7 @@ const unsigned int storeQueueSize = 8;
 Core::Core(const char* insnPtr, unsigned int programByteLength,
            const Architecture& isa, BranchPredictor& branchPredictor,
            char* memory)
-    : memory(memory),
-      registerFile(physicalRegisters),
+    : registerFile(physicalRegisters),
       registerAliasTable(isa.getRegisterFileStructure(), physicalRegisters),
       loadStoreQueue(loadQueueSize, storeQueueSize, memory),
       reorderBuffer(robSize, registerAliasTable, loadStoreQueue),
@@ -68,7 +67,7 @@ void Core::tick() {
 
   // Check for flush
   if (executeUnit.shouldFlush() || reorderBuffer.shouldFlush()) {
-    // Flush was requested at execute stage.
+    // Flush was requested in an out-of-order stage
     // Update PC and wipe in-order buffers (Fetch/Decode, Decode/Rename,
     // Rename/Dispatch)
 

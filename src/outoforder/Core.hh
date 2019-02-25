@@ -37,9 +37,6 @@ class Core : public simeng::Core {
   std::map<std::string, std::string> getStats() const override;
 
  private:
-  /** A pointer to process memory. */
-  char* memory;
-
   /** The core's register file. */
   RegisterFile registerFile;
 

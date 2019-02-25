@@ -9,8 +9,7 @@ namespace inorder {
 Core::Core(const char* insnPtr, unsigned int programByteLength,
            const Architecture& isa, BranchPredictor& branchPredictor,
            char* memory)
-    : memory(memory),
-      registerFile({32, 32, 1}),
+    : registerFile({32, 32, 1}),
       fetchToDecodeBuffer(1, {}),
       decodeToExecuteBuffer(1, nullptr),
       executeToWritebackBuffer(1, nullptr),
