@@ -5,8 +5,6 @@
 namespace simeng {
 
 RegisterValue::RegisterValue() : bytes(0) {}
-RegisterValue::RegisterValue(std::shared_ptr<char> ptr, uint8_t bytes)
-    : bytes(bytes), ptr(ptr) {}
 
 RegisterValue::operator bool() const { return (bytes > 0); }
 
@@ -26,7 +24,5 @@ RegisterValue RegisterValue::zeroExtend(uint8_t fromBytes,
 
   return extended;
 }
-
-bool RegisterValue::isLocal() const { return bytes <= threshold; }
 
 }  // namespace simeng
