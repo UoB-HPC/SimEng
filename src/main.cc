@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  char* memory = static_cast<char*>(calloc(1024, 1));
+  char* memory = new char[1024]();  // static_cast<char*>(calloc(1024, 1));
 
   // Simple program demonstrating various instructions
   // uint32_t hex[] = {
@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
   std::cout << "\nFinished " << iterations << " ticks in " << duration << "ms ("
             << hz << "Hz)" << std::endl;
 
-  free(memory);
+  delete[] memory;
 
   return 0;
 }
