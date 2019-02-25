@@ -22,8 +22,8 @@ class DecodeUnit {
 
   /** Forwards operands and performs register reads for the currently queued
    * instruction. */
-  void forwardOperands(const std::vector<Register>& destinations,
-                       const std::vector<RegisterValue>& values);
+  void forwardOperands(const span<Register>& destinations,
+                       const span<RegisterValue>& values);
 
   /** Check whether the core should be flushed this cycle. */
   bool shouldFlush() const;

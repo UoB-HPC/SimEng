@@ -32,8 +32,8 @@ class DispatchIssueUnit {
 
   /** Forwards operands and performs register reads for the currently queued
    * instruction. */
-  void forwardOperands(const std::vector<Register>& destinations,
-                       const std::vector<RegisterValue>& values);
+  void forwardOperands(const span<Register>& destinations,
+                       const span<RegisterValue>& values);
 
   /** Set the scoreboard entry for the provided register as ready. */
   void setRegisterReady(Register reg);
