@@ -37,7 +37,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
     // If it's a memory op, commit the entry at the head of the respective queue
     if (uop->isStore()) {
-      bool violationFound = lsq.commitStore();
+      bool violationFound = lsq.commitStore(uop);
       if (violationFound) {
         // Memory order violation found; aborting commits and flushing
         auto load = lsq.getViolatingLoad();
@@ -49,7 +49,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
         return n + 1;
       }
     } else if (uop->isLoad()) {
-      lsq.commitLoad();
+      lsq.commitLoad(uop);
     }
     buffer.pop_front();
   }
@@ -60,9 +60,8 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 void ReorderBuffer::flush(uint64_t afterSeqId) {
   // Iterate backwards from the tail of the queue to find and remove ops newer
   // than `afterSeqId`
-  size_t limit = buffer.size();
-  for (size_t i = limit - 1; i < limit; i--) {
-    auto& uop = buffer[i];
+  while (!buffer.empty()) {
+    auto& uop = buffer.back();
     if (uop->getSequenceId() <= afterSeqId) {
       break;
     }

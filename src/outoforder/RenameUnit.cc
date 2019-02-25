@@ -36,13 +36,13 @@ void RenameUnit::tick() {
   bool isLoad = uop->isLoad();
   bool isStore = uop->isStore();
   if (isLoad) {
-    if (lsq.getLoadQueueSpace() == 0 || lsq.getTotalSpace() == 0) {
+    if (lsq.getLoadQueueSpace() == 0) {
       lqStalls++;
       fromDecodeBuffer.stall(true);
       return;
     }
   } else if (isStore) {
-    if (lsq.getStoreQueueSpace() == 0 || lsq.getTotalSpace() == 0) {
+    if (lsq.getStoreQueueSpace() == 0) {
       sqStalls++;
       fromDecodeBuffer.stall(true);
       return;
