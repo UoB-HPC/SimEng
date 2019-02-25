@@ -22,8 +22,10 @@ void FetchUnit::tick() {
     return;
   }
 
+  auto& macroOp = toDecode.getTailSlots()[0];
+
   auto prediction = branchPredictor.predict(pc);
-  auto [macroop, bytesRead] = isa.predecode(insnPtr + pc, 4, pc, prediction);
+  auto bytesRead = isa.predecode(insnPtr + pc, 4, pc, prediction, macroOp);
 
   if (!prediction.taken) {
     // Predicted as not taken; increment PC to next instruction
@@ -32,8 +34,6 @@ void FetchUnit::tick() {
     // Predicted as taken; set PC to predicted target address
     pc = prediction.target;
   }
-
-  toDecode.getTailSlots()[0] = macroop;
 
   if (pc >= programByteLength) {
     hasHalted_ = true;

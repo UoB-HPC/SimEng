@@ -20,12 +20,12 @@ void Core::tick() {
   }
 
   // Fetch
-  auto [macroop, bytesRead] = isa.predecode(insnPtr + pc, 4, pc, {false, 0});
+  auto bytesRead = isa.predecode(insnPtr + pc, 4, pc, {false, 0}, macroOp);
 
   pc += bytesRead;
 
   // Decode
-  auto uop = macroop[0];
+  auto uop = macroOp[0];
 
   // Issue
   auto registers = uop->getOperandRegisters();

@@ -12,11 +12,11 @@ namespace simeng {
 class A64Architecture : public Architecture {
  public:
   /** Pre-decode instruction memory into a macro-op of `A64Instruction`
-   * instances. Returns the macro-op generated and the number of bytes consumed
-   * to produce it (always 4). */
-  std::tuple<MacroOp, uint8_t> predecode(
-      const void* ptr, uint8_t bytesAvailable, uint64_t instructionAddress,
-      BranchPrediction prediction) const override;
+   * instances. Returns the number of bytes consumed to produce it (always 4),
+   * and writes into the supplied macro-op vector. */
+  uint8_t predecode(const void* ptr, uint8_t bytesAvailable,
+                    uint64_t instructionAddress, BranchPrediction prediction,
+                    MacroOp& output) const override;
 
   /** Returns an ARMv8-a register file structure description. */
   std::vector<RegisterFileStructure> getRegisterFileStructure() const override;

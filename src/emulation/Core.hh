@@ -49,6 +49,9 @@ class Core : public simeng::Core {
 
   /** Whether or not the core has halted. */
   bool hasHalted_ = false;
+
+  /** A reusable macro-op vector to fill with uops. */
+  MacroOp macroOp;
 };
 
 }  // namespace emulation
