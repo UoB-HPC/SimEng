@@ -18,12 +18,13 @@ class Architecture {
   virtual ~Architecture(){};
 
   /** Attempt to pre-decode from `bytesAvailable` bytes of instruction memory.
-   * Returns the macro-op generated and the number of bytes consumed to produce
-   * it; a value of 0 indicates too few bytes were present for a valid decoding.
-   */
-  virtual std::tuple<MacroOp, uint8_t> predecode(
-      const void* ptr, uint8_t bytesAvailable, uint64_t instructionAddress,
-      BranchPrediction prediction) const = 0;
+   * Writes into the supplied macro-op vector, and returns the number of bytes
+   * consumed to produce it; a value of 0 indicates too few bytes were present
+   * for a valid decoding. */
+  virtual uint8_t predecode(const void* ptr, uint8_t bytesAvailable,
+                            uint64_t instructionAddress,
+                            BranchPrediction prediction,
+                            MacroOp& output) const = 0;
 
   /** Returns a vector of {size, number} pairs describing the available
    * registers. */
