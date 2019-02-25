@@ -74,11 +74,13 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   }
 }
 
-bool LoadStoreQueue::commitStore() {
+bool LoadStoreQueue::commitStore(std::shared_ptr<Instruction> uop) {
   assert(storeQueue.size() > 0 &&
          "Attempted to commit a store from an empty queue");
+  assert(storeQueue.front()->getSequenceId() == uop->getSequenceId() &&
+         "Attempted to commit a store that wasn't present at the front of the "
+         "store queue");
 
-  const auto& uop = storeQueue.front();
   const auto& addresses = uop->getGeneratedAddresses();
   const auto& data = uop->getData();
   for (size_t i = 0; i < addresses.size(); i++) {
@@ -95,12 +97,9 @@ bool LoadStoreQueue::commitStore() {
     if (load->canCommit()) {
       const auto& loadedAddresses = load->getGeneratedAddresses();
       // Iterate over store addresses
-      for (size_t storeIndex = 0; storeIndex < addresses.size(); storeIndex++) {
-        const auto& storeReq = addresses[storeIndex];
+      for (const auto& storeReq : addresses) {
         // Iterate over load addresses
-        for (size_t loadIndex = 0; loadIndex < loadedAddresses.size();
-             loadIndex++) {
-          const auto& loadReq = loadedAddresses[loadIndex];
+        for (const auto& loadReq : loadedAddresses) {
           // Check for overlapping requests, and flush if discovered
           if (requestsOverlap(storeReq, loadReq)) {
             violatingLoad = load;
@@ -117,9 +116,12 @@ bool LoadStoreQueue::commitStore() {
   return false;
 }
 
-void LoadStoreQueue::commitLoad() {
+void LoadStoreQueue::commitLoad(std::shared_ptr<Instruction> uop) {
   assert(loadQueue.size() > 0 &&
          "Attempted to commit a load from an empty queue");
+  assert(loadQueue.front()->getSequenceId() == uop->getSequenceId() &&
+         "Attempted to commit a load that wasn't present at the front of the "
+         "load queue");
 
   loadQueue.pop_front();
 }

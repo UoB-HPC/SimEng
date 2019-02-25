@@ -44,10 +44,10 @@ class LoadStoreQueue {
   /** Commit and write the oldest store instruction to memory, removing it from
    * the store queue. Returns `true` if memory disambiguation has discovered a
    * memory order violation during the commit. */
-  bool commitStore();
+  bool commitStore(std::shared_ptr<Instruction> uop);
 
   /** Remove the oldest load instruction from the load queue. */
-  void commitLoad();
+  void commitLoad(std::shared_ptr<Instruction> uop);
 
   /** Remove all flushed instructions from the queues. */
   void purgeFlushed();

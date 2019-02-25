@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  char* memory = new char[1024]();  // static_cast<char*>(calloc(1024, 1));
+  char* memory = new char[1024]();
 
   // Simple program demonstrating various instructions
   // uint32_t hex[] = {
