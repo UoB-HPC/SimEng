@@ -2,6 +2,8 @@
 
 #include "Instruction.hh"
 
+#include <array>
+
 #include "BranchPredictor.hh"
 
 namespace simeng {
