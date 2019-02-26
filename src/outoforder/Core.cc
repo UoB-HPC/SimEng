@@ -3,6 +3,11 @@
 #include <algorithm>
 #include <string>
 
+#include "PortAllocator.hh"
+
+// Temporary; until config options are available
+#include "../A64Instruction.hh"
+
 namespace simeng {
 namespace outoforder {
 
@@ -16,13 +21,17 @@ const unsigned int rsSize = 16;
 const unsigned int loadQueueSize = 16;
 const unsigned int storeQueueSize = 8;
 const unsigned int frontendWidth = 2;
-const unsigned int executionUnitCount = 2;
 const unsigned int commitWidth = 2;
+const std::vector<std::vector<uint16_t>> portArrangement = {
+    {A64InstructionGroups::LOAD, A64InstructionGroups::STORE},
+    {A64InstructionGroups::ARITHMETIC},
+    {A64InstructionGroups::BRANCH}};
+const unsigned int executionUnitCount = portArrangement.size();
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const char* insnPtr, unsigned int programByteLength,
            const Architecture& isa, BranchPredictor& branchPredictor,
-           char* memory)
+           PortAllocator& portAllocator, char* memory)
     : registerFileSet(physicalRegisterStructures),
       registerAliasTable(isa.getRegisterFileStructures(),
                          physicalRegisterQuantities),
@@ -40,7 +49,7 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
                  registerAliasTable, loadStoreQueue,
                  physicalRegisterStructures.size()),
       dispatchIssueUnit(renameToDispatchBuffer, issuePorts, registerFileSet,
-                        physicalRegisterQuantities, rsSize),
+                        portAllocator, physicalRegisterQuantities, rsSize),
       writebackUnit(completionSlots, registerFileSet) {
   for (size_t i = 0; i < executionUnitCount; i++) {
     executionUnits.emplace_back(issuePorts[i], completionSlots[i],

@@ -115,6 +115,9 @@ class Instruction {
 
   /** Check whether this instruction has been flushed. */
   virtual bool isFlushed() const = 0;
+
+  /** Retrieve the instruction group this instruction belongs to. */
+  virtual uint16_t getGroup() const = 0;
 };
 
 }  // namespace simeng
