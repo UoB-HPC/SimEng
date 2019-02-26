@@ -1,5 +1,7 @@
 #include "DispatchIssueUnit.hh"
 
+#include <iostream>
+
 namespace simeng {
 namespace outoforder {
 
@@ -15,7 +17,8 @@ DispatchIssueUnit::DispatchIssueUnit(
       scoreboard(physicalRegisterStructure.size()),
       maxReservationStationSize(maxReservationStationSize),
       dependencyMatrix(physicalRegisterStructure.size()),
-      portAllocator(portAllocator) {
+      portAllocator(portAllocator),
+      availablePorts(issuePorts.size()) {
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
     scoreboard[type].assign(physicalRegisterStructure[type], true);
@@ -69,27 +72,44 @@ void DispatchIssueUnit::tick() {
       scoreboard[reg.type][reg.tag] = false;
     }
 
-    reservationStation.push_back(uop);
+    uint8_t port = portAllocator.allocate(uop->getGroup());
+
+    reservationStation.push_back({uop, port});
     fromRenameBuffer.getHeadSlots()[slot] = nullptr;
   }
 }
 
 void DispatchIssueUnit::issue() {
+  std::fill(availablePorts.begin(), availablePorts.end(), true);
+
   const int maxIssue = issuePorts.size();
   int issued = 0;
   auto it = reservationStation.begin();
 
+  unsigned int readyRemaining = readyCount;
+
   // Iterate over RS to find a ready uop to issue
   while (issued < maxIssue && it != reservationStation.end() &&
-         readyCount > 0) {
+         readyRemaining > 0) {
     auto& entry = *it;
 
-    if (entry->canExecute()) {
+    if (entry.uop->canExecute()) {
+      if (!availablePorts[entry.port]) {
+        // Entry is ready, but port isn't available; skip
+        readyRemaining--;
+        portBusyStalls++;
+        continue;
+      }
+
       // Found a suitable entry; add to output, increment issue counter,
       // decrement ready counter, and remove from RS
-      issuePorts[issued].getTailSlots()[0] = entry;
+      issuePorts[entry.port].getTailSlots()[0] = entry.uop;
+      availablePorts[entry.port] = false;
+      portAllocator.issued(entry.port);
+
       issued++;
       readyCount--;
+      readyRemaining--;
 
       if (it != reservationStation.begin()) {
         outOfOrderIssues++;
@@ -141,10 +161,11 @@ void DispatchIssueUnit::purgeFlushed() {
   auto it = reservationStation.begin();
   while (it != reservationStation.end()) {
     auto& entry = *it;
-    if (entry->isFlushed()) {
-      if (entry->canExecute()) {
+    if (entry.uop->isFlushed()) {
+      if (entry.uop->canExecute()) {
         readyCount--;
       }
+      portAllocator.issued(entry.port);
       it = reservationStation.erase(it);
     } else {
       it++;
@@ -158,6 +179,7 @@ uint64_t DispatchIssueUnit::getBackendStalls() const { return backendStalls; }
 uint64_t DispatchIssueUnit::getOutOfOrderIssueCount() const {
   return outOfOrderIssues;
 }
+uint64_t DispatchIssueUnit::getPortBusyStalls() const { return portBusyStalls; }
 
 }  // namespace outoforder
 }  // namespace simeng

@@ -190,6 +190,8 @@ std::map<std::string, std::string> Core::getStats() const {
   auto frontendStalls = dispatchIssueUnit.getFrontendStalls();
   auto backendStalls = dispatchIssueUnit.getBackendStalls();
   auto outOfOrderIssues = dispatchIssueUnit.getOutOfOrderIssueCount();
+  auto portBusyStalls = dispatchIssueUnit.getPortBusyStalls();
+
   return {{"cycles", std::to_string(ticks)},
           {"retired", std::to_string(retired)},
           {"ipc", std::to_string(ipc)},
@@ -203,8 +205,14 @@ std::map<std::string, std::string> Core::getStats() const {
           {"dispatch.rsStalls", std::to_string(rsStalls)},
           {"issue.frontendStalls", std::to_string(frontendStalls)},
           {"issue.backendStalls", std::to_string(backendStalls)},
+<<<<<<< HEAD
           {"issue.outOfOrderIssues", std::to_string(outOfOrderIssues)}};
 }
+=======
+          {"issue.outOfOrderIssues", std::to_string(outOfOrderIssues)},
+          {"issue.portBusyStalls", std::to_string(portBusyStalls)}};
+}  // namespace outoforder
+>>>>>>> Integrates port allocator with dispatch/issue logic
 
 }  // namespace outoforder
 }  // namespace simeng

@@ -9,6 +9,11 @@
 namespace simeng {
 namespace outoforder {
 
+struct ReservationStationEntry {
+  std::shared_ptr<Instruction> uop;
+  uint8_t port;
+};
+
 /** A dispatch/issue unit for an out-of-order pipeline. Reads instruction
  * operand and performs scoreboarding. Issues instructions to the execution unit
  * once ready. */
@@ -59,6 +64,8 @@ class DispatchIssueUnit {
    * dependencies or a lack of available ports. */
   uint64_t getOutOfOrderIssueCount() const;
 
+  uint64_t getPortBusyStalls() const;
+
  private:
   /** A buffer of instructions to dispatch and read operands for. */
   PipelineBuffer<std::shared_ptr<Instruction>>& fromRenameBuffer;
@@ -77,7 +84,7 @@ class DispatchIssueUnit {
 
   /** The reservation station. Holds instructions until operands become
    * available. */
-  std::deque<std::shared_ptr<Instruction>> reservationStation;
+  std::deque<ReservationStationEntry> reservationStation;
 
   /** A dependency matrix, containing all the instructions waiting on an
    * operand. For a register `{type,tag}`, the vector of dependents may be found
@@ -86,6 +93,8 @@ class DispatchIssueUnit {
       dependencyMatrix;
 
   PortAllocator& portAllocator;
+
+  std::vector<bool> availablePorts;
 
   /** The number of instructions ready to execute. */
   unsigned int readyCount = 0;
@@ -102,6 +111,10 @@ class DispatchIssueUnit {
 
   /** The number of instructions issued out-of-order. */
   uint64_t outOfOrderIssues = 0;
+
+  /** The number of times an instruction was unable to issue due to a busy port.
+   */
+  uint64_t portBusyStalls = 0;
 };
 
 }  // namespace outoforder
