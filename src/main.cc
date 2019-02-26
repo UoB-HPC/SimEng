@@ -8,12 +8,14 @@
 #include <string>
 
 #include "A64Architecture.hh"
+#include "A64Instruction.hh"
 #include "AlwaysNotTakenPredictor.hh"
 #include "Architecture.hh"
 #include "BTBPredictor.hh"
 #include "Core.hh"
 #include "emulation/Core.hh"
 #include "inorder/Core.hh"
+#include "outoforder/BalancedPortAllocator.hh"
 #include "outoforder/Core.hh"
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
@@ -130,6 +132,14 @@ int main(int argc, char** argv) {
   auto arch = simeng::A64Architecture();
   auto predictor = simeng::BTBPredictor(8);
 
+  // Temporary
+  const std::vector<std::vector<uint16_t>> portArrangement = {
+      {simeng::A64InstructionGroups::LOAD, simeng::A64InstructionGroups::STORE},
+      {simeng::A64InstructionGroups::ARITHMETIC},
+      {simeng::A64InstructionGroups::BRANCH}};
+  auto portAllocator =
+      simeng::outoforder::BalancedPortAllocator(portArrangement);
+
   int iterations = 0;
 
   std::string modeString;
@@ -137,8 +147,8 @@ int main(int argc, char** argv) {
   switch (mode) {
     case SimulationMode::OutOfOrder: {
       modeString = "Out-of-Order";
-      core = std::make_unique<simeng::outoforder::Core>(insnPtr, length, arch,
-                                                        predictor, memory);
+      core = std::make_unique<simeng::outoforder::Core>(
+          insnPtr, length, arch, predictor, portAllocator, memory);
       break;
     }
     case SimulationMode::InOrderPipelined: {

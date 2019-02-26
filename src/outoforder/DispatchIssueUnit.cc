@@ -6,7 +6,7 @@ namespace outoforder {
 DispatchIssueUnit::DispatchIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
-    const RegisterFileSet& registerFileSet,
+    const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
     const std::vector<uint16_t>& physicalRegisterStructure,
     unsigned int maxReservationStationSize)
     : fromRenameBuffer(fromRename),
@@ -14,7 +14,8 @@ DispatchIssueUnit::DispatchIssueUnit(
       registerFileSet(registerFileSet),
       scoreboard(physicalRegisterStructure.size()),
       maxReservationStationSize(maxReservationStationSize),
-      dependencyMatrix(physicalRegisterStructure.size()) {
+      dependencyMatrix(physicalRegisterStructure.size()),
+      portAllocator(portAllocator) {
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
     scoreboard[type].assign(physicalRegisterStructure[type], true);

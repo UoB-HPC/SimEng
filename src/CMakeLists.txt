@@ -9,6 +9,8 @@ set(SIMENG_SOURCES
     inorder/FetchUnit.hh
     inorder/WritebackUnit.cc
     inorder/WritebackUnit.hh
+    outoforder/BalancedPortAllocator.cc
+    outoforder/BalancedPortAllocator.hh
     outoforder/Core.cc
     outoforder/Core.hh
     outoforder/DecodeUnit.cc
@@ -19,6 +21,7 @@ set(SIMENG_SOURCES
     outoforder/ExecuteUnit.hh
     outoforder/FetchUnit.cc
     outoforder/FetchUnit.hh
+    outoforder/PortAllocator.hh
     outoforder/LoadStoreQueue.cc
     outoforder/LoadStoreQueue.hh
     outoforder/RegisterAliasTable.cc

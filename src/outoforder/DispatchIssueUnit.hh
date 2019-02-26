@@ -4,6 +4,7 @@
 
 #include "../Instruction.hh"
 #include "../PipelineBuffer.hh"
+#include "PortAllocator.hh"
 
 namespace simeng {
 namespace outoforder {
@@ -19,7 +20,7 @@ class DispatchIssueUnit {
   DispatchIssueUnit(
       PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
-      const RegisterFileSet& registerFileSet,
+      const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
       unsigned int maxReservationStationSize);
 
@@ -83,6 +84,8 @@ class DispatchIssueUnit {
    * at `dependencyMatrix[type][tag]`. */
   std::vector<std::vector<std::vector<std::shared_ptr<Instruction>>>>
       dependencyMatrix;
+
+  PortAllocator& portAllocator;
 
   /** The number of instructions ready to execute. */
   unsigned int readyCount = 0;

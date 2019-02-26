@@ -17,6 +17,14 @@ const uint8_t VECTOR = 1;
 const uint8_t NZCV = 2;
 }  // namespace A64RegisterType
 
+/** The IDs of the instruction groups for A64 instructions. */
+namespace A64InstructionGroups {
+const uint8_t ARITHMETIC = 0;
+const uint8_t LOAD = 1;
+const uint8_t STORE = 2;
+const uint8_t BRANCH = 3;
+}  // namespace A64InstructionGroups
+
 /** The decoded metadata for an instruction. Produced during decoding and used
  * during operation - most fields are only used for some instructions. Variable
  * names match those from ARMv8 Reference Manual. Future versions (or
@@ -186,6 +194,9 @@ class A64Instruction : public Instruction {
 
   /** Check whether this instruction has been flushed. */
   bool isFlushed() const override;
+
+  /** Retrieve the instruction group this instruction belongs to. */
+  uint16_t getGroup() const override;
 
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be

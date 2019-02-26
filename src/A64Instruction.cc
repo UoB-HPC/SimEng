@@ -160,4 +160,18 @@ uint64_t A64Instruction::getSequenceId() const { return sequenceId; };
 void A64Instruction::setFlushed() { flushed = true; }
 bool A64Instruction::isFlushed() const { return flushed; }
 
+uint16_t A64Instruction::getGroup() const {
+  if (isBranch()) {
+    return A64InstructionGroups::BRANCH;
+  }
+  if (isLoad()) {
+    return A64InstructionGroups::LOAD;
+  }
+  if (isStore()) {
+    return A64InstructionGroups::STORE;
+  }
+
+  return A64InstructionGroups::ARITHMETIC;
+}
+
 }  // namespace simeng
