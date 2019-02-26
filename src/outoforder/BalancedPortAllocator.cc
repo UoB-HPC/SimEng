@@ -1,6 +1,6 @@
 #include "BalancedPortAllocator.hh"
 
-#include <limits>
+#include <cassert>
 
 namespace simeng {
 namespace outoforder {
@@ -22,13 +22,18 @@ BalancedPortAllocator::BalancedPortAllocator(
 uint8_t BalancedPortAllocator::allocate(uint16_t instructionGroup) {
   const auto& available = supportMatrix[instructionGroup];
 
-  uint16_t bestWeight = std::numeric_limits<uint16_t>::max();
+  bool foundPort = false;
+  uint16_t bestWeight;
   uint8_t bestPort = 0;
   for (const auto& portIndex : available) {
-    if (weights[portIndex] < bestWeight) {
+    if (!foundPort || weights[portIndex] < bestWeight) {
+      foundPort = true;
+      bestWeight = weights[portIndex];
       bestPort = portIndex;
     }
   }
+
+  assert(foundPort && "Unsupported group; cannot allocate a port");
 
   weights[bestPort]++;
   return bestPort;

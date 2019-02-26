@@ -136,7 +136,8 @@ int main(int argc, char** argv) {
   const std::vector<std::vector<uint16_t>> portArrangement = {
       {simeng::A64InstructionGroups::LOAD, simeng::A64InstructionGroups::STORE},
       {simeng::A64InstructionGroups::ARITHMETIC},
-      {simeng::A64InstructionGroups::BRANCH}};
+      {simeng::A64InstructionGroups::ARITHMETIC,
+       simeng::A64InstructionGroups::BRANCH}};
   auto portAllocator =
       simeng::outoforder::BalancedPortAllocator(portArrangement);
 
