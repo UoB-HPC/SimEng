@@ -80,7 +80,10 @@ void DispatchIssueUnit::tick() {
 }
 
 void DispatchIssueUnit::issue() {
-  std::fill(availablePorts.begin(), availablePorts.end(), true);
+  // Mark all ports as available unless they're stalled
+  for (size_t i = 0; i < availablePorts.size(); i++) {
+    availablePorts[i] = !issuePorts[i].isStalled();
+  }
 
   const int maxIssue = issuePorts.size();
   int issued = 0;
@@ -165,7 +168,7 @@ void DispatchIssueUnit::purgeFlushed() {
       if (entry.uop->canExecute()) {
         readyCount--;
       }
-      portAllocator.issued(entry.port);
+      portAllocator.deallocate(entry.port);
       it = reservationStation.erase(it);
     } else {
       it++;

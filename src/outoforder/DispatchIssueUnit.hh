@@ -9,8 +9,11 @@
 namespace simeng {
 namespace outoforder {
 
+/** An entry in the reservation station. */
 struct ReservationStationEntry {
+  /** The instruction to execute. */
   std::shared_ptr<Instruction> uop;
+  /** The port to issue to. */
   uint8_t port;
 };
 
@@ -20,8 +23,8 @@ struct ReservationStationEntry {
 class DispatchIssueUnit {
  public:
   /** Construct a dispatch/issue unit with references to input/output buffers,
-   * the register file, and a description of the number of physical registers
-   * the scoreboard needs to reflect. */
+   * the register file, the port allocator, and a description of the number of
+   * physical registers the scoreboard needs to reflect. */
   DispatchIssueUnit(
       PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
@@ -64,6 +67,8 @@ class DispatchIssueUnit {
    * dependencies or a lack of available ports. */
   uint64_t getOutOfOrderIssueCount() const;
 
+  /** Retrieve the number of times an instruction was unable to issue due to a
+   * busy port. */
   uint64_t getPortBusyStalls() const;
 
  private:
@@ -92,8 +97,10 @@ class DispatchIssueUnit {
   std::vector<std::vector<std::vector<std::shared_ptr<Instruction>>>>
       dependencyMatrix;
 
+  /** A reference to the execution port allocator. */
   PortAllocator& portAllocator;
 
+  /** A map of port availability. Reset after each cycle. */
   std::vector<bool> availablePorts;
 
   /** The number of instructions ready to execute. */
