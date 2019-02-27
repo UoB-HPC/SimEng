@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
   auto arch = simeng::A64Architecture();
   auto predictor = simeng::BTBPredictor(8);
 
-  // Temporary
+  // TODO: Construct port arrangement from config options
   const std::vector<std::vector<uint16_t>> portArrangement = {
       {simeng::A64InstructionGroups::LOAD, simeng::A64InstructionGroups::STORE},
       {simeng::A64InstructionGroups::ARITHMETIC},

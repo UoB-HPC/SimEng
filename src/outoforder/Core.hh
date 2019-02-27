@@ -20,9 +20,9 @@ namespace outoforder {
  * Decode, Rename, Dispatch/Issue, Execute, Writeback. */
 class Core : public simeng::Core {
  public:
-  /** Construct a core model, providing an ISA and branch predictor to use,
-   * along with a pointer and size of instruction memory, and a pointer to
-   * process memory. */
+  /** Construct a core model, providing an ISA, branch predictor, and port
+   * allocator to use, along with a pointer and size of instruction memory, and
+   * a pointer to process memory. */
   Core(const char* insnPtr, unsigned int programByteLength,
        const Architecture& isa, BranchPredictor& branchPredictor,
        PortAllocator& portAllocator, char* memory);
