@@ -23,6 +23,12 @@ class RegisterValue {
     if (isLocal()) {
       T* view = reinterpret_cast<T*>(this->value);
       view[0] = value;
+
+      if (bytes > sizeof(T)) {
+        // Zero the remaining bytes not set by the provided value
+        std::fill<char*, uint8_t>(this->value + sizeof(T), this->value + bytes,
+                                  0);
+      }
     } else {
       void* data = calloc(1, bytes);
 
