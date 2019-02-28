@@ -11,7 +11,7 @@ Core::Core(const char* insnPtr, uint64_t programByteLength,
       insnPtr(insnPtr),
       programByteLength(programByteLength),
       isa(isa),
-      registerFile({32, 32, 1}) {}
+      registerFileSet(isa.getRegisterFileStructures()) {}
 
 void Core::tick() {
   if (pc >= programByteLength) {
@@ -32,7 +32,7 @@ void Core::tick() {
   for (size_t i = 0; i < registers.size(); i++) {
     auto reg = registers[i];
     if (!uop->isOperandReady(i)) {
-      uop->supplyOperand(reg, registerFile.get(reg));
+      uop->supplyOperand(reg, registerFileSet.get(reg));
     }
   }
 
@@ -69,7 +69,7 @@ void Core::tick() {
   auto destinations = uop->getDestinationRegisters();
   for (size_t i = 0; i < results.size(); i++) {
     auto reg = destinations[i];
-    registerFile.set(reg, results[i]);
+    registerFileSet.set(reg, results[i]);
   }
 }
 

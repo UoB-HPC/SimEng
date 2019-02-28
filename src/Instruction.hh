@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RegisterFile.hh"
+#include "RegisterFileSet.hh"
 #include "RegisterValue.hh"
 #include "span.hh"
 

@@ -9,7 +9,7 @@ namespace simeng {
 /** A generic register identifier. */
 struct Register {
   /** An identifier representing the type of register - e.g. 0 = general, 1 =
-   * vector. Used to determine which register set to access. */
+   * vector. Used to determine which register file to access. */
   uint8_t type;
 
   /** A tag identifying the register. May correspond to either physical or
@@ -21,7 +21,7 @@ struct Register {
 };
 std::ostream& operator<<(std::ostream& os, simeng::Register const& reg);
 
-/** Defines a set of registers in the register file. */
+/** Defines the structure of a register file. */
 struct RegisterFileStructure {
   /** The number of bytes per register. */
   uint8_t bytes;
@@ -30,13 +30,12 @@ struct RegisterFileStructure {
 };
 
 /** A processor register file set. Holds the physical registers for each
- * register type. */
-class RegisterFile {
+ * register file. */
+class RegisterFileSet {
  public:
-  /** Initialise multiple register groups. Each entry in `registerFileSizes`
-   * states the number of registers that should be available for the register
-   * type corresponding to the entry's index. */
-  RegisterFile(std::vector<uint16_t> registerFileSizes);
+  /** Constructs a set of register files, defined by `registerFileStructures`.
+   */
+  RegisterFileSet(std::vector<RegisterFileStructure> registerFileStructures);
 
   /** Read the value of the specified register. */
   RegisterValue get(Register reg) const;
@@ -46,7 +45,7 @@ class RegisterFile {
 
  private:
   /** The set of register files. Each entry in the outer vector corresponds to a
-   * register type, according to its index. */
+   * register file, and the inner vectors are the registers. */
   std::vector<std::vector<RegisterValue>> registerFiles;
 };
 

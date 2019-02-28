@@ -33,8 +33,8 @@ class Core : public simeng::Core {
   std::map<std::string, std::string> getStats() const override;
 
  private:
-  /** The core's register file. */
-  RegisterFile registerFile;
+  /** The core's register file set. */
+  RegisterFileSet registerFileSet;
 
   /** The buffer between fetch and decode. */
   PipelineBuffer<MacroOp> fetchToDecodeBuffer;
@@ -55,7 +55,7 @@ class Core : public simeng::Core {
    * results to decode. */
   ExecuteUnit executeUnit;
 
-  /** The writeback unit; writes uop results to the register file. */
+  /** The writeback unit; writes uop results to the register files. */
   WritebackUnit writebackUnit;
 
   /** The number of times the pipeline has been flushed. */

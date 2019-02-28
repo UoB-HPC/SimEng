@@ -11,10 +11,11 @@ namespace inorder {
 class DecodeUnit {
  public:
   /** Constructs a decode unit with references to input/output buffers, the
-   * register file, and the current branch predictor. */
+   * register file set, and the current branch predictor. */
   DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
              PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
-             const RegisterFile& registerFile, BranchPredictor& predictor);
+             const RegisterFileSet& registerFileSet,
+             BranchPredictor& predictor);
 
   /** Ticks the decode unit. Breaks macro-ops into uops, and performs early
    * branch misprediction checks. */
@@ -38,8 +39,8 @@ class DecodeUnit {
   /** A buffer for writing decoded uops into. */
   PipelineBuffer<std::shared_ptr<Instruction>>& toExecuteBuffer;
 
-  /** A reference to the register file. */
-  const RegisterFile& registerFile;
+  /** A reference to the register file set. */
+  const RegisterFileSet& registerFileSet;
 
   /** A reference to the current branch predictor. */
   BranchPredictor& predictor;

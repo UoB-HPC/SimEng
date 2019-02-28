@@ -7,14 +7,14 @@ namespace simeng {
 namespace outoforder {
 
 /** An out-of-order pipeline writeback unit. Responsible for handling writing
- * instruction results to the register file. */
+ * instruction results to the register files. */
 class WritebackUnit {
  public:
   /** Constructs a writeback unit with references to an input buffer and
    * register file to write to. */
   WritebackUnit(std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>&
                     completionSlots,
-                RegisterFile& registerFile);
+                RegisterFileSet& registerFileSet);
 
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
@@ -27,8 +27,8 @@ class WritebackUnit {
    * units. */
   std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots;
 
-  /** The register file to write results into. */
-  RegisterFile& registerFile;
+  /** The register file set to write results into. */
+  RegisterFileSet& registerFileSet;
 
   /** The number of instructions processed and retired by this stage. */
   uint64_t instructionsRetired = 0;

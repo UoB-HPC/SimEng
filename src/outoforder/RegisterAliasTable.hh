@@ -2,7 +2,7 @@
 
 #include <queue>
 
-#include "../RegisterFile.hh"
+#include "../RegisterFileSet.hh"
 
 namespace simeng {
 namespace outoforder {

@@ -1,12 +1,16 @@
 #include "Core.hh"
 
+#include <algorithm>
 #include <string>
 
 namespace simeng {
 namespace outoforder {
 
 // TODO: Replace with config options
-const std::initializer_list<uint16_t> physicalRegisters = {128, 128, 128};
+const std::initializer_list<uint16_t> physicalRegisterQuantities = {128, 128,
+                                                                    128};
+const std::initializer_list<RegisterFileStructure> physicalRegisterStructures =
+    {{8, 128}, {16, 128}, {1, 128}};
 const unsigned int robSize = 16;
 const unsigned int rsSize = 16;
 const unsigned int loadQueueSize = 16;
@@ -19,8 +23,9 @@ const unsigned int commitWidth = 2;
 Core::Core(const char* insnPtr, unsigned int programByteLength,
            const Architecture& isa, BranchPredictor& branchPredictor,
            char* memory)
-    : registerFile(physicalRegisters),
-      registerAliasTable(isa.getRegisterFileStructure(), physicalRegisters),
+    : registerFileSet(physicalRegisterStructures),
+      registerAliasTable(isa.getRegisterFileStructures(),
+                         physicalRegisterQuantities),
       loadStoreQueue(loadQueueSize, storeQueueSize, memory),
       reorderBuffer(robSize, registerAliasTable, loadStoreQueue),
       fetchToDecodeBuffer(frontendWidth, {}),
@@ -32,10 +37,11 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
                 branchPredictor),
       decodeUnit(fetchToDecodeBuffer, decodeToRenameBuffer, branchPredictor),
       renameUnit(decodeToRenameBuffer, renameToDispatchBuffer, reorderBuffer,
-                 registerAliasTable, loadStoreQueue, physicalRegisters.size()),
-      dispatchIssueUnit(renameToDispatchBuffer, issuePorts, registerFile,
-                        physicalRegisters, rsSize),
-      writebackUnit(completionSlots, registerFile) {
+                 registerAliasTable, loadStoreQueue,
+                 physicalRegisterStructures.size()),
+      dispatchIssueUnit(renameToDispatchBuffer, issuePorts, registerFileSet,
+                        physicalRegisterQuantities, rsSize),
+      writebackUnit(completionSlots, registerFileSet) {
   for (size_t i = 0; i < executionUnitCount; i++) {
     executionUnits.emplace_back(issuePorts[i], completionSlots[i],
                                 dispatchIssueUnit, loadStoreQueue,

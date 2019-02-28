@@ -8,7 +8,7 @@ set(SIMENG_SOURCES
     ../../src/A64Instruction_address.cc
     ../../src/A64Instruction_decode.cc
     ../../src/A64Instruction_execute.cc
-    ../../src/RegisterFile.cc
+    ../../src/RegisterFileSet.cc
     ../../src/RegisterValue.cc
     )
 

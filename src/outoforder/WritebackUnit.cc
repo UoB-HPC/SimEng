@@ -5,8 +5,8 @@ namespace outoforder {
 
 WritebackUnit::WritebackUnit(
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots,
-    RegisterFile& registerFile)
-    : completionSlots(completionSlots), registerFile(registerFile) {}
+    RegisterFileSet& registerFileSet)
+    : completionSlots(completionSlots), registerFileSet(registerFileSet) {}
 
 void WritebackUnit::tick() {
   for (size_t slot = 0; slot < completionSlots.size(); slot++) {
@@ -20,7 +20,7 @@ void WritebackUnit::tick() {
     auto& destinations = uop->getDestinationRegisters();
     for (size_t i = 0; i < results.size(); i++) {
       // Write results to register file
-      registerFile.set(destinations[i], results[i]);
+      registerFileSet.set(destinations[i], results[i]);
     }
     uop->setCommitReady();
 
