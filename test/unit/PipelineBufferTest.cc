@@ -3,10 +3,11 @@
 
 namespace {
 
-// Test that we can create a pipeline buffer
+// Test that we can create a pipeline buffer with a specified initial value
 TEST(PipelineBufferTest, Create) {
   auto pipelineBuffer = simeng::PipelineBuffer<int>(1, 1);
   EXPECT_EQ(pipelineBuffer.getTailSlots()[0], 1);
+  EXPECT_EQ(pipelineBuffer.getHeadSlots()[0], 1);
 }
 
 // Test that values move when ticked
@@ -20,6 +21,7 @@ TEST(PipelineBufferTest, Tick) {
 // Test that values don't move once stalled
 TEST(PipelineBufferTest, Stall) {
   auto pipelineBuffer = simeng::PipelineBuffer<int>(1, 0);
+  pipelineBuffer.getTailSlots()[0] = 1;
 
   pipelineBuffer.stall(true);
   EXPECT_TRUE(pipelineBuffer.isStalled());

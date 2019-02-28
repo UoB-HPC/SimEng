@@ -1,5 +1,6 @@
 set(TEST_SOURCES
     ISATest.cc
+    BTBPredictorTest.cc
     PipelineBufferTest.cc
     RegisterValueTest.cc
     )
@@ -10,6 +11,7 @@ set(SIMENG_SOURCES
     ../../src/A64Instruction_address.cc
     ../../src/A64Instruction_decode.cc
     ../../src/A64Instruction_execute.cc
+    ../../src/BTBPredictor.cc
     ../../src/RegisterFileSet.cc
     ../../src/RegisterValue.cc
     )
