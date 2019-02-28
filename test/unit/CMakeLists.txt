@@ -1,5 +1,6 @@
 set(TEST_SOURCES
     ISATest.cc
+    PipelineBufferTest.cc
     )
 
 set(SIMENG_SOURCES
