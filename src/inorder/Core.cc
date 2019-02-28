@@ -9,17 +9,17 @@ namespace inorder {
 Core::Core(const char* insnPtr, unsigned int programByteLength,
            const Architecture& isa, BranchPredictor& branchPredictor,
            char* memory)
-    : registerFile({32, 32, 1}),
+    : registerFileSet(isa.getRegisterFileStructures()),
       fetchToDecodeBuffer(1, {}),
       decodeToExecuteBuffer(1, nullptr),
       executeToWritebackBuffer(1, nullptr),
       fetchUnit(fetchToDecodeBuffer, insnPtr, programByteLength, isa,
                 branchPredictor),
-      decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, registerFile,
+      decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, registerFileSet,
                  branchPredictor),
       executeUnit(decodeToExecuteBuffer, executeToWritebackBuffer, decodeUnit,
                   branchPredictor, memory),
-      writebackUnit(executeToWritebackBuffer, registerFile){};
+      writebackUnit(executeToWritebackBuffer, registerFileSet){};
 
 void Core::tick() {
   ticks++;

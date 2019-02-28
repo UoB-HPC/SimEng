@@ -11,7 +11,7 @@ namespace outoforder {
 class DecodeUnit {
  public:
   /** Constructs a decode unit with references to input/output buffers, the
-   * register file, and the current branch predictor. */
+   * register file set, and the current branch predictor. */
   DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
              PipelineBuffer<std::shared_ptr<Instruction>>& toDispatchIssue,
              BranchPredictor& predictor);

@@ -19,7 +19,7 @@ class DispatchIssueUnit {
   DispatchIssueUnit(
       PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
-      const RegisterFile& registerFile,
+      const RegisterFileSet& registerFileSet,
       const std::vector<uint16_t>& physicalRegisterStructure,
       unsigned int maxReservationStationSize);
 
@@ -65,8 +65,8 @@ class DispatchIssueUnit {
   /** Ports to the execution units, for writing ready instructions to. */
   std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts;
 
-  /** A reference to the physical register file. */
-  const RegisterFile& registerFile;
+  /** A reference to the physical register file set. */
+  const RegisterFileSet& registerFileSet;
 
   /** The register availability scoreboard. */
   std::vector<std::vector<bool>> scoreboard;

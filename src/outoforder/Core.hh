@@ -40,8 +40,8 @@ class Core : public simeng::Core {
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
 
-  /** The core's register file. */
-  RegisterFile registerFile;
+  /** The core's register file set. */
+  RegisterFileSet registerFileSet;
 
   /** The core's register alias table. */
   RegisterAliasTable registerAliasTable;
@@ -86,7 +86,7 @@ class Core : public simeng::Core {
    * forwarding results to dispatch/issue. */
   std::vector<ExecuteUnit> executionUnits;
 
-  /** The writeback unit; writes uop results to the register file. */
+  /** The writeback unit; writes uop results to the register files. */
   WritebackUnit writebackUnit;
 
   /** The number of times the pipeline has been flushed. */

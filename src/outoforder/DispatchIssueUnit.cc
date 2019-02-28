@@ -6,12 +6,12 @@ namespace outoforder {
 DispatchIssueUnit::DispatchIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
-    const RegisterFile& registerFile,
+    const RegisterFileSet& registerFileSet,
     const std::vector<uint16_t>& physicalRegisterStructure,
     unsigned int maxReservationStationSize)
     : fromRenameBuffer(fromRename),
       issuePorts(issuePorts),
-      registerFile(registerFile),
+      registerFileSet(registerFileSet),
       scoreboard(physicalRegisterStructure.size()),
       maxReservationStationSize(maxReservationStationSize),
       dependencyMatrix(physicalRegisterStructure.size()) {
@@ -48,7 +48,7 @@ void DispatchIssueUnit::tick() {
         // The operand hasn't already been supplied
         if (scoreboard[reg.type][reg.tag]) {
           // The scoreboard says it's ready; read and supply the register value
-          uop->supplyOperand(reg, registerFile.get(reg));
+          uop->supplyOperand(reg, registerFileSet.get(reg));
         } else {
           // This register isn't ready yet. Register this uop to the dependency
           // matrix for a more efficient lookup later

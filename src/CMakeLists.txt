@@ -48,8 +48,8 @@ set(SIMENG_SOURCES
     CMakeLists.txt
     Instruction.hh
     PipelineBuffer.hh
-    RegisterFile.cc
-    RegisterFile.hh
+    RegisterFileSet.cc
+    RegisterFileSet.hh
     RegisterValue.cc
     RegisterValue.hh
     span.hh

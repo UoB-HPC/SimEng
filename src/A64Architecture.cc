@@ -35,7 +35,7 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   return 4;
 }
 
-std::vector<RegisterFileStructure> A64Architecture::getRegisterFileStructure()
+std::vector<RegisterFileStructure> A64Architecture::getRegisterFileStructures()
     const {
   return {
       {8, 32},   // General purpose

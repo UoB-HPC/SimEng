@@ -7,11 +7,11 @@ namespace inorder {
 
 DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& fromFetch,
                        PipelineBuffer<std::shared_ptr<Instruction>>& toExecute,
-                       const RegisterFile& registerFile,
+                       const RegisterFileSet& registerFileSet,
                        BranchPredictor& predictor)
     : fromFetchBuffer(fromFetch),
       toExecuteBuffer(toExecute),
-      registerFile(registerFile),
+      registerFileSet(registerFileSet),
       predictor(predictor){};
 
 void DecodeUnit::tick() {
@@ -80,7 +80,7 @@ void DecodeUnit::forwardOperands(const span<Register>& registers,
   for (size_t i = 0; i < sourceRegisters.size(); i++) {
     auto reg = sourceRegisters[i];
     if (!uop->isOperandReady(i)) {
-      uop->supplyOperand(reg, registerFile.get(reg));
+      uop->supplyOperand(reg, registerFileSet.get(reg));
     }
   }
 }

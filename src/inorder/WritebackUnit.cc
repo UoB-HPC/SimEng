@@ -5,8 +5,8 @@ namespace inorder {
 
 WritebackUnit::WritebackUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromExecute,
-    RegisterFile& registerFile)
-    : fromExecuteBuffer(fromExecute), registerFile(registerFile) {}
+    RegisterFileSet& registerFileSet)
+    : fromExecuteBuffer(fromExecute), registerFileSet(registerFileSet) {}
 
 void WritebackUnit::tick() {
   auto uop = fromExecuteBuffer.getHeadSlots()[0];
@@ -18,8 +18,8 @@ void WritebackUnit::tick() {
   auto results = uop->getResults();
   auto destinations = uop->getDestinationRegisters();
   for (size_t i = 0; i < results.size(); i++) {
-    // Write results to register file
-    registerFile.set(destinations[i], results[i]);
+    // Write results to register files
+    registerFileSet.set(destinations[i], results[i]);
   }
 
   instructionsRetired++;

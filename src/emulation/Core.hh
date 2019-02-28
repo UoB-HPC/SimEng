@@ -6,7 +6,7 @@
 #include <string>
 
 #include "../Architecture.hh"
-#include "../RegisterFile.hh"
+#include "../RegisterFileSet.hh"
 
 namespace simeng {
 namespace emulation {
@@ -45,8 +45,8 @@ class Core : public simeng::Core {
   /** The current program counter. */
   uint64_t pc = 0;
 
-  /** The core's register file. */
-  RegisterFile registerFile;
+  /** The core's register file set. */
+  RegisterFileSet registerFileSet;
 
   /** Whether or not the core has halted. */
   bool hasHalted_ = false;
