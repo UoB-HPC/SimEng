@@ -8,6 +8,7 @@
 #include "inorder/FetchUnit.hh"
 
 using ::testing::_;
+using ::testing::DoAll;
 using ::testing::Field;
 using ::testing::Return;
 using ::testing::SetArgReferee;
@@ -35,7 +36,7 @@ TEST(InOrderFetchUnitTest, Tick) {
                              AllOf(Field(&BranchPrediction::taken, true),
                                    Field(&BranchPrediction::target, 1)),
                              _))
-      .WillOnce(SetArgReferee<4>(macroOp));
+      .WillOnce(DoAll(SetArgReferee<4>(macroOp), Return(1)));
 
   fetchUnit.tick();
 
