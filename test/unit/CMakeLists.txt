@@ -1,4 +1,5 @@
 set(TEST_SOURCES
+    inorder/FetchUnitTest.cc
     ISATest.cc
     BTBPredictorTest.cc
     PipelineBufferTest.cc
@@ -6,6 +7,7 @@ set(TEST_SOURCES
     )
 
 set(SIMENG_SOURCES
+    ../../src/inorder/FetchUnit.cc
     ../../src/A64Architecture.cc
     ../../src/A64Instruction.cc
     ../../src/A64Instruction_address.cc
@@ -25,7 +27,7 @@ add_executable(unittests ${TEST_SOURCES} ${SIMENG_SOURCES})
 
 target_include_directories(unittests PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(unittests PRIVATE ${PROJECT_SOURCE_DIR}/external/capstone/include)
-target_link_libraries(unittests gtest_main)
+target_link_libraries(unittests gmock_main)
 target_link_libraries(unittests capstone-static)
 
 add_test(NAME unit_tests COMMAND unittests)
