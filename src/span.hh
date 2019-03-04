@@ -12,6 +12,7 @@ template <class T>
 class span {
  public:
   using pointer = T*;
+  using value_type = T;
   using index_type = size_t;
   using reference = T&;
   using iterator = pointer;

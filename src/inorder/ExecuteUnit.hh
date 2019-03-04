@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "../Instruction.hh"
 #include "../PipelineBuffer.hh"
 #include "DecodeUnit.hh"
@@ -14,9 +16,11 @@ class ExecuteUnit {
   /** Constructs an execute unit with references to an input and output buffer,
    * the decode unit, the currently used branch predictor, and a pointer to
    * process memory. */
-  ExecuteUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
-              PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
-              DecodeUnit& decodeUnit, BranchPredictor& predictor, char* memory);
+  ExecuteUnit(
+      PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
+      PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
+      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+      BranchPredictor& predictor, char* memory);
 
   /** Tick the execute unit. Executes the current instruction and forwards the
    * results back to the decode stage. */
@@ -36,8 +40,10 @@ class ExecuteUnit {
   /** A buffer for writing executed instructions into. */
   PipelineBuffer<std::shared_ptr<Instruction>>& toWritebackBuffer;
 
-  /** A reference to the decode unit, for forwarding operands. */
-  DecodeUnit& decodeUnit;
+  std::function<void(span<Register>, span<RegisterValue>)> forwardOperands;
+
+  // /** A reference to the decode unit, for forwarding operands. */
+  // DecodeUnit& decodeUnit;
 
   /** A reference to the branch predictor, for updating with prediction results.
    */

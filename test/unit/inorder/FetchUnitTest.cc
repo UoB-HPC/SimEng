@@ -14,19 +14,27 @@ using ::testing::Return;
 using ::testing::SetArgReferee;
 
 namespace simeng {
+namespace inorder {
+
+class InOrderFetchUnitTest : public testing::Test {
+ public:
+  InOrderFetchUnitTest()
+      : output(1, {}), fetchUnit(output, nullptr, 1024, isa, predictor) {}
+
+ protected:
+  PipelineBuffer<MacroOp> output;
+  MockArchitecture isa;
+  MockBranchPredictor predictor;
+
+  FetchUnit fetchUnit;
+};
 
 // Tests that ticking a fetch unit attempts to predict a branch, attempts to
 // predecode from the correct program counter using the supplied prediction, and
 // generates output correctly.
-TEST(InOrderFetchUnitTest, Tick) {
-  MockArchitecture isa;
-  MockBranchPredictor predictor;
+TEST_F(InOrderFetchUnitTest, Tick) {
   BranchPrediction prediction{true, 1};
   MacroOp macroOp = {nullptr};
-
-  auto output = simeng::PipelineBuffer<simeng::MacroOp>(1, {});
-  auto fetchUnit =
-      simeng::inorder::FetchUnit(output, nullptr, 1024, isa, predictor);
 
   EXPECT_CALL(predictor, predict(0)).WillOnce(Return(prediction));
 
@@ -45,14 +53,7 @@ TEST(InOrderFetchUnitTest, Tick) {
 }
 
 // Tests that ticking a fetch unit does nothing if the output has stalled
-TEST(InOrderFetchUnitTest, TickStalled) {
-  MockArchitecture isa;
-  MockBranchPredictor predictor;
-
-  auto output = simeng::PipelineBuffer<simeng::MacroOp>(1, {});
-  auto fetchUnit =
-      simeng::inorder::FetchUnit(output, nullptr, 1024, isa, predictor);
-
+TEST_F(InOrderFetchUnitTest, TickStalled) {
   output.stall(true);
 
   EXPECT_CALL(predictor, predict(_)).Times(0);
@@ -64,4 +65,5 @@ TEST(InOrderFetchUnitTest, TickStalled) {
   EXPECT_EQ(output.getTailSlots()[0].size(), 0);
 }
 
+}  // namespace inorder
 }  // namespace simeng
