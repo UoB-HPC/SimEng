@@ -8,10 +8,12 @@ namespace inorder {
 ExecuteUnit::ExecuteUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
     PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
-    DecodeUnit& decodeUnit, BranchPredictor& predictor, char* memory)
+    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+    BranchPredictor& predictor, char* memory)
     : fromDecodeBuffer(fromDecode),
       toWritebackBuffer(toWriteback),
-      decodeUnit(decodeUnit),
+      forwardOperands(forwardOperands),
+      // decodeUnit(decodeUnit),
       predictor(predictor),
       memory(memory) {}
 
@@ -22,7 +24,7 @@ void ExecuteUnit::tick() {
   if (uop == nullptr) {
     // NOP
     // Forward a lack of results to trigger reading other operands.
-    decodeUnit.forwardOperands({}, {});
+    forwardOperands({}, {});
     return;
   }
 
@@ -62,7 +64,7 @@ void ExecuteUnit::tick() {
   }
 
   // Operand forwarding; allows a dependent uop to execute next cycle
-  decodeUnit.forwardOperands(uop->getDestinationRegisters(), uop->getResults());
+  forwardOperands(uop->getDestinationRegisters(), uop->getResults());
 
   auto out = toWritebackBuffer.getTailSlots();
   out[0] = uop;

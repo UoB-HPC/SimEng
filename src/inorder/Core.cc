@@ -17,7 +17,10 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
                 branchPredictor),
       decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, registerFileSet,
                  branchPredictor),
-      executeUnit(decodeToExecuteBuffer, executeToWritebackBuffer, decodeUnit,
+      executeUnit(decodeToExecuteBuffer, executeToWritebackBuffer,
+                  [this](auto regs, auto values) {
+                    return decodeUnit.forwardOperands(regs, values);
+                  },
                   branchPredictor, memory),
       writebackUnit(executeToWritebackBuffer, registerFileSet){};
 

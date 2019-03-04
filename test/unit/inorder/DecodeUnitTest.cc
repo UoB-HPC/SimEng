@@ -7,9 +7,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <iostream>
-
 namespace simeng {
+namespace inorder {
 
 using ::testing::_;
 using ::testing::Property;
@@ -20,8 +19,8 @@ class InOrderDecodeUnitTest : public testing::Test {
   InOrderDecodeUnitTest()
       : input(1, {}),
         output(1, nullptr),
-        registerFile({1}),
-        decodeUnit(input, output, registerFile, predictor),
+        registerFileSet({{8, 1}}),
+        decodeUnit(input, output, registerFileSet, predictor),
         uop(new MockInstruction),
         uopPtr(uop),
         sourceRegisters({{0, 0}}) {}
@@ -29,9 +28,9 @@ class InOrderDecodeUnitTest : public testing::Test {
  protected:
   PipelineBuffer<MacroOp> input;
   PipelineBuffer<std::shared_ptr<Instruction>> output;
-  RegisterFile registerFile;
+  RegisterFileSet registerFileSet;
   MockBranchPredictor predictor;
-  inorder::DecodeUnit decodeUnit;
+  DecodeUnit decodeUnit;
 
   MockInstruction* uop;
   std::shared_ptr<Instruction> uopPtr;
@@ -101,13 +100,13 @@ TEST_F(InOrderDecodeUnitTest, ForwardNonReady) {
   output.getTailSlots()[0] = uopPtr;
 
   std::vector<Register> registers = {{0, 1}};
-  std::vector<RegisterValue> values = {RegisterValue(1, 8)};
+  std::vector<RegisterValue> values = {RegisterValue(1, 4)};
 
   // Check that the instruction readiness is verified before supplying operands
   EXPECT_CALL(*uop, canExecute()).WillOnce(Return(false));
   // Check that the forwarded operand is supplied
   EXPECT_CALL(*uop, supplyOperand(registers[0],
-                                  Property(&RegisterValue::get<uint64_t>, 1)))
+                                  Property(&RegisterValue::get<uint32_t>, 1)))
       .Times(1);
   // Check that the source registers are requested
   EXPECT_CALL(*uop, getOperandRegisters())
@@ -124,7 +123,7 @@ TEST_F(InOrderDecodeUnitTest, ForwardNonReady) {
 TEST_F(InOrderDecodeUnitTest, ForwardRead) {
   output.getTailSlots()[0] = uopPtr;
 
-  registerFile.set(sourceRegisters[0], RegisterValue(1, 8));
+  registerFileSet.set(sourceRegisters[0], RegisterValue(1, 4));
 
   std::vector<Register> registers;
   std::vector<RegisterValue> values;
@@ -137,11 +136,12 @@ TEST_F(InOrderDecodeUnitTest, ForwardRead) {
   EXPECT_CALL(*uop, isOperandReady(0)).WillOnce(Return(false));
   // Check that the correct register and value are supplied
   EXPECT_CALL(*uop, supplyOperand(sourceRegisters[0],
-                                  Property(&RegisterValue::get<uint64_t>, 1)))
+                                  Property(&RegisterValue::get<uint32_t>, 1)))
       .Times(1);
 
   decodeUnit.forwardOperands({registers.data(), registers.size()},
                              {values.data(), values.size()});
 }
 
+}  // namespace inorder
 }  // namespace simeng
