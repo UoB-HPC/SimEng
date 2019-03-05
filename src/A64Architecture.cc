@@ -14,6 +14,7 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
   // Dereference the instruction pointer to obtain the instruction word
   const uint32_t insn = *static_cast<const uint32_t*>(ptr);
+  const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
   std::shared_ptr<A64Instruction> uop;
   if (decodeCache.count(insn)) {
@@ -21,7 +22,7 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     uop = std::make_shared<A64Instruction>(decodeCache[insn]);
   } else {
     // Generate a fresh decoding, and add to cache
-    auto decoded = A64Instruction(insn);
+    auto decoded = A64Instruction(encoding);
     decodeCache[insn] = decoded;
     uop = std::make_shared<A64Instruction>(decoded);
   }
