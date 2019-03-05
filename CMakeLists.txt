@@ -9,6 +9,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Enable additional compiler warnings for all targets
 add_compile_options(-Wall)
 
+# capstone
+set(CAPSTONE_BUILD_TESTS OFF)
+set(CAPSTONE_BUILD_SHARED OFF)
+set(CAPSTONE_BUILD_CSTOOL OFF)
+add_subdirectory(external/capstone)
+include_directories(external/capstone/include)
+
 add_subdirectory(src)
 
 add_subdirectory(docs)

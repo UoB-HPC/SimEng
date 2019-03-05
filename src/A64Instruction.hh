@@ -5,8 +5,11 @@
 #include <array>
 
 #include "BranchPredictor.hh"
+#include "capstone.hh"
 
 namespace simeng {
+
+enum class A64RegisterSize { B, H, S, D, Q, V, W, X, Cond };
 
 namespace A64RegisterType {
 /** The 64-bit general purpose register set: [w|x]0-31. */
@@ -87,7 +90,7 @@ class A64Instruction : public Instruction {
 
   /** Construct an instruction instance by decoding a provided instruction word.
    */
-  A64Instruction(uint32_t insn);
+  A64Instruction(const uint8_t* encoding);
 
   /** Supply an instruction address. Performed after construction to prevent
    * values being cached. */
@@ -211,6 +214,8 @@ class A64Instruction : public Instruction {
    * can have. */
   static const size_t MAX_DESTINATION_REGISTERS = 3;
 
+  CapstoneInsn insn;
+
   /** This instruction's opcode. */
   A64Opcode opcode;
 
@@ -242,6 +247,10 @@ class A64Instruction : public Instruction {
   A64InstructionException exception = A64InstructionException::None;
 
   // Decoding
+
+  void decode(const uint8_t* encoding);
+
+  A64RegisterSize getRegisterSize(arm64_reg reg) const;
   /** Decode the instruction word `encoding` and populate this instruction with
    * the appropriate values. **/
   void decodeA64(uint32_t encoding);
@@ -288,6 +297,9 @@ class A64Instruction : public Instruction {
 
   /** Whether or not this instruction is ready to commit. */
   bool canCommit_ = false;
+
+  // Execution
+  void executionNYI();
 
   // Metadata
   /** Is this a store operation? */

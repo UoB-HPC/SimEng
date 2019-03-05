@@ -35,6 +35,85 @@ constexpr int32_t signExtend(uint32_t value, int currentLength) {
   return static_cast<int32_t>(value) | (negative ? mask : 0);
 }
 
+/** Parses the Capstone `arm64_reg` value to generate an architectural register
+ * representation.
+ *
+ * WARNING: this conversion is FRAGILE, and relies on the structure of the
+ * `arm64_reg` enum. Updates to the Capstone library version may cause this to
+ * break. */
+Register csRegToRegister(arm64_reg reg) {
+  // Check from top of the range downwards
+
+  // ARM64_REG_X0 -> {end} are 64-bit (X) registers, reading from the general
+  // file
+  if (reg >= ARM64_REG_X0) {
+    return {A64RegisterType::GENERAL,
+            static_cast<uint16_t>(reg - ARM64_REG_X0)};
+  }
+
+  // ARM64_REG_V0 -> +31 are vector registers, reading from the vector file
+  if (reg >= ARM64_REG_V0) {
+    return {A64RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_V0)};
+  }
+
+  // ARM64_REG_W0 -> +30 are 32-bit (W) registers, reading from the general
+  // file. Excludes #31 (WZR/WSP).
+  if (reg >= ARM64_REG_W0) {
+    return {A64RegisterType::GENERAL,
+            static_cast<uint16_t>(reg - ARM64_REG_W0)};
+  }
+
+  // ARM64_REG_B0 and above are repeated ranges representing scalar access
+  // specifiers on the vector registers (i.e., B, H, S, D, Q), each covering 32
+  // registers
+  if (reg >= ARM64_REG_B0) {
+    return {A64RegisterType::VECTOR,
+            static_cast<uint16_t>((reg - ARM64_REG_B0) % 32)};
+  }
+
+  // ARM64_REG_WZR and _XZR are zero registers, and don't read
+  if (reg == ARM64_REG_WZR || reg == ARM64_REG_XZR) {
+    return A64Instruction::ZERO_REGISTER;
+  }
+
+  // ARM64_REG_SP and _WSP are stack pointer registers, stored in r31 of the
+  // general file
+  if (reg == ARM64_REG_SP || reg == ARM64_REG_WSP) {
+    return {A64RegisterType::GENERAL, 31};
+  }
+
+  // ARM64_REG_NZCV is the condition flags register
+  if (reg == ARM64_REG_NZCV) {
+    return {A64RegisterType::NZCV, 0};
+  }
+  // ARM64_REG_X29 is the frame pointer, stored in r29 of the general file
+  if (reg == ARM64_REG_X29) {
+    return {A64RegisterType::GENERAL, 29};
+  }
+  // ARM64_REG_X30 is the link register, stored in r30 of the general file
+  if (reg == ARM64_REG_X30) {
+    return {A64RegisterType::GENERAL, 30};
+  }
+
+  return {std::numeric_limits<uint8_t>::max(),
+          std::numeric_limits<uint16_t>::max()};
+}
+
+A64RegisterSize A64Instruction::getRegisterSize(arm64_reg reg) const {
+  if (reg >= ARM64_REG_X0) return A64RegisterSize::X;
+  if (reg >= ARM64_REG_V0) return A64RegisterSize::V;
+  if (reg >= ARM64_REG_W0) return A64RegisterSize::W;
+  if (reg >= ARM64_REG_S0) return A64RegisterSize::S;
+  if (reg >= ARM64_REG_Q0) return A64RegisterSize::Q;
+  if (reg >= ARM64_REG_H0) return A64RegisterSize::H;
+  if (reg >= ARM64_REG_D0) return A64RegisterSize::D;
+  if (reg >= ARM64_REG_B0) return A64RegisterSize::B;
+  if (reg == ARM64_REG_XZR) return A64RegisterSize::X;
+  if (reg == ARM64_REG_WZR || reg == ARM64_REG_WSP) return A64RegisterSize::W;
+  if (reg == ARM64_REG_NZCV) return A64RegisterSize::Cond;
+  return A64RegisterSize::X;
+}
+
 // Check for and mark WZR/XZR references
 const Register& filterZR(const Register& reg) {
   return (reg.type == A64RegisterType::GENERAL && reg.tag == 31
@@ -76,6 +155,95 @@ uint64_t decodeBitMasks(uint8_t immN, uint8_t imms, uint8_t immr,
 /******************
  * DECODING LOGIC
  *****************/
+void A64Instruction::decode(const uint8_t* encoding) {
+  csh handle;
+  if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &handle) != CS_ERR_OK) {
+    return nyi();
+  }
+  cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
+
+  size_t size = 4;
+  size_t address = 0;
+  bool success = cs_disasm_iter(handle, &encoding, &size, &address, &(insn));
+  if (!success) {
+    return nyi();
+  }
+  // std::cout << "ID: " << insn.id << std::endl;
+  // std::cout << "Registers: " << (int)insn.detail->arm64.op_count <<
+  // std::endl; std::cout << "Read: " << (int)insn.detail->regs_read_count
+  //           << "; write: " << (int)insn.detail->regs_write_count <<
+  //           std::endl;
+
+  if (insn.id == ARM64_INS_ORR) {
+    // Manual patch for bad ORR access specifier
+    // Destination register is incorrectly listed as read|write instead of write
+    insn.detail->arm64.operands[0].access = cs_ac_type::CS_AC_WRITE;
+  }
+
+  // Extract implicit writes
+  for (size_t i = 0; i < insn.detail->regs_write_count; i++) {
+    destinationRegisters[destinationRegisterCount] =
+        csRegToRegister(static_cast<arm64_reg>(insn.detail->regs_write[i]));
+    destinationRegisterCount++;
+  }
+  // Extract implicit reads
+  for (size_t i = 0; i < insn.detail->regs_read_count; i++) {
+    sourceRegisters[sourceRegisterCount] =
+        csRegToRegister(static_cast<arm64_reg>(insn.detail->regs_read[i]));
+    sourceRegisterCount++;
+    operandsPending++;
+  }
+
+  // Extract explicit register accesses
+  for (size_t i = 0; i < insn.detail->arm64.op_count; i++) {
+    const auto& op = insn.detail->arm64.operands[i];
+    if (op.type != ARM64_OP_REG) {
+      // Only check op registers
+      continue;
+    }
+
+    // std::cout << "op " << i << " access: " << (int)op.access << std::endl;
+    if (op.access & cs_ac_type::CS_AC_WRITE) {
+      destinationRegisters[destinationRegisterCount] = csRegToRegister(op.reg);
+      // std::cout << "dest: " << op.reg << std::endl;
+      destinationRegisterCount++;
+    }
+    if (op.access & cs_ac_type::CS_AC_READ) {
+      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
+      if (sourceRegisters[sourceRegisterCount] ==
+          A64Instruction::ZERO_REGISTER) {
+        operands[sourceRegisterCount] = RegisterValue(0, 8);
+      } else {
+        operandsPending++;
+      }
+      // std::cout << "src: " << op.reg << std::endl;
+      sourceRegisterCount++;
+    }
+  }
+
+  // Identify branches
+  for (size_t i = 0; i < insn.detail->groups_count; i++) {
+    if (insn.detail->groups[i] == ARM64_GRP_JUMP) {
+      isBranch_ = true;
+    }
+  }
+  // std::cout << insn.mnemonic << " " << insn.op_str << std::endl;
+
+  // std::cout << "Format: ";
+  // for (size_t i = 0; i < destinationRegisterCount; i++) {
+  //   const auto& reg = destinationRegisters[i];
+  //   std::cout << (int)reg.type << ":" << reg.tag << " ";
+  // }
+  // std::cout << "= ";
+  // for (size_t i = 0; i < sourceRegisterCount; i++) {
+  //   const auto& reg = sourceRegisters[i];
+  //   std::cout << (int)reg.type << ":" << reg.tag << " ";
+  // }
+  // std::cout << std::endl;
+  // std::cout << "Output: " << destinationRegisterCount
+  //           << "; Input: " << sourceRegisterCount << std::endl;
+  // exit(0);
+}
 
 void A64Instruction::decodeA64(uint32_t insn) {
   uint8_t op0 = (insn >> 25) & 0b1111;

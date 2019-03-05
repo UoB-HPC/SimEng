@@ -1,5 +1,6 @@
 #include "A64Instruction.hh"
 
+#include <iostream>
 #include <limits>
 #include <tuple>
 
@@ -86,117 +87,204 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
 
 namespace simeng {
 
+void A64Instruction::executionNYI() {
+  exception = A64InstructionException::ExecutionNotYetImplemented;
+  return;
+}
+
 void A64Instruction::execute() {
   assert(!executed && "Attempted to execute an instruction more than once");
   assert(
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
 
+  // std::cout << "Executing " << insn.mnemonic << " " << insn.op_str << " ("
+  //           << insn.id << ")" << std::endl;
   executed = true;
-  switch (opcode) {
-    case A64Opcode::ADD_I: {
-      if (metadata.sf) {
-        auto x = operands[0].get<uint64_t>();
-        auto y = metadata.imm;
-        results[0] = RegisterValue(x + y);
+  switch (insn.id) {
+    case ARM64_INS_B: {
+      if (sourceRegisterCount > 0) {  // B.cond
+        if (conditionHolds(insn.detail->arm64.cc - 1,
+                           operands[0].get<uint8_t>())) {
+          branchTaken = true;
+          branchAddress =
+              instructionAddress + insn.detail->arm64.operands[0].imm;
+          // std::cout << "B.cond; relative: "
+          //           << insn.detail->arm64.operands[0].imm
+          //           << "; type: " << insn.detail->arm64.operands[0].type
+          //           << std::endl;
+        } else {
+          branchTaken = false;
+          branchAddress = instructionAddress + 4;
+        }
       } else {
-        auto x = operands[0].get<uint32_t>();
-        auto y = static_cast<uint32_t>(metadata.imm);
-        results[0] = RegisterValue(x + y, 8);
-      }
-      return;
-    }
-    case A64Opcode::B: {
-      branchTaken = true;
-      branchAddress = instructionAddress + metadata.offset;
-      return;
-    }
-    case A64Opcode::B_cond: {
-      if (conditionHolds(metadata.cond, operands[0].get<uint8_t>())) {
         branchTaken = true;
-        branchAddress = instructionAddress + metadata.offset;
-      } else {
-        branchTaken = false;
-        branchAddress = instructionAddress + 4;
+        branchAddress = instructionAddress + insn.detail->arm64.operands[0].imm;
       }
       return;
     }
-    case A64Opcode::LDR_I: {
-      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 8);
-      return;
-    }
-    case A64Opcode::ORR_I: {
-      if (metadata.sf) {
-        auto value = operands[0].get<uint64_t>();
-        auto result = value | metadata.imm;
-        results[0] = RegisterValue(result);
-      } else {
-        auto value = operands[0].get<uint32_t>();
-        auto result = (value | static_cast<uint32_t>(metadata.imm));
-        results[0] = RegisterValue(result, 8);
+    case ARM64_INS_ORR: {
+      if (sourceRegisterCount > 1) {
+        // Register, NYI
+        return executionNYI();
       }
-      return;
-    }
-    case A64Opcode::STR_I: {
-      memoryData[0] = operands[0];
-      return;
-    }
-    case A64Opcode::SUB_Shift: {
-      if (metadata.sf) {
-        auto x = operands[0].get<uint64_t>();
-        auto y = operands[1].get<uint64_t>();
-        results[0] = RegisterValue(x - y);
-      } else {
-        auto x = operands[0].get<uint32_t>();
-        auto y = operands[1].get<uint32_t>();
-        results[0] = RegisterValue(x - y, 8);
+      switch (getRegisterSize(insn.detail->arm64.operands[0].reg)) {
+        case A64RegisterSize::X: {
+          auto value = operands[0].get<uint64_t>();
+          auto result = value | insn.detail->arm64.operands[2].imm;
+          results[0] = RegisterValue(result);
+          return;
+        }
+        case A64RegisterSize::W: {
+          auto value = operands[0].get<uint32_t>();
+          auto result = (value | static_cast<uint32_t>(
+                                     insn.detail->arm64.operands[2].imm));
+          results[0] = RegisterValue(result, 8);
+          return;
+        }
+        default:
+          return executionNYI();
       }
-      return;
     }
-    case A64Opcode::SUB_I: {
-      if (metadata.sf) {
-        auto x = operands[0].get<uint64_t>();
-        auto y = metadata.imm;
-        results[0] = RegisterValue(x - y);
-      } else {
-        auto x = operands[0].get<uint32_t>();
-        auto y = static_cast<uint32_t>(metadata.imm);
-        results[0] = RegisterValue(x - y, 8);
+    case ARM64_INS_SUB: {
+      if (sourceRegisterCount > 1) {  // Register, NYI
+        return executionNYI();
       }
-      return;
-    }
-    case A64Opcode::SUBS_I: {
-      if (metadata.sf) {
-        auto x = operands[0].get<uint64_t>();
-        auto y = ~metadata.imm;
-        auto [result, nzcv] = addWithCarry(x, y, true);
-        results[0] = RegisterValue(result);
-        results[1] = RegisterValue(nzcv);
-      } else {
-        auto x = operands[0].get<uint32_t>();
-        auto y = ~static_cast<uint32_t>(metadata.imm);
-        auto [result, nzcv] = addWithCarry(x, y, true);
-        results[0] = RegisterValue(result, 8);
-        results[1] = RegisterValue(nzcv);
+      if (destinationRegisterCount > 1) {  // SUBS
+        switch (getRegisterSize(insn.detail->arm64.operands[0].reg)) {
+          case A64RegisterSize::X: {
+            auto x = operands[0].get<uint64_t>();
+            auto y = ~(insn.detail->arm64.operands[2].imm);
+            auto [result, nzcv] = addWithCarry(x, y, true);
+            results[0] = RegisterValue(nzcv);
+            results[1] = RegisterValue(result);
+            return;
+          }
+          case A64RegisterSize::W: {
+            auto x = operands[0].get<uint32_t>();
+            auto y = ~static_cast<uint32_t>(insn.detail->arm64.operands[2].imm);
+            auto [result, nzcv] = addWithCarry(x, y, true);
+            results[0] = RegisterValue(nzcv);
+            results[1] = RegisterValue(result, 8);
+            // std::cout << "SUBS; op = " << operands[0].get<uint32_t>()
+            //           << "; imm = " << insn.detail->arm64.operands[2].imm
+            //           << "; result = " << result << "; nzcv = " << (int)nzcv
+            //           << std::endl;
+            return;
+          }
+          default:
+            return executionNYI();
+        }
       }
-      return;
-    }
-    case A64Opcode::TBNZ: {
-      uint64_t x = operands[0].get<uint64_t>();
-      uint64_t mask = 1 << (metadata.bitPos - 1);
-      if ((x & mask)) {
-        branchTaken = true;
-        branchAddress = instructionAddress + metadata.offset;
-      } else {
-        branchTaken = false;
-        branchAddress = instructionAddress + 4;
-      }
-      return;
     }
     default:
-      exception = A64InstructionException::ExecutionNotYetImplemented;
-      return;
+      return executionNYI();
   }
+
+  // switch (opcode) {
+  //   case A64Opcode::ADD_I: {
+  //     if (metadata.sf) {
+  //       auto x = operands[0].get<uint64_t>();
+  //       auto y = metadata.imm;
+  //       results[0] = RegisterValue(x + y);
+  //     } else {
+  //       auto x = operands[0].get<uint32_t>();
+  //       auto y = static_cast<uint32_t>(metadata.imm);
+  //       results[0] = RegisterValue(x + y, 8);
+  //     }
+  //     return;
+  //   }
+  //   case A64Opcode::B: {
+  //     branchTaken = true;
+  //     branchAddress = instructionAddress + metadata.offset;
+  //     return;
+  //   }
+  //   case A64Opcode::B_cond: {
+  //     if (conditionHolds(metadata.cond, operands[0].get<uint8_t>())) {
+  //       branchTaken = true;
+  //       branchAddress = instructionAddress + metadata.offset;
+  //     } else {
+  //       branchTaken = false;
+  //       branchAddress = instructionAddress + 4;
+  //     }
+  //     return;
+  //   }
+  //   case A64Opcode::LDR_I: {
+  //     results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second,
+  //     8); return;
+  //   }
+  //   case A64Opcode::ORR_I: {
+  //     if (metadata.sf) {
+  //       auto value = operands[0].get<uint64_t>();
+  //       auto result = value | metadata.imm;
+  //       results[0] = RegisterValue(result);
+  //     } else {
+  //       auto value = operands[0].get<uint32_t>();
+  //       auto result = (value | static_cast<uint32_t>(metadata.imm));
+  //       results[0] = RegisterValue(result, 8);
+  //     }
+  //     return;
+  //   }
+  //   case A64Opcode::STR_I: {
+  //     memoryData[0] = operands[0];
+  //     return;
+  //   }
+  //   case A64Opcode::SUB_Shift: {
+  //     if (metadata.sf) {
+  //       auto x = operands[0].get<uint64_t>();
+  //       auto y = operands[1].get<uint64_t>();
+  //       results[0] = RegisterValue(x - y);
+  //     } else {
+  //       auto x = operands[0].get<uint32_t>();
+  //       auto y = operands[1].get<uint32_t>();
+  //       results[0] = RegisterValue(x - y, 8);
+  //     }
+  //     return;
+  //   }
+  //   case A64Opcode::SUB_I: {
+  //     if (metadata.sf) {
+  //       auto x = operands[0].get<uint64_t>();
+  //       auto y = metadata.imm;
+  //       results[0] = RegisterValue(x - y);
+  //     } else {
+  //       auto x = operands[0].get<uint32_t>();
+  //       auto y = static_cast<uint32_t>(metadata.imm);
+  //       results[0] = RegisterValue(x - y, 8);
+  //     }
+  //     return;
+  //   }
+  //   case A64Opcode::SUBS_I: {
+  //     if (metadata.sf) {
+  //       auto x = operands[0].get<uint64_t>();
+  //       auto y = ~metadata.imm;
+  //       auto [result, nzcv] = addWithCarry(x, y, true);
+  //       results[0] = RegisterValue(result);
+  //       results[1] = RegisterValue(nzcv);
+  //     } else {
+  //       auto x = operands[0].get<uint32_t>();
+  //       auto y = ~static_cast<uint32_t>(metadata.imm);
+  //       auto [result, nzcv] = addWithCarry(x, y, true);
+  //       results[0] = RegisterValue(result, 8);
+  //       results[1] = RegisterValue(nzcv);
+  //     }
+  //     return;
+  //   }
+  //   case A64Opcode::TBNZ: {
+  //     uint64_t x = operands[0].get<uint64_t>();
+  //     uint64_t mask = 1 << (metadata.bitPos - 1);
+  //     if ((x & mask)) {
+  //       branchTaken = true;
+  //       branchAddress = instructionAddress + metadata.offset;
+  //     } else {
+  //       branchTaken = false;
+  //       branchAddress = instructionAddress + 4;
+  //     }
+  //     return;
+  //   }
+  //   default:
+  //     exception = A64InstructionException::ExecutionNotYetImplemented;
+  //     return;
+  // }
 }
 
 }  // namespace simeng

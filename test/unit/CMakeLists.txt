@@ -19,5 +19,6 @@ set(SIMENG_SOURCES
 include_directories("../../src")
 add_executable(unittests ${TEST_SOURCES} ${SIMENG_SOURCES})
 target_link_libraries(unittests gtest_main)
+target_link_libraries(unittests capstone-static)
 
 add_test(NAME unit_tests COMMAND unittests)
