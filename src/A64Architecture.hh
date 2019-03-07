@@ -11,6 +11,8 @@ namespace simeng {
 /* A basic ARMv8-a implementation of the `Architecture` interface. */
 class A64Architecture : public Architecture {
  public:
+  A64Architecture();
+  ~A64Architecture();
   /** Pre-decode instruction memory into a macro-op of `A64Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
    * and writes into the supplied macro-op vector. */
@@ -29,6 +31,12 @@ class A64Architecture : public Architecture {
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */
   static std::unordered_map<uint32_t, A64Instruction> decodeCache;
+  static std::unordered_map<uint32_t, A64CapstoneInsn> metadataCache;
+
+  csh capstoneHandle;
+
+  cs_insn capstoneInsn;
+  cs_detail capstoneDetail;
 };
 
 }  // namespace simeng

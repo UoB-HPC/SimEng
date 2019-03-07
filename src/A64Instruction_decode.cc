@@ -155,94 +155,57 @@ uint64_t decodeBitMasks(uint8_t immN, uint8_t imms, uint8_t immr,
 /******************
  * DECODING LOGIC
  *****************/
-void A64Instruction::decode(const uint8_t* encoding) {
-  csh handle;
-  if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &handle) != CS_ERR_OK) {
-    return nyi();
-  }
-  cs_option(handle, CS_OPT_DETAIL, CS_OPT_ON);
-
-  size_t size = 4;
-  size_t address = 0;
-  bool success = cs_disasm_iter(handle, &encoding, &size, &address, &(insn));
-  if (!success) {
-    return nyi();
-  }
-  // std::cout << "ID: " << insn.id << std::endl;
-  // std::cout << "Registers: " << (int)insn.detail->arm64.op_count <<
-  // std::endl; std::cout << "Read: " << (int)insn.detail->regs_read_count
-  //           << "; write: " << (int)insn.detail->regs_write_count <<
-  //           std::endl;
-
-  if (insn.id == ARM64_INS_ORR) {
-    // Manual patch for bad ORR access specifier
-    // Destination register is incorrectly listed as read|write instead of write
-    insn.detail->arm64.operands[0].access = cs_ac_type::CS_AC_WRITE;
-  }
+void A64Instruction::decode() {
+  std::cout << "Sizes: A64Instruction = " << sizeof(A64Instruction)
+            << std::endl;
 
   // Extract implicit writes
-  for (size_t i = 0; i < insn.detail->regs_write_count; i++) {
+  for (size_t i = 0; i < insn.regs_write_count; i++) {
     destinationRegisters[destinationRegisterCount] =
-        csRegToRegister(static_cast<arm64_reg>(insn.detail->regs_write[i]));
+        csRegToRegister(static_cast<arm64_reg>(insn.regs_write[i]));
     destinationRegisterCount++;
   }
   // Extract implicit reads
-  for (size_t i = 0; i < insn.detail->regs_read_count; i++) {
+  for (size_t i = 0; i < insn.regs_read_count; i++) {
     sourceRegisters[sourceRegisterCount] =
-        csRegToRegister(static_cast<arm64_reg>(insn.detail->regs_read[i]));
+        csRegToRegister(static_cast<arm64_reg>(insn.regs_read[i]));
     sourceRegisterCount++;
     operandsPending++;
   }
 
   // Extract explicit register accesses
-  for (size_t i = 0; i < insn.detail->arm64.op_count; i++) {
-    const auto& op = insn.detail->arm64.operands[i];
+  for (size_t i = 0; i < insn.detail.op_count; i++) {
+    const auto& op = insn.detail.operands[i];
     if (op.type != ARM64_OP_REG) {
       // Only check op registers
       continue;
     }
 
-    // std::cout << "op " << i << " access: " << (int)op.access << std::endl;
     if (op.access & cs_ac_type::CS_AC_WRITE) {
+      // Add register writes to destinations
       destinationRegisters[destinationRegisterCount] = csRegToRegister(op.reg);
-      // std::cout << "dest: " << op.reg << std::endl;
       destinationRegisterCount++;
     }
     if (op.access & cs_ac_type::CS_AC_READ) {
+      // Add register reads to destinations
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
       if (sourceRegisters[sourceRegisterCount] ==
           A64Instruction::ZERO_REGISTER) {
+        // Catch zero register references and pre-complete those operands
         operands[sourceRegisterCount] = RegisterValue(0, 8);
       } else {
         operandsPending++;
       }
-      // std::cout << "src: " << op.reg << std::endl;
       sourceRegisterCount++;
     }
   }
 
   // Identify branches
-  for (size_t i = 0; i < insn.detail->groups_count; i++) {
-    if (insn.detail->groups[i] == ARM64_GRP_JUMP) {
+  for (size_t i = 0; i < insn.groups_count; i++) {
+    if (insn.groups[i] == ARM64_GRP_JUMP) {
       isBranch_ = true;
     }
   }
-  // std::cout << insn.mnemonic << " " << insn.op_str << std::endl;
-
-  // std::cout << "Format: ";
-  // for (size_t i = 0; i < destinationRegisterCount; i++) {
-  //   const auto& reg = destinationRegisters[i];
-  //   std::cout << (int)reg.type << ":" << reg.tag << " ";
-  // }
-  // std::cout << "= ";
-  // for (size_t i = 0; i < sourceRegisterCount; i++) {
-  //   const auto& reg = sourceRegisters[i];
-  //   std::cout << (int)reg.type << ":" << reg.tag << " ";
-  // }
-  // std::cout << std::endl;
-  // std::cout << "Output: " << destinationRegisterCount
-  //           << "; Input: " << sourceRegisterCount << std::endl;
-  // exit(0);
 }
 
 void A64Instruction::decodeA64(uint32_t insn) {

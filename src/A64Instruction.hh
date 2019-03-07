@@ -5,9 +5,46 @@
 #include <array>
 
 #include "BranchPredictor.hh"
-#include "capstone.hh"
+#include "capstone/capstone.h"
 
 namespace simeng {
+
+/** A simplified A64-only version of the capstone instruction structure. */
+struct A64CapstoneInsn {
+ public:
+  A64CapstoneInsn(){};
+  A64CapstoneInsn(const cs_insn& insn)
+      : id(insn.id),
+        size(insn.size),
+        regs_read_count(insn.detail->regs_read_count),
+        regs_write_count(insn.detail->regs_write_count),
+        groups_count(insn.detail->groups_count),
+        detail(insn.detail->arm64) {
+    std::strncpy(mnemonic, insn.mnemonic, CS_MNEMONIC_SIZE);
+    std::strncpy(op_str, insn.op_str, sizeof(op_str));
+    std::memcpy(regs_read, insn.detail->regs_read,
+                sizeof(uint16_t) * regs_read_count);
+    std::memcpy(regs_write, insn.detail->regs_write,
+                sizeof(uint16_t) * regs_write_count);
+    std::memcpy(groups, insn.detail->groups, sizeof(uint8_t) * groups_count);
+  }
+  unsigned int id;
+  uint16_t size;
+
+  char mnemonic[CS_MNEMONIC_SIZE];
+  char op_str[160];
+
+  uint16_t regs_read[16];
+  uint8_t regs_read_count;
+
+  uint16_t regs_write[20];
+  uint8_t regs_write_count;
+
+  uint8_t groups[8];
+  uint8_t groups_count;
+
+  cs_arm64 detail;
+};
 
 enum class A64RegisterSize { B, H, S, D, Q, V, W, X, Cond };
 
@@ -86,11 +123,11 @@ enum class A64Opcode {
 /** A basic ARMv8-a implementation of the `Instruction` interface. */
 class A64Instruction : public Instruction {
  public:
-  A64Instruction(){};
+  // A64Instruction(){};
 
   /** Construct an instruction instance by decoding a provided instruction word.
    */
-  A64Instruction(const uint8_t* encoding);
+  A64Instruction(const A64CapstoneInsn& capstoneInsn);
 
   /** Supply an instruction address. Performed after construction to prevent
    * values being cached. */
@@ -214,7 +251,7 @@ class A64Instruction : public Instruction {
    * can have. */
   static const size_t MAX_DESTINATION_REGISTERS = 3;
 
-  CapstoneInsn insn;
+  const A64CapstoneInsn& insn;
 
   /** This instruction's opcode. */
   A64Opcode opcode;
@@ -248,7 +285,7 @@ class A64Instruction : public Instruction {
 
   // Decoding
 
-  void decode(const uint8_t* encoding);
+  void decode();
 
   A64RegisterSize getRegisterSize(arm64_reg reg) const;
   /** Decode the instruction word `encoding` and populate this instruction with
