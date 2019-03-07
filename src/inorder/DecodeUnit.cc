@@ -66,11 +66,11 @@ void DecodeUnit::forwardOperands(const span<Register>& registers,
   if (uop == nullptr) {
     return;
   }
-  if (uop->canExecute()) {
-    return;
-  }
 
   for (size_t i = 0; i < registers.size(); i++) {
+    if (uop->canExecute()) {
+      return;
+    }
     uop->supplyOperand(registers[i], values[i]);
   }
 
