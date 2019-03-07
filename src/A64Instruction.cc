@@ -9,7 +9,9 @@ namespace simeng {
 const Register A64Instruction::ZERO_REGISTER = {A64RegisterType::GENERAL,
                                                 (uint16_t)-1};
 
-A64Instruction::A64Instruction(const uint8_t* encoding) { decode(encoding); }
+A64Instruction::A64Instruction(const A64CapstoneInsn& insn) : insn(insn) {
+  decode();
+}
 
 void A64Instruction::setInstructionAddress(uint64_t address) {
   instructionAddress = address;
