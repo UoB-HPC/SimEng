@@ -87,8 +87,6 @@ enum class A64Opcode {
 /** A basic ARMv8-a implementation of the `Instruction` interface. */
 class A64Instruction : public Instruction {
  public:
-  // A64Instruction(){};
-
   /** Construct an instruction instance by decoding a provided instruction word.
    */
   A64Instruction(const A64InstructionMetadata& capstoneInsn);
@@ -215,16 +213,11 @@ class A64Instruction : public Instruction {
    * can have. */
   static const size_t MAX_DESTINATION_REGISTERS = 3;
 
-  const A64InstructionMetadata& insn;
-
-  /** This instruction's opcode. */
-  A64Opcode opcode;
+  /** A reference to the decoding metadata for this instruction. */
+  const A64InstructionMetadata& metadata;
 
   /** The location in memory of this instruction was decoded at. */
   uint64_t instructionAddress;
-
-  /** Metadata for this instruction; used for operation logic */
-  A64DecodeMetadata metadata;
 
   /** An array of source registers. */
   std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
@@ -252,32 +245,12 @@ class A64Instruction : public Instruction {
   void decode();
 
   A64RegisterSize getRegisterSize(arm64_reg reg) const;
-  /** Decode the instruction word `encoding` and populate this instruction with
-   * the appropriate values. **/
-  void decodeA64(uint32_t encoding);
 
   /** Generate an EncodingNotYetImplemented exception. */
   void nyi();
 
   /** Generate an EncodingUnallocated exception. */
   void unallocated();
-
-  /** Decode an instruction under the "Data Processing - Immediate" category. */
-  void decodeA64DataImmediate(uint32_t insn);
-
-  /** Decode an instruction under the "Branches, Exception Generating and System
-   * instructions" category. */
-  void decodeA64BranchSystem(uint32_t insn);
-
-  /** Decode an instruction under the "Loads and Stores" category. */
-  void decodeA64LoadStore(uint32_t insn);
-
-  /** Decode an instruction under the "Data Processing - Register" category. */
-  void decodeA64DataRegister(uint32_t insn);
-
-  /** Decode an instruction under the "Data Processing - Scalar Floating-Point
-   * and Advanced SIMD" category. */
-  void decodeA64DataFPSIMD(uint32_t insn);
 
   /** Set the source registers of the instruction, and create a corresponding
    * operands vector. Zero register references will be pre-supplied with a value
