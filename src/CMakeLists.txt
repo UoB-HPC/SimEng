@@ -41,6 +41,8 @@ set(SIMENG_SOURCES
     A64Instruction_address.cc
     A64Instruction_decode.cc
     A64Instruction_execute.cc
+    A64InstructionMetadata.cc
+    A64InstructionMetadata.hh
     AlwaysNotTakenPredictor.cc
     AlwaysNotTakenPredictor.hh
     Architecture.hh

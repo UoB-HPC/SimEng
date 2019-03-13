@@ -104,9 +104,9 @@ void A64Instruction::execute() {
   switch (insn.id) {
     case ARM64_INS_B: {
       if (sourceRegisterCount > 0) {  // B.cond
-        if (conditionHolds(insn.detail.cc - 1, operands[0].get<uint8_t>())) {
+        if (conditionHolds(insn.cc, operands[0].get<uint8_t>())) {
           branchTaken = true;
-          branchAddress = instructionAddress + insn.detail.operands[0].imm;
+          branchAddress = instructionAddress + insn.operands[0].imm;
           // std::cout << "B.cond; relative: "
           //           << insn.detail->arm64.operands[0].imm
           //           << "; type: " << insn.detail->arm64.operands[0].type
@@ -117,7 +117,7 @@ void A64Instruction::execute() {
         }
       } else {
         branchTaken = true;
-        branchAddress = instructionAddress + insn.detail.operands[0].imm;
+        branchAddress = instructionAddress + insn.operands[0].imm;
       }
       return;
     }
@@ -126,17 +126,16 @@ void A64Instruction::execute() {
         // Register, NYI
         return executionNYI();
       }
-      switch (getRegisterSize(insn.detail.operands[0].reg)) {
+      switch (getRegisterSize(insn.operands[0].reg)) {
         case A64RegisterSize::X: {
           auto value = operands[0].get<uint64_t>();
-          auto result = value | insn.detail.operands[2].imm;
+          auto result = value | insn.operands[2].imm;
           results[0] = RegisterValue(result);
           return;
         }
         case A64RegisterSize::W: {
           auto value = operands[0].get<uint32_t>();
-          auto result =
-              (value | static_cast<uint32_t>(insn.detail.operands[2].imm));
+          auto result = (value | static_cast<uint32_t>(insn.operands[2].imm));
           results[0] = RegisterValue(result, 8);
           return;
         }
@@ -149,10 +148,10 @@ void A64Instruction::execute() {
         return executionNYI();
       }
       if (destinationRegisterCount > 1) {  // SUBS
-        switch (getRegisterSize(insn.detail.operands[0].reg)) {
+        switch (getRegisterSize(insn.operands[0].reg)) {
           case A64RegisterSize::X: {
             auto x = operands[0].get<uint64_t>();
-            auto y = ~(insn.detail.operands[2].imm);
+            auto y = ~(insn.operands[2].imm);
             auto [result, nzcv] = addWithCarry(x, y, true);
             results[0] = RegisterValue(nzcv);
             results[1] = RegisterValue(result);
@@ -160,7 +159,7 @@ void A64Instruction::execute() {
           }
           case A64RegisterSize::W: {
             auto x = operands[0].get<uint32_t>();
-            auto y = ~static_cast<uint32_t>(insn.detail.operands[2].imm);
+            auto y = ~static_cast<uint32_t>(insn.operands[2].imm);
             auto [result, nzcv] = addWithCarry(x, y, true);
             results[0] = RegisterValue(nzcv);
             results[1] = RegisterValue(result, 8);

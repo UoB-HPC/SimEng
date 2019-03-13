@@ -160,22 +160,22 @@ void A64Instruction::decode() {
             << std::endl;
 
   // Extract implicit writes
-  for (size_t i = 0; i < insn.regs_write_count; i++) {
+  for (size_t i = 0; i < insn.implicitDestinationCount; i++) {
     destinationRegisters[destinationRegisterCount] =
-        csRegToRegister(static_cast<arm64_reg>(insn.regs_write[i]));
+        csRegToRegister(static_cast<arm64_reg>(insn.implicitDestinations[i]));
     destinationRegisterCount++;
   }
   // Extract implicit reads
-  for (size_t i = 0; i < insn.regs_read_count; i++) {
+  for (size_t i = 0; i < insn.implicitSourceCount; i++) {
     sourceRegisters[sourceRegisterCount] =
-        csRegToRegister(static_cast<arm64_reg>(insn.regs_read[i]));
+        csRegToRegister(static_cast<arm64_reg>(insn.implicitSources[i]));
     sourceRegisterCount++;
     operandsPending++;
   }
 
   // Extract explicit register accesses
-  for (size_t i = 0; i < insn.detail.op_count; i++) {
-    const auto& op = insn.detail.operands[i];
+  for (size_t i = 0; i < insn.operandCount; i++) {
+    const auto& op = insn.operands[i];
     if (op.type != ARM64_OP_REG) {
       // Only check op registers
       continue;
@@ -201,7 +201,7 @@ void A64Instruction::decode() {
   }
 
   // Identify branches
-  for (size_t i = 0; i < insn.groups_count; i++) {
+  for (size_t i = 0; i < insn.groupCount; i++) {
     if (insn.groups[i] == ARM64_GRP_JUMP) {
       isBranch_ = true;
     }
