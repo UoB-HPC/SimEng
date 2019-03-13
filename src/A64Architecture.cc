@@ -6,7 +6,8 @@
 namespace simeng {
 
 std::unordered_map<uint32_t, A64Instruction> A64Architecture::decodeCache;
-std::unordered_map<uint32_t, A64CapstoneInsn> A64Architecture::metadataCache;
+std::unordered_map<uint32_t, A64InstructionMetadata>
+    A64Architecture::metadataCache;
 
 A64Architecture::A64Architecture() {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
@@ -41,13 +42,7 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     // "invalid decoding" implementation if not successful
     cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
 
-    auto metadata = A64CapstoneInsn(rawInsn);
-    if (metadata.id == ARM64_INS_ORR) {
-      // Manual patch for bad ORR access specifier
-      // Destination register is incorrectly listed as read|write instead of
-      // write
-      metadata.detail.operands[0].access = cs_ac_type::CS_AC_WRITE;
-    }
+    auto metadata = A64InstructionMetadata(rawInsn);
 
     // Cache the metadata
     metadataCache[insn] = metadata;

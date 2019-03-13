@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include "A64Instruction.hh"
+#include "A64InstructionMetadata.hh"
 
 namespace simeng {
 
@@ -31,7 +32,7 @@ class A64Architecture : public Architecture {
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */
   static std::unordered_map<uint32_t, A64Instruction> decodeCache;
-  static std::unordered_map<uint32_t, A64CapstoneInsn> metadataCache;
+  static std::unordered_map<uint32_t, A64InstructionMetadata> metadataCache;
 
   csh capstoneHandle;
 
