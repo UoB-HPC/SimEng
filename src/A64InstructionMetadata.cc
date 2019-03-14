@@ -26,9 +26,16 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
 
   if (id == ARM64_INS_ORR) {
     // Manual patch for bad ORR access specifier
-    // Destination register is incorrectly listed as read|write instead of
-    // write
-    operands[0].access = cs_ac_type::CS_AC_WRITE;
+    // Destination register is incorrectly listed as read|write instead of write
+    operands[0].access = CS_AC_WRITE;
+  } else if (id == ARM64_INS_LDR) {
+    // Manual patch for bad LDR access specifier
+    // Destination register is incorrectly listed as read|write instead of write
+    operands[0].access = CS_AC_WRITE;
+  } else if (id == ARM64_INS_STR) {
+    // Manual patch for bad STR access specifier
+    // Destination register is incorrectly listed as read|write instead of read
+    operands[0].access = CS_AC_READ;
   }
 }
 
