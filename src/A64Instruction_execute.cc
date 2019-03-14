@@ -98,28 +98,55 @@ void A64Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
 
-  // std::cout << "Executing " << insn.mnemonic << " " << insn.op_str << " ("
-  //           << insn.id << ")" << std::endl;
   executed = true;
   switch (metadata.id) {
+    case ARM64_INS_ADD: {
+      switch (getRegisterSize(metadata.operands[0].reg)) {
+        case A64RegisterSize::W: {
+          auto x = operands[0].get<uint32_t>();
+          auto y = static_cast<uint32_t>(metadata.operands[2].imm);
+          uint64_t tmp = x + y;
+          results[0] = RegisterValue(tmp, 8);
+          return;
+        }
+        case A64RegisterSize::X: {
+          auto x = operands[0].get<uint64_t>();
+          auto y = metadata.operands[2].imm;
+          results[0] = RegisterValue(x + y);
+          return;
+        }
+        default:
+          return executionNYI();
+      }
+    }
     case ARM64_INS_B: {
       if (sourceRegisterCount > 0) {  // B.cond
         if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
           branchTaken = true;
           branchAddress = instructionAddress + metadata.operands[0].imm;
-          // std::cout << "B.cond; relative: "
-          //           << insn.detail->arm64.operands[0].imm
-          //           << "; type: " << insn.detail->arm64.operands[0].type
-          //           << std::endl;
         } else {
           branchTaken = false;
           branchAddress = instructionAddress + 4;
         }
-      } else {
+      } else {  // B
         branchTaken = true;
         branchAddress = instructionAddress + metadata.operands[0].imm;
       }
       return;
+    }
+    case ARM64_INS_LDR: {
+      switch (getRegisterSize(metadata.operands[0].reg)) {
+        case A64RegisterSize::W: {
+          results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 8);
+          return;
+        }
+        case A64RegisterSize::X: {
+          results[0] = memoryData[0];
+          return;
+        }
+        default:
+          return executionNYI();
+      }
     }
     case ARM64_INS_ORR: {
       if (sourceRegisterCount > 1) {
@@ -138,6 +165,18 @@ void A64Instruction::execute() {
           auto result =
               (value | static_cast<uint32_t>(metadata.operands[2].imm));
           results[0] = RegisterValue(result, 8);
+          return;
+        }
+        default:
+          return executionNYI();
+      }
+    }
+    case ARM64_INS_STR: {
+      switch (getRegisterSize(metadata.operands[0].reg)) {
+        case A64RegisterSize::W:
+          [[fallthrough]];
+        case A64RegisterSize::X: {
+          memoryData[0] = operands[0];
           return;
         }
         default:
@@ -164,6 +203,23 @@ void A64Instruction::execute() {
             auto [result, nzcv] = addWithCarry(x, y, true);
             results[0] = RegisterValue(nzcv);
             results[1] = RegisterValue(result, 8);
+            return;
+          }
+          default:
+            return executionNYI();
+        }
+      } else {  // SUB
+        switch (getRegisterSize(metadata.operands[0].reg)) {
+          case A64RegisterSize::W: {
+            auto x = operands[0].get<uint32_t>();
+            auto y = static_cast<uint32_t>(metadata.operands[2].imm);
+            results[0] = RegisterValue(x - y, 8);
+            return;
+          }
+          case A64RegisterSize::X: {
+            auto x = operands[0].get<uint64_t>();
+            auto y = metadata.operands[2].imm;
+            results[0] = RegisterValue(x - y);
             return;
           }
           default:

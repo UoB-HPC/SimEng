@@ -10,6 +10,9 @@ namespace simeng {
 struct A64InstructionMetadata {
  public:
   A64InstructionMetadata(){};
+
+  /** Constructs a metadata object from a Capstone instruction representation.
+   */
   A64InstructionMetadata(const cs_insn& insn);
 
   /** The instruction's mnemonic ID. */

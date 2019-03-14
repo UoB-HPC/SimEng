@@ -139,30 +139,49 @@ void A64Instruction::decode() {
     operandsPending++;
   }
 
+  bool accessesMemory = false;
+
   // Extract explicit register accesses
   for (size_t i = 0; i < metadata.operandCount; i++) {
     const auto& op = metadata.operands[i];
-    if (op.type != ARM64_OP_REG) {
-      // Only check op registers
-      continue;
-    }
 
-    if (op.access & cs_ac_type::CS_AC_WRITE) {
-      // Add register writes to destinations
-      destinationRegisters[destinationRegisterCount] = csRegToRegister(op.reg);
-      destinationRegisterCount++;
-    }
-    if (op.access & cs_ac_type::CS_AC_READ) {
-      // Add register reads to destinations
-      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
-      if (sourceRegisters[sourceRegisterCount] ==
-          A64Instruction::ZERO_REGISTER) {
-        // Catch zero register references and pre-complete those operands
-        operands[sourceRegisterCount] = RegisterValue(0, 8);
-      } else {
+    if (op.type == ARM64_OP_REG) {  // Register operand
+      if (op.access & cs_ac_type::CS_AC_WRITE) {
+        // Add register writes to destinations
+        destinationRegisters[destinationRegisterCount] =
+            csRegToRegister(op.reg);
+        destinationRegisterCount++;
+      }
+      if (op.access & cs_ac_type::CS_AC_READ) {
+        // Add register reads to destinations
+        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
+        if (sourceRegisters[sourceRegisterCount] ==
+            A64Instruction::ZERO_REGISTER) {
+          // Catch zero register references and pre-complete those operands
+          operands[sourceRegisterCount] = RegisterValue(0, 8);
+        } else {
+          operandsPending++;
+        }
+        sourceRegisterCount++;
+      }
+    } else if (op.type == ARM64_OP_MEM) {  // Memory operand
+      accessesMemory = true;
+      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
+      sourceRegisterCount++;
+      operandsPending++;
+
+      if (metadata.writeback) {
+        // Writeback instructions modify the base address
+        destinationRegisters[destinationRegisterCount] =
+            csRegToRegister(op.mem.base);
+        destinationRegisterCount++;
+      }
+      if (op.mem.index) {
+        // Register offset; add to sources
+        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.index);
+        sourceRegisterCount++;
         operandsPending++;
       }
-      sourceRegisterCount++;
     }
   }
 
@@ -170,6 +189,27 @@ void A64Instruction::decode() {
   for (size_t i = 0; i < metadata.groupCount; i++) {
     if (metadata.groups[i] == ARM64_GRP_JUMP) {
       isBranch_ = true;
+    }
+  }
+  // Identify loads/stores
+  if (accessesMemory) {
+    // Check first operand access to determine if it's a load or store
+    // Currently broken: https://github.com/aquynh/capstone/issues/1422
+    // if (metadata.operands[0].access == CS_AC_WRITE) {
+    //   isLoad_ = true;
+    // } else {
+    //   isStore_ = true;
+    // }
+
+    // Hack to workaround above issue: check first letter of mnemonic
+    if (metadata.mnemonic[0] == 's') {
+      isStore_ = true;
+    } else if (metadata.mnemonic[0] == 'l') {
+      isLoad_ = true;
+    } else {
+      std::cerr << "Unknown memory-accessing operation encountered: "
+                << metadata.mnemonic << " " << metadata.operandStr << std::endl;
+      exit(1);
     }
   }
 }
