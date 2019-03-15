@@ -9,7 +9,6 @@ namespace simeng {
 namespace inorder {
 
 using ::testing::AtLeast;
-using ::testing::Each;
 using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 using ::testing::Property;
@@ -26,11 +25,12 @@ class InOrderExecuteUnitTest : public testing::Test {
   InOrderExecuteUnitTest()
       : input(1, nullptr),
         output(1, nullptr),
-        executeUnit(input, output,
-                    [this](auto regs, auto values) {
-                      forwardOperands.forwardOperands(regs, values);
-                    },
-                    predictor, nullptr),
+        executeUnit(
+            input, output,
+            [this](auto regs, auto values) {
+              forwardOperands.forwardOperands(regs, values);
+            },
+            predictor, nullptr),
         uop(new MockInstruction),
         uopPtr(uop) {}
 

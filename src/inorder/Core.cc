@@ -17,11 +17,12 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
                 branchPredictor),
       decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, registerFileSet,
                  branchPredictor),
-      executeUnit(decodeToExecuteBuffer, executeToWritebackBuffer,
-                  [this](auto regs, auto values) {
-                    return decodeUnit.forwardOperands(regs, values);
-                  },
-                  branchPredictor, memory),
+      executeUnit(
+          decodeToExecuteBuffer, executeToWritebackBuffer,
+          [this](auto regs, auto values) {
+            return decodeUnit.forwardOperands(regs, values);
+          },
+          branchPredictor, memory),
       writebackUnit(executeToWritebackBuffer, registerFileSet){};
 
 void Core::tick() {

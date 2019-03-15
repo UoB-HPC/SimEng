@@ -2,6 +2,7 @@ set(TEST_SOURCES
     inorder/FetchUnitTest.cc
     inorder/DecodeUnitTest.cc
     inorder/ExecuteUnitTest.cc
+    inorder/WritebackUnitTest.cc
     ISATest.cc
     BTBPredictorTest.cc
     PipelineBufferTest.cc
@@ -12,6 +13,7 @@ set(SIMENG_SOURCES
     ../../src/inorder/FetchUnit.cc
     ../../src/inorder/DecodeUnit.cc
     ../../src/inorder/ExecuteUnit.cc
+    ../../src/inorder/WritebackUnit.cc
     ../../src/A64Architecture.cc
     ../../src/A64Instruction.cc
     ../../src/A64Instruction_address.cc

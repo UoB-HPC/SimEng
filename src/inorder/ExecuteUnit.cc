@@ -13,7 +13,6 @@ ExecuteUnit::ExecuteUnit(
     : fromDecodeBuffer(fromDecode),
       toWritebackBuffer(toWriteback),
       forwardOperands(forwardOperands),
-      // decodeUnit(decodeUnit),
       predictor(predictor),
       memory(memory) {}
 

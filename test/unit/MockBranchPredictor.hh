@@ -5,6 +5,7 @@
 
 namespace simeng {
 
+/** Mock implementation of the `BranchPredictor` interface. */
 class MockBranchPredictor : public BranchPredictor {
  public:
   MOCK_METHOD1(predict, BranchPrediction(uint64_t instructionAddress));
