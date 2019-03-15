@@ -6,6 +6,12 @@
 
 namespace simeng {
 
+/** AArch64 opcodes. Each opcode represents a unique AArch64 operation. */
+namespace A64Opcode {
+#define GET_INSTRINFO_ENUM
+#include "AArch64GenInstrInfo.inc"
+}  // namespace A64Opcode
+
 /** A simplified A64-only version of the Capstone instruction structure. */
 struct A64InstructionMetadata {
  public:
@@ -17,6 +23,9 @@ struct A64InstructionMetadata {
 
   /** The instruction's mnemonic ID. */
   unsigned int id;
+
+  /** The instruction's opcode. */
+  unsigned int opcode;
 
   /** The instruction's mnemonic. */
   char mnemonic[CS_MNEMONIC_SIZE];
