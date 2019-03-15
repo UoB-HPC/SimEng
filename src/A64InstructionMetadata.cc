@@ -4,6 +4,7 @@ namespace simeng {
 
 A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
     : id(insn.id),
+      opcode(insn.opcode),
       implicitSourceCount(insn.detail->regs_read_count),
       implicitDestinationCount(insn.detail->regs_write_count),
       groupCount(insn.detail->groups_count),

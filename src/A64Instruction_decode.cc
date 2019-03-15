@@ -1,5 +1,6 @@
-#include <iostream>
 #include "A64Instruction.hh"
+
+#include <iostream>
 
 #define NOT(bits, length) (~bits & (1 << length - 1))
 #define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)
@@ -97,21 +98,6 @@ Register csRegToRegister(arm64_reg reg) {
 
   return {std::numeric_limits<uint8_t>::max(),
           std::numeric_limits<uint16_t>::max()};
-}
-
-A64RegisterSize A64Instruction::getRegisterSize(arm64_reg reg) const {
-  if (reg >= ARM64_REG_X0) return A64RegisterSize::X;
-  if (reg >= ARM64_REG_V0) return A64RegisterSize::V;
-  if (reg >= ARM64_REG_W0) return A64RegisterSize::W;
-  if (reg >= ARM64_REG_S0) return A64RegisterSize::S;
-  if (reg >= ARM64_REG_Q0) return A64RegisterSize::Q;
-  if (reg >= ARM64_REG_H0) return A64RegisterSize::H;
-  if (reg >= ARM64_REG_D0) return A64RegisterSize::D;
-  if (reg >= ARM64_REG_B0) return A64RegisterSize::B;
-  if (reg == ARM64_REG_XZR) return A64RegisterSize::X;
-  if (reg == ARM64_REG_WZR || reg == ARM64_REG_WSP) return A64RegisterSize::W;
-  if (reg == ARM64_REG_NZCV) return A64RegisterSize::Cond;
-  return A64RegisterSize::X;
 }
 
 // Check for and mark WZR/XZR references

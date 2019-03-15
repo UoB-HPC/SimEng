@@ -10,8 +10,6 @@
 
 namespace simeng {
 
-enum class A64RegisterSize { B, H, S, D, Q, V, W, X, Cond };
-
 namespace A64RegisterType {
 /** The 64-bit general purpose register set: [w|x]0-31. */
 const uint8_t GENERAL = 0;
@@ -29,59 +27,11 @@ const uint8_t STORE = 2;
 const uint8_t BRANCH = 3;
 }  // namespace A64InstructionGroups
 
-/** The decoded metadata for an instruction. Produced during decoding and used
- * during operation - most fields are only used for some instructions. Variable
- * names match those from ARMv8 Reference Manual. Future versions (or
- * automatically generated versions) may use a heavily `union`-ed datastructure
- * to minimise footprint.
- *
- * Potential alternative approach: store the original
- * instruction word and only extract these values during execution? Pros:
- * reduced memory footprint, cleaner; cons: slight performance penalty as values
- * can't be cached during decoding. */
-struct A64DecodeMetadata {
-  /** Size flag; 0 = 32-bit; 1 = 64-bit. */
-  uint8_t sf;
-  uint8_t N;
-  union {
-    /** An unsigned 64-bit immediate. Mutually exclusive with `offset`. */
-    uint64_t imm;
-    /** A signed 64-bit immediate offset. Mutually exclusive with `imm`. */
-    int64_t offset;
-  };
-  /** Memory: index writeback? */
-  bool wback;
-  /** Memory: post-index writeback or pre-index writeback? */
-  bool postindex;
-  /** Scaling mode identifier. Instruction-dependent behaviour. */
-  uint8_t scale;
-  /** Condition code; identifies condition mode for instructions with
-   * conditional behaviour. */
-  uint8_t cond;
-  /** Bit position; used for bit testing instructions. */
-  uint8_t bitPos;
-};
-
 enum class A64InstructionException {
   None = 0,
   EncodingUnallocated,
   EncodingNotYetImplemented,
   ExecutionNotYetImplemented
-};
-
-/** A64 instruction opcode identifier. */
-enum class A64Opcode {
-  ADD_I,
-  ADDS_I,
-  B,
-  B_cond,
-  LDR_I,
-  ORR_I,
-  STR_I,
-  SUB_Shift,
-  SUB_I,
-  SUBS_I,
-  TBNZ,
 };
 
 /** A basic ARMv8-a implementation of the `Instruction` interface. */
@@ -241,10 +191,9 @@ class A64Instruction : public Instruction {
   A64InstructionException exception = A64InstructionException::None;
 
   // Decoding
-
+  /** Process the instruction's metadata to determine source/destination
+   * registers. */
   void decode();
-
-  A64RegisterSize getRegisterSize(arm64_reg reg) const;
 
   /** Generate an EncodingNotYetImplemented exception. */
   void nyi();
@@ -273,6 +222,7 @@ class A64Instruction : public Instruction {
   bool canCommit_ = false;
 
   // Execution
+  /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
 
   // Metadata
