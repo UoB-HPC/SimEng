@@ -5,6 +5,7 @@
 
 namespace simeng {
 
+/** Mock implementation of the `Architecture` interface. */
 class MockArchitecture : public Architecture {
  public:
   MOCK_CONST_METHOD5(predecode,

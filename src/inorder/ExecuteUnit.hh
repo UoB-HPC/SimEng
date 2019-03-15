@@ -10,12 +10,12 @@ namespace simeng {
 namespace inorder {
 
 /** An execute unit for an in-order pipeline. Executes instructions and forwards
- * results to the decode stage. */
+ * results by calling the supplied function. */
 class ExecuteUnit {
  public:
   /** Constructs an execute unit with references to an input and output buffer,
-   * the decode unit, the currently used branch predictor, and a pointer to
-   * process memory. */
+   * an operand-forwarding function, the currently used branch predictor,
+   * and a pointer to process memory. */
   ExecuteUnit(
       PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
       PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
@@ -23,7 +23,8 @@ class ExecuteUnit {
       BranchPredictor& predictor, char* memory);
 
   /** Tick the execute unit. Executes the current instruction and forwards the
-   * results back to the decode stage. */
+   * results by calling the operand-forwarding function supplied at
+   * construction. */
   void tick();
 
   /** Query whether a branch misprediction was discovered this cycle. */
@@ -40,10 +41,8 @@ class ExecuteUnit {
   /** A buffer for writing executed instructions into. */
   PipelineBuffer<std::shared_ptr<Instruction>>& toWritebackBuffer;
 
+  /** An operand-forwarding function, called with the results of execution. */
   std::function<void(span<Register>, span<RegisterValue>)> forwardOperands;
-
-  // /** A reference to the decode unit, for forwarding operands. */
-  // DecodeUnit& decodeUnit;
 
   /** A reference to the branch predictor, for updating with prediction results.
    */

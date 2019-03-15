@@ -128,7 +128,6 @@ TEST_F(InOrderDecodeUnitTest, ForwardRead) {
   std::vector<Register> registers;
   std::vector<RegisterValue> values;
 
-  EXPECT_CALL(*uop, canExecute()).WillOnce(Return(false));
   // Check that the source registers are requested
   EXPECT_CALL(*uop, getOperandRegisters())
       .WillOnce(Return(span(sourceRegisters.data(), sourceRegisters.size())));

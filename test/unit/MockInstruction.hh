@@ -5,6 +5,7 @@
 
 namespace simeng {
 
+/** Mock implementation of the `Instruction` interface. */
 class MockInstruction : public Instruction {
  public:
   MOCK_CONST_METHOD0(getException, InstructionException());
@@ -41,54 +42,7 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(getSequenceId, uint64_t());
   MOCK_METHOD0(setFlushed, void());
   MOCK_CONST_METHOD0(isFlushed, bool());
-
-  // /** Provide data from a requested memory address. */
-  // virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
-
-  // /** Retrieve previously generated memory addresses. */
-  // virtual std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses()
-  //     const = 0;
-
-  // /** Retrieve supplied memory data. */
-  // virtual std::vector<RegisterValue> getData() const = 0;
-
-  // /** Early misprediction check; see if it's possible to determine whether
-  // the
-  //  * next instruction address was mispredicted without executing the
-  //  * instruction. Returns a {mispredicted, target} tuple representing whether
-  //  * the instruction was mispredicted, and the correct target address. */
-
-  // /** Check for misprediction. */
-  // virtual bool wasBranchMispredicted() const = 0;
-
-  // /** Retrieve branch address. */
-  // virtual uint64_t getBranchAddress() const = 0;
-
-  // /** Was the branch taken? */
-  // virtual bool wasBranchTaken() const = 0;
-
-  // /** Is this a store operation? */
-  // virtual bool isStore() const = 0;
-
-  // /** Is this a load operation? */
-  // virtual bool isLoad() const = 0;
-
-  // /** Is this a branch operation? */
-  // virtual bool isBranch() const = 0;
-
-  // /** Get this instruction's instruction memory address. */
-
-  // /** Set this instruction's sequence ID. */
-  // virtual void setSequenceId(uint64_t seqId) = 0;
-
-  // /** Retrieve this instruction's sequence ID. */
-  // virtual uint64_t getSequenceId() const = 0;
-
-  // /** Mark this instruction as flushed. */
-  // virtual void setFlushed() = 0;
-
-  // /** Check whether this instruction has been flushed. */
-  // virtual bool isFlushed() const = 0;
+  MOCK_CONST_METHOD0(getGroup, uint16_t());
 };
 
 }  // namespace simeng

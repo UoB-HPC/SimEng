@@ -52,7 +52,7 @@ class Core : public simeng::Core {
   DecodeUnit decodeUnit;
 
   /** The execute unit; executes uops and sends to writeback, also forwarding
-   * results to decode. */
+   * results. */
   ExecuteUnit executeUnit;
 
   /** The writeback unit; writes uop results to the register files. */
