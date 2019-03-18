@@ -102,8 +102,7 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_ADDWri: {  // add wd, wn, #imm
       auto x = operands[0].get<uint32_t>();
       auto y = static_cast<uint32_t>(metadata.operands[2].imm);
-      uint64_t tmp = x + y;
-      results[0] = RegisterValue(tmp, 8);
+      results[0] = RegisterValue(x + y, 8);
       return;
     }
     case A64Opcode::AArch64_ADDXri: {  // add xd, xn, #imm
