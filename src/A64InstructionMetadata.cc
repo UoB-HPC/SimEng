@@ -24,20 +24,6 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
   std::memcpy(groups, insn.detail->groups, sizeof(uint8_t) * groupCount);
   std::memcpy(operands, insn.detail->arm64.operands,
               sizeof(cs_arm64_op) * operandCount);
-
-  if (id == ARM64_INS_ORR) {
-    // Manual patch for bad ORR access specifier
-    // Destination register is incorrectly listed as read|write instead of write
-    operands[0].access = CS_AC_WRITE;
-  } else if (id == ARM64_INS_LDR) {
-    // Manual patch for bad LDR access specifier
-    // Destination register is incorrectly listed as read|write instead of write
-    operands[0].access = CS_AC_WRITE;
-  } else if (id == ARM64_INS_STR) {
-    // Manual patch for bad STR access specifier
-    // Destination register is incorrectly listed as read|write instead of read
-    operands[0].access = CS_AC_READ;
-  }
 }
 
 }  // namespace simeng

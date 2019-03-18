@@ -1,7 +1,5 @@
 #include "A64Instruction.hh"
 
-#include <iostream>
-
 #define NOT(bits, length) (~bits & (1 << length - 1))
 #define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)
 #define ONES(n) ((1 << (n)) - 1)
@@ -180,22 +178,10 @@ void A64Instruction::decode() {
   // Identify loads/stores
   if (accessesMemory) {
     // Check first operand access to determine if it's a load or store
-    // Currently broken: https://github.com/aquynh/capstone/issues/1422
-    // if (metadata.operands[0].access == CS_AC_WRITE) {
-    //   isLoad_ = true;
-    // } else {
-    //   isStore_ = true;
-    // }
-
-    // Hack to workaround above issue: check first letter of mnemonic
-    if (metadata.mnemonic[0] == 's') {
-      isStore_ = true;
-    } else if (metadata.mnemonic[0] == 'l') {
+    if (metadata.operands[0].access == CS_AC_WRITE) {
       isLoad_ = true;
     } else {
-      std::cerr << "Unknown memory-accessing operation encountered: "
-                << metadata.mnemonic << " " << metadata.operandStr << std::endl;
-      exit(1);
+      isStore_ = true;
     }
   }
 }
