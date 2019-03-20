@@ -1,6 +1,7 @@
 #include "ExecuteUnit.hh"
 
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace inorder {
@@ -38,7 +39,14 @@ void ExecuteUnit::tick() {
   } else if (uop->isStore()) {
     uop->generateAddresses();
   }
+
   uop->execute();
+
+  if (uop->exceptionEncountered()) {
+    std::cout << "Exception generated during instruction execution"
+              << std::endl;
+    exit(0);
+  }
 
   if (uop->isStore()) {
     auto addresses = uop->getGeneratedAddresses();

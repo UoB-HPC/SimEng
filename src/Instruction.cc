@@ -2,17 +2,22 @@
 
 namespace simeng {
 
+bool Instruction::exceptionEncountered() const { return exceptionEncountered_; }
+
 void Instruction::setInstructionAddress(uint64_t address) {
   instructionAddress_ = address;
 }
 uint64_t Instruction::getInstructionAddress() const {
   return instructionAddress_;
 }
+
 void Instruction::setBranchPrediction(BranchPrediction prediction) {
   prediction_ = prediction;
 }
+
 uint64_t Instruction::getBranchAddress() const { return branchAddress_; }
 bool Instruction::wasBranchTaken() const { return branchTaken_; }
+
 bool Instruction::wasBranchMispredicted() const {
   assert(executed_ &&
          "Branch misprediction check requires instruction to have executed");
@@ -30,6 +35,7 @@ void Instruction::setFlushed() { flushed_ = true; }
 bool Instruction::isFlushed() const { return flushed_; }
 
 bool Instruction::hasExecuted() const { return executed_; }
+
 void Instruction::setCommitReady() { canCommit_ = true; }
 bool Instruction::canCommit() const { return canCommit_; }
 

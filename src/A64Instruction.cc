@@ -14,8 +14,8 @@ A64Instruction::A64Instruction(const A64InstructionMetadata& metadata)
   decode();
 }
 
-InstructionException A64Instruction::getException() const {
-  return static_cast<InstructionException>(exception);
+A64InstructionException A64Instruction::getException() const {
+  return exception;
 }
 
 void A64Instruction::setSourceRegisters(
