@@ -64,7 +64,12 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   } else if (uop->isStore()) {
     uop->generateAddresses();
   }
+
   uop->execute();
+  if (uop->exceptionEncountered()) {
+    // Exception; don't forward results, don't pass uop forward
+    return;
+  }
 
   if (uop->isBranch()) {
     pc = uop->getBranchAddress();

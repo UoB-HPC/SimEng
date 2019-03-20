@@ -88,6 +88,7 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
 namespace simeng {
 
 void A64Instruction::executionNYI() {
+  exceptionEncountered_ = true;
   exception = A64InstructionException::ExecutionNotYetImplemented;
   return;
 }

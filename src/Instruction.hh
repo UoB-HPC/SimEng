@@ -17,9 +17,9 @@ class Instruction {
  public:
   virtual ~Instruction(){};
 
-  /** Retrieve the identifier for the first exception that occurred during
-   * decoding or execution. */
-  virtual InstructionException getException() const = 0;
+  /** Check whether an exception has been encountered while processing this
+   * instruction. */
+  bool exceptionEncountered() const;
 
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getOperandRegisters() const = 0;
@@ -127,6 +127,9 @@ class Instruction {
   virtual uint16_t getGroup() const = 0;
 
  protected:
+  /** Whether an exception has been encountered. */
+  bool exceptionEncountered_ = false;
+
   /** The location in memory of this instruction was decoded at. */
   uint64_t instructionAddress_;
 

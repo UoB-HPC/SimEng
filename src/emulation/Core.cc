@@ -1,6 +1,7 @@
 #include "Core.hh"
 
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace emulation {
@@ -48,7 +49,14 @@ void Core::tick() {
   } else if (uop->isStore()) {
     uop->generateAddresses();
   }
+
   uop->execute();
+
+  if (uop->exceptionEncountered()) {
+    std::cout << "Exception generated during instruction execution"
+              << std::endl;
+    exit(0);
+  }
 
   if (uop->isStore()) {
     auto addresses = uop->getGeneratedAddresses();

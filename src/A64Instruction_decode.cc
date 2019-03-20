@@ -189,9 +189,11 @@ void A64Instruction::decode() {
 }
 
 void A64Instruction::nyi() {
+  exceptionEncountered_ = true;
   exception = A64InstructionException::EncodingNotYetImplemented;
 }
 void A64Instruction::unallocated() {
+  exceptionEncountered_ = true;
   exception = A64InstructionException::EncodingUnallocated;
 }
 

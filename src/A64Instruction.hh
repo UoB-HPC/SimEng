@@ -43,7 +43,7 @@ class A64Instruction : public Instruction {
 
   /** Retrieve the identifier for the first exception that occurred during
    * decoding or execution. */
-  InstructionException getException() const override;
+  A64InstructionException getException() const;
 
   /** Retrieve the source registers this instruction reads. */
   const span<Register> getOperandRegisters() const override;
