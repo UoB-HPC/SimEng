@@ -10,6 +10,7 @@ namespace inorder {
 
 using ::testing::AtLeast;
 using ::testing::ElementsAre;
+using ::testing::Invoke;
 using ::testing::IsEmpty;
 using ::testing::Property;
 using ::testing::Return;
@@ -89,24 +90,17 @@ TEST_F(InOrderExecuteUnitTest, ExecuteBranch) {
   // Anticipate testing instruction type; return true for branch
   ON_CALL(*uop, isBranch()).WillByDefault(Return(true));
 
-  EXPECT_CALL(*uop, execute()).Times(1);
+  const bool taken = true;
+  const uint64_t pc = 1;
+  const uint64_t insnAddress = 2;
 
-  bool taken = true;
-  uint64_t pc = 1;
-  uint64_t insnAddress = 2;
+  uop->setInstructionAddress(insnAddress);
+  uop->setBranchPrediction({taken, pc});
 
-  EXPECT_CALL(*uop, getBranchAddress())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(pc));
-  EXPECT_CALL(*uop, wasBranchTaken())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(taken));
-  EXPECT_CALL(*uop, wasBranchMispredicted())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(false));
-  EXPECT_CALL(*uop, getInstructionAddress())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(insnAddress));
+  EXPECT_CALL(*uop, execute()).WillOnce(Invoke([&]() {
+    uop->setExecuted(true);
+    uop->setBranchResults(taken, pc);
+  }));
 
   // Check that the branch predictor was updated with the results
   EXPECT_CALL(predictor, update(insnAddress, taken, pc)).Times(1);

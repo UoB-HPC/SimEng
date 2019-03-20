@@ -67,10 +67,11 @@ TEST_F(InOrderDecodeUnitTest, Tick) {
 TEST_F(InOrderDecodeUnitTest, Flush) {
   input.getHeadSlots()[0] = {uopPtr};
 
+  uop->setInstructionAddress(2);
+
   EXPECT_CALL(*uop, checkEarlyBranchMisprediction())
       .WillOnce(Return(std::tuple<bool, uint64_t>(true, 1)));
   EXPECT_CALL(*uop, isBranch()).WillOnce(Return(false));
-  EXPECT_CALL(*uop, getInstructionAddress()).WillOnce(Return(2));
 
   // Check the predictor is updated with the correct instruction address and PC
   EXPECT_CALL(predictor, update(2, false, 1));

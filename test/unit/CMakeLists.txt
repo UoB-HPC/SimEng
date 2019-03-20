@@ -21,6 +21,7 @@ set(SIMENG_SOURCES
     ../../src/A64Instruction_execute.cc
     ../../src/A64InstructionMetadata.cc
     ../../src/BTBPredictor.cc
+    ../../src/Instruction.cc
     ../../src/RegisterFileSet.cc
     ../../src/RegisterValue.cc
     )

@@ -93,12 +93,12 @@ void A64Instruction::executionNYI() {
 }
 
 void A64Instruction::execute() {
-  assert(!executed && "Attempted to execute an instruction more than once");
+  assert(!executed_ && "Attempted to execute an instruction more than once");
   assert(
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
 
-  executed = true;
+  executed_ = true;
   switch (metadata.opcode) {
     case A64Opcode::AArch64_ADDWri: {  // add wd, wn, #imm
       auto x = operands[0].get<uint32_t>();
@@ -113,17 +113,17 @@ void A64Instruction::execute() {
       return;
     }
     case A64Opcode::AArch64_B: {  // b label
-      branchTaken = true;
-      branchAddress = instructionAddress + metadata.operands[0].imm;
+      branchTaken_ = true;
+      branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
       return;
     }
     case A64Opcode::AArch64_Bcc: {  // b.cond label
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
-        branchTaken = true;
-        branchAddress = instructionAddress + metadata.operands[0].imm;
+        branchTaken_ = true;
+        branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
       } else {
-        branchTaken = false;
-        branchAddress = instructionAddress + 4;
+        branchTaken_ = false;
+        branchAddress_ = instructionAddress_ + 4;
       }
       return;
     }

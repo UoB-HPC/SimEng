@@ -41,14 +41,6 @@ class A64Instruction : public Instruction {
    */
   A64Instruction(const A64InstructionMetadata& metadata);
 
-  /** Supply an instruction address. Performed after construction to prevent
-   * values being cached. */
-  void setInstructionAddress(uint64_t address);
-
-  /** Supply a branch prediction. Performed after construction to prevent values
-   * being cached. */
-  void setBranchPrediction(BranchPrediction prediction);
-
   /** Retrieve the identifier for the first exception that occurred during
    * decoding or execution. */
   InstructionException getException() const override;
@@ -82,17 +74,6 @@ class A64Instruction : public Instruction {
   /** Execute the instruction. */
   void execute() override;
 
-  /** Check whether the instruction has executed and has results ready to
-   * write back. */
-  bool hasExecuted() const override;
-
-  /** Mark the instruction as ready to commit. */
-  void setCommitReady() override;
-
-  /** Check whether the instruction has written its values back and is ready to
-   * commit. */
-  bool canCommit() const override;
-
   /** Retrieve register results. */
   const span<RegisterValue> getResults() const override;
 
@@ -114,15 +95,6 @@ class A64Instruction : public Instruction {
    * instruction. */
   std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
 
-  /** Check for misprediction. */
-  bool wasBranchMispredicted() const override;
-
-  /** Was the branch taken? */
-  bool wasBranchTaken() const override;
-
-  /** Retrieve branch address. */
-  uint64_t getBranchAddress() const override;
-
   /** Is this a store operation? */
   bool isStore() const override;
 
@@ -131,21 +103,6 @@ class A64Instruction : public Instruction {
 
   /** Is this a branch operation? */
   bool isBranch() const override;
-
-  /** Get this instruction's instruction memory address. */
-  uint64_t getInstructionAddress() const override;
-
-  /** Set this instruction's sequence ID. */
-  void setSequenceId(uint64_t seqId) override;
-
-  /** Retrieve this instruction's sequence ID. */
-  uint64_t getSequenceId() const override;
-
-  /** Mark this instruction as flushed. */
-  void setFlushed() override;
-
-  /** Check whether this instruction has been flushed. */
-  bool isFlushed() const override;
 
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
@@ -165,9 +122,6 @@ class A64Instruction : public Instruction {
 
   /** A reference to the decoding metadata for this instruction. */
   const A64InstructionMetadata& metadata;
-
-  /** The location in memory of this instruction was decoded at. */
-  uint64_t instructionAddress;
 
   /** An array of source registers. */
   std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
@@ -215,12 +169,6 @@ class A64Instruction : public Instruction {
    * determine execution readiness. */
   short operandsPending = 0;
 
-  /** Whether or not this instruction has been executed. */
-  bool executed = false;
-
-  /** Whether or not this instruction is ready to commit. */
-  bool canCommit_ = false;
-
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
@@ -247,21 +195,6 @@ class A64Instruction : public Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
-
-  // Branches
-  /** The predicted branching result. */
-  BranchPrediction prediction;
-  /** A branching address calculated by this instruction during execution. */
-  uint64_t branchAddress;
-  /** Was the branch taken? */
-  bool branchTaken;
-
-  /** This instruction's sequence ID; a higher ID represents a chronologically
-   * newer instruction. */
-  uint64_t sequenceId;
-
-  /** Has this instruction been flushed? */
-  bool flushed = false;
 };
 
 }  // namespace simeng
