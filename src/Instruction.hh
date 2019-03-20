@@ -1,5 +1,6 @@
 #pragma once
 
+#include "BranchPredictor.hh"
 #include "RegisterFileSet.hh"
 #include "RegisterValue.hh"
 #include "span.hh"
@@ -52,14 +53,14 @@ class Instruction {
 
   /** Check whether the instruction has executed and has results ready to
    * write back. */
-  virtual bool hasExecuted() const = 0;
+  bool hasExecuted() const;
 
   /** Mark the instruction as ready to commit. */
-  virtual void setCommitReady() = 0;
+  void setCommitReady();
 
   /** Check whether the instruction has written its values back and is ready to
    * commit. */
-  virtual bool canCommit() const = 0;
+  bool canCommit() const;
 
   /** Retrieve register results. */
   virtual const span<RegisterValue> getResults() const = 0;
@@ -84,13 +85,13 @@ class Instruction {
   virtual std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const = 0;
 
   /** Check for misprediction. */
-  virtual bool wasBranchMispredicted() const = 0;
+  bool wasBranchMispredicted() const;
 
   /** Retrieve branch address. */
-  virtual uint64_t getBranchAddress() const = 0;
+  uint64_t getBranchAddress() const;
 
   /** Was the branch taken? */
-  virtual bool wasBranchTaken() const = 0;
+  bool wasBranchTaken() const;
 
   /** Is this a store operation? */
   virtual bool isStore() const = 0;
@@ -101,23 +102,57 @@ class Instruction {
   /** Is this a branch operation? */
   virtual bool isBranch() const = 0;
 
+  /** Set this instruction's instruction memory address. */
+  void setInstructionAddress(uint64_t address);
+
   /** Get this instruction's instruction memory address. */
-  virtual uint64_t getInstructionAddress() const = 0;
+  uint64_t getInstructionAddress() const;
+
+  /** Supply a branch prediction. */
+  void setBranchPrediction(BranchPrediction prediction);
 
   /** Set this instruction's sequence ID. */
-  virtual void setSequenceId(uint64_t seqId) = 0;
+  void setSequenceId(uint64_t seqId);
 
   /** Retrieve this instruction's sequence ID. */
-  virtual uint64_t getSequenceId() const = 0;
+  uint64_t getSequenceId() const;
 
   /** Mark this instruction as flushed. */
-  virtual void setFlushed() = 0;
+  void setFlushed();
 
   /** Check whether this instruction has been flushed. */
-  virtual bool isFlushed() const = 0;
+  bool isFlushed() const;
 
   /** Retrieve the instruction group this instruction belongs to. */
   virtual uint16_t getGroup() const = 0;
+
+ protected:
+  /** The location in memory of this instruction was decoded at. */
+  uint64_t instructionAddress_;
+
+  /** Whether or not this instruction has been executed. */
+  bool executed_ = false;
+
+  /** Whether or not this instruction is ready to commit. */
+  bool canCommit_ = false;
+
+  // Branches
+  /** The predicted branching result. */
+  BranchPrediction prediction_;
+
+  /** A branching address calculated by this instruction during execution. */
+  uint64_t branchAddress_;
+
+  /** Was the branch taken? */
+  bool branchTaken_;
+
+  // Flushing
+  /** This instruction's sequence ID; a higher ID represents a chronologically
+   * newer instruction. */
+  uint64_t sequenceId_;
+
+  /** Has this instruction been flushed? */
+  bool flushed_ = false;
 };
 
 }  // namespace simeng

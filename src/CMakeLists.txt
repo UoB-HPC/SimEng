@@ -51,6 +51,7 @@ set(SIMENG_SOURCES
     BTBPredictor.hh
     Core.hh
     CMakeLists.txt
+    Instruction.cc
     Instruction.hh
     PipelineBuffer.hh
     RegisterFileSet.cc
