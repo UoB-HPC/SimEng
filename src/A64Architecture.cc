@@ -31,6 +31,7 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   const uint32_t insn = *static_cast<const uint32_t*>(ptr);
   const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
+  std::shared_ptr<Instruction> uop;
   if (!decodeCache.count(insn)) {
     // Generate a fresh decoding, and add to cache
     cs_insn rawInsn;
@@ -42,19 +43,24 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
     // TODO: capture result (success state) and replace instruction with an
     // "invalid decoding" implementation if not successful
-    cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
+    bool success =
+        cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
 
-    auto metadata = A64InstructionMetadata(rawInsn);
+    if (success) {
+      auto metadata = A64InstructionMetadata(rawInsn);
 
-    // Cache the metadata
-    metadataCache[insn] = metadata;
-    // Create and cache an instruction using the metadata
-    decodeCache.insert({insn, metadataCache[insn]});
+      // Cache the metadata
+      metadataCache[insn] = metadata;
+      // Create and cache an instruction using the metadata
+      decodeCache.insert({insn, metadataCache[insn]});
+      uop = std::make_shared<A64Instruction>(decodeCache.find(insn)->second);
+    } else {
+      uop = std::make_shared<A64IllegalInstruction>(insn);
+    }
+  } else {
+    // Retrieve the cached instruction
+    uop = std::make_shared<A64Instruction>(decodeCache.find(insn)->second);
   }
-
-  // Retrieve the cached instruction
-  std::shared_ptr<A64Instruction> uop =
-      std::make_shared<A64Instruction>(decodeCache.find(insn)->second);
 
   uop->setInstructionAddress(instructionAddress);
   uop->setBranchPrediction(prediction);

@@ -27,6 +27,13 @@ void Core::tick() {
 
   // Decode
   auto uop = macroOp[0];
+  if (uop->exceptionEncountered()) {
+    std::cout << "Exception generated during instruction decoding" << std::endl;
+
+    pc = programByteLength;
+    hasHalted_ = true;
+    return;
+  }
 
   // Issue
   auto registers = uop->getOperandRegisters();

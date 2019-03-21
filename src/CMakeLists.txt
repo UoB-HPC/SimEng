@@ -36,6 +36,8 @@ set(SIMENG_SOURCES
     emulation/Core.hh
     A64Architecture.cc
     A64Architecture.hh
+    A64IllegalInstruction.cc
+    A64IllegalInstruction.hh
     A64Instruction.cc
     A64Instruction.hh
     A64Instruction_address.cc

@@ -15,6 +15,7 @@ set(SIMENG_SOURCES
     ../../src/inorder/ExecuteUnit.cc
     ../../src/inorder/WritebackUnit.cc
     ../../src/A64Architecture.cc
+    ../../src/A64IllegalInstruction.cc
     ../../src/A64Instruction.cc
     ../../src/A64Instruction_address.cc
     ../../src/A64Instruction_decode.cc
