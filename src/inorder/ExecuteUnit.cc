@@ -46,8 +46,7 @@ void ExecuteUnit::tick() {
   uop->execute();
 
   if (uop->exceptionEncountered()) {
-    std::cout << "Exception generated during instruction execution"
-              << std::endl;
+    std::cout << "Exception generated" << std::endl;
 
     raiseException(uop);
     fromDecodeBuffer.getHeadSlots()[0] = nullptr;

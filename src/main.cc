@@ -79,6 +79,7 @@ int main(int argc, char** argv) {
       0x320C03E0,  // orr w0, wzr, #1048576
       0x320003E1,  // orr w0, wzr, #1
       0x71000400,  // subs w0, w0, #1
+      // 0x00000000,  // invalid
       0x54FFFFC1,  // b.ne -8
   };
 
