@@ -20,7 +20,9 @@ class ExecuteUnit {
       PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
       PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      BranchPredictor& predictor, char* memory);
+      BranchPredictor& predictor,
+      std::function<void(std::shared_ptr<Instruction>)> raiseException,
+      char* memory);
 
   /** Tick the execute unit. Executes the current instruction and forwards the
    * results by calling the operand-forwarding function supplied at
@@ -47,6 +49,9 @@ class ExecuteUnit {
   /** A reference to the branch predictor, for updating with prediction results.
    */
   BranchPredictor& predictor;
+
+  /** A function to call upon exception generation. */
+  std::function<void(std::shared_ptr<Instruction>)> raiseException;
 
   /** A pointer to process memory. */
   char* memory;

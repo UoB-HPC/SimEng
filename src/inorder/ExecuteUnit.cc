@@ -10,11 +10,14 @@ ExecuteUnit::ExecuteUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
     PipelineBuffer<std::shared_ptr<Instruction>>& toWriteback,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    BranchPredictor& predictor, char* memory)
+    BranchPredictor& predictor,
+    std::function<void(std::shared_ptr<Instruction>)> raiseException,
+    char* memory)
     : fromDecodeBuffer(fromDecode),
       toWritebackBuffer(toWriteback),
       forwardOperands(forwardOperands),
       predictor(predictor),
+      raiseException(raiseException),
       memory(memory) {}
 
 void ExecuteUnit::tick() {
@@ -45,7 +48,10 @@ void ExecuteUnit::tick() {
   if (uop->exceptionEncountered()) {
     std::cout << "Exception generated during instruction execution"
               << std::endl;
-    exit(0);
+
+    raiseException(uop);
+    fromDecodeBuffer.getHeadSlots()[0] = nullptr;
+    return;
   }
 
   if (uop->isStore()) {

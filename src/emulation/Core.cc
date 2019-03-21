@@ -55,7 +55,10 @@ void Core::tick() {
   if (uop->exceptionEncountered()) {
     std::cout << "Exception generated during instruction execution"
               << std::endl;
-    exit(0);
+
+    pc = programByteLength;
+    hasHalted_ = true;
+    return;
   }
 
   if (uop->isStore()) {
