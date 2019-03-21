@@ -68,6 +68,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
   if (uop->exceptionEncountered()) {
     // Exception; don't forward results, don't pass uop forward
+    uop->setCommitReady();
     return;
   }
 

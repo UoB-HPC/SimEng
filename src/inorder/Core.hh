@@ -33,6 +33,9 @@ class Core : public simeng::Core {
   std::map<std::string, std::string> getStats() const override;
 
  private:
+  /** Raise an exception to the core, providing the generating instruction. */
+  void raiseException(std::shared_ptr<Instruction> instruction);
+
   /** The core's register file set. */
   RegisterFileSet registerFileSet;
 
@@ -63,6 +66,15 @@ class Core : public simeng::Core {
 
   /** The number of times this core has been ticked. */
   uint64_t ticks = 0;
+
+  /** Whether an exception was generated during the cycle. */
+  bool exceptionGenerated_ = false;
+
+  /** A pointer to the instruction responsible for generating the exception. */
+  std::shared_ptr<Instruction> exceptionGeneratingInstruction_;
+
+  /** Whether the core has halted. */
+  bool hasHalted_ = false;
 };
 
 }  // namespace inorder

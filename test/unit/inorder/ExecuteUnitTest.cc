@@ -15,10 +15,11 @@ using ::testing::IsEmpty;
 using ::testing::Property;
 using ::testing::Return;
 
-class MockForwardOperands {
+class MockExecutionHandlers {
  public:
   MOCK_METHOD2(forwardOperands,
                void(const span<Register>, const span<RegisterValue>));
+  MOCK_METHOD1(raiseException, void(std::shared_ptr<Instruction> instruction));
 };
 
 class InOrderExecuteUnitTest : public testing::Test {
@@ -29,9 +30,13 @@ class InOrderExecuteUnitTest : public testing::Test {
         executeUnit(
             input, output,
             [this](auto regs, auto values) {
-              forwardOperands.forwardOperands(regs, values);
+              executionHandlers.forwardOperands(regs, values);
             },
-            predictor, nullptr),
+            predictor,
+            [this](auto instruction) {
+              executionHandlers.raiseException(instruction);
+            },
+            nullptr),
         uop(new MockInstruction),
         uopPtr(uop) {}
 
@@ -39,7 +44,7 @@ class InOrderExecuteUnitTest : public testing::Test {
   PipelineBuffer<std::shared_ptr<Instruction>> input;
   PipelineBuffer<std::shared_ptr<Instruction>> output;
   MockBranchPredictor predictor;
-  MockForwardOperands forwardOperands;
+  MockExecutionHandlers executionHandlers;
 
   ExecuteUnit executeUnit;
 
@@ -50,7 +55,8 @@ class InOrderExecuteUnitTest : public testing::Test {
 // Tests that the execution unit processes nothing if no instruction is present
 TEST_F(InOrderExecuteUnitTest, TickEmpty) {
   // Check that an empty operand forwarding call is made
-  EXPECT_CALL(forwardOperands, forwardOperands(IsEmpty(), IsEmpty())).Times(1);
+  EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty()))
+      .Times(1);
 
   executeUnit.tick();
 
@@ -74,7 +80,7 @@ TEST_F(InOrderExecuteUnitTest, Execute) {
 
   // Check that the results/registers are forwarded
   EXPECT_CALL(
-      forwardOperands,
+      executionHandlers,
       forwardOperands(ElementsAre(registers[0]),
                       ElementsAre(Property(&RegisterValue::get<uint32_t>, 1))))
       .Times(1);
@@ -106,7 +112,8 @@ TEST_F(InOrderExecuteUnitTest, ExecuteBranch) {
   EXPECT_CALL(predictor, update(insnAddress, taken, pc)).Times(1);
 
   // Check that empty forwarding call is made
-  EXPECT_CALL(forwardOperands, forwardOperands(IsEmpty(), IsEmpty())).Times(1);
+  EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty()))
+      .Times(1);
 
   executeUnit.tick();
 

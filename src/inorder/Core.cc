@@ -22,7 +22,8 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
           [this](auto regs, auto values) {
             return decodeUnit.forwardOperands(regs, values);
           },
-          branchPredictor, memory),
+          branchPredictor,
+          [this](auto instruction) { raiseException(instruction); }, memory),
       writebackUnit(executeToWritebackBuffer, registerFileSet){};
 
 void Core::tick() {
@@ -43,6 +44,12 @@ void Core::tick() {
   fetchToDecodeBuffer.tick();
   decodeToExecuteBuffer.tick();
   executeToWritebackBuffer.tick();
+
+  if (exceptionGenerated_) {
+    exceptionGenerated_ = false;
+    hasHalted_ = true;
+    return;
+  }
 
   // Check for flush
   if (executeUnit.shouldFlush()) {
@@ -68,6 +75,10 @@ void Core::tick() {
 }
 
 bool Core::hasHalted() const {
+  if (hasHalted_) {
+    return true;
+  }
+
   // Core is considered to have halted when the fetch unit has halted, and there
   // are no uops at the head of any buffer.
   bool decodePending = fetchToDecodeBuffer.getHeadSlots()[0].size() > 0;
@@ -85,6 +96,11 @@ std::map<std::string, std::string> Core::getStats() const {
           {"retired", std::to_string(retired)},
           {"ipc", std::to_string(ipc)},
           {"flushes", std::to_string(flushes)}};
+}
+
+void Core::raiseException(std::shared_ptr<Instruction> instruction) {
+  exceptionGenerated_ = true;
+  exceptionGeneratingInstruction_ = instruction;
 }
 
 }  // namespace inorder

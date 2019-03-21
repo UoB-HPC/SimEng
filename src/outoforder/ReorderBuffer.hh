@@ -1,6 +1,7 @@
 #pragma once
 
 #include <deque>
+#include <functional>
 
 #include "../Instruction.hh"
 #include "LoadStoreQueue.hh"
@@ -15,8 +16,9 @@ class ReorderBuffer {
  public:
   /** Constructs a reorder buffer of maximum size `maxSize`, supplying a
    * reference to the register alias table. */
-  ReorderBuffer(unsigned int maxSize, RegisterAliasTable& rat,
-                LoadStoreQueue& lsq);
+  ReorderBuffer(
+      unsigned int maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
+      std::function<void(std::shared_ptr<Instruction>)> raiseException);
 
   /** Add the provided instruction to the ROB. */
   void reserve(std::shared_ptr<Instruction> insn);
@@ -54,6 +56,9 @@ class ReorderBuffer {
 
   /** The maximum size of the ROB. */
   unsigned int maxSize;
+
+  /** A function to call upon exception generation. */
+  std::function<void(std::shared_ptr<Instruction>)> raiseException;
 
   /** The buffer containing in-flight instructions. */
   std::deque<std::shared_ptr<Instruction>> buffer;

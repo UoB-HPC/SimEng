@@ -36,7 +36,8 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
       registerAliasTable(isa.getRegisterFileStructures(),
                          physicalRegisterQuantities),
       loadStoreQueue(loadQueueSize, storeQueueSize, memory),
-      reorderBuffer(robSize, registerAliasTable, loadStoreQueue),
+      reorderBuffer(robSize, registerAliasTable, loadStoreQueue,
+                    [this](auto instruction) { raiseException(instruction); }),
       fetchToDecodeBuffer(frontendWidth, {}),
       decodeToRenameBuffer(frontendWidth, nullptr),
       renameToDispatchBuffer(frontendWidth, nullptr),
@@ -94,6 +95,10 @@ void Core::tick() {
   // Commit instructions from ROB
   reorderBuffer.commit(commitWidth);
 
+  if (exceptionGenerated_) {
+    handleException();
+  }
+
   flushIfNeeded();
 }
 
@@ -146,6 +151,10 @@ void Core::flushIfNeeded() {
 }
 
 bool Core::hasHalted() const {
+  if (hasHalted_) {
+    return true;
+  }
+
   // Core is considered to have halted when the fetch unit has halted, and there
   // are no uops at the head of any buffer.
   if (!fetchUnit.hasHalted()) {
@@ -171,6 +180,16 @@ bool Core::hasHalted() const {
   }
 
   return true;
+}
+
+void Core::raiseException(std::shared_ptr<Instruction> instruction) {
+  exceptionGenerated_ = true;
+  exceptionGeneratingInstruction_ = instruction;
+}
+
+void Core::handleException() {
+  exceptionGenerated_ = false;
+  hasHalted_ = true;
 }
 
 std::map<std::string, std::string> Core::getStats() const {
