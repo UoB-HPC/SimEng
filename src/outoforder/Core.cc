@@ -32,7 +32,8 @@ const unsigned int executionUnitCount = portArrangement.size();
 Core::Core(const char* insnPtr, unsigned int programByteLength,
            const Architecture& isa, BranchPredictor& branchPredictor,
            PortAllocator& portAllocator, char* memory)
-    : registerFileSet(physicalRegisterStructures),
+    : isa(isa),
+      registerFileSet(physicalRegisterStructures),
       registerAliasTable(isa.getRegisterFileStructures(),
                          physicalRegisterQuantities),
       loadStoreQueue(loadQueueSize, storeQueueSize, memory),
@@ -190,6 +191,7 @@ void Core::raiseException(std::shared_ptr<Instruction> instruction) {
 void Core::handleException() {
   exceptionGenerated_ = false;
   hasHalted_ = true;
+  isa.handleException(exceptionGeneratingInstruction_);
 }
 
 std::map<std::string, std::string> Core::getStats() const {

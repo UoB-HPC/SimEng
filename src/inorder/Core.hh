@@ -36,6 +36,8 @@ class Core : public simeng::Core {
   /** Raise an exception to the core, providing the generating instruction. */
   void raiseException(std::shared_ptr<Instruction> instruction);
 
+  const Architecture& isa;
+
   /** The core's register file set. */
   RegisterFileSet registerFileSet;
 

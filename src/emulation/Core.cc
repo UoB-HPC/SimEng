@@ -32,6 +32,8 @@ void Core::tick() {
 
     pc = programByteLength;
     hasHalted_ = true;
+    isa.handleException(uop);
+
     return;
   }
 
@@ -65,6 +67,7 @@ void Core::tick() {
 
     pc = programByteLength;
     hasHalted_ = true;
+    isa.handleException(uop);
     return;
   }
 

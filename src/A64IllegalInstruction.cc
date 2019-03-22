@@ -6,6 +6,10 @@ A64IllegalInstruction::A64IllegalInstruction(uint64_t encoding)
   exceptionEncountered_ = true;
 }
 
+A64InstructionException A64IllegalInstruction::getException() const {
+  return A64InstructionException::EncodingUnallocated;
+}
+
 const span<Register> A64IllegalInstruction::getOperandRegisters() const {
   return {nullptr, 0};
 }
@@ -47,5 +51,7 @@ A64IllegalInstruction::checkEarlyBranchMisprediction() const {
 bool A64IllegalInstruction::isStore() const { return false; }
 bool A64IllegalInstruction::isLoad() const { return false; }
 bool A64IllegalInstruction::isBranch() const { return false; }
+
+uint16_t A64IllegalInstruction::getGroup() const { return 0; }
 
 }  // namespace simeng

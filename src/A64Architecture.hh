@@ -29,6 +29,8 @@ class A64Architecture : public Architecture {
   /** Determine whether the specified register can be renamed. */
   bool canRename(Register reg) const override;
 
+  void handleException(std::shared_ptr<Instruction> instruction) const override;
+
  private:
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to

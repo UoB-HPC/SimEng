@@ -31,6 +31,9 @@ class Architecture {
   virtual std::vector<RegisterFileStructure> getRegisterFileStructures()
       const = 0;
 
+  virtual void handleException(
+      std::shared_ptr<Instruction> instruction) const = 0;
+
   /** Determine whether the specified register can be renamed. */
   virtual bool canRename(Register reg) const = 0;
 };
