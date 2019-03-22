@@ -37,6 +37,13 @@ void RenameUnit::tick() {
       robStalls++;
       break;
     }
+    if (uop->exceptionEncountered()) {
+      // Exception; place in ROB, mark as ready, and remove from pipeline
+      reorderBuffer.reserve(uop);
+      uop->setCommitReady();
+      fromDecodeBuffer.getHeadSlots()[slot] = nullptr;
+      continue;
+    }
 
     // If it's a memory op, make sure there's space in the respective queue
     bool isLoad = uop->isLoad();

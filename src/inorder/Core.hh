@@ -2,6 +2,7 @@
 
 #include "../Core.hh"
 
+#include <iostream>
 #include <vector>
 
 #include "DecodeUnit.hh"

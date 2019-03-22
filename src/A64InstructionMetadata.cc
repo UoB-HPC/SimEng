@@ -14,6 +14,7 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
       setsFlags(insn.detail->arm64.update_flags),
       writeback(insn.detail->arm64.writeback),
       operandCount(insn.detail->arm64.op_count) {
+  std::memcpy(encoding, insn.bytes, sizeof(encoding));
   // Copy printed output
   std::strncpy(mnemonic, insn.mnemonic, CS_MNEMONIC_SIZE);
   std::strncpy(operandStr, insn.op_str, sizeof(operandStr));
@@ -26,6 +27,20 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
   std::memcpy(groups, insn.detail->groups, sizeof(uint8_t) * groupCount);
   std::memcpy(operands, insn.detail->arm64.operands,
               sizeof(cs_arm64_op) * operandCount);
+}
+
+A64InstructionMetadata::A64InstructionMetadata(const uint8_t* invalidEncoding)
+    : id(ARM64_INS_INVALID),
+      opcode(A64Opcode::AArch64_INSTRUCTION_LIST_END),
+      implicitSourceCount(0),
+      implicitDestinationCount(0),
+      groupCount(0),
+      setsFlags(false),
+      writeback(false),
+      operandCount(0) {
+  std::memcpy(encoding, invalidEncoding, sizeof(encoding));
+  mnemonic[0] = '\0';
+  operandStr[0] = '\0';
 }
 
 }  // namespace simeng

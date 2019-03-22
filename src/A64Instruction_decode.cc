@@ -111,6 +111,11 @@ const Register& filterZR(const Register& reg) {
  * DECODING LOGIC
  *****************/
 void A64Instruction::decode() {
+  if (metadata.id == ARM64_INS_INVALID) {
+    exception = A64InstructionException::EncodingUnallocated;
+    exceptionEncountered_ = true;
+  }
+
   // Extract implicit writes
   for (size_t i = 0; i < metadata.implicitDestinationCount; i++) {
     destinationRegisters[destinationRegisterCount] = csRegToRegister(
