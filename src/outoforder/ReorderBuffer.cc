@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 
 namespace simeng {
 namespace outoforder {
@@ -33,7 +32,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     if (uop->exceptionEncountered()) {
-      std::cout << "Exception generated" << std::endl;
       raiseException(uop);
       buffer.pop_front();
       return n + 1;

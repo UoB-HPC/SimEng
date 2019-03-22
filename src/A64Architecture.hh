@@ -4,7 +4,6 @@
 
 #include <unordered_map>
 
-#include "A64IllegalInstruction.hh"
 #include "A64Instruction.hh"
 
 using csh = size_t;

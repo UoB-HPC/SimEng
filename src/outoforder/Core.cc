@@ -1,6 +1,7 @@
 #include "Core.hh"
 
 #include <algorithm>
+#include <iostream>
 #include <string>
 
 #include "PortAllocator.hh"
@@ -192,6 +193,7 @@ void Core::handleException() {
   exceptionGenerated_ = false;
   hasHalted_ = true;
   isa.handleException(exceptionGeneratingInstruction_);
+  std::cout << "Halting due to fatal exception" << std::endl;
 }
 
 std::map<std::string, std::string> Core::getStats() const {

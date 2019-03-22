@@ -13,11 +13,12 @@ namespace A64Opcode {
 /** A simplified A64-only version of the Capstone instruction structure. */
 struct A64InstructionMetadata {
  public:
-  A64InstructionMetadata(){};
-
   /** Constructs a metadata object from a Capstone instruction representation.
    */
   A64InstructionMetadata(const cs_insn& insn);
+
+  /** Constructs an invalid metadata object containing the invalid encoding. */
+  A64InstructionMetadata(const uint8_t* invalidEncoding);
 
   static const size_t MAX_OPERAND_STR_LENGTH =
       sizeof(cs_insn::op_str) / sizeof(char);
@@ -34,6 +35,9 @@ struct A64InstructionMetadata {
 
   /** The instruction's opcode. */
   unsigned int opcode;
+
+  /** The instruction's encoding. */
+  uint8_t encoding[4];
 
   /** The instruction's mnemonic. */
   char mnemonic[CS_MNEMONIC_SIZE];

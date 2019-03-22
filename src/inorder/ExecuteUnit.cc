@@ -1,7 +1,6 @@
 #include "ExecuteUnit.hh"
 
 #include <cstring>
-#include <iostream>
 
 namespace simeng {
 namespace inorder {
@@ -31,6 +30,13 @@ void ExecuteUnit::tick() {
     return;
   }
 
+  if (uop->exceptionEncountered()) {
+    // Exception encountered prior to decoding
+    raiseException(uop);
+    fromDecodeBuffer.getHeadSlots()[0] = nullptr;
+    return;
+  }
+
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
     for (auto const& request : addresses) {
@@ -46,8 +52,6 @@ void ExecuteUnit::tick() {
   uop->execute();
 
   if (uop->exceptionEncountered()) {
-    std::cout << "Exception generated" << std::endl;
-
     raiseException(uop);
     fromDecodeBuffer.getHeadSlots()[0] = nullptr;
     return;

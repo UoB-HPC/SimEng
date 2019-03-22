@@ -50,6 +50,8 @@ void Core::tick() {
     exceptionGenerated_ = false;
     hasHalted_ = true;
     isa.handleException(exceptionGeneratingInstruction_);
+
+    std::cout << "Halting due to fatal exception" << std::endl;
     return;
   }
 

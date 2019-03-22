@@ -1,5 +1,4 @@
 #include "A64Architecture.hh"
-#include "A64ExceptionGenerator.hh"
 
 #include <cassert>
 #include <iostream>
@@ -32,7 +31,6 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   const uint32_t insn = *static_cast<const uint32_t*>(ptr);
   const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
-  std::shared_ptr<Instruction> uop;
   if (!decodeCache.count(insn)) {
     // Generate a fresh decoding, and add to cache
     cs_insn rawInsn;
@@ -47,21 +45,18 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     bool success =
         cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
 
-    if (success) {
-      auto metadata = A64InstructionMetadata(rawInsn);
+    auto metadata = success ? A64InstructionMetadata(rawInsn)
+                            : A64InstructionMetadata(encoding);
 
-      // Cache the metadata
-      metadataCache[insn] = metadata;
-      // Create and cache an instruction using the metadata
-      decodeCache.insert({insn, metadataCache[insn]});
-      uop = std::make_shared<A64Instruction>(decodeCache.find(insn)->second);
-    } else {
-      uop = std::make_shared<A64IllegalInstruction>(insn);
-    }
-  } else {
-    // Retrieve the cached instruction
-    uop = std::make_shared<A64Instruction>(decodeCache.find(insn)->second);
+    // Cache the metadata
+    metadataCache.insert({insn, metadata});
+    // Create and cache an instruction using the metadata
+    decodeCache.insert({insn, metadataCache.find(insn)->second});
   }
+
+  // Retrieve the cached instruction
+  std::shared_ptr<Instruction> uop =
+      std::make_shared<A64Instruction>(decodeCache.find(insn)->second);
 
   uop->setInstructionAddress(instructionAddress);
   uop->setBranchPrediction(prediction);
@@ -75,9 +70,21 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
 void A64Architecture::handleException(
     std::shared_ptr<Instruction> instruction) const {
-  A64ExceptionGenerator* generator =
-      dynamic_cast<A64ExceptionGenerator*>(instruction.get());
-  std::cout << "Exception: " << (int)generator->getException() << std::endl;
+  A64Instruction* insn = static_cast<A64Instruction*>(instruction.get());
+
+  std::cout << "Encountered ";
+  switch (insn->getException()) {
+    case A64InstructionException::EncodingUnallocated:
+      std::cout << "illegal instruction";
+      break;
+    case A64InstructionException::ExecutionNotYetImplemented:
+      std::cout << "execution not-yet-implemented";
+      break;
+    default:
+      std::cout << "unknown (id: "
+                << static_cast<unsigned int>(insn->getException()) << ")";
+  }
+  std::cout << " exception" << std::endl;
 }
 
 std::vector<RegisterFileStructure> A64Architecture::getRegisterFileStructures()

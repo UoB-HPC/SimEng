@@ -28,12 +28,7 @@ void Core::tick() {
   // Decode
   auto uop = macroOp[0];
   if (uop->exceptionEncountered()) {
-    std::cout << "Exception generated during instruction decoding" << std::endl;
-
-    pc = programByteLength;
-    hasHalted_ = true;
-    isa.handleException(uop);
-
+    handleException(uop);
     return;
   }
 
@@ -62,12 +57,7 @@ void Core::tick() {
   uop->execute();
 
   if (uop->exceptionEncountered()) {
-    std::cout << "Exception generated during instruction execution"
-              << std::endl;
-
-    pc = programByteLength;
-    hasHalted_ = true;
-    isa.handleException(uop);
+    handleException(uop);
     return;
   }
 
@@ -92,6 +82,14 @@ void Core::tick() {
     auto reg = destinations[i];
     registerFileSet.set(reg, results[i]);
   }
+}
+
+void Core::handleException(std::shared_ptr<Instruction> instruction) {
+  pc = programByteLength;
+  hasHalted_ = true;
+  isa.handleException(instruction);
+
+  std::cout << "Halting due to fatal exception" << std::endl;
 }
 
 bool Core::hasHalted() const { return hasHalted_; }

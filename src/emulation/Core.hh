@@ -30,6 +30,9 @@ class Core : public simeng::Core {
   std::map<std::string, std::string> getStats() const override;
 
  private:
+  /** Handle an encountered exception. */
+  void handleException(std::shared_ptr<Instruction> instruction);
+
   /** A pointer to process memory. */
   char* memory;
 
