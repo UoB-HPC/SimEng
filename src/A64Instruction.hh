@@ -107,6 +107,9 @@ class A64Instruction : public Instruction {
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
+  /** Retrieve the instruction's metadata. */
+  const A64InstructionMetadata& getMetadata() const;
+
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
    * automatically supplied as zero. */

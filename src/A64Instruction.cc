@@ -143,4 +143,8 @@ uint16_t A64Instruction::getGroup() const {
   return A64InstructionGroups::ARITHMETIC;
 }
 
+const A64InstructionMetadata& A64Instruction::getMetadata() const {
+  return metadata;
+}
+
 }  // namespace simeng
