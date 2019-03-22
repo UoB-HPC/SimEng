@@ -1,4 +1,5 @@
 #include "A64Architecture.hh"
+#include "A64ExceptionGenerator.hh"
 
 #include <cassert>
 #include <iostream>
@@ -70,6 +71,13 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   output[0] = uop;
 
   return 4;
+}
+
+void A64Architecture::handleException(
+    std::shared_ptr<Instruction> instruction) const {
+  A64ExceptionGenerator* generator =
+      dynamic_cast<A64ExceptionGenerator*>(instruction.get());
+  std::cout << "Exception: " << (int)generator->getException() << std::endl;
 }
 
 std::vector<RegisterFileStructure> A64Architecture::getRegisterFileStructures()

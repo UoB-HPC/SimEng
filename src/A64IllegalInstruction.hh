@@ -1,12 +1,15 @@
 #pragma once
 
+#include "A64ExceptionGenerator.hh"
 #include "Instruction.hh"
 
 namespace simeng {
 
-class A64IllegalInstruction : public Instruction {
+class A64IllegalInstruction : public Instruction, public A64ExceptionGenerator {
  public:
   A64IllegalInstruction(uint64_t encoding);
+
+  A64InstructionException getException() const override;
 
   const span<Register> getOperandRegisters() const override;
   const span<Register> getDestinationRegisters() const override;
@@ -59,6 +62,9 @@ class A64IllegalInstruction : public Instruction {
 
   /** Is this a branch operation? */
   bool isBranch() const override;
+
+  /** Get the instruction's group. */
+  uint16_t getGroup() const override;
 
  private:
   uint64_t encoding_;

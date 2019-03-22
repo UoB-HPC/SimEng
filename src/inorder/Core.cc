@@ -9,7 +9,8 @@ namespace inorder {
 Core::Core(const char* insnPtr, unsigned int programByteLength,
            const Architecture& isa, BranchPredictor& branchPredictor,
            char* memory)
-    : registerFileSet(isa.getRegisterFileStructures()),
+    : isa(isa),
+      registerFileSet(isa.getRegisterFileStructures()),
       fetchToDecodeBuffer(1, {}),
       decodeToExecuteBuffer(1, nullptr),
       executeToWritebackBuffer(1, nullptr),
@@ -48,6 +49,7 @@ void Core::tick() {
   if (exceptionGenerated_) {
     exceptionGenerated_ = false;
     hasHalted_ = true;
+    isa.handleException(exceptionGeneratingInstruction_);
     return;
   }
 

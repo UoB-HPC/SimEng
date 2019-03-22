@@ -48,6 +48,8 @@ class Core : public simeng::Core {
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
 
+  const Architecture& isa;
+
   /** The core's register file set. */
   RegisterFileSet registerFileSet;
 

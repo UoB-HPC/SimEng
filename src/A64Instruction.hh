@@ -1,5 +1,6 @@
 #pragma once
 
+#include "A64ExceptionGenerator.hh"
 #include "Instruction.hh"
 
 #include <array>
@@ -27,15 +28,8 @@ const uint8_t STORE = 2;
 const uint8_t BRANCH = 3;
 }  // namespace A64InstructionGroups
 
-enum class A64InstructionException {
-  None = 0,
-  EncodingUnallocated,
-  EncodingNotYetImplemented,
-  ExecutionNotYetImplemented
-};
-
 /** A basic ARMv8-a implementation of the `Instruction` interface. */
-class A64Instruction : public Instruction {
+class A64Instruction : public Instruction, public A64ExceptionGenerator {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.
    */
@@ -43,7 +37,7 @@ class A64Instruction : public Instruction {
 
   /** Retrieve the identifier for the first exception that occurred during
    * decoding or execution. */
-  A64InstructionException getException() const;
+  A64InstructionException getException() const override;
 
   /** Retrieve the source registers this instruction reads. */
   const span<Register> getOperandRegisters() const override;
