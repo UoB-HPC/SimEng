@@ -7,6 +7,7 @@
 
 #include "../Architecture.hh"
 #include "../RegisterFileSet.hh"
+#include "../span.hh"
 
 namespace simeng {
 namespace emulation {
@@ -17,8 +18,8 @@ class Core : public simeng::Core {
   /** Construct an emulation-style core, providing an ISA
   to use, along with a pointer and size of instruction memory, and a pointer to
   process memory. */
-  Core(const char* insnPtr, uint64_t programByteLength, const Architecture& isa,
-       char* memory);
+  Core(const span<char> processMemory, uint64_t entryPoint,
+       const Architecture& isa);
 
   /** Tick the core. */
   void tick() override;

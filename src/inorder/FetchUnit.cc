@@ -4,9 +4,10 @@ namespace simeng {
 namespace inorder {
 
 FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& toDecode, const char* insnPtr,
-                     unsigned int programByteLength, const Architecture& isa,
-                     BranchPredictor& branchPredictor)
+                     unsigned int programByteLength, uint64_t entryPoint,
+                     const Architecture& isa, BranchPredictor& branchPredictor)
     : toDecode(toDecode),
+      pc(entryPoint),
       insnPtr(insnPtr),
       programByteLength(programByteLength),
       isa(isa),

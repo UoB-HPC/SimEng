@@ -19,7 +19,7 @@ namespace inorder {
 class InOrderFetchUnitTest : public testing::Test {
  public:
   InOrderFetchUnitTest()
-      : output(1, {}), fetchUnit(output, nullptr, 1024, isa, predictor) {}
+      : output(1, {}), fetchUnit(output, nullptr, 1024, 0, isa, predictor) {}
 
  protected:
   PipelineBuffer<MacroOp> output;

@@ -6,16 +6,15 @@ namespace simeng {
 namespace inorder {
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
-Core::Core(const char* insnPtr, unsigned int programByteLength,
-           const Architecture& isa, BranchPredictor& branchPredictor,
-           char* memory)
+Core::Core(const span<char> processMemory, uint64_t entryPoint,
+           const Architecture& isa, BranchPredictor& branchPredictor)
     : isa(isa),
       registerFileSet(isa.getRegisterFileStructures()),
       fetchToDecodeBuffer(1, {}),
       decodeToExecuteBuffer(1, nullptr),
       executeToWritebackBuffer(1, nullptr),
-      fetchUnit(fetchToDecodeBuffer, insnPtr, programByteLength, isa,
-                branchPredictor),
+      fetchUnit(fetchToDecodeBuffer, processMemory.data(), processMemory.size(),
+                entryPoint, isa, branchPredictor),
       decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, registerFileSet,
                  branchPredictor),
       executeUnit(
@@ -24,7 +23,8 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
             return decodeUnit.forwardOperands(regs, values);
           },
           branchPredictor,
-          [this](auto instruction) { raiseException(instruction); }, memory),
+          [this](auto instruction) { raiseException(instruction); },
+          processMemory.data()),
       writebackUnit(executeToWritebackBuffer, registerFileSet){};
 
 void Core::tick() {

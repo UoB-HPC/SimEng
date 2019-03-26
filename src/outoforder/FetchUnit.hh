@@ -13,8 +13,8 @@ class FetchUnit {
   /** Construct a fetch unit with a reference to an output buffer, the ISA, and
    * the current branch predictor, and information on the instruction memory. */
   FetchUnit(PipelineBuffer<MacroOp>& toDecode, const char* insnPtr,
-            unsigned int programByteLength, const Architecture& isa,
-            BranchPredictor& branchPredictor);
+            unsigned int programByteLength, uint64_t entryPoint,
+            const Architecture& isa, BranchPredictor& branchPredictor);
 
   /** Tick the fetch unit. Retrieves and pre-decodes the instruction at the
    * current program counter. */

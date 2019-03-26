@@ -6,12 +6,13 @@
 namespace simeng {
 namespace emulation {
 
-Core::Core(const char* insnPtr, uint64_t programByteLength,
-           const Architecture& isa, char* memory)
-    : memory(memory),
-      insnPtr(insnPtr),
-      programByteLength(programByteLength),
+Core::Core(const span<char> processMemory, uint64_t entryPoint,
+           const Architecture& isa)
+    : memory(processMemory.data()),
+      insnPtr(processMemory.data()),
+      programByteLength(processMemory.size()),
       isa(isa),
+      pc(entryPoint),
       registerFileSet(isa.getRegisterFileStructures()) {}
 
 void Core::tick() {
