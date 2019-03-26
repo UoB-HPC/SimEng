@@ -20,12 +20,11 @@ namespace outoforder {
  * Decode, Rename, Dispatch/Issue, Execute, Writeback. */
 class Core : public simeng::Core {
  public:
-  /** Construct a core model, providing an ISA, branch predictor, and port
-   * allocator to use, along with a pointer and size of instruction memory, and
-   * a pointer to process memory. */
-  Core(const char* insnPtr, unsigned int programByteLength,
+  /** Construct a core model, providing the process memory, and an ISA, branch
+   * predictor, and port allocator to use. */
+  Core(const span<char> processMemory, uint64_t entryPoint,
        const Architecture& isa, BranchPredictor& branchPredictor,
-       PortAllocator& portAllocator, char* memory);
+       PortAllocator& portAllocator);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the

@@ -30,14 +30,14 @@ const std::vector<std::vector<uint16_t>> portArrangement = {
 const unsigned int executionUnitCount = portArrangement.size();
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
-Core::Core(const char* insnPtr, unsigned int programByteLength,
+Core::Core(const span<char> processMemory, uint64_t entryPoint,
            const Architecture& isa, BranchPredictor& branchPredictor,
-           PortAllocator& portAllocator, char* memory)
+           PortAllocator& portAllocator)
     : isa(isa),
       registerFileSet(physicalRegisterStructures),
       registerAliasTable(isa.getRegisterFileStructures(),
                          physicalRegisterQuantities),
-      loadStoreQueue(loadQueueSize, storeQueueSize, memory),
+      loadStoreQueue(loadQueueSize, storeQueueSize, processMemory.data()),
       reorderBuffer(robSize, registerAliasTable, loadStoreQueue,
                     [this](auto instruction) { raiseException(instruction); }),
       fetchToDecodeBuffer(frontendWidth, {}),
@@ -45,8 +45,8 @@ Core::Core(const char* insnPtr, unsigned int programByteLength,
       renameToDispatchBuffer(frontendWidth, nullptr),
       issuePorts(executionUnitCount, {1, nullptr}),
       completionSlots(executionUnitCount, {1, nullptr}),
-      fetchUnit(fetchToDecodeBuffer, insnPtr, programByteLength, isa,
-                branchPredictor),
+      fetchUnit(fetchToDecodeBuffer, processMemory.data(), processMemory.size(),
+                entryPoint, isa, branchPredictor),
       decodeUnit(fetchToDecodeBuffer, decodeToRenameBuffer, branchPredictor),
       renameUnit(decodeToRenameBuffer, renameToDispatchBuffer, reorderBuffer,
                  registerAliasTable, loadStoreQueue,
