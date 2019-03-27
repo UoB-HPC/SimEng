@@ -1,6 +1,7 @@
 #include "A64Instruction.hh"
 #include "A64InstructionMetadata.hh"
 
+#include <cmath>
 #include <limits>
 #include <tuple>
 
@@ -113,6 +114,12 @@ void A64Instruction::execute() {
       results[0] = RegisterValue(x + y);
       return;
     }
+    case A64Opcode::AArch64_ADRP: {  // adrp xd, #imm
+      // Clear lowest 12 bits of address and add immediate (already shifted by
+      // decoder)
+      results[0] = (instructionAddress_ & ~(0xFFF)) + metadata.operands[1].imm;
+      return;
+    }
     case A64Opcode::AArch64_B: {  // b label
       branchTaken_ = true;
       branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
@@ -128,12 +135,89 @@ void A64Instruction::execute() {
       }
       return;
     }
+    case A64Opcode::AArch64_FADDv2f64: {  // fadd vd.2d, vn.2d, vm.2d
+      const double* a = operands[0].getAsVector<double>();
+      const double* b = operands[1].getAsVector<double>();
+      double out[2] = {a[0] + b[0], a[1] + b[1]};
+      results[0] = out;
+      return;
+    }
+    case A64Opcode::AArch64_FCMPDri: {  // fcmp dn, #imm
+      double a = operands[0].get<double>();
+      double b = metadata.operands[1].fp;
+      if (std::isnan(a) || std::isnan(b)) {
+        results[0] = nzcv(false, false, true, true);
+      } else if (a == b) {
+        results[0] = nzcv(false, true, true, false);
+      } else if (a < b) {
+        results[0] = nzcv(true, false, false, false);
+      } else {
+        results[0] = nzcv(false, false, true, false);
+      }
+      return;
+    }
+    case A64Opcode::AArch64_FCMPDrr: {  // fcmp dn, dm
+      double a = operands[0].get<double>();
+      double b = operands[1].get<double>();
+      if (std::isnan(a) || std::isnan(b)) {
+        results[0] = nzcv(false, false, true, true);
+      } else if (a == b) {
+        results[0] = nzcv(false, true, true, false);
+      } else if (a < b) {
+        results[0] = nzcv(true, false, false, false);
+      } else {
+        results[0] = nzcv(false, false, true, false);
+      }
+      return;
+    }
+    case A64Opcode::AArch64_FMOVv2f64_ns: {  // fmov vd.2d, #imm
+      double out[2] = {metadata.operands[0].fp, metadata.operands[0].fp};
+      results[0] = out;
+      return;
+    }
+    case A64Opcode::AArch64_FMULv2f64: {  // fmul vd.2d, vn.2d, vm.2d
+      const double* a = operands[0].getAsVector<double>();
+      const double* b = operands[1].getAsVector<double>();
+      double out[2] = {a[0] * b[0], a[1] * b[1]};
+      results[0] = out;
+      return;
+    }
+    case A64Opcode::AArch64_LDPQi: {  // ldp qt1, qt2, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 16);
+      results[1] = memoryData[1].zeroExtend(memoryAddresses[1].second, 16);
+      return;
+    }
+    case A64Opcode::AArch64_LDRDroX: {  // ldr dt, [xn, xm, {extend {#amount}}]
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 16);
+      return;
+    }
     case A64Opcode::AArch64_LDRWui: {  // ldr wt, [xn, #imm]
       results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 8);
       return;
     }
     case A64Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]
       results[0] = memoryData[0];
+      return;
+    }
+    case A64Opcode::AArch64_MOVIv2d_ns: {  // movi vd.2d, #imm
+      uint64_t bits = static_cast<uint64_t>(metadata.operands[1].imm);
+      uint64_t vector[2] = {bits, bits};
+      results[0] = vector;
+      return;
+    }
+    case A64Opcode::AArch64_MOVKWi: {  // movk wd, #imm
+      // Clear 16-bit region offset by `shift` and replace with immediate
+      uint8_t shift = metadata.operands[1].shift.value;
+      uint32_t mask = ~(0xFFFF << shift);
+      uint32_t value = (operands[0].get<uint32_t>() & mask) |
+                       (metadata.operands[1].imm << shift);
+      results[0] = RegisterValue(value, 8);
+      return;
+    }
+    case A64Opcode::AArch64_MOVZWi: {  // movk wd, #imm
+      uint8_t shift = metadata.operands[1].shift.value;
+      uint32_t value = metadata.operands[1].imm << shift;
+      results[0] = RegisterValue(value, 8);
       return;
     }
     case A64Opcode::AArch64_ORRWri: {  // orr wd, wn, #imm
@@ -146,6 +230,11 @@ void A64Instruction::execute() {
       auto value = operands[0].get<uint64_t>();
       auto result = value | metadata.operands[2].imm;
       results[0] = RegisterValue(result);
+      return;
+    }
+    case A64Opcode::AArch64_STPQi: {  // stp qt1, qt2, [xn, #imm]
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
       return;
     }
     case A64Opcode::AArch64_STRWui: {  // str wt, [xn, #imm]
@@ -187,6 +276,6 @@ void A64Instruction::execute() {
     default:
       return executionNYI();
   }
-}  // namespace simeng
+}
 
 }  // namespace simeng

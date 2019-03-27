@@ -53,6 +53,13 @@ class RegisterValue {
     std::memcpy(dest, ptr, bytes);
   }
 
+  /** Create a new RegisterValue by copying bytes from a fixed-size array. The
+   * resultant RegisterValue will have the same byte size as the original array.
+   */
+  template <class T, size_t N>
+  RegisterValue(T (&array)[N])
+      : RegisterValue(reinterpret_cast<const char*>(array), sizeof(T) * N) {}
+
   /** Read the encapsulated raw memory as a specified datatype. */
   template <class T>
   T get() const {

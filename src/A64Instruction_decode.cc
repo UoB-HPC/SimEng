@@ -44,16 +44,16 @@ constexpr int32_t signExtend(uint32_t value, int currentLength) {
 Register csRegToRegister(arm64_reg reg) {
   // Check from top of the range downwards
 
-  // ARM64_REG_X0 -> {end} are 64-bit (X) registers, reading from the general
+  // ARM64_REG_V0 -> {end} are vector registers, reading from the vector file
+  if (reg >= ARM64_REG_V0) {
+    return {A64RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_V0)};
+  }
+
+  // ARM64_REG_X0 -> +31 are 64-bit (X) registers, reading from the general
   // file
   if (reg >= ARM64_REG_X0) {
     return {A64RegisterType::GENERAL,
             static_cast<uint16_t>(reg - ARM64_REG_X0)};
-  }
-
-  // ARM64_REG_V0 -> +31 are vector registers, reading from the vector file
-  if (reg >= ARM64_REG_V0) {
-    return {A64RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_V0)};
   }
 
   // ARM64_REG_W0 -> +30 are 32-bit (W) registers, reading from the general
