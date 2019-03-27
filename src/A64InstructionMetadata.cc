@@ -27,6 +27,12 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
   std::memcpy(groups, insn.detail->groups, sizeof(uint8_t) * groupCount);
   std::memcpy(operands, insn.detail->arm64.operands,
               sizeof(cs_arm64_op) * operandCount);
+
+  if (opcode == A64Opcode::AArch64_MOVZWi ||
+      opcode == A64Opcode::AArch64_MOVZXi) {
+    // MOVZ incorrectly flags destination as READ | WRITE
+    operands[0].access = CS_AC_WRITE;
+  }
 }
 
 A64InstructionMetadata::A64InstructionMetadata(const uint8_t* invalidEncoding)

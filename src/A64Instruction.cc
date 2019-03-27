@@ -71,7 +71,7 @@ void A64Instruction::supplyOperand(const Register& reg,
   // Iterate over operand registers, and copy value if the provided register
   // matches
   for (size_t i = 0; i < sourceRegisterCount; i++) {
-    if (sourceRegisters[i] == reg) {
+    if (sourceRegisters[i] == reg && !isOperandReady(i)) {
       operands[i] = value;
       operandsPending--;
       break;
