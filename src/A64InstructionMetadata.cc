@@ -33,6 +33,8 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
     // MOVZ incorrectly flags destination as READ | WRITE
     operands[0].access = CS_AC_WRITE;
   }
+
+  revertAliasing();
 }
 
 A64InstructionMetadata::A64InstructionMetadata(const uint8_t* invalidEncoding)
@@ -47,6 +49,32 @@ A64InstructionMetadata::A64InstructionMetadata(const uint8_t* invalidEncoding)
   std::memcpy(encoding, invalidEncoding, sizeof(encoding));
   mnemonic[0] = '\0';
   operandStr[0] = '\0';
+}
+
+void A64InstructionMetadata::revertAliasing() {
+  if (opcode == A64Opcode::AArch64_CSINCWr &&
+      !std::strncmp(mnemonic, "cset", 4)) {
+    // cset wd, cc; alias for: csinc wd, wzr, wzr, invert(cc)
+    operands[1].type = ARM64_OP_REG;
+    operands[1].reg = ARM64_REG_WZR;
+    operands[1].access = CS_AC_READ;
+
+    operands[2].type = ARM64_OP_REG;
+    operands[2].reg = ARM64_REG_WZR;
+    operands[2].access = CS_AC_READ;
+    cc ^= 1;  // invert lowest bit to negate cc
+  } else if (opcode == A64Opcode::AArch64_CSINCXr &&
+             !std::strncmp(mnemonic, "cset", 4)) {
+    // cset xd, cc; alias for: csinc xd, xzr, xzr, invert(cc)
+    operands[1].type = ARM64_OP_REG;
+    operands[1].reg = ARM64_REG_XZR;
+    operands[1].access = CS_AC_READ;
+
+    operands[2].type = ARM64_OP_REG;
+    operands[2].reg = ARM64_REG_XZR;
+    operands[2].access = CS_AC_READ;
+    cc ^= 1;  // invert lowest bit to negate cc
+  }
 }
 
 }  // namespace simeng

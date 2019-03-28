@@ -94,7 +94,7 @@ class RegisterValue {
   bool isLocal() const { return bytes <= MAX_LOCAL_BYTES; }
 
   /** The maximum number of bytes that can be held locally. */
-  static const uint8_t MAX_LOCAL_BYTES = 8;
+  static const uint8_t MAX_LOCAL_BYTES = 16;
 
   /** The number of bytes held. */
   uint8_t bytes = 0;
