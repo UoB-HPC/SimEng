@@ -71,6 +71,11 @@ struct A64InstructionMetadata {
   cs_arm64_op operands[MAX_OPERANDS];
   /** The number of explicit operands. */
   uint8_t operandCount;
+
+ private:
+  /** Detect instruction aliases and update metadata to match the de-aliased
+   * instruction. */
+  void revertAliasing();
 };
 
 }  // namespace simeng

@@ -101,6 +101,7 @@ void A64Architecture::handleException(
   } else {
     std::cout << metadata.mnemonic << " " << metadata.operandStr;
   }
+  std::cout << "\n      opcode ID: " << metadata.opcode;
   std::cout << std::endl;
 }
 

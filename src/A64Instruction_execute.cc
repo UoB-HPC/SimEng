@@ -135,6 +135,22 @@ void A64Instruction::execute() {
       }
       return;
     }
+    case A64Opcode::AArch64_CSINCWr: {  // csinc wd, wn, wm, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        results[0] = RegisterValue(operands[1].get<uint32_t>(), 8);
+      } else {
+        results[0] = RegisterValue(operands[2].get<uint32_t>() + 1, 8);
+      }
+      return;
+    }
+    case A64Opcode::AArch64_CSINCXr: {  // csinc xd, xn, xm, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        results[0] = operands[1].get<uint64_t>();
+      } else {
+        results[0] = operands[2].get<uint64_t>() + 1;
+      }
+      return;
+    }
     case A64Opcode::AArch64_FADDv2f64: {  // fadd vd.2d, vn.2d, vm.2d
       const double* a = operands[0].getAsVector<double>();
       const double* b = operands[1].getAsVector<double>();
@@ -183,8 +199,8 @@ void A64Instruction::execute() {
       return;
     }
     case A64Opcode::AArch64_LDPQi: {  // ldp qt1, qt2, [xn, #imm]
-      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 16);
-      results[1] = memoryData[1].zeroExtend(memoryAddresses[1].second, 16);
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
       return;
     }
     case A64Opcode::AArch64_LDRDroX: {  // ldr dt, [xn, xm, {extend {#amount}}]
