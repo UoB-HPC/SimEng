@@ -2,7 +2,6 @@
 
 #include <cstring>
 #include <fstream>
-#include <iostream>
 
 namespace simeng {
 
@@ -18,7 +17,6 @@ Elf::Elf(std::string path) {
   char fileMagic[4];
   file.read(fileMagic, 4);
   if (std::memcmp(elfMagic, fileMagic, sizeof(elfMagic))) {
-    std::cout << "NOT AN ELF" << std::endl;
     return;
   }
 
@@ -68,7 +66,7 @@ Elf::Elf(std::string path) {
     }
   }
 
-  processImage_ = static_cast<char*>(std::malloc(processImageSize_));
+  processImage_ = new char[processImageSize_];
 
   // Process headers; only observe LOAD sections for this basic implementation
   for (const auto& header : headers_) {
@@ -85,7 +83,7 @@ Elf::Elf(std::string path) {
 
 Elf::~Elf() {
   if (isValid_) {
-    std::free(processImage_);
+    delete[] processImage_;
   }
 }
 

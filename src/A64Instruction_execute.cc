@@ -230,7 +230,7 @@ void A64Instruction::execute() {
       results[0] = RegisterValue(value, 8);
       return;
     }
-    case A64Opcode::AArch64_MOVZWi: {  // movk wd, #imm
+    case A64Opcode::AArch64_MOVZWi: {  // movz wd, #imm
       uint8_t shift = metadata.operands[1].shift.value;
       uint32_t value = metadata.operands[1].imm << shift;
       results[0] = RegisterValue(value, 8);
@@ -246,6 +246,11 @@ void A64Instruction::execute() {
       auto value = operands[0].get<uint64_t>();
       auto result = value | metadata.operands[2].imm;
       results[0] = RegisterValue(result);
+      return;
+    }
+    case A64Opcode::AArch64_RET: {  // ret {xr}
+      branchTaken_ = true;
+      branchAddress_ = operands[0].get<uint64_t>();
       return;
     }
     case A64Opcode::AArch64_STPQi: {  // stp qt1, qt2, [xn, #imm]

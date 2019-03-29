@@ -32,6 +32,14 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
       opcode == A64Opcode::AArch64_MOVZXi) {
     // MOVZ incorrectly flags destination as READ | WRITE
     operands[0].access = CS_AC_WRITE;
+  } else if (opcode == A64Opcode::AArch64_RET) {
+    // RET doesn't list use of x30 (LR) if no register is supplied
+    operandCount = 1;
+    operands[0].type = ARM64_OP_REG;
+    operands[0].reg = ARM64_REG_LR;
+    operands[0].access = CS_AC_READ;
+    groupCount = 1;
+    groups[0] = CS_GRP_JUMP;
   }
 
   revertAliasing();
@@ -55,6 +63,8 @@ void A64InstructionMetadata::revertAliasing() {
   if (opcode == A64Opcode::AArch64_CSINCWr &&
       !std::strncmp(mnemonic, "cset", 4)) {
     // cset wd, cc; alias for: csinc wd, wzr, wzr, invert(cc)
+    operandCount = 3;
+
     operands[1].type = ARM64_OP_REG;
     operands[1].reg = ARM64_REG_WZR;
     operands[1].access = CS_AC_READ;
@@ -66,6 +76,8 @@ void A64InstructionMetadata::revertAliasing() {
   } else if (opcode == A64Opcode::AArch64_CSINCXr &&
              !std::strncmp(mnemonic, "cset", 4)) {
     // cset xd, cc; alias for: csinc xd, xzr, xzr, invert(cc)
+    operandCount = 3;
+
     operands[1].type = ARM64_OP_REG;
     operands[1].reg = ARM64_REG_XZR;
     operands[1].access = CS_AC_READ;
