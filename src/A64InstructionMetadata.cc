@@ -1,5 +1,7 @@
 #include "A64InstructionMetadata.hh"
 
+#include <cstring>
+
 namespace simeng {
 
 A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)

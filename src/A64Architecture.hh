@@ -5,7 +5,8 @@
 #include <unordered_map>
 
 #include "A64Instruction.hh"
-#include "A64InstructionMetadata.hh"
+
+using csh = size_t;
 
 namespace simeng {
 

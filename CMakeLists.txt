@@ -27,8 +27,7 @@ set(CAPSTONE_M680X_SUPPORT OFF CACHE BOOL "Disable M680x support")
 set(CAPSTONE_EVM_SUPPORT OFF CACHE BOOL "Disable EVM support")
 set(CAPSTONE_MOS65XX_SUPPORT OFF CACHE BOOL "Disable MSO65XX support")
 
-add_subdirectory(external/capstone)
-include_directories(external/capstone/include)
+add_subdirectory(external/capstone EXCLUDE_FROM_ALL)
 
 add_subdirectory(src)
 
