@@ -1,4 +1,5 @@
 #include "A64Instruction.hh"
+#include "A64InstructionMetadata.hh"
 
 #define NOT(bits, length) (~bits & (1 << length - 1))
 #define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)
@@ -94,6 +95,7 @@ Register csRegToRegister(arm64_reg reg) {
     return {A64RegisterType::GENERAL, 30};
   }
 
+  assert(false && "Decoding failed due to unknown register identifier");
   return {std::numeric_limits<uint8_t>::max(),
           std::numeric_limits<uint16_t>::max()};
 }

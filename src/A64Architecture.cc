@@ -3,6 +3,8 @@
 #include <cassert>
 #include <iostream>
 
+#include "A64InstructionMetadata.hh"
+
 namespace simeng {
 
 std::unordered_map<uint32_t, A64Instruction> A64Architecture::decodeCache;

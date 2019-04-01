@@ -1,4 +1,5 @@
 #include "A64Instruction.hh"
+#include "A64InstructionMetadata.hh"
 
 #include <limits>
 #include <tuple>

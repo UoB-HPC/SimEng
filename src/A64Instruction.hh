@@ -4,11 +4,11 @@
 
 #include <array>
 
-#include "A64InstructionMetadata.hh"
 #include "BranchPredictor.hh"
-#include "capstone/capstone.h"
 
 namespace simeng {
+
+struct A64InstructionMetadata;
 
 namespace A64RegisterType {
 /** The 64-bit general purpose register set: [w|x]0-31. */
@@ -39,7 +39,7 @@ class A64Instruction : public Instruction {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.
    */
-  A64Instruction(const A64InstructionMetadata& capstoneInsn);
+  A64Instruction(const A64InstructionMetadata& metadata);
 
   /** Supply an instruction address. Performed after construction to prevent
    * values being cached. */

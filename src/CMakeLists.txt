@@ -62,5 +62,8 @@ set(SIMENG_SOURCES
     )
 
 add_executable(simeng ${SIMENG_SOURCES})
+
+target_include_directories(simeng PRIVATE ${PROJECT_SOURCE_DIR}/external/capstone/include)
 target_link_libraries(simeng capstone-static)
+
 install(TARGETS simeng DESTINATION bin)

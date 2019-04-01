@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstring>
-
 #include "capstone/capstone.h"
 
 namespace simeng {

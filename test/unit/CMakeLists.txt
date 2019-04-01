@@ -19,6 +19,7 @@ set(SIMENG_SOURCES
 
 include_directories("../../src")
 add_executable(unittests ${TEST_SOURCES} ${SIMENG_SOURCES})
+target_include_directories(unittests PRIVATE ${PROJECT_SOURCE_DIR}/external/capstone/include)
 target_link_libraries(unittests gtest_main)
 target_link_libraries(unittests capstone-static)
 
