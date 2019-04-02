@@ -61,8 +61,11 @@ set(SIMENG_SOURCES
     main.cc
     )
 
+configure_file(${PROJECT_SOURCE_DIR}/external/capstone/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
+
 add_executable(simeng ${SIMENG_SOURCES})
 
+target_include_directories(simeng PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(simeng PRIVATE ${PROJECT_SOURCE_DIR}/external/capstone/include)
 target_link_libraries(simeng capstone-static)
 
