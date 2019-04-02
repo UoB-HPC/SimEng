@@ -19,6 +19,16 @@ struct A64InstructionMetadata {
    */
   A64InstructionMetadata(const cs_insn& insn);
 
+  static const size_t MAX_OPERAND_STR_LENGTH =
+      sizeof(cs_insn::op_str) / sizeof(char);
+  static const size_t MAX_IMPLICIT_SOURCES =
+      sizeof(cs_detail::regs_read) / sizeof(uint16_t);
+  static const size_t MAX_IMPLICIT_DESTINATIONS =
+      sizeof(cs_detail::regs_write) / sizeof(uint16_t);
+  static const size_t MAX_GROUPS = sizeof(cs_detail::groups) / sizeof(uint8_t);
+  static const size_t MAX_OPERANDS =
+      sizeof(cs_arm64::operands) / sizeof(cs_arm64_op);
+
   /** The instruction's mnemonic ID. */
   unsigned int id;
 
@@ -28,20 +38,20 @@ struct A64InstructionMetadata {
   /** The instruction's mnemonic. */
   char mnemonic[CS_MNEMONIC_SIZE];
   /** The remainder of the instruction's assembly representation. */
-  char operandStr[160];
+  char operandStr[MAX_OPERAND_STR_LENGTH];
 
   /** The implicitly referenced registers. */
-  uint16_t implicitSources[16];
+  uint16_t implicitSources[MAX_IMPLICIT_SOURCES];
   /** The number of implicitly referenced registers. */
   uint8_t implicitSourceCount;
 
   /** The implicitly referenced destination registers. */
-  uint16_t implicitDestinations[20];
+  uint16_t implicitDestinations[MAX_IMPLICIT_DESTINATIONS];
   /** The number of implicitly referenced destination registers. */
   uint8_t implicitDestinationCount;
 
   /** The instruction groups this instruction belongs to. Non-exhaustive. */
-  uint8_t groups[8];
+  uint8_t groups[MAX_GROUPS];
   /** The number of instruction groups this instruction belongs to. */
   uint8_t groupCount;
 
@@ -54,7 +64,7 @@ struct A64InstructionMetadata {
   bool writeback;
 
   /** The explicit operands. */
-  cs_arm64_op operands[8];
+  cs_arm64_op operands[MAX_OPERANDS];
   /** The number of explicit operands. */
   uint8_t operandCount;
 };
