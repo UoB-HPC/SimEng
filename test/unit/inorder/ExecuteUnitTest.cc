@@ -121,5 +121,37 @@ TEST_F(InOrderExecuteUnitTest, ExecuteBranch) {
   EXPECT_EQ(output.getTailSlots()[0].get(), uop);
 }
 
+// Test that an instruction that already encountered an exception will raise it
+// without executing
+TEST_F(InOrderExecuteUnitTest, ExceptionDoesNotExecute) {
+  input.getHeadSlots()[0] = uopPtr;
+
+  uop->setExceptionEncountered(true);
+
+  EXPECT_CALL(*uop, execute()).Times(0);
+
+  EXPECT_CALL(executionHandlers,
+              raiseException(Property(&std::shared_ptr<Instruction>::get, uop)))
+      .Times(1);
+
+  executeUnit.tick();
+}
+
+// Test that an exception-generating execution will raise an exception
+TEST_F(InOrderExecuteUnitTest, ExecutionException) {
+  input.getHeadSlots()[0] = uopPtr;
+
+  EXPECT_CALL(*uop, execute()).WillOnce(Invoke([&]() {
+    uop->setExecuted(true);
+    uop->setExceptionEncountered(true);
+  }));
+
+  EXPECT_CALL(executionHandlers,
+              raiseException(Property(&std::shared_ptr<Instruction>::get, uop)))
+      .Times(1);
+
+  executeUnit.tick();
+}
+
 }  // namespace inorder
 }  // namespace simeng

@@ -39,6 +39,10 @@ class MockInstruction : public Instruction {
   }
 
   void setExecuted(bool executed) { executed_ = executed; }
+
+  void setExceptionEncountered(bool exceptionEncountered) {
+    exceptionEncountered_ = exceptionEncountered;
+  }
 };
 
 }  // namespace simeng
