@@ -41,8 +41,6 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     size_t size = 4;
     uint64_t address = 0;
 
-    // TODO: capture result (success state) and replace instruction with an
-    // "invalid decoding" implementation if not successful
     bool success =
         cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
 
