@@ -103,7 +103,7 @@ bool A64Instruction::isLoad() const { return isLoad_; }
 bool A64Instruction::isBranch() const { return isBranch_; }
 
 void A64Instruction::setMemoryAddresses(
-    const std::vector<std::pair<uint64_t, uint8_t>>& addresses) {
+    const std::initializer_list<std::pair<uint64_t, uint8_t>>& addresses) {
   memoryData = std::vector<RegisterValue>(addresses.size());
   memoryAddresses = addresses;
 }
