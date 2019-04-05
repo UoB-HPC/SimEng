@@ -3,7 +3,7 @@
 
 namespace simeng {
 
-std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
+span<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
   assert((isLoad() || isStore()) &&
          "generateAddresses called on non-load-or-store instruction");
 
@@ -11,7 +11,7 @@ std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
     case A64Opcode::AArch64_LDRDroX: {  // ldr dt, [xn, xm{, extend {amount}}]
       if (metadata.operands[1].shift.type != 0) {
         executionNYI();
-        return {};
+        return getGeneratedAddresses();
       }
       setMemoryAddresses(
           {{operands[0].get<uint64_t>() + operands[1].get<uint64_t>(), 8}});
@@ -50,9 +50,8 @@ std::vector<std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
     }
     default:
       exception = A64InstructionException::ExecutionNotYetImplemented;
-      return {};
   }
-  return memoryAddresses;
+  return getGeneratedAddresses();
 }
 
 }  // namespace simeng

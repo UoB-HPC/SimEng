@@ -78,17 +78,16 @@ class A64Instruction : public Instruction {
   const span<RegisterValue> getResults() const override;
 
   /** Generate memory addresses this instruction wishes to access. */
-  std::vector<std::pair<uint64_t, uint8_t>> generateAddresses() override;
+  span<std::pair<uint64_t, uint8_t>> generateAddresses() override;
 
   /** Retrieve previously generated memory addresses. */
-  std::vector<std::pair<uint64_t, uint8_t>> getGeneratedAddresses()
-      const override;
+  span<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() const override;
 
   /** Provide data from a requested memory address. */
   void supplyData(uint64_t address, const RegisterValue& data) override;
 
   /** Retrieve supplied memory data. */
-  std::vector<RegisterValue> getData() const override;
+  span<RegisterValue> getData() const override;
 
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the
