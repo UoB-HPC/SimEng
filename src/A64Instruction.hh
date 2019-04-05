@@ -187,7 +187,7 @@ class A64Instruction : public Instruction {
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
   void setMemoryAddresses(
-      const std::vector<std::pair<uint64_t, uint8_t>>& addresses);
+      const std::initializer_list<std::pair<uint64_t, uint8_t>>& addresses);
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */
