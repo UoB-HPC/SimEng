@@ -4,7 +4,7 @@
 #include "RegisterFileSet.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "inorder/WritebackUnit.hh"
+#include "pipeline/WritebackUnit.hh"
 
 using ::testing::_;
 using ::testing::DoAll;
@@ -15,28 +15,28 @@ using ::testing::SetArgReferee;
 namespace simeng {
 namespace inorder {
 
-class InOrderWritebackUnitTest : public testing::Test {
+class PipelineWritebackUnitTest : public testing::Test {
  public:
-  InOrderWritebackUnitTest()
-      : input(1, nullptr),
+  PipelineWritebackUnitTest()
+      : input(1, {1, nullptr}),
         registerFileSet({{8, 2}}),
         uop(new MockInstruction),
         uopPtr(uop),
         writebackUnit(input, registerFileSet) {}
 
  protected:
-  PipelineBuffer<std::shared_ptr<Instruction>> input;
+  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> input;
   RegisterFileSet registerFileSet;
 
   MockInstruction* uop;
   std::shared_ptr<Instruction> uopPtr;
-  WritebackUnit writebackUnit;
+  pipeline::WritebackUnit writebackUnit;
 };
 
 // Tests that a value is correctly written back, and the uop is cleared from the
 // buffer
-TEST_F(InOrderWritebackUnitTest, Tick) {
-  input.getHeadSlots()[0] = uopPtr;
+TEST_F(PipelineWritebackUnitTest, Tick) {
+  input[0].getHeadSlots()[0] = uopPtr;
   uint32_t result = 1;
   std::vector<RegisterValue> results = {RegisterValue(result)};
   std::vector<Register> destinations = {{0, 1}};
@@ -50,7 +50,7 @@ TEST_F(InOrderWritebackUnitTest, Tick) {
   writebackUnit.tick();
 
   EXPECT_EQ(registerFileSet.get(destinations[0]).get<uint32_t>(), result);
-  EXPECT_EQ(input.getHeadSlots()[0], nullptr);
+  EXPECT_EQ(input[0].getHeadSlots()[0], nullptr);
 }
 
 }  // namespace inorder
