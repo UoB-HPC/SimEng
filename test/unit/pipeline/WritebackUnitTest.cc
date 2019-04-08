@@ -13,7 +13,7 @@ using ::testing::Return;
 using ::testing::SetArgReferee;
 
 namespace simeng {
-namespace inorder {
+namespace pipeline {
 
 class PipelineWritebackUnitTest : public testing::Test {
  public:
@@ -30,7 +30,7 @@ class PipelineWritebackUnitTest : public testing::Test {
 
   MockInstruction* uop;
   std::shared_ptr<Instruction> uopPtr;
-  pipeline::WritebackUnit writebackUnit;
+  WritebackUnit writebackUnit;
 };
 
 // Tests that a value is correctly written back, and the uop is cleared from the
@@ -53,5 +53,5 @@ TEST_F(PipelineWritebackUnitTest, Tick) {
   EXPECT_EQ(input[0].getHeadSlots()[0], nullptr);
 }
 
-}  // namespace inorder
+}  // namespace pipeline
 }  // namespace simeng

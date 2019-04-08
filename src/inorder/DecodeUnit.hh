@@ -21,6 +21,10 @@ class DecodeUnit {
    * branch misprediction checks. */
   void tick();
 
+  /** Reads and supplies missing source operands for the uop in the output slot.
+   */
+  void readRegisters();
+
   /** Forwards operands and performs register reads for the currently queued
    * instruction. */
   void forwardOperands(const span<Register>& destinations,

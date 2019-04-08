@@ -109,35 +109,6 @@ TEST_F(InOrderDecodeUnitTest, ForwardNonReady) {
   EXPECT_CALL(*uop, supplyOperand(registers[0],
                                   Property(&RegisterValue::get<uint32_t>, 1)))
       .Times(1);
-  // Check that the source registers are requested
-  EXPECT_CALL(*uop, getOperandRegisters())
-      .WillOnce(Return(span(sourceRegisters.data(), sourceRegisters.size())));
-  // Check that the readiness is checked for provided registers
-  EXPECT_CALL(*uop, isOperandReady(0)).WillOnce(Return(true));
-
-  decodeUnit.forwardOperands({registers.data(), registers.size()},
-                             {values.data(), values.size()});
-}
-
-// Tests that the decode unit supplies remaining operands once forwarding is
-// complete
-TEST_F(InOrderDecodeUnitTest, ForwardRead) {
-  output.getTailSlots()[0] = uopPtr;
-
-  registerFileSet.set(sourceRegisters[0], RegisterValue(1, 4));
-
-  std::vector<Register> registers;
-  std::vector<RegisterValue> values;
-
-  // Check that the source registers are requested
-  EXPECT_CALL(*uop, getOperandRegisters())
-      .WillOnce(Return(span(sourceRegisters.data(), sourceRegisters.size())));
-  // Check that the readiness is checked for provided registers
-  EXPECT_CALL(*uop, isOperandReady(0)).WillOnce(Return(false));
-  // Check that the correct register and value are supplied
-  EXPECT_CALL(*uop, supplyOperand(sourceRegisters[0],
-                                  Property(&RegisterValue::get<uint32_t>, 1)))
-      .Times(1);
 
   decodeUnit.forwardOperands({registers.data(), registers.size()},
                              {values.data(), values.size()});

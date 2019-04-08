@@ -1,12 +1,12 @@
 #include "../MockBranchPredictor.hh"
 #include "../MockInstruction.hh"
-#include "inorder/ExecuteUnit.hh"
+#include "pipeline/ExecuteUnit.hh"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace simeng {
-namespace inorder {
+namespace pipeline {
 
 using ::testing::AtLeast;
 using ::testing::ElementsAre;
@@ -22,9 +22,9 @@ class MockExecutionHandlers {
   MOCK_METHOD1(raiseException, void(std::shared_ptr<Instruction> instruction));
 };
 
-class InOrderExecuteUnitTest : public testing::Test {
+class PipelineExecuteUnitTest : public testing::Test {
  public:
-  InOrderExecuteUnitTest()
+  PipelineExecuteUnitTest()
       : input(1, nullptr),
         output(1, nullptr),
         executeUnit(
@@ -32,11 +32,11 @@ class InOrderExecuteUnitTest : public testing::Test {
             [this](auto regs, auto values) {
               executionHandlers.forwardOperands(regs, values);
             },
-            predictor,
+            [this](auto uop) {}, [this](auto uop) {},
             [this](auto instruction) {
               executionHandlers.raiseException(instruction);
             },
-            nullptr),
+            predictor),
         uop(new MockInstruction),
         uopPtr(uop) {}
 
@@ -53,11 +53,7 @@ class InOrderExecuteUnitTest : public testing::Test {
 };
 
 // Tests that the execution unit processes nothing if no instruction is present
-TEST_F(InOrderExecuteUnitTest, TickEmpty) {
-  // Check that an empty operand forwarding call is made
-  EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty()))
-      .Times(1);
-
+TEST_F(PipelineExecuteUnitTest, TickEmpty) {
   executeUnit.tick();
 
   EXPECT_EQ(output.getTailSlots()[0], nullptr);
@@ -65,7 +61,7 @@ TEST_F(InOrderExecuteUnitTest, TickEmpty) {
 
 // Tests that the execution unit executes an instruction and forwards the
 // results
-TEST_F(InOrderExecuteUnitTest, Execute) {
+TEST_F(PipelineExecuteUnitTest, Execute) {
   input.getHeadSlots()[0] = uopPtr;
 
   EXPECT_CALL(*uop, execute()).Times(1);
@@ -90,7 +86,7 @@ TEST_F(InOrderExecuteUnitTest, Execute) {
   EXPECT_EQ(output.getTailSlots()[0].get(), uop);
 }
 
-TEST_F(InOrderExecuteUnitTest, ExecuteBranch) {
+TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
   input.getHeadSlots()[0] = uopPtr;
 
   // Anticipate testing instruction type; return true for branch
@@ -123,7 +119,7 @@ TEST_F(InOrderExecuteUnitTest, ExecuteBranch) {
 
 // Test that an instruction that already encountered an exception will raise it
 // without executing
-TEST_F(InOrderExecuteUnitTest, ExceptionDoesNotExecute) {
+TEST_F(PipelineExecuteUnitTest, ExceptionDoesNotExecute) {
   input.getHeadSlots()[0] = uopPtr;
 
   uop->setExceptionEncountered(true);
@@ -138,7 +134,7 @@ TEST_F(InOrderExecuteUnitTest, ExceptionDoesNotExecute) {
 }
 
 // Test that an exception-generating execution will raise an exception
-TEST_F(InOrderExecuteUnitTest, ExecutionException) {
+TEST_F(PipelineExecuteUnitTest, ExecutionException) {
   input.getHeadSlots()[0] = uopPtr;
 
   EXPECT_CALL(*uop, execute()).WillOnce(Invoke([&]() {
@@ -153,5 +149,5 @@ TEST_F(InOrderExecuteUnitTest, ExecutionException) {
   executeUnit.tick();
 }
 
-}  // namespace inorder
+}  // namespace pipeline
 }  // namespace simeng

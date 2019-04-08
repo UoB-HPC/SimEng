@@ -5,10 +5,10 @@
 #include <iostream>
 #include <vector>
 
+#include "../pipeline/ExecuteUnit.hh"
 #include "../pipeline/FetchUnit.hh"
 #include "../pipeline/WritebackUnit.hh"
 #include "DecodeUnit.hh"
-#include "ExecuteUnit.hh"
 
 namespace simeng {
 namespace inorder {
@@ -40,6 +40,15 @@ class Core : public simeng::Core {
   /** Handle an exception raised during the cycle. */
   void handleException();
 
+  /** Load and supply memory data requested by an instruction. */
+  void loadData(std::shared_ptr<Instruction> instruction);
+  /** Store data supplied by an instruction to memory. */
+  void storeData(std::shared_ptr<Instruction> instruction);
+
+  /** The process memory. */
+  const span<char> processMemory_;
+
+  /** A reference to the core's architecture. */
   const Architecture& isa;
 
   /** The core's register file set. */
@@ -62,7 +71,7 @@ class Core : public simeng::Core {
 
   /** The execute unit; executes uops and sends to writeback, also forwarding
    * results. */
-  ExecuteUnit executeUnit;
+  pipeline::ExecuteUnit executeUnit;
 
   /** The writeback unit; writes uop results to the register files. */
   pipeline::WritebackUnit writebackUnit;
