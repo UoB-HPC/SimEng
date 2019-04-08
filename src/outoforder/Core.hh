@@ -2,16 +2,16 @@
 
 #include "../Core.hh"
 
+#include "../pipeline/FetchUnit.hh"
+#include "../pipeline/WritebackUnit.hh"
 #include "DecodeUnit.hh"
 #include "DispatchIssueUnit.hh"
 #include "ExecuteUnit.hh"
-#include "FetchUnit.hh"
 #include "LoadStoreQueue.hh"
 #include "PortAllocator.hh"
 #include "RegisterAliasTable.hh"
 #include "RenameUnit.hh"
 #include "ReorderBuffer.hh"
-#include "WritebackUnit.hh"
 
 namespace simeng {
 namespace outoforder {
@@ -78,7 +78,7 @@ class Core : public simeng::Core {
   std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots;
 
   /** The fetch unit; fetches instructions from memory. */
-  FetchUnit fetchUnit;
+  pipeline::FetchUnit fetchUnit;
 
   /** The decode unit; decodes instructions into uops and reads operands. */
   DecodeUnit decodeUnit;
@@ -96,7 +96,7 @@ class Core : public simeng::Core {
   std::vector<ExecuteUnit> executionUnits;
 
   /** The writeback unit; writes uop results to the register files. */
-  WritebackUnit writebackUnit;
+  pipeline::WritebackUnit writebackUnit;
 
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes = 0;

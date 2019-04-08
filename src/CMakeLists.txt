@@ -5,10 +5,6 @@ set(SIMENG_SOURCES
     inorder/DecodeUnit.hh
     inorder/ExecuteUnit.cc
     inorder/ExecuteUnit.hh
-    inorder/FetchUnit.cc
-    inorder/FetchUnit.hh
-    inorder/WritebackUnit.cc
-    inorder/WritebackUnit.hh
     outoforder/BalancedPortAllocator.cc
     outoforder/BalancedPortAllocator.hh
     outoforder/Core.cc
@@ -19,8 +15,6 @@ set(SIMENG_SOURCES
     outoforder/DispatchIssueUnit.hh
     outoforder/ExecuteUnit.cc
     outoforder/ExecuteUnit.hh
-    outoforder/FetchUnit.cc
-    outoforder/FetchUnit.hh
     outoforder/PortAllocator.hh
     outoforder/LoadStoreQueue.cc
     outoforder/LoadStoreQueue.hh
@@ -30,8 +24,10 @@ set(SIMENG_SOURCES
     outoforder/RenameUnit.hh
     outoforder/ReorderBuffer.cc
     outoforder/ReorderBuffer.hh
-    outoforder/WritebackUnit.cc
-    outoforder/WritebackUnit.hh
+    pipeline/FetchUnit.cc
+    pipeline/FetchUnit.hh
+    pipeline/WritebackUnit.cc
+    pipeline/WritebackUnit.hh
     emulation/Core.cc
     emulation/Core.hh
     A64Architecture.cc

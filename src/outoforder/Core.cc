@@ -197,7 +197,7 @@ void Core::handleException() {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  auto retired = writebackUnit.getInstructionsRetiredCount();
+  auto retired = writebackUnit.getInstructionsWrittenCount();
   auto ipc = retired / static_cast<float>(ticks);
 
   auto branchStalls = fetchUnit.getBranchStalls();

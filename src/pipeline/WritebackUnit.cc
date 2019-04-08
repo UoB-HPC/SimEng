@@ -1,16 +1,16 @@
 #include "WritebackUnit.hh"
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 WritebackUnit::WritebackUnit(
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots,
     RegisterFileSet& registerFileSet)
-    : completionSlots(completionSlots), registerFileSet(registerFileSet) {}
+    : completionSlots_(completionSlots), registerFileSet_(registerFileSet) {}
 
 void WritebackUnit::tick() {
-  for (size_t slot = 0; slot < completionSlots.size(); slot++) {
-    auto& uop = completionSlots[slot].getHeadSlots()[0];
+  for (size_t slot = 0; slot < completionSlots_.size(); slot++) {
+    auto& uop = completionSlots_[slot].getHeadSlots()[0];
 
     if (uop == nullptr) {
       continue;
@@ -20,19 +20,19 @@ void WritebackUnit::tick() {
     auto& destinations = uop->getDestinationRegisters();
     for (size_t i = 0; i < results.size(); i++) {
       // Write results to register file
-      registerFileSet.set(destinations[i], results[i]);
+      registerFileSet_.set(destinations[i], results[i]);
     }
     uop->setCommitReady();
 
-    instructionsRetired++;
+    instructionsWritten_++;
 
-    completionSlots[slot].getHeadSlots()[0] = nullptr;
+    completionSlots_[slot].getHeadSlots()[0] = nullptr;
   }
 }
 
-uint64_t WritebackUnit::getInstructionsRetiredCount() const {
-  return instructionsRetired;
+uint64_t WritebackUnit::getInstructionsWrittenCount() const {
+  return instructionsWritten_;
 }
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

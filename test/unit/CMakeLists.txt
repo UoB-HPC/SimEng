@@ -1,12 +1,12 @@
 set(TEST_SOURCES
-    inorder/FetchUnitTest.cc
     inorder/DecodeUnitTest.cc
     inorder/ExecuteUnitTest.cc
-    inorder/WritebackUnitTest.cc
     outoforder/BalancedPortAllocatorTest.cc
     outoforder/LoadStoreQueueTest.cc
     outoforder/RegisterAliasTableTest.cc
     outoforder/ReorderBufferTest.cc
+    pipeline/FetchUnitTest.cc
+    pipeline/WritebackUnitTest.cc
     ISATest.cc
     BTBPredictorTest.cc
     PipelineBufferTest.cc
@@ -14,14 +14,14 @@ set(TEST_SOURCES
     )
 
 set(SIMENG_SOURCES
-    ../../src/inorder/FetchUnit.cc
     ../../src/inorder/DecodeUnit.cc
     ../../src/inorder/ExecuteUnit.cc
-    ../../src/inorder/WritebackUnit.cc
     ../../src/outoforder/BalancedPortAllocator.cc
     ../../src/outoforder/RegisterAliasTable.cc
     ../../src/outoforder/ReorderBuffer.cc
     ../../src/outoforder/LoadStoreQueue.cc
+    ../../src/pipeline/FetchUnit.cc
+    ../../src/pipeline/WritebackUnit.cc
     ../../src/A64Architecture.cc
     ../../src/A64Instruction.cc
     ../../src/A64Instruction_address.cc

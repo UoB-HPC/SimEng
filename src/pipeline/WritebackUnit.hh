@@ -4,10 +4,10 @@
 #include "../PipelineBuffer.hh"
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
-/** An out-of-order pipeline writeback unit. Responsible for handling writing
- * instruction results to the register files. */
+/** A writeback pipeline unit. Responsible for writing instruction results to
+ * the register files. */
 class WritebackUnit {
  public:
   /** Constructs a writeback unit with references to an input buffer and
@@ -20,19 +20,18 @@ class WritebackUnit {
   void tick();
 
   /** Retrieve a count of the number of instructions retired. */
-  uint64_t getInstructionsRetiredCount() const;
+  uint64_t getInstructionsWrittenCount() const;
 
  private:
-  /** Buffers of completed instructions to process, coming from the execute
-   * units. */
-  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots;
+  /** Buffers of completed instructions to process. */
+  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots_;
 
   /** The register file set to write results into. */
-  RegisterFileSet& registerFileSet;
+  RegisterFileSet& registerFileSet_;
 
   /** The number of instructions processed and retired by this stage. */
-  uint64_t instructionsRetired = 0;
+  uint64_t instructionsWritten_ = 0;
 };
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

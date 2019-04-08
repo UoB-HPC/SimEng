@@ -5,10 +5,10 @@
 #include <iostream>
 #include <vector>
 
+#include "../pipeline/FetchUnit.hh"
+#include "../pipeline/WritebackUnit.hh"
 #include "DecodeUnit.hh"
 #include "ExecuteUnit.hh"
-#include "FetchUnit.hh"
-#include "WritebackUnit.hh"
 
 namespace simeng {
 namespace inorder {
@@ -52,10 +52,10 @@ class Core : public simeng::Core {
   PipelineBuffer<std::shared_ptr<Instruction>> decodeToExecuteBuffer;
 
   /** The buffer between execute and writeback. */
-  PipelineBuffer<std::shared_ptr<Instruction>> executeToWritebackBuffer;
+  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots;
 
   /** The fetch unit; fetches instructions from memory. */
-  FetchUnit fetchUnit;
+  pipeline::FetchUnit fetchUnit;
 
   /** The decode unit; decodes instructions into uops and reads operands. */
   DecodeUnit decodeUnit;
@@ -65,7 +65,7 @@ class Core : public simeng::Core {
   ExecuteUnit executeUnit;
 
   /** The writeback unit; writes uop results to the register files. */
-  WritebackUnit writebackUnit;
+  pipeline::WritebackUnit writebackUnit;
 
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes = 0;

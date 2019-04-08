@@ -5,7 +5,7 @@
 #include "PipelineBuffer.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "inorder/FetchUnit.hh"
+#include "pipeline/FetchUnit.hh"
 
 using ::testing::_;
 using ::testing::DoAll;
@@ -14,11 +14,11 @@ using ::testing::Return;
 using ::testing::SetArgReferee;
 
 namespace simeng {
-namespace inorder {
+namespace pipeline {
 
-class InOrderFetchUnitTest : public testing::Test {
+class PipelineFetchUnitTest : public testing::Test {
  public:
-  InOrderFetchUnitTest()
+  PipelineFetchUnitTest()
       : output(1, {}), fetchUnit(output, nullptr, 1024, 0, isa, predictor) {}
 
  protected:
@@ -26,13 +26,13 @@ class InOrderFetchUnitTest : public testing::Test {
   MockArchitecture isa;
   MockBranchPredictor predictor;
 
-  FetchUnit fetchUnit;
+  pipeline::FetchUnit fetchUnit;
 };
 
 // Tests that ticking a fetch unit attempts to predict a branch, attempts to
 // predecode from the correct program counter using the supplied prediction, and
 // generates output correctly.
-TEST_F(InOrderFetchUnitTest, Tick) {
+TEST_F(PipelineFetchUnitTest, Tick) {
   BranchPrediction prediction{true, 1};
   MacroOp macroOp = {nullptr};
 
@@ -53,7 +53,7 @@ TEST_F(InOrderFetchUnitTest, Tick) {
 }
 
 // Tests that ticking a fetch unit does nothing if the output has stalled
-TEST_F(InOrderFetchUnitTest, TickStalled) {
+TEST_F(PipelineFetchUnitTest, TickStalled) {
   output.stall(true);
 
   EXPECT_CALL(predictor, predict(_)).Times(0);
@@ -65,5 +65,5 @@ TEST_F(InOrderFetchUnitTest, TickStalled) {
   EXPECT_EQ(output.getTailSlots()[0].size(), 0);
 }
 
-}  // namespace inorder
+}  // namespace pipeline
 }  // namespace simeng

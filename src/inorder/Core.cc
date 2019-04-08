@@ -12,20 +12,20 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
       registerFileSet(isa.getRegisterFileStructures()),
       fetchToDecodeBuffer(1, {}),
       decodeToExecuteBuffer(1, nullptr),
-      executeToWritebackBuffer(1, nullptr),
+      completionSlots(1, {1, nullptr}),
       fetchUnit(fetchToDecodeBuffer, processMemory.data(), processMemory.size(),
                 entryPoint, isa, branchPredictor),
       decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, registerFileSet,
                  branchPredictor),
       executeUnit(
-          decodeToExecuteBuffer, executeToWritebackBuffer,
+          decodeToExecuteBuffer, completionSlots[0],
           [this](auto regs, auto values) {
             return decodeUnit.forwardOperands(regs, values);
           },
           branchPredictor,
           [this](auto instruction) { raiseException(instruction); },
           processMemory.data()),
-      writebackUnit(executeToWritebackBuffer, registerFileSet){};
+      writebackUnit(completionSlots, registerFileSet){};
 
 void Core::tick() {
   ticks++;
@@ -44,7 +44,9 @@ void Core::tick() {
   // as these will now loop around and become the tail.
   fetchToDecodeBuffer.tick();
   decodeToExecuteBuffer.tick();
-  executeToWritebackBuffer.tick();
+  for (auto& buffer : completionSlots) {
+    buffer.tick();
+  }
 
   if (exceptionGenerated_) {
     handleException();
@@ -83,14 +85,14 @@ bool Core::hasHalted() const {
   // are no uops at the head of any buffer.
   bool decodePending = fetchToDecodeBuffer.getHeadSlots()[0].size() > 0;
   bool executePending = decodeToExecuteBuffer.getHeadSlots()[0] != nullptr;
-  bool writebackPending = executeToWritebackBuffer.getHeadSlots()[0] != nullptr;
+  bool writebackPending = completionSlots[0].getHeadSlots()[0] != nullptr;
 
   return (fetchUnit.hasHalted() && !decodePending && !writebackPending &&
           !executePending);
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  auto retired = writebackUnit.getInstructionsRetiredCount();
+  auto retired = writebackUnit.getInstructionsWrittenCount();
   auto ipc = retired / static_cast<float>(ticks);
   return {{"cycles", std::to_string(ticks)},
           {"retired", std::to_string(retired)},
