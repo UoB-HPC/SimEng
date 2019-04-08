@@ -8,7 +8,8 @@ namespace inorder {
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const span<char> processMemory, uint64_t entryPoint,
            const Architecture& isa, BranchPredictor& branchPredictor)
-    : isa(isa),
+    : processMemory_(processMemory),
+      isa(isa),
       registerFileSet(isa.getRegisterFileStructures()),
       fetchToDecodeBuffer(1, {}),
       decodeToExecuteBuffer(1, nullptr),
@@ -22,9 +23,10 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
           [this](auto regs, auto values) {
             return decodeUnit.forwardOperands(regs, values);
           },
-          branchPredictor,
+          [this](auto instruction) { loadData(instruction); },
+          [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
-          processMemory.data()),
+          branchPredictor),
       writebackUnit(completionSlots, registerFileSet){};
 
 void Core::tick() {
@@ -38,6 +40,10 @@ void Core::tick() {
   fetchUnit.tick();
   decodeUnit.tick();
   executeUnit.tick();
+
+  // Read pending registers for ready-to-execute uop; must happen after execute
+  // to allow operand forwarding to take place first
+  decodeUnit.readRegisters();
 
   // Tick buffers
   // Each unit must have wiped the entries at the head of the buffer after use,
@@ -111,6 +117,30 @@ void Core::handleException() {
   isa.handleException(exceptionGeneratingInstruction_);
 
   std::cout << "Halting due to fatal exception" << std::endl;
+}
+
+void Core::loadData(std::shared_ptr<Instruction> instruction) {
+  const auto& addresses = instruction->getGeneratedAddresses();
+  for (auto const& request : addresses) {
+    // Copy the data at the requested memory address into a
+    // RegisterValue
+    auto data =
+        RegisterValue(processMemory_.data() + request.first, request.second);
+
+    instruction->supplyData(request.first, data);
+  }
+}
+
+void Core::storeData(std::shared_ptr<Instruction> instruction) {
+  const auto& addresses = instruction->getGeneratedAddresses();
+  const auto& data = instruction->getData();
+  for (size_t i = 0; i < addresses.size(); i++) {
+    auto& request = addresses[i];
+
+    // Copy data to memory
+    auto address = processMemory_.data() + request.first;
+    memcpy(address, data[i].getAsVector<char>(), request.second);
+  }
 }
 
 }  // namespace inorder

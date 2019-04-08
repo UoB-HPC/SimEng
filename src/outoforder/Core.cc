@@ -55,9 +55,14 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
                         portAllocator, physicalRegisterQuantities, rsSize),
       writebackUnit(completionSlots, registerFileSet) {
   for (size_t i = 0; i < executionUnitCount; i++) {
-    executionUnits.emplace_back(issuePorts[i], completionSlots[i],
-                                dispatchIssueUnit, loadStoreQueue,
-                                branchPredictor);
+    executionUnits.emplace_back(
+        issuePorts[i], completionSlots[i],
+        [this](auto regs, auto values) {
+          dispatchIssueUnit.forwardOperands(regs, values);
+        },
+        [this](auto uop) { loadStoreQueue.startLoad(uop); },
+        [this](auto uop) {}, [this](auto uop) { uop->setCommitReady(); },
+        branchPredictor);
   }
 };
 

@@ -73,9 +73,16 @@ void DecodeUnit::forwardOperands(const span<Register>& registers,
     }
     uop->supplyOperand(registers[i], values[i]);
   }
+}
+
+void DecodeUnit::readRegisters() {
+  auto uop = toExecuteBuffer.getTailSlots()[0];
+  if (uop == nullptr) {
+    return;
+  }
 
   // Register read
-  // Identify remaining missing registers and supply values
+  // Identify missing registers and supply values
   auto sourceRegisters = uop->getOperandRegisters();
   for (size_t i = 0; i < sourceRegisters.size(); i++) {
     auto reg = sourceRegisters[i];

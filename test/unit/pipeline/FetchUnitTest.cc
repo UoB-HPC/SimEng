@@ -26,7 +26,7 @@ class PipelineFetchUnitTest : public testing::Test {
   MockArchitecture isa;
   MockBranchPredictor predictor;
 
-  pipeline::FetchUnit fetchUnit;
+  FetchUnit fetchUnit;
 };
 
 // Tests that ticking a fetch unit attempts to predict a branch, attempts to

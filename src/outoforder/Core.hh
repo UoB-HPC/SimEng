@@ -2,11 +2,11 @@
 
 #include "../Core.hh"
 
+#include "../pipeline/ExecuteUnit.hh"
 #include "../pipeline/FetchUnit.hh"
 #include "../pipeline/WritebackUnit.hh"
 #include "DecodeUnit.hh"
 #include "DispatchIssueUnit.hh"
-#include "ExecuteUnit.hh"
 #include "LoadStoreQueue.hh"
 #include "PortAllocator.hh"
 #include "RegisterAliasTable.hh"
@@ -93,7 +93,7 @@ class Core : public simeng::Core {
 
   /** The set of execution units; executes uops and sends to writeback, also
    * forwarding results to dispatch/issue. */
-  std::vector<ExecuteUnit> executionUnits;
+  std::vector<pipeline::ExecuteUnit> executionUnits;
 
   /** The writeback unit; writes uop results to the register files. */
   pipeline::WritebackUnit writebackUnit;
