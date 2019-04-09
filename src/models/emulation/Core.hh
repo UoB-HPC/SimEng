@@ -1,15 +1,16 @@
 #pragma once
 
-#include "../Core.hh"
+#include "../../Core.hh"
 
 #include <map>
 #include <string>
 
-#include "../Architecture.hh"
-#include "../RegisterFileSet.hh"
-#include "../span.hh"
+#include "../../Architecture.hh"
+#include "../../RegisterFileSet.hh"
+#include "../../span.hh"
 
 namespace simeng {
+namespace models {
 namespace emulation {
 
 /** An emulation-style core model. Executes each instruction in turn. */
@@ -32,32 +33,33 @@ class Core : public simeng::Core {
 
  private:
   /** Handle an encountered exception. */
-  void handleException(std::shared_ptr<Instruction> instruction);
+  void handleException(const std::shared_ptr<Instruction>& instruction);
 
   /** A pointer to process memory. */
-  char* memory;
+  char* memory_;
 
   /** Pointer to the start of instruction memory. */
-  const char* insnPtr;
+  const char* insnPtr_;
 
   /** The length of the available instruction memory. */
-  uint64_t programByteLength;
+  uint64_t programByteLength_;
 
   /** The currently used ISA. */
-  const Architecture& isa;
+  const Architecture& isa_;
 
   /** The current program counter. */
-  uint64_t pc = 0;
+  uint64_t pc_ = 0;
 
   /** The core's register file set. */
-  RegisterFileSet registerFileSet;
+  RegisterFileSet registerFileSet_;
 
   /** Whether or not the core has halted. */
   bool hasHalted_ = false;
 
   /** A reusable macro-op vector to fill with uops. */
-  MacroOp macroOp;
+  MacroOp macroOp_;
 };
 
 }  // namespace emulation
+}  // namespace models
 }  // namespace simeng

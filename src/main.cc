@@ -14,9 +14,9 @@
 #include "BTBPredictor.hh"
 #include "Core.hh"
 #include "Elf.hh"
-#include "emulation/Core.hh"
-#include "inorder/Core.hh"
-#include "outoforder/Core.hh"
+#include "models/emulation/Core.hh"
+#include "models/inorder/Core.hh"
+#include "models/outoforder/Core.hh"
 #include "pipeline/BalancedPortAllocator.hh"
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
@@ -177,20 +177,20 @@ int main(int argc, char** argv) {
   switch (mode) {
     case SimulationMode::OutOfOrder: {
       modeString = "Out-of-Order";
-      core = std::make_unique<simeng::outoforder::Core>(
+      core = std::make_unique<simeng::models::outoforder::Core>(
           processMemoryContainer, entryPoint, arch, predictor, portAllocator);
       break;
     }
     case SimulationMode::InOrderPipelined: {
       modeString = "In-Order Pipelined";
-      core = std::make_unique<simeng::inorder::Core>(
+      core = std::make_unique<simeng::models::inorder::Core>(
           processMemoryContainer, entryPoint, arch, predictor);
       break;
     }
     default: {
       modeString = "Emulation";
-      core = std::make_unique<simeng::emulation::Core>(processMemoryContainer,
-                                                       entryPoint, arch);
+      core = std::make_unique<simeng::models::emulation::Core>(
+          processMemoryContainer, entryPoint, arch);
       break;
     }
   };

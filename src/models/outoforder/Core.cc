@@ -4,12 +4,11 @@
 #include <iostream>
 #include <string>
 
-#include "../pipeline/PortAllocator.hh"
-
 // Temporary; until config options are available
-#include "../A64Instruction.hh"
+#include "../../A64Instruction.hh"
 
 namespace simeng {
+namespace models {
 namespace outoforder {
 
 // TODO: Replace with config options
@@ -33,74 +32,74 @@ const unsigned int executionUnitCount = portArrangement.size();
 Core::Core(const span<char> processMemory, uint64_t entryPoint,
            const Architecture& isa, BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator)
-    : isa(isa),
-      registerFileSet(physicalRegisterStructures),
-      registerAliasTable(isa.getRegisterFileStructures(),
-                         physicalRegisterQuantities),
-      loadStoreQueue(loadQueueSize, storeQueueSize, processMemory.data()),
-      reorderBuffer(robSize, registerAliasTable, loadStoreQueue,
-                    [this](auto instruction) { raiseException(instruction); }),
-      fetchToDecodeBuffer(frontendWidth, {}),
-      decodeToRenameBuffer(frontendWidth, nullptr),
-      renameToDispatchBuffer(frontendWidth, nullptr),
-      issuePorts(executionUnitCount, {1, nullptr}),
-      completionSlots(executionUnitCount, {1, nullptr}),
-      fetchUnit(fetchToDecodeBuffer, processMemory.data(), processMemory.size(),
-                entryPoint, isa, branchPredictor),
-      decodeUnit(fetchToDecodeBuffer, decodeToRenameBuffer, branchPredictor),
-      renameUnit(decodeToRenameBuffer, renameToDispatchBuffer, reorderBuffer,
-                 registerAliasTable, loadStoreQueue,
-                 physicalRegisterStructures.size()),
-      dispatchIssueUnit(renameToDispatchBuffer, issuePorts, registerFileSet,
-                        portAllocator, physicalRegisterQuantities, rsSize),
-      writebackUnit(completionSlots, registerFileSet) {
+    : isa_(isa),
+      registerFileSet_(physicalRegisterStructures),
+      registerAliasTable_(isa.getRegisterFileStructures(),
+                          physicalRegisterQuantities),
+      loadStoreQueue_(loadQueueSize, storeQueueSize, processMemory.data()),
+      reorderBuffer_(robSize, registerAliasTable_, loadStoreQueue_,
+                     [this](auto instruction) { raiseException(instruction); }),
+      fetchToDecodeBuffer_(frontendWidth, {}),
+      decodeToRenameBuffer_(frontendWidth, nullptr),
+      renameToDispatchBuffer_(frontendWidth, nullptr),
+      issuePorts_(executionUnitCount, {1, nullptr}),
+      completionSlots_(executionUnitCount, {1, nullptr}),
+      fetchUnit_(fetchToDecodeBuffer_, processMemory.data(),
+                 processMemory.size(), entryPoint, isa, branchPredictor),
+      decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
+      renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
+                  reorderBuffer_, registerAliasTable_, loadStoreQueue_,
+                  physicalRegisterStructures.size()),
+      dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
+                         portAllocator, physicalRegisterQuantities, rsSize),
+      writebackUnit_(completionSlots_, registerFileSet_) {
   for (size_t i = 0; i < executionUnitCount; i++) {
-    executionUnits.emplace_back(
-        issuePorts[i], completionSlots[i],
+    executionUnits_.emplace_back(
+        issuePorts_[i], completionSlots_[i],
         [this](auto regs, auto values) {
-          dispatchIssueUnit.forwardOperands(regs, values);
+          dispatchIssueUnit_.forwardOperands(regs, values);
         },
-        [this](auto uop) { loadStoreQueue.startLoad(uop); },
+        [this](auto uop) { loadStoreQueue_.startLoad(uop); },
         [this](auto uop) {}, [this](auto uop) { uop->setCommitReady(); },
         branchPredictor);
   }
 };
 
 void Core::tick() {
-  ticks++;
+  ticks_++;
 
   // Writeback must be ticked at start of cycle, to ensure decode reads the
   // correct values
-  writebackUnit.tick();
+  writebackUnit_.tick();
 
   // Tick units
-  fetchUnit.tick();
-  decodeUnit.tick();
-  renameUnit.tick();
-  dispatchIssueUnit.tick();
-  for (auto& eu : executionUnits) {
+  fetchUnit_.tick();
+  decodeUnit_.tick();
+  renameUnit_.tick();
+  dispatchIssueUnit_.tick();
+  for (auto& eu : executionUnits_) {
     // Tick each execution unit
     eu.tick();
   }
 
   // Late tick for the dispatch/issue unit to issue newly ready uops
-  dispatchIssueUnit.issue();
+  dispatchIssueUnit_.issue();
 
   // Tick buffers
   // Each unit must have wiped the entries at the head of the buffer after use,
   // as these will now loop around and become the tail.
-  fetchToDecodeBuffer.tick();
-  decodeToRenameBuffer.tick();
-  renameToDispatchBuffer.tick();
-  for (auto& issuePort : issuePorts) {
+  fetchToDecodeBuffer_.tick();
+  decodeToRenameBuffer_.tick();
+  renameToDispatchBuffer_.tick();
+  for (auto& issuePort : issuePorts_) {
     issuePort.tick();
   }
-  for (auto& completionSlot : completionSlots) {
+  for (auto& completionSlot : completionSlots_) {
     completionSlot.tick();
   }
 
   // Commit instructions from ROB
-  reorderBuffer.commit(commitWidth);
+  reorderBuffer_.commit(commitWidth);
 
   if (exceptionGenerated_) {
     handleException();
@@ -114,46 +113,46 @@ void Core::flushIfNeeded() {
   bool euFlush = false;
   uint64_t targetAddress = 0;
   uint64_t lowestSeqId = 0;
-  for (const auto& eu : executionUnits) {
+  for (const auto& eu : executionUnits_) {
     if (eu.shouldFlush() && (!euFlush || eu.getFlushSeqId() < lowestSeqId)) {
       euFlush = true;
       lowestSeqId = eu.getFlushSeqId();
       targetAddress = eu.getFlushAddress();
     }
   }
-  if (euFlush || reorderBuffer.shouldFlush()) {
+  if (euFlush || reorderBuffer_.shouldFlush()) {
     // Flush was requested in an out-of-order stage.
     // Update PC and wipe in-order buffers (Fetch/Decode, Decode/Rename,
     // Rename/Dispatch)
 
-    if (reorderBuffer.shouldFlush() &&
-        (!euFlush || reorderBuffer.getFlushSeqId() < lowestSeqId)) {
+    if (reorderBuffer_.shouldFlush() &&
+        (!euFlush || reorderBuffer_.getFlushSeqId() < lowestSeqId)) {
       // If the reorder buffer found an older instruction to flush up to, do
       // that instead
-      lowestSeqId = reorderBuffer.getFlushSeqId();
-      targetAddress = reorderBuffer.getFlushAddress();
+      lowestSeqId = reorderBuffer_.getFlushSeqId();
+      targetAddress = reorderBuffer_.getFlushAddress();
     }
 
-    fetchUnit.updatePC(targetAddress);
-    fetchToDecodeBuffer.fill({});
-    decodeToRenameBuffer.fill(nullptr);
-    renameToDispatchBuffer.fill(nullptr);
+    fetchUnit_.updatePC(targetAddress);
+    fetchToDecodeBuffer_.fill({});
+    decodeToRenameBuffer_.fill(nullptr);
+    renameToDispatchBuffer_.fill(nullptr);
 
     // Flush everything younger than the bad instruction from the ROB
-    reorderBuffer.flush(lowestSeqId);
-    dispatchIssueUnit.purgeFlushed();
-    loadStoreQueue.purgeFlushed();
+    reorderBuffer_.flush(lowestSeqId);
+    dispatchIssueUnit_.purgeFlushed();
+    loadStoreQueue_.purgeFlushed();
 
-    flushes++;
-  } else if (decodeUnit.shouldFlush()) {
+    flushes_++;
+  } else if (decodeUnit_.shouldFlush()) {
     // Flush was requested at decode stage
     // Update PC and wipe Fetch/Decode buffer.
-    targetAddress = decodeUnit.getFlushAddress();
+    targetAddress = decodeUnit_.getFlushAddress();
 
-    fetchUnit.updatePC(targetAddress);
-    fetchToDecodeBuffer.fill({});
+    fetchUnit_.updatePC(targetAddress);
+    fetchToDecodeBuffer_.fill({});
 
-    flushes++;
+    flushes_++;
   }
 }
 
@@ -164,23 +163,23 @@ bool Core::hasHalted() const {
 
   // Core is considered to have halted when the fetch unit has halted, and there
   // are no uops at the head of any buffer.
-  if (!fetchUnit.hasHalted()) {
+  if (!fetchUnit_.hasHalted()) {
     return false;
   }
 
-  if (reorderBuffer.size() > 0) {
+  if (reorderBuffer_.size() > 0) {
     return false;
   }
 
-  auto decodeSlots = fetchToDecodeBuffer.getHeadSlots();
-  for (size_t slot = 0; slot < fetchToDecodeBuffer.getWidth(); slot++) {
+  auto decodeSlots = fetchToDecodeBuffer_.getHeadSlots();
+  for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
     if (decodeSlots[slot].size() > 0) {
       return false;
     }
   }
 
-  auto renameSlots = decodeToRenameBuffer.getHeadSlots();
-  for (size_t slot = 0; slot < decodeToRenameBuffer.getWidth(); slot++) {
+  auto renameSlots = decodeToRenameBuffer_.getHeadSlots();
+  for (size_t slot = 0; slot < decodeToRenameBuffer_.getWidth(); slot++) {
     if (renameSlots[slot] != nullptr) {
       return false;
     }
@@ -197,33 +196,33 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 void Core::handleException() {
   exceptionGenerated_ = false;
   hasHalted_ = true;
-  isa.handleException(exceptionGeneratingInstruction_);
+  isa_.handleException(exceptionGeneratingInstruction_);
   std::cout << "Halting due to fatal exception" << std::endl;
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  auto retired = writebackUnit.getInstructionsWrittenCount();
-  auto ipc = retired / static_cast<float>(ticks);
+  auto retired = writebackUnit_.getInstructionsWrittenCount();
+  auto ipc = retired / static_cast<float>(ticks_);
 
-  auto branchStalls = fetchUnit.getBranchStalls();
+  auto branchStalls = fetchUnit_.getBranchStalls();
 
-  auto earlyFlushes = decodeUnit.getEarlyFlushes();
+  auto earlyFlushes = decodeUnit_.getEarlyFlushes();
 
-  auto allocationStalls = renameUnit.getAllocationStalls();
-  auto robStalls = renameUnit.getROBStalls();
-  auto lqStalls = renameUnit.getLoadQueueStalls();
-  auto sqStalls = renameUnit.getStoreQueueStalls();
+  auto allocationStalls = renameUnit_.getAllocationStalls();
+  auto robStalls = renameUnit_.getROBStalls();
+  auto lqStalls = renameUnit_.getLoadQueueStalls();
+  auto sqStalls = renameUnit_.getStoreQueueStalls();
 
-  auto rsStalls = dispatchIssueUnit.getRSStalls();
-  auto frontendStalls = dispatchIssueUnit.getFrontendStalls();
-  auto backendStalls = dispatchIssueUnit.getBackendStalls();
-  auto outOfOrderIssues = dispatchIssueUnit.getOutOfOrderIssueCount();
-  auto portBusyStalls = dispatchIssueUnit.getPortBusyStalls();
+  auto rsStalls = dispatchIssueUnit_.getRSStalls();
+  auto frontendStalls = dispatchIssueUnit_.getFrontendStalls();
+  auto backendStalls = dispatchIssueUnit_.getBackendStalls();
+  auto outOfOrderIssues = dispatchIssueUnit_.getOutOfOrderIssueCount();
+  auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
 
-  return {{"cycles", std::to_string(ticks)},
+  return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
           {"ipc", std::to_string(ipc)},
-          {"flushes", std::to_string(flushes)},
+          {"flushes", std::to_string(flushes_)},
           {"fetch.branchStalls", std::to_string(branchStalls)},
           {"decode.earlyFlushes", std::to_string(earlyFlushes)},
           {"rename.allocationStalls", std::to_string(allocationStalls)},
@@ -238,4 +237,5 @@ std::map<std::string, std::string> Core::getStats() const {
 }
 
 }  // namespace outoforder
+}  // namespace models
 }  // namespace simeng
