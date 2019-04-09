@@ -9,9 +9,9 @@ ExecuteUnit::ExecuteUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& input,
     PipelineBuffer<std::shared_ptr<Instruction>>& output,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    std::function<void(std::shared_ptr<Instruction>)> handleLoad,
-    std::function<void(std::shared_ptr<Instruction>)> handleStore,
-    std::function<void(std::shared_ptr<Instruction>)> raiseException,
+    std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
+    std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
+    std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     BranchPredictor& predictor)
     : input_(input),
       output_(output),

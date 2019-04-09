@@ -30,9 +30,9 @@ class ExecuteUnit {
       PipelineBuffer<std::shared_ptr<Instruction>>& input,
       PipelineBuffer<std::shared_ptr<Instruction>>& output,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      std::function<void(std::shared_ptr<Instruction>)> handleLoad,
-      std::function<void(std::shared_ptr<Instruction>)> handleStore,
-      std::function<void(std::shared_ptr<Instruction>)> raiseException,
+      std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
+      std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
+      std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
       BranchPredictor& predictor);
 
   /** Tick the execute unit. Places incoming instructions into the pipeline and
@@ -66,12 +66,12 @@ class ExecuteUnit {
   std::function<void(span<Register>, span<RegisterValue>)> forwardOperands_;
 
   /** A function handle called after generating the addresses for a load. */
-  std::function<void(std::shared_ptr<Instruction>)> handleLoad_;
+  std::function<void(const std::shared_ptr<Instruction>&)> handleLoad_;
   /** A function handle called after aquiring the data for a store. */
-  std::function<void(std::shared_ptr<Instruction>)> handleStore_;
+  std::function<void(const std::shared_ptr<Instruction>&)> handleStore_;
 
   /** A function handle called upon exception generation. */
-  std::function<void(std::shared_ptr<Instruction>)> raiseException_;
+  std::function<void(const std::shared_ptr<Instruction>&)> raiseException_;
 
   /** A reference to the branch predictor, for updating with prediction results.
    */

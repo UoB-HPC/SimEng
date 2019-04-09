@@ -103,7 +103,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"flushes", std::to_string(flushes)}};
 }
 
-void Core::raiseException(std::shared_ptr<Instruction> instruction) {
+void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
   exceptionGenerated_ = true;
   exceptionGeneratingInstruction_ = instruction;
 }
@@ -116,9 +116,9 @@ void Core::handleException() {
   std::cout << "Halting due to fatal exception" << std::endl;
 }
 
-void Core::loadData(std::shared_ptr<Instruction> instruction) {
+void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   const auto& addresses = instruction->getGeneratedAddresses();
-  for (auto const& request : addresses) {
+  for (const auto& request : addresses) {
     // Copy the data at the requested memory address into a
     // RegisterValue
     auto data =
@@ -128,11 +128,11 @@ void Core::loadData(std::shared_ptr<Instruction> instruction) {
   }
 }
 
-void Core::storeData(std::shared_ptr<Instruction> instruction) {
+void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
   const auto& addresses = instruction->getGeneratedAddresses();
   const auto& data = instruction->getData();
   for (size_t i = 0; i < addresses.size(); i++) {
-    auto& request = addresses[i];
+    const auto& request = addresses[i];
 
     // Copy data to memory
     auto address = processMemory_.data() + request.first;
@@ -145,7 +145,7 @@ void Core::forwardOperands(const span<Register>& registers,
   assert(registers.size() == values.size() &&
          "Mismatched register and value vector sizes");
 
-  auto uop = decodeToExecuteBuffer.getTailSlots()[0];
+  const auto& uop = decodeToExecuteBuffer.getTailSlots()[0];
   if (uop == nullptr) {
     return;
   }
@@ -159,16 +159,16 @@ void Core::forwardOperands(const span<Register>& registers,
 }
 
 void Core::readRegisters() {
-  auto uop = decodeToExecuteBuffer.getTailSlots()[0];
+  const auto& uop = decodeToExecuteBuffer.getTailSlots()[0];
   if (uop == nullptr) {
     return;
   }
 
   // Register read
   // Identify missing registers and supply values
-  auto sourceRegisters = uop->getOperandRegisters();
+  const auto& sourceRegisters = uop->getOperandRegisters();
   for (size_t i = 0; i < sourceRegisters.size(); i++) {
-    auto reg = sourceRegisters[i];
+    const auto& reg = sourceRegisters[i];
     if (!uop->isOperandReady(i)) {
       uop->supplyOperand(reg, registerFileSet.get(reg));
     }
