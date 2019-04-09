@@ -7,7 +7,7 @@
 #include "PortAllocator.hh"
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 /** An entry in the reservation station. */
 struct ReservationStationEntry {
@@ -17,9 +17,9 @@ struct ReservationStationEntry {
   uint8_t port;
 };
 
-/** A dispatch/issue unit for an out-of-order pipeline. Reads instruction
- * operand and performs scoreboarding. Issues instructions to the execution unit
- * once ready. */
+/** A dispatch/issue unit for an out-of-order pipelined processor. Reads
+ * instruction operand and performs scoreboarding. Issues instructions to the
+ * execution unit once ready. */
 class DispatchIssueUnit {
  public:
   /** Construct a dispatch/issue unit with references to input/output buffers,
@@ -73,56 +73,56 @@ class DispatchIssueUnit {
 
  private:
   /** A buffer of instructions to dispatch and read operands for. */
-  PipelineBuffer<std::shared_ptr<Instruction>>& fromRenameBuffer;
+  PipelineBuffer<std::shared_ptr<Instruction>>& input_;
 
   /** Ports to the execution units, for writing ready instructions to. */
-  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts;
+  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts_;
 
   /** A reference to the physical register file set. */
-  const RegisterFileSet& registerFileSet;
+  const RegisterFileSet& registerFileSet_;
 
   /** The register availability scoreboard. */
-  std::vector<std::vector<bool>> scoreboard;
+  std::vector<std::vector<bool>> scoreboard_;
 
   /** The maximum reservation station size. */
-  unsigned int maxReservationStationSize;
+  unsigned int maxReservationStationSize_;
 
   /** The reservation station. Holds instructions until operands become
    * available. */
-  std::deque<ReservationStationEntry> reservationStation;
+  std::deque<ReservationStationEntry> reservationStation_;
 
   /** A dependency matrix, containing all the instructions waiting on an
    * operand. For a register `{type,tag}`, the vector of dependents may be found
    * at `dependencyMatrix[type][tag]`. */
   std::vector<std::vector<std::vector<std::shared_ptr<Instruction>>>>
-      dependencyMatrix;
+      dependencyMatrix_;
 
   /** A reference to the execution port allocator. */
-  PortAllocator& portAllocator;
+  PortAllocator& portAllocator_;
 
   /** A map of port availability. Reset after each cycle. */
-  std::vector<bool> availablePorts;
+  std::vector<bool> availablePorts_;
 
   /** The number of instructions ready to execute. */
-  unsigned int readyCount = 0;
+  unsigned int readyCount_ = 0;
 
   /** The number of cycles stalled due to a full reservation station. */
-  uint64_t rsStalls = 0;
+  uint64_t rsStalls_ = 0;
 
   /** The number of cycles no instructions were issued due to an empty RS. */
-  uint64_t frontendStalls = 0;
+  uint64_t frontendStalls_ = 0;
 
   /** The number of cycles no instructions were issued due to dependencies or a
    * lack of available ports. */
-  uint64_t backendStalls = 0;
+  uint64_t backendStalls_ = 0;
 
   /** The number of instructions issued out-of-order. */
-  uint64_t outOfOrderIssues = 0;
+  uint64_t outOfOrderIssues_ = 0;
 
   /** The number of times an instruction was unable to issue due to a busy port.
    */
-  uint64_t portBusyStalls = 0;
+  uint64_t portBusyStalls_ = 0;
 };
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

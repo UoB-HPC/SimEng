@@ -1,21 +1,21 @@
 set(SIMENG_SOURCES
     inorder/Core.cc
     inorder/Core.hh
-    outoforder/BalancedPortAllocator.cc
-    outoforder/BalancedPortAllocator.hh
     outoforder/Core.cc
     outoforder/Core.hh
-    outoforder/DispatchIssueUnit.cc
-    outoforder/DispatchIssueUnit.hh
-    outoforder/PortAllocator.hh
+    pipeline/BalancedPortAllocator.cc
+    pipeline/BalancedPortAllocator.hh
     pipeline/DecodeUnit.cc
     pipeline/DecodeUnit.hh
+    pipeline/DispatchIssueUnit.cc
+    pipeline/DispatchIssueUnit.hh
     pipeline/ExecuteUnit.cc
     pipeline/ExecuteUnit.hh
     pipeline/FetchUnit.cc
     pipeline/FetchUnit.hh
     pipeline/LoadStoreQueue.cc
     pipeline/LoadStoreQueue.hh
+    pipeline/PortAllocator.hh
     pipeline/RegisterAliasTable.cc
     pipeline/RegisterAliasTable.hh
     pipeline/RenameUnit.cc
