@@ -2,14 +2,14 @@
 #include "Instruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "outoforder/LoadStoreQueue.hh"
+#include "pipeline/LoadStoreQueue.hh"
 
 using ::testing::AtLeast;
 using ::testing::Property;
 using ::testing::Return;
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 const uint8_t MAX_LOADS = 32;
 const uint8_t MAX_STORES = 32;
@@ -291,5 +291,5 @@ TEST_P(LoadStoreQueueTest, NoViolation) {
 INSTANTIATE_TEST_SUITE_P(LoadStoreQueueTests, LoadStoreQueueTest,
                          ::testing::Values<bool>(false, true));
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

@@ -1,12 +1,13 @@
 set(TEST_SOURCES
     outoforder/BalancedPortAllocatorTest.cc
-    outoforder/LoadStoreQueueTest.cc
-    outoforder/RegisterAliasTableTest.cc
-    outoforder/ReorderBufferTest.cc
+    pipeline/ExecuteUnitTest.cc
     pipeline/DecodeUnitTest.cc
     pipeline/FetchUnitTest.cc
+    pipeline/LoadStoreQueueTest.cc
+    pipeline/RegisterAliasTableTest.cc
+    pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
-    pipeline/ExecuteUnitTest.cc
+
     ISATest.cc
     BTBPredictorTest.cc
     PipelineBufferTest.cc
@@ -15,12 +16,12 @@ set(TEST_SOURCES
 
 set(SIMENG_SOURCES
     ../../src/outoforder/BalancedPortAllocator.cc
-    ../../src/outoforder/RegisterAliasTable.cc
-    ../../src/outoforder/ReorderBuffer.cc
-    ../../src/outoforder/LoadStoreQueue.cc
     ../../src/pipeline/DecodeUnit.cc
     ../../src/pipeline/ExecuteUnit.cc
     ../../src/pipeline/FetchUnit.cc
+    ../../src/pipeline/LoadStoreQueue.cc
+    ../../src/pipeline/RegisterAliasTable.cc
+    ../../src/pipeline/ReorderBuffer.cc
     ../../src/pipeline/WritebackUnit.cc
     ../../src/A64Architecture.cc
     ../../src/A64Instruction.cc

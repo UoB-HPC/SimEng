@@ -5,7 +5,7 @@
 #include "../RegisterFileSet.hh"
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 /** A Register Alias Table (RAT) implementation. Contains information on
  * the current register renaming state. */
@@ -46,21 +46,21 @@ class RegisterAliasTable {
  private:
   /** The register mapping tables. Holds a map of architectural -> physical
    * register mappings for each register type. */
-  std::vector<std::vector<uint16_t>> mappingTable;
+  std::vector<std::vector<uint16_t>> mappingTable_;
 
   /** The register history tables. Each table holds an entry for each physical
    * register, recording the physical register formerly assigned to its
    * architectural register; one table is available per register type. */
-  std::vector<std::vector<uint16_t>> historyTable;
+  std::vector<std::vector<uint16_t>> historyTable_;
 
   /** The register destination tables. Holds a map of physical -> architectural
    * register mappings for each register type. Used for rewind behaviour. */
-  std::vector<std::vector<uint16_t>> destinationTable;
+  std::vector<std::vector<uint16_t>> destinationTable_;
 
   /** The free register queues. Holds a list of unallocated physical registers
    * for each register type. */
-  std::vector<std::queue<uint16_t>> freeQueues;
+  std::vector<std::queue<uint16_t>> freeQueues_;
 };
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng
