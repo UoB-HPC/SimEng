@@ -35,15 +35,15 @@ class Core : public simeng::Core {
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
-  void raiseException(std::shared_ptr<Instruction> instruction);
+  void raiseException(const std::shared_ptr<Instruction>& instruction);
 
   /** Handle an exception raised during the cycle. */
   void handleException();
 
   /** Load and supply memory data requested by an instruction. */
-  void loadData(std::shared_ptr<Instruction> instruction);
+  void loadData(const std::shared_ptr<Instruction>& instruction);
   /** Store data supplied by an instruction to memory. */
-  void storeData(std::shared_ptr<Instruction> instruction);
+  void storeData(const std::shared_ptr<Instruction>& instruction);
 
   /** Forward operands to the most recently decoded instruction. */
   void forwardOperands(const span<Register>& destinations,
