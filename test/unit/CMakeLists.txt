@@ -1,9 +1,9 @@
 set(TEST_SOURCES
-    inorder/DecodeUnitTest.cc
     outoforder/BalancedPortAllocatorTest.cc
     outoforder/LoadStoreQueueTest.cc
     outoforder/RegisterAliasTableTest.cc
     outoforder/ReorderBufferTest.cc
+    pipeline/DecodeUnitTest.cc
     pipeline/FetchUnitTest.cc
     pipeline/WritebackUnitTest.cc
     pipeline/ExecuteUnitTest.cc
@@ -14,11 +14,11 @@ set(TEST_SOURCES
     )
 
 set(SIMENG_SOURCES
-    ../../src/inorder/DecodeUnit.cc
     ../../src/outoforder/BalancedPortAllocator.cc
     ../../src/outoforder/RegisterAliasTable.cc
     ../../src/outoforder/ReorderBuffer.cc
     ../../src/outoforder/LoadStoreQueue.cc
+    ../../src/pipeline/DecodeUnit.cc
     ../../src/pipeline/ExecuteUnit.cc
     ../../src/pipeline/FetchUnit.cc
     ../../src/pipeline/WritebackUnit.cc

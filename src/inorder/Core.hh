@@ -5,10 +5,10 @@
 #include <iostream>
 #include <vector>
 
+#include "../pipeline/DecodeUnit.hh"
 #include "../pipeline/ExecuteUnit.hh"
 #include "../pipeline/FetchUnit.hh"
 #include "../pipeline/WritebackUnit.hh"
-#include "DecodeUnit.hh"
 
 namespace simeng {
 namespace inorder {
@@ -45,6 +45,13 @@ class Core : public simeng::Core {
   /** Store data supplied by an instruction to memory. */
   void storeData(std::shared_ptr<Instruction> instruction);
 
+  /** Forward operands to the most recently decoded instruction. */
+  void forwardOperands(const span<Register>& destinations,
+                       const span<RegisterValue>& values);
+
+  /** Read pending registers for the most recently decoded instruction. */
+  void readRegisters();
+
   /** The process memory. */
   const span<char> processMemory_;
 
@@ -67,7 +74,7 @@ class Core : public simeng::Core {
   pipeline::FetchUnit fetchUnit;
 
   /** The decode unit; decodes instructions into uops and reads operands. */
-  DecodeUnit decodeUnit;
+  pipeline::DecodeUnit decodeUnit;
 
   /** The execute unit; executes uops and sends to writeback, also forwarding
    * results. */

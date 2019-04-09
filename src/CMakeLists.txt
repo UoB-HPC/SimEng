@@ -1,14 +1,10 @@
 set(SIMENG_SOURCES
     inorder/Core.cc
     inorder/Core.hh
-    inorder/DecodeUnit.cc
-    inorder/DecodeUnit.hh
     outoforder/BalancedPortAllocator.cc
     outoforder/BalancedPortAllocator.hh
     outoforder/Core.cc
     outoforder/Core.hh
-    outoforder/DecodeUnit.cc
-    outoforder/DecodeUnit.hh
     outoforder/DispatchIssueUnit.cc
     outoforder/DispatchIssueUnit.hh
     outoforder/PortAllocator.hh
@@ -20,6 +16,8 @@ set(SIMENG_SOURCES
     outoforder/RenameUnit.hh
     outoforder/ReorderBuffer.cc
     outoforder/ReorderBuffer.hh
+    pipeline/DecodeUnit.cc
+    pipeline/DecodeUnit.hh
     pipeline/ExecuteUnit.cc
     pipeline/ExecuteUnit.hh
     pipeline/FetchUnit.cc

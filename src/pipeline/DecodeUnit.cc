@@ -3,27 +3,24 @@
 #include <cassert>
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
-DecodeUnit::DecodeUnit(
-    PipelineBuffer<MacroOp>& fromFetch,
-    PipelineBuffer<std::shared_ptr<Instruction>>& toDispatchIssue,
-    BranchPredictor& predictor)
-    : fromFetchBuffer(fromFetch),
-      toDispatchIssueBuffer(toDispatchIssue),
-      predictor(predictor){};
+DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& input,
+                       PipelineBuffer<std::shared_ptr<Instruction>>& output,
+                       BranchPredictor& predictor)
+    : input_(input), output_(output), predictor_(predictor){};
 
 void DecodeUnit::tick() {
-  if (toDispatchIssueBuffer.isStalled()) {
-    fromFetchBuffer.stall(true);
+  if (output_.isStalled()) {
+    input_.stall(true);
     return;
   }
 
   shouldFlush_ = false;
-  fromFetchBuffer.stall(false);
+  input_.stall(false);
 
-  for (size_t slot = 0; slot < fromFetchBuffer.getWidth(); slot++) {
-    auto& macroOp = fromFetchBuffer.getHeadSlots()[slot];
+  for (size_t slot = 0; slot < input_.getWidth(); slot++) {
+    auto& macroOp = input_.getHeadSlots()[slot];
 
     // Assume single uop per macro op for this version
     // TODO: Stall on multiple uops and siphon one per cycle, recording progress
@@ -37,8 +34,8 @@ void DecodeUnit::tick() {
 
     auto& uop = macroOp[0];
 
-    toDispatchIssueBuffer.getTailSlots()[slot] = uop;
-    fromFetchBuffer.getHeadSlots()[slot].clear();
+    output_.getTailSlots()[slot] = uop;
+    input_.getHeadSlots()[slot].clear();
 
     // Check preliminary branch prediction results now that the instruction is
     // decoded. Identifies:
@@ -46,13 +43,13 @@ void DecodeUnit::tick() {
     // - Incorrect targets for immediate branches
     auto [misprediction, correctAddress] = uop->checkEarlyBranchMisprediction();
     if (misprediction) {
-      earlyFlushes++;
+      earlyFlushes_++;
       shouldFlush_ = true;
-      pc = correctAddress;
+      pc_ = correctAddress;
 
       if (!uop->isBranch()) {
         // Non-branch incorrectly predicted as a branch; let the predictor know
-        predictor.update(uop->getInstructionAddress(), false, pc);
+        predictor_.update(uop->getInstructionAddress(), false, pc_);
       }
 
       // Skip processing remaining macro-ops, as they need to be flushed
@@ -62,8 +59,8 @@ void DecodeUnit::tick() {
 }
 
 bool DecodeUnit::shouldFlush() const { return shouldFlush_; }
-uint64_t DecodeUnit::getFlushAddress() const { return pc; }
-uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes; };
+uint64_t DecodeUnit::getFlushAddress() const { return pc_; }
+uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes_; };
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng
