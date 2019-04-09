@@ -1,8 +1,11 @@
 set(SIMENG_SOURCES
-    inorder/Core.cc
-    inorder/Core.hh
-    outoforder/Core.cc
-    outoforder/Core.hh
+
+    models/emulation/Core.cc
+    models/emulation/Core.hh
+    models/inorder/Core.cc
+    models/inorder/Core.hh
+    models/outoforder/Core.cc
+    models/outoforder/Core.hh
     pipeline/BalancedPortAllocator.cc
     pipeline/BalancedPortAllocator.hh
     pipeline/DecodeUnit.cc
@@ -24,8 +27,6 @@ set(SIMENG_SOURCES
     pipeline/ReorderBuffer.hh
     pipeline/WritebackUnit.cc
     pipeline/WritebackUnit.hh
-    emulation/Core.cc
-    emulation/Core.hh
     A64Architecture.cc
     A64Architecture.hh
     A64Instruction.cc

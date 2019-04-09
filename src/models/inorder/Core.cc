@@ -3,40 +3,42 @@
 #include <string>
 
 namespace simeng {
+namespace models {
 namespace inorder {
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const span<char> processMemory, uint64_t entryPoint,
            const Architecture& isa, BranchPredictor& branchPredictor)
     : processMemory_(processMemory),
-      isa(isa),
-      registerFileSet(isa.getRegisterFileStructures()),
-      fetchToDecodeBuffer(1, {}),
-      decodeToExecuteBuffer(1, nullptr),
-      completionSlots(1, {1, nullptr}),
-      fetchUnit(fetchToDecodeBuffer, processMemory.data(), processMemory.size(),
-                entryPoint, isa, branchPredictor),
-      decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, branchPredictor),
-      executeUnit(
-          decodeToExecuteBuffer, completionSlots[0],
+      isa_(isa),
+      registerFileSet_(isa.getRegisterFileStructures()),
+      fetchToDecodeBuffer_(1, {}),
+      decodeToExecuteBuffer_(1, nullptr),
+      completionSlots_(1, {1, nullptr}),
+      fetchUnit_(fetchToDecodeBuffer_, processMemory.data(),
+                 processMemory.size(), entryPoint, isa, branchPredictor),
+      decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
+                  branchPredictor),
+      executeUnit_(
+          decodeToExecuteBuffer_, completionSlots_[0],
           [this](auto regs, auto values) { forwardOperands(regs, values); },
           [this](auto instruction) { loadData(instruction); },
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor),
-      writebackUnit(completionSlots, registerFileSet){};
+      writebackUnit_(completionSlots_, registerFileSet_){};
 
 void Core::tick() {
-  ticks++;
+  ticks_++;
 
   // Writeback must be ticked at start of cycle, to ensure decode reads the
   // correct values
-  writebackUnit.tick();
+  writebackUnit_.tick();
 
   // Tick units
-  fetchUnit.tick();
-  decodeUnit.tick();
-  executeUnit.tick();
+  fetchUnit_.tick();
+  decodeUnit_.tick();
+  executeUnit_.tick();
 
   // Read pending registers for ready-to-execute uop; must happen after execute
   // to allow operand forwarding to take place first
@@ -45,9 +47,9 @@ void Core::tick() {
   // Tick buffers
   // Each unit must have wiped the entries at the head of the buffer after use,
   // as these will now loop around and become the tail.
-  fetchToDecodeBuffer.tick();
-  decodeToExecuteBuffer.tick();
-  for (auto& buffer : completionSlots) {
+  fetchToDecodeBuffer_.tick();
+  decodeToExecuteBuffer_.tick();
+  for (auto& buffer : completionSlots_) {
     buffer.tick();
   }
 
@@ -57,25 +59,25 @@ void Core::tick() {
   }
 
   // Check for flush
-  if (executeUnit.shouldFlush()) {
+  if (executeUnit_.shouldFlush()) {
     // Flush was requested at execute stage
     // Update PC and wipe younger buffers (Fetch/Decode, Decode/Execute)
-    auto targetAddress = executeUnit.getFlushAddress();
+    auto targetAddress = executeUnit_.getFlushAddress();
 
-    fetchUnit.updatePC(targetAddress);
-    fetchToDecodeBuffer.fill({});
-    decodeToExecuteBuffer.fill(nullptr);
+    fetchUnit_.updatePC(targetAddress);
+    fetchToDecodeBuffer_.fill({});
+    decodeToExecuteBuffer_.fill(nullptr);
 
-    flushes++;
-  } else if (decodeUnit.shouldFlush()) {
+    flushes_++;
+  } else if (decodeUnit_.shouldFlush()) {
     // Flush was requested at decode stage
     // Update PC and wipe Fetch/Decode buffer.
-    auto targetAddress = decodeUnit.getFlushAddress();
+    auto targetAddress = decodeUnit_.getFlushAddress();
 
-    fetchUnit.updatePC(targetAddress);
-    fetchToDecodeBuffer.fill({});
+    fetchUnit_.updatePC(targetAddress);
+    fetchToDecodeBuffer_.fill({});
 
-    flushes++;
+    flushes_++;
   }
 }
 
@@ -86,21 +88,21 @@ bool Core::hasHalted() const {
 
   // Core is considered to have halted when the fetch unit has halted, and there
   // are no uops at the head of any buffer.
-  bool decodePending = fetchToDecodeBuffer.getHeadSlots()[0].size() > 0;
-  bool executePending = decodeToExecuteBuffer.getHeadSlots()[0] != nullptr;
-  bool writebackPending = completionSlots[0].getHeadSlots()[0] != nullptr;
+  bool decodePending = fetchToDecodeBuffer_.getHeadSlots()[0].size() > 0;
+  bool executePending = decodeToExecuteBuffer_.getHeadSlots()[0] != nullptr;
+  bool writebackPending = completionSlots_[0].getHeadSlots()[0] != nullptr;
 
-  return (fetchUnit.hasHalted() && !decodePending && !writebackPending &&
+  return (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
           !executePending);
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  auto retired = writebackUnit.getInstructionsWrittenCount();
-  auto ipc = retired / static_cast<float>(ticks);
-  return {{"cycles", std::to_string(ticks)},
+  auto retired = writebackUnit_.getInstructionsWrittenCount();
+  auto ipc = retired / static_cast<float>(ticks_);
+  return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
           {"ipc", std::to_string(ipc)},
-          {"flushes", std::to_string(flushes)}};
+          {"flushes", std::to_string(flushes_)}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
@@ -111,7 +113,7 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 void Core::handleException() {
   exceptionGenerated_ = false;
   hasHalted_ = true;
-  isa.handleException(exceptionGeneratingInstruction_);
+  isa_.handleException(exceptionGeneratingInstruction_);
 
   std::cout << "Halting due to fatal exception" << std::endl;
 }
@@ -145,7 +147,7 @@ void Core::forwardOperands(const span<Register>& registers,
   assert(registers.size() == values.size() &&
          "Mismatched register and value vector sizes");
 
-  const auto& uop = decodeToExecuteBuffer.getTailSlots()[0];
+  const auto& uop = decodeToExecuteBuffer_.getTailSlots()[0];
   if (uop == nullptr) {
     return;
   }
@@ -159,7 +161,7 @@ void Core::forwardOperands(const span<Register>& registers,
 }
 
 void Core::readRegisters() {
-  const auto& uop = decodeToExecuteBuffer.getTailSlots()[0];
+  const auto& uop = decodeToExecuteBuffer_.getTailSlots()[0];
   if (uop == nullptr) {
     return;
   }
@@ -170,10 +172,11 @@ void Core::readRegisters() {
   for (size_t i = 0; i < sourceRegisters.size(); i++) {
     const auto& reg = sourceRegisters[i];
     if (!uop->isOperandReady(i)) {
-      uop->supplyOperand(reg, registerFileSet.get(reg));
+      uop->supplyOperand(reg, registerFileSet_.get(reg));
     }
   }
 }
 
 }  // namespace inorder
+}  // namespace models
 }  // namespace simeng

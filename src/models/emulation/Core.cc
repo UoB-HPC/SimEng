@@ -4,30 +4,31 @@
 #include <iostream>
 
 namespace simeng {
+namespace models {
 namespace emulation {
 
 Core::Core(const span<char> processMemory, uint64_t entryPoint,
            const Architecture& isa)
-    : memory(processMemory.data()),
-      insnPtr(processMemory.data()),
-      programByteLength(processMemory.size()),
-      isa(isa),
-      pc(entryPoint),
-      registerFileSet(isa.getRegisterFileStructures()) {}
+    : memory_(processMemory.data()),
+      insnPtr_(processMemory.data()),
+      programByteLength_(processMemory.size()),
+      isa_(isa),
+      pc_(entryPoint),
+      registerFileSet_(isa.getRegisterFileStructures()) {}
 
 void Core::tick() {
-  if (pc >= programByteLength) {
+  if (pc_ >= programByteLength_) {
     hasHalted_ = true;
     return;
   }
 
   // Fetch
-  auto bytesRead = isa.predecode(insnPtr + pc, 4, pc, {false, 0}, macroOp);
+  auto bytesRead = isa_.predecode(insnPtr_ + pc_, 4, pc_, {false, 0}, macroOp_);
 
-  pc += bytesRead;
+  pc_ += bytesRead;
 
   // Decode
-  auto uop = macroOp[0];
+  auto& uop = macroOp_[0];
   if (uop->exceptionEncountered()) {
     handleException(uop);
     return;
@@ -38,7 +39,7 @@ void Core::tick() {
   for (size_t i = 0; i < registers.size(); i++) {
     auto reg = registers[i];
     if (!uop->isOperandReady(i)) {
-      uop->supplyOperand(reg, registerFileSet.get(reg));
+      uop->supplyOperand(reg, registerFileSet_.get(reg));
     }
   }
 
@@ -47,7 +48,8 @@ void Core::tick() {
     auto addresses = uop->generateAddresses();
     for (auto const& request : addresses) {
       // Copy the data at the requested memory address into a RegisterValue
-      auto data = simeng::RegisterValue(memory + request.first, request.second);
+      auto data =
+          simeng::RegisterValue(memory_ + request.first, request.second);
 
       uop->supplyData(request.first, data);
     }
@@ -69,11 +71,11 @@ void Core::tick() {
       auto request = addresses[i];
 
       // Copy data to memory
-      auto address = memory + request.first;
+      auto address = memory_ + request.first;
       memcpy(address, data[i].getAsVector<char>(), request.second);
     }
   } else if (uop->isBranch()) {
-    pc = uop->getBranchAddress();
+    pc_ = uop->getBranchAddress();
   }
 
   // Writeback
@@ -81,14 +83,14 @@ void Core::tick() {
   auto destinations = uop->getDestinationRegisters();
   for (size_t i = 0; i < results.size(); i++) {
     auto reg = destinations[i];
-    registerFileSet.set(reg, results[i]);
+    registerFileSet_.set(reg, results[i]);
   }
 }
 
-void Core::handleException(std::shared_ptr<Instruction> instruction) {
-  pc = programByteLength;
+void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
+  pc_ = programByteLength_;
   hasHalted_ = true;
-  isa.handleException(instruction);
+  isa_.handleException(instruction);
 
   std::cout << "Halting due to fatal exception" << std::endl;
 }
@@ -98,4 +100,5 @@ bool Core::hasHalted() const { return hasHalted_; }
 std::map<std::string, std::string> Core::getStats() const { return {}; };
 
 }  // namespace emulation
+}  // namespace models
 }  // namespace simeng

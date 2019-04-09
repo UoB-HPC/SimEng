@@ -1,16 +1,17 @@
 #pragma once
 
-#include "../Core.hh"
+#include "../../Core.hh"
 
 #include <iostream>
 #include <vector>
 
-#include "../pipeline/DecodeUnit.hh"
-#include "../pipeline/ExecuteUnit.hh"
-#include "../pipeline/FetchUnit.hh"
-#include "../pipeline/WritebackUnit.hh"
+#include "../../pipeline/DecodeUnit.hh"
+#include "../../pipeline/ExecuteUnit.hh"
+#include "../../pipeline/FetchUnit.hh"
+#include "../../pipeline/WritebackUnit.hh"
 
 namespace simeng {
+namespace models {
 namespace inorder {
 
 /** A simple scalar in-order pipelined core model. */
@@ -56,38 +57,38 @@ class Core : public simeng::Core {
   const span<char> processMemory_;
 
   /** A reference to the core's architecture. */
-  const Architecture& isa;
+  const Architecture& isa_;
 
   /** The core's register file set. */
-  RegisterFileSet registerFileSet;
+  RegisterFileSet registerFileSet_;
 
   /** The buffer between fetch and decode. */
-  PipelineBuffer<MacroOp> fetchToDecodeBuffer;
+  PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
 
   /** The buffer between decode and execute. */
-  PipelineBuffer<std::shared_ptr<Instruction>> decodeToExecuteBuffer;
+  PipelineBuffer<std::shared_ptr<Instruction>> decodeToExecuteBuffer_;
 
   /** The buffer between execute and writeback. */
-  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots;
+  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots_;
 
   /** The fetch unit; fetches instructions from memory. */
-  pipeline::FetchUnit fetchUnit;
+  pipeline::FetchUnit fetchUnit_;
 
   /** The decode unit; decodes instructions into uops and reads operands. */
-  pipeline::DecodeUnit decodeUnit;
+  pipeline::DecodeUnit decodeUnit_;
 
   /** The execute unit; executes uops and sends to writeback, also forwarding
    * results. */
-  pipeline::ExecuteUnit executeUnit;
+  pipeline::ExecuteUnit executeUnit_;
 
   /** The writeback unit; writes uop results to the register files. */
-  pipeline::WritebackUnit writebackUnit;
+  pipeline::WritebackUnit writebackUnit_;
 
   /** The number of times the pipeline has been flushed. */
-  uint64_t flushes = 0;
+  uint64_t flushes_ = 0;
 
   /** The number of times this core has been ticked. */
-  uint64_t ticks = 0;
+  uint64_t ticks_ = 0;
 
   /** Whether an exception was generated during the cycle. */
   bool exceptionGenerated_ = false;
@@ -100,4 +101,5 @@ class Core : public simeng::Core {
 };
 
 }  // namespace inorder
+}  // namespace models
 }  // namespace simeng
