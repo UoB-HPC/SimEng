@@ -2,7 +2,7 @@
 
 #include "../MockBranchPredictor.hh"
 #include "../MockInstruction.hh"
-#include "inorder/DecodeUnit.hh"
+#include "pipeline/DecodeUnit.hh"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -14,13 +14,13 @@ using ::testing::_;
 using ::testing::Property;
 using ::testing::Return;
 
-class InOrderDecodeUnitTest : public testing::Test {
+class PipelineDecodeUnitTest : public testing::Test {
  public:
-  InOrderDecodeUnitTest()
+  PipelineDecodeUnitTest()
       : input(1, {}),
         output(1, nullptr),
         registerFileSet({{8, 1}}),
-        decodeUnit(input, output, registerFileSet, predictor),
+        decodeUnit(input, output, predictor),
         uop(new MockInstruction),
         uopPtr(uop),
         sourceRegisters({{0, 0}}) {}
@@ -30,7 +30,7 @@ class InOrderDecodeUnitTest : public testing::Test {
   PipelineBuffer<std::shared_ptr<Instruction>> output;
   RegisterFileSet registerFileSet;
   MockBranchPredictor predictor;
-  DecodeUnit decodeUnit;
+  pipeline::DecodeUnit decodeUnit;
 
   MockInstruction* uop;
   std::shared_ptr<Instruction> uopPtr;
@@ -40,14 +40,14 @@ class InOrderDecodeUnitTest : public testing::Test {
 
 // Tests that the decode unit output remains empty when an empty macro-op is
 // present
-TEST_F(InOrderDecodeUnitTest, TickEmpty) {
+TEST_F(PipelineDecodeUnitTest, TickEmpty) {
   decodeUnit.tick();
 
   EXPECT_EQ(output.getTailSlots()[0], nullptr);
 }
 
 // Tests that the decode unit extracts an processes a uop correctly
-TEST_F(InOrderDecodeUnitTest, Tick) {
+TEST_F(PipelineDecodeUnitTest, Tick) {
   input.getHeadSlots()[0] = {uopPtr};
 
   EXPECT_CALL(*uop, checkEarlyBranchMisprediction())
@@ -64,7 +64,7 @@ TEST_F(InOrderDecodeUnitTest, Tick) {
 }
 
 // Tests that the decode unit requests a flush when a non-branch is mispredicted
-TEST_F(InOrderDecodeUnitTest, Flush) {
+TEST_F(PipelineDecodeUnitTest, Flush) {
   input.getHeadSlots()[0] = {uopPtr};
 
   uop->setInstructionAddress(2);
@@ -81,37 +81,6 @@ TEST_F(InOrderDecodeUnitTest, Flush) {
   // Check that a flush was correctly requested
   EXPECT_EQ(decodeUnit.shouldFlush(), true);
   EXPECT_EQ(decodeUnit.getFlushAddress(), 1);
-}
-
-// Tests that the decode unit does not forward operands when the uop is ready
-TEST_F(InOrderDecodeUnitTest, ForwardReady) {
-  output.getTailSlots()[0] = uopPtr;
-
-  EXPECT_CALL(*uop, canExecute()).WillOnce(Return(true));
-  EXPECT_CALL(*uop, supplyOperand(_, _)).Times(0);
-
-  std::vector<Register> registers(1);
-  std::vector<RegisterValue> values(1);
-  decodeUnit.forwardOperands({registers.data(), registers.size()},
-                             {values.data(), values.size()});
-}
-
-// Tests that the decode unit forwards operands to non-ready instructions
-TEST_F(InOrderDecodeUnitTest, ForwardNonReady) {
-  output.getTailSlots()[0] = uopPtr;
-
-  std::vector<Register> registers = {{0, 1}};
-  std::vector<RegisterValue> values = {RegisterValue(1, 4)};
-
-  // Check that the instruction readiness is verified before supplying operands
-  EXPECT_CALL(*uop, canExecute()).WillOnce(Return(false));
-  // Check that the forwarded operand is supplied
-  EXPECT_CALL(*uop, supplyOperand(registers[0],
-                                  Property(&RegisterValue::get<uint32_t>, 1)))
-      .Times(1);
-
-  decodeUnit.forwardOperands({registers.data(), registers.size()},
-                             {values.data(), values.size()});
 }
 
 }  // namespace inorder

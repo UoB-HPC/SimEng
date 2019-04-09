@@ -16,13 +16,10 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
       completionSlots(1, {1, nullptr}),
       fetchUnit(fetchToDecodeBuffer, processMemory.data(), processMemory.size(),
                 entryPoint, isa, branchPredictor),
-      decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, registerFileSet,
-                 branchPredictor),
+      decodeUnit(fetchToDecodeBuffer, decodeToExecuteBuffer, branchPredictor),
       executeUnit(
           decodeToExecuteBuffer, completionSlots[0],
-          [this](auto regs, auto values) {
-            return decodeUnit.forwardOperands(regs, values);
-          },
+          [this](auto regs, auto values) { forwardOperands(regs, values); },
           [this](auto instruction) { loadData(instruction); },
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
@@ -43,7 +40,7 @@ void Core::tick() {
 
   // Read pending registers for ready-to-execute uop; must happen after execute
   // to allow operand forwarding to take place first
-  decodeUnit.readRegisters();
+  readRegisters();
 
   // Tick buffers
   // Each unit must have wiped the entries at the head of the buffer after use,
@@ -140,6 +137,41 @@ void Core::storeData(std::shared_ptr<Instruction> instruction) {
     // Copy data to memory
     auto address = processMemory_.data() + request.first;
     memcpy(address, data[i].getAsVector<char>(), request.second);
+  }
+}
+
+void Core::forwardOperands(const span<Register>& registers,
+                           const span<RegisterValue>& values) {
+  assert(registers.size() == values.size() &&
+         "Mismatched register and value vector sizes");
+
+  auto uop = decodeToExecuteBuffer.getTailSlots()[0];
+  if (uop == nullptr) {
+    return;
+  }
+
+  for (size_t i = 0; i < registers.size(); i++) {
+    if (uop->canExecute()) {
+      return;
+    }
+    uop->supplyOperand(registers[i], values[i]);
+  }
+}
+
+void Core::readRegisters() {
+  auto uop = decodeToExecuteBuffer.getTailSlots()[0];
+  if (uop == nullptr) {
+    return;
+  }
+
+  // Register read
+  // Identify missing registers and supply values
+  auto sourceRegisters = uop->getOperandRegisters();
+  for (size_t i = 0; i < sourceRegisters.size(); i++) {
+    auto reg = sourceRegisters[i];
+    if (!uop->isOperandReady(i)) {
+      uop->supplyOperand(reg, registerFileSet.get(reg));
+    }
   }
 }
 

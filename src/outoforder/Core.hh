@@ -2,10 +2,10 @@
 
 #include "../Core.hh"
 
+#include "../pipeline/DecodeUnit.hh"
 #include "../pipeline/ExecuteUnit.hh"
 #include "../pipeline/FetchUnit.hh"
 #include "../pipeline/WritebackUnit.hh"
-#include "DecodeUnit.hh"
 #include "DispatchIssueUnit.hh"
 #include "LoadStoreQueue.hh"
 #include "PortAllocator.hh"
@@ -81,7 +81,7 @@ class Core : public simeng::Core {
   pipeline::FetchUnit fetchUnit;
 
   /** The decode unit; decodes instructions into uops and reads operands. */
-  DecodeUnit decodeUnit;
+  pipeline::DecodeUnit decodeUnit;
 
   /** The rename unit; renames instruction registers. */
   RenameUnit renameUnit;
