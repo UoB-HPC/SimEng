@@ -5,13 +5,13 @@
 #include "../pipeline/DecodeUnit.hh"
 #include "../pipeline/ExecuteUnit.hh"
 #include "../pipeline/FetchUnit.hh"
+#include "../pipeline/LoadStoreQueue.hh"
+#include "../pipeline/RegisterAliasTable.hh"
+#include "../pipeline/RenameUnit.hh"
+#include "../pipeline/ReorderBuffer.hh"
 #include "../pipeline/WritebackUnit.hh"
 #include "DispatchIssueUnit.hh"
-#include "LoadStoreQueue.hh"
 #include "PortAllocator.hh"
-#include "RegisterAliasTable.hh"
-#include "RenameUnit.hh"
-#include "ReorderBuffer.hh"
 
 namespace simeng {
 namespace outoforder {
@@ -53,13 +53,13 @@ class Core : public simeng::Core {
   RegisterFileSet registerFileSet;
 
   /** The core's register alias table. */
-  RegisterAliasTable registerAliasTable;
+  pipeline::RegisterAliasTable registerAliasTable;
 
   /** The core's load/store queue. */
-  LoadStoreQueue loadStoreQueue;
+  pipeline::LoadStoreQueue loadStoreQueue;
 
   /** The core's reorder buffer. */
-  ReorderBuffer reorderBuffer;
+  pipeline::ReorderBuffer reorderBuffer;
 
   /** The buffer between fetch and decode. */
   PipelineBuffer<MacroOp> fetchToDecodeBuffer;
@@ -84,7 +84,7 @@ class Core : public simeng::Core {
   pipeline::DecodeUnit decodeUnit;
 
   /** The rename unit; renames instruction registers. */
-  RenameUnit renameUnit;
+  pipeline::RenameUnit renameUnit;
 
   /** The dispatch/issue unit; dispatches instructions to the reservation
    * station, reads operands, and issues ready instructions to the execution

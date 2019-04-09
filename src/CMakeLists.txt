@@ -8,20 +8,20 @@ set(SIMENG_SOURCES
     outoforder/DispatchIssueUnit.cc
     outoforder/DispatchIssueUnit.hh
     outoforder/PortAllocator.hh
-    outoforder/LoadStoreQueue.cc
-    outoforder/LoadStoreQueue.hh
-    outoforder/RegisterAliasTable.cc
-    outoforder/RegisterAliasTable.hh
-    outoforder/RenameUnit.cc
-    outoforder/RenameUnit.hh
-    outoforder/ReorderBuffer.cc
-    outoforder/ReorderBuffer.hh
     pipeline/DecodeUnit.cc
     pipeline/DecodeUnit.hh
     pipeline/ExecuteUnit.cc
     pipeline/ExecuteUnit.hh
     pipeline/FetchUnit.cc
     pipeline/FetchUnit.hh
+    pipeline/LoadStoreQueue.cc
+    pipeline/LoadStoreQueue.hh
+    pipeline/RegisterAliasTable.cc
+    pipeline/RegisterAliasTable.hh
+    pipeline/RenameUnit.cc
+    pipeline/RenameUnit.hh
+    pipeline/ReorderBuffer.cc
+    pipeline/ReorderBuffer.hh
     pipeline/WritebackUnit.cc
     pipeline/WritebackUnit.hh
     emulation/Core.cc

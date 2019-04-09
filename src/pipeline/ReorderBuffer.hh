@@ -8,7 +8,7 @@
 #include "RegisterAliasTable.hh"
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 /** A Reorder Buffer (ROB) implementation. Contains an in-order queue of
  * in-flight instructions. */
@@ -18,10 +18,10 @@ class ReorderBuffer {
    * reference to the register alias table. */
   ReorderBuffer(
       unsigned int maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
-      std::function<void(std::shared_ptr<Instruction>)> raiseException);
+      std::function<void(const std::shared_ptr<Instruction>&)> raiseException);
 
   /** Add the provided instruction to the ROB. */
-  void reserve(std::shared_ptr<Instruction> insn);
+  void reserve(const std::shared_ptr<Instruction>& insn);
 
   /** Commit and remove up to `maxCommitSize` instructions. */
   unsigned int commit(unsigned int maxCommitSize);
@@ -49,19 +49,19 @@ class ReorderBuffer {
 
  private:
   /** A reference to the register alias table. */
-  RegisterAliasTable& rat;
+  RegisterAliasTable& rat_;
 
   /** A reference to the load/store queue. */
-  LoadStoreQueue& lsq;
+  LoadStoreQueue& lsq_;
 
   /** The maximum size of the ROB. */
-  unsigned int maxSize;
+  unsigned int maxSize_;
 
   /** A function to call upon exception generation. */
-  std::function<void(std::shared_ptr<Instruction>)> raiseException;
+  std::function<void(std::shared_ptr<Instruction>)> raiseException_;
 
   /** The buffer containing in-flight instructions. */
-  std::deque<std::shared_ptr<Instruction>> buffer;
+  std::deque<std::shared_ptr<Instruction>> buffer_;
 
   /** Whether the core should be flushed after the most recent commit. */
   bool shouldFlush_ = false;
@@ -69,15 +69,15 @@ class ReorderBuffer {
   /** The target instruction address the PC should be reset to after the most
    * recent commit.
    */
-  uint64_t pc;
+  uint64_t pc_;
 
   /** The sequence ID of the youngest instruction that should remain after the
    * current flush. */
-  uint64_t flushAfter;
+  uint64_t flushAfter_;
 
   /** The next available sequence ID. */
-  uint64_t seqId = 0;
+  uint64_t seqId_ = 0;
 };
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

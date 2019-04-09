@@ -2,10 +2,10 @@
 #include "Instruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "outoforder/RegisterAliasTable.hh"
+#include "pipeline/RegisterAliasTable.hh"
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 class RegisterAliasTableTest : public testing::Test {
  public:
@@ -93,5 +93,5 @@ TEST_F(RegisterAliasTableTest, Rewind) {
   EXPECT_EQ(rat.freeRegistersAvailable(0), initialFreeRegisters);
 }
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

@@ -3,15 +3,15 @@
 #include <cassert>
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 RegisterAliasTable::RegisterAliasTable(
     std::vector<RegisterFileStructure> architecturalStructure,
     std::vector<uint16_t> physicalRegisterCounts)
-    : mappingTable(architecturalStructure.size()),
-      historyTable(architecturalStructure.size()),
-      destinationTable(architecturalStructure.size()),
-      freeQueues(architecturalStructure.size()) {
+    : mappingTable_(architecturalStructure.size()),
+      historyTable_(architecturalStructure.size()),
+      destinationTable_(architecturalStructure.size()),
+      freeQueues_(architecturalStructure.size()) {
   assert(architecturalStructure.size() == physicalRegisterCounts.size() &&
          "The number of physical register types does not match the number of "
          "architectural register types");
@@ -23,40 +23,40 @@ RegisterAliasTable::RegisterAliasTable(
            "Cannot have fewer physical registers than architectural registers");
 
     // Set up the initial mapping table state for this register type
-    mappingTable[type].resize(archCount);
+    mappingTable_[type].resize(archCount);
 
     for (size_t tag = 0; tag < archCount; tag++) {
       // Pre-assign a physical register to each architectural register
-      mappingTable[type][tag] = tag;
+      mappingTable_[type][tag] = tag;
     }
 
     // Add remaining physical registers to free queue
     for (size_t tag = archCount; tag < physCount; tag++) {
-      freeQueues[type].push(tag);
+      freeQueues_[type].push(tag);
     }
 
     // Set up history/destination tables
-    historyTable[type].resize(physCount);
-    destinationTable[type].resize(physCount);
+    historyTable_[type].resize(physCount);
+    destinationTable_[type].resize(physCount);
   }
 };
 
 Register RegisterAliasTable::getMapping(Register architectural) const {
-  auto tag = mappingTable[architectural.type][architectural.tag];
+  auto tag = mappingTable_[architectural.type][architectural.tag];
   return {architectural.type, tag};
 }
 
 bool RegisterAliasTable::canAllocate(uint8_t type,
                                      unsigned int quantity) const {
-  return (freeQueues[type].size() >= quantity);
+  return (freeQueues_[type].size() >= quantity);
 }
 
 unsigned int RegisterAliasTable::freeRegistersAvailable(uint8_t type) const {
-  return freeQueues[type].size();
+  return freeQueues_[type].size();
 }
 
 Register RegisterAliasTable::allocate(Register architectural) {
-  std::queue<uint16_t>& freeQueue = freeQueues[architectural.type];
+  std::queue<uint16_t>& freeQueue = freeQueues_[architectural.type];
   assert(freeQueue.size() > 0 &&
          "Attempted to allocate free register when none were available");
 
@@ -64,13 +64,13 @@ Register RegisterAliasTable::allocate(Register architectural) {
   freeQueue.pop();
 
   // Keep the old physical register in the history table
-  historyTable[architectural.type][tag] =
-      mappingTable[architectural.type][architectural.tag];
+  historyTable_[architectural.type][tag] =
+      mappingTable_[architectural.type][architectural.tag];
 
   // Update the mapping table with the new tag, and mark the architectural
   // register it replaces in the destination table
-  mappingTable[architectural.type][architectural.tag] = tag;
-  destinationTable[architectural.type][tag] = architectural.tag;
+  mappingTable_[architectural.type][architectural.tag] = tag;
+  destinationTable_[architectural.type][tag] = architectural.tag;
 
   return {architectural.type, tag};
 }
@@ -78,21 +78,21 @@ Register RegisterAliasTable::allocate(Register architectural) {
 void RegisterAliasTable::commit(Register physical) {
   // Find the register previously mapped to the same architectural register and
   // free it
-  auto oldTag = historyTable[physical.type][physical.tag];
-  freeQueues[physical.type].push(oldTag);
+  auto oldTag = historyTable_[physical.type][physical.tag];
+  freeQueues_[physical.type].push(oldTag);
 }
 void RegisterAliasTable::rewind(Register physical) {
   // Find which architectural tag this referred to
-  auto destinationTag = destinationTable[physical.type][physical.tag];
+  auto destinationTag = destinationTable_[physical.type][physical.tag];
   // Rewind the mapping table to the old physical tag
-  mappingTable[physical.type][destinationTag] =
-      historyTable[physical.type][physical.tag];
+  mappingTable_[physical.type][destinationTag] =
+      historyTable_[physical.type][physical.tag];
   // Add the rewound physical tag back to the free queue
-  freeQueues[physical.type].push(physical.tag);
+  freeQueues_[physical.type].push(physical.tag);
 }
 void RegisterAliasTable::free(Register physical) {
-  freeQueues[physical.type].push(physical.tag);
+  freeQueues_[physical.type].push(physical.tag);
 }
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

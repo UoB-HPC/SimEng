@@ -4,7 +4,7 @@
 #include "../Instruction.hh"
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 /** A load store queue (known as "load/store buffers" or "memory order buffer").
  * Holds in-flight memory access requests to ensure load/store consistency. */
@@ -44,10 +44,10 @@ class LoadStoreQueue {
   /** Commit and write the oldest store instruction to memory, removing it from
    * the store queue. Returns `true` if memory disambiguation has discovered a
    * memory order violation during the commit. */
-  bool commitStore(std::shared_ptr<Instruction> uop);
+  bool commitStore(const std::shared_ptr<Instruction>& uop);
 
   /** Remove the oldest load instruction from the load queue. */
-  void commitLoad(std::shared_ptr<Instruction> uop);
+  void commitLoad(const std::shared_ptr<Instruction>& uop);
 
   /** Remove all flushed instructions from the queues. */
   void purgeFlushed();
@@ -61,25 +61,25 @@ class LoadStoreQueue {
 
  private:
   /** The load queue: holds in-flight load instructions. */
-  std::deque<std::shared_ptr<Instruction>> loadQueue;
+  std::deque<std::shared_ptr<Instruction>> loadQueue_;
 
   /** The store queue: holds in-flight store instructions. */
-  std::deque<std::shared_ptr<Instruction>> storeQueue;
+  std::deque<std::shared_ptr<Instruction>> storeQueue_;
 
   /** The maximum number of loads that can be in-flight. Undefined if this is a
    * combined queue. */
-  unsigned int maxLoadQueueSpace;
+  unsigned int maxLoadQueueSpace_;
 
   /** The maximum number of stores that can be in-flight. Undefined if this is a
    * combined queue. */
-  unsigned int maxStoreQueueSpace;
+  unsigned int maxStoreQueueSpace_;
 
   /** The maximum number of memory ops that can be in-flight. Undefined if this
    * is a split queue. */
-  unsigned int maxCombinedSpace;
+  unsigned int maxCombinedSpace_;
 
   /** Whether this queue is combined or split. */
-  bool combined;
+  bool combined_;
 
   /** Retrieve the load queue space for a split queue. */
   unsigned int getLoadQueueSplitSpace() const;
@@ -91,12 +91,12 @@ class LoadStoreQueue {
   unsigned int getCombinedSpace() const;
 
   /** A pointer to process memory. */
-  char* memory;
+  char* memory_;
 
   /** The load instruction associated with the most recently discovered memory
    * order violation. */
-  std::shared_ptr<Instruction> violatingLoad = nullptr;
+  std::shared_ptr<Instruction> violatingLoad_ = nullptr;
 };
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

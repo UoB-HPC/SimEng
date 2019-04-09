@@ -2,14 +2,14 @@
 #include "Instruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "outoforder/LoadStoreQueue.hh"
-#include "outoforder/RegisterAliasTable.hh"
-#include "outoforder/ReorderBuffer.hh"
+#include "pipeline/LoadStoreQueue.hh"
+#include "pipeline/RegisterAliasTable.hh"
+#include "pipeline/ReorderBuffer.hh"
 
 using ::testing::Return;
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 class MockExceptionHandler {
  public:
@@ -196,5 +196,5 @@ TEST_F(ReorderBufferTest, Exception) {
   EXPECT_EQ(committed, 1);
 }
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng
