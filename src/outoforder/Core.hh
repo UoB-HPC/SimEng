@@ -3,15 +3,15 @@
 #include "../Core.hh"
 
 #include "../pipeline/DecodeUnit.hh"
+#include "../pipeline/DispatchIssueUnit.hh"
 #include "../pipeline/ExecuteUnit.hh"
 #include "../pipeline/FetchUnit.hh"
 #include "../pipeline/LoadStoreQueue.hh"
+#include "../pipeline/PortAllocator.hh"
 #include "../pipeline/RegisterAliasTable.hh"
 #include "../pipeline/RenameUnit.hh"
 #include "../pipeline/ReorderBuffer.hh"
 #include "../pipeline/WritebackUnit.hh"
-#include "DispatchIssueUnit.hh"
-#include "PortAllocator.hh"
 
 namespace simeng {
 namespace outoforder {
@@ -24,7 +24,7 @@ class Core : public simeng::Core {
    * predictor, and port allocator to use. */
   Core(const span<char> processMemory, uint64_t entryPoint,
        const Architecture& isa, BranchPredictor& branchPredictor,
-       PortAllocator& portAllocator);
+       pipeline::PortAllocator& portAllocator);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -89,7 +89,7 @@ class Core : public simeng::Core {
   /** The dispatch/issue unit; dispatches instructions to the reservation
    * station, reads operands, and issues ready instructions to the execution
    * unit. */
-  DispatchIssueUnit dispatchIssueUnit;
+  pipeline::DispatchIssueUnit dispatchIssueUnit;
 
   /** The set of execution units; executes uops and sends to writeback, also
    * forwarding results to dispatch/issue. */

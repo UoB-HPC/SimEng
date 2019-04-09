@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 /** A load-balancing port allocator implementation. Maintains demand weightings
  * for each port, and allocates instructions to the suitable port with the
@@ -39,5 +39,5 @@ class BalancedPortAllocator : public PortAllocator {
   std::vector<uint16_t> weights;
 };
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

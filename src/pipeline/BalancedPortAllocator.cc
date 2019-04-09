@@ -3,7 +3,7 @@
 #include <cassert>
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 BalancedPortAllocator::BalancedPortAllocator(
     std::vector<std::vector<uint16_t>> portArrangement)
@@ -48,5 +48,5 @@ uint8_t BalancedPortAllocator::allocate(uint16_t instructionGroup) {
 void BalancedPortAllocator::issued(uint8_t port) { weights[port]--; }
 void BalancedPortAllocator::deallocate(uint8_t port) { issued(port); };
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

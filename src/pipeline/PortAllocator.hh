@@ -3,7 +3,7 @@
 #include <cstdint>
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 /** An abstract execution port allocator interface. */
 class PortAllocator {
@@ -23,5 +23,5 @@ class PortAllocator {
   virtual void deallocate(uint8_t port) = 0;
 };
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

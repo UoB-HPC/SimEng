@@ -3,7 +3,7 @@
 #include <iostream>
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 DispatchIssueUnit::DispatchIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
@@ -11,33 +11,33 @@ DispatchIssueUnit::DispatchIssueUnit(
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
     const std::vector<uint16_t>& physicalRegisterStructure,
     unsigned int maxReservationStationSize)
-    : fromRenameBuffer(fromRename),
-      issuePorts(issuePorts),
-      registerFileSet(registerFileSet),
-      scoreboard(physicalRegisterStructure.size()),
-      maxReservationStationSize(maxReservationStationSize),
-      dependencyMatrix(physicalRegisterStructure.size()),
-      portAllocator(portAllocator),
-      availablePorts(issuePorts.size()) {
+    : input_(fromRename),
+      issuePorts_(issuePorts),
+      registerFileSet_(registerFileSet),
+      scoreboard_(physicalRegisterStructure.size()),
+      maxReservationStationSize_(maxReservationStationSize),
+      dependencyMatrix_(physicalRegisterStructure.size()),
+      portAllocator_(portAllocator),
+      availablePorts_(issuePorts.size()) {
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
-    scoreboard[type].assign(physicalRegisterStructure[type], true);
-    dependencyMatrix[type].resize(physicalRegisterStructure[type]);
+    scoreboard_[type].assign(physicalRegisterStructure[type], true);
+    dependencyMatrix_[type].resize(physicalRegisterStructure[type]);
   }
 };
 
 void DispatchIssueUnit::tick() {
-  for (size_t slot = 0; slot < fromRenameBuffer.getWidth(); slot++) {
-    auto& uop = fromRenameBuffer.getHeadSlots()[slot];
+  for (size_t slot = 0; slot < input_.getWidth(); slot++) {
+    auto& uop = input_.getHeadSlots()[slot];
     if (uop == nullptr) {
       continue;
     }
-    if (reservationStation.size() == maxReservationStationSize) {
-      fromRenameBuffer.stall(true);
-      rsStalls++;
+    if (reservationStation_.size() == maxReservationStationSize_) {
+      input_.stall(true);
+      rsStalls_++;
       return;
     }
-    fromRenameBuffer.stall(false);
+    input_.stall(false);
 
     // Assume the uop will be ready
     bool ready = true;
@@ -50,84 +50,84 @@ void DispatchIssueUnit::tick() {
 
       if (!uop->isOperandReady(i)) {
         // The operand hasn't already been supplied
-        if (scoreboard[reg.type][reg.tag]) {
+        if (scoreboard_[reg.type][reg.tag]) {
           // The scoreboard says it's ready; read and supply the register value
-          uop->supplyOperand(reg, registerFileSet.get(reg));
+          uop->supplyOperand(reg, registerFileSet_.get(reg));
         } else {
           // This register isn't ready yet. Register this uop to the dependency
           // matrix for a more efficient lookup later
-          dependencyMatrix[reg.type][reg.tag].push_back(uop);
+          dependencyMatrix_[reg.type][reg.tag].push_back(uop);
           ready = false;
         }
       }
     }
 
     if (ready) {
-      readyCount++;
+      readyCount_++;
     }
 
     // Set scoreboard for all destination registers as not ready
     auto& destinationRegisters = uop->getDestinationRegisters();
     for (const auto& reg : destinationRegisters) {
-      scoreboard[reg.type][reg.tag] = false;
+      scoreboard_[reg.type][reg.tag] = false;
     }
 
-    uint8_t port = portAllocator.allocate(uop->getGroup());
+    uint8_t port = portAllocator_.allocate(uop->getGroup());
 
-    reservationStation.push_back({uop, port});
-    fromRenameBuffer.getHeadSlots()[slot] = nullptr;
+    reservationStation_.push_back({uop, port});
+    input_.getHeadSlots()[slot] = nullptr;
   }
 }
 
 void DispatchIssueUnit::issue() {
   // Mark all ports as available unless they're stalled
-  for (size_t i = 0; i < availablePorts.size(); i++) {
-    availablePorts[i] = !issuePorts[i].isStalled();
+  for (size_t i = 0; i < availablePorts_.size(); i++) {
+    availablePorts_[i] = !issuePorts_[i].isStalled();
   }
 
-  const int maxIssue = issuePorts.size();
+  const int maxIssue = issuePorts_.size();
   int issued = 0;
-  auto it = reservationStation.begin();
+  auto it = reservationStation_.begin();
 
-  unsigned int readyRemaining = readyCount;
+  unsigned int readyRemaining = readyCount_;
 
   // Iterate over RS to find a ready uop to issue
-  while (issued < maxIssue && it != reservationStation.end() &&
+  while (issued < maxIssue && it != reservationStation_.end() &&
          readyRemaining > 0) {
     auto& entry = *it;
 
     if (entry.uop->canExecute()) {
-      if (!availablePorts[entry.port]) {
+      if (!availablePorts_[entry.port]) {
         // Entry is ready, but port isn't available; skip
         readyRemaining--;
-        portBusyStalls++;
+        portBusyStalls_++;
         continue;
       }
 
       // Found a suitable entry; add to output, increment issue counter,
       // decrement ready counter, and remove from RS
-      issuePorts[entry.port].getTailSlots()[0] = entry.uop;
-      availablePorts[entry.port] = false;
-      portAllocator.issued(entry.port);
+      issuePorts_[entry.port].getTailSlots()[0] = entry.uop;
+      availablePorts_[entry.port] = false;
+      portAllocator_.issued(entry.port);
 
       issued++;
-      readyCount--;
+      readyCount_--;
       readyRemaining--;
 
-      if (it != reservationStation.begin()) {
-        outOfOrderIssues++;
+      if (it != reservationStation_.begin()) {
+        outOfOrderIssues_++;
       }
-      it = reservationStation.erase(it);
+      it = reservationStation_.erase(it);
     } else {
       it++;
     }
   }
 
   if (issued == 0) {
-    if (reservationStation.size() == 0) {
-      frontendStalls++;
+    if (reservationStation_.size() == 0) {
+      frontendStalls_++;
     } else {
-      backendStalls++;
+      backendStalls_++;
     }
   }
 }
@@ -140,49 +140,53 @@ void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
   for (size_t i = 0; i < registers.size(); i++) {
     const auto& reg = registers[i];
     // Flag scoreboard as ready now result is available
-    scoreboard[reg.type][reg.tag] = true;
+    scoreboard_[reg.type][reg.tag] = true;
 
     // Supply the value to all dependent uops
-    const auto& dependents = dependencyMatrix[reg.type][reg.tag];
+    const auto& dependents = dependencyMatrix_[reg.type][reg.tag];
     for (auto& uop : dependents) {
       uop->supplyOperand(reg, values[i]);
       if (uop->canExecute()) {
-        readyCount++;
+        readyCount_++;
       }
     }
 
     // Clear the dependency list
-    dependencyMatrix[reg.type][reg.tag].clear();
+    dependencyMatrix_[reg.type][reg.tag].clear();
   }
 }
 
 void DispatchIssueUnit::setRegisterReady(Register reg) {
-  scoreboard[reg.type][reg.tag] = true;
+  scoreboard_[reg.type][reg.tag] = true;
 }
 
 void DispatchIssueUnit::purgeFlushed() {
-  auto it = reservationStation.begin();
-  while (it != reservationStation.end()) {
+  auto it = reservationStation_.begin();
+  while (it != reservationStation_.end()) {
     auto& entry = *it;
     if (entry.uop->isFlushed()) {
       if (entry.uop->canExecute()) {
-        readyCount--;
+        readyCount_--;
       }
-      portAllocator.deallocate(entry.port);
-      it = reservationStation.erase(it);
+      portAllocator_.deallocate(entry.port);
+      it = reservationStation_.erase(it);
     } else {
       it++;
     }
   }
 }
 
-uint64_t DispatchIssueUnit::getRSStalls() const { return rsStalls; }
-uint64_t DispatchIssueUnit::getFrontendStalls() const { return frontendStalls; }
-uint64_t DispatchIssueUnit::getBackendStalls() const { return backendStalls; }
-uint64_t DispatchIssueUnit::getOutOfOrderIssueCount() const {
-  return outOfOrderIssues;
+uint64_t DispatchIssueUnit::getRSStalls() const { return rsStalls_; }
+uint64_t DispatchIssueUnit::getFrontendStalls() const {
+  return frontendStalls_;
 }
-uint64_t DispatchIssueUnit::getPortBusyStalls() const { return portBusyStalls; }
+uint64_t DispatchIssueUnit::getBackendStalls() const { return backendStalls_; }
+uint64_t DispatchIssueUnit::getOutOfOrderIssueCount() const {
+  return outOfOrderIssues_;
+}
+uint64_t DispatchIssueUnit::getPortBusyStalls() const {
+  return portBusyStalls_;
+}
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

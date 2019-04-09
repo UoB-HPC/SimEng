@@ -4,7 +4,7 @@
 #include <iostream>
 #include <string>
 
-#include "PortAllocator.hh"
+#include "../pipeline/PortAllocator.hh"
 
 // Temporary; until config options are available
 #include "../A64Instruction.hh"
@@ -32,7 +32,7 @@ const unsigned int executionUnitCount = portArrangement.size();
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(const span<char> processMemory, uint64_t entryPoint,
            const Architecture& isa, BranchPredictor& branchPredictor,
-           PortAllocator& portAllocator)
+           pipeline::PortAllocator& portAllocator)
     : isa(isa),
       registerFileSet(physicalRegisterStructures),
       registerAliasTable(isa.getRegisterFileStructures(),

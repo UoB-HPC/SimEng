@@ -16,8 +16,8 @@
 #include "Elf.hh"
 #include "emulation/Core.hh"
 #include "inorder/Core.hh"
-#include "outoforder/BalancedPortAllocator.hh"
 #include "outoforder/Core.hh"
+#include "pipeline/BalancedPortAllocator.hh"
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
@@ -168,8 +168,7 @@ int main(int argc, char** argv) {
       {simeng::A64InstructionGroups::ARITHMETIC},
       {simeng::A64InstructionGroups::ARITHMETIC,
        simeng::A64InstructionGroups::BRANCH}};
-  auto portAllocator =
-      simeng::outoforder::BalancedPortAllocator(portArrangement);
+  auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
   int iterations = 0;
 
