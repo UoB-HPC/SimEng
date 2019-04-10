@@ -18,6 +18,7 @@ set(SIMENG_SOURCES
     pipeline/FetchUnit.hh
     pipeline/LoadStoreQueue.cc
     pipeline/LoadStoreQueue.hh
+    pipeline/PipelineBuffer.hh
     pipeline/PortAllocator.hh
     pipeline/RegisterAliasTable.cc
     pipeline/RegisterAliasTable.hh
@@ -48,7 +49,6 @@ set(SIMENG_SOURCES
     Elf.hh
     Instruction.cc
     Instruction.hh
-    PipelineBuffer.hh
     RegisterFileSet.cc
     RegisterFileSet.hh
     RegisterValue.cc

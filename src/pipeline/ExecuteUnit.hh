@@ -5,7 +5,7 @@
 
 #include "../BranchPredictor.hh"
 #include "../Instruction.hh"
-#include "../PipelineBuffer.hh"
+#include "PipelineBuffer.hh"
 
 namespace simeng {
 namespace pipeline {

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../Instruction.hh"
-#include "../PipelineBuffer.hh"
 #include "LoadStoreQueue.hh"
+#include "PipelineBuffer.hh"
 #include "RegisterAliasTable.hh"
 #include "ReorderBuffer.hh"
 

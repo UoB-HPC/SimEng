@@ -3,7 +3,7 @@
 #include <deque>
 
 #include "../Instruction.hh"
-#include "../PipelineBuffer.hh"
+#include "PipelineBuffer.hh"
 #include "PortAllocator.hh"
 
 namespace simeng {

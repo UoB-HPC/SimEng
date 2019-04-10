@@ -1,9 +1,9 @@
 #include "../MockInstruction.hh"
 #include "Instruction.hh"
-#include "PipelineBuffer.hh"
 #include "RegisterFileSet.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "pipeline/PipelineBuffer.hh"
 #include "pipeline/WritebackUnit.hh"
 
 using ::testing::_;

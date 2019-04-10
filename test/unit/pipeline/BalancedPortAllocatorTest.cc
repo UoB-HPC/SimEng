@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
-#include "outoforder/BalancedPortAllocator.hh"
+#include "pipeline/BalancedPortAllocator.hh"
 
 namespace simeng {
-namespace outoforder {
+namespace pipeline {
 
 // Tests that the balanced port allocator can correctly allocate a port for a
 // supported group
@@ -60,5 +60,5 @@ TEST(BalancedPortAllocatorTest, Deallocate) {
   EXPECT_EQ(portAllocator.allocate(0), 0);
 }
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

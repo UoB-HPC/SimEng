@@ -1,21 +1,21 @@
 set(TEST_SOURCES
-    outoforder/BalancedPortAllocatorTest.cc
+    pipeline/BalancedPortAllocatorTest.cc
     pipeline/ExecuteUnitTest.cc
     pipeline/DecodeUnitTest.cc
+    pipeline/ExecuteUnitTest.cc
     pipeline/FetchUnitTest.cc
     pipeline/LoadStoreQueueTest.cc
+    pipeline/PipelineBufferTest.cc
     pipeline/RegisterAliasTableTest.cc
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
-
-    ISATest.cc
     BTBPredictorTest.cc
-    PipelineBufferTest.cc
+    ISATest.cc
     RegisterValueTest.cc
     )
 
 set(SIMENG_SOURCES
-    ../../src/outoforder/BalancedPortAllocator.cc
+    ../../src/pipeline/BalancedPortAllocator.cc
     ../../src/pipeline/DecodeUnit.cc
     ../../src/pipeline/ExecuteUnit.cc
     ../../src/pipeline/FetchUnit.cc
