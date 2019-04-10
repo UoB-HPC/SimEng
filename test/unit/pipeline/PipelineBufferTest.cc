@@ -1,13 +1,14 @@
-#include "PipelineBuffer.hh"
 #include "gtest/gtest.h"
+#include "pipeline/PipelineBuffer.hh"
 
-namespace {
+namespace simeng {
+namespace pipeline {
 
 class PipelineBufferTest : public ::testing::TestWithParam<size_t> {};
 
 // Test that we can create a pipeline buffer with a specified initial value
 TEST_P(PipelineBufferTest, Create) {
-  auto pipelineBuffer = simeng::PipelineBuffer<int>(GetParam(), 1);
+  auto pipelineBuffer = PipelineBuffer<int>(GetParam(), 1);
   for (size_t i = 0; i < GetParam(); i++) {
     EXPECT_EQ(pipelineBuffer.getTailSlots()[i], 1);
     EXPECT_EQ(pipelineBuffer.getHeadSlots()[i], 1);
@@ -16,7 +17,7 @@ TEST_P(PipelineBufferTest, Create) {
 
 // Test that values move when ticked
 TEST_P(PipelineBufferTest, Tick) {
-  auto pipelineBuffer = simeng::PipelineBuffer<int>(GetParam(), 0);
+  auto pipelineBuffer = PipelineBuffer<int>(GetParam(), 0);
   for (size_t i = 0; i < GetParam(); i++) {
     pipelineBuffer.getTailSlots()[i] = i;
   }
@@ -31,7 +32,7 @@ TEST_P(PipelineBufferTest, Tick) {
 
 // Test that values don't move once stalled
 TEST_P(PipelineBufferTest, Stall) {
-  auto pipelineBuffer = simeng::PipelineBuffer<int>(GetParam(), 0);
+  auto pipelineBuffer = PipelineBuffer<int>(GetParam(), 0);
   for (size_t i = 0; i < GetParam(); i++) {
     pipelineBuffer.getTailSlots()[i] = i;
   }
@@ -48,7 +49,7 @@ TEST_P(PipelineBufferTest, Stall) {
 
 // Test that filling the buffer works
 TEST_P(PipelineBufferTest, Fill) {
-  auto pipelineBuffer = simeng::PipelineBuffer<int>(GetParam(), 1);
+  auto pipelineBuffer = PipelineBuffer<int>(GetParam(), 1);
 
   pipelineBuffer.fill(0);
 
@@ -61,4 +62,5 @@ TEST_P(PipelineBufferTest, Fill) {
 INSTANTIATE_TEST_SUITE_P(PipelineBufferTests, PipelineBufferTest,
                          ::testing::Range<size_t>(1, 9, 1));
 
-}  // namespace
+}  // namespace pipeline
+}  // namespace simeng

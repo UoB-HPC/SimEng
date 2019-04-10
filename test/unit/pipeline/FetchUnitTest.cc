@@ -2,10 +2,10 @@
 #include "../MockBranchPredictor.hh"
 #include "Architecture.hh"
 #include "Instruction.hh"
-#include "PipelineBuffer.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "pipeline/FetchUnit.hh"
+#include "pipeline/PipelineBuffer.hh"
 
 using ::testing::_;
 using ::testing::DoAll;

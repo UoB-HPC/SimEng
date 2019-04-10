@@ -5,6 +5,7 @@
 #include <vector>
 
 namespace simeng {
+namespace pipeline {
 
 // TODO: Extend to allow specifying the number of cycles it will take for
 // information to move from tail to head (currently fixed at 1 by
@@ -79,4 +80,5 @@ class PipelineBuffer {
   static const unsigned int length = 2;
 };
 
+}  // namespace pipeline
 }  // namespace simeng

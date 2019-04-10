@@ -7,6 +7,7 @@
 #include "../../pipeline/ExecuteUnit.hh"
 #include "../../pipeline/FetchUnit.hh"
 #include "../../pipeline/LoadStoreQueue.hh"
+#include "../../pipeline/PipelineBuffer.hh"
 #include "../../pipeline/PortAllocator.hh"
 #include "../../pipeline/RegisterAliasTable.hh"
 #include "../../pipeline/RenameUnit.hh"
@@ -63,20 +64,23 @@ class Core : public simeng::Core {
   pipeline::ReorderBuffer reorderBuffer_;
 
   /** The buffer between fetch and decode. */
-  PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
+  pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
 
   /** The buffer between decode and rename. */
-  PipelineBuffer<std::shared_ptr<Instruction>> decodeToRenameBuffer_;
+  pipeline::PipelineBuffer<std::shared_ptr<Instruction>> decodeToRenameBuffer_;
 
   /** The buffer between rename and dispatch/issue. */
-  PipelineBuffer<std::shared_ptr<Instruction>> renameToDispatchBuffer_;
+  pipeline::PipelineBuffer<std::shared_ptr<Instruction>>
+      renameToDispatchBuffer_;
 
   /** The issue ports; single-width buffers between issue and execute. */
-  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> issuePorts_;
+  std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
+      issuePorts_;
 
   /** The completion slots; single-width buffers between execute and writeback.
    */
-  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots_;
+  std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
+      completionSlots_;
 
   /** The fetch unit; fetches instructions from memory. */
   pipeline::FetchUnit fetchUnit_;

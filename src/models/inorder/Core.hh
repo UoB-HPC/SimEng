@@ -63,13 +63,14 @@ class Core : public simeng::Core {
   RegisterFileSet registerFileSet_;
 
   /** The buffer between fetch and decode. */
-  PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
+  pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
 
   /** The buffer between decode and execute. */
-  PipelineBuffer<std::shared_ptr<Instruction>> decodeToExecuteBuffer_;
+  pipeline::PipelineBuffer<std::shared_ptr<Instruction>> decodeToExecuteBuffer_;
 
   /** The buffer between execute and writeback. */
-  std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots_;
+  std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
+      completionSlots_;
 
   /** The fetch unit; fetches instructions from memory. */
   pipeline::FetchUnit fetchUnit_;

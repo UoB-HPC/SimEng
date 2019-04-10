@@ -8,7 +8,7 @@
 #include "gtest/gtest.h"
 
 namespace simeng {
-namespace inorder {
+namespace pipeline {
 
 using ::testing::_;
 using ::testing::Property;
@@ -30,7 +30,7 @@ class PipelineDecodeUnitTest : public testing::Test {
   PipelineBuffer<std::shared_ptr<Instruction>> output;
   RegisterFileSet registerFileSet;
   MockBranchPredictor predictor;
-  pipeline::DecodeUnit decodeUnit;
+  DecodeUnit decodeUnit;
 
   MockInstruction* uop;
   std::shared_ptr<Instruction> uopPtr;
@@ -83,5 +83,5 @@ TEST_F(PipelineDecodeUnitTest, Flush) {
   EXPECT_EQ(decodeUnit.getFlushAddress(), 1);
 }
 
-}  // namespace inorder
+}  // namespace pipeline
 }  // namespace simeng
