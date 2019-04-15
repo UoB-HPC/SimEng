@@ -9,8 +9,7 @@
 namespace simeng {
 
 std::unordered_map<uint32_t, A64Instruction> A64Architecture::decodeCache;
-std::unordered_map<uint32_t, A64InstructionMetadata>
-    A64Architecture::metadataCache;
+std::forward_list<A64InstructionMetadata> A64Architecture::metadataCache;
 
 A64Architecture::A64Architecture() {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
@@ -48,9 +47,9 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                             : A64InstructionMetadata(encoding);
 
     // Cache the metadata
-    metadataCache.insert({insn, metadata});
+    metadataCache.emplace_front(metadata);
     // Create and cache an instruction using the metadata
-    decodeCache.insert({insn, metadataCache.find(insn)->second});
+    decodeCache.insert({insn, metadataCache.front()});
   }
 
   // Retrieve the cached instruction

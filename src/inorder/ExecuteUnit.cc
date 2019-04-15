@@ -22,7 +22,7 @@ ExecuteUnit::ExecuteUnit(
 void ExecuteUnit::tick() {
   shouldFlush_ = false;
 
-  auto uop = fromDecodeBuffer.getHeadSlots()[0];
+  auto& uop = fromDecodeBuffer.getHeadSlots()[0];
   if (uop == nullptr) {
     // NOP
     // Forward a lack of results to trigger reading other operands.
@@ -82,8 +82,7 @@ void ExecuteUnit::tick() {
   // Operand forwarding; allows a dependent uop to execute next cycle
   forwardOperands(uop->getDestinationRegisters(), uop->getResults());
 
-  auto out = toWritebackBuffer.getTailSlots();
-  out[0] = uop;
+  toWritebackBuffer.getTailSlots()[0] = uop;
 
   fromDecodeBuffer.getHeadSlots()[0] = nullptr;
 }
