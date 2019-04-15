@@ -16,7 +16,7 @@ class MockArchitecture : public Architecture {
                      std::vector<RegisterFileStructure>());
   MOCK_CONST_METHOD1(canRename, bool(Register reg));
   MOCK_CONST_METHOD1(handleException,
-                     void(std::shared_ptr<Instruction> instruction));
+                     void(const std::shared_ptr<Instruction>& instruction));
 };
 
 }  // namespace simeng
