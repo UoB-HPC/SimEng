@@ -68,7 +68,7 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 }
 
 void A64Architecture::handleException(
-    std::shared_ptr<Instruction> instruction) const {
+    const std::shared_ptr<Instruction>& instruction) const {
   A64Instruction* insn = static_cast<A64Instruction*>(instruction.get());
 
   A64InstructionException exception = insn->getException();

@@ -47,11 +47,7 @@ void Core::tick() {
   executeToWritebackBuffer.tick();
 
   if (exceptionGenerated_) {
-    exceptionGenerated_ = false;
-    hasHalted_ = true;
-    isa.handleException(exceptionGeneratingInstruction_);
-
-    std::cout << "Halting due to fatal exception" << std::endl;
+    handleException();
     return;
   }
 
@@ -105,6 +101,14 @@ std::map<std::string, std::string> Core::getStats() const {
 void Core::raiseException(std::shared_ptr<Instruction> instruction) {
   exceptionGenerated_ = true;
   exceptionGeneratingInstruction_ = instruction;
+}
+
+void Core::handleException() {
+  exceptionGenerated_ = false;
+  hasHalted_ = true;
+  isa.handleException(exceptionGeneratingInstruction_);
+
+  std::cout << "Halting due to fatal exception" << std::endl;
 }
 
 }  // namespace inorder
