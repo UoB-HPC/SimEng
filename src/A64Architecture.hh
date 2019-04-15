@@ -2,6 +2,7 @@
 
 #include "Architecture.hh"
 
+#include <forward_list>
 #include <unordered_map>
 
 #include "A64Instruction.hh"
@@ -39,7 +40,7 @@ class A64Architecture : public Architecture {
   /** A decoding metadata cache, mapping an instruction word to a previously
    * decoded instruction metadata bundle. Metadata is added to the cache as it's
    * decoded, to reduce the overhead of future decoding. */
-  static std::unordered_map<uint32_t, A64InstructionMetadata> metadataCache;
+  static std::forward_list<A64InstructionMetadata> metadataCache;
 
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;
