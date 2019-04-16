@@ -86,6 +86,15 @@ void A64InstructionMetadata::revertAliasing() {
     operands[2].reg = ARM64_REG_XZR;
     operands[2].access = CS_AC_READ;
     cc ^= 1;  // invert lowest bit to negate cc
+  } else if (opcode == A64Opcode::AArch64_ORRXrs &&
+             !std::strncmp(mnemonic, "mov", 3)) {
+    operandCount = 3;
+    operands[2] = operands[1];
+
+    operands[1].type = ARM64_OP_REG;
+    operands[1].reg = ARM64_REG_XZR;
+    operands[1].access = CS_AC_READ;
+    operands[1].shift = {ARM64_SFT_INVALID, 0};
   }
 }
 

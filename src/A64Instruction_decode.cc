@@ -191,6 +191,12 @@ void A64Instruction::decode() {
       isStore_ = true;
     }
   }
+  if (metadata.opcode == A64Opcode::AArch64_LDRXl ||
+      metadata.opcode == A64Opcode::AArch64_LDRSWl) {
+    // Literal loads aren't flagged as having a memory operand, so these must be
+    // marked as loads manually
+    isLoad_ = true;
+  }
 }
 
 void A64Instruction::nyi() {
