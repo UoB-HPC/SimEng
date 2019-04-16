@@ -9,6 +9,24 @@ uint8_t nzcv(bool n, bool z, bool c, bool v) {
   return (n << 3) | (z << 2) | (c << 1) | v;
 }
 
+uint64_t shiftValue(uint64_t value, uint8_t shiftType, uint8_t amount) {
+  switch (shiftType) {
+    case ARM64_SFT_LSL:
+      return value << amount;
+    case ARM64_SFT_LSR:
+      return value >> amount;
+    case ARM64_SFT_ASR:
+      return static_cast<int64_t>(value) >> amount;
+    case ARM64_SFT_ROR:
+      return (value >> amount) && (value << (63 - amount));
+    case ARM64_SFT_INVALID:
+      return value;
+    default:
+      assert(false && "Unknown shift type");
+      return 0;
+  }
+}
+
 std::tuple<uint64_t, uint8_t> addWithCarry(uint64_t x, uint64_t y,
                                            bool carryIn) {
   int64_t result = static_cast<int64_t>(x) + static_cast<int64_t>(y) + carryIn;
@@ -211,6 +229,10 @@ void A64Instruction::execute() {
       results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 8);
       return;
     }
+    case A64Opcode::AArch64_LDRXl: {  // ldr xt, #imm
+      results[0] = memoryData[0];
+      return;
+    }
     case A64Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]
       results[0] = memoryData[0];
       return;
@@ -236,6 +258,12 @@ void A64Instruction::execute() {
       results[0] = RegisterValue(value, 8);
       return;
     }
+    case A64Opcode::AArch64_MOVZXi: {  // movz xd, #imm
+      uint8_t shift = metadata.operands[1].shift.value;
+      uint64_t value = metadata.operands[1].imm << shift;
+      results[0] = value;
+      return;
+    }
     case A64Opcode::AArch64_ORRWri: {  // orr wd, wn, #imm
       auto value = operands[0].get<uint32_t>();
       auto result = (value | static_cast<uint32_t>(metadata.operands[2].imm));
@@ -246,6 +274,14 @@ void A64Instruction::execute() {
       auto value = operands[0].get<uint64_t>();
       auto result = value | metadata.operands[2].imm;
       results[0] = RegisterValue(result);
+      return;
+    }
+    case A64Opcode::AArch64_ORRXrs: {
+      uint64_t result = operands[0].get<uint64_t>() |
+                        shiftValue(operands[1].get<uint64_t>(),
+                                   metadata.operands[2].shift.type,
+                                   metadata.operands[2].shift.value);
+      results[0] = result;
       return;
     }
     case A64Opcode::AArch64_RET: {  // ret {xr}
