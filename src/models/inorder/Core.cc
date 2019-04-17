@@ -26,7 +26,14 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor),
-      writebackUnit_(completionSlots_, registerFileSet_){};
+      writebackUnit_(completionSlots_, registerFileSet_) {
+  // Query and apply initial state
+  auto state = isa.getInitialState(processMemory);
+  for (size_t i = 0; i < state.modifiedRegisters.size(); i++) {
+    registerFileSet_.set(state.modifiedRegisters[i],
+                         state.modifiedRegisterValues[i]);
+  }
+};
 
 void Core::tick() {
   ticks_++;

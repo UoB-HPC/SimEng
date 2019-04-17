@@ -114,6 +114,18 @@ std::vector<RegisterFileStructure> A64Architecture::getRegisterFileStructures()
   };
 }
 
+ProcessStateChange A64Architecture::getInitialState(
+    span<char> processMemory) const {
+  ProcessStateChange changes;
+
+  // Set the stack pointer to the end of the process memory
+  changes.modifiedRegisters.push_back({A64RegisterType::GENERAL, 31});
+  changes.modifiedRegisterValues.push_back(
+      static_cast<uint64_t>(processMemory.size()));
+
+  return changes;
+}
+
 bool A64Architecture::canRename(Register reg) const { return true; }
 
 }  // namespace simeng

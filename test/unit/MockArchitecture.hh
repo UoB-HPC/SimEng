@@ -17,6 +17,8 @@ class MockArchitecture : public Architecture {
   MOCK_CONST_METHOD1(canRename, bool(Register reg));
   MOCK_CONST_METHOD1(handleException,
                      void(const std::shared_ptr<Instruction>& instruction));
+  MOCK_CONST_METHOD1(getInitialState,
+                     ProcessStateChange(span<char> processMemory));
 };
 
 }  // namespace simeng
