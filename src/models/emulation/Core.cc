@@ -29,6 +29,8 @@ void Core::tick() {
     return;
   }
 
+  std::cout << "0x" << std::hex << pc_ << std::dec << std::endl;
+
   // Fetch
   auto bytesRead = isa_.predecode(insnPtr_ + pc_, 4, pc_, {false, 0}, macroOp_);
 
@@ -54,9 +56,12 @@ void Core::tick() {
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
     for (auto const& request : addresses) {
+      assert(request.first + request.second <= programByteLength_ &&
+             "Attempted to load from outside memory limit");
+
       // Copy the data at the requested memory address into a RegisterValue
-      auto data =
-          simeng::RegisterValue(memory_ + request.first, request.second);
+      const char* address = memory_ + request.first;
+      auto data = simeng::RegisterValue(address, request.second);
 
       uop->supplyData(request.first, data);
     }
@@ -79,7 +84,7 @@ void Core::tick() {
 
       // Copy data to memory
       auto address = memory_ + request.first;
-      assert(request.first + request.second < programByteLength_ &&
+      assert(request.first + request.second <= programByteLength_ &&
              "Attempted to store outside memory limit");
       memcpy(address, data[i].getAsVector<char>(), request.second);
     }

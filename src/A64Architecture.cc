@@ -118,10 +118,22 @@ ProcessStateChange A64Architecture::getInitialState(
     span<char> processMemory) const {
   ProcessStateChange changes;
 
-  // Set the stack pointer to the end of the process memory
+  // Set the base of the stack at the top of process memory
+  uint64_t stackBase = processMemory.size();
+
+  // Decrement the stack pointer and populate with `argc` and `argv`
+  // TODO: allow defining process arguments
+  // Stack pointer must be aligned to a 16-byte interval
+  uint64_t stackPointer = stackBase - 16;
+
+  // argc, 0
+  changes.memoryAddresses.push_back({stackBase, 8});
+  changes.memoryAddressValues.push_back(static_cast<uint64_t>(0));
+  // No need to write argv as it's 0-length
+
+  // Set the stack pointer register
   changes.modifiedRegisters.push_back({A64RegisterType::GENERAL, 31});
-  changes.modifiedRegisterValues.push_back(
-      static_cast<uint64_t>(processMemory.size()));
+  changes.modifiedRegisterValues.push_back(stackPointer);
 
   return changes;
 }
