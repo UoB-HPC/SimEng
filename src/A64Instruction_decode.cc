@@ -137,8 +137,10 @@ void A64Instruction::decode() {
     const auto& op = metadata.operands[i];
 
     if (op.type == ARM64_OP_REG) {  // Register operand
-      if (op.access & cs_ac_type::CS_AC_WRITE) {
-        // Add register writes to destinations
+      if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&
+          op.reg != ARM64_REG_XZR) {
+        // Add register writes to destinations, but skip zero-register
+        // destinations
         destinationRegisters[destinationRegisterCount] =
             csRegToRegister(op.reg);
         destinationRegisterCount++;

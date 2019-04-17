@@ -1,6 +1,8 @@
 #include "A64Instruction.hh"
 #include "A64InstructionMetadata.hh"
 
+#include <iostream>
+
 namespace simeng {
 
 span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
@@ -34,6 +36,18 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
       uint64_t base =
           operands[0].get<uint64_t>() + metadata.operands[0].mem.disp;
       setMemoryAddresses({{base, 16}, {base + 16, 16}});
+      break;
+    }
+    case A64Opcode::AArch64_STPXi: {  // stp xt1, xt2, [xn, #imm]
+      uint64_t base =
+          operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
+      setMemoryAddresses({{base, 8}, {base + 8, 8}});
+      break;
+    }
+    case A64Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
+      uint64_t base =
+          operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
+      setMemoryAddresses({{base, 8}, {base + 8, 8}});
       break;
     }
     case A64Opcode::AArch64_STPQi: {  // stp qt1, qt2, [xn, #imm]

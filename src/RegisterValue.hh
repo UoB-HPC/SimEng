@@ -81,6 +81,9 @@ class RegisterValue {
     }
   }
 
+  /** Retrieve the number of bytes stored. */
+  size_t size() const { return bytes; }
+
   /** Check whether this RegisterValue has an assigned value or is empty. */
   operator bool() const;
 

@@ -17,9 +17,11 @@ bool Register::operator!=(const Register& other) const {
 
 RegisterFileSet::RegisterFileSet(
     std::vector<RegisterFileStructure> registerFileStructures)
-    : registerFiles(registerFileStructures.size()) {
+    : registerFiles(registerFileStructures.size()),
+      registerSizes(registerFileStructures.size()) {
   for (size_t type = 0; type < registerFileStructures.size(); type++) {
     const auto& structure = registerFileStructures[type];
+    registerSizes[type] = structure.bytes;
     registerFiles[type] = std::vector<RegisterValue>(
         structure.quantity, RegisterValue(0, structure.bytes));
   }
@@ -30,6 +32,8 @@ RegisterValue RegisterFileSet::get(Register reg) const {
 }
 
 void RegisterFileSet::set(Register reg, const RegisterValue& value) {
+  assert(value.size() != 0 && value.size() == registerSizes[reg.type] &&
+         "Attempted to write an incorrectly sized value to a register");
   registerFiles[reg.type][reg.tag] = value;
 }
 

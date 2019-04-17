@@ -14,7 +14,14 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
       programByteLength_(processMemory.size()),
       isa_(isa),
       pc_(entryPoint),
-      registerFileSet_(isa.getRegisterFileStructures()) {}
+      registerFileSet_(isa.getRegisterFileStructures()) {
+  // Query and apply initial state
+  auto state = isa.getInitialState(processMemory);
+  for (size_t i = 0; i < state.modifiedRegisters.size(); i++) {
+    registerFileSet_.set(state.modifiedRegisters[i],
+                         state.modifiedRegisterValues[i]);
+  }
+}
 
 void Core::tick() {
   if (pc_ >= programByteLength_) {
@@ -72,6 +79,8 @@ void Core::tick() {
 
       // Copy data to memory
       auto address = memory_ + request.first;
+      assert(request.first + request.second < programByteLength_ &&
+             "Attempted to store outside memory limit");
       memcpy(address, data[i].getAsVector<char>(), request.second);
     }
   } else if (uop->isBranch()) {

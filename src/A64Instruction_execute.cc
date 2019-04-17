@@ -153,6 +153,22 @@ void A64Instruction::execute() {
       }
       return;
     }
+    case A64Opcode::AArch64_BL: {  // bl #imm
+      branchTaken_ = true;
+      branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
+      results[0] = static_cast<uint64_t>(instructionAddress_ + 4);
+      return;
+    }
+    case A64Opcode::AArch64_CBZX: {  // cbz xn, #imm
+      if (operands[0].get<uint64_t>() == 0) {
+        branchTaken_ = true;
+        branchAddress_ = instructionAddress_ + metadata.operands[1].imm;
+      } else {
+        branchTaken_ = false;
+        branchAddress_ = instructionAddress_ + 4;
+      }
+      return;
+    }
     case A64Opcode::AArch64_CSINCWr: {  // csinc wd, wn, wm, cc
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         results[0] = RegisterValue(operands[1].get<uint32_t>(), 8);
@@ -289,6 +305,17 @@ void A64Instruction::execute() {
       branchAddress_ = operands[0].get<uint64_t>();
       return;
     }
+    case A64Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
+      return;
+    }
+    case A64Opcode::AArch64_STPXi: {  // stp xt1, xt2, [xn, #imm]
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      return;
+    }
     case A64Opcode::AArch64_STPQi: {  // stp qt1, qt2, [xn, #imm]
       memoryData[0] = operands[0];
       memoryData[1] = operands[1];
@@ -307,7 +334,9 @@ void A64Instruction::execute() {
       auto y = ~static_cast<uint32_t>(metadata.operands[2].imm);
       auto [result, nzcv] = addWithCarry(x, y, true);
       results[0] = RegisterValue(nzcv);
-      results[1] = RegisterValue(result, 8);
+      if (destinationRegisterCount > 1) {
+        results[1] = RegisterValue(result, 8);
+      }
       return;
     }
     case A64Opcode::AArch64_SUBSXri: {  // subs xd, xn, #imm
@@ -315,7 +344,9 @@ void A64Instruction::execute() {
       auto y = ~(metadata.operands[2].imm);
       auto [result, nzcv] = addWithCarry(x, y, true);
       results[0] = RegisterValue(nzcv);
-      results[1] = RegisterValue(result);
+      if (destinationRegisterCount > 1) {
+        results[1] = RegisterValue(result);
+      }
       return;
     }
     case A64Opcode::AArch64_SUBWri: {  // sub wd, wn, #imm

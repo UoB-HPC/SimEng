@@ -32,6 +32,9 @@ class A64Architecture : public Architecture {
   void handleException(
       const std::shared_ptr<Instruction>& instruction) const override;
 
+  /** Retrieve the initial process state for the supplied process memory. */
+  ProcessStateChange getInitialState(span<char> processMemory) const override;
+
  private:
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to

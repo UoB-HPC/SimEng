@@ -63,6 +63,12 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
         [this](auto uop) {}, [this](auto uop) { uop->setCommitReady(); },
         branchPredictor);
   }
+  // Query and apply initial state
+  auto state = isa.getInitialState(processMemory);
+  for (size_t i = 0; i < state.modifiedRegisters.size(); i++) {
+    registerFileSet_.set(state.modifiedRegisters[i],
+                         state.modifiedRegisterValues[i]);
+  }
 };
 
 void Core::tick() {
