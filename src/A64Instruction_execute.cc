@@ -27,6 +27,43 @@ uint64_t shiftValue(uint64_t value, uint8_t shiftType, uint8_t amount) {
   }
 }
 
+/** Extend `value` according to `extendType`, and left-shift the result by
+ * `shift` */
+uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
+  uint64_t extended;
+  switch (extendType) {
+    case ARM64_EXT_UXTB:
+      extended = static_cast<uint8_t>(value);
+      break;
+    case ARM64_EXT_UXTH:
+      extended = static_cast<uint16_t>(value);
+      break;
+    case ARM64_EXT_UXTW:
+      extended = static_cast<uint32_t>(value);
+      break;
+    case ARM64_EXT_UXTX:
+      extended = value;
+      break;
+    case ARM64_EXT_SXTB:
+      extended = static_cast<int8_t>(value);
+      break;
+    case ARM64_EXT_SXTH:
+      extended = static_cast<int16_t>(value);
+      break;
+    case ARM64_EXT_SXTW:
+      extended = static_cast<int32_t>(value);
+      break;
+    case ARM64_EXT_SXTX:
+      extended = value;
+      break;
+    case ARM64_EXT_INVALID:
+      assert(false && "Invalid extension type");
+      return 0;
+  }
+
+  return extended << shift;
+}
+
 std::tuple<uint64_t, uint8_t> addWithCarry(uint64_t x, uint64_t y,
                                            bool carryIn) {
   int64_t result = static_cast<int64_t>(x) + static_cast<int64_t>(y) + carryIn;
@@ -132,6 +169,14 @@ void A64Instruction::execute() {
       results[0] = RegisterValue(x + y);
       return;
     }
+    case A64Opcode::AArch64_ADDXrx: {  // add xd, xn, xm, {<extend> {#imm}}
+      auto x = operands[0].get<uint64_t>();
+      auto y =
+          extendValue(operands[1].get<uint64_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.value);
+      results[0] = x + y;
+      return;
+    }
     case A64Opcode::AArch64_ADRP: {  // adrp xd, #imm
       // Clear lowest 12 bits of address and add immediate (already shifted by
       // decoder)
@@ -157,6 +202,16 @@ void A64Instruction::execute() {
       branchTaken_ = true;
       branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
       results[0] = static_cast<uint64_t>(instructionAddress_ + 4);
+      return;
+    }
+    case A64Opcode::AArch64_CBNZX: {  // cbnz xn, #imm
+      if (operands[0].get<uint64_t>() == 0) {
+        branchTaken_ = false;
+        branchAddress_ = instructionAddress_ + 4;
+      } else {
+        branchTaken_ = true;
+        branchAddress_ = instructionAddress_ + metadata.operands[1].imm;
+      }
       return;
     }
     case A64Opcode::AArch64_CBZX: {  // cbz xn, #imm
@@ -247,6 +302,11 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_LDRXl: {  // ldr xt, #imm
       results[0] = memoryData[0];
+      return;
+    }
+    case A64Opcode::AArch64_LDRXpost: {  // ldr xt, [xn], #imm
+      results[0] = memoryData[0];
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       return;
     }
     case A64Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]

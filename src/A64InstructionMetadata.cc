@@ -107,6 +107,18 @@ void A64InstructionMetadata::revertAliasing() {
     operands[0].type = ARM64_OP_REG;
     operands[0].reg = ARM64_REG_WZR;
     operands[0].access = CS_AC_WRITE;
+  } else if (opcode == A64Opcode::AArch64_SUBSXri &&
+             !std::strncmp(mnemonic, "cmp", 3)) {
+    // cmp xn, #imm; alias for: subs xzr, xn, #imm
+    operandCount = 3;
+    operands[2] = operands[1];
+
+    operands[1] = operands[0];
+    operands[1].access = CS_AC_READ;
+
+    operands[0].type = ARM64_OP_REG;
+    operands[0].reg = ARM64_REG_XZR;
+    operands[0].access = CS_AC_WRITE;
   }
 }
 
