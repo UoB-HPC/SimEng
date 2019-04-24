@@ -54,7 +54,8 @@ class Architecture {
       const = 0;
 
   virtual ExceptionResult handleException(
-      const std::shared_ptr<Instruction>& instruction) const = 0;
+      const std::shared_ptr<Instruction>& instruction,
+      const RegisterFileSet& registerFileSet, const char* memory) const = 0;
 
   /** Retrieve the initial process state for the supplied process memory. */
   virtual ProcessStateChange getInitialState(

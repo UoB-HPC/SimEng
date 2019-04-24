@@ -120,7 +120,8 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 void Core::handleException() {
   exceptionGenerated_ = false;
   hasHalted_ = true;
-  isa_.handleException(exceptionGeneratingInstruction_);
+  isa_.handleException(exceptionGeneratingInstruction_, registerFileSet_,
+                       processMemory_.data());
 
   std::cout << "Halting due to fatal exception" << std::endl;
 }

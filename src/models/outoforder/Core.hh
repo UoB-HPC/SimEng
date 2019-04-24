@@ -57,6 +57,9 @@ class Core : public simeng::Core {
   /** The core's register alias table. */
   pipeline::RegisterAliasTable registerAliasTable_;
 
+  /** The process memory. */
+  span<char> processMemory;
+
   /** The core's load/store queue. */
   pipeline::LoadStoreQueue loadStoreQueue_;
 
