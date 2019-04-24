@@ -121,15 +121,30 @@ ProcessStateChange A64Architecture::getInitialState(
   // Set the base of the stack at the top of process memory
   uint64_t stackBase = processMemory.size();
 
-  // Decrement the stack pointer and populate with `argc` and `argv`
+  // Decrement the stack pointer and populate with initial stack state
+  // (https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html)
+
   // TODO: allow defining process arguments
   // Stack pointer must be aligned to a 16-byte interval
-  uint64_t stackPointer = stackBase - 16;
+  uint64_t stackPointer = stackBase - 32;
 
   // argc, 0
   changes.memoryAddresses.push_back({stackBase, 8});
   changes.memoryAddressValues.push_back(static_cast<uint64_t>(0));
-  // No need to write argv as it's 0-length
+
+  // argv null terminator
+  changes.memoryAddresses.push_back({stackBase + 8, 8});
+  changes.memoryAddressValues.push_back(static_cast<uint64_t>(0));
+
+  // no environment pointers (envp)
+
+  // environment pointers null terminator
+  changes.memoryAddresses.push_back({stackBase + 16, 8});
+  changes.memoryAddressValues.push_back(static_cast<uint64_t>(0));
+
+  // ELF auxillary data end-of-table
+  changes.memoryAddresses.push_back({stackBase + 24, 8});
+  changes.memoryAddressValues.push_back(static_cast<uint64_t>(0));
 
   // Set the stack pointer register
   changes.modifiedRegisters.push_back({A64RegisterType::GENERAL, 31});
