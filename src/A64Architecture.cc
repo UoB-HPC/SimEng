@@ -66,7 +66,7 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   return 4;
 }
 
-void A64Architecture::handleException(
+ExceptionResult A64Architecture::handleException(
     const std::shared_ptr<Instruction>& instruction) const {
   A64Instruction* insn = static_cast<A64Instruction*>(instruction.get());
 
@@ -112,6 +112,8 @@ void A64Architecture::handleException(
   }
   std::cout << "\n      opcode ID: " << metadata.opcode;
   std::cout << std::endl;
+
+  return {true, 0, {}};
 }
 
 std::vector<RegisterFileStructure> A64Architecture::getRegisterFileStructures()

@@ -17,10 +17,7 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
       registerFileSet_(isa.getRegisterFileStructures()) {
   // Query and apply initial state
   auto state = isa.getInitialState(processMemory);
-  for (size_t i = 0; i < state.modifiedRegisters.size(); i++) {
-    registerFileSet_.set(state.modifiedRegisters[i],
-                         state.modifiedRegisterValues[i]);
-  }
+  applyStateChange(state);
 }
 
 void Core::tick() {
@@ -29,7 +26,7 @@ void Core::tick() {
     return;
   }
 
-  std::cout << "0x" << std::hex << pc_ << std::dec << std::endl;
+  // std::cout << "0x" << std::hex << pc_ << std::dec << std::endl;
 
   // Fetch
   auto bytesRead = isa_.predecode(insnPtr_ + pc_, 4, pc_, {false, 0}, macroOp_);
@@ -56,14 +53,7 @@ void Core::tick() {
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
     for (auto const& request : addresses) {
-      assert(request.first + request.second <= programByteLength_ &&
-             "Attempted to load from outside memory limit");
-
-      // Copy the data at the requested memory address into a RegisterValue
-      const char* address = memory_ + request.first;
-      auto data = simeng::RegisterValue(address, request.second);
-
-      uop->supplyData(request.first, data);
+      uop->supplyData(request.first, readMemory(request));
     }
   } else if (uop->isStore()) {
     uop->generateAddresses();
@@ -80,13 +70,7 @@ void Core::tick() {
     auto addresses = uop->getGeneratedAddresses();
     auto data = uop->getData();
     for (size_t i = 0; i < addresses.size(); i++) {
-      auto request = addresses[i];
-
-      // Copy data to memory
-      auto address = memory_ + request.first;
-      assert(request.first + request.second <= programByteLength_ &&
-             "Attempted to store outside memory limit");
-      memcpy(address, data[i].getAsVector<char>(), request.second);
+      writeMemory(addresses[i], data[i]);
     }
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
@@ -102,11 +86,48 @@ void Core::tick() {
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
-  pc_ = programByteLength_;
-  hasHalted_ = true;
-  isa_.handleException(instruction);
+  auto result = isa_.handleException(instruction);
 
-  std::cout << "Halting due to fatal exception" << std::endl;
+  if (result.fatal) {
+    pc_ = programByteLength_;
+    hasHalted_ = true;
+    std::cout << "Halting due to fatal exception" << std::endl;
+    return;
+  }
+
+  pc_ = result.instructionAddress;
+  applyStateChange(result.stateChange);
+}
+
+void Core::applyStateChange(const ProcessStateChange& change) {
+  // Update registers
+  for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+    registerFileSet_.set(change.modifiedRegisters[i],
+                         change.modifiedRegisterValues[i]);
+  }
+
+  // Update memory
+  for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
+    writeMemory(change.memoryAddresses[i], change.memoryAddressValues[i]);
+  }
+}
+
+RegisterValue Core::readMemory(
+    const std::pair<uint64_t, uint8_t>& request) const {
+  assert(request.first + request.second <= programByteLength_ &&
+         "Attempted to load from outside memory limit");
+
+  // Copy the data at the requested memory address into a RegisterValue
+  const char* address = memory_ + request.first;
+  return simeng::RegisterValue(address, request.second);
+}
+
+void Core::writeMemory(const std::pair<uint64_t, uint8_t>& request,
+                       const RegisterValue& data) {
+  auto address = memory_ + request.first;
+  assert(request.first + request.second <= programByteLength_ &&
+         "Attempted to store outside memory limit");
+  memcpy(address, data.getAsVector<char>(), request.second);
 }
 
 bool Core::hasHalted() const { return hasHalted_; }

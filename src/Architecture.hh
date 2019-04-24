@@ -23,6 +23,16 @@ struct ProcessStateChange {
   std::vector<RegisterValue> memoryAddressValues;
 };
 
+/** The result from a handled exception. */
+struct ExceptionResult {
+  /** Whether execution should halt. */
+  bool fatal;
+  /** The address to resume execution from. */
+  uint64_t instructionAddress;
+  /** Any changes to apply to the process state. */
+  ProcessStateChange stateChange;
+};
+
 /** An abstract Instruction Set Architecture (ISA) definition. Each supported
  * ISA should provide a derived implementation of this class. */
 class Architecture {
@@ -43,7 +53,7 @@ class Architecture {
   virtual std::vector<RegisterFileStructure> getRegisterFileStructures()
       const = 0;
 
-  virtual void handleException(
+  virtual ExceptionResult handleException(
       const std::shared_ptr<Instruction>& instruction) const = 0;
 
   /** Retrieve the initial process state for the supplied process memory. */
