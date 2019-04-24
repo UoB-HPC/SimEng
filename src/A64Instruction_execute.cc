@@ -214,6 +214,16 @@ void A64Instruction::execute() {
       }
       return;
     }
+    case A64Opcode::AArch64_CBZW: {  // cbz wn, #imm
+      if (operands[0].get<uint32_t>() == 0) {
+        branchTaken_ = true;
+        branchAddress_ = instructionAddress_ + metadata.operands[1].imm;
+      } else {
+        branchTaken_ = false;
+        branchAddress_ = instructionAddress_ + 4;
+      }
+      return;
+    }
     case A64Opcode::AArch64_CBZX: {  // cbz xn, #imm
       if (operands[0].get<uint64_t>() == 0) {
         branchTaken_ = true;
@@ -221,6 +231,17 @@ void A64Instruction::execute() {
       } else {
         branchTaken_ = false;
         branchAddress_ = instructionAddress_ + 4;
+      }
+      return;
+    }
+    case A64Opcode::AArch64_CCMPXi: {  // ccmp xd, #imm, #nzcv, cc
+      if (conditionHolds(metadata.cc, operands[1].get<uint8_t>())) {
+        uint8_t nzcv;
+        std::tie(std::ignore, nzcv) = addWithCarry(
+            operands[0].get<uint64_t>(), ~metadata.operands[1].imm, 1);
+        results[0] = nzcv;
+      } else {
+        results[0] = static_cast<uint8_t>(metadata.operands[2].imm);
       }
       return;
     }
@@ -419,6 +440,11 @@ void A64Instruction::execute() {
       auto x = operands[0].get<uint64_t>();
       auto y = metadata.operands[2].imm;
       results[0] = RegisterValue(x - y);
+      return;
+    }
+    case A64Opcode::AArch64_SVC: {  // svc #imm
+      exceptionEncountered_ = true;
+      exception = A64InstructionException::SupervisorCall;
       return;
     }
     default:

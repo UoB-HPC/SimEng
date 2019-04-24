@@ -40,6 +40,9 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
     operands[0].access = CS_AC_READ;
     groupCount = 1;
     groups[0] = CS_GRP_JUMP;
+  } else if (opcode == A64Opcode::AArch64_SVC) {
+    // SVC is incorrectly marked as setting x30
+    implicitDestinationCount = 0;
   }
 
   revertAliasing();

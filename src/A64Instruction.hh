@@ -31,7 +31,10 @@ enum class A64InstructionException {
   None = 0,
   EncodingUnallocated,
   EncodingNotYetImplemented,
-  ExecutionNotYetImplemented
+  ExecutionNotYetImplemented,
+  SupervisorCall,
+  HypervisorCall,
+  SecureMonitorCall
 };
 
 /** A basic ARMv8-a implementation of the `Instruction` interface. */

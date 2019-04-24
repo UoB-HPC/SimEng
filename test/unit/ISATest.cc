@@ -15,10 +15,10 @@ TEST(ISATest, CreateA64Arch) {
 
 // Test that we can set a value in a register file set
 TEST(ISATest, CreateRegisterFileSet) {
-  auto registerFileSet = simeng::RegisterFileSet({{32, 8}, {32, 16}, {1, 1}});
+  auto registerFileSet = simeng::RegisterFileSet({{8, 32}, {16, 32}, {1, 1}});
   auto reg = simeng::Register{simeng::A64RegisterType::GENERAL, 0};
 
-  registerFileSet.set(reg, 42);
+  registerFileSet.set(reg, static_cast<uint64_t>(42));
 
   EXPECT_TRUE(registerFileSet.get(reg));
 }

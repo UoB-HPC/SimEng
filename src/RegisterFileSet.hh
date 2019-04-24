@@ -50,9 +50,6 @@ class RegisterFileSet {
   /** The set of register files. Each entry in the outer vector corresponds to a
    * register file, and the inner vectors are the registers. */
   std::vector<std::vector<RegisterValue>> registerFiles;
-
-  /** The sizes of the registers in each file. */
-  std::vector<uint8_t> registerSizes;
 };
 
 }  // namespace simeng
