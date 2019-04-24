@@ -80,6 +80,15 @@ void A64Architecture::handleException(
     case A64InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";
       break;
+    case A64InstructionException::SupervisorCall:
+      std::cout << "supervisor call";
+      break;
+    case A64InstructionException::HypervisorCall:
+      std::cout << "hypervisor call";
+      break;
+    case A64InstructionException::SecureMonitorCall:
+      std::cout << "secure monitor call";
+      break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)
                 << ")";

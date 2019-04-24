@@ -37,8 +37,8 @@ class PipelineWritebackUnitTest : public testing::Test {
 // buffer
 TEST_F(PipelineWritebackUnitTest, Tick) {
   input[0].getHeadSlots()[0] = uopPtr;
-  uint32_t result = 1;
-  std::vector<RegisterValue> results = {RegisterValue(result)};
+  uint64_t result = 1;
+  std::vector<RegisterValue> results = {result};
   std::vector<Register> destinations = {{0, 1}};
 
   EXPECT_CALL(*uop, getResults())
@@ -49,7 +49,7 @@ TEST_F(PipelineWritebackUnitTest, Tick) {
 
   writebackUnit.tick();
 
-  EXPECT_EQ(registerFileSet.get(destinations[0]).get<uint32_t>(), result);
+  EXPECT_EQ(registerFileSet.get(destinations[0]).get<uint64_t>(), result);
   EXPECT_EQ(input[0].getHeadSlots()[0], nullptr);
 }
 
