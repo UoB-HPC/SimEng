@@ -56,7 +56,7 @@ uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
     case ARM64_EXT_SXTX:
       extended = value;
       break;
-    case ARM64_EXT_INVALID:
+    default:
       assert(false && "Invalid extension type");
       return 0;
   }

@@ -35,6 +35,16 @@ class Core : public simeng::Core {
   /** Handle an encountered exception. */
   void handleException(const std::shared_ptr<Instruction>& instruction);
 
+  /** Apply changes to the process state. */
+  void applyStateChange(const ProcessStateChange& change);
+
+  /** Read a value from memory. */
+  RegisterValue readMemory(const std::pair<uint64_t, uint8_t>& request) const;
+
+  /** Write a value to memory. */
+  void writeMemory(const std::pair<uint64_t, uint8_t>& request,
+                   const RegisterValue& data);
+
   /** A pointer to process memory. */
   char* memory_;
 

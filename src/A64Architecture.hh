@@ -29,7 +29,7 @@ class A64Architecture : public Architecture {
   /** Determine whether the specified register can be renamed. */
   bool canRename(Register reg) const override;
 
-  void handleException(
+  ExceptionResult handleException(
       const std::shared_ptr<Instruction>& instruction) const override;
 
   /** Retrieve the initial process state for the supplied process memory. */
