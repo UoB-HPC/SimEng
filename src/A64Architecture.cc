@@ -73,6 +73,37 @@ ExceptionResult A64Architecture::handleException(
 
   printException(insn);
 
+  A64InstructionException exception = insn.getException();
+
+  if (exception == A64InstructionException::SupervisorCall) {
+    uint64_t nextInstructionAddress = insn.getInstructionAddress() + 4;
+    // Retrieve syscall ID held in register x8
+    auto syscallId =
+        registerFileSet.get({A64RegisterType::GENERAL, 8}).get<uint64_t>();
+    std::cout << "Syscall ID is " << syscallId << std::endl;
+
+    ProcessStateChange stateChange;
+    switch (syscallId) {
+      case 174:  // getuid
+        stateChange = {{{A64RegisterType::GENERAL, 0}},
+                       {static_cast<uint64_t>(0)}};
+        break;
+      case 175:  // geteuid
+        stateChange = {{{A64RegisterType::GENERAL, 0}},
+                       {static_cast<uint64_t>(0)}};
+        break;
+      default:
+        std::cout << "Unrecognised syscall" << std::endl;
+        return {true, 0, {}};
+    }
+
+    std::cout << "Resuming from 0x" << std::hex << nextInstructionAddress
+              << std::dec << "\n"
+              << std::endl;
+
+    return {false, nextInstructionAddress, stateChange};
+  }
+
   return {true, 0, {}};
 }
 
