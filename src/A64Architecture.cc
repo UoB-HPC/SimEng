@@ -92,6 +92,14 @@ ExceptionResult A64Architecture::handleException(
         stateChange = {{{A64RegisterType::GENERAL, 0}},
                        {static_cast<uint64_t>(0)}};
         break;
+      case 176:  // getgid
+        stateChange = {{{A64RegisterType::GENERAL, 0}},
+                       {static_cast<uint64_t>(0)}};
+        break;
+      case 177:  // getegid
+        stateChange = {{{A64RegisterType::GENERAL, 0}},
+                       {static_cast<uint64_t>(0)}};
+        break;
       default:
         std::cout << "Unrecognised syscall" << std::endl;
         return {true, 0, {}};

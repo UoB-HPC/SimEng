@@ -63,8 +63,14 @@ A64InstructionMetadata::A64InstructionMetadata(const uint8_t* invalidEncoding)
 }
 
 void A64InstructionMetadata::revertAliasing() {
-  if (opcode == A64Opcode::AArch64_CSINCWr &&
-      !std::strncmp(mnemonic, "cset", 4)) {
+  if (opcode == A64Opcode::AArch64_ADDXri &&
+      !std::strncmp(mnemonic, "mov", 3)) {
+    operandCount = 3;
+    operands[2].type = ARM64_OP_IMM;
+    operands[2].imm = 0;
+    operands[2].access = CS_AC_READ;
+  } else if (opcode == A64Opcode::AArch64_CSINCWr &&
+             !std::strncmp(mnemonic, "cset", 4)) {
     // cset wd, cc; alias for: csinc wd, wzr, wzr, invert(cc)
     operandCount = 3;
 
