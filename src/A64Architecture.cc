@@ -131,21 +131,21 @@ ProcessStateChange A64Architecture::getInitialState(
   uint64_t stackPointer = stackBase - 32;
 
   // argc, 0
-  changes.memoryAddresses.push_back({stackBase, 8});
+  changes.memoryAddresses.push_back({stackPointer, 8});
   changes.memoryAddressValues.push_back(static_cast<uint64_t>(0));
 
   // argv null terminator
-  changes.memoryAddresses.push_back({stackBase + 8, 8});
+  changes.memoryAddresses.push_back({stackPointer + 8, 8});
   changes.memoryAddressValues.push_back(static_cast<uint64_t>(0));
 
   // no environment pointers (envp)
 
   // environment pointers null terminator
-  changes.memoryAddresses.push_back({stackBase + 16, 8});
+  changes.memoryAddresses.push_back({stackPointer + 16, 8});
   changes.memoryAddressValues.push_back(static_cast<uint64_t>(0));
 
   // ELF auxillary data end-of-table
-  changes.memoryAddresses.push_back({stackBase + 24, 8});
+  changes.memoryAddresses.push_back({stackPointer + 24, 8});
   changes.memoryAddressValues.push_back(static_cast<uint64_t>(0));
 
   // Set the stack pointer register
