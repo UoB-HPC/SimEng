@@ -63,95 +63,180 @@ A64InstructionMetadata::A64InstructionMetadata(const uint8_t* invalidEncoding)
 }
 
 void A64InstructionMetadata::revertAliasing() {
-  if (opcode == A64Opcode::AArch64_ADDXri &&
-      !std::strncmp(mnemonic, "mov", 3)) {
-    operandCount = 3;
-    operands[2].type = ARM64_OP_IMM;
-    operands[2].imm = 0;
-    operands[2].access = CS_AC_READ;
-  } else if (opcode == A64Opcode::AArch64_CSINCWr &&
-             !std::strncmp(mnemonic, "cset", 4)) {
-    // cset wd, cc; alias for: csinc wd, wzr, wzr, invert(cc)
-    operandCount = 3;
+  switch (opcode) {
+    case A64Opcode::AArch64_ADDXri: {
+      if (id != ARM64_INS_MOV) return;
+      // mov <xd|sp>, <sp|xn>; alias for: add <xd|sp>, <sp|xn>, #0
 
-    operands[1].type = ARM64_OP_REG;
-    operands[1].reg = ARM64_REG_WZR;
-    operands[1].access = CS_AC_READ;
+      operandCount = 3;
+      operands[2].type = ARM64_OP_IMM;
+      operands[2].imm = 0;
+      operands[2].access = CS_AC_READ;
+      return;
+    }
+    case A64Opcode::AArch64_ASRVWr: {
+      if (id != ARM64_INS_ASR) return;
+      return aliasNYI();
+    }
+    case A64Opcode::AArch64_ASRVXr: {
+      if (id != ARM64_INS_ASR) return;
+      return aliasNYI();
+    }
+    case A64Opcode::AArch64_BFMWri: {
+      if (id == ARM64_INS_BFI) return aliasNYI();
+      if (id == ARM64_INS_BFXIL) return aliasNYI();
+      return;
+    }
+    case A64Opcode::AArch64_BFMXri: {
+      if (id != ARM64_INS_BFI) return;
+      if (id == ARM64_INS_BFXIL) return aliasNYI();
+      return aliasNYI();
+    }
+    case A64Opcode::AArch64_CSINCWr: {
+      if (id == ARM64_INS_CSET) {
+        // cset wd, cc; alias for: csinc wd, wzr, wzr, invert(cc)
+        operandCount = 3;
 
-    operands[2].type = ARM64_OP_REG;
-    operands[2].reg = ARM64_REG_WZR;
-    operands[2].access = CS_AC_READ;
-    cc ^= 1;  // invert lowest bit to negate cc
-  } else if (opcode == A64Opcode::AArch64_CSINCXr &&
-             !std::strncmp(mnemonic, "cset", 4)) {
-    // cset xd, cc; alias for: csinc xd, xzr, xzr, invert(cc)
-    operandCount = 3;
+        operands[1].type = ARM64_OP_REG;
+        operands[1].reg = ARM64_REG_WZR;
+        operands[1].access = CS_AC_READ;
 
-    operands[1].type = ARM64_OP_REG;
-    operands[1].reg = ARM64_REG_XZR;
-    operands[1].access = CS_AC_READ;
+        operands[2].type = ARM64_OP_REG;
+        operands[2].reg = ARM64_REG_WZR;
+        operands[2].access = CS_AC_READ;
+        cc ^= 1;  // invert lowest bit to negate cc
 
-    operands[2].type = ARM64_OP_REG;
-    operands[2].reg = ARM64_REG_XZR;
-    operands[2].access = CS_AC_READ;
-    cc ^= 1;  // invert lowest bit to negate cc
-  } else if (opcode == A64Opcode::AArch64_ORRWrs &&
-             !std::strncmp(mnemonic, "mov", 3)) {
-    // mov wd, wn; alias for orr wd, wzr, wn
-    operandCount = 3;
-    operands[2] = operands[1];
+        return;
+      } else if (id == ARM64_INS_CINC) {
+        return aliasNYI();
+      }
+      return;
+    }
+    case A64Opcode::AArch64_CSINCXr: {
+      if (id == ARM64_INS_CSET) {
+        // cset xd, cc; alias for: csinc xd, xzr, xzr, invert(cc)
 
-    operands[1].type = ARM64_OP_REG;
-    operands[1].reg = ARM64_REG_WZR;
-    operands[1].access = CS_AC_READ;
-    operands[1].shift = {ARM64_SFT_INVALID, 0};
-  } else if (opcode == A64Opcode::AArch64_ORRXrs &&
-             !std::strncmp(mnemonic, "mov", 3)) {
-    // mov xd, xn; alias for orr xd, xzr, xn
-    operandCount = 3;
-    operands[2] = operands[1];
+        operandCount = 3;
 
-    operands[1].type = ARM64_OP_REG;
-    operands[1].reg = ARM64_REG_XZR;
-    operands[1].access = CS_AC_READ;
-    operands[1].shift = {ARM64_SFT_INVALID, 0};
-  } else if (opcode == A64Opcode::AArch64_SUBSWri &&
-             !std::strncmp(mnemonic, "cmp", 3)) {
-    // cmp wn, #imm; alias for: subs wzr, wn, #imm
-    operandCount = 3;
-    operands[2] = operands[1];
+        operands[1].type = ARM64_OP_REG;
+        operands[1].reg = ARM64_REG_XZR;
+        operands[1].access = CS_AC_READ;
 
-    operands[1] = operands[0];
-    operands[1].access = CS_AC_READ;
+        operands[2].type = ARM64_OP_REG;
+        operands[2].reg = ARM64_REG_XZR;
+        operands[2].access = CS_AC_READ;
+        cc ^= 1;  // invert lowest bit to negate cc
 
-    operands[0].type = ARM64_OP_REG;
-    operands[0].reg = ARM64_REG_WZR;
-    operands[0].access = CS_AC_WRITE;
-  } else if (opcode == A64Opcode::AArch64_SUBSWrs &&
-             !std::strncmp(mnemonic, "cmp", 3)) {
-    // cmp wn, wm; alias for: subs xzr, xn, xm
-    operandCount = 3;
-    operands[2] = operands[1];
+        return;
+      } else if (id == ARM64_INS_CINC) {
+        return aliasNYI();
+      }
+    }
+    case A64Opcode::AArch64_CSINVWr: {
+      if (id != ARM64_INS_CINV) return;
+      return aliasNYI();
+    }
+    case A64Opcode::AArch64_CSINVXr: {
+      if (id != ARM64_INS_CINV) return;
+      return aliasNYI();
+    }
+    case A64Opcode::AArch64_ORRWrs: {
+      if (id != ARM64_INS_MOV) return;
+      // mov wd, wn; alias for orr wd, wzr, wn
+      operandCount = 3;
+      operands[2] = operands[1];
 
-    operands[1] = operands[0];
-    operands[1].access = CS_AC_READ;
+      operands[1].type = ARM64_OP_REG;
+      operands[1].reg = ARM64_REG_WZR;
+      operands[1].access = CS_AC_READ;
+      operands[1].shift = {ARM64_SFT_INVALID, 0};
+      return;
+    }
+    case A64Opcode::AArch64_ORRXrs: {
+      if (id != ARM64_INS_MOV) return;
+      // mov xd, xn; alias for orr xd, xzr, xn
+      operandCount = 3;
+      operands[2] = operands[1];
 
-    operands[0].type = ARM64_OP_REG;
-    operands[0].reg = ARM64_REG_XZR;
-    operands[0].access = CS_AC_WRITE;
-  } else if (opcode == A64Opcode::AArch64_SUBSXri &&
-             !std::strncmp(mnemonic, "cmp", 3)) {
-    // cmp xn, #imm; alias for: subs xzr, xn, #imm
-    operandCount = 3;
-    operands[2] = operands[1];
+      operands[1].type = ARM64_OP_REG;
+      operands[1].reg = ARM64_REG_XZR;
+      operands[1].access = CS_AC_READ;
+      operands[1].shift = {ARM64_SFT_INVALID, 0};
+      return;
+    }
+    case A64Opcode::AArch64_UBFMWri: {
+      if (id == ARM64_INS_LSL) {
+        return aliasNYI();
+      } else if (id == ARM64_INS_LSR) {
+        return aliasNYI();
+      }
+      return;
+    }
+    case A64Opcode::AArch64_UBFMXri: {
+      if (id == ARM64_INS_LSL) {
+        return aliasNYI();
+      } else if (id == ARM64_INS_LSR) {
+        return aliasNYI();
+      }
+      return;
+    }
+    case A64Opcode::AArch64_SBFMWri: {
+      if (id != ARM64_INS_ASR) return;
+      return aliasNYI();
+    }
+    case A64Opcode::AArch64_SBFMXri: {
+      if (id != ARM64_INS_ASR) return;
+      return aliasNYI();
+    }
+    case A64Opcode::AArch64_SUBSWri: {
+      if (id != ARM64_INS_CMP) return;
+      // cmp wn, #imm; alias for: subs wzr, wn, #imm
+      operandCount = 3;
+      operands[2] = operands[1];
 
-    operands[1] = operands[0];
-    operands[1].access = CS_AC_READ;
+      operands[1] = operands[0];
+      operands[1].access = CS_AC_READ;
 
-    operands[0].type = ARM64_OP_REG;
-    operands[0].reg = ARM64_REG_XZR;
-    operands[0].access = CS_AC_WRITE;
+      operands[0].type = ARM64_OP_REG;
+      operands[0].reg = ARM64_REG_WZR;
+      operands[0].access = CS_AC_WRITE;
+      return;
+    }
+    case A64Opcode::AArch64_SUBSWrs: {
+      if (id != ARM64_INS_CMP) return;
+      // cmp wn, wm; alias for: subs xzr, xn, xm
+      operandCount = 3;
+      operands[2] = operands[1];
+
+      operands[1] = operands[0];
+      operands[1].access = CS_AC_READ;
+
+      operands[0].type = ARM64_OP_REG;
+      operands[0].reg = ARM64_REG_XZR;
+      operands[0].access = CS_AC_WRITE;
+      return;
+    }
+    case A64Opcode::AArch64_SUBSXri: {
+      if (id != ARM64_INS_CMP) return;
+      // cmp xn, #imm; alias for: subs xzr, xn, #imm
+      operandCount = 3;
+      operands[2] = operands[1];
+
+      operands[1] = operands[0];
+      operands[1].access = CS_AC_READ;
+
+      operands[0].type = ARM64_OP_REG;
+      operands[0].reg = ARM64_REG_XZR;
+      operands[0].access = CS_AC_WRITE;
+      return;
+    }
+    case A64Opcode::AArch64_SYSxt: {
+      if (id == ARM64_INS_AT) return aliasNYI();
+      return;
+    }
   }
 }
+
+void A64InstructionMetadata::aliasNYI() { id = ARM64_INS_INVALID; }
 
 }  // namespace simeng

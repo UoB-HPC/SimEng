@@ -76,6 +76,9 @@ struct A64InstructionMetadata {
   /** Detect instruction aliases and update metadata to match the de-aliased
    * instruction. */
   void revertAliasing();
+
+  /** Flag the instruction as invalid due to a detected unsupported alias. */
+  void aliasNYI();
 };
 
 }  // namespace simeng
