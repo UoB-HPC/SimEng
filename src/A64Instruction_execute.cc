@@ -361,6 +361,11 @@ void A64Instruction::execute() {
       results[1] = memoryData[1];
       return;
     }
+    case A64Opcode::AArch64_LDPXi: {  // ldp xt1, xt2, [xn, #imm]
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      return;
+    }
     case A64Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
       results[0] = memoryData[0];
       results[1] = memoryData[1];
