@@ -9,16 +9,64 @@ uint8_t nzcv(bool n, bool z, bool c, bool v) {
   return (n << 3) | (z << 2) | (c << 1) | v;
 }
 
-uint64_t shiftValue(uint64_t value, uint8_t shiftType, uint8_t amount) {
+/** Apply the shift specified by `shiftType` to the 64-bit `value`, shifting by
+ * `amount`.
+ */
+// uint64_t shiftValue(uint64_t value, uint8_t shiftType, uint8_t amount) {
+//   switch (shiftType) {
+//     case ARM64_SFT_LSL:
+//       return value << amount;
+//     case ARM64_SFT_LSR:
+//       return value >> amount;
+//     case ARM64_SFT_ASR:
+//       return static_cast<int64_t>(value) >> amount;
+//     case ARM64_SFT_ROR:
+//       return (value >> amount) && (value << (63 - amount));
+//     case ARM64_SFT_INVALID:
+//       return value;
+//     default:
+//       assert(false && "Unknown shift type");
+//       return 0;
+//   }
+// }
+
+/** Apply the shift specified by `shiftType` to the 32-bit `value`, shifting by
+ * `amount`.
+ */
+// uint32_t shiftValue(uint32_t value, uint8_t shiftType, uint8_t amount) {
+//   switch (shiftType) {
+//     case ARM64_SFT_LSL:
+//       return value << amount;
+//     case ARM64_SFT_LSR:
+//       return value >> amount;
+//     case ARM64_SFT_ASR:
+//       return static_cast<int32_t>(value) >> amount;
+//     case ARM64_SFT_ROR:
+//       return (value >> amount) && (value << (31 - amount));
+//     case ARM64_SFT_INVALID:
+//       return value;
+//     default:
+//       assert(false && "Unknown shift type");
+//       return 0;
+//   }
+// }
+
+/** Apply the shift specified by `shiftType` to the unsigned integer `value`,
+ * shifting by `amount`. */
+template <typename T>
+std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
+    T value, uint8_t shiftType, uint8_t amount) {
   switch (shiftType) {
     case ARM64_SFT_LSL:
       return value << amount;
     case ARM64_SFT_LSR:
       return value >> amount;
     case ARM64_SFT_ASR:
-      return static_cast<int64_t>(value) >> amount;
-    case ARM64_SFT_ROR:
-      return (value >> amount) && (value << (63 - amount));
+      return static_cast<std::make_signed_t<T>>(value) >> amount;
+    case ARM64_SFT_ROR: {
+      auto highestBit = (sizeof(T) * 8) - 1;
+      return (value >> amount) && (value << (highestBit - amount));
+    }
     case ARM64_SFT_INVALID:
       return value;
     default:
@@ -367,13 +415,21 @@ void A64Instruction::execute() {
       results[0] = RegisterValue(result, 8);
       return;
     }
+    case A64Opcode::AArch64_ORRWrs: {  // orr wd, wn, wm{, shift{, #amount}}
+      uint32_t result = operands[0].get<uint32_t>() |
+                        shiftValue(operands[1].get<uint32_t>(),
+                                   metadata.operands[2].shift.type,
+                                   metadata.operands[2].shift.value);
+      results[0] = result;
+      return;
+    }
     case A64Opcode::AArch64_ORRXri: {  // orr xd, xn, #imm
       auto value = operands[0].get<uint64_t>();
       auto result = value | metadata.operands[2].imm;
       results[0] = RegisterValue(result);
       return;
     }
-    case A64Opcode::AArch64_ORRXrs: {
+    case A64Opcode::AArch64_ORRXrs: {  // orr xd, xn, xm{, shift{, #amount}}
       uint64_t result = operands[0].get<uint64_t>() |
                         shiftValue(operands[1].get<uint64_t>(),
                                    metadata.operands[2].shift.type,
