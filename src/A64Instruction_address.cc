@@ -42,6 +42,11 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
       setMemoryAddresses({{base, 16}, {base + 16, 16}});
       break;
     }
+    case A64Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
+      uint64_t base = operands[0].get<uint64_t>();
+      setMemoryAddresses({{base, 8}, {base + 8, 8}});
+      break;
+    }
     case A64Opcode::AArch64_STPXi: {  // stp xt1, xt2, [xn, #imm]
       uint64_t base =
           operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;

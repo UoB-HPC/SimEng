@@ -89,8 +89,19 @@ void A64InstructionMetadata::revertAliasing() {
     operands[2].reg = ARM64_REG_XZR;
     operands[2].access = CS_AC_READ;
     cc ^= 1;  // invert lowest bit to negate cc
+  } else if (opcode == A64Opcode::AArch64_ORRWrs &&
+             !std::strncmp(mnemonic, "mov", 3)) {
+    // mov wd, wn; alias for orr wd, wzr, wn
+    operandCount = 3;
+    operands[2] = operands[1];
+
+    operands[1].type = ARM64_OP_REG;
+    operands[1].reg = ARM64_REG_WZR;
+    operands[1].access = CS_AC_READ;
+    operands[1].shift = {ARM64_SFT_INVALID, 0};
   } else if (opcode == A64Opcode::AArch64_ORRXrs &&
              !std::strncmp(mnemonic, "mov", 3)) {
+    // mov xd, xn; alias for orr xd, xzr, xn
     operandCount = 3;
     operands[2] = operands[1];
 
@@ -109,6 +120,18 @@ void A64InstructionMetadata::revertAliasing() {
 
     operands[0].type = ARM64_OP_REG;
     operands[0].reg = ARM64_REG_WZR;
+    operands[0].access = CS_AC_WRITE;
+  } else if (opcode == A64Opcode::AArch64_SUBSWrs &&
+             !std::strncmp(mnemonic, "cmp", 3)) {
+    // cmp wn, wm; alias for: subs xzr, xn, xm
+    operandCount = 3;
+    operands[2] = operands[1];
+
+    operands[1] = operands[0];
+    operands[1].access = CS_AC_READ;
+
+    operands[0].type = ARM64_OP_REG;
+    operands[0].reg = ARM64_REG_XZR;
     operands[0].access = CS_AC_WRITE;
   } else if (opcode == A64Opcode::AArch64_SUBSXri &&
              !std::strncmp(mnemonic, "cmp", 3)) {

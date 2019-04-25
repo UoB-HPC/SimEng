@@ -361,6 +361,12 @@ void A64Instruction::execute() {
       results[1] = memoryData[1];
       return;
     }
+    case A64Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
+      return;
+    }
     case A64Opcode::AArch64_LDRDroX: {  // ldr dt, [xn, xm, {extend {#amount}}]
       results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 16);
       return;
@@ -420,7 +426,7 @@ void A64Instruction::execute() {
                         shiftValue(operands[1].get<uint32_t>(),
                                    metadata.operands[2].shift.type,
                                    metadata.operands[2].shift.value);
-      results[0] = result;
+      results[0] = static_cast<uint64_t>(result);
       return;
     }
     case A64Opcode::AArch64_ORRXri: {  // orr xd, xn, #imm
@@ -473,6 +479,18 @@ void A64Instruction::execute() {
       results[0] = RegisterValue(nzcv);
       if (destinationRegisterCount > 1) {
         results[1] = RegisterValue(result, 8);
+      }
+      return;
+    }
+    case A64Opcode::AArch64_SUBSWrs: {  // subs wd, wn, wm{, shift #amount}
+      auto x = operands[0].get<uint32_t>();
+      auto y = ~shiftValue(operands[1].get<uint32_t>(),
+                           metadata.operands[2].shift.type,
+                           metadata.operands[2].shift.value);
+      auto [result, nzcv] = addWithCarry(x, y, true);
+      results[0] = RegisterValue(nzcv);
+      if (destinationRegisterCount > 1) {
+        results[1] = RegisterValue(result);
       }
       return;
     }
