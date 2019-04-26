@@ -86,6 +86,18 @@ void A64InstructionMetadata::revertAliasing() {
       operands[2].access = CS_AC_READ;
       return;
     }
+    case A64Opcode::AArch64_ANDSWrs: {
+      if (id != ARM64_INS_TST) return;
+      // tst wn, wm{, shift #amount}; alias for:
+      //  ands wzr, wn, wm{, shift #amount}
+      operandCount = 3;
+      operands[2] = operands[1];
+      operands[1] = operands[0];
+      operands[0].type = ARM64_OP_REG;
+      operands[0].reg = ARM64_REG_WZR;
+      operands[0].access = CS_AC_WRITE;
+      return;
+    }
     case A64Opcode::AArch64_ASRVWr: {
       if (id != ARM64_INS_ASR) return;
       return aliasNYI();
