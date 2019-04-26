@@ -28,21 +28,33 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
   std::memcpy(operands, insn.detail->arm64.operands,
               sizeof(cs_arm64_op) * operandCount);
 
-  if (opcode == A64Opcode::AArch64_MOVZWi ||
-      opcode == A64Opcode::AArch64_MOVZXi) {
-    // MOVZ incorrectly flags destination as READ | WRITE
-    operands[0].access = CS_AC_WRITE;
-  } else if (opcode == A64Opcode::AArch64_RET) {
-    // RET doesn't list use of x30 (LR) if no register is supplied
-    operandCount = 1;
-    operands[0].type = ARM64_OP_REG;
-    operands[0].reg = ARM64_REG_LR;
-    operands[0].access = CS_AC_READ;
-    groupCount = 1;
-    groups[0] = CS_GRP_JUMP;
-  } else if (opcode == A64Opcode::AArch64_SVC) {
-    // SVC is incorrectly marked as setting x30
-    implicitDestinationCount = 0;
+  // Fix some inaccuracies in the decoded metadata
+  switch (opcode) {
+    case A64Opcode::AArch64_MOVZWi:
+      [[fallthrough]];
+    case A64Opcode::AArch64_MOVZXi:
+      // MOVZ incorrectly flags destination as READ | WRITE
+      operands[0].access = CS_AC_WRITE;
+      break;
+    case A64Opcode::AArch64_RET:
+      // RET doesn't list use of x30 (LR) if no register is supplied
+      operandCount = 1;
+      operands[0].type = ARM64_OP_REG;
+      operands[0].reg = ARM64_REG_LR;
+      operands[0].access = CS_AC_READ;
+      groupCount = 1;
+      groups[0] = CS_GRP_JUMP;
+      break;
+    case A64Opcode::AArch64_SVC:
+      // SVC is incorrectly marked as setting x30
+      implicitDestinationCount = 0;
+      break;
+    case A64Opcode::AArch64_UBFMWri:
+      [[fallthrough]];
+    case A64Opcode::AArch64_UBFMXri:
+      // UBFM incorrectly flags destination as READ | WRITE
+      operands[0].access = CS_AC_WRITE;
+      break;
   }
 
   revertAliasing();
@@ -164,22 +176,6 @@ void A64InstructionMetadata::revertAliasing() {
       operands[1].shift = {ARM64_SFT_INVALID, 0};
       return;
     }
-    case A64Opcode::AArch64_UBFMWri: {
-      if (id == ARM64_INS_LSL) {
-        return aliasNYI();
-      } else if (id == ARM64_INS_LSR) {
-        return aliasNYI();
-      }
-      return;
-    }
-    case A64Opcode::AArch64_UBFMXri: {
-      if (id == ARM64_INS_LSL) {
-        return aliasNYI();
-      } else if (id == ARM64_INS_LSR) {
-        return aliasNYI();
-      }
-      return;
-    }
     case A64Opcode::AArch64_SBFMWri: {
       if (id != ARM64_INS_ASR) return;
       return aliasNYI();
@@ -232,6 +228,41 @@ void A64InstructionMetadata::revertAliasing() {
     }
     case A64Opcode::AArch64_SYSxt: {
       if (id == ARM64_INS_AT) return aliasNYI();
+      return;
+    }
+
+    case A64Opcode::AArch64_UBFMWri: {
+      if (id == ARM64_INS_LSL) {
+        // lsl wd, wn, #shift; alias for:
+        //  ubfm wd, wn, #(-shift MOD 32), #(31 - shift)
+        operandCount = 4;
+
+        auto shift = operands[2].imm;
+        operands[2].imm = (-shift) & 31;
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].imm = 31 - shift;
+        operands[3].access = CS_AC_READ;
+        return;
+      } else if (id == ARM64_INS_LSR) {
+        return aliasNYI();
+      }
+      return;
+    }
+    case A64Opcode::AArch64_UBFMXri: {
+      if (id == ARM64_INS_LSL) {
+        // lsl xd, xn, #shift; alias for:
+        //  ubfm xd, xn, #(-shift MOD 64), #(64 - shift)
+        operandCount = 4;
+
+        auto shift = operands[2].imm;
+        operands[2].imm = (-shift) & 63;
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].imm = 63 - shift;
+        operands[3].access = CS_AC_READ;
+        return;
+      } else if (id == ARM64_INS_LSR) {
+        return aliasNYI();
+      }
       return;
     }
   }
