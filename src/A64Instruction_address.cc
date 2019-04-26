@@ -5,6 +5,43 @@
 
 namespace simeng {
 
+/** Extend `value` according to `extendType`, and left-shift the result by
+ * `shift` */
+uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
+  uint64_t extended;
+  switch (extendType) {
+    case ARM64_EXT_UXTB:
+      extended = static_cast<uint8_t>(value);
+      break;
+    case ARM64_EXT_UXTH:
+      extended = static_cast<uint16_t>(value);
+      break;
+    case ARM64_EXT_UXTW:
+      extended = static_cast<uint32_t>(value);
+      break;
+    case ARM64_EXT_UXTX:
+      extended = value;
+      break;
+    case ARM64_EXT_SXTB:
+      extended = static_cast<int8_t>(value);
+      break;
+    case ARM64_EXT_SXTH:
+      extended = static_cast<int16_t>(value);
+      break;
+    case ARM64_EXT_SXTW:
+      extended = static_cast<int32_t>(value);
+      break;
+    case ARM64_EXT_SXTX:
+      extended = value;
+      break;
+    default:
+      assert(false && "Invalid extension type");
+      return 0;
+  }
+
+  return extended << shift;
+}
+
 span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
   assert((isLoad() || isStore()) &&
          "generateAddresses called on non-load-or-store instruction");
@@ -80,6 +117,13 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
       uint64_t base =
           operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
       setMemoryAddresses({{base, 16}, {base + 16, 16}});
+      break;
+    }
+    case A64Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend, {#amount}}]
+      uint64_t offset =
+          extendValue(operands[2].get<uint64_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.type);
+      setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 4}});
       break;
     }
     case A64Opcode::AArch64_STRWui: {  // str wt, [xn, #imm]

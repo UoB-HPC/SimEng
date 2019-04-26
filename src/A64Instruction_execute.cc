@@ -246,6 +246,11 @@ void A64Instruction::execute() {
       results[0] = static_cast<uint64_t>(instructionAddress_ + 4);
       return;
     }
+    // case A64Opcode::AArch64_BR: {  // br xn
+    //   branchTaken_ = true;
+    //   branchAddress_ = operands[0].get<uint64_t>();
+    //   return;
+    // }
     case A64Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
       if (operands[0].get<uint32_t>() == 0) {
         branchTaken_ = false;
@@ -416,6 +421,18 @@ void A64Instruction::execute() {
       results[0] = RegisterValue(value, 8);
       return;
     }
+    case A64Opcode::AArch64_MOVNWi: {  // movn wd, #imm{, LSL #shift}
+      uint8_t shift = metadata.operands[1].shift.value;
+      uint32_t value = ~(metadata.operands[1].imm << shift);
+      results[0] = value;
+      return;
+    }
+    case A64Opcode::AArch64_MOVNXi: {  // movn xd, #imm{, LSL #shift}
+      uint8_t shift = metadata.operands[1].shift.value;
+      uint64_t value = ~(metadata.operands[1].imm << shift);
+      results[0] = value;
+      return;
+    }
     case A64Opcode::AArch64_MOVZWi: {  // movz wd, #imm
       uint8_t shift = metadata.operands[1].shift.value;
       uint32_t value = metadata.operands[1].imm << shift;
@@ -426,6 +443,11 @@ void A64Instruction::execute() {
       uint8_t shift = metadata.operands[1].shift.value;
       uint64_t value = metadata.operands[1].imm << shift;
       results[0] = value;
+      return;
+    }
+    case A64Opcode::AArch64_MRS: {  // mrs xt, (systemreg|Sop0_op1_Cn_Cm_op2)
+      // TODO: Correct system register read support
+      results[0] = static_cast<uint64_t>(0);
       return;
     }
     case A64Opcode::AArch64_ORRWri: {  // orr wd, wn, #imm
@@ -477,6 +499,10 @@ void A64Instruction::execute() {
       memoryData[1] = operands[1];
       return;
     }
+    case A64Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend, {#amount}}]
+      memoryData[0] = operands[0];
+      return;
+    }
     case A64Opcode::AArch64_STRWui: {  // str wt, [xn, #imm]
       memoryData[0] = operands[0];
       return;
@@ -517,6 +543,18 @@ void A64Instruction::execute() {
       }
       return;
     }
+    case A64Opcode::AArch64_SUBSXrs: {  // subs xd, xn, xm{, shift #amount}
+      auto x = operands[0].get<uint64_t>();
+      auto y = ~shiftValue(operands[1].get<uint64_t>(),
+                           metadata.operands[2].shift.type,
+                           metadata.operands[2].shift.value);
+      auto [result, nzcv] = addWithCarry(x, y, true);
+      results[0] = RegisterValue(nzcv);
+      if (destinationRegisterCount > 1) {
+        results[1] = RegisterValue(result);
+      }
+      return;
+    }
     case A64Opcode::AArch64_SUBWri: {  // sub wd, wn, #imm
       auto x = operands[0].get<uint32_t>();
       auto y = static_cast<uint32_t>(metadata.operands[2].imm);
@@ -540,6 +578,16 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_SVC: {  // svc #imm
       exceptionEncountered_ = true;
       exception = A64InstructionException::SupervisorCall;
+      return;
+    }
+    case A64Opcode::AArch64_TBNZW: {  // tbnz wn, #imm, label
+      if (operands[0].get<uint32_t>() & (1 << metadata.operands[1].imm)) {
+        branchTaken_ = false;
+        branchAddress_ = instructionAddress_ + 4;
+      } else {
+        branchTaken_ = true;
+        branchAddress_ = instructionAddress_ + metadata.operands[2].imm;
+      }
       return;
     }
     case A64Opcode::AArch64_TBZW: {  // tbz wn, #imm, label

@@ -36,6 +36,10 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
       // MOVZ incorrectly flags destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
       break;
+    case A64Opcode::AArch64_MRS:
+      // MRS incorrectly flags destination as READ | WRITE
+      operands[0].access = CS_AC_WRITE;
+      break;
     case A64Opcode::AArch64_RET:
       // RET doesn't list use of x30 (LR) if no register is supplied
       operandCount = 1;
@@ -212,7 +216,7 @@ void A64InstructionMetadata::revertAliasing() {
     }
     case A64Opcode::AArch64_SUBSWrs: {
       if (id != ARM64_INS_CMP) return;
-      // cmp wn, wm; alias for: subs xzr, xn, xm
+      // cmp wn, wm; alias for: subs wzr, wn, wm
       operandCount = 3;
       operands[2] = operands[1];
 
@@ -220,7 +224,7 @@ void A64InstructionMetadata::revertAliasing() {
       operands[1].access = CS_AC_READ;
 
       operands[0].type = ARM64_OP_REG;
-      operands[0].reg = ARM64_REG_XZR;
+      operands[0].reg = ARM64_REG_WZR;
       operands[0].access = CS_AC_WRITE;
       return;
     }
@@ -238,11 +242,24 @@ void A64InstructionMetadata::revertAliasing() {
       operands[0].access = CS_AC_WRITE;
       return;
     }
+    case A64Opcode::AArch64_SUBSXrs: {
+      if (id != ARM64_INS_CMP) return;
+      // cmp xn, xm; alias for: subs xzr, xn, xm
+      operandCount = 3;
+      operands[2] = operands[1];
+
+      operands[1] = operands[0];
+      operands[1].access = CS_AC_READ;
+
+      operands[0].type = ARM64_OP_REG;
+      operands[0].reg = ARM64_REG_XZR;
+      operands[0].access = CS_AC_WRITE;
+      return;
+    }
     case A64Opcode::AArch64_SYSxt: {
       if (id == ARM64_INS_AT) return aliasNYI();
       return;
     }
-
     case A64Opcode::AArch64_UBFMWri: {
       if (id == ARM64_INS_LSL) {
         // lsl wd, wn, #shift; alias for:

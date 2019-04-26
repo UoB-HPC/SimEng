@@ -100,6 +100,10 @@ ExceptionResult A64Architecture::handleException(
         stateChange = {{{A64RegisterType::GENERAL, 0}},
                        {static_cast<uint64_t>(0)}};
         break;
+      case 214:  // brk
+        stateChange = {{{A64RegisterType::GENERAL, 0}},
+                       {static_cast<uint64_t>(0)}};
+        break;
       default:
         std::cout << "Unrecognised syscall" << std::endl;
         return {true, 0, {}};
