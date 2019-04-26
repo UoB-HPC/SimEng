@@ -2,54 +2,13 @@
 #include "A64InstructionMetadata.hh"
 
 #include <cmath>
+#include <iostream>
 #include <limits>
 #include <tuple>
 
 uint8_t nzcv(bool n, bool z, bool c, bool v) {
   return (n << 3) | (z << 2) | (c << 1) | v;
 }
-
-/** Apply the shift specified by `shiftType` to the 64-bit `value`, shifting by
- * `amount`.
- */
-// uint64_t shiftValue(uint64_t value, uint8_t shiftType, uint8_t amount) {
-//   switch (shiftType) {
-//     case ARM64_SFT_LSL:
-//       return value << amount;
-//     case ARM64_SFT_LSR:
-//       return value >> amount;
-//     case ARM64_SFT_ASR:
-//       return static_cast<int64_t>(value) >> amount;
-//     case ARM64_SFT_ROR:
-//       return (value >> amount) && (value << (63 - amount));
-//     case ARM64_SFT_INVALID:
-//       return value;
-//     default:
-//       assert(false && "Unknown shift type");
-//       return 0;
-//   }
-// }
-
-/** Apply the shift specified by `shiftType` to the 32-bit `value`, shifting by
- * `amount`.
- */
-// uint32_t shiftValue(uint32_t value, uint8_t shiftType, uint8_t amount) {
-//   switch (shiftType) {
-//     case ARM64_SFT_LSL:
-//       return value << amount;
-//     case ARM64_SFT_LSR:
-//       return value >> amount;
-//     case ARM64_SFT_ASR:
-//       return static_cast<int32_t>(value) >> amount;
-//     case ARM64_SFT_ROR:
-//       return (value >> amount) && (value << (31 - amount));
-//     case ARM64_SFT_INVALID:
-//       return value;
-//     default:
-//       assert(false && "Unknown shift type");
-//       return 0;
-//   }
-// }
 
 /** Apply the shift specified by `shiftType` to the unsigned integer `value`,
  * shifting by `amount`. */
@@ -225,6 +184,14 @@ void A64Instruction::execute() {
       results[0] = x + y;
       return;
     }
+    case A64Opcode::AArch64_ADDXrs: {  // add xd, xn, xm, {shift #amount}
+      auto x = operands[0].get<uint64_t>();
+      auto y = shiftValue(operands[1].get<uint64_t>(),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
+      results[0] = x + y;
+      return;
+    }
     case A64Opcode::AArch64_ADRP: {  // adrp xd, #imm
       // Clear lowest 12 bits of address and add immediate (already shifted by
       // decoder)
@@ -250,6 +217,16 @@ void A64Instruction::execute() {
       branchTaken_ = true;
       branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
       results[0] = static_cast<uint64_t>(instructionAddress_ + 4);
+      return;
+    }
+    case A64Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
+      if (operands[0].get<uint32_t>() == 0) {
+        branchTaken_ = false;
+        branchAddress_ = instructionAddress_ + 4;
+      } else {
+        branchTaken_ = true;
+        branchAddress_ = instructionAddress_ + metadata.operands[1].imm;
+      }
       return;
     }
     case A64Opcode::AArch64_CBNZX: {  // cbnz xn, #imm
@@ -426,7 +403,7 @@ void A64Instruction::execute() {
       results[0] = RegisterValue(result, 8);
       return;
     }
-    case A64Opcode::AArch64_ORRWrs: {  // orr wd, wn, wm{, shift{, #amount}}
+    case A64Opcode::AArch64_ORRWrs: {  // orr wd, wn, wm{, shift{ #amount}}
       uint32_t result = operands[0].get<uint32_t>() |
                         shiftValue(operands[1].get<uint32_t>(),
                                    metadata.operands[2].shift.type,
@@ -440,7 +417,7 @@ void A64Instruction::execute() {
       results[0] = RegisterValue(result);
       return;
     }
-    case A64Opcode::AArch64_ORRXrs: {  // orr xd, xn, xm{, shift{, #amount}}
+    case A64Opcode::AArch64_ORRXrs: {  // orr xd, xn, xm{, shift{ #amount}}
       uint64_t result = operands[0].get<uint64_t>() |
                         shiftValue(operands[1].get<uint64_t>(),
                                    metadata.operands[2].shift.type,
@@ -521,9 +498,32 @@ void A64Instruction::execute() {
       results[0] = RegisterValue(x - y);
       return;
     }
+    case A64Opcode::AArch64_SUBXrs: {  // sub xd, xn, xm{, shift #amount}
+      auto x = operands[0].get<uint64_t>();
+      auto y = shiftValue(operands[1].get<uint64_t>(),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
+      results[0] = x - y;
+      return;
+    }
     case A64Opcode::AArch64_SVC: {  // svc #imm
       exceptionEncountered_ = true;
       exception = A64InstructionException::SupervisorCall;
+      return;
+    }
+    case A64Opcode::AArch64_UBFMXri: {  // ubfm
+      uint8_t r = metadata.operands[2].imm;
+      uint8_t s = metadata.operands[3].imm;
+      uint64_t mask = (1 << (s + 1)) - 1;
+      uint64_t source = operands[0].get<uint64_t>() & mask;
+
+      if (s >= r) {
+        // Mask of values [r:s+1]
+        results[0] = source >> r;
+      } else {
+        results[0] = source << (64 - r);
+      }
+
       return;
     }
     default:
