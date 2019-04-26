@@ -85,10 +85,11 @@ std::tuple<uint64_t, uint8_t> addWithCarry(uint64_t x, uint64_t y,
   } else {
     // We know x + carryIn <= max, so can safely subtract and compare against y
     // max > x + y + c == max - x > y + c
-    c = ((std::numeric_limits<uint64_t>::max() - x - carryIn) > y);
+    c = ((std::numeric_limits<uint64_t>::max() - x - carryIn) < y);
   }
 
-  bool v = ((x < 0) != (result < 0));
+  bool v = (std::numeric_limits<int64_t>::max() - static_cast<int64_t>(x) -
+            carryIn) < static_cast<int32_t>(y);
 
   return {result, nzcv(n, z, c, v)};
 }
@@ -96,13 +97,15 @@ std::tuple<uint32_t, uint8_t> addWithCarry(uint32_t x, uint32_t y,
                                            bool carryIn) {
   uint64_t unsignedResult =
       static_cast<uint64_t>(x) + static_cast<int64_t>(y) + carryIn;
+  int64_t signedResult =
+      static_cast<int64_t>(x) + static_cast<int64_t>(y) + carryIn;
   int32_t result = static_cast<int32_t>(x) + static_cast<int32_t>(y) + carryIn;
   bool n = (result < 0);
   bool z = (result == 0);
 
   bool c = unsignedResult != static_cast<uint64_t>(result);
 
-  bool v = ((x < 0) != (result < 0));
+  bool v = result != signedResult;
 
   return {result, nzcv(n, z, c, v)};
 }
