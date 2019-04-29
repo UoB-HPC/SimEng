@@ -106,6 +106,10 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});
       break;
     }
+    case A64Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
+      // TODO: Implement prefetching
+      break;
+    }
     case A64Opcode::AArch64_STPXi: {  // stp xt1, xt2, [xn, #imm]
 
       uint64_t base =
@@ -144,6 +148,11 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
     case A64Opcode::AArch64_STRXui: {  // str xt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});
+      break;
+    }
+    case A64Opcode::AArch64_STURWi: {  // stur wt, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});
       break;
     }
     default:
