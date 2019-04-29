@@ -119,6 +119,16 @@ RegisterValue Core::readMemory(
   assert(request.first + request.second <= programByteLength_ &&
          "Attempted to load from outside memory limit");
 
+  std::cout << "Reading " << (int)request.second << " bytes from " << std::hex
+            << request.first << ": ";
+  for (size_t i = 0; i < request.second; i++) {
+    std::cout << static_cast<uint16_t>(
+                     static_cast<uint8_t>(memory_[request.first + i]))
+              << " ";
+  }
+
+  std::cout << std::dec << std::endl;
+
   // Copy the data at the requested memory address into a RegisterValue
   const char* address = memory_ + request.first;
   return simeng::RegisterValue(address, request.second);

@@ -47,6 +47,11 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
          "generateAddresses called on non-load-or-store instruction");
 
   switch (metadata.opcode) {
+    case A64Opcode::AArch64_LDRBBpre: {  // ldrb wt, [xn, #imm]!
+      setMemoryAddresses(
+          {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});
+      break;
+    }
     case A64Opcode::AArch64_LDRBBui: {  // ldrb wt, [xn, #imm]
       setMemoryAddresses(
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});
