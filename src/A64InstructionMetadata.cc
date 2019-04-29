@@ -85,6 +85,19 @@ A64InstructionMetadata::A64InstructionMetadata(const uint8_t* invalidEncoding)
 
 void A64InstructionMetadata::revertAliasing() {
   switch (opcode) {
+    case A64Opcode::AArch64_ADDSXri: {
+      if (id != ARM64_INS_CMN) return;
+      // cmn xn, #imm{, shift}
+      operandCount = 3;
+      operands[2] = operands[1];
+      operands[1] = operands[0];
+      operands[1].access = CS_AC_READ;
+
+      operands[0].type = ARM64_OP_REG;
+      operands[0].reg = ARM64_REG_XZR;
+      operands[0].access = CS_AC_WRITE;
+      return;
+    }
     case A64Opcode::AArch64_ADDXri: {
       if (id != ARM64_INS_MOV) return;
       // mov <xd|sp>, <sp|xn>; alias for: add <xd|sp>, <sp|xn>, #0

@@ -96,16 +96,19 @@ std::tuple<uint64_t, uint8_t> addWithCarry(uint64_t x, uint64_t y,
 std::tuple<uint32_t, uint8_t> addWithCarry(uint32_t x, uint32_t y,
                                            bool carryIn) {
   uint64_t unsignedResult =
-      static_cast<uint64_t>(x) + static_cast<int64_t>(y) + carryIn;
+      static_cast<uint64_t>(x) + static_cast<uint64_t>(y) + carryIn;
   int64_t signedResult =
       static_cast<int64_t>(x) + static_cast<int64_t>(y) + carryIn;
   int32_t result = static_cast<int32_t>(x) + static_cast<int32_t>(y) + carryIn;
   bool n = (result < 0);
   bool z = (result == 0);
 
-  bool c = unsignedResult != static_cast<uint64_t>(result);
+  bool c = unsignedResult != static_cast<uint32_t>(result);
 
   bool v = result != signedResult;
+
+  std::cout << "addWithCarry32: " << std::hex << x << ", " << y << ", "
+            << std::dec << carryIn << " = " << n << z << c << v << std::endl;
 
   return {result, nzcv(n, z, c, v)};
 }
@@ -136,7 +139,7 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
       result = v;
       break;  // VS/VC
     case 0b100:
-      result = (c && !v);
+      result = (c && !z);
       break;  // HI/LS
     case 0b101:
       result = (n == v);
@@ -167,10 +170,26 @@ void A64Instruction::execute() {
 
   executed_ = true;
   switch (metadata.opcode) {
+    case A64Opcode::AArch64_ADDSXri: {  // adds xd, xn, #imm{, shift}
+      auto x = operands[0].get<uint64_t>();
+      auto y = metadata.operands[2].imm;
+      auto [result, nzcv] = addWithCarry(x, y, 0);
+      results[0] = nzcv;
+      results[1] = result;
+      return;
+    }
     case A64Opcode::AArch64_ADDWri: {  // add wd, wn, #imm
       auto x = operands[0].get<uint32_t>();
       auto y = static_cast<uint32_t>(metadata.operands[2].imm);
       results[0] = RegisterValue(x + y, 8);
+      return;
+    }
+    case A64Opcode::AArch64_ADDWrs: {  // add wd, wn, wm{, shift #amount}
+      auto x = operands[0].get<uint32_t>();
+      auto y = shiftValue(operands[1].get<uint32_t>(),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
+      results[0] = static_cast<uint64_t>(x + y);
       return;
     }
     case A64Opcode::AArch64_ADDXri: {  // add xd, xn, #imm
@@ -212,6 +231,12 @@ void A64Instruction::execute() {
       if (destinationRegisterCount > 1) {
         results[1] = static_cast<uint64_t>(result);
       }
+      return;
+    }
+    case A64Opcode::AArch64_ANDWri: {  // and wd, xn, #imm
+      auto x = operands[0].get<uint32_t>();
+      auto y = static_cast<uint32_t>(metadata.operands[2].imm);
+      results[0] = static_cast<uint64_t>(x & y);
       return;
     }
     case A64Opcode::AArch64_ANDXri: {  // and xd, xn, #imm
@@ -311,6 +336,14 @@ void A64Instruction::execute() {
       }
       return;
     }
+    case A64Opcode::AArch64_CSELXr: {  // csel xd, xn, xm, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        results[0] = operands[1].get<uint64_t>();
+      } else {
+        results[0] = operands[2].get<uint64_t>();
+      }
+      return;
+    }
     case A64Opcode::AArch64_CSINCWr: {  // csinc wd, wn, wm, cc
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         results[0] = RegisterValue(operands[1].get<uint32_t>(), 8);
@@ -391,8 +424,13 @@ void A64Instruction::execute() {
       results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
       return;
     }
+    case A64Opcode::AArch64_LDRBBpre: {  // ldrb wt, [xn, #imm]!
+      results[0] = memoryData[0].zeroExtend(1, 8);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+      return;
+    }
     case A64Opcode::AArch64_LDRBBui: {  // ldrb wt, [xn, #imm]
-      results[0] = static_cast<uint64_t>(memoryData[0]);
+      results[0] = memoryData[0].zeroExtend(1, 8);
       return;
     }
     case A64Opcode::AArch64_LDRDroX: {  // ldr dt, [xn, xm, {extend {#amount}}]
@@ -422,6 +460,13 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_LDURXi: {  // ldur xt, [xn, #imm]
       results[0] = memoryData[0];
+      return;
+    }
+    case A64Opcode::AArch64_MADDXrrr: {  // madd xd, xn, xm, xa
+      auto x = operands[0].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>();
+      auto a = operands[2].get<uint64_t>();
+      results[0] = a + (x * y);
       return;
     }
     case A64Opcode::AArch64_MOVIv2d_ns: {  // movi vd.2d, #imm
@@ -466,6 +511,14 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_MRS: {  // mrs xt, (systemreg|Sop0_op1_Cn_Cm_op2)
       // TODO: Correct system register read support
       results[0] = static_cast<uint64_t>(0);
+      return;
+    }
+    case A64Opcode::AArch64_MSR: {  // mrs (systemreg|Sop0_op1_Cn_Cm_op2), xt
+      // TODO: Correct system register write support
+      return;
+    }
+    case A64Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
+      // TODO: Observe hints
       return;
     }
     case A64Opcode::AArch64_ORRWri: {  // orr wd, wn, #imm
@@ -638,6 +691,12 @@ void A64Instruction::execute() {
         results[0] = source << (64 - r);
       }
 
+      return;
+    }
+    case A64Opcode::AArch64_UDIVXr: {  // udiv xd, xn, xm
+      auto x = operands[0].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>();
+      results[0] = x / y;
       return;
     }
     default:

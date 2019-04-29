@@ -84,6 +84,29 @@ ExceptionResult A64Architecture::handleException(
 
     ProcessStateChange stateChange;
     switch (syscallId) {
+      case 160: {  // uname
+        const uint64_t base =
+            registerFileSet.get({A64RegisterType::GENERAL, 0}).get<uint64_t>();
+        const uint8_t len =
+            65;  // Reserved length of each string field in Linux
+        const char sysname[] = "Linux\0";
+        const char nodename[] = "simeng.hpc.cs.bris.ac.uk\0";
+        const char release[] = "0.0.0\0";
+        const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019\0";
+        const char machine[] = "aarch64\0";
+
+        stateChange = {{{A64RegisterType::GENERAL, 0}},
+                       {static_cast<uint64_t>(0)},
+                       {{base, sizeof(sysname)},
+                        {base + len, sizeof(nodename)},
+                        {base + (len * 2), sizeof(release)},
+                        {base + (len * 3), sizeof(version)},
+                        {base + (len * 4), sizeof(machine)}},
+                       {RegisterValue(sysname), RegisterValue(nodename),
+                        RegisterValue(release), RegisterValue(version),
+                        RegisterValue(machine)}};
+        break;
+      }
       case 174:  // getuid
         stateChange = {{{A64RegisterType::GENERAL, 0}},
                        {static_cast<uint64_t>(0)}};
