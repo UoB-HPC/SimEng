@@ -249,11 +249,17 @@ void A64Instruction::execute() {
       results[0] = static_cast<uint64_t>(instructionAddress_ + 4);
       return;
     }
-    // case A64Opcode::AArch64_BR: {  // br xn
-    //   branchTaken_ = true;
-    //   branchAddress_ = operands[0].get<uint64_t>();
-    //   return;
-    // }
+    case A64Opcode::AArch64_BR: {  // br xn
+      branchTaken_ = true;
+      branchAddress_ = operands[0].get<uint64_t>();
+      return;
+    }
+    case A64Opcode::AArch64_BLR: {  // blr xn
+      branchTaken_ = true;
+      branchAddress_ = operands[0].get<uint64_t>();
+      results[0] = static_cast<uint64_t>(instructionAddress_ + 4);
+      return;
+    }
     case A64Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
       if (operands[0].get<uint32_t>() == 0) {
         branchTaken_ = false;
@@ -368,22 +374,6 @@ void A64Instruction::execute() {
       results[0] = out;
       return;
     }
-    case A64Opcode::AArch64_LDPQi: {  // ldp qt1, qt2, [xn, #imm]
-      results[0] = memoryData[0];
-      results[1] = memoryData[1];
-      return;
-    }
-    case A64Opcode::AArch64_LDPXi: {  // ldp xt1, xt2, [xn, #imm]
-      results[0] = memoryData[0];
-      results[1] = memoryData[1];
-      return;
-    }
-    case A64Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
-      results[0] = memoryData[0];
-      results[1] = memoryData[1];
-      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
-      return;
-    }
     case A64Opcode::AArch64_LDRBBui: {  // ldrb wt, [xn, #imm]
       results[0] = static_cast<uint64_t>(memoryData[0]);
       return;
@@ -406,6 +396,31 @@ void A64Instruction::execute() {
       return;
     }
     case A64Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]
+      results[0] = memoryData[0];
+      return;
+    }
+
+    case A64Opcode::AArch64_LDPQi: {  // ldp qt1, qt2, [xn, #imm]
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      return;
+    }
+    case A64Opcode::AArch64_LDPXi: {  // ldp xt1, xt2, [xn, #imm]
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      return;
+    }
+    case A64Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
+      return;
+    }
+    case A64Opcode::AArch64_LDURWi: {  // ldur wt, [xn, #imm]
+      results[0] = memoryData[0];
+      return;
+    }
+    case A64Opcode::AArch64_LDURXi: {  // ldur xt, [xn, #imm]
       results[0] = memoryData[0];
       return;
     }

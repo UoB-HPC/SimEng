@@ -273,7 +273,12 @@ void A64InstructionMetadata::revertAliasing() {
         operands[3].access = CS_AC_READ;
         return;
       } else if (id == ARM64_INS_LSR) {
-        return aliasNYI();
+        operandCount = 4;
+
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].imm = 31;
+        operands[3].access = CS_AC_READ;
+        return;
       }
       return;
     }
@@ -290,7 +295,12 @@ void A64InstructionMetadata::revertAliasing() {
         operands[3].access = CS_AC_READ;
         return;
       } else if (id == ARM64_INS_LSR) {
-        return aliasNYI();
+        operandCount = 4;
+
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].imm = 63;
+        operands[3].access = CS_AC_READ;
+        return;
       }
       return;
     }
