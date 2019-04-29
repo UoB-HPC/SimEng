@@ -374,6 +374,23 @@ void A64Instruction::execute() {
       results[0] = out;
       return;
     }
+
+    case A64Opcode::AArch64_LDPQi: {  // ldp qt1, qt2, [xn, #imm]
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      return;
+    }
+    case A64Opcode::AArch64_LDPXi: {  // ldp xt1, xt2, [xn, #imm]
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      return;
+    }
+    case A64Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
+      return;
+    }
     case A64Opcode::AArch64_LDRBBui: {  // ldrb wt, [xn, #imm]
       results[0] = static_cast<uint64_t>(memoryData[0]);
       return;
@@ -397,23 +414,6 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]
       results[0] = memoryData[0];
-      return;
-    }
-
-    case A64Opcode::AArch64_LDPQi: {  // ldp qt1, qt2, [xn, #imm]
-      results[0] = memoryData[0];
-      results[1] = memoryData[1];
-      return;
-    }
-    case A64Opcode::AArch64_LDPXi: {  // ldp xt1, xt2, [xn, #imm]
-      results[0] = memoryData[0];
-      results[1] = memoryData[1];
-      return;
-    }
-    case A64Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
-      results[0] = memoryData[0];
-      results[1] = memoryData[1];
-      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
       return;
     }
     case A64Opcode::AArch64_LDURWi: {  // ldur wt, [xn, #imm]
@@ -496,6 +496,9 @@ void A64Instruction::execute() {
       results[0] = result;
       return;
     }
+    case A64Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
+      return;
+    }
     case A64Opcode::AArch64_RET: {  // ret {xr}
       branchTaken_ = true;
       branchAddress_ = operands[0].get<uint64_t>();
@@ -526,6 +529,10 @@ void A64Instruction::execute() {
       return;
     }
     case A64Opcode::AArch64_STRXui: {  // str xt, [xn, #imm]
+      memoryData[0] = operands[0];
+      return;
+    }
+    case A64Opcode::AArch64_STURWi: {  // stur wt, [xn, #imm]
       memoryData[0] = operands[0];
       return;
     }
@@ -600,21 +607,21 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_TBNZW: {  // tbnz wn, #imm, label
       if (operands[0].get<uint32_t>() & (1 << metadata.operands[1].imm)) {
-        branchTaken_ = false;
-        branchAddress_ = instructionAddress_ + 4;
-      } else {
         branchTaken_ = true;
         branchAddress_ = instructionAddress_ + metadata.operands[2].imm;
+      } else {
+        branchTaken_ = false;
+        branchAddress_ = instructionAddress_ + 4;
       }
       return;
     }
     case A64Opcode::AArch64_TBZW: {  // tbz wn, #imm, label
       if (operands[0].get<uint32_t>() & (1 << metadata.operands[1].imm)) {
-        branchTaken_ = true;
-        branchAddress_ = instructionAddress_ + metadata.operands[2].imm;
-      } else {
         branchTaken_ = false;
         branchAddress_ = instructionAddress_ + 4;
+      } else {
+        branchTaken_ = true;
+        branchAddress_ = instructionAddress_ + metadata.operands[2].imm;
       }
       return;
     }

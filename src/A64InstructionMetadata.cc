@@ -40,6 +40,11 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
       // MRS incorrectly flags destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
       break;
+    case A64Opcode::AArch64_MSR:
+      // MSR incorrectly flags source/destination as READ | WRITE
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
     case A64Opcode::AArch64_RET:
       // RET doesn't list use of x30 (LR) if no register is supplied
       operandCount = 1;
@@ -254,6 +259,30 @@ void A64InstructionMetadata::revertAliasing() {
       operands[0].type = ARM64_OP_REG;
       operands[0].reg = ARM64_REG_XZR;
       operands[0].access = CS_AC_WRITE;
+      return;
+    }
+    case A64Opcode::AArch64_SUBWrs: {
+      if (id != ARM64_INS_NEG) return;
+      // neg wd, wm{, shift #amount}; alias for:
+      //  sub wd, wzr, wm{, shift #amount}
+      operandCount = 3;
+      operands[2] = operands[1];
+
+      operands[1].type = ARM64_OP_REG;
+      operands[1].reg = ARM64_REG_WZR;
+      operands[1].access = CS_AC_READ;
+      return;
+    }
+    case A64Opcode::AArch64_SUBXrs: {
+      if (id != ARM64_INS_NEG) return;
+      // neg xd, xm{, shift #amount}; alias for:
+      //  sub xd, xzr, xm{, shift #amount}
+      operandCount = 3;
+      operands[2] = operands[1];
+
+      operands[1].type = ARM64_OP_REG;
+      operands[1].reg = ARM64_REG_XZR;
+      operands[1].access = CS_AC_READ;
       return;
     }
     case A64Opcode::AArch64_SYSxt: {
