@@ -84,268 +84,240 @@ A64InstructionMetadata::A64InstructionMetadata(const uint8_t* invalidEncoding)
 }
 
 void A64InstructionMetadata::revertAliasing() {
-  switch (opcode) {
-    case A64Opcode::AArch64_ADDSXri: {
-      if (id != ARM64_INS_CMN) return;
-      // cmn xn, #imm{, shift}
+  // Check mnemonics known to be aliases and see if their opcode matches
+  // something else
+  switch (id) {
+    case ARM64_INS_ASR:
+      return aliasNYI();
+    case ARM64_INS_AT:
+      return aliasNYI();
+    case ARM64_INS_BFI:
+      return aliasNYI();
+    case ARM64_INS_BFXIL:
+      return aliasNYI();
+    case ARM64_INS_CINC:
+      return aliasNYI();
+    case ARM64_INS_CINV:
+      return aliasNYI();
+    case ARM64_INS_CMN:
+      // cmn <operands>, alias for adds <wzr|xzr> <operands>
       operandCount = 3;
       operands[2] = operands[1];
       operands[1] = operands[0];
       operands[1].access = CS_AC_READ;
 
       operands[0].type = ARM64_OP_REG;
-      operands[0].reg = ARM64_REG_XZR;
       operands[0].access = CS_AC_WRITE;
-      return;
-    }
-    case A64Opcode::AArch64_ADDXri: {
-      if (id != ARM64_INS_MOV) return;
-      // mov <xd|sp>, <sp|xn>; alias for: add <xd|sp>, <sp|xn>, #0
 
-      operandCount = 3;
-      operands[2].type = ARM64_OP_IMM;
-      operands[2].imm = 0;
-      operands[2].access = CS_AC_READ;
+      if (opcode == A64Opcode::AArch64_ADDSXri ||
+          opcode == A64Opcode::AArch64_ADDSXrr ||
+          opcode == A64Opcode::AArch64_ADDSXrs) {
+        // 64-bit version
+        operands[0].reg = ARM64_REG_XZR;
+      } else {
+        // 32-bit version
+        operands[0].reg = ARM64_REG_WZR;
+      }
       return;
-    }
-    case A64Opcode::AArch64_ANDSWrs: {
-      if (id != ARM64_INS_TST) return;
-      // tst wn, wm{, shift #amount}; alias for:
-      //  ands wzr, wn, wm{, shift #amount}
-      operandCount = 3;
-      operands[2] = operands[1];
-      operands[1] = operands[0];
-      operands[0].type = ARM64_OP_REG;
-      operands[0].reg = ARM64_REG_WZR;
-      operands[0].access = CS_AC_WRITE;
-      return;
-    }
-    case A64Opcode::AArch64_ASRVWr: {
-      if (id != ARM64_INS_ASR) return;
+    case ARM64_INS_CMP:
+      if (opcode == A64Opcode::AArch64_SUBSWri ||
+          opcode == A64Opcode::AArch64_SUBSWrs ||
+          opcode == A64Opcode::AArch64_SUBSXri ||
+          opcode == A64Opcode::AArch64_SUBSXrs) {
+        operandCount = 3;
+        operands[2] = operands[1];
+
+        operands[1] = operands[0];
+        operands[1].access = CS_AC_READ;
+
+        operands[0].type = ARM64_OP_REG;
+        operands[0].access = CS_AC_WRITE;
+
+        if (opcode == A64Opcode::AArch64_SUBSWri ||
+            opcode == A64Opcode::AArch64_SUBSWrs) {
+          operands[0].reg = ARM64_REG_WZR;
+        } else {
+          operands[0].reg = ARM64_REG_XZR;
+        }
+        return;
+      }
       return aliasNYI();
-    }
-    case A64Opcode::AArch64_ASRVXr: {
-      if (id != ARM64_INS_ASR) return;
+    case ARM64_INS_CNEG:
       return aliasNYI();
-    }
-    case A64Opcode::AArch64_BFMWri: {
-      if (id == ARM64_INS_BFI) return aliasNYI();
-      if (id == ARM64_INS_BFXIL) return aliasNYI();
-      return;
-    }
-    case A64Opcode::AArch64_BFMXri: {
-      if (id != ARM64_INS_BFI) return;
-      if (id == ARM64_INS_BFXIL) return aliasNYI();
-      return aliasNYI();
-    }
-    case A64Opcode::AArch64_CSINCWr: {
-      if (id == ARM64_INS_CSET) {
-        // cset wd, cc; alias for: csinc wd, wzr, wzr, invert(cc)
+    case ARM64_INS_CSET:
+      if (opcode == A64Opcode::AArch64_CSINCWr ||
+          opcode == A64Opcode::AArch64_CSINCXr) {
+        // cset rd, cc; alias for: csinc rd, zr, zr, invert(cc)
         operandCount = 3;
 
         operands[1].type = ARM64_OP_REG;
-        operands[1].reg = ARM64_REG_WZR;
         operands[1].access = CS_AC_READ;
 
         operands[2].type = ARM64_OP_REG;
-        operands[2].reg = ARM64_REG_WZR;
         operands[2].access = CS_AC_READ;
+
+        if (opcode == A64Opcode::AArch64_CSINCWr) {
+          operands[1].reg = ARM64_REG_WZR;
+          operands[2].reg = ARM64_REG_WZR;
+        } else {
+          operands[1].reg = ARM64_REG_XZR;
+          operands[2].reg = ARM64_REG_XZR;
+        }
+
         cc ^= 1;  // invert lowest bit to negate cc
 
         return;
-      } else if (id == ARM64_INS_CINC) {
-        return aliasNYI();
       }
-      return;
-    }
-    case A64Opcode::AArch64_CSINCXr: {
-      if (id == ARM64_INS_CSET) {
-        // cset xd, cc; alias for: csinc xd, xzr, xzr, invert(cc)
+      return aliasNYI();
+    case ARM64_INS_CSETM:
+      return aliasNYI();
+    case ARM64_INS_DC:
+      return aliasNYI();
+    case ARM64_INS_IC:
+      return aliasNYI();
+    case ARM64_INS_LSL:
+      if (opcode == A64Opcode::AArch64_UBFMWri ||
+          opcode == A64Opcode::AArch64_UBFMXri) {
+        // lsl rd, rn, #shift; alias for:
+        //  ubfm rd, rn, #(-shift MOD <32|64>), #(<31|63> - shift)
+        operandCount = 4;
+        uint8_t highestBit = 63;
+        if (opcode == A64Opcode::AArch64_UBFMWri) {
+          highestBit = 31;
+        }
 
+        auto shift = operands[2].imm;
+        operands[2].imm = (-shift) & highestBit;
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].imm = highestBit - shift;
+        operands[3].access = CS_AC_READ;
+        return;
+      }
+      return aliasNYI();
+    case ARM64_INS_LSR:
+      if (opcode == A64Opcode::AArch64_UBFMWri ||
+          opcode == A64Opcode::AArch64_UBFMXri) {
+        // lsr rd, rn, #amount; alias for ubfm rd, rn, #amount, #<31|63>
+        operandCount = 4;
+
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].access = CS_AC_READ;
+
+        if (opcode == A64Opcode::AArch64_UBFMWri) {
+          operands[3].imm = 31;
+        } else {
+          operands[3].imm = 63;
+        }
+        return;
+      }
+      return aliasNYI();
+    case ARM64_INS_MNEG:
+      return aliasNYI();
+    case ARM64_INS_MOV:
+      if (opcode == A64Opcode::AArch64_ADDXri ||
+          opcode == A64Opcode::AArch64_ADDWri) {
+        // mov to/from sp; alias for: add <sp|rd>, <rn|sp>, #0
         operandCount = 3;
+        operands[2].type = ARM64_OP_IMM;
+        operands[2].imm = 0;
+        operands[2].access = CS_AC_READ;
+        return;
+      }
+      if (opcode == A64Opcode::AArch64_ORRWrs ||
+          opcode == A64Opcode::AArch64_ORRXrs) {
+        // mov rd, rn; alias for: orr rd, zr, rn
+        operandCount = 3;
+        operands[2] = operands[1];
 
         operands[1].type = ARM64_OP_REG;
-        operands[1].reg = ARM64_REG_XZR;
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_INVALID, 0};
+        if (opcode == A64Opcode::AArch64_ORRWrs) {
+          operands[1].reg = ARM64_REG_WZR;
+        } else {
+          operands[1].reg = ARM64_REG_XZR;
+        }
+        return;
+      }
+      return aliasNYI();
+    case ARM64_INS_MUL:
+      return aliasNYI();
+    case ARM64_INS_MVN:
+      return aliasNYI();
+    case ARM64_INS_NEG:
+      if (opcode == A64Opcode::AArch64_SUBWrs ||
+          opcode == A64Opcode::AArch64_SUBXrs) {
+        // neg rd, rm{, shift #amount}; alias for:
+        //  sub rd, zr, rm{, shift #amount}
+        operandCount = 3;
+        operands[2] = operands[1];
+
+        operands[1].type = ARM64_OP_REG;
         operands[1].access = CS_AC_READ;
 
-        operands[2].type = ARM64_OP_REG;
-        operands[2].reg = ARM64_REG_XZR;
-        operands[2].access = CS_AC_READ;
-        cc ^= 1;  // invert lowest bit to negate cc
-
-        return;
-      } else if (id == ARM64_INS_CINC) {
-        return aliasNYI();
-      }
-    }
-    case A64Opcode::AArch64_CSINVWr: {
-      if (id != ARM64_INS_CINV) return;
-      return aliasNYI();
-    }
-    case A64Opcode::AArch64_CSINVXr: {
-      if (id != ARM64_INS_CINV) return;
-      return aliasNYI();
-    }
-    case A64Opcode::AArch64_ORRWrs: {
-      if (id != ARM64_INS_MOV) return;
-      // mov wd, wn; alias for orr wd, wzr, wn
-      operandCount = 3;
-      operands[2] = operands[1];
-
-      operands[1].type = ARM64_OP_REG;
-      operands[1].reg = ARM64_REG_WZR;
-      operands[1].access = CS_AC_READ;
-      operands[1].shift = {ARM64_SFT_INVALID, 0};
-      return;
-    }
-    case A64Opcode::AArch64_ORRXrs: {
-      if (id != ARM64_INS_MOV) return;
-      // mov xd, xn; alias for orr xd, xzr, xn
-      operandCount = 3;
-      operands[2] = operands[1];
-
-      operands[1].type = ARM64_OP_REG;
-      operands[1].reg = ARM64_REG_XZR;
-      operands[1].access = CS_AC_READ;
-      operands[1].shift = {ARM64_SFT_INVALID, 0};
-      return;
-    }
-    case A64Opcode::AArch64_SBFMWri: {
-      if (id != ARM64_INS_ASR) return;
-      return aliasNYI();
-    }
-    case A64Opcode::AArch64_SBFMXri: {
-      if (id != ARM64_INS_ASR) return;
-      return aliasNYI();
-    }
-    case A64Opcode::AArch64_SUBSWri: {
-      if (id != ARM64_INS_CMP) return;
-      // cmp wn, #imm; alias for: subs wzr, wn, #imm
-      operandCount = 3;
-      operands[2] = operands[1];
-
-      operands[1] = operands[0];
-      operands[1].access = CS_AC_READ;
-
-      operands[0].type = ARM64_OP_REG;
-      operands[0].reg = ARM64_REG_WZR;
-      operands[0].access = CS_AC_WRITE;
-      return;
-    }
-    case A64Opcode::AArch64_SUBSWrs: {
-      if (id != ARM64_INS_CMP) return;
-      // cmp wn, wm; alias for: subs wzr, wn, wm
-      operandCount = 3;
-      operands[2] = operands[1];
-
-      operands[1] = operands[0];
-      operands[1].access = CS_AC_READ;
-
-      operands[0].type = ARM64_OP_REG;
-      operands[0].reg = ARM64_REG_WZR;
-      operands[0].access = CS_AC_WRITE;
-      return;
-    }
-    case A64Opcode::AArch64_SUBSXri: {
-      if (id != ARM64_INS_CMP) return;
-      // cmp xn, #imm; alias for: subs xzr, xn, #imm
-      operandCount = 3;
-      operands[2] = operands[1];
-
-      operands[1] = operands[0];
-      operands[1].access = CS_AC_READ;
-
-      operands[0].type = ARM64_OP_REG;
-      operands[0].reg = ARM64_REG_XZR;
-      operands[0].access = CS_AC_WRITE;
-      return;
-    }
-    case A64Opcode::AArch64_SUBSXrs: {
-      if (id != ARM64_INS_CMP) return;
-      // cmp xn, xm; alias for: subs xzr, xn, xm
-      operandCount = 3;
-      operands[2] = operands[1];
-
-      operands[1] = operands[0];
-      operands[1].access = CS_AC_READ;
-
-      operands[0].type = ARM64_OP_REG;
-      operands[0].reg = ARM64_REG_XZR;
-      operands[0].access = CS_AC_WRITE;
-      return;
-    }
-    case A64Opcode::AArch64_SUBWrs: {
-      if (id != ARM64_INS_NEG) return;
-      // neg wd, wm{, shift #amount}; alias for:
-      //  sub wd, wzr, wm{, shift #amount}
-      operandCount = 3;
-      operands[2] = operands[1];
-
-      operands[1].type = ARM64_OP_REG;
-      operands[1].reg = ARM64_REG_WZR;
-      operands[1].access = CS_AC_READ;
-      return;
-    }
-    case A64Opcode::AArch64_SUBXrs: {
-      if (id != ARM64_INS_NEG) return;
-      // neg xd, xm{, shift #amount}; alias for:
-      //  sub xd, xzr, xm{, shift #amount}
-      operandCount = 3;
-      operands[2] = operands[1];
-
-      operands[1].type = ARM64_OP_REG;
-      operands[1].reg = ARM64_REG_XZR;
-      operands[1].access = CS_AC_READ;
-      return;
-    }
-    case A64Opcode::AArch64_SYSxt: {
-      if (id == ARM64_INS_AT) return aliasNYI();
-      return;
-    }
-    case A64Opcode::AArch64_UBFMWri: {
-      if (id == ARM64_INS_LSL) {
-        // lsl wd, wn, #shift; alias for:
-        //  ubfm wd, wn, #(-shift MOD 32), #(31 - shift)
-        operandCount = 4;
-
-        auto shift = operands[2].imm;
-        operands[2].imm = (-shift) & 31;
-        operands[3].type = ARM64_OP_IMM;
-        operands[3].imm = 31 - shift;
-        operands[3].access = CS_AC_READ;
-        return;
-      } else if (id == ARM64_INS_LSR) {
-        operandCount = 4;
-
-        operands[3].type = ARM64_OP_IMM;
-        operands[3].imm = 31;
-        operands[3].access = CS_AC_READ;
+        if (opcode == A64Opcode::AArch64_SUBWrs) {
+          operands[1].reg = ARM64_REG_WZR;
+        } else {
+          operands[1].reg = ARM64_REG_XZR;
+        }
         return;
       }
-      return;
-    }
-    case A64Opcode::AArch64_UBFMXri: {
-      if (id == ARM64_INS_LSL) {
-        // lsl xd, xn, #shift; alias for:
-        //  ubfm xd, xn, #(-shift MOD 64), #(64 - shift)
-        operandCount = 4;
-
-        auto shift = operands[2].imm;
-        operands[2].imm = (-shift) & 63;
-        operands[3].type = ARM64_OP_IMM;
-        operands[3].imm = 63 - shift;
-        operands[3].access = CS_AC_READ;
-        return;
-      } else if (id == ARM64_INS_LSR) {
-        operandCount = 4;
-
-        operands[3].type = ARM64_OP_IMM;
-        operands[3].imm = 63;
-        operands[3].access = CS_AC_READ;
+      return aliasNYI();
+    case ARM64_INS_NEGS:
+      return aliasNYI();
+    case ARM64_INS_NGC:
+      return aliasNYI();
+    case ARM64_INS_NGCS:
+      return aliasNYI();
+    case ARM64_INS_REV64:
+      return aliasNYI();
+    case ARM64_INS_ROR:
+      return aliasNYI();
+    case ARM64_INS_SBFIZ:
+      return aliasNYI();
+    case ARM64_INS_SBFX:
+      return aliasNYI();
+    case ARM64_INS_SMNEGL:
+      return aliasNYI();
+    case ARM64_INS_SMULL:
+      return aliasNYI();
+    case ARM64_INS_SXTB:
+      return aliasNYI();
+    case ARM64_INS_SXTH:
+      return aliasNYI();
+    case ARM64_INS_SXTW:
+      return aliasNYI();
+    case ARM64_INS_TLBI:
+      return aliasNYI();
+    case ARM64_INS_TST:
+      if (opcode == A64Opcode::AArch64_ANDSWrs ||
+          opcode == A64Opcode::AArch64_ANDSXrs) {
+        // tst rn, rm; alias for: ands zr, rn, rm
+        operandCount = 3;
+        operands[2] = operands[1];
+        operands[1] = operands[0];
+        operands[0].type = ARM64_OP_REG;
+        operands[0].access = CS_AC_WRITE;
+        if (opcode == A64Opcode::AArch64_ANDSWrs) {
+          operands[0].reg = ARM64_REG_WZR;
+        } else {
+          operands[0].reg = ARM64_REG_XZR;
+        }
         return;
       }
-      return;
-    }
+      return aliasNYI();
+    case ARM64_INS_UBFIZ:
+      return aliasNYI();
+    case ARM64_INS_UBFX:
+      return aliasNYI();
+    case ARM64_INS_UMNEGL:
+      return aliasNYI();
+    case ARM64_INS_UMULL:
+      return aliasNYI();
+    case ARM64_INS_UXTB:
+      return aliasNYI();
+    case ARM64_INS_UXTH:
+      return aliasNYI();
   }
 }
 
