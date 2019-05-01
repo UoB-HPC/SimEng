@@ -119,10 +119,6 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
 
       uint64_t base =
           operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
-      std::cout << "STPXi: 0x" << std::hex << base << " (0x"
-                << operands[2].get<uint64_t>() << " + 0x"
-                << metadata.operands[2].mem.disp << ")" << std::dec
-                << std::endl;
       setMemoryAddresses({{base, 8}, {base + 8, 8}});
       break;
     }
@@ -140,8 +136,8 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
     }
     case A64Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend, {#amount}}]
       uint64_t offset =
-          extendValue(operands[2].get<uint64_t>(), metadata.operands[2].ext,
-                      metadata.operands[2].shift.type);
+          extendValue(operands[2].get<uint64_t>(), metadata.operands[1].ext,
+                      metadata.operands[1].shift.type);
       setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 4}});
       break;
     }

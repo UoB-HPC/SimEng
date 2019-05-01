@@ -107,9 +107,6 @@ std::tuple<uint32_t, uint8_t> addWithCarry(uint32_t x, uint32_t y,
 
   bool v = result != signedResult;
 
-  std::cout << "addWithCarry32: " << std::hex << x << ", " << y << ", "
-            << std::dec << carryIn << " = " << n << z << c << v << std::endl;
-
   return {result, nzcv(n, z, c, v)};
 }
 
@@ -455,7 +452,7 @@ void A64Instruction::execute() {
       return;
     }
     case A64Opcode::AArch64_LDURWi: {  // ldur wt, [xn, #imm]
-      results[0] = memoryData[0];
+      results[0] = memoryData[0].zeroExtend(4, 8);
       return;
     }
     case A64Opcode::AArch64_LDURXi: {  // ldur xt, [xn, #imm]

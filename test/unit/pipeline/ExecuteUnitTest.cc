@@ -64,6 +64,7 @@ TEST_F(PipelineExecuteUnitTest, TickEmpty) {
 TEST_F(PipelineExecuteUnitTest, Execute) {
   input.getHeadSlots()[0] = uopPtr;
 
+  ON_CALL(*uop, canExecute()).WillByDefault(Return(true));
   EXPECT_CALL(*uop, execute()).Times(1);
 
   std::vector<Register> registers = {{0, 1}};
@@ -89,6 +90,7 @@ TEST_F(PipelineExecuteUnitTest, Execute) {
 TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
   input.getHeadSlots()[0] = uopPtr;
 
+  ON_CALL(*uop, canExecute()).WillByDefault(Return(true));
   // Anticipate testing instruction type; return true for branch
   ON_CALL(*uop, isBranch()).WillByDefault(Return(true));
 
@@ -124,6 +126,7 @@ TEST_F(PipelineExecuteUnitTest, ExceptionDoesNotExecute) {
 
   uop->setExceptionEncountered(true);
 
+  ON_CALL(*uop, canExecute()).WillByDefault(Return(true));
   EXPECT_CALL(*uop, execute()).Times(0);
 
   EXPECT_CALL(executionHandlers,
@@ -137,6 +140,7 @@ TEST_F(PipelineExecuteUnitTest, ExceptionDoesNotExecute) {
 TEST_F(PipelineExecuteUnitTest, ExecutionException) {
   input.getHeadSlots()[0] = uopPtr;
 
+  ON_CALL(*uop, canExecute()).WillByDefault(Return(true));
   EXPECT_CALL(*uop, execute()).WillOnce(Invoke([&]() {
     uop->setExecuted(true);
     uop->setExceptionEncountered(true);
