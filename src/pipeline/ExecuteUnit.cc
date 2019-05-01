@@ -63,6 +63,9 @@ void ExecuteUnit::tick() {
 }
 
 void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
+  assert(uop->canExecute() &&
+         "Attempted to execute an instruction before it was ready");
+
   if (uop->exceptionEncountered()) {
     // Exception encountered prior to execution
     // TODO: Identify whether this can be removed; executing an

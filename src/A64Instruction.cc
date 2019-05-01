@@ -67,6 +67,8 @@ void A64Instruction::supplyOperand(const Register& reg,
                                    const RegisterValue& value) {
   assert(!canExecute() &&
          "Attempted to provide an operand to a ready-to-execute instruction");
+  assert(value.size() > 0 &&
+         "Attempted to provide an uninitialised RegisterValue");
 
   // Iterate over operand registers, and copy value if the provided register
   // matches

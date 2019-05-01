@@ -29,10 +29,7 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
       writebackUnit_(completionSlots_, registerFileSet_) {
   // Query and apply initial state
   auto state = isa.getInitialState(processMemory);
-  for (size_t i = 0; i < state.modifiedRegisters.size(); i++) {
-    registerFileSet_.set(state.modifiedRegisters[i],
-                         state.modifiedRegisterValues[i]);
-  }
+  applyStateChange(state);
 };
 
 void Core::tick() {
@@ -119,11 +116,23 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 
 void Core::handleException() {
   exceptionGenerated_ = false;
-  hasHalted_ = true;
-  isa_.handleException(exceptionGeneratingInstruction_, registerFileSet_,
-                       processMemory_.data());
 
-  std::cout << "Halting due to fatal exception" << std::endl;
+  auto result = isa_.handleException(exceptionGeneratingInstruction_,
+                                     registerFileSet_, processMemory.data());
+
+  if (result.fatal) {
+    hasHalted_ = true;
+    std::cout << "Halting due to fatal exception" << std::endl;
+    return;
+  }
+
+  fetchUnit_.updatePC(result.instructionAddress);
+  applyStateChange(result.stateChange);
+
+  // Flush pipeline
+  fetchToDecodeBuffer_.fill({});
+  decodeToExecuteBuffer_.fill(nullptr);
+  completionSlots_[0].fill(nullptr);
 }
 
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
@@ -182,6 +191,25 @@ void Core::readRegisters() {
     if (!uop->isOperandReady(i)) {
       uop->supplyOperand(reg, registerFileSet_.get(reg));
     }
+  }
+}
+
+void Core::applyStateChange(const ProcessStateChange& change) {
+  // Update registers
+  for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+    registerFileSet_.set(change.modifiedRegisters[i],
+                         change.modifiedRegisterValues[i]);
+  }
+
+  // Update memory
+  for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
+    const auto& request = change.memoryAddresses[i];
+    const auto& data = change.memoryAddressValues[i];
+
+    auto address = processMemory_.data() + request.first;
+    assert(request.first + request.second <= processMemory_.size() &&
+           "Attempted to store outside memory limit");
+    memcpy(address, data.getAsVector<char>(), request.second);
   }
 }
 

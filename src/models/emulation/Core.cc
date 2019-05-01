@@ -28,8 +28,6 @@ void Core::tick() {
     return;
   }
 
-  // std::cout << "0x" << std::hex << pc_ << std::dec << std::endl;
-
   // Fetch
   auto bytesRead = isa_.predecode(insnPtr_ + pc_, 4, pc_, {false, 0}, macroOp_);
 
@@ -118,16 +116,6 @@ RegisterValue Core::readMemory(
     const std::pair<uint64_t, uint8_t>& request) const {
   assert(request.first + request.second <= programByteLength_ &&
          "Attempted to load from outside memory limit");
-
-  std::cout << "Reading " << (int)request.second << " bytes from " << std::hex
-            << request.first << ": ";
-  for (size_t i = 0; i < request.second; i++) {
-    std::cout << static_cast<uint16_t>(
-                     static_cast<uint8_t>(memory_[request.first + i]))
-              << " ";
-  }
-
-  std::cout << std::dec << std::endl;
 
   // Copy the data at the requested memory address into a RegisterValue
   const char* address = memory_ + request.first;

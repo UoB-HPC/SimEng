@@ -53,6 +53,9 @@ class Core : public simeng::Core {
   /** Read pending registers for the most recently decoded instruction. */
   void readRegisters();
 
+  /** Apply changes to the process state. */
+  void applyStateChange(const ProcessStateChange& change);
+
   /** The process memory. */
   const span<char> processMemory_;
 
