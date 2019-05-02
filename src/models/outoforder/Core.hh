@@ -7,6 +7,7 @@
 #include "../../pipeline/ExecuteUnit.hh"
 #include "../../pipeline/FetchUnit.hh"
 #include "../../pipeline/LoadStoreQueue.hh"
+#include "../../pipeline/MappedRegisterFileSet.hh"
 #include "../../pipeline/PipelineBuffer.hh"
 #include "../../pipeline/PortAllocator.hh"
 #include "../../pipeline/RegisterAliasTable.hh"
@@ -46,6 +47,9 @@ class Core : public simeng::Core {
   /** Handle an exception raised during the cycle. */
   void handleException();
 
+  /** Apply changes to the process state. */
+  void applyStateChange(const ProcessStateChange& change);
+
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
 
@@ -57,8 +61,11 @@ class Core : public simeng::Core {
   /** The core's register alias table. */
   pipeline::RegisterAliasTable registerAliasTable_;
 
+  /** The mapped register file set. */
+  pipeline::MappedRegisterFileSet mappedRegisterFileSet_;
+
   /** The process memory. */
-  span<char> processMemory;
+  span<char> processMemory_;
 
   /** The core's load/store queue. */
   pipeline::LoadStoreQueue loadStoreQueue_;

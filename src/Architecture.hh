@@ -3,9 +3,9 @@
 #include <tuple>
 #include <vector>
 
+#include "ArchitecturalRegisterFileSet.hh"
 #include "BranchPredictor.hh"
 #include "Instruction.hh"
-#include "RegisterFileSet.hh"
 
 namespace simeng {
 
@@ -55,7 +55,8 @@ class Architecture {
 
   virtual ExceptionResult handleException(
       const std::shared_ptr<Instruction>& instruction,
-      const RegisterFileSet& registerFileSet, const char* memory) const = 0;
+      const ArchitecturalRegisterFileSet& registerFileSet,
+      const char* memory) const = 0;
 
   /** Retrieve the initial process state for the supplied process memory. */
   virtual ProcessStateChange getInitialState(
