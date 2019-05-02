@@ -18,7 +18,7 @@ class MockArchitecture : public Architecture {
   MOCK_CONST_METHOD3(
       handleException,
       ExceptionResult(const std::shared_ptr<Instruction>& instruction,
-                      const RegisterFileSet& registerFileSet,
+                      const ArchitecturalRegisterFileSet& registerFileSet,
                       const char* memory));
   MOCK_CONST_METHOD1(getInitialState,
                      ProcessStateChange(span<char> processMemory));

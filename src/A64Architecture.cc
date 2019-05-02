@@ -68,7 +68,8 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
 ExceptionResult A64Architecture::handleException(
     const std::shared_ptr<Instruction>& instruction,
-    const RegisterFileSet& registerFileSet, const char* memory) const {
+    const ArchitecturalRegisterFileSet& registerFileSet,
+    const char* memory) const {
   A64Instruction& insn = *static_cast<A64Instruction*>(instruction.get());
 
   printException(insn);

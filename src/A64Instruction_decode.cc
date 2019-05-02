@@ -114,6 +114,7 @@ void A64Instruction::decode() {
   if (metadata.id == ARM64_INS_INVALID) {
     exception = A64InstructionException::EncodingUnallocated;
     exceptionEncountered_ = true;
+    return;
   }
 
   // Extract implicit writes

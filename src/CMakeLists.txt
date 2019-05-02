@@ -18,6 +18,8 @@ set(SIMENG_SOURCES
     pipeline/FetchUnit.hh
     pipeline/LoadStoreQueue.cc
     pipeline/LoadStoreQueue.hh
+    pipeline/MappedRegisterFileSet.cc
+    pipeline/MappedRegisterFileSet.hh
     pipeline/PipelineBuffer.hh
     pipeline/PortAllocator.hh
     pipeline/RegisterAliasTable.cc
@@ -39,6 +41,8 @@ set(SIMENG_SOURCES
     A64InstructionMetadata.hh
     AlwaysNotTakenPredictor.cc
     AlwaysNotTakenPredictor.hh
+    ArchitecturalRegisterFileSet.cc
+    ArchitecturalRegisterFileSet.hh
     Architecture.hh
     BranchPredictor.hh
     BTBPredictor.cc

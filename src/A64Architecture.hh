@@ -31,7 +31,7 @@ class A64Architecture : public Architecture {
 
   ExceptionResult handleException(
       const std::shared_ptr<Instruction>& instruction,
-      const RegisterFileSet& registerFileSet,
+      const ArchitecturalRegisterFileSet& registerFileSet,
       const char* memory) const override;
 
   /** Retrieve the initial process state for the supplied process memory. */

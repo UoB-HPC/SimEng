@@ -42,6 +42,7 @@ void RenameUnit::tick() {
       reorderBuffer_.reserve(uop);
       uop->setCommitReady();
       input_.getHeadSlots()[slot] = nullptr;
+      input_.stall(false);
       continue;
     }
 

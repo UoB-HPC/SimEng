@@ -36,7 +36,8 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
       registerFileSet_(physicalRegisterStructures),
       registerAliasTable_(isa.getRegisterFileStructures(),
                           physicalRegisterQuantities),
-      processMemory(processMemory),
+      mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
+      processMemory_(processMemory),
       loadStoreQueue_(loadQueueSize, storeQueueSize, processMemory.data()),
       reorderBuffer_(robSize, registerAliasTable_, loadStoreQueue_,
                      [this](auto instruction) { raiseException(instruction); }),
@@ -66,10 +67,7 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
   }
   // Query and apply initial state
   auto state = isa.getInitialState(processMemory);
-  for (size_t i = 0; i < state.modifiedRegisters.size(); i++) {
-    registerFileSet_.set(state.modifiedRegisters[i],
-                         state.modifiedRegisterValues[i]);
-  }
+  applyStateChange(state);
 };
 
 void Core::tick() {
@@ -142,8 +140,13 @@ void Core::flushIfNeeded() {
 
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
+    fetchToDecodeBuffer_.stall(false);
+
     decodeToRenameBuffer_.fill(nullptr);
+    decodeToRenameBuffer_.stall(false);
+
     renameToDispatchBuffer_.fill(nullptr);
+    renameToDispatchBuffer_.stall(false);
 
     // Flush everything younger than the bad instruction from the ROB
     reorderBuffer_.flush(lowestSeqId);
@@ -158,6 +161,7 @@ void Core::flushIfNeeded() {
 
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
+    fetchToDecodeBuffer_.stall(false);
 
     flushes_++;
   }
@@ -201,11 +205,55 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
+  fetchToDecodeBuffer_.fill({});
+  fetchToDecodeBuffer_.stall(false);
+
+  decodeToRenameBuffer_.fill(nullptr);
+  decodeToRenameBuffer_.stall(false);
+
+  renameToDispatchBuffer_.fill(nullptr);
+  renameToDispatchBuffer_.stall(false);
+
+  // Flush everything younger than the exception-generating instruction.
+  // This must happen prior to handling the exception to ensure the commit state
+  // is up-to-date with the register mapping table
+  reorderBuffer_.flush(exceptionGeneratingInstruction_->getSequenceId());
+  dispatchIssueUnit_.purgeFlushed();
+  loadStoreQueue_.purgeFlushed();
+
   exceptionGenerated_ = false;
-  hasHalted_ = true;
-  isa_.handleException(exceptionGeneratingInstruction_, registerFileSet_,
-                       processMemory.data());
-  std::cout << "Halting due to fatal exception" << std::endl;
+
+  auto result =
+      isa_.handleException(exceptionGeneratingInstruction_,
+                           mappedRegisterFileSet_, processMemory_.data());
+
+  if (result.fatal) {
+    hasHalted_ = true;
+    std::cout << "Halting due to fatal exception" << std::endl;
+    return;
+  }
+
+  fetchUnit_.updatePC(result.instructionAddress);
+  applyStateChange(result.stateChange);
+}
+
+void Core::applyStateChange(const ProcessStateChange& change) {
+  // Update registers
+  for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+    mappedRegisterFileSet_.set(change.modifiedRegisters[i],
+                               change.modifiedRegisterValues[i]);
+  }
+
+  // Update memory
+  for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
+    const auto& request = change.memoryAddresses[i];
+    const auto& data = change.memoryAddressValues[i];
+
+    auto address = processMemory_.data() + request.first;
+    assert(request.first + request.second <= processMemory_.size() &&
+           "Attempted to store outside memory limit");
+    memcpy(address, data.getAsVector<char>(), request.second);
+  }
 }
 
 std::map<std::string, std::string> Core::getStats() const {

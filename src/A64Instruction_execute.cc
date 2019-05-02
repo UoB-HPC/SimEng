@@ -484,7 +484,7 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_MOVNWi: {  // movn wd, #imm{, LSL #shift}
       uint8_t shift = metadata.operands[1].shift.value;
       uint32_t value = ~(metadata.operands[1].imm << shift);
-      results[0] = value;
+      results[0] = static_cast<uint64_t>(value);
       return;
     }
     case A64Opcode::AArch64_MOVNXi: {  // movn xd, #imm{, LSL #shift}
@@ -539,11 +539,11 @@ void A64Instruction::execute() {
       return;
     }
     case A64Opcode::AArch64_ORRXrs: {  // orr xd, xn, xm{, shift{ #amount}}
-      uint64_t result = operands[0].get<uint64_t>() |
-                        shiftValue(operands[1].get<uint64_t>(),
-                                   metadata.operands[2].shift.type,
-                                   metadata.operands[2].shift.value);
-      results[0] = result;
+      auto x = operands[0].get<uint64_t>();
+      auto y = shiftValue(operands[1].get<uint64_t>(),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
+      results[0] = x | y;
       return;
     }
     case A64Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
