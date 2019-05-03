@@ -67,8 +67,9 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   // TODO: Defer data read
   const auto& addresses = insn->getGeneratedAddresses();
   for (auto const& request : addresses) {
+    const char* address = memory + request.first;
     // Copy the data at the requested memory address into a RegisterValue
-    auto data = RegisterValue(memory + request.first, request.second);
+    auto data = RegisterValue(address, request.second);
 
     insn->supplyData(request.first, data);
   }
