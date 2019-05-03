@@ -21,7 +21,8 @@ class MockExceptionHandler {
 class ReorderBufferTest : public testing::Test {
  public:
   ReorderBufferTest()
-      : rat({{8, 32}}, {64}),
+      : memory{},
+        rat({{8, 32}}, {64}),
         lsq(maxLSQLoads, maxLSQStores, memory),
         uop(new MockInstruction),
         uop2(new MockInstruction),
@@ -29,9 +30,7 @@ class ReorderBufferTest : public testing::Test {
         uopPtr2(uop2),
         reorderBuffer(maxROBSize, rat, lsq, [this](auto insn) {
           exceptionHandler.raiseException(insn);
-        }) {
-    std::fill(memory, memory + sizeof(memory), 0);
-  }
+        }) {}
 
  protected:
   const uint8_t maxLSQLoads = 32;
@@ -179,6 +178,8 @@ TEST_F(ReorderBufferTest, Flush) {
 
   reorderBuffer.flush(uop->getSequenceId());
 
+  EXPECT_EQ(uop->isFlushed(), false);
+  EXPECT_EQ(uop2->isFlushed(), true);
   EXPECT_EQ(reorderBuffer.size(), 1);
 }
 

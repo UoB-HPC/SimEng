@@ -3,6 +3,7 @@ set(TEST_SOURCES
     inorder/DecodeUnitTest.cc
     inorder/ExecuteUnitTest.cc
     inorder/WritebackUnitTest.cc
+    outoforder/LoadStoreQueueTest.cc
     outoforder/ReorderBufferTest.cc
     ISATest.cc
     BTBPredictorTest.cc
