@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
     //                                  17, 4, 3, 22, 117, 11, 4,  12, 10, 18};
     // memcpy(memory, memoryValues.data(), memoryValues.size() * sizeof(int));
 
-    processMemorySize = sizeof(hex);
+    processMemorySize = sizeof(hex) + stackSize;
     processMemory = new char[processMemorySize];
     std::memcpy(processMemory, hex, sizeof(hex));
     entryPoint = 0;

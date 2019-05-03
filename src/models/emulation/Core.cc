@@ -16,8 +16,6 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
       pc_(entryPoint),
       registerFileSet_(isa.getRegisterFileStructures()) {
   // Query and apply initial state
-  std::cout << "Process memory size: " << std::hex << processMemory.size()
-            << std::dec << std::endl;
   auto state = isa.getInitialState(processMemory);
   applyStateChange(state);
 }

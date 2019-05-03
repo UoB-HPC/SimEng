@@ -1,7 +1,5 @@
 #include "DispatchIssueUnit.hh"
 
-#include <iostream>
-
 namespace simeng {
 namespace pipeline {
 
