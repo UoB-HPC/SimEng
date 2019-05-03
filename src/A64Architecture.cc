@@ -90,11 +90,11 @@ ExceptionResult A64Architecture::handleException(
             registerFileSet.get({A64RegisterType::GENERAL, 0}).get<uint64_t>();
         const uint8_t len =
             65;  // Reserved length of each string field in Linux
-        const char sysname[] = "Linux\0";
-        const char nodename[] = "simeng.hpc.cs.bris.ac.uk\0";
-        const char release[] = "0.0.0\0";
-        const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019\0";
-        const char machine[] = "aarch64\0";
+        const char sysname[] = "Linux";
+        const char nodename[] = "simeng.hpc.cs.bris.ac.uk";
+        const char release[] = "0.0.0";
+        const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019";
+        const char machine[] = "aarch64";
 
         stateChange = {{{A64RegisterType::GENERAL, 0}},
                        {static_cast<uint64_t>(0)},
