@@ -153,5 +153,7 @@ std::shared_ptr<Instruction> LoadStoreQueue::getViolatingLoad() const {
   return violatingLoad;
 }
 
+bool LoadStoreQueue::isCombined() const { return combined; }
+
 }  // namespace outoforder
 }  // namespace simeng

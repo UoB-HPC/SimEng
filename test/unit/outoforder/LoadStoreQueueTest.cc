@@ -12,14 +12,16 @@ using ::testing::Return;
 namespace simeng {
 namespace outoforder {
 
-class LoadStoreQueueTest : public testing::Test {
+const uint8_t MAX_LOADS = 32;
+const uint8_t MAX_STORES = 32;
+const uint8_t MAX_COMBINED = 64;
+
+class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
  public:
   LoadStoreQueueTest()
       : addresses({{0, 1}}),
         data({static_cast<uint8_t>(1)}),
         memory{},
-        splitQueue(maxLoads, maxStores, memory),
-        combinedQueue(maxCombinedSpace, memory),
         loadUop(new MockInstruction),
         storeUop(new MockInstruction),
         loadUopPtr(loadUop),
@@ -36,17 +38,20 @@ class LoadStoreQueueTest : public testing::Test {
   }
 
  protected:
-  const uint8_t maxLoads = 32;
-  const uint8_t maxStores = 32;
-  const uint8_t maxCombinedSpace = 64;
+  LoadStoreQueue getQueue() {
+    if (GetParam()) {
+      // Combined queue
+      return LoadStoreQueue(MAX_COMBINED, memory);
+    } else {
+      // Split queue
+      return LoadStoreQueue(MAX_LOADS, MAX_STORES, memory);
+    }
+  }
 
   std::vector<std::pair<uint64_t, uint8_t>> addresses;
   std::vector<RegisterValue> data;
 
   char memory[1024];
-
-  LoadStoreQueue splitQueue;
-  LoadStoreQueue combinedQueue;
 
   MockInstruction* loadUop;
   MockInstruction* storeUop;
@@ -55,91 +60,100 @@ class LoadStoreQueueTest : public testing::Test {
   std::shared_ptr<MockInstruction> storeUopPtr;
 };
 
-// Tests that a load can be added to a split queue, without reducing the
-// available space for stores
-TEST_F(LoadStoreQueueTest, SplitAddLoad) {
-  splitQueue.addLoad(loadUopPtr);
+// Test that a split queue can be constructed correctly
+TEST_F(LoadStoreQueueTest, SplitQueue) {
+  LoadStoreQueue queue = LoadStoreQueue(MAX_LOADS, MAX_STORES, nullptr);
 
-  EXPECT_EQ(splitQueue.getLoadQueueSpace(), maxLoads - 1);
-  EXPECT_EQ(splitQueue.getStoreQueueSpace(), maxStores);
+  EXPECT_EQ(queue.isCombined(), false);
+  EXPECT_EQ(queue.getLoadQueueSpace(), MAX_LOADS);
+  EXPECT_EQ(queue.getStoreQueueSpace(), MAX_STORES);
+  EXPECT_EQ(queue.getTotalSpace(), MAX_LOADS + MAX_STORES);
 }
 
-// Tests that a load can be added to a combined queue, and it also reduces the
-// available space for stores
-TEST_F(LoadStoreQueueTest, CombinedAddLoad) {
-  combinedQueue.addLoad(loadUopPtr);
+// Test that a combined queue can be constructed correctly
+TEST_F(LoadStoreQueueTest, CombinedQueue) {
+  LoadStoreQueue queue = LoadStoreQueue(MAX_COMBINED, nullptr);
 
-  EXPECT_EQ(combinedQueue.getLoadQueueSpace(), maxCombinedSpace - 1);
-  EXPECT_EQ(combinedQueue.getStoreQueueSpace(), maxCombinedSpace - 1);
-  EXPECT_EQ(combinedQueue.getTotalSpace(), maxCombinedSpace - 1);
+  EXPECT_EQ(queue.isCombined(), true);
+  EXPECT_EQ(queue.getLoadQueueSpace(), MAX_COMBINED);
+  EXPECT_EQ(queue.getStoreQueueSpace(), MAX_COMBINED);
+  EXPECT_EQ(queue.getTotalSpace(), MAX_COMBINED);
 }
 
-// Tests that a store can be added to a split queue, without reducing the
-// available space for loads
-TEST_F(LoadStoreQueueTest, SplitAddStore) {
-  splitQueue.addStore(storeUopPtr);
+// Tests that a load can be added to the queue
+TEST_P(LoadStoreQueueTest, AddLoad) {
+  auto queue = getQueue();
+  auto initialLoadSpace = queue.getLoadQueueSpace();
+  auto initialStoreSpace = queue.getStoreQueueSpace();
+  auto initialTotalSpace = queue.getTotalSpace();
 
-  EXPECT_EQ(splitQueue.getLoadQueueSpace(), maxLoads);
-  EXPECT_EQ(splitQueue.getStoreQueueSpace(), maxStores - 1);
+  queue.addLoad(loadUopPtr);
+
+  EXPECT_EQ(queue.getLoadQueueSpace(), initialLoadSpace - 1);
+  EXPECT_EQ(queue.getTotalSpace(), initialTotalSpace - 1);
+
+  if (queue.isCombined()) {
+    // Combined queue: adding a load should reduce space for stores
+    EXPECT_EQ(queue.getStoreQueueSpace(), initialStoreSpace - 1);
+  } else {
+    // Split queue: adding a load shouldn't affect space for stores
+    EXPECT_EQ(queue.getStoreQueueSpace(), initialStoreSpace);
+  }
 }
 
-// Tests that a store can be added to a combined queue, and it also reduces the
-// available space for loads
-TEST_F(LoadStoreQueueTest, CombinedAddStore) {
-  combinedQueue.addStore(storeUopPtr);
+// Tests that a store can be added to the queue
+TEST_P(LoadStoreQueueTest, AddStore) {
+  auto queue = getQueue();
+  auto initialLoadSpace = queue.getLoadQueueSpace();
+  auto initialStoreSpace = queue.getStoreQueueSpace();
+  auto initialTotalSpace = queue.getTotalSpace();
 
-  EXPECT_EQ(combinedQueue.getLoadQueueSpace(), maxCombinedSpace - 1);
-  EXPECT_EQ(combinedQueue.getStoreQueueSpace(), maxCombinedSpace - 1);
-  EXPECT_EQ(combinedQueue.getTotalSpace(), maxCombinedSpace - 1);
+  queue.addStore(storeUopPtr);
+
+  EXPECT_EQ(queue.getStoreQueueSpace(), initialStoreSpace - 1);
+  EXPECT_EQ(queue.getTotalSpace(), initialTotalSpace - 1);
+
+  if (queue.isCombined()) {
+    // Combined queue: adding a store should reduce space for loads
+    EXPECT_EQ(queue.getLoadQueueSpace(), initialLoadSpace - 1);
+  } else {
+    // Split queue: adding a store shouldn't affect space for loads
+    EXPECT_EQ(queue.getLoadQueueSpace(), initialLoadSpace);
+  }
 }
 
-// Tests that a split queue can purge flushed load instructions
-TEST_F(LoadStoreQueueTest, SplitPurgeFlushedLoad) {
-  splitQueue.addLoad(loadUopPtr);
+// Tests that a queue can purge flushed load instructions
+TEST_P(LoadStoreQueueTest, PurgeFlushedLoad) {
+  auto queue = getQueue();
+  auto initialLoadSpace = queue.getLoadQueueSpace();
+  queue.addLoad(loadUopPtr);
 
   loadUop->setFlushed();
-  splitQueue.purgeFlushed();
+  queue.purgeFlushed();
 
-  EXPECT_EQ(splitQueue.getLoadQueueSpace(), maxLoads);
+  EXPECT_EQ(queue.getLoadQueueSpace(), initialLoadSpace);
 }
 
-// Tests that a split queue can purge flushed store instructions
-TEST_F(LoadStoreQueueTest, SplitPurgeFlushedStore) {
-  splitQueue.addStore(storeUopPtr);
+// Tests that a queue can purge flushed store instructions
+TEST_P(LoadStoreQueueTest, PurgeFlushedStore) {
+  auto queue = getQueue();
+  auto initialStoreSpace = queue.getStoreQueueSpace();
+  queue.addStore(storeUopPtr);
 
   storeUop->setFlushed();
-  splitQueue.purgeFlushed();
+  queue.purgeFlushed();
 
-  EXPECT_EQ(splitQueue.getStoreQueueSpace(), maxStores);
+  EXPECT_EQ(queue.getStoreQueueSpace(), initialStoreSpace);
 }
 
-// Tests that a combined queue can purge flushed load instructions
-TEST_F(LoadStoreQueueTest, CombinedPurgeFlushedLoad) {
-  combinedQueue.addLoad(loadUopPtr);
-
-  loadUop->setFlushed();
-  combinedQueue.purgeFlushed();
-
-  EXPECT_EQ(combinedQueue.getLoadQueueSpace(), maxCombinedSpace);
-}
-
-// Tests that a combined queue can purge flushed store instructions
-TEST_F(LoadStoreQueueTest, CombinedPurgeFlushedStore) {
-  combinedQueue.addStore(storeUopPtr);
-
-  storeUop->setFlushed();
-  combinedQueue.purgeFlushed();
-
-  EXPECT_EQ(combinedQueue.getStoreQueueSpace(), maxCombinedSpace);
-}
-
-// Tests that a split queue can perform a load
-TEST_F(LoadStoreQueueTest, SplitLoad) {
+// Tests that a queue can perform a load
+TEST_P(LoadStoreQueueTest, Load) {
+  auto queue = getQueue();
   memory[0] = 1;
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses()).Times(AtLeast(1));
 
-  splitQueue.addLoad(loadUopPtr);
+  queue.addLoad(loadUopPtr);
 
   // Check that the request reads the correct value from memory (a single byte
   // of value `memory[0]`)
@@ -148,41 +162,43 @@ TEST_F(LoadStoreQueueTest, SplitLoad) {
               supplyData(0, Property(&RegisterValue::get<uint8_t>, memory[0])))
       .Times(1);
 
-  splitQueue.startLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr);
 }
 
-// Tests that a combined queue can perform a load
-TEST_F(LoadStoreQueueTest, CombinedLoad) {
-  memory[0] = 1;
+// Tests that a queue can commit a load
+TEST_P(LoadStoreQueueTest, CommitLoad) {
+  auto queue = getQueue();
+  auto initialLoadSpace = queue.getLoadQueueSpace();
 
-  EXPECT_CALL(*loadUop, getGeneratedAddresses()).Times(AtLeast(1));
+  queue.addLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr);
 
-  combinedQueue.addLoad(loadUopPtr);
+  queue.commitLoad(loadUopPtr);
 
-  // Check that the request reads the correct value from memory (a single byte
-  // of value `memory[0]`)
-  // TODO: Replace with check for call over memory interface in future?
-  EXPECT_CALL(*loadUop,
-              supplyData(0, Property(&RegisterValue::get<uint8_t>, memory[0])))
-      .Times(1);
-
-  combinedQueue.startLoad(loadUopPtr);
+  // Check that the load has left the queue
+  EXPECT_EQ(queue.getLoadQueueSpace(), initialLoadSpace);
 }
 
-// Tests that a split queue can perform a store
-TEST_F(LoadStoreQueueTest, SplitStore) {
+// Tests that a queue can perform a store
+TEST_P(LoadStoreQueueTest, Store) {
+  auto queue = getQueue();
+  auto initialStoreSpace = queue.getStoreQueueSpace();
+
   EXPECT_CALL(*storeUop, getGeneratedAddresses()).Times(AtLeast(1));
   EXPECT_CALL(*storeUop, getData()).Times(AtLeast(1));
 
-  combinedQueue.addStore(storeUopPtr);
+  queue.addStore(storeUopPtr);
   storeUopPtr->setCommitReady();
-  combinedQueue.commitStore(storeUopPtr);
+  queue.commitStore(storeUopPtr);
 
   // TODO: Replace with check for call over memory interface in future?
   EXPECT_EQ(memory[0], 1);
   // Check the store was removed
-  EXPECT_EQ(splitQueue.getStoreQueueSpace(), maxStores);
+  EXPECT_EQ(queue.getStoreQueueSpace(), initialStoreSpace);
 }
+
+INSTANTIATE_TEST_SUITE_P(LoadStoreQueueTests, LoadStoreQueueTest,
+                         ::testing::Values<bool>(false, true));
 
 }  // namespace outoforder
 }  // namespace simeng
