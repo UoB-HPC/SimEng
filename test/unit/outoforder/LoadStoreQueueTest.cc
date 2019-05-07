@@ -48,6 +48,32 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     }
   }
 
+  /** Constructs and executes a potential read-after-write memory access
+   * sequence in the supplied queue, and returns `true` if the queue detected a
+   * memory order violation. */
+  bool executeRAWSequence(LoadStoreQueue& queue) {
+    // Load uop comes sequentially after the store uop, and potentially reads
+    // from the same address the store writes to
+    storeUop->setSequenceId(0);
+    loadUop->setSequenceId(1);
+
+    // Add the memory operations to the queue in program order
+    queue.addStore(storeUopPtr);
+    queue.addLoad(loadUopPtr);
+
+    // Trigger the load first, so it might incorrectly read what was in memory
+    // before the store
+    queue.startLoad(loadUopPtr);
+    loadUop->setExecuted(true);
+    loadUop->setCommitReady();
+
+    // Trigger the store, and return any violation
+    // TODO: Once a memory interface is in place, ensure the load was resolved
+    // before triggering the store
+    storeUop->setCommitReady();
+    return queue.commitStore(storeUopPtr);
+  }
+
   std::vector<std::pair<uint64_t, uint8_t>> addresses;
   std::vector<RegisterValue> data;
 
@@ -195,6 +221,72 @@ TEST_P(LoadStoreQueueTest, Store) {
   EXPECT_EQ(memory[0], 1);
   // Check the store was removed
   EXPECT_EQ(queue.getStoreQueueSpace(), initialStoreSpace);
+}
+
+// Tests that committing a store will correctly detect a direct memory order
+// violation
+TEST_P(LoadStoreQueueTest, Violation) {
+  auto queue = getQueue();
+
+  EXPECT_CALL(*storeUop, getGeneratedAddresses()).Times(AtLeast(1));
+  EXPECT_CALL(*storeUop, getData()).Times(AtLeast(1));
+
+  EXPECT_CALL(*loadUop, getGeneratedAddresses()).Times(AtLeast(1));
+
+  // Execute a load-after-store sequence
+  bool violation = executeRAWSequence(queue);
+
+  EXPECT_EQ(violation, true);
+  EXPECT_EQ(queue.getViolatingLoad(), loadUopPtr);
+}
+
+// Tests that committing a store correctly detects a memory order violation
+// caused by overlapping (but not matching) memory regions
+TEST_P(LoadStoreQueueTest, ViolationOverlap) {
+  auto queue = getQueue();
+
+  // The store will write the byte `0x01` at addresses 0 and 1
+  std::vector<std::pair<uint64_t, uint8_t>> storeAddresses = {{0, 2}};
+  std::vector<RegisterValue> storeData = {static_cast<uint16_t>(0x0101)};
+
+  // The load will read two bytes, at addresses 1 and 2; this will overlap with
+  // the written data at address 1
+  std::vector<std::pair<uint64_t, uint8_t>> loadAddresses = {{1, 2}};
+
+  EXPECT_CALL(*storeUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeAddresses));
+  EXPECT_CALL(*storeUop, getData())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeData));
+
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(loadAddresses));
+
+  // Execute a load-after-store sequence
+  bool violation = executeRAWSequence(queue);
+
+  EXPECT_EQ(violation, true);
+  EXPECT_EQ(queue.getViolatingLoad(), loadUopPtr);
+}
+
+// Tests that the store queue will not claim a violation for an independent load
+TEST_P(LoadStoreQueueTest, NoViolation) {
+  auto queue = getQueue();
+
+  // A different address to the one being stored to
+  std::vector<std::pair<uint64_t, uint8_t>> loadAddresses = {{1, 1}};
+
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(loadAddresses));
+
+  // Execute a load-after-store sequence
+  bool violation = executeRAWSequence(queue);
+
+  // No violation should have occurred, as the addresses are different
+  EXPECT_EQ(violation, false);
 }
 
 INSTANTIATE_TEST_SUITE_P(LoadStoreQueueTests, LoadStoreQueueTest,

@@ -11,7 +11,7 @@ bool requestsOverlap(std::pair<uint64_t, uint8_t> a,
                      std::pair<uint64_t, uint8_t> b) {
   // Check whether one region ends before the other begins, implying no overlap,
   // and negate
-  return !(a.first + a.second < b.first || b.first + b.second < a.first);
+  return !(a.first + a.second <= b.first || b.first + b.second <= a.first);
 }
 
 LoadStoreQueue::LoadStoreQueue(unsigned int maxCombinedSpace, char* memory)
