@@ -52,6 +52,9 @@ class LoadStoreQueue {
   /** Remove all flushed instructions from the queues. */
   void purgeFlushed();
 
+  /** Whether this is a combined load/store queue. */
+  bool isCombined() const;
+
   /** Retrieve the load instruction associated with the most recently discovered
    * memory order violation. */
   std::shared_ptr<Instruction> getViolatingLoad() const;
