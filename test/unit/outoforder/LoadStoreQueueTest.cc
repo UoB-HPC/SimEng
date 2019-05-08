@@ -4,7 +4,6 @@
 #include "gtest/gtest.h"
 #include "outoforder/LoadStoreQueue.hh"
 
-using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::Property;
 using ::testing::Return;

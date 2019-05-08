@@ -4,10 +4,6 @@
 #include "gtest/gtest.h"
 #include "outoforder/RegisterAliasTable.hh"
 
-using ::testing::_;
-using ::testing::Property;
-using ::testing::Return;
-
 namespace simeng {
 namespace outoforder {
 
@@ -52,7 +48,7 @@ TEST_F(RegisterAliasTableTest, Allocate) {
   auto newMapping = rat.allocate(reg);
 
   // Check the mapping changed
-  EXPECT_FALSE(oldMapping == newMapping);
+  EXPECT_NE(oldMapping, newMapping);
   // Check the mapping is reflected in future calls
   EXPECT_EQ(newMapping, rat.getMapping(reg));
 
