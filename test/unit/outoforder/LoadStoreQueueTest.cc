@@ -20,7 +20,7 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
  public:
   LoadStoreQueueTest()
       : addresses({{0, 1}}),
-        data({static_cast<uint8_t>(1)}),
+        data({RegisterValue(static_cast<uint8_t>(1))}),
         memory{},
         loadUop(new MockInstruction),
         storeUop(new MockInstruction),

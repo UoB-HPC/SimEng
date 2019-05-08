@@ -4,6 +4,7 @@ set(TEST_SOURCES
     inorder/ExecuteUnitTest.cc
     inorder/WritebackUnitTest.cc
     outoforder/LoadStoreQueueTest.cc
+    outoforder/RegisterAliasTableTest.cc
     outoforder/ReorderBufferTest.cc
     ISATest.cc
     BTBPredictorTest.cc
