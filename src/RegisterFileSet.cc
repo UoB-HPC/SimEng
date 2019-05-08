@@ -8,8 +8,11 @@ std::ostream& operator<<(std::ostream& os, Register const& reg) {
   return os << reg.tag;
 }
 
-bool Register::operator==(Register other) const {
+bool Register::operator==(const Register& other) const {
   return (other.type == type && other.tag == tag);
+}
+bool Register::operator!=(const Register& other) const {
+  return !(other == *this);
 }
 
 RegisterFileSet::RegisterFileSet(

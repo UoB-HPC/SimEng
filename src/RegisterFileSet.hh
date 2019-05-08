@@ -17,7 +17,10 @@ struct Register {
   uint16_t tag;
 
   /** Check for equality of two register identifiers. */
-  bool operator==(Register other) const;
+  bool operator==(const Register& other) const;
+
+  /** Check for inequality of two register identifiers. */
+  bool operator!=(const Register& other) const;
 };
 std::ostream& operator<<(std::ostream& os, simeng::Register const& reg);
 

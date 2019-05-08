@@ -6,8 +6,6 @@
 #include "outoforder/RegisterAliasTable.hh"
 #include "outoforder/ReorderBuffer.hh"
 
-using ::testing::_;
-using ::testing::Property;
 using ::testing::Return;
 
 namespace simeng {
