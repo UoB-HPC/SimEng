@@ -54,11 +54,14 @@ set(SIMENG_SOURCES
     BTBPredictor.cc
     BTBPredictor.hh
     Core.hh
+    FlatMemoryInterface.cc
+    FlatMemoryInterface.hh
     CMakeLists.txt
     Elf.cc
     Elf.hh
     Instruction.cc
     Instruction.hh
+    MemoryInterface.hh
     RegisterFileSet.cc
     RegisterFileSet.hh
     RegisterValue.cc
