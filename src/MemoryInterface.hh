@@ -22,9 +22,12 @@ class MemoryInterface {
   /** Request a write of `data` to the target location. */
   virtual void requestWrite(const MemoryAccessTarget& target,
                             const RegisterValue& data) = 0;
-  /** Retrieve all completed requests. */
-  virtual span<std::pair<MemoryAccessTarget, RegisterValue>> getCompletedReads()
-      const = 0;
+  /** Retrieve all completed read requests. */
+  virtual const span<std::pair<MemoryAccessTarget, RegisterValue>>
+  getCompletedReads() const = 0;
+
+  /** Clear the completed reads. */
+  virtual void clearCompletedReads() = 0;
 };
 
 }  // namespace simeng
