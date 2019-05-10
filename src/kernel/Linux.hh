@@ -1,24 +1,9 @@
 #pragma once
 
-#include "../Elf.hh"
+#include "LinuxProcess.hh"
 
 namespace simeng {
 namespace kernel {
-
-/** The initial state of a Linux process, constructed from a binary executable.
- */
-class LinuxProcess {
- public:
-  /** Construct a Linux process from an ELF file at `path`. */
-  LinuxProcess(std::string path);
-
-  /** Get the address of the start of the heap region. */
-  uint64_t getHeapStart() const;
-
- private:
-  /** The processed ELF file. */
-  Elf elf_;
-};
 
 /** A state container for a Linux process. */
 struct LinuxProcessState {
