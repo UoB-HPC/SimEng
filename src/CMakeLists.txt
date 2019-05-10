@@ -1,5 +1,9 @@
 set(SIMENG_SOURCES
 
+    kernel/Linux.cc
+    kernel/Linux.hh
+    kernel/LinuxProcess.cc
+    kernel/LinuxProcess.hh
     models/emulation/Core.cc
     models/emulation/Core.hh
     models/inorder/Core.cc

@@ -1,14 +1,12 @@
 #include "Linux.hh"
 
+#include <cassert>
+
 namespace simeng {
 namespace kernel {
 
-LinuxProcess::LinuxProcess(std::string path) : elf_(path) {}
-uint64_t LinuxProcess::getHeapStart() const {
-  return elf_.getProcessImage().size();
-}
-
 void Linux::createProcess(const LinuxProcess& process) {
+  assert(process.isValid() && "Attempted to use an invalid process");
   processStates_.push_back({process.getHeapStart()});
 }
 

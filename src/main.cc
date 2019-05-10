@@ -14,6 +14,7 @@
 #include "BTBPredictor.hh"
 #include "Core.hh"
 #include "Elf.hh"
+#include "kernel/Linux.hh"
 #include "models/emulation/Core.hh"
 #include "models/inorder/Core.hh"
 #include "models/outoforder/Core.hh"
@@ -50,22 +51,24 @@ int main(int argc, char** argv) {
     }
   }
 
-  char* processMemory;
-  size_t processMemorySize;
-  uint64_t entryPoint;
-  const int stackSize = 4096;
+  // char* processMemory;
+  // size_t processMemorySize;
+  // uint64_t entryPoint;
+  // const int stackSize = 4096;
+
+  std::unique_ptr<simeng::kernel::LinuxProcess> process;
   if (executablePath.length() > 0) {
-    simeng::Elf elf(argv[2]);
-    if (!elf.isValid()) {
+    process = std::make_unique<simeng::kernel::LinuxProcess>(argv[2]);
+    if (!process->isValid()) {
       std::cerr << "Could not read/parse " << argv[2] << std::endl;
       exit(1);
     }
-    const auto& elfProcessImage = elf.getProcessImage();
-    processMemorySize = elfProcessImage.size() + stackSize;
-    processMemory = new char[processMemorySize]();
-    std::copy(elfProcessImage.begin(), elfProcessImage.end(), processMemory);
+    // }
 
-    entryPoint = elf.getEntryPoint();
+    // const auto& elfProcessImage = elf.getProcessImage();
+    // processMemorySize = elfProcessImage.size() + stackSize;
+    // processMemory = new char[processMemorySize]();
+    // std::copy(elfProcessImage.begin(), elfProcessImage.end(), processMemory);
   } else {
     // char* memory = new char[1024]();
 
@@ -151,11 +154,21 @@ int main(int argc, char** argv) {
     //                                  17, 4, 3, 22, 117, 11, 4,  12, 10, 18};
     // memcpy(memory, memoryValues.data(), memoryValues.size() * sizeof(int));
 
-    processMemorySize = sizeof(hex) + stackSize;
-    processMemory = new char[processMemorySize];
-    std::memcpy(processMemory, hex, sizeof(hex));
-    entryPoint = 0;
+    process = std::make_unique<simeng::kernel::LinuxProcess>(
+        simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)));
+
+    // processMemorySize = sizeof(hex) + stackSize;
+    // processMemory = new char[processMemorySize];
+    // std::memcpy(processMemory, hex, sizeof(hex));
+    // entryPoint = 0;
   }
+
+  auto processImage = process->getProcessImage();
+  size_t processMemorySize = processImage.size();
+  char* processMemory = new char[processMemorySize]();
+  std::copy(processImage.begin(), processImage.end(), processMemory);
+
+  uint64_t entryPoint = process->getEntryPoint();
 
   simeng::span<char> processMemoryContainer = {processMemory,
                                                processMemorySize};
