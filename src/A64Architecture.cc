@@ -109,16 +109,16 @@ ExceptionResult A64Architecture::handleException(
         break;
       }
       case 174:  // getuid
-        stateChange = {{x0}, {static_cast<uint64_t>(0)}};
+        stateChange = {{x0}, {linux_.getuid()}};
         break;
       case 175:  // geteuid
-        stateChange = {{x0}, {static_cast<uint64_t>(0)}};
+        stateChange = {{x0}, {linux_.geteuid()}};
         break;
       case 176:  // getgid
-        stateChange = {{x0}, {static_cast<uint64_t>(0)}};
+        stateChange = {{x0}, {linux_.getgid()}};
         break;
       case 177:  // getegid
-        stateChange = {{x0}, {static_cast<uint64_t>(0)}};
+        stateChange = {{x0}, {linux_.getegid()}};
         break;
       case 214: {  // brk
         auto result = linux_.brk(registerFileSet.get(x0).get<uint64_t>());

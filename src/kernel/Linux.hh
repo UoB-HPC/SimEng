@@ -24,6 +24,15 @@ class Linux {
    * reasonable, and returns the program break. */
   int64_t brk(uint64_t addr);
 
+  /** getuid syscall: get the process owner's user ID. */
+  int64_t getuid() const;
+  /** geteuid syscall: get the process owner's effective user ID. */
+  int64_t geteuid() const;
+  /** getgid syscall: get the process owner's group ID. */
+  int64_t getgid() const;
+  /** getegid syscall: get the process owner's effective group ID. */
+  int64_t getegid() const;
+
  private:
   /** The state of the user-space processes running above the kernel. */
   std::vector<LinuxProcessState> processStates_;

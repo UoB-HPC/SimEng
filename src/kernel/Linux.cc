@@ -19,5 +19,10 @@ int64_t Linux::brk(uint64_t address) {
   return state.currentBrk;
 }
 
+int64_t Linux::getuid() const { return 0; }
+int64_t Linux::geteuid() const { return 0; }
+int64_t Linux::getgid() const { return 0; }
+int64_t Linux::getegid() const { return 0; }
+
 }  // namespace kernel
 }  // namespace simeng
