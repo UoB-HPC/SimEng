@@ -163,6 +163,7 @@ int main(int argc, char** argv) {
     // entryPoint = 0;
   }
 
+  // Read the process image and copy to memory
   auto processImage = process->getProcessImage();
   size_t processMemorySize = processImage.size();
   char* processMemory = new char[processMemorySize]();
@@ -172,7 +173,13 @@ int main(int argc, char** argv) {
 
   simeng::span<char> processMemoryContainer = {processMemory,
                                                processMemorySize};
-  auto arch = simeng::A64Architecture();
+
+  // Create the OS kernel with the process
+  simeng::kernel::Linux kernel;
+  kernel.createProcess(*process.get());
+
+  // Create the architecture, with knowledge of the kernel
+  auto arch = simeng::A64Architecture(kernel);
   auto predictor = simeng::BTBPredictor(8);
 
   // TODO: Construct port arrangement from config options

@@ -11,7 +11,7 @@ namespace simeng {
 std::unordered_map<uint32_t, A64Instruction> A64Architecture::decodeCache;
 std::forward_list<A64InstructionMetadata> A64Architecture::metadataCache;
 
-A64Architecture::A64Architecture() {
+A64Architecture::A64Architecture(kernel::Linux& kernel) : linux_(kernel) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "Could not create capstone handle" << std::endl;
     exit(1);
@@ -84,10 +84,10 @@ ExceptionResult A64Architecture::handleException(
     std::cout << "Syscall ID is " << syscallId << std::endl;
 
     ProcessStateChange stateChange;
+    Register x0 = {A64RegisterType::GENERAL, 0};
     switch (syscallId) {
       case 160: {  // uname
-        const uint64_t base =
-            registerFileSet.get({A64RegisterType::GENERAL, 0}).get<uint64_t>();
+        const uint64_t base = registerFileSet.get(x0).get<uint64_t>();
         const uint8_t len =
             65;  // Reserved length of each string field in Linux
         const char sysname[] = "Linux";
@@ -96,7 +96,7 @@ ExceptionResult A64Architecture::handleException(
         const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019";
         const char machine[] = "aarch64";
 
-        stateChange = {{{A64RegisterType::GENERAL, 0}},
+        stateChange = {{x0},
                        {static_cast<uint64_t>(0)},
                        {{base, sizeof(sysname)},
                         {base + len, sizeof(nodename)},
@@ -109,25 +109,22 @@ ExceptionResult A64Architecture::handleException(
         break;
       }
       case 174:  // getuid
-        stateChange = {{{A64RegisterType::GENERAL, 0}},
-                       {static_cast<uint64_t>(0)}};
+        stateChange = {{x0}, {static_cast<uint64_t>(0)}};
         break;
       case 175:  // geteuid
-        stateChange = {{{A64RegisterType::GENERAL, 0}},
-                       {static_cast<uint64_t>(0)}};
+        stateChange = {{x0}, {static_cast<uint64_t>(0)}};
         break;
       case 176:  // getgid
-        stateChange = {{{A64RegisterType::GENERAL, 0}},
-                       {static_cast<uint64_t>(0)}};
+        stateChange = {{x0}, {static_cast<uint64_t>(0)}};
         break;
       case 177:  // getegid
-        stateChange = {{{A64RegisterType::GENERAL, 0}},
-                       {static_cast<uint64_t>(0)}};
+        stateChange = {{x0}, {static_cast<uint64_t>(0)}};
         break;
-      case 214:  // brk
-        stateChange = {{{A64RegisterType::GENERAL, 0}},
-                       {static_cast<uint64_t>(0)}};
+      case 214: {  // brk
+        auto result = linux_.brk(registerFileSet.get(x0).get<uint64_t>());
+        stateChange = {{x0}, {static_cast<uint64_t>(result)}};
         break;
+      }
       default:
         std::cout << "Unrecognised syscall" << std::endl;
         return {true, 0, {}};

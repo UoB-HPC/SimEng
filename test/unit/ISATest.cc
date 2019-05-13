@@ -7,8 +7,9 @@ namespace {
 
 // Test that we can create an A64Architecture object
 TEST(ISATest, CreateA64Arch) {
+  simeng::kernel::Linux kernel;
   std::unique_ptr<simeng::Architecture> isa =
-      std::make_unique<simeng::A64Architecture>();
+      std::make_unique<simeng::A64Architecture>(kernel);
 
   EXPECT_GT(isa->getRegisterFileStructures().size(), 0);
 }
