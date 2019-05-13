@@ -11,6 +11,8 @@ struct LinuxProcessState {
   uint64_t startBrk;
   /** The address of the current end of heap. */
   uint64_t currentBrk;
+  /** The initial stack pointer. */
+  uint64_t initialStackPointer;
 };
 
 /** A Linux kernel syscall emulation implementation, which mimics the responses
@@ -20,8 +22,11 @@ class Linux {
   /** Create a new Linux process running above this kernel. */
   void createProcess(const LinuxProcess& process);
 
-  /** brk syscall: change data segment size. Sets the program break to `addr` if
-   * reasonable, and returns the program break. */
+  /** Retrieve the initial stack pointer. */
+  uint64_t getInitialStackPointer() const;
+
+  /** brk syscall: change data segment size. Sets the program break to
+   * `addr` if reasonable, and returns the program break. */
   int64_t brk(uint64_t addr);
 
   /** getuid syscall: get the process owner's user ID. */

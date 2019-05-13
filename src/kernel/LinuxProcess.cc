@@ -56,9 +56,13 @@ const span<char> LinuxProcess::getProcessImage() const {
 
 uint64_t LinuxProcess::getEntryPoint() const { return entryPoint_; }
 
+uint64_t LinuxProcess::getStackPointer() const { return stackPointer_; }
+
 void LinuxProcess::createStack() {
   // Decrement the stack pointer and populate with initial stack state
   // (https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html)
+
+  // TODO: allow defining process arguments
 
   uint64_t initialStackFrame[] = {// argc, 0
                                   0,
