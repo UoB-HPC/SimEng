@@ -104,7 +104,7 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
       result = (n == v);
       break;  // GE/LT
     case 0b110:
-      result = (n == v && z);
+      result = (n == v && !z);
       break;  // GT/LE
     default:  // 0b111, AL
       result = true;

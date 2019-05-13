@@ -15,6 +15,8 @@ set(TEST_SOURCES
     )
 
 set(SIMENG_SOURCES
+    ../../src/kernel/LinuxProcess.cc
+    ../../src/kernel/Linux.cc
     ../../src/pipeline/BalancedPortAllocator.cc
     ../../src/pipeline/DecodeUnit.cc
     ../../src/pipeline/ExecuteUnit.cc
@@ -30,6 +32,7 @@ set(SIMENG_SOURCES
     ../../src/A64Instruction_execute.cc
     ../../src/A64InstructionMetadata.cc
     ../../src/BTBPredictor.cc
+    ../../src/Elf.cc
     ../../src/Instruction.cc
     ../../src/RegisterFileSet.cc
     ../../src/RegisterValue.cc

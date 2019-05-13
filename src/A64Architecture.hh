@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "A64Instruction.hh"
+#include "kernel/Linux.hh"
 
 using csh = size_t;
 
@@ -14,7 +15,7 @@ namespace simeng {
 /* A basic ARMv8-a implementation of the `Architecture` interface. */
 class A64Architecture : public Architecture {
  public:
-  A64Architecture();
+  A64Architecture(kernel::Linux& kernel);
   ~A64Architecture();
   /** Pre-decode instruction memory into a macro-op of `A64Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -58,6 +59,8 @@ class A64Architecture : public Architecture {
 
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;
+
+  kernel::Linux& linux_;
 };
 
 }  // namespace simeng
