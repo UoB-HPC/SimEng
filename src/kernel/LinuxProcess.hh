@@ -46,6 +46,9 @@ class LinuxProcess {
   /** Get the entry point. */
   uint64_t getEntryPoint() const;
 
+  /** Get the initial stack pointer address. */
+  uint64_t getStackPointer() const;
+
   /** Check whether the process image was created successfully. */
   bool isValid() const;
 

@@ -7,7 +7,13 @@ namespace kernel {
 
 void Linux::createProcess(const LinuxProcess& process) {
   assert(process.isValid() && "Attempted to use an invalid process");
-  processStates_.push_back({process.getHeapStart(), process.getHeapStart()});
+  processStates_.push_back({.startBrk = process.getHeapStart(),
+                            .currentBrk = process.getHeapStart(),
+                            .initialStackPointer = process.getStackPointer()});
+}
+
+uint64_t Linux::getInitialStackPointer() const {
+  return processStates_[0].initialStackPointer;
 }
 
 int64_t Linux::brk(uint64_t address) {
