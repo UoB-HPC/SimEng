@@ -51,25 +51,19 @@ int main(int argc, char** argv) {
     }
   }
 
-  // char* processMemory;
-  // size_t processMemorySize;
-  // uint64_t entryPoint;
-  // const int stackSize = 4096;
-
+  // Create the process image
   std::unique_ptr<simeng::kernel::LinuxProcess> process;
+
   if (executablePath.length() > 0) {
+    // Attempt to create the process image from the specified file
     process = std::make_unique<simeng::kernel::LinuxProcess>(argv[2]);
     if (!process->isValid()) {
       std::cerr << "Could not read/parse " << argv[2] << std::endl;
       exit(1);
     }
-    // }
-
-    // const auto& elfProcessImage = elf.getProcessImage();
-    // processMemorySize = elfProcessImage.size() + stackSize;
-    // processMemory = new char[processMemorySize]();
-    // std::copy(elfProcessImage.begin(), elfProcessImage.end(), processMemory);
   } else {
+    // Create the process image directly
+
     // char* memory = new char[1024]();
 
     // Simple program demonstrating various instructions
@@ -156,11 +150,6 @@ int main(int argc, char** argv) {
 
     process = std::make_unique<simeng::kernel::LinuxProcess>(
         simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)));
-
-    // processMemorySize = sizeof(hex) + stackSize;
-    // processMemory = new char[processMemorySize];
-    // std::memcpy(processMemory, hex, sizeof(hex));
-    // entryPoint = 0;
   }
 
   // Read the process image and copy to memory
