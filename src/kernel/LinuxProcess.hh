@@ -49,6 +49,9 @@ class LinuxProcess {
   /** Get the initial stack pointer address. */
   uint64_t getStackPointer() const;
 
+  /** Get the path of the executable. */
+  std::string getPath() const;
+
   /** Check whether the process image was created successfully. */
   bool isValid() const;
 
@@ -76,6 +79,9 @@ class LinuxProcess {
 
   /** The process image size. */
   uint64_t size_;
+
+  /** The path of the process executable. */
+  std::string path_;
 
   /** Whether the process image was created successfully. */
   bool isValid_ = false;

@@ -7,6 +7,7 @@ namespace kernel {
 
 /** A state container for a Linux process. */
 struct LinuxProcessState {
+  std::string path;
   /** The address of the start of the heap. */
   uint64_t startBrk;
   /** The address of the current end of heap. */
@@ -37,6 +38,13 @@ class Linux {
   int64_t getgid() const;
   /** getegid syscall: get the process owner's effective group ID. */
   int64_t getegid() const;
+
+  /** readlinkat syscall: read value of a symbolic link. */
+  int64_t readlinkat(int64_t dirfd, const std::string pathname, char* buf,
+                     size_t bufsize) const;
+
+  /** The maximum size of a filesystem path. */
+  static const size_t PATH_MAX = 4096;
 
  private:
   /** The state of the user-space processes running above the kernel. */

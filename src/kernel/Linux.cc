@@ -1,13 +1,16 @@
 #include "Linux.hh"
 
+#include <algorithm>
 #include <cassert>
+#include <cstring>
 
 namespace simeng {
 namespace kernel {
 
 void Linux::createProcess(const LinuxProcess& process) {
   assert(process.isValid() && "Attempted to use an invalid process");
-  processStates_.push_back({.startBrk = process.getHeapStart(),
+  processStates_.push_back({.path = process.getPath(),
+                            .startBrk = process.getHeapStart(),
                             .currentBrk = process.getHeapStart(),
                             .initialStackPointer = process.getStackPointer()});
 }
@@ -35,6 +38,21 @@ int64_t Linux::getuid() const { return 0; }
 int64_t Linux::geteuid() const { return 0; }
 int64_t Linux::getgid() const { return 0; }
 int64_t Linux::getegid() const { return 0; }
+
+int64_t Linux::readlinkat(int64_t dirfd, const std::string pathname, char* buf,
+                          size_t bufsize) const {
+  const auto& processState = processStates_[0];
+  if (pathname == "/proc/self/exe") {
+    // Copy executable path to buffer
+    // TODO: resolve path into canonical path
+    std::strncpy(buf, processState.path.c_str(), bufsize);
+
+    return std::min(processState.path.length(), bufsize);
+  }
+
+  // TODO: resolve symbolic link for other paths
+  return -1;
+}
 
 }  // namespace kernel
 }  // namespace simeng
