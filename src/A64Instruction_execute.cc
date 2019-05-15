@@ -159,19 +159,27 @@ void A64Instruction::execute() {
       results[0] = RegisterValue(x + y);
       return;
     }
-    case A64Opcode::AArch64_ADDXrx: {  // add xd, xn, xm, {<extend> {#imm}}
-      auto x = operands[0].get<uint64_t>();
-      auto y =
-          extendValue(operands[1].get<uint64_t>(), metadata.operands[2].ext,
-                      metadata.operands[2].shift.value);
-      results[0] = x + y;
-      return;
-    }
     case A64Opcode::AArch64_ADDXrs: {  // add xd, xn, xm, {shift #amount}
       auto x = operands[0].get<uint64_t>();
       auto y = shiftValue(operands[1].get<uint64_t>(),
                           metadata.operands[2].shift.type,
                           metadata.operands[2].shift.value);
+      results[0] = x + y;
+      return;
+    }
+    case A64Opcode::AArch64_ADDXrx: {  // add xd, xn, wm{, extend {#amount}}
+      auto x = operands[0].get<uint64_t>();
+      auto y =
+          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.value);
+      results[0] = x + y;
+      return;
+    }
+    case A64Opcode::AArch64_ADDXrx64: {  // add xd, xn, xm{, extend {#amount}}
+      auto x = operands[0].get<uint64_t>();
+      auto y =
+          extendValue(operands[1].get<uint64_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.value);
       results[0] = x + y;
       return;
     }
@@ -217,6 +225,26 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_B: {  // b label
       branchTaken_ = true;
       branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
+      return;
+    }
+    case A64Opcode::AArch64_BICXrs: {  // bic xd, xn, xm{, shift #amount}
+      auto x = operands[0].get<uint64_t>();
+      auto y = ~shiftValue(operands[1].get<uint64_t>(),
+                           metadata.operands[2].shift.type,
+                           metadata.operands[2].shift.value);
+      results[0] = x & y;
+      return;
+    }
+    case A64Opcode::AArch64_BICSXrs: {  // bics xd, xn, xm{, shift #amount}
+      auto x = operands[0].get<uint64_t>();
+      auto y = ~shiftValue(operands[1].get<uint64_t>(),
+                           metadata.operands[2].shift.type,
+                           metadata.operands[2].shift.value);
+      auto result = x & y;
+      bool n = (static_cast<int64_t>(result) < 0);
+      bool z = (result == 0);
+      results[0] = nzcv(n, z, false, false);
+      results[1] = result;
       return;
     }
     case A64Opcode::AArch64_Bcc: {  // b.cond label
@@ -548,6 +576,10 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_STPQi: {  // stp qt1, qt2, [xn, #imm]
       memoryData[0] = operands[0];
       memoryData[1] = operands[1];
+      return;
+    }
+    case A64Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
+      memoryData[0] = operands[0];
       return;
     }
     case A64Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend, {#amount}}]

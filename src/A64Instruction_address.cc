@@ -101,6 +101,11 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
       setMemoryAddresses({{base, 16}, {base + 16, 16}});
       break;
     }
+    case A64Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
+      break;
+    }
     case A64Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend, {#amount}}]
       uint64_t offset =
           extendValue(operands[2].get<uint64_t>(), metadata.operands[1].ext,
