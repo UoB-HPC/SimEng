@@ -241,6 +241,18 @@ void A64InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_MUL:
+      if (opcode == A64Opcode::AArch64_MADDXrrr ||
+          opcode == A64Opcode::AArch64_MADDWrrr) {
+        operandCount = 4;
+        operands[3].type = ARM64_OP_REG;
+        operands[3].access = CS_AC_READ;
+        if (opcode == A64Opcode::AArch64_MADDWrrr) {
+          operands[3].reg = ARM64_REG_WZR;
+        } else {
+          operands[3].reg = ARM64_REG_XZR;
+        }
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_MVN:
       return aliasNYI();
