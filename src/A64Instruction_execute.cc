@@ -286,11 +286,23 @@ void A64Instruction::execute() {
       }
       return;
     }
-    case A64Opcode::AArch64_CCMPXi: {  // ccmp xd, #imm, #nzcv, cc
-      if (conditionHolds(metadata.cc, operands[1].get<uint8_t>())) {
+    case A64Opcode::AArch64_CCMPWr: {  // ccmp wn, wm, #nzcv, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         uint8_t nzcv;
         std::tie(std::ignore, nzcv) = addWithCarry(
-            operands[0].get<uint64_t>(), ~metadata.operands[1].imm, 1);
+            operands[1].get<uint32_t>(), ~operands[2].get<uint32_t>(), 1);
+        results[0] = nzcv;
+      } else {
+        results[0] = static_cast<uint8_t>(metadata.operands[2].imm);
+      }
+      return;
+    }
+    case A64Opcode::AArch64_CCMPXi: {  // ccmp xn, #imm, #nzcv, cc
+      std::cout << std::hex << instructionAddress_ << std::dec << std::endl;
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        uint8_t nzcv;
+        std::tie(std::ignore, nzcv) = addWithCarry(
+            operands[1].get<uint64_t>(), ~metadata.operands[1].imm, 1);
         results[0] = nzcv;
       } else {
         results[0] = static_cast<uint8_t>(metadata.operands[2].imm);
@@ -396,6 +408,10 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_LDRDroX: {  // ldr dt, [xn, xm, {extend {#amount}}]
       results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 16);
+      return;
+    }
+    case A64Opcode::AArch64_LDRHHui: {  // ldrh wt, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(2, 8);
       return;
     }
     case A64Opcode::AArch64_LDRWui: {  // ldr wt, [xn, #imm]
