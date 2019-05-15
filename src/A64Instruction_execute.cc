@@ -202,6 +202,19 @@ void A64Instruction::execute() {
       }
       return;
     }
+    case A64Opcode::AArch64_ANDSXrs: {  // ands xd, xn, xm{, shift #amount}
+      auto x = operands[0].get<uint64_t>();
+      auto y = shiftValue(operands[1].get<uint64_t>(),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
+      uint64_t result = x & y;
+      results[0] =
+          nzcv(static_cast<int64_t>(result) < 0, result == 0, false, false);
+      if (destinationRegisterCount > 1) {
+        results[1] = result;
+      }
+      return;
+    }
     case A64Opcode::AArch64_ANDWri: {  // and wd, xn, #imm
       auto x = operands[0].get<uint32_t>();
       auto y = static_cast<uint32_t>(metadata.operands[2].imm);
@@ -337,6 +350,20 @@ void A64Instruction::execute() {
       }
       return;
     }
+    case A64Opcode::AArch64_CLZXr: {  // clz xd, xn
+      auto x = operands[0].get<int64_t>();
+      uint64_t i;
+      for (i = 0; i < 64; i++) {
+        // Left-shift x until it's negative or we run out of bits
+        if (x < 0) {
+          break;
+        }
+        x <<= 1;
+      }
+
+      results[0] = i;
+      return;
+    }
     case A64Opcode::AArch64_CSELXr: {  // csel xd, xn, xm, cc
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         results[0] = operands[1].get<uint64_t>();
@@ -436,6 +463,11 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_LDRDroX: {  // ldr dt, [xn, xm, {extend {#amount}}]
       results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 16);
+      return;
+    }
+    case A64Opcode::AArch64_LDRHHpost: {  // ldrh wt, [xn], #imm
+      results[0] = memoryData[0].zeroExtend(2, 8);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
       return;
     }
     case A64Opcode::AArch64_LDRHHui: {  // ldrh wt, [xn, #imm]
@@ -560,6 +592,14 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_RET: {  // ret {xr}
       branchTaken_ = true;
       branchAddress_ = operands[0].get<uint64_t>();
+      return;
+    }
+    case A64Opcode::AArch64_REVXr: {  // rev xd, xn
+      auto bytes = operands[0].getAsVector<uint8_t>();
+      uint8_t reversed[8];
+      // Copy `bytes` backwards onto `reversed`
+      std::copy(bytes, bytes + 8, std::rbegin(reversed));
+      results[0] = reversed;
       return;
     }
     case A64Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
