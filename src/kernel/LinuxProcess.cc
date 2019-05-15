@@ -14,7 +14,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
   return value + (boundary - remainder);
 }
 
-LinuxProcess::LinuxProcess(std::string path) {
+LinuxProcess::LinuxProcess(std::string path) : path_(path) {
   // Parse ELF file
   Elf elf(path);
   if (!elf.isValid()) {
@@ -62,6 +62,8 @@ LinuxProcess::~LinuxProcess() {
 uint64_t LinuxProcess::getHeapStart() const { return heapStart_; }
 
 uint64_t LinuxProcess::getStackStart() const { return size_; }
+
+std::string LinuxProcess::getPath() const { return path_; }
 
 bool LinuxProcess::isValid() const { return isValid_; }
 

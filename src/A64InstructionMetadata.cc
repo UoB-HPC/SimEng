@@ -54,13 +54,6 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
       groupCount = 1;
       groups[0] = CS_GRP_JUMP;
       break;
-    case A64Opcode::AArch64_STRWroX:
-      // STR with register marks extension type as INVALID instead of UXTX if
-      // shift amount is zero
-      if (operands[1].ext == ARM64_EXT_INVALID) {
-        operands[1].ext = ARM64_EXT_UXTX;
-      }
-      break;
     case A64Opcode::AArch64_SVC:
       // SVC is incorrectly marked as setting x30
       implicitDestinationCount = 0;

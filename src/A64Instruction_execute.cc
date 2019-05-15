@@ -614,6 +614,14 @@ void A64Instruction::execute() {
       results[0] = x - y;
       return;
     }
+    case A64Opcode::AArch64_SUBXrx64: {
+      auto x = operands[0].get<uint64_t>();
+      auto y =
+          extendValue(operands[1].get<uint64_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.value);
+      results[0] = x - y;
+      return;
+    }
     case A64Opcode::AArch64_SVC: {  // svc #imm
       exceptionEncountered_ = true;
       exception = A64InstructionException::SupervisorCall;

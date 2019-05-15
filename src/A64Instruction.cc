@@ -155,6 +155,12 @@ const A64InstructionMetadata& A64Instruction::getMetadata() const {
  * `shift` */
 uint64_t A64Instruction::extendValue(uint64_t value, uint8_t extendType,
                                      uint8_t shift) const {
+  if (extendType == ARM64_EXT_INVALID && shift == 0) {
+    // Special case: an invalid shift type with a shift amount of 0 implies an
+    // identity operation
+    return value;
+  }
+
   uint64_t extended;
   switch (extendType) {
     case ARM64_EXT_UXTB:
