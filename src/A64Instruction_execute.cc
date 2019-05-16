@@ -339,7 +339,6 @@ void A64Instruction::execute() {
       return;
     }
     case A64Opcode::AArch64_CCMPXi: {  // ccmp xn, #imm, #nzcv, cc
-      std::cout << std::hex << instructionAddress_ << std::dec << std::endl;
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         uint8_t nzcv;
         std::tie(std::ignore, nzcv) = addWithCarry(
@@ -435,7 +434,10 @@ void A64Instruction::execute() {
       results[0] = out;
       return;
     }
-
+    case A64Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      return;
+    }
     case A64Opcode::AArch64_LDPQi: {  // ldp qt1, qt2, [xn, #imm]
       results[0] = memoryData[0];
       results[1] = memoryData[1];
@@ -499,6 +501,10 @@ void A64Instruction::execute() {
       results[0] = memoryData[0];
       return;
     }
+    case A64Opcode::AArch64_LDXRW: {  // ldxr wt, [xn]
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      return;
+    }
     case A64Opcode::AArch64_MADDXrrr: {  // madd xd, xn, xm, xa
       auto x = operands[0].get<uint64_t>();
       auto y = operands[1].get<uint64_t>();
@@ -519,6 +525,15 @@ void A64Instruction::execute() {
       uint32_t value = (operands[0].get<uint32_t>() & mask) |
                        (metadata.operands[1].imm << shift);
       results[0] = RegisterValue(value, 8);
+      return;
+    }
+    case A64Opcode::AArch64_MOVKXi: {  // movk xd, #imm
+      // Clear 16-bit region offset by `shift` and replace with immediate
+      uint8_t shift = metadata.operands[1].shift.value;
+      uint64_t mask = ~(0xFFFF << shift);
+      uint64_t value = (operands[0].get<uint64_t>() & mask) |
+                       (metadata.operands[1].imm << shift);
+      results[0] = value;
       return;
     }
     case A64Opcode::AArch64_MOVNWi: {  // movn wd, #imm{, LSL #shift}
@@ -602,6 +617,12 @@ void A64Instruction::execute() {
       results[0] = reversed;
       return;
     }
+    case A64Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]
+      memoryData[0] = operands[0];
+      // TODO: Implement atomic memory access
+      results[0] = static_cast<uint64_t>(0);
+      return;
+    }
     case A64Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
       memoryData[0] = operands[0];
       memoryData[1] = operands[1];
@@ -630,12 +651,22 @@ void A64Instruction::execute() {
       memoryData[0] = operands[0];
       return;
     }
+    case A64Opcode::AArch64_STRXroX: {  // str xt, [xn, xm{, extend, {#amount}}]
+      memoryData[0] = operands[0];
+      return;
+    }
     case A64Opcode::AArch64_STRXui: {  // str xt, [xn, #imm]
       memoryData[0] = operands[0];
       return;
     }
     case A64Opcode::AArch64_STURWi: {  // stur wt, [xn, #imm]
       memoryData[0] = operands[0];
+      return;
+    }
+    case A64Opcode::AArch64_STXRW: {  // stxr ws, wt, [xn]
+      memoryData[0] = operands[0];
+      // TODO: Implement atomic memory access
+      results[0] = static_cast<uint64_t>(0);
       return;
     }
     case A64Opcode::AArch64_SUBSWri: {  // subs wd, wn, #imm
