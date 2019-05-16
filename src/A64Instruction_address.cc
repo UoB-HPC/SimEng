@@ -10,6 +10,10 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
          "generateAddresses called on non-load-or-store instruction");
 
   switch (metadata.opcode) {
+    case A64Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
+      break;
+    }
     case A64Opcode::AArch64_LDRBBpre: {  // ldrb wt, [xn, #imm]!
       setMemoryAddresses(
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});
@@ -83,8 +87,16 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});
       break;
     }
+    case A64Opcode::AArch64_LDXRW: {  // ldxr wt, [xn]
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
+      break;
+    }
     case A64Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
       // TODO: Implement prefetching
+      break;
+    }
+    case A64Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;
     }
     case A64Opcode::AArch64_STPXi: {  // stp xt1, xt2, [xn, #imm]
@@ -122,6 +134,13 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});
       break;
     }
+    case A64Opcode::AArch64_STRXroX: {  // str xt, [xn, xm{, extend, {#amount}}]
+      uint64_t offset =
+          extendValue(operands[2].get<uint64_t>(), metadata.operands[1].ext,
+                      metadata.operands[1].shift.type);
+      setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 8}});
+      break;
+    }
     case A64Opcode::AArch64_STRXui: {  // str xt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});
@@ -130,6 +149,10 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
     case A64Opcode::AArch64_STURWi: {  // stur wt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});
+      break;
+    }
+    case A64Opcode::AArch64_STXRW: {  // stxr ws, wt, [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;
     }
     default:
