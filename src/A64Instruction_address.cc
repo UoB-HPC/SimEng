@@ -55,6 +55,13 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
       setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
       break;
     }
+    case A64Opcode::AArch64_LDRXroX: {  // ldr xt, [xn, xn{, extend, {#amount}}]
+      uint64_t offset =
+          extendValue(operands[1].get<uint64_t>(), metadata.operands[1].ext,
+                      metadata.operands[1].shift.type);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 8}});
+      break;
+    }
     case A64Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]
       setMemoryAddresses(
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});

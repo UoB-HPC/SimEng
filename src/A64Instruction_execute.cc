@@ -387,6 +387,14 @@ void A64Instruction::execute() {
       }
       return;
     }
+    case A64Opcode::AArch64_EORXrs: {  // eor xd, xn, xm{, shift #amount}
+      auto x = operands[0].get<uint64_t>();
+      auto y = shiftValue(operands[1].get<uint64_t>(),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
+      results[0] = x | y;
+      return;
+    }
     case A64Opcode::AArch64_FADDv2f64: {  // fadd vd.2d, vn.2d, vm.2d
       const double* a = operands[0].getAsVector<double>();
       const double* b = operands[1].getAsVector<double>();
@@ -487,6 +495,10 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_LDRXpost: {  // ldr xt, [xn], #imm
       results[0] = memoryData[0];
       results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
+      return;
+    }
+    case A64Opcode::AArch64_LDRXroX: {  // ldr xt, [xn, xn{, extend, {#amount}}]
+      results[0] = memoryData[0];
       return;
     }
     case A64Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]
@@ -766,10 +778,25 @@ void A64Instruction::execute() {
       }
       return;
     }
-    case A64Opcode::AArch64_UBFMXri: {  // ubfm
+    case A64Opcode::AArch64_UBFMWri: {  // ubfm wd, wn, #immr, #imms
       uint8_t r = metadata.operands[2].imm;
       uint8_t s = metadata.operands[3].imm;
-      uint64_t mask = (1 << (s + 1)) - 1;
+      uint32_t mask = (1 << s) - 1;
+      uint32_t source = operands[0].get<uint32_t>() & mask;
+
+      if (s >= r) {
+        // Mask of values [r:s+1]
+        results[0] = static_cast<uint64_t>(source >> r);
+      } else {
+        results[0] = static_cast<uint64_t>(source << (32 - r));
+      }
+
+      return;
+    }
+    case A64Opcode::AArch64_UBFMXri: {  // ubfm xd, xn, #immr, #imms
+      uint8_t r = metadata.operands[2].imm;
+      uint8_t s = metadata.operands[3].imm;
+      uint64_t mask = (1 << s) - 1;
       uint64_t source = operands[0].get<uint64_t>() & mask;
 
       if (s >= r) {
