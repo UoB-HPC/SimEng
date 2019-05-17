@@ -202,6 +202,15 @@ void A64Instruction::execute() {
       }
       return;
     }
+    case A64Opcode::AArch64_ANDSXri: {  // ands xd, xn, #imm
+      auto x = operands[0].get<uint64_t>();
+      auto y = metadata.operands[2].imm;
+      uint64_t result = x & y;
+      results[0] =
+          nzcv(static_cast<int64_t>(result) < 0, result == 0, false, false);
+      results[1] = result;
+      return;
+    }
     case A64Opcode::AArch64_ANDSXrs: {  // ands xd, xn, xm{, shift #amount}
       auto x = operands[0].get<uint64_t>();
       auto y = shiftValue(operands[1].get<uint64_t>(),
@@ -363,6 +372,14 @@ void A64Instruction::execute() {
       results[0] = i;
       return;
     }
+    case A64Opcode::AArch64_CSELWr: {  // csel wd, wn, wm, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        results[0] = static_cast<uint64_t>(operands[1].get<uint32_t>());
+      } else {
+        results[0] = static_cast<uint64_t>(operands[2].get<uint32_t>());
+      }
+      return;
+    }
     case A64Opcode::AArch64_CSELXr: {  // csel xd, xn, xm, cc
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         results[0] = operands[1].get<uint64_t>();
@@ -515,6 +532,12 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_LDXRW: {  // ldxr wt, [xn]
       results[0] = memoryData[0].zeroExtend(4, 8);
+      return;
+    }
+    case A64Opcode::AArch64_LSLVWr: {  // lslv wd, wn, wm
+      auto x = operands[0].get<uint32_t>();
+      auto y = operands[1].get<uint32_t>();
+      results[0] = static_cast<uint64_t>(x << y);
       return;
     }
     case A64Opcode::AArch64_MADDXrrr: {  // madd xd, xn, xm, xa
@@ -760,6 +783,16 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_TBNZW: {  // tbnz wn, #imm, label
       if (operands[0].get<uint32_t>() & (1 << metadata.operands[1].imm)) {
+        branchTaken_ = true;
+        branchAddress_ = instructionAddress_ + metadata.operands[2].imm;
+      } else {
+        branchTaken_ = false;
+        branchAddress_ = instructionAddress_ + 4;
+      }
+      return;
+    }
+    case A64Opcode::AArch64_TBNZX: {  // tbnz xn, #imm, label
+      if (operands[0].get<uint64_t>() & (1 << metadata.operands[1].imm)) {
         branchTaken_ = true;
         branchAddress_ = instructionAddress_ + metadata.operands[2].imm;
       } else {
