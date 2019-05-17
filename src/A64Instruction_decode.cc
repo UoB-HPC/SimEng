@@ -189,7 +189,14 @@ void A64Instruction::decode() {
   if (accessesMemory) {
     // Check first operand access to determine if it's a load or store
     if (metadata.operands[0].access == CS_AC_WRITE) {
-      isLoad_ = true;
+      if (metadata.operands[1].type == ARM64_OP_REG &&
+          metadata.operands[1].access == CS_AC_READ) {
+        // Second operand is a register read; this is an exclusive store with a
+        // success flag as first operand
+        isStore_ = true;
+      } else {
+        isLoad_ = true;
+      }
     } else {
       isStore_ = true;
     }
