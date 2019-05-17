@@ -321,6 +321,18 @@ void A64InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_UBFIZ:
+      if (opcode == A64Opcode::AArch64_UBFMWri ||
+          opcode == A64Opcode::AArch64_UBFMXri) {
+        operands[3].imm -= 1;
+
+        uint8_t highestBit = 63;
+        if (opcode == A64Opcode::AArch64_UBFMWri) {
+          highestBit = 31;
+        }
+
+        operands[2].imm = (-operands[2].imm) & highestBit;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_UBFX:
       return aliasNYI();
