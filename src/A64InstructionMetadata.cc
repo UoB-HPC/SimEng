@@ -193,6 +193,10 @@ void A64InstructionMetadata::revertAliasing() {
         operands[3].access = CS_AC_READ;
         return;
       }
+      if (opcode == A64Opcode::AArch64_LSLVWr ||
+          opcode == A64Opcode::AArch64_LSLVXr) {
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_LSR:
       if (opcode == A64Opcode::AArch64_UBFMWri ||
