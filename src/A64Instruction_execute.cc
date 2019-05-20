@@ -336,6 +336,17 @@ void A64Instruction::execute() {
       }
       return;
     }
+    case A64Opcode::AArch64_CCMPWi: {  // ccmp wn, #imm, #nzcv, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        uint8_t nzcv;
+        std::tie(std::ignore, nzcv) = addWithCarry(
+            operands[1].get<uint32_t>(), ~metadata.operands[1].imm, 1);
+        results[0] = nzcv;
+      } else {
+        results[0] = static_cast<uint8_t>(metadata.operands[2].imm);
+      }
+      return;
+    }
     case A64Opcode::AArch64_CCMPWr: {  // ccmp wn, wm, #nzcv, cc
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         uint8_t nzcv;
@@ -402,6 +413,12 @@ void A64Instruction::execute() {
       } else {
         results[0] = operands[2].get<uint64_t>() + 1;
       }
+      return;
+    }
+    case A64Opcode::AArch64_DUPv16i8gpr: {  // dup vd.16b, wn
+      uint8_t out[16];
+      std::fill(std::begin(out), std::end(out), operands[0].get<uint8_t>());
+      results[0] = out;
       return;
     }
     case A64Opcode::AArch64_EORXrs: {  // eor xd, xn, xm{, shift #amount}
@@ -597,6 +614,13 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_MRS: {  // mrs xt, (systemreg|Sop0_op1_Cn_Cm_op2)
       // TODO: Correct system register read support
+      if (metadata.operands[1].reg ==
+          static_cast<arm64_reg>(ARM64_SYSREG_DCZID_EL0)) {
+        // Temporary: state that DCZ can support clearing 64 bytes at a time,
+        // but is disabled due to bit 4 being set
+        results[0] = static_cast<uint64_t>(0b10100);
+        return;
+      }
       results[0] = static_cast<uint64_t>(0);
       return;
     }
@@ -674,7 +698,17 @@ void A64Instruction::execute() {
       memoryData[1] = operands[1];
       return;
     }
+    case A64Opcode::AArch64_STPQpost: {  // stp qt1, qt2, [xn], #imm
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
+      return;
+    }
     case A64Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
+      memoryData[0] = operands[0];
+      return;
+    }
+    case A64Opcode::AArch64_STRQui: {  // str qt, [xn, #imm]
       memoryData[0] = operands[0];
       return;
     }
