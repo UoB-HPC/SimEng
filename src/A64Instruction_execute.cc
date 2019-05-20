@@ -72,6 +72,29 @@ std::tuple<uint32_t, uint8_t> addWithCarry(uint32_t x, uint32_t y,
   return {result, nzcv(n, z, c, v)};
 }
 
+/** Multiply `a` and `b`, and return the high 64 bits of the result.
+ * https://stackoverflow.com/a/28904636 */
+uint64_t mulhi(uint64_t a, uint64_t b) {
+  uint64_t a_lo = (uint32_t)a;
+  uint64_t a_hi = a >> 32;
+  uint64_t b_lo = (uint32_t)b;
+  uint64_t b_hi = b >> 32;
+
+  uint64_t a_x_b_hi = a_hi * b_hi;
+  uint64_t a_x_b_mid = a_hi * b_lo;
+  uint64_t b_x_a_mid = b_hi * a_lo;
+  uint64_t a_x_b_lo = a_lo * b_lo;
+
+  uint64_t carry_bit = ((uint64_t)(uint32_t)a_x_b_mid +
+                        (uint64_t)(uint32_t)b_x_a_mid + (a_x_b_lo >> 32)) >>
+                       32;
+
+  uint64_t multhi =
+      a_x_b_hi + (a_x_b_mid >> 32) + (b_x_a_mid >> 32) + carry_bit;
+
+  return multhi;
+}
+
 bool conditionHolds(uint8_t cond, uint8_t nzcv) {
   if (cond == 0b1111) {
     return true;
@@ -501,6 +524,11 @@ void A64Instruction::execute() {
       results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
       return;
     }
+    case A64Opcode::AArch64_LDRBBroX: {  // ldrb wt,
+                                         //  [xn, xm{, extend {#amount}}]
+      results[0] = memoryData[0].zeroExtend(1, 8);
+      return;
+    }
     case A64Opcode::AArch64_LDRBBui: {  // ldrb wt, [xn, #imm]
       results[0] = memoryData[0].zeroExtend(1, 8);
       return;
@@ -537,6 +565,10 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]
       results[0] = memoryData[0];
+      return;
+    }
+    case A64Opcode::AArch64_LDURBBi: {  // ldurb wt, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(1, 8);
       return;
     }
     case A64Opcode::AArch64_LDURWi: {  // ldur wt, [xn, #imm]
@@ -685,6 +717,9 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
       memoryData[0] = operands[0];
       memoryData[1] = operands[1];
+      std::cout << "STPXpre: " << std::hex << operands[2].get<uint64_t>()
+                << std::dec << " + " << metadata.operands[2].mem.disp
+                << std::endl;
       results[0] = operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
       return;
     }
@@ -701,7 +736,16 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_STPQpost: {  // stp qt1, qt2, [xn], #imm
       memoryData[0] = operands[0];
       memoryData[1] = operands[1];
-      results[0] = operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[3].imm;
+      return;
+    }
+    case A64Opcode::AArch64_STRBBroX: {  // strb wd,
+                                         //  [xn, xm{, extend {#amount}}]
+      memoryData[0] = operands[0];
+      return;
+    }
+    case A64Opcode::AArch64_STRBBui: {  // strb wd, [xn, #imm]
+      memoryData[0] = operands[0];
       return;
     }
     case A64Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
@@ -710,6 +754,11 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_STRQui: {  // str qt, [xn, #imm]
       memoryData[0] = operands[0];
+      return;
+    }
+    case A64Opcode::AArch64_STRWpost: {  // str wt, [xn], #imm
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       return;
     }
     case A64Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend, {#amount}}]
@@ -728,6 +777,10 @@ void A64Instruction::execute() {
       memoryData[0] = operands[0];
       return;
     }
+    case A64Opcode::AArch64_STURBBi: {  // sturb wd, [xn, #imm]
+      memoryData[0] = operands[0];
+      return;
+    }
     case A64Opcode::AArch64_STURWi: {  // stur wt, [xn, #imm]
       memoryData[0] = operands[0];
       return;
@@ -740,7 +793,9 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_SUBSWri: {  // subs wd, wn, #imm
       auto x = operands[0].get<uint32_t>();
-      auto y = ~static_cast<uint32_t>(metadata.operands[2].imm);
+      auto y = ~shiftValue(static_cast<uint32_t>(metadata.operands[2].imm),
+                           metadata.operands[2].shift.type,
+                           metadata.operands[2].shift.value);
       auto [result, nzcv] = addWithCarry(x, y, true);
       results[0] = RegisterValue(nzcv);
       if (destinationRegisterCount > 1) {
@@ -762,7 +817,10 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_SUBSXri: {  // subs xd, xn, #imm
       auto x = operands[0].get<uint64_t>();
-      auto y = ~(metadata.operands[2].imm);
+      auto y = ~shiftValue(static_cast<uint64_t>(metadata.operands[2].imm),
+                           metadata.operands[2].shift.type,
+                           metadata.operands[2].shift.value);
+
       auto [result, nzcv] = addWithCarry(x, y, true);
       results[0] = RegisterValue(nzcv);
       if (destinationRegisterCount > 1) {
@@ -784,13 +842,17 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_SUBWri: {  // sub wd, wn, #imm
       auto x = operands[0].get<uint32_t>();
-      auto y = static_cast<uint32_t>(metadata.operands[2].imm);
+      auto y = shiftValue(static_cast<uint32_t>(metadata.operands[2].imm),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
       results[0] = RegisterValue(x - y, 8);
       return;
     }
     case A64Opcode::AArch64_SUBXri: {  // sub xd, xn, #imm
       auto x = operands[0].get<uint64_t>();
-      auto y = metadata.operands[2].imm;
+      auto y = shiftValue(static_cast<uint64_t>(metadata.operands[2].imm),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
       results[0] = RegisterValue(x - y);
       return;
     }
@@ -879,6 +941,12 @@ void A64Instruction::execute() {
       auto x = operands[0].get<uint64_t>();
       auto y = operands[1].get<uint64_t>();
       results[0] = x / y;
+      return;
+    }
+    case A64Opcode::AArch64_UMULHrr: {  // umulh xd, xn, xm
+      auto x = operands[0].get<uint64_t>();
+      auto y = operands[0].get<uint64_t>();
+      results[0] = mulhi(x, y);
       return;
     }
     default:
