@@ -6,6 +6,8 @@
 
 #include "BranchPredictor.hh"
 
+struct cs_arm64_op;
+
 namespace simeng {
 
 struct A64InstructionMetadata;
@@ -206,6 +208,9 @@ class A64Instruction : public Instruction {
   /** Extend `value` according to `extendType`, and left-shift the result by
    * `shift` */
   uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) const;
+
+  /** Extend `value` using extension/shifting rules defined in `op`. */
+  uint64_t extendOffset(uint64_t value, const cs_arm64_op& op) const;
 };
 
 }  // namespace simeng

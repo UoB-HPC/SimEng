@@ -195,4 +195,18 @@ uint64_t A64Instruction::extendValue(uint64_t value, uint8_t extendType,
   return extended << shift;
 }
 
+/** Extend `value` using extension/shifting rules defined in `op`. */
+uint64_t A64Instruction::extendOffset(uint64_t value,
+                                      const cs_arm64_op& op) const {
+  if (op.ext == 0) {
+    if (op.shift.value == 0) {
+      return value;
+    }
+    if (op.shift.type == 1) {
+      return extendValue(value, ARM64_EXT_UXTX, op.shift.value);
+    }
+  }
+  return extendValue(value, op.ext, op.shift.value);
+}
+
 }  // namespace simeng
