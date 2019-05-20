@@ -19,6 +19,13 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});
       break;
     }
+    case A64Opcode::AArch64_LDRBBroX: {  // ldrb wt,
+                                         //  [xn, xm{, extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 1}});
+      break;
+    }
     case A64Opcode::AArch64_LDRBBui: {  // ldrb wt, [xn, #imm]
       setMemoryAddresses(
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});
@@ -83,6 +90,11 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
       setMemoryAddresses({{base, 8}, {base + 8, 8}});
       break;
     }
+    case A64Opcode::AArch64_LDURBBi: {  // ldurb wt, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});
+      break;
+    }
     case A64Opcode::AArch64_LDURWi: {  // ldur wt, [xn, #imm]
       setMemoryAddresses(
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});
@@ -128,6 +140,18 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
       setMemoryAddresses({{base, 16}, {base + 16, 16}});
       break;
     }
+    case A64Opcode::AArch64_STRBBroX: {  // strb wd,
+                                         //  [xn, xm{, extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[2].get<uint64_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 1}});
+      break;
+    }
+    case A64Opcode::AArch64_STRBBui: {  // strb wd, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});
+      break;
+    }
     case A64Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
@@ -136,6 +160,10 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
     case A64Opcode::AArch64_STRQui: {  // str qt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 16}});
+      break;
+    }
+    case A64Opcode::AArch64_STRWpost: {  // str wt, [xn], #imm
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;
     }
     case A64Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend, {#amount}}]
@@ -158,6 +186,11 @@ span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
     case A64Opcode::AArch64_STRXui: {  // str xt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});
+      break;
+    }
+    case A64Opcode::AArch64_STURBBi: {  // sturb wd, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});
       break;
     }
     case A64Opcode::AArch64_STURWi: {  // stur wt, [xn, #imm]
