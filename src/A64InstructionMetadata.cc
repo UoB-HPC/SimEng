@@ -54,6 +54,12 @@ A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
       groupCount = 1;
       groups[0] = CS_GRP_JUMP;
       break;
+    case A64Opcode::AArch64_SBFMWri:
+      [[fallthrough]];
+    case A64Opcode::AArch64_SBFMXri:
+      // SBFM incorrectly flags destination as READ | WRITE
+      operands[0].access = CS_AC_WRITE;
+      break;
     case A64Opcode::AArch64_SVC:
       // SVC is incorrectly marked as setting x30
       implicitDestinationCount = 0;
