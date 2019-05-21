@@ -700,18 +700,26 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_MRS: {  // mrs xt, (systemreg|Sop0_op1_Cn_Cm_op2)
       // TODO: Correct system register read support
-      if (metadata.operands[1].reg ==
-          static_cast<arm64_reg>(ARM64_SYSREG_DCZID_EL0)) {
-        // Temporary: state that DCZ can support clearing 64 bytes at a time,
-        // but is disabled due to bit 4 being set
-        results[0] = static_cast<uint64_t>(0b10100);
-        return;
+      uint64_t sysreg = static_cast<uint64_t>(metadata.operands[1].reg);
+      switch (sysreg) {
+        case ARM64_SYSREG_DCZID_EL0:
+          // Temporary: state that DCZ can support clearing 64 bytes at a time,
+          // but is disabled due to bit 4 being set
+          results[0] = static_cast<uint64_t>(0b10100);
+          return;
+        case 0xde82:  // TPIDR_EL0
+          // Temporary: return known Thread-Local Storage (TLS) address for test
+          // file; remove once system register read/write is in place
+          results[0] = static_cast<uint64_t>(0x493d40);
+          return;
       }
       results[0] = static_cast<uint64_t>(0);
       return;
     }
     case A64Opcode::AArch64_MSR: {  // mrs (systemreg|Sop0_op1_Cn_Cm_op2), xt
       // TODO: Correct system register write support
+      std::cout << "MSR: " << std::hex << operands[0].get<uint64_t>()
+                << std::dec << std::endl;
       return;
     }
     case A64Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
@@ -783,6 +791,11 @@ void A64Instruction::execute() {
       memoryData[0] = operands[0];
       // TODO: Implement atomic memory access
       results[0] = static_cast<uint64_t>(0);
+      return;
+    }
+    case A64Opcode::AArch64_STPDi: {  // stp dt1, dt2, [xn, #imm]
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
       return;
     }
     case A64Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!

@@ -136,6 +136,10 @@ ExceptionResult A64Architecture::handleException(
         }
         break;
       }
+      case 94: {  // exit_group
+        std::cout << "Received exit_group syscall: terminating" << std::endl;
+        return {true, 0, {}};
+      }
       case 160: {  // uname
         const uint64_t base = registerFileSet.get(x0).get<uint64_t>();
         const uint8_t len =
