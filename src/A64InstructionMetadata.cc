@@ -316,6 +316,18 @@ void A64InstructionMetadata::revertAliasing() {
     case ARM64_INS_SXTH:
       return aliasNYI();
     case ARM64_INS_SXTW:
+      if (opcode == A64Opcode::AArch64_SBFMXri) {
+        operandCount = 4;
+
+        operands[2].type = ARM64_OP_IMM;
+        operands[2].access = CS_AC_READ;
+        operands[2].imm = 0;
+
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].access = CS_AC_READ;
+        operands[3].imm = 31;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_TLBI:
       return aliasNYI();
