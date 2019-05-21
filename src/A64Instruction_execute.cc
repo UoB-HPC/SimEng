@@ -33,6 +33,23 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
   }
 }
 
+/** Manipulate the bitfield `value` according to the logic of the (U|S)BFM ARMv8
+ * instructions. */
+template <typename T>
+std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
+bitfieldManipulate(T value, uint8_t rotateBy, uint8_t sourceBits) {
+  T mask = (1 << sourceBits) - 1;
+  T source = value & mask;
+  size_t bits = sizeof(T) * 8;
+
+  if (sourceBits >= rotateBy) {
+    // Mask of values [rotateBy:source+1]
+    return source >> rotateBy;
+  } else {
+    return source << (bits - rotateBy);
+  }
+}
+
 std::tuple<uint64_t, uint8_t> addWithCarry(uint64_t x, uint64_t y,
                                            bool carryIn) {
   int64_t result = static_cast<int64_t>(x) + static_cast<int64_t>(y) + carryIn;
@@ -731,9 +748,6 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
       memoryData[0] = operands[0];
       memoryData[1] = operands[1];
-      std::cout << "STPXpre: " << std::hex << operands[2].get<uint64_t>()
-                << std::dec << " + " << metadata.operands[2].mem.disp
-                << std::endl;
       results[0] = operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
       return;
     }
@@ -924,31 +938,17 @@ void A64Instruction::execute() {
     case A64Opcode::AArch64_UBFMWri: {  // ubfm wd, wn, #immr, #imms
       uint8_t r = metadata.operands[2].imm;
       uint8_t s = metadata.operands[3].imm;
-      uint32_t mask = (1 << s) - 1;
-      uint32_t source = operands[0].get<uint32_t>() & mask;
+      uint32_t source = operands[0].get<uint32_t>();
 
-      if (s >= r) {
-        // Mask of values [r:s+1]
-        results[0] = static_cast<uint64_t>(source >> r);
-      } else {
-        results[0] = static_cast<uint64_t>(source << (32 - r));
-      }
-
+      results[0] = static_cast<uint64_t>(bitfieldManipulate(source, r, s));
       return;
     }
     case A64Opcode::AArch64_UBFMXri: {  // ubfm xd, xn, #immr, #imms
       uint8_t r = metadata.operands[2].imm;
       uint8_t s = metadata.operands[3].imm;
-      uint64_t mask = (1 << s) - 1;
-      uint64_t source = operands[0].get<uint64_t>() & mask;
+      uint64_t source = operands[0].get<uint64_t>();
 
-      if (s >= r) {
-        // Mask of values [r:s+1]
-        results[0] = source >> r;
-      } else {
-        results[0] = source << (64 - r);
-      }
-
+      results[0] = bitfieldManipulate(source, r, s);
       return;
     }
     case A64Opcode::AArch64_UDIVXr: {  // udiv xd, xn, xm
