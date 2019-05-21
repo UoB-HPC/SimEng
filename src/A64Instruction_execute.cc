@@ -444,6 +444,10 @@ void A64Instruction::execute() {
       results[0] = out;
       return;
     }
+    case A64Opcode::AArch64_DMB: {  // dmb option|#imm
+      // TODO: Respect memory barriers
+      return;
+    }
     case A64Opcode::AArch64_EORXrs: {  // eor xd, xn, xm{, shift #amount}
       auto x = operands[0].get<uint64_t>();
       auto y = shiftValue(operands[1].get<uint64_t>(),
@@ -519,6 +523,11 @@ void A64Instruction::execute() {
       results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
       return;
     }
+    case A64Opcode::AArch64_LDPXpre: {  // ldp xt1, xt2, [xn, #imm]!
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
+    }
     case A64Opcode::AArch64_LDRBBpre: {  // ldrb wt, [xn, #imm]!
       results[0] = memoryData[0].zeroExtend(1, 8);
       results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
@@ -544,6 +553,11 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_LDRHHui: {  // ldrh wt, [xn, #imm]
       results[0] = memoryData[0].zeroExtend(2, 8);
+      return;
+    }
+    case A64Opcode::AArch64_LDRWpost: {  // ldr wt, [xn], #imm
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       return;
     }
     case A64Opcode::AArch64_LDRWui: {  // ldr wt, [xn, #imm]
