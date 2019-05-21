@@ -37,17 +37,40 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
  * instructions. */
 template <typename T>
 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
-bitfieldManipulate(T value, uint8_t rotateBy, uint8_t sourceBits) {
+bitfieldManipulate(T value, uint8_t rotateBy, uint8_t sourceBits,
+                   bool signExtend = false) {
   T mask = (1 << sourceBits) - 1;
   T source = value & mask;
   size_t bits = sizeof(T) * 8;
 
+  T result;
+  uint8_t highestBit = sourceBits;
   if (sourceBits >= rotateBy) {
     // Mask of values [rotateBy:source+1]
-    return source >> rotateBy;
+    result = source >> rotateBy;
+    highestBit -= rotateBy;
   } else {
-    return source << (bits - rotateBy);
+    result = source << (bits - rotateBy);
+    highestBit += (bits - rotateBy);
   }
+
+  if (!signExtend) {
+    return result;
+  }
+
+  if (highestBit > bits) {
+    // Nothing to do; implicitly sign-extended
+    return result;
+  }
+
+  // Let the compiler do sign-extension for us.
+  uint8_t shiftAmount = bits - highestBit;
+  // Shift the bitfield up, and cast to a signed type, so the highest bit is now
+  // the sign bit
+  auto shifted = static_cast<std::make_signed_t<T>>(result << shiftAmount);
+  // Shift the bitfield back to where it was; as it's a signed type, the
+  // compiler will sign-extend the highest bit
+  return shifted >> shiftAmount;
 }
 
 std::tuple<uint64_t, uint8_t> addWithCarry(uint64_t x, uint64_t y,
@@ -737,6 +760,23 @@ void A64Instruction::execute() {
       // Copy `bytes` backwards onto `reversed`
       std::copy(bytes, bytes + 8, std::rbegin(reversed));
       results[0] = reversed;
+      return;
+    }
+    case A64Opcode::AArch64_SBFMWri: {  // sbfm wd, wn, #immr, #imms
+      uint8_t r = metadata.operands[2].imm;
+      uint8_t s = metadata.operands[3].imm;
+      uint32_t source = operands[0].get<uint32_t>();
+
+      results[0] =
+          static_cast<uint64_t>(bitfieldManipulate(source, r, s, true));
+      return;
+    }
+    case A64Opcode::AArch64_SBFMXri: {  // sbfm xd, xn, #immr, #imms
+      uint8_t r = metadata.operands[2].imm;
+      uint8_t s = metadata.operands[3].imm;
+      uint64_t source = operands[0].get<uint64_t>();
+
+      results[0] = bitfieldManipulate(source, r, s, true);
       return;
     }
     case A64Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]

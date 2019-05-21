@@ -88,6 +88,20 @@ void A64InstructionMetadata::revertAliasing() {
   // something else
   switch (id) {
     case ARM64_INS_ASR:
+      if (opcode == A64Opcode::AArch64_SBFMWri ||
+          opcode == A64Opcode::AArch64_SBFMXri) {
+        operandCount = 4;
+
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].access = CS_AC_READ;
+        if (opcode == A64Opcode::AArch64_SBFMWri) {
+          // 32-bit
+          operands[3].imm = 31;
+        } else {
+          operands[3].imm = 63;
+        }
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_AT:
       return aliasNYI();
