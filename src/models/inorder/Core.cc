@@ -170,6 +170,22 @@ void Core::forwardOperands(const span<Register>& registers,
     return;
   }
 
+    auto sourceRegisters = uop->getOperandRegisters();
+  for (size_t i = 0; i < registers.size(); i++) {
+    // Check each forwarded register vs source operands and supply for each
+    // match
+    for (size_t operand = 0; operand < sourceRegisters.size(); operand++) {
+      const auto& sourceReg = sourceRegisters[operand];
+      if (uop->canExecute()) {
+        return;
+      }
+      if (sourceReg == registers[i] && !uop->isOperandReady(operand)) {
+        // Supply the operand
+        uop->supplyOperand(registers[i], values[i]);
+      }
+    }
+  }
+
   for (size_t i = 0; i < registers.size(); i++) {
     if (uop->canExecute()) {
       return;

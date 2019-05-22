@@ -718,8 +718,6 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_MSR: {  // mrs (systemreg|Sop0_op1_Cn_Cm_op2), xt
       // TODO: Correct system register write support
-      std::cout << "MSR: " << std::hex << operands[0].get<uint64_t>()
-                << std::dec << std::endl;
       return;
     }
     case A64Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
