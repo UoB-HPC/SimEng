@@ -53,6 +53,9 @@ class Core : public simeng::Core {
   /** Read pending registers for the most recently decoded instruction. */
   void readRegisters();
 
+  /** Process the active exception handler. */
+  void processExceptionHandler();
+
   /** Apply changes to the process state. */
   void applyStateChange(const ProcessStateChange& change);
 
@@ -64,6 +67,13 @@ class Core : public simeng::Core {
 
   /** The core's register file set. */
   RegisterFileSet registerFileSet_;
+
+  /** An architectural register file set, serving as a simple wrapper around the
+   * register file set. */
+  ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
+
+  /** The process memory. */
+  span<char> processMemory;
 
   /** The buffer between fetch and decode. */
   pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
@@ -102,6 +112,9 @@ class Core : public simeng::Core {
 
   /** Whether the core has halted. */
   bool hasHalted_ = false;
+
+  /** The active exception handler. */
+  std::shared_ptr<ExceptionHandler> exceptionHandler_;
 };
 
 }  // namespace inorder

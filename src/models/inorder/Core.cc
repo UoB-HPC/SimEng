@@ -12,6 +12,7 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
     : processMemory_(processMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
+      architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
@@ -34,6 +35,11 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
 
 void Core::tick() {
   ticks_++;
+
+  if (exceptionHandler_ != nullptr) {
+    processExceptionHandler();
+    return;
+  }
 
   // Writeback must be ticked at start of cycle, to ensure decode reads the
   // correct values
@@ -117,24 +123,38 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 void Core::handleException() {
   exceptionGenerated_ = false;
 
-  auto handler = isa_.handleException(exceptionGeneratingInstruction_,
-                                      registerFileSet_, processMemory_.data());
-  handler->tick();
-  const auto& result = handler->getResult();
-
-  if (result.fatal) {
-    hasHalted_ = true;
-    std::cout << "Halting due to fatal exception" << std::endl;
-    return;
-  }
-
-  fetchUnit_.updatePC(result.instructionAddress);
-  applyStateChange(result.stateChange);
+  exceptionHandler_ = isa_.handleException(exceptionGeneratingInstruction_,
+                                           architecturalRegisterFileSet_,
+                                           processMemory_.data());
+  processExceptionHandler();
 
   // Flush pipeline
   fetchToDecodeBuffer_.fill({});
   decodeToExecuteBuffer_.fill(nullptr);
   completionSlots_[0].fill(nullptr);
+}
+
+void Core::processExceptionHandler() {
+  assert(exceptionHandler_ != nullptr &&
+         "Attempted to process an exception handler that wasn't present");
+
+  auto success = exceptionHandler_->tick();
+  if (!success) {
+    // Exception handler requires further ticks to complete
+    return;
+  }
+
+  const auto& result = exceptionHandler_->getResult();
+
+  if (result.fatal) {
+    hasHalted_ = true;
+    std::cout << "Halting due to fatal exception" << std::endl;
+  } else {
+    fetchUnit_.updatePC(result.instructionAddress);
+    applyStateChange(result.stateChange);
+  }
+
+  exceptionHandler_ = nullptr;
 }
 
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
