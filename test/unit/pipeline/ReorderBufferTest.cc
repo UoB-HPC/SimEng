@@ -147,11 +147,15 @@ TEST_F(ReorderBufferTest, CommitLoad) {
 // Tests that the reorder buffer correctly triggers a store upon commit
 TEST_F(ReorderBufferTest, CommitStore) {
   std::vector<std::pair<uint64_t, uint8_t>> addresses = {{0, 1}};
+  span<const std::pair<uint64_t, uint8_t>> addressesSpan = {addresses.data(),
+                                                            addresses.size()};
+
   std::vector<RegisterValue> data = {static_cast<uint8_t>(1)};
+  span<const RegisterValue> dataSpan = {data.data(), data.size()};
 
   ON_CALL(*uop, isStore()).WillByDefault(Return(true));
-  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(Return(addresses));
-  ON_CALL(*uop, getData()).WillByDefault(Return(data));
+  ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(Return(addressesSpan));
+  ON_CALL(*uop, getData()).WillByDefault(Return(dataSpan));
 
   lsq.addStore(uopPtr);
 

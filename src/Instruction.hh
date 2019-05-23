@@ -66,16 +66,17 @@ class Instruction {
   virtual const span<RegisterValue> getResults() const = 0;
 
   /** Generate memory addresses this instruction wishes to access. */
-  virtual span<std::pair<uint64_t, uint8_t>> generateAddresses() = 0;
+  virtual span<const std::pair<uint64_t, uint8_t>> generateAddresses() = 0;
 
   /** Provide data from a requested memory address. */
   virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
 
   /** Retrieve previously generated memory addresses. */
-  virtual span<std::pair<uint64_t, uint8_t>> getGeneratedAddresses() const = 0;
+  virtual span<const std::pair<uint64_t, uint8_t>> getGeneratedAddresses()
+      const = 0;
 
   /** Retrieve supplied memory data. */
-  virtual span<RegisterValue> getData() const = 0;
+  virtual span<const RegisterValue> getData() const = 0;
 
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the

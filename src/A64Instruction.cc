@@ -88,8 +88,8 @@ void A64Instruction::supplyData(uint64_t address, const RegisterValue& data) {
   }
 }
 
-span<RegisterValue> A64Instruction::getData() const {
-  return {const_cast<RegisterValue*>(memoryData.data()), memoryData.size()};
+span<const RegisterValue> A64Instruction::getData() const {
+  return {memoryData.data(), memoryData.size()};
 }
 
 bool A64Instruction::canExecute() const { return (operandsPending == 0); }
@@ -108,10 +108,9 @@ void A64Instruction::setMemoryAddresses(
   memoryAddresses = addresses;
 }
 
-span<std::pair<uint64_t, uint8_t>> A64Instruction::getGeneratedAddresses()
+span<const std::pair<uint64_t, uint8_t>> A64Instruction::getGeneratedAddresses()
     const {
-  return {const_cast<std::pair<uint64_t, uint8_t>*>(memoryAddresses.data()),
-          memoryAddresses.size()};
+  return {memoryAddresses.data(), memoryAddresses.size()};
 }
 
 std::tuple<bool, uint64_t> A64Instruction::checkEarlyBranchMisprediction()

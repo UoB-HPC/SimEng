@@ -19,7 +19,9 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
  public:
   LoadStoreQueueTest()
       : addresses({{0, 1}}),
+        addressesSpan({addresses.data(), addresses.size()}),
         data({RegisterValue(static_cast<uint8_t>(1))}),
+        dataSpan({data.data(), data.size()}),
         memory{},
         loadUop(new MockInstruction),
         storeUop(new MockInstruction),
@@ -27,13 +29,14 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
         storeUopPtr(storeUop) {
     // Set up sensible return values for the load uop
     ON_CALL(*loadUop, isLoad()).WillByDefault(Return(true));
-    ON_CALL(*loadUop, getGeneratedAddresses()).WillByDefault(Return(addresses));
+    ON_CALL(*loadUop, getGeneratedAddresses())
+        .WillByDefault(Return(addressesSpan));
 
     // Set up sensible return values for the store uop
     ON_CALL(*storeUop, isStore()).WillByDefault(Return(true));
     ON_CALL(*storeUop, getGeneratedAddresses())
-        .WillByDefault(Return(addresses));
-    ON_CALL(*storeUop, getData()).WillByDefault(Return(data));
+        .WillByDefault(Return(addressesSpan));
+    ON_CALL(*storeUop, getData()).WillByDefault(Return(dataSpan));
   }
 
  protected:
@@ -74,7 +77,10 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   }
 
   std::vector<std::pair<uint64_t, uint8_t>> addresses;
+  span<const std::pair<uint64_t, uint8_t>> addressesSpan;
+
   std::vector<RegisterValue> data;
+  span<const RegisterValue> dataSpan;
 
   char memory[1024];
 
@@ -248,20 +254,27 @@ TEST_P(LoadStoreQueueTest, ViolationOverlap) {
   std::vector<std::pair<uint64_t, uint8_t>> storeAddresses = {{0, 2}};
   std::vector<RegisterValue> storeData = {static_cast<uint16_t>(0x0101)};
 
+  span<const std::pair<uint64_t, uint8_t>> storeAddressesSpan = {
+      storeAddresses.data(), storeAddresses.size()};
+  span<const RegisterValue> storeDataSpan = {storeData.data(),
+                                             storeData.size()};
+
   // The load will read two bytes, at addresses 1 and 2; this will overlap with
   // the written data at address 1
   std::vector<std::pair<uint64_t, uint8_t>> loadAddresses = {{1, 2}};
+  span<const std::pair<uint64_t, uint8_t>> loadAddressesSpan = {
+      loadAddresses.data(), loadAddresses.size()};
 
   EXPECT_CALL(*storeUop, getGeneratedAddresses())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(storeAddresses));
+      .WillRepeatedly(Return(storeAddressesSpan));
   EXPECT_CALL(*storeUop, getData())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(storeData));
+      .WillRepeatedly(Return(storeDataSpan));
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(loadAddresses));
+      .WillRepeatedly(Return(loadAddressesSpan));
 
   // Execute a load-after-store sequence
   bool violation = executeRAWSequence(queue);
@@ -276,10 +289,12 @@ TEST_P(LoadStoreQueueTest, NoViolation) {
 
   // A different address to the one being stored to
   std::vector<std::pair<uint64_t, uint8_t>> loadAddresses = {{1, 1}};
+  span<const std::pair<uint64_t, uint8_t>> loadAddressesSpan = {
+      loadAddresses.data(), loadAddresses.size()};
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses())
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(loadAddresses));
+      .WillRepeatedly(Return(loadAddressesSpan));
 
   // Execute a load-after-store sequence
   bool violation = executeRAWSequence(queue);
