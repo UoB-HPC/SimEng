@@ -5,6 +5,7 @@
 #include <forward_list>
 #include <unordered_map>
 
+#include "A64ExceptionHandler.hh"
 #include "A64Instruction.hh"
 #include "kernel/Linux.hh"
 
@@ -35,7 +36,7 @@ class A64Architecture : public Architecture {
    * Returns an `ExceptionResult` describing whether the exception was fatal,
    * where execution should resume from, and any process state modifications
    * required. */
-  ExceptionResult handleException(
+  std::shared_ptr<ExceptionHandler> handleException(
       const std::shared_ptr<Instruction>& instruction,
       const ArchitecturalRegisterFileSet& registerFileSet,
       const char* memory) const override;
@@ -44,10 +45,6 @@ class A64Architecture : public Architecture {
   ProcessStateChange getInitialState(span<char> processMemory) const override;
 
  private:
-  /** Prints a description of an exception and the instruction that generated
-   * it. */
-  void printException(const A64Instruction& insn) const;
-
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */

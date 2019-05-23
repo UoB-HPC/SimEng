@@ -223,9 +223,11 @@ void Core::handleException() {
 
   exceptionGenerated_ = false;
 
-  auto result =
+  auto handler =
       isa_.handleException(exceptionGeneratingInstruction_,
                            mappedRegisterFileSet_, processMemory_.data());
+  handler->tick();
+  const auto& result = handler->getResult();
 
   if (result.fatal) {
     hasHalted_ = true;

@@ -84,7 +84,9 @@ void Core::tick() {
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
-  auto result = isa_.handleException(instruction, registerFileSet_, memory_);
+  auto handler = isa_.handleException(instruction, registerFileSet_, memory_);
+  handler->tick();
+  const auto& result = handler->getResult();
 
   if (result.fatal) {
     pc_ = programByteLength_;
