@@ -47,6 +47,9 @@ class Core : public simeng::Core {
   /** Handle an exception raised during the cycle. */
   void handleException();
 
+  /** Process the active exception handler. */
+  void processExceptionHandler();
+
   /** Apply changes to the process state. */
   void applyStateChange(const ProcessStateChange& change);
 
@@ -127,6 +130,9 @@ class Core : public simeng::Core {
 
   /** Whether the core has halted. */
   bool hasHalted_ = false;
+
+  /** The active exception handler. */
+  std::shared_ptr<ExceptionHandler> exceptionHandler_;
 };
 
 }  // namespace outoforder
