@@ -33,6 +33,20 @@ struct ExceptionResult {
   ProcessStateChange stateChange;
 };
 
+/** An abstract multi-cycle exception handler interface. Should be ticked each
+ * cycle until complete. */
+class ExceptionHandler {
+ public:
+  virtual ~ExceptionHandler(){};
+  /** Tick the exception handler to progress handling of the exception. Should
+   * return `false` if the exception requires further handling, or `true` once
+   * complete. */
+  virtual bool tick() = 0;
+
+  /** Retrieve the result of the exception. */
+  virtual const ExceptionResult& getResult() const = 0;
+};
+
 /** An abstract Instruction Set Architecture (ISA) definition. Each supported
  * ISA should provide a derived implementation of this class. */
 class Architecture {
@@ -58,7 +72,7 @@ class Architecture {
    * Returns an `ExceptionResult` describing whether the exception was fatal,
    * where execution should resume from, and any process state modifications
    * required. */
-  virtual ExceptionResult handleException(
+  virtual std::shared_ptr<ExceptionHandler> handleException(
       const std::shared_ptr<Instruction>& instruction,
       const ArchitecturalRegisterFileSet& registerFileSet,
       const char* memory) const = 0;

@@ -26,6 +26,7 @@ set(SIMENG_SOURCES
     ../../src/pipeline/ReorderBuffer.cc
     ../../src/pipeline/WritebackUnit.cc
     ../../src/A64Architecture.cc
+    ../../src/A64ExceptionHandler.cc
     ../../src/A64Instruction.cc
     ../../src/A64Instruction_address.cc
     ../../src/A64Instruction_decode.cc

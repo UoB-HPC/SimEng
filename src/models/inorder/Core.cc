@@ -117,8 +117,10 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 void Core::handleException() {
   exceptionGenerated_ = false;
 
-  auto result = isa_.handleException(exceptionGeneratingInstruction_,
-                                     registerFileSet_, processMemory_.data());
+  auto handler = isa_.handleException(exceptionGeneratingInstruction_,
+                                      registerFileSet_, processMemory_.data());
+  handler->tick();
+  const auto& result = handler->getResult();
 
   if (result.fatal) {
     hasHalted_ = true;

@@ -17,7 +17,7 @@ class MockArchitecture : public Architecture {
   MOCK_CONST_METHOD1(canRename, bool(Register reg));
   MOCK_CONST_METHOD3(
       handleException,
-      ExceptionResult(const std::shared_ptr<Instruction>& instruction,
+      std::shared_ptr<ExceptionHandler>(const std::shared_ptr<Instruction>& instruction,
                       const ArchitecturalRegisterFileSet& registerFileSet,
                       const char* memory));
   MOCK_CONST_METHOD1(getInitialState,

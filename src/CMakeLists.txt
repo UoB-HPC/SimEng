@@ -36,6 +36,8 @@ set(SIMENG_SOURCES
     pipeline/WritebackUnit.hh
     A64Architecture.cc
     A64Architecture.hh
+    A64ExceptionHandler.cc
+    A64ExceptionHandler.hh
     A64Instruction.cc
     A64Instruction.hh
     A64Instruction_address.cc
