@@ -72,6 +72,11 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
 void Core::tick() {
   ticks_++;
 
+  if (exceptionHandler_ != nullptr) {
+    processExceptionHandler();
+    return;
+  }
+
   // Writeback must be ticked at start of cycle, to ensure decode reads the
   // correct values
   writebackUnit_.tick();
@@ -222,21 +227,33 @@ void Core::handleException() {
   loadStoreQueue_.purgeFlushed();
 
   exceptionGenerated_ = false;
-
-  auto handler =
+  exceptionHandler_ =
       isa_.handleException(exceptionGeneratingInstruction_,
                            mappedRegisterFileSet_, processMemory_.data());
-  handler->tick();
-  const auto& result = handler->getResult();
+  processExceptionHandler();
+}
+
+void Core::processExceptionHandler() {
+  assert(exceptionHandler_ != nullptr &&
+         "Attempted to process an exception handler that wasn't present");
+
+  bool success = exceptionHandler_->tick();
+  if (!success) {
+    // Exception handler requires further ticks to complete
+    return;
+  }
+
+  const auto& result = exceptionHandler_->getResult();
 
   if (result.fatal) {
     hasHalted_ = true;
     std::cout << "Halting due to fatal exception" << std::endl;
-    return;
+  } else {
+    fetchUnit_.updatePC(result.instructionAddress);
+    applyStateChange(result.stateChange);
   }
 
-  fetchUnit_.updatePC(result.instructionAddress);
-  applyStateChange(result.stateChange);
+  exceptionHandler_ = nullptr;
 }
 
 void Core::applyStateChange(const ProcessStateChange& change) {

@@ -119,7 +119,6 @@ void Core::processExceptionHandler() {
 
   // Clear the handler
   exceptionHandler_ = nullptr;
-  return;
 }
 
 void Core::applyStateChange(const ProcessStateChange& change) {
