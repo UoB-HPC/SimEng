@@ -35,6 +35,9 @@ class Core : public simeng::Core {
   /** Handle an encountered exception. */
   void handleException(const std::shared_ptr<Instruction>& instruction);
 
+  /** Process an active exception handler. */
+  void processExceptionHandler();
+
   /** Apply changes to the process state. */
   void applyStateChange(const ProcessStateChange& change);
 
@@ -63,11 +66,18 @@ class Core : public simeng::Core {
   /** The core's register file set. */
   RegisterFileSet registerFileSet_;
 
+  /** An architectural register file set, serving as a simple wrapper around the
+   * register file set. */
+  ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
+
   /** Whether or not the core has halted. */
   bool hasHalted_ = false;
 
   /** A reusable macro-op vector to fill with uops. */
   MacroOp macroOp_;
+
+  /** The active exception handler. */
+  std::shared_ptr<ExceptionHandler> exceptionHandler_;
 };
 
 }  // namespace emulation
