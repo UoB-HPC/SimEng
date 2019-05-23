@@ -14,7 +14,8 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
       programByteLength_(processMemory.size()),
       isa_(isa),
       pc_(entryPoint),
-      registerFileSet_(isa.getRegisterFileStructures()) {
+      registerFileSet_(isa.getRegisterFileStructures()),
+      architecturalRegisterFileSet_(registerFileSet_) {
   // Query and apply initial state
   auto state = isa.getInitialState(processMemory);
   applyStateChange(state);
@@ -23,6 +24,11 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
 void Core::tick() {
   if (pc_ >= programByteLength_) {
     hasHalted_ = true;
+    return;
+  }
+
+  if (exceptionHandler_ != nullptr) {
+    processExceptionHandler();
     return;
   }
 
@@ -84,19 +90,36 @@ void Core::tick() {
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
-  auto handler = isa_.handleException(instruction, registerFileSet_, memory_);
-  handler->tick();
-  const auto& result = handler->getResult();
+  exceptionHandler_ =
+      isa_.handleException(instruction, architecturalRegisterFileSet_, memory_);
+  processExceptionHandler();
+}
+
+void Core::processExceptionHandler() {
+  assert(exceptionHandler_ != nullptr &&
+         "Attempted to process an exception handler that wasn't present");
+
+  bool success = exceptionHandler_->tick();
+
+  if (!success) {
+    // Handler needs further ticks to complete
+    return;
+  }
+
+  const auto& result = exceptionHandler_->getResult();
 
   if (result.fatal) {
     pc_ = programByteLength_;
     hasHalted_ = true;
     std::cout << "Halting due to fatal exception" << std::endl;
-    return;
+  } else {
+    pc_ = result.instructionAddress;
+    applyStateChange(result.stateChange);
   }
 
-  pc_ = result.instructionAddress;
-  applyStateChange(result.stateChange);
+  // Clear the handler
+  exceptionHandler_ = nullptr;
+  return;
 }
 
 void Core::applyStateChange(const ProcessStateChange& change) {
