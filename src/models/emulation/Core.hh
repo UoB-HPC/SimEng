@@ -6,6 +6,7 @@
 #include <string>
 
 #include "../../Architecture.hh"
+#include "../../MemoryInterface.hh"
 #include "../../RegisterFileSet.hh"
 #include "../../span.hh"
 
@@ -16,10 +17,11 @@ namespace emulation {
 /** An emulation-style core model. Executes each instruction in turn. */
 class Core : public simeng::Core {
  public:
-  /** Construct an emulation-style core, providing an ISA
-  to use, along with a pointer and size of instruction memory, and a pointer to
-  process memory. */
-  Core(const span<char> processMemory, uint64_t entryPoint,
+  /** Construct an emulation-style core, providing memory interfaces for
+   * instructions and data, along with the instruction entry point and an ISA to
+   * use. */
+  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+       uint64_t entryPoint, uint64_t programByteLength,
        const Architecture& isa);
 
   /** Tick the core. */
@@ -32,6 +34,9 @@ class Core : public simeng::Core {
   std::map<std::string, std::string> getStats() const override;
 
  private:
+  /** Execute an instruction. */
+  void execute(std::shared_ptr<Instruction>& uop);
+
   /** Handle an encountered exception. */
   void handleException(const std::shared_ptr<Instruction>& instruction);
 
@@ -48,11 +53,11 @@ class Core : public simeng::Core {
   void writeMemory(const std::pair<uint64_t, uint8_t>& request,
                    const RegisterValue& data);
 
-  /** A pointer to process memory. */
-  char* memory_;
+  /** A memory interface to access instructions. */
+  MemoryInterface& instructionMemory_;
 
-  /** Pointer to the start of instruction memory. */
-  const char* insnPtr_;
+  /** A memory interface to access data. */
+  MemoryInterface& dataMemory_;
 
   /** The length of the available instruction memory. */
   uint64_t programByteLength_;
@@ -78,6 +83,9 @@ class Core : public simeng::Core {
 
   /** The active exception handler. */
   std::shared_ptr<ExceptionHandler> exceptionHandler_;
+
+  /** Is the core waiting on a data read? */
+  unsigned int pendingReads_ = 0;
 };
 
 }  // namespace emulation

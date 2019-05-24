@@ -29,7 +29,7 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
           branchPredictor),
       writebackUnit_(completionSlots_, registerFileSet_) {
   // Query and apply initial state
-  auto state = isa.getInitialState(processMemory);
+  auto state = isa.getInitialState();
   applyStateChange(state);
 };
 
@@ -123,9 +123,10 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 void Core::handleException() {
   exceptionGenerated_ = false;
 
-  exceptionHandler_ = isa_.handleException(exceptionGeneratingInstruction_,
-                                           architecturalRegisterFileSet_,
-                                           processMemory_.data());
+  // exceptionHandler_ = isa_.handleException(exceptionGeneratingInstruction_,
+  //                                          architecturalRegisterFileSet_,
+  //                                          dataMemory_.data();
+
   processExceptionHandler();
 
   // Flush pipeline
