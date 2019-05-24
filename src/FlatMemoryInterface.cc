@@ -8,8 +8,10 @@ FlatMemoryInterface::FlatMemoryInterface(char* memory, size_t size)
     : memory_(memory), size_(size) {}
 
 void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target) {
-  assert(target.address + target.size <= size_ &&
-         "Attempted to read beyond memory limit");
+  if (target.address + target.size > size_) {
+    // Read outside of memory; return an invalid value to signal a fault
+    completedReads_.push_back({target, RegisterValue()});
+  }
 
   const char* ptr = memory_ + target.address;
 

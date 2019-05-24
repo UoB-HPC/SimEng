@@ -14,6 +14,7 @@
 #include "BTBPredictor.hh"
 #include "Core.hh"
 #include "Elf.hh"
+#include "FlatMemoryInterface.hh"
 #include "kernel/Linux.hh"
 #include "models/emulation/Core.hh"
 #include "models/inorder/Core.hh"
@@ -167,8 +168,13 @@ int main(int argc, char** argv) {
   simeng::kernel::Linux kernel;
   kernel.createProcess(*process.get());
 
+  simeng::FlatMemoryInterface instructionMemory(processMemory,
+                                                processMemorySize);
+  simeng::FlatMemoryInterface dataMemory(processMemory, processMemorySize);
+
   // Create the architecture, with knowledge of the kernel
   auto arch = simeng::A64Architecture(kernel);
+
   auto predictor = simeng::BTBPredictor(8);
 
   // TODO: Construct port arrangement from config options
@@ -199,7 +205,8 @@ int main(int argc, char** argv) {
     default: {
       modeString = "Emulation";
       core = std::make_unique<simeng::models::emulation::Core>(
-          processMemoryContainer, entryPoint, arch);
+          instructionMemory, dataMemory, entryPoint,
+          processMemoryContainer.size(), arch);
       break;
     }
   };

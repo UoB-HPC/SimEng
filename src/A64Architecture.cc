@@ -69,7 +69,7 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 std::shared_ptr<ExceptionHandler> A64Architecture::handleException(
     const std::shared_ptr<Instruction>& instruction,
     const ArchitecturalRegisterFileSet& registerFileSet,
-    const char* memory) const {
+    MemoryInterface& memory) const {
   return std::make_shared<A64ExceptionHandler>(instruction, registerFileSet,
                                                memory, linux_);
 }
@@ -83,8 +83,7 @@ std::vector<RegisterFileStructure> A64Architecture::getRegisterFileStructures()
   };
 }
 
-ProcessStateChange A64Architecture::getInitialState(
-    span<char> processMemory) const {
+ProcessStateChange A64Architecture::getInitialState() const {
   ProcessStateChange changes;
 
   uint64_t stackPointer = linux_.getInitialStackPointer();

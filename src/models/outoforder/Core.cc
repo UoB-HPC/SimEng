@@ -65,7 +65,7 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
         [](auto uop) { uop->setCommitReady(); }, branchPredictor);
   }
   // Query and apply initial state
-  auto state = isa.getInitialState(processMemory);
+  auto state = isa.getInitialState();
   applyStateChange(state);
 };
 
@@ -227,9 +227,9 @@ void Core::handleException() {
   loadStoreQueue_.purgeFlushed();
 
   exceptionGenerated_ = false;
-  exceptionHandler_ =
-      isa_.handleException(exceptionGeneratingInstruction_,
-                           mappedRegisterFileSet_, processMemory_.data());
+  // exceptionHandler_ =
+  //     isa_.handleException(exceptionGeneratingInstruction_,
+  //                          mappedRegisterFileSet_, processMemory_.data());
   processExceptionHandler();
 }
 

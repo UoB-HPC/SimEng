@@ -7,17 +7,25 @@ namespace simeng {
 namespace models {
 namespace emulation {
 
-Core::Core(const span<char> processMemory, uint64_t entryPoint,
+// TODO: Expose as config option
+/** The number of bytes fetched each cycle. */
+const uint8_t FETCH_SIZE = 4;
+
+Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+           uint64_t entryPoint, uint64_t programByteLength,
            const Architecture& isa)
-    : memory_(processMemory.data()),
-      insnPtr_(processMemory.data()),
-      programByteLength_(processMemory.size()),
+    : instructionMemory_(instructionMemory),
+      dataMemory_(dataMemory),
+      programByteLength_(programByteLength),
       isa_(isa),
       pc_(entryPoint),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_) {
+  // Pre-load the first instruction
+  instructionMemory_.requestRead({pc_, FETCH_SIZE});
+
   // Query and apply initial state
-  auto state = isa.getInitialState(processMemory);
+  auto state = isa.getInitialState();
   applyStateChange(state);
 }
 
@@ -32,8 +40,47 @@ void Core::tick() {
     return;
   }
 
+  if (pendingReads_ > 0) {
+    // Handle pending reads to a uop
+    auto& uop = macroOp_[0];
+
+    const auto& completedReads = dataMemory_.getCompletedReads();
+    for (const auto& response : completedReads) {
+      uop->supplyData(response.first.address, response.second);
+      pendingReads_--;
+    }
+    dataMemory_.clearCompletedReads();
+
+    if (pendingReads_ == 0) {
+      // Load complete: resume execution
+      execute(uop);
+    }
+
+    // More data pending, end cycle early
+    return;
+  }
+
   // Fetch
-  auto bytesRead = isa_.predecode(insnPtr_ + pc_, 4, pc_, {false, 0}, macroOp_);
+
+  // Find fetched memory that matches the current PC
+  const auto& fetched = instructionMemory_.getCompletedReads();
+  size_t fetchIndex;
+  for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
+    if (fetched[fetchIndex].first.address == pc_) {
+      break;
+    }
+  }
+  if (fetchIndex == fetched.size()) {
+    // Need to wait for fetched instructions
+    return;
+  }
+
+  const auto& instructionBytes = fetched[fetchIndex].second;
+  auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
+                                  FETCH_SIZE, pc_, {false, 0}, macroOp_);
+
+  // Clear the fetched data
+  instructionMemory_.clearCompletedReads();
 
   pc_ += bytesRead;
 
@@ -56,13 +103,23 @@ void Core::tick() {
   // Execute
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
-    for (auto const& request : addresses) {
-      uop->supplyData(request.first, readMemory(request));
+    if (addresses.size() > 0) {
+      // Memory reads are required; request them, set `pendingReads_`
+      // accordingly, and end the cycle early
+      for (auto const& request : addresses) {
+        dataMemory_.requestRead({request.first, request.second});
+      }
+      pendingReads_ = addresses.size();
+      return;
     }
   } else if (uop->isStore()) {
     uop->generateAddresses();
   }
 
+  execute(uop);
+}
+
+void Core::execute(std::shared_ptr<Instruction>& uop) {
   uop->execute();
 
   if (uop->exceptionEncountered()) {
@@ -74,7 +131,8 @@ void Core::tick() {
     auto addresses = uop->getGeneratedAddresses();
     auto data = uop->getData();
     for (size_t i = 0; i < addresses.size(); i++) {
-      writeMemory(addresses[i], data[i]);
+      auto& request = addresses[i];
+      dataMemory_.requestWrite({request.first, request.second}, data[i]);
     }
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
@@ -87,11 +145,14 @@ void Core::tick() {
     auto reg = destinations[i];
     registerFileSet_.set(reg, results[i]);
   }
+
+  // Fetch memory for next cycle
+  instructionMemory_.requestRead({pc_, FETCH_SIZE});
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
-  exceptionHandler_ =
-      isa_.handleException(instruction, architecturalRegisterFileSet_, memory_);
+  exceptionHandler_ = isa_.handleException(
+      instruction, architecturalRegisterFileSet_, dataMemory_);
   processExceptionHandler();
 }
 
@@ -119,6 +180,9 @@ void Core::processExceptionHandler() {
 
   // Clear the handler
   exceptionHandler_ = nullptr;
+
+  // Fetch memory for next cycle
+  instructionMemory_.requestRead({pc_, FETCH_SIZE});
 }
 
 void Core::applyStateChange(const ProcessStateChange& change) {
@@ -130,27 +194,30 @@ void Core::applyStateChange(const ProcessStateChange& change) {
 
   // Update memory
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    writeMemory(change.memoryAddresses[i], change.memoryAddressValues[i]);
+    dataMemory_.requestWrite(
+        {change.memoryAddresses[i].first, change.memoryAddresses[i].second},
+        change.memoryAddressValues[i]);
+    // writeMemory(change.memoryAddresses[i], change.memoryAddressValues[i]);
   }
 }
 
-RegisterValue Core::readMemory(
-    const std::pair<uint64_t, uint8_t>& request) const {
-  assert(request.first + request.second <= programByteLength_ &&
-         "Attempted to load from outside memory limit");
+// RegisterValue Core::readMemory(
+//     const std::pair<uint64_t, uint8_t>& request) const {
+//   assert(request.first + request.second <= programByteLength_ &&
+//          "Attempted to load from outside memory limit");
 
-  // Copy the data at the requested memory address into a RegisterValue
-  const char* address = memory_ + request.first;
-  return simeng::RegisterValue(address, request.second);
-}
+//   // Copy the data at the requested memory address into a RegisterValue
+//   const char* address = memory_ + request.first;
+//   return simeng::RegisterValue(address, request.second);
+// }
 
-void Core::writeMemory(const std::pair<uint64_t, uint8_t>& request,
-                       const RegisterValue& data) {
-  auto address = memory_ + request.first;
-  assert(request.first + request.second <= programByteLength_ &&
-         "Attempted to store outside memory limit");
-  memcpy(address, data.getAsVector<char>(), request.second);
-}
+// void Core::writeMemory(const std::pair<uint64_t, uint8_t>& request,
+//                        const RegisterValue& data) {
+//   auto address = memory_ + request.first;
+//   assert(request.first + request.second <= programByteLength_ &&
+//          "Attempted to store outside memory limit");
+//   memcpy(address, data.getAsVector<char>(), request.second);
+// }
 
 bool Core::hasHalted() const { return hasHalted_; }
 

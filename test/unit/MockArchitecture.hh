@@ -19,9 +19,8 @@ class MockArchitecture : public Architecture {
                      std::shared_ptr<ExceptionHandler>(
                          const std::shared_ptr<Instruction>& instruction,
                          const ArchitecturalRegisterFileSet& registerFileSet,
-                         const char* memory));
-  MOCK_CONST_METHOD1(getInitialState,
-                     ProcessStateChange(span<char> processMemory));
+                         MemoryInterface& memory));
+  MOCK_CONST_METHOD0(getInitialState, ProcessStateChange());
 };
 
 }  // namespace simeng

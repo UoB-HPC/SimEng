@@ -21,7 +21,7 @@ class FlatMemoryInterface : public MemoryInterface {
       const override;
 
   /** Clear the completed reads. */
-  void clearCompletedReads();
+  void clearCompletedReads() override;
 
  private:
   /** The array representing the flat memory system to access. */
