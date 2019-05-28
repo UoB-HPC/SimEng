@@ -40,5 +40,5 @@ class MappedRegisterFileSet : public ArchitecturalRegisterFileSet {
   const RegisterAliasTable& rat_;
 };
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

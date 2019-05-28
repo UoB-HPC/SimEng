@@ -2,7 +2,6 @@
 #include "A64InstructionMetadata.hh"
 
 #include <cmath>
-#include <iostream>
 #include <limits>
 #include <tuple>
 
@@ -23,8 +22,8 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
     case ARM64_SFT_ASR:
       return static_cast<std::make_signed_t<T>>(value) >> amount;
     case ARM64_SFT_ROR: {
-      auto highestBit = (sizeof(T) * 8) - 1;
-      return (value >> amount) && (value << (highestBit - amount));
+      auto highestBit = sizeof(T) * 8;
+      return (value >> amount) & (value << (highestBit - amount));
     }
     case ARM64_SFT_INVALID:
       return value;
@@ -32,43 +31,6 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
       assert(false && "Unknown shift type");
       return 0;
   }
-}
-
-/** Extend `value` according to `extendType`, and left-shift the result by
- * `shift` */
-uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
-  uint64_t extended;
-  switch (extendType) {
-    case ARM64_EXT_UXTB:
-      extended = static_cast<uint8_t>(value);
-      break;
-    case ARM64_EXT_UXTH:
-      extended = static_cast<uint16_t>(value);
-      break;
-    case ARM64_EXT_UXTW:
-      extended = static_cast<uint32_t>(value);
-      break;
-    case ARM64_EXT_UXTX:
-      extended = value;
-      break;
-    case ARM64_EXT_SXTB:
-      extended = static_cast<int8_t>(value);
-      break;
-    case ARM64_EXT_SXTH:
-      extended = static_cast<int16_t>(value);
-      break;
-    case ARM64_EXT_SXTW:
-      extended = static_cast<int32_t>(value);
-      break;
-    case ARM64_EXT_SXTX:
-      extended = value;
-      break;
-    default:
-      assert(false && "Invalid extension type");
-      return 0;
-  }
-
-  return extended << shift;
 }
 
 std::tuple<uint64_t, uint8_t> addWithCarry(uint64_t x, uint64_t y,
@@ -169,7 +131,9 @@ void A64Instruction::execute() {
   switch (metadata.opcode) {
     case A64Opcode::AArch64_ADDSXri: {  // adds xd, xn, #imm{, shift}
       auto x = operands[0].get<uint64_t>();
-      auto y = metadata.operands[2].imm;
+      auto y = shiftValue(static_cast<uint64_t>(metadata.operands[2].imm),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
       auto [result, nzcv] = addWithCarry(x, y, 0);
       results[0] = nzcv;
       results[1] = result;

@@ -15,5 +15,5 @@ void MappedRegisterFileSet::set(Register reg, const RegisterValue& value) {
   return ArchitecturalRegisterFileSet::set(rat_.getMapping(reg), value);
 }
 
-}  // namespace outoforder
+}  // namespace pipeline
 }  // namespace simeng

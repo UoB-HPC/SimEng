@@ -140,8 +140,9 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   for (const auto& request : addresses) {
     // Copy the data at the requested memory address into a
     // RegisterValue
-    auto data =
-        RegisterValue(processMemory_.data() + request.first, request.second);
+
+    const char* address = processMemory_.data() + request.first;
+    auto data = RegisterValue(address, request.second);
 
     instruction->supplyData(request.first, data);
   }
