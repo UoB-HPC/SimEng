@@ -201,6 +201,11 @@ class A64Instruction : public Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
+
+  // Execution helpers
+  /** Extend `value` according to `extendType`, and left-shift the result by
+   * `shift` */
+  uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) const;
 };
 
 }  // namespace simeng
