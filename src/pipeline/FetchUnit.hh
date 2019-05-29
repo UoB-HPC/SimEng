@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Architecture.hh"
+#include "../MemoryInterface.hh"
 #include "PipelineBuffer.hh"
 
 namespace simeng {
@@ -12,8 +13,8 @@ class FetchUnit {
  public:
   /** Construct a fetch unit with a reference to an output buffer, the ISA, and
    * the current branch predictor, and information on the instruction memory. */
-  FetchUnit(PipelineBuffer<MacroOp>& output, const char* insnPtr,
-            unsigned int programByteLength, uint64_t entryPoint,
+  FetchUnit(PipelineBuffer<MacroOp>& output, MemoryInterface& instructionMemory,
+            uint64_t programByteLength, uint64_t entryPoint,
             const Architecture& isa, BranchPredictor& branchPredictor);
 
   /** Tick the fetch unit. Retrieves and pre-decodes the instruction at the
@@ -27,6 +28,9 @@ class FetchUnit {
   /** Update the program counter to the specified address. */
   void updatePC(uint64_t address);
 
+  /** Request instructions at the current program counter for a future cycle. */
+  void requestFromPC();
+
   /** Retrieve the number of cycles fetch terminated early due to a predicted
    * branch. */
   uint64_t getBranchStalls() const;
@@ -38,10 +42,11 @@ class FetchUnit {
   /** The current program counter. */
   uint64_t pc_ = 0;
 
-  /** Pointer to the start of instruction memory. */
-  const char* insnPtr_;
+  /** An interface to the instruction memory. */
+  MemoryInterface& instructionMemory_;
+
   /** The length of the available instruction memory. */
-  unsigned int programByteLength_;
+  uint64_t programByteLength_;
 
   /** Reference to the currently used ISA. */
   const Architecture& isa_;

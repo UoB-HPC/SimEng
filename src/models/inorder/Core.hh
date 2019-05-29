@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 
+#include "../../MemoryInterface.hh"
 #include "../../pipeline/DecodeUnit.hh"
 #include "../../pipeline/ExecuteUnit.hh"
 #include "../../pipeline/FetchUnit.hh"
@@ -20,8 +21,9 @@ class Core : public simeng::Core {
   /** Construct a core model, providing an ISA and branch predictor to use,
    * along with a pointer and size of instruction memory, and a pointer to
    * process memory. */
-  Core(const span<char> processMemory, uint64_t entryPoint,
-       const Architecture& isa, BranchPredictor& branchPredictor);
+  Core(MemoryInterface& instructionMemory, const span<char> processMemory,
+       uint64_t entryPoint, const Architecture& isa,
+       BranchPredictor& branchPredictor);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the

@@ -29,8 +29,9 @@ const std::vector<std::vector<uint16_t>> portArrangement = {
 const unsigned int executionUnitCount = portArrangement.size();
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
-Core::Core(const span<char> processMemory, uint64_t entryPoint,
-           const Architecture& isa, BranchPredictor& branchPredictor,
+Core::Core(MemoryInterface& instructionMemory, const span<char> processMemory,
+           uint64_t entryPoint, const Architecture& isa,
+           BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator)
     : isa_(isa),
       registerFileSet_(physicalRegisterStructures),
@@ -46,8 +47,8 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
       renameToDispatchBuffer_(frontendWidth, nullptr),
       issuePorts_(executionUnitCount, {1, nullptr}),
       completionSlots_(executionUnitCount, {1, nullptr}),
-      fetchUnit_(fetchToDecodeBuffer_, processMemory.data(),
-                 processMemory.size(), entryPoint, isa, branchPredictor),
+      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemory.size(),
+                 entryPoint, isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
@@ -112,10 +113,12 @@ void Core::tick() {
 
   if (exceptionGenerated_) {
     handleException();
+    fetchUnit_.requestFromPC();
     return;
   }
 
   flushIfNeeded();
+  fetchUnit_.requestFromPC();
 }
 
 void Core::flushIfNeeded() {

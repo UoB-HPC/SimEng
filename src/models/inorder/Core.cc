@@ -7,8 +7,9 @@ namespace models {
 namespace inorder {
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
-Core::Core(const span<char> processMemory, uint64_t entryPoint,
-           const Architecture& isa, BranchPredictor& branchPredictor)
+Core::Core(MemoryInterface& instructionMemory, const span<char> processMemory,
+           uint64_t entryPoint, const Architecture& isa,
+           BranchPredictor& branchPredictor)
     : processMemory_(processMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
@@ -16,8 +17,8 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
-      fetchUnit_(fetchToDecodeBuffer_, processMemory.data(),
-                 processMemory.size(), entryPoint, isa, branchPredictor),
+      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemory.size(),
+                 entryPoint, isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
                   branchPredictor),
       executeUnit_(
@@ -65,6 +66,7 @@ void Core::tick() {
 
   if (exceptionGenerated_) {
     handleException();
+    fetchUnit_.requestFromPC();
     return;
   }
 
@@ -89,6 +91,8 @@ void Core::tick() {
 
     flushes_++;
   }
+
+  fetchUnit_.requestFromPC();
 }
 
 bool Core::hasHalted() const {
