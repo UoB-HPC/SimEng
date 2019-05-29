@@ -20,6 +20,7 @@ const unsigned int robSize = 16;
 const unsigned int rsSize = 16;
 const unsigned int loadQueueSize = 16;
 const unsigned int storeQueueSize = 8;
+const unsigned int fetchBlockAlignmentBits = 4;
 const unsigned int frontendWidth = 2;
 const unsigned int commitWidth = 2;
 const std::vector<std::vector<uint16_t>> portArrangement = {
@@ -48,7 +49,7 @@ Core::Core(MemoryInterface& instructionMemory, const span<char> processMemory,
       issuePorts_(executionUnitCount, {1, nullptr}),
       completionSlots_(executionUnitCount, {1, nullptr}),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemory.size(),
-                 entryPoint, isa, branchPredictor),
+                 entryPoint, fetchBlockAlignmentBits, isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,

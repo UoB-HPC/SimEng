@@ -15,7 +15,8 @@ class FetchUnit {
    * the current branch predictor, and information on the instruction memory. */
   FetchUnit(PipelineBuffer<MacroOp>& output, MemoryInterface& instructionMemory,
             uint64_t programByteLength, uint64_t entryPoint,
-            const Architecture& isa, BranchPredictor& branchPredictor);
+            uint8_t blockAlignmentBits, const Architecture& isa,
+            BranchPredictor& branchPredictor);
 
   /** Tick the fetch unit. Retrieves and pre-decodes the instruction at the
    * current program counter. */
@@ -61,6 +62,12 @@ class FetchUnit {
 
   /** The number of cycles fetch terminated early due to a predicted branch. */
   uint64_t branchStalls_ = 0;
+
+  /** The size of a fetch block, in bytes. */
+  uint8_t blockSize_;
+  /** A mask of the bits of the program counter to use for obtaining the block
+   * address to fetch. */
+  uint64_t blockMask_;
 };
 
 }  // namespace pipeline

@@ -20,13 +20,19 @@ namespace pipeline {
 class PipelineFetchUnitTest : public testing::Test {
  public:
   PipelineFetchUnitTest()
-      : output(1, {}), fetchUnit(output, memory, 1024, 0, isa, predictor) {}
+      : output(1, {}),
+        fetchBuffer({0, 4}, 0),
+        completedReads(&fetchBuffer, 1),
+        fetchUnit(output, memory, 1024, 0, 4, isa, predictor) {}
 
  protected:
   PipelineBuffer<MacroOp> output;
   MockMemoryInterface memory;
   MockArchitecture isa;
   MockBranchPredictor predictor;
+
+  std::pair<MemoryAccessTarget, RegisterValue> fetchBuffer;
+  span<std::pair<MemoryAccessTarget, RegisterValue>> completedReads;
 
   FetchUnit fetchUnit;
 };
@@ -37,6 +43,8 @@ class PipelineFetchUnitTest : public testing::Test {
 TEST_F(PipelineFetchUnitTest, Tick) {
   BranchPrediction prediction{true, 1};
   MacroOp macroOp = {nullptr};
+
+  ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
   EXPECT_CALL(predictor, predict(0)).WillOnce(Return(prediction));
 

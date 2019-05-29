@@ -8,13 +8,16 @@ namespace pipeline {
 FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
                      MemoryInterface& instructionMemory,
                      uint64_t programByteLength, uint64_t entryPoint,
-                     const Architecture& isa, BranchPredictor& branchPredictor)
+                     uint8_t blockAlignmentBits, const Architecture& isa,
+                     BranchPredictor& branchPredictor)
     : output_(output),
       pc_(entryPoint),
       instructionMemory_(instructionMemory),
       programByteLength_(programByteLength),
       isa_(isa),
-      branchPredictor_(branchPredictor) {
+      branchPredictor_(branchPredictor),
+      blockSize_(1 << blockAlignmentBits),
+      blockMask_(~(blockSize_ - 1)) {
   requestFromPC();
 };
 
@@ -29,9 +32,10 @@ void FetchUnit::tick() {
 
   // Find fetched memory that matches the current PC
   const auto& fetched = instructionMemory_.getCompletedReads();
+  const uint64_t blockAddress = pc_ & blockMask_;
   size_t fetchIndex;
   for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
-    if (fetched[fetchIndex].first.address == pc_) {
+    if (fetched[fetchIndex].first.address == blockAddress) {
       break;
     }
   }
@@ -42,14 +46,13 @@ void FetchUnit::tick() {
 
   // Get a pointer to the fetched data
   const char* buffer = fetched[fetchIndex].second.getAsVector<char>();
-  const uint8_t bufferSize = fetched[fetchIndex].first.size;
-  uint8_t bufferOffset = 0;
+  uint8_t bufferOffset = pc_ - blockAddress;
 
   auto outputSlots = output_.getTailSlots();
   for (size_t slot = 0; slot < output_.getWidth(); slot++) {
     auto& macroOp = outputSlots[slot];
 
-    uint8_t availableBytes = bufferSize - bufferOffset;
+    uint8_t availableBytes = blockSize_ - bufferOffset;
 
     auto prediction = branchPredictor_.predict(pc_);
     auto bytesRead = isa_.predecode(buffer + bufferOffset, availableBytes, pc_,
@@ -84,7 +87,7 @@ void FetchUnit::tick() {
     }
 
     // Too few bytes remaining in buffer to continue
-    if (bufferOffset == bufferSize) {
+    if (bufferOffset == blockSize_) {
       break;
     }
   }
@@ -99,7 +102,10 @@ void FetchUnit::updatePC(uint64_t address) {
   hasHalted_ = (pc_ >= programByteLength_);
 }
 
-void FetchUnit::requestFromPC() { instructionMemory_.requestRead({pc_, 4}); }
+void FetchUnit::requestFromPC() {
+  uint64_t blockAddress = pc_ & blockMask_;
+  instructionMemory_.requestRead({blockAddress, blockSize_});
+}
 
 uint64_t FetchUnit::getBranchStalls() const { return branchStalls_; }
 
