@@ -6,6 +6,9 @@ namespace simeng {
 namespace models {
 namespace inorder {
 
+// TODO: Replace with config options
+const unsigned int fetchBlockAlignmentBits = 4;  // 2^4 = 16 bytes
+
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(MemoryInterface& instructionMemory, const span<char> processMemory,
            uint64_t entryPoint, const Architecture& isa,
@@ -18,7 +21,7 @@ Core::Core(MemoryInterface& instructionMemory, const span<char> processMemory,
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemory.size(),
-                 entryPoint, isa, branchPredictor),
+                 entryPoint, fetchBlockAlignmentBits, isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
                   branchPredictor),
       executeUnit_(
