@@ -1,5 +1,6 @@
 #include "../MockArchitecture.hh"
 #include "../MockBranchPredictor.hh"
+#include "../MockMemoryInterface.hh"
 #include "Architecture.hh"
 #include "Instruction.hh"
 #include "gmock/gmock.h"
@@ -19,10 +20,11 @@ namespace pipeline {
 class PipelineFetchUnitTest : public testing::Test {
  public:
   PipelineFetchUnitTest()
-      : output(1, {}), fetchUnit(output, nullptr, 1024, 0, isa, predictor) {}
+      : output(1, {}), fetchUnit(output, memory, 1024, 0, isa, predictor) {}
 
  protected:
   PipelineBuffer<MacroOp> output;
+  MockMemoryInterface memory;
   MockArchitecture isa;
   MockBranchPredictor predictor;
 

@@ -2,6 +2,7 @@
 
 #include "../../Core.hh"
 
+#include "../../MemoryInterface.hh"
 #include "../../pipeline/DecodeUnit.hh"
 #include "../../pipeline/DispatchIssueUnit.hh"
 #include "../../pipeline/ExecuteUnit.hh"
@@ -25,8 +26,9 @@ class Core : public simeng::Core {
  public:
   /** Construct a core model, providing the process memory, and an ISA, branch
    * predictor, and port allocator to use. */
-  Core(const span<char> processMemory, uint64_t entryPoint,
-       const Architecture& isa, BranchPredictor& branchPredictor,
+  Core(MemoryInterface& instructionMemory, const span<char> processMemory,
+       uint64_t entryPoint, const Architecture& isa,
+       BranchPredictor& branchPredictor,
        pipeline::PortAllocator& portAllocator);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
