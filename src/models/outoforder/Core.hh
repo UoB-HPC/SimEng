@@ -72,12 +72,6 @@ class Core : public simeng::Core {
   /** The process memory. */
   span<char> processMemory_;
 
-  /** The core's load/store queue. */
-  pipeline::LoadStoreQueue loadStoreQueue_;
-
-  /** The core's reorder buffer. */
-  pipeline::ReorderBuffer reorderBuffer_;
-
   /** The buffer between fetch and decode. */
   pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
 
@@ -96,6 +90,12 @@ class Core : public simeng::Core {
    */
   std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
       completionSlots_;
+
+  /** The core's load/store queue. */
+  pipeline::LoadStoreQueue loadStoreQueue_;
+
+  /** The core's reorder buffer. */
+  pipeline::ReorderBuffer reorderBuffer_;
 
   /** The fetch unit; fetches instructions from memory. */
   pipeline::FetchUnit fetchUnit_;

@@ -27,7 +27,7 @@ Core::Core(MemoryInterface& instructionMemory, const span<char> processMemory,
       executeUnit_(
           decodeToExecuteBuffer_, completionSlots_[0],
           [this](auto regs, auto values) { forwardOperands(regs, values); },
-          [this](auto instruction) { loadData(instruction); },
+          [this](auto instruction) { handleLoad(instruction); },
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor),
@@ -258,6 +258,16 @@ void Core::applyStateChange(const ProcessStateChange& change) {
            "Attempted to store outside memory limit");
     memcpy(address, data.getAsVector<char>(), request.second);
   }
+}
+
+void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
+  loadData(instruction);
+  instruction->execute();
+
+  forwardOperands(instruction->getDestinationRegisters(),
+                  instruction->getResults());
+  // Manually add the instruction to the writeback input buffer
+  completionSlots_[0].getTailSlots()[0] = instruction;
 }
 
 }  // namespace inorder
