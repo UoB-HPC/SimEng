@@ -15,10 +15,17 @@ const uint8_t MAX_LOADS = 32;
 const uint8_t MAX_STORES = 32;
 const uint8_t MAX_COMBINED = 64;
 
+class MockForwardOperandsHandler {
+ public:
+  MOCK_METHOD2(forwardOperands,
+               void(const span<Register>, const span<RegisterValue>));
+};
+
 class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
  public:
   LoadStoreQueueTest()
-      : addresses({{0, 1}}),
+      : completionSlots({{1, nullptr}}),
+        addresses({{0, 1}}),
         addressesSpan({addresses.data(), addresses.size()}),
         data({RegisterValue(static_cast<uint8_t>(1))}),
         dataSpan({data.data(), data.size()}),
@@ -43,10 +50,20 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   LoadStoreQueue getQueue() {
     if (GetParam()) {
       // Combined queue
-      return LoadStoreQueue(MAX_COMBINED, memory);
+      return LoadStoreQueue(MAX_COMBINED, memory,
+                            {completionSlots.data(), completionSlots.size()},
+                            [this](auto registers, auto values) {
+                              forwardOperandsHandler.forwardOperands(registers,
+                                                                     values);
+                            });
     } else {
       // Split queue
-      return LoadStoreQueue(MAX_LOADS, MAX_STORES, memory);
+      return LoadStoreQueue(MAX_LOADS, MAX_STORES, memory,
+                            {completionSlots.data(), completionSlots.size()},
+                            [this](auto registers, auto values) {
+                              forwardOperandsHandler.forwardOperands(registers,
+                                                                     values);
+                            });
     }
   }
 
@@ -76,6 +93,9 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     return queue.commitStore(storeUopPtr);
   }
 
+  std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
+      completionSlots;
+
   std::vector<std::pair<uint64_t, uint8_t>> addresses;
   span<const std::pair<uint64_t, uint8_t>> addressesSpan;
 
@@ -89,11 +109,15 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
 
   std::shared_ptr<Instruction> loadUopPtr;
   std::shared_ptr<MockInstruction> storeUopPtr;
+
+  MockForwardOperandsHandler forwardOperandsHandler;
 };
 
 // Test that a split queue can be constructed correctly
 TEST_F(LoadStoreQueueTest, SplitQueue) {
-  LoadStoreQueue queue = LoadStoreQueue(MAX_LOADS, MAX_STORES, nullptr);
+  LoadStoreQueue queue =
+      LoadStoreQueue(MAX_LOADS, MAX_STORES, nullptr, {nullptr, 0},
+                     [](auto registers, auto values) {});
 
   EXPECT_EQ(queue.isCombined(), false);
   EXPECT_EQ(queue.getLoadQueueSpace(), MAX_LOADS);
@@ -103,7 +127,8 @@ TEST_F(LoadStoreQueueTest, SplitQueue) {
 
 // Test that a combined queue can be constructed correctly
 TEST_F(LoadStoreQueueTest, CombinedQueue) {
-  LoadStoreQueue queue = LoadStoreQueue(MAX_COMBINED, nullptr);
+  LoadStoreQueue queue = LoadStoreQueue(MAX_COMBINED, nullptr, {nullptr, 0},
+                                        [](auto registers, auto values) {});
 
   EXPECT_EQ(queue.isCombined(), true);
   EXPECT_EQ(queue.getLoadQueueSpace(), MAX_COMBINED);

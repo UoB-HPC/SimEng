@@ -61,6 +61,9 @@ class Core : public simeng::Core {
   /** Apply changes to the process state. */
   void applyStateChange(const ProcessStateChange& change);
 
+  /** Handle requesting/execution of a load instruction. */
+  void handleLoad(const std::shared_ptr<Instruction>& instruction);
+
   /** The process memory. */
   const span<char> processMemory_;
 

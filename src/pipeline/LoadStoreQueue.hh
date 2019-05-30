@@ -1,7 +1,10 @@
 #pragma once
 
 #include <deque>
+#include <functional>
+#include <queue>
 #include "../Instruction.hh"
+#include "PipelineBuffer.hh"
 
 namespace simeng {
 namespace pipeline {
@@ -11,13 +14,21 @@ namespace pipeline {
 class LoadStoreQueue {
  public:
   /** Constructs a combined load/store queue model, simulating a shared queue
-   * for both load and store instructions. */
-  LoadStoreQueue(unsigned int maxCombinedSpace, char* memory);
+   * for both load and store instructions, supplying completion slots for loads
+   * and an operand forwarding handler. */
+  LoadStoreQueue(
+      unsigned int maxCombinedSpace, char* memory,
+      span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
+      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands);
 
   /** Constructs a split load/store queue model, simulating discrete queues for
-   * load and store instructions. */
-  LoadStoreQueue(unsigned int maxLoadQueueSpace,
-                 unsigned int maxStoreQueueSpace, char* memory);
+   * load and store instructions, supplying completion slots for loads and an
+   * operand forwarding handler. */
+  LoadStoreQueue(
+      unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
+      char* memory,
+      span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
+      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands);
 
   /** Retrieve the available space for load uops. For combined queue this is the
    * total remaining space. */
@@ -55,6 +66,9 @@ class LoadStoreQueue {
   /** Whether this is a combined load/store queue. */
   bool isCombined() const;
 
+  /** Process received load data and send any completed loads for writeback. */
+  void tick();
+
   /** Retrieve the load instruction associated with the most recently discovered
    * memory order violation. */
   std::shared_ptr<Instruction> getViolatingLoad() const;
@@ -66,8 +80,14 @@ class LoadStoreQueue {
   /** The store queue: holds in-flight store instructions. */
   std::deque<std::shared_ptr<Instruction>> storeQueue_;
 
-  /** The maximum number of loads that can be in-flight. Undefined if this is a
-   * combined queue. */
+  /** Slots to write completed load instructions into for writeback. */
+  span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots_;
+
+  /** A function handler to call to forward the results of a completed load. */
+  std::function<void(span<Register>, span<RegisterValue>)> forwardOperands_;
+
+  /** The maximum number of loads that can be in-flight. Undefined if this
+   * is a combined queue. */
   unsigned int maxLoadQueueSpace_;
 
   /** The maximum number of stores that can be in-flight. Undefined if this is a
@@ -96,6 +116,9 @@ class LoadStoreQueue {
   /** The load instruction associated with the most recently discovered memory
    * order violation. */
   std::shared_ptr<Instruction> violatingLoad_ = nullptr;
+
+  /** A queue of completed loads ready for writeback. */
+  std::queue<std::shared_ptr<Instruction>> completedLoads_;
 };
 
 }  // namespace pipeline

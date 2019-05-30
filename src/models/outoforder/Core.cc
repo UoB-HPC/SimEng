@@ -28,6 +28,7 @@ const std::vector<std::vector<uint16_t>> portArrangement = {
     {A64InstructionGroups::ARITHMETIC},
     {A64InstructionGroups::BRANCH}};
 const unsigned int executionUnitCount = portArrangement.size();
+const unsigned int lsqCompletionSlots = 1;
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(MemoryInterface& instructionMemory, const span<char> processMemory,
@@ -40,14 +41,19 @@ Core::Core(MemoryInterface& instructionMemory, const span<char> processMemory,
                           physicalRegisterQuantities),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       processMemory_(processMemory),
-      loadStoreQueue_(loadQueueSize, storeQueueSize, processMemory.data()),
-      reorderBuffer_(robSize, registerAliasTable_, loadStoreQueue_,
-                     [this](auto instruction) { raiseException(instruction); }),
       fetchToDecodeBuffer_(frontendWidth, {}),
       decodeToRenameBuffer_(frontendWidth, nullptr),
       renameToDispatchBuffer_(frontendWidth, nullptr),
       issuePorts_(executionUnitCount, {1, nullptr}),
-      completionSlots_(executionUnitCount, {1, nullptr}),
+      completionSlots_(executionUnitCount + lsqCompletionSlots, {1, nullptr}),
+      loadStoreQueue_(
+          loadQueueSize, storeQueueSize, processMemory.data(),
+          {completionSlots_.data() + executionUnitCount, lsqCompletionSlots},
+          [this](auto regs, auto values) {
+            dispatchIssueUnit_.forwardOperands(regs, values);
+          }),
+      reorderBuffer_(robSize, registerAliasTable_, loadStoreQueue_,
+                     [this](auto instruction) { raiseException(instruction); }),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemory.size(),
                  entryPoint, fetchBlockAlignmentBits, isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
@@ -92,6 +98,8 @@ void Core::tick() {
     // Tick each execution unit
     eu.tick();
   }
+
+  loadStoreQueue_.tick();
 
   // Late tick for the dispatch/issue unit to issue newly ready uops
   dispatchIssueUnit_.issue();

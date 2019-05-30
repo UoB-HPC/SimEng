@@ -14,12 +14,24 @@ bool requestsOverlap(std::pair<uint64_t, uint8_t> a,
   return !(a.first + a.second <= b.first || b.first + b.second <= a.first);
 }
 
-LoadStoreQueue::LoadStoreQueue(unsigned int maxCombinedSpace, char* memory)
-    : maxCombinedSpace_(maxCombinedSpace), combined_(true), memory_(memory){};
+LoadStoreQueue::LoadStoreQueue(
+    unsigned int maxCombinedSpace, char* memory,
+    span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
+    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands)
+    : completionSlots_(completionSlots),
+      forwardOperands_(forwardOperands),
+      maxCombinedSpace_(maxCombinedSpace),
+      combined_(true),
+      memory_(memory){};
 
-LoadStoreQueue::LoadStoreQueue(unsigned int maxLoadQueueSpace,
-                               unsigned int maxStoreQueueSpace, char* memory)
-    : maxLoadQueueSpace_(maxLoadQueueSpace),
+LoadStoreQueue::LoadStoreQueue(
+    unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
+    char* memory,
+    span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
+    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands)
+    : completionSlots_(completionSlots),
+      forwardOperands_(forwardOperands),
+      maxLoadQueueSpace_(maxLoadQueueSpace),
       maxStoreQueueSpace_(maxStoreQueueSpace),
       combined_(false),
       memory_(memory){};
@@ -65,6 +77,8 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   // TODO: Defer data read
+
+  // Temporary: immediately complete the load
   const auto& addresses = insn->getGeneratedAddresses();
   for (auto const& request : addresses) {
     const char* address = memory_ + request.first;
@@ -73,6 +87,8 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
 
     insn->supplyData(request.first, data);
   }
+  insn->execute();
+  completedLoads_.push(insn);
 }
 
 bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
@@ -145,6 +161,22 @@ void LoadStoreQueue::purgeFlushed() {
       it = storeQueue_.erase(it);
     } else {
       it++;
+    }
+  }
+}
+
+void LoadStoreQueue::tick() {
+  if (completedLoads_.size() > 0) {
+    // Pop from the front of the completed loads queue and send to writeback
+    size_t count = 0;
+    while (completedLoads_.size() > 0 && count < completionSlots_.size()) {
+      const auto& insn = completedLoads_.front();
+      completionSlots_[count].getTailSlots()[0] = insn;
+
+      // Forward the results
+      forwardOperands_(insn->getDestinationRegisters(), insn->getResults());
+
+      completedLoads_.pop();
     }
   }
 }
