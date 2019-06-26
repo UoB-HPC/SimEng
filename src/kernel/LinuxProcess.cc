@@ -3,6 +3,17 @@
 namespace simeng {
 namespace kernel {
 
+/** Align `address` to an `alignTo`-byte boundary by rounding up to the nearest
+ * multiple. */
+uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
+  auto remainder = value % boundary;
+  if (remainder == 0) {
+    return value;
+  }
+
+  return value + (boundary - remainder);
+}
+
 LinuxProcess::LinuxProcess(std::string path) {
   // Parse ELF file
   Elf elf(path);
@@ -15,7 +26,8 @@ LinuxProcess::LinuxProcess(std::string path) {
 
   span<char> elfProcessImage = elf.getProcessImage();
 
-  heapStart_ = elfProcessImage.size();
+  // Align heap start to a 16-byte boundary
+  heapStart_ = alignToBoundary(elfProcessImage.size(), 16);
 
   // Calculate process image size, including heap + stack
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
@@ -29,7 +41,10 @@ LinuxProcess::LinuxProcess(std::string path) {
 
 LinuxProcess::LinuxProcess(span<char> instructions) {
   isValid_ = true;
-  heapStart_ = instructions.size();
+
+  // Align heap start to a 16-byte boundary
+  heapStart_ = alignToBoundary(instructions.size(), 16);
+
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
   processImage_ = new char[size_];
 
@@ -75,19 +90,15 @@ void LinuxProcess::createStack() {
                                   0};
 
   size_t stackFrameSize = sizeof(initialStackFrame);
-  uint64_t stackOffset = stackFrameSize;
 
   // Round the stack offset up to the nearest multiple of 16, as the stack
   // pointer must be aligned to a 16-byte interval on some architectures
-  uint64_t remainder = stackFrameSize % 16;
-  if (remainder != 0) {
-    stackOffset += remainder;
-  }
+  uint64_t stackOffset = alignToBoundary(stackFrameSize, 16);
 
   stackPointer_ = getStackStart() - stackOffset;
 
   char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame);
-  std::copy(stackFrameBytes, stackFrameBytes + sizeof(stackFrameBytes),
+  std::copy(stackFrameBytes, stackFrameBytes + stackFrameSize,
             processImage_ + stackPointer_);
 }
 
