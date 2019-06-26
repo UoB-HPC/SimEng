@@ -60,6 +60,7 @@ class A64Architecture : public Architecture {
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;
 
+  /** A reference to a Linux kernel object to forward syscalls to. */
   kernel::Linux& linux_;
 };
 
