@@ -108,6 +108,7 @@ void Core::tick() {
 
   if (exceptionGenerated_) {
     handleException();
+    return;
   }
 
   flushIfNeeded();
