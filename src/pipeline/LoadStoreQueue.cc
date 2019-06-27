@@ -95,7 +95,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   for (const auto& load : loadQueue_) {
     // Find all loads ready to commit
     // TODO: Partially ready loads also need disambiguation
-    if (load->canCommit()) {
+    if (load->hasExecuted()) {
       const auto& loadedAddresses = load->getGeneratedAddresses();
       // Iterate over store addresses
       for (const auto& storeReq : addresses) {

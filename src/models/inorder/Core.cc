@@ -118,7 +118,7 @@ void Core::handleException() {
   exceptionGenerated_ = false;
 
   auto result = isa_.handleException(exceptionGeneratingInstruction_,
-                                     registerFileSet_, processMemory.data());
+                                     registerFileSet_, processMemory_.data());
 
   if (result.fatal) {
     hasHalted_ = true;
@@ -170,7 +170,7 @@ void Core::forwardOperands(const span<Register>& registers,
     return;
   }
 
-    auto sourceRegisters = uop->getOperandRegisters();
+  auto sourceRegisters = uop->getOperandRegisters();
   for (size_t i = 0; i < registers.size(); i++) {
     // Check each forwarded register vs source operands and supply for each
     // match
