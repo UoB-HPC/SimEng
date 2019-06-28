@@ -21,8 +21,8 @@ class Core : public simeng::Core {
   /** Construct a core model, providing an ISA and branch predictor to use,
    * along with a pointer and size of instruction memory, and a pointer to
    * process memory. */
-  Core(MemoryInterface& instructionMemory, const span<char> processMemory,
-       uint64_t entryPoint, const Architecture& isa,
+  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+       uint64_t processMemorySize, uint64_t entryPoint, const Architecture& isa,
        BranchPredictor& branchPredictor);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
@@ -65,7 +65,8 @@ class Core : public simeng::Core {
   void handleLoad(const std::shared_ptr<Instruction>& instruction);
 
   /** The process memory. */
-  const span<char> processMemory_;
+  MemoryInterface& dataMemory_;
+  // const span<char> processMemory_;
 
   /** A reference to the core's architecture. */
   const Architecture& isa_;

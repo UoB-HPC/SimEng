@@ -201,24 +201,6 @@ void Core::applyStateChange(const ProcessStateChange& change) {
   }
 }
 
-// RegisterValue Core::readMemory(
-//     const std::pair<uint64_t, uint8_t>& request) const {
-//   assert(request.first + request.second <= programByteLength_ &&
-//          "Attempted to load from outside memory limit");
-
-//   // Copy the data at the requested memory address into a RegisterValue
-//   const char* address = memory_ + request.first;
-//   return simeng::RegisterValue(address, request.second);
-// }
-
-// void Core::writeMemory(const std::pair<uint64_t, uint8_t>& request,
-//                        const RegisterValue& data) {
-//   auto address = memory_ + request.first;
-//   assert(request.first + request.second <= programByteLength_ &&
-//          "Attempted to store outside memory limit");
-//   memcpy(address, data.getAsVector<char>(), request.second);
-// }
-
 bool Core::hasHalted() const { return hasHalted_; }
 
 std::map<std::string, std::string> Core::getStats() const { return {}; };

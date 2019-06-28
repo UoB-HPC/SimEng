@@ -160,7 +160,6 @@ void A64ExceptionHandler::readLinkAt(span<char> path) {
     fatal();
   }
 
-
   const auto dirfd = registerFileSet_.get(R0).get<int64_t>();
   const auto bufAddress = registerFileSet_.get(R2).get<uint64_t>();
   const auto bufSize = registerFileSet_.get(R3).get<uint64_t>();
@@ -193,8 +192,8 @@ bool A64ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
   uint64_t nextInstructionAddress = instruction_.getInstructionAddress() + 4;
 
   std::cout << "Resuming from 0x" << std::hex << nextInstructionAddress
-              << std::dec << "\n"
-              << std::endl;
+            << std::dec << "\n"
+            << std::endl;
 
   result_ = {false, nextInstructionAddress, stateChange};
   return true;

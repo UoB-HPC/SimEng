@@ -200,8 +200,8 @@ int main(int argc, char** argv) {
     case SimulationMode::InOrderPipelined: {
       modeString = "In-Order Pipelined";
       core = std::make_unique<simeng::models::inorder::Core>(
-          instructionMemory, processMemoryContainer, entryPoint, arch,
-          predictor);
+          instructionMemory, dataMemory, processMemoryContainer.size(),
+          entryPoint, arch, predictor);
       break;
     }
     default: {
