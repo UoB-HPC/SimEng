@@ -78,6 +78,9 @@ class Instruction {
   /** Retrieve supplied memory data. */
   virtual span<const RegisterValue> getData() const = 0;
 
+  /** Check whether all required data has been supplied. */
+  virtual bool hasAllData() const = 0;
+
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the
    * instruction. Returns a {mispredicted, target} tuple representing whether

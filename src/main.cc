@@ -193,8 +193,8 @@ int main(int argc, char** argv) {
     case SimulationMode::OutOfOrder: {
       modeString = "Out-of-Order";
       core = std::make_unique<simeng::models::outoforder::Core>(
-          instructionMemory, processMemoryContainer, entryPoint, arch,
-          predictor, portAllocator);
+          instructionMemory, dataMemory, processMemoryContainer.size(),
+          entryPoint, arch, predictor, portAllocator);
       break;
     }
     case SimulationMode::InOrderPipelined: {

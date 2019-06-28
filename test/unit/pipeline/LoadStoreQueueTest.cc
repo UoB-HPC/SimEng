@@ -1,10 +1,13 @@
 #include "../MockInstruction.hh"
+#include "../MockMemoryInterface.hh"
 #include "Instruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "pipeline/LoadStoreQueue.hh"
 
+using ::testing::AllOf;
 using ::testing::AtLeast;
+using ::testing::Field;
 using ::testing::Property;
 using ::testing::Return;
 
@@ -50,7 +53,7 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   LoadStoreQueue getQueue() {
     if (GetParam()) {
       // Combined queue
-      return LoadStoreQueue(MAX_COMBINED, memory,
+      return LoadStoreQueue(MAX_COMBINED, dataMemory,
                             {completionSlots.data(), completionSlots.size()},
                             [this](auto registers, auto values) {
                               forwardOperandsHandler.forwardOperands(registers,
@@ -58,7 +61,7 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
                             });
     } else {
       // Split queue
-      return LoadStoreQueue(MAX_LOADS, MAX_STORES, memory,
+      return LoadStoreQueue(MAX_LOADS, MAX_STORES, dataMemory,
                             {completionSlots.data(), completionSlots.size()},
                             [this](auto registers, auto values) {
                               forwardOperandsHandler.forwardOperands(registers,
@@ -111,12 +114,14 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   std::shared_ptr<MockInstruction> storeUopPtr;
 
   MockForwardOperandsHandler forwardOperandsHandler;
+
+  MockMemoryInterface dataMemory;
 };
 
 // Test that a split queue can be constructed correctly
 TEST_F(LoadStoreQueueTest, SplitQueue) {
   LoadStoreQueue queue =
-      LoadStoreQueue(MAX_LOADS, MAX_STORES, nullptr, {nullptr, 0},
+      LoadStoreQueue(MAX_LOADS, MAX_STORES, dataMemory, {nullptr, 0},
                      [](auto registers, auto values) {});
 
   EXPECT_EQ(queue.isCombined(), false);
@@ -127,7 +132,7 @@ TEST_F(LoadStoreQueueTest, SplitQueue) {
 
 // Test that a combined queue can be constructed correctly
 TEST_F(LoadStoreQueueTest, CombinedQueue) {
-  LoadStoreQueue queue = LoadStoreQueue(MAX_COMBINED, nullptr, {nullptr, 0},
+  LoadStoreQueue queue = LoadStoreQueue(MAX_COMBINED, dataMemory, {nullptr, 0},
                                         [](auto registers, auto values) {});
 
   EXPECT_EQ(queue.isCombined(), true);
@@ -205,20 +210,37 @@ TEST_P(LoadStoreQueueTest, PurgeFlushedStore) {
 // Tests that a queue can perform a load
 TEST_P(LoadStoreQueueTest, Load) {
   auto queue = getQueue();
-  memory[0] = 1;
+
+  std::pair<MemoryAccessTarget, RegisterValue> completedRead = {
+      {addresses[0].first, addresses[0].second}, data[0]};
+  span<std::pair<MemoryAccessTarget, RegisterValue>> completedReads = {
+      &completedRead, 1};
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses()).Times(AtLeast(1));
 
   queue.addLoad(loadUopPtr);
 
-  // Check that the request reads the correct value from memory (a single byte
-  // of value `memory[0]`)
+  // Check that a read request is made to the memory interface
+  EXPECT_CALL(
+      dataMemory,
+      requestRead(AllOf(Field(&MemoryAccessTarget::address, addresses[0].first),
+                        Field(&MemoryAccessTarget::size, addresses[0].second))))
+      .Times(1);
+
+  // Expect a check against finished reads and return the result
+  EXPECT_CALL(dataMemory, getCompletedReads())
+      .WillRepeatedly(Return(completedReads));
+
+  // Check that the LSQ supplies the right data to the instruction
   // TODO: Replace with check for call over memory interface in future?
   EXPECT_CALL(*loadUop,
-              supplyData(0, Property(&RegisterValue::get<uint8_t>, memory[0])))
+              supplyData(0, Property(&RegisterValue::get<uint8_t>, data[0])))
       .Times(1);
 
   queue.startLoad(loadUopPtr);
+
+  // Tick the queue to complete the load
+  queue.tick();
 }
 
 // Tests that a queue can commit a load
@@ -245,10 +267,17 @@ TEST_P(LoadStoreQueueTest, Store) {
 
   queue.addStore(storeUopPtr);
   storeUopPtr->setCommitReady();
+
+  // Check that a write request is sent to the memory interface
+  EXPECT_CALL(dataMemory,
+              requestWrite(
+                  AllOf(Field(&MemoryAccessTarget::address, addresses[0].first),
+                        Field(&MemoryAccessTarget::size, addresses[0].second)),
+                  Property(&RegisterValue::get<uint8_t>, data[0])))
+      .Times(1);
+
   queue.commitStore(storeUopPtr);
 
-  // TODO: Replace with check for call over memory interface in future?
-  EXPECT_EQ(memory[0], 1);
   // Check the store was removed
   EXPECT_EQ(queue.getStoreQueueSpace(), initialStoreSpace);
 }
