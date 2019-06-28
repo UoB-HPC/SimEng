@@ -46,13 +46,6 @@ class Core : public simeng::Core {
   /** Apply changes to the process state. */
   void applyStateChange(const ProcessStateChange& change);
 
-  /** Read a value from memory. */
-  RegisterValue readMemory(const std::pair<uint64_t, uint8_t>& request) const;
-
-  /** Write a value to memory. */
-  void writeMemory(const std::pair<uint64_t, uint8_t>& request,
-                   const RegisterValue& data);
-
   /** A memory interface to access instructions. */
   MemoryInterface& instructionMemory_;
 

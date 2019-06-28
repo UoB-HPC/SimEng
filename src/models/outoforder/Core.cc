@@ -239,9 +239,8 @@ void Core::handleException() {
   loadStoreQueue_.purgeFlushed();
 
   exceptionGenerated_ = false;
-  // exceptionHandler_ =
-  //     isa_.handleException(exceptionGeneratingInstruction_,
-  //                          mappedRegisterFileSet_, processMemory_.data());
+  exceptionHandler_ = isa_.handleException(exceptionGeneratingInstruction_,
+                                           mappedRegisterFileSet_, dataMemory_);
   processExceptionHandler();
 }
 

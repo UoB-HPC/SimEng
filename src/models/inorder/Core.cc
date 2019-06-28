@@ -10,17 +10,17 @@ namespace inorder {
 const unsigned int fetchBlockAlignmentBits = 4;  // 2^4 = 16 bytes
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
-Core::Core(MemoryInterface& instructionMemory, const span<char> processMemory,
-           uint64_t entryPoint, const Architecture& isa,
-           BranchPredictor& branchPredictor)
-    : processMemory_(processMemory),
+Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+           uint64_t processMemorySize, uint64_t entryPoint,
+           const Architecture& isa, BranchPredictor& branchPredictor)
+    : dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
-      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemory.size(),
+      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
                  entryPoint, fetchBlockAlignmentBits, isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
                   branchPredictor),
@@ -53,6 +53,9 @@ void Core::tick() {
   fetchUnit_.tick();
   decodeUnit_.tick();
   executeUnit_.tick();
+
+  // Wipe any data read responses, as they will have been handled by this point
+  dataMemory_.clearCompletedReads();
 
   // Read pending registers for ready-to-execute uop; must happen after execute
   // to allow operand forwarding to take place first
@@ -130,9 +133,9 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 void Core::handleException() {
   exceptionGenerated_ = false;
 
-  // exceptionHandler_ = isa_.handleException(exceptionGeneratingInstruction_,
-  //                                          architecturalRegisterFileSet_,
-  //                                          dataMemory_.data();
+  exceptionHandler_ =
+      isa_.handleException(exceptionGeneratingInstruction_,
+                           architecturalRegisterFileSet_, dataMemory_);
 
   processExceptionHandler();
 
@@ -168,13 +171,13 @@ void Core::processExceptionHandler() {
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   const auto& addresses = instruction->getGeneratedAddresses();
   for (const auto& request : addresses) {
-    // Copy the data at the requested memory address into a
-    // RegisterValue
+    dataMemory_.requestRead({request.first, request.second});
+  }
 
-    const char* address = processMemory_.data() + request.first;
-    auto data = RegisterValue(address, request.second);
-
-    instruction->supplyData(request.first, data);
+  // NOTE: This model only supports zero-cycle data memory models, and will not
+  // work unless data requests are handled synchronously.
+  for (const auto& response : dataMemory_.getCompletedReads()) {
+    instruction->supplyData(response.first.address, response.second);
   }
 }
 
@@ -184,9 +187,7 @@ void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
   for (size_t i = 0; i < addresses.size(); i++) {
     const auto& request = addresses[i];
 
-    // Copy data to memory
-    auto address = processMemory_.data() + request.first;
-    memcpy(address, data[i].getAsVector<char>(), request.second);
+    dataMemory_.requestWrite({request.first, request.second}, data[i]);
   }
 }
 
@@ -253,10 +254,7 @@ void Core::applyStateChange(const ProcessStateChange& change) {
     const auto& request = change.memoryAddresses[i];
     const auto& data = change.memoryAddressValues[i];
 
-    auto address = processMemory_.data() + request.first;
-    assert(request.first + request.second <= processMemory_.size() &&
-           "Attempted to store outside memory limit");
-    memcpy(address, data.getAsVector<char>(), request.second);
+    dataMemory_.requestWrite({request.first, request.second}, data);
   }
 }
 
