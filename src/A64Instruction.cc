@@ -85,8 +85,9 @@ void A64Instruction::supplyOperand(const Register& reg,
 
 void A64Instruction::supplyData(uint64_t address, const RegisterValue& data) {
   for (size_t i = 0; i < memoryAddresses.size(); i++) {
-    if (memoryAddresses[i].first == address) {
+    if (memoryAddresses[i].first == address && !memoryData[i]) {
       memoryData[i] = data;
+      dataPending_--;
       return;
     }
   }
@@ -95,6 +96,8 @@ void A64Instruction::supplyData(uint64_t address, const RegisterValue& data) {
 span<const RegisterValue> A64Instruction::getData() const {
   return {memoryData.data(), memoryData.size()};
 }
+
+bool A64Instruction::hasAllData() const { return (dataPending_ == 0); }
 
 bool A64Instruction::canExecute() const { return (operandsPending == 0); }
 
@@ -110,6 +113,7 @@ void A64Instruction::setMemoryAddresses(
     const std::initializer_list<std::pair<uint64_t, uint8_t>>& addresses) {
   memoryData = std::vector<RegisterValue>(addresses.size());
   memoryAddresses = addresses;
+  dataPending_ = addresses.size();
 }
 
 span<const std::pair<uint64_t, uint8_t>> A64Instruction::getGeneratedAddresses()

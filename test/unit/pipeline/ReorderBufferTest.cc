@@ -1,4 +1,5 @@
 #include "../MockInstruction.hh"
+#include "../MockMemoryInterface.hh"
 #include "Instruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -6,6 +7,11 @@
 #include "pipeline/RegisterAliasTable.hh"
 #include "pipeline/ReorderBuffer.hh"
 
+using ::testing::_;
+using ::testing::AllOf;
+using ::testing::ElementsAre;
+using ::testing::Field;
+using ::testing::Property;
 using ::testing::Return;
 
 namespace simeng {
@@ -21,7 +27,7 @@ class ReorderBufferTest : public testing::Test {
   ReorderBufferTest()
       : memory{},
         rat({{8, 32}}, {64}),
-        lsq(maxLSQLoads, maxLSQStores, memory, {nullptr, 0},
+        lsq(maxLSQLoads, maxLSQStores, dataMemory, {nullptr, 0},
             [](auto registers, auto values) {}),
         uop(new MockInstruction),
         uop2(new MockInstruction),
@@ -47,6 +53,8 @@ class ReorderBufferTest : public testing::Test {
 
   std::shared_ptr<Instruction> uopPtr;
   std::shared_ptr<MockInstruction> uopPtr2;
+
+  MockMemoryInterface dataMemory;
 
   ReorderBuffer reorderBuffer;
 };
@@ -163,11 +171,16 @@ TEST_F(ReorderBufferTest, CommitStore) {
   reorderBuffer.reserve(uopPtr);
 
   uopPtr->setCommitReady();
-  reorderBuffer.commit(1);
 
-  // Check that the correct value was written to memory
-  // TODO: Replace with check for a call over the memory interface in future?
-  EXPECT_EQ(memory[0], data[0].get<uint8_t>());
+  // Check that the correct value will be written to memory
+  EXPECT_CALL(dataMemory,
+              requestWrite(
+                  AllOf(Field(&MemoryAccessTarget::address, addresses[0].first),
+                        Field(&MemoryAccessTarget::size, addresses[0].second)),
+                  Property(&RegisterValue::get<uint8_t>, 1)))
+      .Times(1);
+
+  reorderBuffer.commit(1);
 
   // Check that the store was committed and removed from the LSQ
   EXPECT_EQ(lsq.getStoreQueueSpace(), maxLSQStores);

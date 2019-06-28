@@ -31,30 +31,30 @@ const unsigned int executionUnitCount = portArrangement.size();
 const unsigned int lsqCompletionSlots = 1;
 
 // TODO: Replace simple process memory space with memory hierarchy interface.
-Core::Core(MemoryInterface& instructionMemory, const span<char> processMemory,
-           uint64_t entryPoint, const Architecture& isa,
-           BranchPredictor& branchPredictor,
+Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+           uint64_t processMemorySize, uint64_t entryPoint,
+           const Architecture& isa, BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator)
     : isa_(isa),
       registerFileSet_(physicalRegisterStructures),
       registerAliasTable_(isa.getRegisterFileStructures(),
                           physicalRegisterQuantities),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
-      processMemory_(processMemory),
+      dataMemory_(dataMemory),
       fetchToDecodeBuffer_(frontendWidth, {}),
       decodeToRenameBuffer_(frontendWidth, nullptr),
       renameToDispatchBuffer_(frontendWidth, nullptr),
       issuePorts_(executionUnitCount, {1, nullptr}),
       completionSlots_(executionUnitCount + lsqCompletionSlots, {1, nullptr}),
       loadStoreQueue_(
-          loadQueueSize, storeQueueSize, processMemory.data(),
+          loadQueueSize, storeQueueSize, dataMemory,
           {completionSlots_.data() + executionUnitCount, lsqCompletionSlots},
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           }),
       reorderBuffer_(robSize, registerAliasTable_, loadStoreQueue_,
                      [this](auto instruction) { raiseException(instruction); }),
-      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemory.size(),
+      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
                  entryPoint, fetchBlockAlignmentBits, isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
@@ -280,10 +280,7 @@ void Core::applyStateChange(const ProcessStateChange& change) {
     const auto& request = change.memoryAddresses[i];
     const auto& data = change.memoryAddressValues[i];
 
-    auto address = processMemory_.data() + request.first;
-    assert(request.first + request.second <= processMemory_.size() &&
-           "Attempted to store outside memory limit");
-    memcpy(address, data.getAsVector<char>(), request.second);
+    dataMemory_.requestWrite({request.first, request.second}, data);
   }
 }
 

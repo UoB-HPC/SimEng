@@ -4,6 +4,7 @@
 #include <functional>
 #include <queue>
 #include "../Instruction.hh"
+#include "../MemoryInterface.hh"
 #include "PipelineBuffer.hh"
 
 namespace simeng {
@@ -17,7 +18,7 @@ class LoadStoreQueue {
    * for both load and store instructions, supplying completion slots for loads
    * and an operand forwarding handler. */
   LoadStoreQueue(
-      unsigned int maxCombinedSpace, char* memory,
+      unsigned int maxCombinedSpace, MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands);
 
@@ -26,7 +27,7 @@ class LoadStoreQueue {
    * operand forwarding handler. */
   LoadStoreQueue(
       unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
-      char* memory,
+      MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands);
 
@@ -111,7 +112,7 @@ class LoadStoreQueue {
   unsigned int getCombinedSpace() const;
 
   /** A pointer to process memory. */
-  char* memory_;
+  MemoryInterface& memory_;
 
   /** The load instruction associated with the most recently discovered memory
    * order violation. */

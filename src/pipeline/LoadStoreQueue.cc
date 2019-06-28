@@ -15,7 +15,7 @@ bool requestsOverlap(std::pair<uint64_t, uint8_t> a,
 }
 
 LoadStoreQueue::LoadStoreQueue(
-    unsigned int maxCombinedSpace, char* memory,
+    unsigned int maxCombinedSpace, MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands)
     : completionSlots_(completionSlots),
@@ -26,7 +26,7 @@ LoadStoreQueue::LoadStoreQueue(
 
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
-    char* memory,
+    MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands)
     : completionSlots_(completionSlots),
@@ -76,19 +76,10 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 }
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
-  // TODO: Defer data read
-
-  // Temporary: immediately complete the load
   const auto& addresses = insn->getGeneratedAddresses();
   for (auto const& request : addresses) {
-    const char* address = memory_ + request.first;
-    // Copy the data at the requested memory address into a RegisterValue
-    auto data = RegisterValue(address, request.second);
-
-    insn->supplyData(request.first, data);
+    memory_.requestRead({request.first, request.second});
   }
-  insn->execute();
-  completedLoads_.push(insn);
 }
 
 bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
@@ -102,10 +93,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   const auto& data = uop->getData();
   for (size_t i = 0; i < addresses.size(); i++) {
     const auto& request = addresses[i];
-
-    // Copy data to memory
-    const auto& address = memory_ + request.first;
-    memcpy(address, data[i].getAsVector<char>(), request.second);
+    memory_.requestWrite({request.first, request.second}, data[i]);
   }
 
   for (const auto& load : loadQueue_) {
@@ -166,6 +154,27 @@ void LoadStoreQueue::purgeFlushed() {
 }
 
 void LoadStoreQueue::tick() {
+  // Process completed read requests
+  for (const auto& response : memory_.getCompletedReads()) {
+    auto address = response.first.address;
+    const auto& data = response.second;
+    // TODO: Create a data structure to allow direct lookup of requests waiting
+    // on a read, rather than iterating over the queue (see DispatchIssueQueue's
+    // dependency matrix)
+    for (const auto& load : loadQueue_) {
+      // Ignore completed or not-yet-ready loads
+      if (!load->hasAllData()) {
+        load->supplyData(address, data);
+        if (load->hasAllData()) {
+          // This load has completed
+          load->execute();
+          completedLoads_.push(load);
+        }
+      }
+    }
+  }
+  memory_.clearCompletedReads();
+
   if (completedLoads_.size() > 0) {
     // Pop from the front of the completed loads queue and send to writeback
     size_t count = 0;

@@ -26,8 +26,8 @@ class Core : public simeng::Core {
  public:
   /** Construct a core model, providing the process memory, and an ISA, branch
    * predictor, and port allocator to use. */
-  Core(MemoryInterface& instructionMemory, const span<char> processMemory,
-       uint64_t entryPoint, const Architecture& isa,
+  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+       uint64_t processMemorySize, uint64_t entryPoint, const Architecture& isa,
        BranchPredictor& branchPredictor,
        pipeline::PortAllocator& portAllocator);
 
@@ -70,7 +70,7 @@ class Core : public simeng::Core {
   pipeline::MappedRegisterFileSet mappedRegisterFileSet_;
 
   /** The process memory. */
-  span<char> processMemory_;
+  MemoryInterface& dataMemory_;
 
   /** The buffer between fetch and decode. */
   pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
