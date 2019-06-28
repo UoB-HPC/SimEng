@@ -7,6 +7,7 @@ namespace kernel {
 
 /** A state container for a Linux process. */
 struct LinuxProcessState {
+  /** The path of the executable that created this process. */
   std::string path;
   /** The address of the start of the heap. */
   uint64_t startBrk;

@@ -493,7 +493,7 @@ void A64Instruction::execute() {
       auto y = shiftValue(operands[1].get<uint64_t>(),
                           metadata.operands[2].shift.type,
                           metadata.operands[2].shift.value);
-      results[0] = x | y;
+      results[0] = x ^ y;
       return;
     }
     case A64Opcode::AArch64_FADDv2f64: {  // fadd vd.2d, vn.2d, vm.2d
@@ -1010,7 +1010,7 @@ void A64Instruction::execute() {
     }
     case A64Opcode::AArch64_UMULHrr: {  // umulh xd, xn, xm
       auto x = operands[0].get<uint64_t>();
-      auto y = operands[0].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>();
       results[0] = mulhi(x, y);
       return;
     }
