@@ -129,7 +129,7 @@ ExceptionResult A64Architecture::handleException(
         // Slice the returned path into <256-byte chunks for writing
         const char* bufPtr = buffer;
         for (i = 0; i < bytesCopied; i += 256) {
-          auto size = std::min(bytesCopied - i, 256ul);
+          auto size = std::min<uint64_t>(bytesCopied - i, 256ul);
           stateChange.memoryAddresses.push_back({bufAddress + i, size});
           stateChange.memoryAddressValues.push_back(
               RegisterValue(bufPtr, size));
