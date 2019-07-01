@@ -61,9 +61,8 @@ Core::Core(const span<char> processMemory, uint64_t entryPoint,
         [this](auto regs, auto values) {
           dispatchIssueUnit_.forwardOperands(regs, values);
         },
-        [this](auto uop) { loadStoreQueue_.startLoad(uop); },
-        [this](auto uop) {}, [this](auto uop) { uop->setCommitReady(); },
-        branchPredictor);
+        [this](auto uop) { loadStoreQueue_.startLoad(uop); }, [](auto uop) {},
+        [](auto uop) { uop->setCommitReady(); }, branchPredictor);
   }
   // Query and apply initial state
   auto state = isa.getInitialState(processMemory);

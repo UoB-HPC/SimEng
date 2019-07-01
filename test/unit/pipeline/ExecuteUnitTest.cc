@@ -32,7 +32,7 @@ class PipelineExecuteUnitTest : public testing::Test {
             [this](auto regs, auto values) {
               executionHandlers.forwardOperands(regs, values);
             },
-            [this](auto uop) {}, [this](auto uop) {},
+            [](auto uop) {}, [](auto uop) {},
             [this](auto instruction) {
               executionHandlers.raiseException(instruction);
             },
