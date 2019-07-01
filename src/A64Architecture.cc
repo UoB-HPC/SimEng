@@ -97,23 +97,23 @@ ExceptionResult A64Architecture::handleException(
         const auto bufSize = registerFileSet.get(x3).get<uint64_t>();
 
         // Copy string at `pathnameAddress`
-        char pathname[kernel::Linux::PATH_MAX];
+        char pathname[kernel::Linux::LINUX_PATH_MAX];
         const char* ptr = memory + pathnameAddress;
         size_t i;
-        for (i = 0; i < kernel::Linux::PATH_MAX; i++) {
+        for (i = 0; i < kernel::Linux::LINUX_PATH_MAX; i++) {
           pathname[i] = ptr[i];
           if (ptr[i] == '\0') {
             break;
           }
         }
 
-        if (i == kernel::Linux::PATH_MAX) {
-          // TODO: Handle PATH_MAX case
-          std::cout << "Path exceeds PATH_MAX" << std::endl;
+        if (i == kernel::Linux::LINUX_PATH_MAX) {
+          // TODO: Handle LINUX_PATH_MAX case
+          std::cout << "Path exceeds LINUX_PATH_MAX" << std::endl;
           return {true, 0, {}};
         }
 
-        char buffer[kernel::Linux::PATH_MAX];
+        char buffer[kernel::Linux::LINUX_PATH_MAX];
         auto result = linux_.readlinkat(dirfd, pathname, buffer, bufSize);
 
         if (result < 0) {

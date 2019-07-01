@@ -45,7 +45,7 @@ class Linux {
                      size_t bufsize) const;
 
   /** The maximum size of a filesystem path. */
-  static const size_t PATH_MAX = 4096;
+  static const size_t LINUX_PATH_MAX = 4096;
 
  private:
   /** The state of the user-space processes running above the kernel. */
