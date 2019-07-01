@@ -14,11 +14,11 @@ A64ExceptionHandler::A64ExceptionHandler(
     : instruction_(*static_cast<A64Instruction*>(instruction.get())),
       registerFileSet_(registerFileSet),
       memory_(memory),
-      linux_(linux_) {}
+      linux_(linux_) {
+  printException(instruction_);
+}
 
 bool A64ExceptionHandler::tick() {
-  printException(instruction_);
-
   A64InstructionException exception = instruction_.getException();
 
   if (exception == A64InstructionException::SupervisorCall) {
