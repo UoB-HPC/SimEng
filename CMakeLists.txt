@@ -1,10 +1,19 @@
 cmake_minimum_required(VERSION 3.8)
-project(SimEng)
+cmake_policy(SET CMP0048 NEW)
+
+project(SimEng VERSION 0.1)
 
 # Require and enable C++17 support, and disable compiler extensions.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Configure RPATH
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+set(CMAKE_MACOSX_RPATH 1)
+
+# Enable PIC for libraries
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Enable additional compiler warnings for all targets
 add_compile_options(-Wall)
