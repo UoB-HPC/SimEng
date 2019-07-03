@@ -3,8 +3,23 @@ SimEng documentation
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Introduction
 
    developers
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Simulation concepts
+   
+   simulation
+   instruction
+   registers
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Simulation components
+   
+   pipeline/index
+
 
 .. mdinclude:: ../../README.md
