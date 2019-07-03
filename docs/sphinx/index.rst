@@ -17,6 +17,12 @@ SimEng documentation
 
 .. toctree::
    :maxdepth: 2
+   :caption: Models
+
+   models/index
+
+.. toctree::
+   :maxdepth: 2
    :caption: Simulation components
    
    pipeline/index
