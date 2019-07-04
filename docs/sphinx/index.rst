@@ -14,6 +14,7 @@ SimEng documentation
    simulation
    instruction
    registers
+   memory
 
 .. toctree::
    :maxdepth: 2
