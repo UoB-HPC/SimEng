@@ -282,6 +282,11 @@ void Core::applyStateChange(const ProcessStateChange& change) {
   }
 }
 
+const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
+    const {
+  return mappedRegisterFileSet_;
+}
+
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = writebackUnit_.getInstructionsWrittenCount();
   auto ipc = retired / static_cast<float>(ticks_);

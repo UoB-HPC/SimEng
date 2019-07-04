@@ -202,6 +202,11 @@ void Core::applyStateChange(const ProcessStateChange& change) {
 
 bool Core::hasHalted() const { return hasHalted_; }
 
+const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
+    const {
+  return architecturalRegisterFileSet_;
+}
+
 std::map<std::string, std::string> Core::getStats() const { return {}; };
 
 }  // namespace emulation
