@@ -11,6 +11,7 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target) {
   if (target.address + target.size > size_) {
     // Read outside of memory; return an invalid value to signal a fault
     completedReads_.push_back({target, RegisterValue()});
+    return;
   }
 
   const char* ptr = memory_ + target.address;

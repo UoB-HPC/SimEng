@@ -30,7 +30,6 @@ const std::vector<std::vector<uint16_t>> portArrangement = {
 const unsigned int executionUnitCount = portArrangement.size();
 const unsigned int lsqCompletionSlots = 1;
 
-// TODO: Replace simple process memory space with memory hierarchy interface.
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const Architecture& isa, BranchPredictor& branchPredictor,

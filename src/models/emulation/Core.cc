@@ -197,7 +197,6 @@ void Core::applyStateChange(const ProcessStateChange& change) {
     dataMemory_.requestWrite(
         {change.memoryAddresses[i].first, change.memoryAddresses[i].second},
         change.memoryAddressValues[i]);
-    // writeMemory(change.memoryAddresses[i], change.memoryAddressValues[i]);
   }
 }
 
