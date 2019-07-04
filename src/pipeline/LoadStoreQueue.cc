@@ -158,6 +158,8 @@ void LoadStoreQueue::tick() {
   for (const auto& response : memory_.getCompletedReads()) {
     auto address = response.first.address;
     const auto& data = response.second;
+
+    // TODO: Detect and handle any faults
     // TODO: Create a data structure to allow direct lookup of requests waiting
     // on a read, rather than iterating over the queue (see DispatchIssueQueue's
     // dependency matrix)
@@ -175,18 +177,16 @@ void LoadStoreQueue::tick() {
   }
   memory_.clearCompletedReads();
 
-  if (completedLoads_.size() > 0) {
-    // Pop from the front of the completed loads queue and send to writeback
-    size_t count = 0;
-    while (completedLoads_.size() > 0 && count < completionSlots_.size()) {
-      const auto& insn = completedLoads_.front();
-      completionSlots_[count].getTailSlots()[0] = insn;
+  // Pop from the front of the completed loads queue and send to writeback
+  size_t count = 0;
+  while (completedLoads_.size() > 0 && count < completionSlots_.size()) {
+    const auto& insn = completedLoads_.front();
+    completionSlots_[count].getTailSlots()[0] = insn;
 
-      // Forward the results
-      forwardOperands_(insn->getDestinationRegisters(), insn->getResults());
+    // Forward the results
+    forwardOperands_(insn->getDestinationRegisters(), insn->getResults());
 
-      completedLoads_.pop();
-    }
+    completedLoads_.pop();
   }
 }
 

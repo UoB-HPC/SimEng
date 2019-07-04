@@ -9,10 +9,10 @@ namespace inorder {
 // TODO: Replace with config options
 const unsigned int fetchBlockAlignmentBits = 4;  // 2^4 = 16 bytes
 
-// TODO: Replace simple process memory space with memory hierarchy interface.
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t processMemorySize, uint64_t entryPoint,
-           const Architecture& isa, BranchPredictor& branchPredictor)
+Core::Core(FlatMemoryInterface& instructionMemory,
+           FlatMemoryInterface& dataMemory, uint64_t processMemorySize,
+           uint64_t entryPoint, const Architecture& isa,
+           BranchPredictor& branchPredictor)
     : dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
@@ -179,6 +179,9 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   for (const auto& response : dataMemory_.getCompletedReads()) {
     instruction->supplyData(response.first.address, response.second);
   }
+
+  assert(instruction->hasAllData() &&
+         "Load instruction failed to obtain all data this cycle");
 }
 
 void Core::storeData(const std::shared_ptr<Instruction>& instruction) {

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <vector>
 
-#include "../../MemoryInterface.hh"
+#include "../../FlatMemoryInterface.hh"
 #include "../../pipeline/DecodeUnit.hh"
 #include "../../pipeline/ExecuteUnit.hh"
 #include "../../pipeline/FetchUnit.hh"
@@ -21,7 +21,7 @@ class Core : public simeng::Core {
   /** Construct a core model, providing an ISA and branch predictor to use,
    * along with a pointer and size of instruction memory, and a pointer to
    * process memory. */
-  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+  Core(FlatMemoryInterface& instructionMemory, FlatMemoryInterface& dataMemory,
        uint64_t processMemorySize, uint64_t entryPoint, const Architecture& isa,
        BranchPredictor& branchPredictor);
 
@@ -66,7 +66,6 @@ class Core : public simeng::Core {
 
   /** The process memory. */
   MemoryInterface& dataMemory_;
-  // const span<char> processMemory_;
 
   /** A reference to the core's architecture. */
   const Architecture& isa_;
