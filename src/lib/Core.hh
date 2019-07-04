@@ -5,6 +5,8 @@
 
 namespace simeng {
 
+class ArchitecturalRegisterFileSet;
+
 /** An abstract core model. */
 class Core {
  public:
@@ -15,6 +17,10 @@ class Core {
 
   /** Check whether the program has halted. */
   virtual bool hasHalted() const = 0;
+
+  /** Retrieve the architectural register file set. */
+  virtual const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
+      const = 0;
 
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;

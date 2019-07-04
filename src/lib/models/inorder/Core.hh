@@ -33,6 +33,10 @@ class Core : public simeng::Core {
   /** Check whether the program has halted. */
   bool hasHalted() const override;
 
+  /** Retrieve the architectural register file set. */
+  const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
+      const override;
+
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 

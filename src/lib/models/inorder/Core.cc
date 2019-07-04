@@ -116,6 +116,11 @@ bool Core::hasHalted() const {
           !executePending);
 }
 
+const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
+    const {
+  return architecturalRegisterFileSet_;
+}
+
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = writebackUnit_.getInstructionsWrittenCount();
   auto ipc = retired / static_cast<float>(ticks_);
