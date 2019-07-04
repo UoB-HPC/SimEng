@@ -38,7 +38,7 @@ This process of pre-decoding, predicting, and updating the PC continues until on
   The fetched memory block is exhausted
     The next block may be requested, and processing will resume once the data is available.
 
-If at the beginning of the cycle the output buffer is stalled, the fetch unit will idle and perform no operation.
+If the output buffer is stalled when the cycle begins, the fetch unit will idle and perform no operation.
 
 Fetching memory
 ***************
@@ -49,12 +49,50 @@ As the program counter may be updated by numerous external components thoughout 
 DecodeUnit
 ----------
 
-TODO
+The ``DecodeUnit`` class models the decode stage of a processor pipeline, and is responsible for converting a stream of macro-ops into a stream of instructions.
+
+Behaviour
+*********
+
+Each cycle, the decode unit will read macro-ops from the input buffer, and split them into a stream of ``Instruction`` objects.
+
+.. Note:: The DecodeUnit is currently only capable of handling macro-ops that split into a single instruction: https://github.com/UoB-HPC/SimEng/issues/14
+
+The now-decoded instructions are checked for any trivially identifiable branch mispredictions (i.e., a non-branch predicted as a taken branch), and if discovered, the branch predictor is informed and a pipeline flush requested.
+
+The cycle ends when all macro-ops in the input buffer have been processed, or a misprediction is identified and all remaining macro-ops are flushed.
+
+If the output buffer is stalled when the cycle begins, the decode unit will idle, perform no operation, and will flag its input buffer as having stalled, until the output is no longer stalled.
+
 
 RenameUnit
 ----------
 
-TODO
+The ``RenameUnit`` class models the register renaming stage found in out-of-order processors, and is responsible for renaming the source and destination registers of an instruction to eliminate false dependencies.
+
+Behaviour
+*********
+
+Each cycle, the rename unit will read instructions from the input stream, and perform the following operations:
+
+1) Add the instruction to the supplied reorder buffer
+2) Obtain up-to-date register mappings for each of the source operands from the supplied register alias table, and rename them in the instruction accordingly
+3) Allocate new physical registers for each of the destination registers in the supplied register alias table, and rename them in the instruction accordingly
+4) (Loads/stores only) Add the instruction to the supplied load/store queue
+
+Before any of these steps occur, it is ensured that **all** of these steps are possible to carry out for the given instruction: if there is insufficient space in the reorder buffer, insufficient free registers to allocate for the destination registers, or insufficient load/store queue space (where applicable) then the unit will halt and stall the input buffer. If this occurs, processing will be re-attempted each subsequent cycle until successful, at which point the input will be unstalled and normal operation will resume.
+
+Once an instruction is processed, it's written into the output buffer and the next instruction in the input buffer begins processing. This continues until the input buffer is empty.
+
+If the output buffer is stalled when the cycle begins, the rename unit will idle, perform no operation, and will flag its input buffer as having stalled, until the output is no longer stalled.
+
+Exceptions
+**********
+
+If an instruction has been flagged as having encountered an exception, then the rename stage will place it directly into the reorder buffer, skip renaming entirely, and **will not** write it to the output buffer.
+
+.. todo::
+  Verify that this doesn't cause issues with exception-generating load/store instructions, or problems with the register alias table caused by attempting to commit un-renamed registers.
 
 DispatchIssueUnit
 -----------------
