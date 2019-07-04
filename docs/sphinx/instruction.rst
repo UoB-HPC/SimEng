@@ -24,3 +24,9 @@ If an instruction has reported itself as a load or store, once ready to execute 
 Executed
 ********
 Executing an instruction performs the relevant operation using the input values, and makes the results available to the model, along with the registers these results should be written to. As instructions have no access to memory, the execution step for stores is expected to produce a corresponding piece of data to write to each address generated, using the input values supplied; these address/data pairs are presented to the model for writing to memory. For branches, the calculated address will also be available.
+
+
+Macro-Ops
+---------
+
+A SimEng instruction represents what are typically referred to as "micro-ops" (also known as µops or uops): a single conceptual hardware operation. To support more complex instruction sets where individual instructions perform multiple operations, some SimEng components deal with "macro-ops", which are conceptual objects that may be split into a stream of SimEng ``Instruction`` objects. As a result, individual machine-code instructions may become multiple SimEng ``Instruction`` objects when processed.
