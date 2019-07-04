@@ -218,6 +218,8 @@ TEST_P(LoadStoreQueueTest, Load) {
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses()).Times(AtLeast(1));
 
+  loadUop->setDataPending(addresses.size());
+
   queue.addLoad(loadUopPtr);
 
   // Check that a read request is made to the memory interface
