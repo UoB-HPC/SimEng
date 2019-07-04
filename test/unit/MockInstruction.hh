@@ -24,7 +24,6 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(getGeneratedAddresses,
                      span<const std::pair<uint64_t, uint8_t>>());
   MOCK_CONST_METHOD0(getData, span<const RegisterValue>());
-  MOCK_CONST_METHOD0(hasAllData, bool());
 
   MOCK_CONST_METHOD0(checkEarlyBranchMisprediction,
                      std::tuple<bool, uint64_t>());
@@ -44,6 +43,8 @@ class MockInstruction : public Instruction {
   void setExceptionEncountered(bool exceptionEncountered) {
     exceptionEncountered_ = exceptionEncountered;
   }
+
+  void setDataPending(uint8_t value) { dataPending_ = value; }
 };
 
 }  // namespace simeng

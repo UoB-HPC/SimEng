@@ -39,4 +39,6 @@ bool Instruction::hasExecuted() const { return executed_; }
 void Instruction::setCommitReady() { canCommit_ = true; }
 bool Instruction::canCommit() const { return canCommit_; }
 
+bool Instruction::hasAllData() const { return (dataPending_ == 0); }
+
 }  // namespace simeng

@@ -79,7 +79,7 @@ class Instruction {
   virtual span<const RegisterValue> getData() const = 0;
 
   /** Check whether all required data has been supplied. */
-  virtual bool hasAllData() const = 0;
+  bool hasAllData() const;
 
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the
@@ -141,6 +141,10 @@ class Instruction {
 
   /** Whether or not this instruction is ready to commit. */
   bool canCommit_ = false;
+
+  // Memory
+  /** The number of data items that still need to be supplied. */
+  uint8_t dataPending_ = 0;
 
   // Branches
   /** The predicted branching result. */

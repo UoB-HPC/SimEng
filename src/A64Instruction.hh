@@ -95,9 +95,6 @@ class A64Instruction : public Instruction {
   /** Retrieve supplied memory data. */
   span<const RegisterValue> getData() const override;
 
-  /** Check whether all data has been supplied. */
-  bool hasAllData() const override;
-
   /** Early misprediction check; see if it's possible to determine whether the
    * next instruction address was mispredicted without executing the
    * instruction. */
@@ -206,9 +203,6 @@ class A64Instruction : public Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
-
-  /** The number of data entries that have not yet been supplied. */
-  uint8_t dataPending_ = 0;
 
   // Execution helpers
   /** Extend `value` according to `extendType`, and left-shift the result by

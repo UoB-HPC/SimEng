@@ -97,8 +97,6 @@ span<const RegisterValue> A64Instruction::getData() const {
   return {memoryData.data(), memoryData.size()};
 }
 
-bool A64Instruction::hasAllData() const { return (dataPending_ == 0); }
-
 bool A64Instruction::canExecute() const { return (operandsPending == 0); }
 
 const span<RegisterValue> A64Instruction::getResults() const {
