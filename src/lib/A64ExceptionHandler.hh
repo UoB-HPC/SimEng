@@ -45,7 +45,7 @@ class A64ExceptionHandler : public ExceptionHandler {
    * until it either reads a null character or reaches the maximum length, at
    * which point it will call `then`, supplying the length of the read string.
    */
-  bool readStringThen(char* buffer, uint64_t address, size_t maxLength,
+  bool readStringThen(char* buffer, uint64_t address, int maxLength,
                       std::function<bool(size_t length)> then, int offset = -1);
 
   /** Performs a readlinkat syscall using the path supplied. */

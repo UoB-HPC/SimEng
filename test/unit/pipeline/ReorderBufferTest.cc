@@ -155,9 +155,9 @@ TEST_F(ReorderBufferTest, CommitLoad) {
 
 // Tests that the reorder buffer correctly triggers a store upon commit
 TEST_F(ReorderBufferTest, CommitStore) {
-  std::vector<std::pair<uint64_t, uint8_t>> addresses = {{0, 1}};
-  span<const std::pair<uint64_t, uint8_t>> addressesSpan = {addresses.data(),
-                                                            addresses.size()};
+  std::vector<MemoryAccessTarget> addresses = {{0, 1}};
+  span<const MemoryAccessTarget> addressesSpan = {addresses.data(),
+                                                  addresses.size()};
 
   std::vector<RegisterValue> data = {static_cast<uint8_t>(1)};
   span<const RegisterValue> dataSpan = {data.data(), data.size()};
@@ -173,11 +173,12 @@ TEST_F(ReorderBufferTest, CommitStore) {
   uopPtr->setCommitReady();
 
   // Check that the correct value will be written to memory
-  EXPECT_CALL(dataMemory,
-              requestWrite(
-                  AllOf(Field(&MemoryAccessTarget::address, addresses[0].first),
-                        Field(&MemoryAccessTarget::size, addresses[0].second)),
-                  Property(&RegisterValue::get<uint8_t>, 1)))
+  EXPECT_CALL(
+      dataMemory,
+      requestWrite(
+          AllOf(Field(&MemoryAccessTarget::address, addresses[0].address),
+                Field(&MemoryAccessTarget::size, addresses[0].size)),
+          Property(&RegisterValue::get<uint8_t>, 1)))
       .Times(1);
 
   reorderBuffer.commit(1);

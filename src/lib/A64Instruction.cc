@@ -85,7 +85,7 @@ void A64Instruction::supplyOperand(const Register& reg,
 
 void A64Instruction::supplyData(uint64_t address, const RegisterValue& data) {
   for (size_t i = 0; i < memoryAddresses.size(); i++) {
-    if (memoryAddresses[i].first == address && !memoryData[i]) {
+    if (memoryAddresses[i].address == address && !memoryData[i]) {
       memoryData[i] = data;
       dataPending_--;
       return;
@@ -108,14 +108,13 @@ bool A64Instruction::isLoad() const { return isLoad_; }
 bool A64Instruction::isBranch() const { return isBranch_; }
 
 void A64Instruction::setMemoryAddresses(
-    const std::initializer_list<std::pair<uint64_t, uint8_t>>& addresses) {
+    const std::initializer_list<MemoryAccessTarget>& addresses) {
   memoryData = std::vector<RegisterValue>(addresses.size());
   memoryAddresses = addresses;
   dataPending_ = addresses.size();
 }
 
-span<const std::pair<uint64_t, uint8_t>> A64Instruction::getGeneratedAddresses()
-    const {
+span<const MemoryAccessTarget> A64Instruction::getGeneratedAddresses() const {
   return {memoryAddresses.data(), memoryAddresses.size()};
 }
 

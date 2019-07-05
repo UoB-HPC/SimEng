@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BranchPredictor.hh"
+#include "MemoryInterface.hh"
 #include "RegisterFileSet.hh"
 #include "RegisterValue.hh"
 #include "span.hh"
@@ -66,14 +67,13 @@ class Instruction {
   virtual const span<RegisterValue> getResults() const = 0;
 
   /** Generate memory addresses this instruction wishes to access. */
-  virtual span<const std::pair<uint64_t, uint8_t>> generateAddresses() = 0;
+  virtual span<const MemoryAccessTarget> generateAddresses() = 0;
 
   /** Provide data from a requested memory address. */
   virtual void supplyData(uint64_t address, const RegisterValue& data) = 0;
 
   /** Retrieve previously generated memory addresses. */
-  virtual span<const std::pair<uint64_t, uint8_t>> getGeneratedAddresses()
-      const = 0;
+  virtual span<const MemoryAccessTarget> getGeneratedAddresses() const = 0;
 
   /** Retrieve supplied memory data. */
   virtual span<const RegisterValue> getData() const = 0;

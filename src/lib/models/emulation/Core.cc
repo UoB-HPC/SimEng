@@ -106,8 +106,8 @@ void Core::tick() {
     if (addresses.size() > 0) {
       // Memory reads are required; request them, set `pendingReads_`
       // accordingly, and end the cycle early
-      for (auto const& request : addresses) {
-        dataMemory_.requestRead({request.first, request.second});
+      for (auto const& target : addresses) {
+        dataMemory_.requestRead(target);
       }
       pendingReads_ = addresses.size();
       return;
@@ -131,8 +131,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     auto addresses = uop->getGeneratedAddresses();
     auto data = uop->getData();
     for (size_t i = 0; i < addresses.size(); i++) {
-      auto& request = addresses[i];
-      dataMemory_.requestWrite({request.first, request.second}, data[i]);
+      dataMemory_.requestWrite(addresses[i], data[i]);
     }
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
@@ -194,9 +193,8 @@ void Core::applyStateChange(const ProcessStateChange& change) {
 
   // Update memory
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    dataMemory_.requestWrite(
-        {change.memoryAddresses[i].first, change.memoryAddresses[i].second},
-        change.memoryAddressValues[i]);
+    dataMemory_.requestWrite(change.memoryAddresses[i],
+                             change.memoryAddressValues[i]);
   }
 }
 

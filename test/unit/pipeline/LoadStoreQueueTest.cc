@@ -99,8 +99,8 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
       completionSlots;
 
-  std::vector<std::pair<uint64_t, uint8_t>> addresses;
-  span<const std::pair<uint64_t, uint8_t>> addressesSpan;
+  std::vector<MemoryAccessTarget> addresses;
+  span<const MemoryAccessTarget> addressesSpan;
 
   std::vector<RegisterValue> data;
   span<const RegisterValue> dataSpan;
@@ -211,8 +211,8 @@ TEST_P(LoadStoreQueueTest, PurgeFlushedStore) {
 TEST_P(LoadStoreQueueTest, Load) {
   auto queue = getQueue();
 
-  std::pair<MemoryAccessTarget, RegisterValue> completedRead = {
-      {addresses[0].first, addresses[0].second}, data[0]};
+  std::pair<MemoryAccessTarget, RegisterValue> completedRead = {addresses[0],
+                                                                data[0]};
   span<std::pair<MemoryAccessTarget, RegisterValue>> completedReads = {
       &completedRead, 1};
 
@@ -223,10 +223,10 @@ TEST_P(LoadStoreQueueTest, Load) {
   queue.addLoad(loadUopPtr);
 
   // Check that a read request is made to the memory interface
-  EXPECT_CALL(
-      dataMemory,
-      requestRead(AllOf(Field(&MemoryAccessTarget::address, addresses[0].first),
-                        Field(&MemoryAccessTarget::size, addresses[0].second))))
+  EXPECT_CALL(dataMemory,
+              requestRead(AllOf(
+                  Field(&MemoryAccessTarget::address, addresses[0].address),
+                  Field(&MemoryAccessTarget::size, addresses[0].size))))
       .Times(1);
 
   // Expect a check against finished reads and return the result
@@ -271,11 +271,12 @@ TEST_P(LoadStoreQueueTest, Store) {
   storeUopPtr->setCommitReady();
 
   // Check that a write request is sent to the memory interface
-  EXPECT_CALL(dataMemory,
-              requestWrite(
-                  AllOf(Field(&MemoryAccessTarget::address, addresses[0].first),
-                        Field(&MemoryAccessTarget::size, addresses[0].second)),
-                  Property(&RegisterValue::get<uint8_t>, data[0])))
+  EXPECT_CALL(
+      dataMemory,
+      requestWrite(
+          AllOf(Field(&MemoryAccessTarget::address, addresses[0].address),
+                Field(&MemoryAccessTarget::size, addresses[0].size)),
+          Property(&RegisterValue::get<uint8_t>, data[0])))
       .Times(1);
 
   queue.commitStore(storeUopPtr);
@@ -307,19 +308,19 @@ TEST_P(LoadStoreQueueTest, ViolationOverlap) {
   auto queue = getQueue();
 
   // The store will write the byte `0x01` at addresses 0 and 1
-  std::vector<std::pair<uint64_t, uint8_t>> storeAddresses = {{0, 2}};
+  std::vector<MemoryAccessTarget> storeAddresses = {{0, 2}};
   std::vector<RegisterValue> storeData = {static_cast<uint16_t>(0x0101)};
 
-  span<const std::pair<uint64_t, uint8_t>> storeAddressesSpan = {
-      storeAddresses.data(), storeAddresses.size()};
+  span<const MemoryAccessTarget> storeAddressesSpan = {storeAddresses.data(),
+                                                       storeAddresses.size()};
   span<const RegisterValue> storeDataSpan = {storeData.data(),
                                              storeData.size()};
 
   // The load will read two bytes, at addresses 1 and 2; this will overlap with
   // the written data at address 1
-  std::vector<std::pair<uint64_t, uint8_t>> loadAddresses = {{1, 2}};
-  span<const std::pair<uint64_t, uint8_t>> loadAddressesSpan = {
-      loadAddresses.data(), loadAddresses.size()};
+  std::vector<MemoryAccessTarget> loadAddresses = {{1, 2}};
+  span<const MemoryAccessTarget> loadAddressesSpan = {loadAddresses.data(),
+                                                      loadAddresses.size()};
 
   EXPECT_CALL(*storeUop, getGeneratedAddresses())
       .Times(AtLeast(1))
@@ -344,9 +345,9 @@ TEST_P(LoadStoreQueueTest, NoViolation) {
   auto queue = getQueue();
 
   // A different address to the one being stored to
-  std::vector<std::pair<uint64_t, uint8_t>> loadAddresses = {{1, 1}};
-  span<const std::pair<uint64_t, uint8_t>> loadAddressesSpan = {
-      loadAddresses.data(), loadAddresses.size()};
+  std::vector<MemoryAccessTarget> loadAddresses = {{1, 1}};
+  span<const MemoryAccessTarget> loadAddressesSpan = {loadAddresses.data(),
+                                                      loadAddresses.size()};
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses())
       .Times(AtLeast(1))

@@ -5,7 +5,7 @@
 
 namespace simeng {
 
-span<const std::pair<uint64_t, uint8_t>> A64Instruction::generateAddresses() {
+span<const MemoryAccessTarget> A64Instruction::generateAddresses() {
   assert((isLoad() || isStore()) &&
          "generateAddresses called on non-load-or-store instruction");
 

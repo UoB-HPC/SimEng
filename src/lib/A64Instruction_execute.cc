@@ -583,7 +583,7 @@ void A64Instruction::execute() {
       return;
     }
     case A64Opcode::AArch64_LDRDroX: {  // ldr dt, [xn, xm, {extend {#amount}}]
-      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 16);
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 16);
       return;
     }
     case A64Opcode::AArch64_LDRHHpost: {  // ldrh wt, [xn], #imm
@@ -601,7 +601,7 @@ void A64Instruction::execute() {
       return;
     }
     case A64Opcode::AArch64_LDRWui: {  // ldr wt, [xn, #imm]
-      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].second, 8);
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 8);
       return;
     }
     case A64Opcode::AArch64_LDRXl: {  // ldr xt, #imm

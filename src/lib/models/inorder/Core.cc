@@ -175,8 +175,8 @@ void Core::processExceptionHandler() {
 
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   const auto& addresses = instruction->getGeneratedAddresses();
-  for (const auto& request : addresses) {
-    dataMemory_.requestRead({request.first, request.second});
+  for (const auto& target : addresses) {
+    dataMemory_.requestRead(target);
   }
 
   // NOTE: This model only supports zero-cycle data memory models, and will not
@@ -193,9 +193,7 @@ void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
   const auto& addresses = instruction->getGeneratedAddresses();
   const auto& data = instruction->getData();
   for (size_t i = 0; i < addresses.size(); i++) {
-    const auto& request = addresses[i];
-
-    dataMemory_.requestWrite({request.first, request.second}, data[i]);
+    dataMemory_.requestWrite(addresses[i], data[i]);
   }
 }
 
@@ -259,10 +257,10 @@ void Core::applyStateChange(const ProcessStateChange& change) {
 
   // Update memory
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    const auto& request = change.memoryAddresses[i];
+    const auto& target = change.memoryAddresses[i];
     const auto& data = change.memoryAddressValues[i];
 
-    dataMemory_.requestWrite({request.first, request.second}, data);
+    dataMemory_.requestWrite(target, data);
   }
 }
 
