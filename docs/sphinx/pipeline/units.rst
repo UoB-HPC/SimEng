@@ -162,4 +162,9 @@ For all instructions other than loads (as they are removed from the unit after a
 WritebackUnit
 -------------
 
-TODO
+The ``WritebackUnit`` class models the writeback stage of a processor pipeline, responsible for writing the results from executed instructions to the register files, and marking them as ready to commit.
+
+Behaviour
+*********
+
+Each cycle, the unit will read instructions from the input buffer, and retrieve any results generated during execution. All results are written to the supplied register file set, and the instructions are flagged as ready to commit. As the unit has no output buffer, instructions are discarded once writeback is complete.
