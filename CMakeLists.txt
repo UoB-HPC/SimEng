@@ -38,6 +38,17 @@ set(CAPSTONE_MOS65XX_SUPPORT OFF CACHE BOOL "Disable MSO65XX support")
 
 add_subdirectory(external/capstone EXCLUDE_FROM_ALL)
 
+# Add LLVM
+set(LLVM_TARGETS_TO_BUILD "AArch64" CACHE INTERNAL "")
+set(LLVM_BUILD_RUNTIME OFF)
+set(LLVM_INCLUDE_TOOLS OFF)
+set(LLVM_INCLUDE_EXAMPLES OFF)
+set(LLVM_INCLUDE_TESTS OFF)
+set(LLVM_INCLUDE_BENCHMARKS OFF)
+set(LLVM_INCLUDE_DOCS OFF)
+set(LLVM_INCLUDE_UTILS OFF)
+add_subdirectory(external/llvm EXCLUDE_FROM_ALL)
+
 add_subdirectory(src)
 
 add_subdirectory(docs)
