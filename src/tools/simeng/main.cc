@@ -161,9 +161,6 @@ int main(int argc, char** argv) {
 
   uint64_t entryPoint = process->getEntryPoint();
 
-  simeng::span<char> processMemoryContainer = {processMemory,
-                                               processMemorySize};
-
   // Create the OS kernel with the process
   simeng::kernel::Linux kernel;
   kernel.createProcess(*process.get());
@@ -193,22 +190,21 @@ int main(int argc, char** argv) {
     case SimulationMode::OutOfOrder: {
       modeString = "Out-of-Order";
       core = std::make_unique<simeng::models::outoforder::Core>(
-          instructionMemory, dataMemory, processMemoryContainer.size(),
-          entryPoint, arch, predictor, portAllocator);
+          instructionMemory, dataMemory, processMemorySize, entryPoint, arch,
+          predictor, portAllocator);
       break;
     }
     case SimulationMode::InOrderPipelined: {
       modeString = "In-Order Pipelined";
       core = std::make_unique<simeng::models::inorder::Core>(
-          instructionMemory, dataMemory, processMemoryContainer.size(),
-          entryPoint, arch, predictor);
+          instructionMemory, dataMemory, processMemorySize, entryPoint, arch,
+          predictor);
       break;
     }
     default: {
       modeString = "Emulation";
       core = std::make_unique<simeng::models::emulation::Core>(
-          instructionMemory, dataMemory, entryPoint,
-          processMemoryContainer.size(), arch);
+          instructionMemory, dataMemory, entryPoint, processMemorySize, arch);
       break;
     }
   };
