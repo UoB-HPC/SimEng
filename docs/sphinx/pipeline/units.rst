@@ -133,7 +133,31 @@ This search continues until either all ports are full, or all ready-to-execute i
 ExecuteUnit
 -----------
 
-TODO
+The ``ExecuteUnit`` class models the execute stage of a processor pipeline, and is responsible for handling the execution logic of instructions and broadcasting their results once completed. The unit maintains an internal pipeline, which queues instructions according to their execution latency prior to executing them.
+
+.. Note:: ``ExecuteUnit`` represents a single functional/execution unit of a pipeline. As a result, only the first slot of the input/output buffers are used; models of superscalar processors with multiple execution units are expected to use multiple instances.
+
+Behaviour
+*********
+
+Each cycle, a single instruction is read from the input buffer. The latency of the instruction is checked, and it is added to the internal pipeline queue, where it will remain for at least the duration of its instruction latency.
+
+Once the input has been processed, the instruction at the head of the pipeline  is checked to see if its latency has passed. If not, the cycle ends early, otherwise the instruction proceeds to execution.
+
+While normal data processing instructions are simply executed, some instruction types are treated slightly differently during execution:
+
+.. glossary::
+  Loads
+    Address generation is performed, before passing the instruction to the unit's supplied load handling function. Unlike other instructions, load instructions **are not** written to the output buffer, as execution cannot occur until the memory read concludes. It is the responsibility of the load handling function to ensure that the instruction is executed and results broadcast once the loaded data is available.
+  
+  Stores
+    Address generation is performed, and the instruction is executed to determine the memory data to be written. The instruction is passed to the unit's supplied store handler.
+
+  Branches
+    The instruction is executed, and queried to determine whether or not the results match the branch prediction originally associated with the instruction. If a misprediction is encountered, the branch predictor is informed, and a flush is raised to instruct the core to reset the program counter to the correct address and remove all incorrectly speculated instructions from the core.
+
+For all instructions other than loads (as they are removed from the unit after address generation), once executed, the instruction is checked for any exceptions. If an exception was encountered, the instruction is passed to the unit's supplied exception handler. Otherwise, any register results are broadcast by calling the unit's supplied operand forwarding handler. In both cases, the instruction is then written to the unit's output buffer.
+
 
 WritebackUnit
 -------------
