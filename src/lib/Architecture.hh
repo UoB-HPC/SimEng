@@ -19,7 +19,7 @@ struct ProcessStateChange {
   /** Values to set modified registers to */
   std::vector<RegisterValue> modifiedRegisterValues;
   /** Memory address/width pairs to modify */
-  std::vector<std::pair<uint64_t, uint8_t>> memoryAddresses;
+  std::vector<MemoryAccessTarget> memoryAddresses;
   /** Values to write to memory */
   std::vector<RegisterValue> memoryAddressValues;
 };

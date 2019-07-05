@@ -275,10 +275,10 @@ void Core::applyStateChange(const ProcessStateChange& change) {
 
   // Update memory
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    const auto& request = change.memoryAddresses[i];
+    const auto& target = change.memoryAddresses[i];
     const auto& data = change.memoryAddressValues[i];
 
-    dataMemory_.requestWrite({request.first, request.second}, data);
+    dataMemory_.requestWrite(target, data);
   }
 }
 

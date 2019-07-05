@@ -104,9 +104,9 @@ bool A64ExceptionHandler::init() {
 }
 
 bool A64ExceptionHandler::readStringThen(
-    char* buffer, uint64_t address, size_t maxLength,
+    char* buffer, uint64_t address, int maxLength,
     std::function<bool(size_t length)> then, int offset) {
-  if (maxLength == 0) {
+  if (maxLength <= 0) {
     return then(offset);
   }
 
@@ -183,7 +183,7 @@ void A64ExceptionHandler::readLinkAt(span<char> path) {
   // Slice the returned path into <256-byte chunks for writing
   const char* bufPtr = buffer;
   for (size_t i = 0; i < bytesCopied; i += 256) {
-    auto size = std::min<uint64_t>(bytesCopied - i, 256ul);
+    uint8_t size = std::min<uint64_t>(bytesCopied - i, 256ul);
     stateChange.memoryAddresses.push_back({bufAddress + i, size});
     stateChange.memoryAddressValues.push_back(RegisterValue(bufPtr, size));
   }

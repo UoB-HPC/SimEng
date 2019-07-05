@@ -7,11 +7,10 @@ namespace simeng {
 namespace pipeline {
 
 /** Check whether requests `a` and `b` overlap. */
-bool requestsOverlap(std::pair<uint64_t, uint8_t> a,
-                     std::pair<uint64_t, uint8_t> b) {
+bool requestsOverlap(MemoryAccessTarget a, MemoryAccessTarget b) {
   // Check whether one region ends before the other begins, implying no overlap,
   // and negate
-  return !(a.first + a.second <= b.first || b.first + b.second <= a.first);
+  return !(a.address + a.size <= b.address || b.address + b.size <= a.address);
 }
 
 LoadStoreQueue::LoadStoreQueue(
@@ -77,8 +76,8 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   const auto& addresses = insn->getGeneratedAddresses();
-  for (auto const& request : addresses) {
-    memory_.requestRead({request.first, request.second});
+  for (auto const& target : addresses) {
+    memory_.requestRead(target);
   }
 }
 
@@ -92,8 +91,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   const auto& addresses = uop->getGeneratedAddresses();
   const auto& data = uop->getData();
   for (size_t i = 0; i < addresses.size(); i++) {
-    const auto& request = addresses[i];
-    memory_.requestWrite({request.first, request.second}, data[i]);
+    memory_.requestWrite(addresses[i], data[i]);
   }
 
   for (const auto& load : loadQueue_) {
