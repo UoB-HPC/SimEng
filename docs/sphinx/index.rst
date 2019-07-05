@@ -28,6 +28,7 @@ SimEng documentation
    
    pipeline/index
    pipeline/units
+   pipeline/components
 
 
 .. mdinclude:: ../../README.md

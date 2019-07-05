@@ -1,6 +1,8 @@
 Registers
 =========
 
+.. _registers:
+
 Instructions in SimEng primarily operate upon registers. Each instruction may request data from any number of registers, and may update any number of registers upon completion.
 
 Registers are uniquely identified within SimEng using a ``Register`` object, consisting of a "type"---corresponding to a specific set of registers (i.e., general purpose, floating point, etc.)---and a "tag", which identifies an individual register within that set. The number of different types of registers, as well as the number and size of registers of each type, is defined by the architecture used.
