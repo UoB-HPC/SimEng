@@ -94,10 +94,41 @@ If an instruction has been flagged as having encountered an exception, then the 
 .. todo::
   Verify that this doesn't cause issues with exception-generating load/store instructions, or problems with the register alias table caused by attempting to commit un-renamed registers.
 
+
 DispatchIssueUnit
 -----------------
 
-TODO
+The ``DispatchIssueUnit`` class models the dispatch/issue stages found in out-of-order processors, and is responsible for managing dependencies between instructions. This class contains a reservation station for holding instructions until their dependencies are met, and uses a scoreboard and dependency matrix to track and handle dependencies.
+
+While the ``DispatchIssueUnit`` has a single input buffer, it has multiple output buffers. Only a single instruction will ever be placed into any individual output buffer per cycle, even if they are wide enough to support multiple.
+
+.. Note:: The terms "dispatch" and "issue" are often used inconsistently in computer architecture literature. In SimEng, dispatch refers to an instruction being placed into the reservation station, while issue refers to an instruction being removed from the reservation station and placed into an output port.
+
+Behaviour
+*********
+
+Each cycle, the unit performs three discrete tasks: dispatch, operand forwarding, and issue. Dispatch occurs when the unit is ticked, while operand forwarding is expected to occur multiple times as other components in the pipeline generate results that must be delivered to pending instructions. Issue must be independently triggered later in the cycle, once all operand forwarding has concluded.
+
+Dispatch
+''''''''
+
+During dispatch, the unit will read instructions from the input buffer, and check their required source operands against the internal scoreboard---the structure responsible for tracking operand availability. If an operand is available, it is supplied to the instruction; otherwise, an entry is inserted into the internal dependency matrix to track that the instruction depends on that missing operand.
+
+Using the supplied port allocator, each instruction is allocated a destination port, which corresponds to one of the output buffers.
+
+The instruction is then added to the reservation station, where it will remain until issued. If at any point the reservation station becomes full while instructions remain in the input, the cycle stops and the input buffer becomes stalled. The remaining instructions will be processed during a future dispatch, once space is available, and the input buffer will be unstalled once emptied.
+
+Operand forwarding
+''''''''''''''''''
+
+When results are forwarded to the unit, the associated registers are looked up in the internal dependency matrix to find the instructions depending on them. The results are supplied to the dependent instructions, and the relevant dependency matrix entries cleared.
+
+Issue
+'''''
+
+During issue, the reservation station is searched from oldest to youngest to find ready-to-execute instructions. If a ready instruction's allocated port is unstalled and has not yet been used this cycle, the instruction will be placed into it and removed from the reservation station; otherwise, it will be skipped and handled during a future issue stage.
+
+This search continues until either all ports are full, or all ready-to-execute instructions have been checked.
 
 ExecuteUnit
 -----------
