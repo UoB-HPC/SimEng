@@ -11,6 +11,16 @@ struct MemoryAccessTarget {
   uint64_t address;
   /** The number of bytes to access at `address`. */
   uint8_t size;
+
+  /** Check for equality of two access targets. */
+  bool operator==(const MemoryAccessTarget& other) const {
+    return (address == other.address && size == other.size);
+  };
+
+  /** Check for inequality of two access targets. */
+  bool operator!=(const MemoryAccessTarget& other) const {
+    return !(other == *this);
+  }
 };
 
 /** An abstract memory interface. Describes a connection to a memory system to

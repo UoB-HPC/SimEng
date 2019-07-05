@@ -8,9 +8,7 @@
 #include "pipeline/ReorderBuffer.hh"
 
 using ::testing::_;
-using ::testing::AllOf;
 using ::testing::ElementsAre;
-using ::testing::Field;
 using ::testing::Property;
 using ::testing::Return;
 
@@ -175,10 +173,7 @@ TEST_F(ReorderBufferTest, CommitStore) {
   // Check that the correct value will be written to memory
   EXPECT_CALL(
       dataMemory,
-      requestWrite(
-          AllOf(Field(&MemoryAccessTarget::address, addresses[0].address),
-                Field(&MemoryAccessTarget::size, addresses[0].size)),
-          Property(&RegisterValue::get<uint8_t>, 1)))
+      requestWrite(addresses[0], Property(&RegisterValue::get<uint8_t>, 1)))
       .Times(1);
 
   reorderBuffer.commit(1);
