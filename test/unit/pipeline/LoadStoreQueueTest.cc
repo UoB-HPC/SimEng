@@ -5,9 +5,7 @@
 #include "gtest/gtest.h"
 #include "pipeline/LoadStoreQueue.hh"
 
-using ::testing::AllOf;
 using ::testing::AtLeast;
-using ::testing::Field;
 using ::testing::Property;
 using ::testing::Return;
 
@@ -223,11 +221,7 @@ TEST_P(LoadStoreQueueTest, Load) {
   queue.addLoad(loadUopPtr);
 
   // Check that a read request is made to the memory interface
-  EXPECT_CALL(dataMemory,
-              requestRead(AllOf(
-                  Field(&MemoryAccessTarget::address, addresses[0].address),
-                  Field(&MemoryAccessTarget::size, addresses[0].size))))
-      .Times(1);
+  EXPECT_CALL(dataMemory, requestRead(addresses[0])).Times(1);
 
   // Expect a check against finished reads and return the result
   EXPECT_CALL(dataMemory, getCompletedReads())
@@ -271,12 +265,9 @@ TEST_P(LoadStoreQueueTest, Store) {
   storeUopPtr->setCommitReady();
 
   // Check that a write request is sent to the memory interface
-  EXPECT_CALL(
-      dataMemory,
-      requestWrite(
-          AllOf(Field(&MemoryAccessTarget::address, addresses[0].address),
-                Field(&MemoryAccessTarget::size, addresses[0].size)),
-          Property(&RegisterValue::get<uint8_t>, data[0])))
+  EXPECT_CALL(dataMemory,
+              requestWrite(addresses[0],
+                           Property(&RegisterValue::get<uint8_t>, data[0])))
       .Times(1);
 
   queue.commitStore(storeUopPtr);
