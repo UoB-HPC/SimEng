@@ -5,7 +5,7 @@
 #include <string>
 
 // Temporary; until config options are available
-#include "../../A64Instruction.hh"
+#include "arch/aarch64/A64Instruction.hh"
 
 namespace simeng {
 namespace models {

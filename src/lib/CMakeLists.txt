@@ -1,4 +1,11 @@
 set(SIMENG_SOURCES
+    arch/aarch64/A64Architecture.cc
+    arch/aarch64/A64ExceptionHandler.cc
+    arch/aarch64/A64Instruction.cc
+    arch/aarch64/A64Instruction_address.cc
+    arch/aarch64/A64Instruction_decode.cc
+    arch/aarch64/A64Instruction_execute.cc
+    arch/aarch64/A64InstructionMetadata.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
     models/emulation/Core.cc
@@ -15,13 +22,6 @@ set(SIMENG_SOURCES
     pipeline/RenameUnit.cc
     pipeline/ReorderBuffer.cc
     pipeline/WritebackUnit.cc
-    A64Architecture.cc
-    A64ExceptionHandler.cc
-    A64Instruction.cc
-    A64Instruction_address.cc
-    A64Instruction_decode.cc
-    A64Instruction_execute.cc
-    A64InstructionMetadata.cc
     AlwaysNotTakenPredictor.cc
     ArchitecturalRegisterFileSet.cc
     BTBPredictor.cc
@@ -34,6 +34,10 @@ set(SIMENG_SOURCES
     )
 
 set(SIMENG_HEADERS
+    arch/aarch64/A64Architecture.hh
+    arch/aarch64/A64ExceptionHandler.hh
+    arch/aarch64/A64Instruction.hh
+    arch/aarch64/A64InstructionMetadata.hh
     kernel/Linux.hh
     kernel/LinuxProcess.hh
     models/emulation/Core.hh
@@ -52,10 +56,6 @@ set(SIMENG_HEADERS
     pipeline/RenameUnit.hh
     pipeline/ReorderBuffer.hh
     pipeline/WritebackUnit.hh
-    A64Architecture.hh
-    A64ExceptionHandler.hh
-    A64Instruction.hh
-    A64InstructionMetadata.hh
     AlwaysNotTakenPredictor.hh
     ArchitecturalRegisterFileSet.hh
     Architecture.hh
@@ -75,6 +75,7 @@ configure_file(${PROJECT_SOURCE_DIR}/external/capstone/arch/AArch64/AArch64GenIn
 add_library(libsimeng SHARED ${SIMENG_SOURCES} ${SIMENG_HEADERS})
 set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 
+target_include_directories(libsimeng PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libsimeng PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(libsimeng PRIVATE ${PROJECT_SOURCE_DIR}/external/capstone/include)
 target_link_libraries(libsimeng capstone-static)

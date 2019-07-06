@@ -1,6 +1,6 @@
-#include "A64Architecture.hh"
-#include "A64Instruction.hh"
 #include "RegisterFileSet.hh"
+#include "arch/aarch64/A64Architecture.hh"
+#include "arch/aarch64/A64Instruction.hh"
 #include "gtest/gtest.h"
 
 namespace {

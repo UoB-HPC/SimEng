@@ -1,20 +1,17 @@
-#include "A64Instruction.hh"
-#include "RegisterFileSet.hh"
-
 #include <chrono>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <string>
 
-#include "A64Architecture.hh"
-#include "A64Instruction.hh"
 #include "AlwaysNotTakenPredictor.hh"
 #include "Architecture.hh"
 #include "BTBPredictor.hh"
 #include "Core.hh"
 #include "Elf.hh"
 #include "FlatMemoryInterface.hh"
+#include "arch/aarch64/A64Architecture.hh"
+#include "arch/aarch64/A64Instruction.hh"
 #include "kernel/Linux.hh"
 #include "models/emulation/Core.hh"
 #include "models/inorder/Core.hh"
