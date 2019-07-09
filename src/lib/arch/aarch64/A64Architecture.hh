@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Architecture.hh"
+#include "arch/Architecture.hh"
 
 #include <forward_list>
 #include <unordered_map>

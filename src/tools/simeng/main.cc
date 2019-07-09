@@ -5,7 +5,7 @@
 #include <string>
 
 #include "AlwaysNotTakenPredictor.hh"
-#include "Architecture.hh"
+#include "arch/Architecture.hh"
 #include "BTBPredictor.hh"
 #include "Core.hh"
 #include "Elf.hh"

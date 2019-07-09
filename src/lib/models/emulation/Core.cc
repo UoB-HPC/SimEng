@@ -13,7 +13,7 @@ const uint8_t FETCH_SIZE = 4;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t entryPoint, uint64_t programByteLength,
-           const Architecture& isa)
+           const arch::Architecture& isa)
     : instructionMemory_(instructionMemory),
       dataMemory_(dataMemory),
       programByteLength_(programByteLength),
@@ -184,7 +184,7 @@ void Core::processExceptionHandler() {
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 }
 
-void Core::applyStateChange(const ProcessStateChange& change) {
+void Core::applyStateChange(const arch::ProcessStateChange& change) {
   // Update registers
   for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
     registerFileSet_.set(change.modifiedRegisters[i],

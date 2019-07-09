@@ -27,8 +27,8 @@ class Core : public simeng::Core {
   /** Construct a core model, providing the process memory, and an ISA, branch
    * predictor, and port allocator to use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       uint64_t processMemorySize, uint64_t entryPoint, const Architecture& isa,
-       BranchPredictor& branchPredictor,
+       uint64_t processMemorySize, uint64_t entryPoint,
+       const arch::Architecture& isa, BranchPredictor& branchPredictor,
        pipeline::PortAllocator& portAllocator);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
@@ -57,12 +57,12 @@ class Core : public simeng::Core {
   void processExceptionHandler();
 
   /** Apply changes to the process state. */
-  void applyStateChange(const ProcessStateChange& change);
+  void applyStateChange(const arch::ProcessStateChange& change);
 
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
 
-  const Architecture& isa_;
+  const arch::Architecture& isa_;
 
   /** The core's register file set. */
   RegisterFileSet registerFileSet_;
@@ -138,7 +138,7 @@ class Core : public simeng::Core {
   bool hasHalted_ = false;
 
   /** The active exception handler. */
-  std::shared_ptr<ExceptionHandler> exceptionHandler_;
+  std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 };
 
 }  // namespace outoforder

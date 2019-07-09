@@ -5,10 +5,10 @@
 #include <map>
 #include <string>
 
-#include "../../Architecture.hh"
 #include "../../MemoryInterface.hh"
 #include "../../RegisterFileSet.hh"
 #include "../../span.hh"
+#include "arch/Architecture.hh"
 
 namespace simeng {
 namespace models {
@@ -22,7 +22,7 @@ class Core : public simeng::Core {
    * use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        uint64_t entryPoint, uint64_t programByteLength,
-       const Architecture& isa);
+       const arch::Architecture& isa);
 
   /** Tick the core. */
   void tick() override;
@@ -48,7 +48,7 @@ class Core : public simeng::Core {
   void processExceptionHandler();
 
   /** Apply changes to the process state. */
-  void applyStateChange(const ProcessStateChange& change);
+  void applyStateChange(const arch::ProcessStateChange& change);
 
   /** A memory interface to access instructions. */
   MemoryInterface& instructionMemory_;
@@ -60,7 +60,7 @@ class Core : public simeng::Core {
   uint64_t programByteLength_;
 
   /** The currently used ISA. */
-  const Architecture& isa_;
+  const arch::Architecture& isa_;
 
   /** The current program counter. */
   uint64_t pc_ = 0;
@@ -79,7 +79,7 @@ class Core : public simeng::Core {
   MacroOp macroOp_;
 
   /** The active exception handler. */
-  std::shared_ptr<ExceptionHandler> exceptionHandler_;
+  std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 
   /** Is the core waiting on a data read? */
   unsigned int pendingReads_ = 0;

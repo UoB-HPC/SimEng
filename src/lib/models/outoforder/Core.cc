@@ -33,7 +33,7 @@ const unsigned int lsqCompletionSlots = 1;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
-           const Architecture& isa, BranchPredictor& branchPredictor,
+           const arch::Architecture& isa, BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator)
     : isa_(isa),
       registerFileSet_(physicalRegisterStructures),
@@ -273,7 +273,7 @@ void Core::processExceptionHandler() {
   exceptionHandler_ = nullptr;
 }
 
-void Core::applyStateChange(const ProcessStateChange& change) {
+void Core::applyStateChange(const arch::ProcessStateChange& change) {
   // Update registers
   for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
     mappedRegisterFileSet_.set(change.modifiedRegisters[i],

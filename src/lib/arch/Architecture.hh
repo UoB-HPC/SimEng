@@ -12,6 +12,8 @@ namespace simeng {
 
 using MacroOp = std::vector<std::shared_ptr<Instruction>>;
 
+namespace arch {
+
 /** A structure describing a set of changes to the process state. */
 struct ProcessStateChange {
   /** Registers to modify */
@@ -84,4 +86,5 @@ class Architecture {
   virtual bool canRename(Register reg) const = 0;
 };
 
+}  // namespace arch
 }  // namespace simeng

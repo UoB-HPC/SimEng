@@ -22,8 +22,8 @@ class Core : public simeng::Core {
    * along with a pointer and size of instruction memory, and a pointer to
    * process memory. */
   Core(FlatMemoryInterface& instructionMemory, FlatMemoryInterface& dataMemory,
-       uint64_t processMemorySize, uint64_t entryPoint, const Architecture& isa,
-       BranchPredictor& branchPredictor);
+       uint64_t processMemorySize, uint64_t entryPoint,
+       const arch::Architecture& isa, BranchPredictor& branchPredictor);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -63,7 +63,7 @@ class Core : public simeng::Core {
   void processExceptionHandler();
 
   /** Apply changes to the process state. */
-  void applyStateChange(const ProcessStateChange& change);
+  void applyStateChange(const arch::ProcessStateChange& change);
 
   /** Handle requesting/execution of a load instruction. */
   void handleLoad(const std::shared_ptr<Instruction>& instruction);
@@ -72,7 +72,7 @@ class Core : public simeng::Core {
   MemoryInterface& dataMemory_;
 
   /** A reference to the core's architecture. */
-  const Architecture& isa_;
+  const arch::Architecture& isa_;
 
   /** The core's register file set. */
   RegisterFileSet registerFileSet_;
@@ -123,7 +123,7 @@ class Core : public simeng::Core {
   bool hasHalted_ = false;
 
   /** The active exception handler. */
-  std::shared_ptr<ExceptionHandler> exceptionHandler_;
+  std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 };
 
 }  // namespace inorder

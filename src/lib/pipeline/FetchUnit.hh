@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Architecture.hh"
 #include "../MemoryInterface.hh"
 #include "PipelineBuffer.hh"
+#include "arch/Architecture.hh"
 
 namespace simeng {
 namespace pipeline {
@@ -15,7 +15,7 @@ class FetchUnit {
    * the current branch predictor, and information on the instruction memory. */
   FetchUnit(PipelineBuffer<MacroOp>& output, MemoryInterface& instructionMemory,
             uint64_t programByteLength, uint64_t entryPoint,
-            uint8_t blockAlignmentBits, const Architecture& isa,
+            uint8_t blockAlignmentBits, const arch::Architecture& isa,
             BranchPredictor& branchPredictor);
 
   /** Tick the fetch unit. Retrieves and pre-decodes the instruction at the
@@ -50,7 +50,7 @@ class FetchUnit {
   uint64_t programByteLength_;
 
   /** Reference to the currently used ISA. */
-  const Architecture& isa_;
+  const arch::Architecture& isa_;
 
   /** Reference to the current branch predictor. */
   BranchPredictor& branchPredictor_;

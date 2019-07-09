@@ -11,7 +11,7 @@ const unsigned int fetchBlockAlignmentBits = 4;  // 2^4 = 16 bytes
 
 Core::Core(FlatMemoryInterface& instructionMemory,
            FlatMemoryInterface& dataMemory, uint64_t processMemorySize,
-           uint64_t entryPoint, const Architecture& isa,
+           uint64_t entryPoint, const arch::Architecture& isa,
            BranchPredictor& branchPredictor)
     : dataMemory_(dataMemory),
       isa_(isa),
@@ -248,7 +248,7 @@ void Core::readRegisters() {
   }
 }
 
-void Core::applyStateChange(const ProcessStateChange& change) {
+void Core::applyStateChange(const arch::ProcessStateChange& change) {
   // Update registers
   for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
     registerFileSet_.set(change.modifiedRegisters[i],

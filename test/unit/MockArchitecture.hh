@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Architecture.hh"
+#include "arch/Architecture.hh"
 #include "gmock/gmock.h"
 
 namespace simeng {
 
 /** Mock implementation of the `Architecture` interface. */
-class MockArchitecture : public Architecture {
+class MockArchitecture : public arch::Architecture {
  public:
   MOCK_CONST_METHOD5(predecode,
                      uint8_t(const void* ptr, uint8_t bytesAvailable,
@@ -16,11 +16,11 @@ class MockArchitecture : public Architecture {
                      std::vector<RegisterFileStructure>());
   MOCK_CONST_METHOD1(canRename, bool(Register reg));
   MOCK_CONST_METHOD3(handleException,
-                     std::shared_ptr<ExceptionHandler>(
+                     std::shared_ptr<arch::ExceptionHandler>(
                          const std::shared_ptr<Instruction>& instruction,
                          const ArchitecturalRegisterFileSet& registerFileSet,
                          MemoryInterface& memory));
-  MOCK_CONST_METHOD0(getInitialState, ProcessStateChange());
+  MOCK_CONST_METHOD0(getInitialState, arch::ProcessStateChange());
 };
 
 }  // namespace simeng

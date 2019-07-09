@@ -34,6 +34,7 @@ set(SIMENG_SOURCES
     )
 
 set(SIMENG_HEADERS
+    arch/Architecture.hh
     arch/aarch64/A64Architecture.hh
     arch/aarch64/A64ExceptionHandler.hh
     arch/aarch64/A64Instruction.hh
@@ -58,7 +59,6 @@ set(SIMENG_HEADERS
     pipeline/WritebackUnit.hh
     AlwaysNotTakenPredictor.hh
     ArchitecturalRegisterFileSet.hh
-    Architecture.hh
     BranchPredictor.hh
     BTBPredictor.hh
     Core.hh
