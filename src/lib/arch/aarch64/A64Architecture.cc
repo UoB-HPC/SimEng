@@ -7,6 +7,8 @@
 #include "A64InstructionMetadata.hh"
 
 namespace simeng {
+namespace arch {
+namespace aarch64 {
 
 std::unordered_map<uint32_t, A64Instruction> A64Architecture::decodeCache;
 std::forward_list<A64InstructionMetadata> A64Architecture::metadataCache;
@@ -117,4 +119,6 @@ std::pair<uint8_t, uint8_t> A64Architecture::getLatencies(
   return {1, 1};
 }
 
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng

@@ -5,6 +5,10 @@
 #include <limits>
 #include <tuple>
 
+namespace simeng {
+namespace arch {
+namespace aarch64 {
+
 uint8_t nzcv(bool n, bool z, bool c, bool v) {
   return (n << 3) | (z << 2) | (c << 1) | v;
 }
@@ -175,8 +179,6 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
 
   return (inverse ? !result : result);
 }
-
-namespace simeng {
 
 void A64Instruction::executionNYI() {
   exceptionEncountered_ = true;
@@ -1019,4 +1021,6 @@ void A64Instruction::execute() {
   }
 }
 
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng

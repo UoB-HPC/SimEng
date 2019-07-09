@@ -6,6 +6,8 @@
 #include "A64InstructionMetadata.hh"
 
 namespace simeng {
+namespace arch {
+namespace aarch64 {
 
 A64ExceptionHandler::A64ExceptionHandler(
     const std::shared_ptr<Instruction>& instruction,
@@ -255,4 +257,6 @@ bool A64ExceptionHandler::fatal() {
   return true;
 }
 
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng

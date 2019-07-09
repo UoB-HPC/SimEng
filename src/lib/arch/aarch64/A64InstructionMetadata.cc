@@ -3,6 +3,8 @@
 #include <cstring>
 
 namespace simeng {
+namespace arch {
+namespace aarch64 {
 
 A64InstructionMetadata::A64InstructionMetadata(const cs_insn& insn)
     : id(insn.id),
@@ -385,4 +387,6 @@ void A64InstructionMetadata::revertAliasing() {
 
 void A64InstructionMetadata::aliasNYI() { id = ARM64_INS_INVALID; }
 
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng

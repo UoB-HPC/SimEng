@@ -8,6 +8,8 @@
 #include "kernel/Linux.hh"
 
 namespace simeng {
+namespace arch {
+namespace aarch64 {
 
 /** An A64 exception handler. */
 class A64ExceptionHandler : public ExceptionHandler {
@@ -83,4 +85,6 @@ class A64ExceptionHandler : public ExceptionHandler {
   static constexpr Register R3 = {A64RegisterType::GENERAL, 3};
 };
 
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng

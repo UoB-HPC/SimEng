@@ -9,6 +9,8 @@
 struct cs_arm64_op;
 
 namespace simeng {
+namespace arch {
+namespace aarch64 {
 
 struct A64InstructionMetadata;
 
@@ -213,4 +215,6 @@ class A64Instruction : public Instruction {
   uint64_t extendOffset(uint64_t value, const cs_arm64_op& op) const;
 };
 
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng

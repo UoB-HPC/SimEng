@@ -167,16 +167,17 @@ int main(int argc, char** argv) {
   simeng::FlatMemoryInterface dataMemory(processMemory, processMemorySize);
 
   // Create the architecture, with knowledge of the kernel
-  auto arch = simeng::A64Architecture(kernel);
+  auto arch = simeng::arch::aarch64::A64Architecture(kernel);
 
   auto predictor = simeng::BTBPredictor(8);
 
   // TODO: Construct port arrangement from config options
   const std::vector<std::vector<uint16_t>> portArrangement = {
-      {simeng::A64InstructionGroups::LOAD, simeng::A64InstructionGroups::STORE},
-      {simeng::A64InstructionGroups::ARITHMETIC},
-      {simeng::A64InstructionGroups::ARITHMETIC,
-       simeng::A64InstructionGroups::BRANCH}};
+      {simeng::arch::aarch64::A64InstructionGroups::LOAD,
+       simeng::arch::aarch64::A64InstructionGroups::STORE},
+      {simeng::arch::aarch64::A64InstructionGroups::ARITHMETIC},
+      {simeng::arch::aarch64::A64InstructionGroups::ARITHMETIC,
+       simeng::arch::aarch64::A64InstructionGroups::BRANCH}};
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
   int iterations = 0;

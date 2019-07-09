@@ -3,6 +3,8 @@
 #include "capstone/capstone.h"
 
 namespace simeng {
+namespace arch {
+namespace aarch64 {
 
 /** AArch64 opcodes. Each opcode represents a unique AArch64 operation. */
 namespace A64Opcode {
@@ -81,4 +83,6 @@ struct A64InstructionMetadata {
   void aliasNYI();
 };
 
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng

@@ -12,6 +12,8 @@
 using csh = size_t;
 
 namespace simeng {
+namespace arch {
+namespace aarch64 {
 
 /* A basic ARMv8-a implementation of the `Architecture` interface. */
 class A64Architecture : public Architecture {
@@ -67,4 +69,6 @@ class A64Architecture : public Architecture {
   kernel::Linux& linux_;
 };
 
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng

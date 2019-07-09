@@ -1,9 +1,9 @@
 #include "A64Instruction.hh"
 #include "A64InstructionMetadata.hh"
 
-#include <iostream>
-
 namespace simeng {
+namespace arch {
+namespace aarch64 {
 
 span<const MemoryAccessTarget> A64Instruction::generateAddresses() {
   assert((isLoad() || isStore()) &&
@@ -224,4 +224,6 @@ span<const MemoryAccessTarget> A64Instruction::generateAddresses() {
   return getGeneratedAddresses();
 }
 
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng

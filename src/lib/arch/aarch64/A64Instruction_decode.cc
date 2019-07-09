@@ -7,6 +7,8 @@
 #define ROR(x, shift, size) ((x >> shift) | (x << (size - shift)))
 
 namespace simeng {
+namespace arch {
+namespace aarch64 {
 
 /********************
  * HELPER FUNCTIONS
@@ -218,4 +220,6 @@ void A64Instruction::unallocated() {
   exception = A64InstructionException::EncodingUnallocated;
 }
 
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng

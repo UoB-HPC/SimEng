@@ -7,6 +7,8 @@
 #include "A64InstructionMetadata.hh"
 
 namespace simeng {
+namespace arch {
+namespace aarch64 {
 
 const Register A64Instruction::ZERO_REGISTER = {A64RegisterType::GENERAL,
                                                 (uint16_t)-1};
@@ -214,4 +216,6 @@ uint64_t A64Instruction::extendOffset(uint64_t value,
   return extendValue(value, op.ext, op.shift.value);
 }
 
+}  // namespace aarch64
+}  // namespace arch
 }  // namespace simeng

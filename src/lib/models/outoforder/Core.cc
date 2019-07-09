@@ -24,9 +24,10 @@ const unsigned int fetchBlockAlignmentBits = 4;
 const unsigned int frontendWidth = 2;
 const unsigned int commitWidth = 2;
 const std::vector<std::vector<uint16_t>> portArrangement = {
-    {A64InstructionGroups::LOAD, A64InstructionGroups::STORE},
-    {A64InstructionGroups::ARITHMETIC},
-    {A64InstructionGroups::BRANCH}};
+    {arch::aarch64::A64InstructionGroups::LOAD,
+     arch::aarch64::A64InstructionGroups::STORE},
+    {arch::aarch64::A64InstructionGroups::ARITHMETIC},
+    {arch::aarch64::A64InstructionGroups::BRANCH}};
 const unsigned int executionUnitCount = portArrangement.size();
 const unsigned int lsqCompletionSlots = 1;
 
