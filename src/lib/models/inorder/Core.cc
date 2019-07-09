@@ -30,7 +30,7 @@ Core::Core(FlatMemoryInterface& instructionMemory,
           [this](auto instruction) { handleLoad(instruction); },
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
-          branchPredictor),
+          branchPredictor, false),
       writebackUnit_(completionSlots_, registerFileSet_) {
   // Query and apply initial state
   auto state = isa.getInitialState();

@@ -12,14 +12,15 @@ ExecuteUnit::ExecuteUnit(
     std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
     std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-    BranchPredictor& predictor)
+    BranchPredictor& predictor, bool pipelined)
     : input_(input),
       output_(output),
       forwardOperands_(forwardOperands),
       handleLoad_(handleLoad),
       handleStore_(handleStore),
       raiseException_(raiseException),
-      predictor_(predictor) {}
+      predictor_(predictor),
+      pipelined_(pipelined) {}
 
 void ExecuteUnit::tick() {
   tickCounter_++;
@@ -43,8 +44,10 @@ void ExecuteUnit::tick() {
           pipeline_.push({uop, tickCounter_ + latency - 1});
 
           // This instruction may take more than a single cycle; check for a
-          // stall
-          auto stallCycles = uop->getStallCycles();
+          // stall. For unpipelined units, the unit will stall for the full
+          // instruction duration.
+          auto stallCycles =
+              pipelined_ ? uop->getStallCycles() : uop->getLatency();
           if (stallCycles > 1) {
             stallUntil_ = tickCounter_ + stallCycles - 1;
             input_.stall(true);

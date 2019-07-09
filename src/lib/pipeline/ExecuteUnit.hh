@@ -33,7 +33,7 @@ class ExecuteUnit {
       std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
       std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-      BranchPredictor& predictor);
+      BranchPredictor& predictor, bool pipelined = true);
 
   /** Tick the execute unit. Places incoming instructions into the pipeline and
    * executes an instruction that has reached the head of the pipeline, if
@@ -76,6 +76,10 @@ class ExecuteUnit {
   /** A reference to the branch predictor, for updating with prediction results.
    */
   BranchPredictor& predictor_;
+
+  /** Whether this unit is pipelined, or if all instructions should stall until
+   * complete. */
+  bool pipelined_;
 
   /** The execution unit's internal pipeline, holding instructions until their
    * execution latency has expired and they are ready for their final results to
