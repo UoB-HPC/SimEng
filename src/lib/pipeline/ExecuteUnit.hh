@@ -95,6 +95,9 @@ class ExecuteUnit {
 
   /** The number of times this unit has been ticked. */
   uint64_t tickCounter_ = 0;
+
+  /** The cycle this unit will become unstalled. */
+  uint64_t stallUntil_ = 0;
 };
 
 }  // namespace pipeline

@@ -11,8 +11,12 @@ namespace simeng {
 const Register A64Instruction::ZERO_REGISTER = {A64RegisterType::GENERAL,
                                                 (uint16_t)-1};
 
-A64Instruction::A64Instruction(const A64InstructionMetadata& metadata)
+A64Instruction::A64Instruction(const A64InstructionMetadata& metadata,
+                               uint8_t latency, uint8_t stallCycles)
     : metadata(metadata) {
+  latency_ = latency;
+  stallCycles_ = stallCycles;
+
   decode();
 }
 
