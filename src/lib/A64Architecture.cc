@@ -103,6 +103,17 @@ bool A64Architecture::canRename(Register reg) const { return true; }
 
 std::pair<uint8_t, uint8_t> A64Architecture::getLatencies(
     A64InstructionMetadata& metadata) const {
+  const std::pair<uint8_t, uint8_t> FPSIMD_LATENCY = {6, 1};
+
+  // Look up the instruction opcode to get the latency
+  switch (metadata.opcode) {
+    case A64Opcode::AArch64_FADDv2f64:
+      return FPSIMD_LATENCY;
+    case A64Opcode::AArch64_FMULv2f64:
+      return FPSIMD_LATENCY;
+  }
+
+  // Assume single-cycle, non-blocking for all other instructions
   return {1, 1};
 }
 
