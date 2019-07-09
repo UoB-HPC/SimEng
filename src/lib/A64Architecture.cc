@@ -48,8 +48,13 @@ uint8_t A64Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
     // Cache the metadata
     metadataCache.emplace_front(metadata);
-    // Create and cache an instruction using the metadata
-    decodeCache.insert({insn, metadataCache.front()});
+
+    // Get the latencies for this instruction
+    auto latencies = getLatencies(metadata);
+
+    // Create and cache an instruction using the metadata and latencies
+    decodeCache.insert(
+        {insn, {metadataCache.front(), latencies.first, latencies.second}});
   }
 
   // Retrieve the cached instruction
@@ -95,5 +100,10 @@ ProcessStateChange A64Architecture::getInitialState() const {
 }
 
 bool A64Architecture::canRename(Register reg) const { return true; }
+
+std::pair<uint8_t, uint8_t> A64Architecture::getLatencies(
+    A64InstructionMetadata& metadata) const {
+  return {1, 1};
+}
 
 }  // namespace simeng

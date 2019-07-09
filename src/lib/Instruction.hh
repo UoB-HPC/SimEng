@@ -129,6 +129,13 @@ class Instruction {
   /** Retrieve the instruction group this instruction belongs to. */
   virtual uint16_t getGroup() const = 0;
 
+  /** Retrieve the number of cycles this instruction will take to execute. */
+  uint16_t getLatency() const;
+
+  /** Retrieve the number of cycles this instruction will block the unit
+   * executing it. */
+  uint16_t getStallCycles() const;
+
  protected:
   /** Whether an exception has been encountered. */
   bool exceptionEncountered_ = false;
@@ -163,6 +170,13 @@ class Instruction {
 
   /** Has this instruction been flushed? */
   bool flushed_ = false;
+
+  /** The number of cycles this instruction takes to execute. */
+  uint16_t latency_ = 1;
+
+  /** The number of cycles this instruction will stall the unit executing it
+   * for. */
+  uint16_t stallCycles_ = 1;
 };
 
 }  // namespace simeng

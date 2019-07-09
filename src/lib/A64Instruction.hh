@@ -44,7 +44,8 @@ class A64Instruction : public Instruction {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.
    */
-  A64Instruction(const A64InstructionMetadata& metadata);
+  A64Instruction(const A64InstructionMetadata& metadata, uint8_t latency,
+                 uint8_t stallCycles);
 
   /** Retrieve the identifier for the first exception that occurred during
    * processing this instruction. */

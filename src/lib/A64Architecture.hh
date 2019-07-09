@@ -44,6 +44,13 @@ class A64Architecture : public Architecture {
   ProcessStateChange getInitialState() const override;
 
  private:
+  /** Retrieve the latencies for the instruction represented by the supplied
+   * metadata. Returns a pair of values {latency, stallCycles}, representing the
+   * cycles the instruction takes to execute and the cycles it blocks the
+   * execution unit for, respectively. */
+  std::pair<uint8_t, uint8_t> getLatencies(
+      A64InstructionMetadata& metadata) const;
+
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */

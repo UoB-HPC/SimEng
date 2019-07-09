@@ -25,21 +25,34 @@ void ExecuteUnit::tick() {
   tickCounter_++;
   shouldFlush_ = false;
 
-  auto& uop = input_.getHeadSlots()[0];
-  if (uop != nullptr) {
-    if (!uop->isFlushed()) {
-      // TODO: Retrieve latency from the instruction
-      const unsigned int latency = 1;
+  if (stallUntil_ <= tickCounter_) {
+    input_.stall(false);
+    // Input isn't stalled; process instruction and add to pipeline
 
-      if (latency == 1 && pipeline_.size() == 0) {
-        // Pipeline is empty and insn will execute this cycle; bypass
-        execute(uop);
-      } else {
-        // Add insn to pipeline
-        pipeline_.push({uop, tickCounter_ + latency - 1});
+    auto& uop = input_.getHeadSlots()[0];
+    if (uop != nullptr) {
+      if (!uop->isFlushed()) {
+        // Retrieve execution latency from the instruction
+        auto latency = uop->getLatency();
+
+        if (latency == 1 && pipeline_.size() == 0) {
+          // Pipeline is empty and insn will execute this cycle; bypass
+          execute(uop);
+        } else {
+          // Add insn to pipeline
+          pipeline_.push({uop, tickCounter_ + latency - 1});
+
+          // This instruction may take more than a single cycle; check for a
+          // stall
+          auto stallCycles = uop->getStallCycles();
+          if (stallCycles > 1) {
+            stallUntil_ = tickCounter_ + stallCycles - 1;
+            input_.stall(true);
+          }
+        }
       }
+      input_.getHeadSlots()[0] = nullptr;
     }
-    input_.getHeadSlots()[0] = nullptr;
   }
 
   if (pipeline_.size() == 0) {
