@@ -5,13 +5,13 @@
 #include <string>
 
 #include "AlwaysNotTakenPredictor.hh"
-#include "arch/Architecture.hh"
 #include "BTBPredictor.hh"
 #include "Core.hh"
 #include "Elf.hh"
 #include "FlatMemoryInterface.hh"
-#include "arch/aarch64/A64Architecture.hh"
-#include "arch/aarch64/A64Instruction.hh"
+#include "arch/Architecture.hh"
+#include "arch/aarch64/Architecture.hh"
+#include "arch/aarch64/Instruction.hh"
 #include "kernel/Linux.hh"
 #include "models/emulation/Core.hh"
 #include "models/inorder/Core.hh"
@@ -167,17 +167,17 @@ int main(int argc, char** argv) {
   simeng::FlatMemoryInterface dataMemory(processMemory, processMemorySize);
 
   // Create the architecture, with knowledge of the kernel
-  auto arch = simeng::arch::aarch64::A64Architecture(kernel);
+  auto arch = simeng::arch::aarch64::Architecture(kernel);
 
   auto predictor = simeng::BTBPredictor(8);
 
   // TODO: Construct port arrangement from config options
   const std::vector<std::vector<uint16_t>> portArrangement = {
-      {simeng::arch::aarch64::A64InstructionGroups::LOAD,
-       simeng::arch::aarch64::A64InstructionGroups::STORE},
-      {simeng::arch::aarch64::A64InstructionGroups::ARITHMETIC},
-      {simeng::arch::aarch64::A64InstructionGroups::ARITHMETIC,
-       simeng::arch::aarch64::A64InstructionGroups::BRANCH}};
+      {simeng::arch::aarch64::InstructionGroups::LOAD,
+       simeng::arch::aarch64::InstructionGroups::STORE},
+      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC},
+      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
+       simeng::arch::aarch64::InstructionGroups::BRANCH}};
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
   int iterations = 0;

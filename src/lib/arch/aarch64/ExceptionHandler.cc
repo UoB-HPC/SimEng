@@ -1,35 +1,35 @@
-#include "A64ExceptionHandler.hh"
+#include "ExceptionHandler.hh"
 
 #include <iomanip>
 #include <iostream>
 
-#include "A64InstructionMetadata.hh"
+#include "InstructionMetadata.hh"
 
 namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-A64ExceptionHandler::A64ExceptionHandler(
-    const std::shared_ptr<Instruction>& instruction,
+ExceptionHandler::ExceptionHandler(
+    const std::shared_ptr<simeng::Instruction>& instruction,
     const ArchitecturalRegisterFileSet& registerFileSet,
     MemoryInterface& memory, kernel::Linux& linux_)
-    : instruction_(*static_cast<A64Instruction*>(instruction.get())),
+    : instruction_(*static_cast<Instruction*>(instruction.get())),
       registerFileSet_(registerFileSet),
       memory_(memory),
       linux_(linux_) {
   resumeHandling_ = [this]() { return init(); };
 }
 
-bool A64ExceptionHandler::tick() { return resumeHandling_(); }
+bool ExceptionHandler::tick() { return resumeHandling_(); }
 
-bool A64ExceptionHandler::init() {
+bool ExceptionHandler::init() {
   printException(instruction_);
-  A64InstructionException exception = instruction_.getException();
+  InstructionException exception = instruction_.getException();
 
-  if (exception == A64InstructionException::SupervisorCall) {
+  if (exception == InstructionException::SupervisorCall) {
     // Retrieve syscall ID held in register x8
     auto syscallId =
-        registerFileSet_.get({A64RegisterType::GENERAL, 8}).get<uint64_t>();
+        registerFileSet_.get({RegisterType::GENERAL, 8}).get<uint64_t>();
     std::cout << "Syscall ID is " << syscallId << std::endl;
 
     ProcessStateChange stateChange;
@@ -105,9 +105,10 @@ bool A64ExceptionHandler::init() {
   return fatal();
 }
 
-bool A64ExceptionHandler::readStringThen(
-    char* buffer, uint64_t address, int maxLength,
-    std::function<bool(size_t length)> then, int offset) {
+bool ExceptionHandler::readStringThen(char* buffer, uint64_t address,
+                                      int maxLength,
+                                      std::function<bool(size_t length)> then,
+                                      int offset) {
   if (maxLength <= 0) {
     return then(offset);
   }
@@ -156,7 +157,7 @@ bool A64ExceptionHandler::readStringThen(
   return false;
 }
 
-void A64ExceptionHandler::readLinkAt(span<char> path) {
+void ExceptionHandler::readLinkAt(span<char> path) {
   if (path.size() == kernel::Linux::LINUX_PATH_MAX) {
     // TODO: Handle LINUX_PATH_MAX case
     std::cout << "Path exceeds LINUX_PATH_MAX" << std::endl;
@@ -193,7 +194,7 @@ void A64ExceptionHandler::readLinkAt(span<char> path) {
   concludeSyscall(stateChange);
 }
 
-bool A64ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
+bool ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
   uint64_t nextInstructionAddress = instruction_.getInstructionAddress() + 4;
 
   std::cout << "Resuming from 0x" << std::hex << nextInstructionAddress
@@ -204,27 +205,25 @@ bool A64ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
   return true;
 }
 
-const ExceptionResult& A64ExceptionHandler::getResult() const {
-  return result_;
-}
+const ExceptionResult& ExceptionHandler::getResult() const { return result_; }
 
-void A64ExceptionHandler::printException(const A64Instruction& insn) const {
+void ExceptionHandler::printException(const Instruction& insn) const {
   auto exception = insn.getException();
   std::cout << "Encountered ";
   switch (exception) {
-    case A64InstructionException::EncodingUnallocated:
+    case InstructionException::EncodingUnallocated:
       std::cout << "illegal instruction";
       break;
-    case A64InstructionException::ExecutionNotYetImplemented:
+    case InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";
       break;
-    case A64InstructionException::SupervisorCall:
+    case InstructionException::SupervisorCall:
       std::cout << "supervisor call";
       break;
-    case A64InstructionException::HypervisorCall:
+    case InstructionException::HypervisorCall:
       std::cout << "hypervisor call";
       break;
-    case A64InstructionException::SecureMonitorCall:
+    case InstructionException::SecureMonitorCall:
       std::cout << "secure monitor call";
       break;
     default:
@@ -243,7 +242,7 @@ void A64ExceptionHandler::printException(const A64Instruction& insn) const {
               << static_cast<unsigned int>(byte) << " ";
   }
   std::cout << std::dec << "    ";
-  if (exception == A64InstructionException::EncodingUnallocated) {
+  if (exception == InstructionException::EncodingUnallocated) {
     std::cout << "<unknown>";
   } else {
     std::cout << metadata.mnemonic << " " << metadata.operandStr;
@@ -252,7 +251,7 @@ void A64ExceptionHandler::printException(const A64Instruction& insn) const {
   std::cout << std::endl;
 }
 
-bool A64ExceptionHandler::fatal() {
+bool ExceptionHandler::fatal() {
   result_ = {true, 0, {}};
   return true;
 }

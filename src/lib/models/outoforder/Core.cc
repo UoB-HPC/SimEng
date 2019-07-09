@@ -5,7 +5,7 @@
 #include <string>
 
 // Temporary; until config options are available
-#include "arch/aarch64/A64Instruction.hh"
+#include "arch/aarch64/Instruction.hh"
 
 namespace simeng {
 namespace models {
@@ -24,10 +24,10 @@ const unsigned int fetchBlockAlignmentBits = 4;
 const unsigned int frontendWidth = 2;
 const unsigned int commitWidth = 2;
 const std::vector<std::vector<uint16_t>> portArrangement = {
-    {arch::aarch64::A64InstructionGroups::LOAD,
-     arch::aarch64::A64InstructionGroups::STORE},
-    {arch::aarch64::A64InstructionGroups::ARITHMETIC},
-    {arch::aarch64::A64InstructionGroups::BRANCH}};
+    {arch::aarch64::InstructionGroups::LOAD,
+     arch::aarch64::InstructionGroups::STORE},
+    {arch::aarch64::InstructionGroups::ARITHMETIC},
+    {arch::aarch64::InstructionGroups::BRANCH}};
 const unsigned int executionUnitCount = portArrangement.size();
 const unsigned int lsqCompletionSlots = 1;
 

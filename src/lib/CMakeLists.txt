@@ -1,11 +1,11 @@
 set(SIMENG_SOURCES
-    arch/aarch64/A64Architecture.cc
-    arch/aarch64/A64ExceptionHandler.cc
-    arch/aarch64/A64Instruction.cc
-    arch/aarch64/A64Instruction_address.cc
-    arch/aarch64/A64Instruction_decode.cc
-    arch/aarch64/A64Instruction_execute.cc
-    arch/aarch64/A64InstructionMetadata.cc
+    arch/aarch64/Architecture.cc
+    arch/aarch64/ExceptionHandler.cc
+    arch/aarch64/Instruction.cc
+    arch/aarch64/Instruction_address.cc
+    arch/aarch64/Instruction_decode.cc
+    arch/aarch64/Instruction_execute.cc
+    arch/aarch64/InstructionMetadata.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
     models/emulation/Core.cc
@@ -35,10 +35,10 @@ set(SIMENG_SOURCES
 
 set(SIMENG_HEADERS
     arch/Architecture.hh
-    arch/aarch64/A64Architecture.hh
-    arch/aarch64/A64ExceptionHandler.hh
-    arch/aarch64/A64Instruction.hh
-    arch/aarch64/A64InstructionMetadata.hh
+    arch/aarch64/Architecture.hh
+    arch/aarch64/ExceptionHandler.hh
+    arch/aarch64/Instruction.hh
+    arch/aarch64/InstructionMetadata.hh
     kernel/Linux.hh
     kernel/LinuxProcess.hh
     models/emulation/Core.hh

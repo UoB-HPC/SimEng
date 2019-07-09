@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Instruction.hh"
+#include "../../Instruction.hh"
 
 #include <array>
 
@@ -12,26 +12,26 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-struct A64InstructionMetadata;
+struct InstructionMetadata;
 
-namespace A64RegisterType {
+namespace RegisterType {
 /** The 64-bit general purpose register set: [w|x]0-31. */
 const uint8_t GENERAL = 0;
 /** The 128+ bit vector register set: v0-31. */
 const uint8_t VECTOR = 1;
 /** The 4-bit NZCV condition flag register. */
 const uint8_t NZCV = 2;
-}  // namespace A64RegisterType
+}  // namespace RegisterType
 
-/** The IDs of the instruction groups for A64 instructions. */
-namespace A64InstructionGroups {
+/** The IDs of the instruction groups for AArch64 instructions. */
+namespace InstructionGroups {
 const uint8_t ARITHMETIC = 0;
 const uint8_t LOAD = 1;
 const uint8_t STORE = 2;
 const uint8_t BRANCH = 3;
-}  // namespace A64InstructionGroups
+}  // namespace InstructionGroups
 
-enum class A64InstructionException {
+enum class InstructionException {
   None = 0,
   EncodingUnallocated,
   EncodingNotYetImplemented,
@@ -42,16 +42,16 @@ enum class A64InstructionException {
 };
 
 /** A basic ARMv8-a implementation of the `Instruction` interface. */
-class A64Instruction : public Instruction {
+class Instruction : public simeng::Instruction {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.
    */
-  A64Instruction(const A64InstructionMetadata& metadata, uint8_t latency,
-                 uint8_t stallCycles);
+  Instruction(const InstructionMetadata& metadata, uint8_t latency,
+              uint8_t stallCycles);
 
   /** Retrieve the identifier for the first exception that occurred during
    * processing this instruction. */
-  virtual A64InstructionException getException() const;
+  virtual InstructionException getException() const;
 
   /** Retrieve the source registers this instruction reads. */
   const span<Register> getOperandRegisters() const override;
@@ -115,7 +115,7 @@ class A64Instruction : public Instruction {
   uint16_t getGroup() const override;
 
   /** Retrieve the instruction's metadata. */
-  const A64InstructionMetadata& getMetadata() const;
+  const InstructionMetadata& getMetadata() const;
 
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
@@ -123,15 +123,15 @@ class A64Instruction : public Instruction {
   static const Register ZERO_REGISTER;
 
  private:
-  /** The maximum number of source registers any supported A64 instruction can
-   * have. */
-  static const size_t MAX_SOURCE_REGISTERS = 4;
-  /** The maximum number of destination registers any supported A64 instruction
+  /** The maximum number of source registers any supported AArch64 instruction
    * can have. */
+  static const size_t MAX_SOURCE_REGISTERS = 4;
+  /** The maximum number of destination registers any supported AArch64
+   * instruction can have. */
   static const size_t MAX_DESTINATION_REGISTERS = 3;
 
   /** A reference to the decoding metadata for this instruction. */
-  const A64InstructionMetadata& metadata;
+  const InstructionMetadata& metadata;
 
   /** An array of source registers. */
   std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
@@ -152,7 +152,7 @@ class A64Instruction : public Instruction {
   std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results;
 
   /** The current exception state of this instruction. */
-  A64InstructionException exception = A64InstructionException::None;
+  InstructionException exception = InstructionException::None;
 
   // Decoding
   /** Process the instruction's metadata to determine source/destination

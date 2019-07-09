@@ -5,8 +5,8 @@
 #include <forward_list>
 #include <unordered_map>
 
-#include "A64ExceptionHandler.hh"
-#include "A64Instruction.hh"
+#include "ExceptionHandler.hh"
+#include "Instruction.hh"
 #include "kernel/Linux.hh"
 
 using csh = size_t;
@@ -16,11 +16,11 @@ namespace arch {
 namespace aarch64 {
 
 /* A basic ARMv8-a implementation of the `Architecture` interface. */
-class A64Architecture : public Architecture {
+class Architecture : public arch::Architecture {
  public:
-  A64Architecture(kernel::Linux& kernel);
-  ~A64Architecture();
-  /** Pre-decode instruction memory into a macro-op of `A64Instruction`
+  Architecture(kernel::Linux& kernel);
+  ~Architecture();
+  /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
    * and writes into the supplied macro-op vector. */
   uint8_t predecode(const void* ptr, uint8_t bytesAvailable,
@@ -37,8 +37,8 @@ class A64Architecture : public Architecture {
    * providing a register file state and a reference to process memory.
    * Returns a smart pointer to an `ExceptionHandler` which may be ticked until
    * the exception is resolved, and results then obtained. */
-  std::shared_ptr<ExceptionHandler> handleException(
-      const std::shared_ptr<Instruction>& instruction,
+  std::shared_ptr<arch::ExceptionHandler> handleException(
+      const std::shared_ptr<simeng::Instruction>& instruction,
       const ArchitecturalRegisterFileSet& registerFileSet,
       MemoryInterface& memory) const override;
 
@@ -50,17 +50,16 @@ class A64Architecture : public Architecture {
    * metadata. Returns a pair of values {latency, stallCycles}, representing the
    * cycles the instruction takes to execute and the cycles it blocks the
    * execution unit for, respectively. */
-  std::pair<uint8_t, uint8_t> getLatencies(
-      A64InstructionMetadata& metadata) const;
+  std::pair<uint8_t, uint8_t> getLatencies(InstructionMetadata& metadata) const;
 
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */
-  static std::unordered_map<uint32_t, A64Instruction> decodeCache;
+  static std::unordered_map<uint32_t, Instruction> decodeCache;
   /** A decoding metadata cache, mapping an instruction word to a previously
    * decoded instruction metadata bundle. Metadata is added to the cache as it's
    * decoded, to reduce the overhead of future decoding. */
-  static std::forward_list<A64InstructionMetadata> metadataCache;
+  static std::forward_list<InstructionMetadata> metadataCache;
 
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;

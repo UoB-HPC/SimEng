@@ -7,20 +7,20 @@ namespace arch {
 namespace aarch64 {
 
 /** AArch64 opcodes. Each opcode represents a unique AArch64 operation. */
-namespace A64Opcode {
+namespace Opcode {
 #define GET_INSTRINFO_ENUM
 #include "AArch64GenInstrInfo.inc"
-}  // namespace A64Opcode
+}  // namespace Opcode
 
-/** A simplified A64-only version of the Capstone instruction structure. */
-struct A64InstructionMetadata {
+/** A simplified AArch64-only version of the Capstone instruction structure. */
+struct InstructionMetadata {
  public:
   /** Constructs a metadata object from a Capstone instruction representation.
    */
-  A64InstructionMetadata(const cs_insn& insn);
+  InstructionMetadata(const cs_insn& insn);
 
   /** Constructs an invalid metadata object containing the invalid encoding. */
-  A64InstructionMetadata(const uint8_t* invalidEncoding);
+  InstructionMetadata(const uint8_t* invalidEncoding);
 
   static const size_t MAX_OPERAND_STR_LENGTH =
       sizeof(cs_insn::op_str) / sizeof(char);
