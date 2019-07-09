@@ -1,7 +1,7 @@
+.. _registers:
+
 Registers
 =========
-
-.. _registers:
 
 Instructions in SimEng primarily operate upon registers. Each instruction may request data from any number of registers, and may update any number of registers upon completion.
 
