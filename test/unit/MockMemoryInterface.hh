@@ -18,6 +18,8 @@ class MockMemoryInterface : public MemoryInterface {
       const span<std::pair<MemoryAccessTarget, RegisterValue>>());
 
   MOCK_METHOD0(clearCompletedReads, void());
+
+  MOCK_METHOD0(tick, void());
 };
 
 }  // namespace simeng

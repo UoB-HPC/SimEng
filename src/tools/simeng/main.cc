@@ -8,6 +8,7 @@
 #include "BTBPredictor.hh"
 #include "Core.hh"
 #include "Elf.hh"
+#include "FixedLatencyMemoryInterface.hh"
 #include "FlatMemoryInterface.hh"
 #include "arch/Architecture.hh"
 #include "arch/aarch64/Architecture.hh"
@@ -21,11 +22,16 @@
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
 /** Tick the provided core model until it halts. */
-int simulate(simeng::Core& core) {
+int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
+             simeng::MemoryInterface& dataMemory) {
   int iterations = 0;
   while (!core.hasHalted()) {
     // Tick the core until it detects the program has halted.
     core.tick();
+
+    // Tick memory
+    instructionMemory.tick();
+    dataMemory.tick();
 
     iterations++;
   }
@@ -164,7 +170,6 @@ int main(int argc, char** argv) {
 
   simeng::FlatMemoryInterface instructionMemory(processMemory,
                                                 processMemorySize);
-  simeng::FlatMemoryInterface dataMemory(processMemory, processMemorySize);
 
   // Create the architecture, with knowledge of the kernel
   auto arch = simeng::arch::aarch64::Architecture(kernel);
@@ -180,29 +185,40 @@ int main(int argc, char** argv) {
        simeng::arch::aarch64::InstructionGroups::BRANCH}};
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
+  // TODO: Expose as config option
+  const uint16_t dataMemoryLatency = 4;
+
   int iterations = 0;
 
   std::string modeString;
   std::unique_ptr<simeng::Core> core;
+  std::unique_ptr<simeng::MemoryInterface> dataMemory;
   switch (mode) {
     case SimulationMode::OutOfOrder: {
       modeString = "Out-of-Order";
+      dataMemory = std::make_unique<simeng::FixedLatencyMemoryInterface>(
+          processMemory, processMemorySize, dataMemoryLatency);
       core = std::make_unique<simeng::models::outoforder::Core>(
-          instructionMemory, dataMemory, processMemorySize, entryPoint, arch,
+          instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
           predictor, portAllocator);
       break;
     }
     case SimulationMode::InOrderPipelined: {
       modeString = "In-Order Pipelined";
+      dataMemory = std::make_unique<simeng::FlatMemoryInterface>(
+          processMemory, processMemorySize);
       core = std::make_unique<simeng::models::inorder::Core>(
-          instructionMemory, dataMemory, processMemorySize, entryPoint, arch,
-          predictor);
+          instructionMemory,
+          dynamic_cast<simeng::FlatMemoryInterface&>(*dataMemory),
+          processMemorySize, entryPoint, arch, predictor);
       break;
     }
     default: {
       modeString = "Emulation";
+      dataMemory = std::make_unique<simeng::FlatMemoryInterface>(
+          processMemory, processMemorySize);
       core = std::make_unique<simeng::models::emulation::Core>(
-          instructionMemory, dataMemory, entryPoint, processMemorySize, arch);
+          instructionMemory, *dataMemory, entryPoint, processMemorySize, arch);
       break;
     }
   };
@@ -210,7 +226,7 @@ int main(int argc, char** argv) {
   std::cout << "Starting..." << std::endl;
   auto startTime = std::chrono::high_resolution_clock::now();
 
-  iterations = simulate(*core);
+  iterations = simulate(*core, *dataMemory, instructionMemory);
 
   auto endTime = std::chrono::high_resolution_clock::now();
   auto duration =
