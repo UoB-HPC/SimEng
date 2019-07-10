@@ -1,7 +1,7 @@
 #pragma once
 
+#include <deque>
 #include <functional>
-#include <queue>
 
 #include "../BranchPredictor.hh"
 #include "../Instruction.hh"
@@ -51,6 +51,10 @@ class ExecuteUnit {
    * misprediction. */
   uint64_t getFlushSeqId() const;
 
+  /** Purge flushed instructions from the internal pipeline and clear any active
+   * stall, if applicable. */
+  void purgeFlushed();
+
  private:
   /** Execute the supplied uop, write it into the output buffer, and forward
    * results back to dispatch/issue. */
@@ -84,7 +88,7 @@ class ExecuteUnit {
   /** The execution unit's internal pipeline, holding instructions until their
    * execution latency has expired and they are ready for their final results to
    * be calculated and forwarded. */
-  std::queue<ExecutionUnitPipelineEntry> pipeline_;
+  std::deque<ExecutionUnitPipelineEntry> pipeline_;
 
   /** Whether the core should be flushed after this cycle. */
   bool shouldFlush_;
