@@ -9,31 +9,12 @@ target_link_libraries(regression-test-base libsimeng)
 # Link to gtest
 target_link_libraries(regression-test-base gtest_main)
 
-# Include LLVM
-target_include_directories(regression-test-base PRIVATE
-                           ${PROJECT_SOURCE_DIR}/external/llvm/include
-                           ${PROJECT_BINARY_DIR}/external/llvm/include)
+# Add LLVM includes
+target_include_directories(regression-test-base PRIVATE ${LLVM_INCLUDE_DIRS})
 
-# Link to LLVM
-# List of LLVM libraries obtained from running:
-#   llvm-config --libs aarch64asmparser object
-target_link_libraries(regression-test-base
-                      LLVMAArch64AsmParser
-                      LLVMAArch64Desc
-                      LLVMAArch64Utils
-                      LLVMAArch64Info
-                      LLVMObject
-                      LLVMMCParser
-                      LLVMMC
-                      LLVMDebugInfoCodeView
-                      LLVMDebugInfoMSF
-                      LLVMBitReader
-                      LLVMCore
-                      LLVMRemarks
-                      LLVMBinaryFormat
-                      LLVMSupport
-                      LLVMDemangle
-                      )
+# Link to LLVM libraries
+llvm_map_components_to_libnames(LLVM_LIBS aarch64asmparser object)
+target_link_libraries(regression-test-base ${LLVM_LIBS})
 
 # Add regression test directories for each architecture
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
