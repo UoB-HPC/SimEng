@@ -168,6 +168,9 @@ void Core::flushIfNeeded() {
     reorderBuffer_.flush(lowestSeqId);
     dispatchIssueUnit_.purgeFlushed();
     loadStoreQueue_.purgeFlushed();
+    for (auto& eu : executionUnits_) {
+      eu.purgeFlushed();
+    }
 
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
@@ -236,6 +239,9 @@ void Core::handleException() {
   reorderBuffer_.flush(exceptionGeneratingInstruction_->getSequenceId());
   dispatchIssueUnit_.purgeFlushed();
   loadStoreQueue_.purgeFlushed();
+  for (auto& eu : executionUnits_) {
+    eu.purgeFlushed();
+  }
 
   exceptionGenerated_ = false;
   exceptionHandler_ = isa_.handleException(exceptionGeneratingInstruction_,

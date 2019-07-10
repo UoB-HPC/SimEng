@@ -41,7 +41,7 @@ void ExecuteUnit::tick() {
           execute(uop);
         } else {
           // Add insn to pipeline
-          pipeline_.push({uop, tickCounter_ + latency - 1});
+          pipeline_.push_back({uop, tickCounter_ + latency - 1});
 
           // This instruction may take more than a single cycle; check for a
           // stall. For unpipelined units, the unit will stall for the full
@@ -62,19 +62,10 @@ void ExecuteUnit::tick() {
     return;
   }
 
-  // Pop flushed instructions from the pipeline until a non-flushed instruction
-  // is found. If the pipeline ends up empty, return early.
-  while (pipeline_.front().insn->isFlushed()) {
-    pipeline_.pop();
-    if (pipeline_.size() == 0) {
-      return;
-    }
-  }
-
   auto& head = pipeline_.front();
   if (head.readyAt <= tickCounter_) {
     execute(head.insn);
-    pipeline_.pop();
+    pipeline_.pop_front();
   }
 }
 
@@ -129,6 +120,28 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
 bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t ExecuteUnit::getFlushAddress() const { return pc_; }
 uint64_t ExecuteUnit::getFlushSeqId() const { return flushAfter_; }
+
+void ExecuteUnit::purgeFlushed() {
+  if (pipeline_.size() == 0) {
+    return;
+  }
+
+  // If the newest instruction has been flushed, clear any stalls.
+  if (pipeline_.back().insn->isFlushed()) {
+    stallUntil_ = tickCounter_;
+  }
+
+  // Iterate over the pipeline and remove flushed instructions
+  auto it = pipeline_.begin();
+  while (it != pipeline_.end()) {
+    auto& entry = *it;
+    if (entry.insn->isFlushed()) {
+      it = pipeline_.erase(it);
+    } else {
+      it++;
+    }
+  }
+}
 
 }  // namespace pipeline
 }  // namespace simeng
