@@ -39,15 +39,35 @@ set(CAPSTONE_MOS65XX_SUPPORT OFF CACHE BOOL "Disable MSO65XX support")
 add_subdirectory(external/capstone EXCLUDE_FROM_ALL)
 
 # Add LLVM
-set(LLVM_TARGETS_TO_BUILD "AArch64" CACHE INTERNAL "")
-set(LLVM_BUILD_RUNTIME OFF)
-set(LLVM_INCLUDE_TOOLS OFF)
-set(LLVM_INCLUDE_EXAMPLES OFF)
-set(LLVM_INCLUDE_TESTS OFF)
-set(LLVM_INCLUDE_BENCHMARKS OFF)
-set(LLVM_INCLUDE_DOCS OFF)
-set(LLVM_INCLUDE_UTILS OFF)
-add_subdirectory(external/llvm EXCLUDE_FROM_ALL)
+option(SIMENG_USE_EXTERNAL_LLVM
+       "Use an external LLVM rather than building it as a submodule")
+if (SIMENG_USE_EXTERNAL_LLVM)
+  find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
+else()
+  set(LLVM_TARGETS_TO_BUILD "AArch64" CACHE INTERNAL "")
+  set(LLVM_BUILD_RUNTIME OFF)
+  set(LLVM_INCLUDE_TOOLS OFF)
+  set(LLVM_INCLUDE_EXAMPLES OFF)
+  set(LLVM_INCLUDE_TESTS OFF)
+  set(LLVM_INCLUDE_BENCHMARKS OFF)
+  set(LLVM_INCLUDE_DOCS OFF)
+  set(LLVM_INCLUDE_UTILS OFF)
+  add_subdirectory(external/llvm EXCLUDE_FROM_ALL)
+  find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH
+               PATHS "${PROJECT_BINARY_DIR}/external/llvm/lib/cmake/llvm")
+endif()
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+# Check LLVM version
+if (${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0")
+  message(FATAL_ERROR "LLVM version must be >= 8.0")
+endif()
+
+# Check LLVM was built with the correct targets enabled
+if (NOT "AArch64" IN_LIST LLVM_TARGETS_TO_BUILD)
+  message(FATAL_ERROR "LLVM was built without AArch64 target")
+endif()
 
 add_subdirectory(src)
 
