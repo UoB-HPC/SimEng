@@ -27,6 +27,7 @@ set(SIMENG_SOURCES
     BTBPredictor.cc
     CMakeLists.txt
     Elf.cc
+    FixedLatencyMemoryInterface.cc
     FlatMemoryInterface.cc
     Instruction.cc
     RegisterFileSet.cc
@@ -63,6 +64,7 @@ set(SIMENG_HEADERS
     BTBPredictor.hh
     Core.hh
     Elf.hh
+    FixedLatencyMemoryInterface.hh
     FlatMemoryInterface.hh
     Instruction.hh
     MemoryInterface.hh

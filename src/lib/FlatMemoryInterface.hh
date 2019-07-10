@@ -23,6 +23,9 @@ class FlatMemoryInterface : public MemoryInterface {
   /** Clear the completed reads. */
   void clearCompletedReads() override;
 
+  /** Tick: do nothing */
+  void tick() override;
+
  private:
   /** The array representing the flat memory system to access. */
   char* memory_;

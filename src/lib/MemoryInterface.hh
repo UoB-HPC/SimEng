@@ -38,6 +38,13 @@ class MemoryInterface {
 
   /** Clear the completed reads. */
   virtual void clearCompletedReads() = 0;
+
+  /** Tick the memory interface to allow it to process internal tasks.
+   *
+   * TODO: Move ticking out of the memory interface and into a central "memory
+   * system" covering a set of related interfaces.
+   */
+  virtual void tick() = 0;
 };
 
 }  // namespace simeng
