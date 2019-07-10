@@ -22,7 +22,7 @@ jobs:
           name: Install dependencies
           command: |
             apt-get update -yqq
-            apt-get install -y cmake << parameters.packages >>
+            apt-get install -y cmake llvm-8-dev << parameters.packages >>
       - run:
           name: Build SimEng
           command: |
@@ -31,6 +31,8 @@ jobs:
             cmake .. \
               -DCMAKE_BUILD_TYPE=Debug \
               -DCMAKE_INSTALL_PREFIX=$PWD/../build \
+              -DSIMENG_USE_EXTERNAL_LLVM=ON \
+              -DLLVM_DIR=/usr/lib/llvm-8/cmake \
               << parameters.cmake >>
             make
             ctest --output-on-failure
