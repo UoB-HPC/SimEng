@@ -21,6 +21,10 @@ jobs:
       - run:
           name: Install dependencies
           command: |
+            echo deb https://apt.kitware.com/ubuntu/ bionic main \
+              >> /etc/apt/sources.list
+            wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc \
+              | apt-key add -
             apt-get update -yqq
             apt-get install -y cmake llvm-8-dev << parameters.packages >>
       - run:
@@ -98,7 +102,7 @@ workflows:
             - gcc-8
       - build:
           name: clang-7
-          ubuntu: cosmic
+          ubuntu: bionic
           packages: clang-7
           cmake: -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7
           requires:
