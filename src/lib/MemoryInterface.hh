@@ -27,6 +27,8 @@ struct MemoryAccessTarget {
  * which data read/write requests may be made. */
 class MemoryInterface {
  public:
+  virtual ~MemoryInterface() {}
+
   /** Request a read from the supplied target location. */
   virtual void requestRead(const MemoryAccessTarget& target) = 0;
   /** Request a write of `data` to the target location. */
