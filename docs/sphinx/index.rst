@@ -15,6 +15,7 @@ SimEng documentation
    instruction
    registers
    memory
+   arch/index
 
 .. toctree::
    :maxdepth: 2

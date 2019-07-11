@@ -1,3 +1,5 @@
+.. _instructions:
+
 Instructions
 ============
 
@@ -25,6 +27,7 @@ Executed
 ********
 Executing an instruction performs the relevant operation using the input values, and makes the results available to the model, along with the registers these results should be written to. As instructions have no access to memory, the execution step for stores is expected to produce a corresponding piece of data to write to each address generated, using the input values supplied; these address/data pairs are presented to the model for writing to memory. For branches, the calculated address will also be available.
 
+.. _macroops:
 
 Macro-Ops
 ---------
