@@ -1,8 +1,8 @@
 #include "../MockInstruction.hh"
-#include "Instruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "pipeline/RegisterAliasTable.hh"
+#include "simeng/Instruction.hh"
+#include "simeng/pipeline/RegisterAliasTable.hh"
 
 namespace simeng {
 namespace pipeline {

@@ -1,4 +1,4 @@
-#include "FlatMemoryInterface.hh"
+#include "simeng/FlatMemoryInterface.hh"
 
 #include <cassert>
 

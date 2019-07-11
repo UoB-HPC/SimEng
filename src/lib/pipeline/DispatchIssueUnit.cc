@@ -1,4 +1,4 @@
-#include "DispatchIssueUnit.hh"
+#include "simeng/pipeline/DispatchIssueUnit.hh"
 
 namespace simeng {
 namespace pipeline {

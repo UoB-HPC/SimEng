@@ -18,6 +18,12 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Enable additional compiler warnings for all targets
 add_compile_options(-Wall)
 
+# Include SimEng API headers in all targets and install them
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include)
+install(DIRECTORY src/include/simeng
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.hh")
+
 # capstone
 set(CAPSTONE_BUILD_TESTS OFF CACHE BOOL "Disable Capstone tests")
 set(CAPSTONE_BUILD_SHARED OFF CACHE BOOL "Disable Capstone shared library")

@@ -2,7 +2,7 @@
 
 #include "RegressionTest.hh"
 
-#include "arch/aarch64/Instruction.hh"
+#include "simeng/arch/aarch64/Instruction.hh"
 
 /** A helper macro to run a snippet of Armv8 assembly code, returning from the
  * calling function if a fatal error occurs. Four bytes containing zeros are

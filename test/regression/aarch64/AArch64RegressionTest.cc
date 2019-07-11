@@ -1,7 +1,7 @@
 #include "AArch64RegressionTest.hh"
 
-#include "arch/aarch64/Architecture.hh"
-#include "pipeline/BalancedPortAllocator.hh"
+#include "simeng/arch/aarch64/Architecture.hh"
+#include "simeng/pipeline/BalancedPortAllocator.hh"
 
 using namespace simeng::arch::aarch64;
 

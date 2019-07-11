@@ -1,4 +1,4 @@
-#include "Architecture.hh"
+#include "simeng/arch/aarch64/Architecture.hh"
 
 #include <algorithm>
 #include <cassert>

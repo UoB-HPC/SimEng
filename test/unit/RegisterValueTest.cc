@@ -1,5 +1,5 @@
-#include "RegisterValue.hh"
 #include "gtest/gtest.h"
+#include "simeng/RegisterValue.hh"
 
 namespace {
 

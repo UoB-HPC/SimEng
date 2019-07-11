@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "pipeline/BalancedPortAllocator.hh"
+#include "simeng/pipeline/BalancedPortAllocator.hh"
 
 namespace simeng {
 namespace pipeline {

@@ -1,6 +1,6 @@
 #include "../MockBranchPredictor.hh"
 #include "../MockInstruction.hh"
-#include "pipeline/ExecuteUnit.hh"
+#include "simeng/pipeline/ExecuteUnit.hh"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

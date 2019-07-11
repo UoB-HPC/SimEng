@@ -1,4 +1,4 @@
-#include "LinuxProcess.hh"
+#include "simeng/kernel/LinuxProcess.hh"
 
 namespace simeng {
 namespace kernel {

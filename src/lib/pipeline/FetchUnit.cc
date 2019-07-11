@@ -1,4 +1,4 @@
-#include "FetchUnit.hh"
+#include "simeng/pipeline/FetchUnit.hh"
 
 namespace simeng {
 namespace pipeline {

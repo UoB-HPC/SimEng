@@ -2,7 +2,7 @@
 
 #include "../MockBranchPredictor.hh"
 #include "../MockInstruction.hh"
-#include "pipeline/DecodeUnit.hh"
+#include "simeng/pipeline/DecodeUnit.hh"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"

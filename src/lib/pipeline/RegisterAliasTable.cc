@@ -1,4 +1,4 @@
-#include "RegisterAliasTable.hh"
+#include "simeng/pipeline/RegisterAliasTable.hh"
 
 #include <cassert>
 

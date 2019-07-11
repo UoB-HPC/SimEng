@@ -19,13 +19,13 @@
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 
-#include "BTBPredictor.hh"
-#include "FlatMemoryInterface.hh"
-#include "kernel/Linux.hh"
-#include "kernel/LinuxProcess.hh"
-#include "models/emulation/Core.hh"
-#include "models/inorder/Core.hh"
-#include "models/outoforder/Core.hh"
+#include "simeng/BTBPredictor.hh"
+#include "simeng/FlatMemoryInterface.hh"
+#include "simeng/kernel/Linux.hh"
+#include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/models/emulation/Core.hh"
+#include "simeng/models/inorder/Core.hh"
+#include "simeng/models/outoforder/Core.hh"
 
 RegressionTest::~RegressionTest() {
   delete[] code_;

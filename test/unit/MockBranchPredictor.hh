@@ -1,7 +1,7 @@
 #pragma once
 
-#include "BranchPredictor.hh"
 #include "gmock/gmock.h"
+#include "simeng/BranchPredictor.hh"
 
 namespace simeng {
 

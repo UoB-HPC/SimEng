@@ -1,12 +1,12 @@
 #include "../MockArchitecture.hh"
 #include "../MockBranchPredictor.hh"
 #include "../MockMemoryInterface.hh"
-#include "Instruction.hh"
-#include "arch/Architecture.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "pipeline/FetchUnit.hh"
-#include "pipeline/PipelineBuffer.hh"
+#include "simeng/Instruction.hh"
+#include "simeng/arch/Architecture.hh"
+#include "simeng/pipeline/FetchUnit.hh"
+#include "simeng/pipeline/PipelineBuffer.hh"
 
 using ::testing::_;
 using ::testing::DoAll;

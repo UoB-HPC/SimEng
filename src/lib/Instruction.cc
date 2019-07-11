@@ -1,4 +1,4 @@
-#include "Instruction.hh"
+#include "simeng/Instruction.hh"
 
 namespace simeng {
 

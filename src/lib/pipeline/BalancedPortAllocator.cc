@@ -1,4 +1,4 @@
-#include "BalancedPortAllocator.hh"
+#include "simeng/pipeline/BalancedPortAllocator.hh"
 
 #include <cassert>
 

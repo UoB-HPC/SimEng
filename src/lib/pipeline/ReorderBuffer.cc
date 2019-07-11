@@ -1,4 +1,4 @@
-#include "ReorderBuffer.hh"
+#include "simeng/pipeline/ReorderBuffer.hh"
 
 #include <algorithm>
 #include <cassert>

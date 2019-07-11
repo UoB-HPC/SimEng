@@ -1,4 +1,4 @@
-#include "DecodeUnit.hh"
+#include "simeng/pipeline/DecodeUnit.hh"
 
 #include <cassert>
 

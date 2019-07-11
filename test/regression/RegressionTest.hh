@@ -4,12 +4,12 @@
 
 #include "gtest/gtest.h"
 
-#include "ArchitecturalRegisterFileSet.hh"
-#include "Core.hh"
-#include "arch/Architecture.hh"
-#include "kernel/Linux.hh"
-#include "kernel/LinuxProcess.hh"
-#include "pipeline/PortAllocator.hh"
+#include "simeng/ArchitecturalRegisterFileSet.hh"
+#include "simeng/Core.hh"
+#include "simeng/arch/Architecture.hh"
+#include "simeng/kernel/Linux.hh"
+#include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/pipeline/PortAllocator.hh"
 
 /** The different types of core model that can be used in tests. */
 enum CoreType { EMULATION, INORDER, OUTOFORDER };

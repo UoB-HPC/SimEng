@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Instruction.hh"
 #include "gmock/gmock.h"
+#include "simeng/Instruction.hh"
 
 namespace simeng {
 

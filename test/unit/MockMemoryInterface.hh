@@ -1,7 +1,7 @@
 #pragma once
 
-#include "MemoryInterface.hh"
 #include "gmock/gmock.h"
+#include "simeng/MemoryInterface.hh"
 
 namespace simeng {
 

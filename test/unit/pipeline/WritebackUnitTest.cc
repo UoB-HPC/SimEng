@@ -1,10 +1,10 @@
 #include "../MockInstruction.hh"
-#include "Instruction.hh"
-#include "RegisterFileSet.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "pipeline/PipelineBuffer.hh"
-#include "pipeline/WritebackUnit.hh"
+#include "simeng/Instruction.hh"
+#include "simeng/RegisterFileSet.hh"
+#include "simeng/pipeline/PipelineBuffer.hh"
+#include "simeng/pipeline/WritebackUnit.hh"
 
 using ::testing::_;
 using ::testing::DoAll;

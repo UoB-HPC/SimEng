@@ -1,4 +1,4 @@
-#include "LoadStoreQueue.hh"
+#include "simeng/pipeline/LoadStoreQueue.hh"
 
 #include <cassert>
 #include <cstring>

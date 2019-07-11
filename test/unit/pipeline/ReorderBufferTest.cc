@@ -1,11 +1,11 @@
 #include "../MockInstruction.hh"
 #include "../MockMemoryInterface.hh"
-#include "Instruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "pipeline/LoadStoreQueue.hh"
-#include "pipeline/RegisterAliasTable.hh"
-#include "pipeline/ReorderBuffer.hh"
+#include "simeng/Instruction.hh"
+#include "simeng/pipeline/LoadStoreQueue.hh"
+#include "simeng/pipeline/RegisterAliasTable.hh"
+#include "simeng/pipeline/ReorderBuffer.hh"
 
 using ::testing::_;
 using ::testing::ElementsAre;

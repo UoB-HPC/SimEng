@@ -1,11 +1,11 @@
-#include "Core.hh"
+#include "simeng/models/outoforder/Core.hh"
 
 #include <algorithm>
 #include <iostream>
 #include <string>
 
 // Temporary; until config options are available
-#include "arch/aarch64/Instruction.hh"
+#include "simeng/arch/aarch64/Instruction.hh"
 
 namespace simeng {
 namespace models {

@@ -1,4 +1,5 @@
-#include "Instruction.hh"
+#include "simeng/arch/aarch64/Instruction.hh"
+
 #include "InstructionMetadata.hh"
 
 #define NOT(bits, length) (~bits & (1 << length - 1))

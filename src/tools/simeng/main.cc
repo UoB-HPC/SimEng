@@ -4,20 +4,20 @@
 #include <iostream>
 #include <string>
 
-#include "AlwaysNotTakenPredictor.hh"
-#include "BTBPredictor.hh"
-#include "Core.hh"
-#include "Elf.hh"
-#include "FixedLatencyMemoryInterface.hh"
-#include "FlatMemoryInterface.hh"
-#include "arch/Architecture.hh"
-#include "arch/aarch64/Architecture.hh"
-#include "arch/aarch64/Instruction.hh"
-#include "kernel/Linux.hh"
-#include "models/emulation/Core.hh"
-#include "models/inorder/Core.hh"
-#include "models/outoforder/Core.hh"
-#include "pipeline/BalancedPortAllocator.hh"
+#include "simeng/AlwaysNotTakenPredictor.hh"
+#include "simeng/BTBPredictor.hh"
+#include "simeng/Core.hh"
+#include "simeng/Elf.hh"
+#include "simeng/FixedLatencyMemoryInterface.hh"
+#include "simeng/FlatMemoryInterface.hh"
+#include "simeng/arch/Architecture.hh"
+#include "simeng/arch/aarch64/Architecture.hh"
+#include "simeng/arch/aarch64/Instruction.hh"
+#include "simeng/kernel/Linux.hh"
+#include "simeng/models/emulation/Core.hh"
+#include "simeng/models/inorder/Core.hh"
+#include "simeng/models/outoforder/Core.hh"
+#include "simeng/pipeline/BalancedPortAllocator.hh"
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 

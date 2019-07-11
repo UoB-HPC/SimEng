@@ -1,5 +1,5 @@
-#include "BTBPredictor.hh"
 #include "gtest/gtest.h"
+#include "simeng/BTBPredictor.hh"
 
 namespace {
 

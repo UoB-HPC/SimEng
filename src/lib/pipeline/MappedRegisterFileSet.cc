@@ -1,4 +1,4 @@
-#include "MappedRegisterFileSet.hh"
+#include "simeng/pipeline/MappedRegisterFileSet.hh"
 
 namespace simeng {
 namespace pipeline {

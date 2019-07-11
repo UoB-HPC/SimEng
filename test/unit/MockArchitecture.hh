@@ -1,7 +1,7 @@
 #pragma once
 
-#include "arch/Architecture.hh"
 #include "gmock/gmock.h"
+#include "simeng/arch/Architecture.hh"
 
 namespace simeng {
 

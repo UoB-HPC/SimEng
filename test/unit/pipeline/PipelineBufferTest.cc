@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "pipeline/PipelineBuffer.hh"
+#include "simeng/pipeline/PipelineBuffer.hh"
 
 namespace simeng {
 namespace pipeline {

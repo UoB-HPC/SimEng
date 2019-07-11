@@ -1,7 +1,7 @@
-#include "RegisterFileSet.hh"
-#include "arch/aarch64/Architecture.hh"
-#include "arch/aarch64/Instruction.hh"
 #include "gtest/gtest.h"
+#include "simeng/RegisterFileSet.hh"
+#include "simeng/arch/aarch64/Architecture.hh"
+#include "simeng/arch/aarch64/Instruction.hh"
 
 namespace {
 

@@ -1,4 +1,4 @@
-#include "FixedLatencyMemoryInterface.hh"
+#include "simeng/FixedLatencyMemoryInterface.hh"
 
 #include <cassert>
 

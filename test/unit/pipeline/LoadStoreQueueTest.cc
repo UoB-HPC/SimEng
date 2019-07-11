@@ -1,9 +1,9 @@
 #include "../MockInstruction.hh"
 #include "../MockMemoryInterface.hh"
-#include "Instruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "pipeline/LoadStoreQueue.hh"
+#include "simeng/Instruction.hh"
+#include "simeng/pipeline/LoadStoreQueue.hh"
 
 using ::testing::AtLeast;
 using ::testing::Property;
