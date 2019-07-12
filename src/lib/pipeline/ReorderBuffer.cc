@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -33,6 +34,8 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     if (!uop->canCommit()) {
       break;
     }
+
+    instructionsCommitted_++;
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);
@@ -93,6 +96,10 @@ unsigned int ReorderBuffer::getFreeSpace() const {
 bool ReorderBuffer::shouldFlush() const { return shouldFlush_; }
 uint64_t ReorderBuffer::getFlushAddress() const { return pc_; }
 uint64_t ReorderBuffer::getFlushSeqId() const { return flushAfter_; }
+
+uint64_t ReorderBuffer::getInstructionsCommittedCount() const {
+  return instructionsCommitted_;
+}
 
 }  // namespace pipeline
 }  // namespace simeng

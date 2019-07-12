@@ -145,6 +145,8 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     registerFileSet_.set(reg, results[i]);
   }
 
+  instructionsExecuted_++;
+
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 }
@@ -205,7 +207,9 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
   return architecturalRegisterFileSet_;
 }
 
-std::map<std::string, std::string> Core::getStats() const { return {}; };
+std::map<std::string, std::string> Core::getStats() const {
+  return {{"instructions", std::to_string(instructionsExecuted_)}};
+};
 
 }  // namespace emulation
 }  // namespace models

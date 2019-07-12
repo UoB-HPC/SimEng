@@ -12,24 +12,27 @@ namespace models {
 namespace outoforder {
 
 // TODO: Replace with config options
-const std::initializer_list<uint16_t> physicalRegisterQuantities = {128, 128,
+const std::initializer_list<uint16_t> physicalRegisterQuantities = {192, 128,
                                                                     128};
 const std::initializer_list<RegisterFileStructure> physicalRegisterStructures =
-    {{8, 128}, {16, 128}, {1, 128}};
-const unsigned int robSize = 16;
-const unsigned int rsSize = 16;
-const unsigned int loadQueueSize = 16;
-const unsigned int storeQueueSize = 8;
-const unsigned int fetchBlockAlignmentBits = 4;
-const unsigned int frontendWidth = 2;
-const unsigned int commitWidth = 2;
+    {{8, 192}, {16, 128}, {1, 128}};
+const unsigned int robSize = 180;
+const unsigned int rsSize = 60;
+const unsigned int loadQueueSize = 64;
+const unsigned int storeQueueSize = 36;
+const unsigned int fetchBlockAlignmentBits = 5;
+const unsigned int frontendWidth = 4;
+const unsigned int commitWidth = 4;
 const std::vector<std::vector<uint16_t>> portArrangement = {
-    {arch::aarch64::InstructionGroups::LOAD,
-     arch::aarch64::InstructionGroups::STORE},
+    {arch::aarch64::InstructionGroups::LOAD},
+    {arch::aarch64::InstructionGroups::LOAD},
+    {arch::aarch64::InstructionGroups::STORE},
+    {arch::aarch64::InstructionGroups::ARITHMETIC,
+     arch::aarch64::InstructionGroups::BRANCH},
     {arch::aarch64::InstructionGroups::ARITHMETIC},
-    {arch::aarch64::InstructionGroups::BRANCH}};
+    {arch::aarch64::InstructionGroups::ARITHMETIC}};
 const unsigned int executionUnitCount = portArrangement.size();
-const unsigned int lsqCompletionSlots = 1;
+const unsigned int lsqCompletionSlots = 2;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
@@ -295,7 +298,7 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  auto retired = writebackUnit_.getInstructionsWrittenCount();
+  auto retired = reorderBuffer_.getInstructionsCommittedCount();
   auto ipc = retired / static_cast<float>(ticks_);
 
   auto branchStalls = fetchUnit_.getBranchStalls();

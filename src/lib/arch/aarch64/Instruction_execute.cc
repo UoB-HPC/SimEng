@@ -533,6 +533,14 @@ void Instruction::execute() {
       }
       return;
     }
+    case Opcode::AArch64_FMLAv2f64: {  // fmla vd.2d, vn.2d, vm.2d
+      const double* a = operands[0].getAsVector<double>();
+      const double* b = operands[0].getAsVector<double>();
+      const double* c = operands[0].getAsVector<double>();
+      double out[2] = {a[0] + b[0] * c[0], a[1] + b[1] * c[1]};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMOVv2f64_ns: {  // fmov vd.2d, #imm
       double out[2] = {metadata.operands[0].fp, metadata.operands[0].fp};
       results[0] = out;
@@ -588,6 +596,10 @@ void Instruction::execute() {
       results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 16);
       return;
     }
+    case Opcode::AArch64_LDRDui: {  // ldr dt, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(8, 16);
+      return;
+    }
     case Opcode::AArch64_LDRHHpost: {  // ldrh wt, [xn], #imm
       results[0] = memoryData[0].zeroExtend(2, 8);
       results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
@@ -595,6 +607,10 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_LDRHHui: {  // ldrh wt, [xn, #imm]
       results[0] = memoryData[0].zeroExtend(2, 8);
+      return;
+    }
+    case Opcode::AArch64_LDRQroX: {  // ldr qt, [xn, xm, {extend {#amount}}]
+      results[0] = memoryData[0];
       return;
     }
     case Opcode::AArch64_LDRWpost: {  // ldr wt, [xn], #imm
@@ -830,6 +846,10 @@ void Instruction::execute() {
       return;
     }
     case Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
+      memoryData[0] = operands[0];
+      return;
+    }
+    case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend, {#amount}}]
       memoryData[0] = operands[0];
       return;
     }
