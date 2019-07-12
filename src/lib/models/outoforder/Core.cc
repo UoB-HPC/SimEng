@@ -23,15 +23,7 @@ const unsigned int storeQueueSize = 36;
 const unsigned int fetchBlockAlignmentBits = 5;
 const unsigned int frontendWidth = 4;
 const unsigned int commitWidth = 4;
-const std::vector<std::vector<uint16_t>> portArrangement = {
-    {arch::aarch64::InstructionGroups::LOAD},
-    {arch::aarch64::InstructionGroups::LOAD},
-    {arch::aarch64::InstructionGroups::STORE},
-    {arch::aarch64::InstructionGroups::ARITHMETIC,
-     arch::aarch64::InstructionGroups::BRANCH},
-    {arch::aarch64::InstructionGroups::ARITHMETIC},
-    {arch::aarch64::InstructionGroups::ARITHMETIC}};
-const unsigned int executionUnitCount = portArrangement.size();
+const unsigned int executionUnitCount = 5;
 const unsigned int lsqCompletionSlots = 2;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,

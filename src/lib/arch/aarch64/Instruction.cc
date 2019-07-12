@@ -147,6 +147,9 @@ uint16_t Instruction::getGroup() const {
     return InstructionGroups::STORE;
   }
 
+  if (isASIMD_) {
+    return InstructionGroups::ASIMD;
+  }
   return InstructionGroups::ARITHMETIC;
 }
 

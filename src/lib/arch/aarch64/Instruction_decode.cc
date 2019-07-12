@@ -142,11 +142,20 @@ void Instruction::decode() {
         // destinations
         destinationRegisters[destinationRegisterCount] =
             csRegToRegister(op.reg);
+        if (destinationRegisters[destinationRegisterCount].type ==
+            RegisterType::VECTOR) {
+          isASIMD_ = true;
+        }
+
         destinationRegisterCount++;
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
         // Add register reads to destinations
         sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
+        if (sourceRegisters[sourceRegisterCount].type == RegisterType::VECTOR) {
+          isASIMD_ = true;
+        }
+
         if (sourceRegisters[sourceRegisterCount] ==
             Instruction::ZERO_REGISTER) {
           // Catch zero register references and pre-complete those operands

@@ -29,6 +29,7 @@ const uint8_t ARITHMETIC = 0;
 const uint8_t LOAD = 1;
 const uint8_t STORE = 2;
 const uint8_t BRANCH = 3;
+const uint8_t ASIMD = 4;
 }  // namespace InstructionGroups
 
 enum class InstructionException {
@@ -190,6 +191,9 @@ class Instruction : public simeng::Instruction {
   bool isLoad_ = false;
   /** Is this a branch operation? */
   bool isBranch_ = false;
+
+  /** Is this an ASIMD operation? */
+  bool isASIMD_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data
