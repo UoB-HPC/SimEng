@@ -114,6 +114,8 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
       return FPSIMD_LATENCY;
     case Opcode::AArch64_FMULv2f64:
       return FPSIMD_LATENCY;
+    case Opcode::AArch64_FMLAv2f64:
+      return FPSIMD_LATENCY;
   }
 
   // Assume single-cycle, non-blocking for all other instructions
