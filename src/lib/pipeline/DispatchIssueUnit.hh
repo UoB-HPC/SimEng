@@ -1,6 +1,7 @@
 #pragma once
 
 #include <deque>
+#include <queue>
 
 #include "../Instruction.hh"
 #include "PipelineBuffer.hh"
@@ -30,7 +31,8 @@ class DispatchIssueUnit {
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
-      unsigned int maxReservationStationSize);
+      unsigned int maxReservationStationSize,
+      unsigned int maxInFlightInstructions);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -63,10 +65,6 @@ class DispatchIssueUnit {
    * dependencies or a lack of available ports. */
   uint64_t getBackendStalls() const;
 
-  /** Retrieve the number of cycles no instructions were issued due to
-   * dependencies or a lack of available ports. */
-  uint64_t getOutOfOrderIssueCount() const;
-
   /** Retrieve the number of times an instruction was unable to issue due to a
    * busy port. */
   uint64_t getPortBusyStalls() const;
@@ -89,22 +87,25 @@ class DispatchIssueUnit {
 
   /** The reservation station. Holds instructions until operands become
    * available. */
-  std::deque<ReservationStationEntry> reservationStation_;
+  std::vector<ReservationStationEntry> reservationStation_;
 
   /** A dependency matrix, containing all the instructions waiting on an
    * operand. For a register `{type,tag}`, the vector of dependents may be found
    * at `dependencyMatrix[type][tag]`. */
-  std::vector<std::vector<std::vector<std::shared_ptr<Instruction>>>>
+  std::vector<std::vector<std::vector<ReservationStationEntry>>>
       dependencyMatrix_;
 
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;
 
-  /** A map of port availability. Reset after each cycle. */
-  std::vector<bool> availablePorts_;
+  /** The queues of ready instructions for each port. */
+  std::vector<std::deque<std::shared_ptr<Instruction>>> readyQueues_;
 
-  /** The number of instructions ready to execute. */
-  unsigned int readyCount_ = 0;
+  /** The index of the next available RS slot. */
+  size_t rsHead_ = 0;
+
+  /** The number of items currently in the RS. */
+  size_t rsSize_ = 0;
 
   /** The number of cycles stalled due to a full reservation station. */
   uint64_t rsStalls_ = 0;
@@ -115,9 +116,6 @@ class DispatchIssueUnit {
   /** The number of cycles no instructions were issued due to dependencies or a
    * lack of available ports. */
   uint64_t backendStalls_ = 0;
-
-  /** The number of instructions issued out-of-order. */
-  uint64_t outOfOrderIssues_ = 0;
 
   /** The number of times an instruction was unable to issue due to a busy port.
    */
