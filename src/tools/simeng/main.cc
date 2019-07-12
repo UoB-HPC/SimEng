@@ -178,11 +178,14 @@ int main(int argc, char** argv) {
 
   // TODO: Construct port arrangement from config options
   const std::vector<std::vector<uint16_t>> portArrangement = {
-      {simeng::arch::aarch64::InstructionGroups::LOAD,
-       simeng::arch::aarch64::InstructionGroups::STORE},
-      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC},
+      {simeng::arch::aarch64::InstructionGroups::LOAD},
+      {simeng::arch::aarch64::InstructionGroups::STORE},
       {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
-       simeng::arch::aarch64::InstructionGroups::BRANCH}};
+       simeng::arch::aarch64::InstructionGroups::BRANCH},
+      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
+       simeng::arch::aarch64::InstructionGroups::ASIMD},
+      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
+       simeng::arch::aarch64::InstructionGroups::ASIMD}};
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
   // TODO: Expose as config option
