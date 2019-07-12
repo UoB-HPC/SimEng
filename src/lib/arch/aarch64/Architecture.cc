@@ -120,6 +120,8 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
   return {1, 1};
 }
 
+uint8_t Architecture::getMaxInstructionSize() const { return 4; }
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng
