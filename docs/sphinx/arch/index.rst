@@ -1,5 +1,5 @@
-Architectures
-=============
+Overview
+========
 
 SimEng architecture definitions are responsible for describing the features and behaviour of specific Instruction Set Architectures (ISAs) in a standardised way, allowing SimEng to model processors that use these ISAs while itself remaining ISA agnostic.
 
