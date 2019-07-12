@@ -46,6 +46,8 @@ TEST_F(PipelineFetchUnitTest, Tick) {
 
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
+  ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(4));
+
   EXPECT_CALL(predictor, predict(0)).WillOnce(Return(prediction));
 
   // Verify the prediction matches the one we provided

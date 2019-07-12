@@ -18,6 +18,8 @@ class FetchUnit {
             uint8_t blockAlignmentBits, const arch::Architecture& isa,
             BranchPredictor& branchPredictor);
 
+  ~FetchUnit();
+
   /** Tick the fetch unit. Retrieves and pre-decodes the instruction at the
    * current program counter. */
   void tick();
@@ -68,6 +70,12 @@ class FetchUnit {
   /** A mask of the bits of the program counter to use for obtaining the block
    * address to fetch. */
   uint64_t blockMask_;
+
+  /** The buffer used to hold fetched instruction data. */
+  uint8_t *fetchBuffer_;
+
+  /** The amount of data currently in the fetch buffer. */
+  uint8_t bufferedBytes_ = 0;
 };
 
 }  // namespace pipeline
