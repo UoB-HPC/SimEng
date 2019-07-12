@@ -47,6 +47,9 @@ class ReorderBuffer {
    * memory order violation. */
   uint64_t getFlushSeqId() const;
 
+  /** Get the number of instructions the ROB has committed. */
+  uint64_t getInstructionsCommittedCount() const;
+
  private:
   /** A reference to the register alias table. */
   RegisterAliasTable& rat_;
@@ -77,6 +80,9 @@ class ReorderBuffer {
 
   /** The next available sequence ID. */
   uint64_t seqId_ = 0;
+
+  /** The number of instructions committed. */
+  uint64_t instructionsCommitted_ = 0;
 };
 
 }  // namespace pipeline

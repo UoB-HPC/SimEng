@@ -83,6 +83,9 @@ class Core : public simeng::Core {
 
   /** Is the core waiting on a data read? */
   unsigned int pendingReads_ = 0;
+
+  /** The number of instructions executed. */
+  uint64_t instructionsExecuted_ = 0;
 };
 
 }  // namespace emulation
