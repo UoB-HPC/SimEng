@@ -15,7 +15,6 @@ SimEng documentation
    instruction
    registers
    memory
-   arch/index
 
 .. toctree::
    :maxdepth: 2
@@ -31,5 +30,11 @@ SimEng documentation
    pipeline/units
    pipeline/components
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Architectures
+
+   arch/index.rst
+   arch/aarch64.rst
 
 .. mdinclude:: ../../README.md
