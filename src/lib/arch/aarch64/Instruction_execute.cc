@@ -535,8 +535,8 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_FMLAv2f64: {  // fmla vd.2d, vn.2d, vm.2d
       const double* a = operands[0].getAsVector<double>();
-      const double* b = operands[0].getAsVector<double>();
-      const double* c = operands[0].getAsVector<double>();
+      const double* b = operands[1].getAsVector<double>();
+      const double* c = operands[2].getAsVector<double>();
       double out[2] = {a[0] + b[0] * c[0], a[1] + b[1] * c[1]};
       results[0] = out;
       return;

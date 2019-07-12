@@ -56,7 +56,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures.size()),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities, rsSize),
+                         portAllocator, physicalRegisterQuantities, rsSize,
+                         robSize),
       writebackUnit_(completionSlots_, registerFileSet_) {
   for (size_t i = 0; i < executionUnitCount; i++) {
     executionUnits_.emplace_back(
@@ -305,7 +306,6 @@ std::map<std::string, std::string> Core::getStats() const {
   auto rsStalls = dispatchIssueUnit_.getRSStalls();
   auto frontendStalls = dispatchIssueUnit_.getFrontendStalls();
   auto backendStalls = dispatchIssueUnit_.getBackendStalls();
-  auto outOfOrderIssues = dispatchIssueUnit_.getOutOfOrderIssueCount();
   auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
 
   return {{"cycles", std::to_string(ticks_)},
@@ -321,7 +321,6 @@ std::map<std::string, std::string> Core::getStats() const {
           {"dispatch.rsStalls", std::to_string(rsStalls)},
           {"issue.frontendStalls", std::to_string(frontendStalls)},
           {"issue.backendStalls", std::to_string(backendStalls)},
-          {"issue.outOfOrderIssues", std::to_string(outOfOrderIssues)},
           {"issue.portBusyStalls", std::to_string(portBusyStalls)}};
 }
 
