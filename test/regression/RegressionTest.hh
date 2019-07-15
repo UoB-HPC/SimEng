@@ -24,6 +24,8 @@ inline std::string coreTypeToString(
       return "inorder";
     case OUTOFORDER:
       return "outoforder";
+    default:
+      return "unknown";
   }
 }
 
