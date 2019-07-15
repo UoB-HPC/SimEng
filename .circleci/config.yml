@@ -12,7 +12,8 @@ jobs:
       - run:
           name: Pull submodules
           command: |
-            git submodule init
+            # Don't pull LLVM submodule to save time (use packaged version)
+            git submodule init external/{capstone,googletest}
             git submodule update
       - run:
           name: Build SimEng
