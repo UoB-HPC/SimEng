@@ -208,12 +208,13 @@ int main(int argc, char** argv) {
     }
     case SimulationMode::InOrderPipelined: {
       modeString = "In-Order Pipelined";
-      dataMemory = std::make_unique<simeng::FlatMemoryInterface>(
-          processMemory, processMemorySize);
+      std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
+          std::make_unique<simeng::FlatMemoryInterface>(processMemory,
+                                                        processMemorySize);
       core = std::make_unique<simeng::models::inorder::Core>(
-          instructionMemory,
-          dynamic_cast<simeng::FlatMemoryInterface&>(*dataMemory),
-          processMemorySize, entryPoint, arch, predictor);
+          instructionMemory, *flatDataMemory, processMemorySize, entryPoint,
+          arch, predictor);
+      dataMemory = std::move(flatDataMemory);
       break;
     }
     default: {
