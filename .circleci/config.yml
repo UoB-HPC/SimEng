@@ -26,7 +26,7 @@ jobs:
               -DSIMENG_USE_EXTERNAL_LLVM=ON \
               -DLLVM_DIR=/usr/lib/llvm-8/cmake \
               << parameters.cmake >>
-            make
+            make -j 2
             ctest --output-on-failure
             make install
       - run:
