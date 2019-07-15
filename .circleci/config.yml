@@ -3,14 +3,10 @@ version: 2.1
 jobs:
   build:
     parameters:
-      ubuntu:
-        type: string
-      packages:
-        type: string
       cmake:
         type: string
     docker:
-      - image: buildpack-deps:<< parameters.ubuntu >>
+      - image: uobhpc/simeng-circleci:1
     steps:
       - checkout
       - run:
@@ -18,15 +14,6 @@ jobs:
           command: |
             git submodule init
             git submodule update
-      - run:
-          name: Install dependencies
-          command: |
-            echo deb https://apt.kitware.com/ubuntu/ bionic main \
-              >> /etc/apt/sources.list
-            wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc \
-              | apt-key add -
-            apt-get update -yqq
-            apt-get install -y cmake llvm-8-dev << parameters.packages >>
       - run:
           name: Build SimEng
           command: |
@@ -47,18 +34,9 @@ jobs:
 
   check-format:
     docker:
-      - image: buildpack-deps:bionic
+      - image: uobhpc/simeng-circleci:1
     steps:
       - checkout
-      - run:
-          name: Install dependencies
-          command: |
-            echo deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-8 main \
-              >> /etc/apt/sources.list
-            wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
-            apt-get update -yqq
-            apt-get install -y clang-format-8
-            ln -s /usr/bin/clang-format-8 /usr/bin/clang-format
       - run:
           name: Check code formatting
           command: |
@@ -90,27 +68,19 @@ workflows:
     jobs:
       - build:
           name: gcc-8
-          ubuntu: bionic
-          packages: g++-8
           cmake: -DCMAKE_C_COMPILER=gcc-8 -DCMAKE_CXX_COMPILER=g++-8
       - build:
           name: gcc-7
-          ubuntu: bionic
-          packages: g++-7
           cmake: -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7
           requires:
             - gcc-8
       - build:
           name: clang-7
-          ubuntu: bionic
-          packages: clang-7
           cmake: -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7
           requires:
             - gcc-8
       - build:
           name: clang-5
-          ubuntu: bionic
-          packages: clang-5.0
           cmake: -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0
           requires:
             - gcc-8
