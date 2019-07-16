@@ -8,7 +8,7 @@ To achieve this, SimEng defines a set of abstract architecture-related classes. 
 Architecture
 ------------
 
-The main component of an ISA implementation is the ``Architecture`` class. During simulation initialisation, an reference to an instance of the modelled architecture is passed to the model, where it is queried to determine how various components should be initialised, and to allow components to perform further architecture-specific operations during simulation.
+The main component of an ISA implementation is the ``Architecture`` class. During simulation initialisation, a reference to an instance of the modelled architecture is passed to the model, where it is queried to determine how various components should be initialised, and to allow components to perform further architecture-specific operations during simulation.
 
 Architectures are expected to support querying the following information:
 

@@ -31,7 +31,7 @@ This process of pre-decoding, predicting, and updating the PC continues until on
 
   The maximum number of fetched macro-ops is reached
     The current block is saved and processing resumes in the next cycle.
-   
+
   A branch is predicted as taken
     A block of memory from the new address may be requested, and processing will resume once the data is available.
 
@@ -43,7 +43,7 @@ If the output buffer is stalled when the cycle begins, the fetch unit will idle 
 Fetching memory
 ***************
 
-As the program counter may be updated by numerous external components thoughout the course of a single cycle, the fetch unit does not perform any memory requests automatically. **The next block must be requested manually**, by calling the ``requestFromPC`` function. It is advised to do this at the end of a cycle, once all possible sources of PC updates have been completed.
+As the program counter may be updated by numerous external components thoughout the course of a single cycle, the fetch unit does not perform any memory requests automatically. **The next block must be requested manually**, by calling the ``requestFromPC`` function. It is advised to do this at the end of a cycle from the core model, once all possible sources of PC updates have been completed.
 
 
 DecodeUnit
@@ -142,14 +142,14 @@ Behaviour
 
 Each cycle, a single instruction is read from the input buffer. The latency of the instruction is checked, and it is added to the internal pipeline queue, where it will remain for at least the duration of its instruction latency.
 
-Once the input has been processed, the instruction at the head of the pipeline  is checked to see if its latency has passed. If not, the cycle ends early, otherwise the instruction proceeds to execution.
+Once the input has been processed, the instruction at the head of the pipeline is checked to see if its latency has passed. If not, the cycle ends early, otherwise the instruction proceeds to execution.
 
 While normal data processing instructions are simply executed, some instruction types are treated slightly differently during execution:
 
 .. glossary::
   Loads
     Address generation is performed, before passing the instruction to the unit's supplied load handling function. Unlike other instructions, load instructions **are not** written to the output buffer, as execution cannot occur until the memory read concludes. It is the responsibility of the load handling function to ensure that the instruction is executed and results broadcast once the loaded data is available.
-  
+
   Stores
     Address generation is performed, and the instruction is executed to determine the memory data to be written. The instruction is passed to the unit's supplied store handler.
 
