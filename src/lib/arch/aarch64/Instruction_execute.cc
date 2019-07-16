@@ -844,6 +844,11 @@ void Instruction::execute() {
       results[0] = operands[2].get<uint64_t>() + metadata.operands[3].imm;
       return;
     }
+    case Opcode::AArch64_STPWi: {  // stp wt1, wt2, [xn, #imm]
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      return;
+    }
     case Opcode::AArch64_STRBBroX: {  // strb wd,
                                       //  [xn, xm{, extend {#amount}}]
       memoryData[0] = operands[0];

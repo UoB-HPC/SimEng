@@ -168,6 +168,12 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{base, 16}, {base + 16, 16}});
       break;
     }
+    case Opcode::AArch64_STPWi: {  // stp wt1, wt2, [xn, #imm]
+      uint64_t base =
+          operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
+      setMemoryAddresses({{base, 4}, {base + 4, 4}});
+      break;
+    }
     case Opcode::AArch64_STRBBroX: {  // strb wd,
                                       //  [xn, xm{, extend {#amount}}]
       uint64_t offset =

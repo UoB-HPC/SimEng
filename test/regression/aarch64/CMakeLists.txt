@@ -3,6 +3,7 @@ add_executable(regression-aarch64
                AArch64RegressionTest.hh
                SmokeTest.cc
                instructions/multiply.cc
+               instructions/store.cc
                )
 target_include_directories(regression-aarch64 PRIVATE
                            ${CMAKE_CURRENT_SOURCE_DIR})
