@@ -669,6 +669,13 @@ void Instruction::execute() {
       results[0] = a + (x * y);
       return;
     }
+    case Opcode::AArch64_MADDWrrr: {  // madd wd, wn, wm, wa
+      auto x = operands[0].get<uint32_t>();
+      auto y = operands[1].get<uint32_t>();
+      auto a = operands[2].get<uint32_t>();
+      results[0] = static_cast<uint64_t>(a + (x * y));
+      return;
+    }
     case Opcode::AArch64_MOVIv2d_ns: {  // movi vd.2d, #imm
       uint64_t bits = static_cast<uint64_t>(metadata.operands[1].imm);
       uint64_t vector[2] = {bits, bits};
