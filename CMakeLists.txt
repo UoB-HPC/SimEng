@@ -19,7 +19,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_compile_options(-Wall)
 
 # Disable RTTI for all targets
-add_compile_options(-fno-rtti)
+add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
 
 # Include SimEng API headers in all targets and install them
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include)
