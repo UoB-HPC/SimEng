@@ -78,10 +78,11 @@ bitfieldManipulate(T value, uint8_t rotateBy, uint8_t sourceBits,
   return shifted >> shiftAmount;
 }
 
-std::tuple<uint64_t, uint8_t> addWithCarry(uint64_t x, uint64_t y,
-                                           bool carryIn) {
-  int64_t result = static_cast<int64_t>(x) + static_cast<int64_t>(y) + carryIn;
-  bool n = (result < 0);
+template <typename T>
+std::tuple<T, uint8_t> addWithCarry(T x, T y, bool carryIn) {
+  T result = x + y + carryIn;
+
+  bool n = (result >> (sizeof(T) * 8 - 1));
   bool z = (result == 0);
 
   // Trying to calculate whether `result` overflows (`x + y + carryIn > max`).
@@ -92,27 +93,23 @@ std::tuple<uint64_t, uint8_t> addWithCarry(uint64_t x, uint64_t y,
   } else {
     // We know x + carryIn <= max, so can safely subtract and compare against y
     // max > x + y + c == max - x > y + c
-    c = ((std::numeric_limits<uint64_t>::max() - x - carryIn) < y);
+    c = ((std::numeric_limits<T>::max() - x - carryIn) < y);
   }
 
-  bool v = (std::numeric_limits<int64_t>::max() - static_cast<int64_t>(x) -
-            carryIn) < static_cast<int32_t>(y);
-
-  return {result, nzcv(n, z, c, v)};
-}
-std::tuple<uint32_t, uint8_t> addWithCarry(uint32_t x, uint32_t y,
-                                           bool carryIn) {
-  uint64_t unsignedResult =
-      static_cast<uint64_t>(x) + static_cast<uint64_t>(y) + carryIn;
-  int64_t signedResult =
-      static_cast<int64_t>(x) + static_cast<int64_t>(y) + carryIn;
-  int32_t result = static_cast<int32_t>(x) + static_cast<int32_t>(y) + carryIn;
-  bool n = (result < 0);
-  bool z = (result == 0);
-
-  bool c = unsignedResult != static_cast<uint32_t>(result);
-
-  bool v = result != signedResult;
+  // Calculate whether signed result overflows
+  bool v = false;
+  typedef std::make_signed_t<T> ST;
+  auto sx = static_cast<ST>(x);
+  auto sy = static_cast<ST>(y);
+  if (sx >= 0) {
+    // Check if (x + y + c) > MAX
+    // y > (MAX - x - c)
+    v = sy > (std::numeric_limits<ST>::max() - sx - carryIn);
+  } else {
+    // Check if (x + y + c) < MIN
+    // y < (MIN - x - c)
+    v = sy < (std::numeric_limits<ST>::min() - sx - carryIn);
+  }
 
   return {result, nzcv(n, z, c, v)};
 }
@@ -405,8 +402,9 @@ void Instruction::execute() {
     case Opcode::AArch64_CCMPWi: {  // ccmp wn, #imm, #nzcv, cc
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         uint8_t nzcv;
-        std::tie(std::ignore, nzcv) = addWithCarry(
-            operands[1].get<uint32_t>(), ~metadata.operands[1].imm, 1);
+        std::tie(std::ignore, nzcv) =
+            addWithCarry(operands[1].get<uint32_t>(),
+                         ~static_cast<uint32_t>(metadata.operands[1].imm), 1);
         results[0] = nzcv;
       } else {
         results[0] = static_cast<uint8_t>(metadata.operands[2].imm);
@@ -427,8 +425,9 @@ void Instruction::execute() {
     case Opcode::AArch64_CCMPXi: {  // ccmp xn, #imm, #nzcv, cc
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         uint8_t nzcv;
-        std::tie(std::ignore, nzcv) = addWithCarry(
-            operands[1].get<uint64_t>(), ~metadata.operands[1].imm, 1);
+        std::tie(std::ignore, nzcv) =
+            addWithCarry(operands[1].get<uint64_t>(),
+                         ~static_cast<uint64_t>(metadata.operands[1].imm), 1);
         results[0] = nzcv;
       } else {
         results[0] = static_cast<uint8_t>(metadata.operands[2].imm);
@@ -925,7 +924,7 @@ void Instruction::execute() {
       auto [result, nzcv] = addWithCarry(x, y, true);
       results[0] = RegisterValue(nzcv);
       if (destinationRegisterCount > 1) {
-        results[1] = RegisterValue(result);
+        results[1] = RegisterValue(result, 8);
       }
       return;
     }
@@ -934,7 +933,6 @@ void Instruction::execute() {
       auto y = ~shiftValue(static_cast<uint64_t>(metadata.operands[2].imm),
                            metadata.operands[2].shift.type,
                            metadata.operands[2].shift.value);
-
       auto [result, nzcv] = addWithCarry(x, y, true);
       results[0] = RegisterValue(nzcv);
       if (destinationRegisterCount > 1) {
