@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "gtest/gtest.h"
 
@@ -67,6 +68,9 @@ class RegressionTest : public ::testing::TestWithParam<CoreType> {
     EXPECT_LE(address + sizeof(T), processMemorySize_);
     return *(T*)(processMemory_ + address);
   }
+
+  /** The initial data to populate the heap with. */
+  std::vector<uint8_t> initialHeapData_;
 
   /** The process memory. */
   char* processMemory_ = nullptr;

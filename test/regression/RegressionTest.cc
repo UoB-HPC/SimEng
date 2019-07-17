@@ -58,6 +58,12 @@ void RegressionTest::run(const char* source, const char* triple) {
   simeng::kernel::Linux kernel;
   kernel.createProcess(*process_);
 
+  // Populate the heap with initial data (specified by the test being run).
+  ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
+            process_->getStackPointer());
+  std::copy(initialHeapData_.begin(), initialHeapData_.end(),
+            processMemory_ + process_->getHeapStart());
+
   // Create the architecture
   std::unique_ptr<simeng::arch::Architecture> arch = createArchitecture(kernel);
 
