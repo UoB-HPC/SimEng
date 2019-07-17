@@ -810,6 +810,18 @@ void Instruction::execute() {
       results[0] = bitfieldManipulate(source, r, s, true);
       return;
     }
+    case Opcode::AArch64_SDIVWr: {  // sdiv wd, wn, wm
+      auto x = operands[0].get<int32_t>();
+      auto y = operands[1].get<int32_t>();
+      results[0] = RegisterValue(x / y, 8);
+      return;
+    }
+    case Opcode::AArch64_SDIVXr: {  // sdiv xd, xn, xm
+      auto x = operands[0].get<int64_t>();
+      auto y = operands[1].get<int64_t>();
+      results[0] = x / y;
+      return;
+    }
     case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]
       memoryData[0] = operands[0];
       // TODO: Implement atomic memory access

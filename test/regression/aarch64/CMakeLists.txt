@@ -3,6 +3,7 @@ add_executable(regression-aarch64
                AArch64RegressionTest.hh
                SmokeTest.cc
                instructions/arithmetic.cc
+               instructions/divide.cc
                instructions/multiply.cc
                instructions/store.cc
                )
