@@ -24,6 +24,8 @@ BalancedPortAllocator::BalancedPortAllocator(
 
 uint8_t BalancedPortAllocator::allocate(uint16_t instructionGroup) {
   // Find the list of ports that support this instruction group
+  assert(instructionGroup < supportMatrix.size() &&
+         "instruction group not covered by port allocator");
   const auto& available = supportMatrix[instructionGroup];
 
   bool foundPort = false;

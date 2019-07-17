@@ -19,9 +19,15 @@ AArch64RegressionTest::createPortAllocator() const {
   // TODO: this is currently tightly coupled to the number of execution units,
   // which is specified in the out-of-order core model
   const std::vector<std::vector<uint16_t>> portArrangement = {
-      {InstructionGroups::LOAD, InstructionGroups::STORE},
-      {InstructionGroups::ARITHMETIC},
-      {InstructionGroups::ARITHMETIC, InstructionGroups::BRANCH}};
+      {simeng::arch::aarch64::InstructionGroups::LOAD},
+      {simeng::arch::aarch64::InstructionGroups::STORE},
+      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
+       simeng::arch::aarch64::InstructionGroups::BRANCH},
+      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
+       simeng::arch::aarch64::InstructionGroups::ASIMD},
+      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
+       simeng::arch::aarch64::InstructionGroups::ASIMD}};
+
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
 }
