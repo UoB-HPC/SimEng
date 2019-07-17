@@ -158,6 +158,8 @@ void LoadStoreQueue::tick() {
     const auto& data = response.second;
 
     // TODO: Detect and handle any faults
+    assert(response.second && "Memory read failed");
+
     // TODO: Create a data structure to allow direct lookup of requests waiting
     // on a read, rather than iterating over the queue (see DispatchIssueQueue's
     // dependency matrix)

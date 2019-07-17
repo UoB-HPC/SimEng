@@ -66,6 +66,8 @@ void FetchUnit::tick() {
       return;
     }
 
+    // TODO: Handle memory faults
+    assert(fetched[fetchIndex].second && "Memory read failed");
     const uint8_t* fetchData =
         fetched[fetchIndex].second.getAsVector<uint8_t>();
 

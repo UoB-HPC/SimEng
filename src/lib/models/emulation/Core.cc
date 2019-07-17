@@ -46,6 +46,7 @@ void Core::tick() {
 
     const auto& completedReads = dataMemory_.getCompletedReads();
     for (const auto& response : completedReads) {
+      assert(response.second && "Memory read failed");
       uop->supplyData(response.first.address, response.second);
       pendingReads_--;
     }

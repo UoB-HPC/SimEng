@@ -127,6 +127,7 @@ bool ExceptionHandler::readStringThen(char* buffer, uint64_t address,
   for (const auto& response : memory_.getCompletedReads()) {
     if (response.first.address == address + offset) {
       // TODO: Detect and handle any faults
+      assert(response.second && "Memory read failed");
       buffer[offset] = response.second.get<char>();
       found = true;
       break;
