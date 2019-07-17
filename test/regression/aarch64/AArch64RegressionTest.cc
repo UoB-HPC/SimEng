@@ -32,18 +32,20 @@ AArch64RegressionTest::createPortAllocator() const {
       portArrangement);
 }
 
-bool AArch64RegressionTest::getNegativeFlag() const {
-  return (getRegister<uint8_t>({RegisterType::NZCV, 0}) >> 3) & 1;
+uint8_t AArch64RegressionTest::getNZCV() const {
+  return getRegister<uint8_t>({RegisterType::NZCV, 0});
 }
 
-bool AArch64RegressionTest::getZeroFlag() const {
-  return (getRegister<uint8_t>({RegisterType::NZCV, 0}) >> 2) & 1;
+bool AArch64RegressionTest::getNegativeFlag() const {
+  return (getNZCV() >> 3) & 1;
 }
+
+bool AArch64RegressionTest::getZeroFlag() const { return (getNZCV() >> 2) & 1; }
 
 bool AArch64RegressionTest::getCarryFlag() const {
-  return (getRegister<uint8_t>({RegisterType::NZCV, 0}) >> 1) & 1;
+  return (getNZCV() >> 1) & 1;
 }
 
 bool AArch64RegressionTest::getOverflowFlag() const {
-  return (getRegister<uint8_t>({RegisterType::NZCV, 0}) >> 0) & 1;
+  return (getNZCV() >> 0) & 1;
 }
