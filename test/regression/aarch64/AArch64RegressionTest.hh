@@ -44,6 +44,9 @@ class AArch64RegressionTest : public RegressionTest {
     return getRegister<T>({simeng::arch::aarch64::RegisterType::VECTOR, tag});
   }
 
+  /** Get the value of the NZCV register. */
+  uint8_t getNZCV() const;
+
   /** Get the negative flag from the NZCV register. */
   bool getNegativeFlag() const;
 
