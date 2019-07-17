@@ -631,6 +631,11 @@ void Instruction::execute() {
       results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       return;
     }
+    case Opcode::AArch64_LDRXpre: {  // ldr xt, [xn, #imm]!
+      results[0] = memoryData[0];
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+      return;
+    }
     case Opcode::AArch64_LDRXroX: {  // ldr xt, [xn, xn{, extend, {#amount}}]
       results[0] = memoryData[0];
       return;
