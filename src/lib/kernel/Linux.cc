@@ -61,5 +61,11 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string pathname, char* buf,
   return -1;
 }
 
+int64_t Linux::setTidAddress(uint64_t tidptr) {
+  assert(processStates_.size() > 0);
+  processStates_[0].clearChildTid = tidptr;
+  return processStates_[0].pid;
+}
+
 }  // namespace kernel
 }  // namespace simeng
