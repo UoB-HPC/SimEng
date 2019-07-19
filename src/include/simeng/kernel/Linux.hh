@@ -7,6 +7,8 @@ namespace kernel {
 
 /** A state container for a Linux process. */
 struct LinuxProcessState {
+  /** The process ID. */
+  int64_t pid;
   /** The path of the executable that created this process. */
   std::string path;
   /** The address of the start of the heap. */
@@ -31,6 +33,8 @@ class Linux {
    * `addr` if reasonable, and returns the program break. */
   int64_t brk(uint64_t addr);
 
+  /** getpid syscall: get the process owner's process ID. */
+  int64_t getpid() const;
   /** getuid syscall: get the process owner's user ID. */
   int64_t getuid() const;
   /** geteuid syscall: get the process owner's effective user ID. */

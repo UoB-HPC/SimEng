@@ -9,7 +9,9 @@ namespace kernel {
 
 void Linux::createProcess(const LinuxProcess& process) {
   assert(process.isValid() && "Attempted to use an invalid process");
-  processStates_.push_back({.path = process.getPath(),
+  assert(processStates_.size() == 0 && "Multiple processes not yet supported");
+  processStates_.push_back({.pid = 0,  // TODO: create unique PIDs
+                            .path = process.getPath(),
                             .startBrk = process.getHeapStart(),
                             .currentBrk = process.getHeapStart(),
                             .initialStackPointer = process.getStackPointer()});
@@ -32,6 +34,11 @@ int64_t Linux::brk(uint64_t address) {
     state.currentBrk = address;
   }
   return state.currentBrk;
+}
+
+int64_t Linux::getpid() const {
+  assert(processStates_.size() > 0);
+  return processStates_[0].pid;
 }
 
 int64_t Linux::getuid() const { return 0; }
