@@ -55,6 +55,11 @@ bool ExceptionHandler::init() {
                   << exitCode << std::endl;
         return fatal();
       }
+      case 96: {  // set_tid_address
+        uint64_t ptr = registerFileSet_.get(R0).get<uint64_t>();
+        stateChange = {{R0}, {linux_.setTidAddress(ptr)}};
+        break;
+      }
       case 160: {  // uname
         const uint64_t base = registerFileSet_.get(R0).get<uint64_t>();
         const uint8_t len =

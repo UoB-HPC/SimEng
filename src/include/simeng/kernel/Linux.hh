@@ -17,6 +17,11 @@ struct LinuxProcessState {
   uint64_t currentBrk;
   /** The initial stack pointer. */
   uint64_t initialStackPointer;
+
+  // Thread state
+  // TODO: Support multiple threads per process
+  /** The clear_child_tid value. */
+  uint64_t clearChildTid = 0;
 };
 
 /** A Linux kernel syscall emulation implementation, which mimics the responses
@@ -47,6 +52,9 @@ class Linux {
   /** readlinkat syscall: read value of a symbolic link. */
   int64_t readlinkat(int64_t dirfd, const std::string pathname, char* buf,
                      size_t bufsize) const;
+
+  /** set_tid_address syscall: set clear_child_tid value for calling thread. */
+  int64_t setTidAddress(uint64_t tidptr);
 
   /** The maximum size of a filesystem path. */
   static const size_t LINUX_PATH_MAX = 4096;
