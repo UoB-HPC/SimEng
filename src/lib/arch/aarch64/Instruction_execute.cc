@@ -915,6 +915,10 @@ void Instruction::execute() {
       memoryData[0] = operands[0];
       return;
     }
+    case Opcode::AArch64_STURXi: {  // stur xt, [xn, #imm]
+      memoryData[0] = operands[0];
+      return;
+    }
     case Opcode::AArch64_STXRW: {  // stxr ws, wt, [xn]
       memoryData[0] = operands[0];
       // TODO: Implement atomic memory access
