@@ -252,14 +252,21 @@ void Instruction::execute() {
       results[0] = (instructionAddress_ & ~(0xFFF)) + metadata.operands[1].imm;
       return;
     }
+    case Opcode::AArch64_ANDSWri: {  // ands wd, wn, #imm
+      auto x = operands[0].get<uint32_t>();
+      auto y = static_cast<uint32_t>(metadata.operands[2].imm);
+      uint32_t result = x & y;
+      results[0] = nzcv(result >> 31, result == 0, false, false);
+      results[1] = result;
+      return;
+    }
     case Opcode::AArch64_ANDSWrs: {  // ands wd, wn, wm{, shift #amount}
       auto x = operands[0].get<uint32_t>();
       auto y = shiftValue(operands[1].get<uint32_t>(),
                           metadata.operands[2].shift.type,
                           metadata.operands[2].shift.value);
       uint32_t result = x & y;
-      results[0] =
-          nzcv(static_cast<int32_t>(result) < 0, result == 0, false, false);
+      results[0] = nzcv(result >> 31, result == 0, false, false);
       if (destinationRegisterCount > 1) {
         results[1] = static_cast<uint64_t>(result);
       }
@@ -269,8 +276,7 @@ void Instruction::execute() {
       auto x = operands[0].get<uint64_t>();
       auto y = metadata.operands[2].imm;
       uint64_t result = x & y;
-      results[0] =
-          nzcv(static_cast<int64_t>(result) < 0, result == 0, false, false);
+      results[0] = nzcv(result >> 63, result == 0, false, false);
       results[1] = result;
       return;
     }
@@ -280,8 +286,7 @@ void Instruction::execute() {
                           metadata.operands[2].shift.type,
                           metadata.operands[2].shift.value);
       uint64_t result = x & y;
-      results[0] =
-          nzcv(static_cast<int64_t>(result) < 0, result == 0, false, false);
+      results[0] = nzcv(result >> 63, result == 0, false, false);
       if (destinationRegisterCount > 1) {
         results[1] = result;
       }
