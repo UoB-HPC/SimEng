@@ -341,8 +341,11 @@ void InstructionMetadata::revertAliasing() {
       return aliasNYI();
     case ARM64_INS_TST:
       if (opcode == Opcode::AArch64_ANDSWrs ||
-          opcode == Opcode::AArch64_ANDSXrs) {
+          opcode == Opcode::AArch64_ANDSXrs ||
+          opcode == Opcode::AArch64_ANDSWri ||
+          opcode == Opcode::AArch64_ANDSXri) {
         // tst rn, rm; alias for: ands zr, rn, rm
+        // tst rn, #imm; alias for: ands zr, rn, #imm
         operandCount = 3;
         operands[2] = operands[1];
         operands[1] = operands[0];
@@ -350,7 +353,8 @@ void InstructionMetadata::revertAliasing() {
 
         operands[0].type = ARM64_OP_REG;
         operands[0].access = CS_AC_WRITE;
-        if (opcode == Opcode::AArch64_ANDSWrs) {
+        if (opcode == Opcode::AArch64_ANDSWrs ||
+            opcode == Opcode::AArch64_ANDSWri) {
           operands[0].reg = ARM64_REG_WZR;
         } else {
           operands[0].reg = ARM64_REG_XZR;
