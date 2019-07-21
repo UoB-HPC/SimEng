@@ -247,6 +247,7 @@ void InstructionMetadata::revertAliasing() {
         operands[2].type = ARM64_OP_IMM;
         operands[2].imm = 0;
         operands[2].access = CS_AC_READ;
+        operands[2].shift.type = ARM64_SFT_INVALID;
         return;
       }
       if (opcode == Opcode::AArch64_ORRWrs ||

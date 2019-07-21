@@ -202,9 +202,11 @@ void Instruction::execute() {
       results[1] = result;
       return;
     }
-    case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm
+    case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm{, shift}
       auto x = operands[0].get<uint32_t>();
-      auto y = static_cast<uint32_t>(metadata.operands[2].imm);
+      auto y = shiftValue(static_cast<uint32_t>(metadata.operands[2].imm),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
       results[0] = RegisterValue(x + y, 8);
       return;
     }
@@ -216,9 +218,11 @@ void Instruction::execute() {
       results[0] = static_cast<uint64_t>(x + y);
       return;
     }
-    case Opcode::AArch64_ADDXri: {  // add xd, xn, #imm
+    case Opcode::AArch64_ADDXri: {  // add xd, xn, #imm{, shift}
       auto x = operands[0].get<uint64_t>();
-      auto y = metadata.operands[2].imm;
+      auto y = shiftValue(static_cast<uint64_t>(metadata.operands[2].imm),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
       results[0] = RegisterValue(x + y);
       return;
     }
