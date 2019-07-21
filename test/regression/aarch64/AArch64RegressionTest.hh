@@ -38,10 +38,12 @@ class AArch64RegressionTest : public RegressionTest {
     return getRegister<T>({simeng::arch::aarch64::RegisterType::GENERAL, tag});
   }
 
-  /** Get the value of a vector register. */
-  template <typename T>
-  T getVectorRegister(uint8_t tag) const {
-    return getRegister<T>({simeng::arch::aarch64::RegisterType::VECTOR, tag});
+  /** Get the value of a vector register element. */
+  template <typename T, unsigned element>
+  T getVectorRegisterElement(uint8_t tag) const {
+    static_assert(element * sizeof(T) < 16);
+    return RegressionTest::getVectorRegister<T>(
+        {simeng::arch::aarch64::RegisterType::VECTOR, tag})[element];
   }
 
   /** Get the value of the NZCV register. */
