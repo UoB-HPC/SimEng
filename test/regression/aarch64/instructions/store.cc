@@ -4,6 +4,16 @@ namespace {
 
 using InstStore = AArch64RegressionTest;
 
+TEST_P(InstStore, strd) {
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    sub sp, sp, 8
+    str d0, [sp], -8
+  )");
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), 2.0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 16);
+}
+
 TEST_P(InstStore, stpwi) {
   RUN_AARCH64(R"(
     movz w0, #7

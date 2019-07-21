@@ -199,6 +199,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});
       break;
     }
+    case Opcode::AArch64_STRDpost: {  // str dt, [xn], #imm
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+      break;
+    }
     case Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
