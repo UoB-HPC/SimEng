@@ -62,6 +62,12 @@ class RegressionTest : public ::testing::TestWithParam<CoreType> {
     return core_->getArchitecturalRegisterFileSet().get(reg).get<T>();
   }
 
+  /** Get a pointer to the value of an architectural vector register. */
+  template <typename T>
+  const T* getVectorRegister(simeng::Register reg) const {
+    return core_->getArchitecturalRegisterFileSet().get(reg).getAsVector<T>();
+  }
+
   /** Get a value from process memory at `address`. */
   template <typename T>
   T getMemoryValue(uint64_t address) const {
