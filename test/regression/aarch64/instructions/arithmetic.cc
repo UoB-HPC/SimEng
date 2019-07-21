@@ -4,6 +4,24 @@ namespace {
 
 using InstArithmetic = AArch64RegressionTest;
 
+TEST_P(InstArithmetic, add) {
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    add w1, w0, #2
+    add w2, w0, #7, lsl #12
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 2u);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), (7u << 12));
+
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    add x1, x0, #3
+    add x2, x0, #5, lsl #12
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 3u);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), (5u << 12));
+}
+
 // Test that NZCV flags are set correctly by 32-bit subs
 TEST_P(InstArithmetic, subsw) {
   // 0 - 0 = 0
