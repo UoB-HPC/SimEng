@@ -541,8 +541,13 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMOVDi: {  // fmov dn, #imm
+      double out[2] = {metadata.operands[1].fp, 0.0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMOVv2f64_ns: {  // fmov vd.2d, #imm
-      double out[2] = {metadata.operands[0].fp, metadata.operands[0].fp};
+      double out[2] = {metadata.operands[1].fp, metadata.operands[1].fp};
       results[0] = out;
       return;
     }
