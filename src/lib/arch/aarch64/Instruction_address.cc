@@ -144,6 +144,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;
     }
+    case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+      break;
+    }
     case Opcode::AArch64_STPDi: {  // stp dt1, dt2, [xn, #imm]
       uint64_t base =
           operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;

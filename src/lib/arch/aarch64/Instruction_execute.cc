@@ -847,6 +847,12 @@ void Instruction::execute() {
       results[0] = static_cast<uint64_t>(0);
       return;
     }
+    case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
+      memoryData[0] = operands[0];
+      // TODO: Implement atomic memory access
+      results[0] = static_cast<uint64_t>(0);
+      return;
+    }
     case Opcode::AArch64_STPDi: {  // stp dt1, dt2, [xn, #imm]
       memoryData[0] = operands[0];
       memoryData[1] = operands[1];
