@@ -4,6 +4,20 @@ namespace {
 
 using InstFloat = AArch64RegressionTest;
 
+TEST_P(InstFloat, fmadd) {
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 7.5
+    fmadd d3, d0, d1, d2
+    fmadd d4, d1, d2, d0
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 7.25);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 1.0625);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+}
+
 TEST_P(InstFloat, fmov) {
   RUN_AARCH64(R"(
     fmov d0, 1.0
