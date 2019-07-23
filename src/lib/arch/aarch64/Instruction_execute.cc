@@ -856,6 +856,11 @@ void Instruction::execute() {
       results[0] = bitfieldManipulate(source, r, s, true);
       return;
     }
+    case Opcode::AArch64_SCVTFv1i64: {
+      double out[2] = {static_cast<double>(operands[0].get<int64_t>()), 0.0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_SDIVWr: {  // sdiv wd, wn, wm
       auto x = operands[0].get<int32_t>();
       auto y = operands[1].get<int32_t>();
