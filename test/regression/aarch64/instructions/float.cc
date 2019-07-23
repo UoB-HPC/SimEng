@@ -15,6 +15,20 @@ TEST_P(InstFloat, fmov) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), 0.0);
 }
 
+TEST_P(InstFloat, fsub) {
+  RUN_AARCH64(R"(
+    fmov d0, 1.0
+    fmov d1, -0.125
+    fmov d2, 7.5
+    fsub d3, d0, d1
+    fsub d4, d0, d2
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 1.125);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), -6.5);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+}
+
 TEST_P(InstFloat, scvtf) {
   initialHeapData_.resize(32);
   int64_t* heap = reinterpret_cast<int64_t*>(initialHeapData_.data());

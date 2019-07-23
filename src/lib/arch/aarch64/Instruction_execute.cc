@@ -577,6 +577,13 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FSUBDrr: {  // fsub dd, dn, dm
+      double n = operands[0].get<double>();
+      double m = operands[1].get<double>();
+      double out[2] = {n - m, 0.0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
       results[0] = memoryData[0].zeroExtend(4, 8);
       return;
