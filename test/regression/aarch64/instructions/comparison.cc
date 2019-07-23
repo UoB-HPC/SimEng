@@ -4,6 +4,56 @@ namespace {
 
 using InstComparison = AArch64RegressionTest;
 
+// Test that NZCV flags are set correctly by the 32-bit cmn instruction
+TEST_P(InstComparison, cmnw) {
+  // cmn 0, 0 = true
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    cmn w0, #0x0
+  )");
+  EXPECT_EQ(getNZCV(), 0b0100);
+
+  // cmn 1, 1 = false
+  RUN_AARCH64(R"(
+    movz w0, #0x1
+    cmn w0, #0x1
+  )");
+  EXPECT_EQ(getNZCV(), 0b0000);
+
+  // cmn -1, 1 = true
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    sub w0, w0, #0x1
+    cmn w0, #0x1
+  )");
+  EXPECT_EQ(getNZCV(), 0b0110);
+}
+
+// Test that NZCV flags are set correctly by the 64-bit cmn instruction
+TEST_P(InstComparison, cmnx) {
+  // cmn 0, 0 = true
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    cmn x0, #0x0
+  )");
+  EXPECT_EQ(getNZCV(), 0b0100);
+
+  // cmn 1, 1 = false
+  RUN_AARCH64(R"(
+    movz x0, #0x1
+    cmn x0, #0x1
+  )");
+  EXPECT_EQ(getNZCV(), 0b0000);
+
+  // cmn -1, 1 = true
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    sub x0, x0, #0x1
+    cmn x0, #0x1
+  )");
+  EXPECT_EQ(getNZCV(), 0b0110);
+}
+
 // Test that NZCV flags are set correctly by 32-bit tst
 TEST_P(InstComparison, tstw) {
   // tst 0, 1 = false
