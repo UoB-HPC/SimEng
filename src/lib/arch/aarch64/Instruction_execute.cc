@@ -557,6 +557,10 @@ void Instruction::execute() {
       results[0] = memoryData[0].zeroExtend(4, 8);
       return;
     }
+    case Opcode::AArch64_LDAXRX: {  // ldaxr xd, [xn]
+      results[0] = memoryData[0];
+      return;
+    }
     case Opcode::AArch64_LDPQi: {  // ldp qt1, qt2, [xn, #imm]
       results[0] = memoryData[0];
       results[1] = memoryData[1];
