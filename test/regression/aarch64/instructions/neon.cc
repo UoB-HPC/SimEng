@@ -4,6 +4,18 @@ namespace {
 
 using InstNeon = AArch64RegressionTest;
 
+TEST_P(InstNeon, fmov) {
+  // FP64 vector from immediate
+  RUN_AARCH64(R"(
+    fmov v0.2d, 1.0
+    fmov v1.2d, -0.125
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(0)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -0.125);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), -0.125);
+}
+
 TEST_P(InstNeon, movi) {
   RUN_AARCH64(R"(
     movi v0.4s, 42
