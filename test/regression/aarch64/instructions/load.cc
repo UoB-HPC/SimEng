@@ -35,6 +35,7 @@ TEST_P(InstLoad, ldr_vector) {
   heap[2] = -0.00032;
   heap[3] = 123456;
 
+  // ldr 128-bit
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -44,6 +45,22 @@ TEST_P(InstLoad, ldr_vector) {
     # Load values from heap
     ldr q0, [x0]
     ldr q1, [x0, #16]
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(0)), 123.456);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -0.00032);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), 123456);
+
+  // ldur 128-bit
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ldur q0, [x0]
+    ldur q1, [x0, #16]
   )");
   EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
   EXPECT_EQ((getVectorRegisterElement<double, 1>(0)), 123.456);

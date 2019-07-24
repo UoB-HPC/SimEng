@@ -702,6 +702,10 @@ void Instruction::execute() {
       results[0] = memoryData[0].zeroExtend(1, 8);
       return;
     }
+    case Opcode::AArch64_LDURQi: {  // ldur qt, [xn, #imm]
+      results[0] = memoryData[0];
+      return;
+    }
     case Opcode::AArch64_LDURWi: {  // ldur wt, [xn, #imm]
       results[0] = memoryData[0].zeroExtend(4, 8);
       return;
