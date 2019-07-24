@@ -47,6 +47,34 @@ TEST_P(InstFloat, fcmp) {
   EXPECT_EQ(getNZCV(), 0b0011);
 }
 
+TEST_P(InstFloat, fcvt) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 1.0;
+  heap[1] = -42.76;
+  heap[2] = -0.125;
+  heap[3] = 321.5;
+
+  // Signed, round to zero
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    fcvtzs w0, d0
+    fcvtzs w1, d1
+    fcvtzs w2, d2
+    fcvtzs w3, d3
+  )");
+  EXPECT_EQ((getGeneralRegister<int32_t>(0)), 1);
+  EXPECT_EQ((getGeneralRegister<int32_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<int32_t>(2)), 0);
+  EXPECT_EQ((getGeneralRegister<int32_t>(3)), 321);
+}
+
 TEST_P(InstFloat, fmadd) {
   RUN_AARCH64(R"(
     fmov d0, 2.0

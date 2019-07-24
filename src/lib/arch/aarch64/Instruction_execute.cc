@@ -554,6 +554,12 @@ void Instruction::execute() {
       }
       return;
     }
+    case Opcode::AArch64_FCVTZSUWDr: {  // fcvtzs wd, dn
+      double n = operands[0].get<double>();
+      // TODO: Handle NaNs, denorms, and saturation
+      results[0] = RegisterValue(static_cast<int32_t>(std::trunc(n)), 8);
+      return;
+    }
     case Opcode::AArch64_FCVTZSv2f64: {  // fcvtzs vd.2d, vn.2d
       const double* n = operands[0].getAsVector<double>();
       // TODO: Handle NaNs, denorms, and saturation
