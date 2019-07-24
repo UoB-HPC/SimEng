@@ -939,6 +939,14 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_SMINv4i32: {  // smin vd.4s, vn.4s, vm.4s
+      const int32_t* n = operands[0].getAsVector<int32_t>();
+      const int32_t* m = operands[1].getAsVector<int32_t>();
+      int32_t out[4] = {std::min(n[0], m[0]), std::min(n[1], m[1]),
+                        std::min(n[2], m[2]), std::min(n[3], m[3])};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]
       memoryData[0] = operands[0];
       // TODO: Implement atomic memory access
