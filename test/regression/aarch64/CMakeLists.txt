@@ -8,6 +8,7 @@ add_executable(regression-aarch64
                instructions/float.cc
                instructions/load.cc
                instructions/multiply.cc
+               instructions/neon.cc
                instructions/store.cc
                )
 target_include_directories(regression-aarch64 PRIVATE
