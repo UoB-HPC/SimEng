@@ -1015,6 +1015,11 @@ void Instruction::execute() {
       memoryData[0] = operands[0];
       return;
     }
+    case Opcode::AArch64_STRQpost: {  // str qt, [xn], #imm
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+      return;
+    }
     case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend, {#amount}}]
       memoryData[0] = operands[0];
       return;

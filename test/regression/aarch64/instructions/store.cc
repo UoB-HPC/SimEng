@@ -14,6 +14,17 @@ TEST_P(InstStore, strd) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 16);
 }
 
+TEST_P(InstStore, strq) {
+  RUN_AARCH64(R"(
+    fmov v0.2d, 0.125
+    sub sp, sp, 16
+    str q0, [sp], -16
+  )");
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), 0.125);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 16), 0.125);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 32);
+}
+
 TEST_P(InstStore, stpwi) {
   RUN_AARCH64(R"(
     movz w0, #7
