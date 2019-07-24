@@ -583,6 +583,13 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FDIVv2f64: {  // fdiv vd.2d, vn.2d, vm.2d
+      const double* n = operands[0].getAsVector<double>();
+      const double* m = operands[1].getAsVector<double>();
+      double out[2] = {n[0] / m[0], n[1] / m[1]};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMADDDrrr: {  // fmadd dn, dm, da
       double n = operands[0].get<double>();
       double m = operands[1].get<double>();

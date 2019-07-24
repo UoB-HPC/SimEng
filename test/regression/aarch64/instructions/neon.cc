@@ -30,6 +30,28 @@ TEST_P(InstNeon, fcvt) {
   EXPECT_EQ((getVectorRegisterElement<int64_t, 1>(3)), 321);
 }
 
+TEST_P(InstNeon, fdiv) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 1.0;
+  heap[1] = -42.5;
+  heap[2] = -0.125;
+  heap[3] = 16.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fdiv v2.2d, v0.2d, v1.2d
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), -8.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(2)), -2.65625);
+}
+
 TEST_P(InstNeon, fmov) {
   // FP64 vector from immediate
   RUN_AARCH64(R"(
