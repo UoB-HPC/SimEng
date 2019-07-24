@@ -27,6 +27,30 @@ TEST_P(InstLoad, ldrxpre) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x12345678);
 }
 
+TEST_P(InstLoad, ldr_vector) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 1.0;
+  heap[1] = 123.456;
+  heap[2] = -0.00032;
+  heap[3] = 123456;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(0)), 123.456);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -0.00032);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), 123456);
+}
+
 TEST_P(InstLoad, ldpd) {
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());

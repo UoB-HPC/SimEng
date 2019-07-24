@@ -663,6 +663,10 @@ void Instruction::execute() {
       results[0] = memoryData[0];
       return;
     }
+    case Opcode::AArch64_LDRQui: {  // ldr dt, [xn, #imm]
+      results[0] = memoryData[0];
+      return;
+    }
     case Opcode::AArch64_LDRWpost: {  // ldr wt, [xn], #imm
       results[0] = memoryData[0].zeroExtend(4, 8);
       results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
