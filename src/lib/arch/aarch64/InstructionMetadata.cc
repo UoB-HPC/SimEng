@@ -284,6 +284,13 @@ void InstructionMetadata::revertAliasing() {
         }
         return;
       }
+      if (opcode == Opcode::AArch64_UMOVvi8 ||
+          opcode == Opcode::AArch64_UMOVvi16 ||
+          opcode == Opcode::AArch64_UMOVvi32 ||
+          opcode == Opcode::AArch64_UMOVvi64) {
+        // mov rd, Vn.T[index]; alias for umov rd, Vn.T[index]
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_MUL:
       if (opcode == Opcode::AArch64_MADDXrrr ||

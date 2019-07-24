@@ -160,6 +160,34 @@ TEST_P(InstNeon, smin) {
   EXPECT_EQ((getVectorRegisterElement<int32_t, 0>(1)), -321);
 }
 
+TEST_P(InstNeon, umov) {
+  initialHeapData_.resize(16);
+  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap[0] = 42;
+  heap[1] = 1u << 31;
+  heap[2] = -1;
+  heap[3] = 7;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    umov w0, v0.s[0]
+    umov w1, v0.s[1]
+
+    # Check mov alias works as well
+    mov  w2, v0.s[2]
+    mov  w3, v0.s[3]
+  )");
+  EXPECT_EQ((getGeneralRegister<uint32_t>(0)), 42);
+  EXPECT_EQ((getGeneralRegister<uint32_t>(1)), 1u << 31);
+  EXPECT_EQ((getGeneralRegister<uint32_t>(2)), -1);
+  EXPECT_EQ((getGeneralRegister<uint32_t>(3)), 7);
+}
+
 TEST_P(InstNeon, xtn) {
   initialHeapData_.resize(32);
   uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());

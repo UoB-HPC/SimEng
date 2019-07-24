@@ -1199,6 +1199,11 @@ void Instruction::execute() {
       results[0] = x / y;
       return;
     }
+    case Opcode::AArch64_UMOVvi32: {  // umov wd, vn.s[index]
+      const uint32_t* vec = operands[0].getAsVector<uint32_t>();
+      results[0] = RegisterValue(vec[metadata.operands[1].vector_index], 8);
+      return;
+    }
     case Opcode::AArch64_UMULHrr: {  // umulh xd, xn, xm
       auto x = operands[0].get<uint64_t>();
       auto y = operands[1].get<uint64_t>();
