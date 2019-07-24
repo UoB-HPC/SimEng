@@ -599,6 +599,13 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FSUBv2f64: {  // fsub vd.2d, vn.2d, vm.2d
+      const double* n = operands[0].getAsVector<double>();
+      const double* m = operands[1].getAsVector<double>();
+      double out[2] = {n[0] - m[0], n[1] - m[1]};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
       results[0] = memoryData[0].zeroExtend(4, 8);
       return;
