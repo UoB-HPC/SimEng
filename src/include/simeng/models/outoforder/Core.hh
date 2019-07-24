@@ -2,6 +2,7 @@
 
 #include "simeng/Core.hh"
 
+#include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/DispatchIssueUnit.hh"

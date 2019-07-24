@@ -241,8 +241,8 @@ void Core::handleException() {
   }
 
   exceptionGenerated_ = false;
-  exceptionHandler_ = isa_.handleException(exceptionGeneratingInstruction_,
-                                           mappedRegisterFileSet_, dataMemory_);
+  exceptionHandler_ =
+      isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
   processExceptionHandler();
 }
 

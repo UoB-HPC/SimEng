@@ -4,17 +4,17 @@
 #include <iostream>
 
 #include "InstructionMetadata.hh"
+#include "simeng/ArchitecturalRegisterFileSet.hh"
 
 namespace simeng {
 namespace arch {
 namespace aarch64 {
 
 ExceptionHandler::ExceptionHandler(
-    const std::shared_ptr<simeng::Instruction>& instruction,
-    const ArchitecturalRegisterFileSet& registerFileSet,
+    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory, kernel::Linux& linux_)
     : instruction_(*static_cast<Instruction*>(instruction.get())),
-      registerFileSet_(registerFileSet),
+      core(core),
       memory_(memory),
       linux_(linux_) {
   resumeHandling_ = [this]() { return init(); };
@@ -24,16 +24,17 @@ bool ExceptionHandler::tick() { return resumeHandling_(); }
 
 bool ExceptionHandler::init() {
   InstructionException exception = instruction_.getException();
+  const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
 
   if (exception == InstructionException::SupervisorCall) {
     // Retrieve syscall ID held in register x8
     auto syscallId =
-        registerFileSet_.get({RegisterType::GENERAL, 8}).get<uint64_t>();
+        registerFileSet.get({RegisterType::GENERAL, 8}).get<uint64_t>();
 
     ProcessStateChange stateChange;
     switch (syscallId) {
       case 78: {  // readlinkat
-        const auto pathnameAddress = registerFileSet_.get(R1).get<uint64_t>();
+        const auto pathnameAddress = registerFileSet.get(R1).get<uint64_t>();
 
         // Copy string at `pathnameAddress`
         auto pathname = new char[kernel::Linux::LINUX_PATH_MAX];
@@ -48,18 +49,18 @@ bool ExceptionHandler::init() {
                               });
       }
       case 94: {  // exit_group
-        auto exitCode = registerFileSet_.get(R0).get<uint64_t>();
+        auto exitCode = registerFileSet.get(R0).get<uint64_t>();
         std::cout << "Received exit_group syscall: terminating with exit code "
                   << exitCode << std::endl;
         return fatal();
       }
       case 96: {  // set_tid_address
-        uint64_t ptr = registerFileSet_.get(R0).get<uint64_t>();
+        uint64_t ptr = registerFileSet.get(R0).get<uint64_t>();
         stateChange = {{R0}, {linux_.setTidAddress(ptr)}};
         break;
       }
       case 160: {  // uname
-        const uint64_t base = registerFileSet_.get(R0).get<uint64_t>();
+        const uint64_t base = registerFileSet.get(R0).get<uint64_t>();
         const uint8_t len =
             65;  // Reserved length of each string field in Linux
         const char sysname[] = "Linux";
@@ -93,7 +94,7 @@ bool ExceptionHandler::init() {
         stateChange = {{R0}, {linux_.getegid()}};
         break;
       case 214: {  // brk
-        auto result = linux_.brk(registerFileSet_.get(R0).get<uint64_t>());
+        auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
         stateChange = {{R0}, {static_cast<uint64_t>(result)}};
         break;
       }
@@ -171,9 +172,10 @@ void ExceptionHandler::readLinkAt(span<char> path) {
     return;
   }
 
-  const auto dirfd = registerFileSet_.get(R0).get<int64_t>();
-  const auto bufAddress = registerFileSet_.get(R2).get<uint64_t>();
-  const auto bufSize = registerFileSet_.get(R3).get<uint64_t>();
+  const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
+  const auto dirfd = registerFileSet.get(R0).get<int64_t>();
+  const auto bufAddress = registerFileSet.get(R2).get<uint64_t>();
+  const auto bufSize = registerFileSet.get(R3).get<uint64_t>();
 
   char buffer[kernel::Linux::LINUX_PATH_MAX];
   auto result = linux_.readlinkat(dirfd, path.data(), buffer, bufSize);

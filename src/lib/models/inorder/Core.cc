@@ -143,8 +143,7 @@ void Core::handleException() {
   exceptionGenerated_ = false;
 
   exceptionHandler_ =
-      isa_.handleException(exceptionGeneratingInstruction_,
-                           architecturalRegisterFileSet_, dataMemory_);
+      isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
 
   processExceptionHandler();
 

@@ -15,11 +15,10 @@ namespace aarch64 {
 class ExceptionHandler : public simeng::arch::ExceptionHandler {
  public:
   /** Create an exception handler with references to the instruction that caused
-   * the exception, along with the architectural register files and process
-   * memory. */
+   * the exception, along with the core model object and process memory. */
   ExceptionHandler(const std::shared_ptr<simeng::Instruction>& instruction,
-                   const ArchitecturalRegisterFileSet& registerFileSet,
-                   MemoryInterface& memory, kernel::Linux& linux);
+                   const Core& core, MemoryInterface& memory,
+                   kernel::Linux& linux);
 
   /** Progress handling of the exception, by calling and returning the result of
    * the handler currently assigned to `resumeHandling_`. Returns `false` if
@@ -63,8 +62,8 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   /** The instruction generating an exception. */
   const Instruction& instruction_;
 
-  /** The core's architectural register file set. */
-  const ArchitecturalRegisterFileSet& registerFileSet_;
+  /** The core model object. */
+  const Core& core;
 
   /** The process memory. */
   MemoryInterface& memory_;

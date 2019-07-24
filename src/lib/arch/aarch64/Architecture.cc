@@ -75,11 +75,9 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 }
 
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
-    const std::shared_ptr<simeng::Instruction>& instruction,
-    const ArchitecturalRegisterFileSet& registerFileSet,
+    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, registerFileSet,
-                                            memory, linux_);
+  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
 }
 
 std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()

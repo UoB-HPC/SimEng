@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 
+#include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/arch/Architecture.hh"

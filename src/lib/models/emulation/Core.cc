@@ -153,8 +153,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
-  exceptionHandler_ = isa_.handleException(
-      instruction, architecturalRegisterFileSet_, dataMemory_);
+  exceptionHandler_ = isa_.handleException(instruction, *this, dataMemory_);
   processExceptionHandler();
 }
 
