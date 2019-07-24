@@ -10,6 +10,7 @@ namespace emulation {
 // TODO: Expose as config option
 /** The number of bytes fetched each cycle. */
 const uint8_t FETCH_SIZE = 4;
+const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t entryPoint, uint64_t programByteLength,
@@ -30,6 +31,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 }
 
 void Core::tick() {
+  ticks_++;
+
   if (pc_ >= programByteLength_) {
     hasHalted_ = true;
     return;
@@ -209,6 +212,10 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 
 uint64_t Core::getInstructionsRetiredCount() const {
   return instructionsExecuted_;
+}
+
+uint64_t Core::getSystemTimer() const {
+  return ticks_ / (clockFrequency / 1e9);
 }
 
 std::map<std::string, std::string> Core::getStats() const {

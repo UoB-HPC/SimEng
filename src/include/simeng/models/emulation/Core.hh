@@ -38,6 +38,9 @@ class Core : public simeng::Core {
   /** Retrieve the number of instructions retired. */
   uint64_t getInstructionsRetiredCount() const override;
 
+  /** Retrieve the simulated nanoseconds elapsed since the core started. */
+  uint64_t getSystemTimer() const override;
+
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
@@ -87,6 +90,9 @@ class Core : public simeng::Core {
 
   /** Is the core waiting on a data read? */
   unsigned int pendingReads_ = 0;
+
+  /** The number of times this core has been ticked. */
+  uint64_t ticks_ = 0;
 
   /** The number of instructions executed. */
   uint64_t instructionsExecuted_ = 0;

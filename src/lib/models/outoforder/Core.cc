@@ -25,6 +25,7 @@ const unsigned int frontendWidth = 4;
 const unsigned int commitWidth = 4;
 const unsigned int executionUnitCount = 6;
 const unsigned int lsqCompletionSlots = 2;
+const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
@@ -292,6 +293,11 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 
 uint64_t Core::getInstructionsRetiredCount() const {
   return reorderBuffer_.getInstructionsCommittedCount();
+}
+
+uint64_t Core::getSystemTimer() const {
+  // TODO: This will need to be changed if we start supporting DVFS.
+  return ticks_ / (clockFrequency / 1e9);
 }
 
 std::map<std::string, std::string> Core::getStats() const {

@@ -8,6 +8,7 @@ namespace inorder {
 
 // TODO: Replace with config options
 const unsigned int fetchBlockAlignmentBits = 4;  // 2^4 = 16 bytes
+const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(FlatMemoryInterface& instructionMemory,
            FlatMemoryInterface& dataMemory, uint64_t processMemorySize,
@@ -123,6 +124,11 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 
 uint64_t Core::getInstructionsRetiredCount() const {
   return writebackUnit_.getInstructionsWrittenCount();
+}
+
+uint64_t Core::getSystemTimer() const {
+  // TODO: This will need to be changed if we start supporting DVFS.
+  return ticks_ / (clockFrequency / 1e9);
 }
 
 std::map<std::string, std::string> Core::getStats() const {

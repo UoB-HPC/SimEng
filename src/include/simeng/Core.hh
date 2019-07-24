@@ -25,6 +25,9 @@ class Core {
   /** Retrieve the number of instructions retired. */
   virtual uint64_t getInstructionsRetiredCount() const = 0;
 
+  /** Retrieve the simulated nanoseconds elapsed since the core started. */
+  virtual uint64_t getSystemTimer() const = 0;
+
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;
 };

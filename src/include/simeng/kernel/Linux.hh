@@ -38,6 +38,13 @@ class Linux {
    * `addr` if reasonable, and returns the program break. */
   int64_t brk(uint64_t addr);
 
+  /** clock_gettime syscall: get the time of specified clock `clkId`, using
+   * the system timer `systemTimer` (with nanosecond accuracy). Returns 0 on
+   * success, and puts the retrieved time in the `seconds` and `nanoseconds`
+   * arguments. */
+  uint64_t clockGetTime(uint64_t clkId, uint64_t systemTimer, uint64_t& seconds,
+                        uint64_t& nanoseconds);
+
   /** getpid syscall: get the process owner's process ID. */
   int64_t getpid() const;
   /** getuid syscall: get the process owner's user ID. */

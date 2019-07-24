@@ -59,6 +59,23 @@ bool ExceptionHandler::init() {
         stateChange = {{R0}, {linux_.setTidAddress(ptr)}};
         break;
       }
+      case 113: {  // clock_gettime
+        uint64_t clkId = registerFileSet.get(R0).get<uint64_t>();
+        uint64_t systemTimer = core.getSystemTimer();
+
+        uint64_t seconds;
+        uint64_t nanoseconds;
+        uint64_t retval =
+            linux_.clockGetTime(clkId, systemTimer, seconds, nanoseconds);
+        stateChange = {{R0}, {retval}};
+
+        uint64_t timespecPtr = registerFileSet.get(R1).get<uint64_t>();
+        stateChange.memoryAddresses.push_back({timespecPtr, 8});
+        stateChange.memoryAddressValues.push_back(seconds);
+        stateChange.memoryAddresses.push_back({timespecPtr + 8, 8});
+        stateChange.memoryAddressValues.push_back(nanoseconds);
+        break;
+      }
       case 160: {  // uname
         const uint64_t base = registerFileSet.get(R0).get<uint64_t>();
         const uint8_t len =
