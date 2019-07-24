@@ -128,6 +128,7 @@ TEST_P(InstNeon, smin) {
   heap[6] = -321;
   heap[7] = 123;
 
+  // smin (element-wise)
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -142,6 +143,21 @@ TEST_P(InstNeon, smin) {
   EXPECT_EQ((getVectorRegisterElement<int32_t, 1>(2)), -42);
   EXPECT_EQ((getVectorRegisterElement<int32_t, 2>(2)), -321);
   EXPECT_EQ((getVectorRegisterElement<int32_t, 3>(2)), -1);
+
+  // sminv (across vector)
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    sminv s0, v0.4s
+    sminv s1, v1.4s
+  )");
+  EXPECT_EQ((getVectorRegisterElement<int32_t, 0>(0)), -42);
+  EXPECT_EQ((getVectorRegisterElement<int32_t, 0>(1)), -321);
 }
 
 TEST_P(InstNeon, xtn) {

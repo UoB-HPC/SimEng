@@ -939,6 +939,12 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_SMINVv4i32v: {  // smin s0, vn.4s
+      const int32_t* n = operands[0].getAsVector<int32_t>();
+      int32_t out = std::min(std::min(n[0], n[1]), std::min(n[2], n[3]));
+      results[0] = RegisterValue(out, 16);
+      return;
+    }
     case Opcode::AArch64_SMINv4i32: {  // smin vd.4s, vn.4s, vm.4s
       const int32_t* n = operands[0].getAsVector<int32_t>();
       const int32_t* m = operands[1].getAsVector<int32_t>();
