@@ -517,6 +517,13 @@ void Instruction::execute() {
       results[0] = x ^ y;
       return;
     }
+    case Opcode::AArch64_FADDDrr: {  // fadd dd, dn, dm
+      double n = operands[0].get<double>();
+      double m = operands[1].get<double>();
+      double out[2] = {n + m, 0.0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FADDv2f64: {  // fadd vd.2d, vn.2d, vm.2d
       const double* a = operands[0].getAsVector<double>();
       const double* b = operands[1].getAsVector<double>();
