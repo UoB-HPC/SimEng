@@ -538,10 +538,12 @@ void Instruction::execute() {
       }
       return;
     }
-    case Opcode::AArch64_FCMPDrr: {  // fcmp dn, dm
+    case Opcode::AArch64_FCMPDrr:     // fcmp dn, dm
+    case Opcode::AArch64_FCMPEDrr: {  // fcmpe dn, dm
       double a = operands[0].get<double>();
       double b = operands[1].get<double>();
       if (std::isnan(a) || std::isnan(b)) {
+        // TODO: Raise exception if NaNs are signalling or fcmpe
         results[0] = nzcv(false, false, true, true);
       } else if (a == b) {
         results[0] = nzcv(false, true, true, false);

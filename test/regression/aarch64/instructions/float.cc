@@ -1,8 +1,51 @@
 #include "AArch64RegressionTest.hh"
 
+#include <cmath>
+
 namespace {
 
 using InstFloat = AArch64RegressionTest;
+
+TEST_P(InstFloat, fcmp) {
+  // 1.25 == 1.25
+  RUN_AARCH64(R"(
+    fmov d0, 1.25
+    fmov d1, 1.25
+    fcmp d0, d1
+  )");
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 1.25 > -1.25
+  RUN_AARCH64(R"(
+    fmov d0, 1.25
+    fmov d1, -1.25
+    fcmp d0, d1
+  )");
+  EXPECT_EQ(getNZCV(), 0b0010);
+
+  // 1.25 < 10.5
+  RUN_AARCH64(R"(
+    fmov d0, 1.25
+    fmov d1, 10.5
+    fcmp d0, d1
+  )");
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  // 1.0 vs NaN
+  initialHeapData_.resize(8);
+  reinterpret_cast<double*>(initialHeapData_.data())[0] = std::nan("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fmov d0, 1.0
+    ldr d1, [x0]
+    fcmp d0, d1
+  )");
+  EXPECT_EQ(getNZCV(), 0b0011);
+}
 
 TEST_P(InstFloat, fmadd) {
   RUN_AARCH64(R"(
