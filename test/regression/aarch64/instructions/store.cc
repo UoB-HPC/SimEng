@@ -5,6 +5,15 @@ namespace {
 using InstStore = AArch64RegressionTest;
 
 TEST_P(InstStore, strd) {
+  // immediate offset
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    sub sp, sp, #16
+    str d0, [sp, #8]
+  )");
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), 2.0);
+
+  // post increment
   RUN_AARCH64(R"(
     fmov d0, 2.0
     sub sp, sp, 8

@@ -1006,6 +1006,10 @@ void Instruction::execute() {
       memoryData[0] = operands[0];
       return;
     }
+    case Opcode::AArch64_STRDui: {  // str dt, [xn, #imm]
+      memoryData[0] = operands[0];
+      return;
+    }
     case Opcode::AArch64_STRDpost: {  // str dt, [xn], #imm
       memoryData[0] = operands[0];
       results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
