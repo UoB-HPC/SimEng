@@ -1177,6 +1177,21 @@ void Instruction::execute() {
       results[0] = mulhi(x, y);
       return;
     }
+    case Opcode::AArch64_XTNv2i32: {  // xtn vd.2s, vn.2d
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      uint32_t out[4] = {static_cast<uint32_t>(n[0]),
+                         static_cast<uint32_t>(n[1]), 0, 0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_XTNv4i32: {  // xtn2 vd.4s, vn.2d
+      const uint32_t* d = operands[0].getAsVector<uint32_t>();
+      const uint64_t* n = operands[1].getAsVector<uint64_t>();
+      uint32_t out[4] = {d[0], d[1], static_cast<uint32_t>(n[0]),
+                         static_cast<uint32_t>(n[1])};
+      results[0] = out;
+      return;
+    }
     default:
       return executionNYI();
   }

@@ -86,6 +86,32 @@ TEST_P(InstNeon, movi) {
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(2)), (3u << 24));
 }
 
+TEST_P(InstNeon, xtn) {
+  initialHeapData_.resize(32);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap[0] = 42;
+  heap[1] = 1u << 31;
+  heap[2] = -1;
+  heap[3] = 7;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load and narrow integer values
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    xtn v2.2s, v0.2d
+    xtn2 v2.4s, v1.2d
+  )");
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(2)), 42);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(2)), 1u << 31);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(2)), -1);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(2)), 7);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstNeon, ::testing::Values(EMULATION),
                          coreTypeToString);
 

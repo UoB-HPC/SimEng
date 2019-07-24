@@ -72,6 +72,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // UBFM incorrectly flags destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
       break;
+    case Opcode::AArch64_XTNv16i8:
+    case Opcode::AArch64_XTNv4i32:
+    case Opcode::AArch64_XTNv8i16:
+      // XTN2 incorrectly flags destination as only WRITE
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      break;
   }
 
   revertAliasing();
