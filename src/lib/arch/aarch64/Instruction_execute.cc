@@ -793,6 +793,12 @@ void Instruction::execute() {
       results[0] = static_cast<uint64_t>(a + (x * y));
       return;
     }
+    case Opcode::AArch64_MOVID: {  // movi dd, #imm
+      uint64_t bits = static_cast<uint64_t>(metadata.operands[1].imm);
+      uint64_t vector[2] = {bits, 0};
+      results[0] = vector;
+      return;
+    }
     case Opcode::AArch64_MOVIv2d_ns: {  // movi vd.2d, #imm
       uint64_t bits = static_cast<uint64_t>(metadata.operands[1].imm);
       uint64_t vector[2] = {bits, bits};

@@ -87,6 +87,17 @@ TEST_P(InstNeon, fsub) {
 }
 
 TEST_P(InstNeon, movi) {
+  // scalar, 64-bit
+  RUN_AARCH64(R"(
+    movi d0, #65280
+    movi d1, -1
+  )");
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(0)), 65280u);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(0)), 0);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(1)), -1);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(1)), 0);
+
+  // vector, 32-bit
   RUN_AARCH64(R"(
     movi v0.4s, 42
     movi v1.4s, 42, lsl #8
