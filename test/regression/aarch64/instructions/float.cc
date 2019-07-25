@@ -179,6 +179,18 @@ TEST_P(InstFloat, fmov) {
   EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -0.125);
   EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), 0.0);
 
+  // FP64 scalar from register
+  RUN_AARCH64(R"(
+    fmov d0, 1.0
+    fmov d1, -0.125
+    fmov d2, d1
+    fmov d3, d0
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), -0.125);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(2)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+
   // FP64 scalar from general
   initialHeapData_.resize(16);
   reinterpret_cast<double*>(initialHeapData_.data())[0] = 123.456;
