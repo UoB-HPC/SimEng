@@ -378,6 +378,15 @@ void Instruction::execute() {
       results[0] = static_cast<uint64_t>(instructionAddress_ + 4);
       return;
     }
+    case Opcode::AArch64_BSLv16i8: {  // bsl vd.16b, vn.16b, vm.16b
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* n = operands[1].getAsVector<uint64_t>();
+      const uint64_t* m = operands[2].getAsVector<uint64_t>();
+      uint64_t out[2] = {(d[0] & n[0]) | ((~d[0]) & m[0]),
+                         (d[1] & n[1]) | ((~d[1]) & m[1])};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
       if (operands[0].get<uint32_t>() == 0) {
         branchTaken_ = false;
