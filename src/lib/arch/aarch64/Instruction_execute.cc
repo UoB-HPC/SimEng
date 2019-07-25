@@ -669,6 +669,11 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FNEGDr: {  // fneg dd, dn
+      double out[2] = {-operands[0].get<double>(), 0.0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FNEGv2f64: {  // fneg vd.2d, vn.2d
       const double* n = operands[0].getAsVector<double>();
       double out[2] = {-n[0], -n[1]};

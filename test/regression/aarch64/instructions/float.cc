@@ -240,6 +240,23 @@ TEST_P(InstFloat, fmul) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
 }
 
+TEST_P(InstFloat, fneg) {
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 12.5
+    fneg d3, d0
+    fneg d4, d1
+    fneg d5, d2
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), -2.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 0.125);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)), -12.5);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(5)), 0.0);
+}
+
 TEST_P(InstFloat, fsub) {
   RUN_AARCH64(R"(
     fmov d0, 1.0
