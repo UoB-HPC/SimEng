@@ -640,6 +640,12 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FNEGv2f64: {  // fneg vd.2d, vn.2d
+      const double* n = operands[0].getAsVector<double>();
+      double out[2] = {-n[0], -n[1]};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FSUBDrr: {  // fsub dd, dn, dm
       double n = operands[0].get<double>();
       double m = operands[1].get<double>();

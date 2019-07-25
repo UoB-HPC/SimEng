@@ -64,6 +64,31 @@ TEST_P(InstNeon, fmov) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), -0.125);
 }
 
+TEST_P(InstNeon, fneg) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 1.0;
+  heap[1] = -42.76;
+  heap[2] = -0.125;
+  heap[3] = 321.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fneg v2.2d, v0.2d
+    fneg v3.2d, v1.2d
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), -1.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(2)), 42.76);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 0.125);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), -321.0);
+}
+
 TEST_P(InstNeon, fsub) {
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
