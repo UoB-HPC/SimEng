@@ -531,6 +531,13 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FCMGEv2i64rz: {  // fcmge vd.2s, vn.2s, 0.0
+      const double* n = operands[0].getAsVector<double>();
+      uint64_t out[2] = {static_cast<uint64_t>(n[0] >= 0.0 ? -1 : 0),
+                         static_cast<uint64_t>(n[1] >= 0.0 ? -1 : 0)};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FCMPDri: {  // fcmp dn, #imm
       double a = operands[0].get<double>();
       double b = metadata.operands[1].fp;
