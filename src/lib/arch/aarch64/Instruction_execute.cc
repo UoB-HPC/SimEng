@@ -476,6 +476,12 @@ void Instruction::execute() {
       results[0] = i;
       return;
     }
+    case Opcode::AArch64_CPYi64: {  // dup vd, vn.d[index]
+      const uint64_t* vec = operands[0].getAsVector<uint64_t>();
+      uint64_t out[2] = {vec[metadata.operands[1].vector_index], 0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_CSELWr: {  // csel wd, wn, wm, cc
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         results[0] = static_cast<uint64_t>(operands[1].get<uint32_t>());

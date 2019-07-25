@@ -268,6 +268,12 @@ void InstructionMetadata::revertAliasing() {
         operands[2].shift.type = ARM64_SFT_INVALID;
         return;
       }
+      if (opcode == Opcode::AArch64_CPYi8 || opcode == Opcode::AArch64_CPYi16 ||
+          opcode == Opcode::AArch64_CPYi32 ||
+          opcode == Opcode::AArch64_CPYi64) {
+        // mov vd, Vn.T[index]; alias for dup vd, Vn.T[index]
+        return;
+      }
       if (opcode == Opcode::AArch64_ORRWrs ||
           opcode == Opcode::AArch64_ORRXrs) {
         // mov rd, rn; alias for: orr rd, zr, rn

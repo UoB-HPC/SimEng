@@ -31,6 +31,39 @@ TEST_P(InstNeon, bsl) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), -42.76);
 }
 
+TEST_P(InstNeon, dup) {
+  initialHeapData_.resize(32);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap[0] = 42;
+  heap[1] = 1ul << 63;
+  heap[2] = -1;
+  heap[3] = 7;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    dup d2, v0.d[0]
+    dup d3, v0.d[1]
+
+    # Check mov alias works as well
+    mov d4, v1.d[0]
+    mov d5, v1.d[1]
+  )");
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(2)), 42);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(2)), 0);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(3)), 1ul << 63);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(3)), 0);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(4)), -1);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(4)), 0);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(5)), 7);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(5)), 0);
+}
+
 TEST_P(InstNeon, fcmge) {
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
