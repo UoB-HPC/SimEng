@@ -154,6 +154,20 @@ TEST_P(InstFloat, fcvt) {
   EXPECT_EQ((getGeneralRegister<int32_t>(3)), 321);
 }
 
+TEST_P(InstFloat, fdiv) {
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 12.5
+    fdiv d3, d0, d1
+    fdiv d4, d0, d2
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), -16);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 0.16);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+}
+
 TEST_P(InstFloat, fmadd) {
   RUN_AARCH64(R"(
     fmov d0, 2.0
