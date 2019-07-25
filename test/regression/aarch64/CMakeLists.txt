@@ -4,6 +4,7 @@ add_executable(regression-aarch64
                SmokeTest.cc
                instructions/arithmetic.cc
                instructions/comparison.cc
+               instructions/conditional.cc
                instructions/divide.cc
                instructions/float.cc
                instructions/load.cc

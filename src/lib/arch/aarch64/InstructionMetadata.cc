@@ -118,6 +118,18 @@ void InstructionMetadata::revertAliasing() {
     case ARM64_INS_BFXIL:
       return aliasNYI();
     case ARM64_INS_CINC:
+      if (opcode == Opcode::AArch64_CSINCWr ||
+          opcode == Opcode::AArch64_CSINCXr) {
+        // cinc rd, rn, cc; alias for: csinc rd, rn, rn, invert(cc)
+        operandCount = 3;
+
+        operands[2].type = ARM64_OP_REG;
+        operands[2].access = CS_AC_READ;
+        operands[2].reg = operands[1].reg;
+
+        cc ^= 1;  // invert lowest bit to negate cc
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_CINV:
       return aliasNYI();
