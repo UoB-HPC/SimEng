@@ -79,6 +79,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   for (auto const& target : addresses) {
     memory_.requestRead(target);
   }
+  pendingLoads_.insert(insn);
 }
 
 bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
@@ -94,22 +95,19 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
     memory_.requestWrite(addresses[i], data[i]);
   }
 
-  for (const auto& load : loadQueue_) {
-    // Find all loads ready to commit
-    // TODO: Partially ready loads also need disambiguation
-    if (load->hasExecuted()) {
-      const auto& loadedAddresses = load->getGeneratedAddresses();
-      // Iterate over store addresses
-      for (const auto& storeReq : addresses) {
-        // Iterate over load addresses
-        for (const auto& loadReq : loadedAddresses) {
-          // Check for overlapping requests, and flush if discovered
-          if (requestsOverlap(storeReq, loadReq)) {
-            violatingLoad_ = load;
+  // Check all loads that have requested memory
+  for (const auto& load : pendingLoads_) {
+    const auto& loadedAddresses = load->getGeneratedAddresses();
+    // Iterate over store addresses
+    for (const auto& storeReq : addresses) {
+      // Iterate over load addresses
+      for (const auto& loadReq : loadedAddresses) {
+        // Check for overlapping requests, and flush if discovered
+        if (requestsOverlap(storeReq, loadReq)) {
+          violatingLoad_ = load;
 
-            storeQueue_.pop_front();
-            return true;
-          }
+          storeQueue_.pop_front();
+          return true;
         }
       }
     }
@@ -127,6 +125,7 @@ void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
          "load queue");
 
   loadQueue_.pop_front();
+  pendingLoads_.erase(uop);
 }
 
 void LoadStoreQueue::purgeFlushed() {
@@ -134,6 +133,7 @@ void LoadStoreQueue::purgeFlushed() {
   while (it != loadQueue_.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {
+      pendingLoads_.erase(*it);
       it = loadQueue_.erase(it);
     } else {
       it++;

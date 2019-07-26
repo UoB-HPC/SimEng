@@ -1,6 +1,7 @@
 add_executable(regression-aarch64
                AArch64RegressionTest.cc
                AArch64RegressionTest.hh
+               LoadStoreQueue.cc
                SmokeTest.cc
                instructions/arithmetic.cc
                instructions/comparison.cc
