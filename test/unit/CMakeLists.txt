@@ -10,6 +10,7 @@ set(TEST_SOURCES
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
     BTBPredictorTest.cc
+    FixedLatencyMemoryInterfaceTest.cc
     ISATest.cc
     RegisterValueTest.cc
     )
