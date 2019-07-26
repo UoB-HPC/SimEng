@@ -25,8 +25,9 @@ enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
              simeng::MemoryInterface& dataMemory) {
   int iterations = 0;
-  while (!core.hasHalted()) {
-    // Tick the core until it detects the program has halted.
+  // Tick the core and memory interfaces until the program has halted
+  while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
+    // Tick the core
     core.tick();
 
     // Tick memory
