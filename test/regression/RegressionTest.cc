@@ -20,6 +20,7 @@
 #include "llvm/Support/TargetSelect.h"
 
 #include "simeng/BTBPredictor.hh"
+#include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
@@ -52,7 +53,13 @@ void RegressionTest::run(const char* source, const char* triple) {
   // Create memory interfaces for instruction and data access
   simeng::FlatMemoryInterface instructionMemory(processMemory_,
                                                 processMemorySize_);
-  simeng::FlatMemoryInterface dataMemory(processMemory_, processMemorySize_);
+  std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
+      std::make_unique<simeng::FlatMemoryInterface>(processMemory_,
+                                                    processMemorySize_);
+  std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
+      std::make_unique<simeng::FixedLatencyMemoryInterface>(
+          processMemory_, processMemorySize_, 4);
+  std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
   // Create the OS kernel and the process
   simeng::kernel::Linux kernel;
@@ -78,23 +85,29 @@ void RegressionTest::run(const char* source, const char* triple) {
   switch (GetParam()) {
     case EMULATION:
       core_ = std::make_unique<simeng::models::emulation::Core>(
-          instructionMemory, dataMemory, entryPoint, processMemorySize_, *arch);
+          instructionMemory, *flatDataMemory, entryPoint, processMemorySize_,
+          *arch);
+      dataMemory = std::move(flatDataMemory);
       break;
     case INORDER:
       core_ = std::make_unique<simeng::models::inorder::Core>(
-          instructionMemory, dataMemory, processMemorySize_, entryPoint, *arch,
-          predictor);
+          instructionMemory, *flatDataMemory, processMemorySize_, entryPoint,
+          *arch, predictor);
+      dataMemory = std::move(flatDataMemory);
       break;
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
-          instructionMemory, dataMemory, processMemorySize_, entryPoint, *arch,
-          predictor, *portAllocator);
+          instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
+          entryPoint, *arch, predictor, *portAllocator);
+      dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }
 
   // Run the core model until the program is complete
-  while (!core_->hasHalted()) {
+  while (!core_->hasHalted() || dataMemory->hasPendingRequests()) {
     core_->tick();
+    instructionMemory.tick();
+    dataMemory->tick();
   }
 }
 
