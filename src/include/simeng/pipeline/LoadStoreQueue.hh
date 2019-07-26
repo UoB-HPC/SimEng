@@ -3,6 +3,7 @@
 #include <deque>
 #include <functional>
 #include <queue>
+#include <unordered_set>
 
 #include "simeng/Instruction.hh"
 #include "simeng/MemoryInterface.hh"
@@ -84,6 +85,9 @@ class LoadStoreQueue {
 
   /** Slots to write completed load instructions into for writeback. */
   span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots_;
+
+  /** The set of uncommitted loads that have already requested their data. */
+  std::unordered_set<std::shared_ptr<Instruction>> pendingLoads_;
 
   /** A function handler to call to forward the results of a completed load. */
   std::function<void(span<Register>, span<RegisterValue>)> forwardOperands_;
