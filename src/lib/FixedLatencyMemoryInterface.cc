@@ -50,12 +50,12 @@ void FixedLatencyMemoryInterface::tick() {
 
 void FixedLatencyMemoryInterface::requestRead(
     const MemoryAccessTarget& target) {
-  pendingRequests_.push({target, tickCounter_ + latency_ - 1});
+  pendingRequests_.push({target, tickCounter_ + latency_});
 }
 
 void FixedLatencyMemoryInterface::requestWrite(const MemoryAccessTarget& target,
                                                const RegisterValue& data) {
-  pendingRequests_.push({target, data, tickCounter_ + latency_ - 1});
+  pendingRequests_.push({target, data, tickCounter_ + latency_});
 }
 
 const span<std::pair<MemoryAccessTarget, RegisterValue>>
