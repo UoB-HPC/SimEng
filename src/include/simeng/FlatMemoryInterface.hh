@@ -23,6 +23,9 @@ class FlatMemoryInterface : public MemoryInterface {
   /** Clear the completed reads. */
   void clearCompletedReads() override;
 
+  /** Returns true if there are any oustanding memory requests in-flight. */
+  bool hasPendingRequests() const override;
+
   /** Tick: do nothing */
   void tick() override;
 

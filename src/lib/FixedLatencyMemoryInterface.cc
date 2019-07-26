@@ -69,4 +69,8 @@ void FixedLatencyMemoryInterface::clearCompletedReads() {
   completedReads_.clear();
 }
 
+bool FixedLatencyMemoryInterface::hasPendingRequests() const {
+  return !pendingRequests_.empty();
+}
+
 }  // namespace simeng

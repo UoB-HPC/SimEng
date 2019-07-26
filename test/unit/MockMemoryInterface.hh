@@ -19,6 +19,8 @@ class MockMemoryInterface : public MemoryInterface {
 
   MOCK_METHOD0(clearCompletedReads, void());
 
+  MOCK_CONST_METHOD0(hasPendingRequests, bool());
+
   MOCK_METHOD0(tick, void());
 };
 

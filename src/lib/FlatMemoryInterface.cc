@@ -39,6 +39,8 @@ FlatMemoryInterface::getCompletedReads() const {
 
 void FlatMemoryInterface::clearCompletedReads() { completedReads_.clear(); }
 
+bool FlatMemoryInterface::hasPendingRequests() const { return false; }
+
 void FlatMemoryInterface::tick() {}
 
 }  // namespace simeng
