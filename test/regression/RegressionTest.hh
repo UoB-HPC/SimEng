@@ -78,6 +78,12 @@ class RegressionTest : public ::testing::TestWithParam<CoreType> {
   /** The initial data to populate the heap with. */
   std::vector<uint8_t> initialHeapData_;
 
+  /** The maximum number of ticks to run before aborting the test. */
+  uint64_t maxTicks_ = UINT64_MAX;
+
+  /** The number of ticks that were run before the test program completed. */
+  uint64_t numTicks_ = 0;
+
   /** The process memory. */
   char* processMemory_ = nullptr;
 
