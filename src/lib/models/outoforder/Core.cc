@@ -23,7 +23,7 @@ const unsigned int storeQueueSize = 36;
 const unsigned int fetchBlockAlignmentBits = 5;
 const unsigned int frontendWidth = 4;
 const unsigned int commitWidth = 4;
-const unsigned int executionUnitCount = 5;
+const unsigned int executionUnitCount = 6;
 const unsigned int lsqCompletionSlots = 2;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,

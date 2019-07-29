@@ -23,6 +23,28 @@ TEST_P(LoadStoreQueue, RAW) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 42u);
 }
 
+// Test with two load instructions that will complete on the same cycle.
+TEST_P(LoadStoreQueue, SimultaneousLoadCompletion) {
+  initialHeapData_.resize(8);
+  reinterpret_cast<uint32_t*>(initialHeapData_.data())[0] = 0xDEADBEEF;
+  reinterpret_cast<uint32_t*>(initialHeapData_.data())[1] = 0x12345678;
+
+  maxTicks_ = 30;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Perform two loads that should complete on the same cycle
+    # (assuming superscalar core with at least two load units)
+    ldr w1, [x0]
+    ldr w2, [x0, 4]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xDEADBEEF);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x12345678);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, LoadStoreQueue, ::testing::Values(OUTOFORDER),
                          coreTypeToString);
 

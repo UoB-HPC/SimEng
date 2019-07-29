@@ -187,6 +187,8 @@ void LoadStoreQueue::tick() {
     forwardOperands_(insn->getDestinationRegisters(), insn->getResults());
 
     completedLoads_.pop();
+
+    count++;
   }
 }
 

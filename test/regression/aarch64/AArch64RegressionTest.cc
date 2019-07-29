@@ -20,6 +20,7 @@ AArch64RegressionTest::createPortAllocator() const {
   // which is specified in the out-of-order core model
   const std::vector<std::vector<uint16_t>> portArrangement = {
       {simeng::arch::aarch64::InstructionGroups::LOAD},
+      {simeng::arch::aarch64::InstructionGroups::LOAD},
       {simeng::arch::aarch64::InstructionGroups::STORE},
       {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
        simeng::arch::aarch64::InstructionGroups::BRANCH},
