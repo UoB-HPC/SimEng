@@ -45,6 +45,30 @@ TEST_P(LoadStoreQueue, SimultaneousLoadCompletion) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x12345678);
 }
 
+// Test that a speculative load from an invalid address does not crash.
+TEST_P(LoadStoreQueue, SpeculativeInvalidLoad) {
+  initialHeapData_.resize(16);
+  reinterpret_cast<double*>(initialHeapData_.data())[0] = 0.0;
+  reinterpret_cast<double*>(initialHeapData_.data())[1] = 0.0;
+
+  RUN_AARCH64(R"(
+    # Fill pipelines to delay branch execution
+    fadd v1.2d, v1.2d, v1.2d
+    fadd v2.2d, v2.2d, v2.2d
+    fadd v1.2d, v1.2d, v1.2d
+    fadd v2.2d, v2.2d, v2.2d
+    fcmp d0, d0
+    b.eq .end
+
+    # Load from an invalid address
+    movk x0, 0xFFFF, lsl 48
+    ldr x1, [x0]
+
+    .end:
+    nop
+  )");
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, LoadStoreQueue, ::testing::Values(OUTOFORDER),
                          coreTypeToString);
 
