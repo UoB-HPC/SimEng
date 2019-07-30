@@ -89,7 +89,16 @@ void Instruction::supplyOperand(const Register& reg,
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
   for (size_t i = 0; i < memoryAddresses.size(); i++) {
     if (memoryAddresses[i].address == address && !memoryData[i]) {
-      memoryData[i] = data;
+      if (!data) {
+        // Raise exception for failed read
+        // TODO: Move this logic to caller and distinguish between different
+        // memory faults (e.g. bus error, page fault, seg fault)
+        exception = InstructionException::DataAbort;
+        exceptionEncountered_ = true;
+        memoryData[i] = RegisterValue(0, memoryAddresses[i].size);
+      } else {
+        memoryData[i] = data;
+      }
       dataPending_--;
       return;
     }

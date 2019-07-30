@@ -37,6 +37,7 @@ enum class InstructionException {
   EncodingUnallocated,
   EncodingNotYetImplemented,
   ExecutionNotYetImplemented,
+  DataAbort,
   SupervisorCall,
   HypervisorCall,
   SecureMonitorCall
