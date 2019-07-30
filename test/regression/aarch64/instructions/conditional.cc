@@ -4,6 +4,40 @@ namespace {
 
 using InstConditional = AArch64RegressionTest;
 
+TEST_P(InstConditional, csetm) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    mov w1, 42
+    mov w2, 7
+    cmp w0, w0
+    csetm w3, eq
+    csetm w4, ne
+    csetm w5, lt
+    csetm w6, le
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), -1);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), -1);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    mov x1, 42
+    mov x2, 7
+    cmp x0, x0
+    csetm x3, eq
+    csetm x4, ne
+    csetm x5, lt
+    csetm x6, le
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), -1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), -1);
+}
+
 TEST_P(InstConditional, csinc) {
   // 32-bit
   RUN_AARCH64(R"(

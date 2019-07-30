@@ -514,6 +514,22 @@ void Instruction::execute() {
       }
       return;
     }
+    case Opcode::AArch64_CSINVWr: {  // csinv wd, wn, wm, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        results[0] = RegisterValue(operands[1].get<uint32_t>(), 8);
+      } else {
+        results[0] = RegisterValue(~operands[2].get<uint32_t>(), 8);
+      }
+      return;
+    }
+    case Opcode::AArch64_CSINVXr: {  // csinv xd, xn, xm, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        results[0] = operands[1].get<uint64_t>();
+      } else {
+        results[0] = ~operands[2].get<uint64_t>();
+      }
+      return;
+    }
     case Opcode::AArch64_DUPv16i8gpr: {  // dup vd.16b, wn
       uint8_t out[16];
       std::fill(std::begin(out), std::end(out), operands[0].get<uint8_t>());

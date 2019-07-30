@@ -210,6 +210,29 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_CSETM:
+      if (opcode == Opcode::AArch64_CSINVWr ||
+          opcode == Opcode::AArch64_CSINVXr) {
+        // csetm rd, cc; alias for: csinv rd, zr, zr, invert(cc)
+        operandCount = 3;
+
+        operands[1].type = ARM64_OP_REG;
+        operands[1].access = CS_AC_READ;
+
+        operands[2].type = ARM64_OP_REG;
+        operands[2].access = CS_AC_READ;
+
+        if (opcode == Opcode::AArch64_CSINVWr) {
+          operands[1].reg = ARM64_REG_WZR;
+          operands[2].reg = ARM64_REG_WZR;
+        } else {
+          operands[1].reg = ARM64_REG_XZR;
+          operands[2].reg = ARM64_REG_XZR;
+        }
+
+        cc ^= 1;  // invert lowest bit to negate cc
+
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_DC:
       return aliasNYI();
