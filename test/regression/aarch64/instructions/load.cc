@@ -96,6 +96,26 @@ TEST_P(InstLoad, ldpd) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0);
 }
 
+TEST_P(InstLoad, ldrsw) {
+  initialHeapData_.resize(8);
+  int32_t* heap = reinterpret_cast<int32_t*>(initialHeapData_.data());
+  heap[0] = -2;
+  heap[1] = INT32_MAX;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load 32-bit values from heap and sign-extend to 64-bits
+    ldrsw x1, [x0]
+    ldrsw x2, [x0, #4]
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(1), -2);
+  EXPECT_EQ(getGeneralRegister<int64_t>(2), INT32_MAX);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstLoad, ::testing::Values(EMULATION),
                          coreTypeToString);
 

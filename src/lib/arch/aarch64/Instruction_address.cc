@@ -132,6 +132,12 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{base, 8}, {base + 8, 8}});
       break;
     }
+    case Opcode::AArch64_LDRSWui: {  // ldrsw xt, [xn{, #pimm}]
+      uint64_t base =
+          operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+      setMemoryAddresses({{base, 4}});
+      break;
+    }
     case Opcode::AArch64_LDURBBi: {  // ldurb wt, [xn, #imm]
       setMemoryAddresses(
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});

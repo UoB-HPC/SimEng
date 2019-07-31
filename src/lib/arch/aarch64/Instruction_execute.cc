@@ -767,6 +767,10 @@ void Instruction::execute() {
       results[0] = memoryData[0];
       return;
     }
+    case Opcode::AArch64_LDRSWui: {  // ldrsw xt, [xn{, #pimm}]
+      results[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
+      return;
+    }
     case Opcode::AArch64_LDRWpost: {  // ldr wt, [xn], #imm
       results[0] = memoryData[0].zeroExtend(4, 8);
       results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
