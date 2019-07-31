@@ -239,6 +239,7 @@ int main(int argc, char** argv) {
       std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)
           .count();
   auto hz = iterations / (static_cast<double>(duration) / 1000.0);
+  auto khz = hz / 1000.0;
 
   // Print stats
   std::cout << "\n";
@@ -248,7 +249,7 @@ int main(int argc, char** argv) {
   }
 
   std::cout << "\nFinished " << iterations << " ticks in " << duration << "ms ("
-            << hz << "Hz)" << std::endl;
+            << std::setprecision(4) << khz << " kHz)" << std::endl;
 
   delete[] processMemory;
 
