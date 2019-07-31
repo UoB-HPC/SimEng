@@ -50,6 +50,44 @@ TEST_P(InstConditional, csinc) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 43u);
 }
 
+TEST_P(InstConditional, tbz) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov w1, 42
+    mov w2, 7
+
+    movz w0, #0xA005
+
+    tbz w0, 14, .b1
+    mov w1, 50
+    .b1:
+
+    tbz w0, 2, .b2
+    mov w2, 15
+    .b2:
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 42u);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 15u);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x1, 42
+    mov x2, 7
+
+    movk x0, #0xA005, lsl 48
+
+    tbz x0, 62, .b1
+    mov x1, 50
+    .b1:
+
+    tbz x0, 50, .b2
+    mov x2, 15
+    .b2:
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 42u);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 15u);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstConditional, ::testing::Values(EMULATION),
                          coreTypeToString);
 

@@ -1263,6 +1263,16 @@ void Instruction::execute() {
       }
       return;
     }
+    case Opcode::AArch64_TBZX: {  // tbz xn, #imm, label
+      if (operands[0].get<uint64_t>() & (1ul << metadata.operands[1].imm)) {
+        branchTaken_ = false;
+        branchAddress_ = instructionAddress_ + 4;
+      } else {
+        branchTaken_ = true;
+        branchAddress_ = instructionAddress_ + metadata.operands[2].imm;
+      }
+      return;
+    }
     case Opcode::AArch64_UBFMWri: {  // ubfm wd, wn, #immr, #imms
       uint8_t r = metadata.operands[2].imm;
       uint8_t s = metadata.operands[3].imm;
