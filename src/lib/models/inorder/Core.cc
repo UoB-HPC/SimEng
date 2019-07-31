@@ -268,6 +268,10 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
 void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
   loadData(instruction);
   instruction->execute();
+  if (instruction->exceptionEncountered()) {
+    raiseException(instruction);
+    return;
+  }
 
   forwardOperands(instruction->getDestinationRegisters(),
                   instruction->getResults());
