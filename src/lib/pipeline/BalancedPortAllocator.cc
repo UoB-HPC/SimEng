@@ -47,7 +47,10 @@ uint8_t BalancedPortAllocator::allocate(uint16_t instructionGroup) {
   return bestPort;
 }
 
-void BalancedPortAllocator::issued(uint8_t port) { weights[port]--; }
+void BalancedPortAllocator::issued(uint8_t port) {
+  assert(weights[port] > 0);
+  weights[port]--;
+}
 void BalancedPortAllocator::deallocate(uint8_t port) { issued(port); };
 
 }  // namespace pipeline

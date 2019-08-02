@@ -57,8 +57,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures.size()),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities, rsSize,
-                         robSize),
+                         portAllocator, physicalRegisterQuantities, rsSize),
       writebackUnit_(completionSlots_, registerFileSet_) {
   for (size_t i = 0; i < executionUnitCount; i++) {
     executionUnits_.emplace_back(

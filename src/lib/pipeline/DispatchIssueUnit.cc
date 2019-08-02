@@ -1,5 +1,7 @@
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 
+#include <unordered_set>
+
 namespace simeng {
 namespace pipeline {
 
@@ -8,14 +10,12 @@ DispatchIssueUnit::DispatchIssueUnit(
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
     const std::vector<uint16_t>& physicalRegisterStructure,
-    unsigned int maxReservationStationSize,
-    unsigned int maxInFlightInstructions)
+    unsigned int maxReservationStationSize)
     : input_(fromRename),
       issuePorts_(issuePorts),
       registerFileSet_(registerFileSet),
       scoreboard_(physicalRegisterStructure.size()),
       maxReservationStationSize_(maxReservationStationSize),
-      reservationStation_(maxInFlightInstructions, {nullptr, 0}),
       dependencyMatrix_(physicalRegisterStructure.size()),
       portAllocator_(portAllocator),
       readyQueues_(issuePorts.size()) {
@@ -75,11 +75,6 @@ void DispatchIssueUnit::tick() {
       scoreboard_[reg.type][reg.tag] = false;
     }
 
-    reservationStation_[rsHead_] = {uop, port};
-    rsHead_++;
-    if (rsHead_ >= reservationStation_.size()) {
-      rsHead_ = 0;
-    }
     rsSize_++;
 
     input_.getHeadSlots()[slot] = nullptr;
@@ -108,6 +103,7 @@ void DispatchIssueUnit::issue() {
       portAllocator_.issued(i);
       issued++;
 
+      assert(rsSize_ > 0);
       rsSize_--;
     }
   }
@@ -159,28 +155,43 @@ void DispatchIssueUnit::purgeFlushed() {
       auto& uop = *it;
       if (uop->isFlushed()) {
         it = queue.erase(it);
+        assert(rsSize_ > 0);
+        rsSize_--;
       } else {
         it++;
       }
     }
   }
 
-  while (rsSize_ > 0) {
-    // All flushed instructions must implicitly be at the end of the RS.
-    // Shuffle the head backwards until a non-flushed instruction is found
-    size_t previousIndex =
-        (rsHead_ == 0 ? reservationStation_.size() - 1 : rsHead_ - 1);
-    auto& entry = reservationStation_[previousIndex];
-    if (!entry.uop->isFlushed()) {
-      break;
+  // Collect flushed instructions and remove them from the dependency matrix
+  std::unordered_set<std::shared_ptr<Instruction>> flushed;
+  for (auto& registerType : dependencyMatrix_) {
+    for (auto& dependencyList : registerType) {
+      // Instructions are added in-order, so flushed instructions will be at the
+      // back of each dependency list. Walk backwards through the list and add
+      // the flushed instructions to the set.
+      int i;
+      for (i = dependencyList.size() - 1; i >= 0; i--) {
+        auto& uop = dependencyList[i].uop;
+        if (!uop->isFlushed()) {
+          // Stop at first (newest) non-flushed instruction
+          break;
+        }
+        if (!flushed.count(uop)) {
+          flushed.insert(uop);
+
+          // Inform the allocator we've removed an instruction
+          portAllocator_.deallocate(dependencyList[i].port);
+        }
+      }
+      // Resize the dependency list to remove flushed instructions from it
+      dependencyList.resize(i + 1);
     }
-
-    // Inform the allocator we've removed an instruction
-    portAllocator_.deallocate(entry.port);
-
-    rsHead_ = previousIndex;
-    rsSize_--;
   }
+
+  // Update reservation station size
+  assert(rsSize_ >= flushed.size());
+  rsSize_ -= flushed.size();
 }
 
 uint64_t DispatchIssueUnit::getRSStalls() const { return rsStalls_; }

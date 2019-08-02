@@ -114,21 +114,19 @@ Dispatch
 
 During dispatch, the unit will read instructions from the input buffer, and check their required source operands against the internal scoreboard---the structure responsible for tracking operand availability. If an operand is available, it is supplied to the instruction; otherwise, an entry is inserted into the internal dependency matrix to track that the instruction depends on that missing operand.
 
-Using the supplied port allocator, each instruction is allocated a destination port, which corresponds to one of the output buffers.
+Using the supplied port allocator, each instruction is allocated a destination port, which corresponds to one of the output buffers. Each port has a corresponding ready queue which contains instructions that are ready to execute.
 
-The instruction is then added to the reservation station, where it will remain until issued. If at any point the reservation station becomes full while instructions remain in the input, the cycle stops and the input buffer becomes stalled. The remaining instructions will be processed during a future dispatch, once space is available, and the input buffer will be unstalled once emptied.
+The instruction is then added to the reservation station, where it will remain until issued. If at any point the reservation station becomes full while instructions remain in the input, the cycle stops and the input buffer becomes stalled. The remaining instructions will be processed during a future dispatch, once space is available, and the input buffer will be unstalled once emptied. Note that there is no dedicated data structure for the reservation station; all instructions it contains are either in the dependency matrix or one of the ready queues, so we simply keep track of the number of instructions instead.
 
 Operand forwarding
 ''''''''''''''''''
 
-When results are forwarded to the unit, the associated registers are looked up in the internal dependency matrix to find the instructions depending on them. The results are supplied to the dependent instructions, and the relevant dependency matrix entries cleared.
+When results are forwarded to the unit, the associated registers are looked up in the internal dependency matrix to find the instructions depending on them. The results are supplied to the dependent instructions, and the relevant dependency matrix entries cleared. Once an instruction has all of its dependencies met it is moved to the ready queue for its allocated port.
 
 Issue
 '''''
 
-During issue, the reservation station is searched from oldest to youngest to find ready-to-execute instructions. If a ready instruction's allocated port is unstalled and has not yet been used this cycle, the instruction will be placed into it and removed from the reservation station; otherwise, it will be skipped and handled during a future issue stage.
-
-This search continues until either all ports are full, or all ready-to-execute instructions have been checked.
+During issue, the ready queue for each port is checked for instructions that can be executed. If a ready instruction's allocated port is unstalled and has not yet been used this cycle, the instruction will be placed into it and removed from the queue; otherwise, it will be skipped and handled during a future issue stage.
 
 ExecuteUnit
 -----------
