@@ -34,6 +34,9 @@ class Core : public simeng::Core {
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const override;
 
+  /** Retrieve the number of instructions retired. */
+  uint64_t getInstructionsRetiredCount() const override;
+
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 

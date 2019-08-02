@@ -1,4 +1,5 @@
 #include <chrono>
+#include <cmath>
 #include <cstring>
 #include <iomanip>
 #include <iostream>
@@ -240,6 +241,8 @@ int main(int argc, char** argv) {
           .count();
   auto hz = iterations / (static_cast<double>(duration) / 1000.0);
   auto khz = hz / 1000.0;
+  auto retired = core->getInstructionsRetiredCount();
+  auto mips = retired / static_cast<double>(duration) / 1000.0;
 
   // Print stats
   std::cout << "\n";
@@ -249,7 +252,8 @@ int main(int argc, char** argv) {
   }
 
   std::cout << "\nFinished " << iterations << " ticks in " << duration << "ms ("
-            << std::setprecision(4) << khz << " kHz)" << std::endl;
+            << std::round(khz) << " kHz, " << std::setprecision(2) << mips
+            << " MIPS)" << std::endl;
 
   delete[] processMemory;
 

@@ -290,6 +290,10 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
   return mappedRegisterFileSet_;
 }
 
+uint64_t Core::getInstructionsRetiredCount() const {
+  return reorderBuffer_.getInstructionsCommittedCount();
+}
+
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = reorderBuffer_.getInstructionsCommittedCount();
   auto ipc = retired / static_cast<float>(ticks_);

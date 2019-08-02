@@ -22,6 +22,9 @@ class Core {
   virtual const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const = 0;
 
+  /** Retrieve the number of instructions retired. */
+  virtual uint64_t getInstructionsRetiredCount() const = 0;
+
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;
 };

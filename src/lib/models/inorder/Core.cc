@@ -121,6 +121,10 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
   return architecturalRegisterFileSet_;
 }
 
+uint64_t Core::getInstructionsRetiredCount() const {
+  return writebackUnit_.getInstructionsWrittenCount();
+}
+
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = writebackUnit_.getInstructionsWrittenCount();
   auto ipc = retired / static_cast<float>(ticks_);

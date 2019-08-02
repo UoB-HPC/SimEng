@@ -208,6 +208,10 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
   return architecturalRegisterFileSet_;
 }
 
+uint64_t Core::getInstructionsRetiredCount() const {
+  return instructionsExecuted_;
+}
+
 std::map<std::string, std::string> Core::getStats() const {
   return {{"instructions", std::to_string(instructionsExecuted_)}};
 };
