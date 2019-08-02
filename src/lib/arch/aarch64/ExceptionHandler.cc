@@ -23,14 +23,12 @@ ExceptionHandler::ExceptionHandler(
 bool ExceptionHandler::tick() { return resumeHandling_(); }
 
 bool ExceptionHandler::init() {
-  printException(instruction_);
   InstructionException exception = instruction_.getException();
 
   if (exception == InstructionException::SupervisorCall) {
     // Retrieve syscall ID held in register x8
     auto syscallId =
         registerFileSet_.get({RegisterType::GENERAL, 8}).get<uint64_t>();
-    std::cout << "Syscall ID is " << syscallId << std::endl;
 
     ProcessStateChange stateChange;
     switch (syscallId) {
@@ -100,6 +98,7 @@ bool ExceptionHandler::init() {
         break;
       }
       default:
+        printException(instruction_);
         std::cout << "Unrecognised syscall" << std::endl;
         return fatal();
     }
@@ -107,6 +106,7 @@ bool ExceptionHandler::init() {
     return concludeSyscall(stateChange);
   }
 
+  printException(instruction_);
   return fatal();
 }
 
@@ -202,11 +202,6 @@ void ExceptionHandler::readLinkAt(span<char> path) {
 
 bool ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
   uint64_t nextInstructionAddress = instruction_.getInstructionAddress() + 4;
-
-  std::cout << "Resuming from 0x" << std::hex << nextInstructionAddress
-            << std::dec << "\n"
-            << std::endl;
-
   result_ = {false, nextInstructionAddress, stateChange};
   return true;
 }
@@ -215,6 +210,7 @@ const ExceptionResult& ExceptionHandler::getResult() const { return result_; }
 
 void ExceptionHandler::printException(const Instruction& insn) const {
   auto exception = insn.getException();
+  std::cout << std::endl;
   std::cout << "Encountered ";
   switch (exception) {
     case InstructionException::EncodingUnallocated:
