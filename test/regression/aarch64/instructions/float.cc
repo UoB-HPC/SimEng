@@ -258,6 +258,24 @@ TEST_P(InstFloat, fneg) {
 }
 
 TEST_P(InstFloat, fsub) {
+  // FP32
+  RUN_AARCH64(R"(
+    fmov s0, 1.0
+    fmov s1, -0.125
+    fmov s2, 7.5
+    fsub s3, s0, s1
+    fsub s4, s0, s2
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 1.125);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), -6.5);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.0);
+
+  // FP64
   RUN_AARCH64(R"(
     fmov d0, 1.0
     fmov d1, -0.125
