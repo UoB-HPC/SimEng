@@ -306,9 +306,18 @@ void Instruction::execute() {
       }
       return;
     }
-    case Opcode::AArch64_ANDWri: {  // and wd, xn, #imm
+    case Opcode::AArch64_ANDWri: {  // and wd, wn, #imm
       auto x = operands[0].get<uint32_t>();
       auto y = static_cast<uint32_t>(metadata.operands[2].imm);
+      uint32_t result = x & y;
+      results[0] = RegisterValue(result, 8);
+      return;
+    }
+    case Opcode::AArch64_ANDWrs: {  // and wd, wn, wm{, shift #amount}
+      auto x = operands[0].get<uint32_t>();
+      auto y = shiftValue(operands[1].get<uint32_t>(),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
       results[0] = static_cast<uint64_t>(x & y);
       return;
     }
