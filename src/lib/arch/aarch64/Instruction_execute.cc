@@ -271,7 +271,7 @@ void Instruction::execute() {
       auto y = static_cast<uint32_t>(metadata.operands[2].imm);
       uint32_t result = x & y;
       results[0] = nzcv(result >> 31, result == 0, false, false);
-      results[1] = result;
+      results[1] = RegisterValue(result, 8);
       return;
     }
     case Opcode::AArch64_ANDSWrs: {  // ands wd, wn, wm{, shift #amount}

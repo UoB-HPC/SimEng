@@ -9,6 +9,7 @@ add_executable(regression-aarch64
                instructions/divide.cc
                instructions/float.cc
                instructions/load.cc
+               instructions/logical.cc
                instructions/multiply.cc
                instructions/neon.cc
                instructions/store.cc
