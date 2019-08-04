@@ -201,6 +201,60 @@ TEST_P(InstFloat, fmadd) {
 }
 
 TEST_P(InstFloat, fmov) {
+  // FP32 scalar from immediate
+  RUN_AARCH64(R"(
+    fmov s0, 1.0
+    fmov s1, -0.125
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(0)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(0)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(0)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(0)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), -0.125);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(1)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(1)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(1)), 0.0);
+
+  // FP32 scalar from register
+  RUN_AARCH64(R"(
+    fmov s0, 1.0
+    fmov s1, -0.125
+    fmov s2, s1
+    fmov s3, s0
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), -0.125);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(2)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(2)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(2)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.0);
+
+  // FP32 scalar from general
+  initialHeapData_.resize(8);
+  reinterpret_cast<float*>(initialHeapData_.data())[0] = 128.5;
+  reinterpret_cast<float*>(initialHeapData_.data())[1] = -0.0625;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr w1, [x0]
+    ldr w2, [x0, #4]
+    fmov s0, w1
+    fmov s1, w2
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(0)), 128.5);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(0)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(0)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(0)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), -0.0625);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(1)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(1)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(1)), 0.0);
+
   // FP64 scalar from immediate
   RUN_AARCH64(R"(
     fmov d0, 1.0

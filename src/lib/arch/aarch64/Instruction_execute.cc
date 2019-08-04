@@ -697,6 +697,22 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMOVSi: {  // fmov sn, #imm
+      float out[4] = {static_cast<float>(metadata.operands[1].fp), 0.f, 0.f,
+                      0.f};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMOVSr: {  // fmov sd, sn
+      float out[4] = {operands[0].get<float>(), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMOVWSr: {  // fmov sd, wn
+      float out[4] = {operands[0].get<float>(), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMOVXDr: {  // fmov dd, xn
       double out[2] = {operands[0].get<double>(), 0.0};
       results[0] = out;
