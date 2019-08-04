@@ -549,6 +549,26 @@ void Instruction::execute() {
       // TODO: Respect memory barriers
       return;
     }
+    case Opcode::AArch64_EORWri: {  // eor wd, wn, #imm
+      auto x = operands[0].get<uint32_t>();
+      auto y = static_cast<uint32_t>(metadata.operands[2].imm);
+      results[0] = RegisterValue(x ^ y, 8);
+      return;
+    }
+    case Opcode::AArch64_EORWrs: {  // eor wd, wn, wm{, shift #imm}
+      auto x = operands[0].get<uint32_t>();
+      auto y = shiftValue(operands[1].get<uint32_t>(),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
+      results[0] = RegisterValue(x ^ y, 8);
+      return;
+    }
+    case Opcode::AArch64_EORXri: {  // eor xd, xn, #imm
+      auto x = operands[0].get<uint64_t>();
+      auto y = static_cast<uint64_t>(metadata.operands[2].imm);
+      results[0] = x ^ y;
+      return;
+    }
     case Opcode::AArch64_EORXrs: {  // eor xd, xn, xm{, shift #amount}
       auto x = operands[0].get<uint64_t>();
       auto y = shiftValue(operands[1].get<uint64_t>(),
