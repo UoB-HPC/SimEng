@@ -157,6 +157,72 @@ TEST_P(InstLogical, andsx) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), (0b101ull) << 48);
 }
 
+TEST_P(InstLogical, asrw) {
+  // 1 >> 0 = 0
+  RUN_AARCH64(R"(
+    mov w0, #1
+    asr w0, w0, wzr
+  )");
+  EXPECT_EQ(getGeneralRegister<int32_t>(0), 1);
+
+  // 3 >> 1 = 1
+  RUN_AARCH64(R"(
+    mov w0, #3
+    asr w0, w0, #1
+  )");
+  EXPECT_EQ(getGeneralRegister<int32_t>(0), 1);
+
+  // -16 >> 2 = -4
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    sub w0, w0, #16
+    asr w0, w0, #2
+  )");
+  EXPECT_EQ(getGeneralRegister<int32_t>(0), -4);
+
+  // -16 >> 33 = -8 (since shift amout is mod 32)
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    mov w1, #33
+    sub w0, w0, #16
+    asr w0, w0, w1
+  )");
+  EXPECT_EQ(getGeneralRegister<int32_t>(0), -8);
+}
+
+TEST_P(InstLogical, asrx) {
+  // 1 >> 0 = 0
+  RUN_AARCH64(R"(
+    mov x0, #1
+    asr x0, x0, xzr
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), 1);
+
+  // 3 >> 1 = 1
+  RUN_AARCH64(R"(
+    mov x0, #3
+    asr x0, x0, #1
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), 1);
+
+  // -16 >> 2 = -4
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    sub x0, x0, #16
+    asr x0, x0, #2
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), -4);
+
+  // -16 >> 65 = -8 (since shift amout is mod 64)
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    mov x1, #65
+    sub x0, x0, #16
+    asr x0, x0, x1
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), -8);
+}
+
 TEST_P(InstLogical, eorw) {
   // 0 ^ 0 = 0
   RUN_AARCH64(R"(

@@ -44,7 +44,7 @@ template <typename T>
 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
 bitfieldManipulate(T value, uint8_t rotateBy, uint8_t sourceBits,
                    bool signExtend = false) {
-  T mask = (1 << sourceBits) - 1;
+  T mask = (1ull << sourceBits) - 1;
   T source = value & mask;
   size_t bits = sizeof(T) * 8;
 
@@ -337,6 +337,18 @@ void Instruction::execute() {
                           metadata.operands[2].shift.type,
                           metadata.operands[2].shift.value);
       results[0] = x & y;
+      return;
+    }
+    case Opcode::AArch64_ASRVWr: {  // asrv wd, wn, wm
+      auto n = operands[0].get<int32_t>();
+      auto m = operands[1].get<uint32_t>();
+      results[0] = RegisterValue(n >> (m % 32), 8);
+      return;
+    }
+    case Opcode::AArch64_ASRVXr: {  // asrv xd, xn, xm
+      auto n = operands[0].get<int64_t>();
+      auto m = operands[1].get<uint64_t>();
+      results[0] = n >> (m % 64);
       return;
     }
     case Opcode::AArch64_B: {  // b label

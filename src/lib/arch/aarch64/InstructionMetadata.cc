@@ -102,6 +102,11 @@ void InstructionMetadata::revertAliasing() {
   // something else
   switch (id) {
     case ARM64_INS_ASR:
+      if (opcode == Opcode::AArch64_ASRVWr ||
+          opcode == Opcode::AArch64_ASRVXr) {
+        // asr rd, rn, rm; alias for: asrv rd, rn, rm
+        return;
+      }
       if (opcode == Opcode::AArch64_SBFMWri ||
           opcode == Opcode::AArch64_SBFMXri) {
         operandCount = 4;
