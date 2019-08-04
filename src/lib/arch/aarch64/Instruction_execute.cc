@@ -260,6 +260,10 @@ void Instruction::execute() {
       results[0] = x + y;
       return;
     }
+    case Opcode::AArch64_ADR: {  // adr xd, #imm
+      results[0] = instructionAddress_ + metadata.operands[1].imm;
+      return;
+    }
     case Opcode::AArch64_ADRP: {  // adrp xd, #imm
       // Clear lowest 12 bits of address and add immediate (already shifted by
       // decoder)
