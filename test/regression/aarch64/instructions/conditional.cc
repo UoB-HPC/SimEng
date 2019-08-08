@@ -4,6 +4,70 @@ namespace {
 
 using InstConditional = AArch64RegressionTest;
 
+TEST_P(InstConditional, ccmp) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    mov w1, 42
+    mov w2, 7
+
+    # cmp 0, 0; eq = true; cmp 42, 7; gt = true
+    cmp w0, w0
+    ccmp w1, w2, 2, eq
+    csetm w3, gt
+
+    # cmp 0, 0; ne = false; nzcv = 8; lt = true
+    cmp w0, w0
+    ccmp w1, w2, 8, ne
+    csetm w4, lt
+
+    # cmp 42, 7; gt = true; cmp 42, 31; lt = false
+    cmp w1, w2
+    ccmp w1, 31, 10, gt
+    csetm w5, lt
+
+    # cmp 7, 42; gt = false; nzcv = 8; ne = true
+    cmp w2, w1
+    ccmp w2, 7, 8, gt
+    csetm w6, ne
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), -1);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), -1);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), -1);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    mov x1, 42
+    mov x2, 7
+
+    # cmp 0, 0; eq = true; cmp 42, 7; gt = true
+    cmp x0, x0
+    ccmp x1, x2, 2, eq
+    csetm x3, gt
+
+    # cmp 0, 0; ne = false; nzcv = 8; lt = true
+    cmp x0, x0
+    ccmp x1, x2, 8, ne
+    csetm x4, lt
+
+    # cmp 42, 7; gt = true; cmp 42, 31; lt = false
+    cmp x1, x2
+    ccmp x1, 31, 10, gt
+    csetm x5, lt
+
+    # cmp 7, 42; gt = false; nzcv = 8; ne = true
+    cmp x2, x1
+    ccmp x2, 7, 8, gt
+    csetm x6, ne
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), -1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), -1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), -1);
+}
+
 TEST_P(InstConditional, csetm) {
   // 32-bit
   RUN_AARCH64(R"(
