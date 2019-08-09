@@ -231,6 +231,24 @@ TEST_P(InstFloat, fmov) {
   EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.0);
   EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.0);
 
+  // FP32 general from scalar
+  initialHeapData_.resize(8);
+  reinterpret_cast<float*>(initialHeapData_.data())[0] = 128.5;
+  reinterpret_cast<float*>(initialHeapData_.data())[1] = -0.0625;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr s1, [x0]
+    ldr s2, [x0, #4]
+    fmov w1, s1
+    fmov w2, s2
+  )");
+  EXPECT_EQ((getGeneralRegister<float>(1)), 128.5);
+  EXPECT_EQ((getGeneralRegister<float>(2)), -0.0625);
+
   // FP32 scalar from general
   initialHeapData_.resize(8);
   reinterpret_cast<float*>(initialHeapData_.data())[0] = 128.5;
@@ -276,6 +294,24 @@ TEST_P(InstFloat, fmov) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(2)), 0.0);
   EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 1.0);
   EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+
+  // FP64 general from scalar
+  initialHeapData_.resize(16);
+  reinterpret_cast<double*>(initialHeapData_.data())[0] = 123.456;
+  reinterpret_cast<double*>(initialHeapData_.data())[1] = -0.00032;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr d1, [x0]
+    ldr d2, [x0, #8]
+    fmov x1, d1
+    fmov x2, d2
+  )");
+  EXPECT_EQ((getGeneralRegister<double>(1)), 123.456);
+  EXPECT_EQ((getGeneralRegister<double>(2)), -0.00032);
 
   // FP64 scalar from general
   initialHeapData_.resize(16);

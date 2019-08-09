@@ -748,6 +748,10 @@ void Instruction::execute() {
       results[0] = operands[0].getAsVector<double>()[1];
       return;
     }
+    case Opcode::AArch64_FMOVDXr: {  // fmov xd, dn
+      results[0] = operands[0].get<double>();
+      return;
+    }
     case Opcode::AArch64_FMOVDi: {  // fmov dn, #imm
       double out[2] = {metadata.operands[1].fp, 0.0};
       results[0] = out;
@@ -756,6 +760,10 @@ void Instruction::execute() {
     case Opcode::AArch64_FMOVDr: {  // fmov dd, dn
       double out[2] = {operands[0].get<double>(), 0.0};
       results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMOVSWr: {  // fmov wd, sn
+      results[0] = RegisterValue(operands[0].get<float>(), 8);
       return;
     }
     case Opcode::AArch64_FMOVSi: {  // fmov sn, #imm
