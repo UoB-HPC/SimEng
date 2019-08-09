@@ -1235,7 +1235,35 @@ void Instruction::execute() {
       results[0] = bitfieldManipulate(source, r, s, true);
       return;
     }
-    case Opcode::AArch64_SCVTFv1i64: {
+    case Opcode::AArch64_SCVTFUWDri: {  // scvtf dd, wn
+      double out[2] = {static_cast<double>(operands[0].get<int32_t>()), 0.0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_SCVTFUWSri: {  // scvtf sd, wn
+      int32_t n = operands[0].get<int32_t>();
+      float out[4] = {static_cast<float>(n), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_SCVTFUXDri: {  // scvtf dd, xn
+      double out[2] = {static_cast<double>(operands[0].get<int64_t>()), 0.0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_SCVTFUXSri: {  // scvtf sd, xn
+      int64_t n = operands[0].get<int64_t>();
+      float out[4] = {static_cast<float>(n), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_SCVTFv1i32: {  // scvtf sd, sn
+      int32_t n = operands[0].get<int32_t>();
+      float out[4] = {static_cast<float>(n), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_SCVTFv1i64: {  // scvtf dd, dn
       double out[2] = {static_cast<double>(operands[0].get<int64_t>()), 0.0};
       results[0] = out;
       return;
