@@ -28,6 +28,30 @@ TEST_P(InstStore, strb) {
   EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 18), 0x12);
 }
 
+TEST_P(InstStore, strh) {
+  RUN_AARCH64(R"(
+    mov w0, 0xABAB
+    mov w1, 0x1234
+    mov w2, 0xCD89
+    mov w3, 0x3401
+    sub sp, sp, #8
+    strh w0, [sp], 2
+    strh w1, [sp]
+    strh w2, [sp, 2]!
+    strh w3, [sp, 2]
+    mov w5, 4
+    strh w0, [sp, w5, uxtw]
+    mov x6, -16
+    strh w1, [sp, x6, sxtx]
+  )");
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 8), 0xABAB);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 6), 0x1234);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 4), 0xCD89);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 2), 0x3401);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer()), 0xABAB);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 20), 0x1234);
+}
+
 TEST_P(InstStore, strd) {
   // immediate offset
   RUN_AARCH64(R"(

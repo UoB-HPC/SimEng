@@ -312,6 +312,29 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
       break;
     }
+    case Opcode::AArch64_STRHHpost: {  // strh wt, [xn], #imm
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 2}});
+      break;
+    }
+    case Opcode::AArch64_STRHHpre: {  // strh wd, [xn, #imm]!
+      setMemoryAddresses(
+          {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
+      break;
+    }
+    case Opcode::AArch64_STRHHroW: {  // strh wd,
+                                      //  [xn, wm{, extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[2].get<uint32_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 2}});
+      break;
+    }
+    case Opcode::AArch64_STRHHroX: {  // strh wd,
+                                      //  [xn, xm{, extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[2].get<uint64_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 2}});
+      break;
+    }
     case Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
