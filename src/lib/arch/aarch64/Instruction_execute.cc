@@ -790,6 +790,11 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMOVXDHighr: {  // fmov vd.d[1], xn
+      double out[2] = {operands[0].get<double>(), operands[1].get<double>()};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMOVXDr: {  // fmov dd, xn
       double out[2] = {operands[0].get<double>(), 0.0};
       results[0] = out;

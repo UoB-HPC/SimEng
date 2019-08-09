@@ -352,6 +352,23 @@ TEST_P(InstFloat, fmov) {
   )");
   EXPECT_EQ((getGeneralRegister<double>(1)), 123.456);
   EXPECT_EQ((getGeneralRegister<double>(2)), -0.00032);
+
+  // FP64 top half from general
+  initialHeapData_.resize(32);
+  reinterpret_cast<double*>(initialHeapData_.data())[0] = 123.456;
+  reinterpret_cast<double*>(initialHeapData_.data())[1] = -0.00032;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr d1, [x0]
+    ldr x2, [x0, #8]
+    fmov v1.d[1], x2
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), 123.456);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), -0.00032);
 }
 
 TEST_P(InstFloat, fmul) {
