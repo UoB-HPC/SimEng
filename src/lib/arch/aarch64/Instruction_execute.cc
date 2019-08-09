@@ -1146,6 +1146,20 @@ void Instruction::execute() {
       // TODO: Correct system register write support
       return;
     }
+    case Opcode::AArch64_MSUBWrrr: {  // msub wd, wn, wm, wa
+      auto x = operands[0].get<uint32_t>();
+      auto y = operands[1].get<uint32_t>();
+      auto a = operands[2].get<uint32_t>();
+      results[0] = RegisterValue(a - (x * y), 8);
+      return;
+    }
+    case Opcode::AArch64_MSUBXrrr: {  // msub xd, xn, xm, xa
+      auto x = operands[0].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>();
+      auto a = operands[2].get<uint64_t>();
+      results[0] = a - (x * y);
+      return;
+    }
     case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
       // TODO: Observe hints
       return;
