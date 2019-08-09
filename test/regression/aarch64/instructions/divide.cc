@@ -29,6 +29,18 @@ TEST_P(InstDiv, sdiv) {
   EXPECT_EQ(getGeneralRegister<int32_t>(3), -6);
 }
 
+TEST_P(InstDiv, udiv) {
+  // 42 / 6 = 7
+  RUN_AARCH64(R"(
+    movz x0, #42
+    movz x1, #6
+    udiv x2, x0, x1
+    udiv w3, w0, w1
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(2), 7u);
+  EXPECT_EQ(getGeneralRegister<int32_t>(3), 7u);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstDiv, ::testing::Values(EMULATION),
                          coreTypeToString);
 

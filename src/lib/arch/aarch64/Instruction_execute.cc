@@ -1531,6 +1531,12 @@ void Instruction::execute() {
       results[0] = bitfieldManipulate(source, r, s);
       return;
     }
+    case Opcode::AArch64_UDIVWr: {  // udiv wd, wn, wm
+      auto x = operands[0].get<uint32_t>();
+      auto y = operands[1].get<uint32_t>();
+      results[0] = RegisterValue(x / y, 8);
+      return;
+    }
     case Opcode::AArch64_UDIVXr: {  // udiv xd, xn, xm
       auto x = operands[0].get<uint64_t>();
       auto y = operands[1].get<uint64_t>();
