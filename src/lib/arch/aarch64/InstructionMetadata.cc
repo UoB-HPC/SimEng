@@ -279,6 +279,11 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_LSR:
+      if (opcode == Opcode::AArch64_LSRVWr ||
+          opcode == Opcode::AArch64_LSRVXr) {
+        // lsr rd, rn, rm; alias for lsrv rd, rn, rm
+        return;
+      }
       if (opcode == Opcode::AArch64_UBFMWri ||
           opcode == Opcode::AArch64_UBFMXri) {
         // lsr rd, rn, #amount; alias for ubfm rd, rn, #amount, #<31|63>

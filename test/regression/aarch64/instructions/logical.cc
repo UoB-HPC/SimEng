@@ -329,6 +329,40 @@ TEST_P(InstLogical, lslv) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 31ull << 7);
 }
 
+TEST_P(InstLogical, lsrv) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov w0, #7
+    mov w1, #3
+    mov w2, #36
+    lsrv w3, w0, wzr
+    lsrv w4, w0, w1
+    lsrv w5, w0, w2
+    # Check lsr alias as well
+    lsr w6, w1, w0
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 7u);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 7u >> 3);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 7u >> 4);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 3u >> 7);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, #7
+    mov x1, #31
+    mov x2, #70
+    lsrv x3, x0, xzr
+    lsrv x4, x0, x1
+    lsrv x5, x0, x2
+    # Check lsr alias as xell
+    lsr x6, x1, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 7ull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 7ull >> 31);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 7ull >> 6);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 31ull >> 7);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstLogical, ::testing::Values(EMULATION),
                          coreTypeToString);
 

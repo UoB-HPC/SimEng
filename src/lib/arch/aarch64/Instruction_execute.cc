@@ -1036,6 +1036,18 @@ void Instruction::execute() {
       results[0] = x << y;
       return;
     }
+    case Opcode::AArch64_LSRVWr: {  // lsrv wd, wn, wm
+      auto x = operands[0].get<uint32_t>();
+      auto y = operands[1].get<uint32_t>();
+      results[0] = static_cast<uint64_t>(x >> y);
+      return;
+    }
+    case Opcode::AArch64_LSRVXr: {  // lsrv xd, xn, xm
+      auto x = operands[0].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>();
+      results[0] = x >> y;
+      return;
+    }
     case Opcode::AArch64_MADDXrrr: {  // madd xd, xn, xm, xa
       auto x = operands[0].get<uint64_t>();
       auto y = operands[1].get<uint64_t>();
