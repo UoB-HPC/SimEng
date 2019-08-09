@@ -148,6 +148,52 @@ TEST_P(InstConditional, csinc) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 43u);
 }
 
+TEST_P(InstConditional, csneg) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    mov w1, 42
+    mov w2, 7
+    cmp w0, w0
+    csneg w3, w1, w2, eq
+    csneg w4, w1, w2, ne
+    csneg w5, w1, w2, lt
+    csneg w6, w1, w2, le
+
+    # Check cneg alias as well
+    cneg w7, w1, gt
+    cneg w8, w1, ge
+  )");
+  EXPECT_EQ(getGeneralRegister<int32_t>(3), 42);
+  EXPECT_EQ(getGeneralRegister<int32_t>(4), -7);
+  EXPECT_EQ(getGeneralRegister<int32_t>(5), -7);
+  EXPECT_EQ(getGeneralRegister<int32_t>(6), 42);
+  EXPECT_EQ(getGeneralRegister<int32_t>(7), 42);
+  EXPECT_EQ(getGeneralRegister<int32_t>(8), -42);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    mov x1, 42
+    mov x2, 7
+    cmp x0, x0
+    csneg x3, x1, x2, eq
+    csneg x4, x1, x2, ne
+    csneg x5, x1, x2, lt
+    csneg x6, x1, x2, le
+
+    # Check cneg alias as well
+    cneg x7, x1, gt
+    cneg x8, x1, ge
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(3), 42);
+  EXPECT_EQ(getGeneralRegister<int64_t>(4), -7);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5), -7);
+  EXPECT_EQ(getGeneralRegister<int64_t>(6), 42);
+  EXPECT_EQ(getGeneralRegister<int64_t>(7), 42);
+  EXPECT_EQ(getGeneralRegister<int64_t>(8), -42);
+}
+
 TEST_P(InstConditional, tbz) {
   // 32-bit
   RUN_AARCH64(R"(

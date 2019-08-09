@@ -534,6 +534,22 @@ void Instruction::execute() {
       }
       return;
     }
+    case Opcode::AArch64_CSNEGWr: {  // csneg wd, wn, wm, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        results[0] = static_cast<int64_t>(operands[1].get<int32_t>());
+      } else {
+        results[0] = static_cast<int64_t>(-operands[2].get<int32_t>());
+      }
+      return;
+    }
+    case Opcode::AArch64_CSNEGXr: {  // csneg xd, xn, xm, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        results[0] = operands[1].get<int64_t>();
+      } else {
+        results[0] = -operands[2].get<int64_t>();
+      }
+      return;
+    }
     case Opcode::AArch64_CSINCWr: {  // csinc wd, wn, wm, cc
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         results[0] = RegisterValue(operands[1].get<uint32_t>(), 8);

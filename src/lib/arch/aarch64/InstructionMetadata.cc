@@ -188,6 +188,14 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_CNEG:
+      if (opcode == Opcode::AArch64_CSNEGWr ||
+          opcode == Opcode::AArch64_CSNEGXr) {
+        // cneg rd, rn, cc; alias for: csneg rd, rn, rn, invert(cc)
+        operandCount = 3;
+        operands[2] = operands[1];
+        cc ^= 1;  // invert lowest bit to negate cc
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_CSET:
       if (opcode == Opcode::AArch64_CSINCWr ||
