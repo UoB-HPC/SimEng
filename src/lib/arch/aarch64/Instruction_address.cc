@@ -98,6 +98,32 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 16}});
       break;
     }
+    case Opcode::AArch64_LDRSpost: {  // ldr st, [xn], #imm
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
+      break;
+    }
+    case Opcode::AArch64_LDRSpre: {  // ldr st, [xn, #imm]!
+      setMemoryAddresses(
+          {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});
+      break;
+    }
+    case Opcode::AArch64_LDRSroW: {  // ldr st, [xn, wm, {extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 4}});
+      break;
+    }
+    case Opcode::AArch64_LDRSroX: {  // ldr st, [xn, xm, {extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 4}});
+      break;
+    }
+    case Opcode::AArch64_LDRSui: {  // ldr st, [xn, #imm] {
+      setMemoryAddresses(
+          {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});
+      break;
+    }
     case Opcode::AArch64_LDRWpost: {  // ldr wt, [xn], #imm
       setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
       break;

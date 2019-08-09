@@ -64,6 +64,38 @@ TEST_P(InstLoad, ldrh) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0x1234);
 }
 
+TEST_P(InstLoad, ldr_fp32) {
+  initialHeapData_.resize(16);
+  float* heap = reinterpret_cast<float*>(initialHeapData_.data());
+  heap[0] = 128.5;
+  heap[1] = -0.0625;
+  heap[2] = -32;
+  heap[3] = 0.125;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr s1, [x0], 4
+    ldr s2, [x0]
+    ldr s3, [x0, 4]!
+    ldr s4, [x0, 4]
+
+    mov w5, -4
+    ldr s6, [x0, w5, sxtw]
+    mov w5, 4
+    ldr s7, [x0, x5]
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), 128.5);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), -0.0625);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), -32);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 0.125);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(6)), -0.0625);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(7)), 0.125);
+}
+
 // Test that ldr with pre-index mode updates the base pointer correctly.
 TEST_P(InstLoad, ldrxpre) {
   initialHeapData_.resize(24);
