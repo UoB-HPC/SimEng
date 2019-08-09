@@ -869,6 +869,16 @@ void Instruction::execute() {
       results[1] = memoryData[1];
       return;
     }
+    case Opcode::AArch64_LDPSi: {  // ldp st1, st2, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(4, 16);
+      results[1] = memoryData[1].zeroExtend(4, 16);
+      return;
+    }
+    case Opcode::AArch64_LDPWi: {  // ldp wt1, wt2, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      results[1] = memoryData[1].zeroExtend(4, 8);
+      return;
+    }
     case Opcode::AArch64_LDPXi: {  // ldp xt1, xt2, [xn, #imm]
       results[0] = memoryData[0];
       results[1] = memoryData[1];

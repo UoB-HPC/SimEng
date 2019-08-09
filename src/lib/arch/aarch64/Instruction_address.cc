@@ -169,6 +169,18 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{base, 16}, {base + 16, 16}});
       break;
     }
+    case Opcode::AArch64_LDPSi: {  // ldp st1, st2, [xn, #imm]
+      uint64_t base =
+          operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
+      setMemoryAddresses({{base, 4}, {base + 4, 4}});
+      break;
+    }
+    case Opcode::AArch64_LDPWi: {  // ldp wt1, wt2, [xn, #imm]
+      uint64_t base =
+          operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
+      setMemoryAddresses({{base, 4}, {base + 4, 4}});
+      break;
+    }
     case Opcode::AArch64_LDPXi: {  // ldp xt1, xt2, [xn, #imm]
       uint64_t base =
           operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
