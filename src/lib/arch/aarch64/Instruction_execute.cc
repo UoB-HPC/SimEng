@@ -624,14 +624,22 @@ void Instruction::execute() {
       uint32_t n = operands[0].get<uint32_t>();
       uint32_t m = operands[1].get<uint32_t>();
       int64_t lsb = metadata.operands[3].imm;
-      results[0] = RegisterValue((m >> lsb) | (n << (32 - lsb)), 8);
+      if (lsb == 0) {
+        results[0] = RegisterValue(m, 8);
+      } else {
+        results[0] = RegisterValue((m >> lsb) | (n << (32 - lsb)), 8);
+      }
       return;
     }
     case Opcode::AArch64_EXTRXrri: {  // extr xd, xn, xm, #lsb
       uint64_t n = operands[0].get<uint64_t>();
       uint64_t m = operands[1].get<uint64_t>();
       int64_t lsb = metadata.operands[3].imm;
-      results[0] = (m >> lsb) | (n << (64 - lsb));
+      if (lsb == 0) {
+        results[0] = m;
+      } else {
+        results[0] = (m >> lsb) | (n << (64 - lsb));
+      }
       return;
     }
     case Opcode::AArch64_FADDDrr: {  // fadd dd, dn, dm
