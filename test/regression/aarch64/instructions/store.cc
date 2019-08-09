@@ -82,6 +82,37 @@ TEST_P(InstStore, strq) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 32);
 }
 
+TEST_P(InstStore, strx) {
+  RUN_AARCH64(R"(
+    movz x0, 0xABAB, lsl 32
+    movz x1, 0x1234, lsl 32
+    movz x2, 0xCD89, lsl 32
+    movz x3, 0x3401, lsl 32
+    sub sp, sp, #32
+    str x0, [sp], 8
+    str x1, [sp]
+    str x2, [sp, 8]!
+    str x3, [sp, 8]
+    mov w5, 16
+    str x0, [sp, w5, uxtw]
+    sub sp, sp, 16
+    mov x6, -16
+    str x1, [sp, x6, sxtx]
+  )");
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 32),
+            0xABABull << 32);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 24),
+            0x1234ull << 32);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 16),
+            0xCD89ull << 32);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 8),
+            0x3401ull << 32);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()),
+            0xABABull << 32);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 48),
+            0x1234ull << 32);
+}
+
 TEST_P(InstStore, stpwi) {
   RUN_AARCH64(R"(
     movz w0, #7
