@@ -4,6 +4,30 @@ namespace {
 
 using InstStore = AArch64RegressionTest;
 
+TEST_P(InstStore, strb) {
+  RUN_AARCH64(R"(
+    mov w0, 0xAB
+    mov w1, 0x12
+    mov w2, 0xCD
+    mov w3, 0x34
+    sub sp, sp, #4
+    strb w0, [sp], 1
+    strb w1, [sp]
+    strb w2, [sp, 1]!
+    strb w3, [sp, 1]
+    mov w5, 2
+    strb w0, [sp, w5, uxtw]
+    mov x6, -16
+    strb w1, [sp, x6, sxtx]
+  )");
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 4), 0xAB);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 3), 0x12);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 2), 0xCD);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1), 0x34);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer()), 0xAB);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 18), 0x12);
+}
+
 TEST_P(InstStore, strd) {
   // immediate offset
   RUN_AARCH64(R"(
