@@ -898,7 +898,20 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_LDRHHpost: {  // ldrh wt, [xn], #imm
       results[0] = memoryData[0].zeroExtend(2, 8);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
+      return;
+    }
+    case Opcode::AArch64_LDRHHpre: {  // ldrh wt, [xn, #imm]!
+      results[0] = memoryData[0].zeroExtend(2, 8);
       results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+      return;
+    }
+    case Opcode::AArch64_LDRHHroW: {  // ldrh wt, [xn, wm, {extend {#amount}}]
+      results[0] = memoryData[0].zeroExtend(2, 8);
+      return;
+    }
+    case Opcode::AArch64_LDRHHroX: {  // ldrh wt, [xn, xm, {extend {#amount}}]
+      results[0] = memoryData[0].zeroExtend(2, 8);
       return;
     }
     case Opcode::AArch64_LDRHHui: {  // ldrh wt, [xn, #imm]
