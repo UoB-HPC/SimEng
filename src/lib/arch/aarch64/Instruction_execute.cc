@@ -744,6 +744,10 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMOVDXHighr: {  // fmov xd, vn.d[1]
+      results[0] = operands[0].getAsVector<double>()[1];
+      return;
+    }
     case Opcode::AArch64_FMOVDi: {  // fmov dn, #imm
       double out[2] = {metadata.operands[1].fp, 0.0};
       results[0] = out;
