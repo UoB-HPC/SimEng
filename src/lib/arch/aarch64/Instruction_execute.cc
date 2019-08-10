@@ -1234,6 +1234,24 @@ void Instruction::execute() {
       results[0] = reversed;
       return;
     }
+    case Opcode::AArch64_SBCWr: {  // sbc wd, wn, wm
+      auto nzcv = operands[0].get<uint8_t>();
+      auto x = operands[1].get<uint32_t>();
+      auto y = operands[2].get<uint32_t>();
+      uint32_t result;
+      std::tie(result, std::ignore) = addWithCarry(x, ~y, (nzcv >> 1) & 1);
+      results[0] = RegisterValue(result, 8);
+      return;
+    }
+    case Opcode::AArch64_SBCXr: {  // sbc xd, xn, xm
+      auto nzcv = operands[0].get<uint8_t>();
+      auto x = operands[1].get<uint64_t>();
+      auto y = operands[2].get<uint64_t>();
+      uint64_t result;
+      std::tie(result, std::ignore) = addWithCarry(x, ~y, (nzcv >> 1) & 1);
+      results[0] = result;
+      return;
+    }
     case Opcode::AArch64_SBFMWri: {  // sbfm wd, wn, #immr, #imms
       uint8_t r = metadata.operands[2].imm;
       uint8_t s = metadata.operands[3].imm;
