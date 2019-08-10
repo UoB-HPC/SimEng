@@ -1560,6 +1560,30 @@ void Instruction::execute() {
       }
       return;
     }
+    case Opcode::AArch64_SUBSXrx: {  // subs xd, xn, wm{, extend #amount}
+      auto x = operands[0].get<uint64_t>();
+      auto y =
+          ~extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
+                       metadata.operands[2].shift.value);
+      auto [result, nzcv] = addWithCarry(x, y, true);
+      results[0] = RegisterValue(nzcv);
+      if (destinationRegisterCount > 1) {
+        results[1] = result;
+      }
+      return;
+    }
+    case Opcode::AArch64_SUBSXrx64: {  // subs xd, xn, xm{, extend #amount}
+      auto x = operands[0].get<uint64_t>();
+      auto y =
+          ~extendValue(operands[1].get<uint64_t>(), metadata.operands[2].ext,
+                       metadata.operands[2].shift.value);
+      auto [result, nzcv] = addWithCarry(x, y, true);
+      results[0] = RegisterValue(nzcv);
+      if (destinationRegisterCount > 1) {
+        results[1] = result;
+      }
+      return;
+    }
     case Opcode::AArch64_SUBWri: {  // sub wd, wn, #imm
       auto x = operands[0].get<uint32_t>();
       auto y = shiftValue(static_cast<uint32_t>(metadata.operands[2].imm),

@@ -198,6 +198,36 @@ TEST_P(InstArithmetic, subsx) {
   )");
   EXPECT_EQ(getNZCV(), 0b0011);
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), (1ul << 63) - 1);
+
+  // (7 << 48) - (15 << 33)
+  RUN_AARCH64(R"(
+    movz x0, #7, lsl #48
+    movz x1, #15
+    subs x2, x0, x1, lsl 33
+  )");
+  EXPECT_EQ(getNZCV(), 0b0010);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), (7ul << 48) - (15ul << 33));
+
+  // (7 << 48) - (-1) [8-bit sign-extended]
+  RUN_AARCH64(R"(
+    movz x0, #7, lsl #48
+    movz x1, #15
+    # 255 will be -1 when sign-extended from 8-bits
+    mov w2, 255
+    subs x3, x0, w2, sxtb
+  )");
+  EXPECT_EQ(getNZCV(), 0b0000);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), (7ul << 48) + 1);
+
+  // (7 << 48) - (255 << 4)
+  RUN_AARCH64(R"(
+    movz x0, #7, lsl #48
+    movz x1, #15
+    mov w2, 255
+    subs x3, x0, x2, uxtx 4
+  )");
+  EXPECT_EQ(getNZCV(), 0b0010);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), (7ul << 48) - (255ul << 4));
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstArithmetic, ::testing::Values(EMULATION),
