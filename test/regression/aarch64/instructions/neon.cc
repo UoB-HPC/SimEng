@@ -212,6 +212,9 @@ TEST_P(InstNeon, movi) {
     movi v0.4s, 42
     movi v1.4s, 42, lsl #8
     movi v2.4s, 3, lsl #24
+    movi v3.2s, 42
+    movi v4.2s, 42, lsl #8
+    movi v5.2s, 3, lsl #24
   )");
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(0)), 42u);
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(0)), 42u);
@@ -227,6 +230,21 @@ TEST_P(InstNeon, movi) {
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(2)), (3u << 24));
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(2)), (3u << 24));
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(2)), (3u << 24));
+
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(3)), 42u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(3)), 42u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(3)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(3)), 0u);
+
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(4)), (42u << 8));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(4)), (42u << 8));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(4)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(4)), 0u);
+
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(5)), (3u << 24));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(5)), (3u << 24));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(5)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(5)), 0u);
 }
 
 TEST_P(InstNeon, orr) {

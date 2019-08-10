@@ -1084,6 +1084,14 @@ void Instruction::execute() {
       results[0] = vector;
       return;
     }
+    case Opcode::AArch64_MOVIv2i32: {  // movi vd.2s, #imm{, lsl #shift}
+      uint32_t bits = shiftValue(
+          static_cast<uint32_t>(metadata.operands[1].imm),
+          metadata.operands[1].shift.type, metadata.operands[1].shift.value);
+      uint32_t vector[4] = {bits, bits, 0, 0};
+      results[0] = vector;
+      return;
+    }
     case Opcode::AArch64_MOVIv4i32: {  // movi vd.4s, #imm{, LSL #shift}
       uint32_t bits = shiftValue(
           static_cast<uint32_t>(metadata.operands[1].imm),
