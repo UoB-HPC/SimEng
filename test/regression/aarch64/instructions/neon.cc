@@ -229,6 +229,33 @@ TEST_P(InstNeon, movi) {
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(2)), (3u << 24));
 }
 
+TEST_P(InstNeon, orr) {
+  initialHeapData_.resize(32);
+  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap[0] = 0xDEADBEEF;
+  heap[1] = 0x12345678;
+  heap[2] = 0x98765432;
+  heap[3] = 0xABCDEF01;
+  heap[4] = 0xF0F0F0F0;
+  heap[5] = 0x77777777;
+  heap[6] = 0xEEEEEEEE;
+  heap[7] = 0x0F0F0F0F;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    orr v2.16b, v0.16b, v1.16b
+  )");
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(2)), 0xFEFDFEFF);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(2)), 0x7777777F);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(2)), 0xFEFEFEFE);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(2)), 0xAFCFEF0F);
+}
+
 TEST_P(InstNeon, smax) {
   initialHeapData_.resize(32);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());

@@ -1202,6 +1202,14 @@ void Instruction::execute() {
       results[0] = x | y;
       return;
     }
+    case Opcode::AArch64_ORRv16i8: {  // orr Vd.16b, Vn.16b, Vm.16b
+      uint64_t out[2] = {operands[0].getAsVector<uint64_t>()[0] |
+                             operands[1].getAsVector<uint64_t>()[0],
+                         operands[0].getAsVector<uint64_t>()[1] |
+                             operands[1].getAsVector<uint64_t>()[1]};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
       return;
     }
