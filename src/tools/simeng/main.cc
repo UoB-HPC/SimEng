@@ -252,7 +252,7 @@ int main(int argc, char** argv) {
   }
 
   std::cout << "\nFinished " << iterations << " ticks in " << duration << "ms ("
-            << std::round(khz) << " kHz, " << std::setprecision(2) << mips
+            << std::round(khz) << " kHz, " << std::setprecision(3) << mips
             << " MIPS)" << std::endl;
 
   delete[] processMemory;

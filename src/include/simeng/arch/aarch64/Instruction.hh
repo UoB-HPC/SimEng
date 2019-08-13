@@ -5,6 +5,7 @@
 #include <array>
 
 #include "simeng/BranchPredictor.hh"
+#include "simeng/LocalFirstArray.hh"
 
 struct cs_arm64_op;
 
@@ -204,12 +205,14 @@ class Instruction : public simeng::Instruction {
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */
-  std::vector<MemoryAccessTarget> memoryAddresses;
+  // std::vector<MemoryAccessTarget> memoryAddresses;
+  LocalFirstArray<MemoryAccessTarget, 2> memoryAddresses;
 
   /** A vector of memory values, that were either loaded memory, or are prepared
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
-  std::vector<RegisterValue> memoryData;
+  LocalFirstArray<RegisterValue, 2> memoryData;
+  // std::vector<RegisterValue> memoryData;
 
   // Execution helpers
   /** Extend `value` according to `extendType`, and left-shift the result by

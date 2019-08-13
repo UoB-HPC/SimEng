@@ -121,7 +121,8 @@ bool Instruction::isBranch() const { return isBranch_; }
 
 void Instruction::setMemoryAddresses(
     const std::initializer_list<MemoryAccessTarget>& addresses) {
-  memoryData = std::vector<RegisterValue>(addresses.size());
+  // memoryData = std::vector<RegisterValue>(addresses.size());
+  memoryData.set(addresses.size(), {});
   memoryAddresses = addresses;
   dataPending_ = addresses.size();
 }
