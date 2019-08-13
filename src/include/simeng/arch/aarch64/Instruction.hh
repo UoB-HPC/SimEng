@@ -5,7 +5,7 @@
 #include <array>
 
 #include "simeng/BranchPredictor.hh"
-#include "simeng/LocalFirstArray.hh"
+#include "simeng/StaticFirstArray.hh"
 
 struct cs_arm64_op;
 
@@ -133,6 +133,11 @@ class Instruction : public simeng::Instruction {
    * instruction can have. */
   static const size_t MAX_DESTINATION_REGISTERS = 3;
 
+  /** The number of generated addresses to reserve space locally for. Too low a
+   * number results in more memory allocations, while too high a number results
+   * in unnecessarily large static allocations. */
+  static const size_t LOCAL_ADDRESS_COUNT = 2;
+
   /** A reference to the decoding metadata for this instruction. */
   const InstructionMetadata& metadata;
 
@@ -203,16 +208,14 @@ class Instruction : public simeng::Instruction {
   void setMemoryAddresses(
       const std::initializer_list<MemoryAccessTarget>& addresses);
 
-  /** The memory addresses this instruction accesses, as a vector of {offset,
-   * width} pairs. */
-  // std::vector<MemoryAccessTarget> memoryAddresses;
-  LocalFirstArray<MemoryAccessTarget, 2> memoryAddresses;
+  /** The memory addresses this instruction accesses, as a static-first array of
+   * memory access targets. */
+  StaticFirstArray<MemoryAccessTarget, LOCAL_ADDRESS_COUNT> memoryAddresses;
 
-  /** A vector of memory values, that were either loaded memory, or are prepared
-   * for sending to memory (according to instruction type). Each entry
-   * corresponds to a `memoryAddresses` entry. */
-  LocalFirstArray<RegisterValue, 2> memoryData;
-  // std::vector<RegisterValue> memoryData;
+  /** A static-first array of memory values, that were either loaded memory, or
+   * are prepared for sending to memory (according to instruction type). Each
+   * entry corresponds to a `memoryAddresses` entry. */
+  StaticFirstArray<RegisterValue, LOCAL_ADDRESS_COUNT> memoryData;
 
   // Execution helpers
   /** Extend `value` according to `extendType`, and left-shift the result by
