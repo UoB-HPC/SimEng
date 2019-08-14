@@ -267,11 +267,18 @@ TEST_P(InstNeon, orr) {
     ldr q0, [x0]
     ldr q1, [x0, #16]
     orr v2.16b, v0.16b, v1.16b
+
+    # Test mov alias as well
+    mov v3.16b, v0.16b
   )");
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(2)), 0xFEFDFEFF);
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(2)), 0x7777777F);
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(2)), 0xFEFEFEFE);
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(2)), 0xAFCFEF0F);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(3)), 0xDEADBEEF);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(3)), 0x12345678);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(3)), 0x98765432);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(3)), 0xABCDEF01);
 }
 
 TEST_P(InstNeon, smax) {

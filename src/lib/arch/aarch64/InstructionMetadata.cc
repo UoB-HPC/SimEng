@@ -360,6 +360,12 @@ void InstructionMetadata::revertAliasing() {
         }
         return;
       }
+      if (opcode == Opcode::AArch64_ORRv16i8) {
+        // mov Vd.16b, Vn.16b; alias for: orr Vd.16b, Vn.16b, Vn.16b
+        operandCount = 3;
+        operands[2] = operands[1];
+        return;
+      }
       if (opcode == Opcode::AArch64_UMOVvi8 ||
           opcode == Opcode::AArch64_UMOVvi16 ||
           opcode == Opcode::AArch64_UMOVvi32 ||
