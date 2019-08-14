@@ -192,8 +192,11 @@ void InstructionMetadata::revertAliasing() {
     case ARM64_INS_CMP:
       if (opcode == Opcode::AArch64_SUBSWri ||
           opcode == Opcode::AArch64_SUBSWrs ||
+          opcode == Opcode::AArch64_SUBSWrx ||
           opcode == Opcode::AArch64_SUBSXri ||
-          opcode == Opcode::AArch64_SUBSXrs) {
+          opcode == Opcode::AArch64_SUBSXrs ||
+          opcode == Opcode::AArch64_SUBSXrx ||
+          opcode == Opcode::AArch64_SUBSXrx64) {
         operandCount = 3;
         operands[2] = operands[1];
 
@@ -204,7 +207,8 @@ void InstructionMetadata::revertAliasing() {
         operands[0].access = CS_AC_WRITE;
 
         if (opcode == Opcode::AArch64_SUBSWri ||
-            opcode == Opcode::AArch64_SUBSWrs) {
+            opcode == Opcode::AArch64_SUBSWrs ||
+            opcode == Opcode::AArch64_SUBSWrx) {
           operands[0].reg = ARM64_REG_WZR;
         } else {
           operands[0].reg = ARM64_REG_XZR;
