@@ -129,8 +129,29 @@ void InstructionMetadata::revertAliasing() {
     case ARM64_INS_AT:
       return aliasNYI();
     case ARM64_INS_BFI:
+      if (opcode == Opcode::AArch64_BFMWri) {
+        // bfi wd, wn, #lsb, #width; alias for
+        // bfm wd, wn, #(-lsb MOD 32), #(width - 1)
+        operands[2].imm = static_cast<uint32_t>(-operands[2].imm) % 32;
+        operands[3].imm = operands[3].imm - 1;
+        return;
+      }
+      if (opcode == Opcode::AArch64_BFMXri) {
+        // bfi xd, xn, #lsb, #width; alias for
+        // bfm xd, xn, #(-lsb MOD 64), #(width - 1)
+        operands[2].imm = static_cast<uint32_t>(-operands[2].imm) % 64;
+        operands[3].imm = operands[3].imm - 1;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_BFXIL:
+      if (opcode == Opcode::AArch64_BFMWri ||
+          opcode == Opcode::AArch64_BFMXri) {
+        // bfxil rd, rn, #lsb, #width; alias for
+        // bfm rd, rn, #lsb, #(lsb + width - 1)
+        operands[3].imm = operands[2].imm + operands[3].imm - 1;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_CINC:
       if (opcode == Opcode::AArch64_CSINCWr ||
@@ -389,8 +410,27 @@ void InstructionMetadata::revertAliasing() {
     case ARM64_INS_ROR:
       return aliasNYI();
     case ARM64_INS_SBFIZ:
+      if (opcode == Opcode::AArch64_SBFMWri ||
+          opcode == Opcode::AArch64_SBFMXri) {
+        operands[3].imm -= 1;
+
+        uint8_t highestBit = 63;
+        if (opcode == Opcode::AArch64_SBFMWri) {
+          highestBit = 31;
+        }
+
+        operands[2].imm = (-operands[2].imm) & highestBit;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_SBFX:
+      if (opcode == Opcode::AArch64_SBFMWri ||
+          opcode == Opcode::AArch64_SBFMXri) {
+        // sbfx rd, rn, #lsb, #width; alias for
+        // sbfm rd, rn, #lsb, #(lsb + width - 1)
+        operands[3].imm = operands[2].imm + operands[3].imm - 1;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_SMNEGL:
       return aliasNYI();
@@ -454,6 +494,13 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_UBFX:
+      if (opcode == Opcode::AArch64_UBFMWri ||
+          opcode == Opcode::AArch64_UBFMXri) {
+        // ubfx rd, rn, #lsb, #width; alias for
+        // ubfm rd, rn, #lsb, #(lsb + width - 1)
+        operands[3].imm = operands[2].imm + operands[3].imm - 1;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_UMNEGL:
       return aliasNYI();

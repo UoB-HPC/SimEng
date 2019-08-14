@@ -4,6 +4,52 @@ namespace {
 
 using InstBitmanip = AArch64RegressionTest;
 
+TEST_P(InstBitmanip, bfm) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    # Fill desintation registers with 1s
+    mov w0, wzr
+    sub w1, w0, #1
+    sub w2, w0, #1
+    sub w3, w0, #1
+    sub w4, w0, #1
+
+    # Source = 0x007A0000
+    movz w0, #0x7A, lsl 16
+
+    bfm w1, w0, #12, #23
+    bfm w2, w0, #16, #31
+    bfm w3, w0, #28, #23
+    bfm w4, w0, #30, #27
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xFFFFF7A0ull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0xFFFF007Aull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0xF7A0000Full);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xC1E80003ull);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    # Fill desintation registers with 1s
+    mov x0, xzr
+    sub x1, x0, #1
+    sub x2, x0, #1
+    sub x3, x0, #1
+    sub x4, x0, #1
+
+    # Source = 0x00000000007A0000
+    movz x0, #0x7A, lsl 16
+
+    bfm x1, x0, #12, #23
+    bfm x2, x0, #16, #63
+    bfm x3, x0, #32, #23
+    bfm x4, x0, #60, #55
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0xFFFFFFFFFFFFF7A0ull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0xFFFF00000000007Aull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0xFF7A0000FFFFFFFFull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0xF000000007A0000Full);
+}
+
 TEST_P(InstBitmanip, extr) {
   // 32-bit
   initialHeapData_.resize(8);
@@ -54,6 +100,108 @@ TEST_P(InstBitmanip, extr) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0xEEF1234567800000);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000DEADBEEF1234);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x00000001BD5B7DDE);
+}
+
+TEST_P(InstBitmanip, sbfm) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    # Fill desintation registers with 1s
+    mov w0, wzr
+    sub w1, w0, #1
+    sub w2, w0, #1
+    sub w3, w0, #1
+    sub w4, w0, #1
+
+    # Source = 0x007A0000
+    movz w0, #0x7A, lsl 16
+
+    sbfm w1, w0, #12, #23
+    sbfm w2, w0, #16, #31
+    sbfm w3, w0, #28, #23
+    sbfm w4, w0, #30, #27
+
+    # Test sign extension (select bitfield such that highest bit is set)
+    sbfm w5, w0, #12, #22
+    sbfm w6, w0, #28, #22
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0x000007A0ull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x0000007Aull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0x07A00000ull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0x01E80000ull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0xFFFFFFA0ull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0xFFA00000ull);
+
+  RUN_AARCH64(R"(
+    # Fill desintation registers with 1s
+    mov x0, xzr
+    sub x1, x0, #1
+    sub x2, x0, #1
+    sub x3, x0, #1
+    sub x4, x0, #1
+
+    # Source = 0x00000000007A0000
+    movz x0, #0x7A, lsl 16
+
+    sbfm x1, x0, #12, #23
+    sbfm x2, x0, #16, #63
+    sbfm x3, x0, #32, #23
+    sbfm x4, x0, #60, #55
+
+    # Test sign extension (select bitfield such that highest bit is set)
+    sbfm x5, x0, #12, #22
+    sbfm x6, x0, #32, #22
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0x00000000000007A0ull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0x000000000000007Aull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x007A000000000000ull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x0000000007A00000ull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xFFFFFFFFFFFFFFA0ull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFA000000000000ull);
+}
+
+TEST_P(InstBitmanip, ubfm) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    # Fill desintation registers with 1s
+    mov w0, wzr
+    sub w1, w0, #1
+    sub w2, w0, #1
+    sub w3, w0, #1
+    sub w4, w0, #1
+
+    # Source = 0x007A0000
+    movz w0, #0x7A, lsl 16
+
+    ubfm w1, w0, #12, #23
+    ubfm w2, w0, #16, #31
+    ubfm w3, w0, #28, #23
+    ubfm w4, w0, #30, #27
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0x000007A0ull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x0000007Aull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0x07A00000ull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0x01E80000ull);
+
+  RUN_AARCH64(R"(
+    # Fill desintation registers with 1s
+    mov x0, xzr
+    sub x1, x0, #1
+    sub x2, x0, #1
+    sub x3, x0, #1
+    sub x4, x0, #1
+
+    # Source = 0x00000000007A0000
+    movz x0, #0x7A, lsl 16
+
+    ubfm x1, x0, #12, #23
+    ubfm x2, x0, #16, #63
+    ubfm x3, x0, #32, #23
+    ubfm x4, x0, #60, #55
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0x00000000000007A0ull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0x000000000000007Aull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x007A000000000000ull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x0000000007A00000ull);
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstBitmanip, ::testing::Values(EMULATION),

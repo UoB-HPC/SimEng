@@ -42,22 +42,27 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
  * instructions. */
 template <typename T>
 std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
-bitfieldManipulate(T value, uint8_t rotateBy, uint8_t sourceBits,
+bitfieldManipulate(T value, T dest, uint8_t rotateBy, uint8_t sourceBits,
                    bool signExtend = false) {
-  T mask = (1ull << sourceBits) - 1;
-  T source = value & mask;
   size_t bits = sizeof(T) * 8;
 
-  T result;
+  T source;
+  T destMask;
   uint8_t highestBit = sourceBits;
   if (sourceBits >= rotateBy) {
     // Mask of values [rotateBy:source+1]
-    result = source >> rotateBy;
+    destMask = (static_cast<T>(-1) << (sourceBits - rotateBy + 1));
+    source = value >> rotateBy;
     highestBit -= rotateBy;
   } else {
-    result = source << (bits - rotateBy);
+    T upper = (static_cast<T>(-1) << (bits - rotateBy));
+    T lower = (static_cast<T>(-1) >> (rotateBy - sourceBits - 1));
+    destMask = upper ^ lower;
+    source = value << (bits - rotateBy);
     highestBit += (bits - rotateBy);
   }
+
+  T result = (dest & destMask) | (source & ~destMask);
 
   if (!signExtend) {
     return result;
@@ -69,7 +74,7 @@ bitfieldManipulate(T value, uint8_t rotateBy, uint8_t sourceBits,
   }
 
   // Let the compiler do sign-extension for us.
-  uint8_t shiftAmount = bits - highestBit;
+  uint8_t shiftAmount = bits - highestBit - 1;
   // Shift the bitfield up, and cast to a signed type, so the highest bit is now
   // the sign bit
   auto shifted = static_cast<std::make_signed_t<T>>(result << shiftAmount);
@@ -354,6 +359,22 @@ void Instruction::execute() {
     case Opcode::AArch64_B: {  // b label
       branchTaken_ = true;
       branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
+      return;
+    }
+    case Opcode::AArch64_BFMWri: {  // bfm wd, wn, #immr, #imms
+      uint8_t r = metadata.operands[2].imm;
+      uint8_t s = metadata.operands[3].imm;
+      uint32_t dest = operands[0].get<uint32_t>();
+      uint32_t source = operands[1].get<uint32_t>();
+      results[0] = RegisterValue(bitfieldManipulate(source, dest, r, s), 8);
+      return;
+    }
+    case Opcode::AArch64_BFMXri: {  // bfm xd, xn, #immr, #imms
+      uint8_t r = metadata.operands[2].imm;
+      uint8_t s = metadata.operands[3].imm;
+      uint64_t dest = operands[0].get<uint64_t>();
+      uint64_t source = operands[1].get<uint64_t>();
+      results[0] = bitfieldManipulate(source, dest, r, s);
       return;
     }
     case Opcode::AArch64_BICXrs: {  // bic xd, xn, xm{, shift #amount}
@@ -1256,17 +1277,14 @@ void Instruction::execute() {
       uint8_t r = metadata.operands[2].imm;
       uint8_t s = metadata.operands[3].imm;
       uint32_t source = operands[0].get<uint32_t>();
-
-      results[0] =
-          static_cast<uint64_t>(bitfieldManipulate(source, r, s, true));
+      results[0] = RegisterValue(bitfieldManipulate(source, 0u, r, s, true), 8);
       return;
     }
     case Opcode::AArch64_SBFMXri: {  // sbfm xd, xn, #immr, #imms
       uint8_t r = metadata.operands[2].imm;
       uint8_t s = metadata.operands[3].imm;
       uint64_t source = operands[0].get<uint64_t>();
-
-      results[0] = bitfieldManipulate(source, r, s, true);
+      results[0] = bitfieldManipulate(source, 0ull, r, s, true);
       return;
     }
     case Opcode::AArch64_SCVTFUWDri: {  // scvtf dd, wn
@@ -1673,16 +1691,14 @@ void Instruction::execute() {
       uint8_t r = metadata.operands[2].imm;
       uint8_t s = metadata.operands[3].imm;
       uint32_t source = operands[0].get<uint32_t>();
-
-      results[0] = static_cast<uint64_t>(bitfieldManipulate(source, r, s));
+      results[0] = RegisterValue(bitfieldManipulate(source, 0u, r, s), 8);
       return;
     }
     case Opcode::AArch64_UBFMXri: {  // ubfm xd, xn, #immr, #imms
       uint8_t r = metadata.operands[2].imm;
       uint8_t s = metadata.operands[3].imm;
       uint64_t source = operands[0].get<uint64_t>();
-
-      results[0] = bitfieldManipulate(source, r, s);
+      results[0] = bitfieldManipulate(source, 0ull, r, s);
       return;
     }
     case Opcode::AArch64_UDIVWr: {  // udiv wd, wn, wm
