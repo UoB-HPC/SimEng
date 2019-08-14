@@ -1284,7 +1284,7 @@ void Instruction::execute() {
       uint8_t r = metadata.operands[2].imm;
       uint8_t s = metadata.operands[3].imm;
       uint64_t source = operands[0].get<uint64_t>();
-      results[0] = bitfieldManipulate(source, 0ull, r, s, true);
+      results[0] = bitfieldManipulate(source, UINT64_C(0), r, s, true);
       return;
     }
     case Opcode::AArch64_SCVTFUWDri: {  // scvtf dd, wn
@@ -1698,7 +1698,7 @@ void Instruction::execute() {
       uint8_t r = metadata.operands[2].imm;
       uint8_t s = metadata.operands[3].imm;
       uint64_t source = operands[0].get<uint64_t>();
-      results[0] = bitfieldManipulate(source, 0ull, r, s);
+      results[0] = bitfieldManipulate(source, UINT64_C(0), r, s);
       return;
     }
     case Opcode::AArch64_UDIVWr: {  // udiv wd, wn, wm
