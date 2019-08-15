@@ -117,7 +117,7 @@ bool ExceptionHandler::init() {
       }
       default:
         printException(instruction_);
-        std::cout << "Unrecognised syscall" << std::endl;
+        std::cout << "Unrecognised syscall: " << syscallId << std::endl;
         return fatal();
     }
 
