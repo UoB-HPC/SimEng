@@ -33,7 +33,13 @@ RegressionTest::~RegressionTest() {
   delete[] processMemory_;
 }
 
+void RegressionTest::TearDown() {
+  if (!programFinished_) testing::internal::GetCapturedStdout();
+}
+
 void RegressionTest::run(const char* source, const char* triple) {
+  testing::internal::CaptureStdout();
+
   // Assemble the source to a flat binary
   assemble(source, triple);
   if (HasFatalFailure()) return;
@@ -111,6 +117,11 @@ void RegressionTest::run(const char* source, const char* triple) {
     dataMemory->tick();
     numTicks_++;
   }
+
+  stdout_ = testing::internal::GetCapturedStdout();
+  std::cout << stdout_;
+
+  programFinished_ = true;
 }
 
 void RegressionTest::assemble(const char* source, const char* triple) {

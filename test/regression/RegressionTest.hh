@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "gtest/gtest.h"
@@ -44,6 +45,8 @@ inline std::string coreTypeToString(
 class RegressionTest : public ::testing::TestWithParam<CoreType> {
  protected:
   virtual ~RegressionTest();
+
+  virtual void TearDown() override;
 
   /** Run the assembly in `source`, building it for the target `triple`. */
   void run(const char* source, const char* triple);
@@ -95,6 +98,12 @@ class RegressionTest : public ::testing::TestWithParam<CoreType> {
 
   /** The core that was used. */
   std::unique_ptr<simeng::Core> core_ = nullptr;
+
+  /** The output written to stdout during the test. */
+  std::string stdout_;
+
+  /** True if the test program finished running. */
+  bool programFinished_ = false;
 
  private:
   /** Assemble test source to a flat binary for the given triple. */
