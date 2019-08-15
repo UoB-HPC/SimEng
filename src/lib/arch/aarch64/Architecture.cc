@@ -64,16 +64,14 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     iter = result.first;
   }
 
-  // Retrieve the cached instruction
-  std::shared_ptr<Instruction> uop =
-      std::make_shared<Instruction>(iter->second);
+  output.resize(1);
+  auto& uop = output[0];
+
+  // Retrieve the cached instruction and write to output
+  uop = std::make_shared<Instruction>(iter->second);
 
   uop->setInstructionAddress(instructionAddress);
   uop->setBranchPrediction(prediction);
-
-  // Bundle uop into output macro-op and return
-  output.resize(1);
-  output[0] = uop;
 
   return 4;
 }
