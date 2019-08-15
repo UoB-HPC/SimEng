@@ -16,6 +16,8 @@ struct ReservationStationEntry {
   std::shared_ptr<Instruction> uop;
   /** The port to issue to. */
   uint8_t port;
+  /** The operand waiting on a value. */
+  uint8_t operandIndex;
 };
 
 /** A dispatch/issue unit for an out-of-order pipelined processor. Reads

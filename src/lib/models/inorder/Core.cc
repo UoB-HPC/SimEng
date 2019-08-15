@@ -228,16 +228,9 @@ void Core::forwardOperands(const span<Register>& registers,
       }
       if (sourceReg == registers[i] && !uop->isOperandReady(operand)) {
         // Supply the operand
-        uop->supplyOperand(registers[i], values[i]);
+        uop->supplyOperand(operand, values[i]);
       }
     }
-  }
-
-  for (size_t i = 0; i < registers.size(); i++) {
-    if (uop->canExecute()) {
-      return;
-    }
-    uop->supplyOperand(registers[i], values[i]);
   }
 }
 
@@ -253,7 +246,7 @@ void Core::readRegisters() {
   for (size_t i = 0; i < sourceRegisters.size(); i++) {
     const auto& reg = sourceRegisters[i];
     if (!uop->isOperandReady(i)) {
-      uop->supplyOperand(reg, registerFileSet_.get(reg));
+      uop->supplyOperand(i, registerFileSet_.get(reg));
     }
   }
 }

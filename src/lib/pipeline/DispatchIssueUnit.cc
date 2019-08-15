@@ -48,18 +48,18 @@ void DispatchIssueUnit::tick() {
     // Register read
     // Identify remaining missing registers and supply values
     auto& sourceRegisters = uop->getOperandRegisters();
-    for (size_t i = 0; i < sourceRegisters.size(); i++) {
+    for (uint8_t i = 0; i < sourceRegisters.size(); i++) {
       const auto& reg = sourceRegisters[i];
 
       if (!uop->isOperandReady(i)) {
         // The operand hasn't already been supplied
         if (scoreboard_[reg.type][reg.tag]) {
           // The scoreboard says it's ready; read and supply the register value
-          uop->supplyOperand(reg, registerFileSet_.get(reg));
+          uop->supplyOperand(i, registerFileSet_.get(reg));
         } else {
           // This register isn't ready yet. Register this uop to the dependency
           // matrix for a more efficient lookup later
-          dependencyMatrix_[reg.type][reg.tag].push_back({uop, port});
+          dependencyMatrix_[reg.type][reg.tag].push_back({uop, port, i});
           ready = false;
         }
       }
@@ -130,7 +130,7 @@ void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
     // Supply the value to all dependent uops
     const auto& dependents = dependencyMatrix_[reg.type][reg.tag];
     for (auto& entry : dependents) {
-      entry.uop->supplyOperand(reg, values[i]);
+      entry.uop->supplyOperand(entry.operandIndex, values[i]);
       if (entry.uop->canExecute()) {
         // Add the now-ready instruction to the relevant ready queue
         readyQueues_[entry.port].push_back(entry.uop);

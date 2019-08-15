@@ -100,7 +100,7 @@ void Core::tick() {
   for (size_t i = 0; i < registers.size(); i++) {
     auto reg = registers[i];
     if (!uop->isOperandReady(i)) {
-      uop->supplyOperand(reg, registerFileSet_.get(reg));
+      uop->supplyOperand(i, registerFileSet_.get(reg));
     }
   }
 

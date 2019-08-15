@@ -68,22 +68,14 @@ void Instruction::renameDestination(uint8_t i, Register renamed) {
   destinationRegisters[i] = renamed;
 }
 
-void Instruction::supplyOperand(const Register& reg,
-                                const RegisterValue& value) {
+void Instruction::supplyOperand(uint8_t i, const RegisterValue& value) {
   assert(!canExecute() &&
          "Attempted to provide an operand to a ready-to-execute instruction");
   assert(value.size() > 0 &&
          "Attempted to provide an uninitialised RegisterValue");
 
-  // Iterate over operand registers, and copy value if the provided register
-  // matches
-  for (size_t i = 0; i < sourceRegisterCount; i++) {
-    if (sourceRegisters[i] == reg && !isOperandReady(i)) {
-      operands[i] = value;
-      operandsPending--;
-      break;
-    }
-  }
+  operands[i] = value;
+  operandsPending--;
 }
 
 void Instruction::supplyData(uint64_t address, const RegisterValue& data) {

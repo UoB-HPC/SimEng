@@ -38,9 +38,8 @@ class Instruction {
    * register. */
   virtual void renameDestination(uint8_t i, Register renamed) = 0;
 
-  /** Provide a value for the specified physical register. */
-  virtual void supplyOperand(const Register& reg,
-                             const RegisterValue& value) = 0;
+  /** Provide a value for the operand at the specified index. */
+  virtual void supplyOperand(uint8_t i, const RegisterValue& value) = 0;
 
   /** Check whether the operand at index `i` has had a value supplied. */
   virtual bool isOperandReady(int i) const = 0;
