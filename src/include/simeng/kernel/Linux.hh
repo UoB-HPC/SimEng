@@ -56,6 +56,9 @@ class Linux {
   /** getegid syscall: get the process owner's effective group ID. */
   int64_t getegid() const;
 
+  /** ioctl syscall: control device. */
+  int64_t ioctl(int64_t fd, uint64_t request, std::vector<char>& out);
+
   /** readlinkat syscall: read value of a symbolic link. */
   int64_t readlinkat(int64_t dirfd, const std::string pathname, char* buf,
                      size_t bufsize) const;
