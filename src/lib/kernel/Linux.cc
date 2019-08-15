@@ -1,5 +1,6 @@
 #include "simeng/kernel/Linux.hh"
 
+#include <sys/ioctl.h>
 #include <algorithm>
 #include <cassert>
 #include <cstring>
@@ -59,6 +60,19 @@ int64_t Linux::getuid() const { return 0; }
 int64_t Linux::geteuid() const { return 0; }
 int64_t Linux::getgid() const { return 0; }
 int64_t Linux::getegid() const { return 0; }
+
+int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
+  assert(fd == 1 && "unimplemented ioctl fd");
+  switch (request) {
+    case 0x5413:  // TIOCGWINSZ
+      out.resize(sizeof(struct winsize));
+      ::ioctl(fd, TIOCGWINSZ, out.data());
+      return 0;
+    default:
+      assert(false && "unimplemented ioctl request");
+      return -1;
+  }
+}
 
 int64_t Linux::readlinkat(int64_t dirfd, const std::string pathname, char* buf,
                           size_t bufsize) const {

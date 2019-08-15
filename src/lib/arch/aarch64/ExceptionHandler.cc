@@ -33,6 +33,22 @@ bool ExceptionHandler::init() {
 
     ProcessStateChange stateChange;
     switch (syscallId) {
+      case 29: {  // ioctl
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t request = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t argp = registerFileSet.get(R2).get<uint64_t>();
+
+        std::vector<char> out;
+        int64_t retval = linux_.ioctl(fd, request, out);
+
+        assert(out.size() < 256 && "large ioctl() output not implemented");
+        uint8_t outSize = static_cast<uint8_t>(out.size());
+        stateChange = {{R0}, {retval}};
+        stateChange.memoryAddresses.push_back({argp, outSize});
+        stateChange.memoryAddressValues.push_back(
+            RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
+        break;
+      }
       case 78: {  // readlinkat
         const auto pathnameAddress = registerFileSet.get(R1).get<uint64_t>();
 
