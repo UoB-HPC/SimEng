@@ -1,6 +1,7 @@
 #include "simeng/kernel/Linux.hh"
 
 #include <sys/ioctl.h>
+#include <sys/uio.h>
 #include <algorithm>
 #include <cassert>
 #include <cstring>
@@ -93,6 +94,11 @@ int64_t Linux::setTidAddress(uint64_t tidptr) {
   assert(processStates_.size() > 0);
   processStates_[0].clearChildTid = tidptr;
   return processStates_[0].pid;
+}
+
+uint64_t Linux::writev(int64_t fd, void* iovdata, int iovcnt) {
+  assert(fd == 1 && "unimplemented writev fd");
+  return ::writev(fd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 
 }  // namespace kernel

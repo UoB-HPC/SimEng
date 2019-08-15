@@ -49,6 +49,52 @@ bool ExceptionHandler::init() {
             RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
         break;
       }
+      case 66: {  // writev
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
+        int64_t iovcnt = registerFileSet.get(R2).get<int64_t>();
+
+        // The pointer `iov` points to an array of structures that each contain
+        // a pointer to the data and the size of the data as an integer.
+        //
+        // We're going to queue up a chain of handlers:
+        // - First, read the iovec structures that describe each buffer.
+        // - Next, read the data for each buffer.
+        // - Finally, invoke the kernel to perform the write operation.
+
+        // Create the final handler in the chain, which invokes the kernel
+        std::function<bool()> last = [=]() {
+          // Rebuild the iovec structures using pointers to `dataBuffer` data
+          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
+          uint8_t* bufferPtr = dataBuffer.data() + iovcnt * 16;
+          for (int64_t i = 0; i < iovcnt; i++) {
+            iovdata[i * 2 + 0] = reinterpret_cast<uint64_t>(bufferPtr);
+
+            // Get the length of this buffer and add it to the current pointer
+            uint64_t len = iovdata[i * 2 + 1];
+            bufferPtr += len;
+          }
+
+          // Invoke the kernel
+          uint64_t retval = linux_.writev(fd, dataBuffer.data(), iovcnt);
+          ProcessStateChange stateChange = {{R0}, {retval}};
+          return concludeSyscall(stateChange);
+        };
+
+        // Build the chain of buffer loads backwards through the iov buffers
+        for (int64_t i = iovcnt - 1; i >= 0; i--) {
+          last = [=]() {
+            uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
+            uint64_t ptr = iovdata[i * 2 + 0];
+            uint64_t len = iovdata[i * 2 + 1];
+            return readBufferThen(ptr, len, last);
+          };
+        }
+
+        // Run the first buffer read to load the buffer structures, before
+        // performing each of the buffer loads.
+        return readBufferThen(iov, iovcnt * 16, last);
+      }
       case 78: {  // readlinkat
         const auto pathnameAddress = registerFileSet.get(R1).get<uint64_t>();
 
@@ -233,6 +279,50 @@ void ExceptionHandler::readLinkAt(span<char> path) {
   }
 
   concludeSyscall(stateChange);
+}
+
+bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
+                                      std::function<bool()> then,
+                                      bool firstCall) {
+  // If first call, trigger read for first entry and set self as handler
+  if (firstCall) {
+    if (length == 0) {
+      return then();
+    }
+
+    // Request a read of up to 128 bytes
+    uint64_t numBytes = std::min<uint64_t>(length, 128);
+    memory_.requestRead({ptr, static_cast<uint8_t>(numBytes)});
+    resumeHandling_ = [=]() {
+      return readBufferThen(ptr, length, then, false);
+    };
+  }
+
+  // Check whether read has completed
+  auto completedReads = memory_.getCompletedReads();
+  auto response =
+      std::find_if(completedReads.begin(), completedReads.end(),
+                   [&](std::pair<MemoryAccessTarget, RegisterValue> response) {
+                     return response.first.address == ptr;
+                   });
+  if (response == completedReads.end()) {
+    return false;
+  }
+
+  // Append data to buffer
+  assert(response->second && "unhandled failed read in exception handler");
+  uint8_t bytesRead = response->first.size;
+  const uint8_t* data = response->second.getAsVector<uint8_t>();
+  dataBuffer.insert(dataBuffer.end(), data, data + bytesRead);
+  memory_.clearCompletedReads();
+
+  // If there is more data, rerun this function for next chunk
+  if (bytesRead < length) {
+    return readBufferThen(ptr + bytesRead, length - bytesRead, then, true);
+  }
+
+  // All done - call onwards
+  return then();
 }
 
 bool ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
