@@ -30,6 +30,37 @@ TEST_P(Syscall, ioctl) {
   EXPECT_NE(getMemoryValue<uint16_t>(process_->getHeapStart() + 6), -1);
 }
 
+TEST_P(Syscall, writev) {
+  const char str[] = "Hello, World!\n";
+  for (char c : str) {
+    initialHeapData_.push_back(c);
+  }
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # iovec = {{x0, 10}, {x0+10, 4}}
+    str x0, [sp, #-32]
+    mov x1, 10
+    str x1, [sp, #-24]
+    add x0, x0, 10
+    str x0, [sp, #-16]
+    mov x1, 4
+    str x1, [sp, #-8]
+
+    # writev(fd=1, iov=iovec, iovcnt=2)
+    mov x0, #1
+    sub x1, sp, 32
+    mov x2, #2
+    mov x8, #66
+    svc #0
+  )");
+  EXPECT_EQ(stdout_.substr(0, sizeof(str) - 1), str);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), sizeof(str) - 1);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, Syscall,
                          ::testing::Values(EMULATION, INORDER, OUTOFORDER),
                          coreTypeToString);

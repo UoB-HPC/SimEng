@@ -66,6 +66,9 @@ class Linux {
   /** set_tid_address syscall: set clear_child_tid value for calling thread. */
   int64_t setTidAddress(uint64_t tidptr);
 
+  /** writev syscall: write buffers to a file. */
+  uint64_t writev(int64_t fd, void* iovdata, int iovcnt);
+
   /** The maximum size of a filesystem path. */
   static const size_t LINUX_PATH_MAX = 4096;
 

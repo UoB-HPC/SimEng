@@ -49,6 +49,19 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   bool readStringThen(char* buffer, uint64_t address, int maxLength,
                       std::function<bool(size_t length)> then, int offset = -1);
 
+  /** Read `length` bytes of data from `ptr`, and then call `then`.
+   *
+   * This function will repeatedly set itself as the handler for the next cycle
+   * until it has read `length` bytes of data. The data may be read in chunks if
+   * it is larger than can be read in a single memory request. The data will be
+   * appended to the member vector `dataBuffer`.
+   */
+  bool readBufferThen(uint64_t ptr, uint64_t length, std::function<bool()> then,
+                      bool firstCall = true);
+
+  /** A data buffer used for reading data from memory. */
+  std::vector<uint8_t> dataBuffer;
+
   /** Performs a readlinkat syscall using the path supplied. */
   void readLinkAt(span<char> path);
 
