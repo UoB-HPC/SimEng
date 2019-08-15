@@ -34,8 +34,10 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   const uint32_t insn = *static_cast<const uint32_t*>(ptr);
   const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
-  if (!decodeCache.count(insn)) {
-    // Generate a fresh decoding, and add to cache
+  // Try to find the decoding in the decode cache
+  auto iter = decodeCache.find(insn);
+  if (iter == decodeCache.end()) {
+    // No decoding present. Generate a fresh decoding, and add to cache
     cs_insn rawInsn;
     cs_detail rawDetail;
     rawInsn.detail = &rawDetail;
@@ -56,13 +58,15 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     auto latencies = getLatencies(metadata);
 
     // Create and cache an instruction using the metadata and latencies
-    decodeCache.insert(
+    auto result = decodeCache.insert(
         {insn, {metadataCache.front(), latencies.first, latencies.second}});
+
+    iter = result.first;
   }
 
   // Retrieve the cached instruction
   std::shared_ptr<Instruction> uop =
-      std::make_shared<Instruction>(decodeCache.find(insn)->second);
+      std::make_shared<Instruction>(iter->second);
 
   uop->setInstructionAddress(instructionAddress);
   uop->setBranchPrediction(prediction);
