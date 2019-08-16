@@ -77,7 +77,7 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   const auto& addresses = insn->getGeneratedAddresses();
   for (auto const& target : addresses) {
-    memory_.requestRead(target);
+    memory_.requestRead(target, insn->getSequenceId());
   }
   pendingLoads_.insert(insn);
 }
@@ -157,8 +157,8 @@ void LoadStoreQueue::purgeFlushed() {
 void LoadStoreQueue::tick() {
   // Process completed read requests
   for (const auto& response : memory_.getCompletedReads()) {
-    auto address = response.first.address;
-    const auto& data = response.second;
+    auto address = response.target.address;
+    const auto& data = response.data;
 
     // TODO: Detect and handle non-fatal faults (e.g. page fault)
 
@@ -166,14 +166,14 @@ void LoadStoreQueue::tick() {
     // on a read, rather than iterating over the queue (see DispatchIssueQueue's
     // dependency matrix)
     for (const auto& load : loadQueue_) {
-      // Ignore completed or not-yet-ready loads
-      if (!load->hasAllData()) {
+      if (load->getSequenceId() == response.requestId) {
         load->supplyData(address, data);
         if (load->hasAllData()) {
           // This load has completed
           load->execute();
           completedLoads_.push(load);
         }
+        break;
       }
     }
   }

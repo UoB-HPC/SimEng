@@ -49,8 +49,9 @@ void Core::tick() {
 
     const auto& completedReads = dataMemory_.getCompletedReads();
     for (const auto& response : completedReads) {
-      assert(response.second && "Memory read failed");
-      uop->supplyData(response.first.address, response.second);
+      assert(pendingReads_ > 0);
+      assert(response.data && "Memory read failed");
+      uop->supplyData(response.target.address, response.data);
       pendingReads_--;
     }
     dataMemory_.clearCompletedReads();
@@ -70,7 +71,7 @@ void Core::tick() {
   const auto& fetched = instructionMemory_.getCompletedReads();
   size_t fetchIndex;
   for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
-    if (fetched[fetchIndex].first.address == pc_) {
+    if (fetched[fetchIndex].target.address == pc_) {
       break;
     }
   }
@@ -79,7 +80,7 @@ void Core::tick() {
     return;
   }
 
-  const auto& instructionBytes = fetched[fetchIndex].second;
+  const auto& instructionBytes = fetched[fetchIndex].data;
   auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
                                   FETCH_SIZE, pc_, {false, 0}, macroOp_);
 

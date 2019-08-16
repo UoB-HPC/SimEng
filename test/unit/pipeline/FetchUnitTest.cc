@@ -21,7 +21,7 @@ class PipelineFetchUnitTest : public testing::Test {
  public:
   PipelineFetchUnitTest()
       : output(1, {}),
-        fetchBuffer({0, 16}, 0),
+        fetchBuffer({{0, 16}, 0, 0}),
         completedReads(&fetchBuffer, 1),
         fetchUnit(output, memory, 1024, 0, 4, isa, predictor) {}
 
@@ -31,8 +31,8 @@ class PipelineFetchUnitTest : public testing::Test {
   MockArchitecture isa;
   MockBranchPredictor predictor;
 
-  std::pair<MemoryAccessTarget, RegisterValue> fetchBuffer;
-  span<std::pair<MemoryAccessTarget, RegisterValue>> completedReads;
+  MemoryReadResult fetchBuffer;
+  span<MemoryReadResult> completedReads;
 
   FetchUnit fetchUnit;
 };
@@ -89,14 +89,13 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   fetchUnit.tick();
 
   // Expect a block starting at address 16 to be requested when we fetch again
-  EXPECT_CALL(memory, requestRead(Field(&MemoryAccessTarget::address, 16)))
+  EXPECT_CALL(memory, requestRead(Field(&MemoryAccessTarget::address, 16), _))
       .Times(1);
   fetchUnit.requestFromPC();
 
   // Tick again, expecting that decoding will now resume
-  std::pair<MemoryAccessTarget, RegisterValue> nextBlockValue = {{16, 16}, 0};
-  span<std::pair<MemoryAccessTarget, RegisterValue>> nextBlock = {
-      &nextBlockValue, 1};
+  MemoryReadResult nextBlockValue = {{16, 16}, 0, 1};
+  span<MemoryReadResult> nextBlock = {&nextBlockValue, 1};
   EXPECT_CALL(memory, getCompletedReads()).WillOnce(Return(nextBlock));
   EXPECT_CALL(isa, predecode(_, _, _, _, _)).WillOnce(Return(4));
   fetchUnit.tick();

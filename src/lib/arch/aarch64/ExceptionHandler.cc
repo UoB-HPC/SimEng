@@ -210,10 +210,10 @@ bool ExceptionHandler::readStringThen(char* buffer, uint64_t address,
   // Search completed memory requests for the needed data
   bool found = false;
   for (const auto& response : memory_.getCompletedReads()) {
-    if (response.first.address == address + offset) {
+    if (response.target.address == address + offset) {
       // TODO: Detect and handle any faults
-      assert(response.second && "Memory read failed");
-      buffer[offset] = response.second.get<char>();
+      assert(response.data && "Memory read failed");
+      buffer[offset] = response.data.get<char>();
       found = true;
       break;
     }
@@ -300,19 +300,18 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
 
   // Check whether read has completed
   auto completedReads = memory_.getCompletedReads();
-  auto response =
-      std::find_if(completedReads.begin(), completedReads.end(),
-                   [&](std::pair<MemoryAccessTarget, RegisterValue> response) {
-                     return response.first.address == ptr;
-                   });
+  auto response = std::find_if(completedReads.begin(), completedReads.end(),
+                               [&](const MemoryReadResult& response) {
+                                 return response.target.address == ptr;
+                               });
   if (response == completedReads.end()) {
     return false;
   }
 
   // Append data to buffer
-  assert(response->second && "unhandled failed read in exception handler");
-  uint8_t bytesRead = response->first.size;
-  const uint8_t* data = response->second.getAsVector<uint8_t>();
+  assert(response->data && "unhandled failed read in exception handler");
+  uint8_t bytesRead = response->target.size;
+  const uint8_t* data = response->data.getAsVector<uint8_t>();
   dataBuffer.insert(dataBuffer.end(), data, data + bytesRead);
   memory_.clearCompletedReads();
 

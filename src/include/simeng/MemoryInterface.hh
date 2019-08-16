@@ -23,20 +23,34 @@ struct MemoryAccessTarget {
   }
 };
 
+/** A structure used for the result of memory read operations. */
+struct MemoryReadResult {
+  /** The memory access that was requested. */
+  MemoryAccessTarget target;
+  /** The data returned by the request. */
+  RegisterValue data;
+  /** The request identifier provided by the requester. */
+  uint64_t requestId;
+};
+
 /** An abstract memory interface. Describes a connection to a memory system to
  * which data read/write requests may be made. */
 class MemoryInterface {
  public:
   virtual ~MemoryInterface() {}
 
-  /** Request a read from the supplied target location. */
-  virtual void requestRead(const MemoryAccessTarget& target) = 0;
+  /** Request a read from the supplied target location.
+   *
+   * The caller can optionally provide an ID that will be attached to completed
+   * read results.
+   */
+  virtual void requestRead(const MemoryAccessTarget& target,
+                           uint64_t requestId = 0) = 0;
   /** Request a write of `data` to the target location. */
   virtual void requestWrite(const MemoryAccessTarget& target,
                             const RegisterValue& data) = 0;
   /** Retrieve all completed read requests. */
-  virtual const span<std::pair<MemoryAccessTarget, RegisterValue>>
-  getCompletedReads() const = 0;
+  virtual const span<MemoryReadResult> getCompletedReads() const = 0;
 
   /** Clear the completed reads. */
   virtual void clearCompletedReads() = 0;

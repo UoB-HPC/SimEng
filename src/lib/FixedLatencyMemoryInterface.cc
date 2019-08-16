@@ -34,12 +34,13 @@ void FixedLatencyMemoryInterface::tick() {
       // Read: read data into `completedReads`
       if (target.address + target.size > size_) {
         // Read outside of memory; return an invalid value to signal a fault
-        completedReads_.push_back({target, RegisterValue()});
+        completedReads_.push_back({target, RegisterValue(), request.requestId});
       } else {
         const char* ptr = memory_ + target.address;
 
         // Copy the data at the requested memory address into a RegisterValue
-        completedReads_.push_back({target, RegisterValue(ptr, target.size)});
+        completedReads_.push_back(
+            {target, RegisterValue(ptr, target.size), request.requestId});
       }
     }
 
@@ -48,9 +49,9 @@ void FixedLatencyMemoryInterface::tick() {
   }
 }
 
-void FixedLatencyMemoryInterface::requestRead(
-    const MemoryAccessTarget& target) {
-  pendingRequests_.push({target, tickCounter_ + latency_});
+void FixedLatencyMemoryInterface::requestRead(const MemoryAccessTarget& target,
+                                              uint64_t requestId) {
+  pendingRequests_.push({target, tickCounter_ + latency_, requestId});
 }
 
 void FixedLatencyMemoryInterface::requestWrite(const MemoryAccessTarget& target,
@@ -58,10 +59,9 @@ void FixedLatencyMemoryInterface::requestWrite(const MemoryAccessTarget& target,
   pendingRequests_.push({target, data, tickCounter_ + latency_});
 }
 
-const span<std::pair<MemoryAccessTarget, RegisterValue>>
-FixedLatencyMemoryInterface::getCompletedReads() const {
-  return {const_cast<std::pair<MemoryAccessTarget, RegisterValue>*>(
-              completedReads_.data()),
+const span<MemoryReadResult> FixedLatencyMemoryInterface::getCompletedReads()
+    const {
+  return {const_cast<MemoryReadResult*>(completedReads_.data()),
           completedReads_.size()};
 }
 
