@@ -5,6 +5,7 @@
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/LoadStoreQueue.hh"
 
+using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::Property;
 using ::testing::Return;
@@ -209,10 +210,8 @@ TEST_P(LoadStoreQueueTest, PurgeFlushedStore) {
 TEST_P(LoadStoreQueueTest, Load) {
   auto queue = getQueue();
 
-  std::pair<MemoryAccessTarget, RegisterValue> completedRead = {addresses[0],
-                                                                data[0]};
-  span<std::pair<MemoryAccessTarget, RegisterValue>> completedReads = {
-      &completedRead, 1};
+  MemoryReadResult completedRead = {addresses[0], data[0]};
+  span<MemoryReadResult> completedReads = {&completedRead, 1};
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses()).Times(AtLeast(1));
 
@@ -221,7 +220,7 @@ TEST_P(LoadStoreQueueTest, Load) {
   queue.addLoad(loadUopPtr);
 
   // Check that a read request is made to the memory interface
-  EXPECT_CALL(dataMemory, requestRead(addresses[0])).Times(1);
+  EXPECT_CALL(dataMemory, requestRead(addresses[0], _)).Times(1);
 
   // Expect a check against finished reads and return the result
   EXPECT_CALL(dataMemory, getCompletedReads())

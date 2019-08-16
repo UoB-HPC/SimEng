@@ -7,17 +7,18 @@ namespace simeng {
 FlatMemoryInterface::FlatMemoryInterface(char* memory, size_t size)
     : memory_(memory), size_(size) {}
 
-void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target) {
+void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
+                                      uint64_t requestId) {
   if (target.address + target.size > size_) {
     // Read outside of memory; return an invalid value to signal a fault
-    completedReads_.push_back({target, RegisterValue()});
-    return;
+    completedReads_.push_back({target, RegisterValue(), requestId});
   }
 
   const char* ptr = memory_ + target.address;
 
   // Copy the data at the requested memory address into a RegisterValue
-  completedReads_.push_back({target, RegisterValue(ptr, target.size)});
+  completedReads_.push_back(
+      {target, RegisterValue(ptr, target.size), requestId});
 }
 
 void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
@@ -30,10 +31,8 @@ void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
   memcpy(ptr, data.getAsVector<char>(), target.size);
 }
 
-const span<std::pair<MemoryAccessTarget, RegisterValue>>
-FlatMemoryInterface::getCompletedReads() const {
-  return {const_cast<std::pair<MemoryAccessTarget, RegisterValue>*>(
-              completedReads_.data()),
+const span<MemoryReadResult> FlatMemoryInterface::getCompletedReads() const {
+  return {const_cast<MemoryReadResult*>(completedReads_.data()),
           completedReads_.size()};
 }
 

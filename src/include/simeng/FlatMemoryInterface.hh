@@ -11,14 +11,18 @@ class FlatMemoryInterface : public MemoryInterface {
  public:
   FlatMemoryInterface(char* memory, size_t size);
 
-  /** Request a read from the supplied target location. */
-  void requestRead(const MemoryAccessTarget& target) override;
+  /** Request a read from the supplied target location.
+   *
+   * The caller can optionally provide an ID that will be attached to completed
+   * read results.
+   */
+  void requestRead(const MemoryAccessTarget& target,
+                   uint64_t requestId) override;
   /** Request a write of `data` to the target location. */
   void requestWrite(const MemoryAccessTarget& target,
                     const RegisterValue& data) override;
   /** Retrieve all completed requests. */
-  const span<std::pair<MemoryAccessTarget, RegisterValue>> getCompletedReads()
-      const override;
+  const span<MemoryReadResult> getCompletedReads() const override;
 
   /** Clear the completed reads. */
   void clearCompletedReads() override;
@@ -35,7 +39,7 @@ class FlatMemoryInterface : public MemoryInterface {
   /** The size of accessible memory. */
   size_t size_;
   /** A vector containing all completed read requests. */
-  std::vector<std::pair<MemoryAccessTarget, RegisterValue>> completedReads_;
+  std::vector<MemoryReadResult> completedReads_;
 };
 
 }  // namespace simeng

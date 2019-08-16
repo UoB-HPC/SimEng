@@ -57,7 +57,7 @@ void FetchUnit::tick() {
 
     size_t fetchIndex;
     for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
-      if (fetched[fetchIndex].first.address == blockAddress) {
+      if (fetched[fetchIndex].target.address == blockAddress) {
         break;
       }
     }
@@ -67,9 +67,8 @@ void FetchUnit::tick() {
     }
 
     // TODO: Handle memory faults
-    assert(fetched[fetchIndex].second && "Memory read failed");
-    const uint8_t* fetchData =
-        fetched[fetchIndex].second.getAsVector<uint8_t>();
+    assert(fetched[fetchIndex].data && "Memory read failed");
+    const uint8_t* fetchData = fetched[fetchIndex].data.getAsVector<uint8_t>();
 
     if (bufferedBytes_ > 0) {
       // Copy fetched data to fetch buffer after existing data
