@@ -79,7 +79,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   for (auto const& target : addresses) {
     memory_.requestRead(target, insn->getSequenceId());
   }
-  pendingLoads_.emplace(insn->getSequenceId(), insn);
+  requestedLoads_.emplace(insn->getSequenceId(), insn);
 }
 
 bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
@@ -97,7 +97,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
 
   // Check all loads that have requested memory
   violatingLoad_ = nullptr;
-  for (const auto& load : pendingLoads_) {
+  for (const auto& load : requestedLoads_) {
     // Skip loads that are younger than the oldest violating load
     if (violatingLoad_ &&
         load.second->getSequenceId() > violatingLoad_->getSequenceId())
@@ -128,7 +128,7 @@ void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
          "load queue");
 
   loadQueue_.pop_front();
-  pendingLoads_.erase(uop->getSequenceId());
+  requestedLoads_.erase(uop->getSequenceId());
 }
 
 void LoadStoreQueue::purgeFlushed() {
@@ -136,7 +136,7 @@ void LoadStoreQueue::purgeFlushed() {
   while (it != loadQueue_.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {
-      pendingLoads_.erase((*it)->getSequenceId());
+      requestedLoads_.erase((*it)->getSequenceId());
       it = loadQueue_.erase(it);
     } else {
       it++;
@@ -163,8 +163,8 @@ void LoadStoreQueue::tick() {
     // TODO: Detect and handle non-fatal faults (e.g. page fault)
 
     // Find instruction that requested the memory read
-    auto itr = pendingLoads_.find(response.requestId);
-    if (itr == pendingLoads_.end()) {
+    auto itr = requestedLoads_.find(response.requestId);
+    if (itr == requestedLoads_.end()) {
       continue;
     }
 
