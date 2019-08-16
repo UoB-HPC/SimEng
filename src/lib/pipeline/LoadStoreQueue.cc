@@ -79,7 +79,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   for (auto const& target : addresses) {
     memory_.requestRead(target, insn->getSequenceId());
   }
-  pendingLoads_.insert(insn);
+  pendingLoads_.emplace(insn->getSequenceId(), insn);
 }
 
 bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
@@ -100,17 +100,17 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   for (const auto& load : pendingLoads_) {
     // Skip loads that are younger than the oldest violating load
     if (violatingLoad_ &&
-        load->getSequenceId() > violatingLoad_->getSequenceId())
+        load.second->getSequenceId() > violatingLoad_->getSequenceId())
       continue;
 
-    const auto& loadedAddresses = load->getGeneratedAddresses();
+    const auto& loadedAddresses = load.second->getGeneratedAddresses();
     // Iterate over store addresses
     for (const auto& storeReq : addresses) {
       // Iterate over load addresses
       for (const auto& loadReq : loadedAddresses) {
         // Check for overlapping requests, and flush if discovered
         if (requestsOverlap(storeReq, loadReq)) {
-          violatingLoad_ = load;
+          violatingLoad_ = load.second;
         }
       }
     }
@@ -128,7 +128,7 @@ void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
          "load queue");
 
   loadQueue_.pop_front();
-  pendingLoads_.erase(uop);
+  pendingLoads_.erase(uop->getSequenceId());
 }
 
 void LoadStoreQueue::purgeFlushed() {
@@ -136,7 +136,7 @@ void LoadStoreQueue::purgeFlushed() {
   while (it != loadQueue_.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {
-      pendingLoads_.erase(*it);
+      pendingLoads_.erase((*it)->getSequenceId());
       it = loadQueue_.erase(it);
     } else {
       it++;
@@ -162,19 +162,19 @@ void LoadStoreQueue::tick() {
 
     // TODO: Detect and handle non-fatal faults (e.g. page fault)
 
-    // TODO: Create a data structure to allow direct lookup of requests waiting
-    // on a read, rather than iterating over the queue (see DispatchIssueQueue's
-    // dependency matrix)
-    for (const auto& load : loadQueue_) {
-      if (load->getSequenceId() == response.requestId) {
-        load->supplyData(address, data);
-        if (load->hasAllData()) {
-          // This load has completed
-          load->execute();
-          completedLoads_.push(load);
-        }
-        break;
-      }
+    // Find instruction that requested the memory read
+    auto itr = pendingLoads_.find(response.requestId);
+    if (itr == pendingLoads_.end()) {
+      continue;
+    }
+
+    // Supply data to the instruction and execute if it is ready
+    auto load = itr->second;
+    load->supplyData(address, data);
+    if (load->hasAllData()) {
+      // This load has completed
+      load->execute();
+      completedLoads_.push(load);
     }
   }
   memory_.clearCompletedReads();
