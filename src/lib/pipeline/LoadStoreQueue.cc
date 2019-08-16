@@ -96,7 +96,13 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   }
 
   // Check all loads that have requested memory
+  violatingLoad_ = nullptr;
   for (const auto& load : pendingLoads_) {
+    // Skip loads that are younger than the oldest violating load
+    if (violatingLoad_ &&
+        load->getSequenceId() > violatingLoad_->getSequenceId())
+      continue;
+
     const auto& loadedAddresses = load->getGeneratedAddresses();
     // Iterate over store addresses
     for (const auto& storeReq : addresses) {
@@ -105,16 +111,13 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
         // Check for overlapping requests, and flush if discovered
         if (requestsOverlap(storeReq, loadReq)) {
           violatingLoad_ = load;
-
-          storeQueue_.pop_front();
-          return true;
         }
       }
     }
   }
 
   storeQueue_.pop_front();
-  return false;
+  return violatingLoad_ != nullptr;
 }
 
 void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {

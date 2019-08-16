@@ -23,6 +23,27 @@ TEST_P(LoadStoreQueue, RAW) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 42u);
 }
 
+// Test multiple simulteneous RAW violations are flushed correctly.
+TEST_P(LoadStoreQueue, RAWx2) {
+  initialHeapData_.resize(8);
+  reinterpret_cast<uint64_t*>(initialHeapData_.data())[0] = -1;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Write a value and try to read it immediately, twice.
+    mov x1, #42
+    str x1, [x0]
+    ldr x2, [x0]
+    ldr x3, [x0]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 42u);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 42u);
+}
+
 // Test with two load instructions that will complete on the same cycle.
 TEST_P(LoadStoreQueue, SimultaneousLoadCompletion) {
   initialHeapData_.resize(8);
