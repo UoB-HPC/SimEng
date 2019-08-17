@@ -17,7 +17,7 @@ class FlatMemoryInterface : public MemoryInterface {
    * read results.
    */
   void requestRead(const MemoryAccessTarget& target,
-                   uint64_t requestId) override;
+                   uint64_t requestId = 0) override;
   /** Request a write of `data` to the target location. */
   void requestWrite(const MemoryAccessTarget& target,
                     const RegisterValue& data) override;

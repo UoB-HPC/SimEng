@@ -9,7 +9,7 @@ namespace simeng {
 class MockMemoryInterface : public MemoryInterface {
  public:
   MOCK_METHOD2(requestRead,
-               void(const MemoryAccessTarget& target, uint64_t id));
+               void(const MemoryAccessTarget& target, uint64_t requestId));
 
   MOCK_METHOD2(requestWrite, void(const MemoryAccessTarget& target,
                                   const RegisterValue& data));
