@@ -223,6 +223,57 @@ TEST_P(InstLogical, asrx) {
   EXPECT_EQ(getGeneralRegister<int64_t>(0), -8);
 }
 
+TEST_P(InstLogical, bic) {
+  // 32-bit
+  // 0 & ~0 = 0
+  // 0b0010 & ~0b0001 = 0b0010
+  // 0b0111 & ~0b1010 = 0b0101
+  // 0b0111 & ~(0b1010 << 1) = 0b0011
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    bic w2, w0, wzr
+
+    mov w0, #2
+    bic w3, w0, #1
+
+    movz w0, 0x7
+    movz w1, 0xA
+    bic w4, w0, w1
+    bic w5, w0, w1, lsl #1
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0u);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0b0010);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0b0101);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0b0011);
+
+  // 64-bit
+  // 0 & ~0 = 0
+  // 0b0010 & ~0b0001 = 0b0010
+  // 0b0111 & ~0b1010 = 0b0101
+  // 0b0111 & ~(0b1010 << 1) = 0b0011
+  // (0b0111 << 48) & ~(0b1010 << 47) = 0b0010 << 48
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    bic x2, x0, xzr
+
+    mov x0, #2
+    bic x3, x0, #1
+
+    movz x0, 0x7
+    movz x1, 0xA
+    bic x4, x0, x1
+    bic x5, x0, x1, lsl #1
+
+    movz x0, 0x7, lsl #48
+    bic x6, x0, x1, lsl #47
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), UINT64_C(0));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), UINT64_C(0b0010));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), UINT64_C(0b0101));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), UINT64_C(0b0011));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), UINT64_C(0b0010) << 48);
+}
+
 TEST_P(InstLogical, eorw) {
   // 0 ^ 0 = 0
   RUN_AARCH64(R"(

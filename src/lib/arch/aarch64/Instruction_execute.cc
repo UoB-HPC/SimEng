@@ -377,6 +377,14 @@ void Instruction::execute() {
       results[0] = bitfieldManipulate(source, dest, r, s);
       return;
     }
+    case Opcode::AArch64_BICWrs: {  // bic wd, wn, wm{, shift #amount}
+      auto x = operands[0].get<uint32_t>();
+      auto y = ~shiftValue(operands[1].get<uint32_t>(),
+                           metadata.operands[2].shift.type,
+                           metadata.operands[2].shift.value);
+      results[0] = RegisterValue(x & y, 8);
+      return;
+    }
     case Opcode::AArch64_BICXrs: {  // bic xd, xn, xm{, shift #amount}
       auto x = operands[0].get<uint64_t>();
       auto y = ~shiftValue(operands[1].get<uint64_t>(),
