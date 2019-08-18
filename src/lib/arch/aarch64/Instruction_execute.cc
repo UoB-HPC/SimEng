@@ -671,6 +671,31 @@ void Instruction::execute() {
       }
       return;
     }
+    case Opcode::AArch64_FABSDr: {  // fabs dd, dn
+      double n = operands[0].get<double>();
+      double out[2] = {std::fabs(n), 0.0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FABSSr: {  // fabs sd, sn
+      float n = operands[0].get<float>();
+      float out[4] = {std::fabs(n), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FABSv2f64: {  // fabs vd.2d, vn.2d
+      const double* n = operands[0].getAsVector<double>();
+      double out[2] = {std::fabs(n[0]), std::fabs(n[1])};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FABSv4f32: {  // fabs vd.4s, vn.4s
+      const float* n = operands[0].getAsVector<float>();
+      float out[4] = {std::fabs(n[0]), std::fabs(n[1]), std::fabs(n[2]),
+                      std::fabs(n[3])};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FADDDrr: {  // fadd dd, dn, dm
       double n = operands[0].get<double>();
       double m = operands[1].get<double>();

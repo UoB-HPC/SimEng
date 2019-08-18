@@ -6,6 +6,44 @@ namespace {
 
 using InstFloat = AArch64RegressionTest;
 
+TEST_P(InstFloat, fabs) {
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fmov s2, 12.5
+    fabs s3, s0
+    fabs s4, s1
+    fabs s5, s2
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 2.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 0.125f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 12.5f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(5)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(5)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(5)), 0.f);
+
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 12.5
+    fabs d3, d0
+    fabs d4, d1
+    fabs d5, d2
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 2.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 0.125);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)), 12.5);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(5)), 0.0);
+}
+
 TEST_P(InstFloat, fadd) {
   RUN_AARCH64(R"(
     fmov d0, 1.0

@@ -1,5 +1,7 @@
 #include "AArch64RegressionTest.hh"
 
+#include <cmath>
+
 namespace {
 
 using InstNeon = AArch64RegressionTest;
@@ -62,6 +64,60 @@ TEST_P(InstNeon, dup) {
   EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(4)), 0);
   EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(5)), 7);
   EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(5)), 0);
+}
+
+TEST_P(InstNeon, fabs) {
+  initialHeapData_.resize(32);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 1.0;
+  fheap[1] = -42.75;
+  fheap[2] = -2.5;
+  fheap[3] = 32768;
+  fheap[4] = -0.125;
+  fheap[5] = 321.0;
+  fheap[6] = -0.0;
+  fheap[7] = std::nanf("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fabs v2.4s, v0.4s
+    fabs v3.4s, v1.4s
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(2)), 42.75);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(2)), 2.5);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(2)), 32768);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 0.125);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 321.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.0);
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 3>(3)));
+
+  initialHeapData_.resize(32);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = -42.76;
+  dheap[2] = -0.125;
+  dheap[3] = 321.0;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fabs v2.2d, v0.2d
+    fabs v3.2d, v1.2d
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(2)), 42.76);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 0.125);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 321.0);
 }
 
 TEST_P(InstNeon, fcmge) {
