@@ -180,7 +180,7 @@ TEST_P(InstLogical, asrw) {
   )");
   EXPECT_EQ(getGeneralRegister<int32_t>(0), -4);
 
-  // -16 >> 33 = -8 (since shift amout is mod 32)
+  // -16 >> 33 = -8 (since shift amount is mod 32)
   RUN_AARCH64(R"(
     mov w0, wzr
     mov w1, #33
@@ -213,7 +213,7 @@ TEST_P(InstLogical, asrx) {
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(0), -4);
 
-  // -16 >> 65 = -8 (since shift amout is mod 64)
+  // -16 >> 65 = -8 (since shift amount is mod 64)
   RUN_AARCH64(R"(
     mov x0, xzr
     mov x1, #65
