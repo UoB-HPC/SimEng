@@ -65,14 +65,14 @@ void DispatchIssueUnit::tick() {
       }
     }
 
-    if (ready) {
-      readyQueues_[port].push_back(uop);
-    }
-
     // Set scoreboard for all destination registers as not ready
     auto& destinationRegisters = uop->getDestinationRegisters();
     for (const auto& reg : destinationRegisters) {
       scoreboard_[reg.type][reg.tag] = false;
+    }
+
+    if (ready) {
+      readyQueues_[port].push_back(std::move(uop));
     }
 
     rsSize_++;

@@ -114,7 +114,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   // Operand forwarding; allows a dependent uop to execute next cycle
   forwardOperands_(uop->getDestinationRegisters(), uop->getResults());
 
-  output_.getTailSlots()[0] = uop;
+  output_.getTailSlots()[0] = std::move(uop);
 }
 
 bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }

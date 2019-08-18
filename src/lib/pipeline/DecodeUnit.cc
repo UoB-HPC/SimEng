@@ -32,9 +32,8 @@ void DecodeUnit::tick() {
       continue;
     }
 
-    auto& uop = macroOp[0];
+    auto& uop = (output_.getTailSlots()[slot] = std::move(macroOp[0]));
 
-    output_.getTailSlots()[slot] = uop;
     input_.getHeadSlots()[slot].clear();
 
     // Check preliminary branch prediction results now that the instruction is
