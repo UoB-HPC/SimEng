@@ -866,10 +866,33 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMULv1i32_indexed: {  // fmul sd, sn, vm.s[index]
+      int index = metadata.operands[2].vector_index;
+      float n = operands[0].get<float>();
+      float m = operands[1].getAsVector<float>()[index];
+      float out[4] = {n * m, 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMULv1i64_indexed: {  // fmul dd, dn, vm.d[index]
+      int index = metadata.operands[2].vector_index;
+      double n = operands[0].get<double>();
+      double m = operands[1].getAsVector<double>()[index];
+      double out[2] = {n * m, 0.0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMULv2f64: {  // fmul vd.2d, vn.2d, vm.2d
       const double* a = operands[0].getAsVector<double>();
       const double* b = operands[1].getAsVector<double>();
       double out[2] = {a[0] * b[0], a[1] * b[1]};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMULv4f32: {  // fmul vd.4s, vn.4s, vm.4s
+      const float* a = operands[0].getAsVector<float>();
+      const float* b = operands[1].getAsVector<float>();
+      float out[4] = {a[0] * b[0], a[1] * b[1], a[2] * b[2], a[3] * b[3]};
       results[0] = out;
       return;
     }

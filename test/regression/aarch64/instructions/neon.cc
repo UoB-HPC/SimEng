@@ -205,6 +205,80 @@ TEST_P(InstNeon, fmov) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), -0.125);
 }
 
+TEST_P(InstNeon, fmul) {
+  // 32-bit
+  initialHeapData_.resize(32);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 2.0;
+  fheap[1] = -42.75;
+  fheap[2] = -0.125;
+  fheap[3] = 321.0;
+  fheap[4] = -2.5;
+  fheap[5] = 32768;
+  fheap[6] = -0.0;
+  fheap[7] = std::nanf("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fmul v2.4s, v0.4s, v1.4s
+    fmul s3, s0, v1.s[2]
+    fmul s4, s1, v1.s[0]
+    fmul s5, s0, v0.s[1]
+    fmul s6, s0, v1.s[3]
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), -5.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(2)), -1400832.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(2)), 0.f);
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 3>(2)));
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), -0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 6.25f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), -85.5f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(5)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(5)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(5)), 0.f);
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(6)));
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(6)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(6)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(6)), 0.f);
+
+  // 64-bit
+  initialHeapData_.resize(32);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 2.0;
+  dheap[1] = -42.76;
+  dheap[2] = -0.125;
+  dheap[3] = 321.0;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fmul v2.2d, v0.2d, v1.2d
+    fmul d3, d0, v1.d[1]
+    fmul d4, d1, v1.d[0]
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), -0.25);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(2)), -13725.96);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 642.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 0.015625);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+}
+
 TEST_P(InstNeon, fneg) {
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
