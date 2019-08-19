@@ -41,6 +41,7 @@ TEST_P(InstNeon, dup) {
   heap[2] = -1;
   heap[3] = 7;
 
+  // 64-bit vector lane to scalar
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -64,6 +65,30 @@ TEST_P(InstNeon, dup) {
   EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(4)), 0);
   EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(5)), 7);
   EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(5)), 0);
+
+  // 64-bit scalar to vector
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr x1, [x0]
+    ldr x2, [x0, #8]
+    ldr q0, [x0, #16]
+    dup v2.2d, x1
+    dup v3.2d, x2
+    dup v4.2d, v0.d[0]
+    dup v5.2d, v0.d[1]
+  )");
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(2)), 42);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(2)), 42);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(3)), 1ul << 63);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(3)), 1ul << 63);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(4)), -1);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(4)), -1);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(5)), 7);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(5)), 7);
 }
 
 TEST_P(InstNeon, fabs) {

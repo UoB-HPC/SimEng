@@ -617,6 +617,20 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_DUPv2i64gpr: {  // dup vd.2d, xn
+      uint64_t out[2];
+      std::fill(std::begin(out), std::end(out), operands[0].get<uint64_t>());
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_DUPv2i64lane: {  // dup vd.2d, vn.d[index]
+      int index = metadata.operands[1].vector_index;
+      uint64_t element = operands[0].getAsVector<uint64_t>()[index];
+      uint64_t out[2];
+      std::fill(std::begin(out), std::end(out), element);
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_DMB: {  // dmb option|#imm
       // TODO: Respect memory barriers
       return;
