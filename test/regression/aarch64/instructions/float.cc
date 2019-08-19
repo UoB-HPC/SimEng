@@ -440,6 +440,38 @@ TEST_P(InstFloat, fneg) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(5)), 0.0);
 }
 
+TEST_P(InstFloat, fnmsub) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fmov s2, 7.5
+    fnmsub s3, s0, s1, s2
+    fnmsub s4, s1, s2, s0
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), -7.75f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), -2.9375f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 7.5
+    fnmsub d3, d0, d1, d2
+    fnmsub d4, d1, d2, d0
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), -7.75);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), -2.9375);
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+}
+
 TEST_P(InstFloat, fsub) {
   // FP32
   RUN_AARCH64(R"(
