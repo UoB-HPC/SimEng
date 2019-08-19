@@ -1494,13 +1494,26 @@ void Instruction::execute() {
       memoryData[0] = operands[0];
       return;
     }
-    case Opcode::AArch64_STRDui: {  // str dt, [xn, #imm]
-      memoryData[0] = operands[0];
-      return;
-    }
     case Opcode::AArch64_STRDpost: {  // str dt, [xn], #imm
       memoryData[0] = operands[0];
       results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+      return;
+    }
+    case Opcode::AArch64_STRDpre: {  // str dd, [xn, #imm]!
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
+      return;
+    }
+    case Opcode::AArch64_STRDroW: {  // str dt, [xn, wm{, #extend {#amount}}]
+      memoryData[0] = operands[0];
+      return;
+    }
+    case Opcode::AArch64_STRDroX: {  // str dt, [xn, xm{, #extend {#amount}}]
+      memoryData[0] = operands[0];
+      return;
+    }
+    case Opcode::AArch64_STRDui: {  // str dt, [xn, #imm]
+      memoryData[0] = operands[0];
       return;
     }
     case Opcode::AArch64_STRHHpost: {  // strh wt, [xn], #imm

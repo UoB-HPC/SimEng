@@ -53,22 +53,28 @@ TEST_P(InstStore, strh) {
 }
 
 TEST_P(InstStore, strd) {
-  // immediate offset
   RUN_AARCH64(R"(
     fmov d0, 2.0
-    sub sp, sp, #16
-    str d0, [sp, #8]
+    fmov d1, -0.125
+    fmov d2, 7.5
+    fmov d3, 16.0
+    sub sp, sp, #40
+    str d0, [sp], 8
+    str d1, [sp]
+    str d2, [sp, 8]!
+    str d3, [sp, 8]
+    mov w5, 16
+    str d0, [sp, w5, uxtw]
+    sub sp, sp, 16
+    mov x6, -16
+    str d1, [sp, x6, sxtx]
   )");
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 40), 2.0);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 32), -0.125);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 24), 7.5);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 16), 16.0);
   EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), 2.0);
-
-  // post increment
-  RUN_AARCH64(R"(
-    fmov d0, 2.0
-    sub sp, sp, 8
-    str d0, [sp], -8
-  )");
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), 2.0);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 16);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 56), -0.125);
 }
 
 TEST_P(InstStore, strq) {
