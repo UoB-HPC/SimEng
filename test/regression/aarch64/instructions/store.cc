@@ -171,6 +171,12 @@ TEST_P(InstStore, stur) {
     stur x0, [sp, #-8]
   )");
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 8), 42u);
+
+  RUN_AARCH64(R"(
+    fmov d0, -0.125
+    stur d0, [sp, #-8]
+  )");
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), -0.125);
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstStore, ::testing::Values(EMULATION),

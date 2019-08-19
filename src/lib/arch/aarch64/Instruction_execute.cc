@@ -1601,6 +1601,10 @@ void Instruction::execute() {
       memoryData[0] = operands[0];
       return;
     }
+    case Opcode::AArch64_STURDi: {  // stur dt, [xn, #imm]
+      memoryData[0] = operands[0];
+      return;
+    }
     case Opcode::AArch64_STURWi: {  // stur wt, [xn, #imm]
       memoryData[0] = operands[0];
       return;
