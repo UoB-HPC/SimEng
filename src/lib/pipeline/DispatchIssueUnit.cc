@@ -96,7 +96,7 @@ void DispatchIssueUnit::issue() {
     if (readyQueues_[i].size() > 0) {
       // Assign the instruction to the port
       auto& uop = readyQueues_[i].front();
-      issuePorts_[i].getTailSlots()[0] = uop;
+      issuePorts_[i].getTailSlots()[0] = std::move(uop);
       readyQueues_[i].pop_front();
 
       // Inform the port allocator that an instruction issued
@@ -133,7 +133,7 @@ void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
       entry.uop->supplyOperand(entry.operandIndex, values[i]);
       if (entry.uop->canExecute()) {
         // Add the now-ready instruction to the relevant ready queue
-        readyQueues_[entry.port].push_back(entry.uop);
+        readyQueues_[entry.port].push_back(std::move(entry.uop));
       }
     }
 
