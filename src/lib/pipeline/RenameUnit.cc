@@ -104,7 +104,9 @@ void RenameUnit::tick() {
     }
 
     output_.getTailSlots()[slot] = std::move(uop);
-    input_.getHeadSlots()[slot] = nullptr;
+    // Moving a shared_ptr implicitly nullifies it, removing need to clear it
+    // manually
+    assert(uop == nullptr && "Move didn't nullify shared_ptr");
   }
 }
 
