@@ -819,6 +819,14 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMADDSrrr: {  // fmadd sn, sm, sa
+      float n = operands[0].get<float>();
+      float m = operands[1].get<float>();
+      float a = operands[2].get<float>();
+      float out[4] = {std::fma(n, m, a), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMLAv2f64: {  // fmla vd.2d, vn.2d, vm.2d
       const double* a = operands[0].getAsVector<double>();
       const double* b = operands[1].getAsVector<double>();
