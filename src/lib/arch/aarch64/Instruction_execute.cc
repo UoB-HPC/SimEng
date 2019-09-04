@@ -948,6 +948,22 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMSUBDrrr: {  // fmsub dn, dm, da
+      double n = operands[0].get<double>();
+      double m = operands[1].get<double>();
+      double a = operands[2].get<double>();
+      double out[2] = {std::fma(-n, m, a), 0.0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMSUBSrrr: {  // fmsub sn, sm, sa
+      float n = operands[0].get<float>();
+      float m = operands[1].get<float>();
+      float a = operands[2].get<float>();
+      float out[4] = {std::fma(-n, m, a), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMULDrr: {  // fmul dd, dn, dm
       double n = operands[0].get<double>();
       double m = operands[1].get<double>();
