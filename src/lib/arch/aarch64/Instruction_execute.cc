@@ -1041,12 +1041,12 @@ void Instruction::execute() {
       return;
     }
     case Opcode::AArch64_FSQRTDr: {  // fsqrt dd, dn
-      double out[2] = {std::sqrt(operands[0].get<double>()), 0.0};
+      double out[2] = {::sqrt(operands[0].get<double>()), 0.0};
       results[0] = out;
       return;
     }
     case Opcode::AArch64_FSQRTSr: {  // fsqrt sd, sn
-      float out[4] = {std::sqrtf(operands[0].get<float>()), 0.f, 0.f, 0.f};
+      float out[4] = {::sqrtf(operands[0].get<float>()), 0.f, 0.f, 0.f};
       results[0] = out;
       return;
     }
