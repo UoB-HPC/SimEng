@@ -768,6 +768,38 @@ void Instruction::execute() {
       }
       return;
     }
+    case Opcode::AArch64_FCMPSri:     // fcmp sn, #imm
+    case Opcode::AArch64_FCMPESri: {  // fcmpe sn, #imm
+      float a = operands[0].get<float>();
+      float b = metadata.operands[1].fp;
+      if (std::isnan(a) || std::isnan(b)) {
+        // TODO: Raise exception if NaNs are signalling or fcmpe
+        results[0] = nzcv(false, false, true, true);
+      } else if (a == b) {
+        results[0] = nzcv(false, true, true, false);
+      } else if (a < b) {
+        results[0] = nzcv(true, false, false, false);
+      } else {
+        results[0] = nzcv(false, false, true, false);
+      }
+      return;
+    }
+    case Opcode::AArch64_FCMPSrr:     // fcmp sn, sm
+    case Opcode::AArch64_FCMPESrr: {  // fcmpe sn, sm
+      float a = operands[0].get<float>();
+      float b = operands[1].get<float>();
+      if (std::isnan(a) || std::isnan(b)) {
+        // TODO: Raise exception if NaNs are signalling or fcmpe
+        results[0] = nzcv(false, false, true, true);
+      } else if (a == b) {
+        results[0] = nzcv(false, true, true, false);
+      } else if (a < b) {
+        results[0] = nzcv(true, false, false, false);
+      } else {
+        results[0] = nzcv(false, false, true, false);
+      }
+      return;
+    }
     case Opcode::AArch64_FCSELDrrr: {  // fcsel dd, dn, dm, cond
       double n = operands[1].get<double>();
       double m = operands[2].get<double>();

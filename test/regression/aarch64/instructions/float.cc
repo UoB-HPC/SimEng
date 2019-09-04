@@ -76,7 +76,55 @@ TEST_P(InstFloat, fadd) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
 }
 
-TEST_P(InstFloat, fcmp) {
+TEST_P(InstFloat, fcmp32) {
+  // 1.25 == 1.25
+  RUN_AARCH64(R"(
+    fmov s0, 1.25
+    fmov s1, 1.25
+    fcmp s0, s1
+  )");
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 1.25 > -1.25
+  RUN_AARCH64(R"(
+    fmov s0, 1.25
+    fmov s1, -1.25
+    fcmp s0, s1
+  )");
+  EXPECT_EQ(getNZCV(), 0b0010);
+
+  // 1.25 < 10.5
+  RUN_AARCH64(R"(
+    fmov s0, 1.25
+    fmov s1, 10.5
+    fcmp s0, s1
+  )");
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  // 1.25 > 0.0 (immediate)
+  RUN_AARCH64(R"(
+    fmov s0, 1.25
+    fcmp s0, 0.0
+  )");
+  EXPECT_EQ(getNZCV(), 0b0010);
+
+  // 1.0 vs NaN
+  initialHeapData_.resize(8);
+  reinterpret_cast<float*>(initialHeapData_.data())[0] = std::nan("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fmov s0, 1.0
+    ldr s1, [x0]
+    fcmp s0, s1
+  )");
+  EXPECT_EQ(getNZCV(), 0b0011);
+}
+
+TEST_P(InstFloat, fcmp64) {
   // 1.25 == 1.25
   RUN_AARCH64(R"(
     fmov d0, 1.25
