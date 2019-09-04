@@ -817,6 +817,19 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FCVTDSr: {  // fcvt dd, sn
+      // TODO: Handle NaNs, denorms, and saturation?
+      double out[2] = {static_cast<double>(operands[0].get<float>()), 0.0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FCVTSDr: {  // fcvt sd, dn
+      // TODO: Handle NaNs, denorms, and saturation?
+      float out[4] = {static_cast<float>(operands[0].get<double>()), 0.f, 0.f,
+                      0.f};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FCVTZSUWDr: {  // fcvtzs wd, dn
       double n = operands[0].get<double>();
       // TODO: Handle NaNs, denorms, and saturation

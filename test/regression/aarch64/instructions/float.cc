@@ -310,6 +310,26 @@ TEST_P(InstFloat, fcvt) {
   heap[2] = -0.125;
   heap[3] = 321.5;
 
+  // 32-bit to 64-bit
+  RUN_AARCH64(R"(
+    fmov s0, 1.25
+    fmov s1, -10.5
+    fcvt d0, s0
+    fcvt d1, s1
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.25);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -10.5);
+
+  // 64-bit to 32-bit
+  RUN_AARCH64(R"(
+    fmov d0, 1.25
+    fmov d1, -10.5
+    fcvt s0, d0
+    fcvt s1, d1
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(0)), 1.25f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), -10.5f);
+
   // Signed, round to zero
   RUN_AARCH64(R"(
     # Get heap address
