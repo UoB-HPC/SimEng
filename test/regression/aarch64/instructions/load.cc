@@ -160,6 +160,38 @@ TEST_P(InstLoad, ldr_vector) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), 123456);
 }
 
+TEST_P(InstLoad, ldrw) {
+  initialHeapData_.resize(16);
+  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap[0] = 0xDEADBEEF;
+  heap[1] = 0x12345678;
+  heap[2] = 0x98765432;
+  heap[3] = 0xABCDEF12;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr w1, [x0], 4
+    ldr w2, [x0]
+    ldr w3, [x0, 4]!
+    ldr w4, [x0, 4]
+
+    mov w5, -4
+    ldr w6, [x0, w5, sxtw]
+    mov x5, 4
+    ldr w7, [x0, x5]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xDEADBEEF);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x12345678);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0x98765432);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xABCDEF12);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0x12345678);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0xABCDEF12);
+}
+
 TEST_P(InstLoad, ldp) {
   // 32-bit integer
   initialHeapData_.resize(16);

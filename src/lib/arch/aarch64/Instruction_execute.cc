@@ -1208,6 +1208,19 @@ void Instruction::execute() {
       results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       return;
     }
+    case Opcode::AArch64_LDRWpre: {  // ldr wt, [xn, #imm]!
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+      return;
+    }
+    case Opcode::AArch64_LDRWroW: {  // ldr wt, [xn, wm, {extend {#amount}}]
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      return;
+    }
+    case Opcode::AArch64_LDRWroX: {  // ldr wt, [xn, xm, {extend {#amount}}]
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      return;
+    }
     case Opcode::AArch64_LDRWui: {  // ldr wt, [xn, #imm]
       results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 8);
       return;

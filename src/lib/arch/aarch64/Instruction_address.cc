@@ -128,6 +128,23 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
       break;
     }
+    case Opcode::AArch64_LDRWpre: {  // ldr wt, [xn, #imm]!
+      setMemoryAddresses(
+          {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});
+      break;
+    }
+    case Opcode::AArch64_LDRWroW: {  // ldr wt, [xn, wm, {extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[1].get<uint32_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 4}});
+      break;
+    }
+    case Opcode::AArch64_LDRWroX: {  // ldr wt, [xn, xm, {extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 4}});
+      break;
+    }
     case Opcode::AArch64_LDRWui: {  // ldr wt, [xn, #imm]
       setMemoryAddresses(
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});
