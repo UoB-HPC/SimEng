@@ -729,7 +729,7 @@ TEST_P(InstFloat, fsqrt) {
     fsqrt s2, s0
     fsqrt s3, s1
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), std::sqrtf(2.f));
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), ::sqrtf(2.f));
   EXPECT_EQ((getVectorRegisterElement<float, 1>(2)), 0.f);
   EXPECT_EQ((getVectorRegisterElement<float, 2>(2)), 0.f);
   EXPECT_EQ((getVectorRegisterElement<float, 3>(2)), 0.f);
@@ -745,7 +745,7 @@ TEST_P(InstFloat, fsqrt) {
     fsqrt d2, d0
     fsqrt d3, d1
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), std::sqrt(2.0));
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), ::sqrt(2.0));
   EXPECT_EQ((getVectorRegisterElement<double, 1>(2)), 0.0);
   EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(3)));
   EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
