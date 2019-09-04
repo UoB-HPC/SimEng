@@ -101,6 +101,13 @@ TEST_P(InstFloat, fcmp) {
   )");
   EXPECT_EQ(getNZCV(), 0b1000);
 
+  // 1.25 > 0.0 (immediate)
+  RUN_AARCH64(R"(
+    fmov d0, 1.25
+    fcmp d0, 0.0
+  )");
+  EXPECT_EQ(getNZCV(), 0b0010);
+
   // 1.0 vs NaN
   initialHeapData_.resize(8);
   reinterpret_cast<double*>(initialHeapData_.data())[0] = std::nan("");
