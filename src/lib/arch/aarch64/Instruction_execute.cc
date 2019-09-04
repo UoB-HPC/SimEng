@@ -808,6 +808,15 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FCSELSrrr: {  // fcsel sd, sn, sm, cond
+      float n = operands[1].get<float>();
+      float m = operands[2].get<float>();
+      float out[4] = {
+          conditionHolds(metadata.cc, operands[0].get<uint8_t>()) ? n : m, 0.f,
+          0.f, 0.f};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FCVTZSUWDr: {  // fcvtzs wd, dn
       double n = operands[0].get<double>();
       // TODO: Handle NaNs, denorms, and saturation

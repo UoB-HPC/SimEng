@@ -172,7 +172,72 @@ TEST_P(InstFloat, fcmp64) {
   EXPECT_EQ(getNZCV(), 0b0011);
 }
 
-TEST_P(InstFloat, fcsel) {
+TEST_P(InstFloat, fcsel32) {
+  // 1.25 == 1.25
+  RUN_AARCH64(R"(
+    fmov s0, 1.25
+    fmov s1, 1.25
+    fmov s2, 5.0
+    fcmp s0, s1
+    fcsel s3, s2, s1, eq
+    fcsel s4, s2, s1, lo
+    fcsel s5, s2, s1, gt
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 5.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 1.25f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 1.25f);
+
+  // 1.25 > -1.25
+  RUN_AARCH64(R"(
+    fmov s0, 1.25
+    fmov s1, -1.25
+    fmov s2, 5.0
+    fcmp s0, s1
+    fcsel s3, s2, s1, eq
+    fcsel s4, s2, s1, lo
+    fcsel s5, s2, s1, gt
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), -1.25f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), -1.25f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 5.f);
+
+  // 1.25 < 10.5
+  RUN_AARCH64(R"(
+    fmov s0, 1.25
+    fmov s1, 10.5
+    fmov s2, 5.0
+    fcmp s0, s1
+    fcsel s3, s2, s1, eq
+    fcsel s4, s2, s1, lo
+    fcsel s5, s2, s1, gt
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 10.5f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 5.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 10.5f);
+
+  // 1.0 vs NaN
+  initialHeapData_.resize(8);
+  reinterpret_cast<float*>(initialHeapData_.data())[0] = std::nan("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fmov s0, 1.0
+    ldr s1, [x0]
+    fmov s2, 5.0
+    fcmp s0, s1
+    fcsel s3, s2, s0, eq
+    fcsel s4, s2, s0, lo
+    fcsel s5, s2, s0, gt
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 1.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 1.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 1.f);
+}
+
+TEST_P(InstFloat, fcsel64) {
   // 1.25 == 1.25
   RUN_AARCH64(R"(
     fmov d0, 1.25
