@@ -45,6 +45,24 @@ TEST_P(InstFloat, fabs) {
 }
 
 TEST_P(InstFloat, fadd) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    fmov s0, 1.0
+    fmov s1, -0.125
+    fmov s2, 7.5
+    fadd s3, s0, s1
+    fadd s4, s0, s2
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 0.875f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 8.5f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+
+  // 64-bit
   RUN_AARCH64(R"(
     fmov d0, 1.0
     fmov d1, -0.125
