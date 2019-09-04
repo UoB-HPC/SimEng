@@ -971,6 +971,13 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMULSrr: {  // fmul sd, sn, sm
+      float n = operands[0].get<float>();
+      float m = operands[1].get<float>();
+      float out[4] = {n * m, 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMULv1i32_indexed: {  // fmul sd, sn, vm.s[index]
       int index = metadata.operands[2].vector_index;
       float n = operands[0].get<float>();

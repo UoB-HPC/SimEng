@@ -618,6 +618,24 @@ TEST_P(InstFloat, fmsub) {
 }
 
 TEST_P(InstFloat, fmul) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fmov s2, 7.5
+    fmul s3, s0, s1
+    fmul s4, s0, s2
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), -0.25f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 15.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+
+  // 64-bit
   RUN_AARCH64(R"(
     fmov d0, 2.0
     fmov d1, -0.125
