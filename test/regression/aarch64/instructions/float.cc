@@ -721,6 +721,36 @@ TEST_P(InstFloat, fnmsub) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
 }
 
+TEST_P(InstFloat, fsqrt) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fsqrt s2, s0
+    fsqrt s3, s1
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), std::sqrtf(2.f));
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(2)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(2)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(2)), 0.f);
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(3)));
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fsqrt d2, d0
+    fsqrt d3, d1
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), std::sqrt(2.0));
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(2)), 0.0);
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(3)));
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+}
+
 TEST_P(InstFloat, fsub) {
   // FP32
   RUN_AARCH64(R"(

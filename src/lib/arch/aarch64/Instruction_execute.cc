@@ -1040,6 +1040,16 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FSQRTDr: {  // fsqrt dd, dn
+      double out[2] = {std::sqrt(operands[0].get<double>()), 0.0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FSQRTSr: {  // fsqrt sd, sn
+      float out[4] = {std::sqrtf(operands[0].get<float>()), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FSUBDrr: {  // fsub dd, dn, dm
       double n = operands[0].get<double>();
       double m = operands[1].get<double>();
