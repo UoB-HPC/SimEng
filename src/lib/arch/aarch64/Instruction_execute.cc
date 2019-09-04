@@ -1013,6 +1013,11 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FNEGSr: {  // fneg sd, sn
+      float out[4] = {-operands[0].get<float>(), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FNEGv2f64: {  // fneg vd.2d, vn.2d
       const double* n = operands[0].getAsVector<double>();
       double out[2] = {-n[0], -n[1]};
