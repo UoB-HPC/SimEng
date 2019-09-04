@@ -1680,6 +1680,28 @@ void Instruction::execute() {
       memoryData[0] = operands[0];
       return;
     }
+    case Opcode::AArch64_STRSpost: {  // str st, [xn], #imm
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+      return;
+    }
+    case Opcode::AArch64_STRSpre: {  // str sd, [xn, #imm]!
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
+      return;
+    }
+    case Opcode::AArch64_STRSroW: {  // str st, [xn, wm{, #extend {#amount}}]
+      memoryData[0] = operands[0];
+      return;
+    }
+    case Opcode::AArch64_STRSroX: {  // str st, [xn, xm{, #extend {#amount}}]
+      memoryData[0] = operands[0];
+      return;
+    }
+    case Opcode::AArch64_STRSui: {  // str st, [xn, #imm]
+      memoryData[0] = operands[0];
+      return;
+    }
     case Opcode::AArch64_STRWpost: {  // str wt, [xn], #imm
       memoryData[0] = operands[0];
       results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
