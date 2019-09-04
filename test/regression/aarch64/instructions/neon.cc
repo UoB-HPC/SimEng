@@ -219,6 +219,20 @@ TEST_P(InstNeon, fdiv) {
 }
 
 TEST_P(InstNeon, fmov) {
+  // FP32 vector from immediate
+  RUN_AARCH64(R"(
+    fmov v0.4s, 1.0
+    fmov v1.4s, -0.125
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(0)), 1.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(0)), 1.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(0)), 1.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(0)), 1.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), -0.125f);
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(1)), -0.125f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(1)), -0.125f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(1)), -0.125f);
+
   // FP64 vector from immediate
   RUN_AARCH64(R"(
     fmov v0.2d, 1.0

@@ -942,6 +942,12 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMOVv4f32_ns: {  // fmov vn.4s, #imm
+      float imm = static_cast<float>(metadata.operands[1].fp);
+      float out[4] = {imm, imm, imm, imm};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMULDrr: {  // fmul dd, dn, dm
       double n = operands[0].get<double>();
       double m = operands[1].get<double>();
