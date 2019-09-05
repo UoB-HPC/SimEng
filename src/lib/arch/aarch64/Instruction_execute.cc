@@ -1952,6 +1952,39 @@ void Instruction::execute() {
       results[0] = bitfieldManipulate(source, UINT64_C(0), r, s);
       return;
     }
+    case Opcode::AArch64_UCVTFUWDri: {  // ucvtf dd, wn
+      double out[2] = {static_cast<double>(operands[0].get<uint32_t>()), 0.0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_UCVTFUWSri: {  // ucvtf sd, wn
+      uint32_t n = operands[0].get<uint32_t>();
+      float out[4] = {static_cast<float>(n), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_UCVTFUXDri: {  // ucvtf dd, xn
+      double out[2] = {static_cast<double>(operands[0].get<uint64_t>()), 0.0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_UCVTFUXSri: {  // ucvtf sd, xn
+      uint64_t n = operands[0].get<uint64_t>();
+      float out[4] = {static_cast<float>(n), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_UCVTFv1i32: {  // ucvtf sd, sn
+      uint32_t n = operands[0].get<uint32_t>();
+      float out[4] = {static_cast<float>(n), 0.f, 0.f, 0.f};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_UCVTFv1i64: {  // ucvtf dd, dn
+      double out[2] = {static_cast<double>(operands[0].get<uint64_t>()), 0.0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_UDIVWr: {  // udiv wd, wn, wm
       auto x = operands[0].get<uint32_t>();
       auto y = operands[1].get<uint32_t>();

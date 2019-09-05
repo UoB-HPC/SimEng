@@ -897,6 +897,117 @@ TEST_P(InstFloat, scvtf) {
             static_cast<float>(INT64_MIN));
 }
 
+TEST_P(InstFloat, ucvtf) {
+  // 32-bit integer
+  initialHeapData_.resize(16);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap32[0] = 1;
+  heap32[1] = 65537;
+  heap32[2] = UINT32_MAX;
+  heap32[3] = 0;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load and convert integer values
+    ldp s0, s1, [x0]
+    ucvtf s0, s0
+    ucvtf s1, s1
+    ldp s2, s3, [x0, #8]
+    ucvtf s2, s2
+    ucvtf s3, s3
+
+    # Load and convert integer values (via general)
+    ldp w1, w2, [x0]
+    ucvtf s4, w1
+    ucvtf s5, w2
+    ldp w3, w4, [x0, #8]
+    ucvtf s6, w3
+    ucvtf s7, w4
+
+    # Load and convert integer values to double precision (via general)
+    ldp w1, w2, [x0]
+    ucvtf d8, w1
+    ucvtf d9, w2
+    ldp w3, w4, [x0, #8]
+    ucvtf d10, w3
+    ucvtf d11, w4
+  )");
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(0)), 1.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), 65537.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)),
+            static_cast<float>(UINT32_MAX));
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 1.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 65537.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(6)),
+            static_cast<float>(UINT32_MAX));
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(7)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(8)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(9)), 65537.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(10)),
+            static_cast<double>(UINT32_MAX));
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(11)), 0.0);
+
+  // 64-bit integer
+  initialHeapData_.resize(32);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 1;
+  heap64[1] = (UINT64_C(1) << 48);
+  heap64[2] = UINT64_MAX;
+  heap64[3] = 0;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load and convert integer values
+    ldp d0, d1, [x0]
+    ucvtf d0, d0
+    ucvtf d1, d1
+    ldp d2, d3, [x0, #16]
+    ucvtf d2, d2
+    ucvtf d3, d3
+
+    # Load and convert integer values (via general)
+    ldp x1, x2, [x0]
+    ucvtf d4, x1
+    ucvtf d5, x2
+    ldp x3, x4, [x0, #16]
+    ucvtf d6, x3
+    ucvtf d7, x4
+
+    # Load and convert integer values to single precision (via general)
+    ldp x1, x2, [x0]
+    ucvtf s8, x1
+    ucvtf s9, x2
+    ldp x3, x4, [x0, #16]
+    ucvtf s10, x3
+    ucvtf s11, x4
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)),
+            static_cast<float>(UINT64_C(1) << 48));
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)),
+            static_cast<double>(UINT64_MAX));
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)),
+            static_cast<float>(UINT64_C(1) << 48));
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(6)),
+            static_cast<double>(UINT64_MAX));
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(7)), 0.0);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(8)), 1.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(9)),
+            static_cast<float>(UINT64_C(1) << 48));
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(10)),
+            static_cast<float>(UINT64_MAX));
+  EXPECT_EQ((getVectorRegisterElement<float, 0>(11)), 0.f);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstFloat, ::testing::Values(EMULATION),
                          coreTypeToString);
 
