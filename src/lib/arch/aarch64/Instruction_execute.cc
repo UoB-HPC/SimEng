@@ -1427,6 +1427,22 @@ void Instruction::execute() {
       // TODO: Observe hints
       return;
     }
+    case Opcode::AArch64_ORNWrs: {  // orn wd, wn, wm{, shift{ #amount}}
+      auto x = operands[0].get<uint32_t>();
+      auto y = ~shiftValue(operands[1].get<uint32_t>(),
+                           metadata.operands[2].shift.type,
+                           metadata.operands[2].shift.value);
+      results[0] = RegisterValue(x | y, 8);
+      return;
+    }
+    case Opcode::AArch64_ORNXrs: {  // orn xd, xn, xm{, shift{ #amount}}
+      auto x = operands[0].get<uint64_t>();
+      auto y = ~shiftValue(operands[1].get<uint64_t>(),
+                           metadata.operands[2].shift.type,
+                           metadata.operands[2].shift.value);
+      results[0] = x | y;
+      return;
+    }
     case Opcode::AArch64_ORRWri: {  // orr wd, wn, #imm
       auto value = operands[0].get<uint32_t>();
       auto result = (value | static_cast<uint32_t>(metadata.operands[2].imm));

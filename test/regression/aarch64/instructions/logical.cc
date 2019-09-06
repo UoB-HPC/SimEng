@@ -414,6 +414,56 @@ TEST_P(InstLogical, lsrv) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 31ull >> 7);
 }
 
+TEST_P(InstLogical, orn) {
+  // 32-bit
+  // 0 | ~0 = 0xFFFFFFFF
+  // 0b0010 | ~0b0001 = 1111..1110
+  // 0b0111 | ~0b1010 = 1111..0111
+  // 0b0111 | ~(0b1010 << 4) = 1111..01011111
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    orn w2, w0, wzr
+
+    mov w0, #2
+    orn w3, w0, #1
+
+    movz w0, 0x7
+    movz w1, 0xA
+    orn w4, w0, w1
+    orn w5, w0, w1, lsl #4
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0xFFFFFFFF);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0xFFFFFFFE);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xFFFFFFF7);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0xFFFFFF5F);
+
+  // 64-bit
+  // 0 | ~0 = 1111...1111
+  // 0b0010 | ~0b0001 = 1111..1110
+  // 0b0111 | ~0b1010 = 1111..0111
+  // (0b0111 << 48) | ~(0b0101 << 50) = 1111..11010111..1111
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    orn x2, x0, xzr
+
+    mov x0, #2
+    orn x3, x0, #1
+
+    movz x0, 0x7
+    movz x1, 0xA
+    orn x4, x0, x1
+
+    movz x0, 0x7, lsl #48
+    movz x1, 0x5
+    orn x5, x0, x1, lsl #51
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), UINT64_C(-1));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), UINT64_C(-1) & ~UINT64_C(0b0001));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), UINT64_C(-1) & ~UINT64_C(0b1000));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
+            UINT64_C(-1) & ~(UINT64_C(0b00101000) << 48));
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstLogical, ::testing::Values(EMULATION),
                          coreTypeToString);
 
