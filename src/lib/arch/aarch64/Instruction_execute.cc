@@ -1583,6 +1583,23 @@ void Instruction::execute() {
       memoryData[1] = operands[1];
       return;
     }
+    case Opcode::AArch64_STPSi: {  // stp st1, st2, [xn, #imm]
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      return;
+    }
+    case Opcode::AArch64_STPSpost: {  // stp st1, st2, [xn], #imm
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[3].imm;
+      return;
+    }
+    case Opcode::AArch64_STPSpre: {  // stp st1, st2, [xn, #imm]!
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
+      return;
+    }
     case Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
       memoryData[0] = operands[0];
       memoryData[1] = operands[1];

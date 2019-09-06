@@ -174,6 +174,28 @@ TEST_P(InstStore, strx) {
             0x1234ull << 32);
 }
 
+TEST_P(InstStore, stps) {
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fmov s2, 7.5
+    fmov s3, 16.0
+    sub sp, sp, #32
+    stp s0, s1, [sp], 8
+    stp s1, s2, [sp]
+    stp s2, s3, [sp, 8]!
+    stp s3, s0, [sp, 8]
+  )");
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 32), 2.f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 28), -0.125f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 24), -0.125f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 20), 7.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 16), 7.5f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 12), 16.f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 8), 16.f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 4), 2.f);
+}
+
 TEST_P(InstStore, stpwi) {
   RUN_AARCH64(R"(
     movz w0, #7
