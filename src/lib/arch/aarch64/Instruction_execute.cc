@@ -1089,6 +1089,18 @@ void Instruction::execute() {
       results[1] = memoryData[1];
       return;
     }
+    case Opcode::AArch64_LDPQpost: {  // ldp qt1, qt2, [xn], #imm
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
+      return;
+    }
+    case Opcode::AArch64_LDPQpre: {  // ldp qt1, qt2, [xn, #imm]
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
+      return;
+    }
     case Opcode::AArch64_LDPSi: {  // ldp st1, st2, [xn, #imm]
       results[0] = memoryData[0].zeroExtend(4, 16);
       results[1] = memoryData[1].zeroExtend(4, 16);

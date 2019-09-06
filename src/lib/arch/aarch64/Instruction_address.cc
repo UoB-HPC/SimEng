@@ -182,7 +182,18 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     }
     case Opcode::AArch64_LDPQi: {  // ldp qt1, qt2, [xn, #imm]
       uint64_t base =
-          operands[0].get<uint64_t>() + metadata.operands[0].mem.disp;
+          operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
+      setMemoryAddresses({{base, 16}, {base + 16, 16}});
+      break;
+    }
+    case Opcode::AArch64_LDPQpost: {  // ldp qt1, qt2, [xn], #imm
+      uint64_t base = operands[0].get<uint64_t>();
+      setMemoryAddresses({{base, 16}, {base + 16, 16}});
+      break;
+    }
+    case Opcode::AArch64_LDPQpre: {  // ldp qt1, qt2, [xn, #imm]!
+      uint64_t base =
+          operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
       setMemoryAddresses({{base, 16}, {base + 16, 16}});
       break;
     }

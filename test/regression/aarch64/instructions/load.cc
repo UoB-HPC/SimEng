@@ -298,12 +298,18 @@ TEST_P(InstLoad, ldp) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0);
 
   // 128-bit
-  initialHeapData_.resize(64);
-  heap64 = reinterpret_cast<double*>(initialHeapData_.data());
-  heap64[0] = 1.0;
-  heap64[1] = 123.456;
-  heap64[2] = -0.00032;
-  heap64[3] = 123456;
+  initialHeapData_.resize(80);
+  heapi64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heapi64[0] = UINT64_C(0xDEADBEEF) << 32;
+  heapi64[1] = UINT64_C(0x12345678) << 16;
+  heapi64[2] = UINT64_C(0x98765432) << 8;
+  heapi64[3] = UINT64_C(0xABCDEF12) << 4;
+  heapi64[4] = UINT64_C(0xDEADBEEF) << 4;
+  heapi64[5] = UINT64_C(0x12345678) << 8;
+  heapi64[6] = UINT64_C(0x98765432) << 16;
+  heapi64[7] = UINT64_C(0xABCDEF12) << 32;
+  heapi64[8] = UINT64_C(0xDEADBEEF) << 40;
+  heapi64[9] = UINT64_C(0x12345678) << 48;
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -311,12 +317,27 @@ TEST_P(InstLoad, ldp) {
     svc #0
 
     # Load values from heap
-    ldp q0, q1, [x0]
+    ldp q0, q1, [x0], 16
+    ldp q2, q3, [x0]
+    ldp q4, q5, [x0, 16]!
+    ldp q6, q7, [x0, 16]
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(0)), 123.456);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -0.00032);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), 123456);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(0)), 0xDEADBEEFull << 32);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(0)), 0x12345678ull << 16);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(1)), 0x98765432ull << 8);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(1)), 0xABCDEF12ull << 4);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(2)), 0x98765432ull << 8);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(2)), 0xABCDEF12ull << 4);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(3)), 0xDEADBEEFull << 4);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(3)), 0x12345678ull << 8);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(4)), 0xDEADBEEFull << 4);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(4)), 0x12345678ull << 8);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(5)), 0x98765432ull << 16);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(5)), 0xABCDEF12ull << 32);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(6)), 0x98765432ull << 16);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(6)), 0xABCDEF12ull << 32);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(7)), 0xDEADBEEFull << 40);
+  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(7)), 0x12345678ull << 48);
 }
 
 TEST_P(InstLoad, ldrsw) {
