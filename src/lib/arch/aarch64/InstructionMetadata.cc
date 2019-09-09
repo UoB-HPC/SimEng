@@ -389,6 +389,22 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_MVN:
+      if (opcode == Opcode::AArch64_ORNWrs ||
+          opcode == Opcode::AArch64_ORNXrs) {
+        // mvn rd, rn; alias for: orn rd, zr, rn
+        operandCount = 3;
+        operands[2] = operands[1];
+
+        operands[1].type = ARM64_OP_REG;
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_INVALID, 0};
+        if (opcode == Opcode::AArch64_ORNWrs) {
+          operands[1].reg = ARM64_REG_WZR;
+        } else {
+          operands[1].reg = ARM64_REG_XZR;
+        }
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_NEG:
       if (opcode == Opcode::AArch64_SUBWrs ||

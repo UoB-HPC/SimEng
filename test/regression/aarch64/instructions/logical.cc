@@ -431,11 +431,17 @@ TEST_P(InstLogical, orn) {
     movz w1, 0xA
     orn w4, w0, w1
     orn w5, w0, w1, lsl #4
+
+    # Check mvn alias
+    mvn w6, w0
+    mvn w7, w0, lsl #28
   )");
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0xFFFFFFFF);
   EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0xFFFFFFFE);
   EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xFFFFFFF7);
   EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0xFFFFFF5F);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0xFFFFFFF8);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0x8FFFFFFF);
 
   // 64-bit
   // 0 | ~0 = 1111...1111
@@ -456,12 +462,19 @@ TEST_P(InstLogical, orn) {
     movz x0, 0x7, lsl #48
     movz x1, 0x5
     orn x5, x0, x1, lsl #51
+
+    # Check mvn alias
+    mvn x6, x1
+    mvn x7, x1, lsl #60
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), UINT64_C(-1));
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), UINT64_C(-1) & ~UINT64_C(0b0001));
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), UINT64_C(-1) & ~UINT64_C(0b1000));
   EXPECT_EQ(getGeneralRegister<uint64_t>(5),
             UINT64_C(-1) & ~(UINT64_C(0b00101000) << 48));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), UINT64_C(-1) & ~UINT64_C(0b0101));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7),
+            UINT64_C(-1) & ~(UINT64_C(0b0101) << 60));
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstLogical, ::testing::Values(EMULATION),
