@@ -10,7 +10,7 @@ SimEng documentation
 .. toctree::
    :maxdepth: 2
    :caption: Simulation concepts
-   
+
    simulation
    instruction
    registers
@@ -25,7 +25,7 @@ SimEng documentation
 .. toctree::
    :maxdepth: 2
    :caption: Simulation components
-   
+
    pipeline/index
    pipeline/units
    pipeline/components
@@ -36,5 +36,11 @@ SimEng documentation
 
    arch/index.rst
    arch/aarch64.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: System call emulation
+
+   syscalls/index.rst
 
 .. mdinclude:: ../../README.md
