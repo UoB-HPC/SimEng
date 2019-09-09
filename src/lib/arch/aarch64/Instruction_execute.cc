@@ -731,6 +731,46 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FCCMPDrr:     // fccmp sn, sm, #nzcv, cc
+    case Opcode::AArch64_FCCMPEDrr: {  // fccmpe sn, sm, #nzcv, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        double a = operands[1].get<double>();
+        double b = operands[2].get<double>();
+        if (std::isnan(a) || std::isnan(b)) {
+          // TODO: Raise exception if NaNs are signalling or fcmpe
+          results[0] = nzcv(false, false, true, true);
+        } else if (a == b) {
+          results[0] = nzcv(false, true, true, false);
+        } else if (a < b) {
+          results[0] = nzcv(true, false, false, false);
+        } else {
+          results[0] = nzcv(false, false, true, false);
+        }
+      } else {
+        results[0] = static_cast<uint8_t>(metadata.operands[2].imm);
+      }
+      return;
+    }
+    case Opcode::AArch64_FCCMPSrr:     // fccmp sn, sm, #nzcv, cc
+    case Opcode::AArch64_FCCMPESrr: {  // fccmpe sn, sm, #nzcv, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        float a = operands[1].get<float>();
+        float b = operands[2].get<float>();
+        if (std::isnan(a) || std::isnan(b)) {
+          // TODO: Raise exception if NaNs are signalling or fcmpe
+          results[0] = nzcv(false, false, true, true);
+        } else if (a == b) {
+          results[0] = nzcv(false, true, true, false);
+        } else if (a < b) {
+          results[0] = nzcv(true, false, false, false);
+        } else {
+          results[0] = nzcv(false, false, true, false);
+        }
+      } else {
+        results[0] = static_cast<uint8_t>(metadata.operands[2].imm);
+      }
+      return;
+    }
     case Opcode::AArch64_FCMGEv2i64rz: {  // fcmge vd.2s, vn.2s, 0.0
       const double* n = operands[0].getAsVector<double>();
       uint64_t out[2] = {static_cast<uint64_t>(n[0] >= 0.0 ? -1 : 0),

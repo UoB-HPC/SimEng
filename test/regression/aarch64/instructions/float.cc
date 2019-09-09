@@ -76,6 +76,70 @@ TEST_P(InstFloat, fadd) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
 }
 
+TEST_P(InstFloat, fccmp) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    fmov s0, 0
+    fmov s1, 10.5
+    fmov s2, 1.25
+
+    # fcmp 0, 0; eq = true; fcmp 10.5, 1.25; gt = true
+    fcmp s0, s0
+    fccmp s1, s2, 2, eq
+    csetm w3, gt
+
+    # fcmp 0, 0; ne = false; nzcv = 8; lt = true
+    fcmp s0, s0
+    fccmp s1, s2, 8, ne
+    csetm w4, lt
+
+    // # fcmp 10.5, 1.25; gt = true; fcmp 10.5, 0; lt = false
+    fcmp s1, s2
+    fccmp s1, s0, 10, gt
+    csetm w5, lt
+
+    # fcmp 1.25, 10.5; gt = false; nzcv = 8; ne = true
+    fcmp s2, s1
+    fccmp s2, s2, 8, gt
+    csetm w6, ne
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), -1);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), -1);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), -1);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    fmov d0, 0
+    fmov d1, 10.5
+    fmov d2, 1.25
+
+    # fcmp 0, 0; eq = true; fcmp 10.5, 1.25; gt = true
+    fcmp d0, d0
+    fccmp d1, d2, 2, eq
+    csetm w3, gt
+
+    # fcmp 0, 0; ne = false; nzcv = 8; lt = true
+    fcmp d0, d0
+    fccmp d1, d2, 8, ne
+    csetm w4, lt
+
+    // # fcmp 10.5, 1.25; gt = true; fcmp 10.5, 0; lt = false
+    fcmp d1, d2
+    fccmp d1, d0, 10, gt
+    csetm w5, lt
+
+    # fcmp 1.25, 10.5; gt = false; nzcv = 8; ne = true
+    fcmp d2, d1
+    fccmp d2, d2, 8, gt
+    csetm w6, ne
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), -1);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), -1);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), -1);
+}
+
 TEST_P(InstFloat, fcmp32) {
   // 1.25 == 1.25
   RUN_AARCH64(R"(
