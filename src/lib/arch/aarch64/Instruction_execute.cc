@@ -1633,6 +1633,13 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_SMULHrr: {  // smulh xd, xn, xm
+      auto x = operands[0].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>();
+      // TODO: signed
+      results[0] = mulhi(x, y);
+      return;
+    }
     case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]
       memoryData[0] = operands[0];
       // TODO: Implement atomic memory access
