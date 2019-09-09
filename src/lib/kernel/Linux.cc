@@ -1,10 +1,14 @@
 #include "simeng/kernel/Linux.hh"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/uio.h>
+#include <unistd.h>
 #include <algorithm>
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace kernel {
@@ -17,6 +21,9 @@ void Linux::createProcess(const LinuxProcess& process) {
                             .startBrk = process.getHeapStart(),
                             .currentBrk = process.getHeapStart(),
                             .initialStackPointer = process.getStackPointer()});
+  processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
+  processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
+  processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
 }
 
 uint64_t Linux::getInitialStackPointer() const {
@@ -52,6 +59,21 @@ uint64_t Linux::clockGetTime(uint64_t clkId, uint64_t systemTimer,
   }
 }
 
+int64_t Linux::close(int64_t fd) {
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
+
+  // Deallocate the virtual file descriptor
+  assert(processStates_[0].freeFileDescriptors.count(fd) == 0);
+  processStates_[0].freeFileDescriptors.insert(fd);
+  processStates_[0].fileDescriptorTable[fd] = -1;
+
+  return ::close(hfd);
+}
+
 int64_t Linux::getpid() const {
   assert(processStates_.size() > 0);
   return processStates_[0].pid;
@@ -63,16 +85,62 @@ int64_t Linux::getgid() const { return 0; }
 int64_t Linux::getegid() const { return 0; }
 
 int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
-  assert(fd == 1 && "unimplemented ioctl fd");
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
+
   switch (request) {
     case 0x5413:  // TIOCGWINSZ
       out.resize(sizeof(struct winsize));
-      ::ioctl(fd, TIOCGWINSZ, out.data());
+      ::ioctl(hfd, TIOCGWINSZ, out.data());
       return 0;
     default:
       assert(false && "unimplemented ioctl request");
       return -1;
   }
+}
+
+int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
+                      uint16_t mode) {
+  // Resolve absolute path to target file
+  char absolutePath[LINUX_PATH_MAX];
+  realpath(pathname.c_str(), absolutePath);
+
+  // Check if path may be a special file, bail out if it is
+  // TODO: Add support for special files
+  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
+    if (strncmp(absolutePath, prefix, strlen(prefix)) == 0) {
+      std::cerr << "ERROR: attempted to open special file: "
+                << "'" << absolutePath << "'" << std::endl;
+      exit(1);
+    }
+  }
+
+  // Pass syscall through to host
+  assert(dirfd == -100 && "unsupported dirfd argument in openat syscall");
+  int64_t hfd = ::openat(AT_FDCWD, pathname.c_str(), flags, mode);
+  if (hfd < 0) {
+    return hfd;
+  }
+
+  LinuxProcessState& processState = processStates_[0];
+
+  // Allocate virtual file descriptor and map to host file descriptor
+  int64_t vfd;
+  if (!processState.freeFileDescriptors.empty()) {
+    // Take virtual descriptor from free pool
+    auto first = processState.freeFileDescriptors.begin();
+    vfd = processState.freeFileDescriptors.extract(first).value();
+    processState.fileDescriptorTable[vfd] = hfd;
+  } else {
+    // Extend file descriptor table for a new virtual descriptor
+    vfd = processState.fileDescriptorTable.size();
+    processState.fileDescriptorTable.push_back(hfd);
+  }
+
+  return vfd;
 }
 
 int64_t Linux::readlinkat(int64_t dirfd, const std::string pathname, char* buf,
@@ -96,9 +164,13 @@ int64_t Linux::setTidAddress(uint64_t tidptr) {
   return processStates_[0].pid;
 }
 
-uint64_t Linux::writev(int64_t fd, void* iovdata, int iovcnt) {
-  assert(fd == 1 && "unimplemented writev fd");
-  return ::writev(fd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
+int64_t Linux::writev(int64_t fd, void* iovdata, int iovcnt) {
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
+  return ::writev(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 
 }  // namespace kernel
