@@ -49,6 +49,29 @@ bool ExceptionHandler::init() {
             RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
         break;
       }
+      case 56: {  // openat
+        int64_t dirfd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t pathnamePtr = registerFileSet.get(R1).get<uint64_t>();
+        int64_t flags = registerFileSet.get(R2).get<int64_t>();
+        uint16_t mode = registerFileSet.get(R3).get<uint16_t>();
+
+        char* pathname = new char[kernel::Linux::LINUX_PATH_MAX];
+        return readStringThen(
+            pathname, pathnamePtr, kernel::Linux::LINUX_PATH_MAX,
+            [=](auto length) {
+              // Invoke the kernel
+              uint64_t retval = linux_.openat(dirfd, pathname, flags, mode);
+              ProcessStateChange stateChange = {{R0}, {retval}};
+              delete[] pathname;
+              return concludeSyscall(stateChange);
+            });
+        break;
+      }
+      case 57: {  // close
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        stateChange = {{R0}, {linux_.close(fd)}};
+        break;
+      }
       case 66: {  // writev
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
@@ -76,7 +99,7 @@ bool ExceptionHandler::init() {
           }
 
           // Invoke the kernel
-          uint64_t retval = linux_.writev(fd, dataBuffer.data(), iovcnt);
+          int64_t retval = linux_.writev(fd, dataBuffer.data(), iovcnt);
           ProcessStateChange stateChange = {{R0}, {retval}};
           return concludeSyscall(stateChange);
         };

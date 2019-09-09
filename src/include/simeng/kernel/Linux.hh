@@ -1,5 +1,7 @@
 #pragma once
 
+#include <set>
+
 #include "simeng/kernel/LinuxProcess.hh"
 
 namespace simeng {
@@ -22,6 +24,11 @@ struct LinuxProcessState {
   // TODO: Support multiple threads per process
   /** The clear_child_tid value. */
   uint64_t clearChildTid = 0;
+
+  /** The virtual file descriptor mapping table. */
+  std::vector<int64_t> fileDescriptorTable;
+  /** Set of deallocated virtual file descriptors available for reuse. */
+  std::set<int64_t> freeFileDescriptors;
 };
 
 /** A Linux kernel syscall emulation implementation, which mimics the responses
@@ -45,6 +52,9 @@ class Linux {
   uint64_t clockGetTime(uint64_t clkId, uint64_t systemTimer, uint64_t& seconds,
                         uint64_t& nanoseconds);
 
+  /** close syscall: close a file descriptor. */
+  int64_t close(int64_t fd);
+
   /** getpid syscall: get the process owner's process ID. */
   int64_t getpid() const;
   /** getuid syscall: get the process owner's user ID. */
@@ -59,6 +69,10 @@ class Linux {
   /** ioctl syscall: control device. */
   int64_t ioctl(int64_t fd, uint64_t request, std::vector<char>& out);
 
+  /** openat syscall: open/create a file. */
+  int64_t openat(int64_t dirfd, const std::string& path, int64_t flags,
+                 uint16_t mode);
+
   /** readlinkat syscall: read value of a symbolic link. */
   int64_t readlinkat(int64_t dirfd, const std::string pathname, char* buf,
                      size_t bufsize) const;
@@ -67,7 +81,7 @@ class Linux {
   int64_t setTidAddress(uint64_t tidptr);
 
   /** writev syscall: write buffers to a file. */
-  uint64_t writev(int64_t fd, void* iovdata, int iovcnt);
+  int64_t writev(int64_t fd, void* iovdata, int iovcnt);
 
   /** The maximum size of a filesystem path. */
   static const size_t LINUX_PATH_MAX = 4096;
