@@ -1554,6 +1554,25 @@ void Instruction::execute() {
     case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
       return;
     }
+    case Opcode::AArch64_RBITWr:    // rbit wd, wn
+    case Opcode::AArch64_RBITXr: {  // rbit xd, xn
+      int width = metadata.opcode == Opcode::AArch64_RBITWr ? 32 : 64;
+
+      static uint8_t reversedNibble[16] = {
+          0b0000, 0b1000, 0b0100, 0b1100, 0b0010, 0b1010, 0b0110, 0b1110,
+          0b0001, 0b1001, 0b0101, 0b1101, 0b0011, 0b1011, 0b0111, 0b1111};
+
+      uint64_t n = operands[0].get<uint64_t>();
+      uint64_t result = 0;
+      for (int i = 0; i < width; i += 4) {
+        result <<= 4;
+        result |= reversedNibble[n & 0b1111];
+        n >>= 4;
+      }
+
+      results[0] = result;
+      return;
+    }
     case Opcode::AArch64_RET: {  // ret {xr}
       branchTaken_ = true;
       branchAddress_ = operands[0].get<uint64_t>();
