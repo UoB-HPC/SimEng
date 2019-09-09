@@ -1604,6 +1604,13 @@ void Instruction::execute() {
       results[0] = x / y;
       return;
     }
+    case Opcode::AArch64_SMADDLrrr: {  // smaddl xd, wn, wm, xa
+      auto n = static_cast<int64_t>(operands[0].get<int32_t>());
+      auto m = static_cast<int64_t>(operands[1].get<int32_t>());
+      auto a = operands[2].get<int64_t>();
+      results[0] = a + (n * m);
+      return;
+    }
     case Opcode::AArch64_SMAXv4i32: {  // smax vd.4s, vn.4s, vm.4s
       const int32_t* n = operands[0].getAsVector<int32_t>();
       const int32_t* m = operands[1].getAsVector<int32_t>();
