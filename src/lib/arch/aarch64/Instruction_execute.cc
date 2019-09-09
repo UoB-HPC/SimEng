@@ -1896,6 +1896,18 @@ void Instruction::execute() {
       }
       return;
     }
+    case Opcode::AArch64_SUBSWrx: {  // subs wd, wn, wm{, extend #amount}
+      auto x = operands[0].get<uint32_t>();
+      auto y = static_cast<uint32_t>(
+          ~extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
+                       metadata.operands[2].shift.value));
+      auto [result, nzcv] = addWithCarry(x, y, true);
+      results[0] = RegisterValue(nzcv);
+      if (destinationRegisterCount > 1) {
+        results[1] = RegisterValue(result, 8);
+      }
+      return;
+    }
     case Opcode::AArch64_SUBSXri: {  // subs xd, xn, #imm
       auto x = operands[0].get<uint64_t>();
       auto y = ~shiftValue(static_cast<uint64_t>(metadata.operands[2].imm),

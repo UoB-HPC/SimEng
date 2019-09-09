@@ -139,6 +139,27 @@ TEST_P(InstArithmetic, subsw) {
   )");
   EXPECT_EQ(getNZCV(), 0b0011);
   EXPECT_EQ(getGeneralRegister<uint32_t>(0), (1u << 31) - 1);
+
+  // (7 << 16) - (-1) [8-bit sign-extended]
+  RUN_AARCH64(R"(
+    movz w0, #7, lsl #16
+    movz w1, #15
+    # 255 will be -1 when sign-extended from 8-bits
+    mov w2, 255
+    subs w3, w0, w2, sxtb
+  )");
+  EXPECT_EQ(getNZCV(), 0b0000);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), (7u << 16) + 1);
+
+  // (7 << 16) - (255 << 4)
+  RUN_AARCH64(R"(
+    movz w0, #7, lsl #16
+    movz w1, #15
+    mov w2, 255
+    subs w3, w0, w2, uxtx 4
+  )");
+  EXPECT_EQ(getNZCV(), 0b0010);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), (7u << 16) - (255u << 4));
 }
 
 // Test that NZCV flags are set correctly by 64-bit subs
