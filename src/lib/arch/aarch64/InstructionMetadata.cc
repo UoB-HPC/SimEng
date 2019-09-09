@@ -461,6 +461,13 @@ void InstructionMetadata::revertAliasing() {
     case ARM64_INS_SMNEGL:
       return aliasNYI();
     case ARM64_INS_SMULL:
+      if (opcode == Opcode::AArch64_SMADDLrrr) {
+        operandCount = 4;
+        operands[3].type = ARM64_OP_REG;
+        operands[3].access = CS_AC_READ;
+        operands[3].reg = ARM64_REG_XZR;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_SXTB:
       return aliasNYI();
