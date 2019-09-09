@@ -416,6 +416,114 @@ TEST_P(InstNeon, movi) {
   EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(5)), 0u);
 }
 
+TEST_P(InstNeon, mvni) {
+  // 16-bit
+  RUN_AARCH64(R"(
+    mvni v0.8h, 42
+    mvni v1.8h, 42, lsl #8
+    mvni v3.4h, 42
+    mvni v4.4h, 42, lsl #8
+  )");
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 0>(0)),
+            static_cast<uint16_t>(~42));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 1>(0)),
+            static_cast<uint16_t>(~42));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 2>(0)),
+            static_cast<uint16_t>(~42));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 3>(0)),
+            static_cast<uint16_t>(~42));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 4>(0)),
+            static_cast<uint16_t>(~42));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 5>(0)),
+            static_cast<uint16_t>(~42));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 6>(0)),
+            static_cast<uint16_t>(~42));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 7>(0)),
+            static_cast<uint16_t>(~42));
+
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 0>(1)),
+            static_cast<uint16_t>(~(42u << 8)));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 1>(1)),
+            static_cast<uint16_t>(~(42u << 8)));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 2>(1)),
+            static_cast<uint16_t>(~(42u << 8)));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 3>(1)),
+            static_cast<uint16_t>(~(42u << 8)));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 4>(1)),
+            static_cast<uint16_t>(~(42u << 8)));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 5>(1)),
+            static_cast<uint16_t>(~(42u << 8)));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 6>(1)),
+            static_cast<uint16_t>(~(42u << 8)));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 7>(1)),
+            static_cast<uint16_t>(~(42u << 8)));
+
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 0>(3)),
+            static_cast<uint16_t>(~42u));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 1>(3)),
+            static_cast<uint16_t>(~42u));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 2>(3)),
+            static_cast<uint16_t>(~42u));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 3>(3)),
+            static_cast<uint16_t>(~42u));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 4>(3)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 5>(3)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 6>(3)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 7>(3)), 0u);
+
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 0>(4)),
+            static_cast<uint16_t>(~(42u << 8)));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 1>(4)),
+            static_cast<uint16_t>(~(42u << 8)));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 2>(4)),
+            static_cast<uint16_t>(~(42u << 8)));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 3>(4)),
+            static_cast<uint16_t>(~(42u << 8)));
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 4>(4)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 5>(4)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 6>(4)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint16_t, 7>(4)), 0u);
+
+  // 32-bit
+  RUN_AARCH64(R"(
+    mvni v0.4s, 42
+    mvni v1.4s, 42, lsl #8
+    mvni v2.4s, 3, lsl #24
+    mvni v3.2s, 42
+    mvni v4.2s, 42, lsl #8
+    mvni v5.2s, 3, lsl #24
+  )");
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(0)), ~42u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(0)), ~42u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(0)), ~42u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(0)), ~42u);
+
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(1)), ~(42u << 8));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(1)), ~(42u << 8));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(1)), ~(42u << 8));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(1)), ~(42u << 8));
+
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(2)), ~(3u << 24));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(2)), ~(3u << 24));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(2)), ~(3u << 24));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(2)), ~(3u << 24));
+
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(3)), ~42u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(3)), ~42u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(3)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(3)), 0u);
+
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(4)), ~(42u << 8));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(4)), ~(42u << 8));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(4)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(4)), 0u);
+
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(5)), ~(3u << 24));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(5)), ~(3u << 24));
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(5)), 0u);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 3>(5)), 0u);
+}
+
 TEST_P(InstNeon, orr) {
   initialHeapData_.resize(32);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());

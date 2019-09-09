@@ -1423,6 +1423,38 @@ void Instruction::execute() {
       results[0] = a - (x * y);
       return;
     }
+    case Opcode::AArch64_MVNIv2i32: {  // mvni vd.2s, #imm{, lsl #shift}
+      uint32_t bits = ~shiftValue(
+          static_cast<uint32_t>(metadata.operands[1].imm),
+          metadata.operands[1].shift.type, metadata.operands[1].shift.value);
+      uint32_t vector[4] = {bits, bits, 0, 0};
+      results[0] = vector;
+      return;
+    }
+    case Opcode::AArch64_MVNIv4i16: {  // mvni vd.4h, #imm{, lsl #shift}
+      uint16_t bits = ~shiftValue(
+          static_cast<uint16_t>(metadata.operands[1].imm),
+          metadata.operands[1].shift.type, metadata.operands[1].shift.value);
+      uint16_t vector[8] = {bits, bits, bits, bits, 0, 0, 0, 0};
+      results[0] = vector;
+      return;
+    }
+    case Opcode::AArch64_MVNIv4i32: {  // mvni vd.4s, #imm{, lsl #shift}
+      uint32_t bits = ~shiftValue(
+          static_cast<uint32_t>(metadata.operands[1].imm),
+          metadata.operands[1].shift.type, metadata.operands[1].shift.value);
+      uint32_t vector[4] = {bits, bits, bits, bits};
+      results[0] = vector;
+      return;
+    }
+    case Opcode::AArch64_MVNIv8i16: {  // mvni vd.8h, #imm{, lsl #shift}
+      uint16_t bits = ~shiftValue(
+          static_cast<uint16_t>(metadata.operands[1].imm),
+          metadata.operands[1].shift.type, metadata.operands[1].shift.value);
+      uint16_t vector[8] = {bits, bits, bits, bits, bits, bits, bits, bits};
+      results[0] = vector;
+      return;
+    }
     case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
       // TODO: Observe hints
       return;
