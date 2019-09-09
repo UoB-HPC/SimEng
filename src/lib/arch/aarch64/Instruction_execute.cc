@@ -1357,7 +1357,7 @@ void Instruction::execute() {
     case Opcode::AArch64_MOVKXi: {  // movk xd, #imm
       // Clear 16-bit region offset by `shift` and replace with immediate
       uint8_t shift = metadata.operands[1].shift.value;
-      uint64_t mask = ~(0xFFFF << shift);
+      uint64_t mask = ~(UINT64_C(0xFFFF) << shift);
       uint64_t value = (operands[0].get<uint64_t>() & mask) |
                        (metadata.operands[1].imm << shift);
       results[0] = value;

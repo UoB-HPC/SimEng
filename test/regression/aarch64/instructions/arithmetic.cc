@@ -22,6 +22,38 @@ TEST_P(InstArithmetic, add) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), (5u << 12));
 }
 
+TEST_P(InstArithmetic, movk) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    sub w0, w0, #1
+    mov w1, w0
+
+    movk w0, #0
+    movk w1, #0, lsl 16
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(0), 0xFFFF0000);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0x0000FFFF);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    sub x0, x0, #1
+    mov x1, x0
+    mov x2, x0
+    mov x3, x0
+
+    movk x0, #0
+    movk x1, #0, lsl 16
+    movk x2, #0, lsl 32
+    movk x3, #0, lsl 48
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0xFFFFFFFFFFFF0000);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0xFFFFFFFF0000FFFF);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0xFFFF0000FFFFFFFF);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x0000FFFFFFFFFFFF);
+}
+
 TEST_P(InstArithmetic, sbc) {
   // 32-bit
   RUN_AARCH64(R"(
