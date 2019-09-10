@@ -157,6 +157,7 @@ void DispatchIssueUnit::purgeFlushed() {
         it = queue.erase(it);
         assert(rsSize_ > 0);
         rsSize_--;
+        portAllocator_.deallocate(i);
       } else {
         it++;
       }
