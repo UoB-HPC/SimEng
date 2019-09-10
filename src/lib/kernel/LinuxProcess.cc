@@ -79,17 +79,21 @@ void LinuxProcess::createStack() {
   // Decrement the stack pointer and populate with initial stack state
   // (https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html)
 
-  // TODO: allow defining process arguments
+  uint64_t initialStackFrame[] = {
+      // Program arguments
+      // TODO: allow defining program arguments
+      0,  // argc
+      0,  // argv null terminator
 
-  uint64_t initialStackFrame[] = {// argc, 0
-                                  0,
-                                  // argv null terminator
-                                  0,
-                                  // no environment pointers (envp)
-                                  // environment pointers null terminator
-                                  0,
-                                  // ELF auxillary data end-of-table
-                                  0};
+      // Environment variable pointers (envp)
+      // TODO: pass environment variables to program
+      0,  // null terminator
+
+      // ELF auxillary vector, keys defined in `uapi/linux/auxvec.h`
+      // TODO: populate remaining auxillary vector entries
+      6, 4096,  // AT_PAGESZ -> 4KB
+      0         // null terminator
+  };
 
   size_t stackFrameSize = sizeof(initialStackFrame);
 
