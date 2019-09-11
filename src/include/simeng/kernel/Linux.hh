@@ -7,6 +7,12 @@
 namespace simeng {
 namespace kernel {
 
+/** Fixed-width definition of `timeval` (from `<sys/time.h>`). */
+struct timeval {
+  int64_t tv_sec;   // seconds
+  int64_t tv_usec;  // microseconds
+};
+
 /** A state container for a Linux process. */
 struct LinuxProcessState {
   /** The process ID. */
@@ -65,6 +71,12 @@ class Linux {
   int64_t getgid() const;
   /** getegid syscall: get the process owner's effective group ID. */
   int64_t getegid() const;
+
+  /** gettimeofday syscall: get the current time, using the system timer
+   * `systemTimer` (with nanosecond accuracy). Returns 0 on success, and puts
+   * the seconds and microsconds elapsed since the Epoch in `tv`, while setting
+   * the elements of `tz` to 0. */
+  int64_t gettimeofday(uint64_t systemTimer, timeval* tv, timeval* tz);
 
   /** ioctl syscall: control device. */
   int64_t ioctl(int64_t fd, uint64_t request, std::vector<char>& out);
