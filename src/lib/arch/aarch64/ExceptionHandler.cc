@@ -144,7 +144,7 @@ bool ExceptionHandler::init() {
             65;  // Reserved length of each string field in Linux
         const char sysname[] = "Linux";
         const char nodename[] = "simeng.hpc.cs.bris.ac.uk";
-        const char release[] = "0.0.0";
+        const char release[] = "4.14.0";
         const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019";
         const char machine[] = "aarch64";
 
