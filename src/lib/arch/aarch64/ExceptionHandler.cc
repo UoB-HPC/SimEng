@@ -160,6 +160,26 @@ bool ExceptionHandler::init() {
                         RegisterValue(machine)}};
         break;
       }
+      case 169: {  // gettimeofday
+        uint64_t tvPtr = registerFileSet.get(R0).get<uint64_t>();
+        uint64_t tzPtr = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t systemTimer = core.getSystemTimer();
+
+        kernel::timeval tv;
+        kernel::timeval tz;
+        int64_t retval = linux_.gettimeofday(systemTimer, tvPtr ? &tv : nullptr,
+                                             tzPtr ? &tz : nullptr);
+        stateChange = {{R0}, {retval}};
+        if (tvPtr) {
+          stateChange.memoryAddresses.push_back({tvPtr, 16});
+          stateChange.memoryAddressValues.push_back(tv);
+        }
+        if (tzPtr) {
+          stateChange.memoryAddresses.push_back({tzPtr, 16});
+          stateChange.memoryAddressValues.push_back(tz);
+        }
+        break;
+      }
       case 174:  // getuid
         stateChange = {{R0}, {linux_.getuid()}};
         break;
