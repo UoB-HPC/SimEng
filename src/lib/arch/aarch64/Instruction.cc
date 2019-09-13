@@ -22,7 +22,7 @@ Instruction::Instruction(const InstructionMetadata& metadata, uint8_t latency,
   decode();
 }
 
-InstructionException Instruction::getException() const { return exception; }
+InstructionException Instruction::getException() const { return exception_; }
 
 void Instruction::setSourceRegisters(const std::vector<Register>& registers) {
   assert(registers.size() <= MAX_SOURCE_REGISTERS &&
@@ -85,7 +85,7 @@ void Instruction::supplyData(uint64_t address, const RegisterValue& data) {
         // Raise exception for failed read
         // TODO: Move this logic to caller and distinguish between different
         // memory faults (e.g. bus error, page fault, seg fault)
-        exception = InstructionException::DataAbort;
+        exception_ = InstructionException::DataAbort;
         exceptionEncountered_ = true;
         memoryData[i] = RegisterValue(0, memoryAddresses[i].size);
       } else {

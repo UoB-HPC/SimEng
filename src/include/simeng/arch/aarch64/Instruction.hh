@@ -154,7 +154,7 @@ class Instruction : public simeng::Instruction {
   std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results;
 
   /** The current exception state of this instruction. */
-  InstructionException exception = InstructionException::None;
+  InstructionException exception_ = InstructionException::None;
 
   // Decoding
   /** Process the instruction's metadata to determine source/destination

@@ -185,7 +185,7 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
 
 void Instruction::executionNYI() {
   exceptionEncountered_ = true;
-  exception = InstructionException::ExecutionNotYetImplemented;
+  exception_ = InstructionException::ExecutionNotYetImplemented;
   return;
 }
 
@@ -2057,7 +2057,7 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_SVC: {  // svc #imm
       exceptionEncountered_ = true;
-      exception = InstructionException::SupervisorCall;
+      exception_ = InstructionException::SupervisorCall;
       return;
     }
     case Opcode::AArch64_TBNZW: {  // tbnz wn, #imm, label

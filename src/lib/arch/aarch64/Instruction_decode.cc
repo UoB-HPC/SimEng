@@ -111,7 +111,7 @@ const Register& filterZR(const Register& reg) {
  *****************/
 void Instruction::decode() {
   if (metadata.id == ARM64_INS_INVALID) {
-    exception = InstructionException::EncodingUnallocated;
+    exception_ = InstructionException::EncodingUnallocated;
     exceptionEncountered_ = true;
     return;
   }
@@ -219,11 +219,11 @@ void Instruction::decode() {
 
 void Instruction::nyi() {
   exceptionEncountered_ = true;
-  exception = InstructionException::EncodingNotYetImplemented;
+  exception_ = InstructionException::EncodingNotYetImplemented;
 }
 void Instruction::unallocated() {
   exceptionEncountered_ = true;
-  exception = InstructionException::EncodingUnallocated;
+  exception_ = InstructionException::EncodingUnallocated;
 }
 
 }  // namespace aarch64
