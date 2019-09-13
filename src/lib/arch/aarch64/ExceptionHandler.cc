@@ -343,6 +343,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
     case InstructionException::ExecutionNotYetImplemented:
       std::cout << "execution not-yet-implemented";
       break;
+    case InstructionException::MisalignedPC:
+      std::cout << "misaligned program counter";
+      break;
     case InstructionException::DataAbort:
       std::cout << "data abort";
       break;

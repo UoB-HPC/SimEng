@@ -22,6 +22,13 @@ Instruction::Instruction(const InstructionMetadata& metadata, uint8_t latency,
   decode();
 }
 
+Instruction::Instruction(const InstructionMetadata& metadata,
+                         InstructionException exception)
+    : metadata(metadata) {
+  exception_ = exception;
+  exceptionEncountered_ = true;
+}
+
 InstructionException Instruction::getException() const { return exception_; }
 
 void Instruction::setSourceRegisters(const std::vector<Register>& registers) {

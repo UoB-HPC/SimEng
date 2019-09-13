@@ -27,6 +27,21 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
                                 BranchPrediction prediction,
                                 MacroOp& output) const {
+  // Check that instruction address is 4-byte aligned as required by Armv8
+  if (instructionAddress & 0x3) {
+    // Consume 1-byte and raise a misaligned PC exception
+    auto metadata = InstructionMetadata((uint8_t*)ptr, 1);
+    metadataCache.emplace_front(metadata);
+    output.resize(1);
+    auto& uop = output[0];
+    uop = std::make_shared<Instruction>(metadataCache.front(),
+                                        InstructionException::MisalignedPC);
+    uop->setInstructionAddress(instructionAddress);
+    uop->setBranchPrediction(prediction);
+    // Return non-zero value to avoid fatal error
+    return 1;
+  }
+
   assert(bytesAvailable >= 4 &&
          "Fewer than 4 bytes supplied to AArch64 decoder");
 
