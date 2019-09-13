@@ -1,5 +1,6 @@
 #include "InstructionMetadata.hh"
 
+#include <cassert>
 #include <cstring>
 
 namespace simeng {
@@ -87,7 +88,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
   revertAliasing();
 }
 
-InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding)
+InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
+                                         uint8_t bytes)
     : id(ARM64_INS_INVALID),
       opcode(Opcode::AArch64_INSTRUCTION_LIST_END),
       implicitSourceCount(0),
@@ -96,7 +98,8 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding)
       setsFlags(false),
       writeback(false),
       operandCount(0) {
-  std::memcpy(encoding, invalidEncoding, sizeof(encoding));
+  assert(bytes <= sizeof(encoding));
+  std::memcpy(encoding, invalidEncoding, bytes);
   mnemonic[0] = '\0';
   operandStr[0] = '\0';
 }

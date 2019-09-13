@@ -20,7 +20,7 @@ struct InstructionMetadata {
   InstructionMetadata(const cs_insn& insn);
 
   /** Constructs an invalid metadata object containing the invalid encoding. */
-  InstructionMetadata(const uint8_t* invalidEncoding);
+  InstructionMetadata(const uint8_t* invalidEncoding, uint8_t bytes = 4);
 
   static const size_t MAX_OPERAND_STR_LENGTH =
       sizeof(cs_insn::op_str) / sizeof(char);

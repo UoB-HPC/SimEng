@@ -37,6 +37,7 @@ enum class InstructionException {
   EncodingUnallocated,
   EncodingNotYetImplemented,
   ExecutionNotYetImplemented,
+  MisalignedPC,
   DataAbort,
   SupervisorCall,
   HypervisorCall,
@@ -50,6 +51,10 @@ class Instruction : public simeng::Instruction {
    */
   Instruction(const InstructionMetadata& metadata, uint8_t latency,
               uint8_t stallCycles);
+
+  /** Construct an instruction instance that raises an exception. */
+  Instruction(const InstructionMetadata& metadata,
+              InstructionException exception);
 
   /** Retrieve the identifier for the first exception that occurred during
    * processing this instruction. */
