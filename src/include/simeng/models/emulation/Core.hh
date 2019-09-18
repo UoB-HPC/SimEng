@@ -96,6 +96,9 @@ class Core : public simeng::Core {
 
   /** The number of instructions executed. */
   uint64_t instructionsExecuted_ = 0;
+
+  /** The number of branches executed. */
+  uint64_t branchesExecuted_ = 0;
 };
 
 }  // namespace emulation

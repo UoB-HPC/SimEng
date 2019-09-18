@@ -139,6 +139,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     }
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
+    branchesExecuted_++;
   }
 
   // Writeback
@@ -219,7 +220,9 @@ uint64_t Core::getSystemTimer() const {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  return {{"instructions", std::to_string(instructionsExecuted_)}};
+  return {{"instructions", std::to_string(instructionsExecuted_)},
+          {"branch.executed", std::to_string(branchesExecuted_)}};
+
 };
 
 }  // namespace emulation
