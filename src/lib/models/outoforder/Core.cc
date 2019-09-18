@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <sstream>
+#include <ios>
+#include <iomanip>
 
 // Temporary; until config options are available
 #include "simeng/arch/aarch64/Instruction.hh"
@@ -302,6 +305,8 @@ uint64_t Core::getSystemTimer() const {
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = reorderBuffer_.getInstructionsCommittedCount();
   auto ipc = retired / static_cast<float>(ticks_);
+  std::ostringstream ipcStr;
+  ipcStr << std::setprecision(2) << ipc;
 
   auto branchStalls = fetchUnit_.getBranchStalls();
 
@@ -326,10 +331,12 @@ std::map<std::string, std::string> Core::getStats() const {
     totalBranchMispredicts += eu.getBranchMispredictedCount();
   }
   auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) / static_cast<float>(totalBranchesExecuted);
+  std::ostringstream branchMissRateStr;
+  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
-          {"ipc", std::to_string(ipc)},
+          {"ipc", ipcStr.str()},
           {"flushes", std::to_string(flushes_)},
           {"fetch.branchStalls", std::to_string(branchStalls)},
           {"decode.earlyFlushes", std::to_string(earlyFlushes)},
@@ -343,7 +350,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"issue.portBusyStalls", std::to_string(portBusyStalls)},
           {"branch.executed", std::to_string(totalBranchesExecuted)},
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", std::to_string(branchMissRate)}};
+          {"branch.missrate", branchMissRateStr.str()}};
 }
 
 }  // namespace outoforder
