@@ -148,9 +148,12 @@ void ExecuteUnit::purgeFlushed() {
   }
 }
 
-uint64_t ExecuteUnit::getBranchExecutedCount() const { return branchesExecuted_; }
-uint64_t ExecuteUnit::getBranchMispredictedCount() const { return branchMispredicts_; }
-
+uint64_t ExecuteUnit::getBranchExecutedCount() const {
+  return branchesExecuted_;
+}
+uint64_t ExecuteUnit::getBranchMispredictedCount() const {
+  return branchMispredicts_;
+}
 
 }  // namespace pipeline
 }  // namespace simeng

@@ -1,11 +1,11 @@
 #include "simeng/models/outoforder/Core.hh"
 
 #include <algorithm>
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <ios>
 #include <iomanip>
+#include <ios>
+#include <iostream>
+#include <sstream>
+#include <string>
 
 // Temporary; until config options are available
 #include "simeng/arch/aarch64/Instruction.hh"
@@ -330,7 +330,8 @@ std::map<std::string, std::string> Core::getStats() const {
     totalBranchesExecuted += eu.getBranchExecutedCount();
     totalBranchMispredicts += eu.getBranchMispredictedCount();
   }
-  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) / static_cast<float>(totalBranchesExecuted);
+  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
+                        static_cast<float>(totalBranchesExecuted);
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 

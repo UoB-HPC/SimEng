@@ -1,9 +1,9 @@
 #include "simeng/models/inorder/Core.hh"
 
-#include <string>
-#include <sstream>
-#include <ios>
 #include <iomanip>
+#include <ios>
+#include <sstream>
+#include <string>
 
 namespace simeng {
 namespace models {
@@ -145,7 +145,8 @@ std::map<std::string, std::string> Core::getStats() const {
   uint64_t totalBranchMispredicts = 0;
   totalBranchesExecuted += executeUnit_.getBranchExecutedCount();
   totalBranchMispredicts += executeUnit_.getBranchMispredictedCount();
-  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) / static_cast<float>(totalBranchesExecuted);
+  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
+                        static_cast<float>(totalBranchesExecuted);
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
 

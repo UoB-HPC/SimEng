@@ -61,7 +61,6 @@ class ExecuteUnit {
   /** Retrieve the number of branch mispredictions. */
   uint64_t getBranchMispredictedCount() const;
 
-
  private:
   /** Execute the supplied uop, write it into the output buffer, and forward
    * results back to dispatch/issue. */
