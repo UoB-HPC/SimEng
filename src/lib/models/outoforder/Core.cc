@@ -317,6 +317,16 @@ std::map<std::string, std::string> Core::getStats() const {
   auto backendStalls = dispatchIssueUnit_.getBackendStalls();
   auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
 
+  uint64_t totalBranchesExecuted = 0;
+  uint64_t totalBranchMispredicts = 0;
+
+  // Sum up the branch stats reported across the execution units.
+  for (auto& eu : executionUnits_) {
+    totalBranchesExecuted += eu.getBranchExecutedCount();
+    totalBranchMispredicts += eu.getBranchMispredictedCount();
+  }
+  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) / static_cast<float>(totalBranchesExecuted);
+
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
           {"ipc", std::to_string(ipc)},
@@ -330,7 +340,10 @@ std::map<std::string, std::string> Core::getStats() const {
           {"dispatch.rsStalls", std::to_string(rsStalls)},
           {"issue.frontendStalls", std::to_string(frontendStalls)},
           {"issue.backendStalls", std::to_string(backendStalls)},
-          {"issue.portBusyStalls", std::to_string(portBusyStalls)}};
+          {"issue.portBusyStalls", std::to_string(portBusyStalls)},
+          {"branch.executed", std::to_string(totalBranchesExecuted)},
+          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+          {"branch.missrate", std::to_string(branchMissRate)}};
 }
 
 }  // namespace outoforder
