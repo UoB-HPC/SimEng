@@ -40,9 +40,6 @@ void ExecuteUnit::tick() {
           // Pipeline is empty and insn will execute this cycle; bypass
           execute(uop);
         } else {
-          // Add insn to pipeline
-          pipeline_.push_back({uop, tickCounter_ + latency - 1});
-
           // This instruction may take more than a single cycle; check for a
           // stall. For unpipelined units, the unit will stall for the full
           // instruction duration.
@@ -52,6 +49,10 @@ void ExecuteUnit::tick() {
             stallUntil_ = tickCounter_ + stallCycles - 1;
             input_.stall(true);
           }
+
+          // Add insn to pipeline
+          pipeline_.push_back({nullptr, tickCounter_ + latency - 1});
+          pipeline_.back().insn = std::move(uop);
         }
       }
       input_.getHeadSlots()[0] = nullptr;
@@ -114,7 +115,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   // Operand forwarding; allows a dependent uop to execute next cycle
   forwardOperands_(uop->getDestinationRegisters(), uop->getResults());
 
-  output_.getTailSlots()[0] = uop;
+  output_.getTailSlots()[0] = std::move(uop);
 }
 
 bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }

@@ -183,10 +183,11 @@ void LoadStoreQueue::tick() {
   size_t count = 0;
   while (completedLoads_.size() > 0 && count < completionSlots_.size()) {
     const auto& insn = completedLoads_.front();
-    completionSlots_[count].getTailSlots()[0] = insn;
 
     // Forward the results
     forwardOperands_(insn->getDestinationRegisters(), insn->getResults());
+
+    completionSlots_[count].getTailSlots()[0] = std::move(insn);
 
     completedLoads_.pop();
 

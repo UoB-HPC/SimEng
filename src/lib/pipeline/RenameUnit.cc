@@ -103,8 +103,7 @@ void RenameUnit::tick() {
       lsq_.addStore(uop);
     }
 
-    output_.getTailSlots()[slot] = uop;
-    input_.getHeadSlots()[slot] = nullptr;
+    output_.getTailSlots()[slot] = std::move(uop);
   }
 }
 
