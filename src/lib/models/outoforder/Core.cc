@@ -1,7 +1,10 @@
 #include "simeng/models/outoforder/Core.hh"
 
 #include <algorithm>
+#include <iomanip>
+#include <ios>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 // Temporary; until config options are available
@@ -302,6 +305,8 @@ uint64_t Core::getSystemTimer() const {
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = reorderBuffer_.getInstructionsCommittedCount();
   auto ipc = retired / static_cast<float>(ticks_);
+  std::ostringstream ipcStr;
+  ipcStr << std::setprecision(2) << ipc;
 
   auto branchStalls = fetchUnit_.getBranchStalls();
 
@@ -317,9 +322,22 @@ std::map<std::string, std::string> Core::getStats() const {
   auto backendStalls = dispatchIssueUnit_.getBackendStalls();
   auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
 
+  uint64_t totalBranchesExecuted = 0;
+  uint64_t totalBranchMispredicts = 0;
+
+  // Sum up the branch stats reported across the execution units.
+  for (auto& eu : executionUnits_) {
+    totalBranchesExecuted += eu.getBranchExecutedCount();
+    totalBranchMispredicts += eu.getBranchMispredictedCount();
+  }
+  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
+                        static_cast<float>(totalBranchesExecuted);
+  std::ostringstream branchMissRateStr;
+  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
+
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
-          {"ipc", std::to_string(ipc)},
+          {"ipc", ipcStr.str()},
           {"flushes", std::to_string(flushes_)},
           {"fetch.branchStalls", std::to_string(branchStalls)},
           {"decode.earlyFlushes", std::to_string(earlyFlushes)},
@@ -330,7 +348,10 @@ std::map<std::string, std::string> Core::getStats() const {
           {"dispatch.rsStalls", std::to_string(rsStalls)},
           {"issue.frontendStalls", std::to_string(frontendStalls)},
           {"issue.backendStalls", std::to_string(backendStalls)},
-          {"issue.portBusyStalls", std::to_string(portBusyStalls)}};
+          {"issue.portBusyStalls", std::to_string(portBusyStalls)},
+          {"branch.executed", std::to_string(totalBranchesExecuted)},
+          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+          {"branch.missrate", branchMissRateStr.str()}};
 }
 
 }  // namespace outoforder

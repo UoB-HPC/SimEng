@@ -55,6 +55,12 @@ class ExecuteUnit {
    * stall, if applicable. */
   void purgeFlushed();
 
+  /** Retrieve the number of branch instructions that have been executed. */
+  uint64_t getBranchExecutedCount() const;
+
+  /** Retrieve the number of branch mispredictions. */
+  uint64_t getBranchMispredictedCount() const;
+
  private:
   /** Execute the supplied uop, write it into the output buffer, and forward
    * results back to dispatch/issue. */
@@ -71,7 +77,7 @@ class ExecuteUnit {
 
   /** A function handle called after generating the addresses for a load. */
   std::function<void(const std::shared_ptr<Instruction>&)> handleLoad_;
-  /** A function handle called after aquiring the data for a store. */
+  /** A function handle called after acquiring the data for a store. */
   std::function<void(const std::shared_ptr<Instruction>&)> handleStore_;
 
   /** A function handle called upon exception generation. */
@@ -106,6 +112,12 @@ class ExecuteUnit {
 
   /** The cycle this unit will become unstalled. */
   uint64_t stallUntil_ = 0;
+
+  /** The number of branch instructions that were executed. */
+  uint64_t branchesExecuted_ = 0;
+
+  /** The number of branch mispredictions that were observed. */
+  uint64_t branchMispredicts_ = 0;
 };
 
 }  // namespace pipeline

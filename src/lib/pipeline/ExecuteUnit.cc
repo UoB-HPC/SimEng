@@ -105,10 +105,15 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     // Update branch predictor with branch results
     predictor_.update(uop->getInstructionAddress(), uop->wasBranchTaken(), pc_);
 
+    // Update the branch instruction counter
+    branchesExecuted_++;
+
     if (uop->wasBranchMispredicted()) {
       // Misprediction; flush the pipeline
       shouldFlush_ = true;
       flushAfter_ = uop->getSequenceId();
+      // Update the branch misprediction counter
+      branchMispredicts_++;
     }
   }
 
@@ -142,6 +147,13 @@ void ExecuteUnit::purgeFlushed() {
       it++;
     }
   }
+}
+
+uint64_t ExecuteUnit::getBranchExecutedCount() const {
+  return branchesExecuted_;
+}
+uint64_t ExecuteUnit::getBranchMispredictedCount() const {
+  return branchMispredicts_;
 }
 
 }  // namespace pipeline

@@ -1,5 +1,8 @@
 #include "simeng/models/inorder/Core.hh"
 
+#include <iomanip>
+#include <ios>
+#include <sstream>
 #include <string>
 
 namespace simeng {
@@ -134,10 +137,26 @@ uint64_t Core::getSystemTimer() const {
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = writebackUnit_.getInstructionsWrittenCount();
   auto ipc = retired / static_cast<float>(ticks_);
+  std::ostringstream ipcStr;
+  ipcStr << std::setprecision(2) << ipc;
+
+  // Sum up the branch stats reported across the execution units.
+  uint64_t totalBranchesExecuted = 0;
+  uint64_t totalBranchMispredicts = 0;
+  totalBranchesExecuted += executeUnit_.getBranchExecutedCount();
+  totalBranchMispredicts += executeUnit_.getBranchMispredictedCount();
+  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
+                        static_cast<float>(totalBranchesExecuted);
+  std::ostringstream branchMissRateStr;
+  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
+
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
-          {"ipc", std::to_string(ipc)},
-          {"flushes", std::to_string(flushes_)}};
+          {"ipc", ipcStr.str()},
+          {"flushes", std::to_string(flushes_)},
+          {"branch.executed", std::to_string(totalBranchesExecuted)},
+          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+          {"branch.missrate", branchMissRateStr.str()}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
