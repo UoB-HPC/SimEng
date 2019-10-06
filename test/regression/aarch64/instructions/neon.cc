@@ -33,11 +33,75 @@ TEST_P(InstNeon, bsl) {
 
 TEST_P(InstNeon, dup) {
   initialHeapData_.resize(32);
-  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
-  heap[0] = 42;
-  heap[1] = 1ul << 63;
-  heap[2] = -1;
-  heap[3] = 7;
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap32[0] = 42;
+  heap32[1] = (1u << 31);
+  heap32[2] = UINT32_MAX;
+  heap32[3] = 7;
+  heap32[4] = 1;
+  heap32[5] = (1u << 31) - 1;
+  heap32[6] = 0;
+  heap32[7] = 0xDEADBEEF;
+
+  // 32-bit vector lane to scalar
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    dup s2, v0.s[0]
+    dup s3, v0.s[1]
+    dup s4, v0.s[2]
+    dup s5, v0.s[3]
+
+    # Check mov alias works as well
+    mov s6, v1.s[0]
+    mov s7, v1.s[1]
+    mov s8, v1.s[2]
+    mov s9, v1.s[3]
+  )");
+  CHECK_NEON(2, uint32_t, {42, 0, 0, 0});
+  CHECK_NEON(3, uint32_t, {(1u << 31), 0, 0, 0});
+  CHECK_NEON(4, uint32_t, {UINT32_MAX, 0, 0, 0});
+  CHECK_NEON(5, uint32_t, {7, 0, 0, 0});
+  CHECK_NEON(6, uint32_t, {1, 0, 0, 0});
+  CHECK_NEON(7, uint32_t, {(1u << 31) - 1, 0, 0, 0});
+  CHECK_NEON(8, uint32_t, {0, 0, 0, 0});
+  CHECK_NEON(9, uint32_t, {0xDEADBEEF, 0, 0, 0});
+
+  // 32-bit scalar to vector
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr w1, [x0]
+    ldr w2, [x0, #4]
+    ldr q0, [x0, #16]
+    dup v2.4s, w1
+    dup v3.4s, w2
+    dup v4.4s, v0.s[0]
+    dup v5.4s, v0.s[1]
+    dup v6.4s, v0.s[2]
+    dup v7.4s, v0.s[3]
+  )");
+  CHECK_NEON(2, uint32_t, {42, 42, 42, 42});
+  CHECK_NEON(3, uint32_t, {(1u << 31), (1u << 31), (1u << 31), (1u << 31)});
+  CHECK_NEON(4, uint32_t, {1, 1, 1, 1});
+  CHECK_NEON(5, uint32_t,
+             {(1u << 31) - 1, (1u << 31) - 1, (1u << 31) - 1, (1u << 31) - 1});
+  CHECK_NEON(6, uint32_t, {0, 0, 0, 0});
+  CHECK_NEON(7, uint32_t, {0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF});
+
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 42;
+  heap64[1] = 1ul << 63;
+  heap64[2] = UINT64_MAX;
+  heap64[3] = 7;
 
   // 64-bit vector lane to scalar
   RUN_AARCH64(R"(

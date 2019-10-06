@@ -541,6 +541,12 @@ void Instruction::execute() {
       results[0] = i;
       return;
     }
+    case Opcode::AArch64_CPYi32: {  // dup vd, vn.s[index]
+      const uint32_t* vec = operands[0].getAsVector<uint32_t>();
+      uint32_t out[4] = {vec[metadata.operands[1].vector_index], 0, 0, 0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_CPYi64: {  // dup vd, vn.d[index]
       const uint64_t* vec = operands[0].getAsVector<uint64_t>();
       uint64_t out[2] = {vec[metadata.operands[1].vector_index], 0};
@@ -627,6 +633,20 @@ void Instruction::execute() {
       int index = metadata.operands[1].vector_index;
       uint64_t element = operands[0].getAsVector<uint64_t>()[index];
       uint64_t out[2];
+      std::fill(std::begin(out), std::end(out), element);
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_DUPv4i32gpr: {  // dup vd.4s, wn
+      uint32_t out[4];
+      std::fill(std::begin(out), std::end(out), operands[0].get<uint32_t>());
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_DUPv4i32lane: {  // dup vd.4s, vn.s[index]
+      int index = metadata.operands[1].vector_index;
+      uint32_t element = operands[0].getAsVector<uint32_t>()[index];
+      uint32_t out[4];
       std::fill(std::begin(out), std::end(out), element);
       results[0] = out;
       return;
