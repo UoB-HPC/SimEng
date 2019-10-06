@@ -15,18 +15,9 @@ TEST_P(InstFloat, fabs) {
     fabs s4, s1
     fabs s5, s2
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 2.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 0.125f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 12.5f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(5)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(5)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(5)), 0.f);
+  CHECK_NEON(3, float, {2.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {0.125f, 0.f, 0.f, 0.f});
+  CHECK_NEON(5, float, {12.5f, 0.f, 0.f, 0.f});
 
   RUN_AARCH64(R"(
     fmov d0, 2.0
@@ -36,12 +27,9 @@ TEST_P(InstFloat, fabs) {
     fabs d4, d1
     fabs d5, d2
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 2.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 0.125);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)), 12.5);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(5)), 0.0);
+  CHECK_NEON(3, double, {2.0, 0.f});
+  CHECK_NEON(4, double, {0.125, 0.f});
+  CHECK_NEON(5, double, {12.5, 0.f});
 }
 
 TEST_P(InstFloat, fadd) {
@@ -53,14 +41,8 @@ TEST_P(InstFloat, fadd) {
     fadd s3, s0, s1
     fadd s4, s0, s2
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 0.875f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 8.5f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+  CHECK_NEON(3, float, {0.875f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {8.5f, 0.f, 0.f, 0.f});
 
   // 64-bit
   RUN_AARCH64(R"(
@@ -70,10 +52,8 @@ TEST_P(InstFloat, fadd) {
     fadd d3, d0, d1
     fadd d4, d0, d2
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 0.875);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 8.5);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+  CHECK_NEON(3, double, {0.875f, 0.f});
+  CHECK_NEON(4, double, {8.5f, 0.f});
 }
 
 TEST_P(InstFloat, fccmp) {
@@ -247,9 +227,9 @@ TEST_P(InstFloat, fcsel32) {
     fcsel s4, s2, s1, lo
     fcsel s5, s2, s1, gt
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 5.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 1.25f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 1.25f);
+  CHECK_NEON(3, float, {5.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {1.25f, 0.f, 0.f, 0.f});
+  CHECK_NEON(5, float, {1.25f, 0.f, 0.f, 0.f});
 
   // 1.25 > -1.25
   RUN_AARCH64(R"(
@@ -261,9 +241,9 @@ TEST_P(InstFloat, fcsel32) {
     fcsel s4, s2, s1, lo
     fcsel s5, s2, s1, gt
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), -1.25f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), -1.25f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 5.f);
+  CHECK_NEON(3, float, {-1.25f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {-1.25f, 0.f, 0.f, 0.f});
+  CHECK_NEON(5, float, {5.f, 0.f, 0.f, 0.f});
 
   // 1.25 < 10.5
   RUN_AARCH64(R"(
@@ -275,9 +255,9 @@ TEST_P(InstFloat, fcsel32) {
     fcsel s4, s2, s1, lo
     fcsel s5, s2, s1, gt
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 10.5f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 5.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 10.5f);
+  CHECK_NEON(3, float, {10.5f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {5.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(5, float, {10.5f, 0.f, 0.f, 0.f});
 
   // 1.0 vs NaN
   initialHeapData_.resize(8);
@@ -296,9 +276,9 @@ TEST_P(InstFloat, fcsel32) {
     fcsel s4, s2, s0, lo
     fcsel s5, s2, s0, gt
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 1.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 1.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 1.f);
+  CHECK_NEON(3, float, {1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(5, float, {1.f, 0.f, 0.f, 0.f});
 }
 
 TEST_P(InstFloat, fcsel64) {
@@ -312,9 +292,9 @@ TEST_P(InstFloat, fcsel64) {
     fcsel d4, d2, d1, lo
     fcsel d5, d2, d1, gt
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 5.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 1.25);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)), 1.25);
+  CHECK_NEON(3, double, {5.0, 0.0});
+  CHECK_NEON(4, double, {1.25, 0.0});
+  CHECK_NEON(5, double, {1.25, 0.0});
 
   // 1.25 > -1.25
   RUN_AARCH64(R"(
@@ -326,9 +306,9 @@ TEST_P(InstFloat, fcsel64) {
     fcsel d4, d2, d1, lo
     fcsel d5, d2, d1, gt
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), -1.25);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), -1.25);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)), 5.0);
+  CHECK_NEON(3, double, {-1.25, 0.0});
+  CHECK_NEON(4, double, {-1.25, 0.0});
+  CHECK_NEON(5, double, {5.0, 0.0});
 
   // 1.25 < 10.5
   RUN_AARCH64(R"(
@@ -340,9 +320,9 @@ TEST_P(InstFloat, fcsel64) {
     fcsel d4, d2, d1, lo
     fcsel d5, d2, d1, gt
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 10.5);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 5.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)), 10.5);
+  CHECK_NEON(3, double, {10.5, 0.0});
+  CHECK_NEON(4, double, {5.0, 0.0});
+  CHECK_NEON(5, double, {10.5, 0.0});
 
   // 1.0 vs NaN
   initialHeapData_.resize(8);
@@ -361,9 +341,9 @@ TEST_P(InstFloat, fcsel64) {
     fcsel d4, d2, d0, lo
     fcsel d5, d2, d0, gt
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)), 1.0);
+  CHECK_NEON(3, double, {1.0, 0.0});
+  CHECK_NEON(4, double, {1.0, 0.0});
+  CHECK_NEON(5, double, {1.0, 0.0});
 }
 
 TEST_P(InstFloat, fcvt) {
@@ -381,8 +361,8 @@ TEST_P(InstFloat, fcvt) {
     fcvt d0, s0
     fcvt d1, s1
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.25);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -10.5);
+  CHECK_NEON(0, double, {1.25, 0.0});
+  CHECK_NEON(1, double, {-10.5, 0.0});
 
   // 64-bit to 32-bit
   RUN_AARCH64(R"(
@@ -391,8 +371,8 @@ TEST_P(InstFloat, fcvt) {
     fcvt s0, d0
     fcvt s1, d1
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(0)), 1.25f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), -10.5f);
+  CHECK_NEON(0, float, {1.25f, 0.f, 0.f, 0.f});
+  CHECK_NEON(1, float, {-10.5f, 0.f, 0.f, 0.f});
 
   // Signed, round to zero
   RUN_AARCH64(R"(
@@ -423,14 +403,8 @@ TEST_P(InstFloat, fdiv) {
     fdiv s3, s0, s1
     fdiv s4, s0, s2
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), -16);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 0.125);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.0);
+  CHECK_NEON(3, float, {-16.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {0.125f, 0.f, 0.f, 0.f});
 
   // FP64
   RUN_AARCH64(R"(
@@ -440,10 +414,8 @@ TEST_P(InstFloat, fdiv) {
     fdiv d3, d0, d1
     fdiv d4, d0, d2
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), -16);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 0.16);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+  CHECK_NEON(3, double, {-16.0, 0.0});
+  CHECK_NEON(4, double, {0.16, 0.0});
 }
 
 TEST_P(InstFloat, fmadd) {
@@ -455,14 +427,8 @@ TEST_P(InstFloat, fmadd) {
     fmadd s3, s0, s1, s2
     fmadd s4, s1, s2, s0
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 7.25f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 1.0625f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+  CHECK_NEON(3, float, {7.25f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {1.0625f, 0.f, 0.f, 0.f});
 
   // 64-bit
   RUN_AARCH64(R"(
@@ -472,10 +438,8 @@ TEST_P(InstFloat, fmadd) {
     fmadd d3, d0, d1, d2
     fmadd d4, d1, d2, d0
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 7.25);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 1.0625);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+  CHECK_NEON(3, double, {7.25, 0.0});
+  CHECK_NEON(4, double, {1.0625, 0.0});
 }
 
 TEST_P(InstFloat, fmov) {
@@ -484,14 +448,8 @@ TEST_P(InstFloat, fmov) {
     fmov s0, 1.0
     fmov s1, -0.125
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(0)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(0)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(0)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(0)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), -0.125);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(1)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(1)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(1)), 0.0);
+  CHECK_NEON(0, float, {1.0f, 0.f, 0.f, 0.f});
+  CHECK_NEON(1, float, {-0.125f, 0.f, 0.f, 0.f});
 
   // FP32 scalar from register
   RUN_AARCH64(R"(
@@ -500,14 +458,8 @@ TEST_P(InstFloat, fmov) {
     fmov s2, s1
     fmov s3, s0
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), -0.125);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(2)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(2)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(2)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.0);
+  CHECK_NEON(2, float, {-0.125f, 0.f, 0.f, 0.f});
+  CHECK_NEON(3, float, {1.0f, 0.f, 0.f, 0.f});
 
   // FP32 general from scalar
   initialHeapData_.resize(8);
@@ -542,24 +494,16 @@ TEST_P(InstFloat, fmov) {
     fmov s0, w1
     fmov s1, w2
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(0)), 128.5);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(0)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(0)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(0)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), -0.0625);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(1)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(1)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(1)), 0.0);
+  CHECK_NEON(0, float, {128.5f, 0.f, 0.f, 0.f});
+  CHECK_NEON(1, float, {-0.0625f, 0.f, 0.f, 0.f});
 
   // FP64 scalar from immediate
   RUN_AARCH64(R"(
     fmov d0, 1.0
     fmov d1, -0.125
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(0)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -0.125);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), 0.0);
+  CHECK_NEON(0, double, {1.0, 0.0});
+  CHECK_NEON(1, double, {-0.125, 0.0});
 
   // FP64 scalar from register
   RUN_AARCH64(R"(
@@ -568,10 +512,8 @@ TEST_P(InstFloat, fmov) {
     fmov d2, d1
     fmov d3, d0
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), -0.125);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(2)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+  CHECK_NEON(2, double, {-0.125, 0.0});
+  CHECK_NEON(3, double, {1.0, 0.0});
 
   // FP64 general from scalar
   initialHeapData_.resize(16);
@@ -606,10 +548,8 @@ TEST_P(InstFloat, fmov) {
     fmov d0, x1
     fmov d1, x2
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 123.456);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(0)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -0.00032);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), 0.0);
+  CHECK_NEON(0, double, {123.456, 0.0});
+  CHECK_NEON(1, double, {-0.00032, 0.0});
 
   // FP64 top half to general
   initialHeapData_.resize(32);
@@ -645,8 +585,7 @@ TEST_P(InstFloat, fmov) {
     ldr x2, [x0, #8]
     fmov v1.d[1], x2
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), 123.456);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), -0.00032);
+  CHECK_NEON(1, double, {123.456, -0.00032});
 }
 
 TEST_P(InstFloat, fmsub) {
@@ -658,14 +597,8 @@ TEST_P(InstFloat, fmsub) {
     fmsub s3, s0, s1, s2
     fmsub s4, s1, s2, s0
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 7.75f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 2.9375f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+  CHECK_NEON(3, float, {7.75f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {2.9375f, 0.f, 0.f, 0.f});
 
   // 64-bit
   RUN_AARCH64(R"(
@@ -675,10 +608,8 @@ TEST_P(InstFloat, fmsub) {
     fmsub d3, d0, d1, d2
     fmsub d4, d1, d2, d0
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 7.75);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 2.9375);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+  CHECK_NEON(3, double, {7.75, 0.0});
+  CHECK_NEON(4, double, {2.9375, 0.0});
 }
 
 TEST_P(InstFloat, fmul) {
@@ -690,14 +621,8 @@ TEST_P(InstFloat, fmul) {
     fmul s3, s0, s1
     fmul s4, s0, s2
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), -0.25f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 15.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+  CHECK_NEON(3, float, {-0.25f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {15.f, 0.f, 0.f, 0.f});
 
   // 64-bit
   RUN_AARCH64(R"(
@@ -707,10 +632,8 @@ TEST_P(InstFloat, fmul) {
     fmul d3, d0, d1
     fmul d4, d0, d2
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), -0.25);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 15.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+  CHECK_NEON(3, double, {-0.25, 0.0});
+  CHECK_NEON(4, double, {15.0, 0.0});
 }
 
 TEST_P(InstFloat, fneg) {
@@ -723,18 +646,9 @@ TEST_P(InstFloat, fneg) {
     fneg s4, s1
     fneg s5, s2
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), -2.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 0.125f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), -12.5f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(5)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(5)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(5)), 0.f);
+  CHECK_NEON(3, float, {-2.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {0.125f, 0.f, 0.f, 0.f});
+  CHECK_NEON(5, float, {-12.5f, 0.f, 0.f, 0.f});
 
   // 64-bit
   RUN_AARCH64(R"(
@@ -745,12 +659,9 @@ TEST_P(InstFloat, fneg) {
     fneg d4, d1
     fneg d5, d2
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), -2.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 0.125);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)), -12.5);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(5)), 0.0);
+  CHECK_NEON(3, double, {-2.0, 0.0});
+  CHECK_NEON(4, double, {0.125, 0.0});
+  CHECK_NEON(5, double, {-12.5, 0.0});
 }
 
 TEST_P(InstFloat, fnmsub) {
@@ -762,14 +673,8 @@ TEST_P(InstFloat, fnmsub) {
     fnmsub s3, s0, s1, s2
     fnmsub s4, s1, s2, s0
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), -7.75f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), -2.9375f);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+  CHECK_NEON(3, float, {-7.75f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {-2.9375f, 0.f, 0.f, 0.f});
 
   // 64-bit
   RUN_AARCH64(R"(
@@ -779,10 +684,8 @@ TEST_P(InstFloat, fnmsub) {
     fnmsub d3, d0, d1, d2
     fnmsub d4, d1, d2, d0
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), -7.75);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), -2.9375);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+  CHECK_NEON(3, double, {-7.75, 0.0});
+  CHECK_NEON(4, double, {-2.9375, 0.0});
 }
 
 TEST_P(InstFloat, fsqrt) {
@@ -793,10 +696,7 @@ TEST_P(InstFloat, fsqrt) {
     fsqrt s2, s0
     fsqrt s3, s1
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), ::sqrtf(2.f));
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(2)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(2)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(2)), 0.f);
+  CHECK_NEON(2, float, {::sqrtf(2.f), 0.f, 0.f, 0.f});
   EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(3)));
   EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
   EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
@@ -809,8 +709,7 @@ TEST_P(InstFloat, fsqrt) {
     fsqrt d2, d0
     fsqrt d3, d1
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), ::sqrt(2.0));
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(2)), 0.0);
+  CHECK_NEON(2, double, {::sqrt(2.0), 0.0});
   EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(3)));
   EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
 }
@@ -824,14 +723,8 @@ TEST_P(InstFloat, fsub) {
     fsub s3, s0, s1
     fsub s4, s0, s2
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 1.125);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), -6.5);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.0);
+  CHECK_NEON(3, float, {1.125f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {-6.5f, 0.f, 0.f, 0.f});
 
   // FP64
   RUN_AARCH64(R"(
@@ -841,10 +734,8 @@ TEST_P(InstFloat, fsub) {
     fsub d3, d0, d1
     fsub d4, d0, d2
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 1.125);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), -6.5);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(4)), 0.0);
+  CHECK_NEON(3, double, {1.125, 0.0});
+  CHECK_NEON(4, double, {-6.5, 0.0});
 }
 
 TEST_P(InstFloat, scvtf) {
@@ -885,24 +776,18 @@ TEST_P(InstFloat, scvtf) {
     scvtf d10, w3
     scvtf d11, w4
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(0)), 1.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), -1.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)),
-            static_cast<float>(INT32_MAX));
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)),
-            static_cast<float>(INT32_MIN));
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 1.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), -1.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(6)),
-            static_cast<float>(INT32_MAX));
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(7)),
-            static_cast<float>(INT32_MIN));
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(8)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(9)), -1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(10)),
-            static_cast<double>(INT32_MAX));
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(11)),
-            static_cast<double>(INT32_MIN));
+  CHECK_NEON(0, float, {1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(1, float, {-1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(2, float, {static_cast<float>(INT32_MAX), 0.f, 0.f, 0.f});
+  CHECK_NEON(3, float, {static_cast<float>(INT32_MIN), 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(5, float, {-1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(6, float, {static_cast<float>(INT32_MAX), 0.f, 0.f, 0.f});
+  CHECK_NEON(7, float, {static_cast<float>(INT32_MIN), 0.f, 0.f, 0.f});
+  CHECK_NEON(8, double, {1.0, 0.0});
+  CHECK_NEON(9, double, {-1.0, 0.0});
+  CHECK_NEON(10, double, {static_cast<double>(INT32_MAX), 0.0});
+  CHECK_NEON(11, double, {static_cast<double>(INT32_MIN), 0.0});
 
   // 64-bit integer
   initialHeapData_.resize(32);
@@ -941,24 +826,18 @@ TEST_P(InstFloat, scvtf) {
     scvtf s10, x3
     scvtf s11, x4
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)),
-            static_cast<double>(INT64_MAX));
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)),
-            static_cast<double>(INT64_MIN));
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)), -1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(6)),
-            static_cast<double>(INT64_MAX));
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(7)),
-            static_cast<double>(INT64_MIN));
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(8)), 1.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(9)), -1.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(10)),
-            static_cast<float>(INT64_MAX));
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(11)),
-            static_cast<float>(INT64_MIN));
+  CHECK_NEON(0, double, {1.0, 0.0});
+  CHECK_NEON(1, double, {-1.0, 0.0});
+  CHECK_NEON(2, double, {static_cast<double>(INT64_MAX), 0.0});
+  CHECK_NEON(3, double, {static_cast<double>(INT64_MIN), 0.0});
+  CHECK_NEON(4, double, {1.0, 0.0});
+  CHECK_NEON(5, double, {-1.0, 0.0});
+  CHECK_NEON(6, double, {static_cast<double>(INT64_MAX), 0.0});
+  CHECK_NEON(7, double, {static_cast<double>(INT64_MIN), 0.0});
+  CHECK_NEON(8, float, {1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(9, float, {-1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(10, float, {static_cast<float>(INT64_MAX), 0.f, 0.f, 0.f});
+  CHECK_NEON(11, float, {static_cast<float>(INT64_MIN), 0.f, 0.f, 0.f});
 }
 
 TEST_P(InstFloat, ucvtf) {
@@ -999,21 +878,18 @@ TEST_P(InstFloat, ucvtf) {
     ucvtf d10, w3
     ucvtf d11, w4
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(0)), 1.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), 65537.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)),
-            static_cast<float>(UINT32_MAX));
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 1.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(5)), 65537.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(6)),
-            static_cast<float>(UINT32_MAX));
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(7)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(8)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(9)), 65537.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(10)),
-            static_cast<double>(UINT32_MAX));
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(11)), 0.0);
+  CHECK_NEON(0, float, {1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(1, float, {65537.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(2, float, {static_cast<float>(UINT32_MAX), 0.f, 0.f, 0.f});
+  CHECK_NEON(3, float, {0.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(5, float, {65537.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(6, float, {static_cast<float>(UINT32_MAX), 0.f, 0.f, 0.f});
+  CHECK_NEON(7, float, {0.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(8, double, {1.0, 0.0});
+  CHECK_NEON(9, double, {65537.0, 0.0});
+  CHECK_NEON(10, double, {static_cast<double>(UINT32_MAX), 0.0});
+  CHECK_NEON(11, double, {0.0, 0.0});
 
   // 64-bit integer
   initialHeapData_.resize(32);
@@ -1052,24 +928,18 @@ TEST_P(InstFloat, ucvtf) {
     ucvtf s10, x3
     ucvtf s11, x4
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)),
-            static_cast<float>(UINT64_C(1) << 48));
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)),
-            static_cast<double>(UINT64_MAX));
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(5)),
-            static_cast<float>(UINT64_C(1) << 48));
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(6)),
-            static_cast<double>(UINT64_MAX));
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(7)), 0.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(8)), 1.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(9)),
-            static_cast<float>(UINT64_C(1) << 48));
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(10)),
-            static_cast<float>(UINT64_MAX));
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(11)), 0.f);
+  CHECK_NEON(0, double, {1.0, 0.0});
+  CHECK_NEON(1, double, {static_cast<double>(UINT64_C(1) << 48), 0.0});
+  CHECK_NEON(2, double, {static_cast<double>(UINT64_MAX), 0.0});
+  CHECK_NEON(3, double, {0.0, 0.0});
+  CHECK_NEON(4, double, {1.0, 0.0});
+  CHECK_NEON(5, double, {static_cast<double>(UINT64_C(1) << 48), 0.0});
+  CHECK_NEON(6, double, {static_cast<double>(UINT64_MAX), 0.0});
+  CHECK_NEON(7, double, {0.0, 0.0});
+  CHECK_NEON(8, float, {1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(9, float, {static_cast<float>(UINT64_C(1) << 48), 0.f, 0.f, 0.f});
+  CHECK_NEON(10, float, {static_cast<float>(UINT64_MAX), 0.f, 0.f, 0.f});
+  CHECK_NEON(11, float, {0.f, 0.f, 0.f, 0.f});
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstFloat, ::testing::Values(EMULATION),

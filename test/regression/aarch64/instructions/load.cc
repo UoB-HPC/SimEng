@@ -88,12 +88,12 @@ TEST_P(InstLoad, ldr_fp32) {
     mov w5, 4
     ldr s7, [x0, x5]
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), 128.5);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), -0.0625);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), -32);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(4)), 0.125);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(6)), -0.0625);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(7)), 0.125);
+  CHECK_NEON(1, float, {128.5f, 0.f, 0.f, 0.f});
+  CHECK_NEON(2, float, {-0.0625f, 0.f, 0.f, 0.f});
+  CHECK_NEON(3, float, {-32.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {0.125f, 0.f, 0.f, 0.f});
+  CHECK_NEON(6, float, {-0.0625f, 0.f, 0.f, 0.f});
+  CHECK_NEON(7, float, {0.125f, 0.f, 0.f, 0.f});
 }
 
 // Test that ldr with pre-index mode updates the base pointer correctly.
@@ -138,10 +138,8 @@ TEST_P(InstLoad, ldr_vector) {
     ldr q0, [x0]
     ldr q1, [x0, #16]
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(0)), 123.456);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -0.00032);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), 123456);
+  CHECK_NEON(0, double, {1.0, 123.456});
+  CHECK_NEON(1, double, {-0.00032, 123456});
 
   // ldur 128-bit
   RUN_AARCH64(R"(
@@ -154,10 +152,8 @@ TEST_P(InstLoad, ldr_vector) {
     ldur q0, [x0]
     ldur q1, [x0, #16]
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(0)), 123.456);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), -0.00032);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), 123456);
+  CHECK_NEON(0, double, {1.0, 123.456});
+  CHECK_NEON(1, double, {-0.00032, 123456});
 }
 
 TEST_P(InstLoad, ldrw) {
@@ -254,22 +250,10 @@ TEST_P(InstLoad, ldp) {
     ldp s0, s1, [x0]
     ldp s2, s3, [x0, #8]
   )");
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(0)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(0)), 0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(0)), 0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(0)), 0);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(1)), 128.5);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(1)), 0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(1)), 0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(1)), 0);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), -0.0625);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(2)), 0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(2)), 0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(2)), 0);
-  EXPECT_EQ((getVectorRegisterElement<float, 0>(3)), 123456);
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0);
+  CHECK_NEON(0, float, {1.f, 0.f, 0.f, 0.f});
+  CHECK_NEON(1, float, {128.5f, 0.f, 0.f, 0.f});
+  CHECK_NEON(2, float, {-0.0625f, 0.f, 0.f, 0.f});
+  CHECK_NEON(3, float, {123456.f, 0.f, 0.f, 0.f});
 
   // FP64
   initialHeapData_.resize(32);
@@ -288,14 +272,10 @@ TEST_P(InstLoad, ldp) {
     ldp d0, d1, [x0]
     ldp d2, d3, [x0, #16]
   )");
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(0)), 1.0);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(0)), 0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), 123.456);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(1)), 0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), -0.00032);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(2)), 0);
-  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), 123456);
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0);
+  CHECK_NEON(0, double, {1.0, 0.0});
+  CHECK_NEON(1, double, {123.456, 0.0});
+  CHECK_NEON(2, double, {-0.00032, 0.0});
+  CHECK_NEON(3, double, {123456.0, 0.0});
 
   // 128-bit
   initialHeapData_.resize(80);
@@ -322,22 +302,14 @@ TEST_P(InstLoad, ldp) {
     ldp q4, q5, [x0, 16]!
     ldp q6, q7, [x0, 16]
   )");
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(0)), 0xDEADBEEFull << 32);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(0)), 0x12345678ull << 16);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(1)), 0x98765432ull << 8);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(1)), 0xABCDEF12ull << 4);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(2)), 0x98765432ull << 8);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(2)), 0xABCDEF12ull << 4);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(3)), 0xDEADBEEFull << 4);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(3)), 0x12345678ull << 8);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(4)), 0xDEADBEEFull << 4);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(4)), 0x12345678ull << 8);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(5)), 0x98765432ull << 16);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(5)), 0xABCDEF12ull << 32);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(6)), 0x98765432ull << 16);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(6)), 0xABCDEF12ull << 32);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 0>(7)), 0xDEADBEEFull << 40);
-  EXPECT_EQ((getVectorRegisterElement<uint64_t, 1>(7)), 0x12345678ull << 48);
+  CHECK_NEON(0, uint64_t, {(0xDEADBEEFull << 32), (0x12345678ull << 16)});
+  CHECK_NEON(1, uint64_t, {(0x98765432ull << 8), (0xABCDEF12ull << 4)});
+  CHECK_NEON(2, uint64_t, {(0x98765432ull << 8), (0xABCDEF12ull << 4)});
+  CHECK_NEON(3, uint64_t, {(0xDEADBEEFull << 4), (0x12345678ull << 8)});
+  CHECK_NEON(4, uint64_t, {(0xDEADBEEFull << 4), (0x12345678ull << 8)});
+  CHECK_NEON(5, uint64_t, {(0x98765432ull << 16), (0xABCDEF12ull << 32)});
+  CHECK_NEON(6, uint64_t, {(0x98765432ull << 16), (0xABCDEF12ull << 32)});
+  CHECK_NEON(7, uint64_t, {(0xDEADBEEFull << 40), (0x12345678ull << 48)});
 }
 
 TEST_P(InstLoad, ldrsw) {

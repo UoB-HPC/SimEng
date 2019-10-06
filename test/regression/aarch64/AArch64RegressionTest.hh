@@ -16,6 +16,24 @@
   }                                            \
   if (HasFatalFailure()) return
 
+/** Check each element of a Neon register against expected values.
+ *
+ * The `tag` argument is the register index, and the `type` argument is the C++
+ * data type to use for value comparisons. The third argument should be an
+ * initializer list containing one value for each register element (for a total
+ * of `(16 / sizeof(type))` values).
+ *
+ * For example:
+ *
+ *     // Compare v2.4s to some expected 32-bit floating point values.
+ *     CHECK_NEON(2, float, {123.456f, 0.f, 42.f, -1.f});
+ */
+#define CHECK_NEON(tag, type, ...)             \
+  {                                            \
+    SCOPED_TRACE("<<== error generated here"); \
+    checkNeonRegister<type>(tag, __VA_ARGS__); \
+  }
+
 /** The test fixture for all AArch64 regression tests. */
 class AArch64RegressionTest : public RegressionTest {
  protected:
@@ -31,6 +49,21 @@ class AArch64RegressionTest : public RegressionTest {
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
       const override;
+
+  /** Check the elements of a Neon register.
+   *
+   * This should be invoked via the `CHECK_NEON` macro in order to provide
+   * better diagnostic messages, rather than called directly from test code.
+   */
+  template <typename T>
+  void checkNeonRegister(uint8_t tag,
+                         const std::array<T, (16 / sizeof(T))>& values) const {
+    const T* data = RegressionTest::getVectorRegister<T>(
+        {simeng::arch::aarch64::RegisterType::VECTOR, tag});
+    for (int i = 0; i < (16 / sizeof(T)); i++) {
+      EXPECT_EQ(data[i], values[i]) << "Mismatch for element " << i << ".";
+    }
+  }
 
   /** Get the value of a general purpose register. */
   template <typename T>
