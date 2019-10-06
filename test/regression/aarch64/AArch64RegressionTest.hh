@@ -60,7 +60,7 @@ class AArch64RegressionTest : public RegressionTest {
                          const std::array<T, (16 / sizeof(T))>& values) const {
     const T* data = RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::VECTOR, tag});
-    for (int i = 0; i < (16 / sizeof(T)); i++) {
+    for (unsigned i = 0; i < (16 / sizeof(T)); i++) {
       EXPECT_EQ(data[i], values[i]) << "Mismatch for element " << i << ".";
     }
   }
