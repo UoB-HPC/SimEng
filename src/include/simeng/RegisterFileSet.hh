@@ -41,7 +41,7 @@ class RegisterFileSet {
   RegisterFileSet(std::vector<RegisterFileStructure> registerFileStructures);
 
   /** Read the value of the specified register. */
-  RegisterValue get(Register reg) const;
+  const RegisterValue& get(Register reg) const;
 
   /** Set a register as the specified value. */
   void set(Register reg, const RegisterValue& value);

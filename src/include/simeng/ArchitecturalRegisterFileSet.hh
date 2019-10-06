@@ -14,7 +14,7 @@ class ArchitecturalRegisterFileSet {
   ArchitecturalRegisterFileSet(RegisterFileSet& physicalRegisterFileSet);
 
   /** Read the value of the specified architectural register. */
-  virtual RegisterValue get(Register reg) const;
+  virtual const RegisterValue& get(Register reg) const;
 
   /** Set an architectural register as the specified value. */
   virtual void set(Register reg, const RegisterValue& value);

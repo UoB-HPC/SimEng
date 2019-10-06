@@ -24,7 +24,7 @@ class MappedRegisterFileSet : public ArchitecturalRegisterFileSet {
    * NOTE: The physical register mapped to depends on the current state of the
    * register alias table; if there are any allocated but uncommitted registers,
    * this mapping will not represent the committed architectural state. */
-  virtual RegisterValue get(Register reg) const override;
+  virtual const RegisterValue& get(Register reg) const override;
 
   /** Set the physical register currently mapped to the architectural register
    * `reg` to the specified value.

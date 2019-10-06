@@ -25,7 +25,7 @@ RegisterFileSet::RegisterFileSet(
   }
 }
 
-RegisterValue RegisterFileSet::get(Register reg) const {
+const RegisterValue& RegisterFileSet::get(Register reg) const {
   return registerFiles[reg.type][reg.tag];
 }
 

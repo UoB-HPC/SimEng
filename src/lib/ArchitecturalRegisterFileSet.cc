@@ -6,7 +6,7 @@ ArchitecturalRegisterFileSet::ArchitecturalRegisterFileSet(
     RegisterFileSet& physicalRegisterFileSet)
     : physicalRegisterFileSet_(physicalRegisterFileSet) {}
 
-RegisterValue ArchitecturalRegisterFileSet::get(Register reg) const {
+const RegisterValue& ArchitecturalRegisterFileSet::get(Register reg) const {
   return physicalRegisterFileSet_.get(reg);
 }
 

@@ -7,7 +7,7 @@ MappedRegisterFileSet::MappedRegisterFileSet(
     RegisterFileSet& physicalRegisterFileSet, const RegisterAliasTable& rat)
     : ArchitecturalRegisterFileSet(physicalRegisterFileSet), rat_(rat) {}
 
-RegisterValue MappedRegisterFileSet::get(Register reg) const {
+const RegisterValue& MappedRegisterFileSet::get(Register reg) const {
   return ArchitecturalRegisterFileSet::get(rat_.getMapping(reg));
 }
 
