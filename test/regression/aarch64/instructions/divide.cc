@@ -27,6 +27,16 @@ TEST_P(InstDiv, sdiv) {
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(2), -6);
   EXPECT_EQ(getGeneralRegister<int32_t>(3), -6);
+
+  // Divide-by-zero should not crash
+  // 42 / 0 = 0
+  RUN_AARCH64(R"(
+    movz x0, #42
+    sdiv x2, x0, xzr
+    sdiv w3, w0, wzr
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(2), 0u);
+  EXPECT_EQ(getGeneralRegister<int32_t>(3), 0u);
 }
 
 TEST_P(InstDiv, udiv) {
@@ -37,8 +47,18 @@ TEST_P(InstDiv, udiv) {
     udiv x2, x0, x1
     udiv w3, w0, w1
   )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(2), 7u);
-  EXPECT_EQ(getGeneralRegister<int32_t>(3), 7u);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 7u);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 7u);
+
+  // Divide-by-zero should not crash
+  // 42 / 0 = 0
+  RUN_AARCH64(R"(
+    movz x0, #42
+    udiv x2, x0, xzr
+    udiv w3, w0, wzr
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0u);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0u);
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstDiv, ::testing::Values(EMULATION),

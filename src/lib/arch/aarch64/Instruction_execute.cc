@@ -1674,13 +1674,21 @@ void Instruction::execute() {
     case Opcode::AArch64_SDIVWr: {  // sdiv wd, wn, wm
       auto x = operands[0].get<int32_t>();
       auto y = operands[1].get<int32_t>();
-      results[0] = RegisterValue(x / y, 8);
+      if (y == 0) {
+        results[0] = RegisterValue(0, 8);
+      } else {
+        results[0] = RegisterValue(x / y, 8);
+      }
       return;
     }
     case Opcode::AArch64_SDIVXr: {  // sdiv xd, xn, xm
       auto x = operands[0].get<int64_t>();
       auto y = operands[1].get<int64_t>();
-      results[0] = x / y;
+      if (y == 0) {
+        results[0] = RegisterValue(0, 8);
+      } else {
+        results[0] = x / y;
+      }
       return;
     }
     case Opcode::AArch64_SMADDLrrr: {  // smaddl xd, wn, wm, xa
@@ -2170,13 +2178,21 @@ void Instruction::execute() {
     case Opcode::AArch64_UDIVWr: {  // udiv wd, wn, wm
       auto x = operands[0].get<uint32_t>();
       auto y = operands[1].get<uint32_t>();
-      results[0] = RegisterValue(x / y, 8);
+      if (y == 0) {
+        results[0] = RegisterValue(0, 8);
+      } else {
+        results[0] = RegisterValue(x / y, 8);
+      }
       return;
     }
     case Opcode::AArch64_UDIVXr: {  // udiv xd, xn, xm
       auto x = operands[0].get<uint64_t>();
       auto y = operands[1].get<uint64_t>();
-      results[0] = x / y;
+      if (y == 0) {
+        results[0] = RegisterValue(0, 8);
+      } else {
+        results[0] = x / y;
+      }
       return;
     }
     case Opcode::AArch64_UMOVvi32: {  // umov wd, vn.s[index]
