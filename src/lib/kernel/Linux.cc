@@ -116,6 +116,15 @@ int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
   }
 }
 
+uint64_t Linux::lseek(int64_t fd, uint64_t offset, int64_t whence) {
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
+  return ::lseek(hfd, offset, whence);
+}
+
 int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
                       uint16_t mode) {
   // Resolve absolute path to target file

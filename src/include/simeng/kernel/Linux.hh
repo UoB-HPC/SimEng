@@ -81,6 +81,9 @@ class Linux {
   /** ioctl syscall: control device. */
   int64_t ioctl(int64_t fd, uint64_t request, std::vector<char>& out);
 
+  /** lseek syscall: reposition read/write file offset. */
+  uint64_t lseek(int64_t fd, uint64_t offset, int64_t whence);
+
   /** openat syscall: open/create a file. */
   int64_t openat(int64_t dirfd, const std::string& path, int64_t flags,
                  uint16_t mode);

@@ -72,6 +72,13 @@ bool ExceptionHandler::init() {
         stateChange = {{R0}, {linux_.close(fd)}};
         break;
       }
+      case 62: {  // lseek
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t offset = registerFileSet.get(R1).get<uint64_t>();
+        int64_t whence = registerFileSet.get(R2).get<uint64_t>();
+        stateChange = {{R0}, {linux_.lseek(fd, offset, whence)}};
+        break;
+      }
       case 66: {  // writev
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
