@@ -187,7 +187,7 @@ int64_t Linux::setTidAddress(uint64_t tidptr) {
   return processStates_[0].pid;
 }
 
-int64_t Linux::writev(int64_t fd, void* iovdata, int iovcnt) {
+int64_t Linux::writev(int64_t fd, const void* iovdata, int iovcnt) {
   assert(fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {

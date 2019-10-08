@@ -96,7 +96,7 @@ class Linux {
   int64_t setTidAddress(uint64_t tidptr);
 
   /** writev syscall: write buffers to a file. */
-  int64_t writev(int64_t fd, void* iovdata, int iovcnt);
+  int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
   /** The maximum size of a filesystem path. */
   static const size_t LINUX_PATH_MAX = 4096;
