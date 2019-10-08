@@ -151,6 +151,16 @@ bool ExceptionHandler::init() {
         // the kernel.
         return readBufferThen(iov, iovcnt * 16, invokeKernel);
       }
+      case 64: {  // write
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t retval = linux_.write(fd, dataBuffer.data(), count);
+          ProcessStateChange stateChange = {{R0}, {retval}};
+          return concludeSyscall(stateChange);
+        });
+      }
       case 66: {  // writev
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t iov = registerFileSet.get(R1).get<uint64_t>();

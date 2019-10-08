@@ -98,6 +98,9 @@ class Linux {
   /** readv syscall: read buffers from a file. */
   int64_t readv(int64_t fd, const void* iovdata, int iovcnt);
 
+  /** write syscall: write buffer to a file. */
+  int64_t write(int64_t fd, const void* buf, uint64_t count);
+
   /** writev syscall: write buffers to a file. */
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
