@@ -181,6 +181,15 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string pathname, char* buf,
   return -1;
 }
 
+int64_t Linux::readv(int64_t fd, const void* iovdata, int iovcnt) {
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
+  return ::readv(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
+}
+
 int64_t Linux::setTidAddress(uint64_t tidptr) {
   assert(processStates_.size() > 0);
   processStates_[0].clearChildTid = tidptr;

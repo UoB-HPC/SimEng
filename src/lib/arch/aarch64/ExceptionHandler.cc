@@ -79,6 +79,78 @@ bool ExceptionHandler::init() {
         stateChange = {{R0}, {linux_.lseek(fd, offset, whence)}};
         break;
       }
+      case 65: {  // readv
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
+        int64_t iovcnt = registerFileSet.get(R2).get<int64_t>();
+
+        // The pointer `iov` points to an array of structures that each contain
+        // a pointer to where the data should be written and the number of
+        // bytes to write.
+        //
+        // We're going to queue up two handlers:
+        // - First, read the iovec structures that describe each buffer.
+        // - Second, invoke the kernel to perform the read operation, and
+        //   generate memory write requests for each buffer.
+
+        // Create the second handler in the chain, which invokes the kernel and
+        // generates the memory write requests.
+        auto invokeKernel = [=]() {
+          // The iov structure has been read into `dataBuffer`
+          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
+
+          // Allocate buffers to hold the data read by the kernel
+          std::vector<std::vector<uint8_t>> buffers(iovcnt);
+          for (int64_t i = 0; i < iovcnt; i++) {
+            buffers[i].resize(iovdata[i * 2 + 1]);
+          }
+
+          // Build new iovec structures using pointers to `dataBuffer` data
+          std::vector<uint64_t> iovec(iovcnt * 2);
+          for (int64_t i = 0; i < iovcnt; i++) {
+            iovec[i * 2 + 0] = reinterpret_cast<uint64_t>(buffers[i].data());
+            iovec[i * 2 + 1] = iovdata[i * 2 + 1];
+          }
+
+          // Invoke the kernel
+          int64_t totalRead = linux_.readv(fd, iovec.data(), iovcnt);
+          ProcessStateChange stateChange = {{R0}, {totalRead}};
+
+          // Check for failure
+          if (totalRead < 0) {
+            return concludeSyscall(stateChange);
+          }
+
+          // Build list of memory write operations
+          int64_t bytesRemaining = totalRead;
+          for (int64_t i = 0; i < iovcnt; i++) {
+            // Get pointer and size of the buffer
+            uint64_t iDst = iovdata[i * 2 + 0];
+            uint64_t iLength = iovdata[i * 2 + 1];
+            if (iLength > bytesRemaining) {
+              iLength = bytesRemaining;
+            }
+            bytesRemaining -= iLength;
+
+            // Write data for this buffer in 128-byte chunks
+            auto iSrc = reinterpret_cast<const char*>(buffers[i].data());
+            while (iLength > 0) {
+              uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+              stateChange.memoryAddresses.push_back({iDst, len});
+              stateChange.memoryAddressValues.push_back({iSrc, len});
+              iDst += len;
+              iSrc += len;
+              iLength -= len;
+            }
+          }
+
+          return concludeSyscall(stateChange);
+        };
+
+        // Run the buffer read to load the buffer structures, before invoking
+        // the kernel.
+        return readBufferThen(iov, iovcnt * 16, invokeKernel);
+      }
       case 66: {  // writev
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
