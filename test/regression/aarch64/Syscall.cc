@@ -31,7 +31,88 @@ TEST_P(Syscall, ioctl) {
   EXPECT_NE(getMemoryValue<uint16_t>(process_->getHeapStart() + 6), -1);
 }
 
-TEST_P(Syscall, fileio) {
+// Test reading from and seeking through a file
+TEST_P(Syscall, file_read) {
+  const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/input.txt";
+
+  // Reserve 100 bytes for input read from file
+  initialHeapData_.resize(100 + strlen(filepath) + 1);
+
+  // Copy filepath to heap
+  memcpy(initialHeapData_.data() + 100, filepath, strlen(filepath) + 1);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # <input> = openat(AT_FDCWD, filepath, O_RDONLY, S_IRUSR)
+    mov x0, -100
+    add x1, x20, 100
+    mov x2, 0x0000
+    mov x3, 400
+    mov x8, #56
+    svc #0
+    mov x21, x0
+
+    # iovec = {{x0, 4}, {x0+8, 4}}
+    mov x0, x20
+    str x0, [sp, #-32]
+    mov x1, 4
+    str x1, [sp, #-24]
+    add x0, x0, 8
+    str x0, [sp, #-16]
+    mov x1, 4
+    str x1, [sp, #-8]
+
+    # readv(fd=<input>, iov=iovec, iovcnt=2)
+    mov x0, x21
+    sub x1, sp, 32
+    mov x2, #2
+    mov x8, #65
+    svc #0
+
+    # lseek(fd=<input>, offset=12, whence=SEEK_SET)
+    mov x0, x21
+    mov x1, 12
+    mov x2, 0
+    mov x8, #62
+    svc #0
+
+    # iovec = {{x0+16, 8}, {x0 + 5, 2}}
+    add x0, x20, 16
+    str x0, [sp, #-32]
+    mov x1, 8
+    str x1, [sp, #-24]
+    add x0, x20, 5
+    str x0, [sp, #-16]
+    mov x1, 2
+    str x1, [sp, #-8]
+
+    # readv(fd=<input>, iov=iovec, iovcnt=2)
+    mov x0, x21
+    sub x1, sp, 32
+    mov x2, #2
+    mov x8, #65
+    svc #0
+
+    # close(fd=<input>)
+    mov x0, x21
+    mov x8, #57
+    svc #0
+  )");
+
+  // Check result of read operations
+  const char reference[] = "ABCD\0UV\0EFGH\0\0\0\0MNOPQRST";
+  char* data = processMemory_ + process_->getHeapStart();
+  for (int i = 0; i < sizeof(reference); i++) {
+    EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
+  }
+}
+
+TEST_P(Syscall, file_write) {
   const char str[] = "Hello, World!\n";
   const char filepath[] = "./simeng-fileio-test.txt";
 
