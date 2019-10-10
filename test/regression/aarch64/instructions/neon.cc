@@ -585,11 +585,11 @@ TEST_P(InstNeon, smin) {
 
 TEST_P(InstNeon, umov) {
   initialHeapData_.resize(16);
-  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
-  heap[0] = 42;
-  heap[1] = 1u << 31;
-  heap[2] = -1;
-  heap[3] = 7;
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap32[0] = 42;
+  heap32[1] = 1u << 31;
+  heap32[2] = -1;
+  heap32[3] = 7;
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -609,6 +609,31 @@ TEST_P(InstNeon, umov) {
   EXPECT_EQ((getGeneralRegister<uint32_t>(1)), 1u << 31);
   EXPECT_EQ((getGeneralRegister<uint32_t>(2)), -1);
   EXPECT_EQ((getGeneralRegister<uint32_t>(3)), 7);
+
+  // 64-bit
+  initialHeapData_.resize(16);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 42;
+  heap64[1] = 1ul << 63;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    umov x0, v0.d[0]
+    umov x1, v0.d[1]
+
+    # Check mov alias works as well
+    mov  x2, v0.d[0]
+    mov  x3, v0.d[1]
+  )");
+  EXPECT_EQ((getGeneralRegister<uint64_t>(0)), 42);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(1)), 1ul << 63);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(2)), 42);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(3)), 1ul << 63);
 }
 
 TEST_P(InstNeon, xtn) {
