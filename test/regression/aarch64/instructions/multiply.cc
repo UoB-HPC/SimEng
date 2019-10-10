@@ -74,6 +74,17 @@ TEST_P(InstMul, smull) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x0000002A00000000);
 }
 
+TEST_P(InstMul, umaddl) {
+  RUN_AARCH64(R"(
+    mov w0, 0x2A
+    orr w0, wzr, w0, lsl 24
+    movz w1, 0x100
+    movz x2, 0x05, lsl 48
+    umaddl x3, w0, w1, x2
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x0005002A00000000);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstMul, ::testing::Values(EMULATION),
                          coreTypeToString);
 

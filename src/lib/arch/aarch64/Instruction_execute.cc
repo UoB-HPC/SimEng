@@ -2202,6 +2202,13 @@ void Instruction::execute() {
       }
       return;
     }
+    case Opcode::AArch64_UMADDLrrr: {  // umaddl xd, wn, wm, xa
+      auto n = static_cast<uint64_t>(operands[0].get<uint32_t>());
+      auto m = static_cast<uint64_t>(operands[1].get<uint32_t>());
+      auto a = operands[2].get<uint64_t>();
+      results[0] = a + (n * m);
+      return;
+    }
     case Opcode::AArch64_UMOVvi32: {  // umov wd, vn.s[index]
       const uint32_t* vec = operands[0].getAsVector<uint32_t>();
       results[0] = RegisterValue(vec[metadata.operands[1].vector_index], 8);
