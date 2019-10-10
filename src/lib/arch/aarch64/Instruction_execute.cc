@@ -1252,7 +1252,7 @@ void Instruction::execute() {
       results[0] = memoryData[0];
       return;
     }
-    case Opcode::AArch64_LDRQui: {  // ldr dt, [xn, #imm]
+    case Opcode::AArch64_LDRQui: {  // ldr qt, [xn, #imm]
       results[0] = memoryData[0];
       return;
     }
