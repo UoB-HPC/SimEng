@@ -505,6 +505,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});
       break;
     }
+    case Opcode::AArch64_STURQi: {  // stur qt, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 16}});
+      break;
+    }
     case Opcode::AArch64_STURWi: {  // stur wt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});

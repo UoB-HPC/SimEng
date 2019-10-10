@@ -1952,6 +1952,10 @@ void Instruction::execute() {
       memoryData[0] = operands[0];
       return;
     }
+    case Opcode::AArch64_STURQi: {  // stur qt, [xn, #imm]
+      memoryData[0] = operands[0];
+      return;
+    }
     case Opcode::AArch64_STURWi: {  // stur wt, [xn, #imm]
       memoryData[0] = operands[0];
       return;
