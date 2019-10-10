@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <sys/uio.h>
 #include <unistd.h>
 #include <algorithm>
@@ -72,6 +73,35 @@ int64_t Linux::close(int64_t fd) {
   processStates_[0].fileDescriptorTable[fd] = -1;
 
   return ::close(hfd);
+}
+
+int64_t Linux::fstat(int64_t fd, stat& out) {
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
+
+  // Pass call through to host
+  struct ::stat statbuf;
+  int64_t retval = ::fstat(hfd, &statbuf);
+
+  // Copy results to output struct
+  out.dev = statbuf.st_dev;
+  out.ino = statbuf.st_ino;
+  out.mode = statbuf.st_mode;
+  out.nlink = statbuf.st_nlink;
+  out.uid = statbuf.st_uid;
+  out.gid = statbuf.st_gid;
+  out.rdev = statbuf.st_rdev;
+  out.size = statbuf.st_size;
+  out.blksize = statbuf.st_blksize;
+  out.blocks = statbuf.st_blocks;
+  out.atime = statbuf.st_atime;
+  out.mtime = statbuf.st_mtime;
+  out.ctime = statbuf.st_ctime;
+
+  return retval;
 }
 
 int64_t Linux::getpid() const {

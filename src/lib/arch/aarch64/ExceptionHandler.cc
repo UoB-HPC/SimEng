@@ -222,6 +222,16 @@ bool ExceptionHandler::init() {
                                 return true;
                               });
       }
+      case 80: {  // fstat
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t statbufPtr = registerFileSet.get(R1).get<uint64_t>();
+
+        kernel::stat statOut;
+        stateChange = {{R0}, {linux_.fstat(fd, statOut)}};
+        stateChange.memoryAddresses.push_back({statbufPtr, sizeof(statOut)});
+        stateChange.memoryAddressValues.push_back(statOut);
+        break;
+      }
       case 94: {  // exit_group
         auto exitCode = registerFileSet.get(R0).get<uint64_t>();
         std::cout << "Received exit_group syscall: terminating with exit code "
