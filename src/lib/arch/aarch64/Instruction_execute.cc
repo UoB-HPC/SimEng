@@ -344,6 +344,13 @@ void Instruction::execute() {
       results[0] = x & y;
       return;
     }
+    case Opcode::AArch64_ANDv16i8: {  // and vd.16b, vn.16b, vm.16b
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t* m = operands[1].getAsVector<uint64_t>();
+      uint64_t out[2] = {n[0] & m[0], n[1] & m[1]};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_ASRVWr: {  // asrv wd, wn, wm
       auto n = operands[0].get<int32_t>();
       auto m = operands[1].get<uint32_t>();

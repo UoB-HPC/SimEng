@@ -6,6 +6,33 @@ namespace {
 
 using InstNeon = AArch64RegressionTest;
 
+TEST_P(InstNeon, and) {
+  initialHeapData_.resize(32);
+  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap[0] = 0xDEADBEEF;
+  heap[1] = 0xDEADBEEF;
+  heap[2] = 0xDEADBEEF;
+  heap[3] = 0xDEADBEEF;
+  heap[4] = 0x01234567;
+  heap[5] = 0x89ABCDEF;
+  heap[6] = 0x0F0F0F0F;
+  heap[7] = 0xF0F0F0F0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    and v2.16b, v0.16b, v1.16b
+  )");
+  CHECK_NEON(2, uint32_t,
+             {0xDEADBEEF & 0x01234567, 0xDEADBEEF & 0x89ABCDEF,
+              0xDEADBEEF & 0x0F0F0F0F, 0xDEADBEEF & 0xF0F0F0F0});
+}
+
 TEST_P(InstNeon, bsl) {
   initialHeapData_.resize(32);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
