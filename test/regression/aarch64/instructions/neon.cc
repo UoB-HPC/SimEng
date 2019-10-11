@@ -164,6 +164,35 @@ TEST_P(InstNeon, bsl) {
   CHECK_NEON(3, double, {-0.125, -42.76});
 }
 
+TEST_P(InstNeon, cmeq) {
+  initialHeapData_.resize(32);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  for (int i = 0; i < 16; i++) {
+    heap8[i] = i;
+    heap8[i + 16] = i;
+  }
+  heap8[3] = 0;
+  heap8[6] = 0;
+  heap8[12] = 0;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    cmeq v2.16b, v0.16b, v1.16b
+    cmeq v3.16b, v0.16b, 0
+  )");
+  CHECK_NEON(2, uint8_t,
+             {0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
+              0xFF, 0x00, 0xFF, 0xFF, 0xFF});
+  CHECK_NEON(3, uint8_t,
+             {0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00,
+              0x00, 0xFF, 0x00, 0x00, 0x00});
+}
+
 TEST_P(InstNeon, dup) {
   initialHeapData_.resize(32);
   uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());

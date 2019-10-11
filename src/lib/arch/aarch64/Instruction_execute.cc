@@ -648,6 +648,25 @@ void Instruction::execute() {
       results[0] = i;
       return;
     }
+    case Opcode::AArch64_CMEQv16i8: {  // cmeq vd.16b, vn.16b, vm.16b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint8_t* m = operands[1].getAsVector<uint8_t>();
+      uint8_t out[16];
+      for (int i = 0; i < 16; i++) {
+        out[i] = (n[i] == m[i]) ? 0xFF : 0;
+      }
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_CMEQv16i8rz: {  // cmeq vd.16b, vn.16b, #0
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      uint8_t out[16];
+      for (int i = 0; i < 16; i++) {
+        out[i] = (n[i] == 0) ? 0xFF : 0;
+      }
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_CPYi32: {  // dup vd, vn.s[index]
       const uint32_t* vec = operands[0].getAsVector<uint32_t>();
       uint32_t out[4] = {vec[metadata.operands[1].vector_index], 0, 0, 0};
