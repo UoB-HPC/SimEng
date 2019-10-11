@@ -6,6 +6,112 @@ namespace {
 
 using InstNeon = AArch64RegressionTest;
 
+TEST_P(InstNeon, addp) {
+  // 8-bit
+  initialHeapData_.resize(32);
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  for (int i = 0; i < 32; i++) {
+    heap8[i] = i;
+  }
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    addp v2.16b, v0.16b, v1.16b
+  )");
+  CHECK_NEON(2, uint8_t,
+             {1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61});
+
+  // 16-bit
+  initialHeapData_.resize(32);
+  uint16_t* heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+  heap16[0] = 0x0123;
+  heap16[1] = 0x4567;
+  heap16[2] = 0x89AB;
+  heap16[3] = 0xCDEF;
+  heap16[4] = 0xF0F0;
+  heap16[5] = 0xF0F0;
+  heap16[6] = 0x0F0F;
+  heap16[7] = 0x0F0F;
+  heap16[8] = 0xFFFF;
+  heap16[9] = 0xFFFF;
+  heap16[10] = 0x0000;
+  heap16[11] = 0x0000;
+  heap16[12] = 0xDEAD;
+  heap16[13] = 0xBEEF;
+  heap16[14] = 0xABBA;
+  heap16[15] = 0xABBA;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    addp v2.8h, v0.8h, v1.8h
+  )");
+  CHECK_NEON(2, uint16_t,
+             {static_cast<uint16_t>(0x0123 + 0x4567),
+              static_cast<uint16_t>(0x89AB + 0xCDEF),
+              static_cast<uint16_t>(0xF0F0 + 0xF0F0),
+              static_cast<uint16_t>(0x0F0F + 0x0F0F),
+              static_cast<uint16_t>(0xFFFF + 0xFFFF),
+              static_cast<uint16_t>(0x0000 + 0x0000),
+              static_cast<uint16_t>(0xDEAD + 0xBEEF),
+              static_cast<uint16_t>(0xABBA + 0xABBA)});
+
+  // 32-bit
+  initialHeapData_.resize(32);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap32[0] = 0xDEADBEEF;
+  heap32[1] = 0x01234567;
+  heap32[2] = 0x89ABCDEF;
+  heap32[3] = 0x0F0F0F0F;
+  heap32[4] = 0xF0F0F0F0;
+  heap32[5] = 0xF0F0F0F0;
+  heap32[6] = 0xDEADBEEF;
+  heap32[7] = 0xDEADBEEF;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    addp v2.4s, v0.4s, v1.4s
+  )");
+  CHECK_NEON(2, uint32_t,
+             {0xDEADBEEFu + 0x01234567u, 0x89ABCDEFu + 0x0F0F0F0Fu,
+              0xF0F0F0F0u + 0xF0F0F0F0u, 0xDEADBEEFu + 0xDEADBEEFu});
+
+  // 64-bit
+  initialHeapData_.resize(32);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xDEADBEEFul;
+  heap64[1] = 0x01234567ul << 8;
+  heap64[2] = 0x89ABCDEFul;
+  heap64[3] = 0x0F0F0F0Ful << 16;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    addp v2.2d, v0.2d, v1.2d
+  )");
+  CHECK_NEON(2, uint64_t,
+             {0xDEADBEEFul + (0x01234567ul << 8),
+              0x89ABCDEFul + (0x0F0F0F0Ful << 16)});
+}
+
 TEST_P(InstNeon, and) {
   initialHeapData_.resize(32);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());

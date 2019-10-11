@@ -197,6 +197,56 @@ void Instruction::execute() {
 
   executed_ = true;
   switch (metadata.opcode) {
+    case Opcode::AArch64_ADDPv16i8: {  // addp vd.16b, vn.16b, vm.16b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint8_t* m = operands[1].getAsVector<uint8_t>();
+      uint8_t out[16] = {static_cast<uint8_t>(n[0] + n[1]),
+                         static_cast<uint8_t>(n[2] + n[3]),
+                         static_cast<uint8_t>(n[4] + n[5]),
+                         static_cast<uint8_t>(n[6] + n[7]),
+                         static_cast<uint8_t>(n[8] + n[9]),
+                         static_cast<uint8_t>(n[10] + n[11]),
+                         static_cast<uint8_t>(n[12] + n[13]),
+                         static_cast<uint8_t>(n[14] + n[15]),
+                         static_cast<uint8_t>(m[0] + m[1]),
+                         static_cast<uint8_t>(m[2] + m[3]),
+                         static_cast<uint8_t>(m[4] + m[5]),
+                         static_cast<uint8_t>(m[6] + m[7]),
+                         static_cast<uint8_t>(m[8] + m[9]),
+                         static_cast<uint8_t>(m[10] + m[11]),
+                         static_cast<uint8_t>(m[12] + m[13]),
+                         static_cast<uint8_t>(m[14] + m[15])};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_ADDPv2i64: {  // addp vd.2d, vn.2d, vm.2d
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t* m = operands[1].getAsVector<uint64_t>();
+      uint64_t out[2] = {n[0] + n[1], m[0] + m[1]};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_ADDPv4i32: {  // addp vd.4s, vn.4s, vm.4s
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      const uint32_t* m = operands[1].getAsVector<uint32_t>();
+      uint32_t out[4] = {n[0] + n[1], n[2] + n[3], m[0] + m[1], m[2] + m[3]};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_ADDPv8i16: {  // addp vd.8h, vn.8h, vm.8h
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      const uint16_t* m = operands[1].getAsVector<uint16_t>();
+      uint16_t out[8] = {static_cast<uint16_t>(n[0] + n[1]),
+                         static_cast<uint16_t>(n[2] + n[3]),
+                         static_cast<uint16_t>(n[4] + n[5]),
+                         static_cast<uint16_t>(n[6] + n[7]),
+                         static_cast<uint16_t>(m[0] + m[1]),
+                         static_cast<uint16_t>(m[2] + m[3]),
+                         static_cast<uint16_t>(m[4] + m[5]),
+                         static_cast<uint16_t>(m[6] + m[7])};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_ADDSWri: {  // adds wd, wn, #imm{, shift}
       auto x = operands[0].get<uint32_t>();
       auto y = shiftValue(static_cast<uint32_t>(metadata.operands[2].imm),
