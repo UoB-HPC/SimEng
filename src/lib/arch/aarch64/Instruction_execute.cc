@@ -254,7 +254,27 @@ void Instruction::execute() {
                           metadata.operands[2].shift.value);
       auto [result, nzcv] = addWithCarry(x, y, 0);
       results[0] = nzcv;
-      results[1] = result;
+      results[1] = RegisterValue(result, 8);
+      return;
+    }
+    case Opcode::AArch64_ADDSWrs: {  // adds wd, wn, wm{, shift}
+      auto x = operands[0].get<uint32_t>();
+      auto y = shiftValue(operands[1].get<uint32_t>(),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
+      auto [result, nzcv] = addWithCarry(x, y, 0);
+      results[0] = nzcv;
+      results[1] = RegisterValue(result, 8);
+      return;
+    }
+    case Opcode::AArch64_ADDSWrx: {  // adds wd, wn, wm{, extend {#amount}}
+      auto x = operands[0].get<uint32_t>();
+      auto y = static_cast<uint32_t>(
+          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.value));
+      auto [result, nzcv] = addWithCarry(x, y, 0);
+      results[0] = nzcv;
+      results[1] = RegisterValue(result, 8);
       return;
     }
     case Opcode::AArch64_ADDSXri: {  // adds xd, xn, #imm{, shift}
@@ -262,6 +282,36 @@ void Instruction::execute() {
       auto y = shiftValue(static_cast<uint64_t>(metadata.operands[2].imm),
                           metadata.operands[2].shift.type,
                           metadata.operands[2].shift.value);
+      auto [result, nzcv] = addWithCarry(x, y, 0);
+      results[0] = nzcv;
+      results[1] = result;
+      return;
+    }
+    case Opcode::AArch64_ADDSXrs: {  // adds xd, xn, xm{, shift}
+      auto x = operands[0].get<uint64_t>();
+      auto y = shiftValue(operands[1].get<uint64_t>(),
+                          metadata.operands[2].shift.type,
+                          metadata.operands[2].shift.value);
+      auto [result, nzcv] = addWithCarry(x, y, 0);
+      results[0] = nzcv;
+      results[1] = result;
+      return;
+    }
+    case Opcode::AArch64_ADDSXrx: {  // adds xd, xn, xm{, extend {#amount}}
+      auto x = operands[0].get<uint64_t>();
+      auto y =
+          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.value);
+      auto [result, nzcv] = addWithCarry(x, y, 0);
+      results[0] = nzcv;
+      results[1] = result;
+      return;
+    }
+    case Opcode::AArch64_ADDSXrx64: {  // adds xd, xn, xm{, extend {#amount}}
+      auto x = operands[0].get<uint64_t>();
+      auto y =
+          extendValue(operands[1].get<uint64_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.value);
       auto [result, nzcv] = addWithCarry(x, y, 0);
       results[0] = nzcv;
       results[1] = result;

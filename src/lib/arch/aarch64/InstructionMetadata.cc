@@ -33,6 +33,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
+    case Opcode::AArch64_ADDSWri:
+      // adds incorrectly flags destination as READ
+      operands[0].access = CS_AC_WRITE;
+      break;
     case Opcode::AArch64_FMOVXDHighr:
       // FMOVXDHighr incorrectly flags destination as only WRITE
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
