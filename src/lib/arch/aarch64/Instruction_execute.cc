@@ -1257,6 +1257,18 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_LD1Twov16b: {  // ld1 {vt1.16b, vt2.16b}, [xn]
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      return;
+    }
+    case Opcode::AArch64_LD1Twov16b_POST: {  // ld1 {vt1.16b, vt2.16b}, [xn],
+                                             //   #imm
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      results[2] = operands[2].get<uint64_t>() + metadata.operands[3].imm;
+      return;
+    }
     case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
       results[0] = memoryData[0].zeroExtend(4, 8);
       return;
