@@ -167,6 +167,11 @@ TEST_P(InstBitmanip, sbfm) {
     # Test sign extension (select bitfield such that highest bit is set)
     sbfm w5, w0, #12, #22
     sbfm w6, w0, #28, #22
+
+    # Test aliases
+    movz w0, 0x1234
+    sxtb w7, w0
+    sxth w8, w0
   )");
   EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0x000007A0ull);
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x0000007Aull);
@@ -174,7 +179,10 @@ TEST_P(InstBitmanip, sbfm) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0x01E80000ull);
   EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0xFFFFFFA0ull);
   EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0xFFA00000ull);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0x34);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(8), 0x1234);
 
+  // 64-bit
   RUN_AARCH64(R"(
     # Fill desintation registers with 1s
     mov x0, xzr
@@ -194,6 +202,14 @@ TEST_P(InstBitmanip, sbfm) {
     # Test sign extension (select bitfield such that highest bit is set)
     sbfm x5, x0, #12, #22
     sbfm x6, x0, #32, #22
+
+    # Test aliases
+    movz x0, 0x1234
+    lsl x0, x0, 16
+    movk x0, 0x5678
+    sxtb x7, w0
+    sxth x8, w0
+    sxtw x9, w0
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0x00000000000007A0ull);
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0x000000000000007Aull);
@@ -201,6 +217,9 @@ TEST_P(InstBitmanip, sbfm) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x0000000007A00000ull);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xFFFFFFFFFFFFFFA0ull);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFA000000000000ull);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x78);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0x5678);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), 0x12345678);
 }
 
 TEST_P(InstBitmanip, ubfm) {

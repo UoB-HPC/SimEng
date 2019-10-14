@@ -494,10 +494,39 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_SXTB:
+      // sxtb rd, rn; alias for: sbfm rd, rn, #0, #7
+      if (opcode == Opcode::AArch64_SBFMWri ||
+          opcode == Opcode::AArch64_SBFMXri) {
+        operandCount = 4;
+
+        operands[2].type = ARM64_OP_IMM;
+        operands[2].access = CS_AC_READ;
+        operands[2].imm = 0;
+
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].access = CS_AC_READ;
+        operands[3].imm = 7;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_SXTH:
+      // sxth rd, rn; alias for: sbfm rd, rn, #0, #15
+      if (opcode == Opcode::AArch64_SBFMWri ||
+          opcode == Opcode::AArch64_SBFMXri) {
+        operandCount = 4;
+
+        operands[2].type = ARM64_OP_IMM;
+        operands[2].access = CS_AC_READ;
+        operands[2].imm = 0;
+
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].access = CS_AC_READ;
+        operands[3].imm = 15;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_SXTW:
+      // sxtw rd, rn; alias for: sbfm rd, rn, #0, #31
       if (opcode == Opcode::AArch64_SBFMXri) {
         operandCount = 4;
 
