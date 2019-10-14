@@ -239,12 +239,16 @@ TEST_P(InstLoad, ldp) {
   EXPECT_EQ((getGeneralRegister<uint32_t>(4)), 0xABCDEF12);
 
   // 64-bit integer
-  initialHeapData_.resize(32);
+  initialHeapData_.resize(64);
   uint64_t* heapi64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
-  heapi64[0] = 0xDEADBEEFull << 32;
-  heapi64[1] = 0x12345678ull << 16;
-  heapi64[2] = 0x98765432ull << 8;
-  heapi64[3] = 0xABCDEF12ull << 4;
+  heapi64[0] = UINT64_C(0xDEADBEEF) << 32;
+  heapi64[1] = UINT64_C(0x12345678) << 16;
+  heapi64[2] = UINT64_C(0x98765432) << 8;
+  heapi64[3] = UINT64_C(0xABCDEF12) << 4;
+  heapi64[4] = UINT64_C(0xDEADBEEF) << 4;
+  heapi64[5] = UINT64_C(0x12345678) << 8;
+  heapi64[6] = UINT64_C(0x98765432) << 16;
+  heapi64[7] = UINT64_C(0xABCDEF12) << 32;
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -252,13 +256,19 @@ TEST_P(InstLoad, ldp) {
     svc #0
 
     # Load values from heap
-    ldp x1, x2, [x0]
-    ldp x3, x4, [x0, #16]
+    ldp x1, x2, [x0], 16
+    ldp x3, x4, [x0]
+    ldp x5, x6, [x0, 16]!
+    ldp x7, x8, [x0, 16]
   )");
   EXPECT_EQ((getGeneralRegister<uint64_t>(1)), 0xDEADBEEFull << 32);
   EXPECT_EQ((getGeneralRegister<uint64_t>(2)), 0x12345678ull << 16);
   EXPECT_EQ((getGeneralRegister<uint64_t>(3)), 0x98765432ull << 8);
   EXPECT_EQ((getGeneralRegister<uint64_t>(4)), 0xABCDEF12ull << 4);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(5)), 0xDEADBEEFull << 4);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(6)), 0x12345678ull << 8);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(7)), 0x98765432ull << 16);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(8)), 0xABCDEF12ull << 32);
 
   // FP32
   initialHeapData_.resize(16);

@@ -1324,6 +1324,7 @@ void Instruction::execute() {
       results[0] = memoryData[0];
       results[1] = memoryData[1];
       results[2] = operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
+      return;
     }
     case Opcode::AArch64_LDRBBpost: {  // ldrb wt, [xn], #imm
       results[0] = memoryData[0].zeroExtend(1, 8);
