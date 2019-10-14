@@ -241,6 +241,104 @@ TEST_P(InstArithmetic, movk) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x0000FFFFFFFFFFFF);
 }
 
+// Test that NZCV flags are set correctly by 32-bit negs
+TEST_P(InstArithmetic, negsw) {
+  // - 0
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    negs w0, w0
+  )");
+  EXPECT_EQ(getNZCV(), 0b0110);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(0), 0u);
+
+  // - 1
+  RUN_AARCH64(R"(
+    mov w0, 1
+    negs w0, w0
+  )");
+  EXPECT_EQ(getNZCV(), 0b1000);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(0), -1);
+
+  // - -1
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    sub w0, w0, #1
+    negs w0, w0
+  )");
+  EXPECT_EQ(getNZCV(), 0b0000);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(0), 1);
+
+  // - (2^31 - 1)
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    mov w1, #1
+    add w1, w0, w1, lsl #31
+    sub w1, w1, #1
+    negs w0, w1
+  )");
+  EXPECT_EQ(getNZCV(), 0b1000);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(0),
+            static_cast<uint32_t>(-((1ul << 31) - 1)));
+
+  // - (2^31)
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    mov w1, #1
+    negs w0, w1, lsl 31
+  )");
+  EXPECT_EQ(getNZCV(), 0b1001);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(0), static_cast<uint32_t>(1ul << 31));
+}
+
+// Test that NZCV flags are set correctly by 64-bit negs
+TEST_P(InstArithmetic, negsx) {
+  // - 0
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    negs x0, x0
+  )");
+  EXPECT_EQ(getNZCV(), 0b0110);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0u);
+
+  // - 1
+  RUN_AARCH64(R"(
+    mov x0, 1
+    negs x0, x0
+  )");
+  EXPECT_EQ(getNZCV(), 0b1000);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), -1);
+
+  // - -1
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    sub x0, x0, #1
+    negs x0, x0
+  )");
+  EXPECT_EQ(getNZCV(), 0b0000);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 1);
+
+  // - (2^63 - 1)
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    mov x1, #1
+    add x1, x0, x1, lsl #63
+    sub x1, x1, #1
+    negs x0, x1
+  )");
+  EXPECT_EQ(getNZCV(), 0b1000);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0),
+            static_cast<uint64_t>(-((1ul << 63) - 1)));
+
+  // - (2^63)
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    mov x1, #1
+    negs x0, x1, lsl 63
+  )");
+  EXPECT_EQ(getNZCV(), 0b1001);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), static_cast<uint64_t>(1ul << 63));
+}
+
 TEST_P(InstArithmetic, sbc) {
   // 32-bit
   RUN_AARCH64(R"(

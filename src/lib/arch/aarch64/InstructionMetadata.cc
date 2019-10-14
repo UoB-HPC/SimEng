@@ -433,6 +433,23 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_NEGS:
+      if (opcode == Opcode::AArch64_SUBSWrs ||
+          opcode == Opcode::AArch64_SUBSXrs) {
+        // negs rd, rm{, shift #amount}; alias for:
+        //  subs rd, zr, rm{, shift #amount}
+        operandCount = 3;
+        operands[2] = operands[1];
+
+        operands[1].type = ARM64_OP_REG;
+        operands[1].access = CS_AC_READ;
+
+        if (opcode == Opcode::AArch64_SUBWrs) {
+          operands[1].reg = ARM64_REG_WZR;
+        } else {
+          operands[1].reg = ARM64_REG_XZR;
+        }
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_NGC:
       return aliasNYI();
