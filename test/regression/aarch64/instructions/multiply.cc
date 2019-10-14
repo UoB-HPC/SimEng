@@ -81,8 +81,12 @@ TEST_P(InstMul, umaddl) {
     movz w1, 0x100
     movz x2, 0x05, lsl 48
     umaddl x3, w0, w1, x2
+
+    # Test umull alias
+    umull x4, w0, w1
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x0005002A00000000);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x0000002A00000000);
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstMul, ::testing::Values(EMULATION),
