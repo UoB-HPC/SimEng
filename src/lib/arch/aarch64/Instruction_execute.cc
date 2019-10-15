@@ -1587,25 +1587,11 @@ void Instruction::execute() {
       return;
     }
     case Opcode::AArch64_MRS: {  // mrs xt, (systemreg|Sop0_op1_Cn_Cm_op2)
-      // TODO: Correct system register read support
-      uint64_t sysreg = static_cast<uint64_t>(metadata.operands[1].reg);
-      switch (sysreg) {
-        case ARM64_SYSREG_DCZID_EL0:
-          // Temporary: state that DCZ can support clearing 64 bytes at a time,
-          // but is disabled due to bit 4 being set
-          results[0] = static_cast<uint64_t>(0b10100);
-          return;
-        case 0xde82:  // TPIDR_EL0
-          // Temporary: return known Thread-Local Storage (TLS) address for test
-          // file; remove once system register read/write is in place
-          results[0] = static_cast<uint64_t>(0x493d40);
-          return;
-      }
-      results[0] = static_cast<uint64_t>(0);
+      results[0] = operands[0];
       return;
     }
     case Opcode::AArch64_MSR: {  // mrs (systemreg|Sop0_op1_Cn_Cm_op2), xt
-      // TODO: Correct system register write support
+      results[0] = operands[0];
       return;
     }
     case Opcode::AArch64_MSUBWrrr: {  // msub wd, wn, wm, wa

@@ -20,6 +20,11 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
   }
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
+
+  // Generate zero-indexed system register map
+  systemRegisterMap_[ARM64_SYSREG_DCZID_EL0] = systemRegisterMap_.size();
+  systemRegisterMap_[0xda20] = systemRegisterMap_.size();  // FPCR
+  systemRegisterMap_[0xde82] = systemRegisterMap_.size();  // TPIDR_EL0
 }
 Architecture::~Architecture() { cs_close(&capstoneHandle); }
 
@@ -100,11 +105,18 @@ std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
 
 std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
     const {
+  uint16_t numSysRegs = static_cast<uint16_t>(systemRegisterMap_.size());
   return {
-      {8, 32},   // General purpose
-      {16, 32},  // Vector
-      {1, 1}     // NZCV
+      {8, 32},          // General purpose
+      {16, 32},         // Vector
+      {1, 1},           // NZCV
+      {8, numSysRegs},  // System
   };
+}
+
+uint16_t Architecture::getSystemRegisterTag(uint16_t reg) const {
+  assert(systemRegisterMap_.count(reg) && "unhandled system register");
+  return systemRegisterMap_.at(reg);
 }
 
 ProcessStateChange Architecture::getInitialState() const {
@@ -114,6 +126,13 @@ ProcessStateChange Architecture::getInitialState() const {
   // Set the stack pointer register
   changes.modifiedRegisters.push_back({RegisterType::GENERAL, 31});
   changes.modifiedRegisterValues.push_back(stackPointer);
+
+  // Set the system registers
+  // Temporary: state that DCZ can support clearing 64 bytes at a time,
+  // but is disabled due to bit 4 being set
+  changes.modifiedRegisters.push_back(
+      {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)});
+  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
 
   return changes;
 }

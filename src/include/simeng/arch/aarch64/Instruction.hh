@@ -22,6 +22,8 @@ const uint8_t GENERAL = 0;
 const uint8_t VECTOR = 1;
 /** The 4-bit NZCV condition flag register. */
 const uint8_t NZCV = 2;
+/** The system registers. */
+const uint8_t SYSTEM = 3;
 }  // namespace RegisterType
 
 /** The IDs of the instruction groups for AArch64 instructions. */
