@@ -16,10 +16,11 @@ namespace outoforder {
 
 // TODO: Replace with config options
 // TODO: Physical registers are configured for TX2 booted with 4-way SMT
+// TODO: System register count has to match number of supported system registers
 const std::initializer_list<uint16_t> physicalRegisterQuantities = {154, 90,
-                                                                    128};
+                                                                    128, 3};
 const std::initializer_list<RegisterFileStructure> physicalRegisterStructures =
-    {{8, 154}, {16, 90}, {1, 128}};
+    {{8, 154}, {16, 90}, {1, 128}, {8, 3}};
 const unsigned int robSize = 180;
 const unsigned int rsSize = 60;
 const unsigned int loadQueueSize = 64;
