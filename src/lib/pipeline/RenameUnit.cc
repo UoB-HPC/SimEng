@@ -63,10 +63,18 @@ void RenameUnit::tick() {
       }
     }
 
+    bool serialize = false;
+
     auto& destinationRegisters = uop->getDestinationRegisters();
     // Count the number of each type of destination registers needed, and ensure
     // enough free registers exist to allocate them.
     for (const auto& reg : destinationRegisters) {
+      // Check whether renaming is allowed, otherwise we need to serialize
+      if (!rat_.canRename(reg.type)) {
+        serialize = true;
+        continue;
+      }
+
       if (freeRegistersAvailable_[reg.type] == 0) {
         // Not enough free registers available for this uop
         input_.stall(true);
@@ -74,6 +82,14 @@ void RenameUnit::tick() {
         return;
       }
       freeRegistersAvailable_[reg.type]--;
+    }
+
+    if (serialize) {
+      // Wait until ROB is empty before continuing
+      if (reorderBuffer_.size() > 0) {
+        input_.stall(true);
+        return;
+      }
     }
 
     input_.stall(false);
@@ -90,7 +106,9 @@ void RenameUnit::tick() {
     // Allocate destination registers
     for (size_t i = 0; i < destinationRegisters.size(); i++) {
       const auto& reg = destinationRegisters[i];
-      uop->renameDestination(i, rat_.allocate(reg));
+      if (rat_.canRename(reg.type)) {
+        uop->renameDestination(i, rat_.allocate(reg));
+      }
     }
 
     // Reserve a slot in the ROB for this uop

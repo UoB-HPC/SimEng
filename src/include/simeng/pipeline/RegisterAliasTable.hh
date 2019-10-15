@@ -25,6 +25,9 @@ class RegisterAliasTable {
    * of type `type` this cycle. */
   bool canAllocate(uint8_t type, unsigned int quantity) const;
 
+  /** Check whether registers of type `type` can be renamed by this RAT. */
+  bool canRename(uint8_t type) const;
+
   /** Allocate a physical register for the provided architectural register. */
   Register allocate(Register architectural);
 
