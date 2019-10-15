@@ -34,7 +34,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     metadataCache.emplace_front(metadata);
     output.resize(1);
     auto& uop = output[0];
-    uop = std::make_shared<Instruction>(metadataCache.front(),
+    uop = std::make_shared<Instruction>(*this, metadataCache.front(),
                                         InstructionException::MisalignedPC);
     uop->setInstructionAddress(instructionAddress);
     uop->setBranchPrediction(prediction);
@@ -74,7 +74,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
     // Create and cache an instruction using the metadata and latencies
     auto result = decodeCache.insert(
-        {insn, {metadataCache.front(), latencies.first, latencies.second}});
+        {insn,
+         {*this, metadataCache.front(), latencies.first, latencies.second}});
 
     iter = result.first;
   }

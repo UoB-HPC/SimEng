@@ -12,6 +12,7 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
+class Architecture;
 struct InstructionMetadata;
 
 namespace RegisterType {
@@ -49,11 +50,13 @@ class Instruction : public simeng::Instruction {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.
    */
-  Instruction(const InstructionMetadata& metadata, uint8_t latency,
+  Instruction(const Architecture& architecture,
+              const InstructionMetadata& metadata, uint8_t latency,
               uint8_t stallCycles);
 
   /** Construct an instruction instance that raises an exception. */
-  Instruction(const InstructionMetadata& metadata,
+  Instruction(const Architecture& architecture,
+              const InstructionMetadata& metadata,
               InstructionException exception);
 
   /** Retrieve the identifier for the first exception that occurred during
@@ -136,6 +139,9 @@ class Instruction : public simeng::Instruction {
   /** The maximum number of destination registers any supported AArch64
    * instruction can have. */
   static const size_t MAX_DESTINATION_REGISTERS = 3;
+
+  /** A reference to the ISA instance this instruction belongs to. */
+  const Architecture& architecture_;
 
   /** A reference to the decoding metadata for this instruction. */
   const InstructionMetadata& metadata;
