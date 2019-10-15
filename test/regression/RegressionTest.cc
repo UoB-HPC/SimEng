@@ -78,7 +78,7 @@ void RegressionTest::run(const char* source, const char* triple) {
             processMemory_ + process_->getHeapStart());
 
   // Create the architecture
-  std::unique_ptr<simeng::arch::Architecture> arch = createArchitecture(kernel);
+  architecture_ = createArchitecture(kernel);
 
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
@@ -92,19 +92,19 @@ void RegressionTest::run(const char* source, const char* triple) {
     case EMULATION:
       core_ = std::make_unique<simeng::models::emulation::Core>(
           instructionMemory, *flatDataMemory, entryPoint, processMemorySize_,
-          *arch);
+          *architecture_);
       dataMemory = std::move(flatDataMemory);
       break;
     case INORDER:
       core_ = std::make_unique<simeng::models::inorder::Core>(
           instructionMemory, *flatDataMemory, processMemorySize_, entryPoint,
-          *arch, predictor);
+          *architecture_, predictor);
       dataMemory = std::move(flatDataMemory);
       break;
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *arch, predictor, *portAllocator);
+          entryPoint, *architecture_, predictor, *portAllocator);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }

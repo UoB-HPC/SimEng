@@ -5,6 +5,7 @@ add_executable(regression-aarch64
                LoadStoreQueue.cc
                SmokeTest.cc
                Syscall.cc
+               SystemRegisters.cc
                instructions/arithmetic.cc
                instructions/bitmanip.cc
                instructions/comparison.cc
