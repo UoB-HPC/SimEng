@@ -51,6 +51,11 @@ bool RegisterAliasTable::canAllocate(uint8_t type,
   return (freeQueues_[type].size() >= quantity);
 }
 
+bool RegisterAliasTable::canRename(uint8_t type) const {
+  // Renaming possible iff there are more physical than architectural registers
+  return destinationTable_[type].size() > mappingTable_[type].size();
+}
+
 unsigned int RegisterAliasTable::freeRegistersAvailable(uint8_t type) const {
   return freeQueues_[type].size();
 }

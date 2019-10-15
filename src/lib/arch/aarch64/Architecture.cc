@@ -117,8 +117,6 @@ ProcessStateChange Architecture::getInitialState() const {
   return changes;
 }
 
-bool Architecture::canRename(Register reg) const { return true; }
-
 std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     InstructionMetadata& metadata) const {
   const std::pair<uint8_t, uint8_t> FPSIMD_LATENCY = {6, 1};
