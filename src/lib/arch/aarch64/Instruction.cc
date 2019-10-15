@@ -13,18 +13,20 @@ namespace aarch64 {
 const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
                                              (uint16_t)-1};
 
-Instruction::Instruction(const InstructionMetadata& metadata, uint8_t latency,
+Instruction::Instruction(const Architecture& architecture,
+                         const InstructionMetadata& metadata, uint8_t latency,
                          uint8_t stallCycles)
-    : metadata(metadata) {
+    : architecture_(architecture), metadata(metadata) {
   latency_ = latency;
   stallCycles_ = stallCycles;
 
   decode();
 }
 
-Instruction::Instruction(const InstructionMetadata& metadata,
+Instruction::Instruction(const Architecture& architecture,
+                         const InstructionMetadata& metadata,
                          InstructionException exception)
-    : metadata(metadata) {
+    : architecture_(architecture), metadata(metadata) {
   exception_ = exception;
   exceptionEncountered_ = true;
 }
