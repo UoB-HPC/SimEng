@@ -87,6 +87,9 @@ class RegressionTest : public ::testing::TestWithParam<CoreType> {
   /** The number of ticks that were run before the test program completed. */
   uint64_t numTicks_ = 0;
 
+  /** The architecture instance. */
+  std::unique_ptr<simeng::arch::Architecture> architecture_;
+
   /** The process memory. */
   char* processMemory_ = nullptr;
 

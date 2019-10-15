@@ -2,6 +2,7 @@
 
 #include "RegressionTest.hh"
 
+#include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 
 /** A helper macro to run a snippet of Armv8 assembly code, returning from the
@@ -69,6 +70,15 @@ class AArch64RegressionTest : public RegressionTest {
   template <typename T>
   T getGeneralRegister(uint8_t tag) const {
     return getRegister<T>({simeng::arch::aarch64::RegisterType::GENERAL, tag});
+  }
+
+  /** Get the value of a system register. */
+  uint64_t getSystemRegister(uint16_t encoding) const {
+    auto arch = reinterpret_cast<simeng::arch::aarch64::Architecture*>(
+        architecture_.get());
+    uint16_t tag = arch->getSystemRegisterTag(encoding);
+    return getRegister<uint64_t>(
+        {simeng::arch::aarch64::RegisterType::SYSTEM, tag});
   }
 
   /** Get the value of a vector register element. */
