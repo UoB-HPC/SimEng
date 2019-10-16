@@ -34,7 +34,9 @@ RegressionTest::~RegressionTest() {
 }
 
 void RegressionTest::TearDown() {
-  if (!programFinished_) testing::internal::GetCapturedStdout();
+  if (!programFinished_) {
+    std::cout << testing::internal::GetCapturedStdout();
+  }
 }
 
 void RegressionTest::run(const char* source, const char* triple) {
