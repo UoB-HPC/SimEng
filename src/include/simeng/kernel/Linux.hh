@@ -32,6 +32,17 @@ struct stat {
   uint32_t padding7;  // offset = 124
 };
 
+/** Fixed-width definition of `termios`.
+ * Defined by Linux kernel in `include/uapi/asm-generic/termbits.h` */
+struct ktermios {
+  uint32_t c_iflag;  // input mode flags
+  uint32_t c_oflag;  // output mode flags
+  uint32_t c_cflag;  // control mode flags
+  uint32_t c_lflag;  // local mode flags
+  uint8_t c_line;    // line discipline
+  uint8_t c_cc[19];  // control characters
+};
+
 /** Fixed-width definition of `timeval` (from `<sys/time.h>`). */
 struct timeval {
   int64_t tv_sec;   // seconds

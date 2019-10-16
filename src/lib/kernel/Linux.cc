@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/termios.h>
 #include <sys/uio.h>
 #include <unistd.h>
 #include <algorithm>
@@ -136,6 +137,23 @@ int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
   }
 
   switch (request) {
+    case 0x5401: {  // TCGETS
+      struct ::termios hostResult;
+      int64_t retval;
+#ifdef __APPLE__
+      retval = ::ioctl(hfd, TIOCGETA, &hostResult);
+#else
+      retval = ::ioctl(hfd, TCGETS, &hostResult);
+#endif
+      out.resize(sizeof(ktermios));
+      ktermios& result = *reinterpret_cast<ktermios*>(out.data());
+      result.c_iflag = hostResult.c_iflag;
+      result.c_oflag = hostResult.c_oflag;
+      result.c_cflag = hostResult.c_cflag;
+      result.c_lflag = hostResult.c_lflag;
+      // TODO: populate c_line and c_cc
+      return retval;
+    }
     case 0x5413:  // TIOCGWINSZ
       out.resize(sizeof(struct winsize));
       ::ioctl(hfd, TIOCGWINSZ, out.data());
