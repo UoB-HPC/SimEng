@@ -176,7 +176,7 @@ int main(int argc, char** argv) {
   // Create the architecture, with knowledge of the kernel
   auto arch = simeng::arch::aarch64::Architecture(kernel);
 
-  auto predictor = simeng::BTBPredictor(8);
+  auto predictor = simeng::BTBPredictor(16);
 
   // TODO: Construct port arrangement from config options
   const std::vector<std::vector<uint16_t>> portArrangement = {
