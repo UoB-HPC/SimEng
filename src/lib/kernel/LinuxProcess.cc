@@ -1,5 +1,8 @@
 #include "simeng/kernel/LinuxProcess.hh"
 
+#include <cassert>
+#include <cstring>
+
 namespace simeng {
 namespace kernel {
 
@@ -14,9 +17,11 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
   return value + (boundary - remainder);
 }
 
-LinuxProcess::LinuxProcess(std::string path) : path_(path) {
+LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine)
+    : commandLine_(commandLine) {
   // Parse ELF file
-  Elf elf(path);
+  assert(commandLine.size() > 0);
+  Elf elf(commandLine[0]);
   if (!elf.isValid()) {
     return;
   }
@@ -40,6 +45,9 @@ LinuxProcess::LinuxProcess(std::string path) : path_(path) {
 }
 
 LinuxProcess::LinuxProcess(span<char> instructions) {
+  // Leave program command string empty
+  commandLine_.push_back("\0");
+
   isValid_ = true;
 
   // Align heap start to a 16-byte boundary
@@ -63,7 +71,7 @@ uint64_t LinuxProcess::getHeapStart() const { return heapStart_; }
 
 uint64_t LinuxProcess::getStackStart() const { return size_; }
 
-std::string LinuxProcess::getPath() const { return path_; }
+std::string LinuxProcess::getPath() const { return commandLine_[0]; }
 
 bool LinuxProcess::isValid() const { return isValid_; }
 
@@ -79,31 +87,41 @@ void LinuxProcess::createStack() {
   // Decrement the stack pointer and populate with initial stack state
   // (https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html)
 
-  uint64_t initialStackFrame[] = {
-      // Program arguments
-      // TODO: allow defining program arguments
-      0,  // argc
-      0,  // argv null terminator
+  stackPointer_ = getStackStart();
+  std::vector<uint64_t> initialStackFrame;
 
-      // Environment variable pointers (envp)
-      // TODO: pass environment variables to program
-      0,  // null terminator
+  // Program arguments (argc, argv[])
+  initialStackFrame.push_back(commandLine_.size());  // argc
+  for (size_t i = 0; i < commandLine_.size(); i++) {
+    // Push argv[i] to the stack
+    size_t argSize = commandLine_[i].size() + 1;
+    stackPointer_ -= alignToBoundary(argSize, 16);
+    std::memcpy(processImage_ + stackPointer_, commandLine_[i].data(), argSize);
 
-      // ELF auxillary vector, keys defined in `uapi/linux/auxvec.h`
-      // TODO: populate remaining auxillary vector entries
-      6, 4096,  // AT_PAGESZ -> 4KB
-      0         // null terminator
-  };
+    initialStackFrame.push_back(stackPointer_);  // pointer to argv[i]
+  }
+  initialStackFrame.push_back(0);  // null terminator
 
-  size_t stackFrameSize = sizeof(initialStackFrame);
+  // Environment variable pointers (envp[])
+  // TODO: pass environment variables to program
+  initialStackFrame.push_back(0);  // null terminator
+
+  // ELF auxillary vector, keys defined in `uapi/linux/auxvec.h`
+  // TODO: populate remaining auxillary vector entries
+  initialStackFrame.push_back(6);     // AT_PAGESZ
+  initialStackFrame.push_back(4096);  // = 4KB
+  initialStackFrame.push_back(0);     // null terminator
+
+  size_t stackFrameSize = initialStackFrame.size() * 8;
 
   // Round the stack offset up to the nearest multiple of 16, as the stack
   // pointer must be aligned to a 16-byte interval on some architectures
   uint64_t stackOffset = alignToBoundary(stackFrameSize, 16);
 
-  stackPointer_ = getStackStart() - stackOffset;
+  stackPointer_ -= stackOffset;
 
-  char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame);
+  // Copy initial stack frame to process memory
+  char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame.data());
   std::copy(stackFrameBytes, stackFrameBytes + stackFrameSize,
             processImage_ + stackPointer_);
 }
