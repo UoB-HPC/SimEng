@@ -25,8 +25,10 @@ namespace kernel {
  */
 class LinuxProcess {
  public:
-  /** Construct a Linux process from an ELF file at `path`. */
-  LinuxProcess(std::string path);
+  /** Construct a Linux process from a vector of command-line arguments.
+   *
+   * The first argument is a path to an executable ELF file. */
+  LinuxProcess(const std::vector<std::string>& commandLine);
 
   /** Construct a Linux process from region of instruction memory, with the
    * entry point fixed at 0. */
@@ -80,8 +82,8 @@ class LinuxProcess {
   /** The process image size. */
   uint64_t size_;
 
-  /** The path of the process executable. */
-  std::string path_;
+  /** The process command and its arguments. */
+  std::vector<std::string> commandLine_;
 
   /** Whether the process image was created successfully. */
   bool isValid_ = false;
