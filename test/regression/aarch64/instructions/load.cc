@@ -61,6 +61,41 @@ TEST_P(InstLoad, ldrb) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0x56);
 }
 
+TEST_P(InstLoad, ldrd) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 1.0;
+  heap[1] = 123.456;
+  heap[2] = -0.00032;
+  heap[3] = 123456;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr d1, [x0], 8
+    ldr d2, [x0]
+    ldr d3, [x0, 8]!
+    ldr d4, [x0, 8]
+
+    mov w5, -8
+    ldr d6, [x0, w5, sxtw]
+    mov x5, 8
+    ldr d7, [x0, x5]
+    mov x5, 1
+    ldr d8, [x0, x5, lsl 3]
+  )");
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(1)), 1.0);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(2)), 123.456);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(3)), -0.00032);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(4)), 123456);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(6)), 123.456);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(7)), 123456);
+  EXPECT_EQ((getVectorRegisterElement<double, 0>(8)), 123456);
+}
+
 TEST_P(InstLoad, ldrh) {
   initialHeapData_.resize(8);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());

@@ -1350,6 +1350,20 @@ void Instruction::execute() {
       results[0] = memoryData[0].zeroExtend(1, 8);
       return;
     }
+    case Opcode::AArch64_LDRDpost: {  // ldr dt, [xn], #imm
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 16);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
+      return;
+    }
+    case Opcode::AArch64_LDRDpre: {  // ldr dt, [xn, #imm]!
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 16);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+      return;
+    }
+    case Opcode::AArch64_LDRDroW: {  // ldr dt, [xn, wm, {extend {#amount}}]
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 16);
+      return;
+    }
     case Opcode::AArch64_LDRDroX: {  // ldr dt, [xn, xm, {extend {#amount}}]
       results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 16);
       return;
