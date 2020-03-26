@@ -11,6 +11,14 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
          "generateAddresses called on non-load-or-store instruction");
 
   switch (metadata.opcode) {
+    case Opcode::AArch64_LD1Rv4s: { // ld1r {vt.4s}, [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+      break;
+    }
+    case Opcode::AArch64_LD1Rv4s_POST: { // ld1r {vt.4s}, [xn], #imm
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+      break;
+    }
     case Opcode::AArch64_LD1Twov16b: {  // ld1 {vt1.16b, vt2.16b}, [xn]
       uint64_t base = operands[2].get<uint64_t>();
       setMemoryAddresses({{base, 16}, {base + 16, 16}});
@@ -186,6 +194,12 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});
       break;
     }
+    case Opcode::AArch64_LDRXroW: {  // ldr xt, [xn, wn{, extend, {#amount}}]      
+      uint64_t offset =
+          extendOffset(operands[1].get<uint32_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 8}});
+      break;
+    }
     case Opcode::AArch64_LDRXroX: {  // ldr xt, [xn, xn{, extend, {#amount}}]
       uint64_t offset =
           extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
@@ -198,6 +212,17 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       break;
     }
     case Opcode::AArch64_LDPDi: {  // ldp dt1, dt2, [xn, #imm]
+      uint64_t base =
+          operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
+      setMemoryAddresses({{base, 8}, {base + 8, 8}});
+      break;
+    }
+    case Opcode::AArch64_LDPDpost: {  // ldp dt1, dt2, [xn], #imm
+      uint64_t base = operands[0].get<uint64_t>();
+      setMemoryAddresses({{base, 8}, {base + 8, 8}});
+      break;
+    }
+    case Opcode::AArch64_LDPDpre: {  // ldp dt1, dt2, [xn, #imm]
       uint64_t base =
           operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
       setMemoryAddresses({{base, 8}, {base + 8, 8}});
@@ -260,6 +285,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});
       break;
     }
+    case Opcode::AArch64_LDURDi: {  // ldur dt, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});
+      break;
+    }
     case Opcode::AArch64_LDURQi: {  // ldur qt, [xn, #imm]
       setMemoryAddresses(
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 16}});
@@ -292,6 +322,17 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       break;
     }
     case Opcode::AArch64_STPDi: {  // stp dt1, dt2, [xn, #imm]
+      uint64_t base =
+          operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
+      setMemoryAddresses({{base, 8}, {base + 8, 8}});
+      break;
+    }
+    case Opcode::AArch64_STPDpost: {  // stp dt1, dt2, [xn], #imm
+      uint64_t base = operands[2].get<uint64_t>();
+      setMemoryAddresses({{base, 8}, {base + 8, 8}});
+      break;
+    }
+    case Opcode::AArch64_STPDpre: {  // stp dt1, dt2, [xn, #imm]!
       uint64_t base =
           operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
       setMemoryAddresses({{base, 8}, {base + 8, 8}});
@@ -533,6 +574,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 16}});
       break;
     }
+    case Opcode::AArch64_STURSi: {  // stur st, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});
+      break;
+    }
     case Opcode::AArch64_STURWi: {  // stur wt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});
@@ -548,6 +594,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       break;
     }
     default:
+      exceptionEncountered_ = true;
       exception_ = InstructionException::ExecutionNotYetImplemented;
   }
   return getGeneratedAddresses();

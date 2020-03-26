@@ -442,6 +442,62 @@ TEST_P(InstFloat, fmadd) {
   CHECK_NEON(4, double, {1.0625, 0.0});
 }
 
+TEST_P(InstFloat, fmaxnm){
+  // 64-bit numeric
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 7.5
+    fmaxnm d3, d0, d2
+    fmaxnm d4, d1, d2
+  )");
+  CHECK_NEON(3, double, {7.5, 0.0});
+  CHECK_NEON(4, double, {7.5, 0.0});
+  
+  // 64-bit with NAN
+  initialHeapData_.resize(8);
+  reinterpret_cast<double*>(initialHeapData_.data())[0] = std::nan("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fmov d0, -2.0
+    ldr d1, [x0]
+    fmaxnm d2, d0, d1
+  )");
+  CHECK_NEON(2, double, {-2.0, 0.0});
+}
+
+TEST_P(InstFloat, fminnm){
+  // 64-bit
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 7.5
+    fminnm d3, d0, d2
+    fminnm d4, d1, d2
+  )");
+  CHECK_NEON(3, double, {2.0, 0.0});
+  CHECK_NEON(4, double, {-0.125, 0.0});
+
+  // 64-bit with NAN
+  initialHeapData_.resize(8);
+  reinterpret_cast<double*>(initialHeapData_.data())[0] = std::nan("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fmov d0, 2.0
+    ldr d1, [x0]
+    fminnm d2, d0, d1
+  )");
+  CHECK_NEON(2, double, {2.0, 0.0});
+}
+
 TEST_P(InstFloat, fmov) {
   // FP32 scalar from immediate
   RUN_AARCH64(R"(

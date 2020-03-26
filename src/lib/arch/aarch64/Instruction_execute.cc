@@ -197,6 +197,16 @@ void Instruction::execute() {
 
   executed_ = true;
   switch (metadata.opcode) {
+    case Opcode::AArch64_ADDv4i32: {  // add vd.4s, vn.4s, vm.4s
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      const uint32_t* m = operands[1].getAsVector<uint32_t>();
+      uint32_t out[4] = {static_cast<uint32_t>(n[0] + m[0]),
+                         static_cast<uint32_t>(n[1] + m[1]),
+                         static_cast<uint32_t>(n[2] + m[2]), 
+                         static_cast<uint32_t>(n[3] + m[3])};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_ADDPv16i8: {  // addp vd.16b, vn.16b, vm.16b
       const uint8_t* n = operands[0].getAsVector<uint8_t>();
       const uint8_t* m = operands[1].getAsVector<uint8_t>();
@@ -451,6 +461,13 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_ANDv8i8: {  // and vd.8b, vn.8b, vm.8b
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      const uint32_t* m = operands[1].getAsVector<uint32_t>();
+      uint32_t out[4] = {n[0] & m[0], n[1] & m[1], 0, 0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_ASRVWr: {  // asrv wd, wn, wm
       auto n = operands[0].get<int32_t>();
       auto m = operands[1].get<uint32_t>();
@@ -520,6 +537,24 @@ void Instruction::execute() {
         branchTaken_ = false;
         branchAddress_ = instructionAddress_ + 4;
       }
+      return;
+    }
+    case Opcode::AArch64_BIFv16i8: {  // bif vd.16b, vn.16b, vm.16b
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* n = operands[1].getAsVector<uint64_t>();
+      const uint64_t* m = operands[2].getAsVector<uint64_t>();
+      uint64_t out[2] = {(d[0] & m[0]) | (n[0] & ~m[0]),
+                         (d[1] & m[1]) | (n[1] & ~m[1])};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_BITv16i8: {  // bit vd.16b, vn.16b, vm.16b
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* n = operands[1].getAsVector<uint64_t>();
+      const uint64_t* m = operands[2].getAsVector<uint64_t>();  
+      uint64_t out[2] = {(d[0] & ~m[0]) | (n[0] & m[0]),
+                         (d[1] & ~m[1]) | (n[1] & m[1])};
+      results[0] = out;
       return;
     }
     case Opcode::AArch64_BL: {  // bl #imm
@@ -749,6 +784,19 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_DUPv2i32gpr: {  // dup vd.2s, wn
+      uint32_t element = operands[0].get<uint32_t>();
+      uint32_t out[4] = {element, element, 0, 0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_DUPv2i32lane: {  // dup vd.2s, vn.s[index]
+      int index = metadata.operands[1].vector_index;
+      uint32_t element = operands[0].getAsVector<uint32_t>()[index];
+      uint32_t out[4] = {element, element, 0, 0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_DUPv2i64gpr: {  // dup vd.2d, xn
       uint64_t out[2];
       std::fill(std::begin(out), std::end(out), operands[0].get<uint64_t>());
@@ -760,6 +808,12 @@ void Instruction::execute() {
       uint64_t element = operands[0].getAsVector<uint64_t>()[index];
       uint64_t out[2];
       std::fill(std::begin(out), std::end(out), element);
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_DUPv4i16gpr: {  // dup vd.4h, wn
+      uint16_t element = operands[0].get<uint16_t>();
+      uint16_t out[8] = {element, element, element, element, 0, 0, 0, 0};
       results[0] = out;
       return;
     }
@@ -877,6 +931,19 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FADDv4f32: {  // fadd vd.4s, vn.4s, vm.4s
+      const float* a = operands[0].getAsVector<float>();
+      const float* b = operands[1].getAsVector<float>();
+      float out[4] = {a[0] + b[0], a[1] + b[1], a[2] + b[2], a[3] + b[3]};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FADDPv2i64p: {  // faddp dd, vn.2d
+      const double* a = operands[0].getAsVector<double>();
+      double out[2] = {a[0] + a[1], 0.0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FCCMPDrr:     // fccmp sn, sm, #nzcv, cc
     case Opcode::AArch64_FCCMPEDrr: {  // fccmpe sn, sm, #nzcv, cc
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
@@ -917,17 +984,47 @@ void Instruction::execute() {
       }
       return;
     }
-    case Opcode::AArch64_FCMGEv2i64rz: {  // fcmge vd.2s, vn.2s, 0.0
+    case Opcode::AArch64_FCMGEv2i64rz: {  // fcmge vd.2d, vn.2d, 0.0
       const double* n = operands[0].getAsVector<double>();
       uint64_t out[2] = {static_cast<uint64_t>(n[0] >= 0.0 ? -1 : 0),
                          static_cast<uint64_t>(n[1] >= 0.0 ? -1 : 0)};
       results[0] = out;
       return;
     }
-    case Opcode::AArch64_FCMPDri: {  // fcmp dn, #imm
+    case Opcode::AArch64_FCMGEv4i32rz: {  // fcmge vd.4s, vn.4s, 0.0
+      const float* n = operands[0].getAsVector<float>();
+      uint32_t out[4] = {static_cast<uint32_t>(n[0] >= 0.0 ? -1 : 0),
+                         static_cast<uint32_t>(n[1] >= 0.0 ? -1 : 0),
+                         static_cast<uint32_t>(n[2] >= 0.0 ? -1 : 0),
+                         static_cast<uint32_t>(n[3] >= 0.0 ? -1 : 0)};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FCMGTv4f32: {  // fcmgt vd.4s, vn.4s, vm.4s
+      const float* n = operands[0].getAsVector<float>();
+      const float* m = operands[1].getAsVector<float>();
+      uint32_t out[4] = {static_cast<uint32_t>(n[0] > m[0] ? -1 : 0),
+                         static_cast<uint32_t>(n[1] > m[1] ? -1 : 0),
+                         static_cast<uint32_t>(n[2] > m[2] ? -1 : 0),
+                         static_cast<uint32_t>(n[3] > m[3] ? -1 : 0)};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FCMLTv4i32rz: {  // fcmlt vd.4s, vn.4s, #0.0
+      const float* n = operands[0].getAsVector<float>();
+      uint32_t out[4] = {static_cast<uint32_t>(n[0] < 0.0 ? -1 : 0),
+                         static_cast<uint32_t>(n[1] < 0.0 ? -1 : 0),
+                         static_cast<uint32_t>(n[2] < 0.0 ? -1 : 0),
+                         static_cast<uint32_t>(n[3] < 0.0 ? -1 : 0)};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FCMPDri:  // fcmp dn, #imm
+    case Opcode::AArch64_FCMPEDri: {  // fcmpe dn, #imm
       double a = operands[0].get<double>();
       double b = metadata.operands[1].fp;
       if (std::isnan(a) || std::isnan(b)) {
+        // TODO: Raise exception if NaNs are signalling or fcmpe
         results[0] = nzcv(false, false, true, true);
       } else if (a == b) {
         results[0] = nzcv(false, true, true, false);
@@ -1067,11 +1164,89 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMAXNMDrr: {  // fmaxnm dd, dn, dm
+      double n = operands[0].get<double>();
+      double m = operands[1].get<double>();
+      double out[2] = {std::fmax(n, m), 0.0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMINNMDrr: {  // fminnm dd, dn, dm
+      double n = operands[0].get<double>();
+      double m = operands[1].get<double>();
+      double out[2] = {std::fmin(n, m), 0.0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMINNMv2f64: {  // fminnm vd.2d, vn.2d, vm.2d       
+      const double* n = operands[0].getAsVector<double>();
+      const double* m = operands[1].getAsVector<double>();
+      double out[2] = {std::fmin(n[0], m[0]), std::fmin(n[1], m[1])};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMAXNMv2f64: {  // fmaxnm vd.2d, vn.2d, vm.2d
+      const double* n = operands[0].getAsVector<double>();
+      const double* m = operands[1].getAsVector<double>();
+      double out[2] = {std::fmax(n[0], m[0]), std::fmax(n[1], m[1])};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMAXNMPv2i64p: {  // fmaxnmp dd vd.2d
+      const double* n = operands[0].getAsVector<double>();
+      double out[2] = {std::fmax(n[0], n[1]), 0.0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMINNMPv2i64p: {  // fminnmp dd vd.2d
+      const double* n = operands[0].getAsVector<double>();
+      double out[2] = {std::fmin(n[0], n[1]), 0.0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMLAv2f64: {  // fmla vd.2d, vn.2d, vm.2d
       const double* a = operands[0].getAsVector<double>();
       const double* b = operands[1].getAsVector<double>();
       const double* c = operands[2].getAsVector<double>();
       double out[2] = {a[0] + b[0] * c[0], a[1] + b[1] * c[1]};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMLAv4f32: {  // fmla vd.4s, vn.4s, vm.4s
+      const float* a = operands[0].getAsVector<float>();
+      const float* b = operands[1].getAsVector<float>();
+      const float* c = operands[2].getAsVector<float>();
+      float out[4] = {a[0] + b[0] * c[0], a[1] + b[1] * c[1], 
+                      a[2] + b[2] * c[2], a[3] + b[3] * c[3]};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMLAv4i32_indexed: {  // fmla vd.4s, vn.4s, vm.s[index]
+      const float* a = operands[0].getAsVector<float>();
+      const float* b = operands[1].getAsVector<float>();
+      int index = metadata.operands[2].vector_index;
+      const float c = operands[2].getAsVector<float>()[index];
+      float out[4] = {a[0] + b[0] * c, a[1] + b[1] * c, 
+                      a[2] + b[2] * c, a[3] + b[3] * c}; 
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMLSv4f32: {  // fmls vd.4s, vn.4s, vm.4s
+      const float* a = operands[0].getAsVector<float>();
+      const float* b = operands[1].getAsVector<float>();
+      const float* c = operands[2].getAsVector<float>();
+      float out[4] = {a[0] - b[0] * c[0], a[1] - b[1] * c[1], 
+                      a[2] - b[2] * c[2], a[3] - b[3] * c[3]};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMLSv4i32_indexed: {  // fmls vd.4s, vn.4s, vm.s[index]
+      const float* a = operands[0].getAsVector<float>();
+      const float* b = operands[1].getAsVector<float>();
+      int index = metadata.operands[2].vector_index;
+      const float c = operands[2].getAsVector<float>()[index];
+      float out[4] = {a[0] - b[0] * c, a[1] - b[1] * c, 
+                      a[2] - b[2] * c, a[3] - b[3] * c};
       results[0] = out;
       return;
     }
@@ -1194,6 +1369,14 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMULv4i32_indexed: {  // fmul vd.4s, vn.4s, vm.s[index]
+      int index = metadata.operands[2].vector_index;
+      const float* a = operands[0].getAsVector<float>();
+      const float b = operands[1].getAsVector<float>()[index];
+      float out[4] = {a[0] * b, a[1] * b, a[2] * b, a[3] * b};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FNEGDr: {  // fneg dd, dn
       double out[2] = {-operands[0].get<double>(), 0.0};
       results[0] = out;
@@ -1207,6 +1390,12 @@ void Instruction::execute() {
     case Opcode::AArch64_FNEGv2f64: {  // fneg vd.2d, vn.2d
       const double* n = operands[0].getAsVector<double>();
       double out[2] = {-n[0], -n[1]};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FNEGv4f32: {  // fneg vd.4s, vn.4s
+      const float* n = operands[0].getAsVector<float>();
+      float out[4] = {-n[0], -n[1], -n[2], -n[3]};
       results[0] = out;
       return;
     }
@@ -1236,6 +1425,12 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FSQRTv4f32: { // fsqrt vd.4s, vn.4s
+      const float* n = operands[0].getAsVector<float>();
+      float out[4] = {::sqrtf(n[0]), ::sqrtf(n[1]), ::sqrtf(n[2]), ::sqrtf(n[3])};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FSUBDrr: {  // fsub dd, dn, dm
       double n = operands[0].get<double>();
       double m = operands[1].get<double>();
@@ -1256,6 +1451,26 @@ void Instruction::execute() {
       double out[2] = {n[0] - m[0], n[1] - m[1]};
       results[0] = out;
       return;
+    }
+    case Opcode::AArch64_FSUBv4f32: {  // fsub vd.4s, vn.4s, vm.4s
+      const float* n = operands[0].getAsVector<float>();
+      const float* m = operands[1].getAsVector<float>();
+      float out[4] = {n[0] - m[0], n[1] - m[1], n[2] - m[2], n[3] - m[3]};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_LD1Rv4s: { // ld1r {vt.4s}, [xn]
+      uint32_t val = memoryData[0].get<uint32_t>();
+      uint32_t out[4] = {val, val, val, val};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv4s_POST: { // ld1r {vt.4s}, [xn], #imm
+      uint32_t val = memoryData[0].get<uint32_t>();
+      uint32_t out[4] = {val, val, val, val};
+      results[0] = out;
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+      break;
     }
     case Opcode::AArch64_LD1Twov16b: {  // ld1 {vt1.16b, vt2.16b}, [xn]
       results[0] = memoryData[0];
@@ -1280,6 +1495,18 @@ void Instruction::execute() {
     case Opcode::AArch64_LDPDi: {  // ldp dt1, dt2, [xn, #imm]
       results[0] = memoryData[0].zeroExtend(8, 16);
       results[1] = memoryData[1].zeroExtend(8, 16);
+      return;
+    }
+    case Opcode::AArch64_LDPDpost: {  // ldp dt1, dt2, [xn], #imm
+      results[0] = memoryData[0].zeroExtend(8, 16);
+      results[1] = memoryData[1].zeroExtend(8, 16);
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
+      return;
+    }
+    case Opcode::AArch64_LDPDpre: {  // ldp dt1, dt2, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(8, 16);
+      results[1] = memoryData[1].zeroExtend(8, 16);
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
       return;
     }
     case Opcode::AArch64_LDPQi: {  // ldp qt1, qt2, [xn, #imm]
@@ -1464,6 +1691,10 @@ void Instruction::execute() {
       results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
       return;
     }
+    case Opcode::AArch64_LDRXroW: {  // ldr xt, [xn, wn{, extend, {#amount}}]
+      results[0] = memoryData[0];
+      return;
+    }
     case Opcode::AArch64_LDRXroX: {  // ldr xt, [xn, xn{, extend, {#amount}}]
       results[0] = memoryData[0];
       return;
@@ -1475,6 +1706,10 @@ void Instruction::execute() {
     case Opcode::AArch64_LDURBBi: {  // ldurb wt, [xn, #imm]
       results[0] = memoryData[0].zeroExtend(1, 8);
       return;
+    }
+    case Opcode::AArch64_LDURDi: {  // ldur dt, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(8, 16);
+      return;    
     }
     case Opcode::AArch64_LDURQi: {  // ldur qt, [xn, #imm]
       results[0] = memoryData[0];
@@ -1830,6 +2065,16 @@ void Instruction::execute() {
       }
       return;
     }
+    case Opcode::AArch64_SHLv4i32_shift: {  // shl vd.4s, vn.4s, #imm
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      int64_t shift = metadata.operands[2].imm;
+      uint32_t out[4] = {static_cast<uint32_t>(n[0] << shift),
+                         static_cast<uint32_t>(n[1] << shift),
+                         static_cast<uint32_t>(n[2] << shift),
+                         static_cast<uint32_t>(n[3] << shift)};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_SMADDLrrr: {  // smaddl xd, wn, wm, xa
       auto n = static_cast<int64_t>(operands[0].get<int32_t>());
       auto m = static_cast<int64_t>(operands[1].get<int32_t>());
@@ -1866,6 +2111,24 @@ void Instruction::execute() {
       results[0] = mulhi(x, y);
       return;
     }
+    case Opcode::AArch64_SSHLLv2i32_shift: {  // sshll vd.2d, vn.2s, #imm
+      const int32_t* n = operands[0].getAsVector<int32_t>();
+      int64_t shift = metadata.operands[2].imm;
+      int64_t out[2] = {static_cast<int64_t>(n[0] << shift),
+                      static_cast<int64_t>(n[1] << shift)};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_SSHRv4i32_shift: {  // sshr vd.4s, vn.4s, #imm
+      const int32_t* n = operands[1].getAsVector<int32_t>();
+      int64_t shift = metadata.operands[2].imm;
+      int32_t out[4] = {static_cast<int32_t>(std::trunc(n[0] >> shift)),
+                        static_cast<int32_t>(std::trunc(n[1] >> shift)),
+                        static_cast<int32_t>(std::trunc(n[2] >> shift)),
+                        static_cast<int32_t>(std::trunc(n[3] >> shift))};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]
       memoryData[0] = operands[0];
       // TODO: Implement atomic memory access
@@ -1881,6 +2144,18 @@ void Instruction::execute() {
     case Opcode::AArch64_STPDi: {  // stp dt1, dt2, [xn, #imm]
       memoryData[0] = operands[0];
       memoryData[1] = operands[1];
+      return;
+    }
+    case Opcode::AArch64_STPDpost: {  // stp dt1, dt2, [xn], #imm
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[3].imm;
+      return;
+    }
+    case Opcode::AArch64_STPDpre: {  // stp dt1, dt2, [xn, #imm]!
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
       return;
     }
     case Opcode::AArch64_STPSi: {  // stp st1, st2, [xn, #imm]
@@ -2088,6 +2363,10 @@ void Instruction::execute() {
       memoryData[0] = operands[0];
       return;
     }
+    case Opcode::AArch64_STURSi: {  // stur st, [xn, #imm]
+      memoryData[0] = operands[0];
+      return;
+    }
     case Opcode::AArch64_STURWi: {  // stur wt, [xn, #imm]
       memoryData[0] = operands[0];
       return;
@@ -2218,7 +2497,7 @@ void Instruction::execute() {
       results[0] = x - y;
       return;
     }
-    case Opcode::AArch64_SUBXrx64: {
+    case Opcode::AArch64_SUBXrx64: {  // sub xd, xn, xm{, extend #amount}
       auto x = operands[0].get<uint64_t>();
       auto y =
           extendValue(operands[1].get<uint64_t>(), metadata.operands[2].ext,
@@ -2361,10 +2640,29 @@ void Instruction::execute() {
       results[0] = mulhi(x, y);
       return;
     }
+    case Opcode::AArch64_USHLLv4i16_shift: {  // ushll vd.4s, vn.4h, #imm
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      int64_t shift = metadata.operands[2].imm;
+      uint16_t out[8] = {static_cast<uint16_t>(n[0] << shift), 0, 
+                         static_cast<uint16_t>(n[1] << shift), 0,
+                         static_cast<uint16_t>(n[2] << shift), 0, 
+                         static_cast<uint16_t>(n[3] << shift), 0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_XTNv2i32: {  // xtn vd.2s, vn.2d
       const uint64_t* n = operands[0].getAsVector<uint64_t>();
       uint32_t out[4] = {static_cast<uint32_t>(n[0]),
                          static_cast<uint32_t>(n[1]), 0, 0};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_XTNv4i16: {  // xtn vd.4h, vn.4s
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      uint16_t out[8] = {static_cast<uint16_t>(n[0]),
+                         static_cast<uint16_t>(n[1]),
+                         static_cast<uint16_t>(n[2]),
+                         static_cast<uint16_t>(n[3]), 0, 0, 0, 0};
       results[0] = out;
       return;
     }
