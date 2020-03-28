@@ -11,6 +11,8 @@ struct MemoryAccessTarget {
   uint64_t address;
   /** The number of bytes to access at `address`. */
   uint8_t size;
+  /** Whether the access data type is a floating-point value. */
+  uint16_t isFP = 0;
 
   /** Check for equality of two access targets. */
   bool operator==(const MemoryAccessTarget& other) const {

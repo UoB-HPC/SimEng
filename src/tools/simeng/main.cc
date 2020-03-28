@@ -11,6 +11,7 @@
 #include "simeng/Elf.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
+#include "simeng/VariableLatencyMemoryInterface.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
@@ -196,7 +197,8 @@ int main(int argc, char** argv) {
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
   // TODO: Expose as config option
-  const uint16_t dataMemoryLatency = 5;
+  const uint16_t intDataMemoryLatency = 5;
+  const uint16_t fpDataMemoryLatency = 8;
 
   int iterations = 0;
 
@@ -206,8 +208,8 @@ int main(int argc, char** argv) {
   switch (mode) {
     case SimulationMode::OutOfOrder: {
       modeString = "Out-of-Order";
-      dataMemory = std::make_unique<simeng::FixedLatencyMemoryInterface>(
-          processMemory, processMemorySize, dataMemoryLatency);
+      dataMemory = std::make_unique<simeng::VariableLatencyMemoryInterface>(
+          processMemory, processMemorySize, intDataMemoryLatency, fpDataMemoryLatency);
       core = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
           predictor, portAllocator);

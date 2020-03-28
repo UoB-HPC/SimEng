@@ -156,7 +156,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_FSQRTSr:
     case Opcode::AArch64_FDIVv4f32:
     case Opcode::AArch64_FSQRTv4f32:
-      return {16, 0};
+      return {16, 16};
     case Opcode::AArch64_FADDSrr:
     case Opcode::AArch64_FMADDSrrr:
     case Opcode::AArch64_FMSUBSrrr:
