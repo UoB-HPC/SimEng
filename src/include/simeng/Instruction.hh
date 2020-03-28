@@ -104,6 +104,9 @@ class Instruction {
   /** Is this a branch operation? */
   virtual bool isBranch() const = 0;
 
+  /** Is this a arithmetic simd operation? */
+  virtual bool isASIMD() const = 0;
+
   /** Set this instruction's instruction memory address. */
   void setInstructionAddress(uint64_t address);
 

@@ -123,6 +123,9 @@ class Instruction : public simeng::Instruction {
   /** Is this a branch operation? */
   bool isBranch() const override;
 
+  /** Is this a arithmetic simd operation? */
+  bool isASIMD() const override;
+
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
