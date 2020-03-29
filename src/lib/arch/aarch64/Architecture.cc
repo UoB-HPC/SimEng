@@ -146,32 +146,130 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
 
   // Look up the instruction opcode to get the latency
   switch (metadata.opcode) {
-    case Opcode::AArch64_FADDv2f64:
-      return FPSIMD_LATENCY;
-    case Opcode::AArch64_FMULv2f64:
-      return FPSIMD_LATENCY;
-    case Opcode::AArch64_FMLAv2f64:
-      return FPSIMD_LATENCY;
+    case Opcode::AArch64_FDIVDrr:
+    case Opcode::AArch64_FDIVv2f64:
+    case Opcode::AArch64_FSQRTDr:
+      return {43,43};
     case Opcode::AArch64_FDIVSrr:
     case Opcode::AArch64_FSQRTSr:
-    case Opcode::AArch64_FDIVv4f32:
     case Opcode::AArch64_FSQRTv4f32:
-      return {16, 16};
+      return {29,29};
+    case Opcode::AArch64_FADDDrr:
     case Opcode::AArch64_FADDSrr:
+    case Opcode::AArch64_FADDv2f64:
+    case Opcode::AArch64_FADDv4f32:
+    case Opcode::AArch64_FADDPv2i64p:
+    case Opcode::AArch64_FMADDDrrr:
     case Opcode::AArch64_FMADDSrrr:
-    case Opcode::AArch64_FMSUBSrrr:
+    case Opcode::AArch64_FMULDrr:
     case Opcode::AArch64_FMULSrr:
-    case Opcode::AArch64_FNMADDSrrr:
+    case Opcode::AArch64_FMULv1i32_indexed:
+    case Opcode::AArch64_FMULv1i64_indexed:
+    case Opcode::AArch64_FMULv2f64:
+    case Opcode::AArch64_FMULv4f32:
+    case Opcode::AArch64_FMULv4i32_indexed:
+    case Opcode::AArch64_FMLAv2f64:
+    case Opcode::AArch64_FMLAv4f32:
+    case Opcode::AArch64_FMLAv4i32_indexed:
+    case Opcode::AArch64_FMLSv4f32:
+    case Opcode::AArch64_FMLSv4i32_indexed:
+    case Opcode::AArch64_FNMSUBDrrr:
     case Opcode::AArch64_FNMSUBSrrr:
+    case Opcode::AArch64_FSUBDrr:
     case Opcode::AArch64_FSUBSrr:
+    case Opcode::AArch64_FSUBv2f64:
+    case Opcode::AArch64_FSUBv4f32:
+      return {9, 1};
+    case Opcode::AArch64_CPYi32:
+    case Opcode::AArch64_CPYi64:
+    case Opcode::AArch64_DUPv16i8gpr:
+    case Opcode::AArch64_DUPv2i32gpr:
+    case Opcode::AArch64_DUPv2i32lane:
+    case Opcode::AArch64_DUPv2i64gpr:
+    case Opcode::AArch64_DUPv2i64lane:
+    case Opcode::AArch64_DUPv4i16gpr:
+    case Opcode::AArch64_DUPv4i32gpr:
+    case Opcode::AArch64_DUPv4i32lane:
+    case Opcode::AArch64_FMOVDXHighr:
+    case Opcode::AArch64_FMOVWSr:
+    case Opcode::AArch64_FMOVXDHighr:
+    case Opcode::AArch64_FMOVXDr:
+    case Opcode::AArch64_SSHLLv2i32_shift:
+    case Opcode::AArch64_USHLLv4i16_shift:
+    case Opcode::AArch64_UMOVvi32:
+    case Opcode::AArch64_UMOVvi64:
+    case Opcode::AArch64_XTNv2i32:
+    case Opcode::AArch64_XTNv4i16:
+    case Opcode::AArch64_XTNv4i32:
       return {6, 1};
-    case Opcode::AArch64_FCMPSrr:
-    case Opcode::AArch64_FCMPESrr:
+    case Opcode::AArch64_ANDv16i8:
+    case Opcode::AArch64_ANDv8i8:
+    case Opcode::AArch64_BSLv16i8:
+    case Opcode::AArch64_BICWrs:
+    case Opcode::AArch64_BICXrs:
+    case Opcode::AArch64_BICSXrs:
+    case Opcode::AArch64_BIFv16i8:
+    case Opcode::AArch64_BITv16i8:
+    case Opcode::AArch64_FABSDr:
+    case Opcode::AArch64_FABSSr:
+    case Opcode::AArch64_FABSv2f64:
+    case Opcode::AArch64_FABSv4f32:
+    case Opcode::AArch64_FCCMPDrr:
+    case Opcode::AArch64_FCCMPEDrr:
     case Opcode::AArch64_FCCMPSrr:
     case Opcode::AArch64_FCCMPESrr:
-      return {5, 1};
+    case Opcode::AArch64_FCMGEv2i64rz:
+    case Opcode::AArch64_FCMGEv4i32rz:
+    case Opcode::AArch64_FCMGTv4f32:
+    case Opcode::AArch64_FCMLTv4i32rz:
+    case Opcode::AArch64_FCMPDri:
+    case Opcode::AArch64_FCMPEDri:
+    case Opcode::AArch64_FCMPDrr:
+    case Opcode::AArch64_FCMPEDrr:
+    case Opcode::AArch64_FCMPSri:
+    case Opcode::AArch64_FCMPESri:
+    case Opcode::AArch64_FCMPSrr:
+    case Opcode::AArch64_FCMPESrr:
+    case Opcode::AArch64_FCSELDrrr:
     case Opcode::AArch64_FCSELSrrr:
+    case Opcode::AArch64_FMOVDi:
+    case Opcode::AArch64_FMOVDr:
+    case Opcode::AArch64_FMOVSi:
+    case Opcode::AArch64_FMOVSr:
+    case Opcode::AArch64_FMOVv2f64_ns:
+    case Opcode::AArch64_FMOVv4f32_ns:
+    case Opcode::AArch64_FNEGDr:
+    case Opcode::AArch64_FNEGSr:
+    case Opcode::AArch64_FNEGv2f64:
+    case Opcode::AArch64_FNEGv4f32:
+    case Opcode::AArch64_MOVID:
+    case Opcode::AArch64_MOVIv2d_ns:
+    case Opcode::AArch64_MOVIv2i32:
+    case Opcode::AArch64_MOVIv4i32:
+    case Opcode::AArch64_ORRv16i8:
+    case Opcode::AArch64_SHLv4i32_shift:
+    case Opcode::AArch64_SSHRv4i32_shift:
       return {4, 1};
+    case Opcode::AArch64_ANDSWrs:
+    case Opcode::AArch64_ANDSXrs:
+    case Opcode::AArch64_ANDWrs:
+    case Opcode::AArch64_ANDXrs:
+    case Opcode::AArch64_ORNWrs:
+    case Opcode::AArch64_ORNXrs:
+    case Opcode::AArch64_ORRWrs:
+    case Opcode::AArch64_ORRXrs:
+      if (metadata.operands[2].shift.value > 0) {
+        return {2, 2};
+      }
+      return {1, 1};
+    case Opcode::AArch64_ADDSWrs:
+    case Opcode::AArch64_ADDSXrs:
+    case Opcode::AArch64_ADDWrs:
+    case Opcode::AArch64_ADDXrs:
+      if (metadata.operands[2].shift.value > 4) {
+        return {2, 2};
+      }
+      return {1, 1};
   }
 
   // Assume single-cycle, non-blocking for all other instructions
