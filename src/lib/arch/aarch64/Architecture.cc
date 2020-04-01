@@ -202,6 +202,10 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_XTNv4i16:
     case Opcode::AArch64_XTNv4i32:
       return {6, 1};
+    case Opcode::AArch64_ADDPv16i8:
+    case Opcode::AArch64_ADDPv2i64:
+    case Opcode::AArch64_ADDPv4i32:
+    case Opcode::AArch64_ADDPv8i16:
     case Opcode::AArch64_ANDv16i8:
     case Opcode::AArch64_ANDv8i8:
     case Opcode::AArch64_BSLv16i8:
@@ -232,6 +236,12 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_FCMPESrr:
     case Opcode::AArch64_FCSELDrrr:
     case Opcode::AArch64_FCSELSrrr:
+    case Opcode::AArch64_FMAXNMDrr:
+    case Opcode::AArch64_FMAXNMv2f64:
+    case Opcode::AArch64_FMAXNMPv2i64p:
+    case Opcode::AArch64_FMINNMDrr:
+    case Opcode::AArch64_FMINNMv2f64:
+    case Opcode::AArch64_FMINNMPv2i64p:
     case Opcode::AArch64_FMOVDi:
     case Opcode::AArch64_FMOVDr:
     case Opcode::AArch64_FMOVSi:
@@ -248,6 +258,9 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_MOVIv4i32:
     case Opcode::AArch64_ORRv16i8:
     case Opcode::AArch64_SHLv4i32_shift:
+    case Opcode::AArch64_SMAXv4i32:
+    case Opcode::AArch64_SMINVv4i32v:
+    case Opcode::AArch64_SMINv4i32:
     case Opcode::AArch64_SSHRv4i32_shift:
       return {4, 1};
     case Opcode::AArch64_ANDSWrs:

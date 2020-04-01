@@ -1171,6 +1171,19 @@ void Instruction::execute() {
       results[0] = out;
       return;
     }
+    case Opcode::AArch64_FMAXNMv2f64: {  // fmaxnm vd.2d, vn.2d, vm.2d
+      const double* n = operands[0].getAsVector<double>();
+      const double* m = operands[1].getAsVector<double>();
+      double out[2] = {std::fmax(n[0], m[0]), std::fmax(n[1], m[1])};
+      results[0] = out;
+      return;
+    }
+    case Opcode::AArch64_FMAXNMPv2i64p: {  // fmaxnmp dd vd.2d
+      const double* n = operands[0].getAsVector<double>();
+      double out[2] = {std::fmax(n[0], n[1]), 0.0};
+      results[0] = out;
+      return;
+    }
     case Opcode::AArch64_FMINNMDrr: {  // fminnm dd, dn, dm
       double n = operands[0].get<double>();
       double m = operands[1].get<double>();
@@ -1182,19 +1195,6 @@ void Instruction::execute() {
       const double* n = operands[0].getAsVector<double>();
       const double* m = operands[1].getAsVector<double>();
       double out[2] = {std::fmin(n[0], m[0]), std::fmin(n[1], m[1])};
-      results[0] = out;
-      return;
-    }
-    case Opcode::AArch64_FMAXNMv2f64: {  // fmaxnm vd.2d, vn.2d, vm.2d
-      const double* n = operands[0].getAsVector<double>();
-      const double* m = operands[1].getAsVector<double>();
-      double out[2] = {std::fmax(n[0], m[0]), std::fmax(n[1], m[1])};
-      results[0] = out;
-      return;
-    }
-    case Opcode::AArch64_FMAXNMPv2i64p: {  // fmaxnmp dd vd.2d
-      const double* n = operands[0].getAsVector<double>();
-      double out[2] = {std::fmax(n[0], n[1]), 0.0};
       results[0] = out;
       return;
     }
