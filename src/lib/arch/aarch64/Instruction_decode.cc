@@ -195,6 +195,8 @@ void Instruction::decode() {
           RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
       destinationRegisterCount++;
     }
+
+    if (op.shift.value > 0) isShift_ = true;  // Identify shift operations
   }
 
   // Identify branches
@@ -224,6 +226,24 @@ void Instruction::decode() {
     // Literal loads aren't flagged as having a memory operand, so these must be
     // marked as loads manually
     isLoad_ = true;
+  }
+  if ((538 < metadata.opcode && metadata.opcode < 544) ||
+      (698 < metadata.opcode && metadata.opcode < 714) ||
+      (1301 < metadata.opcode && metadata.opcode < 1306) ||
+      (2099 < metadata.opcode && metadata.opcode < 2104)) {
+        isDivide_ = true;
+  }
+  if ((543 < metadata.opcode && metadata.opcode < 546) ||
+      (618 < metadata.opcode && metadata.opcode < 641) ||
+      (645 < metadata.opcode && metadata.opcode < 652) ||
+      (1075 < metadata.opcode && metadata.opcode < 1078) ||
+      (1124 < metadata.opcode && metadata.opcode < 1137) ||
+      (1356 == metadata.opcode) ||
+      (1416 < metadata.opcode && metadata.opcode < 1429) ||
+      (1450 < metadata.opcode && metadata.opcode < 1499) ||
+      (2116 == metadata.opcode) ||
+      (2174 < metadata.opcode && metadata.opcode < 2187)) {
+        isMultiply_ = true;
   }
 }
 

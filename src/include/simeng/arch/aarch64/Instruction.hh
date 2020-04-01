@@ -29,10 +29,13 @@ const uint8_t SYSTEM = 3;
 /** The IDs of the instruction groups for AArch64 instructions. */
 namespace InstructionGroups {
 const uint8_t ARITHMETIC = 0;
-const uint8_t LOAD = 1;
-const uint8_t STORE = 2;
-const uint8_t BRANCH = 3;
+const uint8_t SHIFT = 1;
+const uint8_t MULTIPLY = 2;
+const uint8_t DIVIDE = 3;
 const uint8_t ASIMD = 4;
+const uint8_t LOAD = 5;
+const uint8_t STORE = 6;
+const uint8_t BRANCH = 7;
 }  // namespace InstructionGroups
 
 enum class InstructionException {
@@ -208,9 +211,14 @@ class Instruction : public simeng::Instruction {
   bool isLoad_ = false;
   /** Is this a branch operation? */
   bool isBranch_ = false;
-
   /** Is this an ASIMD operation? */
   bool isASIMD_ = false;
+  /** Is this a multilpy operation? */
+  bool isMultiply_ = false;
+  /** Is this a divide operation? */
+  bool isDivide_ = false;
+  /** Is this a shift operation? */
+  bool isShift_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data
