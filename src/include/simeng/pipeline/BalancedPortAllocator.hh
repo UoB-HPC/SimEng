@@ -1,11 +1,17 @@
 #pragma once
 
 #include "simeng/pipeline/PortAllocator.hh"
-
 #include <vector>
 
 namespace simeng {
 namespace pipeline {
+
+namespace PortType {
+  /** Instructions have to match the exact group(s) in set*/
+  const uint8_t COMPULSORY = 0;
+  /** Instructions can optional match group(s) in set*/
+  const uint8_t OPTIONAL = 1;
+}
 
 /** A load-balancing port allocator implementation. Maintains demand weightings
  * for each port, and allocates instructions to the suitable port with the
@@ -14,8 +20,10 @@ class BalancedPortAllocator : public PortAllocator {
  public:
   /** Construct a load-balancing port allocator, providing a port arrangement
    * specification. Each element of the port arrangement should represent a
-   * port, and contain a list of the instruction groups that port supports. */
-  BalancedPortAllocator(std::vector<std::vector<uint16_t>> portArrangement);
+   * port, and contain a list of the instruction groups that port supports and
+   * a port type which denotes the matching requirements of said instruction
+   * groups. */
+  BalancedPortAllocator(std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>> portArrangement);
 
   /** Allocate the lowest weighted port available for the specified instruction
    * group. Returns the allocated port, and increases the weight of the port.

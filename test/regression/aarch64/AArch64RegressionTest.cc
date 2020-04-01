@@ -18,16 +18,68 @@ std::unique_ptr<simeng::pipeline::PortAllocator>
 AArch64RegressionTest::createPortAllocator() const {
   // TODO: this is currently tightly coupled to the number of execution units,
   // which is specified in the out-of-order core model
-  const std::vector<std::vector<uint16_t>> portArrangement = {
-      {simeng::arch::aarch64::InstructionGroups::LOAD},
-      {simeng::arch::aarch64::InstructionGroups::LOAD},
-      {simeng::arch::aarch64::InstructionGroups::STORE},
-      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
-       simeng::arch::aarch64::InstructionGroups::BRANCH},
-      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
-       simeng::arch::aarch64::InstructionGroups::ASIMD},
-      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
-       simeng::arch::aarch64::InstructionGroups::ASIMD}};
+  const std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>> portArrangement = {
+    {
+      {
+        {simeng::arch::aarch64::InstructionGroups::LOAD, 0},
+        {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+        {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}
+      }
+    }, // PORT 0
+    {
+      {
+        {simeng::arch::aarch64::InstructionGroups::LOAD, 0},
+        {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+        {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}
+      }
+    }, // PORT 1
+    {
+      {
+        {simeng::arch::aarch64::InstructionGroups::STORE, 0},
+        {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+        {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}
+      }
+    }, // PORT 2
+    {
+      {
+        {simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
+        {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+        {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
+        {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}
+      },
+      {
+        {simeng::arch::aarch64::InstructionGroups::BRANCH, 0}
+      }
+    }, // PORT 3
+    {
+      {
+        {simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
+        {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+        {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
+        {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}
+      },
+      {
+        {simeng::arch::aarch64::InstructionGroups::ASIMD, 0},
+        {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+        {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
+        {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}
+      }
+    }, // PORT 4
+    {
+      {
+        {simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
+        {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+        {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
+        {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}
+      },
+      {
+        {simeng::arch::aarch64::InstructionGroups::ASIMD, 0},
+        {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+        {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
+        {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}
+      }
+    } // PORT 5
+  };
 
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
