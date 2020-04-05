@@ -52,7 +52,7 @@ BalancedPortAllocator::BalancedPortAllocator(
             supportMatrix[groupSet].push_back(portIndex);
           }
           n++;
-      }     
+      }
     }
   }
 }

@@ -22,7 +22,6 @@ const std::initializer_list<uint16_t> physicalRegisterQuantities = {96, 128,
 const std::initializer_list<RegisterFileStructure> physicalRegisterStructures =
     {{8, 96}, {16, 128}, {1, 128}, {8, 6}};
 const unsigned int robSize = 128;
-const unsigned int rsSize = 79;
 const unsigned int loadQueueSize = 160;
 const unsigned int storeQueueSize = 192;
 const unsigned int fetchBlockAlignmentBits = 5;
@@ -35,7 +34,8 @@ const unsigned int clockFrequency = 2.5 * 1e9;
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator)
+           pipeline::PortAllocator& portAllocator, 
+           std::vector<std::pair<uint8_t, uint64_t>> rsArrangement)
     : isa_(isa),
       registerFileSet_(physicalRegisterStructures),
       registerAliasTable_(isa.getRegisterFileStructures(),
@@ -62,7 +62,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures.size()),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities, rsSize),
+                         portAllocator, physicalRegisterQuantities, rsArrangement),
       writebackUnit_(completionSlots_, registerFileSet_) {
   for (size_t i = 0; i < executionUnitCount; i++) {
     executionUnits_.emplace_back(

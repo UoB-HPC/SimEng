@@ -21,6 +21,8 @@ void RenameUnit::tick() {
     input_.stall(true);
     return;
   }
+  
+  input_.stall(false);
 
   // Get the number of available physical registers
   for (size_t type = 0; type < freeRegistersAvailable_.size(); type++) {

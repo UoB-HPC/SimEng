@@ -242,7 +242,12 @@ int main(int argc, char** argv) {
       }
     } // BR
   };
-  auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
+  auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);  
+
+  // TODO: Construct reservation station arrangement from config options
+  const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {
+      {0,20}, {0,20}, {1,20}, {1,20}, {2,10}, {3,10}, {4,19}
+  };
 
   // TODO: Expose as config option
   const uint16_t intDataMemoryLatency = 5;
@@ -260,7 +265,7 @@ int main(int argc, char** argv) {
           processMemory, processMemorySize, intDataMemoryLatency, fpDataMemoryLatency);
       core = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
-          predictor, portAllocator);
+          predictor, portAllocator, rsArrangement);
       break;
     }
     case SimulationMode::InOrderPipelined: {

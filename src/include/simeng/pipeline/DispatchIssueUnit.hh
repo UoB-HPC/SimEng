@@ -33,7 +33,7 @@ class DispatchIssueUnit {
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
-      unsigned int maxReservationStationSize);
+      std::vector<std::pair<uint8_t, uint64_t>> rsArrangment);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -83,8 +83,8 @@ class DispatchIssueUnit {
   /** The register availability scoreboard. */
   std::vector<std::vector<bool>> scoreboard_;
 
-  /** The maximum reservation station size. */
-  unsigned int maxReservationStationSize_;
+  /** A mapping from ports to the readyQueue queues */
+  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement_;
 
   /** A dependency matrix, containing all the instructions waiting on an
    * operand. For a register `{type,tag}`, the vector of dependents may be found
@@ -96,10 +96,10 @@ class DispatchIssueUnit {
   PortAllocator& portAllocator_;
 
   /** The queues of ready instructions for each port. */
-  std::vector<std::deque<std::shared_ptr<Instruction>>> readyQueues_;
+  std::vector<std::deque<std::pair<std::shared_ptr<Instruction>, uint8_t>>> readyQueues_;
 
   /** The number of items currently in the RS. */
-  size_t rsSize_ = 0;
+  std::vector<size_t> rsSize_;
 
   /** The number of cycles stalled due to a full reservation station. */
   uint64_t rsStalls_ = 0;
