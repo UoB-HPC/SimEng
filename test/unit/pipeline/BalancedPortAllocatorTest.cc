@@ -74,5 +74,79 @@ TEST(BalancedPortAllocatorTest, Deallocate) {
   EXPECT_EQ(portAllocator.allocate(1), 0);
 }
 
+// Tests correct allocation when ports share complex groups
+TEST(BalancedPortAllocatorTest, ComplexSharedPorts) {
+  auto portAllocator = BalancedPortAllocator({
+    {{{4,0}, {1,1}, {2,1}, {3,1}}}, // PORT 0
+    {{{0,0}, {1,1}, {2,1}}}, // PORT 1
+    {{{4,0}, {1,1}, {2,1}}}, // PORT 2
+    {{{0,0}, {1,1}, {3,1}}}, // PORT 3
+    {{{5,0}, {1,1}, {4,1}},
+     {{0,0}}}, // PORT 4
+    {{{5,0}, {1,1}, {4,1}},
+     {{6,0}, {1,1}, {4,1}},
+     {{0,0}}}, // PORT 5
+    {{{7,0}}} // PORT 6
+  });
+
+  // Ensure non-shared groups go to correct port first
+  EXPECT_EQ(portAllocator.allocate(128), 6);
+  EXPECT_EQ(portAllocator.allocate(64), 5);
+  EXPECT_EQ(portAllocator.allocate(66), 5);
+  EXPECT_EQ(portAllocator.allocate(82), 5);
+  EXPECT_EQ(portAllocator.allocate(11), 3);
+  EXPECT_EQ(portAllocator.allocate(7), 1);
+  EXPECT_EQ(portAllocator.allocate(30), 0);
+
+  // Group 1 shared between ports 1/3/4/5
+  EXPECT_EQ(portAllocator.allocate(1), 4);
+  EXPECT_EQ(portAllocator.allocate(1), 1);
+  EXPECT_EQ(portAllocator.allocate(1), 3);
+  EXPECT_EQ(portAllocator.allocate(1), 4);
+  EXPECT_EQ(portAllocator.allocate(1), 1);
+  EXPECT_EQ(portAllocator.allocate(1), 3);
+  EXPECT_EQ(portAllocator.allocate(1), 4);
+  EXPECT_EQ(portAllocator.allocate(1), 1);
+  EXPECT_EQ(portAllocator.allocate(1), 3);
+  EXPECT_EQ(portAllocator.allocate(1), 4);
+  EXPECT_EQ(portAllocator.allocate(1), 5);
+
+  // Group 3 shared between ports 1/3
+  EXPECT_EQ(portAllocator.allocate(3), 1);
+  EXPECT_EQ(portAllocator.allocate(3), 3);
+
+  // Group 16/18/22 shared between ports 0/2
+  EXPECT_EQ(portAllocator.allocate(16), 2);
+  EXPECT_EQ(portAllocator.allocate(16), 0);
+  EXPECT_EQ(portAllocator.allocate(18), 2);
+  EXPECT_EQ(portAllocator.allocate(18), 0);
+  EXPECT_EQ(portAllocator.allocate(22), 2);
+  EXPECT_EQ(portAllocator.allocate(22), 0);
+
+  // Group 32 shared between ports 4/5
+  EXPECT_EQ(portAllocator.allocate(32), 4);
+  EXPECT_EQ(portAllocator.allocate(32), 5);
+}
+
+// Test that extreme group cases
+TEST(BalancedPortAllocatorTest, ExtremeCases) {
+  auto portAllocator = BalancedPortAllocator({
+    {{}}, // PORT 0
+    {{{0,0}, {1,0}, {2,0}, {3,0}, {4,0}}}, // PORT 1
+    {{{0,1}, {1,1}, {2,1}, {3,1}, {4,1}}} // PORT 2
+  });
+
+  for (int i = 0; i < 32; i++) {
+    if(i == 0) {
+      EXPECT_EQ(portAllocator.allocate(i), 0);
+    }
+    else if(i == 31) {
+      EXPECT_EQ(portAllocator.allocate(i), 1);
+    } else {
+      EXPECT_EQ(portAllocator.allocate(i), 2);
+    }
+  }
+}
+
 }  // namespace pipeline
 }  // namespace simeng

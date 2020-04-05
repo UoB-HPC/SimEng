@@ -78,7 +78,15 @@ AArch64RegressionTest::createPortAllocator() const {
         {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
         {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}
       }
-    } // PORT 5
+    }, // PORT 5
+    {
+      {
+        {simeng::arch::aarch64::InstructionGroups::ASIMD, 0},
+        {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+        {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
+        {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}
+      }
+    } // PORT 6
   };
 
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
