@@ -279,7 +279,12 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_ADDSXrs:
     case Opcode::AArch64_ADDWrs:
     case Opcode::AArch64_ADDXrs:
+    case Opcode::AArch64_SUBSWrs:
+    case Opcode::AArch64_SUBSXrs:
       if (metadata.operands[2].shift.value > 4) {
+        return {3, 3};
+      }
+      if (metadata.operands[2].shift.value > 0 && metadata.operands[2].shift.type == 1) {
         return {2, 2};
       }
       return {1, 1};
