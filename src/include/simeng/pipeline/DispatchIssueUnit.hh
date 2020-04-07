@@ -35,10 +35,14 @@ class DispatchIssueUnit {
       const std::vector<uint16_t>& physicalRegisterStructure,
       std::vector<std::pair<uint8_t, uint64_t>> rsArrangment);
 
-  /** Ticks the dispatch/issue unit. Reads available input operands for
-   * instructions and sets scoreboard flags for destination registers. */
+  /** Ticks the dispatch/issue unit. Sends the stalled instructions and 
+   * incoming from rename instructions to resourceAllocation function. */
   void tick();
 
+  /** Reads available input operands for a given instruction and sets 
+   * scoreboard flags for destination registers. */
+  void resourceAllocation(std::shared_ptr<Instruction> uop, uint8_t port);
+   
   /** Identify the oldest ready instruction in the reservation station and issue
    * it. */
   void issue();
@@ -100,6 +104,9 @@ class DispatchIssueUnit {
 
   /** The queues of ready instructions for each port. */
   std::vector<std::vector<std::pair<uint8_t, std::deque<std::shared_ptr<Instruction>>>>> readyQueues_;
+  
+  /** The queues of stalled instructions for each port. */
+  std::vector<std::vector<std::pair<uint8_t, std::deque<std::shared_ptr<Instruction>>>>> stallQueues_;
 
   /** The number of items currently in each RS. */
   std::vector<size_t> rsSize_;
