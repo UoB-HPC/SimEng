@@ -6,12 +6,37 @@
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/PortAllocator.hh"
+#include "simeng/trace.hh"
+#include "simeng/control.hh"
 
 namespace simeng {
 namespace pipeline {
 
+/** A reservation station issue port */
+struct ReservationStationPort {
+  /** Issue port this port maps to */
+  uint8_t issuePort;
+  /** Queue of instructions that are ready to be 
+   * issued */
+  std::deque<std::shared_ptr<Instruction>> ready;
+};
+
+/** A reservation station */
+struct ReservationStation {
+  /** Size of reservation station */
+  uint64_t capacity;
+  /** Current number of non-stalled instructions
+   * in reservation station */
+  uint64_t currentSize;
+  /** Issue ports belonging to reservation station */
+  std::vector<ReservationStationPort> ports;
+  /** Queue of instructions that are stalled due to 
+   * reservation station being at capacity */
+  std::deque<std::pair<uint8_t, std::shared_ptr<Instruction>>> stalled;
+};
+
 /** An entry in the reservation station. */
-struct ReservationStationEntry {
+struct dependencyEntry {
   /** The instruction to execute. */
   std::shared_ptr<Instruction> uop;
   /** The port to issue to. */
@@ -35,14 +60,10 @@ class DispatchIssueUnit {
       const std::vector<uint16_t>& physicalRegisterStructure,
       std::vector<std::pair<uint8_t, uint64_t>> rsArrangment);
 
-  /** Ticks the dispatch/issue unit. Sends the stalled instructions and 
-   * incoming from rename instructions to resourceAllocation function. */
+  /** Ticks the dispatch/issue unit. Reads available input operands for
+   * instructions and sets scoreboard flags for destination registers. */
   void tick();
 
-  /** Reads available input operands for a given instruction and sets 
-   * scoreboard flags for destination registers. */
-  void resourceAllocation(std::shared_ptr<Instruction> uop, uint8_t port);
-   
   /** Identify the oldest ready instruction in the reservation station and issue
    * it. */
   void issue();
@@ -87,8 +108,8 @@ class DispatchIssueUnit {
   /** The register availability scoreboard. */
   std::vector<std::vector<bool>> scoreboard_;
 
-  /** The maximum number of items permitted in each RS */
-  std::vector<size_t> maxReservationStationSize_;
+  /** Reservation stations */
+  std::vector<ReservationStation> reservationStations_;
 
   /** A mapping from port to RS port */
   std::vector<std::pair<uint8_t, uint8_t>> portMapping_;
@@ -96,20 +117,11 @@ class DispatchIssueUnit {
   /** A dependency matrix, containing all the instructions waiting on an
    * operand. For a register `{type,tag}`, the vector of dependents may be found
    * at `dependencyMatrix[type][tag]`. */
-  std::vector<std::vector<std::vector<ReservationStationEntry>>>
+  std::vector<std::vector<std::vector<dependencyEntry>>>
       dependencyMatrix_;
 
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;
-
-  /** The queues of ready instructions for each port. */
-  std::vector<std::vector<std::pair<uint8_t, std::deque<std::shared_ptr<Instruction>>>>> readyQueues_;
-  
-  /** The queues of stalled instructions for each port. */
-  std::vector<std::vector<std::pair<uint8_t, std::deque<std::shared_ptr<Instruction>>>>> stallQueues_;
-
-  /** The number of items currently in each RS. */
-  std::vector<size_t> rsSize_;
 
   /** The number of cycles stalled due to a full reservation station. */
   uint64_t rsStalls_ = 0;

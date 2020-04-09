@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -35,6 +36,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     instructionsCommitted_++;
+
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);

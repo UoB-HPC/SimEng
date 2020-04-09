@@ -138,6 +138,12 @@ class Instruction {
    * executing it. */
   uint16_t getStallCycles() const;
 
+  /** Set whether this instruction is stalled at dispatch. */
+  void setDispatchStalled_(bool stalled);
+
+  /** Check whether this instruction is stalled at dispatch. */
+  bool isDispatchStalled_() const;
+
  protected:
   /** Whether an exception has been encountered. */
   bool exceptionEncountered_ = false;
@@ -179,6 +185,9 @@ class Instruction {
   /** The number of cycles this instruction will stall the unit executing it
    * for. */
   uint16_t stallCycles_ = 1;
+
+  /** Has this instruction been stalled at dispatch */
+  bool dispatchStalled_ = false;
 };
 
 }  // namespace simeng

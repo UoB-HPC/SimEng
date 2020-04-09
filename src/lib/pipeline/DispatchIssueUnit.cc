@@ -1,6 +1,7 @@
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 
 #include <unordered_set>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -25,46 +26,37 @@ DispatchIssueUnit::DispatchIssueUnit(
   
   for (int port = 0; port < rsArrangement.size(); port++) {
     auto RS = rsArrangement[port];
-    // Allocate RS port resources
-    if (readyQueues_.size() < RS.first + 1) {
-      readyQueues_.resize(RS.first + 1);
-      stallQueues_.resize(RS.first + 1);
-      maxReservationStationSize_.resize(RS.first + 1);
+    if (reservationStations_.size() < RS.first + 1) {
+      reservationStations_.resize(RS.first + 1, {0, 0, *(new std::vector<ReservationStationPort>)});
     }
-    maxReservationStationSize_[RS.first] = RS.second;
+    reservationStations_[RS.first].capacity = RS.second;
     // Find number of ports already mapping to the given RS
     uint8_t port_index = 0;
     for (auto rsPort : portMapping_){
       if (rsPort.first == RS.first) { port_index++; }
     }
-    // Set mapping from port to RS port
+    // Add port
     portMapping_.push_back({RS.first, port_index});
-    readyQueues_[RS.first].push_back({port, *(new std::deque<std::shared_ptr<Instruction>>)});
-    stallQueues_[RS.first].push_back({port, *(new std::deque<std::shared_ptr<Instruction>>)});
+    reservationStations_[RS.first].ports.resize(port_index + 1);
+    reservationStations_[RS.first].ports[port_index].issuePort = port;
   }
-  rsSize_ = std::vector<size_t>(readyQueues_.size(), 0);
 };
 
 void DispatchIssueUnit::tick() {
-
-  // Unstall instructions whose RS has free space
-  for (auto& RS : stallQueues_) {
-    for (auto& port : RS) {
-      uint8_t RS_Index = portMapping_[port.first].first;
-      auto& queue = port.second;
-      for (size_t entry = 0; entry < queue.size(); entry++) {
-        auto& uop = queue.front();
-        if (rsSize_[RS_Index] == maxReservationStationSize_[RS_Index]) {
-          rsStalls_++;
-          break;
-        }
-        resourceAllocation(uop, port.first);
-        queue.pop_front();
+  for (auto& rs : reservationStations_) {
+    while((rs.currentSize < rs.capacity) && (rs.stalled.size() > 0)) {
+      auto& entry = rs.stalled.front();
+      entry.second->setDispatchStalled_(false);
+      if (entry.second->canExecute()) {
+        rs.ports[portMapping_[entry.first].second].ready.push_back(std::move(entry.second));
       }
+      rs.stalled.pop_front();
+      rs.currentSize++;
     }
   }
 
-  // Allocate reosurces to incoming instructions or add them to stall queue if RS is full
+  input_.stall(false);
+
   for (size_t slot = 0; slot < input_.getWidth(); slot++) {
     auto& uop = input_.getHeadSlots()[slot];
     if (uop == nullptr) {
@@ -73,26 +65,18 @@ void DispatchIssueUnit::tick() {
 
     uint8_t port = portAllocator_.allocate(uop->getGroup());
     uint8_t RS_Index = portMapping_[port].first;
-    assert(RS_Index < readyQueues_.size() && "Allocated port inaccessible");
-
-    if (rsSize_[RS_Index] == maxReservationStationSize_[RS_Index]) {
-      rsStalls_++;
-      stallQueues_[RS_Index][portMapping_[port].second].second.push_back(std::move(uop));
-
-      input_.getHeadSlots()[slot] = nullptr;      
-      continue;
-    }
-
-    resourceAllocation(uop, port);
-    input_.getHeadSlots()[slot] = nullptr;
-  }
-}
-
-void DispatchIssueUnit::resourceAllocation(std::shared_ptr<Instruction> uop, uint8_t port) {
-    // Get RS information
-    uint8_t RS_Index = portMapping_[port].first;
     uint8_t RS_Port = portMapping_[port].second;
-    
+
+    assert(RS_Index < reservationStations_.size() && "Allocated port inaccessible");
+
+    // if (reservationStations_[RS_Index].currentSize == reservationStations_[RS_Index].capacity) {
+    //   rsStalls_ += (input_.getWidth()-slot);
+    //   portAllocator_.deallocate(port);
+
+    //   input_.stall(true);
+    //   return;
+    // }
+
     // Assume the uop will be ready
     bool ready = true;
 
@@ -122,11 +106,23 @@ void DispatchIssueUnit::resourceAllocation(std::shared_ptr<Instruction> uop, uin
       scoreboard_[reg.type][reg.tag] = false;
     }
 
-    if (ready) {
-      readyQueues_[RS_Index][RS_Port].second.push_back(std::move(uop));
+    if (reservationStations_[RS_Index].currentSize == reservationStations_[RS_Index].capacity) {
+      rsStalls_ += (input_.getWidth()-slot);
+      uop->setDispatchStalled_(true);
+      reservationStations_[RS_Index].stalled.push_back({port, std::move(uop)});
+
+      input_.getHeadSlots()[slot] = nullptr;
+      continue;
     }
 
-    rsSize_[RS_Index]++;
+    if (ready) {
+      reservationStations_[RS_Index].ports[RS_Port].ready.push_back(std::move(uop));
+    }
+
+    reservationStations_[RS_Index].currentSize++;
+    
+    input_.getHeadSlots()[slot] = nullptr;
+  }
 }
 
 void DispatchIssueUnit::issue() {
@@ -134,11 +130,11 @@ void DispatchIssueUnit::issue() {
   // Check the ready queues, and issue an instruction from each if the
   // corresponding port isn't blocked
   for (size_t i = 0; i < issuePorts_.size(); i++) {
-    uint8_t readyQueueIndex = portMapping_[i].first;
-    auto& queue = readyQueues_[readyQueueIndex][portMapping_[i].second].second;
+    ReservationStation& rs = reservationStations_[portMapping_[i].first];
+    auto& queue = rs.ports[portMapping_[i].second].ready;
     if (issuePorts_[i].isStalled()) {
       if (queue.size() > 0) {
-        portBusyStalls_++; 
+        portBusyStalls_++;
       }
       continue;
     }
@@ -152,16 +148,15 @@ void DispatchIssueUnit::issue() {
       // Inform the port allocator that an instruction issued
       portAllocator_.issued(i);
       issued++;
-
-      assert(rsSize_[readyQueueIndex] > 0);
-      rsSize_[readyQueueIndex]--;
+      assert(rs.currentSize > 0);
+      rs.currentSize--;
     }
   }
 
   if (issued == 0) {
     bool empty = true;
-    for(auto entry : rsSize_) {
-      if(entry != 0) {
+    for(auto entry : reservationStations_) {
+      if(entry.currentSize != 0) {
         empty = false;
         break;
       }
@@ -189,9 +184,11 @@ void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
     for (auto& entry : dependents) {
       entry.uop->supplyOperand(entry.operandIndex, values[i]);
       if (entry.uop->canExecute()) {
-        // Add the now-ready instruction to the relevant ready queue
-        auto rsInfo = portMapping_[entry.port];
-        readyQueues_[rsInfo.first][rsInfo.second].second.push_back(std::move(entry.uop));
+        if (!entry.uop->isDispatchStalled_()) {
+          // Add the now-ready instruction to the relevant ready queue
+          auto rsInfo = portMapping_[entry.port];
+          reservationStations_[rsInfo.first].ports[rsInfo.second].ready.push_back(std::move(entry.uop));
+        }
       }
     }
 
@@ -205,40 +202,39 @@ void DispatchIssueUnit::setRegisterReady(Register reg) {
 }
 
 void DispatchIssueUnit::purgeFlushed() {
-  for (size_t i = 0; i < readyQueues_.size(); i++) {
+  for (size_t i = 0; i < reservationStations_.size(); i++) {
     // Search the ready and stall queues for flushed instructions and remove them
-    auto& readyQueue = readyQueues_[i];
-    auto& stallQueue = stallQueues_[i];
-    for (auto& port : readyQueue) {
-      auto it = port.second.begin();
-      while (it != port.second.end()) {
+    auto& rs = reservationStations_[i];
+    for (auto& port : rs.ports) {
+      // Ready queue
+      auto it = port.ready.begin();
+      while (it != port.ready.end()) {
         auto& uop = *it;
         if (uop->isFlushed()) {
-          portAllocator_.deallocate(port.first);
-          it = port.second.erase(it);
-          assert(rsSize_[i] > 0);
-          rsSize_[i]--;
+          portAllocator_.deallocate(port.issuePort);
+          it = port.ready.erase(it);
+          assert(rs.currentSize > 0);
+          rs.currentSize--;
         } else {
           it++;
         }
       }
     }
-    for (auto& port : stallQueue) {
-      auto it = port.second.begin();
-      while (it != port.second.end()) {
-        auto& uop = *it;
-        if (uop->isFlushed()) {
-          portAllocator_.deallocate(port.first);
-          it = port.second.erase(it);
-        } else {
-          it++;
-        }
+    // Stall queue
+    auto it = rs.stalled.begin();
+    while (it != rs.stalled.end()) {
+      auto& entry = (*it);
+      if (entry.second->isFlushed()) {
+        portAllocator_.deallocate(entry.first);
+        it = rs.stalled.erase(it);
+      } else {
+        it++;
       }
     }
   }
 
   // Collect flushed instructions and remove them from the dependency matrix
-  std::vector<std::unordered_set<std::shared_ptr<Instruction>>> flushed(rsSize_.size(), 
+  std::vector<std::unordered_set<std::shared_ptr<Instruction>>> flushed(reservationStations_.size(), 
     *(new std::unordered_set<std::shared_ptr<Instruction>>));
   for (auto& registerType : dependencyMatrix_) {
     for (auto& dependencyList : registerType) {
@@ -248,16 +244,17 @@ void DispatchIssueUnit::purgeFlushed() {
       int i;
       for (i = dependencyList.size() - 1; i >= 0; i--) {
         auto& uop = dependencyList[i].uop;
-        auto readyQueueIndex = portMapping_[dependencyList[i].port].first;
+        auto rsIndex = portMapping_[dependencyList[i].port].first;
         if (!uop->isFlushed()) {
           // Stop at first (newest) non-flushed instruction
           break;
         }
-        if (!flushed[readyQueueIndex].count(uop)) {
-          flushed[readyQueueIndex].insert(uop);
-
-          // Inform the allocator we've removed an instruction
-          portAllocator_.deallocate(dependencyList[i].port);
+        if (!flushed[rsIndex].count(uop)) {
+          if(!uop->isDispatchStalled_()) {
+            flushed[rsIndex].insert(uop);
+            // Inform the allocator we've removed an instruction
+            portAllocator_.deallocate(dependencyList[i].port);
+          }
         }
       }
       // Resize the dependency list to remove flushed instructions from it
@@ -266,11 +263,12 @@ void DispatchIssueUnit::purgeFlushed() {
   }
 
   // Update reservation station size
-  for(int i = 0; i < rsSize_.size(); i++) {
-    assert(rsSize_[i] >= flushed[i].size());
-    rsSize_[i] -= flushed[i].size();
+  for(int i = 0; i < reservationStations_.size(); i++) {
+    assert(reservationStations_[i].currentSize >= flushed[i].size());
+    reservationStations_[i].currentSize -= flushed[i].size();
   }
 }
+
 
 uint64_t DispatchIssueUnit::getRSStalls() const { return rsStalls_; }
 uint64_t DispatchIssueUnit::getFrontendStalls() const {
