@@ -20,6 +20,7 @@
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
+#include "simeng/pipeline/A64FXPortAllocator.hh"
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
@@ -242,7 +243,7 @@ int main(int argc, char** argv) {
       }
     } // BR
   };
-  auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);  
+  auto portAllocator = simeng::pipeline::A64FXPortAllocator(portArrangement);  
 
   // TODO: Construct reservation station arrangement from config options
   const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {

@@ -87,5 +87,8 @@ void BalancedPortAllocator::issued(uint8_t port) {
 }
 void BalancedPortAllocator::deallocate(uint8_t port) { issued(port); };
 
+void BalancedPortAllocator::setRSSizeGetter(
+  std::function<void(std::vector<uint64_t>&)> rsSizes) { rsSizes_ = rsSizes; }
+
 }  // namespace pipeline
 }  // namespace simeng

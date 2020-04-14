@@ -596,6 +596,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     default:
       exceptionEncountered_ = true;
       exception_ = InstructionException::ExecutionNotYetImplemented;
+      break;
   }
   return getGeneratedAddresses();
 }

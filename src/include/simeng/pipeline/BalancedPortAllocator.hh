@@ -6,13 +6,6 @@
 namespace simeng {
 namespace pipeline {
 
-namespace PortType {
-  /** Instructions have to match the exact group(s) in set*/
-  const uint8_t COMPULSORY = 0;
-  /** Instructions can optional match group(s) in set*/
-  const uint8_t OPTIONAL = 1;
-}
-
 /** A load-balancing port allocator implementation. Maintains demand weightings
  * for each port, and allocates instructions to the suitable port with the
  * lowest weighting. */
@@ -36,6 +29,10 @@ class BalancedPortAllocator : public PortAllocator {
   /** Decrease the weight for the specified port. */
   void deallocate(uint8_t port) override;
 
+  /** Set function from DispatchIssueUnit to retrieve reservation 
+   * station sizes during execution. */
+  void setRSSizeGetter(std::function<void(std::vector<uint64_t>&)> rsSizes) override;
+
  private:
   /** The instruction group support matrix. An instruction-group-indexed map
    * containing lists of the ports that support each instruction group. */
@@ -45,6 +42,9 @@ class BalancedPortAllocator : public PortAllocator {
    * weighting representing the number of in-flight instructions allocated to
    * that port. */
   std::vector<uint16_t> weights;
+
+  /** Get the current sizes an capacity of the reservation stations */
+  std::function<void(std::vector<uint64_t>&)> rsSizes_;
 };
 
 }  // namespace pipeline

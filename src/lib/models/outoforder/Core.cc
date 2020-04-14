@@ -73,6 +73,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
         [this](auto uop) { loadStoreQueue_.startLoad(uop); }, [](auto uop) {},
         [](auto uop) { uop->setCommitReady(); }, branchPredictor);
   }
+  // Provide reservation size getter to A64FX port allocator
+  portAllocator.setRSSizeGetter([this](std::vector<uint64_t> &sizeVec) {dispatchIssueUnit_.getRSSizes(sizeVec);});
+
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);

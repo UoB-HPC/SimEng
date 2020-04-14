@@ -95,6 +95,9 @@ class DispatchIssueUnit {
    * busy port. */
   uint64_t getPortBusyStalls() const;
 
+  /** Retrieve the current sizes and capacities of the reservation stations*/
+  void getRSSizes(std::vector<uint64_t>&) const;
+
  private:
   /** A buffer of instructions to dispatch and read operands for. */
   PipelineBuffer<std::shared_ptr<Instruction>>& input_;

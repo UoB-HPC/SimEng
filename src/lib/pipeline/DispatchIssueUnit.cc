@@ -1,7 +1,6 @@
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 
 #include <unordered_set>
-#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -68,14 +67,6 @@ void DispatchIssueUnit::tick() {
     uint8_t RS_Port = portMapping_[port].second;
 
     assert(RS_Index < reservationStations_.size() && "Allocated port inaccessible");
-
-    // if (reservationStations_[RS_Index].currentSize == reservationStations_[RS_Index].capacity) {
-    //   rsStalls_ += (input_.getWidth()-slot);
-    //   portAllocator_.deallocate(port);
-
-    //   input_.stall(true);
-    //   return;
-    // }
 
     // Assume the uop will be ready
     bool ready = true;
@@ -277,6 +268,12 @@ uint64_t DispatchIssueUnit::getFrontendStalls() const {
 uint64_t DispatchIssueUnit::getBackendStalls() const { return backendStalls_; }
 uint64_t DispatchIssueUnit::getPortBusyStalls() const {
   return portBusyStalls_;
+}
+
+void DispatchIssueUnit::getRSSizes(std::vector<uint64_t>& sizes) const {
+  for (auto& rs : reservationStations_) {
+    sizes.push_back(rs.capacity - rs.currentSize);
+  }
 }
 
 }  // namespace pipeline

@@ -1,4 +1,5 @@
 set(TEST_SOURCES
+    pipeline/A64FXPortAllocatorTest.cc
     pipeline/BalancedPortAllocatorTest.cc
     pipeline/ExecuteUnitTest.cc
     pipeline/DecodeUnitTest.cc
