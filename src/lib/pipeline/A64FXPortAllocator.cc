@@ -90,7 +90,46 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
     int thresholdA = 0;
     int thresholdB = 0;
     int thresholdC = 0;
-    if(difference == 0) {
+    if ((freeEntries[0] > 0) && (freeEntries[1] > 0) && (freeEntries[2] == 0) && (freeEntries[3] == 0)) {
+      if ((freeEntries[0] - freeEntries[1]) >= thresholdB) {
+        rs = freeEntries[0] >= freeEntries[1] ? 0 : 1;  // Table 1
+        foundRS = true;
+      } else {
+        switch (rowSelection[1] % 2) { // Table 2
+          case 0: {
+            rs = freeEntries[0] >= freeEntries[1] ? 0 : 1;
+            foundRS = true;
+            break;
+          }
+          case 1: { 
+            rs = freeEntries[1] <= freeEntries[0] ? 1 : 0;
+            foundRS = true;
+            break;
+          }
+          default:
+            rowSelection[1]--;
+            break;
+        }
+        rowSelection[1]++;
+      }
+    } else if ((freeEntries[2] > 0) && (freeEntries[3] > 0) && (freeEntries[0] == 0) && (freeEntries[1] == 0)) {
+      switch (rowSelection[2] % 2) { // Table 3
+          case 0: { 
+            rs = freeEntries[2] >= freeEntries[3] ? 2 : 3;
+            foundRS = true;
+            break;
+          }
+          case 1: { 
+            rs = freeEntries[3] <= freeEntries[2] ? 3 : 2;
+            foundRS = true;
+            break;
+          }
+          default:
+            rowSelection[2]--;
+            break;
+      }
+      rowSelection[2]++;
+    } else {
       // Determine if RSE{0|1} has the most free entries excluding RSBR
       if((std::max_element(freeEntries.begin(), freeEntries.end()-1) - freeEntries.begin()) < 2) {
         switch (rowSelection[3] % 4) { // Table 4
@@ -100,7 +139,7 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
             break;
           }
           case 1: { 
-            rs = freeEntries[0] <= freeEntries[1] ? 0 : 1;
+            rs = freeEntries[1] <= freeEntries[0] ? 1 : 0;
             foundRS = true;
             break;
           }
@@ -110,7 +149,7 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
             break;
           }
           case 3: { 
-            rs = freeEntries[2] <= freeEntries[3] ? 2 : 3;
+            rs = freeEntries[3] <= freeEntries[2] ? 3 : 2;
             foundRS = true;
             break;
           }
@@ -127,7 +166,7 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
             break;
           }
           case 1: { 
-            rs = freeEntries[2] <= freeEntries[3] ? 2 : 3;
+            rs = freeEntries[3] <= freeEntries[2] ? 3 : 2;
             foundRS = true;
             break;
           }
@@ -137,7 +176,7 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
             break;
           }
           case 3: { 
-            rs = freeEntries[0] <= freeEntries[1] ? 0 : 1;
+            rs = freeEntries[1] <= freeEntries[0] ? 1 : 0;
             foundRS = true;
             break;
           }
@@ -147,46 +186,7 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
         }
         rowSelection[4]++;
       }
-    } else if (difference >= thresholdA) {
-      if ((freeEntries[0] - freeEntries[1]) >= thresholdB) {
-        rs = freeEntries[0] >= freeEntries[1] ? 0 : 1;  // Table 1
-        foundRS = true;
-      } else {
-        switch (rowSelection[1] % 2) { // Table 2
-          case 0: {
-            rs = freeEntries[0] >= freeEntries[1] ? 0 : 1;
-            foundRS = true;
-            break;
-          }
-          case 1: { 
-            rs = freeEntries[0] <= freeEntries[1] ? 0 : 1;
-            foundRS = true;
-            break;
-          }
-          default:
-            rowSelection[1]--;
-            break;
-        }
-        rowSelection[1]++;
-      }
-    } else if (difference <= thresholdC) {
-      switch (rowSelection[2] % 2) { // Table 3
-          case 0: { 
-            rs = freeEntries[2] >= freeEntries[3] ? 2 : 3;
-            foundRS = true;
-            break;
-          }
-          case 1: { 
-            rs = freeEntries[2] <= freeEntries[3] ? 2 : 3;
-            foundRS = true;
-            break;
-          }
-          default:
-            rowSelection[2]--;
-            break;
-      }
-      rowSelection[2]++;
-    }
+    }  
   } else if (attribute == InstructionAttribute::RSE || attribute == InstructionAttribute::RSA) {
     uint8_t A = 0;
     uint8_t B = 1;
@@ -218,13 +218,13 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
       }
       rowSelection[5]++;
     }
-  }  else if (attribute == InstructionAttribute::RSE0) {
+  } else if (attribute == InstructionAttribute::RSE0) {
     rs = 0;
     foundRS = true; 
-  }  else if (attribute == InstructionAttribute::RSE1) {
+  } else if (attribute == InstructionAttribute::RSE1) {
     rs = 1;
     foundRS = true; 
-  }  else if (attribute == InstructionAttribute::BR) {
+  } else if (attribute == InstructionAttribute::BR) {
     rs = 4;
     foundRS = true; 
   }

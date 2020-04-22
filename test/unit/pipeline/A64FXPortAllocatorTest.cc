@@ -57,29 +57,28 @@ TEST(A64FXPortAllocatorTest, RSX) {
   rsFreeEntires = {4, 4, 2, 2, 19};
   EXPECT_EQ(portAllocator.allocate(1), 1);
   rsFreeEntires[0]--;
-  EXPECT_EQ(portAllocator.allocate(1), 3);
-  rsFreeEntires[1]--;
-  EXPECT_EQ(portAllocator.allocate(1), 1);
-  rsFreeEntires[0]--;
-  EXPECT_EQ(portAllocator.allocate(1), 3);
-  rsFreeEntires[1]--;
   EXPECT_EQ(portAllocator.allocate(1), 1);
   rsFreeEntires[0]--;
   EXPECT_EQ(portAllocator.allocate(1), 4);
   rsFreeEntires[2]--;
-  EXPECT_EQ(portAllocator.allocate(1), 1);
-  rsFreeEntires[0]--;
   EXPECT_EQ(portAllocator.allocate(1), 4);
   rsFreeEntires[2]--;
-  EXPECT_EQ(portAllocator.allocate(1), 5);
-  rsFreeEntires[3]--;
   EXPECT_EQ(portAllocator.allocate(1), 3);
   rsFreeEntires[1]--;
+  EXPECT_EQ(portAllocator.allocate(1), 1);
+  rsFreeEntires[0]--;
+  EXPECT_EQ(portAllocator.allocate(1), 5);
+  rsFreeEntires[3]--;
   EXPECT_EQ(portAllocator.allocate(1), 4);
   EXPECT_EQ(portAllocator.allocate(1), 3);
   rsFreeEntires[1]--;
+  EXPECT_EQ(portAllocator.allocate(1), 1);
+  rsFreeEntires[0]--;
   EXPECT_EQ(portAllocator.allocate(1), 5);
   rsFreeEntires[3]--;
+  EXPECT_EQ(portAllocator.allocate(1), 5);
+  EXPECT_EQ(portAllocator.allocate(1), 3);
+  rsFreeEntires[1]--;
 }
 
 // Tests correct allocation when for RSE
