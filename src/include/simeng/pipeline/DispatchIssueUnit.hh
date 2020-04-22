@@ -58,7 +58,8 @@ class DispatchIssueUnit {
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
-      std::vector<std::pair<uint8_t, uint64_t>> rsArrangment);
+      std::vector<std::pair<uint8_t, uint64_t>> rsArrangment, 
+      uint8_t dispatchRate);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -125,6 +126,9 @@ class DispatchIssueUnit {
 
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;
+
+  /** The number of instructions that can be dispatched to a reservation station per cycle. */
+  uint64_t dispatchRate_;
 
   /** The number of cycles stalled due to a full reservation station. */
   uint64_t rsStalls_ = 0;

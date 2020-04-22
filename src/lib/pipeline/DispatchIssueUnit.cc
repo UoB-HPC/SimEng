@@ -10,13 +10,15 @@ DispatchIssueUnit::DispatchIssueUnit(
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
     const std::vector<uint16_t>& physicalRegisterStructure,
-    std::vector<std::pair<uint8_t, uint64_t>> rsArrangement)
+    std::vector<std::pair<uint8_t, uint64_t>> rsArrangement,
+    uint8_t dispatchRate)
     : input_(fromRename),
       issuePorts_(issuePorts),
       registerFileSet_(registerFileSet),
       scoreboard_(physicalRegisterStructure.size()),
       dependencyMatrix_(physicalRegisterStructure.size()),
-      portAllocator_(portAllocator) {
+      portAllocator_(portAllocator),
+      dispatchRate_(dispatchRate) {
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
     scoreboard_[type].assign(physicalRegisterStructure[type], true);
@@ -42,9 +44,12 @@ DispatchIssueUnit::DispatchIssueUnit(
 };
 
 void DispatchIssueUnit::tick() {
-  for (auto& rs : reservationStations_) {
-    while((rs.currentSize < rs.capacity) && (rs.stalled.size() > 0)) {
+  std::vector<uint8_t> dispatches(reservationStations_.size(),0);
+  for (int i = 0; i < reservationStations_.size(); i++) {
+    auto& rs = reservationStations_[i];
+    while((rs.currentSize < rs.capacity) && (rs.stalled.size() > 0) && dispatches[i] < dispatchRate_) {
       auto& entry = rs.stalled.front();
+      dispatches[i]++;
       entry.second->setDispatchStalled_(false);
       if (entry.second->canExecute()) {
         rs.ports[portMapping_[entry.first].second].ready.push_back(std::move(entry.second));
@@ -52,6 +57,7 @@ void DispatchIssueUnit::tick() {
       rs.stalled.pop_front();
       rs.currentSize++;
     }
+    if(rs.stalled.size() > 0) { rsStalls_++; }
   }
 
   input_.stall(false);
@@ -97,14 +103,16 @@ void DispatchIssueUnit::tick() {
       scoreboard_[reg.type][reg.tag] = false;
     }
 
-    if (reservationStations_[RS_Index].currentSize == reservationStations_[RS_Index].capacity) {
-      rsStalls_ += (input_.getWidth()-slot);
+    if (reservationStations_[RS_Index].currentSize == reservationStations_[RS_Index].capacity || 
+          dispatches[RS_Index] > dispatchRate_) {
       uop->setDispatchStalled_(true);
       reservationStations_[RS_Index].stalled.push_back({port, std::move(uop)});
 
       input_.getHeadSlots()[slot] = nullptr;
       continue;
     }
+    
+    dispatches[RS_Index]++;
 
     if (ready) {
       reservationStations_[RS_Index].ports[RS_Port].ready.push_back(std::move(uop));
@@ -198,28 +206,28 @@ void DispatchIssueUnit::purgeFlushed() {
     auto& rs = reservationStations_[i];
     for (auto& port : rs.ports) {
       // Ready queue
-      auto it = port.ready.begin();
-      while (it != port.ready.end()) {
-        auto& uop = *it;
+      auto readyIter = port.ready.begin();
+      while (readyIter != port.ready.end()) {
+        auto& uop = *readyIter;
         if (uop->isFlushed()) {
           portAllocator_.deallocate(port.issuePort);
-          it = port.ready.erase(it);
+          readyIter = port.ready.erase(readyIter);
           assert(rs.currentSize > 0);
           rs.currentSize--;
         } else {
-          it++;
+          readyIter++;
         }
       }
     }
     // Stall queue
-    auto it = rs.stalled.begin();
-    while (it != rs.stalled.end()) {
-      auto& entry = (*it);
+    auto stallIter = rs.stalled.begin();
+    while (stallIter != rs.stalled.end()) {
+      auto& entry = (*stallIter);
       if (entry.second->isFlushed()) {
         portAllocator_.deallocate(entry.first);
-        it = rs.stalled.erase(it);
+        stallIter = rs.stalled.erase(stallIter);
       } else {
-        it++;
+        stallIter++;
       }
     }
   }
