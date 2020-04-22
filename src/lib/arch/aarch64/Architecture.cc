@@ -353,36 +353,36 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STPXpre:
     case Opcode::AArch64_STPQpost:
       return {3,3};
-    Non-indexed stores
-    case Opcode::AArch64_STRDroW:
-    case Opcode::AArch64_STRDroX:
-    case Opcode::AArch64_STRDui:
-    case Opcode::AArch64_STRHHroW:
-    case Opcode::AArch64_STRHHroX:
-    case Opcode::AArch64_STRQui:
-    case Opcode::AArch64_STRSroW:
-    case Opcode::AArch64_STRSroX:
-    case Opcode::AArch64_STRSui:
-    case Opcode::AArch64_STURDi:
-    case Opcode::AArch64_STURQi: 
-    case Opcode::AArch64_STURSi:
-      return {8,1};
-    case Opcode::AArch64_STLXRW:
-    case Opcode::AArch64_STLXRX:
-    case Opcode::AArch64_STRBBroW:
-    case Opcode::AArch64_STRBBroX:
-    case Opcode::AArch64_STRBBui:
-    case Opcode::AArch64_STRHHui:
-    case Opcode::AArch64_STRWroW:
-    case Opcode::AArch64_STRWroX:
-    case Opcode::AArch64_STRWui:
-    case Opcode::AArch64_STRXroW:
-    case Opcode::AArch64_STRXroX:
-    case Opcode::AArch64_STRXui:
-    case Opcode::AArch64_STURBBi:
-    case Opcode::AArch64_STURWi:
-    case Opcode::AArch64_STURXi:
-      return {5,1};
+    // Non-indexed stores
+    // case Opcode::AArch64_STRDroW:
+    // case Opcode::AArch64_STRDroX:
+    // case Opcode::AArch64_STRDui:
+    // case Opcode::AArch64_STRHHroW:
+    // case Opcode::AArch64_STRHHroX:
+    // case Opcode::AArch64_STRQui:
+    // case Opcode::AArch64_STRSroW:
+    // case Opcode::AArch64_STRSroX:
+    // case Opcode::AArch64_STRSui:
+    // case Opcode::AArch64_STURDi:
+    // case Opcode::AArch64_STURQi: 
+    // case Opcode::AArch64_STURSi:
+    //   return {8,1};
+    // case Opcode::AArch64_STLXRW:
+    // case Opcode::AArch64_STLXRX:
+    // case Opcode::AArch64_STRBBroW:
+    // case Opcode::AArch64_STRBBroX:
+    // case Opcode::AArch64_STRBBui:
+    // case Opcode::AArch64_STRHHui:
+    // case Opcode::AArch64_STRWroW:
+    // case Opcode::AArch64_STRWroX:
+    // case Opcode::AArch64_STRWui:
+    // case Opcode::AArch64_STRXroW:
+    // case Opcode::AArch64_STRXroX:
+    // case Opcode::AArch64_STRXui:
+    // case Opcode::AArch64_STURBBi:
+    // case Opcode::AArch64_STURWi:
+    // case Opcode::AArch64_STURXi:
+    //   return {5,1};
   }
 
   // Assume single-cycle, non-blocking for all other instructions

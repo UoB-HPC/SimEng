@@ -3,6 +3,8 @@
 #include <cassert>
 #include <cstring>
 
+#include <iostream>
+
 namespace simeng {
 namespace pipeline {
 
@@ -77,6 +79,8 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   const auto& addresses = insn->getGeneratedAddresses();
   for (size_t i = 0; i < addresses.size(); i++) {
+    // memory_.requestRead(addresses[i], insn->getSequenceId());
+    // std::cout << "LOAD: " << std::hex << insn->getInstructionAddress() << std::dec << std::endl;
     requestQueue_.push_back({i, insn});
   }
   requestedLoads_.emplace(insn->getSequenceId(), insn);
@@ -92,6 +96,8 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   const auto& addresses = uop->getGeneratedAddresses();
   const auto& data = uop->getData();
   for (size_t i = 0; i < addresses.size(); i++) {
+    // std::cout << "STORE: " << std::hex << uop->getInstructionAddress() << std::dec << std::endl;
+    memory_.requestWrite(addresses[i], data[i]);
     requestQueue_.push_back({i, uop});
   }
 
@@ -157,19 +163,23 @@ void LoadStoreQueue::purgeFlushed() {
 void LoadStoreQueue::tick() {
   // Arbitrarily choose a store or 2 loads to request write/read resp.
   if(requestQueue_.size() > 0) {
+    // std::cout << "ENTRY: " << std::hex << requestQueue_.front().second->getInstructionAddress() << std::dec << std::endl;
     auto& first_entry = requestQueue_.front();
     const auto& first_addresses = first_entry.second->getGeneratedAddresses();
 
     if(first_entry.second->isStore()) {
       const auto& data = first_entry.second->getData();
-      memory_.requestWrite(first_addresses[first_entry.first], data[first_entry.first]);
+      // std::cout << "STORE: " << std::hex << first_entry.second->getInstructionAddress() << std::dec << std::endl;
+      // memory_.requestWrite(first_addresses[first_entry.first], data[first_entry.first]);
       requestQueue_.pop_front();
     } else {
+      // std::cout << "LOAD: " << std::hex << first_entry.second->getInstructionAddress() << std::dec << std::endl;
       memory_.requestRead(first_addresses[first_entry.first], first_entry.second->getSequenceId());
       requestQueue_.pop_front();
       if(requestQueue_.size() > 0 && requestQueue_.front().second->isLoad()) {
         auto& second_entry = requestQueue_.front();
         const auto& second_addresses = second_entry.second->getGeneratedAddresses();
+        // std::cout << "LOAD: " << std::hex << second_entry.second->getInstructionAddress() << std::dec << std::endl;
         memory_.requestRead(second_addresses[second_entry.first], second_entry.second->getSequenceId());
         requestQueue_.pop_front();
       }

@@ -99,7 +99,7 @@ void BTB_BTWPredictor::update(std::shared_ptr<Instruction> uop, bool taken,
   ghrUnsigned = ((ghrUnsigned << 1) | taken) & mask;
   
   // If appropiate branch type, add to return address stack.
-  if(uop->isBL()) {=
+  if(uop->isBL()) {
     ras.push(instructionAddress + 4);
   }
 }
