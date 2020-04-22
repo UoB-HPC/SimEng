@@ -154,6 +154,12 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_FSQRTSr:
     case Opcode::AArch64_FSQRTv4f32:
       return {29,29};
+    case Opcode::AArch64_SDIVWr:
+    case Opcode::AArch64_SDIVXr:
+      return {42,42};
+    case Opcode::AArch64_UDIVWr:
+    case Opcode::AArch64_UDIVXr:
+      return {41,41};
     case Opcode::AArch64_FADDDrr:
     case Opcode::AArch64_FADDSrr:
     case Opcode::AArch64_FADDv2f64:
@@ -288,6 +294,95 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
         return {2, 2};
       }
       return {1, 1};
+    case Opcode::AArch64_LD1Rv4s_POST:
+    case Opcode::AArch64_LD1Twov16b:
+    case Opcode::AArch64_LDPDi:
+    case Opcode::AArch64_LDPQi:
+    case Opcode::AArch64_LDPSi:
+    case Opcode::AArch64_LDPWi:
+    case Opcode::AArch64_LDPXi:
+    case Opcode::AArch64_LDRBBpost:
+    case Opcode::AArch64_LDRBBpre:
+    case Opcode::AArch64_LDRDpost:
+    case Opcode::AArch64_LDRDpre:
+    case Opcode::AArch64_LDRHHpost:
+    case Opcode::AArch64_LDRHHpre:
+    case Opcode::AArch64_LDRSpost:
+    case Opcode::AArch64_LDRSpre: 
+    case Opcode::AArch64_LDRWpost:
+    case Opcode::AArch64_LDRWpre:
+    case Opcode::AArch64_LDRXpost:
+    case Opcode::AArch64_LDRXpre:
+      return {2,2};
+    case Opcode::AArch64_LD1Twov16b_POST:
+    case Opcode::AArch64_LDPDpost:
+    case Opcode::AArch64_LDPDpre:
+    case Opcode::AArch64_LDPQpost:
+    case Opcode::AArch64_LDPQpre:
+    case Opcode::AArch64_LDPXpost:
+    case Opcode::AArch64_LDPXpre:
+      return {3,3};
+    // STR indexed
+    case Opcode::AArch64_STRBBpost:
+    case Opcode::AArch64_STRBBpre:
+    case Opcode::AArch64_STRWpost:
+    case Opcode::AArch64_STRWpre:
+    case Opcode::AArch64_STRXpost:
+    case Opcode::AArch64_STRXpre:
+      return {2,2};
+    case Opcode::AArch64_STRDpost:
+    case Opcode::AArch64_STRDpre:
+    case Opcode::AArch64_STRHHpost:
+    case Opcode::AArch64_STRHHpre:
+    case Opcode::AArch64_STRQpost:
+    case Opcode::AArch64_STRSpost:
+    case Opcode::AArch64_STRSpre:
+      return {2,2};
+    // STP
+    case Opcode::AArch64_STPXi:
+    case Opcode::AArch64_STPWi:
+      return {2,2};
+    case Opcode::AArch64_STPDi:
+    case Opcode::AArch64_STPSi:
+    case Opcode::AArch64_STPQi:
+      return {2,2};
+    case Opcode::AArch64_STPDpost:
+    case Opcode::AArch64_STPDpre:
+    case Opcode::AArch64_STPSpost:
+    case Opcode::AArch64_STPSpre:
+    case Opcode::AArch64_STPXpre:
+    case Opcode::AArch64_STPQpost:
+      return {3,3};
+    Non-indexed stores
+    case Opcode::AArch64_STRDroW:
+    case Opcode::AArch64_STRDroX:
+    case Opcode::AArch64_STRDui:
+    case Opcode::AArch64_STRHHroW:
+    case Opcode::AArch64_STRHHroX:
+    case Opcode::AArch64_STRQui:
+    case Opcode::AArch64_STRSroW:
+    case Opcode::AArch64_STRSroX:
+    case Opcode::AArch64_STRSui:
+    case Opcode::AArch64_STURDi:
+    case Opcode::AArch64_STURQi: 
+    case Opcode::AArch64_STURSi:
+      return {8,1};
+    case Opcode::AArch64_STLXRW:
+    case Opcode::AArch64_STLXRX:
+    case Opcode::AArch64_STRBBroW:
+    case Opcode::AArch64_STRBBroX:
+    case Opcode::AArch64_STRBBui:
+    case Opcode::AArch64_STRHHui:
+    case Opcode::AArch64_STRWroW:
+    case Opcode::AArch64_STRWroX:
+    case Opcode::AArch64_STRWui:
+    case Opcode::AArch64_STRXroW:
+    case Opcode::AArch64_STRXroX:
+    case Opcode::AArch64_STRXui:
+    case Opcode::AArch64_STURBBi:
+    case Opcode::AArch64_STURWi:
+    case Opcode::AArch64_STURXi:
+      return {5,1};
   }
 
   // Assume single-cycle, non-blocking for all other instructions
