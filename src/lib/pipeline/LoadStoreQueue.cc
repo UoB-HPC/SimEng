@@ -76,8 +76,8 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   const auto& addresses = insn->getGeneratedAddresses();
-  for (auto const& target : addresses) {
-    memory_.requestRead(target, insn->getSequenceId());
+  for (size_t i = 0; i < addresses.size(); i++) {
+    requestQueue_.push_back({i, insn});
   }
   requestedLoads_.emplace(insn->getSequenceId(), insn);
 }
@@ -92,7 +92,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   const auto& addresses = uop->getGeneratedAddresses();
   const auto& data = uop->getData();
   for (size_t i = 0; i < addresses.size(); i++) {
-    memory_.requestWrite(addresses[i], data[i]);
+    requestQueue_.push_back({i, uop});
   }
 
   // Check all loads that have requested memory
@@ -155,6 +155,27 @@ void LoadStoreQueue::purgeFlushed() {
 }
 
 void LoadStoreQueue::tick() {
+  // Arbitrarily choose a store or 2 loads to request write/read resp.
+  if(requestQueue_.size() > 0) {
+    auto& first_entry = requestQueue_.front();
+    const auto& first_addresses = first_entry.second->getGeneratedAddresses();
+
+    if(first_entry.second->isStore()) {
+      const auto& data = first_entry.second->getData();
+      memory_.requestWrite(first_addresses[first_entry.first], data[first_entry.first]);
+      requestQueue_.pop_front();
+    } else {
+      memory_.requestRead(first_addresses[first_entry.first], first_entry.second->getSequenceId());
+      requestQueue_.pop_front();
+      if(requestQueue_.size() > 0 && requestQueue_.front().second->isLoad()) {
+        auto& second_entry = requestQueue_.front();
+        const auto& second_addresses = second_entry.second->getGeneratedAddresses();
+        memory_.requestRead(second_addresses[second_entry.first], second_entry.second->getSequenceId());
+        requestQueue_.pop_front();
+      }
+    }
+  }
+
   // Process completed read requests
   for (const auto& response : memory_.getCompletedReads()) {
     auto address = response.target.address;
