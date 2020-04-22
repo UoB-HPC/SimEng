@@ -1,6 +1,7 @@
 #include "../MockArchitecture.hh"
 #include "../MockBranchPredictor.hh"
 #include "../MockMemoryInterface.hh"
+#include "../MockInstruction.hh"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "simeng/Instruction.hh"
@@ -23,7 +24,11 @@ class PipelineFetchUnitTest : public testing::Test {
       : output(1, {}),
         fetchBuffer({{0, 16}, 0, 0}),
         completedReads(&fetchBuffer, 1),
-        fetchUnit(output, memory, 1024, 0, 4, isa, predictor) {}
+        fetchUnit(output, memory, 1024, 0, 4, isa, predictor),
+        uop(new MockInstruction),
+        uopPtr(uop) {
+    uopPtr->setInstructionAddress(0);
+  }
 
  protected:
   PipelineBuffer<MacroOp> output;
@@ -35,28 +40,31 @@ class PipelineFetchUnitTest : public testing::Test {
   span<MemoryReadResult> completedReads;
 
   FetchUnit fetchUnit;
+
+  MockInstruction* uop;
+  std::shared_ptr<Instruction> uopPtr;
 };
 
 // Tests that ticking a fetch unit attempts to predict a branch, attempts to
 // predecode from the correct program counter using the supplied prediction, and
 // generates output correctly.
 TEST_F(PipelineFetchUnitTest, Tick) {
-  BranchPrediction prediction{true, 1};
-  MacroOp macroOp = {nullptr};
+  BranchPrediction prediction{false, 0};
+  MacroOp macroOp = {uopPtr};
 
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(4));
 
-  EXPECT_CALL(predictor, predict(0)).WillOnce(Return(prediction));
-
   // Verify the prediction matches the one we provided
   // Set the output parameter to a 1-wide macro-op
   EXPECT_CALL(isa, predecode(_, _, 0,
-                             AllOf(Field(&BranchPrediction::taken, true),
-                                   Field(&BranchPrediction::target, 1)),
+                             AllOf(Field(&BranchPrediction::taken, false),
+                                   Field(&BranchPrediction::target, 0)),
                              _))
-      .WillOnce(DoAll(SetArgReferee<4>(macroOp), Return(1)));
+      .WillOnce(DoAll(SetArgReferee<4>(macroOp), Return(4)));
+  
+  EXPECT_CALL(predictor, predict(uopPtr)).WillOnce(Return(prediction));
 
   fetchUnit.tick();
 
@@ -68,8 +76,9 @@ TEST_F(PipelineFetchUnitTest, Tick) {
 TEST_F(PipelineFetchUnitTest, TickStalled) {
   output.stall(true);
 
-  EXPECT_CALL(predictor, predict(_)).Times(0);
   EXPECT_CALL(isa, predecode(_, _, _, _, _)).Times(0);
+  
+  EXPECT_CALL(predictor, predict(_)).Times(0);
 
   fetchUnit.tick();
 
@@ -80,6 +89,7 @@ TEST_F(PipelineFetchUnitTest, TickStalled) {
 // Tests that the fetch unit will handle instructions that straddle fetch block
 // boundaries by automatically requesting the next block of data.
 TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
+  MacroOp macroOp = {uopPtr};
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(4));
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
@@ -97,7 +107,8 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   MemoryReadResult nextBlockValue = {{16, 16}, 0, 1};
   span<MemoryReadResult> nextBlock = {&nextBlockValue, 1};
   EXPECT_CALL(memory, getCompletedReads()).WillOnce(Return(nextBlock));
-  EXPECT_CALL(isa, predecode(_, _, _, _, _)).WillOnce(Return(4));
+  EXPECT_CALL(isa, predecode(_, _, _, _, _))
+    .WillOnce(DoAll(SetArgReferee<4>(macroOp), Return(4)));
   fetchUnit.tick();
 }
 

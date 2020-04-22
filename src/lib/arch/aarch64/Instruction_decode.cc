@@ -245,6 +245,12 @@ void Instruction::decode() {
       (2174 < metadata.opcode && metadata.opcode < 2187)) {
         isMultiply_ = true;
   }
+  if(metadata.opcode == 1192) {
+    isRET_ = true;
+  }
+  if(metadata.opcode == 124 || metadata.opcode == 125) {
+    isBL_ = true;
+  }
 }
 
 void Instruction::nyi() {

@@ -30,6 +30,7 @@ const unsigned int commitWidth = 4;
 const unsigned int executionUnitCount = 7;
 const unsigned int lsqCompletionSlots = 2;
 const unsigned int clockFrequency = 2.5 * 1e9;
+const uint8_t dispatchRate = 2;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
@@ -62,7 +63,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures.size()),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities, rsArrangement),
+                         portAllocator, physicalRegisterQuantities, rsArrangement,
+                         dispatchRate),
       writebackUnit_(completionSlots_, registerFileSet_) {
   for (size_t i = 0; i < executionUnitCount; i++) {
     executionUnits_.emplace_back(

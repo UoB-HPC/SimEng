@@ -120,6 +120,8 @@ bool Instruction::isStore() const { return isStore_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
 bool Instruction::isASIMD() const { return isASIMD_; }
+bool Instruction::isRET() const { return isRET_; }
+bool Instruction::isBL() const { return isBL_; }
 
 void Instruction::setMemoryAddresses(
     const std::initializer_list<MemoryAccessTarget>& addresses) {

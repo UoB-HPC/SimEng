@@ -1,6 +1,5 @@
 #pragma once
 
-#include "simeng/BranchPredictor.hh"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/RegisterValue.hh"
@@ -11,6 +10,16 @@
 using InstructionException = short;
 
 namespace simeng {
+
+  /** A branch result prediction for an instruction. */
+  struct BranchPrediction {
+    /** Whether the branch will be taken. */
+    bool taken;
+
+    /** The branch instruction's target address. If `taken = false`, the value
+     * will be ignored. */
+    uint64_t target;
+  };
 
 /** An abstract instruction definition.
  * Each supported ISA should provide a derived implementation of this class. */
@@ -106,6 +115,12 @@ class Instruction {
 
   /** Is this a arithmetic simd operation? */
   virtual bool isASIMD() const = 0;
+
+  /** Is this a return instruction? */
+  virtual bool isRET() const = 0;
+
+  /** Is this a branch and link instruction? */
+  virtual bool isBL() const = 0;
 
   /** Set this instruction's instruction memory address. */
   void setInstructionAddress(uint64_t address);

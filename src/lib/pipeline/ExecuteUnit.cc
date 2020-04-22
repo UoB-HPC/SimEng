@@ -36,7 +36,18 @@ void ExecuteUnit::tick() {
         // Retrieve execution latency from the instruction
         auto latency = uop->getLatency();
 
-        if (latency == 1 && pipeline_.size() == 0) {
+        if ((uop->getGroup() & 8) > 0) {
+          if(operationsStalled_.size() == 0) {
+            // Add insn to pipeline
+            pipeline_.push_back({nullptr, tickCounter_ + latency - 1});
+            pipeline_.back().insn = std::move(uop);
+            operationsStalled_.push_back(pipeline_.back().insn);
+          } else {            
+            operationsStalled_.push_back(nullptr);
+            operationsStalled_.back() = std::move(uop);
+          }
+        }
+        else if (latency == 1 && pipeline_.size() == 0) {
           // Pipeline is empty and insn will execute this cycle; bypass
           execute(uop);
         } else {
@@ -65,6 +76,16 @@ void ExecuteUnit::tick() {
 
   auto& head = pipeline_.front();
   if (head.readyAt <= tickCounter_) {
+    if((head.insn->getGroup() & 8) > 0) {
+      operationsStalled_.pop_front();
+      if (operationsStalled_.size() > 0) {
+        // Add insn to pipeline
+        auto& uop = operationsStalled_.front();
+        pipeline_.push_back({nullptr, tickCounter_ + uop->getLatency() - 1});
+        pipeline_.back().insn = std::move(uop);
+        operationsStalled_.front() = pipeline_.back().insn;
+       }
+    }
     execute(head.insn);
     pipeline_.pop_front();
   }
@@ -103,7 +124,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     pc_ = uop->getBranchAddress();
 
     // Update branch predictor with branch results
-    predictor_.update(uop->getInstructionAddress(), uop->wasBranchTaken(), pc_);
+    predictor_.update(uop, uop->wasBranchTaken(), pc_);
 
     // Update the branch instruction counter
     branchesExecuted_++;
@@ -145,6 +166,16 @@ void ExecuteUnit::purgeFlushed() {
       it = pipeline_.erase(it);
     } else {
       it++;
+    }
+  }
+
+  auto itStall = operationsStalled_.begin();
+  while (itStall != operationsStalled_.end()) {
+    auto& entry = *itStall;
+    if (entry->isFlushed()) {
+      itStall = operationsStalled_.erase(itStall);
+    } else {
+      itStall++;
     }
   }
 }

@@ -129,6 +129,12 @@ class Instruction : public simeng::Instruction {
   /** Is this a arithmetic simd operation? */
   bool isASIMD() const override;
 
+  /** Is this a return instruction? */
+  bool isRET() const override;
+
+  /** Is this a branch and link instruction? */
+  bool isBL() const override;
+
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
@@ -219,6 +225,10 @@ class Instruction : public simeng::Instruction {
   bool isDivide_ = false;
   /** Is this a shift operation? */
   bool isShift_ = false;
+  /** Is this a return instruction? */
+  bool isRET_ = false;
+  /** Is this a branch and link instruction? */
+  bool isBL_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

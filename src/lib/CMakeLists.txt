@@ -25,6 +25,7 @@ set(SIMENG_SOURCES
     pipeline/WritebackUnit.cc
     AlwaysNotTakenPredictor.cc
     ArchitecturalRegisterFileSet.cc
+    BTB_BTWPredictor.cc
     BTBPredictor.cc
     CMakeLists.txt
     Elf.cc

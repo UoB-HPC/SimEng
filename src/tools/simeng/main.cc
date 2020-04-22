@@ -7,6 +7,7 @@
 
 #include "simeng/AlwaysNotTakenPredictor.hh"
 #include "simeng/BTBPredictor.hh"
+#include "simeng/BTB_BTWPredictor.hh"
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
@@ -179,7 +180,7 @@ int main(int argc, char** argv) {
   // Create the architecture, with knowledge of the kernel
   auto arch = simeng::arch::aarch64::Architecture(kernel);
 
-  auto predictor = simeng::BTBPredictor(11);
+  auto predictor = simeng::BTBPredictor(13);
 
   // TODO: Construct port arrangement from config options
   const std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>> portArrangement = {
@@ -217,7 +218,12 @@ int main(int argc, char** argv) {
         {simeng::arch::aarch64::InstructionGroups::LOAD, 0},
         {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
         {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}
-      },         
+      },
+      {
+        {simeng::arch::aarch64::InstructionGroups::STORE, 0},
+        {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+        {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}
+      },      
       {
         {simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0}
       }

@@ -96,6 +96,11 @@ class ExecuteUnit {
    * be calculated and forwarded. */
   std::deque<ExecutionUnitPipelineEntry> pipeline_;
 
+  /** A queue to hold divide instructions as to mimic the operation blocking
+   * scheme.
+  */
+  std::deque<std::shared_ptr<Instruction>> operationsStalled_;
+
   /** Whether the core should be flushed after this cycle. */
   bool shouldFlush_;
 
