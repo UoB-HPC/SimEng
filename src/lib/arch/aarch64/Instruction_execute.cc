@@ -1465,7 +1465,7 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
-    case Opcode::AArch64_LD1Rv4s_POST: { // ld1r {vt.4s}, [xn], #imm
+    case Opcode::AArch64_LD1Rv4s_POST: {  // ld1r {vt.4s}, [xn], #imm
       uint32_t val = memoryData[0].get<uint32_t>();
       uint32_t out[4] = {val, val, val, val};
       results[0] = out;
