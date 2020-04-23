@@ -33,6 +33,9 @@ struct ReservationStation {
   /** Queue of instructions that are stalled due to 
    * reservation station being at capacity */
   std::deque<std::pair<uint8_t, std::shared_ptr<Instruction>>> stalled;
+  /** Paused dispatching to allow for the flow of an 
+   * instruction that represents multiple micro-ops. */
+  int64_t pausedId = -1;
 };
 
 /** An entry in the reservation station. */
