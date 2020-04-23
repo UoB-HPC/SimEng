@@ -22,7 +22,8 @@ class LoadStoreQueue {
   LoadStoreQueue(
       unsigned int maxCombinedSpace, MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands);
+      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+      uint64_t L1Bandwidth = UINT64_MAX, uint8_t permittedLoads = UINT8_MAX);
 
   /** Constructs a split load/store queue model, simulating discrete queues for
    * load and store instructions, supplying completion slots for loads and an
@@ -31,7 +32,8 @@ class LoadStoreQueue {
       unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
       MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands);
+      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+      uint64_t L1Bandwidth = UINT64_MAX, uint8_t permittedLoads = UINT8_MAX);
 
   /** Retrieve the available space for load uops. For combined queue this is the
    * total remaining space. */
@@ -129,7 +131,13 @@ class LoadStoreQueue {
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
 
   /** A ready to hold memory requests. */
-  std::deque<std::pair<uint64_t, const std::shared_ptr<Instruction>>> requestQueue_;
+  std::deque<std::shared_ptr<Instruction>> requestQueue_;
+
+  /** The amount of data transferable to the L1 cache per cycle. */
+  uint64_t L1Bandwidth_;
+
+  /** The number of loads permitted to being per cycle. */
+  uint64_t permittedLoads_;
 };
 
 }  // namespace pipeline

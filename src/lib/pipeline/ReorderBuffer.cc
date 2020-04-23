@@ -36,6 +36,9 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
     instructionsCommitted_++;
 
+    if(uop->isLoad() || uop->isStore()) {
+      n += (uop->getStallCycles() - 1);
+    }
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);

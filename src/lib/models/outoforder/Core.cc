@@ -31,6 +31,8 @@ const unsigned int executionUnitCount = 7;
 const unsigned int lsqCompletionSlots = 2;
 const unsigned int clockFrequency = 2.5 * 1e9;
 const uint8_t dispatchRate = 2;
+const uint64_t L1Bandwidth = 64;
+const uint8_t permittedLoadsPerCycle = 2;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
@@ -53,7 +55,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           {completionSlots_.data() + executionUnitCount, lsqCompletionSlots},
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
-          }),
+          }, L1Bandwidth, permittedLoadsPerCycle),
       reorderBuffer_(robSize, registerAliasTable_, loadStoreQueue_,
                      [this](auto instruction) { raiseException(instruction); }),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,

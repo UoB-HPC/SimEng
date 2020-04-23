@@ -18,24 +18,30 @@ bool requestsOverlap(MemoryAccessTarget a, MemoryAccessTarget b) {
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands)
+    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+      uint64_t L1Bandwidth, uint8_t permittedLoads)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxCombinedSpace_(maxCombinedSpace),
       combined_(true),
-      memory_(memory){};
+      memory_(memory),
+      L1Bandwidth_(L1Bandwidth),
+      permittedLoads_(permittedLoads){};
 
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
     MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands)
+    std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+      uint64_t L1Bandwidth, uint8_t permittedLoads)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxLoadQueueSpace_(maxLoadQueueSpace),
       maxStoreQueueSpace_(maxStoreQueueSpace),
       combined_(false),
-      memory_(memory){};
+      memory_(memory),
+      L1Bandwidth_(L1Bandwidth),
+      permittedLoads_(permittedLoads){};
 
 unsigned int LoadStoreQueue::getLoadQueueSpace() const {
   if (combined_) {
@@ -77,12 +83,7 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 }
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
-  const auto& addresses = insn->getGeneratedAddresses();
-  for (size_t i = 0; i < addresses.size(); i++) {
-    // memory_.requestRead(addresses[i], insn->getSequenceId());
-    // std::cout << "LOAD: " << std::hex << insn->getInstructionAddress() << std::dec << std::endl;
-    requestQueue_.push_back({i, insn});
-  }
+  requestQueue_.push_back({insn});
   requestedLoads_.emplace(insn->getSequenceId(), insn);
 }
 
@@ -96,10 +97,9 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   const auto& addresses = uop->getGeneratedAddresses();
   const auto& data = uop->getData();
   for (size_t i = 0; i < addresses.size(); i++) {
-    // std::cout << "STORE: " << std::hex << uop->getInstructionAddress() << std::dec << std::endl;
     memory_.requestWrite(addresses[i], data[i]);
-    requestQueue_.push_back({i, uop});
   }
+  requestQueue_.push_back({uop});
 
   // Check all loads that have requested memory
   violatingLoad_ = nullptr;
@@ -161,27 +161,28 @@ void LoadStoreQueue::purgeFlushed() {
 }
 
 void LoadStoreQueue::tick() {
-  // Arbitrarily choose a store or 2 loads to request write/read resp.
+  // Send memory requests adhering to set bandwidth and number of permitted loads per cycle
+  uint64_t dataTransfered = 0;
   if(requestQueue_.size() > 0) {
-    // std::cout << "ENTRY: " << std::hex << requestQueue_.front().second->getInstructionAddress() << std::dec << std::endl;
-    auto& first_entry = requestQueue_.front();
-    const auto& first_addresses = first_entry.second->getGeneratedAddresses();
-
-    if(first_entry.second->isStore()) {
-      const auto& data = first_entry.second->getData();
-      // std::cout << "STORE: " << std::hex << first_entry.second->getInstructionAddress() << std::dec << std::endl;
-      // memory_.requestWrite(first_addresses[first_entry.first], data[first_entry.first]);
+    if(requestQueue_.front()->isStore()) {
       requestQueue_.pop_front();
     } else {
-      // std::cout << "LOAD: " << std::hex << first_entry.second->getInstructionAddress() << std::dec << std::endl;
-      memory_.requestRead(first_addresses[first_entry.first], first_entry.second->getSequenceId());
-      requestQueue_.pop_front();
-      if(requestQueue_.size() > 0 && requestQueue_.front().second->isLoad()) {
-        auto& second_entry = requestQueue_.front();
-        const auto& second_addresses = second_entry.second->getGeneratedAddresses();
-        // std::cout << "LOAD: " << std::hex << second_entry.second->getInstructionAddress() << std::dec << std::endl;
-        memory_.requestRead(second_addresses[second_entry.first], second_entry.second->getSequenceId());
-        requestQueue_.pop_front();
+      for(int req = 0; req < permittedLoads_; req++) {
+        if(requestQueue_.size() > 0 && requestQueue_.front()->isLoad()) {
+          auto& entry = requestQueue_.front();
+          const auto& addresses = entry->getGeneratedAddresses();
+          uint64_t requestSize = 0;
+          for (auto target : addresses) {
+            requestSize += target.size;
+          }
+          if(dataTransfered + requestSize <= L1Bandwidth_) {
+            for (auto& target : addresses) {
+              memory_.requestRead(target, entry->getSequenceId());
+            }
+            requestQueue_.pop_front();
+            dataTransfered += requestSize;
+          }
+        } else { break; }
       }
     }
   }
