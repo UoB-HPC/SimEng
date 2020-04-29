@@ -229,6 +229,15 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string pathname, char* buf,
   return -1;
 }
 
+int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
+  return ::read(hfd, buf, count);
+}
+
 int64_t Linux::readv(int64_t fd, const void* iovdata, int iovcnt) {
   assert(fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
