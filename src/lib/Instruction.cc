@@ -44,7 +44,7 @@ bool Instruction::hasAllData() const { return (dataPending_ == 0); }
 uint16_t Instruction::getLatency() const { return latency_; }
 uint16_t Instruction::getStallCycles() const { return stallCycles_; }
 
-void Instruction::setDispatchStalled_(bool stalled) { dispatchStalled_ = stalled; }
-bool Instruction::isDispatchStalled_() const { return dispatchStalled_; }
+void Instruction::setDispatchStalled(bool stalled) { dispatchStalled_ = stalled; }
+bool Instruction::isDispatchStalled() const { return dispatchStalled_; }
 
 }  // namespace simeng

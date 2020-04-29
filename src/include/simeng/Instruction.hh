@@ -154,10 +154,10 @@ class Instruction {
   uint16_t getStallCycles() const;
 
   /** Set whether this instruction is stalled at dispatch. */
-  void setDispatchStalled_(bool stalled);
+  void setDispatchStalled(bool stalled);
 
   /** Check whether this instruction is stalled at dispatch. */
-  bool isDispatchStalled_() const;
+  bool isDispatchStalled() const;
 
  protected:
   /** Whether an exception has been encountered. */

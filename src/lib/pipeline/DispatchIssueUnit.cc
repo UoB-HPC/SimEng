@@ -59,7 +59,7 @@ void DispatchIssueUnit::tick() {
           if (rs.pausedId == entry.second->getSequenceId()) { rs.pausedId = -1; }
         }
       }
-      entry.second->setDispatchStalled_(false);
+      entry.second->setDispatchStalled(false);
       if (entry.second->canExecute()) {
         rs.ports[portMapping_[entry.first].second].ready.push_back(std::move(entry.second));
       }
@@ -116,14 +116,14 @@ void DispatchIssueUnit::tick() {
     }
 
     if (rs.pausedId != -1 || rs.currentSize == rs.capacity || dispatches[RS_Index] > dispatchRate_) {
-      uop->setDispatchStalled_(true);
+      uop->setDispatchStalled(true);
       rs.stalled.push_back({port, std::move(uop)});
 
       input_.getHeadSlots()[slot] = nullptr;
       continue;
     } else if ((uop->isLoad() || uop->isStore()) && ((rs.currentSize + uop->getStallCycles()) > rs.capacity)) {
       rs.pausedId = uop->getSequenceId();
-      uop->setDispatchStalled_(true);
+      uop->setDispatchStalled(true);
       rs.stalled.push_back({port, std::move(uop)});
 
       input_.getHeadSlots()[slot] = nullptr;
@@ -178,18 +178,13 @@ void DispatchIssueUnit::issue() {
   }
 
   if (issued == 0) {
-    bool empty = true;
-    for(auto entry : reservationStations_) {
-      if(entry.currentSize != 0) {
-        empty = false;
-        break;
+    for(auto rs : reservationStations_) {
+      if(rs.currentSize != 0) {
+        backendStalls_++;
+        return;
       }
     }
-    if (empty) {
-      frontendStalls_++;
-    } else {
-      backendStalls_++;
-    }
+    frontendStalls_++;
   }
 }
 
@@ -208,7 +203,7 @@ void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
     for (auto& entry : dependents) {
       entry.uop->supplyOperand(entry.operandIndex, values[i]);
       if (entry.uop->canExecute()) {
-        if (!entry.uop->isDispatchStalled_()) {
+        if (!entry.uop->isDispatchStalled()) {
           // Add the now-ready instruction to the relevant ready queue
           auto rsInfo = portMapping_[entry.port];
           reservationStations_[rsInfo.first].ports[rsInfo.second].ready.push_back(std::move(entry.uop));
@@ -280,7 +275,7 @@ void DispatchIssueUnit::purgeFlushed() {
           break;
         }
         if (!flushed[rsIndex].count(uop)) {
-          if(!uop->isDispatchStalled_()) {
+          if(!uop->isDispatchStalled()) {
             flushed[rsIndex].insert(uop);
             if(uop->isLoad() || uop->isStore()) {
               reservationStations_[rsIndex].currentSize -= (uop->getStallCycles() - 1);
