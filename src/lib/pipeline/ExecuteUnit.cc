@@ -84,7 +84,7 @@ void ExecuteUnit::tick() {
         pipeline_.push_back({nullptr, tickCounter_ + uop->getLatency() - 1});
         pipeline_.back().insn = std::move(uop);
         operationsStalled_.front() = pipeline_.back().insn;
-       }
+      }
     }
     execute(head.insn);
     pipeline_.pop_front();
@@ -169,6 +169,12 @@ void ExecuteUnit::purgeFlushed() {
     }
   }
 
+  // If first divide in-flight is flushed, ensure another stalled 
+  // divide takes it place in the pipeline if available
+  bool replace = false;
+  if(operationsStalled_.size() > 0 && operationsStalled_.front()->isFlushed()) {
+    replace = true;
+  }
   auto itStall = operationsStalled_.begin();
   while (itStall != operationsStalled_.end()) {
     auto& entry = *itStall;
@@ -177,6 +183,14 @@ void ExecuteUnit::purgeFlushed() {
     } else {
       itStall++;
     }
+  }
+
+  if(replace && operationsStalled_.size() > 0) {
+    // Add insn to pipeline
+    auto& uop = operationsStalled_.front();
+    pipeline_.push_back({nullptr, tickCounter_ + uop->getLatency() - 1});
+    pipeline_.back().insn = std::move(uop);
+    operationsStalled_.front() = pipeline_.back().insn;
   }
 }
 
