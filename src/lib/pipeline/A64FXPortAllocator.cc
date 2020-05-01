@@ -80,6 +80,7 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
   bool foundRS = false;
   bool foundPort = false;
 
+  // TODO: remove first if statement
   if ((instructionGroup & 64) > 0) { // Ensure store foes to EAGB
     rs = 3;
     foundRS = true;
