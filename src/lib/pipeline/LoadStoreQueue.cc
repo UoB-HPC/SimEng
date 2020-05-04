@@ -83,7 +83,11 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 }
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
-  requestQueue_.push_back({insn});
+  const auto& addresses = insn->getGeneratedAddresses();
+  for (size_t i = 0; i < addresses.size(); i++) {
+    requestQueue_.push_back({i, insn});
+  }
+  // requestQueue_.push_back({insn});
   requestedLoads_.emplace(insn->getSequenceId(), insn);
 }
 
@@ -98,8 +102,9 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   const auto& data = uop->getData();
   for (size_t i = 0; i < addresses.size(); i++) {
     memory_.requestWrite(addresses[i], data[i]);
+    requestQueue_.push_back({i, uop});
   }
-  requestQueue_.push_back({uop});
+  // requestQueue_.push_back({uop});
 
   // Check all loads that have requested memory
   violatingLoad_ = nullptr;
@@ -164,23 +169,26 @@ void LoadStoreQueue::tick() {
   // Send memory requests adhering to set bandwidth and number of permitted loads per cycle
   uint64_t dataTransfered = 0;
   if(requestQueue_.size() > 0) {
-    if(requestQueue_.front()->isStore()) {
+    if(requestQueue_.front().second->isStore()) {
       requestQueue_.pop_front();
     } else {
       for(int req = 0; req < permittedLoads_; req++) {
-        if(requestQueue_.size() > 0 && requestQueue_.front()->isLoad()) {
+        if(requestQueue_.size() > 0 && requestQueue_.front().second->isLoad()) {
           auto& entry = requestQueue_.front();
-          const auto& addresses = entry->getGeneratedAddresses();
-          uint64_t requestSize = 0;
-          for (auto target : addresses) {
-            requestSize += target.size;
-          }
-          if(dataTransfered + requestSize <= L1Bandwidth_) {
-            for (auto& target : addresses) {
-              memory_.requestRead(target, entry->getSequenceId());
-            }
+          const auto& addresses = entry.second->getGeneratedAddresses();
+          // uint64_t requestSize = 0;
+          // for (auto target : addresses) {
+          //   requestSize += target.size;
+          // }
+          // if(dataTransfered + requestSize <= L1Bandwidth_) {
+          if (dataTransfered + addresses[entry.first].size <= L1Bandwidth_) {
+            // for (auto& target : addresses) {
+            //   memory_.requestRead(target, entry->getSequenceId());
+            // }
+             memory_.requestRead(addresses[entry.first], entry.second->getSequenceId());
+            dataTransfered += addresses[entry.first].size;
             requestQueue_.pop_front();
-            dataTransfered += requestSize;
+            // dataTransfered += requestSize;
           }
         } else { break; }
       }

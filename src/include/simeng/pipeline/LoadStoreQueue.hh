@@ -131,7 +131,7 @@ class LoadStoreQueue {
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
 
   /** A ready to hold memory requests. */
-  std::deque<std::shared_ptr<Instruction>> requestQueue_;
+  std::deque<std::pair<uint8_t, std::shared_ptr<Instruction>>> requestQueue_;
 
   /** The amount of data transferable to the L1 cache per cycle. */
   uint64_t L1Bandwidth_;
