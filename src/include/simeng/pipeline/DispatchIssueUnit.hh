@@ -6,8 +6,6 @@
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/PortAllocator.hh"
-#include "simeng/trace.hh"
-#include "simeng/control.hh"
 
 namespace simeng {
 namespace pipeline {
