@@ -101,13 +101,13 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
       break;
     }
-    case Opcode::AArch64_LDRHHroW: {  // ldrh wt, [xn, wm, {extend {#amount}}]
+    case Opcode::AArch64_LDRHHroW: {  // ldrh wt, [xn, wm{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 2}});
       break;
     }
-    case Opcode::AArch64_LDRHHroX: {  // ldrh wt, [xn, xm, {extend {#amount}}]
+    case Opcode::AArch64_LDRHHroX: {  // ldrh wt, [xn, xm{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 2}});
@@ -118,7 +118,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
       break;
     }
-    case Opcode::AArch64_LDRQroX: {  // ldr qt, [xn, xm, {extend {#amount}}]
+    case Opcode::AArch64_LDRQpost: {  // ldr qt, [xn], #imm
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 16, 1}});
+      break;
+    }
+    case Opcode::AArch64_LDRQroX: {  // ldr qt, [xn, xm{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 16, 1}});
@@ -138,13 +142,13 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 4, 1}});
       break;
     }
-    case Opcode::AArch64_LDRSroW: {  // ldr st, [xn, wm, {extend {#amount}}]
+    case Opcode::AArch64_LDRSroW: {  // ldr st, [xn, wm{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 4, 1}});
       break;
     }
-    case Opcode::AArch64_LDRSroX: {  // ldr st, [xn, xm, {extend {#amount}}]
+    case Opcode::AArch64_LDRSroX: {  // ldr st, [xn, xm{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 4, 1}});
@@ -164,13 +168,13 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 4}});
       break;
     }
-    case Opcode::AArch64_LDRWroW: {  // ldr wt, [xn, wm, {extend {#amount}}]
+    case Opcode::AArch64_LDRWroW: {  // ldr wt, [xn, wm{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[1].get<uint32_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 4}});
       break;
     }
-    case Opcode::AArch64_LDRWroX: {  // ldr wt, [xn, xm, {extend {#amount}}]
+    case Opcode::AArch64_LDRWroX: {  // ldr wt, [xn, xm{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 4}});
@@ -194,13 +198,13 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});
       break;
     }
-    case Opcode::AArch64_LDRXroW: {  // ldr xt, [xn, wn{, extend, {#amount}}]      
+    case Opcode::AArch64_LDRXroW: {  // ldr xt, [xn, wn{, extend {#amount}}]      
       uint64_t offset =
           extendOffset(operands[1].get<uint32_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 8}});
       break;
     }
-    case Opcode::AArch64_LDRXroX: {  // ldr xt, [xn, xn{, extend, {#amount}}]
+    case Opcode::AArch64_LDRXroX: {  // ldr xt, [xn, xn{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 8}});
@@ -274,6 +278,61 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{base, 8}, {base + 8, 8}});
       break;
     }
+    case Opcode::AArch64_LDRSBWroX: {  // ldrsb wt, [xn, xm{, extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 1}});
+      break;
+    }
+    case Opcode::AArch64_LDRSBXui: {  // ldrsb xt, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1}});
+      break;
+    }
+    case Opcode::AArch64_LDRSHWroW: {  // ldrsh wt, [xn, wm{, extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[1].get<uint32_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 2}});
+      break;
+    }
+    case Opcode::AArch64_LDRSHWroX: {  // ldrsh wt, [xn, xm{, extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 2}});
+      break;
+    }
+    case Opcode::AArch64_LDRSHWui: {  // ldrsh wt, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
+      break;
+    }
+    case Opcode::AArch64_LDRSHXroW: {  // ldrsh xt, [xn, wm{, extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[1].get<uint32_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 2}});
+      break;
+    }
+    case Opcode::AArch64_LDRSHXroX: {  // ldrsh xt, [xn, xm{, extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 2}});
+      break;
+    }
+    case Opcode::AArch64_LDRSHXui: {  // ldrsh xt, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
+      break;
+    }
+    case Opcode::AArch64_LDRSWpost: {  // ldrsw xt, [xn], #simm
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
+      break;
+    }
+    case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend {#amount}}]
+      uint64_t offset =
+          extendOffset(operands[1].get<uint64_t>(), metadata.operands[1]);
+      setMemoryAddresses({{operands[0].get<uint64_t>() + offset, 4}});
+      break;
+    }
     case Opcode::AArch64_LDRSWui: {  // ldrsw xt, [xn{, #pimm}]
       uint64_t base =
           operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
@@ -309,7 +368,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
       break;
     }
-    case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
+    case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend {#amount}}]
       // TODO: Implement prefetching
       break;
     }
@@ -470,7 +529,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[1].get<uint64_t>(), 16, 1}});
       break;
     }
-    case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend, {#amount}}]
+    case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[2].get<uint64_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 16, 1}});
@@ -522,7 +581,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 4}});
       break;
     }
-    case Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend, {#amount}}]
+    case Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[2].get<uint64_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 4}});
@@ -548,7 +607,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 8}});
       break;
     }
-    case Opcode::AArch64_STRXroX: {  // str xt, [xn, xm{, extend, {#amount}}]
+    case Opcode::AArch64_STRXroX: {  // str xt, [xn, xm{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[2].get<uint64_t>(), metadata.operands[1]);
       setMemoryAddresses({{operands[1].get<uint64_t>() + offset, 8}});
