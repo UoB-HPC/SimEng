@@ -13,6 +13,8 @@ VariableLatencyMemoryInterface::VariableLatencyMemoryInterface(char* memory,
 void VariableLatencyMemoryInterface::tick() {
   tickCounter_++;
 
+  if(pendingRequests_.size() > 0) { cycles_++; }
+
   while (pendingRequests_.size() > 0) {
     const auto& request = pendingRequests_.front();
 
@@ -76,6 +78,10 @@ void VariableLatencyMemoryInterface::clearCompletedReads() {
 
 bool VariableLatencyMemoryInterface::hasPendingRequests() const {
   return !pendingRequests_.empty();
+}
+
+uint64_t VariableLatencyMemoryInterface::getCycles() const {
+  return cycles_;
 }
 
 }  // namespace simeng

@@ -43,4 +43,8 @@ bool FlatMemoryInterface::hasPendingRequests() const { return false; }
 
 void FlatMemoryInterface::tick() {}
 
+uint64_t FlatMemoryInterface::getCycles() const {
+  return cycles_;
+}
+
 }  // namespace simeng

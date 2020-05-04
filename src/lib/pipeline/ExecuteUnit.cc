@@ -49,6 +49,7 @@ void ExecuteUnit::tick() {
         }
         else if (latency == 1 && pipeline_.size() == 0) {
           // Pipeline is empty and insn will execute this cycle; bypass
+          cycles_++;
           execute(uop);
         } else {
           // This instruction may take more than a single cycle; check for a
@@ -73,6 +74,8 @@ void ExecuteUnit::tick() {
   if (pipeline_.size() == 0) {
     return;
   }
+
+  cycles_++;
 
   auto& head = pipeline_.front();
   if (head.readyAt <= tickCounter_) {
@@ -199,6 +202,10 @@ uint64_t ExecuteUnit::getBranchExecutedCount() const {
 }
 uint64_t ExecuteUnit::getBranchMispredictedCount() const {
   return branchMispredicts_;
+}
+
+uint64_t ExecuteUnit::getCycles() const {
+  return cycles_;
 }
 
 }  // namespace pipeline

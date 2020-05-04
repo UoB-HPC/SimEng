@@ -66,6 +66,8 @@ class MemoryInterface {
    * system" covering a set of related interfaces.
    */
   virtual void tick() = 0;
+
+  virtual uint64_t getCycles() const = 0;
 };
 
 }  // namespace simeng

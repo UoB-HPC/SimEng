@@ -33,6 +33,8 @@ class FlatMemoryInterface : public MemoryInterface {
   /** Tick: do nothing */
   void tick() override;
 
+  uint64_t getCycles() const override;
+
  private:
   /** The array representing the flat memory system to access. */
   char* memory_;
@@ -40,6 +42,8 @@ class FlatMemoryInterface : public MemoryInterface {
   size_t size_;
   /** A vector containing all completed read requests. */
   std::vector<MemoryReadResult> completedReads_;
+
+  uint64_t cycles_ = 0;
 };
 
 }  // namespace simeng

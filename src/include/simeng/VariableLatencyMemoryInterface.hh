@@ -63,6 +63,8 @@ class VariableLatencyMemoryInterface : public MemoryInterface {
   /** Tick the memory model to process the request queue. */
   void tick() override;
 
+  uint64_t getCycles() const override;
+
  private:
   /** The array representing the memory system to access. */
   char* memory_;
@@ -82,6 +84,8 @@ class VariableLatencyMemoryInterface : public MemoryInterface {
 
   /** The number of times this interface has been ticked. */
   uint64_t tickCounter_ = 0;
+
+  uint64_t cycles_ = 0;
 };
 
 }  // namespace simeng

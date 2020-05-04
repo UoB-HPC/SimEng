@@ -73,4 +73,8 @@ bool FixedLatencyMemoryInterface::hasPendingRequests() const {
   return !pendingRequests_.empty();
 }
 
+uint64_t FixedLatencyMemoryInterface::getCycles() const {
+  return cycles_;
+}
+
 }  // namespace simeng

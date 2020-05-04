@@ -334,10 +334,13 @@ std::map<std::string, std::string> Core::getStats() const {
   uint64_t totalBranchesExecuted = 0;
   uint64_t totalBranchMispredicts = 0;
 
+  std::vector<uint64_t> euCycles;
+
   // Sum up the branch stats reported across the execution units.
   for (auto& eu : executionUnits_) {
     totalBranchesExecuted += eu.getBranchExecutedCount();
     totalBranchMispredicts += eu.getBranchMispredictedCount();
+    euCycles.push_back(eu.getCycles());
   }
   auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
                         static_cast<float>(totalBranchesExecuted);
@@ -360,7 +363,15 @@ std::map<std::string, std::string> Core::getStats() const {
           {"issue.portBusyStalls", std::to_string(portBusyStalls)},
           {"branch.executed", std::to_string(totalBranchesExecuted)},
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()}};
+          {"branch.missrate", branchMissRateStr.str()},
+          {"eu0.cycles", std::to_string(euCycles[0])},
+          {"eu1.cycles", std::to_string(euCycles[1])},
+          {"eu2.cycles", std::to_string(euCycles[2])},
+          {"eu3.cycles", std::to_string(euCycles[3])},
+          {"eu4.cycles", std::to_string(euCycles[4])},
+          {"eu5.cycles", std::to_string(euCycles[5])},
+          {"eu6.cycles", std::to_string(euCycles[6])},
+          {"memory.cycles", std::to_string(dataMemory_.getCycles())}};
 }
 
 }  // namespace outoforder

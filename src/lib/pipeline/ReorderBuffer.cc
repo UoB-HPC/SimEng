@@ -20,6 +20,9 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   insn->setSequenceId(seqId_);
   seqId_++;
   buffer_.push_back(insn);
+  if(insn->isLoad() || insn->isStore()) { 
+    maxSize_ -= (insn->getStallCycles() - 1);
+  }
 }
 
 unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
@@ -34,10 +37,17 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
+    if(uop->isLoad() || uop->isStore()) {
+      if((maxCommits - n) < uop->getStallCycles()){
+        break;
+      }
+    }
+
     instructionsCommitted_++;
 
     if(uop->isLoad() || uop->isStore()) {
       n += (uop->getStallCycles() - 1);
+      maxSize_ += (uop->getStallCycles() - 1);
     }
 
     if (uop->exceptionEncountered()) {
@@ -80,6 +90,10 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
     auto& uop = buffer_.back();
     if (uop->getSequenceId() <= afterSeqId) {
       break;
+    }
+
+    if(uop->isLoad() || uop->isStore()) {
+      maxSize_ += (uop->getStallCycles() - 1);
     }
 
     for (const auto& reg : uop->getDestinationRegisters()) {

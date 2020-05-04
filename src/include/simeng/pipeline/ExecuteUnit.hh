@@ -61,6 +61,8 @@ class ExecuteUnit {
   /** Retrieve the number of branch mispredictions. */
   uint64_t getBranchMispredictedCount() const;
 
+  uint64_t getCycles() const;
+
  private:
   /** Execute the supplied uop, write it into the output buffer, and forward
    * results back to dispatch/issue. */
@@ -123,6 +125,8 @@ class ExecuteUnit {
 
   /** The number of branch mispredictions that were observed. */
   uint64_t branchMispredicts_ = 0;
+
+  uint64_t cycles_ = 0;
 };
 
 }  // namespace pipeline
