@@ -13,8 +13,6 @@ VariableLatencyMemoryInterface::VariableLatencyMemoryInterface(char* memory,
 void VariableLatencyMemoryInterface::tick() {
   tickCounter_++;
 
-  if(pendingRequests_.size() > 0) { cycles_++; }
-
   while (pendingRequests_.size() > 0) {
     const auto& request = pendingRequests_.front();
 
@@ -57,6 +55,7 @@ void VariableLatencyMemoryInterface::requestRead(const MemoryAccessTarget& targe
   uint16_t latency = iLatency_;
   if (target.isFP) latency = fpLatency_;
   pendingRequests_.push({target, tickCounter_ + latency, requestId});
+  cycles_++;
 }
 
 void VariableLatencyMemoryInterface::requestWrite(const MemoryAccessTarget& target,
@@ -64,6 +63,7 @@ void VariableLatencyMemoryInterface::requestWrite(const MemoryAccessTarget& targ
   uint16_t latency = iLatency_;
   if (target.isFP) latency = fpLatency_;
   pendingRequests_.push({target, data, tickCounter_ + latency});
+  cycles_+=2;
 }
 
 const span<MemoryReadResult> VariableLatencyMemoryInterface::getCompletedReads()

@@ -199,6 +199,8 @@ void Instruction::decode() {
     if (op.shift.value > 0) isShift_ = true;  // Identify shift operations
   }
 
+  if(metadata.setsFlags)  isShift_ = true;
+
   // Identify branches
   for (size_t i = 0; i < metadata.groupCount; i++) {
     if (metadata.groups[i] == ARM64_GRP_JUMP) {
