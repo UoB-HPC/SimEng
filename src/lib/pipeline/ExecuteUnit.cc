@@ -49,7 +49,8 @@ void ExecuteUnit::tick() {
         }
         else if (latency == 1 && pipeline_.size() == 0) {
           // Pipeline is empty and insn will execute this cycle; bypass
-          cycles_++;
+          // cycles_++;
+          cycles_+= uop->getStallCycles();
           execute(uop);
         } else {
           // This instruction may take more than a single cycle; check for a
@@ -75,7 +76,7 @@ void ExecuteUnit::tick() {
     return;
   }
 
-  cycles_++;
+  // cycles_++;
 
   auto& head = pipeline_.front();
   if (head.readyAt <= tickCounter_) {
@@ -89,6 +90,7 @@ void ExecuteUnit::tick() {
         operationsStalled_.front() = pipeline_.back().insn;
       }
     }
+    cycles_+= head.insn->getStallCycles();
     execute(head.insn);
     pipeline_.pop_front();
   }
