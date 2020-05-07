@@ -40,13 +40,13 @@ void RenameUnit::tick() {
       break;
     }
 
-    if(uop->isLoad() || uop->isStore()) {
-      if(reorderBuffer_.getFreeSpace() < uop->getStallCycles()) {
-        input_.stall(true);
-        robStalls_++;
-        break;
-      }
-    }
+    // if(uop->isLoad() || uop->isStore()) {
+    //   if(reorderBuffer_.getFreeSpace() < uop->getStallCycles()) {
+    //     input_.stall(true);
+    //     robStalls_++;
+    //     break;
+    //   }
+    // }
 
     if (uop->exceptionEncountered()) {
       // Exception; place in ROB, mark as ready, and remove from pipeline

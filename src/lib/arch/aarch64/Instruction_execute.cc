@@ -197,15 +197,6 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
 
-  std::cout << metadata.mnemonic;
-  if(isShift_){
-    std::cout << " SHIFT";
-  }
-  if(isASIMD_){
-    std::cout << " ASIMD";
-  }
-  std::cout << std::endl;
-
   executed_ = true;
   switch (metadata.opcode) {
     case Opcode::AArch64_ADDv1i64: {  // add dd, dn, dm
