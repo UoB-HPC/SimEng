@@ -65,6 +65,11 @@ BranchPrediction BTB_BTWPredictor::predict(std::shared_ptr<Instruction> uop) {
     prediction.target = std::get<0>(btb[btbIndex.first][btbIndex.second]);
   }
 
+  // If appropiate branch type, add to return address stack.
+  if(uop->isBL()) {
+    ras.push(instructionAddress + 4);
+  }
+
   return prediction;
 }
 
@@ -97,11 +102,6 @@ void BTB_BTWPredictor::update(std::shared_ptr<Instruction> uop, bool taken,
   // Update bitlength history registers.
   thr = targetAddress & mask;
   ghrUnsigned = ((ghrUnsigned << 1) | taken) & mask;
-  
-  // If appropiate branch type, add to return address stack.
-  if(uop->isBL()) {
-    ras.push(instructionAddress + 4);
-  }
 }
 
 uint64_t BTB_BTWPredictor::hash(uint64_t instructionAddress) const {

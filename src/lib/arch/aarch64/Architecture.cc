@@ -497,7 +497,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STURBBi:
     case Opcode::AArch64_STURWi:
     case Opcode::AArch64_STURXi:
-      return {5, 2};
+      return {5, 1};
     case Opcode::AArch64_STRDroW:
     case Opcode::AArch64_STRDroX:
     case Opcode::AArch64_STRDui:
@@ -511,7 +511,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STURDi:
     case Opcode::AArch64_STURQi: 
     case Opcode::AArch64_STURSi:
-      return {8, 2};
+      return {8, 1};
     // STR indexed
     case Opcode::AArch64_STRBBpost:
     case Opcode::AArch64_STRBBpre:

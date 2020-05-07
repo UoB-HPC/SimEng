@@ -27,16 +27,6 @@ bool Instruction::wasBranchMispredicted() const {
   // Flag as mispredicted if taken state was wrongly predicted, or taken and
   // predicted target is wrong
   
-  if(branchTaken_ != prediction_.taken) {
-    if((branchTaken_ && prediction_.target != branchAddress_)){
-      std::cout << "BOTH" << std::endl;
-    } else {
-      std::cout << "DIRECTION" << std::endl;
-    }
-  } else if (branchTaken_ && prediction_.target != branchAddress_) {
-    std::cout << "TARGET" << std::endl;
-  }
-
   return (branchTaken_ != prediction_.taken ||
           (branchTaken_ && prediction_.target != branchAddress_));
 }
