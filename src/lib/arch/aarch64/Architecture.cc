@@ -472,8 +472,8 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_LDRWpre:
     case Opcode::AArch64_LDRXpost:
     case Opcode::AArch64_LDRXpre:
-      return {2, 2};
-      // return {2, 1};
+      // return {2, 2};
+      return {2, 1};
     case Opcode::AArch64_LD1Twov16b_POST:
     case Opcode::AArch64_LDPDpost:
     case Opcode::AArch64_LDPDpre:
@@ -481,8 +481,8 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_LDPQpre:
     case Opcode::AArch64_LDPXpost:
     case Opcode::AArch64_LDPXpre:
-      return {3, 3};
-      // return {3, 1};
+      // return {3, 3};
+      return {3, 1};
     // Non-indexed stores
     case Opcode::AArch64_STRBBroW:
     case Opcode::AArch64_STRBBroX:
@@ -497,8 +497,8 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STURBBi:
     case Opcode::AArch64_STURWi:
     case Opcode::AArch64_STURXi:
-      return {5, 2};
-      // return {5, 1};
+      // return {5, 2};
+      return {5, 1};
     case Opcode::AArch64_STRDroW:
     case Opcode::AArch64_STRDroX:
     case Opcode::AArch64_STRDui:
@@ -512,8 +512,8 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STURDi:
     case Opcode::AArch64_STURQi: 
     case Opcode::AArch64_STURSi:
-      return {8, 2};
-      // return {8, 1};
+      // return {8, 2};
+      return {8, 1};
     // STR indexed
     case Opcode::AArch64_STRBBpost:
     case Opcode::AArch64_STRBBpre:
@@ -521,8 +521,8 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STRWpre:
     case Opcode::AArch64_STRXpost:
     case Opcode::AArch64_STRXpre:
-      return {5, 3};
-      // return {5, 1};
+      // return {5, 3};
+      return {5, 1};
     case Opcode::AArch64_STLXRW:
     case Opcode::AArch64_STLXRX:
     case Opcode::AArch64_STRDpost:
@@ -533,28 +533,28 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STRSpost:
     case Opcode::AArch64_STRSpre:
     case Opcode::AArch64_STXRW:
-      return {8, 3};
-      // return {8, 1};
+      // return {8, 3};
+      return {8, 1};
     // STP
     case Opcode::AArch64_STPXi:
     case Opcode::AArch64_STPWi:
-      return {6, 4};
-      // return {6, 1};
+      // return {6, 4};
+      return {6, 1};
     case Opcode::AArch64_STPDi:
     case Opcode::AArch64_STPSi:
     case Opcode::AArch64_STPQi:
-      return {9, 4};
-      // return {9, 1};
+      // return {9, 4};
+      return {9, 1};
     case Opcode::AArch64_STPXpre:
-      return {6, 4};
-      // return {6, 1};
+      // return {6, 4};
+      return {6, 1};
     case Opcode::AArch64_STPDpost:
     case Opcode::AArch64_STPDpre:
     case Opcode::AArch64_STPSpost:
     case Opcode::AArch64_STPSpre:
     case Opcode::AArch64_STPQpost:
-      return {9, 4};
-      // return {9, 1};
+      // return {9, 4};
+      return {9, 1};
   }
 
   // Assume single-cycle, non-blocking for all other instructions
