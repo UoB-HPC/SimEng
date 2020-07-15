@@ -3,7 +3,7 @@
 	url = https://github.com/google/googletest.git
 [submodule "external/capstone"]
 	path = external/capstone
-	url = https://github.com/UoB-HPC/capstone.git
+	url = https://github.com/jj16791/capstone.git
 [submodule "external/llvm"]
 	path = external/llvm
 	url = https://github.com/llvm-mirror/llvm

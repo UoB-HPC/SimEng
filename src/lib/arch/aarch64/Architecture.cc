@@ -80,13 +80,14 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     // Get the latencies for this instruction
     auto latencies = getLatencies(metadata);
 
-    if(instructionAddress == UINT64_MAX) {
+    // if(instructionAddress == UINT64_MAX) {
+    if(instructionAddress > 0) {
       cs_arm64 *arm64;
       int i;
       cs_regs regs_read, regs_write;
       uint8_t regs_read_count, regs_write_count;
       uint8_t access;
-      std::cout << "====== 0x" << std::hex << instructionAddress << std::dec << " === " << metadata.mnemonic << " " << metadata.operandStr << " ======" << std::endl;
+      std::cout << "====== 0x" << std::hex << instructionAddress << std::dec << " === " << metadata.mnemonic << " " << metadata.operandStr << " === " << metadata.id << " === " << metadata.opcode << " ======" << std::endl;
       if ((&rawInsn)->detail != NULL) {
         arm64 = &((&rawInsn)->detail->arm64);
         if (arm64->op_count)
@@ -169,9 +170,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
           if (op->vas != ARM64_VAS_INVALID)
             printf("\t\t\tVector Arrangement Specifier: 0x%x\n", op->vas);
-
-          if (op->vess != ARM64_VESS_INVALID)
-            printf("\t\t\tVector Element Size Specifier: %u\n", op->vess);
 
           if (op->vector_index != -1)
             printf("\t\t\tVector Index: %u\n", op->vector_index);
