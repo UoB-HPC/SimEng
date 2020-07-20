@@ -51,6 +51,12 @@ Register csRegToRegister(arm64_reg reg) {
     return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_V0)};
   }
 
+  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading 
+  // from the general file
+  if (reg >= ARM64_REG_Z0) {
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_Z0)};
+  }
+
   // ARM64_REG_X0 -> +31 are 64-bit (X) registers, reading from the general
   // file
   if (reg >= ARM64_REG_X0) {
@@ -63,9 +69,24 @@ Register csRegToRegister(arm64_reg reg) {
     return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_W0)};
   }
 
-  // ARM64_REG_B0 and above are repeated ranges representing scalar access
-  // specifiers on the vector registers (i.e., B, H, S, D, Q), each covering 32
-  // registers
+  // ARM64_REG_Q0 and above are repeated ranges representing scalar access
+  // specifiers on the vector registers with arrangements Q and S, each 
+  // covering 32 registers
+  if (reg >= ARM64_REG_Q0) {
+    return {RegisterType::VECTOR,
+            static_cast<uint16_t>((reg - ARM64_REG_Q0) % 32)};
+  }
+
+  // Predicate registers *TODO*
+  if (reg == ARM64_REG_FFR || reg >= ARM64_REG_P0) {
+    assert(false && "Decoding failed due to unhandled predicate registers");
+    return {std::numeric_limits<uint8_t>::max(),
+            std::numeric_limits<uint16_t>::max()};
+  }
+
+  // ARM64_REG_Q0 and above are repeated ranges representing scalar access
+  // specifiers on the vector registers with arrangements B, D and H, each 
+  // covering 32 registers
   if (reg >= ARM64_REG_B0) {
     return {RegisterType::VECTOR,
             static_cast<uint16_t>((reg - ARM64_REG_B0) % 32)};

@@ -37,10 +37,24 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // adds incorrectly flags destination as READ
       operands[0].access = CS_AC_WRITE;
       break;
+    case Opcode::AArch64_CBNZW:
+      [[fallthrough]];
+    case Opcode::AArch64_CBNZX:
+      [[fallthrough]];
+    case Opcode::AArch64_CBZW:
+      [[fallthrough]];
+    case Opcode::AArch64_CBZX:
+      // incorrectly adds implicit nzcv dependency
+      implicitSourceCount = 0;
+      break;
     case Opcode::AArch64_FMOVXDHighr:
       // FMOVXDHighr incorrectly flags destination as only WRITE
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
-      break;
+      break;    
+    case Opcode::AArch64_MOVNWi:
+      [[fallthrough]];    
+    case Opcode::AArch64_MOVNXi:
+      [[fallthrough]];
     case Opcode::AArch64_MOVZWi:
       [[fallthrough]];
     case Opcode::AArch64_MOVZXi:
@@ -48,13 +62,24 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       break;
     case Opcode::AArch64_MRS:
-      // MRS incorrectly flags destination as READ | WRITE
+      // MRS incorrectly flags source/destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      // MRS incorrectly tags ARM64_OP_REG_MRS as ARM64_OP_SYS
+      operands[1].type = ARM64_OP_REG_MRS;
       break;
     case Opcode::AArch64_MSR:
       // MSR incorrectly flags source/destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
+      // MSR incorrectly tags ARM64_OP_REG_MSR as ARM64_OP_SYS
+      operands[0].type = ARM64_OP_REG_MSR;
+      break;
+    case Opcode::AArch64_LD1Rv4s_POST:
+      operandCount = 3;
+      operands[2].type = ARM64_OP_IMM;
+      operands[2].access = CS_AC_READ;
+      operands[2].imm = 4;
       break;
     case Opcode::AArch64_RET:
       // RET doesn't list use of x30 (LR) if no register is supplied
@@ -343,6 +368,8 @@ void InstructionMetadata::revertAliasing() {
         operands[2].imm = 0;
         operands[2].access = CS_AC_READ;
         operands[2].shift.type = ARM64_SFT_INVALID;
+        operands[2].vas = ARM64_VAS_INVALID;
+        operands[2].vector_index = -1;
         return;
       }
       if (opcode == Opcode::AArch64_CPYi8 || opcode == Opcode::AArch64_CPYi16 ||
@@ -351,7 +378,9 @@ void InstructionMetadata::revertAliasing() {
         // mov vd, Vn.T[index]; alias for dup vd, Vn.T[index]
         return;
       }
-      if (opcode == Opcode::AArch64_ORRWrs ||
+      if (opcode == Opcode::AArch64_ORRWri ||
+          opcode == Opcode::AArch64_ORRWrs ||
+          opcode == Opcode::AArch64_ORRXri ||
           opcode == Opcode::AArch64_ORRXrs) {
         // mov rd, rn; alias for: orr rd, zr, rn
         operandCount = 3;
@@ -360,7 +389,8 @@ void InstructionMetadata::revertAliasing() {
         operands[1].type = ARM64_OP_REG;
         operands[1].access = CS_AC_READ;
         operands[1].shift = {ARM64_SFT_INVALID, 0};
-        if (opcode == Opcode::AArch64_ORRWrs) {
+        if (opcode == Opcode::AArch64_ORRWri ||
+            opcode == Opcode::AArch64_ORRWrs) {
           operands[1].reg = ARM64_REG_WZR;
         } else {
           operands[1].reg = ARM64_REG_XZR;
@@ -378,6 +408,21 @@ void InstructionMetadata::revertAliasing() {
           opcode == Opcode::AArch64_UMOVvi32 ||
           opcode == Opcode::AArch64_UMOVvi64) {
         // mov rd, Vn.T[index]; alias for umov rd, Vn.T[index]
+        return;
+      }
+      if (opcode == Opcode::AArch64_MOVZWi ||
+          opcode == Opcode::AArch64_MOVZXi) {
+        // mov rd, #0; alias for: movz rd, #0{, shift #0}
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_LSL, 0};
+        return;
+      }
+      if (opcode == Opcode::AArch64_MOVNWi ||
+          opcode == Opcode::AArch64_MOVNXi) {
+        // mov rd, #amount; alias for: movn rd, #amount{, shift #0}
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_LSL, 0};
+        operands[1].imm = ~(operands[1].imm);
         return;
       }
       return aliasNYI();
