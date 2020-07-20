@@ -80,21 +80,23 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     // Get the latencies for this instruction
     auto latencies = getLatencies(metadata);
 
-    // if(instructionAddress == UINT64_MAX) {
-    if(instructionAddress > 0) {
-      cs_arm64 *arm64;
+    if(instructionAddress == UINT64_MAX) {
+    // if(instructionAddress > 0) {
+      // cs_arm64 *arm64;
       int i;
-      cs_regs regs_read, regs_write;
-      uint8_t regs_read_count, regs_write_count;
+      // cs_regs regs_read, regs_write;
+      // uint8_t regs_read_count, regs_write_count;
       uint8_t access;
+      std::vector<cs_arm64_op> readOps;
+      std::vector<cs_arm64_op> writeOps;
       std::cout << "====== 0x" << std::hex << instructionAddress << std::dec << " === " << metadata.mnemonic << " " << metadata.operandStr << " === " << metadata.id << " === " << metadata.opcode << " ======" << std::endl;
       if ((&rawInsn)->detail != NULL) {
-        arm64 = &((&rawInsn)->detail->arm64);
-        if (arm64->op_count)
-          printf("\top_count: %u\n", arm64->op_count);
+        // arm64 = &((&rawInsn)->detail->arm64);
+        if (metadata.operandCount)
+          printf("\top_count: %u\n", metadata.operandCount);
 
-        for (i = 0; i < arm64->op_count; i++) {
-          cs_arm64_op *op = &(arm64->operands[i]);
+        for (i = 0; i < metadata.operandCount; i++) {
+          cs_arm64_op *op = &(metadata.operands[i]);
           switch(op->type) {
             default:
               break;
@@ -151,12 +153,23 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
               break;
             case CS_AC_READ:
               printf("\t\toperands[%u].access: READ\n", i);
+              if(op->type == ARM64_OP_REG || op->type == ARM64_OP_REG_MRS || 
+                 op->type == ARM64_OP_REG_MSR || op->type == ARM64_OP_SYS)
+                readOps.push_back(*op);
               break;
             case CS_AC_WRITE:
               printf("\t\toperands[%u].access: WRITE\n", i);
+              if(op->type == ARM64_OP_REG || op->type == ARM64_OP_REG_MRS || 
+                 op->type == ARM64_OP_REG_MSR || op->type == ARM64_OP_SYS)
+                writeOps.push_back(*op);
               break;
             case CS_AC_READ | CS_AC_WRITE:
               printf("\t\toperands[%u].access: READ | WRITE\n", i);
+              if(op->type == ARM64_OP_REG || op->type == ARM64_OP_REG_MRS || 
+                 op->type == ARM64_OP_REG_MSR || op->type == ARM64_OP_SYS) {
+                readOps.push_back(*op);
+                writeOps.push_back(*op);
+              }
               break;
           }
           
@@ -175,38 +188,60 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
             printf("\t\t\tVector Index: %u\n", op->vector_index);
         }
 
-        if (arm64->update_flags)
+        if (metadata.setsFlags)
           printf("\tUpdate-flags: True\n");
 
-        if (arm64->writeback)
+        if (metadata.writeback)
           printf("\tWrite-back: True\n");
 
-        if (arm64->cc)
-          printf("\tCode-condition: %u\n", arm64->cc);
+        if (metadata.cc < 255)
+          printf("\tCode-condition: %u\n", metadata.cc);
 
         // Print out all registers accessed by this instruction (either implicit or explicit)
-        if (!cs_regs_access(capstoneHandle, (&rawInsn),
-                  regs_read, &regs_read_count,
-                  regs_write, &regs_write_count)) {
-          if (regs_read_count) {
-            printf("\tRegisters read:");
-            for(i = 0; i < regs_read_count; i++) {
-              printf(" %s", cs_reg_name(capstoneHandle, regs_read[i]));
-            }
-            printf("\n");
+        if(metadata.implicitSourceCount || readOps.size()){
+          printf("\tRegisters read:");
+          for(i = 0; i < metadata.implicitSourceCount; i++){
+            printf(" %s", cs_reg_name(capstoneHandle, metadata.implicitSources[i]));
           }
-          
-          if (regs_write_count) {
-            printf("\tRegisters modified:");
-            for(i = 0; i < regs_write_count; i++) {
-              printf(" %s", cs_reg_name(capstoneHandle, regs_write[i]));
-            }
-            printf("\n");
+          for(i = 0; i < readOps.size(); i++){
+            printf(" %s", cs_reg_name(capstoneHandle, readOps[i].reg));
           }
+          printf("\n");
         }
+        if(metadata.implicitDestinationCount || writeOps.size()){
+          printf("\tRegisters modified:");
+          for(i = 0; i < metadata.implicitDestinationCount; i++){
+            printf(" %s", cs_reg_name(capstoneHandle, metadata.implicitDestinations[i]));
+          }
+          for(i = 0; i < writeOps.size(); i++){
+            printf(" %s", cs_reg_name(capstoneHandle, writeOps[i].reg));
+          }
+          printf("\n");
+        }
+
+        // if (!cs_regs_access(capstoneHandle, (&rawInsn),
+        //           regs_read, &regs_read_count,
+        //           regs_write, &regs_write_count)) {
+        //   if (metadata.implicitSourceCount) {
+        //     printf("\tRegisters read:");
+        //     for(i = 0; i < regs_read_count; i++) {
+        //       printf(" %s", cs_reg_name(capstoneHandle, regs_read[i]));
+        //     }
+        //     printf("\n");
+        //   }
+          
+        //   if (regs_write_count) {
+        //     printf("\tRegisters modified:");
+        //     for(i = 0; i < regs_write_count; i++) {
+        //       printf(" %s", cs_reg_name(capstoneHandle, regs_write[i]));
+        //     }
+        //     printf("\n");
+        //   }
+        // }
       }
     }
 
+    // std::cout << "=== " << instructionAddress << " ===" << std::endl;
     // Create and cache an instruction using the metadata and latencies
     auto result = decodeCache.insert(
         {insn,
