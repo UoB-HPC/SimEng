@@ -250,28 +250,30 @@ void Instruction::decode() {
     // marked as loads manually
     isLoad_ = true;
   }
-  if ((538 < metadata.opcode && metadata.opcode < 544) ||
-      (698 < metadata.opcode && metadata.opcode < 714) ||
-      (1301 < metadata.opcode && metadata.opcode < 1306) ||
-      (2099 < metadata.opcode && metadata.opcode < 2104)) {
+  if ((1189 < metadata.opcode && metadata.opcode < 1204) ||
+      (1605 < metadata.opcode && metadata.opcode < 1617) ||
+      (2906 < metadata.opcode && metadata.opcode < 2913) ||
+      (4045 < metadata.opcode && metadata.opcode < 4052)) {
         isDivide_ = true;
   }
-  if ((543 < metadata.opcode && metadata.opcode < 546) ||
-      (618 < metadata.opcode && metadata.opcode < 641) ||
-      (645 < metadata.opcode && metadata.opcode < 652) ||
-      (1075 < metadata.opcode && metadata.opcode < 1078) ||
-      (1124 < metadata.opcode && metadata.opcode < 1137) ||
-      (1356 == metadata.opcode) ||
-      (1416 < metadata.opcode && metadata.opcode < 1429) ||
-      (1450 < metadata.opcode && metadata.opcode < 1499) ||
-      (2116 == metadata.opcode) ||
-      (2174 < metadata.opcode && metadata.opcode < 2187)) {
+  if ((1210 < metadata.opcode && metadata.opcode < 1214) ||
+      (1329 < metadata.opcode && metadata.opcode < 1367) ||
+      (1393 < metadata.opcode && metadata.opcode < 1444) ||
+      (1454 < metadata.opcode && metadata.opcode < 1458) ||
+      (1469 < metadata.opcode && metadata.opcode < 1476) ||
+      (2502 < metadata.opcode && metadata.opcode < 2505) ||
+      (2578 < metadata.opcode && metadata.opcode < 2599) ||
+      (2992 == metadata.opcode) ||
+      (3076 < metadata.opcode && metadata.opcode < 3093) ||
+      (3148 < metadata.opcode && metadata.opcode < 3197) ||
+      (4072 == metadata.opcode) ||
+      (4154 < metadata.opcode && metadata.opcode < 4171)) {
         isMultiply_ = true;
   }
-  if(metadata.opcode == 1192) {
+  if(metadata.opcode == 2756) {
     isRET_ = true;
   }
-  if(metadata.opcode == 124 || metadata.opcode == 125) {
+  if(metadata.opcode == 325 || metadata.opcode == 326) {
     isBL_ = true;
   }
 }
