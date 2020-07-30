@@ -2170,6 +2170,11 @@ void Instruction::execute() {
     case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
       break;
     }
+    case Opcode::AArch64_PTEST_PP: {  // ptest pg, pn.b
+      const uin64_t* g = operands[0].getAsVector<uint64_t>();
+      const uin64_t* n = operands[1].getAsVector<uint64_t>();
+      break;
+    }
     case Opcode::AArch64_PTRUE_S: {  // ptrue pd.s{, pattern}
       const uint64_t VL_bits = 512;
       const uint8_t partition_num = VL_bits/32;

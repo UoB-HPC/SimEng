@@ -175,8 +175,20 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // MSR incorrectly tags ARM64_OP_REG_MSR as ARM64_OP_SYS
       operands[0].type = ARM64_OP_REG_MSR;
       break;
+    case Opcode::AArch64_PTEST_PP: {
+      // PTEST doesn't label access types for operands
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      // Doesn't identify implicit NZCV destination
+      implicitDestinationCount = 1;
+      uint16_t implicitDestinations[20] = {0};
+      implicitDestinations[0] = ARM64_REG_NZCV;
+      std::memcpy(implicitDestinations, implicitDestinations,
+              sizeof(uint16_t) * implicitDestinationCount);
+      break;
+    }
     case Opcode::AArch64_PTRUE_S:
-      // PTRUE doesn't label access or vector specifiers
+      // PTRUE doesn't label access
       operands[0].access = CS_AC_WRITE;
       break;
     case Opcode::AArch64_RET:
