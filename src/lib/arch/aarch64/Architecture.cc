@@ -28,6 +28,7 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
   systemRegisterMap_[0xde82] = systemRegisterMap_.size();  // TPIDR_EL0
   systemRegisterMap_[0xc000] = systemRegisterMap_.size();  // MIDR_EL1
   systemRegisterMap_[0xdf14] = systemRegisterMap_.size();
+  systemRegisterMap_[ARM64_SYSREG_ZCR_EL1] = systemRegisterMap_.size();
 }
 Architecture::~Architecture() { cs_close(&capstoneHandle); }
 
@@ -80,8 +81,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     // Get the latencies for this instruction
     auto latencies = getLatencies(metadata);
 
-    if(instructionAddress == UINT64_MAX) {
-    // if(instructionAddress > 0) {
+    // if(instructionAddress == UINT64_MAX) {
+    if(instructionAddress > 0) {
       // cs_arm64 *arm64;
       int i;
       // cs_regs regs_read, regs_write;
@@ -273,7 +274,8 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
   uint16_t numSysRegs = static_cast<uint16_t>(systemRegisterMap_.size());
   return {
       {8, 32},          // General purpose
-      {16, 32},         // Vector
+      {256, 32},        // Vector
+      {32, 17},         // Predicate
       {1, 1},           // NZCV
       {8, numSysRegs},  // System
   };
@@ -298,6 +300,11 @@ ProcessStateChange Architecture::getInitialState() const {
   changes.modifiedRegisters.push_back(
       {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)});
   changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
+
+  // Set the initial value of VL to LEN = 4
+  changes.modifiedRegisters.push_back(
+      {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_ZCR_EL1)});
+  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(4));
 
   return changes;
 }

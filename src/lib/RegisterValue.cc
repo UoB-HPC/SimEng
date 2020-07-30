@@ -8,8 +8,8 @@ RegisterValue::RegisterValue() : bytes(0) {}
 
 RegisterValue::operator bool() const { return (bytes > 0); }
 
-RegisterValue RegisterValue::zeroExtend(uint8_t fromBytes,
-                                        uint8_t toBytes) const {
+RegisterValue RegisterValue::zeroExtend(uint16_t fromBytes,
+                                        uint16_t toBytes) const {
   assert(bytes > 0 && "Attempted to extend an uninitialised RegisterValue");
   assert(fromBytes <= bytes &&
          "Attempted to copy more data from a RegisterValue than it held");

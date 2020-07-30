@@ -31,7 +31,8 @@ const RegisterValue& RegisterFileSet::get(Register reg) const {
 
 void RegisterFileSet::set(Register reg, const RegisterValue& value) {
   assert(value.size() != 0 &&
-         value.size() == registerFiles[reg.type][reg.tag].size() &&
+         "Attempted to write an zero sized value to a register");
+  assert(value.size() == registerFiles[reg.type][reg.tag].size() &&
          "Attempted to write an incorrectly sized value to a register");
   registerFiles[reg.type][reg.tag] = value;
 }

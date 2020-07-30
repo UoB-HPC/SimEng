@@ -122,6 +122,10 @@ class Instruction {
   /** Is this a branch and link instruction? */
   virtual bool isBL() const = 0;
 
+  /** Is this a SVE instruction? */
+  /** Maybe remove as aarch64 exclusive? */
+  virtual bool isSVE() const = 0;
+
   /** Set this instruction's instruction memory address. */
   void setInstructionAddress(uint64_t address);
 

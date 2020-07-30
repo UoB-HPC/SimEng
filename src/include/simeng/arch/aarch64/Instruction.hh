@@ -20,10 +20,12 @@ namespace RegisterType {
 const uint8_t GENERAL = 0;
 /** The 128+ bit vector register set: v0-31. */
 const uint8_t VECTOR = 1;
+/** The 32 bit predicate register set: p0-15. */
+const uint8_t PREDICATE = 2;
 /** The 4-bit NZCV condition flag register. */
-const uint8_t NZCV = 2;
+const uint8_t NZCV = 3;
 /** The system registers. */
-const uint8_t SYSTEM = 3;
+const uint8_t SYSTEM = 4;
 }  // namespace RegisterType
 
 /** The IDs of the instruction groups for AArch64 instructions. */
@@ -135,6 +137,9 @@ class Instruction : public simeng::Instruction {
   /** Is this a branch and link instruction? */
   bool isBL() const override;
 
+  /** Is this a SVE instruction? */
+  bool isSVE() const override;
+
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
@@ -229,12 +234,14 @@ class Instruction : public simeng::Instruction {
   bool isRET_ = false;
   /** Is this a branch and link instruction? */
   bool isBL_ = false;
+  /** Is this a SVE instruction? */
+  bool isSVE_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
   void setMemoryAddresses(
-      const std::initializer_list<MemoryAccessTarget>& addresses);
+      const std::vector<MemoryAccessTarget>& addresses);
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */
