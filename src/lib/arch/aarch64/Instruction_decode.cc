@@ -2,6 +2,7 @@
 
 #include "InstructionMetadata.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
+#include <iostream>
 
 #define NOT(bits, length) (~bits & (1 << length - 1))
 #define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)
@@ -52,13 +53,13 @@ Register csRegToRegister(arm64_reg reg) {
   }
 
   // ARM64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading 
-  // from the general file
+  // from the vector file
   if (reg >= ARM64_REG_Z0) {
     return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_Z0)};
   }
 
-  // ARM64_REG_X0 -> +31 are 64-bit (X) registers, reading from the general
-  // file
+  // ARM64_REG_X0 -> +28 are 64-bit (X) registers, reading from the general
+  // file. Excludes #29 (FP) and #30 (LR)
   if (reg >= ARM64_REG_X0) {
     return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_X0)};
   }
@@ -77,11 +78,9 @@ Register csRegToRegister(arm64_reg reg) {
             static_cast<uint16_t>((reg - ARM64_REG_Q0) % 32)};
   }
 
-  // Predicate registers *TODO*
-  if (reg == ARM64_REG_FFR || reg >= ARM64_REG_P0) {
-    assert(false && "Decoding failed due to unhandled predicate registers");
-    return {std::numeric_limits<uint8_t>::max(),
-            std::numeric_limits<uint16_t>::max()};
+  // ARM64_REG_P0 -> +15 are 256-bit (P) registers. Excludes #16 (FFR).
+  if (reg >= ARM64_REG_P0) {
+    return {RegisterType::PREDICATE, static_cast<uint16_t>(reg - ARM64_REG_P0)};
   }
 
   // ARM64_REG_Q0 and above are repeated ranges representing scalar access
@@ -114,6 +113,10 @@ Register csRegToRegister(arm64_reg reg) {
   // ARM64_REG_X30 is the link register, stored in r30 of the general file
   if (reg == ARM64_REG_X30) {
     return {RegisterType::GENERAL, 30};
+  }
+
+  if (reg == ARM64_REG_FFR) {
+    return {RegisterType::PREDICATE, 16};
   }
 
   assert(false && "Decoding failed due to unknown register identifier");
@@ -215,7 +218,20 @@ void Instruction::decode() {
       destinationRegisters[destinationRegisterCount] = {
           RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
       destinationRegisterCount++;
+    } else if (op.type == ARM64_OP_SYS) { // System register
+      if (op.access & cs_ac_type::CS_AC_WRITE) {
+        destinationRegisters[destinationRegisterCount] = {
+            RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.sys)};
+        destinationRegisterCount++;        
+      }
+      if (op.access & cs_ac_type::CS_AC_READ) {
+        sourceRegisters[sourceRegisterCount] = {
+            RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.sys)};
+        sourceRegisterCount++;
+        operandsPending++;
+      }
     }
+
 
     if (op.shift.value > 0) isShift_ = true;  // Identify shift operations
   }
@@ -232,8 +248,7 @@ void Instruction::decode() {
   if (accessesMemory) {
     // Check first operand access to determine if it's a load or store
     if (metadata.operands[0].access & CS_AC_WRITE) {
-      if (metadata.operands[1].type == ARM64_OP_REG &&
-          metadata.operands[1].access == CS_AC_READ) {
+      if (metadata.id == ARM64_INS_STXR || metadata.id == ARM64_INS_STLXR) {
         // Second operand is a register read; this is an exclusive store with a
         // success flag as first operand
         isStore_ = true;
@@ -275,6 +290,13 @@ void Instruction::decode() {
   }
   if(metadata.opcode == 325 || metadata.opcode == 326) {
     isBL_ = true;
+  }
+  if(metadata.id == ARM64_INS_ADDVL || metadata.id == ARM64_INS_LD1RW   || 
+     metadata.id == ARM64_INS_LD1W  || metadata.id == ARM64_INS_WHILELO || 
+     metadata.id == ARM64_INS_PTRUE || metadata.opcode == 1430          ||
+     metadata.opcode == 1331        || metadata.opcode == 837           ||
+     metadata.id == ARM64_INS_ST1W) {
+       isSVE_ = true;
   }
 }
 

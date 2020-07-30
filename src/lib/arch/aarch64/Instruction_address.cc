@@ -1,6 +1,8 @@
 #include "simeng/arch/aarch64/Instruction.hh"
 
 #include "InstructionMetadata.hh"
+#include <cmath>
+#include <iostream>
 
 namespace simeng {
 namespace arch {
@@ -11,6 +13,18 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
          "generateAddresses called on non-load-or-store instruction");
 
   switch (metadata.opcode) {
+    case Opcode::AArch64_LD1RW_IMM: {  // ld1rw {zt.s}, pg/z, [xn, #imm]
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      for(int i = 0; i < 4; i++){
+        if(p[i] != 0) {
+          setMemoryAddresses({
+            {operands[1].get<uint64_t>() + metadata.operands[2].mem.disp, 4, 1}
+          });
+          break;
+        }
+      }
+      break;
+    }
     case Opcode::AArch64_LD1Rv4s: { // ld1r {vt.4s}, [xn]
       setMemoryAddresses({{operands[1].get<uint64_t>(), 16, 1}});
       break;
@@ -28,6 +42,26 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
                                              //   #imm
       uint64_t base = operands[2].get<uint64_t>();
       setMemoryAddresses({{base, 16, 1}, {base + 16, 16, 1}});
+      break;
+    }
+    case Opcode::AArch64_LD1W: {  // ld1w  {zt.s}, pg/z, [xn, xm, lsl #2]
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint8_t partition_num = VL_bits/32;
+
+      const uint64_t base = operands[1].get<uint64_t>();
+      const uint64_t offset = operands[2].get<uint64_t>();
+
+      std::vector<MemoryAccessTarget> addresses;
+
+      for(int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i*4));
+        if(p[(int)i/16] & shifted_active) {
+          addresses.push_back({base + ((offset + i) * 4), 4, 1});
+        }
+      }
+
+      setMemoryAddresses(addresses);
       break;
     }
     case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
@@ -157,6 +191,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     case Opcode::AArch64_LDRSui: {  // ldr st, [xn, #imm] {
       setMemoryAddresses(
           {{operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 4, 1}});
+      break;
+    }
+    case Opcode::AArch64_LDRSWl: {  // ldrsw xt, #imm
+      setMemoryAddresses({{metadata.operands[1].imm + instructionAddress_, 4}});
       break;
     }
     case Opcode::AArch64_LDRWpost: {  // ldr wt, [xn], #imm
@@ -370,6 +408,26 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     }
     case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend {#amount}}]
       // TODO: Implement prefetching
+      break;
+    }
+    case Opcode::AArch64_ST1W: {  // st1w {zt.s}, pg, [xn, xm, lsl #2]
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint8_t partition_num = VL_bits/32;
+
+      const uint64_t base = operands[2].get<uint64_t>();
+      const uint64_t offset = operands[3].get<uint64_t>();
+
+      std::vector<MemoryAccessTarget> addresses;
+
+      for(int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i*4));
+        if(p[(int)i/16] & shifted_active) {
+          addresses.push_back({base + ((offset + i) * 4), 4, 1});
+        }
+      }
+
+      setMemoryAddresses(addresses);
       break;
     }
     case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]

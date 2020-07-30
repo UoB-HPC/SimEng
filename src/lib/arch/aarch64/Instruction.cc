@@ -122,9 +122,10 @@ bool Instruction::isBranch() const { return isBranch_; }
 bool Instruction::isASIMD() const { return isASIMD_; }
 bool Instruction::isRET() const { return isRET_; }
 bool Instruction::isBL() const { return isBL_; }
+bool Instruction::isSVE() const { return isSVE_; }
 
 void Instruction::setMemoryAddresses(
-    const std::initializer_list<MemoryAccessTarget>& addresses) {
+    const std::vector<MemoryAccessTarget>& addresses) {
   memoryData = std::vector<RegisterValue>(addresses.size());
   memoryAddresses = addresses;
   dataPending_ = addresses.size();
