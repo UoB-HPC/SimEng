@@ -543,7 +543,6 @@ TEST_P(InstLoad, ldrsw) {
     mov x0, 0
     mov x8, 214
     svc #0
-    
     mov x5, 1
     # Load 32-bit values from heap and sign-extend to 64-bits
     ldrsw x1, [x0, #4]

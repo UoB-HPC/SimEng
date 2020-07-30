@@ -18,6 +18,7 @@ add_executable(regression-aarch64
                instructions/multiply.cc
                instructions/neon.cc
                instructions/store.cc
+               instructions/sve.cc
                )
 target_include_directories(regression-aarch64 PRIVATE
                            ${CMAKE_CURRENT_SOURCE_DIR})
