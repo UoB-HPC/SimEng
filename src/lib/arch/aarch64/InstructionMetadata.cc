@@ -100,6 +100,11 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_FDUP_ZI_S:
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_INCB_XPiI:
       [[fallthrough]];
     case Opcode::AArch64_INCW_XPiI:
@@ -181,10 +186,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       // Doesn't identify implicit NZCV destination
       implicitDestinationCount = 1;
-      uint16_t implicitDestinations[20] = {0};
       implicitDestinations[0] = ARM64_REG_NZCV;
-      std::memcpy(implicitDestinations, implicitDestinations,
-              sizeof(uint16_t) * implicitDestinationCount);
       break;
     }
     case Opcode::AArch64_PTRUE_S:
@@ -444,7 +446,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_DC:
-      return aliasNYI();
+      return aliasNYI();      
     case ARM64_INS_IC:
       return aliasNYI();
     case ARM64_INS_LSL:
@@ -511,6 +513,49 @@ void InstructionMetadata::revertAliasing() {
           opcode == Opcode::AArch64_CPYi32 ||
           opcode == Opcode::AArch64_CPYi64) {
         // mov vd, Vn.T[index]; alias for dup vd, Vn.T[index]
+        return;
+      }
+      if (opcode == Opcode::AArch64_DUP_ZI_S) {
+        // mov Zd.T, #imm{, shift}; alias for dup Zd.T, #imm{, shift}
+        operandCount = 2;
+        operands[0].access = CS_AC_WRITE;
+        operands[1].type = ARM64_OP_IMM;
+        operands[1].access = CS_AC_READ;
+
+        std::string str(operandStr);
+        uint8_t start = operandStr[6] == '#' ? 7 : 8;
+        bool hex = false;
+
+        if(operandStr[start+1] == 'x') {
+          hex = true;
+          start += 2;
+        }
+
+        uint8_t end = start + 1;
+        while(true) {
+          if(operandStr[end] == ' ') {
+            break;
+          }
+          end++;
+        }
+
+        std::string sub = str.substr(start, end);
+        if(hex) {
+          operands[1].imm = 0;
+          uint8_t base = 1;
+          for(int i = sub.size(); i > -1; i--) {
+            if(sub[i] >= '0' && sub[i] <= '9') {
+              operands[1].imm += (sub[i] - 48) * base;
+              base *= 16;
+            } else if(sub[i] >= 'a' && sub[i] <= 'f') {
+              operands[1].imm += (sub[i] - 87) * base;
+              base *= 16;
+            }
+          }
+        } else {
+          operands[1].imm = stoi(sub);
+        }
+
         return;
       }
       if (opcode == Opcode::AArch64_ORRWri ||

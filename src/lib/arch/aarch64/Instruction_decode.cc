@@ -295,7 +295,10 @@ void Instruction::decode() {
      metadata.id == ARM64_INS_LD1W  || metadata.id == ARM64_INS_WHILELO || 
      metadata.id == ARM64_INS_PTRUE || metadata.opcode == 1430          ||
      metadata.opcode == 1331        || metadata.opcode == 837           ||
-     metadata.id == ARM64_INS_ST1W) {
+     metadata.id == ARM64_INS_ST1W  || metadata.id == ARM64_INS_PTEST   ||
+     (705 < metadata.opcode && metadata.opcode < 720)                   ||
+     metadata.id == ARM64_INS_FDUP  ||
+     (1203 < metadata.opcode && metadata.opcode < 1207)                   ){
        isSVE_ = true;
   }
 }

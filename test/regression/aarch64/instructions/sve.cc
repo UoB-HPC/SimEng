@@ -43,6 +43,26 @@ TEST_P(InstSve, dec) {
   EXPECT_EQ(getGeneralRegister<int64_t>(0), 64);
 }
 
+TEST_P(InstSve, dups) {
+  // VL = 512-bit
+  // 32-bit arrangement
+  RUN_AARCH64(R"(
+    dup z0.s, #7
+    dup z1.s, #-7
+    fdup z2.s, #0.5
+    fdup z3.s, #-0.5
+  )");
+
+  CHECK_NEON(0, int32_t, {7, 7, 7, 7, 7, 7, 7, 7,
+                           7, 7, 7, 7, 7, 7, 7, 7});
+  CHECK_NEON(1, int32_t, {-7, -7, -7, -7, -7, -7, -7, -7,
+                           -7, -7, -7, -7, -7, -7, -7, -7});
+  CHECK_NEON(2, float, {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
+                          0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f});
+  CHECK_NEON(3, float, {-0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5,
+                          -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5, -0.5});
+}
+
 TEST_P(InstSve, inc) {
   // VL = 512-bits
   // pattern = all
@@ -306,6 +326,23 @@ TEST_P(InstSve, orr) {
   // CHECK_PREDICATE(6, uint32_t, {0x11111111, 0, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(7, uint32_t, {0x11111111, 0, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(8, uint32_t, {0x11111111, 0x11111111, 0, 0, 0, 0, 0, 0});
+}
+
+TEST_P(InstSve, ptest) {
+  // VL = 512-bits
+  RUN_AARCH64(R"(
+    ptrue p0.s
+    ptest p0, p0.b
+  )");
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    ptrue p0.s
+    mov x0, #8
+    whilelo p1.s, xzr, x0
+    ptest p1, p0.b
+  )");
+  EXPECT_EQ(getNZCV(), 0b1010);
 }
 
 TEST_P(InstSve, ptrue) {

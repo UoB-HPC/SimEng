@@ -81,22 +81,22 @@ class AArch64RegressionTest : public RegressionTest {
     const T* data = RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::VECTOR, tag});
     for (unsigned i = 0; i < (256 / sizeof(T)); i++) {
-      int bitA = 0;
-      int bitB = 0;
-      float d = data[i];
-      float v = values[i];
-      int* re_d = reinterpret_cast<int*>(&d);
-      int* re_v = reinterpret_cast<int*>(&v);
-      for (int k = 31; k >=0; k--) {
-        bitA = ((*re_d >> k)&1);
-        std::cout << bitA;
-      }
-      std::cout << " | ";
-      for (int k = 31; k >=0; k--) {
-        bitB = ((*re_v >> k)&1);
-        std::cout << bitB;
-      }
-      std::cout << '\n';
+      // int bitA = 0;
+      // int bitB = 0;
+      // T d = data[i];
+      // T v = values[i];
+      // int* re_d = reinterpret_cast<int*>(&d);
+      // int* re_v = reinterpret_cast<int*>(&v);
+      // for (int k = 31; k >=0; k--) {
+      //   bitA = ((*re_d >> k)&1);
+      //   std::cout << bitA;
+      // }
+      // std::cout << " | ";
+      // for (int k = 31; k >=0; k--) {
+      //   bitB = ((*re_v >> k)&1);
+      //   std::cout << bitB;
+      // }
+      // std::cout << '\n';
       EXPECT_EQ(data[i], values[i]) << "Mismatch for element " << i << ".";
     }
   }

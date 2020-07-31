@@ -817,6 +817,20 @@ void Instruction::execute() {
       results[0] = n - (VL_bits/8);
       break;
     }
+    case Opcode::AArch64_DUP_ZI_S: {  // dup zd.s, #imm{, shift}
+      const int8_t imm = static_cast<int8_t>(metadata.operands[1].imm);
+
+      const uint64_t VL_bits = 512;
+      const uint8_t partition_num = VL_bits/32;
+      int32_t out[64] = {0};
+
+      for(int i = 0; i < partition_num; i++) {
+        out[i] = imm;
+      }
+
+      results[0] = out;  
+      break;
+    }
     case Opcode::AArch64_DUPv16i8gpr: {  // dup vd.16b, wn
       uint8_t out[16];
       std::fill(std::begin(out), std::end(out), operands[0].get<uint8_t>());
@@ -1205,6 +1219,20 @@ void Instruction::execute() {
       const double* m = operands[1].getAsVector<double>();
       double out[2] = {n[0] / m[0], n[1] / m[1]};
       results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FDUP_ZI_S: {  // fdup zd.t, #imm
+      const float imm = metadata.operands[1].fp;
+      const uint64_t VL_bits = 512;
+      const uint8_t partition_num = VL_bits/32;
+      float out[64] = {0};
+
+      for(int i = 0; i < partition_num; i++) {
+        out[i] = imm;
+      }
+
+      results[0] = out;  
+
       break;
     }
     case Opcode::AArch64_FMADDDrrr: {  // fmadd dn, dm, da
@@ -2171,8 +2199,25 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_PTEST_PP: {  // ptest pg, pn.b
-      const uin64_t* g = operands[0].getAsVector<uint64_t>();
-      const uin64_t* n = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint64_t* g = operands[0].getAsVector<uint64_t>();
+      const uint64_t* s = operands[1].getAsVector<uint64_t>();
+
+      uint64_t masked_n[4] = {(g[0] & s[0]), (g[1] & s[1]), (g[2] & s[2]), (g[3] & s[3])};
+
+      uint8_t n = (masked_n[0] & 1);
+      uint8_t z = 1;
+      // (int)(VL_bits - 1)/512 derives which block of 64-bits within the predicate 
+      // register we're working in. std::pow(2, (VL_bits / 8) - 1) derives a 1 in the 
+      // last position of the current predicate. Both dictated by vector length.
+      uint8_t c = !(masked_n[(int)((VL_bits - 1)/512)] & (uint64_t)std::pow(2, (VL_bits / 8) - 1));
+      for(int i = 0; i < (int)((VL_bits - 1)/512) + 1; i++) {
+        if(masked_n[i]) {
+          z = 0;
+          break;
+        }
+      }
+      results[0] = nzcv(n, z, c, 0);
       break;
     }
     case Opcode::AArch64_PTRUE_S: {  // ptrue pd.s{, pattern}
