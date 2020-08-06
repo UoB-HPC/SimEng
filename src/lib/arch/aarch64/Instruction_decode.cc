@@ -293,12 +293,24 @@ void Instruction::decode() {
   }
   if(metadata.id == ARM64_INS_ADDVL || metadata.id == ARM64_INS_LD1RW   || 
      metadata.id == ARM64_INS_LD1W  || metadata.id == ARM64_INS_WHILELO || 
-     metadata.id == ARM64_INS_PTRUE || metadata.opcode == 1430          ||
+     metadata.id == ARM64_INS_PTRUE ||
      metadata.opcode == 1331        || metadata.opcode == 837           ||
      metadata.id == ARM64_INS_ST1W  || metadata.id == ARM64_INS_PTEST   ||
      (705 < metadata.opcode && metadata.opcode < 720)                   ||
      metadata.id == ARM64_INS_FDUP  ||
-     (1203 < metadata.opcode && metadata.opcode < 1207)                   ){
+     (1203 < metadata.opcode && metadata.opcode < 1207)                 ||
+     (1625 < metadata.opcode && metadata.opcode < 1635)                 ||
+     (1213 < metadata.opcode && metadata.opcode < 1217)                 ||
+     (1608 < metadata.opcode && metadata.opcode < 1612)                 ||
+     (903 < metadata.opcode && metadata.opcode < 910)                 ||
+     (244 < metadata.opcode && metadata.opcode < 252)                 ||
+     (2920 < metadata.opcode && metadata.opcode < 2926)                 ||
+     (946 < metadata.opcode && metadata.opcode < 950)                  ||
+     metadata.id == ARM64_INS_FMSB || metadata.opcode == 2648                 ||
+     (781 < metadata.opcode && metadata.opcode < 785)                 ||
+     (1446 < metadata.opcode && metadata.opcode < 1450)                 ||
+     (881 < metadata.opcode && metadata.opcode < 888)                 ||
+     (1418 < metadata.opcode && metadata.opcode < 1431)){
        isSVE_ = true;
   }
 }

@@ -90,7 +90,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
       uint8_t access;
       std::vector<cs_arm64_op> readOps;
       std::vector<cs_arm64_op> writeOps;
-      std::cout << "====== 0x" << std::hex << instructionAddress << std::dec << " === " << metadata.mnemonic << " " << metadata.operandStr << " === " << metadata.id << " === " << metadata.opcode << " ======" << std::endl;
+      std::cout << "==== @ 0x" << std::hex << instructionAddress << std::dec << " === " << metadata.mnemonic << " " << metadata.operandStr << " === " << metadata.id << " === " << metadata.opcode << " ======" << std::endl;
       if ((&rawInsn)->detail != NULL) {
         // arm64 = &((&rawInsn)->detail->arm64);
         if (metadata.operandCount)

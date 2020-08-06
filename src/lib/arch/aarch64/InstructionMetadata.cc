@@ -85,26 +85,72 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[1].type = ARM64_OP_IMM;
       break;
+    case Opcode::AArch64_FMAD_ZPmZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FMLA_ZPmZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FMSB_ZPmZZ_S:
       // No defined access types
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       operands[3].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_FABS_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FADD_ZZZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_FSQRT_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FSUB_ZZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FMUL_ZZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FNEG_ZPmZ_S:
       // No defined access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
+      break;    
+    case Opcode::AArch64_FMUL_ZPmI_S: {
+      // No defined access types
+      operandCount = 4;
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].type = ARM64_OP_FP;
+      operands[3].access = CS_AC_READ;
+      // Doesn't recognise immediate operands
+      // Extract two possible values, 0.5 or 2.0
+      std::string str(operandStr);
+      if(str.substr(str.length() - 1, 1) == "5"){
+        operands[3].fp = 0.5f;
+      } else {
+        operands[3].fp = 2.0f;
+      }
+
+      break;
+    }
+    case Opcode::AArch64_AND_PPzPP:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMGE_PPzZ0_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMGT_PPzZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMLT_PPzZ0_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SEL_ZPZZ_S:
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
       break;
     case Opcode::AArch64_FDUP_ZI_S:
       // No defined access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
-      break;
+      break;    
     case Opcode::AArch64_INCB_XPiI:
       [[fallthrough]];
     case Opcode::AArch64_INCW_XPiI:
@@ -137,7 +183,9 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       operands[2].imm = 4;
       break;
-    case Opcode::AArch64_LD1W: {
+    case Opcode::AArch64_LD1W:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1W_IMM_REAL: {
       // LD1W doesn't correctly identify destination register
       std::string str(operandStr);
       uint16_t reg_enum = ARM64_REG_Z0;
@@ -558,6 +606,22 @@ void InstructionMetadata::revertAliasing() {
 
         return;
       }
+      if (opcode == Opcode::AArch64_DUP_ZZI_S){
+        // mov Zd.T, Vn; alias for dup Zd.T, Zn.T[0]
+        operandCount = 2;
+        operands[0].access = CS_AC_WRITE;
+        operands[1].type = ARM64_OP_REG;
+        operands[1].access = CS_AC_READ;
+
+        std::string str(operandStr);
+        uint8_t start = operandStr[2] == '.' ? 7 : 8;        
+        uint8_t end = str.length() - start;
+
+        // ARM64_REG_Z0 == 245
+        operands[1].reg = static_cast<arm64_reg>(245 + stoi(str.substr(start, end)));
+        operands[1].vector_index = 0;
+        return;
+      }
       if (opcode == Opcode::AArch64_ORRWri ||
           opcode == Opcode::AArch64_ORRWrs ||
           opcode == Opcode::AArch64_ORRXri ||
@@ -588,10 +652,26 @@ void InstructionMetadata::revertAliasing() {
         operands[3] = operands[1];
         return;
       }
+      if (opcode == Opcode::AArch64_ORR_ZZZ) {
+        // mov Zd.d, Zn.d; alias for: orr Zd.d, Zn.d, Zn.d
+        operandCount = 3;
+        operands[0].access = CS_AC_WRITE;
+        operands[1].access = CS_AC_READ;
+        operands[2] = operands[1];
+        return;
+      }
       if (opcode == Opcode::AArch64_ORRv16i8) {
         // mov Vd.16b, Vn.16b; alias for: orr Vd.16b, Vn.16b, Vn.16b
         operandCount = 3;
         operands[2] = operands[1];
+        return;
+      }
+      if (opcode == Opcode::AArch64_SEL_ZPZZ_S) {
+        // mov Zd.T, Pg/M, Zn.T; alias for: sel Zd.T, Pg, Zn.T, Zd.T
+        if (mnemonic[0] == 'm') {
+          operandCount = 4;
+          operands[3].reg = operands[0].reg;
+        }
         return;
       }
       if (opcode == Opcode::AArch64_UMOVvi8 ||
