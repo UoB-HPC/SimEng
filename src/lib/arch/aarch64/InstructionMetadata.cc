@@ -157,10 +157,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // lacking access specifiers for destination
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       break;
-    case Opcode::AArch64_LD1RW_IMM: {
+    case Opcode::AArch64_LD1RW_IMM:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1W:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1W_IMM_REAL: {
       // LD1RW doesn't correctly identify destination register
       std::string str(operandStr);
-      uint8_t reg_enum = ARM64_REG_Z0;
+      uint16_t reg_enum = ARM64_REG_Z0;
       // Single or double digit Z register identifier
       if(operandStr[3] == '.') {
         reg_enum += std::stoi(str.substr(2,1)); 
@@ -183,27 +187,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       operands[2].imm = 4;
       break;
-    case Opcode::AArch64_LD1W:
-      [[fallthrough]];
-    case Opcode::AArch64_LD1W_IMM_REAL: {
-      // LD1W doesn't correctly identify destination register
-      std::string str(operandStr);
-      uint16_t reg_enum = ARM64_REG_Z0;
-      // Single or double digit Z register identifier
-      if(operandStr[3] == '.') {
-        reg_enum += std::stoi(str.substr(2,1)); 
-      }
-      else {
-        reg_enum += std::stoi(str.substr(2,2)); 
-      }
-
-      operands[0].reg = static_cast<arm64_reg>(reg_enum);
-      // No defined access types
-      operands[0].access = CS_AC_WRITE;
-      operands[1].access = CS_AC_READ;
-      operands[2].access = CS_AC_READ;
-      break;
-    }
     case Opcode::AArch64_MOVNWi:
       [[fallthrough]];    
     case Opcode::AArch64_MOVNXi:
@@ -250,7 +233,9 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       groupCount = 1;
       groups[0] = CS_GRP_JUMP;
       break;
-    case Opcode::AArch64_ST1W: {
+    case Opcode::AArch64_ST1W:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1W_IMM: {
       // ST1W doesn't correctly identify first source register
       std::string str(operandStr);
       uint16_t reg_enum = ARM64_REG_Z0;

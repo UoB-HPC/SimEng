@@ -453,6 +453,29 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses(addresses);
       break;
     }
+    case Opcode::AArch64_ST1W_IMM: {  // st1w {zt.s}, pg, [xn{, #imm, mul vl}]
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint8_t partition_num = VL_bits/32;
+
+      const uint64_t base = operands[2].get<uint64_t>();
+      const uint64_t offset = static_cast<uint64_t>(metadata.operands[2].mem.disp);
+
+      std::vector<MemoryAccessTarget> addresses;
+
+      uint64_t addr = base + (offset * partition_num * 4);
+
+      for(int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i*4));
+        if(p[(int)i/16] & shifted_active) {
+          addresses.push_back({addr, 4, 1});
+        }
+        addr += 4;
+      }
+
+      setMemoryAddresses(addresses);
+      break;
+    }
     case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]
       setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;

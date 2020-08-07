@@ -498,10 +498,14 @@ TEST_P(InstSve, fmul) {
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
 
     fmul z2.s, z1.s, z0.s
+    fmul z0.s, p0/m, z0.s, #0.5
   )");
 
   CHECK_NEON(2, float, {-34.71f, 39.2109184265f, 0.0f, 0.0f,
                         -5059.4742f, 6.84719944f, -105.285011292f, 755.02f, 
+                        0, 0, 0, 0, 0, 0, 0, 0});
+  CHECK_NEON(0, float, {0.5f, -21.38f, -0.0625f, 0, 
+                        20.13f, -342.36f, -0.075f, 53.93f, 
                         0, 0, 0, 0, 0, 0, 0, 0});
 }
 
@@ -915,15 +919,20 @@ TEST_P(InstSve, st1w) {
     svc #0
 
     mov x1, #0
+    mov x4, #64
     ptrue p0.s
     ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z2.s}, p0/z, [x0, x1, lsl #2]
     st1w {z0.s}, p0, [sp, x1, lsl #2]
+    st1w {z2.s}, p0, [x4]
 
     mov x2, #8
     mov x3, #4
     whilelo p1.s, xzr, x2
     ld1w {z1.s}, p1/z, [x0, x3, lsl #2]
+    // ld1w {z3.s}, p1/z, [x0, x3, lsl #2]
     st1w {z1.s}, p1, [x2, x3, lsl #2]
+    // st1w {z3.s}, p1, [x2, #4, mul vl]
   )");
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer()), 0xDEADBEEF);
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() + 4), 0x12345678);
@@ -942,6 +951,23 @@ TEST_P(InstSve, st1w) {
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() + 56), 0x98765432);
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() + 60), 0xABCDEF01);
 
+  EXPECT_EQ(getMemoryValue<uint32_t>(64), 0xDEADBEEF);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 4), 0x12345678);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 8), 0x98765432);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 12), 0xABCDEF01);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 16), 0xDEADBEEF);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 20), 0x12345678);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 24), 0x98765432);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 28), 0xABCDEF01);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 32), 0xDEADBEEF);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 36), 0x12345678);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 40), 0x98765432);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 44), 0xABCDEF01);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 48), 0xDEADBEEF);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 52), 0x12345678);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 56), 0x98765432);
+  EXPECT_EQ(getMemoryValue<uint32_t>(64 + 60), 0xABCDEF01);
+
   EXPECT_EQ(getMemoryValue<uint32_t>(8 + 16), 0xDEADBEEF);
   EXPECT_EQ(getMemoryValue<uint32_t>(8 + 20), 0x12345678);
   EXPECT_EQ(getMemoryValue<uint32_t>(8 + 24), 0x98765432);
@@ -950,6 +976,15 @@ TEST_P(InstSve, st1w) {
   EXPECT_EQ(getMemoryValue<uint32_t>(8 + 36), 0x12345678);
   EXPECT_EQ(getMemoryValue<uint32_t>(8 + 40), 0x98765432);
   EXPECT_EQ(getMemoryValue<uint32_t>(8 + 44), 0xABCDEF01);
+
+  // EXPECT_EQ(getMemoryValue<uint32_t>(264), 0xDEADBEEF);
+  // EXPECT_EQ(getMemoryValue<uint32_t>(264 + 4), 0x12345678);
+  // EXPECT_EQ(getMemoryValue<uint32_t>(264 + 8), 0x98765432);
+  // EXPECT_EQ(getMemoryValue<uint32_t>(264 + 12), 0xABCDEF01);
+  // EXPECT_EQ(getMemoryValue<uint32_t>(264 + 16), 0xDEADBEEF);
+  // EXPECT_EQ(getMemoryValue<uint32_t>(264 + 20), 0x12345678);
+  // EXPECT_EQ(getMemoryValue<uint32_t>(264 + 24), 0x98765432);
+  // EXPECT_EQ(getMemoryValue<uint32_t>(264 + 28), 0xABCDEF01);
 }
 
 TEST_P(InstSve, whilelo) {
