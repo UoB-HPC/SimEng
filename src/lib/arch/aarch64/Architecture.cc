@@ -81,8 +81,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     // Get the latencies for this instruction
     auto latencies = getLatencies(metadata);
 
-    // if(instructionAddress == UINT64_MAX) {
-    if(instructionAddress > 0) {
+    if(instructionAddress == UINT64_MAX) {
+    // if(instructionAddress > 0) {
       // cs_arm64 *arm64;
       int i;
       // cs_regs regs_read, regs_write;
@@ -264,7 +264,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 }
 
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
-    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
+    std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory) const {
   return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
 }

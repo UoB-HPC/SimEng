@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cassert>
 
+#include <iostream>
+
 namespace simeng {
 namespace pipeline {
 
@@ -20,6 +22,9 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   insn->setSequenceId(seqId_);
   seqId_++;
   buffer_.push_back(insn);
+  if(insn->isSVC()) {
+    svc_insns.push_back(insn);
+  }
   // if(insn->isLoad() || insn->isStore()) { 
   //   maxSize_ -= (insn->getStallCycles() - 1);
   // }
@@ -52,6 +57,9 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);
+      if(uop->isSVC()) {
+        svc_insns.pop_front();
+      }
       buffer_.pop_front();
       return n + 1;
     }
@@ -64,18 +72,55 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     // If it's a memory op, commit the entry at the head of the respective queue
     if (uop->isStore()) {
       bool violationFound = lsq_.commitStore(uop);
-      if (violationFound) {
-        // Memory order violation found; aborting commits and flushing
-        auto load = lsq_.getViolatingLoad();
-        shouldFlush_ = true;
-        flushAfter_ = load->getSequenceId() - 1;
-        pc_ = load->getInstructionAddress();
-
+      bool svcViolation = false;
+      std::shared_ptr<Instruction> violatingSvc;
+      const auto& storeAddresses = uop->getGeneratedAddresses();
+      for (const auto& svc : svc_insns) {
+        const auto& loadAddresses = svc->getGeneratedAddresses();
+        for (const auto& storeReq : storeAddresses) {
+          // Iterate over load addresses
+          for (const auto& loadReq : loadAddresses) {
+            // Check for overlapping requests, and flush if discovered
+            if (!(storeReq.address + storeReq.size <= loadReq.address || 
+                  loadReq.address + loadReq.size <= storeReq.address)) {
+              violatingSvc = svc;
+              svcViolation = true;
+              break;
+            }
+          }
+          if(svcViolation) break;
+        }
+        if(svcViolation) break;
+      }
+      if (violationFound || svcViolation) {
+        if(violationFound) {
+          // Memory order violation found; aborting commits and flushing
+          auto load = lsq_.getViolatingLoad();
+          shouldFlush_ = true;
+          flushAfter_ = load->getSequenceId() - 1;
+          pc_ = load->getInstructionAddress();
+        }
+        if(svcViolation) {
+          // Memory order violation found; aborting commits and flushing
+          if(shouldFlush_) {
+            if(flushAfter_ > violatingSvc->getSequenceId()) {
+              flushAfter_ = violatingSvc->getSequenceId() - 1;
+              pc_ = violatingSvc->getInstructionAddress();
+            }
+          } else {
+            shouldFlush_ = true;
+            flushAfter_ = violatingSvc->getSequenceId() - 1;
+            pc_ = violatingSvc->getInstructionAddress();
+          }
+        }
         buffer_.pop_front();
         return n + 1;
       }
     } else if (uop->isLoad()) {
       lsq_.commitLoad(uop);
+    }
+    if(uop->isSVC()) {
+      svc_insns.pop_front();
     }
     buffer_.pop_front();
   }
@@ -101,6 +146,16 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
     }
     uop->setFlushed();
     buffer_.pop_back();
+  }
+
+  while (!svc_insns.empty()) {
+    auto& uop = svc_insns.back();
+    if(uop->isFlushed()) {
+      svc_insns.pop_back();
+    }
+    else {
+      break;
+    }    
   }
 }
 

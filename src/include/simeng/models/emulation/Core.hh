@@ -49,7 +49,7 @@ class Core : public simeng::Core {
   void execute(std::shared_ptr<Instruction>& uop);
 
   /** Handle an encountered exception. */
-  void handleException(const std::shared_ptr<Instruction>& instruction);
+  void handleException(std::shared_ptr<Instruction>& instruction);
 
   /** Process an active exception handler. */
   void processExceptionHandler();

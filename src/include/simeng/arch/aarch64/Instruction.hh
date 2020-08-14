@@ -137,6 +137,9 @@ class Instruction : public simeng::Instruction {
   /** Is this a branch and link instruction? */
   bool isBL() const override;
 
+  /** Is this a system call instruction? */
+  bool isSVC() const override;
+
   /** Is this a SVE instruction? */
   bool isSVE() const override;
 
@@ -150,6 +153,9 @@ class Instruction : public simeng::Instruction {
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
+
+  /** Add to the accessed memory addresses. */
+  void appendMemoryAddresses(const MemoryAccessTarget& addresses);
 
  private:
   /** The maximum number of source registers any supported AArch64 instruction
@@ -234,6 +240,8 @@ class Instruction : public simeng::Instruction {
   bool isRET_ = false;
   /** Is this a branch and link instruction? */
   bool isBL_ = false;
+  /** Is this a system call instruction? */
+  bool isSVC_ = false;
   /** Is this a SVE instruction? */
   bool isSVE_ = false;
 

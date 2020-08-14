@@ -227,7 +227,7 @@ bool Core::hasHalted() const {
   return true;
 }
 
-void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
+void Core::raiseException(std::shared_ptr<Instruction>& instruction) {
   exceptionGenerated_ = true;
   exceptionGeneratingInstruction_ = instruction;
 }

@@ -27,7 +27,6 @@ void VariableLatencyMemoryInterface::tick() {
       // Write: write data directly to memory
       assert(target.address + target.size <= size_ &&
              "Attempted to write beyond memory limit");
-
       auto ptr = memory_ + target.address;
       // Copy the data from the RegisterValue to memory
       memcpy(ptr, request.data.getAsVector<char>(), target.size);
@@ -62,7 +61,8 @@ void VariableLatencyMemoryInterface::requestWrite(const MemoryAccessTarget& targ
                                                  const RegisterValue& data) {
   uint16_t latency = iLatency_;
   if (target.isFP) latency = fpLatency_;
-  pendingRequests_.push({target, data, tickCounter_ + latency});
+  // pendingRequests_.push({target, data, tickCounter_ + latency});
+  pendingRequests_.push({target, data, tickCounter_});
   cycles_+=2;
 }
 

@@ -17,7 +17,7 @@ class MockArchitecture : public arch::Architecture {
   MOCK_CONST_METHOD1(canRename, bool(Register reg));
   MOCK_CONST_METHOD3(handleException,
                      std::shared_ptr<arch::ExceptionHandler>(
-                         const std::shared_ptr<Instruction>& instruction,
+                         std::shared_ptr<Instruction>& instruction,
                          const Core& core, MemoryInterface& memory));
   MOCK_CONST_METHOD0(getInitialState, arch::ProcessStateChange());
   MOCK_CONST_METHOD0(getMaxInstructionSize, uint8_t());
