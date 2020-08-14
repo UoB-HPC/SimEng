@@ -44,10 +44,16 @@ TEST_P(InstSve, cnt) {
     cntb x0
     cnth x1
     cntw x2
+    cntb x3, all, mul #3
+    cnth x4, all, mul #3
+    cntw x5, all, mul #3
   )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(0), 64);
-  EXPECT_EQ(getGeneralRegister<int64_t>(1), 32);
-  EXPECT_EQ(getGeneralRegister<int64_t>(2), 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 192);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 96);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 48);
 }
 
 TEST_P(InstSve, dec) {
@@ -57,7 +63,7 @@ TEST_P(InstSve, dec) {
     mov x0, #128
     decb x0
   )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(0), 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 64);
 }
 
 TEST_P(InstSve, dups) {
@@ -96,11 +102,17 @@ TEST_P(InstSve, inc) {
   RUN_AARCH64(R"(
     mov x0, #64
     mov x1, #128
+    mov x2, #64
+    mov x3, #128
     incb x0
     incw x1
+    incb x2, all, mul #3
+    incw x3, all, mul #3
   )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(0), 128);
-  EXPECT_EQ(getGeneralRegister<int64_t>(1), 144);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 128);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 144);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 256);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 176);
 }
 
 TEST_P(InstSve, fabs) {
@@ -997,16 +1009,53 @@ TEST_P(InstSve, whilelo) {
     mov x3, #5
 
     whilelo p0.s, xzr, x0
-    whilelo p1.s, x1, x0
-    whilelo p2.s, x2, x0
-    whilelo p3.s, x3, x0
-    whilelo p4.s, xzr, xzr
   )");
   CHECK_PREDICATE(0, uint32_t, {286331153, 286331153, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #16
+    mov x1, #8
+    mov x2, #11
+    mov x3, #5
+
+    whilelo p1.s, x1, x0
+  )");
   CHECK_PREDICATE(1, uint32_t, {286331153, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+  
+  RUN_AARCH64(R"(
+    mov x0, #16
+    mov x1, #8
+    mov x2, #11
+    mov x3, #5
+
+    whilelo p2.s, x2, x0
+  )");
   CHECK_PREDICATE(2, uint32_t, {69905, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+  
+  RUN_AARCH64(R"(
+    mov x0, #16
+    mov x1, #8
+    mov x2, #11
+    mov x3, #5
+
+    whilelo p3.s, x3, x0
+  )");
   CHECK_PREDICATE(3, uint32_t, {286331153, 273, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+  
+  RUN_AARCH64(R"(
+    mov x0, #16
+    mov x1, #8
+    mov x2, #11
+    mov x3, #5
+
+    whilelo p4.s, xzr, xzr
+  )");
   CHECK_PREDICATE(4, uint32_t, {0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstSve, ::testing::Values(EMULATION),

@@ -218,13 +218,22 @@ TEST_P(InstLoad, ldrxrow) {
     mov x8, 214
     svc #0
 
-    mov w5, 8
-    mov w6, 2
-    ldr x1, [x0, w5, uxtw #0]
-    ldr x2, [x0, w6, uxtw #3]
+    mov w9, 8
+    mov w10, 2
+    mov w11, -2
+    mov x6, 96
+    ldr x1, [x0, w9, uxtw #0]
+    ldr x2, [x0, w10, uxtw #3]
+    ldr x3, [x0, w9, sxtw #0]
+    ldr x4, [x0, w10, sxtw #3]
+    ldr x5, [x6, w11, sxtw #3]
   )");
-  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xDEADBEEF);
-  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x12345678);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0xDEADBEEF);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0x12345678);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0xDEADBEEF);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x12345678);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5), 0x12345678);
+  // EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x12345678);
 }
 
 TEST_P(InstLoad, ldrxrox) {
@@ -317,7 +326,9 @@ TEST_P(InstLoad, ldrw) {
     mov w5, -4
     ldr w6, [x0, w5, sxtw]
     mov x5, 4
+    mov x9, 1
     ldr w7, [x0, x5]
+    ldr w8, [x0, x9, lsl #2]
   )");
   EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xDEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x12345678);
@@ -325,6 +336,7 @@ TEST_P(InstLoad, ldrw) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xABCDEF12);
   EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0x12345678);
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0xABCDEF12);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(8), 0xABCDEF12);
 }
 
 TEST_P(InstLoad, ldp) {

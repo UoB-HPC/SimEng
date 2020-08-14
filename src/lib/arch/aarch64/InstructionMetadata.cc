@@ -68,10 +68,21 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_CNTH_XPiI:
       [[fallthrough]];
-    case Opcode::AArch64_CNTW_XPiI:
+    case Opcode::AArch64_CNTW_XPiI: {
       // lacking access specifiers for destination
       operands[0].access = CS_AC_WRITE;
+      std::string str(operandStr);
+      if(str.length() < 4) {
+        operandCount = 2;
+        operands[1].type = ARM64_OP_IMM;
+        operands[1].imm = 1;
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_INVALID, 0};
+        operands[1].ext = ARM64_EXT_INVALID;
+        operands[1].vector_index = -1;
+      }
       break;
+    }
     case Opcode::AArch64_DECB_XPiI:
       // lacking access specifiers for destination
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
@@ -153,10 +164,21 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;    
     case Opcode::AArch64_INCB_XPiI:
       [[fallthrough]];
-    case Opcode::AArch64_INCW_XPiI:
+    case Opcode::AArch64_INCW_XPiI: {
       // lacking access specifiers for destination
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      std::string str(operandStr);
+      if(str.length() < 4) {
+        operandCount = 2;
+        operands[1].type = ARM64_OP_IMM;
+        operands[1].imm = 1;
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_INVALID, 0};
+        operands[1].ext = ARM64_EXT_INVALID;
+        operands[1].vector_index = -1;
+      }
       break;
+    }
     case Opcode::AArch64_LD1RW_IMM:
       [[fallthrough]];
     case Opcode::AArch64_LD1W:
@@ -275,6 +297,9 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
+      // Doesn't identify implicit NZCV destination
+      implicitDestinationCount = 1;
+      implicitDestinations[0] = ARM64_REG_NZCV;
       break;
     case Opcode::AArch64_XTNv16i8:
     case Opcode::AArch64_XTNv4i32:

@@ -743,17 +743,20 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_CNTB_XPiI: {  // cntb xd{, pattern{, #imm}}
       const uint64_t VL_bits = 512;
-      results[0] = VL_bits/8;
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = (VL_bits/8) * imm;
       break;
     }
     case Opcode::AArch64_CNTH_XPiI: {  // cnth xd{, pattern{, #imm}}
       const uint64_t VL_bits = 512;
-      results[0] = VL_bits/16;
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = (VL_bits/16) * imm;
       break;
     }
     case Opcode::AArch64_CNTW_XPiI: {  // cntw xd{, pattern{, #imm}}
       const uint64_t VL_bits = 512;
-      results[0] = VL_bits/32;
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = (VL_bits/32) * imm;
       break;
     }
     case Opcode::AArch64_CPYi32: {  // dup vd, vn.s[index]
@@ -1748,7 +1751,7 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
-    case Opcode::AArch64_FSQRT_ZPmZ_S: {  // fmad zd.s, pg/m, zn.s
+    case Opcode::AArch64_FSQRT_ZPmZ_S: {  // fsqrt zd.s, pg/m, zn.s
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
       const float* n = operands[1].getAsVector<float>();
 
@@ -1818,14 +1821,16 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_INCB_XPiI: {  // incb xdn{, pattern{, #imm}}
       const uint64_t n = operands[0].get<uint64_t>();
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
       const uint64_t VL_bits = 512;
-      results[0] = n + (VL_bits/8);
+      results[0] = n + ((VL_bits/8) * imm);
       break;
     }
     case Opcode::AArch64_INCW_XPiI: {  // incw xdn{, pattern{, #imm}}
       const uint64_t n = operands[0].get<uint64_t>();
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
       const uint64_t VL_bits = 512;
-      results[0] = n + (VL_bits/32);
+      results[0] = n + ((VL_bits/32) * imm);
       break;
     }
     case Opcode::AArch64_LD1RW_IMM: {  // ld1rw {zt.s}, pg/z, [xn, #imm]
@@ -3304,7 +3309,20 @@ void Instruction::execute() {
         index++;
       }
 
-      results[0] = out;
+      uint8_t N = (out[0] & 1);
+      uint8_t Z = 1;
+      // (int)(VL_bits - 1)/512 derives which block of 64-bits within the predicate 
+      // register we're working in. std::pow(2, (VL_bits / 8) - 1) derives a 1 in the 
+      // last position of the current predicate. Both dictated by vector length.
+      uint8_t C = !(out[(int)((VL_bits - 1)/512)] & (uint64_t)std::pow(2, (VL_bits / 8) - 4));
+      for(int i = 0; i < (int)((VL_bits - 1)/512) + 1; i++) {
+        if(out[i]) {
+          Z = 0;
+          break;
+        }
+      }
+      results[0] = nzcv(N, Z, C, 0);
+      results[1] = out;
       break;
     }
     case Opcode::AArch64_XTNv2i32: {  // xtn vd.2s, vn.2d

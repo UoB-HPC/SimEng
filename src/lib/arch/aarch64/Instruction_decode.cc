@@ -291,6 +291,9 @@ void Instruction::decode() {
   if(metadata.opcode == 325 || metadata.opcode == 326) {
     isBL_ = true;
   }
+  if(metadata.opcode == 3864) {
+    isSVC_ = true;
+  }
   if(metadata.id == ARM64_INS_ADDVL || metadata.id == ARM64_INS_LD1RW   || 
      metadata.id == ARM64_INS_LD1W  || metadata.id == ARM64_INS_WHILELO || 
      metadata.id == ARM64_INS_PTRUE ||
