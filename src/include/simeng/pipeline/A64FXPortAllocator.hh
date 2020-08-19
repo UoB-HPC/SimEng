@@ -29,7 +29,7 @@ class A64FXPortAllocator : public PortAllocator {
   void deallocate(uint8_t port) override;
 
   /** A mapping from instruction group to instruction attribute */
-  uint8_t attributeMapping(uint8_t group);
+  uint8_t attributeMapping(uint16_t group);
 
   /** Set function from DispatchIssueUnit to retrieve reservation 
    * station sizes during execution. */

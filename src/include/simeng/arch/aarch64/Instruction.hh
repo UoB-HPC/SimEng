@@ -38,6 +38,7 @@ const uint8_t ASIMD = 4;
 const uint8_t LOAD = 5;
 const uint8_t STORE = 6;
 const uint8_t BRANCH = 7;
+const uint8_t PREDICATE = 8;
 }  // namespace InstructionGroups
 
 enum class InstructionException {
@@ -143,6 +144,9 @@ class Instruction : public simeng::Instruction {
   /** Is this a SVE instruction? */
   bool isSVE() const override;
 
+  /** Is this a predicate setting instruction? */
+  bool isPredicate() const override;
+
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
@@ -244,6 +248,8 @@ class Instruction : public simeng::Instruction {
   bool isSVC_ = false;
   /** Is this a SVE instruction? */
   bool isSVE_ = false;
+  /** Is this a Predicate instruction? */
+  bool isPredicate_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

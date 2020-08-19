@@ -194,6 +194,11 @@ int main(int argc, char** argv) {
     }, // FLA
     {
       {
+        {simeng::arch::aarch64::InstructionGroups::PREDICATE, 0}
+      }
+    }, // PR
+    {
+      {
         {simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
         {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
         {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1}
@@ -253,7 +258,7 @@ int main(int argc, char** argv) {
 
   // TODO: Construct reservation station arrangement from config options
   const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {
-      {0,20}, {0,20}, {1,20}, {1,20}, {2,10}, {3,10}, {4,19}
+      {0,20}, {0,20}, {0,20}, {1,20}, {1,20}, {2,10}, {3,10}, {4,19}
   };
 
   // TODO: Expose as config option

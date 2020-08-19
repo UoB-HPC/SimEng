@@ -27,7 +27,7 @@ const unsigned int storeQueueSize = 192;
 const unsigned int fetchBlockAlignmentBits = 5;
 const unsigned int frontendWidth = 4;
 const unsigned int commitWidth = 4;
-const unsigned int executionUnitCount = 7;
+const unsigned int executionUnitCount = 8;
 const unsigned int lsqCompletionSlots = 2;
 const unsigned int clockFrequency = 2.5 * 1e9;
 const uint8_t dispatchRate = 2;
@@ -371,6 +371,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"eu4.cycles", std::to_string(euCycles[4])},
           {"eu5.cycles", std::to_string(euCycles[5])},
           {"eu6.cycles", std::to_string(euCycles[6])},
+          {"eu7.cycles", std::to_string(euCycles[7])},
           {"memory.cycles", std::to_string(dataMemory_.getCycles())}};
 }
 

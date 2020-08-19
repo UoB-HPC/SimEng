@@ -1059,7 +1059,7 @@ void Instruction::execute() {
       double out[2] = {a[0] + a[1], 0.0};
       results[0] = out;
       break;
-    }    
+    }
     case Opcode::AArch64_FADD_ZZZ_S: {  // fadd zd.s, zn.s, zm.s
       const float* n = operands[0].getAsVector<float>();
       const float* m = operands[1].getAsVector<float>();
@@ -1460,7 +1460,7 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
-    case Opcode::AArch64_FMLA_ZPmZZ_S: {  //fmla zd.s, pg/m, zn.s, zm.s
+    case Opcode::AArch64_FMLA_ZPmZZ_S: {  // fmla zd.s, pg/m, zn.s, zm.s
       const float* a = operands[0].getAsVector<float>();
       const uint64_t* p = operands[1].getAsVector<uint64_t>();
       const float* b = operands[2].getAsVector<float>();
@@ -2424,7 +2424,7 @@ void Instruction::execute() {
       results[0] = x | y;
       break;
     }
-    case Opcode::AArch64_ORR_PPzPP: {  // orr Pd.b, Pg/z, Pn.b, Pm.b
+    case Opcode::AArch64_ORR_PPzPP: {  // orr pd.b, pg/z, pn.b, pm.b
       const uint64_t* g = operands[0].getAsVector<uint64_t>();
       const uint64_t* n = operands[1].getAsVector<uint64_t>();
       const uint64_t* m = operands[2].getAsVector<uint64_t>();

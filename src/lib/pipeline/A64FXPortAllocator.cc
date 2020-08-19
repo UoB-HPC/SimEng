@@ -12,12 +12,12 @@ A64FXPortAllocator::A64FXPortAllocator(
   // Construct the  support matrix
   for (size_t portIndex = 0; portIndex < portArrangement.size(); portIndex++) {
     const auto& port = portArrangement[portIndex];
-    uint8_t id = 0;
+    uint16_t id = 0;
     // Add this port to the matrix entry for each group it supports
     for (const auto& set : port) {
-      std::vector<uint8_t> acceptedSelection;
-      uint8_t compulsoryGroups = 0;
-      std::vector<uint8_t> optionalGroups;
+      std::vector<uint16_t> acceptedSelection;
+      uint16_t compulsoryGroups = 0;
+      std::vector<uint16_t> optionalGroups;
       for (const auto& group : set) {
         assert(group.second < 2 && "port type not supported");
         if (group.second == PortType::COMPULSORY) {
@@ -44,9 +44,9 @@ A64FXPortAllocator::A64FXPortAllocator(
 
       int n = 0;
       while (n < optionalGroups.size()) {
-          std::vector<uint8_t> temp = acceptedSelection;
+          std::vector<uint16_t> temp = acceptedSelection;
           for (const auto& entry : temp) {
-            uint8_t groupSet = entry | optionalGroups[n];
+            uint16_t groupSet = entry | optionalGroups[n];
             acceptedSelection.push_back(groupSet);
             if (groupSet >= supportMatrix.size()) {
               // New highest group ID; expand matrices
@@ -63,7 +63,7 @@ A64FXPortAllocator::A64FXPortAllocator(
   // Initialise rowSelection vector
   rowSelection = std::vector<uint8_t>(6, 0);
   // Initiliase reservation station to port mapping
-  rsToPort_ = {{0,1},{2,3},{4},{5},{6}};
+  rsToPort_ = {{0,1,2},{3,4},{5},{6},{7}};
 }
 
 uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
@@ -247,7 +247,7 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
 void A64FXPortAllocator::issued(uint8_t port) {}
 void A64FXPortAllocator::deallocate(uint8_t port) { issued(port); };
 
-uint8_t A64FXPortAllocator::attributeMapping(uint8_t group) {
+uint8_t A64FXPortAllocator::attributeMapping(uint16_t group) {
   uint8_t attribute = 0;
   bool foundAttribute = false;
   if (group == 1) {
@@ -279,6 +279,9 @@ uint8_t A64FXPortAllocator::attributeMapping(uint8_t group) {
     foundAttribute = true;
   } else if (group == 128) {
     attribute = 5; // BR
+    foundAttribute = true;
+  } else if (group > 255) {
+    attribute = 3; // RSE0
     foundAttribute = true;
   }
 

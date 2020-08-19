@@ -124,6 +124,7 @@ bool Instruction::isRET() const { return isRET_; }
 bool Instruction::isBL() const { return isBL_; }
 bool Instruction::isSVC() const { return isSVC_; }
 bool Instruction::isSVE() const { return isSVE_; }
+bool Instruction::isPredicate() const { return isPredicate_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
@@ -159,6 +160,7 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 
 uint16_t Instruction::getGroup() const {
   uint16_t group = 0;
+  if (isPredicate()) group |= (1 << InstructionGroups::PREDICATE);
   if (isBranch()) group |= (1 << InstructionGroups::BRANCH);
   if (isLoad())   group |= (1 << InstructionGroups::LOAD);
   if (isStore())  group |= (1 << InstructionGroups::STORE);

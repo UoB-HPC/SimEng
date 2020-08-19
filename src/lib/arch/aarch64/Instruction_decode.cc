@@ -171,6 +171,14 @@ void Instruction::decode() {
         if (destinationRegisters[destinationRegisterCount].type ==
             RegisterType::VECTOR) {
           isASIMD_ = true;
+        }        
+        if (destinationRegisters[destinationRegisterCount].type ==
+            RegisterType::PREDICATE) {
+          isPredicate_ = true;
+          if(metadata.id == ARM64_INS_FCMGE || metadata.id == ARM64_INS_FCMGT ||
+             metadata.id == ARM64_INS_FCMLT) {
+            isPredicate_ = false;
+          }
         }
 
         destinationRegisterCount++;
@@ -293,6 +301,9 @@ void Instruction::decode() {
   }
   if(metadata.opcode == 3864) {
     isSVC_ = true;
+  }
+  if(metadata.id == ARM64_INS_PTEST) {
+    isPredicate_ = true;
   }
   if(metadata.id == ARM64_INS_ADDVL || metadata.id == ARM64_INS_LD1RW   || 
      metadata.id == ARM64_INS_LD1W  || metadata.id == ARM64_INS_WHILELO || 
