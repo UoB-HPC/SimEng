@@ -84,11 +84,16 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   const auto& addresses = insn->getGeneratedAddresses();
-  for (size_t i = 0; i < addresses.size(); i++) {
-    requestQueue_.push_back({i, insn});
+  if(addresses.size() == 0) {
+    insn->execute();
+    completedLoads_.push(insn);
+  } else {
+    for (size_t i = 0; i < addresses.size(); i++) {
+      requestQueue_.push_back({i, insn});
+    }
+    // requestQueue_.push_back({insn});
+    requestedLoads_.emplace(insn->getSequenceId(), insn);
   }
-  // requestQueue_.push_back({insn});
-  requestedLoads_.emplace(insn->getSequenceId(), insn);
 }
 
 bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
@@ -168,32 +173,77 @@ void LoadStoreQueue::purgeFlushed() {
 void LoadStoreQueue::tick() {
   // Send memory requests adhering to set bandwidth and number of permitted loads per cycle
   uint64_t dataTransfered = 0;
-  if(requestQueue_.size() > 0) {
+  uint8_t writeCount = 0;
+  uint8_t readCount = 0;
+  while(requestQueue_.size() > 0 && (writeCount + readCount) < 2) {
     if(requestQueue_.front().second->isStore()) {
+      if(writeCount != 0) { break; }
+      uint64_t seq = requestQueue_.front().second->getSequenceId();
       requestQueue_.pop_front();
-    } else {
-      for(int req = 0; req < permittedLoads_; req++) {
-        if(requestQueue_.size() > 0 && requestQueue_.front().second->isLoad()) {
-          auto& entry = requestQueue_.front();
-          const auto& addresses = entry.second->getGeneratedAddresses();
-          // uint64_t requestSize = 0;
-          // for (auto target : addresses) {
-          //   requestSize += target.size;
-          // }
-          // if(dataTransfered + requestSize <= L1Bandwidth_) {
-          if (dataTransfered + addresses[entry.first].size <= L1Bandwidth_) {
-            // for (auto& target : addresses) {
-            //   memory_.requestRead(target, entry->getSequenceId());
-            // }
-             memory_.requestRead(addresses[entry.first], entry.second->getSequenceId());
-            dataTransfered += addresses[entry.first].size;
+      bool multiple = true;
+      while(multiple) {
+        if(requestQueue_.size() > 0 && requestQueue_.front().second->getSequenceId() == seq) {
+          if(requestQueue_.size() > 2 && requestQueue_[1].second->getSequenceId() == seq) {
             requestQueue_.pop_front();
-            // dataTransfered += requestSize;
+          } else {
+            multiple = false;
           }
-        } else { break; }
+        } else {
+          multiple = false;
+        }
       }
+      writeCount++;
+    } else {
+      auto& entry = requestQueue_.front();
+      const auto& addresses = entry.second->getGeneratedAddresses();
+      memory_.requestRead(addresses[entry.first], entry.second->getSequenceId());
+
+      uint64_t seq = entry.second->getSequenceId();
+      requestQueue_.pop_front();
+      bool multiple = true;
+      while(multiple) {
+        if(requestQueue_.size() > 0 && requestQueue_.front().second->getSequenceId() == seq) {
+          if(requestQueue_.size() > 2 && requestQueue_[1].second->getSequenceId() == seq) {
+            auto& entry = requestQueue_.front();
+            const auto& addresses = entry.second->getGeneratedAddresses();
+            memory_.requestRead(addresses[entry.first], entry.second->getSequenceId());
+            requestQueue_.pop_front();
+          } else {
+            multiple = false;
+          }
+        } else {
+          multiple = false;
+        }
+      }
+      readCount++;
     }
   }
+  // if(requestQueue_.size() > 0) {
+  //   if(requestQueue_.front().second->isStore()) {
+  //     requestQueue_.pop_front();
+  //   } else {
+  //     for(int req = 0; req < permittedLoads_; req++) {
+  //       if(requestQueue_.size() > 0 && requestQueue_.front().second->isLoad()) {
+  //         auto& entry = requestQueue_.front();
+  //         const auto& addresses = entry.second->getGeneratedAddresses();
+  //         // uint64_t requestSize = 0;
+  //         // for (auto target : addresses) {
+  //         //   requestSize += target.size;
+  //         // }
+  //         // if(dataTransfered + requestSize <= L1Bandwidth_) {
+  //         if (dataTransfered + addresses[entry.first].size <= L1Bandwidth_) {
+  //           // for (auto& target : addresses) {
+  //           //   memory_.requestRead(target, entry->getSequenceId());
+  //           // }
+  //           memory_.requestRead(addresses[entry.first], entry.second->getSequenceId());
+  //           dataTransfered += addresses[entry.first].size;
+  //           requestQueue_.pop_front();
+  //           // dataTransfered += requestSize;
+  //         }
+  //       } else { break; }
+  //     }
+  //   }
+  // }
 
   // Process completed read requests
   for (const auto& response : memory_.getCompletedReads()) {

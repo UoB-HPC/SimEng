@@ -115,6 +115,9 @@ void Core::tick() {
       }
       pendingReads_ = addresses.size();
       return;
+    } else {
+      // Early execution due to lacking addresses
+      execute(uop);
     }
   } else if (uop->isStore()) {
     uop->generateAddresses();
