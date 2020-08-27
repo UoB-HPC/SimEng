@@ -81,6 +81,19 @@ class AArch64RegressionTest : public RegressionTest {
     const T* data = RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::VECTOR, tag});
     for (unsigned i = 0; i < (256 / sizeof(T)); i++) {
+      // T d = data[i];	
+      // T v = values[i];	
+      // int64_t* re_d = reinterpret_cast<int64_t*>(&d);	
+      // int64_t* re_v = reinterpret_cast<int64_t*>(&v);
+      // std::cout << "Calculate:\t ";
+      // for (int k = 63; k >= 0; k--) {	
+      //   std::cout << ((*re_d >> k)&1);	
+      // }	
+      // std::cout << "\nExpected:\t ";	
+      // for (int k = 63; k >= 0; k--) {
+      //   std::cout << ((*re_v >> k)&1);	
+      // }	
+      // std::cout << "\n\n";
       EXPECT_EQ(data[i], values[i]) << "Mismatch for element " << i << ".";
     }
   }
