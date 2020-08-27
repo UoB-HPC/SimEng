@@ -96,11 +96,21 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[1].type = ARM64_OP_IMM;
       break;
+    case Opcode::AArch64_FADDA_VPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FDIV_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FMAD_ZPmZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FMLA_ZPmZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FMLA_ZPmZZ_S:
       [[fallthrough]];
     case Opcode::AArch64_FMSB_ZPmZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMIN_ZPmZ_S:
       // No defined access types
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
@@ -109,20 +119,38 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;
     case Opcode::AArch64_FABS_ZPmZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_FADD_ZZZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FADD_ZZZ_S:
       [[fallthrough]];
     case Opcode::AArch64_FSQRT_ZPmZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_FSUB_ZZZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FSUB_ZZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FMUL_ZZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FMUL_ZZZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_FNEG_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FNEG_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMINV_VPZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_UZP1_ZZZ_S:
       // No defined access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
-      break;    
+      break;
+    case Opcode::AArch64_FCVTZS_ZPmZ_DtoS:
+      // No defined access types
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_FMUL_ZPmI_S: {
       // No defined access types
       operandCount = 4;
@@ -144,11 +172,17 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     }
     case Opcode::AArch64_AND_PPzPP:
       [[fallthrough]];
+    case Opcode::AArch64_FCMGE_PPzZ0_D:
+      [[fallthrough]];
     case Opcode::AArch64_FCMGE_PPzZ0_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMGT_PPzZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FCMGT_PPzZZ_S:
       [[fallthrough]];
     case Opcode::AArch64_FCMLT_PPzZ0_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SEL_ZPZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_SEL_ZPZZ_S:
       // No defined access types
@@ -157,12 +191,20 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       operands[3].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_FDUP_ZI_D:
+      [[fallthrough]];
     case Opcode::AArch64_FDUP_ZI_S:
+      [[fallthrough]];
+    case Opcode::AArch64_PUNPKHI_PP:
+      [[fallthrough]];
+    case Opcode::AArch64_PUNPKLO_PP:
       // No defined access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
-      break;    
+      break;
     case Opcode::AArch64_INCB_XPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_INCD_XPiI:
       [[fallthrough]];
     case Opcode::AArch64_INCW_XPiI: {
       // lacking access specifiers for destination
@@ -179,6 +221,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_LD1RD_IMM:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1D:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1D_IMM_REAL:
+      [[fallthrough]];
     case Opcode::AArch64_LD1RW_IMM:
       [[fallthrough]];
     case Opcode::AArch64_LD1W:
@@ -203,10 +251,11 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;
     }
     case Opcode::AArch64_LD1Rv4s_POST:
-      // Temporary fix for exclusion of post_index immediate in disassembly
+      // Fix for exclusion of post_index immediate in disassembly
       operandCount = 3;
       operands[2].type = ARM64_OP_IMM;
       operands[2].access = CS_AC_READ;
+      // For vector arrangment of 32-bit, post_index immediate is 4
       operands[2].imm = 4;
       break;
     case Opcode::AArch64_MOVNWi:
@@ -242,6 +291,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       implicitDestinations[0] = ARM64_REG_NZCV;
       break;
     }
+    case Opcode::AArch64_PTRUE_B:
+      [[fallthrough]];
+    case Opcode::AArch64_PTRUE_D:
+      [[fallthrough]];
     case Opcode::AArch64_PTRUE_S:
       // PTRUE doesn't label access
       operands[0].access = CS_AC_WRITE;
@@ -255,6 +308,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       groupCount = 1;
       groups[0] = CS_GRP_JUMP;
       break;
+    case Opcode::AArch64_ST1D:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1D_IMM:
+      [[fallthrough]];
     case Opcode::AArch64_ST1W:
       [[fallthrough]];
     case Opcode::AArch64_ST1W_IMM: {
@@ -292,6 +349,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // UBFM incorrectly flags destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
       break;
+    case Opcode::AArch64_WHILELO_PXX_D:
+      [[fallthrough]];
     case Opcode::AArch64_WHILELO_PXX_S:
       // WHILELO doesn't label access or vector specifiers
       operands[0].access = CS_AC_WRITE;
@@ -573,7 +632,8 @@ void InstructionMetadata::revertAliasing() {
         // mov vd, Vn.T[index]; alias for dup vd, Vn.T[index]
         return;
       }
-      if (opcode == Opcode::AArch64_DUP_ZI_S) {
+      if (opcode == Opcode::AArch64_DUP_ZI_B || opcode == Opcode::AArch64_DUP_ZI_D ||
+          opcode == Opcode::AArch64_DUP_ZI_S) {
         // mov Zd.T, #imm{, shift}; alias for dup Zd.T, #imm{, shift}
         operandCount = 2;
         operands[0].access = CS_AC_WRITE;
@@ -676,7 +736,8 @@ void InstructionMetadata::revertAliasing() {
         operands[2] = operands[1];
         return;
       }
-      if (opcode == Opcode::AArch64_SEL_ZPZZ_S) {
+      if (opcode == Opcode::AArch64_SEL_ZPZZ_S ||
+          opcode == Opcode::AArch64_SEL_ZPZZ_D) {
         // mov Zd.T, Pg/M, Zn.T; alias for: sel Zd.T, Pg, Zn.T, Zd.T
         if (mnemonic[0] == 'm') {
           operandCount = 4;

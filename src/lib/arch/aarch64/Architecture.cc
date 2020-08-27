@@ -315,6 +315,8 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
 
   // Look up the instruction opcode to get the latency
   switch (metadata.opcode) {
+    case Opcode::AArch64_FSQRT_ZPmZ_D:
+      return {154,154};
     case Opcode::AArch64_FSQRT_ZPmZ_S:
       return {98,98};
     case Opcode::AArch64_FDIVDrr:
@@ -331,19 +333,24 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_UDIVWr:
     case Opcode::AArch64_UDIVXr:
       return {41,41};
+    case Opcode::AArch64_FADDA_VPZ_D:
     case Opcode::AArch64_FADDDrr:
+    case Opcode::AArch64_FADD_ZZZ_D:
     case Opcode::AArch64_FADD_ZZZ_S:
     case Opcode::AArch64_FADDSrr:
     case Opcode::AArch64_FADDv2f64:
     case Opcode::AArch64_FADDv4f32:
     case Opcode::AArch64_FADDPv2i64p:
     case Opcode::AArch64_FCVTZSUWSr:
+    case Opcode::AArch64_FCVTZS_ZPmZ_DtoS:
     case Opcode::AArch64_FMADDDrrr:
     case Opcode::AArch64_FMADDSrrr:
     case Opcode::AArch64_FMAD_ZPmZZ_S:
+    case Opcode::AArch64_FMLA_ZPmZZ_D:
     case Opcode::AArch64_FMLA_ZPmZZ_S:
     case Opcode::AArch64_FMULDrr:
     case Opcode::AArch64_FMULSrr:
+    case Opcode::AArch64_FMUL_ZZZ_D:
     case Opcode::AArch64_FMUL_ZZZ_S:
     case Opcode::AArch64_FMUL_ZPmI_S:
     case Opcode::AArch64_FMULv1i32_indexed:
@@ -361,6 +368,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_FNMSUBSrrr:
     case Opcode::AArch64_FSUBDrr:
     case Opcode::AArch64_FSUBSrr:
+    case Opcode::AArch64_FSUB_ZZZ_D:
     case Opcode::AArch64_FSUB_ZZZ_S:
     case Opcode::AArch64_FSUBv2f64:
     case Opcode::AArch64_FSUBv4f32:
@@ -386,6 +394,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_USHLLv4i16_shift:
     case Opcode::AArch64_UMOVvi32:
     case Opcode::AArch64_UMOVvi64:
+    case Opcode::AArch64_UZP1_ZZZ_S:
     case Opcode::AArch64_XTNv2i32:
     case Opcode::AArch64_XTNv4i16:
     case Opcode::AArch64_XTNv4i32:
@@ -412,6 +421,8 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_CNTB_XPiI:
     case Opcode::AArch64_CNTH_XPiI:
     case Opcode::AArch64_CNTW_XPiI:
+    case Opcode::AArch64_DUP_ZI_B:
+    case Opcode::AArch64_DUP_ZI_D:
     case Opcode::AArch64_DUP_ZI_S:
     case Opcode::AArch64_FABSDr:
     case Opcode::AArch64_FABSSr:
@@ -422,9 +433,11 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_FCCMPEDrr:
     case Opcode::AArch64_FCCMPSrr:
     case Opcode::AArch64_FCCMPESrr:
+    case Opcode::AArch64_FCMGE_PPzZ0_D:
     case Opcode::AArch64_FCMGE_PPzZ0_S:
     case Opcode::AArch64_FCMGEv2i64rz:
     case Opcode::AArch64_FCMGEv4i32rz:
+    case Opcode::AArch64_FCMGT_PPzZZ_D:
     case Opcode::AArch64_FCMGT_PPzZZ_S:
     case Opcode::AArch64_FCMGTv4f32:
     case Opcode::AArch64_FCMLT_PPzZ0_S:
@@ -439,6 +452,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_FCMPESrr:
     case Opcode::AArch64_FCSELDrrr:
     case Opcode::AArch64_FCSELSrrr:
+    case Opcode::AArch64_FDUP_ZI_D:
     case Opcode::AArch64_FDUP_ZI_S:
     case Opcode::AArch64_FMAXNMDrr:
     case Opcode::AArch64_FMAXNMv2f64:
@@ -454,6 +468,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_FMOVv4f32_ns:
     case Opcode::AArch64_FNEGDr:
     case Opcode::AArch64_FNEGSr:
+    case Opcode::AArch64_FNEG_ZPmZ_D:
     case Opcode::AArch64_FNEG_ZPmZ_S:
     case Opcode::AArch64_FNEGv2f64:
     case Opcode::AArch64_FNEGv4f32:
@@ -463,10 +478,14 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_MOVIv4i32:
     case Opcode::AArch64_ORR_ZZZ:
     case Opcode::AArch64_ORRv16i8:
+    case Opcode::AArch64_SEL_ZPZZ_D:
     case Opcode::AArch64_SEL_ZPZZ_S:
     case Opcode::AArch64_SHLd:
     case Opcode::AArch64_SHLv4i32_shift:
+    case Opcode::AArch64_SMAX_ZPmZ_S:
     case Opcode::AArch64_SMAXv4i32:
+    case Opcode::AArch64_SMIN_ZPmZ_S:
+    case Opcode::AArch64_SMINV_VPZ_S:
     case Opcode::AArch64_SMINVv4i32v:
     case Opcode::AArch64_SMINv4i32:
     case Opcode::AArch64_SSHRv4i32_shift:
@@ -475,7 +494,12 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_AND_PPzPP:
     case Opcode::AArch64_ORR_PPzPP:
     case Opcode::AArch64_PTEST_PP:
+    case Opcode::AArch64_PTRUE_B:
+    case Opcode::AArch64_PTRUE_D:
     case Opcode::AArch64_PTRUE_S:
+    case Opcode::AArch64_PUNPKHI_PP:
+    case Opcode::AArch64_PUNPKLO_PP:
+    case Opcode::AArch64_WHILELO_PXX_D:
     case Opcode::AArch64_WHILELO_PXX_S:
       return {3, 1};
     case Opcode::AArch64_ANDSWrs:
@@ -551,10 +575,13 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_LDPXpre:
       // return {3, 3};
       return {3, 1};
+    case Opcode::AArch64_LD1RD_IMM:
+    case Opcode::AArch64_LD1D:
+    case Opcode::AArch64_LD1D_IMM_REAL:
     case Opcode::AArch64_LD1RW_IMM:
     case Opcode::AArch64_LD1W:
     case Opcode::AArch64_LD1W_IMM_REAL:
-      return {11,1};
+      return {1,1};
     // Non-indexed stores
     case Opcode::AArch64_STRBBroW:
     case Opcode::AArch64_STRBBroX:
@@ -571,8 +598,6 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STURXi:
       // return {5, 2};
       return {5, 1};
-    case Opcode::AArch64_ST1W:
-    case Opcode::AArch64_ST1W_IMM:
     case Opcode::AArch64_STRDroW:
     case Opcode::AArch64_STRDroX:
     case Opcode::AArch64_STRDui:
@@ -629,6 +654,11 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STPQpost:
       // return {9, 4};
       return {9, 1};
+    case Opcode::AArch64_ST1D:
+    case Opcode::AArch64_ST1D_IMM:
+    case Opcode::AArch64_ST1W:
+    case Opcode::AArch64_ST1W_IMM:
+      return {8, 1};
   }
 
   // Assume single-cycle, non-blocking for all other instructions
