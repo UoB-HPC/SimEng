@@ -1,4 +1,5 @@
 #include "simeng/pipeline/FetchUnit.hh"
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -24,7 +25,8 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
 
 FetchUnit::~FetchUnit() { delete[] fetchBuffer_; }
 
-void FetchUnit::tick() {
+void FetchUnit::tick() {  
+  // std::cout << "FETCH output: ";
   if (output_.isStalled()) {
     return;
   }
@@ -98,6 +100,8 @@ void FetchUnit::tick() {
     auto bytesRead = isa_.predecode(buffer + bufferOffset, bufferedBytes_, pc_,
                                     prediction, macroOp);
 
+    // std::cout << std::hex << pc_ << std::dec << ", ";
+
     // If predecode fails, bail and wait for more data
     if (bytesRead == 0) {
       assert(bufferedBytes_ < isa_.getMaxInstructionSize() &&
@@ -143,6 +147,8 @@ void FetchUnit::tick() {
       break;
     }
   }
+
+  // std::cout << std::endl;
 
   if (bufferedBytes_ > 0) {
     // Move start of fetched data to beginning of fetch buffer

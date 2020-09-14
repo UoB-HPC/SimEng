@@ -1,6 +1,7 @@
 #include "simeng/pipeline/DecodeUnit.hh"
 
 #include <cassert>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -11,8 +12,17 @@ DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& input,
     : input_(input), output_(output), predictor_(predictor){};
 
 void DecodeUnit::tick() {
+  // std::cout << "DECODE output: ";
   if (output_.isStalled()) {
     input_.stall(true);
+    // for(int i = 0; i < output_.getWidth(); i++) {
+    //   if(output_.getTailSlots()[i] != nullptr) {
+    //     std::cout << std::hex << output_.getTailSlots()[i]->getInstructionAddress() << std::dec << ", ";
+    //   } else {
+    //     std::cout << "x, ";
+    //   }
+    // }
+    // std::cout << std::endl;
     return;
   }
 
@@ -55,6 +65,14 @@ void DecodeUnit::tick() {
       break;
     }
   }
+  // for(int i = 0; i < output_.getWidth(); i++) {
+  //   if(output_.getTailSlots()[i] != nullptr) {
+  //     std::cout << std::hex << output_.getTailSlots()[i]->getInstructionAddress() << std::dec << ", ";
+  //   } else {
+  //     std::cout << "x, ";
+  //   }
+  // }
+  // std::cout << std::endl;
 }
 
 bool DecodeUnit::shouldFlush() const { return shouldFlush_; }

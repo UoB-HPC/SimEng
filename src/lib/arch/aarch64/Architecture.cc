@@ -581,7 +581,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_LD1RW_IMM:
     case Opcode::AArch64_LD1W:
     case Opcode::AArch64_LD1W_IMM_REAL:
-      return {1,1};
+      return {2,1};
     // Non-indexed stores
     case Opcode::AArch64_STRBBroW:
     case Opcode::AArch64_STRBBroX:
@@ -658,7 +658,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_ST1D_IMM:
     case Opcode::AArch64_ST1W:
     case Opcode::AArch64_ST1W_IMM:
-      return {8, 1};
+      return {9, 1};
   }
 
   // Assume single-cycle, non-blocking for all other instructions

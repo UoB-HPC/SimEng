@@ -1,6 +1,7 @@
 #include "simeng/pipeline/ExecuteUnit.hh"
 
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -141,7 +142,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
 
   // Operand forwarding; allows a dependent uop to execute next cycle
   forwardOperands_(uop->getDestinationRegisters(), uop->getResults());
-
+  // std::cout << std::hex << uop->getInstructionAddress() << std::dec << ", ";
   output_.getTailSlots()[0] = std::move(uop);
 }
 

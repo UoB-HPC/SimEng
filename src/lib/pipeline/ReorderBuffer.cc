@@ -30,7 +30,8 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   // }
 }
 
-unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
+unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {  
+  // std::cout << "ROB output: ";
   shouldFlush_ = false;
   size_t maxCommits =
       std::min(static_cast<size_t>(maxCommitSize), buffer_.size());
@@ -38,9 +39,11 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
   unsigned int n;
   for (n = 0; n < maxCommits; n++) {
     auto& uop = buffer_[0];
+    // std::cout << std::hex << uop->getInstructionAddress() << std::dec << "|";
     if (!uop->canCommit()) {
       break;
     }
+    // std::cout << std::hex << uop->getInstructionAddress() << std::dec << ", ";
 
     // if(uop->isLoad() || uop->isStore()) {
     //   if((maxCommits - n) < uop->getStallCycles()){
@@ -61,6 +64,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
         svc_insns.pop_front();
       }
       buffer_.pop_front();
+      // std::cout << std::endl;
       return n + 1;
     }
 
@@ -114,6 +118,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
           }
         }
         buffer_.pop_front();
+        // std::cout << std::endl;
         return n + 1;
       }
     } else if (uop->isLoad()) {
@@ -124,7 +129,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
     buffer_.pop_front();
   }
-
+  // std::cout << std::endl;
   return n;
 }
 

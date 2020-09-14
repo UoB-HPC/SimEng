@@ -128,6 +128,8 @@ class DispatchIssueUnit {
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;
 
+  std::deque<std::shared_ptr<Instruction>> stalledBuffer_;
+
   /** The number of instructions that can be dispatched to a reservation station per cycle. */
   uint64_t dispatchRate_;
 

@@ -171,53 +171,33 @@ void LoadStoreQueue::purgeFlushed() {
 }
 
 void LoadStoreQueue::tick() {
+  // std::cout << "LSQ output: ";
   // Send memory requests adhering to set bandwidth and number of permitted loads per cycle
   uint64_t dataTransfered = 0;
-  uint8_t writeCount = 0;
-  uint8_t readCount = 0;
-  while(requestQueue_.size() > 0 && (writeCount + readCount) < 2) {
-    if(requestQueue_.front().second->isStore()) {
-      if(writeCount != 0) { break; }
-      uint64_t seq = requestQueue_.front().second->getSequenceId();
-      requestQueue_.pop_front();
-      bool multiple = true;
-      while(multiple) {
-        if(requestQueue_.size() > 0 && requestQueue_.front().second->getSequenceId() == seq) {
-          if(requestQueue_.size() > 2 && requestQueue_[1].second->getSequenceId() == seq) {
-            requestQueue_.pop_front();
-          } else {
-            multiple = false;
-          }
-        } else {
-          multiple = false;
-        }
-      }
-      writeCount++;
-    } else {
-      auto& entry = requestQueue_.front();
-      const auto& addresses = entry.second->getGeneratedAddresses();
-      memory_.requestRead(addresses[entry.first], entry.second->getSequenceId());
+  std::vector<uint8_t> reqCounts = {0, 0};
+  std::vector<uint8_t> reqLimits = {2, 1};
+  uint64_t seq = 0;
+  while(requestQueue_.size() > 0) {
+    uint8_t isWrite = 0;
+    if(requestQueue_.front().second->isStore()) { isWrite = 1; }
 
-      uint64_t seq = entry.second->getSequenceId();
-      requestQueue_.pop_front();
-      bool multiple = true;
-      while(multiple) {
-        if(requestQueue_.size() > 0 && requestQueue_.front().second->getSequenceId() == seq) {
-          if(requestQueue_.size() > 2 && requestQueue_[1].second->getSequenceId() == seq) {
-            auto& entry = requestQueue_.front();
-            const auto& addresses = entry.second->getGeneratedAddresses();
-            memory_.requestRead(addresses[entry.first], entry.second->getSequenceId());
-            requestQueue_.pop_front();
-          } else {
-            multiple = false;
-          }
-        } else {
-          multiple = false;
-        }
-      }
-      readCount++;
+    if(requestQueue_.front().second->getSequenceId() != seq || !requestQueue_.front().second->isSVE()){ reqCounts[isWrite]++; }
+
+    if(reqCounts[isWrite] > reqLimits[isWrite] || reqCounts[isWrite] + reqCounts[!isWrite] > 2) { break; }
+
+    auto& entry = requestQueue_.front();
+    const auto& addresses = entry.second->getGeneratedAddresses();
+    
+    if(dataTransfered + addresses[entry.first].size > L1Bandwidth_) {
+      break;
     }
+    dataTransfered += addresses[entry.first].size;
+
+    seq = entry.second->getSequenceId();
+    if(!isWrite) { memory_.requestRead(addresses[entry.first], entry.second->getSequenceId()); }
+    requestQueue_.pop_front();
   }
+
   // if(requestQueue_.size() > 0) {
   //   if(requestQueue_.front().second->isStore()) {
   //     requestQueue_.pop_front();
@@ -276,13 +256,14 @@ void LoadStoreQueue::tick() {
 
     // Forward the results
     forwardOperands_(insn->getDestinationRegisters(), insn->getResults());
-
+    // std::cout << std::hex << insn->getInstructionAddress() << std::dec << ", ";
     completionSlots_[count].getTailSlots()[0] = std::move(insn);
 
     completedLoads_.pop();
 
     count++;
   }
+  // std::cout << std::endl;
 }
 
 std::shared_ptr<Instruction> LoadStoreQueue::getViolatingLoad() const {
