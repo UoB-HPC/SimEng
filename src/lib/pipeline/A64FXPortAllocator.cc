@@ -3,6 +3,7 @@
 #include <cassert>
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -72,8 +73,6 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
          "instruction group not covered by port allocator");
   const auto& available = supportMatrix[instructionGroup];
   const uint8_t attribute = attributeMatrix[instructionGroup];
-  std::vector<uint64_t> freeEntries;
-  rsSizes_(freeEntries);
 
   uint8_t rs = 0;
   uint8_t port = 0;
@@ -81,29 +80,29 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
   bool foundPort = false;
 
   // TODO: remove first if statement
-  if ((instructionGroup & 64) > 0) { // Ensure store foes to EAGB
-    rs = 3;
-    foundRS = true;
-  } else if(attribute == InstructionAttribute::RSX) {
+  // if ((instructionGroup & 64) > 0) { // Ensure store foes to EAGB
+  //   rs = 3;
+  //   foundRS = true;
+  if(attribute == InstructionAttribute::RSX) {
     // Get difference betwwen free entries of RSE{0|1} and RSA{0|1}
-    int difference = (freeEntries[0] + freeEntries[1]) - (freeEntries[2] + freeEntries[3]);
+    int difference = (freeEntries_[0] + freeEntries_[1]) - (freeEntries_[2] + freeEntries_[3]);
     // Set threshold values
     int thresholdA = 0;
-    int thresholdB = 0;
+    int thresholdB = 4;
     int thresholdC = 0;
-    if ((freeEntries[0] > 0) && (freeEntries[1] > 0) && (freeEntries[2] == 0) && (freeEntries[3] == 0)) {
-      if ((freeEntries[0] - freeEntries[1]) >= thresholdB) {
-        rs = freeEntries[0] >= freeEntries[1] ? 0 : 1;  // Table 1
+    if ((freeEntries_[0] > 0) && (freeEntries_[1] > 0) && (freeEntries_[2] == 0) && (freeEntries_[3] == 0)) {
+      if (abs(freeEntries_[0] - freeEntries_[1]) >= 0) {
+        rs = freeEntries_[0] >= freeEntries_[1] ? 0 : 1;  // Table 1
         foundRS = true;
       } else {
         switch (rowSelection[1] % 2) { // Table 2
           case 0: {
-            rs = freeEntries[0] >= freeEntries[1] ? 0 : 1;
+            rs = freeEntries_[0] >= freeEntries_[1] ? 0 : 1;
             foundRS = true;
             break;
           }
-          case 1: { 
-            rs = freeEntries[1] <= freeEntries[0] ? 1 : 0;
+          case 1: {
+            rs = freeEntries_[1] <= freeEntries_[0] ? 1 : 0;
             foundRS = true;
             break;
           }
@@ -113,15 +112,15 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
         }
         rowSelection[1]++;
       }
-    } else if ((freeEntries[2] > 0) && (freeEntries[3] > 0) && (freeEntries[0] == 0) && (freeEntries[1] == 0)) {
+    } else if ((freeEntries_[2] > 0) && (freeEntries_[3] > 0) && (freeEntries_[0] == 0) && (freeEntries_[1] == 0)) {
       switch (rowSelection[2] % 2) { // Table 3
           case 0: { 
-            rs = freeEntries[2] >= freeEntries[3] ? 2 : 3;
+            rs = freeEntries_[2] >= freeEntries_[3] ? 2 : 3;
             foundRS = true;
             break;
           }
           case 1: { 
-            rs = freeEntries[3] <= freeEntries[2] ? 3 : 2;
+            rs = freeEntries_[3] <= freeEntries_[2] ? 3 : 2;
             foundRS = true;
             break;
           }
@@ -132,25 +131,25 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
       rowSelection[2]++;
     } else {
       // Determine if RSE{0|1} has the most free entries excluding RSBR
-      if((std::max_element(freeEntries.begin(), freeEntries.end()-1) - freeEntries.begin()) < 2) {
+      if((std::max_element(freeEntries_.begin(), freeEntries_.end()-1) - freeEntries_.begin()) < 2) {
         switch (rowSelection[3] % 4) { // Table 4
           case 0: {
-            rs = freeEntries[0] >= freeEntries[1] ? 0 : 1;
+            rs = freeEntries_[0] >= freeEntries_[1] ? 0 : 1;
             foundRS = true;
             break;
           }
           case 1: { 
-            rs = freeEntries[1] <= freeEntries[0] ? 1 : 0;
+            rs = freeEntries_[1] <= freeEntries_[0] ? 1 : 0;
             foundRS = true;
             break;
           }
           case 2: { 
-            rs = freeEntries[2] >= freeEntries[3] ? 2 : 3;
+            rs = freeEntries_[2] >= freeEntries_[3] ? 2 : 3;
             foundRS = true;
             break;
           }
           case 3: { 
-            rs = freeEntries[3] <= freeEntries[2] ? 3 : 2;
+            rs = freeEntries_[3] <= freeEntries_[2] ? 3 : 2;
             foundRS = true;
             break;
           }
@@ -162,22 +161,22 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
       } else {
         switch (rowSelection[4] % 4) { // Table 5
           case 0: { 
-            rs = freeEntries[2] >= freeEntries[3] ? 2 : 3;
+            rs = freeEntries_[2] >= freeEntries_[3] ? 2 : 3;
             foundRS = true;
             break;
           }
           case 1: { 
-            rs = freeEntries[3] <= freeEntries[2] ? 3 : 2;
+            rs = freeEntries_[3] <= freeEntries_[2] ? 3 : 2;
             foundRS = true;
             break;
           }
           case 2: { 
-            rs = freeEntries[0] >= freeEntries[1] ? 0 : 1;
+            rs = freeEntries_[0] >= freeEntries_[1] ? 0 : 1;
             foundRS = true;
             break;
           }
           case 3: { 
-            rs = freeEntries[1] <= freeEntries[0] ? 1 : 0;
+            rs = freeEntries_[1] <= freeEntries_[0] ? 1 : 0;
             foundRS = true;
             break;
           }
@@ -195,10 +194,10 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
       A = 2;
       B = 3;
     }
-    if ((freeEntries[A] > freeEntries[B]) && (freeEntries[B] == 0)) { // Table 5
+    if ((freeEntries_[A] > freeEntries_[B]) && (freeEntries_[B] == 0)) { // Table 5
       rs = A;
       foundRS = true;
-    } else if ((freeEntries[B] > freeEntries[A]) && (freeEntries[A] == 0)) { // Table 5
+    } else if ((freeEntries_[B] > freeEntries_[A]) && (freeEntries_[A] == 0)) { // Table 5
       rs = B;
       foundRS = true;
     } else {
@@ -291,6 +290,15 @@ uint8_t A64FXPortAllocator::attributeMapping(uint16_t group) {
 
 void A64FXPortAllocator::setRSSizeGetter(
   std::function<void(std::vector<uint64_t>&)> rsSizes) { rsSizes_ = rsSizes; }
+
+void A64FXPortAllocator::tick() {
+  freeEntries_.clear();
+  rsSizes_(freeEntries_);
+  // for(int i = 0; i < freeEntries_.size(); i++){
+  //   std::cout << i << ": " << freeEntries_[i] << "|";
+  // }
+  // std::cout << std::endl;
+}
 
 }  // namespace pipeline
 }  // namespace simeng

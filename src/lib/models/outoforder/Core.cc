@@ -31,7 +31,7 @@ const unsigned int executionUnitCount = 8;
 const unsigned int lsqCompletionSlots = 2;
 const unsigned int clockFrequency = 2.5 * 1e9;
 const uint8_t dispatchRate = 2;
-const uint64_t L1Bandwidth = 64;
+const uint64_t L1Bandwidth = 128;
 const uint8_t permittedLoadsPerCycle = 2;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
@@ -45,6 +45,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                           physicalRegisterQuantities),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       dataMemory_(dataMemory),
+      portAllocator_(portAllocator),
       fetchToDecodeBuffer_(frontendWidth, {}),
       decodeToRenameBuffer_(frontendWidth, nullptr),
       renameToDispatchBuffer_(frontendWidth, nullptr),
@@ -93,6 +94,8 @@ void Core::tick() {
     return;
   }
 
+  portAllocator_.tick();
+
   // Writeback must be ticked at start of cycle, to ensure decode reads the
   // correct values
   writebackUnit_.tick();
@@ -102,10 +105,12 @@ void Core::tick() {
   decodeUnit_.tick();
   renameUnit_.tick();
   dispatchIssueUnit_.tick();
+  // std::cout << "EXECUTE output: ";
   for (auto& eu : executionUnits_) {
     // Tick each execution unit
     eu.tick();
-  }
+  }  
+  // std::cout << std::endl;
 
   loadStoreQueue_.tick();
 
@@ -157,10 +162,13 @@ void Core::flushIfNeeded() {
 
     if (reorderBuffer_.shouldFlush() &&
         (!euFlush || reorderBuffer_.getFlushSeqId() < lowestSeqId)) {
+      // std::cout << "---ROB FLUSH---" << std::endl;
       // If the reorder buffer found an older instruction to flush up to, do
       // that instead
       lowestSeqId = reorderBuffer_.getFlushSeqId();
       targetAddress = reorderBuffer_.getFlushAddress();
+    } else {
+      // std::cout << "---EU FLUSH---" << std::endl;
     }
 
     fetchUnit_.updatePC(targetAddress);
@@ -183,6 +191,7 @@ void Core::flushIfNeeded() {
 
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
+    // std::cout << "---DECODE FLUSH---" << std::endl;
     // Flush was requested at decode stage
     // Update PC and wipe Fetch/Decode buffer.
     targetAddress = decodeUnit_.getFlushAddress();
@@ -233,6 +242,7 @@ void Core::raiseException(std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
+  // std::cout << "---EXCEPTION FLUSH---" << std::endl;
   fetchToDecodeBuffer_.fill({});
   fetchToDecodeBuffer_.stall(false);
 

@@ -33,6 +33,8 @@ class PortAllocator {
   /** Set function from DispatchIssueUnit to retrieve reservation 
    * station sizes during execution. */
   virtual void setRSSizeGetter(std::function<void(std::vector<uint64_t>&)> rsSizes) = 0;
+
+  virtual void tick() = 0;
 };
 
 }  // namespace pipeline

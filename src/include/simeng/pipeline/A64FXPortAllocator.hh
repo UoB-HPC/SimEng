@@ -35,6 +35,8 @@ class A64FXPortAllocator : public PortAllocator {
    * station sizes during execution. */
   void setRSSizeGetter(std::function<void(std::vector<uint64_t>&)> rsSizes) override;
 
+  void tick() override;
+
  private:
   /** The instruction group support matrix. An instruction-group-indexed map
    * containing lists of the ports that support each instruction group. */
@@ -52,6 +54,8 @@ class A64FXPortAllocator : public PortAllocator {
 
   /** Mapping from reservation station to ports */
   std::vector<std::vector<uint8_t>> rsToPort_;
+  
+  std::vector<uint64_t> freeEntries_;
 };
 
 }  // namespace pipeline

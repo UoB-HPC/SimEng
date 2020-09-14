@@ -33,6 +33,8 @@ class BalancedPortAllocator : public PortAllocator {
    * station sizes during execution. */
   void setRSSizeGetter(std::function<void(std::vector<uint64_t>&)> rsSizes) override;
 
+  void tick() override;
+
  private:
   /** The instruction group support matrix. An instruction-group-indexed map
    * containing lists of the ports that support each instruction group. */

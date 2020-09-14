@@ -130,6 +130,8 @@ class Core : public simeng::Core {
   /** The writeback unit; writes uop results to the register files. */
   pipeline::WritebackUnit writebackUnit_;
 
+  pipeline::PortAllocator& portAllocator_;
+
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes_ = 0;
 

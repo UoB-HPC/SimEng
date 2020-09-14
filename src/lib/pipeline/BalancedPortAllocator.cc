@@ -90,5 +90,7 @@ void BalancedPortAllocator::deallocate(uint8_t port) { issued(port); };
 void BalancedPortAllocator::setRSSizeGetter(
   std::function<void(std::vector<uint64_t>&)> rsSizes) { rsSizes_ = rsSizes; }
 
+void BalancedPortAllocator::tick() {}
+
 }  // namespace pipeline
 }  // namespace simeng
