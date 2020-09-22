@@ -39,7 +39,8 @@ struct VariableLatencyMemoryInterfaceRequest {
 /** A memory interface where all requests respond with a variable latency. */
 class VariableLatencyMemoryInterface : public MemoryInterface {
  public:
-  VariableLatencyMemoryInterface(char* memory, size_t size, uint16_t iLatency, uint16_t fpLatency);
+  VariableLatencyMemoryInterface(char* memory, size_t size, uint16_t iLatency, 
+                                  uint16_t fpLatency, uint16_t SVELatency);
 
   /** Queue a read request from the supplied target location.
    *
@@ -81,6 +82,9 @@ class VariableLatencyMemoryInterface : public MemoryInterface {
 
   /** The latency all floating-point requests are completed after. */
   uint16_t fpLatency_;
+
+  /** The latency all SVE instruction requests are completed after. */
+  uint16_t SVELatency_;
 
   /** The number of times this interface has been ticked. */
   uint64_t tickCounter_ = 0;

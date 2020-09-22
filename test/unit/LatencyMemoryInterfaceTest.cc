@@ -35,7 +35,7 @@ TEST(LatencyMemoryInterfaceTest, VariableWriteData) {
    * and a three cycle floating-point latency */
   uint32_t memoryData = 0;
   simeng::VariableLatencyMemoryInterface memory(
-      reinterpret_cast<char*>(&memoryData), 4, 2, 3);
+      reinterpret_cast<char*>(&memoryData), 4, 2, 3, 3);
   EXPECT_FALSE(memory.hasPendingRequests());
 
   // Write a 32-bit integer value to memory

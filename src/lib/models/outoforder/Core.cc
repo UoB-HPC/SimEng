@@ -18,9 +18,9 @@ namespace outoforder {
 // TODO: Physical registers are configured for TX2 booted with 4-way SMT
 // TODO: System register count has to match number of supported system registers
 const std::initializer_list<uint16_t> physicalRegisterQuantities = {96, 128,
-                                                                    48, 128, 7};
+                                                                    48, 128, 6};
 const std::initializer_list<RegisterFileStructure> physicalRegisterStructures =
-    {{8, 96}, {256, 128}, {32, 48}, {1, 128}, {8, 7}};
+    {{8, 96}, {256, 128}, {32, 48}, {1, 128}, {8, 6}};
 const unsigned int robSize = 128;
 const unsigned int loadQueueSize = 160;
 const unsigned int storeQueueSize = 192;
@@ -32,7 +32,9 @@ const unsigned int lsqCompletionSlots = 2;
 const unsigned int clockFrequency = 2.5 * 1e9;
 const uint8_t dispatchRate = 2;
 const uint64_t L1Bandwidth = 128;
+const uint8_t permittedRequestsPerCycle = 2;
 const uint8_t permittedLoadsPerCycle = 2;
+const uint8_t permittedWritesPerCycle = 1;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
@@ -45,7 +47,6 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                           physicalRegisterQuantities),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       dataMemory_(dataMemory),
-      portAllocator_(portAllocator),
       fetchToDecodeBuffer_(frontendWidth, {}),
       decodeToRenameBuffer_(frontendWidth, nullptr),
       renameToDispatchBuffer_(frontendWidth, nullptr),
@@ -56,7 +57,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           {completionSlots_.data() + executionUnitCount, lsqCompletionSlots},
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
-          }, L1Bandwidth, permittedLoadsPerCycle),
+          }, L1Bandwidth, permittedRequestsPerCycle, 
+          permittedLoadsPerCycle, permittedWritesPerCycle),
       reorderBuffer_(robSize, registerAliasTable_, loadStoreQueue_,
                      [this](auto instruction) { raiseException(instruction); }),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
@@ -68,7 +70,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
                          portAllocator, physicalRegisterQuantities, rsArrangement,
                          dispatchRate),
-      writebackUnit_(completionSlots_, registerFileSet_) {
+      writebackUnit_(completionSlots_, registerFileSet_),
+      portAllocator_(portAllocator) {
   for (size_t i = 0; i < executionUnitCount; i++) {
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
@@ -76,7 +79,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           dispatchIssueUnit_.forwardOperands(regs, values);
         },
         [this](auto uop) { loadStoreQueue_.startLoad(uop); }, [](auto uop) {},
-        [](auto uop) { uop->setCommitReady(); }, branchPredictor);
+        [](auto uop) { uop->setCommitReady(); }, branchPredictor, true, 8);
   }
   // Provide reservation size getter to A64FX port allocator
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t> &sizeVec) {dispatchIssueUnit_.getRSSizes(sizeVec);});
@@ -94,6 +97,7 @@ void Core::tick() {
     return;
   }
 
+  // Tick port allocators internal functionality at start of cycle
   portAllocator_.tick();
 
   // Writeback must be ticked at start of cycle, to ensure decode reads the
@@ -105,12 +109,10 @@ void Core::tick() {
   decodeUnit_.tick();
   renameUnit_.tick();
   dispatchIssueUnit_.tick();
-  // std::cout << "EXECUTE output: ";
   for (auto& eu : executionUnits_) {
     // Tick each execution unit
     eu.tick();
-  }  
-  // std::cout << std::endl;
+  }
 
   loadStoreQueue_.tick();
 
@@ -162,13 +164,10 @@ void Core::flushIfNeeded() {
 
     if (reorderBuffer_.shouldFlush() &&
         (!euFlush || reorderBuffer_.getFlushSeqId() < lowestSeqId)) {
-      // std::cout << "---ROB FLUSH---" << std::endl;
       // If the reorder buffer found an older instruction to flush up to, do
       // that instead
       lowestSeqId = reorderBuffer_.getFlushSeqId();
       targetAddress = reorderBuffer_.getFlushAddress();
-    } else {
-      // std::cout << "---EU FLUSH---" << std::endl;
     }
 
     fetchUnit_.updatePC(targetAddress);
@@ -191,7 +190,6 @@ void Core::flushIfNeeded() {
 
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
-    // std::cout << "---DECODE FLUSH---" << std::endl;
     // Flush was requested at decode stage
     // Update PC and wipe Fetch/Decode buffer.
     targetAddress = decodeUnit_.getFlushAddress();
@@ -242,7 +240,6 @@ void Core::raiseException(std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
-  // std::cout << "---EXCEPTION FLUSH---" << std::endl;
   fetchToDecodeBuffer_.fill({});
   fetchToDecodeBuffer_.stall(false);
 

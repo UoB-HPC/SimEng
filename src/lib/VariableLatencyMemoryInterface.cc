@@ -7,8 +7,10 @@ namespace simeng {
 VariableLatencyMemoryInterface::VariableLatencyMemoryInterface(char* memory,
                                                                size_t size,
                                                                uint16_t iLatency,
-                                                               uint16_t fpLatency)
-    : memory_(memory), size_(size), iLatency_(iLatency), fpLatency_(fpLatency) {}
+                                                               uint16_t fpLatency, 
+                                                               uint16_t SVELatency)
+    : memory_(memory), size_(size), iLatency_(iLatency), 
+      fpLatency_(fpLatency), SVELatency_(SVELatency) {}
 
 void VariableLatencyMemoryInterface::tick() {
   tickCounter_++;
@@ -53,6 +55,7 @@ void VariableLatencyMemoryInterface::requestRead(const MemoryAccessTarget& targe
                                                  uint64_t requestId) {
   uint16_t latency = iLatency_;
   if (target.isFP) latency = fpLatency_;
+  if (target.isSVE) latency = SVELatency_;
   pendingRequests_.push({target, tickCounter_ + latency, requestId});
   cycles_++;
 }

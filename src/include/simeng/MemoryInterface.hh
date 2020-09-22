@@ -12,7 +12,9 @@ struct MemoryAccessTarget {
   /** The number of bytes to access at `address`. */
   uint8_t size;
   /** Whether the access data type is a floating-point value. */
-  uint16_t isFP = 0;
+  uint8_t isFP = 0;
+  /** Whether the access data type is from an SVE instruction. */
+  uint8_t isSVE = 0;
 
   /** Check for equality of two access targets. */
   bool operator==(const MemoryAccessTarget& other) const {

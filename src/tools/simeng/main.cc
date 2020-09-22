@@ -7,7 +7,7 @@
 
 #include "simeng/AlwaysNotTakenPredictor.hh"
 #include "simeng/BTBPredictor.hh"
-#include "simeng/BTB_BTWPredictor.hh"
+#include "simeng/BTB_BWTPredictor.hh"
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
@@ -180,7 +180,7 @@ int main(int argc, char** argv) {
   // Create the architecture, with knowledge of the kernel
   auto arch = simeng::arch::aarch64::Architecture(kernel);
 
-  auto predictor = simeng::BTB_BTWPredictor(11, 4);
+  auto predictor = simeng::BTB_BWTPredictor(11, 4);
 
   // TODO: Construct port arrangement from config options
   const std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>> portArrangement = {
@@ -194,7 +194,12 @@ int main(int argc, char** argv) {
     }, // FLA
     {
       {
-        {simeng::arch::aarch64::InstructionGroups::PREDICATE, 0}
+        {simeng::arch::aarch64::InstructionGroups::PREDICATE, 0},
+        {simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 1},
+        {simeng::arch::aarch64::InstructionGroups::ASIMD, 1},
+        {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1},
+        {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
+        {simeng::arch::aarch64::InstructionGroups::SHIFT, 1}
       }
     }, // PR
     {
@@ -254,7 +259,7 @@ int main(int argc, char** argv) {
       }
     } // BR
   };
-  auto portAllocator = simeng::pipeline::A64FXPortAllocator(portArrangement);  
+  auto portAllocator = simeng::pipeline::A64FXPortAllocator(portArrangement);
 
   // TODO: Construct reservation station arrangement from config options
   const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {
@@ -264,6 +269,7 @@ int main(int argc, char** argv) {
   // TODO: Expose as config option
   const uint16_t intDataMemoryLatency = 5;
   const uint16_t fpDataMemoryLatency = 8;
+  const uint16_t SVEDataMemoryLatency = 11;
 
   int iterations = 0;
 
@@ -274,7 +280,8 @@ int main(int argc, char** argv) {
     case SimulationMode::OutOfOrder: {
       modeString = "Out-of-Order";
       dataMemory = std::make_unique<simeng::VariableLatencyMemoryInterface>(
-          processMemory, processMemorySize, intDataMemoryLatency, fpDataMemoryLatency);
+          processMemory, processMemorySize, intDataMemoryLatency, 
+          fpDataMemoryLatency, SVEDataMemoryLatency);
       core = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
           predictor, portAllocator, rsArrangement);

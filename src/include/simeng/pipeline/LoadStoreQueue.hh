@@ -23,7 +23,8 @@ class LoadStoreQueue {
       unsigned int maxCombinedSpace, MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      uint64_t L1Bandwidth = UINT64_MAX, uint8_t permittedLoads = UINT8_MAX);
+      uint64_t L1Bandwidth = UINT64_MAX, uint8_t permittedRequests = UINT8_MAX,
+      uint8_t permittedLoads = UINT8_MAX, uint8_t permittedStores = UINT8_MAX);
 
   /** Constructs a split load/store queue model, simulating discrete queues for
    * load and store instructions, supplying completion slots for loads and an
@@ -33,7 +34,8 @@ class LoadStoreQueue {
       MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      uint64_t L1Bandwidth = UINT64_MAX, uint8_t permittedLoads = UINT8_MAX);
+      uint64_t L1Bandwidth = UINT64_MAX, uint8_t permittedRequests = UINT8_MAX,
+      uint8_t permittedLoads = UINT8_MAX, uint8_t permittedStores = UINT8_MAX);
 
   /** Retrieve the available space for load uops. For combined queue this is the
    * total remaining space. */
@@ -46,6 +48,10 @@ class LoadStoreQueue {
   /** Retrieve the available space for any memory uops. For a split queue this
    * is the sum of the space in both queues. */
   unsigned int getTotalSpace() const;
+
+  bool withinLoadWindow(const std::shared_ptr<Instruction>& insn) const;
+
+  bool withinStoreWindow(const std::shared_ptr<Instruction>& insn) const;
 
   /** Add a load uop to the queue. */
   void addLoad(const std::shared_ptr<Instruction>& insn);
@@ -104,6 +110,14 @@ class LoadStoreQueue {
    * combined queue. */
   unsigned int maxStoreQueueSpace_;
 
+  unsigned int loadWindow_ = 39;
+
+  unsigned int storeWindow_ = 23;
+
+  uint64_t loadWindowSeq_ = UINT64_MAX;
+
+  uint64_t storeWindowSeq_ = UINT64_MAX;
+
   /** The maximum number of memory ops that can be in-flight. Undefined if this
    * is a split queue. */
   unsigned int maxCombinedSpace_;
@@ -135,9 +149,12 @@ class LoadStoreQueue {
 
   /** The amount of data transferable to the L1 cache per cycle. */
   uint64_t L1Bandwidth_;
+  
+  /** The combined limit of loads and store requests permitted per cycle. */
+  uint8_t totalLimit_;
 
-  /** The number of loads permitted to being per cycle. */
-  uint64_t permittedLoads_;
+  /** The number of loads and stores permitted per cycle. */
+  std::vector<uint8_t> reqLimits_;
 };
 
 }  // namespace pipeline

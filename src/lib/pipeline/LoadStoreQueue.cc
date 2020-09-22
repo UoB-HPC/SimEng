@@ -19,21 +19,26 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      uint64_t L1Bandwidth, uint8_t permittedLoads)
+      uint64_t L1Bandwidth, uint8_t permittedRequests,
+      uint8_t permittedLoads, uint8_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxCombinedSpace_(maxCombinedSpace),
       combined_(true),
       memory_(memory),
       L1Bandwidth_(L1Bandwidth),
-      permittedLoads_(permittedLoads){};
+      totalLimit_(permittedRequests) {
+  // Set per-cycle limits for each request type
+  reqLimits_ = {permittedLoads, permittedStores};
+};
 
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
     MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      uint64_t L1Bandwidth, uint8_t permittedLoads)
+      uint64_t L1Bandwidth, uint8_t permittedRequests,
+      uint8_t permittedLoads, uint8_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxLoadQueueSpace_(maxLoadQueueSpace),
@@ -41,7 +46,10 @@ LoadStoreQueue::LoadStoreQueue(
       combined_(false),
       memory_(memory),
       L1Bandwidth_(L1Bandwidth),
-      permittedLoads_(permittedLoads){};
+      totalLimit_(permittedRequests) {
+  // Set per-cycle limits for each request type
+  reqLimits_ = {permittedLoads, permittedStores};
+};
 
 unsigned int LoadStoreQueue::getLoadQueueSpace() const {
   if (combined_) {
@@ -75,11 +83,37 @@ unsigned int LoadStoreQueue::getCombinedSpace() const {
   return maxCombinedSpace_ - loadQueue_.size() - storeQueue_.size();
 }
 
+bool LoadStoreQueue::withinLoadWindow(const std::shared_ptr<Instruction>& insn) const {
+  if(insn->getSequenceId() <= loadWindowSeq_) {
+    return true;
+  }
+  return false;
+}
+bool LoadStoreQueue::withinStoreWindow(const std::shared_ptr<Instruction>& insn) const {
+  if(insn->getSequenceId() <= storeWindowSeq_) {
+    return true;
+  }
+  return false;
+}
+
 void LoadStoreQueue::addLoad(const std::shared_ptr<Instruction>& insn) {
-  loadQueue_.push_back(insn);
+  // uint8_t entries = insn->isPair() ? 2 : 1;
+  // for(int i = 0; i < entries; i++){
+    if(loadQueue_.size() - 1 == loadWindow_) {
+      loadWindowSeq_ = insn->getSequenceId();
+    }
+    loadQueue_.push_back(insn);
+  // }
 }
 void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
-  storeQueue_.push_back(insn);
+  // uint8_t entries = insn->isPair() ? 2 : 1;
+  // for(int i = 0; i < entries; i++){
+    if(storeQueue_.size() - 1 == storeWindow_) {
+      storeWindowSeq_ = insn->getSequenceId();
+    }
+    storeQueue_.push_back(insn);
+  // }
+  // addLoad(insn);
 }
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
@@ -91,7 +125,6 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     for (size_t i = 0; i < addresses.size(); i++) {
       requestQueue_.push_back({i, insn});
     }
-    // requestQueue_.push_back({insn});
     requestedLoads_.emplace(insn->getSequenceId(), insn);
   }
 }
@@ -102,14 +135,12 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   assert(storeQueue_.front()->getSequenceId() == uop->getSequenceId() &&
          "Attempted to commit a store that wasn't present at the front of the "
          "store queue");
-
   const auto& addresses = uop->getGeneratedAddresses();
   const auto& data = uop->getData();
   for (size_t i = 0; i < addresses.size(); i++) {
     memory_.requestWrite(addresses[i], data[i]);
     requestQueue_.push_back({i, uop});
   }
-  // requestQueue_.push_back({uop});
 
   // Check all loads that have requested memory
   violatingLoad_ = nullptr;
@@ -132,7 +163,29 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
     }
   }
 
+  // if(uop->isPair()) storeQueue_.pop_front();
   storeQueue_.pop_front();
+  // storeWindowSeq_ = UINT64_MAX;
+  // if(storeQueue_.size() > storeWindow_) {
+  //   storeWindowSeq_ = storeQueue_[storeWindow_]->getSequenceId();
+  // }
+
+  // auto it = loadQueue_.begin();
+  // while (it != loadQueue_.end()) {
+  //   auto& entry = *it;
+  //   if (entry->isStore()) {
+  //     if(uop->isPair()) it = loadQueue_.erase(it);
+  //     it = loadQueue_.erase(it);
+  //     break;
+  //   } else {
+  //     it++;
+  //   }
+  // }
+  // loadWindowSeq_ = UINT64_MAX;
+  // if(loadQueue_.size() > loadWindow_) {
+  //   loadWindowSeq_ = loadQueue_[loadWindow_]->getSequenceId();
+  // }
+
   return violatingLoad_ != nullptr;
 }
 
@@ -143,8 +196,22 @@ void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
          "Attempted to commit a load that wasn't present at the front of the "
          "load queue");
 
-  loadQueue_.pop_front();
-  requestedLoads_.erase(uop->getSequenceId());
+  auto it = loadQueue_.begin();
+  while (it != loadQueue_.end()) {
+    auto& entry = *it;
+    if (entry->isLoad()) {
+      requestedLoads_.erase(entry->getSequenceId()); 
+      // if(uop->isPair()) it = loadQueue_.erase(it);     
+      it = loadQueue_.erase(it);
+      break;
+    } else {
+      it++;
+    }
+  }
+  // loadWindowSeq_ = UINT64_MAX;
+  // if(loadQueue_.size() > loadWindow_) {
+  //   loadWindowSeq_ = loadQueue_[loadWindow_]->getSequenceId();
+  // }
 }
 
 void LoadStoreQueue::purgeFlushed() {
@@ -152,78 +219,64 @@ void LoadStoreQueue::purgeFlushed() {
   while (it != loadQueue_.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {
-      requestedLoads_.erase((*it)->getSequenceId());
+      requestedLoads_.erase(entry->getSequenceId());
+      // if(entry->isPair()) it = loadQueue_.erase(it);
       it = loadQueue_.erase(it);
     } else {
       it++;
     }
   }
+  // loadWindowSeq_ = UINT64_MAX;
+  // if(loadQueue_.size() > loadWindow_) {
+  //   loadWindowSeq_ = loadQueue_[loadWindow_]->getSequenceId();
+  // }
 
   it = storeQueue_.begin();
   while (it != storeQueue_.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {
+      // if(entry->isPair()) it = storeQueue_.erase(it);
       it = storeQueue_.erase(it);
     } else {
       it++;
     }
   }
+  // storeWindowSeq_ = UINT64_MAX;
+  // if(storeQueue_.size() > storeWindow_) {
+  //   storeWindowSeq_ = storeQueue_[storeWindow_]->getSequenceId();
+  // }
+
+  auto it2 = requestQueue_.begin();
+  while (it2 != requestQueue_.end()) {
+    auto& entry = it2->second;
+    if (entry->isFlushed()) {
+      it2 = requestQueue_.erase(it2);
+    } else {
+      it2++;
+    }
+  }
 }
 
 void LoadStoreQueue::tick() {
-  // std::cout << "LSQ output: ";
   // Send memory requests adhering to set bandwidth and number of permitted loads per cycle
   uint64_t dataTransfered = 0;
   std::vector<uint8_t> reqCounts = {0, 0};
-  std::vector<uint8_t> reqLimits = {2, 1};
   uint64_t seq = 0;
   while(requestQueue_.size() > 0) {
     uint8_t isWrite = 0;
-    if(requestQueue_.front().second->isStore()) { isWrite = 1; }
-
-    if(requestQueue_.front().second->getSequenceId() != seq || !requestQueue_.front().second->isSVE()){ reqCounts[isWrite]++; }
-
-    if(reqCounts[isWrite] > reqLimits[isWrite] || reqCounts[isWrite] + reqCounts[!isWrite] > 2) { break; }
-
     auto& entry = requestQueue_.front();
     const auto& addresses = entry.second->getGeneratedAddresses();
-    
-    if(dataTransfered + addresses[entry.first].size > L1Bandwidth_) {
-      break;
-    }
-    dataTransfered += addresses[entry.first].size;
+    if(entry.second->isStore()) { isWrite = 1; }
+    if(entry.second->getSequenceId() != seq || !entry.second->isSVE()) { reqCounts[isWrite]++; }
 
+    if(reqCounts[isWrite] > reqLimits_[isWrite] || reqCounts[isWrite] + reqCounts[!isWrite] > totalLimit_) { break; }
+    else if(dataTransfered + addresses[entry.first].size > L1Bandwidth_) { break; }
+
+    dataTransfered += addresses[entry.first].size;
     seq = entry.second->getSequenceId();
     if(!isWrite) { memory_.requestRead(addresses[entry.first], entry.second->getSequenceId()); }
     requestQueue_.pop_front();
   }
-
-  // if(requestQueue_.size() > 0) {
-  //   if(requestQueue_.front().second->isStore()) {
-  //     requestQueue_.pop_front();
-  //   } else {
-  //     for(int req = 0; req < permittedLoads_; req++) {
-  //       if(requestQueue_.size() > 0 && requestQueue_.front().second->isLoad()) {
-  //         auto& entry = requestQueue_.front();
-  //         const auto& addresses = entry.second->getGeneratedAddresses();
-  //         // uint64_t requestSize = 0;
-  //         // for (auto target : addresses) {
-  //         //   requestSize += target.size;
-  //         // }
-  //         // if(dataTransfered + requestSize <= L1Bandwidth_) {
-  //         if (dataTransfered + addresses[entry.first].size <= L1Bandwidth_) {
-  //           // for (auto& target : addresses) {
-  //           //   memory_.requestRead(target, entry->getSequenceId());
-  //           // }
-  //           memory_.requestRead(addresses[entry.first], entry.second->getSequenceId());
-  //           dataTransfered += addresses[entry.first].size;
-  //           requestQueue_.pop_front();
-  //           // dataTransfered += requestSize;
-  //         }
-  //       } else { break; }
-  //     }
-  //   }
-  // }
 
   // Process completed read requests
   for (const auto& response : memory_.getCompletedReads()) {
@@ -256,14 +309,13 @@ void LoadStoreQueue::tick() {
 
     // Forward the results
     forwardOperands_(insn->getDestinationRegisters(), insn->getResults());
-    // std::cout << std::hex << insn->getInstructionAddress() << std::dec << ", ";
+
     completionSlots_[count].getTailSlots()[0] = std::move(insn);
 
     completedLoads_.pop();
 
     count++;
   }
-  // std::cout << std::endl;
 }
 
 std::shared_ptr<Instruction> LoadStoreQueue::getViolatingLoad() const {

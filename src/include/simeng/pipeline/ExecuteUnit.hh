@@ -33,7 +33,8 @@ class ExecuteUnit {
       std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
       std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-      BranchPredictor& predictor, bool pipelined = true);
+      BranchPredictor& predictor, bool pipelined = true, 
+      uint16_t blockingGroup = 0);
 
   /** Tick the execute unit. Places incoming instructions into the pipeline and
    * executes an instruction that has reached the head of the pipeline, if
@@ -98,9 +99,11 @@ class ExecuteUnit {
    * be calculated and forwarded. */
   std::deque<ExecutionUnitPipelineEntry> pipeline_;
 
-  /** A queue to hold divide instructions as to mimic the operation blocking
-   * scheme.
-  */
+  /** A group of operation types that are blocked whilst a similar operation 
+   * is being executed. */
+  uint16_t blockingGroup_;
+
+  /** A queue to hold blocked instructions of a similar group type to blockingGroup_. */
   std::deque<std::shared_ptr<Instruction>> operationsStalled_;
 
   /** Whether the core should be flushed after this cycle. */
