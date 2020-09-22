@@ -11,15 +11,15 @@ using InstructionException = short;
 
 namespace simeng {
 
-  /** A branch result prediction for an instruction. */
-  struct BranchPrediction {
-    /** Whether the branch will be taken. */
-    bool taken;
+/** A branch result prediction for an instruction. */
+struct BranchPrediction {
+  /** Whether the branch will be taken. */
+  bool taken;
 
-    /** The branch instruction's target address. If `taken = false`, the value
-     * will be ignored. */
-    uint64_t target;
-  };
+  /** The branch instruction's target address. If `taken = false`, the value
+   * will be ignored. */
+  uint64_t target;
+};
 
 /** An abstract instruction definition.
  * Each supported ISA should provide a derived implementation of this class. */
@@ -164,12 +164,6 @@ class Instruction {
    * executing it. */
   uint16_t getStallCycles() const;
 
-  /** Set whether this instruction is stalled at dispatch. */
-  void setDispatchStalled(bool stalled);
-
-  /** Check whether this instruction is stalled at dispatch. */
-  bool isDispatchStalled() const;
-
  protected:
   /** Whether an exception has been encountered. */
   bool exceptionEncountered_ = false;
@@ -211,9 +205,6 @@ class Instruction {
   /** The number of cycles this instruction will stall the unit executing it
    * for. */
   uint16_t stallCycles_ = 1;
-
-  /** Has this instruction been stalled at dispatch */
-  bool dispatchStalled_ = false;
 };
 
 }  // namespace simeng

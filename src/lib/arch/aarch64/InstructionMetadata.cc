@@ -43,16 +43,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
-      // add dependency on VL
-      operandCount = 4;
-      operands[3].type = ARM64_OP_SYS;
-      operands[3].sys = ARM64_SYSREG_ZCR_EL1;
-      operands[3].access = CS_AC_READ;
-      // incorrect additions of shift, extention, and vector details
-      operands[3].shift = {ARM64_SFT_INVALID, 0};
-      operands[3].vas = ARM64_VAS_INVALID;
-      operands[3].ext = ARM64_EXT_INVALID;
-      operands[3].vector_index = -1;
       break;
     case Opcode::AArch64_CBNZW:
       [[fallthrough]];

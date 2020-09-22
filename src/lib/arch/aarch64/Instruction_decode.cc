@@ -305,35 +305,34 @@ void Instruction::decode() {
   if(metadata.id == ARM64_INS_PTEST) {
     isPredicate_ = true;
   }
-  if(metadata.id == ARM64_INS_ADDVL || metadata.id == ARM64_INS_LD1RW   || 
-     metadata.id == ARM64_INS_LD1W  || metadata.id == ARM64_INS_WHILELO || 
-     metadata.id == ARM64_INS_PTRUE ||
-     (1328 < metadata.opcode && metadata.opcode < 1335)        || 
-     (825 < metadata.opcode && metadata.opcode < 838)           ||
-     metadata.id == ARM64_INS_ST1W  || metadata.id == ARM64_INS_PTEST   ||
-     (705 < metadata.opcode && metadata.opcode < 720)                   ||
-     metadata.id == ARM64_INS_FDUP  ||
-     (1203 < metadata.opcode && metadata.opcode < 1207)                 ||
-     (1625 < metadata.opcode && metadata.opcode < 1635)                 ||
-     (1213 < metadata.opcode && metadata.opcode < 1217)                 ||
-     (1608 < metadata.opcode && metadata.opcode < 1612)                 ||
-     (903 < metadata.opcode && metadata.opcode < 910)                 ||
-     (244 < metadata.opcode && metadata.opcode < 252)                 ||
-     (2920 < metadata.opcode && metadata.opcode < 2926)                 ||
-     (946 < metadata.opcode && metadata.opcode < 950)                  ||
-     metadata.id == ARM64_INS_FMSB || metadata.opcode == 2648                 ||
-     (781 < metadata.opcode && metadata.opcode < 785)                 ||
-     (1446 < metadata.opcode && metadata.opcode < 1450)                 ||
-     (881 < metadata.opcode && metadata.opcode < 888)                 ||
-     (1418 < metadata.opcode && metadata.opcode < 1431) ||
-     metadata.id == ARM64_INS_ST1D || metadata.id == ARM64_INS_LD1D || 
-     metadata.id == ARM64_INS_LD1RD || metadata.id == ARM64_INS_PUNPKHI || 
-     metadata.id == ARM64_INS_PUNPKLO ||
+  if(metadata.id == ARM64_INS_ADDVL   || metadata.id == ARM64_INS_FDUP    ||
+     metadata.id == ARM64_INS_FMSB    || metadata.id == ARM64_INS_LD1RD   ||
+     metadata.id == ARM64_INS_LD1RW   || metadata.id == ARM64_INS_LD1D    ||
+     metadata.id == ARM64_INS_LD1W    || metadata.id == ARM64_INS_PTEST   ||
+     metadata.id == ARM64_INS_PTRUE   || metadata.id == ARM64_INS_ST1D    ||
+     metadata.id == ARM64_INS_ST1W    || metadata.id == ARM64_INS_PUNPKHI || 
+     metadata.id == ARM64_INS_PUNPKLO || metadata.id == ARM64_INS_UZP1    ||
+     metadata.id == ARM64_INS_WHILELO ||
+     (244 < metadata.opcode && metadata.opcode < 252)   ||
+     (705 < metadata.opcode && metadata.opcode < 720)   ||
+     (781 < metadata.opcode && metadata.opcode < 785)   ||
+     (825 < metadata.opcode && metadata.opcode < 838)   ||
+     (881 < metadata.opcode && metadata.opcode < 888)   ||
+     (903 < metadata.opcode && metadata.opcode < 910)   ||
+     (946 < metadata.opcode && metadata.opcode < 950)   ||
      (1125 < metadata.opcode && metadata.opcode < 1133) ||
-     metadata.id == ARM64_INS_UZP1 ||
+     (1195 < metadata.opcode && metadata.opcode < 1199) ||
+     (1203 < metadata.opcode && metadata.opcode < 1207) ||
+     (1213 < metadata.opcode && metadata.opcode < 1217) ||
+     (1328 < metadata.opcode && metadata.opcode < 1335) ||
+     (1418 < metadata.opcode && metadata.opcode < 1431) ||
+     (1446 < metadata.opcode && metadata.opcode < 1450) ||
+     (1625 < metadata.opcode && metadata.opcode < 1635) ||
+     (1608 < metadata.opcode && metadata.opcode < 1612) ||
+     (metadata.opcode == 2648) ||
+     (2920 < metadata.opcode && metadata.opcode < 2926) ||
      (3007 < metadata.opcode && metadata.opcode < 3016) ||
-     (3037 < metadata.opcode && metadata.opcode < 3046) ||
-     (1195 < metadata.opcode && metadata.opcode < 1199)){
+     (3037 < metadata.opcode && metadata.opcode < 3046) ){
        isSVE_ = true;
   }
 }

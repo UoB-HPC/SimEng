@@ -75,9 +75,6 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   /** The instruction generating an exception. */
   Instruction& instruction_;
 
-  /** The addresses accessed during the system call. */
-  std::vector<MemoryAccessTarget> addresses;
-
   /** The core model object. */
   const Core& core;
 

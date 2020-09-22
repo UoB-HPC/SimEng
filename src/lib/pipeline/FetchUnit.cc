@@ -26,7 +26,6 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
 FetchUnit::~FetchUnit() { delete[] fetchBuffer_; }
 
 void FetchUnit::tick() {  
-  // std::cout << "FETCH output: ";
   if (output_.isStalled()) {
     return;
   }
@@ -100,8 +99,6 @@ void FetchUnit::tick() {
     auto bytesRead = isa_.predecode(buffer + bufferOffset, bufferedBytes_, pc_,
                                     prediction, macroOp);
 
-    // std::cout << std::hex << pc_ << std::dec << ", ";
-
     // If predecode fails, bail and wait for more data
     if (bytesRead == 0) {
       assert(bufferedBytes_ < isa_.getMaxInstructionSize() &&
@@ -115,10 +112,10 @@ void FetchUnit::tick() {
     bufferOffset += bytesRead;
     bufferedBytes_ -= bytesRead;
 
-    // if(macroOp[0]->isBranch()) {
-      prediction = branchPredictor_.predict(macroOp[0]);
-      macroOp[0]->setBranchPrediction(prediction);
-    // }
+    // Create brnach prediction after identifing instruction type
+    // (e.g. RET, BL, etc).
+    prediction = branchPredictor_.predict(macroOp[0]);
+    macroOp[0]->setBranchPrediction(prediction);
 
     if (!prediction.taken) {
       // Predicted as not taken; increment PC to next instruction
@@ -147,8 +144,6 @@ void FetchUnit::tick() {
       break;
     }
   }
-
-  // std::cout << std::endl;
 
   if (bufferedBytes_ > 0) {
     // Move start of fetched data to beginning of fetch buffer

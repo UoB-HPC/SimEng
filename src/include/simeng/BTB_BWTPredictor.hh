@@ -6,23 +6,25 @@
 #include <stack>
 #include <deque>
 #include <tuple>
+#include <unordered_map>
 
 namespace simeng {
 
-/** A Branch Target Buffer based branch predictor. Keeps an internal BTB with
- * previously seen branch target buffer addresses. */
-class BTB_BTWPredictor : public BranchPredictor {
+/** An A64FX based branch predictor containing a Branch Target Buffer,
+ * a Branch Weight Table, and a Return Address Stack implementation. */
+class BTB_BWTPredictor : public BranchPredictor {
  public:
-  /** Construct a BTB/BTW predictor, with 2^bits entries. */
-  BTB_BTWPredictor(uint8_t bits, uint8_t associative);
+  /** Construct a BTB/BWT predictor, with 2^bits rows and a 
+   * number of entires per row defined by associative. */
+  BTB_BWTPredictor(uint8_t bits, uint8_t associative);
 
-  /** Generate a branch prediction for the supplied instruction address. Finds
-   * the corresponding BTB entry and returns a "taken" prediction with the
-   * stored target. If no entry is found, predicts "not taken". */
+  /** Generate a branch prediction for the supplied instruction address.
+   * Use a combination of a BTB entry, a global history, and an agreement
+   * policy. */
   BranchPrediction predict(std::shared_ptr<Instruction> uop) override;
 
   /** Update the BTB entry for the supplied instruction address with the taken
-   * state and targt address. */
+   * state and targt address. Also update the global state of the predictor*/
   void update(std::shared_ptr<Instruction> uop, bool taken,
               uint64_t targetAddress) override;
 
@@ -59,6 +61,15 @@ class BTB_BTWPredictor : public BranchPredictor {
 
   /** A return address stack */
   std::stack<uint64_t> ras;
+
+  /** Records occupied entries in BTB. */
+  std::vector<std::vector<uint64_t>> touched;
+
+  /** Records latest used associative entry of a giving BTB row. */
+  std::vector<uint8_t> associativeIndex;
+
+  /** Records mapping between an instruction and a BTB entry. */
+  std::unordered_map<uint64_t, std::pair<uint64_t, uint8_t>> mappings;
 
   /** Generate a BTB lookup hash for the specified address by trimming the
    * lowest `bits` bits. */

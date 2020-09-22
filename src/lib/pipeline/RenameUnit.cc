@@ -18,17 +18,8 @@ RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
       freeRegistersAvailable_(registerTypes) {}
 
 void RenameUnit::tick() {
-  // std::cout << "RENAME output: ";
   if (output_.isStalled()) {
     input_.stall(true);
-    // for(int i = 0; i < output_.getWidth(); i++) {
-    //   if(output_.getHeadSlots()[i] != nullptr) {
-    //     std::cout << std::hex << output_.getHeadSlots()[i]->getInstructionAddress() << std::dec << ", ";
-    //   } else {
-    //     std::cout << "x, ";
-    //   }
-    // }
-    // std::cout << std::endl;
     return;
   }
   
@@ -47,25 +38,8 @@ void RenameUnit::tick() {
     if (reorderBuffer_.getFreeSpace() == 0) {
       input_.stall(true);
       robStalls_++;
-      // for(int i = 0; i < output_.getWidth(); i++) {
-      //   if(output_.getTailSlots()[i] != nullptr) {
-      //     std::cout << std::hex << output_.getTailSlots()[i]->getInstructionAddress() << std::dec << ", ";
-      //   } else {
-      //     std::cout << "x, ";
-      //   }
-      // }
-      // std::cout << std::endl;
       return;
     }
-
-    // if(uop->isLoad() || uop->isStore()) {
-    //   if(reorderBuffer_.getFreeSpace() < uop->getStallCycles()) {
-    //     input_.stall(true);
-    //     robStalls_++;
-    //     break;
-    //   }
-    // }
-
     if (uop->exceptionEncountered()) {
       // Exception; place in ROB, mark as ready, and remove from pipeline
       reorderBuffer_.reserve(uop);
@@ -82,28 +56,12 @@ void RenameUnit::tick() {
       if (lsq_.getLoadQueueSpace() == 0) {
         lqStalls_++;
         input_.stall(true);
-        // for(int i = 0; i < output_.getWidth(); i++) {
-        //   if(output_.getTailSlots()[i] != nullptr) {
-        //     std::cout << std::hex << output_.getTailSlots()[i]->getInstructionAddress() << std::dec << ", ";
-        //   } else {
-        //     std::cout << "x, ";
-        //   }
-        // }
-        // std::cout << std::endl;
         return;
       }
     } else if (isStore) {
       if (lsq_.getStoreQueueSpace() == 0) {
         sqStalls_++;
         input_.stall(true);
-        // for(int i = 0; i < output_.getWidth(); i++) {
-        //   if(output_.getTailSlots()[i] != nullptr) {
-        //     std::cout << std::hex << output_.getTailSlots()[i]->getInstructionAddress() << std::dec << ", ";
-        //   } else {
-        //     std::cout << "x, ";
-        //   }
-        // }
-        // std::cout << std::endl;
         return;
       }
     }
@@ -124,14 +82,6 @@ void RenameUnit::tick() {
         // Not enough free registers available for this uop
         input_.stall(true);
         allocationStalls_++;
-        // for(int i = 0; i < output_.getWidth(); i++) {
-        //   if(output_.getTailSlots()[i] != nullptr) {
-        //     std::cout << std::hex << output_.getTailSlots()[i]->getInstructionAddress() << std::dec << ", ";
-        //   } else {
-        //     std::cout << "x, ";
-        //   }
-        // }
-        // std::cout << std::endl;
         return;
       }
       freeRegistersAvailable_[reg.type]--;
@@ -176,15 +126,6 @@ void RenameUnit::tick() {
 
     output_.getTailSlots()[slot] = std::move(uop);
   }
-  
-  // for(int i = 0; i < output_.getWidth(); i++) {
-  //   if(output_.getTailSlots()[i] != nullptr) {
-  //     std::cout << std::hex << output_.getTailSlots()[i]->getInstructionAddress() << std::dec << ", ";
-  //   } else {
-  //     std::cout << "x, ";
-  //   }
-  // }
-  // std::cout << std::endl;
 }
 
 uint64_t RenameUnit::getAllocationStalls() const { return allocationStalls_; }

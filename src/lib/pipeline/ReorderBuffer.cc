@@ -25,13 +25,9 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   if(insn->isSVC()) {
     svc_insns.push_back(insn);
   }
-  // if(insn->isLoad() || insn->isStore()) { 
-  //   maxSize_ -= (insn->getStallCycles() - 1);
-  // }
 }
 
 unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {  
-  // std::cout << "ROB output: ";
   shouldFlush_ = false;
   size_t maxCommits =
       std::min(static_cast<size_t>(maxCommitSize), buffer_.size());
@@ -39,24 +35,11 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
   unsigned int n;
   for (n = 0; n < maxCommits; n++) {
     auto& uop = buffer_[0];
-    // std::cout << std::hex << uop->getInstructionAddress() << std::dec << "|";
     if (!uop->canCommit()) {
       break;
     }
-    // std::cout << std::hex << uop->getInstructionAddress() << std::dec << ", ";
-
-    // if(uop->isLoad() || uop->isStore()) {
-    //   if((maxCommits - n) < uop->getStallCycles()){
-    //     break;
-    //   }
-    // }
 
     instructionsCommitted_++;
-
-    // if(uop->isLoad() || uop->isStore()) {
-    //   n += (uop->getStallCycles() - 1);
-    //   maxSize_ += (uop->getStallCycles() - 1);
-    // }
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);
@@ -64,7 +47,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
         svc_insns.pop_front();
       }
       buffer_.pop_front();
-      // std::cout << std::endl;
       return n + 1;
     }
 
@@ -118,7 +100,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
           }
         }
         buffer_.pop_front();
-        // std::cout << std::endl;
         return n + 1;
       }
     } else if (uop->isLoad()) {
@@ -129,7 +110,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
     buffer_.pop_front();
   }
-  // std::cout << std::endl;
   return n;
 }
 
@@ -141,10 +121,6 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
     if (uop->getSequenceId() <= afterSeqId) {
       break;
     }
-
-    // if(uop->isLoad() || uop->isStore()) {
-    //   maxSize_ += (uop->getStallCycles() - 1);
-    // }
 
     for (const auto& reg : uop->getDestinationRegisters()) {
       rat_.rewind(reg);

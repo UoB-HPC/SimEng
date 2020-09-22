@@ -1,17 +1,10 @@
-#include "simeng/BTB_BTWPredictor.hh"
+#include "simeng/BTB_BWTPredictor.hh"
 #include <iostream>
 #include <cassert>
-#include <unordered_map>
-
-std::vector<std::vector<uint64_t>> touchedA(1 << 11, *(new std::vector<uint64_t>(4)));
-
-std::vector<uint8_t> associativeIndex(1 << 11, 0);
-
-std::unordered_map<uint64_t, std::pair<uint64_t, uint8_t>> mappings;
 
 namespace simeng {
 
-BTB_BTWPredictor::BTB_BTWPredictor(uint8_t bits, uint8_t associative)
+BTB_BWTPredictor::BTB_BWTPredictor(uint8_t bits, uint8_t associative)
     : bits(bits),
       width(associative),
       mask((1 << bits) - 1),
@@ -21,26 +14,24 @@ BTB_BTWPredictor::BTB_BTWPredictor(uint8_t bits, uint8_t associative)
       pht(1 << bits, 1) {
   thr = 0;
   ghrUnsigned = 0;
-  for(int i = 0; i < bits; i++){
-    ghrSigned.push_back(0);
-    bwt.push_back(0);
-  }
+  touched = std::vector<std::vector<uint64_t>>(1 << bits, *(new std::vector<uint64_t>(associative)));
+  associativeIndex = std::vector<uint8_t>(1 << 11, 0);
 }
 
-BranchPrediction BTB_BTWPredictor::predict(std::shared_ptr<Instruction> uop) {
+BranchPrediction BTB_BWTPredictor::predict(std::shared_ptr<Instruction> uop) {
   auto instructionAddress = uop->getInstructionAddress();
   std::pair<uint64_t, uint8_t>& btbIndex = mappings[instructionAddress];
 
   BranchPrediction prediction;
   // Provide new BTB entry if the branch doesn't have one or it's 
   // previous allocation has been replaced.
-  if(touchedA[btbIndex.first][btbIndex.second] != instructionAddress) {
+  if(touched[btbIndex.first][btbIndex.second] != instructionAddress) {
     auto addressHash = hash(instructionAddress);
     btbIndex.first = addressHash;
     // Increment secondary index for oldest-replacement scheme
     btbIndex.second = (++associativeIndex[addressHash]) % width;
     mappings[instructionAddress] = btbIndex;
-    touchedA[btbIndex.first][btbIndex.second] = instructionAddress;
+    touched[btbIndex.first][btbIndex.second] = instructionAddress;
     std::get<2>(btb[btbIndex.first][btbIndex.second]) = -1;
   }
 
@@ -50,7 +41,6 @@ BranchPrediction BTB_BTWPredictor::predict(std::shared_ptr<Instruction> uop) {
     ras.pop();
     prediction =  {true, target};
   } else {
-    // uint64_t history = btb[btbIndex.first][btbIndex.second].second;
     uint64_t phtIndex = ghrUnsigned ^ (instructionAddress & mask);
     std::get<1>(btb[btbIndex.first][btbIndex.second]) = phtIndex;
 
@@ -73,13 +63,10 @@ BranchPrediction BTB_BTWPredictor::predict(std::shared_ptr<Instruction> uop) {
   return prediction;
 }
 
-void BTB_BTWPredictor::update(std::shared_ptr<Instruction> uop, bool taken,
+void BTB_BWTPredictor::update(std::shared_ptr<Instruction> uop, bool taken,
                           uint64_t targetAddress) {
   auto instructionAddress = uop->getInstructionAddress();
   std::pair<uint64_t, uint8_t>& btbIndex = mappings[instructionAddress];
-
-  // Update branch's bitlength length history in btb entry.
-  // uint64_t history = ((btb[btbIndex.first][btbIndex.second].second << 1) | taken) & mask;
 
   // Update btb entry
   if(taken) std::get<0>(btb[btbIndex.first][btbIndex.second]) = targetAddress;
@@ -94,17 +81,13 @@ void BTB_BTWPredictor::update(std::shared_ptr<Instruction> uop, bool taken,
   } else {
     pht[phtIndex] = pht[phtIndex] == 0 ? 0 : pht[phtIndex] - 1;
   }
-  // pht[phtIndex] += ((2*taken)-1);
-  // Bound to 2 bit saturation.
-  // if(pht[phtIndex] < 0) { pht[phtIndex] = 0; }
-  // if(pht[phtIndex] > 4) { pht[phtIndex] = 4; }
   
   // Update bitlength history registers.
   thr = targetAddress & mask;
   ghrUnsigned = ((ghrUnsigned << 1) | taken) & mask;
 }
 
-uint64_t BTB_BTWPredictor::hash(uint64_t instructionAddress) const {
+uint64_t BTB_BWTPredictor::hash(uint64_t instructionAddress) const {
   uint64_t combination = thr ^ ghrUnsigned;
   return combination ^ (instructionAddress & mask);
 }

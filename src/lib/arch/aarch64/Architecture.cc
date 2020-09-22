@@ -24,11 +24,10 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
   // Generate zero-indexed system register map
   systemRegisterMap_[ARM64_SYSREG_DCZID_EL0] = systemRegisterMap_.size();
   systemRegisterMap_[0xda20] = systemRegisterMap_.size();  // FPCR
-  systemRegisterMap_[0xda21] = systemRegisterMap_.size();
+  systemRegisterMap_[0xda21] = systemRegisterMap_.size();  // FPSR
   systemRegisterMap_[0xde82] = systemRegisterMap_.size();  // TPIDR_EL0
   systemRegisterMap_[0xc000] = systemRegisterMap_.size();  // MIDR_EL1
   systemRegisterMap_[0xdf14] = systemRegisterMap_.size();
-  systemRegisterMap_[ARM64_SYSREG_ZCR_EL1] = systemRegisterMap_.size();
 }
 Architecture::~Architecture() { cs_close(&capstoneHandle); }
 
@@ -242,7 +241,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
       }
     }
 
-    // std::cout << "=== " << instructionAddress << " ===" << std::endl;
     // Create and cache an instruction using the metadata and latencies
     auto result = decodeCache.insert(
         {insn,
@@ -300,11 +298,6 @@ ProcessStateChange Architecture::getInitialState() const {
   changes.modifiedRegisters.push_back(
       {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)});
   changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
-
-  // Set the initial value of VL to LEN = 4
-  changes.modifiedRegisters.push_back(
-      {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_ZCR_EL1)});
-  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(4));
 
   return changes;
 }
@@ -658,7 +651,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_ST1D_IMM:
     case Opcode::AArch64_ST1W:
     case Opcode::AArch64_ST1W_IMM:
-      return {9, 1};
+      return {11, 1};
   }
 
   // Assume single-cycle, non-blocking for all other instructions

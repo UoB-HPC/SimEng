@@ -35,6 +35,7 @@ class A64FXPortAllocator : public PortAllocator {
    * station sizes during execution. */
   void setRSSizeGetter(std::function<void(std::vector<uint64_t>&)> rsSizes) override;
 
+  /** Tick the port allocator to allow it to process internal tasks. */
   void tick() override;
 
  private:

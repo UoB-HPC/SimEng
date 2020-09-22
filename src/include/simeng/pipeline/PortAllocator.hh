@@ -34,6 +34,7 @@ class PortAllocator {
    * station sizes during execution. */
   virtual void setRSSizeGetter(std::function<void(std::vector<uint64_t>&)> rsSizes) = 0;
 
+  /** Tick the port allocator to allow it to process internal tasks. */
   virtual void tick() = 0;
 };
 

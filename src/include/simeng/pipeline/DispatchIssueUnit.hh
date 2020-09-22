@@ -28,12 +28,6 @@ struct ReservationStation {
   uint64_t currentSize;
   /** Issue ports belonging to reservation station */
   std::vector<ReservationStationPort> ports;
-  /** Queue of instructions that are stalled due to 
-   * reservation station being at capacity */
-  std::deque<std::pair<uint8_t, std::shared_ptr<Instruction>>> stalled;
-  /** Paused dispatching to allow for the flow of an 
-   * instruction that represents multiple micro-ops. */
-  int64_t pausedId = -1;
 };
 
 /** An entry in the reservation station. */
@@ -60,7 +54,7 @@ class DispatchIssueUnit {
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
       std::vector<std::pair<uint8_t, uint64_t>> rsArrangment, 
-      uint8_t dispatchRate);
+      uint8_t dispatchRate = UINT8_MAX);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -128,6 +122,8 @@ class DispatchIssueUnit {
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;
 
+  /** A buffer of stalled instructions due to lacking free entires in reservation 
+   * stations. Can hold an amount of instructions equal to the input buffer width. */
   std::deque<std::shared_ptr<Instruction>> stalledBuffer_;
 
   /** The number of instructions that can be dispatched to a reservation station per cycle. */

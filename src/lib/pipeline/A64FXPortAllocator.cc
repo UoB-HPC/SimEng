@@ -294,10 +294,6 @@ void A64FXPortAllocator::setRSSizeGetter(
 void A64FXPortAllocator::tick() {
   freeEntries_.clear();
   rsSizes_(freeEntries_);
-  // for(int i = 0; i < freeEntries_.size(); i++){
-  //   std::cout << i << ": " << freeEntries_[i] << "|";
-  // }
-  // std::cout << std::endl;
 }
 
 }  // namespace pipeline

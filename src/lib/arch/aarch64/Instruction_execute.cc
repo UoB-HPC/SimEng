@@ -339,9 +339,9 @@ void Instruction::execute() {
     case Opcode::AArch64_ADDVL_XXI: {  // addvl xd, xn, #imm
       auto x = operands[0].get<uint64_t>();
       auto y = static_cast<int64_t>(metadata.operands[2].imm);
-      auto VL = operands[1].get<uint64_t>();
+      const uint64_t VL_bits = 512;
       // convert VL from LEN (number of 128-bits) to bytes
-      VL = (VL * 128) / 8;
+      const uint64_t VL = VL_bits / 8;
       results[0] = x + (VL * y);
       break;
     }

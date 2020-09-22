@@ -146,10 +146,6 @@ class Linux {
   /** writev syscall: write buffers to a file. */
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
-  /** sched_getaffinity syscall: writes the affinity mask of the process whose 
-   * ID is pid into the cpu_set_t structure pointed to by mask. */
-  int64_t schedGetAffinity(int64_t pid, uint64_t cpusetsize, cpu_set_t *mask);
-
   /** The maximum size of a filesystem path. */
   static const size_t LINUX_PATH_MAX = 4096;
 
