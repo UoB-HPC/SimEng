@@ -52,14 +52,15 @@ void RenameUnit::tick() {
     // If it's a memory op, make sure there's space in the respective queue
     bool isLoad = uop->isLoad();
     bool isStore = uop->isStore();
+    uint8_t entries = uop->isPair() ? 2 : 1;
     if (isLoad) {
-      if (lsq_.getLoadQueueSpace() == 0) {
+      if (lsq_.getLoadQueueSpace() < entries) {
         lqStalls_++;
         input_.stall(true);
         return;
       }
     } else if (isStore) {
-      if (lsq_.getStoreQueueSpace() == 0) {
+      if (lsq_.getStoreQueueSpace() < entries) {
         sqStalls_++;
         input_.stall(true);
         return;
@@ -94,8 +95,6 @@ void RenameUnit::tick() {
         return;
       }
     }
-
-    // input_.stall(false);
 
     // Allocate source registers
     auto& sourceRegisters = uop->getOperandRegisters();

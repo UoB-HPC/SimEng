@@ -164,6 +164,8 @@ class Instruction {
    * executing it. */
   uint16_t getStallCycles() const;
 
+  bool isPair() const;
+
  protected:
   /** Whether an exception has been encountered. */
   bool exceptionEncountered_ = false;
@@ -205,6 +207,8 @@ class Instruction {
   /** The number of cycles this instruction will stall the unit executing it
    * for. */
   uint16_t stallCycles_ = 1;
+
+  bool pair_ = false;
 };
 
 }  // namespace simeng

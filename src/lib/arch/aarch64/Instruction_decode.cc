@@ -335,6 +335,10 @@ void Instruction::decode() {
      (3037 < metadata.opcode && metadata.opcode < 3046) ){
        isSVE_ = true;
   }
+
+  if(metadata.id == ARM64_INS_LDP || metadata.id == ARM64_INS_STP) {
+    pair_ = true;
+  }
 }
 
 void Instruction::nyi() {

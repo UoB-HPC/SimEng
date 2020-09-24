@@ -83,37 +83,17 @@ unsigned int LoadStoreQueue::getCombinedSpace() const {
   return maxCombinedSpace_ - loadQueue_.size() - storeQueue_.size();
 }
 
-bool LoadStoreQueue::withinLoadWindow(const std::shared_ptr<Instruction>& insn) const {
-  if(insn->getSequenceId() <= loadWindowSeq_) {
-    return true;
-  }
-  return false;
-}
-bool LoadStoreQueue::withinStoreWindow(const std::shared_ptr<Instruction>& insn) const {
-  if(insn->getSequenceId() <= storeWindowSeq_) {
-    return true;
-  }
-  return false;
-}
-
 void LoadStoreQueue::addLoad(const std::shared_ptr<Instruction>& insn) {
-  // uint8_t entries = insn->isPair() ? 2 : 1;
-  // for(int i = 0; i < entries; i++){
-    if(loadQueue_.size() - 1 == loadWindow_) {
-      loadWindowSeq_ = insn->getSequenceId();
-    }
+  uint8_t entries = insn->isPair() ? 2 : 1;
+  for(int i = 0; i < entries; i++){
     loadQueue_.push_back(insn);
-  // }
+  }
 }
 void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
-  // uint8_t entries = insn->isPair() ? 2 : 1;
-  // for(int i = 0; i < entries; i++){
-    if(storeQueue_.size() - 1 == storeWindow_) {
-      storeWindowSeq_ = insn->getSequenceId();
-    }
+  uint8_t entries = insn->isPair() ? 2 : 1;
+  for(int i = 0; i < entries; i++){
     storeQueue_.push_back(insn);
-  // }
-  // addLoad(insn);
+  }
 }
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
@@ -163,28 +143,8 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
     }
   }
 
-  // if(uop->isPair()) storeQueue_.pop_front();
+  if(uop->isPair()) storeQueue_.pop_front();
   storeQueue_.pop_front();
-  // storeWindowSeq_ = UINT64_MAX;
-  // if(storeQueue_.size() > storeWindow_) {
-  //   storeWindowSeq_ = storeQueue_[storeWindow_]->getSequenceId();
-  // }
-
-  // auto it = loadQueue_.begin();
-  // while (it != loadQueue_.end()) {
-  //   auto& entry = *it;
-  //   if (entry->isStore()) {
-  //     if(uop->isPair()) it = loadQueue_.erase(it);
-  //     it = loadQueue_.erase(it);
-  //     break;
-  //   } else {
-  //     it++;
-  //   }
-  // }
-  // loadWindowSeq_ = UINT64_MAX;
-  // if(loadQueue_.size() > loadWindow_) {
-  //   loadWindowSeq_ = loadQueue_[loadWindow_]->getSequenceId();
-  // }
 
   return violatingLoad_ != nullptr;
 }
@@ -201,17 +161,13 @@ void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
     auto& entry = *it;
     if (entry->isLoad()) {
       requestedLoads_.erase(entry->getSequenceId()); 
-      // if(uop->isPair()) it = loadQueue_.erase(it);     
+      if(uop->isPair()) it = loadQueue_.erase(it);
       it = loadQueue_.erase(it);
       break;
     } else {
       it++;
     }
   }
-  // loadWindowSeq_ = UINT64_MAX;
-  // if(loadQueue_.size() > loadWindow_) {
-  //   loadWindowSeq_ = loadQueue_[loadWindow_]->getSequenceId();
-  // }
 }
 
 void LoadStoreQueue::purgeFlushed() {
@@ -220,31 +176,23 @@ void LoadStoreQueue::purgeFlushed() {
     auto& entry = *it;
     if (entry->isFlushed()) {
       requestedLoads_.erase(entry->getSequenceId());
-      // if(entry->isPair()) it = loadQueue_.erase(it);
+      if(entry->isPair()) it = loadQueue_.erase(it);
       it = loadQueue_.erase(it);
     } else {
       it++;
     }
   }
-  // loadWindowSeq_ = UINT64_MAX;
-  // if(loadQueue_.size() > loadWindow_) {
-  //   loadWindowSeq_ = loadQueue_[loadWindow_]->getSequenceId();
-  // }
 
   it = storeQueue_.begin();
   while (it != storeQueue_.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {
-      // if(entry->isPair()) it = storeQueue_.erase(it);
+      if(entry->isPair()) it = storeQueue_.erase(it);
       it = storeQueue_.erase(it);
     } else {
       it++;
     }
   }
-  // storeWindowSeq_ = UINT64_MAX;
-  // if(storeQueue_.size() > storeWindow_) {
-  //   storeWindowSeq_ = storeQueue_[storeWindow_]->getSequenceId();
-  // }
 
   auto it2 = requestQueue_.begin();
   while (it2 != requestQueue_.end()) {

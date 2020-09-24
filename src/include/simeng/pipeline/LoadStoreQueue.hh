@@ -49,10 +49,6 @@ class LoadStoreQueue {
    * is the sum of the space in both queues. */
   unsigned int getTotalSpace() const;
 
-  bool withinLoadWindow(const std::shared_ptr<Instruction>& insn) const;
-
-  bool withinStoreWindow(const std::shared_ptr<Instruction>& insn) const;
-
   /** Add a load uop to the queue. */
   void addLoad(const std::shared_ptr<Instruction>& insn);
 
@@ -109,14 +105,6 @@ class LoadStoreQueue {
   /** The maximum number of stores that can be in-flight. Undefined if this is a
    * combined queue. */
   unsigned int maxStoreQueueSpace_;
-
-  unsigned int loadWindow_ = 39;
-
-  unsigned int storeWindow_ = 23;
-
-  uint64_t loadWindowSeq_ = UINT64_MAX;
-
-  uint64_t storeWindowSeq_ = UINT64_MAX;
 
   /** The maximum number of memory ops that can be in-flight. Undefined if this
    * is a split queue. */
