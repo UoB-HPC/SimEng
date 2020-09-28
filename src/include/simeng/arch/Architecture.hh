@@ -75,7 +75,7 @@ class Architecture {
    * Returns a smart pointer to an `ExceptionHandler` which may be ticked until
    * the exception is resolved, and results then obtained. */
   virtual std::shared_ptr<ExceptionHandler> handleException(
-      std::shared_ptr<Instruction>& instruction, const Core& core,
+      const std::shared_ptr<Instruction>& instruction, const Core& core,
       MemoryInterface& memory) const = 0;
 
   /** Retrieve the initial process state. */

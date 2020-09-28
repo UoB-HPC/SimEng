@@ -32,7 +32,6 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(isASIMD, bool());
   MOCK_CONST_METHOD0(isRET, bool());
   MOCK_CONST_METHOD0(isBL, bool());
-  MOCK_CONST_METHOD0(isSVC, bool());
   MOCK_CONST_METHOD0(isSVE, bool());
   MOCK_CONST_METHOD0(isPredicate, bool());
   MOCK_CONST_METHOD0(getGroup, uint16_t());

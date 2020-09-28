@@ -83,9 +83,6 @@ class ReorderBuffer {
 
   /** The number of instructions committed. */
   uint64_t instructionsCommitted_ = 0;
-
-  /** The non-retired svc instructions. */
-  std::deque<std::shared_ptr<Instruction>> svc_insns;
 };
 
 }  // namespace pipeline

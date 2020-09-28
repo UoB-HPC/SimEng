@@ -56,7 +56,7 @@ class Core : public simeng::Core {
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
-  void raiseException(std::shared_ptr<Instruction>& instruction);
+  void raiseException(const std::shared_ptr<Instruction>& instruction);
 
   /** Handle an exception raised during the cycle. */
   void handleException();

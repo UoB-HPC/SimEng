@@ -159,7 +159,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 }
 
-void Core::handleException(std::shared_ptr<Instruction>& instruction) {
+void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
   exceptionHandler_ = isa_.handleException(instruction, *this, dataMemory_);
   processExceptionHandler();
 }

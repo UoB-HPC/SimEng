@@ -16,7 +16,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
  public:
   /** Create an exception handler with references to the instruction that caused
    * the exception, along with the core model object and process memory. */
-  ExceptionHandler(std::shared_ptr<simeng::Instruction>& instruction,
+  ExceptionHandler(const std::shared_ptr<simeng::Instruction>& instruction,
                    const Core& core, MemoryInterface& memory,
                    kernel::Linux& linux);
 
@@ -73,7 +73,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   bool fatal();
 
   /** The instruction generating an exception. */
-  Instruction& instruction_;
+  const Instruction& instruction_;
 
   /** The core model object. */
   const Core& core;

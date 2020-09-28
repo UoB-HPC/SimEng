@@ -49,7 +49,7 @@ class Core : public simeng::Core {
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
-  void raiseException(std::shared_ptr<Instruction>& instruction);
+  void raiseException(const std::shared_ptr<Instruction>& instruction);
 
   /** Handle an exception raised during the cycle. */
   void handleException();
@@ -73,7 +73,7 @@ class Core : public simeng::Core {
   void applyStateChange(const arch::ProcessStateChange& change);
 
   /** Handle requesting/execution of a load instruction. */
-  void handleLoad(std::shared_ptr<Instruction>& instruction);
+  void handleLoad(const std::shared_ptr<Instruction>& instruction);
 
   /** The process memory. */
   MemoryInterface& dataMemory_;

@@ -38,7 +38,7 @@ class Architecture : public arch::Architecture {
    * Returns a smart pointer to an `ExceptionHandler` which may be ticked until
    * the exception is resolved, and results then obtained. */
   std::shared_ptr<arch::ExceptionHandler> handleException(
-      std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
+      const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
       MemoryInterface& memory) const override;
 
   /** Retrieve the initial process state. */

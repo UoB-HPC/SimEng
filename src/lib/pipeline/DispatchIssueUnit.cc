@@ -166,13 +166,8 @@ void DispatchIssueUnit::issue() {
     }
 
     if (queue.size() > 0) {
-    // auto it = queue.begin();
-    // while(it != queue.end()) {
-      // Assign the instruction to the port
-      // auto& uop = *it;
       auto& uop = queue.front();
       issuePorts_[i].getTailSlots()[0] = std::move(uop);
-      // it = queue.erase(it);
       queue.pop_front();
 
       // Inform the port allocator that an instruction issued
@@ -180,7 +175,6 @@ void DispatchIssueUnit::issue() {
       issued++;
       assert(rs.currentSize > 0);
       rs.currentSize--;
-      // break;
     }
   }
 

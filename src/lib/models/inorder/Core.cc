@@ -159,7 +159,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"branch.missrate", branchMissRateStr.str()}};
 }
 
-void Core::raiseException(std::shared_ptr<Instruction>& instruction) {
+void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
   exceptionGenerated_ = true;
   exceptionGeneratingInstruction_ = instruction;
 }
@@ -285,7 +285,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
   }
 }
 
-void Core::handleLoad(std::shared_ptr<Instruction>& instruction) {
+void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
   loadData(instruction);
   instruction->execute();
   if (instruction->exceptionEncountered()) {

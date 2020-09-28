@@ -11,7 +11,7 @@ namespace arch {
 namespace aarch64 {
 
 ExceptionHandler::ExceptionHandler(
-    std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
+    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory, kernel::Linux& linux_)
     : instruction_(*static_cast<Instruction*>(instruction.get())),
       core(core),
@@ -377,7 +377,6 @@ bool ExceptionHandler::readStringThen(char* buffer, uint64_t address,
   if (offset == -1) {
     // First call; trigger read for address 0
     memory_.requestRead({address + offset + 1, 1});
-    instruction_.appendMemoryAddresses({address + offset + 1, 1});
     resumeHandling_ = [=]() {
       return readStringThen(buffer, address, maxLength, then, offset + 1);
     };
@@ -414,7 +413,6 @@ bool ExceptionHandler::readStringThen(char* buffer, uint64_t address,
 
   // Queue up read for next character
   memory_.requestRead({address + offset + 1, 1});
-  instruction_.appendMemoryAddresses({address + offset + 1, 1});
   resumeHandling_ = [=]() {
     return readStringThen(buffer, address, maxLength, then, offset + 1);
   };
@@ -471,7 +469,6 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
     // Request a read of up to 128 bytes
     uint64_t numBytes = std::min<uint64_t>(length, 128);
     memory_.requestRead({ptr, static_cast<uint8_t>(numBytes)}, instruction_.getSequenceId());
-    instruction_.appendMemoryAddresses({ptr, static_cast<uint8_t>(numBytes)});
     resumeHandling_ = [=]() {
       return readBufferThen(ptr, length, then, false);
     };
