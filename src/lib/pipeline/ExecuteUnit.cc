@@ -111,6 +111,11 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
 
   if (uop->isLoad()) {
     uop->generateAddresses();
+    if (uop->exceptionEncountered()) {
+      // Exception; don't pass handle load function
+      raiseException_(uop);
+      return;
+    }
     handleLoad_(uop);
     return;
   } else if (uop->isStore()) {

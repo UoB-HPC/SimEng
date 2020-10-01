@@ -253,6 +253,10 @@ void Core::forwardOperands(const span<Register>& registers,
 }
 
 void Core::readRegisters() {
+  if(decodeToExecuteBuffer_.isStalled()) {
+    return;
+  }
+
   const auto& uop = decodeToExecuteBuffer_.getTailSlots()[0];
   if (uop == nullptr) {
     return;
