@@ -208,9 +208,10 @@ TEST_P(LoadStoreQueueTest, PurgeFlushedStore) {
 
 // Tests that a queue can perform a load
 TEST_P(LoadStoreQueueTest, Load) {
+  loadUop->setSequenceId(1);
   auto queue = getQueue();
 
-  MemoryReadResult completedRead = {addresses[0], data[0]};
+  MemoryReadResult completedRead = {addresses[0], data[0], 1};
   span<MemoryReadResult> completedReads = {&completedRead, 1};
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses()).Times(AtLeast(1));

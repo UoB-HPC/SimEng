@@ -31,24 +31,20 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
 
 // Test that we can write data and it completes after a number of cycles.
 TEST(LatencyMemoryInterfaceTest, VariableWriteData) {
-  /* Create a memory interface with a two cycle integer latency 
-   * and a three cycle floating-point latency */
+  /* Create a memory interface with a two cycle integer latency, 
+  a three cycle floating-point latency, and a four cycle SVE latency */
   uint32_t memoryData = 0;
   simeng::VariableLatencyMemoryInterface memory(
-      reinterpret_cast<char*>(&memoryData), 4, 2, 3, 3);
+      reinterpret_cast<char*>(&memoryData), 4, 2, 3, 4);
   EXPECT_FALSE(memory.hasPendingRequests());
 
   // Write a 32-bit integer value to memory
-  simeng::MemoryAccessTarget target = {0, 4, 0};
+  simeng::MemoryAccessTarget target = {0, 4};
   simeng::RegisterValue value = (uint32_t)0xDEADBEEF;
   memory.requestWrite(target, value);
   EXPECT_TRUE(memory.hasPendingRequests());
 
-  // Tick once - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick again - request should have completed
+  // Tick once - early write removal thus no pending requests
   memory.tick();
   EXPECT_FALSE(memory.hasPendingRequests());
   EXPECT_EQ(memoryData, 0xDEADBEEF);
@@ -59,15 +55,7 @@ TEST(LatencyMemoryInterfaceTest, VariableWriteData) {
   memory.requestWrite(target, value);
   EXPECT_TRUE(memory.hasPendingRequests());
 
-  // Tick once - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick again - request should still be pending
-  memory.tick();
-  EXPECT_TRUE(memory.hasPendingRequests());
-
-  // Tick again - request should have completed
+  // Tick once - early write removal thus no pending requests
   memory.tick();
   EXPECT_FALSE(memory.hasPendingRequests());
   EXPECT_EQ(memoryData, 0x12345678);

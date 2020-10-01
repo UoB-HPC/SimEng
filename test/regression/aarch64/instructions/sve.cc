@@ -119,8 +119,8 @@ TEST_P(InstSve, dups) {
     # check for alias
     mov z6.s, s4
     mov z7.s, s5
-    mov z8.s, #3, lsl #8
-    mov z9.s, #-3, lsl #8
+    mov z8.s, #3
+    mov z9.s, #-3
   )");
 
   CHECK_NEON(0, int32_t, {7, 7, 7, 7, 7, 7, 7, 7,

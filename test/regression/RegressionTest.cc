@@ -87,8 +87,8 @@ void RegressionTest::run(const char* source, const char* triple) {
       createPortAllocator();
 
   // Create the reservationStation-Port mapping relationship
-  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {
-      {0,20}, {1,20}, {2,20}, {3,20}, {4,20}, {5,20}, {6,20}
+  const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {
+      {0,20}, {0,20}, {0,20}, {1,20}, {1,20}, {2,10}, {3,10}, {4,19}
   };
 
   // Create a branch predictor for a pipelined core
