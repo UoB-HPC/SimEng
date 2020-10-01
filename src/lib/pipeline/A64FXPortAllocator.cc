@@ -79,10 +79,6 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
   bool foundRS = false;
   bool foundPort = false;
 
-  // TODO: remove first if statement
-  // if ((instructionGroup & 64) > 0) { // Ensure store foes to EAGB
-  //   rs = 3;
-  //   foundRS = true;
   if(attribute == InstructionAttribute::RSX) {
     // Get difference betwwen free entries of RSE{0|1} and RSA{0|1}
     int difference = (freeEntries_[0] + freeEntries_[1]) - (freeEntries_[2] + freeEntries_[3]);
@@ -194,14 +190,14 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
       A = 2;
       B = 3;
     }
-    if ((freeEntries_[A] > freeEntries_[B]) && (freeEntries_[B] == 0)) { // Table 5
+    if ((freeEntries_[A] > freeEntries_[B]) && (freeEntries_[B] == 0)) { // Table 6
       rs = A;
       foundRS = true;
-    } else if ((freeEntries_[B] > freeEntries_[A]) && (freeEntries_[A] == 0)) { // Table 5
+    } else if ((freeEntries_[B] > freeEntries_[A]) && (freeEntries_[A] == 0)) { // Table 6
       rs = B;
       foundRS = true;
     } else {
-      switch (rowSelection[5] % 2) { // Table 6
+      switch (rowSelection[5] % 2) { // Table 7
           case 0: {
             rs = A;
             foundRS = true;

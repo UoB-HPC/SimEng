@@ -161,6 +161,7 @@ class Instruction {
    * executing it. */
   uint16_t getStallCycles() const;
 
+  /** Check whether this instruction is a LDP/STP operation. */
   bool isPair() const;
 
  protected:
@@ -205,6 +206,7 @@ class Instruction {
    * for. */
   uint16_t stallCycles_ = 1;
 
+  /** Whether this instruction is a LDP/STP operation. */
   bool pair_ = false;
 };
 
