@@ -2226,7 +2226,7 @@ void Instruction::execute() {
                                              //   #imm
       results[0] = memoryData[0];
       results[1] = memoryData[1];
-      results[2] = operands[2].get<uint64_t>() + metadata.operands[3].imm;
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
       break;
     }
     case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]

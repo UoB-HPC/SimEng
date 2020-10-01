@@ -248,6 +248,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // For vector arrangment of 32-bit, post_index immediate is 4
       operands[2].imm = 4;
       break;
+    case Opcode::AArch64_LD1Twov16b:
+      [[fallthrough]];    
+    case Opcode::AArch64_LD1Twov16b_POST:
+      // Fix incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_WRITE;
+      break;
     case Opcode::AArch64_MOVNWi:
       [[fallthrough]];    
     case Opcode::AArch64_MOVNXi:
