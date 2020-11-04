@@ -348,11 +348,11 @@ TEST_P(InstFloat, fcsel64) {
 
 TEST_P(InstFloat, fcvt) {
   initialHeapData_.resize(32);
-  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
-  heap[0] = 1.0;
-  heap[1] = -42.76;
-  heap[2] = -0.125;
-  heap[3] = 321.5;
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = -42.76;
+  dheap[2] = -0.125;
+  dheap[3] = 321.5;
 
   // 32-bit to 64-bit
   RUN_AARCH64(R"(
@@ -387,6 +387,31 @@ TEST_P(InstFloat, fcvt) {
     fcvtzs w1, d1
     fcvtzs w2, d2
     fcvtzs w3, d3
+  )");
+  EXPECT_EQ((getGeneralRegister<int32_t>(0)), 1);
+  EXPECT_EQ((getGeneralRegister<int32_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<int32_t>(2)), 0);
+  EXPECT_EQ((getGeneralRegister<int32_t>(3)), 321);
+
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 1.0;
+  fheap[1] = -42.76;
+  fheap[2] = -0.125;
+  fheap[3] = 321.5;
+
+  // Signed, round to zero
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp s0, s1, [x0]
+    ldp s2, s3, [x0, #8]
+    fcvtzs w0, s0
+    fcvtzs w1, s1
+    fcvtzs w2, s2
+    fcvtzs w3, s3
   )");
   EXPECT_EQ((getGeneralRegister<int32_t>(0)), 1);
   EXPECT_EQ((getGeneralRegister<int32_t>(1)), -42);
@@ -440,6 +465,62 @@ TEST_P(InstFloat, fmadd) {
   )");
   CHECK_NEON(3, double, {7.25, 0.0});
   CHECK_NEON(4, double, {1.0625, 0.0});
+}
+
+TEST_P(InstFloat, fmaxnm){
+  // 64-bit numeric
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 7.5
+    fmaxnm d3, d0, d2
+    fmaxnm d4, d1, d2
+  )");
+  CHECK_NEON(3, double, {7.5, 0.0});
+  CHECK_NEON(4, double, {7.5, 0.0});
+  
+  // 64-bit with NAN
+  initialHeapData_.resize(8);
+  reinterpret_cast<double*>(initialHeapData_.data())[0] = std::nan("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fmov d0, -2.0
+    ldr d1, [x0]
+    fmaxnm d2, d0, d1
+  )");
+  CHECK_NEON(2, double, {-2.0, 0.0});
+}
+
+TEST_P(InstFloat, fminnm){
+  // 64-bit
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 7.5
+    fminnm d3, d0, d2
+    fminnm d4, d1, d2
+  )");
+  CHECK_NEON(3, double, {2.0, 0.0});
+  CHECK_NEON(4, double, {-0.125, 0.0});
+
+  // 64-bit with NAN
+  initialHeapData_.resize(8);
+  reinterpret_cast<double*>(initialHeapData_.data())[0] = std::nan("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fmov d0, 2.0
+    ldr d1, [x0]
+    fminnm d2, d0, d1
+  )");
+  CHECK_NEON(2, double, {2.0, 0.0});
 }
 
 TEST_P(InstFloat, fmov) {

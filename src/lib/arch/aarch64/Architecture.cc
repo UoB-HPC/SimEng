@@ -24,7 +24,10 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
   // Generate zero-indexed system register map
   systemRegisterMap_[ARM64_SYSREG_DCZID_EL0] = systemRegisterMap_.size();
   systemRegisterMap_[0xda20] = systemRegisterMap_.size();  // FPCR
+  systemRegisterMap_[0xda21] = systemRegisterMap_.size();  // FPSR
   systemRegisterMap_[0xde82] = systemRegisterMap_.size();  // TPIDR_EL0
+  systemRegisterMap_[0xc000] = systemRegisterMap_.size();  // MIDR_EL1
+  systemRegisterMap_[0xdf14] = systemRegisterMap_.size();
 }
 Architecture::~Architecture() { cs_close(&capstoneHandle); }
 
@@ -108,7 +111,8 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
   uint16_t numSysRegs = static_cast<uint16_t>(systemRegisterMap_.size());
   return {
       {8, 32},          // General purpose
-      {16, 32},         // Vector
+      {256, 32},        // Vector
+      {32, 17},         // Predicate
       {1, 1},           // NZCV
       {8, numSysRegs},  // System
   };

@@ -51,8 +51,14 @@ Register csRegToRegister(arm64_reg reg) {
     return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_V0)};
   }
 
-  // ARM64_REG_X0 -> +31 are 64-bit (X) registers, reading from the general
-  // file
+  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading 
+  // from the vector file
+  if (reg >= ARM64_REG_Z0) {
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_Z0)};
+  }
+
+  // ARM64_REG_X0 -> +28 are 64-bit (X) registers, reading from the general
+  // file. Excludes #29 (FP) and #30 (LR)
   if (reg >= ARM64_REG_X0) {
     return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_X0)};
   }
@@ -63,9 +69,22 @@ Register csRegToRegister(arm64_reg reg) {
     return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_W0)};
   }
 
-  // ARM64_REG_B0 and above are repeated ranges representing scalar access
-  // specifiers on the vector registers (i.e., B, H, S, D, Q), each covering 32
-  // registers
+  // ARM64_REG_Q0 and above are repeated ranges representing scalar access
+  // specifiers on the vector registers with arrangements Q and S, each 
+  // covering 32 registers
+  if (reg >= ARM64_REG_Q0) {
+    return {RegisterType::VECTOR,
+            static_cast<uint16_t>((reg - ARM64_REG_Q0) % 32)};
+  }
+
+  // ARM64_REG_P0 -> +15 are 256-bit (P) registers. Excludes #16 (FFR).
+  if (reg >= ARM64_REG_P0) {
+    return {RegisterType::PREDICATE, static_cast<uint16_t>(reg - ARM64_REG_P0)};
+  }
+
+  // ARM64_REG_Q0 and above are repeated ranges representing scalar access
+  // specifiers on the vector registers with arrangements B, D and H, each 
+  // covering 32 registers
   if (reg >= ARM64_REG_B0) {
     return {RegisterType::VECTOR,
             static_cast<uint16_t>((reg - ARM64_REG_B0) % 32)};
@@ -93,6 +112,10 @@ Register csRegToRegister(arm64_reg reg) {
   // ARM64_REG_X30 is the link register, stored in r30 of the general file
   if (reg == ARM64_REG_X30) {
     return {RegisterType::GENERAL, 30};
+  }
+
+  if (reg == ARM64_REG_FFR) {
+    return {RegisterType::PREDICATE, 16};
   }
 
   assert(false && "Decoding failed due to unknown register identifier");
@@ -194,6 +217,18 @@ void Instruction::decode() {
       destinationRegisters[destinationRegisterCount] = {
           RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
       destinationRegisterCount++;
+    } else if (op.type == ARM64_OP_SYS) { // System register
+      if (op.access & cs_ac_type::CS_AC_WRITE) {
+        destinationRegisters[destinationRegisterCount] = {
+            RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.sys)};
+        destinationRegisterCount++;        
+      }
+      if (op.access & cs_ac_type::CS_AC_READ) {
+        sourceRegisters[sourceRegisterCount] = {
+            RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.sys)};
+        sourceRegisterCount++;
+        operandsPending++;
+      }
     }
   }
 
@@ -207,9 +242,8 @@ void Instruction::decode() {
   if (accessesMemory) {
     // Check first operand access to determine if it's a load or store
     if (metadata.operands[0].access & CS_AC_WRITE) {
-      if (metadata.operands[1].type == ARM64_OP_REG &&
-          metadata.operands[1].access == CS_AC_READ) {
-        // Second operand is a register read; this is an exclusive store with a
+      if (metadata.id == ARM64_INS_STXR || metadata.id == ARM64_INS_STLXR) {
+        // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
         isStore_ = true;
       } else {
@@ -224,6 +258,36 @@ void Instruction::decode() {
     // Literal loads aren't flagged as having a memory operand, so these must be
     // marked as loads manually
     isLoad_ = true;
+  }
+  if(metadata.id == ARM64_INS_ADDVL   || metadata.id == ARM64_INS_FDUP    ||
+     metadata.id == ARM64_INS_FMSB    || metadata.id == ARM64_INS_LD1RD   ||
+     metadata.id == ARM64_INS_LD1RW   || metadata.id == ARM64_INS_LD1D    ||
+     metadata.id == ARM64_INS_LD1W    || metadata.id == ARM64_INS_PTEST   ||
+     metadata.id == ARM64_INS_PTRUE   || metadata.id == ARM64_INS_ST1D    ||
+     metadata.id == ARM64_INS_ST1W    || metadata.id == ARM64_INS_PUNPKHI || 
+     metadata.id == ARM64_INS_PUNPKLO || metadata.id == ARM64_INS_UZP1    ||
+     metadata.id == ARM64_INS_WHILELO ||
+     (244 < metadata.opcode && metadata.opcode < 252)   ||
+     (705 < metadata.opcode && metadata.opcode < 720)   ||
+     (781 < metadata.opcode && metadata.opcode < 785)   ||
+     (825 < metadata.opcode && metadata.opcode < 838)   ||
+     (881 < metadata.opcode && metadata.opcode < 888)   ||
+     (903 < metadata.opcode && metadata.opcode < 910)   ||
+     (946 < metadata.opcode && metadata.opcode < 950)   ||
+     (1125 < metadata.opcode && metadata.opcode < 1133) ||
+     (1195 < metadata.opcode && metadata.opcode < 1199) ||
+     (1203 < metadata.opcode && metadata.opcode < 1207) ||
+     (1213 < metadata.opcode && metadata.opcode < 1217) ||
+     (1328 < metadata.opcode && metadata.opcode < 1335) ||
+     (1418 < metadata.opcode && metadata.opcode < 1431) ||
+     (1446 < metadata.opcode && metadata.opcode < 1450) ||
+     (1625 < metadata.opcode && metadata.opcode < 1635) ||
+     (1608 < metadata.opcode && metadata.opcode < 1612) ||
+     (metadata.opcode == 2648) ||
+     (2920 < metadata.opcode && metadata.opcode < 2926) ||
+     (3007 < metadata.opcode && metadata.opcode < 3016) ||
+     (3037 < metadata.opcode && metadata.opcode < 3046) ){
+       isSVE_ = true;
   }
 }
 

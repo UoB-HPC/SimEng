@@ -20,14 +20,14 @@ class RegisterValue {
    * the allocated memory space to the specified number of bytes (defaulting to
    * the size of the template type). */
   template <class T>
-  RegisterValue(T value, uint8_t bytes = sizeof(T)) : bytes(bytes) {
+  RegisterValue(T value, uint16_t bytes = sizeof(T)) : bytes(bytes) {
     if (isLocal()) {
       T* view = reinterpret_cast<T*>(this->value);
       view[0] = value;
 
       if (bytes > sizeof(T)) {
         // Zero the remaining bytes not set by the provided value
-        std::fill<char*, uint8_t>(this->value + sizeof(T), this->value + bytes,
+        std::fill<char*, uint16_t>(this->value + sizeof(T), this->value + bytes,
                                   0);
       }
     } else {
@@ -42,7 +42,7 @@ class RegisterValue {
 
   /** Create a new RegisterValue of size `bytes`, copying data from `ptr`.
    */
-  RegisterValue(const char* ptr, uint8_t bytes) : bytes(bytes) {
+  RegisterValue(const char* ptr, uint16_t bytes) : bytes(bytes) {
     char* dest;
     if (isLocal()) {
       dest = this->value;
@@ -90,17 +90,17 @@ class RegisterValue {
   /** Create a new RegisterValue of size `toBytes`, copying the first
    * `fromBytes` bytes of this one. The remaining bytes of the new
    * RegisterValue are zeroed. */
-  RegisterValue zeroExtend(uint8_t fromBytes, uint8_t toBytes) const;
+  RegisterValue zeroExtend(uint16_t fromBytes, uint16_t toBytes) const;
 
  private:
   /** Check whether the value is held locally or behind a pointer. */
   bool isLocal() const { return bytes <= MAX_LOCAL_BYTES; }
 
   /** The maximum number of bytes that can be held locally. */
-  static const uint8_t MAX_LOCAL_BYTES = 16;
+  static const uint16_t MAX_LOCAL_BYTES = 256;
 
   /** The number of bytes held. */
-  uint8_t bytes = 0;
+  uint16_t bytes = 0;
 
   /** The underlying pointer each instance references. */
   std::shared_ptr<char> ptr;

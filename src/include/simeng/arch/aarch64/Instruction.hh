@@ -20,10 +20,12 @@ namespace RegisterType {
 const uint8_t GENERAL = 0;
 /** The 128+ bit vector register set: v0-31. */
 const uint8_t VECTOR = 1;
+/** The 32 bit predicate register set: p0-15. */
+const uint8_t PREDICATE = 2;
 /** The 4-bit NZCV condition flag register. */
-const uint8_t NZCV = 2;
+const uint8_t NZCV = 3;
 /** The system registers. */
-const uint8_t SYSTEM = 3;
+const uint8_t SYSTEM = 4;
 }  // namespace RegisterType
 
 /** The IDs of the instruction groups for AArch64 instructions. */
@@ -137,10 +139,10 @@ class Instruction : public simeng::Instruction {
  private:
   /** The maximum number of source registers any supported AArch64 instruction
    * can have. */
-  static const size_t MAX_SOURCE_REGISTERS = 4;
+  static const uint8_t MAX_SOURCE_REGISTERS = 6;
   /** The maximum number of destination registers any supported AArch64
    * instruction can have. */
-  static const size_t MAX_DESTINATION_REGISTERS = 3;
+  static const uint8_t MAX_DESTINATION_REGISTERS = 3;
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
@@ -151,12 +153,12 @@ class Instruction : public simeng::Instruction {
   /** An array of source registers. */
   std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
   /** The number of source registers this instruction reads from. */
-  size_t sourceRegisterCount = 0;
+  uint8_t sourceRegisterCount = 0;
 
   /** An array of destination registers. */
   std::array<Register, MAX_DESTINATION_REGISTERS> destinationRegisters;
   /** The number of destination registers this instruction writes to. */
-  size_t destinationRegisterCount = 0;
+  uint8_t destinationRegisterCount = 0;
 
   /** An array of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
@@ -208,12 +210,14 @@ class Instruction : public simeng::Instruction {
 
   /** Is this an ASIMD operation? */
   bool isASIMD_ = false;
+  /** Is this a SVE instruction? */
+  bool isSVE_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
   void setMemoryAddresses(
-      const std::initializer_list<MemoryAccessTarget>& addresses);
+      const std::vector<MemoryAccessTarget>& addresses);
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */
