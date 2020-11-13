@@ -2,6 +2,15 @@
 module swap PrgEnv-cray PrgEnv-gnu
 module load tools/cmake/3.15.4
 
+echo "JENKINS BUILD SCRIPT"
+echo "MODULES"
+module li
+echo "CURRENT DIRECTORY""
+pwd
+echo "GIT BRANCH
+git branch
+
+
 mkdir -p SimEngBuild/install
 cd SimEngBuild
 export SIMENG_TOP=$PWD
