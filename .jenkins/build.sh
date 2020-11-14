@@ -11,20 +11,26 @@ export SIMENG_INSTALL=$PWD/install
 build_and_run () {
    cd $SIMENG_BUILD
    cmake $SIMENG_TOP -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$SIMENG_INSTALL
-   make
+   make -j
    make install
-
    make tests
 }
 
 
-## Download and update submodules
-git submodule update --init
-git submodule sync --recursive
+if [ ! -d "/home/br-hwaugh/jenkins/workspace/SimEngBuild" ]
+then
+    cd /home/br-hwaugh/jenkins/workspace/
+    git clone --recurse-submodules https://github.com/UoB-HPC/SimEng.git
+    ## Download and update submodules
+    git submodule update --init
+    git submodule sync --recursive
 
-cd external/capstone
-git fetch
-git checkout next
+    cd external/capstone
+    git fetch
+    git checkout next
+fi
+
+
 
 ## Setup environment
 export CMAKE_C_COMPILER=cc
