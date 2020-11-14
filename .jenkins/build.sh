@@ -10,7 +10,7 @@ build_and_run () {
    cmake $SIMENG_TOP -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$SIMENG_INSTALL
    make -j
    make install
-   make tests
+   make test
 }
 
 ## Set up file structure
@@ -20,6 +20,7 @@ export SIMENG_INSTALL=$PWD/install
 
 if [ ! -d "$SIMENG_TOP" ]
 then
+    echo "No repository found, recusively cloning SimEng"
     cd /home/br-hwaugh/jenkins/workspace/
     git clone --recurse-submodules https://github.com/UoB-HPC/SimEng.git
     cd SimEngBuild
@@ -34,6 +35,7 @@ then
     cd $SIMENG_TOP
     mkdir -p build install
 else
+    echo "SimEngRepo Found, cleaning up and cloning fresh repo"
     cd $SIMENG_TOP
     rm -rf build/* install/*
 
