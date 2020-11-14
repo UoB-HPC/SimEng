@@ -4,6 +4,7 @@
 
 
 build_and_run () {
+   cd $SIMENG_TOP
    rm -rf build/* install/*
 
    cd $SIMENG_BUILD
