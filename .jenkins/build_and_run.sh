@@ -27,6 +27,7 @@ checkout () {
     fi
 }
 
+# Build common function
 build () {
     cd $SIMENG_TOP
     rm -rf build/* install/*
