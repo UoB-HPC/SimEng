@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source build_and_run.sh
+source .jenkins/build_and_run.sh
 
 ## Set up file structure
 export SIMENG_TOP=$PWD
