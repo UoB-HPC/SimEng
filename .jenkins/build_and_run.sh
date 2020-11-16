@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# If source available clean and checkout, otherwise download
 checkout () {
     if [ ! -d "$SIMENG_TOP" ]
     then
