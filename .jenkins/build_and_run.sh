@@ -39,6 +39,7 @@ build () {
 }
 
 
+# Run tests common function
 run () {
 
     make test
