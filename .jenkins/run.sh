@@ -1,5 +1,5 @@
 #!/bin/bash
 
-. ./build_and_run.sh --source-only
+source build_and_run.sh
 
 run

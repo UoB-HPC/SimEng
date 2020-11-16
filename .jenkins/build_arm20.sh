@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. ./build_and_run.sh --source-only
+source build_and_run.sh
 
 ## Set up file structure
 export SIMENG_TOP=$PWD
