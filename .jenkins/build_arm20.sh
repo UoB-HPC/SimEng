@@ -44,7 +44,7 @@ echo "Compiler Armclang 20.0"
 module swap PrgEnv-cray PrgEnv-allinea
 module swap Generic-AArch64/SUSE/12/arm-linux-compiler/20.0 ThunderX2CN99/SUSE/12/arm-linux-compiler-20.0/armpl/20.0.0
 module load tools/cmake
-build_and_run
+build
 
 #echo "Compiler GCC 7"
 #module swap PrgEnv-allinea PrgEnv-gnu
