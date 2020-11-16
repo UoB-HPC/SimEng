@@ -7,32 +7,9 @@ export SIMENG_TOP=$PWD
 export SIMENG_BUILD=$PWD/build
 export SIMENG_INSTALL=$PWD/install
 
-if [ ! -d "$SIMENG_TOP" ]
-then
-    echo "No repository found, recusively cloning SimEng"
-    cd /home/br-hwaugh/jenkins/workspace/
-    git clone --recurse-submodules https://github.com/UoB-HPC/SimEng.git
-    cd SimEngBuild
-    ## Download and update submodules
-    git submodule update --init
-    git submodule sync --recursive
 
-    cd external/capstone
-    git fetch
-    git checkout next
-
-    cd $SIMENG_TOP
-    mkdir -p build install
-else
-    echo "SimEngRepo Found, cleaning up and cloning fresh repo"
-    cd $SIMENG_TOP
-    rm -rf build/* install/*
-
-    git stash
-    git checkout ${ghprbActualCommit}
-fi
-
-
+## Download/clean and checkout pull request
+checkout
 
 ## Setup environment
 export CMAKE_C_COMPILER=cc
