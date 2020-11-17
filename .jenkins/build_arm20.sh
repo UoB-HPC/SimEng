@@ -2,7 +2,13 @@
 
 source .jenkins/build_and_run.sh
 
-
+echo "MODULES"
+module li
+echo "CURRENT DIRECTORY""
+echo $PWD
+echo "GIT BRANCH
+git branch
+echo "Git commit ${ghprbActualCommit}"
 
 ## Download/clean and checkout pull request
 checkout
