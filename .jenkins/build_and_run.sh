@@ -42,6 +42,6 @@ build () {
 
 # Run tests common function
 run () {
-
+    cd $SIMENG_BUILD
     make test
 }
