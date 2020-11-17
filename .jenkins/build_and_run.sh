@@ -6,6 +6,16 @@ export SIMENG_TOP=$PWD
 export SIMENG_BUILD=$PWD/build
 export SIMENG_INSTALL=$PWD/install
 
+debug () {
+    echo "MODULES"
+    module li
+    echo "CURRENT DIRECTORY"
+    echo $PWD
+    echo "GIT BRANCH"
+    git branch
+
+}
+
 # If source available clean and checkout, otherwise download
 checkout () {
     if [ ! -d "$SIMENG_TOP" ]
