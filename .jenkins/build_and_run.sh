@@ -1,5 +1,11 @@
 #!/bin/bash
 
+
+## Set up file structure
+export SIMENG_TOP=$PWD
+export SIMENG_BUILD=$PWD/build
+export SIMENG_INSTALL=$PWD/install
+
 # If source available clean and checkout, otherwise download
 checkout () {
     if [ ! -d "$SIMENG_TOP" ]

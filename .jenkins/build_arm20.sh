@@ -2,10 +2,6 @@
 
 source .jenkins/build_and_run.sh
 
-## Set up file structure
-export SIMENG_TOP=$PWD
-export SIMENG_BUILD=$PWD/build
-export SIMENG_INSTALL=$PWD/install
 
 
 ## Download/clean and checkout pull request
