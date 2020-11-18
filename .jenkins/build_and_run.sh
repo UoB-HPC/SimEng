@@ -14,6 +14,10 @@ debug () {
     echo "GIT BRANCH"
     git branch
 
+    echo "SIMENG TOP $SIMENG_TOP"
+    echo "SIMENG BUILD $SIMENG_BUILD"
+    echo "SIMENG INSTALL $SIMENG_INSTALL"
+
 }
 
 # If source available clean and checkout, otherwise download
