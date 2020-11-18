@@ -75,6 +75,7 @@ build () {
     rm -rf build/* install/*
 
     cd $SIMENG_BUILD
+    echo $PWD
     cmake $SIMENG_TOP -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$SIMENG_INSTALL
     make -j
     make install
