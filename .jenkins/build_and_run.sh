@@ -36,8 +36,9 @@ checkout () {
 
     cd $SIMENG_TOP
 
-    #git stash
-    #git checkout ${ghprbActualCommit}
+    git stash
+    git stash drop
+    git checkout ${ghprbActualCommit}
 
 
 
