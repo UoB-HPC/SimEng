@@ -9,9 +9,8 @@ checkout
 export CMAKE_C_COMPILER=cc
 export CMAKE_CXX_COMPILER=CC
 
-echo "Compiler GCC 9"
+echo "Compiler GCC 7"
 module swap PrgEnv-cray PrgEnv-gnu
-module swap gcc gcc/9.3.0
+module swap gcc gcc/7.3.0
 module load tools/cmake
 build
-
