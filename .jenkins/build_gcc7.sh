@@ -14,3 +14,4 @@ module swap PrgEnv-cray PrgEnv-gnu
 module swap gcc gcc/7.3.0
 module load tools/cmake
 build
+run

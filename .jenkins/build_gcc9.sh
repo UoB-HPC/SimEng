@@ -15,3 +15,4 @@ module swap gcc gcc/9.3.0
 module load tools/cmake
 build
 
+run
