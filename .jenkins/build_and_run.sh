@@ -85,5 +85,6 @@ build () {
 # Run tests common function
 run () {
     cd $SIMENG_BUILD
-    make test
+    ./test/unit/unittests --gtest_output=xml:unittests.xml
+    ./regression/aarch64/regression-aarch64 --gtest_output=xml:regressiontests.xml
 }
