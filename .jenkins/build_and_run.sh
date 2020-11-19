@@ -27,8 +27,8 @@ checkout () {
     rm -rf build install
     mkdir build install
 
-    git submodule update --init
-    git submodule sync --recursive
+    #git submodule update --init
+    #git submodule sync --recursive
 
     cd external/capstone
     git fetch
@@ -38,7 +38,7 @@ checkout () {
 
     git stash
     git stash drop
-    git checkout ${ghprbActualCommit}
+    #git checkout ${ghprbActualCommit}
 
 
 
