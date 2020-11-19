@@ -86,5 +86,5 @@ build () {
 run () {
     cd $SIMENG_BUILD
     ./test/unit/unittests --gtest_output=xml:unittests.xml
-    ./regression/aarch64/regression-aarch64 --gtest_output=xml:regressiontests.xml
+    ./test/regression/aarch64/regression-aarch64 --gtest_output=xml:regressiontests.xml
 }
