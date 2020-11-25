@@ -27,7 +27,6 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
   systemRegisterMap_[0xda21] = systemRegisterMap_.size();  // FPSR
   systemRegisterMap_[0xde82] = systemRegisterMap_.size();  // TPIDR_EL0
   systemRegisterMap_[0xc000] = systemRegisterMap_.size();  // MIDR_EL1
-  systemRegisterMap_[0xdf14] = systemRegisterMap_.size();
 }
 Architecture::~Architecture() { cs_close(&capstoneHandle); }
 
