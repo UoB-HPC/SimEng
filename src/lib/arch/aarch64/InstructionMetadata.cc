@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace arch {
@@ -37,10 +38,226 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // adds incorrectly flags destination as READ
       operands[0].access = CS_AC_WRITE;
       break;
+    case Opcode::AArch64_ADDVL_XXI:
+      // lacking access specifiers for all operands
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_CBNZW:
+      [[fallthrough]];
+    case Opcode::AArch64_CBNZX:
+      [[fallthrough]];
+    case Opcode::AArch64_CBZW:
+      [[fallthrough]];
+    case Opcode::AArch64_CBZX:
+      // incorrectly adds implicit nzcv dependency
+      implicitSourceCount = 0;
+      break;
+    case Opcode::AArch64_CNTB_XPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_CNTH_XPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_CNTW_XPiI: {
+      // lacking access specifiers for destination
+      operands[0].access = CS_AC_WRITE;
+      std::string str(operandStr);
+      if (str.length() < 4) {
+        operandCount = 2;
+        operands[1].type = ARM64_OP_IMM;
+        operands[1].imm = 1;
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_INVALID, 0};
+        operands[1].ext = ARM64_EXT_INVALID;
+        operands[1].vector_index = -1;
+      }
+      break;
+    }
+    case Opcode::AArch64_DECB_XPiI:
+      // lacking access specifiers for destination
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      break;
     case Opcode::AArch64_FMOVXDHighr:
       // FMOVXDHighr incorrectly flags destination as only WRITE
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       break;
+    case Opcode::AArch64_FMOVSi:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[1].type = ARM64_OP_IMM;
+      break;
+    case Opcode::AArch64_FADDA_VPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FDIV_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FMAD_ZPmZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FMLA_ZPmZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FMLA_ZPmZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FMSB_ZPmZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMIN_ZPmZ_S:
+      // No defined access types
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_FABS_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FADD_ZZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FADD_ZZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FSQRT_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FSUB_ZZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FSUB_ZZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FMUL_ZZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FMUL_ZZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FNEG_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FNEG_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SMINV_VPZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_UZP1_ZZZ_S:
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_FCVTZS_ZPmZ_DtoS:
+      // No defined access types
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_FMUL_ZPmI_S: {
+      // No defined access types
+      operandCount = 4;
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].type = ARM64_OP_FP;
+      operands[3].access = CS_AC_READ;
+      // Doesn't recognise immediate operands
+      // Extract two possible values, 0.5 or 2.0
+      std::string str(operandStr);
+      if (str.substr(str.length() - 1, 1) == "5") {
+        operands[3].fp = 0.5f;
+      } else {
+        operands[3].fp = 2.0f;
+      }
+
+      break;
+    }
+    case Opcode::AArch64_AND_PPzPP:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMGE_PPzZ0_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMGE_PPzZ0_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMGT_PPzZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMGT_PPzZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMLT_PPzZ0_S:
+      [[fallthrough]];
+    case Opcode::AArch64_SEL_ZPZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_SEL_ZPZZ_S:
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_FDUP_ZI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FDUP_ZI_S:
+      [[fallthrough]];
+    case Opcode::AArch64_PUNPKHI_PP:
+      [[fallthrough]];
+    case Opcode::AArch64_PUNPKLO_PP:
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_INCB_XPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_INCD_XPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_INCW_XPiI: {
+      // lacking access specifiers for destination
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      std::string str(operandStr);
+      if (str.length() < 4) {
+        operandCount = 2;
+        operands[1].type = ARM64_OP_IMM;
+        operands[1].imm = 1;
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_INVALID, 0};
+        operands[1].ext = ARM64_EXT_INVALID;
+        operands[1].vector_index = -1;
+      }
+      break;
+    }
+    case Opcode::AArch64_LD1RD_IMM:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1D:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1D_IMM_REAL:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1RW_IMM:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1W:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1W_IMM_REAL: {
+      // LD1RW doesn't correctly identify destination register
+      std::string str(operandStr);
+      uint16_t reg_enum = ARM64_REG_Z0;
+      // Single or double digit Z register identifier
+      if (operandStr[3] == '.') {
+        reg_enum += std::stoi(str.substr(2, 1));
+      } else {
+        reg_enum += std::stoi(str.substr(2, 2));
+      }
+
+      operands[0].reg = static_cast<arm64_reg>(reg_enum);
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv4s_POST:
+      // Fix for exclusion of post_index immediate in disassembly
+      operandCount = 3;
+      operands[2].type = ARM64_OP_IMM;
+      operands[2].access = CS_AC_READ;
+      // For vector arrangment of 32-bit, post_index immediate is 4
+      operands[2].imm = 4;
+      break;
+    case Opcode::AArch64_LD1Twov16b:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Twov16b_POST:
+      // Fix incorrect access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_WRITE;
+      break;
+    case Opcode::AArch64_MOVNWi:
+      [[fallthrough]];
+    case Opcode::AArch64_MOVNXi:
+      [[fallthrough]];
     case Opcode::AArch64_MOVZWi:
       [[fallthrough]];
     case Opcode::AArch64_MOVZXi:
@@ -48,13 +265,35 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       break;
     case Opcode::AArch64_MRS:
-      // MRS incorrectly flags destination as READ | WRITE
+      // MRS incorrectly flags source/destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      // MRS incorrectly tags ARM64_OP_REG_MRS as ARM64_OP_SYS
+      operands[1].type = ARM64_OP_REG_MRS;
       break;
     case Opcode::AArch64_MSR:
       // MSR incorrectly flags source/destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
+      // MSR incorrectly tags ARM64_OP_REG_MSR as ARM64_OP_SYS
+      operands[0].type = ARM64_OP_REG_MSR;
+      break;
+    case Opcode::AArch64_PTEST_PP: {
+      // PTEST doesn't label access types for operands
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      // Doesn't identify implicit NZCV destination
+      implicitDestinationCount = 1;
+      implicitDestinations[0] = ARM64_REG_NZCV;
+      break;
+    }
+    case Opcode::AArch64_PTRUE_B:
+      [[fallthrough]];
+    case Opcode::AArch64_PTRUE_D:
+      [[fallthrough]];
+    case Opcode::AArch64_PTRUE_S:
+      // PTRUE doesn't label access
+      operands[0].access = CS_AC_WRITE;
       break;
     case Opcode::AArch64_RET:
       // RET doesn't list use of x30 (LR) if no register is supplied
@@ -65,6 +304,30 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       groupCount = 1;
       groups[0] = CS_GRP_JUMP;
       break;
+    case Opcode::AArch64_ST1D:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1D_IMM:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1W:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1W_IMM: {
+      // ST1W doesn't correctly identify first source register
+      std::string str(operandStr);
+      uint16_t reg_enum = ARM64_REG_Z0;
+      // Single or double digit Z register identifier
+      if (operandStr[3] == '.') {
+        reg_enum += std::stoi(str.substr(2, 1));
+      } else {
+        reg_enum += std::stoi(str.substr(2, 2));
+      }
+
+      operands[0].reg = static_cast<arm64_reg>(reg_enum);
+      // No defined access types
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_SBFMWri:
       [[fallthrough]];
     case Opcode::AArch64_SBFMXri:
@@ -80,6 +343,17 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_UBFMXri:
       // UBFM incorrectly flags destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
+      break;
+    case Opcode::AArch64_WHILELO_PXX_D:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELO_PXX_S:
+      // WHILELO doesn't label access or vector specifiers
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      // Doesn't identify implicit NZCV destination
+      implicitDestinationCount = 1;
+      implicitDestinations[0] = ARM64_REG_NZCV;
       break;
     case Opcode::AArch64_XTNv16i8:
     case Opcode::AArch64_XTNv4i32:
@@ -343,6 +617,8 @@ void InstructionMetadata::revertAliasing() {
         operands[2].imm = 0;
         operands[2].access = CS_AC_READ;
         operands[2].shift.type = ARM64_SFT_INVALID;
+        operands[2].vas = ARM64_VAS_INVALID;
+        operands[2].vector_index = -1;
         return;
       }
       if (opcode == Opcode::AArch64_CPYi8 || opcode == Opcode::AArch64_CPYi16 ||
@@ -351,7 +627,71 @@ void InstructionMetadata::revertAliasing() {
         // mov vd, Vn.T[index]; alias for dup vd, Vn.T[index]
         return;
       }
-      if (opcode == Opcode::AArch64_ORRWrs ||
+      if (opcode == Opcode::AArch64_DUP_ZI_B ||
+          opcode == Opcode::AArch64_DUP_ZI_D ||
+          opcode == Opcode::AArch64_DUP_ZI_S) {
+        // mov Zd.T, #imm{, shift}; alias for dup Zd.T, #imm{, shift}
+        operandCount = 2;
+        operands[0].access = CS_AC_WRITE;
+        operands[1].type = ARM64_OP_IMM;
+        operands[1].access = CS_AC_READ;
+
+        std::string str(operandStr);
+        uint8_t start = operandStr[6] == '#' ? 7 : 8;
+        bool hex = false;
+
+        if (operandStr[start + 1] == 'x') {
+          hex = true;
+          start += 2;
+        }
+
+        uint8_t end = start + 1;
+        while (true) {
+          if (operandStr[end] == ' ') {
+            break;
+          }
+          end++;
+        }
+
+        std::string sub = str.substr(start, end);
+        if (hex) {
+          operands[1].imm = 0;
+          uint8_t base = 1;
+          for (int i = sub.size(); i > -1; i--) {
+            if (sub[i] >= '0' && sub[i] <= '9') {
+              operands[1].imm += (sub[i] - 48) * base;
+              base *= 16;
+            } else if (sub[i] >= 'a' && sub[i] <= 'f') {
+              operands[1].imm += (sub[i] - 87) * base;
+              base *= 16;
+            }
+          }
+        } else {
+          operands[1].imm = stoi(sub);
+        }
+
+        return;
+      }
+      if (opcode == Opcode::AArch64_DUP_ZZI_S) {
+        // mov Zd.T, Vn; alias for dup Zd.T, Zn.T[0]
+        operandCount = 2;
+        operands[0].access = CS_AC_WRITE;
+        operands[1].type = ARM64_OP_REG;
+        operands[1].access = CS_AC_READ;
+
+        std::string str(operandStr);
+        uint8_t start = operandStr[2] == '.' ? 7 : 8;
+        uint8_t end = str.length() - start;
+
+        // ARM64_REG_Z0 == 245
+        operands[1].reg =
+            static_cast<arm64_reg>(245 + stoi(str.substr(start, end)));
+        operands[1].vector_index = 0;
+        return;
+      }
+      if (opcode == Opcode::AArch64_ORRWri ||
+          opcode == Opcode::AArch64_ORRWrs ||
+          opcode == Opcode::AArch64_ORRXri ||
           opcode == Opcode::AArch64_ORRXrs) {
         // mov rd, rn; alias for: orr rd, zr, rn
         operandCount = 3;
@@ -360,11 +700,31 @@ void InstructionMetadata::revertAliasing() {
         operands[1].type = ARM64_OP_REG;
         operands[1].access = CS_AC_READ;
         operands[1].shift = {ARM64_SFT_INVALID, 0};
-        if (opcode == Opcode::AArch64_ORRWrs) {
+        if (opcode == Opcode::AArch64_ORRWri ||
+            opcode == Opcode::AArch64_ORRWrs) {
           operands[1].reg = ARM64_REG_WZR;
         } else {
           operands[1].reg = ARM64_REG_XZR;
         }
+        return;
+      }
+      if (opcode == Opcode::AArch64_ORR_PPzPP) {
+        // mov Pd.b, Pn.b; alias for: orr Pd.b, Pn/z, Pn.b, Pn.b
+        operandCount = 4;
+        operands[0].access = CS_AC_WRITE;
+        operands[0].vas = ARM64_VAS_1B;
+        operands[1].access = CS_AC_READ;
+        operands[1].vas = ARM64_VAS_1B;
+        operands[2] = operands[1];
+        operands[3] = operands[1];
+        return;
+      }
+      if (opcode == Opcode::AArch64_ORR_ZZZ) {
+        // mov Zd.d, Zn.d; alias for: orr Zd.d, Zn.d, Zn.d
+        operandCount = 3;
+        operands[0].access = CS_AC_WRITE;
+        operands[1].access = CS_AC_READ;
+        operands[2] = operands[1];
         return;
       }
       if (opcode == Opcode::AArch64_ORRv16i8) {
@@ -373,11 +733,35 @@ void InstructionMetadata::revertAliasing() {
         operands[2] = operands[1];
         return;
       }
+      if (opcode == Opcode::AArch64_SEL_ZPZZ_S ||
+          opcode == Opcode::AArch64_SEL_ZPZZ_D) {
+        // mov Zd.T, Pg/M, Zn.T; alias for: sel Zd.T, Pg, Zn.T, Zd.T
+        if (mnemonic[0] == 'm') {
+          operandCount = 4;
+          operands[3].reg = operands[0].reg;
+        }
+        return;
+      }
       if (opcode == Opcode::AArch64_UMOVvi8 ||
           opcode == Opcode::AArch64_UMOVvi16 ||
           opcode == Opcode::AArch64_UMOVvi32 ||
           opcode == Opcode::AArch64_UMOVvi64) {
         // mov rd, Vn.T[index]; alias for umov rd, Vn.T[index]
+        return;
+      }
+      if (opcode == Opcode::AArch64_MOVZWi ||
+          opcode == Opcode::AArch64_MOVZXi) {
+        // mov rd, #0; alias for: movz rd, #0{, shift #0}
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_LSL, 0};
+        return;
+      }
+      if (opcode == Opcode::AArch64_MOVNWi ||
+          opcode == Opcode::AArch64_MOVNXi) {
+        // mov rd, #amount; alias for: movn rd, #amount{, shift #0}
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_LSL, 0};
+        operands[1].imm = ~(operands[1].imm);
         return;
       }
       return aliasNYI();

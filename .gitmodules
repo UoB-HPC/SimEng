@@ -4,6 +4,7 @@
 [submodule "external/capstone"]
 	path = external/capstone
 	url = https://github.com/UoB-HPC/capstone.git
+	branch = next
 [submodule "external/llvm"]
 	path = external/llvm
 	url = https://github.com/llvm-mirror/llvm

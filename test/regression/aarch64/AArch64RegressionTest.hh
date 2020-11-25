@@ -22,7 +22,7 @@
  * The `tag` argument is the register index, and the `type` argument is the C++
  * data type to use for value comparisons. The third argument should be an
  * initializer list containing one value for each register element (for a total
- * of `(16 / sizeof(type))` values).
+ * of `(256 / sizeof(type))` values).
  *
  * For example:
  *
@@ -33,6 +33,26 @@
   {                                            \
     SCOPED_TRACE("<<== error generated here"); \
     checkNeonRegister<type>(tag, __VA_ARGS__); \
+  }
+
+/** Check each element of a Predicate register against expected values.
+ *
+ * The `tag` argument is the register index, and the `type` argument is the C++
+ * data type to use for value comparisons. The third argument should be an
+ * initializer list containing one value for each register element (for a total
+ * of `(32 / sizeof(type))` values).
+ *
+ * For example:
+ *
+ *     // Compare p1.s to some expected 32-bit unsigned integer values.
+ *     // Where VL = 4 and all elements are set to true.
+ *     CHECK_PREDICATE(1, uint32_t, {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+ * 0x11});
+ */
+#define CHECK_PREDICATE(tag, type, ...)             \
+  {                                                 \
+    SCOPED_TRACE("<<== error generated here");      \
+    checkPredicateRegister<type>(tag, __VA_ARGS__); \
   }
 
 /** The test fixture for all AArch64 regression tests. */
@@ -58,10 +78,25 @@ class AArch64RegressionTest : public RegressionTest {
    */
   template <typename T>
   void checkNeonRegister(uint8_t tag,
-                         const std::array<T, (16 / sizeof(T))>& values) const {
+                         const std::array<T, (256 / sizeof(T))>& values) const {
     const T* data = RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::VECTOR, tag});
-    for (unsigned i = 0; i < (16 / sizeof(T)); i++) {
+    for (unsigned i = 0; i < (256 / sizeof(T)); i++) {
+      EXPECT_EQ(data[i], values[i]) << "Mismatch for element " << i << ".";
+    }
+  }
+
+  /** Check the elements of a Predicate register.
+   *
+   * This should be invoked via the `CHECK_PREDICATE` macro in order to provide
+   * better diagnostic messages, rather than called directly from test code.
+   */
+  template <typename T>
+  void checkPredicateRegister(
+      uint8_t tag, const std::array<T, (32 / sizeof(T))>& values) const {
+    const T* data = RegressionTest::getVectorRegister<T>(
+        {simeng::arch::aarch64::RegisterType::PREDICATE, tag});
+    for (unsigned i = 0; i < (32 / sizeof(T)); i++) {
       EXPECT_EQ(data[i], values[i]) << "Mismatch for element " << i << ".";
     }
   }
@@ -84,7 +119,7 @@ class AArch64RegressionTest : public RegressionTest {
   /** Get the value of a vector register element. */
   template <typename T, unsigned element>
   T getVectorRegisterElement(uint8_t tag) const {
-    static_assert(element * sizeof(T) < 16);
+    static_assert(element * sizeof(T) < 256);
     return RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::VECTOR, tag})[element];
   }
