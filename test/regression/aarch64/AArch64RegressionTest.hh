@@ -46,11 +46,12 @@
  *
  *     // Compare p1.s to some expected 32-bit unsigned integer values.
  *     // Where VL = 4 and all elements are set to true.
- *     CHECK_PREDICATE(1, uint32_t, {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11});
+ *     CHECK_PREDICATE(1, uint32_t, {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+ * 0x11});
  */
 #define CHECK_PREDICATE(tag, type, ...)             \
-  {                                            \
-    SCOPED_TRACE("<<== error generated here"); \
+  {                                                 \
+    SCOPED_TRACE("<<== error generated here");      \
     checkPredicateRegister<type>(tag, __VA_ARGS__); \
   }
 
@@ -91,8 +92,8 @@ class AArch64RegressionTest : public RegressionTest {
    * better diagnostic messages, rather than called directly from test code.
    */
   template <typename T>
-  void checkPredicateRegister(uint8_t tag,
-                         const std::array<T, (32 / sizeof(T))>& values) const {
+  void checkPredicateRegister(
+      uint8_t tag, const std::array<T, (32 / sizeof(T))>& values) const {
     const T* data = RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::PREDICATE, tag});
     for (unsigned i = 0; i < (32 / sizeof(T)); i++) {

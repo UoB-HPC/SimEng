@@ -51,7 +51,7 @@ Register csRegToRegister(arm64_reg reg) {
     return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_V0)};
   }
 
-  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading 
+  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading
   // from the vector file
   if (reg >= ARM64_REG_Z0) {
     return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_Z0)};
@@ -70,7 +70,7 @@ Register csRegToRegister(arm64_reg reg) {
   }
 
   // ARM64_REG_Q0 and above are repeated ranges representing scalar access
-  // specifiers on the vector registers with arrangements Q and S, each 
+  // specifiers on the vector registers with arrangements Q and S, each
   // covering 32 registers
   if (reg >= ARM64_REG_Q0) {
     return {RegisterType::VECTOR,
@@ -83,7 +83,7 @@ Register csRegToRegister(arm64_reg reg) {
   }
 
   // ARM64_REG_Q0 and above are repeated ranges representing scalar access
-  // specifiers on the vector registers with arrangements B, D and H, each 
+  // specifiers on the vector registers with arrangements B, D and H, each
   // covering 32 registers
   if (reg >= ARM64_REG_B0) {
     return {RegisterType::VECTOR,
@@ -217,11 +217,11 @@ void Instruction::decode() {
       destinationRegisters[destinationRegisterCount] = {
           RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
       destinationRegisterCount++;
-    } else if (op.type == ARM64_OP_SYS) { // System register
+    } else if (op.type == ARM64_OP_SYS) {  // System register
       if (op.access & cs_ac_type::CS_AC_WRITE) {
         destinationRegisters[destinationRegisterCount] = {
             RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.sys)};
-        destinationRegisterCount++;        
+        destinationRegisterCount++;
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
         sourceRegisters[sourceRegisterCount] = {
@@ -259,35 +259,35 @@ void Instruction::decode() {
     // marked as loads manually
     isLoad_ = true;
   }
-  if(metadata.id == ARM64_INS_ADDVL   || metadata.id == ARM64_INS_FDUP    ||
-     metadata.id == ARM64_INS_FMSB    || metadata.id == ARM64_INS_LD1RD   ||
-     metadata.id == ARM64_INS_LD1RW   || metadata.id == ARM64_INS_LD1D    ||
-     metadata.id == ARM64_INS_LD1W    || metadata.id == ARM64_INS_PTEST   ||
-     metadata.id == ARM64_INS_PTRUE   || metadata.id == ARM64_INS_ST1D    ||
-     metadata.id == ARM64_INS_ST1W    || metadata.id == ARM64_INS_PUNPKHI || 
-     metadata.id == ARM64_INS_PUNPKLO || metadata.id == ARM64_INS_UZP1    ||
-     metadata.id == ARM64_INS_WHILELO ||
-     (244 < metadata.opcode && metadata.opcode < 252)   ||
-     (705 < metadata.opcode && metadata.opcode < 720)   ||
-     (781 < metadata.opcode && metadata.opcode < 785)   ||
-     (825 < metadata.opcode && metadata.opcode < 838)   ||
-     (881 < metadata.opcode && metadata.opcode < 888)   ||
-     (903 < metadata.opcode && metadata.opcode < 910)   ||
-     (946 < metadata.opcode && metadata.opcode < 950)   ||
-     (1125 < metadata.opcode && metadata.opcode < 1133) ||
-     (1195 < metadata.opcode && metadata.opcode < 1199) ||
-     (1203 < metadata.opcode && metadata.opcode < 1207) ||
-     (1213 < metadata.opcode && metadata.opcode < 1217) ||
-     (1328 < metadata.opcode && metadata.opcode < 1335) ||
-     (1418 < metadata.opcode && metadata.opcode < 1431) ||
-     (1446 < metadata.opcode && metadata.opcode < 1450) ||
-     (1625 < metadata.opcode && metadata.opcode < 1635) ||
-     (1608 < metadata.opcode && metadata.opcode < 1612) ||
-     (metadata.opcode == 2648) ||
-     (2920 < metadata.opcode && metadata.opcode < 2926) ||
-     (3007 < metadata.opcode && metadata.opcode < 3016) ||
-     (3037 < metadata.opcode && metadata.opcode < 3046) ){
-       isSVE_ = true;
+  if (metadata.id == ARM64_INS_ADDVL || metadata.id == ARM64_INS_FDUP ||
+      metadata.id == ARM64_INS_FMSB || metadata.id == ARM64_INS_LD1RD ||
+      metadata.id == ARM64_INS_LD1RW || metadata.id == ARM64_INS_LD1D ||
+      metadata.id == ARM64_INS_LD1W || metadata.id == ARM64_INS_PTEST ||
+      metadata.id == ARM64_INS_PTRUE || metadata.id == ARM64_INS_ST1D ||
+      metadata.id == ARM64_INS_ST1W || metadata.id == ARM64_INS_PUNPKHI ||
+      metadata.id == ARM64_INS_PUNPKLO || metadata.id == ARM64_INS_UZP1 ||
+      metadata.id == ARM64_INS_WHILELO ||
+      (244 < metadata.opcode && metadata.opcode < 252) ||
+      (705 < metadata.opcode && metadata.opcode < 720) ||
+      (781 < metadata.opcode && metadata.opcode < 785) ||
+      (825 < metadata.opcode && metadata.opcode < 838) ||
+      (881 < metadata.opcode && metadata.opcode < 888) ||
+      (903 < metadata.opcode && metadata.opcode < 910) ||
+      (946 < metadata.opcode && metadata.opcode < 950) ||
+      (1125 < metadata.opcode && metadata.opcode < 1133) ||
+      (1195 < metadata.opcode && metadata.opcode < 1199) ||
+      (1203 < metadata.opcode && metadata.opcode < 1207) ||
+      (1213 < metadata.opcode && metadata.opcode < 1217) ||
+      (1328 < metadata.opcode && metadata.opcode < 1335) ||
+      (1418 < metadata.opcode && metadata.opcode < 1431) ||
+      (1446 < metadata.opcode && metadata.opcode < 1450) ||
+      (1625 < metadata.opcode && metadata.opcode < 1635) ||
+      (1608 < metadata.opcode && metadata.opcode < 1612) ||
+      (metadata.opcode == 2648) ||
+      (2920 < metadata.opcode && metadata.opcode < 2926) ||
+      (3007 < metadata.opcode && metadata.opcode < 3016) ||
+      (3037 < metadata.opcode && metadata.opcode < 3046)) {
+    isSVE_ = true;
   }
 }
 

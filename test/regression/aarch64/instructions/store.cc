@@ -174,7 +174,7 @@ TEST_P(InstStore, strx) {
             0x1234ull << 32);
 }
 
-TEST_P(InstStore, stpd){
+TEST_P(InstStore, stpd) {
   RUN_AARCH64(R"(
     fmov d0, 2.0
     fmov d1, -0.125

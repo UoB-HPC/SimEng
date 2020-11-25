@@ -62,7 +62,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // lacking access specifiers for destination
       operands[0].access = CS_AC_WRITE;
       std::string str(operandStr);
-      if(str.length() < 4) {
+      if (str.length() < 4) {
         operandCount = 2;
         operands[1].type = ARM64_OP_IMM;
         operands[1].imm = 1;
@@ -152,7 +152,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // Doesn't recognise immediate operands
       // Extract two possible values, 0.5 or 2.0
       std::string str(operandStr);
-      if(str.substr(str.length() - 1, 1) == "5"){
+      if (str.substr(str.length() - 1, 1) == "5") {
         operands[3].fp = 0.5f;
       } else {
         operands[3].fp = 2.0f;
@@ -200,7 +200,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // lacking access specifiers for destination
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       std::string str(operandStr);
-      if(str.length() < 4) {
+      if (str.length() < 4) {
         operandCount = 2;
         operands[1].type = ARM64_OP_IMM;
         operands[1].imm = 1;
@@ -226,11 +226,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       std::string str(operandStr);
       uint16_t reg_enum = ARM64_REG_Z0;
       // Single or double digit Z register identifier
-      if(operandStr[3] == '.') {
-        reg_enum += std::stoi(str.substr(2,1)); 
-      }
-      else {
-        reg_enum += std::stoi(str.substr(2,2)); 
+      if (operandStr[3] == '.') {
+        reg_enum += std::stoi(str.substr(2, 1));
+      } else {
+        reg_enum += std::stoi(str.substr(2, 2));
       }
 
       operands[0].reg = static_cast<arm64_reg>(reg_enum);
@@ -249,14 +248,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].imm = 4;
       break;
     case Opcode::AArch64_LD1Twov16b:
-      [[fallthrough]];    
+      [[fallthrough]];
     case Opcode::AArch64_LD1Twov16b_POST:
       // Fix incorrect access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_WRITE;
       break;
     case Opcode::AArch64_MOVNWi:
-      [[fallthrough]];    
+      [[fallthrough]];
     case Opcode::AArch64_MOVNXi:
       [[fallthrough]];
     case Opcode::AArch64_MOVZWi:
@@ -316,11 +315,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       std::string str(operandStr);
       uint16_t reg_enum = ARM64_REG_Z0;
       // Single or double digit Z register identifier
-      if(operandStr[3] == '.') {
-        reg_enum += std::stoi(str.substr(2,1)); 
-      }
-      else {
-        reg_enum += std::stoi(str.substr(2,2)); 
+      if (operandStr[3] == '.') {
+        reg_enum += std::stoi(str.substr(2, 1));
+      } else {
+        reg_enum += std::stoi(str.substr(2, 2));
       }
 
       operands[0].reg = static_cast<arm64_reg>(reg_enum);
@@ -560,7 +558,7 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_DC:
-      return aliasNYI();      
+      return aliasNYI();
     case ARM64_INS_IC:
       return aliasNYI();
     case ARM64_INS_LSL:
@@ -629,7 +627,8 @@ void InstructionMetadata::revertAliasing() {
         // mov vd, Vn.T[index]; alias for dup vd, Vn.T[index]
         return;
       }
-      if (opcode == Opcode::AArch64_DUP_ZI_B || opcode == Opcode::AArch64_DUP_ZI_D ||
+      if (opcode == Opcode::AArch64_DUP_ZI_B ||
+          opcode == Opcode::AArch64_DUP_ZI_D ||
           opcode == Opcode::AArch64_DUP_ZI_S) {
         // mov Zd.T, #imm{, shift}; alias for dup Zd.T, #imm{, shift}
         operandCount = 2;
@@ -641,28 +640,28 @@ void InstructionMetadata::revertAliasing() {
         uint8_t start = operandStr[6] == '#' ? 7 : 8;
         bool hex = false;
 
-        if(operandStr[start+1] == 'x') {
+        if (operandStr[start + 1] == 'x') {
           hex = true;
           start += 2;
         }
 
         uint8_t end = start + 1;
-        while(true) {
-          if(operandStr[end] == ' ') {
+        while (true) {
+          if (operandStr[end] == ' ') {
             break;
           }
           end++;
         }
 
         std::string sub = str.substr(start, end);
-        if(hex) {
+        if (hex) {
           operands[1].imm = 0;
           uint8_t base = 1;
-          for(int i = sub.size(); i > -1; i--) {
-            if(sub[i] >= '0' && sub[i] <= '9') {
+          for (int i = sub.size(); i > -1; i--) {
+            if (sub[i] >= '0' && sub[i] <= '9') {
               operands[1].imm += (sub[i] - 48) * base;
               base *= 16;
-            } else if(sub[i] >= 'a' && sub[i] <= 'f') {
+            } else if (sub[i] >= 'a' && sub[i] <= 'f') {
               operands[1].imm += (sub[i] - 87) * base;
               base *= 16;
             }
@@ -673,7 +672,7 @@ void InstructionMetadata::revertAliasing() {
 
         return;
       }
-      if (opcode == Opcode::AArch64_DUP_ZZI_S){
+      if (opcode == Opcode::AArch64_DUP_ZZI_S) {
         // mov Zd.T, Vn; alias for dup Zd.T, Zn.T[0]
         operandCount = 2;
         operands[0].access = CS_AC_WRITE;
@@ -681,11 +680,12 @@ void InstructionMetadata::revertAliasing() {
         operands[1].access = CS_AC_READ;
 
         std::string str(operandStr);
-        uint8_t start = operandStr[2] == '.' ? 7 : 8;        
+        uint8_t start = operandStr[2] == '.' ? 7 : 8;
         uint8_t end = str.length() - start;
 
         // ARM64_REG_Z0 == 245
-        operands[1].reg = static_cast<arm64_reg>(245 + stoi(str.substr(start, end)));
+        operands[1].reg =
+            static_cast<arm64_reg>(245 + stoi(str.substr(start, end)));
         operands[1].vector_index = 0;
         return;
       }
