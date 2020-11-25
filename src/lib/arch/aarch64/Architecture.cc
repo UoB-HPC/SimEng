@@ -165,7 +165,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
       return FPSIMD_LATENCY;
     case Opcode::AArch64_SDIVXr:
     case Opcode::AArch64_UDIVXr:
-      return{39, 39};
+      return {39, 39};
     case Opcode::AArch64_FDIVDrr:
     case Opcode::AArch64_SDIVWr:
     case Opcode::AArch64_UDIVWr:
@@ -273,7 +273,7 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_LDRWroX:
     case Opcode::AArch64_LDRXroW:
     case Opcode::AArch64_LDRXroX:
-      if(metadata.operands[1].shift.value > 0){
+      if (metadata.operands[1].shift.value > 0) {
         // return {3, 2};
         return {1, 1};
       }
