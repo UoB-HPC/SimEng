@@ -5,8 +5,8 @@
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 
-/** A helper macro to run a snippet of Armv8 assembly code, returning from the
- * calling function if a fatal error occurs. Four bytes containing zeros are
+/** A helper macro to run a snippet of Armv8 assembly code, returning from the      
+ * calling function if a fatal error occurs. Four bytes containing zeros are        
  * appended to the source to ensure that the program will terminate with an
  * illegal instruction exception instead of running into the heap. */
 #define RUN_AARCH64(source)                    \
@@ -19,9 +19,9 @@
 
 /** Check each element of a Neon register against expected values.
  *
- * The `tag` argument is the register index, and the `type` argument is the C++
+ * The `tag` argument is the register index, and the `type` argument is the C++     
  * data type to use for value comparisons. The third argument should be an
- * initializer list containing one value for each register element (for a total
+ * initializer list containing one value for each register element (for a total     
  * of `(256 / sizeof(type))` values).
  *
  * For example:
@@ -37,20 +37,21 @@
 
 /** Check each element of a Predicate register against expected values.
  *
- * The `tag` argument is the register index, and the `type` argument is the C++
+ * The `tag` argument is the register index, and the `type` argument is the C++     
  * data type to use for value comparisons. The third argument should be an
- * initializer list containing one value for each register element (for a total
+ * initializer list containing one value for each register element (for a total     
  * of `(32 / sizeof(type))` values).
  *
  * For example:
  *
  *     // Compare p1.s to some expected 32-bit unsigned integer values.
  *     // Where VL = 4 and all elements are set to true.
- *     CHECK_PREDICATE(1, uint32_t, {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11});
+ *     CHECK_PREDICATE(1, uint32_t, {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,      
+ * 0x11});
  */
 #define CHECK_PREDICATE(tag, type, ...)             \
-  {                                            \
-    SCOPED_TRACE("<<== error generated here"); \
+  {                                                 \
+    SCOPED_TRACE("<<== error generated here");      \
     checkPredicateRegister<type>(tag, __VA_ARGS__); \
   }
 
@@ -67,17 +68,17 @@ class AArch64RegressionTest : public RegressionTest {
       simeng::kernel::Linux& kernel) const override;
 
   /** Create a port allocator for an out-of-order core model. */
-  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
+  virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()    
       const override;
 
   /** Check the elements of a Neon register.
    *
    * This should be invoked via the `CHECK_NEON` macro in order to provide
-   * better diagnostic messages, rather than called directly from test code.
+   * better diagnostic messages, rather than called directly from test code.        
    */
   template <typename T>
   void checkNeonRegister(uint8_t tag,
-                         const std::array<T, (256 / sizeof(T))>& values) const {
+                         const std::array<T, (256 / sizeof(T))>& values) const {    
     const T* data = RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::VECTOR, tag});
     for (unsigned i = 0; i < (256 / sizeof(T)); i++) {
@@ -87,12 +88,12 @@ class AArch64RegressionTest : public RegressionTest {
 
   /** Check the elements of a Predicate register.
    *
-   * This should be invoked via the `CHECK_PREDICATE` macro in order to provide
-   * better diagnostic messages, rather than called directly from test code.
+   * This should be invoked via the `CHECK_PREDICATE` macro in order to provide     
+   * better diagnostic messages, rather than called directly from test code.        
    */
   template <typename T>
-  void checkPredicateRegister(uint8_t tag,
-                         const std::array<T, (32 / sizeof(T))>& values) const {
+  void checkPredicateRegister(
+      uint8_t tag, const std::array<T, (32 / sizeof(T))>& values) const {
     const T* data = RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::PREDICATE, tag});
     for (unsigned i = 0; i < (32 / sizeof(T)); i++) {
@@ -103,7 +104,7 @@ class AArch64RegressionTest : public RegressionTest {
   /** Get the value of a general purpose register. */
   template <typename T>
   T getGeneralRegister(uint8_t tag) const {
-    return getRegister<T>({simeng::arch::aarch64::RegisterType::GENERAL, tag});
+    return getRegister<T>({simeng::arch::aarch64::RegisterType::GENERAL, tag});     
   }
 
   /** Get the value of a system register. */

@@ -18,19 +18,19 @@ class Instruction {
  public:
   virtual ~Instruction(){};
 
-  /** Check whether an exception has been encountered while processing this
+  /** Check whether an exception has been encountered while processing this    
    * instruction. */
   bool exceptionEncountered() const;
 
   /** Retrieve the source registers this instruction reads. */
   virtual const span<Register> getOperandRegisters() const = 0;
 
-  /** Retrieve the destination registers this instruction will write to.
+  /** Retrieve the destination registers this instruction will write to.     
    * A register value of -1 signifies a Zero Register read, and should not be
    * renamed. */
   virtual const span<Register> getDestinationRegisters() const = 0;
 
-  /** Override the specified source register with a renamed physical register.
+  /** Override the specified source register with a renamed physical register.      
    */
   virtual void renameSource(uint8_t i, Register renamed) = 0;
 
@@ -44,7 +44,7 @@ class Instruction {
   /** Check whether the operand at index `i` has had a value supplied. */
   virtual bool isOperandReady(int i) const = 0;
 
-  /** Check whether all operand values have been supplied, and the instruction
+  /** Check whether all operand values have been supplied, and the instruction      
    * is ready to execute. */
   virtual bool canExecute() const = 0;
 
@@ -58,7 +58,7 @@ class Instruction {
   /** Mark the instruction as ready to commit. */
   void setCommitReady();
 
-  /** Check whether the instruction has written its values back and is ready to
+  /** Check whether the instruction has written its values back and is ready to     
    * commit. */
   bool canCommit() const;
 
@@ -80,11 +80,11 @@ class Instruction {
   /** Check whether all required data has been supplied. */
   bool hasAllData() const;
 
-  /** Early misprediction check; see if it's possible to determine whether the
+  /** Early misprediction check; see if it's possible to determine whether the      
    * next instruction address was mispredicted without executing the
-   * instruction. Returns a {mispredicted, target} tuple representing whether
+   * instruction. Returns a {mispredicted, target} tuple representing whether       
    * the instruction was mispredicted, and the correct target address. */
-  virtual std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const = 0;
+  virtual std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const = 0;     
 
   /** Check for misprediction. */
   bool wasBranchMispredicted() const;
@@ -128,7 +128,7 @@ class Instruction {
   /** Retrieve the instruction group this instruction belongs to. */
   virtual uint16_t getGroup() const = 0;
 
-  /** Retrieve the number of cycles this instruction will take to execute. */
+  /** Retrieve the number of cycles this instruction will take to execute. */       
   uint16_t getLatency() const;
 
   /** Retrieve the number of cycles this instruction will block the unit
@@ -156,14 +156,14 @@ class Instruction {
   /** The predicted branching result. */
   BranchPrediction prediction_;
 
-  /** A branching address calculated by this instruction during execution. */
+  /** A branching address calculated by this instruction during execution. */       
   uint64_t branchAddress_;
 
   /** Was the branch taken? */
   bool branchTaken_;
 
   // Flushing
-  /** This instruction's sequence ID; a higher ID represents a chronologically
+  /** This instruction's sequence ID; a higher ID represents a chronologically      
    * newer instruction. */
   uint64_t sequenceId_;
 
@@ -173,7 +173,7 @@ class Instruction {
   /** The number of cycles this instruction takes to execute. */
   uint16_t latency_ = 1;
 
-  /** The number of cycles this instruction will stall the unit executing it
+  /** The number of cycles this instruction will stall the unit executing it        
    * for. */
   uint16_t stallCycles_ = 1;
 };

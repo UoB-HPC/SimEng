@@ -467,7 +467,7 @@ TEST_P(InstFloat, fmadd) {
   CHECK_NEON(4, double, {1.0625, 0.0});
 }
 
-TEST_P(InstFloat, fmaxnm){
+TEST_P(InstFloat, fmaxnm) {
   // 64-bit numeric
   RUN_AARCH64(R"(
     fmov d0, 2.0
@@ -478,7 +478,7 @@ TEST_P(InstFloat, fmaxnm){
   )");
   CHECK_NEON(3, double, {7.5, 0.0});
   CHECK_NEON(4, double, {7.5, 0.0});
-  
+
   // 64-bit with NAN
   initialHeapData_.resize(8);
   reinterpret_cast<double*>(initialHeapData_.data())[0] = std::nan("");
@@ -495,7 +495,7 @@ TEST_P(InstFloat, fmaxnm){
   CHECK_NEON(2, double, {-2.0, 0.0});
 }
 
-TEST_P(InstFloat, fminnm){
+TEST_P(InstFloat, fminnm) {
   // 64-bit
   RUN_AARCH64(R"(
     fmov d0, 2.0
@@ -1018,7 +1018,7 @@ TEST_P(InstFloat, ucvtf) {
   CHECK_NEON(6, double, {static_cast<double>(UINT64_MAX), 0.0});
   CHECK_NEON(7, double, {0.0, 0.0});
   CHECK_NEON(8, float, {1.f, 0.f, 0.f, 0.f});
-  CHECK_NEON(9, float, {static_cast<float>(UINT64_C(1) << 48), 0.f, 0.f, 0.f});
+  CHECK_NEON(9, float, {static_cast<float>(UINT64_C(1) << 48), 0.f, 0.f, 0.f});     
   CHECK_NEON(10, float, {static_cast<float>(UINT64_MAX), 0.f, 0.f, 0.f});
   CHECK_NEON(11, float, {0.f, 0.f, 0.f, 0.f});
 }

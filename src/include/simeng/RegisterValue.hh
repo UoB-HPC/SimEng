@@ -28,7 +28,7 @@ class RegisterValue {
       if (bytes > sizeof(T)) {
         // Zero the remaining bytes not set by the provided value
         std::fill<char*, uint16_t>(this->value + sizeof(T), this->value + bytes,
-                                  0);
+                                   0);
       }
     } else {
       void* data = calloc(1, bytes);

@@ -20,12 +20,12 @@ TEST_P(InstStore, strb) {
     mov x6, -16
     strb w1, [sp, x6, sxtx]
   )");
-  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 4), 0xAB);
-  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 3), 0x12);
-  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 2), 0xCD);
-  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1), 0x34);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 4), 0xAB);        
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 3), 0x12);        
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 2), 0xCD);        
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1), 0x34);        
   EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer()), 0xAB);
-  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 18), 0x12);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 18), 0x12);       
 }
 
 TEST_P(InstStore, strh) {
@@ -44,12 +44,12 @@ TEST_P(InstStore, strh) {
     mov x6, -16
     strh w1, [sp, x6, sxtx]
   )");
-  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 8), 0xABAB);
-  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 6), 0x1234);
-  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 4), 0xCD89);
-  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 2), 0x3401);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 8), 0xABAB);     
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 6), 0x1234);     
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 4), 0xCD89);     
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 2), 0x3401);     
   EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer()), 0xABAB);
-  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 20), 0x1234);
+  EXPECT_EQ(getMemoryValue<uint16_t>(process_->getStackPointer() - 20), 0x1234);    
 }
 
 TEST_P(InstStore, strd) {
@@ -70,11 +70,11 @@ TEST_P(InstStore, strd) {
     str d1, [sp, x6, sxtx]
   )");
   EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 40), 2.0);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 32), -0.125);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 32), -0.125);      
   EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 24), 7.5);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 16), 16.0);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 16), 16.0);        
   EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), 2.0);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 56), -0.125);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 56), -0.125);      
 }
 
 TEST_P(InstStore, strq) {
@@ -83,9 +83,9 @@ TEST_P(InstStore, strq) {
     sub sp, sp, 16
     str q0, [sp], -16
   )");
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), 0.125);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 16), 0.125);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 32);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), 0.125);        
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 16), 0.125);       
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 32);    
 }
 
 TEST_P(InstStore, strs) {
@@ -106,11 +106,11 @@ TEST_P(InstStore, strs) {
     str s1, [sp, x6, sxtx]
   )");
   EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 20), 2.f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 16), -0.125f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 16), -0.125f);      
   EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 12), 7.5f);
   EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 8), 16.f);
   EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 4), 2.f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 28), -0.125f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 28), -0.125f);      
 }
 
 TEST_P(InstStore, strw) {
@@ -174,7 +174,7 @@ TEST_P(InstStore, strx) {
             0x1234ull << 32);
 }
 
-TEST_P(InstStore, stpd){
+TEST_P(InstStore, stpd) {
   RUN_AARCH64(R"(
     fmov d0, 2.0
     fmov d1, -0.125
@@ -188,12 +188,12 @@ TEST_P(InstStore, stpd){
   )");
 
   EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 64), 2.0);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 56), -0.125);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 48), -0.125);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 56), -0.125);      
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 48), -0.125);      
   EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 40), 7.5);
   EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 32), 7.5);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 24), 16.0);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 16), 16.0);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 24), 16.0);        
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 16), 16.0);        
   EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), 2.0);
 }
 
@@ -210,8 +210,8 @@ TEST_P(InstStore, stps) {
     stp s3, s0, [sp, 8]
   )");
   EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 32), 2.f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 28), -0.125f);
-  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 24), -0.125f);
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 28), -0.125f);      
+  EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 24), -0.125f);      
   EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 20), 7.5f);
   EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 16), 7.5f);
   EXPECT_EQ(getMemoryValue<float>(process_->getStackPointer() - 12), 16.f);
@@ -226,7 +226,7 @@ TEST_P(InstStore, stpwi) {
     stp w0, w1, [sp, -8]
   )");
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 8), 7u);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 4), 42u);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 4), 42u);        
 }
 
 TEST_P(InstStore, stur) {
@@ -234,13 +234,13 @@ TEST_P(InstStore, stur) {
     movz w0, #42
     stur w0, [sp, #-4]
   )");
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 4), 42u);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 4), 42u);        
 
   RUN_AARCH64(R"(
     movz x0, #42
     stur x0, [sp, #-8]
   )");
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 8), 42u);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 8), 42u);        
 
   RUN_AARCH64(R"(
     fmov s0, -0.125
@@ -258,8 +258,8 @@ TEST_P(InstStore, stur) {
     fmov v0.2d, -0.125
     stur q0, [sp, #-16]
   )");
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 16), -0.125);
-  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), -0.125);
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 16), -0.125);      
+  EXPECT_EQ(getMemoryValue<double>(process_->getStackPointer() - 8), -0.125);       
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstStore, ::testing::Values(EMULATION),
