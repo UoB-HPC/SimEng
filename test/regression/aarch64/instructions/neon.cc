@@ -74,7 +74,7 @@ TEST_P(InstNeon, addp) {
     addp v2.16b, v0.16b, v1.16b
   )");
   CHECK_NEON(2, uint8_t,
-             {1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61});        
+             {1, 5, 9, 13, 17, 21, 25, 29, 33, 37, 41, 45, 49, 53, 57, 61});
 
   // 16-bit
   initialHeapData_.resize(32);
@@ -311,7 +311,7 @@ TEST_P(InstNeon, cmeq) {
              {0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,
               0xFF, 0x00, 0xFF, 0xFF, 0xFF});
   CHECK_NEON(3, uint8_t,
-             {0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00,     
+             {0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00,
               0x00, 0xFF, 0x00, 0x00, 0x00});
 }
 
@@ -340,8 +340,8 @@ TEST_P(InstNeon, dup) {
     dup v5.4h, w4
   )");
   CHECK_NEON(2, uint16_t, {42, 42, 42, 42});
-  CHECK_NEON(3, uint16_t, {(1u << 15), (1u << 15), (1u << 15), (1u << 15)});        
-  CHECK_NEON(4, uint16_t, {UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX});        
+  CHECK_NEON(3, uint16_t, {(1u << 15), (1u << 15), (1u << 15), (1u << 15)});
+  CHECK_NEON(4, uint16_t, {UINT16_MAX, UINT16_MAX, UINT16_MAX, UINT16_MAX});
   CHECK_NEON(5, uint16_t, {7, 7, 7, 7});
 
   initialHeapData_.resize(32);
@@ -402,12 +402,12 @@ TEST_P(InstNeon, dup) {
     dup v7.4s, v0.s[3]
   )");
   CHECK_NEON(2, uint32_t, {42, 42, 42, 42});
-  CHECK_NEON(3, uint32_t, {(1u << 31), (1u << 31), (1u << 31), (1u << 31)});        
+  CHECK_NEON(3, uint32_t, {(1u << 31), (1u << 31), (1u << 31), (1u << 31)});
   CHECK_NEON(4, uint32_t, {1, 1, 1, 1});
   CHECK_NEON(5, uint32_t,
-             {(1u << 31) - 1, (1u << 31) - 1, (1u << 31) - 1, (1u << 31) - 1});     
+             {(1u << 31) - 1, (1u << 31) - 1, (1u << 31) - 1, (1u << 31) - 1});
   CHECK_NEON(6, uint32_t, {0, 0, 0, 0});
-  CHECK_NEON(7, uint32_t, {0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF});        
+  CHECK_NEON(7, uint32_t, {0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF});
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1182,8 +1182,8 @@ TEST_P(InstNeon, movi) {
     movi v5.2s, 3, lsl #24
   )");
   CHECK_NEON(0, uint32_t, {42u, 42u, 42u, 42u});
-  CHECK_NEON(1, uint32_t, {(42u << 8), (42u << 8), (42u << 8), (42u << 8)});        
-  CHECK_NEON(2, uint32_t, {(3u << 24), (3u << 24), (3u << 24), (3u << 24)});        
+  CHECK_NEON(1, uint32_t, {(42u << 8), (42u << 8), (42u << 8), (42u << 8)});
+  CHECK_NEON(2, uint32_t, {(3u << 24), (3u << 24), (3u << 24), (3u << 24)});
   CHECK_NEON(3, uint32_t, {42u, 42u, 0, 0});
   CHECK_NEON(4, uint32_t, {(42u << 8), (42u << 8), 0, 0});
   CHECK_NEON(5, uint32_t, {(3u << 24), (3u << 24), 0, 0});
@@ -1204,10 +1204,10 @@ TEST_P(InstNeon, mvni) {
               static_cast<uint16_t>(~42), static_cast<uint16_t>(~42)});
   CHECK_NEON(
       1, uint16_t,
-      {static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8)),      
-       static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8)),      
-       static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8)),      
-       static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8))});    
+      {static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8)),
+       static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8)),
+       static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8)),
+       static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8))});
   CHECK_NEON(3, uint16_t,
              {static_cast<uint16_t>(~42), static_cast<uint16_t>(~42),
               static_cast<uint16_t>(~42), static_cast<uint16_t>(~42),
@@ -1215,8 +1215,8 @@ TEST_P(InstNeon, mvni) {
               static_cast<uint16_t>(0), static_cast<uint16_t>(0)});
   CHECK_NEON(
       4, uint16_t,
-      {static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8)),      
-       static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8)),      
+      {static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8)),
+       static_cast<uint16_t>(~(42u << 8)), static_cast<uint16_t>(~(42u << 8)),
        static_cast<uint16_t>(0), static_cast<uint16_t>(0),
        static_cast<uint16_t>(0), static_cast<uint16_t>(0)});
 
@@ -1230,8 +1230,8 @@ TEST_P(InstNeon, mvni) {
     mvni v5.2s, 3, lsl #24
   )");
   CHECK_NEON(0, uint32_t, {~42u, ~42u, ~42u, ~42u});
-  CHECK_NEON(1, uint32_t, {~(42u << 8), ~(42u << 8), ~(42u << 8), ~(42u << 8)});    
-  CHECK_NEON(2, uint32_t, {~(3u << 24), ~(3u << 24), ~(3u << 24), ~(3u << 24)});    
+  CHECK_NEON(1, uint32_t, {~(42u << 8), ~(42u << 8), ~(42u << 8), ~(42u << 8)});
+  CHECK_NEON(2, uint32_t, {~(3u << 24), ~(3u << 24), ~(3u << 24), ~(3u << 24)});
   CHECK_NEON(3, uint32_t, {~42u, ~42u, 0, 0});
   CHECK_NEON(4, uint32_t, {~(42u << 8), ~(42u << 8), 0, 0});
   CHECK_NEON(5, uint32_t, {~(3u << 24), ~(3u << 24), 0, 0});
@@ -1261,8 +1261,8 @@ TEST_P(InstNeon, orr) {
     # Test mov alias as well
     mov v3.16b, v0.16b
   )");
-  CHECK_NEON(2, uint32_t, {0xFEFDFEFF, 0x7777777F, 0xFEFEFEFE, 0xAFCFEF0F});        
-  CHECK_NEON(3, uint32_t, {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01});        
+  CHECK_NEON(2, uint32_t, {0xFEFDFEFF, 0x7777777F, 0xFEFEFEFE, 0xAFCFEF0F});
+  CHECK_NEON(3, uint32_t, {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01});
 }
 
 TEST_P(InstNeon, smax) {
@@ -1408,7 +1408,7 @@ TEST_P(InstNeon, scvtf) {
   )");
   CHECK_NEON(0, double, {1.0, -1.0});
   CHECK_NEON(1, double,
-             {static_cast<double>(INT64_MAX), static_cast<double>(INT64_MIN)});     
+             {static_cast<double>(INT64_MAX), static_cast<double>(INT64_MIN)});
 }
 
 TEST_P(InstNeon, shl) {
@@ -1431,7 +1431,7 @@ TEST_P(InstNeon, shl) {
   )");
   CHECK_NEON(
       1, uint32_t,
-      {0xDEADBEEF << 2, 0x12345678 << 2, 0x98765432 << 2, 0xABCDEF01 << 2});        
+      {0xDEADBEEF << 2, 0x12345678 << 2, 0x98765432 << 2, 0xABCDEF01 << 2});
 
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
   heap64[0] = 0x12345678;

@@ -26,7 +26,7 @@ constexpr uint32_t bits(uint32_t value, uint8_t start, uint8_t width) {
 }
 
 // Generate a general purpose register identifier with tag `tag`
-constexpr Register genReg(uint16_t tag) { return {RegisterType::GENERAL, tag}; }    
+constexpr Register genReg(uint16_t tag) { return {RegisterType::GENERAL, tag}; }
 // Generate a NZCV register identifier
 constexpr Register nzcvReg() { return {RegisterType::NZCV, 0}; }
 
@@ -37,36 +37,36 @@ constexpr int32_t signExtend(uint32_t value, int currentLength) {
   return static_cast<int32_t>(value) | (negative ? mask : 0);
 }
 
-/** Parses the Capstone `arm64_reg` value to generate an architectural register     
+/** Parses the Capstone `arm64_reg` value to generate an architectural register
  * representation.
  *
  * WARNING: this conversion is FRAGILE, and relies on the structure of the
- * `arm64_reg` enum. Updates to the Capstone library version may cause this to      
+ * `arm64_reg` enum. Updates to the Capstone library version may cause this to
  * break. */
 Register csRegToRegister(arm64_reg reg) {
   // Check from top of the range downwards
 
-  // ARM64_REG_V0 -> {end} are vector registers, reading from the vector file       
+  // ARM64_REG_V0 -> {end} are vector registers, reading from the vector file
   if (reg >= ARM64_REG_V0) {
-    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_V0)};       
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_V0)};
   }
 
-  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading       
+  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading
   // from the vector file
   if (reg >= ARM64_REG_Z0) {
-    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_Z0)};       
+    return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_Z0)};
   }
 
   // ARM64_REG_X0 -> +28 are 64-bit (X) registers, reading from the general
   // file. Excludes #29 (FP) and #30 (LR)
   if (reg >= ARM64_REG_X0) {
-    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_X0)};      
+    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_X0)};
   }
 
   // ARM64_REG_W0 -> +30 are 32-bit (W) registers, reading from the general
   // file. Excludes #31 (WZR/WSP).
   if (reg >= ARM64_REG_W0) {
-    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_W0)};      
+    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - ARM64_REG_W0)};
   }
 
   // ARM64_REG_Q0 and above are repeated ranges representing scalar access
@@ -79,7 +79,7 @@ Register csRegToRegister(arm64_reg reg) {
 
   // ARM64_REG_P0 -> +15 are 256-bit (P) registers. Excludes #16 (FFR).
   if (reg >= ARM64_REG_P0) {
-    return {RegisterType::PREDICATE, static_cast<uint16_t>(reg - ARM64_REG_P0)};    
+    return {RegisterType::PREDICATE, static_cast<uint16_t>(reg - ARM64_REG_P0)};
   }
 
   // ARM64_REG_Q0 and above are repeated ranges representing scalar access
@@ -95,7 +95,7 @@ Register csRegToRegister(arm64_reg reg) {
     return Instruction::ZERO_REGISTER;
   }
 
-  // ARM64_REG_SP and _WSP are stack pointer registers, stored in r31 of the        
+  // ARM64_REG_SP and _WSP are stack pointer registers, stored in r31 of the
   // general file
   if (reg == ARM64_REG_SP || reg == ARM64_REG_WSP) {
     return {RegisterType::GENERAL, 31};
@@ -149,7 +149,7 @@ void Instruction::decode() {
   // Extract implicit reads
   for (size_t i = 0; i < metadata.implicitSourceCount; i++) {
     sourceRegisters[sourceRegisterCount] =
-        csRegToRegister(static_cast<arm64_reg>(metadata.implicitSources[i]));       
+        csRegToRegister(static_cast<arm64_reg>(metadata.implicitSources[i]));
     sourceRegisterCount++;
     operandsPending++;
   }
@@ -161,7 +161,7 @@ void Instruction::decode() {
     const auto& op = metadata.operands[i];
 
     if (op.type == ARM64_OP_REG) {  // Register operand
-      if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&       
+      if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&
           op.reg != ARM64_REG_XZR) {
         // Add register writes to destinations, but skip zero-register
         // destinations
@@ -177,7 +177,7 @@ void Instruction::decode() {
       if (op.access & cs_ac_type::CS_AC_READ) {
         // Add register reads to destinations
         sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
-        if (sourceRegisters[sourceRegisterCount].type == RegisterType::VECTOR) {    
+        if (sourceRegisters[sourceRegisterCount].type == RegisterType::VECTOR) {
           isASIMD_ = true;
         }
 
@@ -204,28 +204,28 @@ void Instruction::decode() {
       }
       if (op.mem.index) {
         // Register offset; add to sources
-        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.index);       
+        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.index);
         sourceRegisterCount++;
         operandsPending++;
       }
     } else if (op.type == ARM64_OP_REG_MRS) {
       sourceRegisters[sourceRegisterCount] = {
-          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};        
+          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
       sourceRegisterCount++;
       operandsPending++;
     } else if (op.type == ARM64_OP_REG_MSR) {
       destinationRegisters[destinationRegisterCount] = {
-          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};        
+          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
       destinationRegisterCount++;
     } else if (op.type == ARM64_OP_SYS) {  // System register
       if (op.access & cs_ac_type::CS_AC_WRITE) {
         destinationRegisters[destinationRegisterCount] = {
-            RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.sys)};      
+            RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.sys)};
         destinationRegisterCount++;
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
         sourceRegisters[sourceRegisterCount] = {
-            RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.sys)};      
+            RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.sys)};
         sourceRegisterCount++;
         operandsPending++;
       }
@@ -242,7 +242,7 @@ void Instruction::decode() {
   if (accessesMemory) {
     // Check first operand access to determine if it's a load or store
     if (metadata.operands[0].access & CS_AC_WRITE) {
-      if (metadata.id == ARM64_INS_STXR || metadata.id == ARM64_INS_STLXR) {        
+      if (metadata.id == ARM64_INS_STXR || metadata.id == ARM64_INS_STLXR) {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
         isStore_ = true;
@@ -255,7 +255,7 @@ void Instruction::decode() {
   }
   if (metadata.opcode == Opcode::AArch64_LDRXl ||
       metadata.opcode == Opcode::AArch64_LDRSWl) {
-    // Literal loads aren't flagged as having a memory operand, so these must be    
+    // Literal loads aren't flagged as having a memory operand, so these must be
     // marked as loads manually
     isLoad_ = true;
   }

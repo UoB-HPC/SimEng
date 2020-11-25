@@ -1018,7 +1018,7 @@ TEST_P(InstFloat, ucvtf) {
   CHECK_NEON(6, double, {static_cast<double>(UINT64_MAX), 0.0});
   CHECK_NEON(7, double, {0.0, 0.0});
   CHECK_NEON(8, float, {1.f, 0.f, 0.f, 0.f});
-  CHECK_NEON(9, float, {static_cast<float>(UINT64_C(1) << 48), 0.f, 0.f, 0.f});     
+  CHECK_NEON(9, float, {static_cast<float>(UINT64_C(1) << 48), 0.f, 0.f, 0.f});
   CHECK_NEON(10, float, {static_cast<float>(UINT64_MAX), 0.f, 0.f, 0.f});
   CHECK_NEON(11, float, {0.f, 0.f, 0.f, 0.f});
 }
