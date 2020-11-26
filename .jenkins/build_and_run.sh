@@ -40,7 +40,7 @@ build () {
 
     cd "$SIMENG_BUILD" || exit
     echo "$PWD"
-    cmake "$SIMENG_TOP" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SIMENG_INSTALL"
+    cmake "$SIMENG_TOP" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX="$SIMENG_INSTALL"
     make -j
     make install
 }
