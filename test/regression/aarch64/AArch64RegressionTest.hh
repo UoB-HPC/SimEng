@@ -82,7 +82,8 @@ class AArch64RegressionTest : public RegressionTest {
     const T* data = RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::VECTOR, tag});
     for (unsigned i = 0; i < (256 / sizeof(T)); i++) {
-      EXPECT_EQ(data[i], values[i]) << "Mismatch for element " << i << ".";
+      EXPECT_NEAR(data[i], values[i], 0.0005)
+          << "Mismatch for element " << i << ".";
     }
   }
 
@@ -97,7 +98,8 @@ class AArch64RegressionTest : public RegressionTest {
     const T* data = RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::PREDICATE, tag});
     for (unsigned i = 0; i < (32 / sizeof(T)); i++) {
-      EXPECT_EQ(data[i], values[i]) << "Mismatch for element " << i << ".";
+      EXPECT_NEAR(data[i], values[i], 0.0005)
+          << "Mismatch for element " << i << ".";
     }
   }
 
