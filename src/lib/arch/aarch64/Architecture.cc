@@ -272,11 +272,6 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_LDRWroX:
     case Opcode::AArch64_LDRXroW:
     case Opcode::AArch64_LDRXroX:
-      if (metadata.operands[1].shift.value > 0) {
-        // return {3, 2};
-        return {1, 1};
-      }
-      // return {2, 2};
       return {1, 1};
     case Opcode::AArch64_LD1Rv4s:
     case Opcode::AArch64_LD1Rv4s_POST:
@@ -295,7 +290,6 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_LDRWpre:
     case Opcode::AArch64_LDRXpost:
     case Opcode::AArch64_LDRXpre:
-      // return {2, 2};
       return {1, 1};
     case Opcode::AArch64_LDPXpost:
     case Opcode::AArch64_LDPXpre:
@@ -303,13 +297,11 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_LDPDi:
     case Opcode::AArch64_LDPQi:
     case Opcode::AArch64_LDPSi:
-      // return {3, 3};
       return {2, 2};
     case Opcode::AArch64_LDPDpost:
     case Opcode::AArch64_LDPDpre:
     case Opcode::AArch64_LDPQpost:
     case Opcode::AArch64_LDPQpre:
-      // return {3, 3};
       return {2, 2};
     case Opcode::AArch64_STLXRW:
     case Opcode::AArch64_STLXRX:
@@ -326,7 +318,6 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STURSi:
     case Opcode::AArch64_STURWi:
     case Opcode::AArch64_STURXi:
-      // return {2, 2};
       return {1, 1};
     case Opcode::AArch64_STRBBpost:
     case Opcode::AArch64_STRBBpre:
@@ -355,7 +346,6 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STRXroW:
     case Opcode::AArch64_STRXroX:
     case Opcode::AArch64_STXRW:
-      // return {3, 3};
       return {1, 1};
     case Opcode::AArch64_STPXpre:
     case Opcode::AArch64_STPXi:
@@ -364,14 +354,12 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     case Opcode::AArch64_STPDi:
     case Opcode::AArch64_STPSi:
     case Opcode::AArch64_STPQi:
-      // return {4, 4};
       return {2, 2};
     case Opcode::AArch64_STPDpost:
     case Opcode::AArch64_STPDpre:
     case Opcode::AArch64_STPSpost:
     case Opcode::AArch64_STPSpre:
     case Opcode::AArch64_STPQpost:
-      // return {4, 4};
       return {2, 2};
     case Opcode::AArch64_FCSELDrrr:
     case Opcode::AArch64_FCSELSrrr:
