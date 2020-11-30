@@ -135,6 +135,9 @@ class Linux {
   int64_t setTidAddress(uint64_t tidptr);
 
   /** readv syscall: read buffers from a file. */
+  int64_t read(int64_t fd, void* buf, uint64_t count);
+
+  /** readv syscall: read buffers from a file. */
   int64_t readv(int64_t fd, const void* iovdata, int iovcnt);
 
   /** write syscall: write buffer to a file. */
