@@ -180,6 +180,9 @@ TEST_F(ReorderBufferTest, CommitStore) {
 
   // Check that the store was committed and removed from the LSQ
   EXPECT_EQ(lsq.getStoreQueueSpace(), maxLSQStores);
+
+  // Tick lsq to complete store
+  lsq.tick();
 }
 
 // Tests that the reorder buffer correctly conditionally flushes instructions

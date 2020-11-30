@@ -271,6 +271,8 @@ TEST_P(LoadStoreQueueTest, Store) {
       .Times(1);
 
   queue.commitStore(storeUopPtr);
+  // Tick the queue to complete the store
+  queue.tick();
 
   // Check the store was removed
   EXPECT_EQ(queue.getStoreQueueSpace(), initialStoreSpace);
