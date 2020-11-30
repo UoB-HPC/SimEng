@@ -10,9 +10,9 @@ set(TEST_SOURCES
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
     BTBPredictorTest.cc
-    FixedLatencyMemoryInterfaceTest.cc
     ISATest.cc
     RegisterValueTest.cc
+    LatencyMemoryInterfaceTest.cc
     )
 
 configure_file(${PROJECT_SOURCE_DIR}/external/capstone/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
