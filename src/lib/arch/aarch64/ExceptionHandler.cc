@@ -79,6 +79,40 @@ bool ExceptionHandler::init() {
         stateChange = {{R0}, {linux_.lseek(fd, offset, whence)}};
         break;
       }
+      case 63: {  // read
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t totalRead = linux_.read(fd, dataBuffer.data(), count);
+          ProcessStateChange stateChange = {{R0}, {totalRead}};
+          // Check for failure
+          if (totalRead < 0) {
+            return concludeSyscall(stateChange);
+          }
+
+          int64_t bytesRemaining = totalRead;
+          // Get pointer and size of the buffer
+          uint64_t iDst = bufPtr;
+          uint64_t iLength = bytesRemaining;
+          if (iLength > bytesRemaining) {
+            iLength = bytesRemaining;
+          }
+          bytesRemaining -= iLength;
+
+          // Write data for this buffer in 128-byte chunks
+          auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
+          while (iLength > 0) {
+            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+            stateChange.memoryAddresses.push_back({iDst, len});
+            stateChange.memoryAddressValues.push_back({iSrc, len});
+            iDst += len;
+            iSrc += len;
+            iLength -= len;
+          }
+          return concludeSyscall(stateChange);
+        });
+      }
       case 65: {  // readv
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
@@ -434,7 +468,8 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
 
     // Request a read of up to 128 bytes
     uint64_t numBytes = std::min<uint64_t>(length, 128);
-    memory_.requestRead({ptr, static_cast<uint8_t>(numBytes)});
+    memory_.requestRead({ptr, static_cast<uint8_t>(numBytes)},
+                        instruction_.getSequenceId());
     resumeHandling_ = [=]() {
       return readBufferThen(ptr, length, then, false);
     };
@@ -442,10 +477,11 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
 
   // Check whether read has completed
   auto completedReads = memory_.getCompletedReads();
-  auto response = std::find_if(completedReads.begin(), completedReads.end(),
-                               [&](const MemoryReadResult& response) {
-                                 return response.target.address == ptr;
-                               });
+  auto response =
+      std::find_if(completedReads.begin(), completedReads.end(),
+                   [&](const MemoryReadResult& response) {
+                     return response.requestId == instruction_.getSequenceId();
+                   });
   if (response == completedReads.end()) {
     return false;
   }
