@@ -12,7 +12,7 @@ ExecuteUnit::ExecuteUnit(
     std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
     std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-    BranchPredictor& predictor, bool pipelined)
+    BranchPredictor& predictor, bool pipelined, uint16_t blockingGroup)
     : input_(input),
       output_(output),
       forwardOperands_(forwardOperands),
@@ -20,7 +20,8 @@ ExecuteUnit::ExecuteUnit(
       handleStore_(handleStore),
       raiseException_(raiseException),
       predictor_(predictor),
-      pipelined_(pipelined) {}
+      pipelined_(pipelined),
+      blockingGroup_(blockingGroup) {}
 
 void ExecuteUnit::tick() {
   tickCounter_++;
@@ -35,8 +36,20 @@ void ExecuteUnit::tick() {
       if (!uop->isFlushed()) {
         // Retrieve execution latency from the instruction
         auto latency = uop->getLatency();
-
-        if (latency == 1 && pipeline_.size() == 0) {
+        cycles_++;
+        // Block uop execution if appropriate
+        if ((uop->getGroup() & blockingGroup_) > 0) {
+          if (operationsStalled_.size() == 0) {
+            // Add uop to pipeline
+            pipeline_.push_back({nullptr, tickCounter_ + latency - 1});
+            pipeline_.back().insn = std::move(uop);
+            operationsStalled_.push_back(pipeline_.back().insn);
+          } else {
+            // Stall execution start cycle
+            operationsStalled_.push_back(nullptr);
+            operationsStalled_.back() = std::move(uop);
+          }
+        } else if (latency == 1 && pipeline_.size() == 0) {
           // Pipeline is empty and insn will execute this cycle; bypass
           execute(uop);
         } else {
@@ -65,6 +78,18 @@ void ExecuteUnit::tick() {
 
   auto& head = pipeline_.front();
   if (head.readyAt <= tickCounter_) {
+    // Check if the completion of an operation would unblock
+    // another stalled operation.
+    if ((head.insn->getGroup() & blockingGroup_) > 0) {
+      operationsStalled_.pop_front();
+      if (operationsStalled_.size() > 0) {
+        // Add uop to pipeline
+        auto& uop = operationsStalled_.front();
+        pipeline_.push_back({nullptr, tickCounter_ + uop->getLatency() - 1});
+        pipeline_.back().insn = std::move(uop);
+        operationsStalled_.front() = pipeline_.back().insn;
+      }
+    }
     execute(head.insn);
     pipeline_.pop_front();
   }
@@ -152,6 +177,32 @@ void ExecuteUnit::purgeFlushed() {
       it++;
     }
   }
+
+  // If first blocking in-flight instruction is flushed, ensure another
+  // non-flushed stalled instruction takes it place in the pipeline if
+  // available.
+  bool replace = false;
+  if (operationsStalled_.size() > 0 &&
+      operationsStalled_.front()->isFlushed()) {
+    replace = true;
+  }
+  auto itStall = operationsStalled_.begin();
+  while (itStall != operationsStalled_.end()) {
+    auto& entry = *itStall;
+    if (entry->isFlushed()) {
+      itStall = operationsStalled_.erase(itStall);
+    } else {
+      itStall++;
+    }
+  }
+
+  if (replace && operationsStalled_.size() > 0) {
+    // Add uop to pipeline
+    auto& uop = operationsStalled_.front();
+    pipeline_.push_back({nullptr, tickCounter_ + uop->getLatency() - 1});
+    pipeline_.back().insn = std::move(uop);
+    operationsStalled_.front() = pipeline_.back().insn;
+  }
 }
 
 uint64_t ExecuteUnit::getBranchExecutedCount() const {
@@ -160,6 +211,8 @@ uint64_t ExecuteUnit::getBranchExecutedCount() const {
 uint64_t ExecuteUnit::getBranchMispredictedCount() const {
   return branchMispredicts_;
 }
+
+uint64_t ExecuteUnit::getCycles() const { return cycles_; }
 
 }  // namespace pipeline
 }  // namespace simeng
