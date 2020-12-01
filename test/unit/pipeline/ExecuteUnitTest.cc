@@ -27,16 +27,15 @@ class PipelineExecuteUnitTest : public testing::Test {
   PipelineExecuteUnitTest()
       : input(1, nullptr),
         output(1, nullptr),
-        executeUnit(
-            input, output,
-            [this](auto regs, auto values) {
-              executionHandlers.forwardOperands(regs, values);
-            },
-            [](auto uop) {}, [](auto uop) {},
-            [this](auto instruction) {
-              executionHandlers.raiseException(instruction);
-            },
-            predictor),
+        executeUnit(input, output,
+                    [this](auto regs, auto values) {
+                      executionHandlers.forwardOperands(regs, values);
+                    },
+                    [](auto uop) {}, [](auto uop) {},
+                    [this](auto instruction) {
+                      executionHandlers.raiseException(instruction);
+                    },
+                    predictor),
         uop(new MockInstruction),
         uopPtr(uop) {}
 
@@ -107,7 +106,7 @@ TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
   }));
 
   // Check that the branch predictor was updated with the results
-  EXPECT_CALL(predictor, update(insnAddress, taken, pc)).Times(1);
+  EXPECT_CALL(predictor, update(uopPtr, taken, pc)).Times(1);
 
   // Check that empty forwarding call is made
   EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty()))
