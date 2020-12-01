@@ -22,7 +22,6 @@ const std::initializer_list<uint16_t> physicalRegisterQuantities = {154, 90,
 const std::initializer_list<RegisterFileStructure> physicalRegisterStructures =
     {{8, 154}, {256, 90}, {32, 48}, {1, 128}, {8, 5}};
 const unsigned int robSize = 180;
-const unsigned int rsSize = 60;
 const unsigned int loadQueueSize = 64;
 const unsigned int storeQueueSize = 36;
 const unsigned int fetchBlockAlignmentBits = 5;
@@ -40,7 +39,8 @@ const uint8_t dispatchRate = 4;
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator)
+           pipeline::PortAllocator& portAllocator,
+           std::vector<std::pair<uint8_t, uint64_t>> rsArrangement)
     : isa_(isa),
       registerFileSet_(physicalRegisterStructures),
       registerAliasTable_(isa.getRegisterFileStructures(),
@@ -69,7 +69,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures.size()),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities, rsSize),
+                         portAllocator, physicalRegisterQuantities,
+                         rsArrangement, dispatchRate),
       writebackUnit_(completionSlots_, registerFileSet_),
       portAllocator_(portAllocator) {
   for (size_t i = 0; i < executionUnitCount; i++) {
@@ -81,6 +82,11 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
         [this](auto uop) { loadStoreQueue_.startLoad(uop); }, [](auto uop) {},
         [](auto uop) { uop->setCommitReady(); }, branchPredictor);
   }
+  // Provide reservation size getter to A64FX port allocator
+  portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {
+    dispatchIssueUnit_.getRSSizes(sizeVec);
+  });
+
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
