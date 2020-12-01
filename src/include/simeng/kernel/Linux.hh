@@ -134,7 +134,7 @@ class Linux {
   /** set_tid_address syscall: set clear_child_tid value for calling thread. */
   int64_t setTidAddress(uint64_t tidptr);
 
-  /** readv syscall: read buffers from a file. */
+  /** read syscall: read buffer from a file. */
   int64_t read(int64_t fd, void* buf, uint64_t count);
 
   /** readv syscall: read buffers from a file. */
