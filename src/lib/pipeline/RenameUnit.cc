@@ -22,6 +22,8 @@ void RenameUnit::tick() {
     return;
   }
 
+  input_.stall(false);
+
   // Get the number of available physical registers
   for (size_t type = 0; type < freeRegistersAvailable_.size(); type++) {
     freeRegistersAvailable_[type] = rat_.freeRegistersAvailable(type);
@@ -35,7 +37,7 @@ void RenameUnit::tick() {
     if (reorderBuffer_.getFreeSpace() == 0) {
       input_.stall(true);
       robStalls_++;
-      break;
+      return;
     }
     if (uop->exceptionEncountered()) {
       // Exception; place in ROB, mark as ready, and remove from pipeline
@@ -53,13 +55,13 @@ void RenameUnit::tick() {
       if (lsq_.getLoadQueueSpace() == 0) {
         lqStalls_++;
         input_.stall(true);
-        break;
+        return;
       }
     } else if (isStore) {
       if (lsq_.getStoreQueueSpace() == 0) {
         sqStalls_++;
         input_.stall(true);
-        break;
+        return;
       }
     }
 
@@ -91,8 +93,6 @@ void RenameUnit::tick() {
         return;
       }
     }
-
-    input_.stall(false);
 
     // Allocate source registers
     auto& sourceRegisters = uop->getOperandRegisters();
