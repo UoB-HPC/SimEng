@@ -104,6 +104,23 @@ class Instruction {
   /** Is this a branch operation? */
   virtual bool isBranch() const = 0;
 
+  /** Is this a arithmetic simd operation? */
+  virtual bool isASIMD() const = 0;
+
+  /** Is this a return instruction? */
+  virtual bool isRET() const = 0;
+
+  /** Is this a branch and link instruction? */
+  virtual bool isBL() const = 0;
+
+  /** Is this a SVE instruction? */
+  /** Maybe remove as aarch64 exclusive? */
+  virtual bool isSVE() const = 0;
+
+  /** Is this a predicate setting instruction? */
+  /** Maybe remove as aarch64 exclusive? */
+  virtual bool isPredicate() const = 0;
+
   /** Set this instruction's instruction memory address. */
   void setInstructionAddress(uint64_t address);
 

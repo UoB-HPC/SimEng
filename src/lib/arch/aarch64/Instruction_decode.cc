@@ -171,6 +171,15 @@ void Instruction::decode() {
             RegisterType::VECTOR) {
           isASIMD_ = true;
         }
+        if (destinationRegisters[destinationRegisterCount].type ==
+            RegisterType::PREDICATE) {
+          isPredicate_ = true;
+          if (metadata.id == ARM64_INS_FCMGE ||
+              metadata.id == ARM64_INS_FCMGT ||
+              metadata.id == ARM64_INS_FCMLT) {
+            isPredicate_ = false;
+          }
+        }
 
         destinationRegisterCount++;
       }
@@ -230,7 +239,11 @@ void Instruction::decode() {
         operandsPending++;
       }
     }
+
+    if (op.shift.value > 0) isShift_ = true;  // Identify shift operations
   }
+
+  if (metadata.setsFlags) isShift_ = true;
 
   // Identify branches
   for (size_t i = 0; i < metadata.groupCount; i++) {
@@ -258,6 +271,35 @@ void Instruction::decode() {
     // Literal loads aren't flagged as having a memory operand, so these must be
     // marked as loads manually
     isLoad_ = true;
+  }
+  if ((1189 < metadata.opcode && metadata.opcode < 1204) ||
+      (1605 < metadata.opcode && metadata.opcode < 1617) ||
+      (2906 < metadata.opcode && metadata.opcode < 2913) ||
+      (4045 < metadata.opcode && metadata.opcode < 4052)) {
+    isDivide_ = true;
+  }
+  if ((1210 < metadata.opcode && metadata.opcode < 1214) ||
+      (1329 < metadata.opcode && metadata.opcode < 1367) ||
+      (1393 < metadata.opcode && metadata.opcode < 1444) ||
+      (1454 < metadata.opcode && metadata.opcode < 1458) ||
+      (1469 < metadata.opcode && metadata.opcode < 1476) ||
+      (2502 < metadata.opcode && metadata.opcode < 2505) ||
+      (2578 < metadata.opcode && metadata.opcode < 2599) ||
+      (2992 == metadata.opcode) ||
+      (3076 < metadata.opcode && metadata.opcode < 3093) ||
+      (3148 < metadata.opcode && metadata.opcode < 3197) ||
+      (4072 == metadata.opcode) ||
+      (4154 < metadata.opcode && metadata.opcode < 4171)) {
+    isMultiply_ = true;
+  }
+  if (metadata.opcode == 2756) {
+    isRET_ = true;
+  }
+  if (metadata.opcode == 325 || metadata.opcode == 326) {
+    isBL_ = true;
+  }
+  if (metadata.id == ARM64_INS_PTEST) {
+    isPredicate_ = true;
   }
   if (metadata.id == ARM64_INS_ADDVL || metadata.id == ARM64_INS_FDUP ||
       metadata.id == ARM64_INS_FMSB || metadata.id == ARM64_INS_LD1RD ||

@@ -119,6 +119,11 @@ const span<RegisterValue> Instruction::getResults() const {
 bool Instruction::isStore() const { return isStore_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
+bool Instruction::isASIMD() const { return isASIMD_; }
+bool Instruction::isRET() const { return isRET_; }
+bool Instruction::isBL() const { return isBL_; }
+bool Instruction::isSVE() const { return isSVE_; }
+bool Instruction::isPredicate() const { return isPredicate_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
