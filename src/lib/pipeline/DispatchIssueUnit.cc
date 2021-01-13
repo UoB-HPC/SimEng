@@ -28,8 +28,8 @@ DispatchIssueUnit::DispatchIssueUnit(
   for (int port = 0; port < rsArrangement.size(); port++) {
     auto RS = rsArrangement[port];
     if (reservationStations_.size() < RS.first + 1) {
-      reservationStations_.resize(
-          RS.first + 1, {0, 0, *(new std::vector<ReservationStationPort>)});
+      std::vector<ReservationStationPort> ports;
+      reservationStations_.resize(RS.first + 1, {0, 0, ports});
     }
     reservationStations_[RS.first].capacity = RS.second;
     // Find number of ports already mapping to the given RS
