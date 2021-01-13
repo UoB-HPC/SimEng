@@ -48,7 +48,7 @@ void DecodeUnit::tick() {
 
       if (!uop->isBranch()) {
         // Non-branch incorrectly predicted as a branch; let the predictor know
-        predictor_.update(uop->getInstructionAddress(), false, pc_);
+        predictor_.update(uop, false, pc_);
       }
 
       // Skip processing remaining macro-ops, as they need to be flushed

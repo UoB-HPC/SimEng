@@ -108,7 +108,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     pc_ = uop->getBranchAddress();
 
     // Update branch predictor with branch results
-    predictor_.update(uop->getInstructionAddress(), uop->wasBranchTaken(), pc_);
+    predictor_.update(uop, uop->wasBranchTaken(), pc_);
 
     // Update the branch instruction counter
     branchesExecuted_++;

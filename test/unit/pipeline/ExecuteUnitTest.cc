@@ -1,9 +1,8 @@
 #include "../MockBranchPredictor.hh"
 #include "../MockInstruction.hh"
-#include "simeng/pipeline/ExecuteUnit.hh"
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "simeng/pipeline/ExecuteUnit.hh"
 
 namespace simeng {
 namespace pipeline {
@@ -107,7 +106,7 @@ TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
   }));
 
   // Check that the branch predictor was updated with the results
-  EXPECT_CALL(predictor, update(insnAddress, taken, pc)).Times(1);
+  EXPECT_CALL(predictor, update(uopPtr, taken, pc)).Times(1);
 
   // Check that empty forwarding call is made
   EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty()))

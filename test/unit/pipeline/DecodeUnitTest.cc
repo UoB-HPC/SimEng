@@ -74,7 +74,7 @@ TEST_F(PipelineDecodeUnitTest, Flush) {
   EXPECT_CALL(*uop, isBranch()).WillOnce(Return(false));
 
   // Check the predictor is updated with the correct instruction address and PC
-  EXPECT_CALL(predictor, update(2, false, 1));
+  EXPECT_CALL(predictor, update(uopPtr, false, 1));
 
   decodeUnit.tick();
 
