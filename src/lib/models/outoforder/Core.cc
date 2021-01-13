@@ -70,7 +70,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                   physicalRegisterStructures.size()),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
                          portAllocator, physicalRegisterQuantities, rsSize),
-      writebackUnit_(completionSlots_, registerFileSet_) {
+      writebackUnit_(completionSlots_, registerFileSet_),
+      portAllocator_(portAllocator) {
   for (size_t i = 0; i < executionUnitCount; i++) {
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
@@ -92,6 +93,9 @@ void Core::tick() {
     processExceptionHandler();
     return;
   }
+
+  // Tick port allocators internal functionality at start of cycle
+  portAllocator_.tick();
 
   // Writeback must be ticked at start of cycle, to ensure decode reads the
   // correct values

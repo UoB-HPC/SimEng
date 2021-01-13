@@ -20,6 +20,7 @@
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
+#include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
@@ -182,16 +183,37 @@ int main(int argc, char** argv) {
   auto predictor = simeng::BTBPredictor(16);
 
   // TODO: Construct port arrangement from config options
-  const std::vector<std::vector<uint16_t>> portArrangement = {
-      {simeng::arch::aarch64::InstructionGroups::LOAD},
-      {simeng::arch::aarch64::InstructionGroups::LOAD},
-      {simeng::arch::aarch64::InstructionGroups::STORE},
-      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
-       simeng::arch::aarch64::InstructionGroups::BRANCH},
-      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
-       simeng::arch::aarch64::InstructionGroups::ASIMD},
-      {simeng::arch::aarch64::InstructionGroups::ARITHMETIC,
-       simeng::arch::aarch64::InstructionGroups::ASIMD}};
+  const std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
+      portArrangement = {
+          {{{simeng::arch::aarch64::InstructionGroups::LOAD, 0},
+            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 4
+          {{{simeng::arch::aarch64::InstructionGroups::LOAD, 0},
+            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 5
+          {{{simeng::arch::aarch64::InstructionGroups::STORE, 0},
+            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 3
+          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
+            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1}},
+           {{simeng::arch::aarch64::InstructionGroups::BRANCH, 0}}},  // Port 2
+          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
+            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1}},
+           {{simeng::arch::aarch64::InstructionGroups::ASIMD, 0},
+            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
+            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}}},  // Port 0
+          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
+            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
+            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}},
+           {{simeng::arch::aarch64::InstructionGroups::ASIMD, 0},
+            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
+            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
+            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}}}  // Port 1
+      };
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
   // TODO: Expose as config option

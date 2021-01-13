@@ -152,20 +152,18 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 }
 
 uint16_t Instruction::getGroup() const {
-  if (isBranch()) {
-    return InstructionGroups::BRANCH;
-  }
-  if (isLoad()) {
-    return InstructionGroups::LOAD;
-  }
-  if (isStore()) {
-    return InstructionGroups::STORE;
-  }
+  uint16_t group = 0;
+  if (isPredicate()) group |= (1 << InstructionGroups::PREDICATE);
+  if (isBranch()) group |= (1 << InstructionGroups::BRANCH);
+  if (isLoad()) group |= (1 << InstructionGroups::LOAD);
+  if (isStore()) group |= (1 << InstructionGroups::STORE);
+  if (isASIMD_) group |= (1 << InstructionGroups::ASIMD);
+  if (group == 0) group |= (1 << InstructionGroups::ARITHMETIC);
+  if (isShift_) group |= (1 << InstructionGroups::SHIFT);
+  if (isDivide_) group |= (1 << InstructionGroups::DIVIDE);
+  if (isMultiply_) group |= (1 << InstructionGroups::MULTIPLY);
 
-  if (isASIMD_) {
-    return InstructionGroups::ASIMD;
-  }
-  return InstructionGroups::ARITHMETIC;
+  return group;
 }
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
