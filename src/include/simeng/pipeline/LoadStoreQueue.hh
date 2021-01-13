@@ -8,7 +8,9 @@
 
 #include "simeng/Instruction.hh"
 #include "simeng/MemoryInterface.hh"
+#include "simeng/control.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
+#include "simeng/trace.hh"
 
 namespace simeng {
 namespace pipeline {

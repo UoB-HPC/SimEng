@@ -12,6 +12,11 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
                                       uint64_t requestId) {
   if (target.address + target.size > size_) {
     // Read outside of memory; return an invalid value to signal a fault
+    // Exception.flatMemoryRead
+    probeTrace newProbe = {20, trace_cycle, 0};
+    Trace* newTrace = new Trace;
+    newTrace->setProbeTraces(newProbe);
+    probeList.push_back(newTrace);
     completedReads_.push_back({target, RegisterValue(), requestId});
     return;
   }

@@ -1,10 +1,12 @@
 #pragma once
 
 #include "simeng/Instruction.hh"
+#include "simeng/control.hh"
 #include "simeng/pipeline/LoadStoreQueue.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/RegisterAliasTable.hh"
 #include "simeng/pipeline/ReorderBuffer.hh"
+#include "simeng/trace.hh"
 
 namespace simeng {
 namespace pipeline {

@@ -7,6 +7,8 @@
 #include "simeng/Core.hh"
 #include "simeng/Instruction.hh"
 #include "simeng/MemoryInterface.hh"
+#include "simeng/control.hh"
+#include "simeng/trace.hh"
 
 namespace simeng {
 
@@ -66,8 +68,8 @@ class Architecture {
    * consumed to produce it; a value of 0 indicates too few bytes were present
    * for a valid decoding. */
   virtual uint8_t predecode(const void* ptr, uint8_t bytesAvailable,
-                            uint64_t instructionAddress,
-                            MacroOp& output) const = 0;
+                            uint64_t instructionAddress, MacroOp& output,
+                            std::string& disasm) const = 0;
 
   /** Returns a vector of {size, number} pairs describing the available
    * registers. */

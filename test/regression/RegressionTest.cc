@@ -5,11 +5,24 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
+#include "simeng/control.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
+#include "simeng/trace.hh"
+
+bool tracing;
+bool enableTrace;
+bool probing;
+bool enableProbe;
+bool enableFocus;
+bool recordEvents;
+uint64_t trace_cycle;
+uint64_t traceId;
+std::map<uint64_t, simeng::Trace*> traceMap;
+std::list<simeng::Trace*> probeList;
 
 RegressionTest::~RegressionTest() { delete[] code_; }
 

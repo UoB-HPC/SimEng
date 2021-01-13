@@ -8,6 +8,7 @@ namespace arch {
 namespace aarch64 {
 
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
+std::unordered_map<uint32_t, std::string> disasmCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 uint64_t Architecture::SVCRval_;
 
@@ -144,8 +145,8 @@ Architecture::~Architecture() {
 }
 
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
-                                uint64_t instructionAddress,
-                                MacroOp& output) const {
+                                uint64_t instructionAddress, MacroOp& output,
+                                std::string& disasm) const {
   // Check that instruction address is 4-byte aligned as required by Armv9.2-a
   if (instructionAddress & 0x3) {
     // Consume 1-byte and raise a misaligned PC exception
@@ -184,6 +185,17 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     bool success =
         cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
 
+    // Construct a disassembly string
+    std::string m(rawInsn.mnemonic);
+    std::string o(rawInsn.op_str);
+    std::string data;
+    if (success)
+      data = m + " " + o;
+    else
+      data = "";
+    // Cache the decoded data
+    disasmCache.insert({insn, data});
+
     auto metadata =
         success ? InstructionMetadata(rawInsn) : InstructionMetadata(encoding);
 
@@ -206,6 +218,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   for (int i = 0; i < num_ops; i++) {
     output[i]->setInstructionAddress(instructionAddress);
   }
+  disasm = disasmCache.find(insn)->second;
 
   return 4;
 }

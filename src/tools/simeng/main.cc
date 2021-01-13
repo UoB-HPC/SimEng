@@ -11,9 +11,15 @@
 
 /** Tick the provided core model until it halts. */
 int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
-             simeng::MemoryInterface& instructionMemory) {
+             simeng::MemoryInterface& instructionMemory,
+             std::ofstream* traceOut, std::ofstream* probeOut) {
   uint64_t iterations = 0;
 
+  int probeIndex = 1;
+  uint64_t probeCycle = 1;
+  int start = 1;
+  std::string traceWriteOut = "";
+  std::string probeWriteOut = "";
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
     // Tick the core
@@ -23,11 +29,89 @@ int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
     instructionMemory.tick();
     dataMemory.tick();
 
+    // Write out trace data
+    std::map<uint64_t, simeng::Trace*>::iterator itM = traceMap.begin();
+    // loop through tracing map and write out the finished instructions
+    while (itM != traceMap.end()) {
+      char str[1000] = "";
+      int success = itM->second->writeCycleOut(str, itM->first, "outoforder");
+      // If written out remove instruction from map
+      if (success) {
+        delete itM->second;
+        itM = traceMap.erase(itM);
+        traceWriteOut += str;
+        if (traceWriteOut.length() > 8196) {
+          *traceOut << traceWriteOut;
+          traceWriteOut = "";
+        }
+      } else
+        break;
+    }
+    // Write out probe data
+    std::list<simeng::Trace*>::iterator itL = probeList.begin();
+    int newline = 0;
+    while (itL != probeList.end()) {
+      simeng::probeTrace pt = (*itL)->getProbeTraces();
+      if (pt.cycle == probeCycle)
+        newline = 0;
+      else {
+        newline = 1;
+        for (uint64_t i = 0; i < (pt.cycle - probeCycle - 1); i++) {
+          probeWriteOut += "\n-";
+        }
+        probeCycle = pt.cycle;
+      }
+      char str[4] = "";
+      int success = (*itL)->writeProbeOut(str, probeIndex, newline, start);
+      // Increment probe counter
+      probeIndex++;
+      // If written out remove probe from list
+      if (success) {
+        start = 0;
+        delete (*itL);
+        itL = probeList.erase(itL);
+        probeWriteOut += str;
+        if (probeWriteOut.length() > 8196) {
+          *probeOut << probeWriteOut;
+          probeWriteOut = "";
+        }
+      } else
+        itL++;
+    }
     iterations++;
+    trace_cycle = iterations;
   }
+  if (traceWriteOut != "") {
+    *traceOut << traceWriteOut;
+  }
+  if (probeWriteOut != "") {
+    *probeOut << probeWriteOut;
+  }
+  // *probeOut << "\n";
+  /*// iterator for in(I) map(M)
+  std::map<uint64_t, simeng::Trace*>::iterator itIM;
+  for(itIM = traceMap->begin(); itIM != traceMap->end(); itIM++){
+    simeng::cycleTrace tr = itIM->second->getCycleTraces();
+    printf("ID: %" PRId64 ", fetch: %" PRId64 ", \tinstruction: %s,\t decode: %"
+  PRId64 ", dispatch: %" PRId64 ", issue: %" PRId64 ", complete: %" PRId64 ",
+  retire: %" PRId64 ", finished: %d\n", itIM->first, tr.fetch.cycle,
+  tr.fetch.disasm.c_str(), tr.decode, tr.dispatch, tr.issue, tr.complete,
+  tr.retire, tr.finished);
+  }*/
 
   return iterations;
 }
+
+bool tracing;
+bool enableTrace;
+bool probing;
+bool enableProbe;
+bool enableFocus;
+bool recordEvents;
+uint64_t trace_cycle;
+uint64_t traceId;
+std::map<uint64_t, simeng::Trace*> traceMap;
+std::list<simeng::Trace*> probeList;
 
 int main(int argc, char** argv) {
   // Print out build metadata
@@ -48,6 +132,16 @@ int main(int argc, char** argv) {
   std::vector<std::string> executableArgs = {};
 
   // Determine if a config file has been supplied.
+  // Set defaults to tracing variables
+  tracing = false;
+  enableTrace = false;
+  probing = false;
+  enableProbe = false;
+  enableFocus = false;
+  recordEvents = true;
+  trace_cycle = 1;
+  traceId = 1;
+
   if (argc > 1) {
     configFilePath = std::string(argv[1]);
     // Determine if an executable has been supplied
@@ -74,6 +168,12 @@ int main(int argc, char** argv) {
   // outputting
   if (executablePath == "") executablePath = "Default";
 
+  // Initialise trace/probe objects
+  std::ofstream traceOut;
+  traceOut.open("trace.out", std::ofstream::binary | std::ofstream::trunc);
+  std::ofstream probeOut;
+  probeOut.open("probe.out", std::ofstream::binary | std::ofstream::trunc);
+
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();
   std::shared_ptr<simeng::MemoryInterface> dataMemory =
@@ -88,12 +188,15 @@ int main(int argc, char** argv) {
   for (const auto& arg : executableArgs) std::cout << " " << arg;
   std::cout << std::endl;
   std::cout << "[SimEng] Config file: " << configFilePath << std::endl;
+  std::cout << "Tracing enabled\n";
+  std::cout << "Probing enabled\n";
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;
   int iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
-  iterations = simulate(*core, *dataMemory, *instructionMemory);
+  iterations =
+      simulate(*core, *dataMemory, *instructionMemory, &traceOut, &probeOut);
 
   // Get timing information
   auto endTime = std::chrono::high_resolution_clock::now();
@@ -144,5 +247,7 @@ int main(int argc, char** argv) {
 
 #endif
 
+  traceOut.close();
+  probeOut.close();
   return 0;
 }

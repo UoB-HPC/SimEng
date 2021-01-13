@@ -73,6 +73,9 @@ class Core : public simeng::Core {
   /** Handle requesting/execution of a load instruction. */
   void handleLoad(const std::shared_ptr<Instruction>& instruction);
 
+  /** Set traces to finished state if their instruction has been flushed */
+  void flushTraces(const bool atDecode);
+
   /** The process memory. */
   MemoryInterface& dataMemory_;
 

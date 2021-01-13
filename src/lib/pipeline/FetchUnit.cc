@@ -114,8 +114,9 @@ void FetchUnit::tick() {
   for (size_t slot = 0; slot < output_.getWidth(); slot++) {
     auto& macroOp = outputSlots[slot];
 
-    auto bytesRead =
-        isa_.predecode(buffer + bufferOffset, bufferedBytes_, pc_, macroOp);
+    std::string disasm;
+    auto bytesRead = isa_.predecode(buffer + bufferOffset, bufferedBytes_, pc_,
+                                    macroOp, disasm);
 
     // If predecode fails, bail and wait for more data
     if (bytesRead == 0) {

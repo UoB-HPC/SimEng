@@ -23,8 +23,8 @@ class Architecture : public arch::Architecture {
    * instances. Returns the number of bytes consumed to produce it (always 4),
    * and writes into the supplied macro-op vector. */
   uint8_t predecode(const void* ptr, uint8_t bytesAvailable,
-                    uint64_t instructionAddress,
-                    MacroOp& output) const override;
+                    uint64_t instructionAddress, MacroOp& output,
+                    std::string& disasm) const override;
 
   /** Returns an RISC-V register file structure description. */
   std::vector<RegisterFileStructure> getRegisterFileStructures() const override;

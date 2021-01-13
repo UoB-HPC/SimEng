@@ -68,6 +68,9 @@ class Core : public simeng::Core {
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
 
+  /** Set traces to finished state if their instruction has been flushed */
+  void flushTraces(const bool atDecode);
+
   const arch::Architecture& isa_;
 
   const std::vector<simeng::RegisterFileStructure> physicalRegisterStructures_;

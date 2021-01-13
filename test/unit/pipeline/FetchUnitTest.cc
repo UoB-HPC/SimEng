@@ -6,8 +6,21 @@
 #include "gtest/gtest.h"
 #include "simeng/Instruction.hh"
 #include "simeng/arch/Architecture.hh"
+#include "simeng/control.hh"
 #include "simeng/pipeline/FetchUnit.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
+#include "simeng/trace.hh"
+
+bool tracing;
+bool enableTrace;
+bool probing;
+bool enableProbe;
+bool enableFocus;
+bool recordEvents;
+uint64_t trace_cycle;
+uint64_t traceId;
+std::map<uint64_t, simeng::Trace*> traceMap;
+std::list<simeng::Trace*> probeList;
 
 using ::testing::_;
 using ::testing::DoAll;
@@ -54,9 +67,15 @@ TEST_F(PipelineFetchUnitTest, Tick) {
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(4));
 
+  // Anticipate testing instruction type; return true for branch
+  ON_CALL(*uop, isBranch()).WillByDefault(Return(true));
+
   // Set the output parameter to a 1-wide macro-op
-  EXPECT_CALL(isa, predecode(_, _, 0, _))
+  EXPECT_CALL(isa, predecode(_, _, 0, _, _))
       .WillOnce(DoAll(SetArgReferee<3>(macroOp), Return(4)));
+
+  BranchPrediction prediction = {0, true};
+  EXPECT_CALL(predictor, predict(uopPtr)).WillOnce(Return(prediction));
 
   fetchUnit.tick();
 
@@ -71,7 +90,7 @@ TEST_F(PipelineFetchUnitTest, TickStalled) {
   // Anticipate testing instruction type; return true for branch
   ON_CALL(*uop, isBranch()).WillByDefault(Return(true));
 
-  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
+  EXPECT_CALL(isa, predecode(_, _, _, _, _)).Times(0);
 
   EXPECT_CALL(predictor, predict(_, _, _)).Times(0);
 
@@ -89,7 +108,7 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
   // Set PC to 14, so there will not be enough data to start decoding
-  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
+  EXPECT_CALL(isa, predecode(_, _, _, _, _)).Times(0);
   fetchUnit.updatePC(14);
   fetchUnit.tick();
 
@@ -102,7 +121,7 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   MemoryReadResult nextBlockValue = {{16, 16}, 0, 1};
   span<MemoryReadResult> nextBlock = {&nextBlockValue, 1};
   EXPECT_CALL(memory, getCompletedReads()).WillOnce(Return(nextBlock));
-  EXPECT_CALL(isa, predecode(_, _, _, _))
+  EXPECT_CALL(isa, predecode(_, _, _, _, _))
       .WillOnce(DoAll(SetArgReferee<3>(macroOp), Return(4)));
   fetchUnit.tick();
 }

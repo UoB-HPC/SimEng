@@ -58,4 +58,7 @@ void Instruction::setWaitingCommit() { waitingCommit_ = true; }
 bool Instruction::isWaitingCommit() const { return waitingCommit_; }
 int Instruction::getMicroOpIndex() const { return microOpIndex_; }
 
+void Instruction::setTraceId(uint64_t trId) { traceId_ = trId; };
+uint64_t Instruction::getTraceId() const { return traceId_; };
+
 }  // namespace simeng

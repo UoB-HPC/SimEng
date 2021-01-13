@@ -178,6 +178,12 @@ class Instruction {
   /** Get arbitrary micro-operation index. */
   int getMicroOpIndex() const;
 
+  /** Set this instructions' trace ID. */
+  void setTraceId(uint64_t trId);
+
+  /** Retrieve this instructions' trace ID. */
+  uint64_t getTraceId() const;
+
  protected:
   /** Whether an exception has been encountered. */
   bool exceptionEncountered_ = false;
@@ -253,6 +259,11 @@ class Instruction {
   /** An arbitrary index value for the micro-operation. Its use is based on the
    * implementation of specific micro-operations. */
   int microOpIndex_;
+
+  // Traces
+  /** This instruction's trace ID; a higher ID represents a chronologically
+   * newer instruction. */
+  uint64_t traceId_ = 0;
 };
 
 }  // namespace simeng

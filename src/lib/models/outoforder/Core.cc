@@ -192,6 +192,9 @@ void Core::flushIfNeeded() {
     }
 
     fetchUnit_.flushLoopBuffer();
+    // Set all flushed instructions to a finished state
+    flushTraces(false);
+
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
@@ -218,11 +221,89 @@ void Core::flushIfNeeded() {
     targetAddress = decodeUnit_.getFlushAddress();
 
     fetchUnit_.flushLoopBuffer();
+    // Set all flushed instructions to a finished state
+    flushTraces(true);
+
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
     flushes_++;
+  }
+}
+
+void Core::flushTraces(const bool atDecode) {
+  // Flush traces from instructions in fetch to decode buffer
+  for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
+    auto& uopH = fetchToDecodeBuffer_.getHeadSlots()[slot][0];
+    if (uopH != nullptr && uopH->getTraceId() != 0) {
+      std::map<uint64_t, Trace*>::iterator it =
+          traceMap.find(uopH->getTraceId());
+      if (it != traceMap.end()) {
+        cycleTrace tr = it->second->getCycleTraces();
+        tr.finished = 1;
+        it->second->setCycleTraces(tr);
+      }
+    }
+    auto& uopT = fetchToDecodeBuffer_.getTailSlots()[slot][0];
+    if (uopT != nullptr && uopT->getTraceId() != 0) {
+      std::map<uint64_t, Trace*>::iterator it =
+          traceMap.find(uopT->getTraceId());
+      if (it != traceMap.end()) {
+        cycleTrace tr = it->second->getCycleTraces();
+        tr.finished = 1;
+        it->second->setCycleTraces(tr);
+      }
+    }
+  }
+  // If flush is not happening at decode unit
+  if (!atDecode) {
+    // Flush traces from instructions in decode to rename buffer
+    for (size_t slot = 0; slot < decodeToRenameBuffer_.getWidth(); slot++) {
+      auto& uopH = decodeToRenameBuffer_.getHeadSlots()[slot];
+      if (uopH != nullptr && uopH->getTraceId() != 0) {
+        std::map<uint64_t, Trace*>::iterator it =
+            traceMap.find(uopH->getTraceId());
+        if (it != traceMap.end()) {
+          cycleTrace tr = it->second->getCycleTraces();
+          tr.finished = 1;
+          it->second->setCycleTraces(tr);
+        }
+      }
+      auto& uopT = decodeToRenameBuffer_.getTailSlots()[slot];
+      if (uopT != nullptr && uopT->getTraceId() != 0) {
+        std::map<uint64_t, Trace*>::iterator it =
+            traceMap.find(uopT->getTraceId());
+        if (it != traceMap.end()) {
+          cycleTrace tr = it->second->getCycleTraces();
+          tr.finished = 1;
+          it->second->setCycleTraces(tr);
+        }
+      }
+    }
+    // Flush traces from instructions in rename to dispatch buffer
+    for (size_t slot = 0; slot < renameToDispatchBuffer_.getWidth(); slot++) {
+      auto& uopH = renameToDispatchBuffer_.getHeadSlots()[slot];
+      if (uopH != nullptr && uopH->getTraceId() != 0) {
+        std::map<uint64_t, Trace*>::iterator it =
+            traceMap.find(uopH->getTraceId());
+        if (it != traceMap.end()) {
+          cycleTrace tr = it->second->getCycleTraces();
+          tr.finished = 1;
+          it->second->setCycleTraces(tr);
+        }
+      }
+      auto& uopT = renameToDispatchBuffer_.getTailSlots()[slot];
+      if (uopT != nullptr && uopT->getTraceId() != 0) {
+        std::map<uint64_t, Trace*>::iterator it =
+            traceMap.find(uopT->getTraceId());
+        if (it != traceMap.end()) {
+          cycleTrace tr = it->second->getCycleTraces();
+          tr.finished = 1;
+          it->second->setCycleTraces(tr);
+        }
+      }
+    }
   }
 }
 
@@ -267,6 +348,9 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
+  // Set all flushed instructions to a finished state
+  flushTraces(false);
+
   fetchToDecodeBuffer_.fill({});
   fetchToDecodeBuffer_.stall(false);
 

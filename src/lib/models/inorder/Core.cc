@@ -87,6 +87,9 @@ void Core::tick() {
     auto targetAddress = executeUnit_.getFlushAddress();
 
     fetchUnit_.flushLoopBuffer();
+    // Set all flushed instructions to a finished state
+    flushTraces(false);
+
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     decodeToExecuteBuffer_.fill(nullptr);
@@ -99,6 +102,9 @@ void Core::tick() {
     auto targetAddress = decodeUnit_.getFlushAddress();
 
     fetchUnit_.flushLoopBuffer();
+    // Set all flushed instructions to a finished state
+    flushTraces(true);
+
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
 
@@ -186,6 +192,9 @@ void Core::handleException() {
       isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
 
   processExceptionHandler();
+
+  // Set all flushed instructions to a finished state
+  flushTraces(false);
 
   // Flush pipeline
   fetchToDecodeBuffer_.fill({});
@@ -360,6 +369,58 @@ void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
                   instruction->getResults());
   // Manually add the instruction to the writeback input buffer
   completionSlots_[0].getTailSlots()[0] = instruction;
+}
+
+void Core::flushTraces(const bool atDecode) {
+  // Flush traces from instructions in fetch to decode buffer
+  for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
+    auto& macroOpH = fetchToDecodeBuffer_.getHeadSlots()[slot];
+    if (macroOpH[0] != nullptr && macroOpH[0]->getTraceId() != 0) {
+      std::map<uint64_t, Trace*>::iterator it =
+          traceMap.find(macroOpH[0]->getTraceId());
+      if (it != traceMap.end()) {
+        cycleTrace tr = it->second->getCycleTraces();
+        tr.finished = 1;
+        it->second->setCycleTraces(tr);
+      }
+    }
+    auto& macroOpT = fetchToDecodeBuffer_.getTailSlots()[slot];
+    if (macroOpT[0] != nullptr && macroOpT[0]->getTraceId() != 0) {
+      std::map<uint64_t, Trace*>::iterator it =
+          traceMap.find(macroOpT[0]->getTraceId());
+      if (it != traceMap.end()) {
+        cycleTrace tr = it->second->getCycleTraces();
+        tr.finished = 1;
+        it->second->setCycleTraces(tr);
+      }
+    }
+  }
+  // If flush is not happening at decode unit
+  if (!atDecode) {
+    // Flush traces from instructions in decode to execute buffer
+    for (size_t slot = 0; slot < decodeToExecuteBuffer_.getWidth(); slot++) {
+      auto& uopH = decodeToExecuteBuffer_.getHeadSlots()[slot];
+      if (uopH != nullptr && uopH->getTraceId() != 0) {
+        std::map<uint64_t, Trace*>::iterator it =
+            traceMap.find(uopH->getTraceId());
+        if (it != traceMap.end()) {
+          cycleTrace tr = it->second->getCycleTraces();
+          tr.finished = 1;
+          it->second->setCycleTraces(tr);
+        }
+      }
+      auto& uopT = decodeToExecuteBuffer_.getTailSlots()[slot];
+      if (uopT != nullptr && uopT->getTraceId() != 0) {
+        std::map<uint64_t, Trace*>::iterator it =
+            traceMap.find(uopT->getTraceId());
+        if (it != traceMap.end()) {
+          cycleTrace tr = it->second->getCycleTraces();
+          tr.finished = 1;
+          it->second->setCycleTraces(tr);
+        }
+      }
+    }
+  }
 }
 
 }  // namespace inorder

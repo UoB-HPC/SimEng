@@ -4,6 +4,8 @@
 #include <map>
 #include <string>
 
+#include "simeng/control.hh"
+#include "simeng/trace.hh"
 #include "yaml-cpp/yaml.h"
 
 namespace simeng {
