@@ -1,9 +1,8 @@
 #include "../MockBranchPredictor.hh"
 #include "../MockInstruction.hh"
-#include "simeng/pipeline/ExecuteUnit.hh"
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "simeng/pipeline/ExecuteUnit.hh"
 
 namespace simeng {
 namespace pipeline {
@@ -27,15 +26,16 @@ class PipelineExecuteUnitTest : public testing::Test {
   PipelineExecuteUnitTest()
       : input(1, nullptr),
         output(1, nullptr),
-        executeUnit(input, output,
-                    [this](auto regs, auto values) {
-                      executionHandlers.forwardOperands(regs, values);
-                    },
-                    [](auto uop) {}, [](auto uop) {},
-                    [this](auto instruction) {
-                      executionHandlers.raiseException(instruction);
-                    },
-                    predictor),
+        executeUnit(
+            input, output,
+            [this](auto regs, auto values) {
+              executionHandlers.forwardOperands(regs, values);
+            },
+            [](auto uop) {}, [](auto uop) {},
+            [this](auto instruction) {
+              executionHandlers.raiseException(instruction);
+            },
+            predictor),
         uop(new MockInstruction),
         uopPtr(uop) {}
 
