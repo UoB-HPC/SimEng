@@ -50,6 +50,18 @@ void DecodeUnit::tick() {
     // Move uop to output buffer and remove from internal buffer
     auto& uop = (output_.getTailSlots()[slot] = std::move(microOps_.front()));
     microOps_.pop_front();
+    // Store cycle at which instruction was decoded
+    if (uop->getTraceId() != 0) {
+      std::map<uint64_t, Trace*>::iterator it =
+          traceMap.find(uop->getTraceId());
+      if (it != traceMap.end()) {
+        cycleTrace tr = it->second->getCycleTraces();
+        if (tr.finished != 1) {
+          tr.decode = trace_cycle;
+          it->second->setCycleTraces(tr);
+        }
+      }
+    }
 
     // Check preliminary branch prediction results now that the instruction is
     // decoded. Identifies:
@@ -82,6 +94,12 @@ void DecodeUnit::tick() {
       while (uopIt != microOps_.end()) {
         uopIt = microOps_.erase(uopIt);
       }
+
+      // Branch.decode.earlyMisprediction
+      probeTrace newProbe = {13, trace_cycle, uop->getTraceId()};
+      Trace* newTrace = new Trace;
+      newTrace->setProbeTraces(newProbe);
+      probeList.push_back(newTrace);
 
       // Skip processing remaining uops, as they need to be flushed
       break;

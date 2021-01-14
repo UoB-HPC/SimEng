@@ -21,7 +21,7 @@ void FixedLatencyMemoryInterface::tick() {
       probeTrace newProbe = {10, trace_cycle, 0};
       Trace* newTrace = new Trace;
       newTrace->setProbeTraces(newProbe);
-      probeList_->push_back(newTrace);
+      probeList.push_back(newTrace);
       break;
     }
 

@@ -6,15 +6,6 @@
 
 #include "simeng/trace.hh"
 
-// Tracing global variables
-extern bool tracing;
-extern bool enableTrace;
-// Probing global variables
-extern bool probing;
-extern bool enableProbe;
-// Region of focus global variables
-extern bool enableFocus;
-extern bool recordEvents;
 // Counters for tracing
 extern uint64_t trace_cycle;
 extern uint64_t traceId;

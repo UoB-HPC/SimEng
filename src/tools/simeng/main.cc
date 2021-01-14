@@ -102,14 +102,8 @@ int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
   return iterations;
 }
 
-bool tracing;
-bool enableTrace;
-bool probing;
-bool enableProbe;
-bool enableFocus;
-bool recordEvents;
-uint64_t trace_cycle;
-uint64_t traceId;
+uint64_t trace_cycle = 1;
+uint64_t traceId = 1;
 std::map<uint64_t, simeng::Trace*> traceMap;
 std::list<simeng::Trace*> probeList;
 
@@ -132,16 +126,6 @@ int main(int argc, char** argv) {
   std::vector<std::string> executableArgs = {};
 
   // Determine if a config file has been supplied.
-  // Set defaults to tracing variables
-  tracing = false;
-  enableTrace = false;
-  probing = false;
-  enableProbe = false;
-  enableFocus = false;
-  recordEvents = true;
-  trace_cycle = 1;
-  traceId = 1;
-
   if (argc > 1) {
     configFilePath = std::string(argv[1]);
     // Determine if an executable has been supplied

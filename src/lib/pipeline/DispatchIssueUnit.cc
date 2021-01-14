@@ -86,6 +86,11 @@ void DispatchIssueUnit::tick() {
       // Deallocate port given
       portAllocator_.deallocate(port);
       input_.stall(true);
+      // Stalled.dispatch.rsFull
+      probeTrace newProbe = {6, trace_cycle, uop->getTraceId()};
+      Trace* newTrace = new Trace;
+      newTrace->setProbeTraces(newProbe);
+      probeList.push_back(newTrace);
       rsStalls_++;
       return;
     }
@@ -122,6 +127,19 @@ void DispatchIssueUnit::tick() {
     // Increment dispatches made and RS occupied entries size
     dispatches_[RS_Index]++;
     rs.currentSize++;
+
+    // Store cycle at which instruction was dispatched
+    if (uop->getTraceId() != 0) {
+      std::map<uint64_t, Trace*>::iterator it =
+          traceMap.find(uop->getTraceId());
+      if (it != traceMap.end()) {
+        cycleTrace tr = it->second->getCycleTraces();
+        if (tr.finished != 1) {
+          tr.dispatch = trace_cycle;
+          it->second->setCycleTraces(tr);
+        }
+      }
+    }
 
     if (ready) {
       rs.ports[RS_Port].ready.push_back(std::move(uop));

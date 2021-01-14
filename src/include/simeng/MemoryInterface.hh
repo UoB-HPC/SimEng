@@ -1,7 +1,9 @@
 #pragma once
 
 #include "simeng/RegisterValue.hh"
+#include "simeng/control.hh"
 #include "simeng/span.hh"
+#include "simeng/trace.hh"
 
 namespace simeng {
 
