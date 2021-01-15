@@ -36,6 +36,7 @@ set(SIMENG_SOURCES
     ArchitecturalRegisterFileSet.cc
     CMakeLists.txt
     CoreInstance.cc
+    control.cc
     Elf.cc
     FixedLatencyMemoryInterface.cc
     FlatMemoryInterface.cc

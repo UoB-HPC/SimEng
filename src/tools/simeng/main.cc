@@ -102,11 +102,6 @@ int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
   return iterations;
 }
 
-uint64_t trace_cycle = 1;
-uint64_t traceId = 1;
-std::map<uint64_t, simeng::Trace*> traceMap;
-std::list<simeng::Trace*> probeList;
-
 int main(int argc, char** argv) {
   // Print out build metadata
   std::cout << "[SimEng] Build metadata:" << std::endl;
