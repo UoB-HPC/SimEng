@@ -10,8 +10,28 @@
 namespace simeng {
 namespace pipeline {
 
+/** A reservation station issue port */
+struct ReservationStationPort {
+  /** Issue port this port maps to */
+  uint8_t issuePort;
+  /** Queue of instructions that are ready to be
+   * issued */
+  std::deque<std::shared_ptr<Instruction>> ready;
+};
+
+/** A reservation station */
+struct ReservationStation {
+  /** Size of reservation station */
+  uint64_t capacity;
+  /** Current number of non-stalled instructions
+   * in reservation station */
+  uint64_t currentSize;
+  /** Issue ports belonging to reservation station */
+  std::vector<ReservationStationPort> ports;
+};
+
 /** An entry in the reservation station. */
-struct ReservationStationEntry {
+struct dependencyEntry {
   /** The instruction to execute. */
   std::shared_ptr<Instruction> uop;
   /** The port to issue to. */
@@ -33,7 +53,8 @@ class DispatchIssueUnit {
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
-      unsigned int maxReservationStationSize);
+      std::vector<std::pair<uint8_t, uint64_t>> rsArrangment,
+      uint8_t dispatchRate = UINT8_MAX);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -70,6 +91,9 @@ class DispatchIssueUnit {
    * busy port. */
   uint64_t getPortBusyStalls() const;
 
+  /** Retrieve the current sizes and capacities of the reservation stations*/
+  void getRSSizes(std::vector<uint64_t>&) const;
+
  private:
   /** A buffer of instructions to dispatch and read operands for. */
   PipelineBuffer<std::shared_ptr<Instruction>>& input_;
@@ -83,23 +107,23 @@ class DispatchIssueUnit {
   /** The register availability scoreboard. */
   std::vector<std::vector<bool>> scoreboard_;
 
-  /** The maximum reservation station size. */
-  unsigned int maxReservationStationSize_;
+  /** Reservation stations */
+  std::vector<ReservationStation> reservationStations_;
+
+  /** A mapping from port to RS port */
+  std::vector<std::pair<uint8_t, uint8_t>> portMapping_;
 
   /** A dependency matrix, containing all the instructions waiting on an
    * operand. For a register `{type,tag}`, the vector of dependents may be found
    * at `dependencyMatrix[type][tag]`. */
-  std::vector<std::vector<std::vector<ReservationStationEntry>>>
-      dependencyMatrix_;
+  std::vector<std::vector<std::vector<dependencyEntry>>> dependencyMatrix_;
 
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;
 
-  /** The queues of ready instructions for each port. */
-  std::vector<std::deque<std::shared_ptr<Instruction>>> readyQueues_;
-
-  /** The number of items currently in the RS. */
-  size_t rsSize_ = 0;
+  /** The number of instructions that can be dispatched to a reservation station
+   * per cycle. */
+  uint64_t dispatchRate_;
 
   /** The number of cycles stalled due to a full reservation station. */
   uint64_t rsStalls_ = 0;
