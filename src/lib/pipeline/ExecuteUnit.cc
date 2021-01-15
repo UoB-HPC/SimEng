@@ -73,6 +73,12 @@ void ExecuteUnit::tick() {
       }
       input_.getHeadSlots()[0] = nullptr;
     }
+  } else {
+    // Stalled.execute.instructionExecuting
+    probeTrace newProbe = {9, trace_cycle, 0};
+    Trace* newTrace = new Trace;
+    newTrace->setProbeTraces(newProbe);
+    probeList.push_back(newTrace);
   }
 
   if (pipeline_.size() == 0) {
@@ -103,7 +109,29 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   assert(uop->canExecute() &&
          "Attempted to execute an instruction before it was ready");
 
+  bool tracePrintable = false;
+  std::map<uint64_t, Trace*>::iterator it;
+  cycleTrace tr;
+  if (uop->getTraceId() != 0) {
+    it = traceMap.find(uop->getTraceId());
+    if (it != traceMap.end()) {
+      tracePrintable = true;
+      tr = it->second->getCycleTraces();
+    }
+  }
+
   if (uop->exceptionEncountered()) {
+    // Set instruction to finished state
+    if (tracePrintable) {
+      tr.finished = 1;
+      it->second->setCycleTraces(tr);
+    }
+    // Exception.execute.beforeExecution
+    probeTrace newProbe = {18, trace_cycle, uop->getTraceId()};
+    Trace* newTrace = new Trace;
+    newTrace->setProbeTraces(newProbe);
+    probeList.push_back(newTrace);
+
     // Exception encountered prior to execution
     // TODO: Identify whether this can be removed; executing an
     // exception-encountered uop would have to be guaranteed to be safe
@@ -114,6 +142,12 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   if (uop->isLoad()) {
     uop->generateAddresses();
     if (uop->exceptionEncountered()) {
+      // Set instruction to finished state
+      if (tracePrintable) {
+        tr.finished = 1;
+        it->second->setCycleTraces(tr);
+      }
+
       // Exception; don't pass handle load function
       raiseException_(uop);
       return;
@@ -133,6 +167,16 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->exceptionEncountered()) {
+    // Set instruction to finished state
+    if (tracePrintable) {
+      tr.finished = 1;
+      it->second->setCycleTraces(tr);
+    }
+    // Exception.execute.afterExecution
+    probeTrace newProbe = {19, trace_cycle, uop->getTraceId()};
+    Trace* newTrace = new Trace;
+    newTrace->setProbeTraces(newProbe);
+    probeList.push_back(newTrace);
     // Exception; don't forward results, don't pass uop forward
     raiseException_(uop);
     return;
@@ -149,6 +193,12 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     branchesExecuted_++;
 
     if (uop->wasBranchMispredicted()) {
+      // Branch.execute.misprediction
+      probeTrace newProbe = {14, trace_cycle, uop->getTraceId()};
+      Trace* newTrace = new Trace;
+      newTrace->setProbeTraces(newProbe);
+      probeList.push_back(newTrace);
+
       // Misprediction; flush the pipeline
       shouldFlush_ = true;
       flushAfter_ = uop->getInstructionId();
@@ -159,6 +209,13 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
 
   // Operand forwarding; allows a dependent uop to execute next cycle
   forwardOperands_(uop->getDestinationRegisters(), uop->getResults());
+
+  if (tracePrintable) {
+    if (tr.finished != 1) {
+      tr.complete = trace_cycle;
+      it->second->setCycleTraces(tr);
+    }
+  }
 
   output_.getTailSlots()[0] = std::move(uop);
 }

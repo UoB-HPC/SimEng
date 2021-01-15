@@ -511,6 +511,24 @@ void LoadStoreQueue::tick() {
         supplyStoreData(load);
       }
       completedLoads_.push(load);
+
+      if (load->getTraceId() != 0) {
+        std::map<uint64_t, Trace*>::iterator it =
+            traceMap.find(load->getTraceId());
+        if (it != traceMap.end()) {
+          cycleTrace tr = it->second->getCycleTraces();
+          if (tr.finished != 1) {
+            tr.complete = trace_cycle;
+            it->second->setCycleTraces(tr);
+          }
+        }
+      }
+    } else {
+      // Stalled.loadStoreQueue.notReady
+      probeTrace newProbe = {11, trace_cycle, load->getTraceId()};
+      Trace* newTrace = new Trace;
+      newTrace->setProbeTraces(newProbe);
+      probeList.push_back(newTrace);
     }
   }
   memory_.clearCompletedReads();

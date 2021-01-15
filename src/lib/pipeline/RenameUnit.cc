@@ -35,13 +35,35 @@ void RenameUnit::tick() {
     if (uop == nullptr) {
       continue;
     }
+    bool tracePrintable = false;
+    std::map<uint64_t, Trace*>::iterator it;
+    cycleTrace tr;
+    if (uop->getTraceId() != 0) {
+      it = traceMap.find(uop->getTraceId());
+      if (it != traceMap.end()) {
+        tracePrintable = true;
+        tr = it->second->getCycleTraces();
+      }
+    }
     if (reorderBuffer_.getFreeSpace() == 0) {
       input_.stall(true);
+
+      // Stalled.rename.robFull
+      probeTrace newProbe = {2, trace_cycle, uop->getTraceId()};
+      Trace* newTrace = new Trace;
+      newTrace->setProbeTraces(newProbe);
+      probeList.push_back(newTrace);
+
       robStalls_++;
       return;
     }
     if (uop->exceptionEncountered()) {
       // Exception; place in ROB, mark as ready, and remove from pipeline
+      // Set instruction trace to finished state
+      if (tracePrintable) {
+        tr.finished = 1;
+        it->second->setCycleTraces(tr);
+      }
       reorderBuffer_.reserve(uop);
       uop->setCommitReady();
       input_.getHeadSlots()[slot] = nullptr;
@@ -54,12 +76,24 @@ void RenameUnit::tick() {
     bool isStore = uop->isStoreAddress();
     if (isLoad) {
       if (lsq_.getLoadQueueSpace() == 0) {
+        // Stalled.rename.lsqFull
+        probeTrace newProbe = {3, trace_cycle, uop->getTraceId()};
+        Trace* newTrace = new Trace;
+        newTrace->setProbeTraces(newProbe);
+        probeList.push_back(newTrace);
+
         lqStalls_++;
         input_.stall(true);
         return;
       }
     } else if (isStore) {
       if (lsq_.getStoreQueueSpace() == 0) {
+        // Stalled.rename.sqFull
+        probeTrace newProbe = {4, trace_cycle, uop->getTraceId()};
+        Trace* newTrace = new Trace;
+        newTrace->setProbeTraces(newProbe);
+        probeList.push_back(newTrace);
+
         sqStalls_++;
         input_.stall(true);
         return;
@@ -81,6 +115,13 @@ void RenameUnit::tick() {
       if (freeRegistersAvailable_[reg.type] == 0) {
         // Not enough free registers available for this uop
         input_.stall(true);
+
+        // Stalled.rename.allocation
+        probeTrace newProbe = {5, trace_cycle, uop->getTraceId()};
+        Trace* newTrace = new Trace;
+        newTrace->setProbeTraces(newProbe);
+        probeList.push_back(newTrace);
+
         allocationStalls_++;
         return;
       }
@@ -121,6 +162,14 @@ void RenameUnit::tick() {
     }
     if (isStore) {
       lsq_.addStore(uop);
+    }
+
+    // Store cycle at which instruction registers were renamed
+    if (tracePrintable) {
+      if (tr.finished != 1) {
+        tr.rename = trace_cycle;
+        it->second->setCycleTraces(tr);
+      }
     }
 
     output_.getTailSlots()[slot] = std::move(uop);

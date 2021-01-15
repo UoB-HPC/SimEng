@@ -86,6 +86,11 @@ void FetchUnit::tick() {
     }
     if (fetchIndex == fetched.size()) {
       // Need to wait for fetched instructions
+      // Stalled.fetch.instructionFetch
+      probeTrace newProbe = {0, trace_cycle, 0};
+      Trace* newTrace = new Trace;
+      newTrace->setProbeTraces(newProbe);
+      probeList.push_back(newTrace);
       return;
     }
 
@@ -108,7 +113,14 @@ void FetchUnit::tick() {
   }
 
   // Check we have enough data to begin decoding
-  if (bufferedBytes_ < isa_.getMaxInstructionSize()) return;
+  if (bufferedBytes_ < isa_.getMaxInstructionSize()) {
+    // Stalled.fetch.instructionDecode
+    probeTrace newProbe = {1, trace_cycle, 0};
+    Trace* newTrace = new Trace;
+    newTrace->setProbeTraces(newProbe);
+    probeList.push_back(newTrace);
+    return;
+  }
 
   auto outputSlots = output_.getTailSlots();
   for (size_t slot = 0; slot < output_.getWidth(); slot++) {
@@ -166,6 +178,25 @@ void FetchUnit::tick() {
 
     assert(bytesRead <= bufferedBytes_ &&
            "Predecode consumed more bytes than were available");
+
+    // Create map element for new fetch
+    if (disasm != "") {
+      macroOp[0]->setTraceId(traceId);
+      const uint32_t insn =
+          *static_cast<const uint32_t*>((void*)(buffer + bufferOffset));
+      fetchTrace newFetch = {trace_cycle, insn, pc_, 0, disasm};
+      cycleTrace newCycleTrace = {newFetch, 0, 0, 0, 0, 0, 0};
+      Trace* newTrace = new Trace;
+      newTrace->setCycleTraces(newCycleTrace);
+      traceMap.insert({macroOp[0]->getTraceId(), newTrace});
+      // Denote id has been assigned/used
+      traceId++;
+    } else {
+      macroOp[0]->setTraceId(traceId);
+      // Denote id has been assigned/used
+      traceId++;
+    }
+
     // Increment the offset, decrement available bytes
     bufferOffset += bytesRead;
     bufferedBytes_ -= bytesRead;
@@ -179,12 +210,24 @@ void FetchUnit::tick() {
     }
 
     if (pc_ >= programByteLength_) {
+      // Halt.fetch.programMemoryExceeded
+      probeTrace newProbe = {16, trace_cycle, 0};
+      Trace* newTrace = new Trace;
+      newTrace->setProbeTraces(newProbe);
+      probeList.push_back(newTrace);
+
       hasHalted_ = true;
       break;
     }
 
     if (prediction.taken) {
       if (slot + 1 < output_.getWidth()) {
+        // Branch.fetch.stalled
+        probeTrace newProbe = {12, trace_cycle, macroOp[0]->getTraceId()};
+        Trace* newTrace = new Trace;
+        newTrace->setProbeTraces(newProbe);
+        probeList.push_back(newTrace);
+
         branchStalls_++;
       }
       // Can't continue fetch immediately after a branch

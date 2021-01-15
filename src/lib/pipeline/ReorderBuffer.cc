@@ -84,7 +84,36 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
     if (uop->isLastMicroOp()) instructionsCommitted_++;
 
+    bool tracePrintable = false;
+    std::map<uint64_t, Trace*>::iterator it;
+    cycleTrace tr;
+    if (uop->getTraceId() != 0) {
+      it = traceMap.find(uop->getTraceId());
+      if (it != traceMap.end()) {
+        tracePrintable = true;
+        tr = it->second->getCycleTraces();
+      }
+    }
+
+    if (tracePrintable) {
+      if (tr.finished != 1) {
+        tr.retire = trace_cycle;
+        tr.finished = 1;
+        it->second->setCycleTraces(tr);
+      }
+    }
+
     if (uop->exceptionEncountered()) {
+      if (tracePrintable) {
+        tr.finished = 1;
+        it->second->setCycleTraces(tr);
+      }
+      // Exception.rob.robCommit
+      probeTrace newProbe = {17, trace_cycle, uop->getTraceId()};
+      Trace* newTrace = new Trace;
+      newTrace->setProbeTraces(newProbe);
+      probeList.push_back(newTrace);
+
       raiseException_(uop);
       buffer_.pop_front();
       return n + 1;
@@ -108,6 +137,16 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
         shouldFlush_ = true;
         flushAfter_ = load->getInstructionId() - 1;
         pc_ = load->getInstructionAddress();
+
+        if (tracePrintable) {
+          tr.finished = 1;
+          it->second->setCycleTraces(tr);
+        }
+        // Flush.rob.storeViolation
+        probeTrace newProbe = {15, trace_cycle, uop->getTraceId()};
+        Trace* newTrace = new Trace;
+        newTrace->setProbeTraces(newProbe);
+        probeList.push_back(newTrace);
 
         buffer_.pop_front();
         return n + 1;
@@ -176,6 +215,17 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
     if (uop->isBranch()) {
       predictor_.flush(uop->getInstructionAddress());
     }
+
+    if (uop->getTraceId() != 0) {
+      std::map<uint64_t, Trace*>::iterator it =
+          traceMap.find(uop->getTraceId());
+      if (it != traceMap.end()) {
+        cycleTrace tr = it->second->getCycleTraces();
+        tr.finished = 1;
+        it->second->setCycleTraces(tr);
+      }
+    }
+
     buffer_.pop_back();
   }
 
