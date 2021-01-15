@@ -80,7 +80,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           dispatchIssueUnit_.forwardOperands(regs, values);
         },
         [this](auto uop) { loadStoreQueue_.startLoad(uop); }, [](auto uop) {},
-        [](auto uop) { uop->setCommitReady(); }, branchPredictor);
+        [](auto uop) { uop->setCommitReady(); }, branchPredictor, true, 0);
   }
   // Provide reservation size getter to A64FX port allocator
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {
