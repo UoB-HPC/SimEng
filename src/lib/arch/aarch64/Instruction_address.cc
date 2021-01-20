@@ -1,7 +1,7 @@
-#include "simeng/arch/aarch64/Instruction.hh"
-
 #include <cmath>
+
 #include "InstructionMetadata.hh"
+#include "simeng/arch/aarch64/Instruction.hh"
 
 namespace simeng {
 namespace arch {
@@ -12,6 +12,18 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
          "generateAddresses called on non-load-or-store instruction");
 
   switch (metadata.opcode) {
+    case Opcode::AArch64_LD1i32: {  // ld1 {vt.s}[index], [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 4, 1}});
+      break;
+    }
+    case Opcode::AArch64_LD1i64: {  // ld1 {vt.d}[index], [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 8, 1}});
+      break;
+    }
+    case Opcode::AArch64_LD1i64_POST: {  // ld1 {vt.d}[index], [xn], #8
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 8, 1}});
+      break;
+    }
     case Opcode::AArch64_LD1RD_IMM: {  // ld1rd {zt.d}, pg/z, [xn, #imm]
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
       for (int i = 0; i < 4; i++) {

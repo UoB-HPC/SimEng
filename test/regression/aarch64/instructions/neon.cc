@@ -1,6 +1,6 @@
-#include "AArch64RegressionTest.hh"
-
 #include <cmath>
+
+#include "AArch64RegressionTest.hh"
 
 namespace {
 
@@ -1097,6 +1097,72 @@ TEST_P(InstNeon, fneg) {
   )");
   CHECK_NEON(2, float, {-1.0, 42.76, 0.125, -321.0});
   CHECK_NEON(3, float, {-2.0, 1.0, 321.0, -123.0});
+}
+
+TEST_P(InstNeon, frinta) {
+  // 64-bit negative
+  initialHeapData_.resize(48);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = -3.75;
+  dheap[1] = -3.5;
+  dheap[2] = -3.125;
+  dheap[3] = -3.0;
+  dheap[4] = -0.5;
+  dheap[5] = -0.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    ldp d4, d5, [x0, #32]
+    frinta d6, d0
+    frinta d7, d1
+    frinta d8, d2
+    frinta d9, d3
+    frinta d10, d4
+    frinta d11, d5
+  )");
+  CHECK_NEON(6, double, {-4});
+  CHECK_NEON(7, double, {-4});
+  CHECK_NEON(8, double, {-3});
+  CHECK_NEON(9, double, {-3});
+  CHECK_NEON(10, double, {-1});
+  CHECK_NEON(11, double, {-0});
+
+  // 64-bit positive
+  dheap[0] = 3.75;
+  dheap[1] = 3.5;
+  dheap[2] = 3.125;
+  dheap[3] = 3.0;
+  dheap[4] = 0.5;
+  dheap[5] = 0.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    ldp d4, d5, [x0, #32]
+    frinta d6, d0
+    frinta d7, d1
+    frinta d8, d2
+    frinta d9, d3
+    frinta d10, d4
+    frinta d11, d5
+  )");
+  CHECK_NEON(6, double, {4});
+  CHECK_NEON(7, double, {4});
+  CHECK_NEON(8, double, {3});
+  CHECK_NEON(9, double, {3});
+  CHECK_NEON(10, double, {1});
+  CHECK_NEON(11, double, {0});
 }
 
 TEST_P(InstNeon, fsqrt) {

@@ -1,10 +1,9 @@
-#include "simeng/arch/aarch64/Instruction.hh"
-
-#include "InstructionMetadata.hh"
-
 #include <cmath>
 #include <limits>
 #include <tuple>
+
+#include "InstructionMetadata.hh"
+#include "simeng/arch/aarch64/Instruction.hh"
 
 namespace simeng {
 namespace arch {
@@ -1405,6 +1404,10 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_FCVTASUXDr: {  // fcvtas xd, dn
+      results[0] = static_cast<int64_t>(round(operands[0].get<double>()));
+      break;
+    }
     case Opcode::AArch64_FCVTDSr: {  // fcvt dd, sn
       // TODO: Handle NaNs, denorms, and saturation?
       double out[2] = {static_cast<double>(operands[0].get<float>()), 0.0};
@@ -1978,6 +1981,11 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_FRINTADr: {  // frinta dd, dn
+      double out[2] = {round(operands[0].get<double>()), 0.0};
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FSQRTDr: {  // fsqrt dd, dn
       double out[2] = {::sqrt(operands[0].get<double>()), 0.0};
       results[0] = out;
@@ -2090,6 +2098,37 @@ void Instruction::execute() {
       const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
       const uint64_t VL_bits = 512;
       results[0] = n + ((VL_bits / 32) * imm);
+      break;
+    }
+    case Opcode::AArch64_LD1i32: {  // ld1 {vt.s}[index], [xn]
+      const int index = metadata.operands[0].vector_index;
+      const uint32_t* vt = operands[0].getAsVector<uint32_t>();
+      uint32_t out[4];
+      for (int i = 0; i < 4; i++) {
+        out[i] = (i == index) ? memoryData[0].get<uint32_t>() : vt[i];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_LD1i64: {  // ld1 {vt.d}[index], [xn]
+      const int index = metadata.operands[0].vector_index;
+      const uint64_t* vt = operands[0].getAsVector<uint64_t>();
+      uint64_t out[2];
+      for (int i = 0; i < 2; i++) {
+        out[i] = (i == index) ? memoryData[0].get<uint64_t>() : vt[i];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_LD1i64_POST: {  // ld1 {vt.d}[index], [xn], #8
+      const int index = metadata.operands[0].vector_index;
+      const uint64_t* vt = operands[0].getAsVector<uint64_t>();
+      uint64_t out[2];
+      for (int i = 0; i < 2; i++) {
+        out[i] = (i == index) ? memoryData[0].get<uint64_t>() : vt[i];
+      }
+      results[0] = out;
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
     case Opcode::AArch64_LD1RD_IMM: {  // ld1rd {zt.d}, pg/z, [xn, #imm]
