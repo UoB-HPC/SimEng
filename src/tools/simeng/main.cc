@@ -22,6 +22,7 @@
 #include "simeng/models/outoforder/Core.hh"
 #include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
+#include "yaml-cpp/yaml.h"
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
