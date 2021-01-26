@@ -1,8 +1,7 @@
 #pragma once
 
-#include "simeng/Core.hh"
-
 #include "simeng/ArchitecturalRegisterFileSet.hh"
+#include "simeng/Core.hh"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/DispatchIssueUnit.hh"
@@ -31,7 +30,8 @@ class Core : public simeng::Core {
        uint64_t processMemorySize, uint64_t entryPoint,
        const arch::Architecture& isa, BranchPredictor& branchPredictor,
        pipeline::PortAllocator& portAllocator,
-       std::vector<std::pair<uint8_t, uint64_t>> rsArrangment);
+       std::vector<std::pair<uint8_t, uint64_t>> rsArrangment,
+       YAML::Node config);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -71,6 +71,11 @@ class Core : public simeng::Core {
   void flushIfNeeded();
 
   const arch::Architecture& isa_;
+
+  const std::initializer_list<simeng::RegisterFileStructure>
+      physicalRegisterStructures;
+
+  const std::initializer_list<uint16_t> physicalRegisterQuantities;
 
   /** The core's register file set. */
   RegisterFileSet registerFileSet_;
@@ -130,7 +135,16 @@ class Core : public simeng::Core {
   /** The writeback unit; writes uop results to the register files. */
   pipeline::WritebackUnit writebackUnit_;
 
+  /** The port allocator unit; allocates a port that an instruction will be
+   * issued from based on a defined algorithm. */
   pipeline::PortAllocator& portAllocator_;
+
+  /** Clock frequency of core */
+  unsigned int clock_frequency = 2.5 * 1e9;
+
+  /** Core commit width; maximum number of instruction that can be commited per
+   * cycle. */
+  unsigned int commitWidth = 6;
 
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes_ = 0;

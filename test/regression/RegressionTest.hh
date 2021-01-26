@@ -47,6 +47,9 @@ class RegressionTest : public ::testing::TestWithParam<CoreType> {
 
   virtual void TearDown() override;
 
+  /** Generate a default YAML-formatted configuration. */
+  YAML::Node generateConfig();
+
   /** Run the assembly in `source`, building it for the target `triple`. */
   void run(const char* source, const char* triple);
 

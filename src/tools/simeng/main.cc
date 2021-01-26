@@ -61,6 +61,8 @@ int main(int argc, char** argv) {
     }
   }
 
+  YAML::Node config = YAML::LoadFile("config.yaml");
+
   // Create the process image
   std::unique_ptr<simeng::kernel::LinuxProcess> process;
 
@@ -181,50 +183,57 @@ int main(int argc, char** argv) {
   // Create the architecture, with knowledge of the kernel
   auto arch = simeng::arch::aarch64::Architecture(kernel);
 
-  auto predictor = simeng::BTBPredictor(16);
+  auto predictor =
+      simeng::BTBPredictor(config["Branch-Predictor"]["bits"].as<uint8_t>());
 
-  // TODO: Construct port arrangement from config options
-  const std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
-      portArrangement = {
-          {{{simeng::arch::aarch64::InstructionGroups::LOAD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 4
-          {{{simeng::arch::aarch64::InstructionGroups::LOAD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 5
-          {{{simeng::arch::aarch64::InstructionGroups::STORE, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 3
-          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1}},
-           {{simeng::arch::aarch64::InstructionGroups::BRANCH, 0}}},  // Port 2
-          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1}},
-           {{simeng::arch::aarch64::InstructionGroups::ASIMD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
-            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}}},  // Port 0
-          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
-            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}},
-           {{simeng::arch::aarch64::InstructionGroups::ASIMD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
-            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}}}  // Port 1
-      };
+  std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
+      portArrangement;
+
+  std::map<std::string, uint16_t> group_mapping = {
+      {"ARITHMETIC", 0}, {"SHIFT", 1},  {"MULTIPLY", 2},
+      {"DIVIDE", 3},     {"ASIMD", 4},  {"LOAD", 5},
+      {"STORE", 6},      {"BRANCH", 7}, {"PREDICATE", 8},
+  };
+
+  auto config_ports = config["Ports"];
+  // Extract number of ports
+  for (int i = 0; i < config_ports.size(); i++) {
+    auto config_groups = config_ports[i];
+    std::vector<std::vector<std::pair<uint16_t, uint8_t>>> groups;
+    // Extract number of groups in port
+    for (int j = 0; j < config_groups.size(); j++) {
+      std::vector<std::pair<uint16_t, uint8_t>> group;
+      auto config_group = config_groups[j];
+      // Extract compulsory instructiuon group types in group
+      for (int k = 0; k < config_group["Compulsory"].size(); k++) {
+        group.push_back(
+            {group_mapping[config_group["Compulsory"][k].as<std::string>()],
+             0});
+      }
+      // Extract optional instructiuon group types in group
+      for (int k = 0; k < config_group["Optional"].size(); k++) {
+        group.push_back(
+            {group_mapping[config_group["Optional"][k].as<std::string>()], 1});
+      }
+      groups.push_back(group);
+    }
+    portArrangement.push_back(groups);
+  }
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
-  // TODO: Construct reservation station arrangement from config options
-  const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {
-      {0, 60}, {0, 60}, {0, 60}, {0, 60}, {0, 60}, {0, 60}};
+  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement;
+  for (int i = 0; i < config["Reservation-Stations"].size(); i++) {
+    auto reservation_station = config["Reservation-Stations"][i];
+    rsArrangement.push_back({reservation_station["Index"].as<uint8_t>(),
+                             reservation_station["Size"].as<uint64_t>()});
+  }
 
-  // TODO: Expose as config option
-  const uint16_t intDataMemoryLatency = 4;
-  const uint16_t fpDataMemoryLatency = 4;
-  const uint16_t SVEDataMemoryLatency = 11;
+  const uint16_t intDataMemoryLatency =
+      config["L1-Cache"]["GeneralPurpose-Latency"].as<uint16_t>();
+  const uint16_t fpDataMemoryLatency =
+      config["L1-Cache"]["FloatingPoint-Latency"].as<uint16_t>();
+  const uint16_t SVEDataMemoryLatency =
+      config["L1-Cache"]["SVE-Latency"].as<uint16_t>();
 
   int iterations = 0;
 
@@ -239,7 +248,7 @@ int main(int argc, char** argv) {
           fpDataMemoryLatency, SVEDataMemoryLatency);
       core = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
-          predictor, portAllocator, rsArrangement);
+          predictor, portAllocator, rsArrangement, config);
       break;
     }
     case SimulationMode::InOrderPipelined: {

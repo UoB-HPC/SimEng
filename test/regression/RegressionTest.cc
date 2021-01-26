@@ -18,7 +18,6 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
-
 #include "simeng/BTBPredictor.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
@@ -37,6 +36,32 @@ void RegressionTest::TearDown() {
   if (!programFinished_) {
     std::cout << testing::internal::GetCapturedStdout();
   }
+}
+
+YAML::Node RegressionTest::generateConfig() {
+  YAML::Node config = YAML::Load(
+      "{L1-Cache: {"
+      "Bandwidth: 32, Permitted-Requests-Per-Cycle: 2 "
+      ",Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1"
+      "}, Register-Set: {"
+      "GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "
+      "Predicate-Count: 48, Conditional-Count: 128"
+      "}, Queue-Sizes: {"
+      "ROB: 180, Load: 64, Store: 36"
+      "}, Pipeline-Widths: {"
+      "Commit: 4, Dispatch-Rate: 4, FrontEnd: 4, "
+      "LSQ-Completion: 2"
+      "}, Execution-Units: ["
+      "{Pipelined: true, Blocking-Group: 0},"
+      "{Pipelined: true, Blocking-Group: 0},"
+      "{Pipelined: true, Blocking-Group: 0},"
+      "{Pipelined: true, Blocking-Group: 0},"
+      "{Pipelined: true, Blocking-Group: 0},"
+      "{Pipelined: true, Blocking-Group: 0}"
+      "], Core: {"
+      "Clock-Frequency: 2.5, Fetch-Block-Alignment-Bits: 5"
+      "}}");
+  return config;
 }
 
 void RegressionTest::run(const char* source, const char* triple) {
@@ -93,6 +118,8 @@ void RegressionTest::run(const char* source, const char* triple) {
   // Create a branch predictor for a pipelined core
   simeng::BTBPredictor predictor(8);
 
+  YAML::Node config = generateConfig();
+
   // Create the core model
   switch (GetParam()) {
     case EMULATION:
@@ -110,7 +137,8 @@ void RegressionTest::run(const char* source, const char* triple) {
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *architecture_, predictor, *portAllocator, rsArrangement);
+          entryPoint, *architecture_, predictor, *portAllocator, rsArrangement,
+          config);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }
