@@ -72,10 +72,9 @@ class Core : public simeng::Core {
 
   const arch::Architecture& isa_;
 
-  const std::initializer_list<simeng::RegisterFileStructure>
-      physicalRegisterStructures;
+  const std::vector<simeng::RegisterFileStructure> physicalRegisterStructures;
 
-  const std::initializer_list<uint16_t> physicalRegisterQuantities;
+  const std::vector<uint16_t> physicalRegisterQuantities;
 
   /** The core's register file set. */
   RegisterFileSet registerFileSet_;
