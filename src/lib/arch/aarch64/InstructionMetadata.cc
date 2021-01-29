@@ -54,6 +54,16 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // incorrectly adds implicit nzcv dependency
       implicitSourceCount = 0;
       break;
+    case Opcode::AArch64_CMPNE_PPzZI_S:
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      // Doesn't identify implicit NZCV destination
+      implicitDestinationCount = 1;
+      implicitDestinations[0] = ARM64_REG_NZCV;
+      break;
     case Opcode::AArch64_CNTB_XPiI:
       [[fallthrough]];
     case Opcode::AArch64_CNTH_XPiI:
@@ -95,6 +105,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_FMLA_ZPmZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FMLA_ZPmZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FMLS_ZPmZZ_S:
       [[fallthrough]];
     case Opcode::AArch64_FMSB_ZPmZZ_S:
       [[fallthrough]];
@@ -141,6 +153,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_FMUL_ZPmI_D:
+      [[fallthrough]];
     case Opcode::AArch64_FMUL_ZPmI_S: {
       // No defined access types
       operandCount = 4;
@@ -162,6 +176,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     }
     case Opcode::AArch64_AND_PPzPP:
       [[fallthrough]];
+    case Opcode::AArch64_FADD_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FCMGE_PPzZ0_D:
       [[fallthrough]];
     case Opcode::AArch64_FCMGE_PPzZ0_S:
@@ -171,6 +187,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_FCMGT_PPzZZ_S:
       [[fallthrough]];
     case Opcode::AArch64_FCMLT_PPzZ0_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FMUL_ZPmZ_S:
       [[fallthrough]];
     case Opcode::AArch64_SEL_ZPZZ_D:
       [[fallthrough]];
@@ -188,6 +206,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_PUNPKHI_PP:
       [[fallthrough]];
     case Opcode::AArch64_PUNPKLO_PP:
+      [[fallthrough]];
+    case Opcode::AArch64_RDVLI_XI:
       // No defined access types
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
@@ -216,11 +236,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1i64:
       operands[1].access = CS_AC_READ;
       break;
-    case Opcode::AArch64_LD1RD_IMM:
+    case Opcode::AArch64_LD1B:
       [[fallthrough]];
     case Opcode::AArch64_LD1D:
       [[fallthrough]];
     case Opcode::AArch64_LD1D_IMM_REAL:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1RD_IMM:
       [[fallthrough]];
     case Opcode::AArch64_LD1RW_IMM:
       [[fallthrough]];
@@ -259,6 +281,20 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_WRITE;
       break;
+    case Opcode::AArch64_LDR_PXI:
+      [[fallthrough]];
+    case Opcode::AArch64_LDR_ZXI:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_LSL_ZZI_S:
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      // No instruction id assigned
+      id = ARM64_INS_LSL;
+      break;
     case Opcode::AArch64_MOVNWi:
       [[fallthrough]];
     case Opcode::AArch64_MOVNXi:
@@ -268,6 +304,11 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_MOVZXi:
       // MOVZ incorrectly flags destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
+      break;
+    case Opcode::AArch64_MOVPRFX_ZZ:
+      // Assign operand access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
       break;
     case Opcode::AArch64_MRS:
       // MRS incorrectly flags source/destination as READ | WRITE
@@ -309,6 +350,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       groupCount = 1;
       groups[0] = CS_GRP_JUMP;
       break;
+    case Opcode::AArch64_ST1B:
+      [[fallthrough]];
     case Opcode::AArch64_ST1D:
       [[fallthrough]];
     case Opcode::AArch64_ST1D_IMM:
@@ -333,6 +376,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_STR_PXI:
+      [[fallthrough]];
+    case Opcode::AArch64_STR_ZXI:
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_SBFMWri:
       [[fallthrough]];
     case Opcode::AArch64_SBFMXri:
@@ -349,6 +398,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // UBFM incorrectly flags destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
       break;
+    case Opcode::AArch64_WHILELO_PXX_B:
+      [[fallthrough]];
     case Opcode::AArch64_WHILELO_PXX_D:
       [[fallthrough]];
     case Opcode::AArch64_WHILELO_PXX_S:
@@ -585,7 +636,8 @@ void InstructionMetadata::revertAliasing() {
         return;
       }
       if (opcode == Opcode::AArch64_LSLVWr ||
-          opcode == Opcode::AArch64_LSLVXr) {
+          opcode == Opcode::AArch64_LSLVXr ||
+          opcode == Opcode::AArch64_LSL_ZZI_S) {
         return;
       }
       return aliasNYI();
@@ -677,7 +729,15 @@ void InstructionMetadata::revertAliasing() {
 
         return;
       }
-      if (opcode == Opcode::AArch64_DUP_ZZI_S) {
+      if (opcode == Opcode::AArch64_DUP_ZR_S) {
+        // mov Zd.T, <rn|sp>; alias for dup Zd.T, <rn|sp>
+        operands[0].access = CS_AC_WRITE;
+        operands[0].vas = ARM64_VAS_1S;
+        operands[1].access = CS_AC_READ;
+        return;
+      }
+      if (opcode == Opcode::AArch64_DUP_ZZI_S ||
+          opcode == Opcode::AArch64_DUP_ZZI_D) {
         // mov Zd.T, Vn; alias for dup Zd.T, Zn.T[0]
         operandCount = 2;
         operands[0].access = CS_AC_WRITE;
