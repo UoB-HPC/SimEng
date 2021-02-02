@@ -72,9 +72,9 @@ class Core : public simeng::Core {
 
   const arch::Architecture& isa_;
 
-  const std::vector<simeng::RegisterFileStructure> physicalRegisterStructures;
+  const std::vector<simeng::RegisterFileStructure> physicalRegisterStructures_;
 
-  const std::vector<uint16_t> physicalRegisterQuantities;
+  const std::vector<uint16_t> physicalRegisterQuantities_;
 
   /** The core's register file set. */
   RegisterFileSet registerFileSet_;
@@ -139,11 +139,11 @@ class Core : public simeng::Core {
   pipeline::PortAllocator& portAllocator_;
 
   /** Clock frequency of core */
-  unsigned int clock_frequency = 2.5 * 1e9;
+  unsigned int clockFrequency_ = 2.5 * 1e9;
 
   /** Core commit width; maximum number of instruction that can be commited per
    * cycle. */
-  unsigned int commitWidth = 6;
+  unsigned int commitWidth_ = 6;
 
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes_ = 0;

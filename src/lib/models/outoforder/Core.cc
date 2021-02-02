@@ -25,21 +25,21 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            std::vector<std::pair<uint8_t, uint64_t>> rsArrangement,
            YAML::Node config)
     : isa_(isa),
-      physicalRegisterStructures(
+      physicalRegisterStructures_(
           {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
            {256,
             config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>()},
            {32, config["Register-Set"]["Predicate-Count"].as<uint16_t>()},
            {1, config["Register-Set"]["Conditional-Count"].as<uint16_t>()},
            {8, 5}}),
-      physicalRegisterQuantities(
+      physicalRegisterQuantities_(
           {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
            config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>(),
            config["Register-Set"]["Predicate-Count"].as<uint16_t>(),
            config["Register-Set"]["Conditional-Count"].as<uint16_t>(), 5}),
-      registerFileSet_(physicalRegisterStructures),
+      registerFileSet_(physicalRegisterStructures_),
       registerAliasTable_(isa.getRegisterFileStructures(),
-                          physicalRegisterQuantities),
+                          physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       dataMemory_(dataMemory),
       fetchToDecodeBuffer_(
@@ -76,15 +76,15 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
-                  physicalRegisterStructures.size()),
+                  physicalRegisterStructures_.size()),
       dispatchIssueUnit_(
           renameToDispatchBuffer_, issuePorts_, registerFileSet_, portAllocator,
-          physicalRegisterQuantities, rsArrangement,
+          physicalRegisterQuantities_, rsArrangement,
           config["Pipeline-Widths"]["Dispatch-Rate"].as<unsigned int>()),
       writebackUnit_(completionSlots_, registerFileSet_),
       portAllocator_(portAllocator),
-      clock_frequency(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
-      commitWidth(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
+      clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
+      commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
   for (size_t i = 0; i < config["Execution-Units"].size(); i++) {
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
@@ -152,7 +152,7 @@ void Core::tick() {
   }
 
   // Commit instructions from ROB
-  reorderBuffer_.commit(commitWidth);
+  reorderBuffer_.commit(commitWidth_);
 
   if (exceptionGenerated_) {
     handleException();
@@ -354,7 +354,7 @@ uint64_t Core::getInstructionsRetiredCount() const {
 
 uint64_t Core::getSystemTimer() const {
   // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clock_frequency / 1e9);
+  return ticks_ / (clockFrequency_ / 1e9);
 }
 
 std::map<std::string, std::string> Core::getStats() const {

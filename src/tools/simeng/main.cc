@@ -49,19 +49,17 @@ int main(int argc, char** argv) {
   SimulationMode mode = SimulationMode::InOrderPipelined;
   std::string executablePath = "";
 
-  if (argc > 1) {
-    if (!strcmp(argv[1], "emulation")) {
-      mode = SimulationMode::Emulation;
-    } else if ((!strcmp(argv[1], "outoforder"))) {
-      mode = SimulationMode::OutOfOrder;
-    }
+  YAML::Node config = YAML::LoadFile(argv[1]);
 
-    if (argc > 2) {
-      executablePath = std::string(argv[2]);
-    }
+  if (config["Simulation-Mode"].as<std::string>() == "emulation") {
+    mode = SimulationMode::Emulation;
+  } else if (config["Simulation-Mode"].as<std::string>() == "outoforder") {
+    mode = SimulationMode::OutOfOrder;
   }
 
-  YAML::Node config = YAML::LoadFile("config.yaml");
+  if (argc > 2) {
+    executablePath = std::string(argv[2]);
+  }
 
   // Create the process image
   std::unique_ptr<simeng::kernel::LinuxProcess> process;
@@ -183,8 +181,8 @@ int main(int argc, char** argv) {
   // Create the architecture, with knowledge of the kernel
   auto arch = simeng::arch::aarch64::Architecture(kernel);
 
-  auto predictor =
-      simeng::BTBPredictor(config["Branch-Predictor"]["bits"].as<uint8_t>());
+  auto predictor = simeng::BTBPredictor(
+      config["Branch-Predictor"]["btb-bitlength"].as<uint8_t>());
 
   std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
       portArrangement;
@@ -221,11 +219,17 @@ int main(int argc, char** argv) {
   }
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
+  // Configure reservation station arrangment
   std::vector<std::pair<uint8_t, uint64_t>> rsArrangement;
   for (int i = 0; i < config["Reservation-Stations"].size(); i++) {
     auto reservation_station = config["Reservation-Stations"][i];
-    rsArrangement.push_back({reservation_station["Index"].as<uint8_t>(),
-                             reservation_station["Size"].as<uint64_t>()});
+    for (int j = 0; j < reservation_station["Ports"].size(); j++) {
+      uint8_t port = reservation_station["Ports"][j].as<uint8_t>();
+      if (rsArrangement.size() < port + 1) {
+        rsArrangement.resize(port + 1);
+      }
+      rsArrangement[port] = {i, reservation_station["Size"].as<uint64_t>()};
+    }
   }
 
   const uint16_t intDataMemoryLatency =
