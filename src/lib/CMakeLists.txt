@@ -32,6 +32,7 @@ set(SIMENG_SOURCES
     FixedLatencyMemoryInterface.cc
     FlatMemoryInterface.cc
     Instruction.cc
+    ModelConfig.cc
     RegisterFileSet.cc
     RegisterValue.cc
     VariableLatencyMemoryInterface.cc

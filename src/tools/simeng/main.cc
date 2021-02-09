@@ -12,6 +12,7 @@
 #include "simeng/Elf.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
+#include "simeng/ModelConfig.hh"
 #include "simeng/VariableLatencyMemoryInterface.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
@@ -49,11 +50,12 @@ int main(int argc, char** argv) {
   SimulationMode mode = SimulationMode::InOrderPipelined;
   std::string executablePath = "";
 
-  YAML::Node config = YAML::LoadFile(argv[1]);
+  YAML::Node config = simeng::ModelConfig(argv[1]).getConfigFile();
 
-  if (config["Simulation-Mode"].as<std::string>() == "emulation") {
+  if (config["Core"]["Simulation-Mode"].as<std::string>() == "emulation") {
     mode = SimulationMode::Emulation;
-  } else if (config["Simulation-Mode"].as<std::string>() == "outoforder") {
+  } else if (config["Core"]["Simulation-Mode"].as<std::string>() ==
+             "outoforder") {
     mode = SimulationMode::OutOfOrder;
   }
 
@@ -182,21 +184,15 @@ int main(int argc, char** argv) {
   auto arch = simeng::arch::aarch64::Architecture(kernel);
 
   auto predictor = simeng::BTBPredictor(
-      config["Branch-Predictor"]["btb-bitlength"].as<uint8_t>());
+      config["Branch-Predictor"]["BTB-bitlength"].as<uint8_t>());
 
   std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
       portArrangement;
 
-  std::map<std::string, uint16_t> group_mapping = {
-      {"ARITHMETIC", 0}, {"SHIFT", 1},  {"MULTIPLY", 2},
-      {"DIVIDE", 3},     {"ASIMD", 4},  {"LOAD", 5},
-      {"STORE", 6},      {"BRANCH", 7}, {"PREDICATE", 8},
-  };
-
   auto config_ports = config["Ports"];
   // Extract number of ports
   for (int i = 0; i < config_ports.size(); i++) {
-    auto config_groups = config_ports[i];
+    auto config_groups = config_ports[i]["Instruction-Support"];
     std::vector<std::vector<std::pair<uint16_t, uint8_t>>> groups;
     // Extract number of groups in port
     for (int j = 0; j < config_groups.size(); j++) {
@@ -204,14 +200,11 @@ int main(int argc, char** argv) {
       auto config_group = config_groups[j];
       // Extract compulsory instructiuon group types in group
       for (int k = 0; k < config_group["Compulsory"].size(); k++) {
-        group.push_back(
-            {group_mapping[config_group["Compulsory"][k].as<std::string>()],
-             0});
+        group.push_back({config_group["Compulsory"][k].as<uint8_t>(), 0});
       }
       // Extract optional instructiuon group types in group
       for (int k = 0; k < config_group["Optional"].size(); k++) {
-        group.push_back(
-            {group_mapping[config_group["Optional"][k].as<std::string>()], 1});
+        group.push_back({config_group["Optional"][k].as<uint8_t>(), 1});
       }
       groups.push_back(group);
     }
@@ -228,7 +221,7 @@ int main(int argc, char** argv) {
       if (rsArrangement.size() < port + 1) {
         rsArrangement.resize(port + 1);
       }
-      rsArrangement[port] = {i, reservation_station["Size"].as<uint64_t>()};
+      rsArrangement[port] = {i, reservation_station["Size"].as<uint16_t>()};
     }
   }
 
