@@ -1,5 +1,7 @@
 #pragma once
 
+#include <math.h>
+
 #include <algorithm>
 #include <cassert>
 #include <fstream>
