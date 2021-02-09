@@ -61,18 +61,17 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          config["L1-Cache"]["Bandwidth"].as<uint64_t>(),
-          config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint16_t>(),
-          config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint16_t>(),
-          config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint16_t>()),
+          config["L1-Cache"]["Bandwidth"].as<uint8_t>(),
+          config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint8_t>(),
+          config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint8_t>(),
+          config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint8_t>()),
       reorderBuffer_(config["Queue-Sizes"]["ROB"].as<unsigned int>(),
                      registerAliasTable_, loadStoreQueue_,
                      [this](auto instruction) { raiseException(instruction); }),
-      fetchUnit_(
-          fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-          entryPoint,
-          config["Core"]["Fetch-Block-Alignment-Bits"].as<unsigned int>(), isa,
-          branchPredictor),
+      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
+                 entryPoint,
+                 config["Core"]["Fetch-Block-Alignment-Bits"].as<uint8_t>(),
+                 isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
@@ -94,7 +93,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
         [this](auto uop) { loadStoreQueue_.startLoad(uop); }, [](auto uop) {},
         [](auto uop) { uop->setCommitReady(); }, branchPredictor,
         config["Execution-Units"][i]["Pipelined"].as<bool>(),
-        config["Execution-Units"][i]["Blocking-Group"].as<int>());
+        config["Execution-Units"][i]["Blocking-Group"].as<uint16_t>());
   }
   // Provide reservation size getter to A64FX port allocator
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {

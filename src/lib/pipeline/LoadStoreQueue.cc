@@ -17,7 +17,7 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    uint64_t L1Bandwidth, uint8_t permittedRequests, uint8_t permittedLoads,
+    uint8_t L1Bandwidth, uint8_t permittedRequests, uint8_t permittedLoads,
     uint8_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
@@ -35,7 +35,7 @@ LoadStoreQueue::LoadStoreQueue(
     MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    uint64_t L1Bandwidth, uint8_t permittedRequests, uint8_t permittedLoads,
+    uint8_t L1Bandwidth, uint8_t permittedRequests, uint8_t permittedLoads,
     uint8_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),

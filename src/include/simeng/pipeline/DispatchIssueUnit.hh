@@ -22,10 +22,10 @@ struct ReservationStationPort {
 /** A reservation station */
 struct ReservationStation {
   /** Size of reservation station */
-  uint64_t capacity;
+  uint16_t capacity;
   /** Current number of non-stalled instructions
    * in reservation station */
-  uint64_t currentSize;
+  uint16_t currentSize;
   /** Issue ports belonging to reservation station */
   std::vector<ReservationStationPort> ports;
 };
