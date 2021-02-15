@@ -23,10 +23,11 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
 
   // Generate zero-indexed system register map
   systemRegisterMap_[ARM64_SYSREG_DCZID_EL0] = systemRegisterMap_.size();
-  systemRegisterMap_[0xda20] = systemRegisterMap_.size();  // FPCR
-  systemRegisterMap_[0xda21] = systemRegisterMap_.size();  // FPSR
-  systemRegisterMap_[0xde82] = systemRegisterMap_.size();  // TPIDR_EL0
-  systemRegisterMap_[0xc000] = systemRegisterMap_.size();  // MIDR_EL1
+  systemRegisterMap_[ARM64_SYSREG_FPCR] = systemRegisterMap_.size();
+  systemRegisterMap_[ARM64_SYSREG_FPSR] = systemRegisterMap_.size();
+  systemRegisterMap_[ARM64_SYSREG_TPIDR_EL0] = systemRegisterMap_.size();
+  systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
+  systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
 }
 Architecture::~Architecture() { cs_close(&capstoneHandle); }
 
@@ -124,6 +125,8 @@ uint16_t Architecture::getSystemRegisterTag(uint16_t reg) const {
 
 ProcessStateChange Architecture::getInitialState() const {
   ProcessStateChange changes;
+  // Set ProcessStateChange type
+  changes.type = REPLACEMENT;
 
   uint64_t stackPointer = linux_.getInitialStackPointer();
   // Set the stack pointer register
@@ -136,6 +139,21 @@ ProcessStateChange Architecture::getInitialState() const {
   changes.modifiedRegisters.push_back(
       {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)});
   changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
+
+  return changes;
+}
+
+ProcessStateChange Architecture::getUpdateState() const {
+  ProcessStateChange changes;
+  // Set ProcessStateChange type
+  changes.type = INCREMENT;
+
+  // Increment the Counter-timer Virtual Count (CNTVCT) register by 1
+  /* TODO: CNTVCT value should be equal to the physical count value minus the
+   * virtual offset visible in CNTVOFF. */
+  changes.modifiedRegisters.push_back(
+      {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0)});
+  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(1));
 
   return changes;
 }

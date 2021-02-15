@@ -14,8 +14,12 @@ using MacroOp = std::vector<std::shared_ptr<Instruction>>;
 
 namespace arch {
 
+enum ChangeType { REPLACEMENT, INCREMENT, DECREMENT };
+
 /** A structure describing a set of changes to the process state. */
 struct ProcessStateChange {
+  /** Type of changes to be made */
+  ChangeType type;
   /** Registers to modify */
   std::vector<Register> modifiedRegisters;
   /** Values to set modified registers to */
@@ -80,6 +84,9 @@ class Architecture {
 
   /** Retrieve the initial process state. */
   virtual ProcessStateChange getInitialState() const = 0;
+
+  /** Retrieve any updates to the process state. */
+  virtual ProcessStateChange getUpdateState() const = 0;
 
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;

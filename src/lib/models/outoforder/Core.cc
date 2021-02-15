@@ -95,6 +95,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 void Core::tick() {
   ticks_++;
 
+  applyStateChange(isa_.getUpdateState());
+
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
     return;
@@ -292,13 +294,32 @@ void Core::processExceptionHandler() {
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  // Update registers
-  for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-    mappedRegisterFileSet_.set(change.modifiedRegisters[i],
-                               change.modifiedRegisterValues[i]);
+  // Update registers in accoradance with the ProcessStateChange type
+  if (change.type == arch::REPLACEMENT) {
+    // If type is REPLACEMENT, set new values
+    for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+      mappedRegisterFileSet_.set(change.modifiedRegisters[i],
+                                 change.modifiedRegisterValues[i]);
+    }
+  } else {
+    for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+      // Get source and value to update by
+      uint64_t sourceValue =
+          mappedRegisterFileSet_.get(change.modifiedRegisters[i])
+              .get<uint64_t>();
+      uint64_t updatedValue = change.modifiedRegisterValues[i].get<uint64_t>();
+      // Based on type, add or subtract update value and set new
+      RegisterValue updateRegisterValue = (change.type == arch::INCREMENT)
+                                              ? sourceValue + updatedValue
+                                              : sourceValue - updatedValue;
+      mappedRegisterFileSet_.set(change.modifiedRegisters[i],
+                                 updateRegisterValue);
+    }
   }
 
   // Update memory
+  // TODO: Analyse if INCREMENT or DECREMENT case is required for memory
+  // changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
     const auto& target = change.memoryAddresses[i];
     const auto& data = change.memoryAddressValues[i];

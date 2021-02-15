@@ -43,7 +43,7 @@ bool ExceptionHandler::init() {
 
         assert(out.size() < 256 && "large ioctl() output not implemented");
         uint8_t outSize = static_cast<uint8_t>(out.size());
-        stateChange = {{R0}, {retval}};
+        stateChange = {REPLACEMENT, {R0}, {retval}};
         stateChange.memoryAddresses.push_back({argp, outSize});
         stateChange.memoryAddressValues.push_back(
             RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
@@ -61,7 +61,7 @@ bool ExceptionHandler::init() {
             [=](auto length) {
               // Invoke the kernel
               uint64_t retval = linux_.openat(dirfd, pathname, flags, mode);
-              ProcessStateChange stateChange = {{R0}, {retval}};
+              ProcessStateChange stateChange = {REPLACEMENT, {R0}, {retval}};
               delete[] pathname;
               return concludeSyscall(stateChange);
             });
@@ -69,14 +69,14 @@ bool ExceptionHandler::init() {
       }
       case 57: {  // close
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        stateChange = {{R0}, {linux_.close(fd)}};
+        stateChange = {REPLACEMENT, {R0}, {linux_.close(fd)}};
         break;
       }
       case 62: {  // lseek
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t offset = registerFileSet.get(R1).get<uint64_t>();
         int64_t whence = registerFileSet.get(R2).get<uint64_t>();
-        stateChange = {{R0}, {linux_.lseek(fd, offset, whence)}};
+        stateChange = {REPLACEMENT, {R0}, {linux_.lseek(fd, offset, whence)}};
         break;
       }
       case 63: {  // read
@@ -85,7 +85,7 @@ bool ExceptionHandler::init() {
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
           int64_t totalRead = linux_.read(fd, dataBuffer.data(), count);
-          ProcessStateChange stateChange = {{R0}, {totalRead}};
+          ProcessStateChange stateChange = {REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
           if (totalRead < 0) {
             return concludeSyscall(stateChange);
@@ -148,7 +148,7 @@ bool ExceptionHandler::init() {
 
           // Invoke the kernel
           int64_t totalRead = linux_.readv(fd, iovec.data(), iovcnt);
-          ProcessStateChange stateChange = {{R0}, {totalRead}};
+          ProcessStateChange stateChange = {REPLACEMENT, {R0}, {totalRead}};
 
           // Check for failure
           if (totalRead < 0) {
@@ -191,7 +191,7 @@ bool ExceptionHandler::init() {
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
           int64_t retval = linux_.write(fd, dataBuffer.data(), count);
-          ProcessStateChange stateChange = {{R0}, {retval}};
+          ProcessStateChange stateChange = {REPLACEMENT, {R0}, {retval}};
           return concludeSyscall(stateChange);
         });
       }
@@ -223,7 +223,7 @@ bool ExceptionHandler::init() {
 
           // Invoke the kernel
           int64_t retval = linux_.writev(fd, dataBuffer.data(), iovcnt);
-          ProcessStateChange stateChange = {{R0}, {retval}};
+          ProcessStateChange stateChange = {REPLACEMENT, {R0}, {retval}};
           return concludeSyscall(stateChange);
         };
 
@@ -261,7 +261,7 @@ bool ExceptionHandler::init() {
         uint64_t statbufPtr = registerFileSet.get(R1).get<uint64_t>();
 
         kernel::stat statOut;
-        stateChange = {{R0}, {linux_.fstat(fd, statOut)}};
+        stateChange = {REPLACEMENT, {R0}, {linux_.fstat(fd, statOut)}};
         stateChange.memoryAddresses.push_back({statbufPtr, sizeof(statOut)});
         stateChange.memoryAddressValues.push_back(statOut);
         break;
@@ -274,7 +274,7 @@ bool ExceptionHandler::init() {
       }
       case 96: {  // set_tid_address
         uint64_t ptr = registerFileSet.get(R0).get<uint64_t>();
-        stateChange = {{R0}, {linux_.setTidAddress(ptr)}};
+        stateChange = {REPLACEMENT, {R0}, {linux_.setTidAddress(ptr)}};
         break;
       }
       case 113: {  // clock_gettime
@@ -285,7 +285,7 @@ bool ExceptionHandler::init() {
         uint64_t nanoseconds;
         uint64_t retval =
             linux_.clockGetTime(clkId, systemTimer, seconds, nanoseconds);
-        stateChange = {{R0}, {retval}};
+        stateChange = {REPLACEMENT, {R0}, {retval}};
 
         uint64_t timespecPtr = registerFileSet.get(R1).get<uint64_t>();
         stateChange.memoryAddresses.push_back({timespecPtr, 8});
@@ -304,7 +304,8 @@ bool ExceptionHandler::init() {
         const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019";
         const char machine[] = "aarch64";
 
-        stateChange = {{R0},
+        stateChange = {REPLACEMENT,
+                       {R0},
                        {static_cast<uint64_t>(0)},
                        {{base, sizeof(sysname)},
                         {base + len, sizeof(nodename)},
@@ -325,7 +326,7 @@ bool ExceptionHandler::init() {
         kernel::timeval tz;
         int64_t retval = linux_.gettimeofday(systemTimer, tvPtr ? &tv : nullptr,
                                              tzPtr ? &tz : nullptr);
-        stateChange = {{R0}, {retval}};
+        stateChange = {REPLACEMENT, {R0}, {retval}};
         if (tvPtr) {
           stateChange.memoryAddresses.push_back({tvPtr, 16});
           stateChange.memoryAddressValues.push_back(tv);
@@ -337,20 +338,20 @@ bool ExceptionHandler::init() {
         break;
       }
       case 174:  // getuid
-        stateChange = {{R0}, {linux_.getuid()}};
+        stateChange = {REPLACEMENT, {R0}, {linux_.getuid()}};
         break;
       case 175:  // geteuid
-        stateChange = {{R0}, {linux_.geteuid()}};
+        stateChange = {REPLACEMENT, {R0}, {linux_.geteuid()}};
         break;
       case 176:  // getgid
-        stateChange = {{R0}, {linux_.getgid()}};
+        stateChange = {REPLACEMENT, {R0}, {linux_.getgid()}};
         break;
       case 177:  // getegid
-        stateChange = {{R0}, {linux_.getegid()}};
+        stateChange = {REPLACEMENT, {R0}, {linux_.getegid()}};
         break;
       case 214: {  // brk
         auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
-        stateChange = {{R0}, {static_cast<uint64_t>(result)}};
+        stateChange = {REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
         break;
       }
       default:
@@ -444,7 +445,7 @@ void ExceptionHandler::readLinkAt(span<char> path) {
 
   auto bytesCopied = static_cast<uint64_t>(result);
 
-  ProcessStateChange stateChange = {{R0}, {result}};
+  ProcessStateChange stateChange = {REPLACEMENT, {R0}, {result}};
 
   // Slice the returned path into <256-byte chunks for writing
   const char* bufPtr = buffer;

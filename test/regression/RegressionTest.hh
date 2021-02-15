@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
 #include "simeng/arch/Architecture.hh"
