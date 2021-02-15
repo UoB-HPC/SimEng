@@ -886,6 +886,16 @@ void Instruction::execute() {
       results[0] = n - (VL_bits / 8);
       break;
     }
+    case Opcode::AArch64_DUPM_ZI: {  // dupm zd.t, #imm
+      const uint64_t VL_bits = 512;
+      const uint64_t imm = static_cast<uint64_t>(metadata.operands[1].imm);
+      uint64_t out[32] = {0};
+      for (int i = 0; i < (VL_bits / 64); i++) {
+        out[i] = imm;
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_DUP_ZI_B: {  // dup zd.b, #imm{, shift}
       const int8_t imm = static_cast<int8_t>(metadata.operands[1].imm);
 
@@ -2034,7 +2044,27 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
-    case Opcode::AArch64_FMUL_ZPmZ_S: {  // fmul zd.s, pg/m, zn.s, zm.s
+    case Opcode::AArch64_FMUL_ZPmZ_D: {  // fmul zdn.d, pg/m, zdn.d, zm.d
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const double* n = operands[1].getAsVector<double>();
+      const double* m = operands[2].getAsVector<double>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      double out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[(int)i / 8] & shifted_active) {
+          out[i] = n[i] * m[i];
+        } else {
+          out[i] = n[i];
+        }
+      }
+
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FMUL_ZPmZ_S: {  // fmul zdn.s, pg/m, zdn.s, zm.s
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
       const float* n = operands[1].getAsVector<float>();
       const float* m = operands[2].getAsVector<float>();
@@ -2242,6 +2272,13 @@ void Instruction::execute() {
       const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
       const uint64_t VL_bits = 512;
       results[0] = n + ((VL_bits / 64) * imm);
+      break;
+    }
+    case Opcode::AArch64_INCH_XPiI: {  // inch xdn{, pattern{, #imm}}
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      const uint64_t VL_bits = 512;
+      results[0] = n + ((VL_bits / 16) * imm);
       break;
     }
     case Opcode::AArch64_INCW_XPiI: {  // incw xdn{, pattern{, #imm}}
@@ -3727,6 +3764,11 @@ void Instruction::execute() {
       results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
+    case Opcode::AArch64_STRQpre: {  // str qt, [xn, #imm]!
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
+      break;
+    }
     case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend, {#amount}}]
       memoryData[0] = operands[0];
       break;
@@ -3989,6 +4031,19 @@ void Instruction::execute() {
       exception_ = InstructionException::SupervisorCall;
       break;
     }
+    case Opcode::AArch64_SYSxt: {  // sys #<op1>, cn, cm, #<op2>{, xt}
+      if (metadata.id == ARM64_INS_DC) {
+        uint64_t address = operands[0].get<uint64_t>();
+        uint8_t dzp = operands[1].get<uint64_t>() & 8;
+        uint8_t N = std::pow(2, operands[1].get<uint64_t>() & 7);
+        if (metadata.operands[0].sys == ARM64_DC_ZVA) {
+          if (dzp) {
+            // TODO
+          }
+        }
+      }
+      break;
+    }
     case Opcode::AArch64_TBNZW: {  // tbnz wn, #imm, label
       if (operands[0].get<uint32_t>() & (1 << metadata.operands[1].imm)) {
         branchTaken_ = true;
@@ -4041,6 +4096,54 @@ void Instruction::execute() {
       uint8_t s = metadata.operands[3].imm;
       uint64_t source = operands[0].get<uint64_t>();
       results[0] = bitfieldManipulate(source, UINT64_C(0), r, s);
+      break;
+    }
+    case Opcode::AArch64_UQDECD_XPiI: {  // uqdecd xd{, pattern{, MUL #imm}}
+      const uint64_t d = operands[0].get<uint64_t>();
+      const uint8_t imm = metadata.operands[1].imm;
+      const uint64_t VL_bits = 512;
+
+      int64_t out = d - (imm * (VL_bits / 64));
+      // Saturate output
+      if (out > (std::pow(2, 64) - 1)) {
+        out = std::pow(2, 64) - 1;
+      } else if (out < 0) {
+        out = 0;
+      }
+
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_UQDECH_XPiI: {  // uqdech xd{, pattern{, MUL #imm}}
+      const uint64_t d = operands[0].get<uint64_t>();
+      const uint8_t imm = metadata.operands[1].imm;
+      const uint64_t VL_bits = 512;
+
+      int64_t out = d - (imm * (VL_bits / 16));
+      // Saturate output
+      if (out > (std::pow(2, 64) - 1)) {
+        out = std::pow(2, 64) - 1;
+      } else if (out < 0) {
+        out = 0;
+      }
+
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_UQDECW_XPiI: {  // uqdecw xd{, pattern{, MUL #imm}}
+      const uint64_t d = operands[0].get<uint64_t>();
+      const uint8_t imm = metadata.operands[1].imm;
+      const uint64_t VL_bits = 512;
+
+      int64_t out = d - (imm * (VL_bits / 32));
+      // Saturate output
+      if (out > (std::pow(2, 64) - 1)) {
+        out = std::pow(2, 64) - 1;
+      } else if (out < 0) {
+        out = 0;
+      }
+
+      results[0] = out;
       break;
     }
     case Opcode::AArch64_UCVTFUWDri: {  // ucvtf dd, wn
@@ -4273,6 +4376,50 @@ void Instruction::execute() {
       const uint64_t* n = operands[1].getAsVector<uint64_t>();
       uint32_t out[4] = {d[0], d[1], static_cast<uint32_t>(n[0]),
                          static_cast<uint32_t>(n[1])};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_ZIP1_ZZZ_D: {  // zip1 zd.d, zn.d, zm.d
+      const double* n = operands[0].getAsVector<double>();
+      const double* m = operands[1].getAsVector<double>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      double out[32] = {0};
+
+      bool interleave = false;
+      int index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        if (interleave) {
+          out[i] = m[index];
+          index++;
+        } else {
+          out[i] = n[index];
+        }
+        interleave = !interleave;
+      }
+
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_ZIP2_ZZZ_D: {  // zip2 zd.d, zn.d, zm.d
+      const double* n = operands[0].getAsVector<double>();
+      const double* m = operands[1].getAsVector<double>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      double out[32] = {0};
+
+      bool interleave = false;
+      int index = partition_num / 2;
+      for (int i = 0; i < partition_num; i++) {
+        if (interleave) {
+          out[i] = m[index];
+          index++;
+        } else {
+          out[i] = n[index];
+        }
+        interleave = !interleave;
+      }
+
       results[0] = out;
       break;
     }

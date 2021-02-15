@@ -188,6 +188,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FCMLT_PPzZ0_S:
       [[fallthrough]];
+    case Opcode::AArch64_FMUL_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FMUL_ZPmZ_S:
       [[fallthrough]];
     case Opcode::AArch64_SEL_ZPZZ_D:
@@ -215,6 +217,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_INCB_XPiI:
       [[fallthrough]];
     case Opcode::AArch64_INCD_XPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_INCH_XPiI:
       [[fallthrough]];
     case Opcode::AArch64_INCW_XPiI: {
       // lacking access specifiers for destination
@@ -392,11 +396,39 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // SVC is incorrectly marked as setting x30
       implicitDestinationCount = 0;
       break;
+    case Opcode::AArch64_SYSxt:
+      // No defined metadata.id for SYS instructions
+      id = ARM64_INS_SYS;
+      break;
     case Opcode::AArch64_UBFMWri:
       [[fallthrough]];
     case Opcode::AArch64_UBFMXri:
       // UBFM incorrectly flags destination as READ | WRITE
       operands[0].access = CS_AC_WRITE;
+      break;
+    case Opcode::AArch64_UQDECB_WPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_UQDECB_XPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_UQDECD_WPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_UQDECD_XPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_UQDECH_WPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_UQDECH_XPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_UQDECW_WPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_UQDECW_XPiI:
+      // UQDEC lacks access types
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      if (operandCount == 1) {
+        operandCount = 2;
+        operands[1].type = ARM64_OP_IMM;
+        operands[1].imm = 1;
+      }
+      operands[1].access = CS_AC_READ;
       break;
     case Opcode::AArch64_WHILELO_PXX_B:
       [[fallthrough]];
@@ -416,6 +448,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_XTNv8i16:
       // XTN2 incorrectly flags destination as only WRITE
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      break;
+    case Opcode::AArch64_ZIP1_ZZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_ZIP2_ZZZ_D:
+      // ZIP lacks access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
       break;
   }
 
@@ -684,9 +724,12 @@ void InstructionMetadata::revertAliasing() {
         // mov vd, Vn.T[index]; alias for dup vd, Vn.T[index]
         return;
       }
-      if (opcode == Opcode::AArch64_DUP_ZI_B ||
+      if (opcode == Opcode::AArch64_DUPM_ZI ||
+          opcode == Opcode::AArch64_DUP_ZI_B ||
           opcode == Opcode::AArch64_DUP_ZI_D ||
           opcode == Opcode::AArch64_DUP_ZI_S) {
+        // mov Zd.T, #imm; alias for dupm Zd.T, #imm
+        // or
         // mov Zd.T, #imm{, shift}; alias for dup Zd.T, #imm{, shift}
         operandCount = 2;
         operands[0].access = CS_AC_WRITE;
@@ -695,8 +738,29 @@ void InstructionMetadata::revertAliasing() {
 
         std::string str(operandStr);
         uint8_t start = operandStr[6] == '#' ? 7 : 8;
-        bool hex = false;
 
+        if (opcode == Opcode::AArch64_DUPM_ZI) {
+          char specifier = operandStr[start - 4];
+          switch (specifier) {
+            case 'b':
+              operands[0].vas = ARM64_VAS_1B;
+              break;
+            case 'h':
+              operands[0].vas = ARM64_VAS_1H;
+              break;
+            case 's':
+              operands[0].vas = ARM64_VAS_1S;
+              break;
+            case 'd':
+              operands[0].vas = ARM64_VAS_1D;
+              break;
+
+            default:
+              break;
+          }
+        }
+
+        bool hex = false;
         if (operandStr[start + 1] == 'x') {
           hex = true;
           start += 2;
@@ -704,7 +768,7 @@ void InstructionMetadata::revertAliasing() {
 
         uint8_t end = start + 1;
         while (true) {
-          if (operandStr[end] == ' ') {
+          if (unsigned(operandStr[end]) < 48) {
             break;
           }
           end++;
@@ -712,17 +776,18 @@ void InstructionMetadata::revertAliasing() {
 
         std::string sub = str.substr(start, end);
         if (hex) {
-          operands[1].imm = 0;
-          uint8_t base = 1;
+          uint64_t immediate = 0;
+          uint64_t base = 1;
           for (int i = sub.size(); i > -1; i--) {
             if (sub[i] >= '0' && sub[i] <= '9') {
-              operands[1].imm += (sub[i] - 48) * base;
+              immediate += (sub[i] - 48) * base;
               base *= 16;
             } else if (sub[i] >= 'a' && sub[i] <= 'f') {
-              operands[1].imm += (sub[i] - 87) * base;
+              immediate += (sub[i] - 87) * base;
               base *= 16;
             }
           }
+          operands[1].imm = immediate;
         } else {
           operands[1].imm = stoi(sub);
         }
@@ -989,6 +1054,25 @@ void InstructionMetadata::revertAliasing() {
         return;
       }
       return aliasNYI();
+    case ARM64_INS_SYS: {
+      // Extract IC/DC/AT/TLBI operation
+      std::string str(operandStr);
+      if (std::string(mnemonic) == "dc") {
+        if (str.substr(0, 3) == "zva") {
+          id = ARM64_INS_DC;
+          operandCount = 3;
+          operands[1] = operands[0];
+          operands[1].access = CS_AC_READ;
+          operands[0].type = ARM64_OP_SYS;
+          operands[0].sys = ARM64_DC_ZVA;
+          operands[2].type = ARM64_OP_REG_MRS;
+          operands[2].access = CS_AC_READ;
+          operands[2].imm = ARM64_SYSREG_DCZID_EL0;
+          return;
+        }
+      }
+      return aliasNYI();
+    }
     case ARM64_INS_TLBI:
       return aliasNYI();
     case ARM64_INS_TST:

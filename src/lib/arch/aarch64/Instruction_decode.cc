@@ -227,18 +227,6 @@ void Instruction::decode() {
       destinationRegisters[destinationRegisterCount] = {
           RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
       destinationRegisterCount++;
-    } else if (op.type == ARM64_OP_SYS) {  // System register
-      if (op.access & cs_ac_type::CS_AC_WRITE) {
-        destinationRegisters[destinationRegisterCount] = {
-            RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.sys)};
-        destinationRegisterCount++;
-      }
-      if (op.access & cs_ac_type::CS_AC_READ) {
-        sourceRegisters[sourceRegisterCount] = {
-            RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.sys)};
-        sourceRegisterCount++;
-        operandsPending++;
-      }
     }
 
     if (op.shift.value > 0) isShift_ = true;  // Identify shift operations
@@ -334,7 +322,9 @@ void Instruction::decode() {
       (2920 < metadata.opcode && metadata.opcode < 2926) ||
       (3007 < metadata.opcode && metadata.opcode < 3016) ||
       (3037 < metadata.opcode && metadata.opcode < 3046) ||
-      (3773 < metadata.opcode && metadata.opcode < 3776)) {
+      (3773 < metadata.opcode && metadata.opcode < 3776) ||
+      (4484 < metadata.opcode && metadata.opcode < 4493) ||
+      (4499 < metadata.opcode && metadata.opcode < 4508)) {
     isSVE_ = true;
   }
 }

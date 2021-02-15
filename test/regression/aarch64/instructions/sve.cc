@@ -127,6 +127,59 @@ TEST_P(InstSve, dec) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 64);
 }
 
+TEST_P(InstSve, dupm) {
+  // VL = 512-bit
+  RUN_AARCH64(R"(
+    # 2-bit
+    mov z0.d, #0x1
+    mov z1.d, #0x3
+
+    # 4-bit
+    mov z2.d, #0x7
+    mov z3.d, #0xf
+    
+    # 8-bit
+    mov z4.d, #0x1f
+    mov z5.d, #0xff
+    
+    # 16-bit
+    mov z6.d, #0x1ff
+    mov z7.d, #0xffff
+    
+    # 32-bit
+    mov z8.d, #0x1ffff
+    mov z9.d, #0xffffffff
+
+    # 64-bit
+    mov z10.d, #0x1ffffffff
+    mov z11.d, #0xefffffffffffffff
+  )");
+
+  CHECK_NEON(0, uint64_t, {0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1});
+  CHECK_NEON(1, uint64_t, {0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3, 0x3});
+  CHECK_NEON(2, uint64_t, {0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7});
+  CHECK_NEON(3, uint64_t, {0xf, 0xf, 0xf, 0xf, 0xf, 0xf, 0xf, 0xf});
+  CHECK_NEON(4, uint64_t, {0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f, 0x1f});
+  CHECK_NEON(5, uint64_t, {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff});
+  CHECK_NEON(6, uint64_t,
+             {0x1ff, 0x1ff, 0x1ff, 0x1ff, 0x1ff, 0x1ff, 0x1ff, 0x1ff});
+  CHECK_NEON(7, uint64_t,
+             {0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff});
+  CHECK_NEON(
+      8, uint64_t,
+      {0x1ffff, 0x1ffff, 0x1ffff, 0x1ffff, 0x1ffff, 0x1ffff, 0x1ffff, 0x1ffff});
+  CHECK_NEON(9, uint64_t,
+             {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff,
+              0xffffffff, 0xffffffff, 0xffffffff});
+  CHECK_NEON(10, uint64_t,
+             {0x1ffffffff, 0x1ffffffff, 0x1ffffffff, 0x1ffffffff, 0x1ffffffff,
+              0x1ffffffff, 0x1ffffffff, 0x1ffffffff});
+  CHECK_NEON(11, uint64_t,
+             {0xefffffffffffffff, 0xefffffffffffffff, 0xefffffffffffffff,
+              0xefffffffffffffff, 0xefffffffffffffff, 0xefffffffffffffff,
+              0xefffffffffffffff, 0xefffffffffffffff});
+}
+
 TEST_P(InstSve, dups) {
   // VL = 512-bit
   // 8-bit arrangement
@@ -247,23 +300,29 @@ TEST_P(InstSve, inc) {
   RUN_AARCH64(R"(
     mov x0, #64
     mov x1, #196
-    mov x2, #128
-    mov x3, #64
-    mov x4, #196
-    mov x5, #128
+    mov x2, #96
+    mov x3, #128
+    mov x4, #64
+    mov x5, #196
+    mov x6, #96
+    mov x7, #128
     incb x0
     incd x1
-    incw x2
-    incb x3, all, mul #3
-    incd x4, all, mul #3
-    incw x5, all, mul #3
+    inch x2
+    incw x3
+    incb x4, all, mul #3
+    incd x5, all, mul #3
+    inch x6, all, mul #3
+    incw x7, all, mul #3
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 128);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 204);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 144);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 256);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 220);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 176);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 128);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 144);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 256);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 220);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 192);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 176);
 }
 
 TEST_P(InstSve, fabs) {
@@ -1055,16 +1114,22 @@ TEST_P(InstSve, fmul) {
     mov x1, #0
     mov x2, #4
     whilelo p0.d, xzr, x2
+    ptrue p1.d
 
     ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
     ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
+    ld1d {z3.d}, p1/z, [x0, x1, lsl #3]
+    ld1d {z4.d}, p0/z, [x0, x2, lsl #3]
 
     fmul z2.d, z1.d, z0.d
     fmul z0.d, p0/m, z0.d, #0.5
+    fmul z3.d, p0/m, z3.d, z4.d
   )");
 
-  CHECK_NEON(2, double, {-34.71, 39.21092, 0.0, 0.0, 0, 0, 0, 0});
+  CHECK_NEON(2, double, {-34.71, 39.21092, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
   CHECK_NEON(0, double, {0.5, -21.38, -0.0625, 0.0, 0.0, 0.0, 0.0, 0.0});
+  CHECK_NEON(3, double,
+             {-34.71, 39.21092, 0.0, 0.0, -34.71, -0.917, 0.0, 80.72});
 }
 
 TEST_P(InstSve, fneg) {
@@ -2329,6 +2394,49 @@ TEST_P(InstSve, str_vector) {
   EXPECT_EQ(getMemoryValue<uint64_t>(512 + 248), 0xFFFFFFFFFFFFFFFF);
 }
 
+TEST_P(InstSve, uqdec) {
+  // VL = 512-bit
+  // d arrangement
+  RUN_AARCH64(R"(
+    mov x0, #1024
+    mov x1, #1024
+    mov x2, #1
+
+    uqdecd x0, all, mul #7
+    uqdecd x1
+    uqdecd x2, all, mul #7
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 968);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 1016);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0);
+  // h arrangement
+  RUN_AARCH64(R"(
+    mov x0, #1024
+    mov x1, #1024
+    mov x2, #1
+
+    uqdech x0, all, mul #7
+    uqdech x1
+    uqdech x2, all, mul #7
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 800);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 992);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0);
+  // w arrangement
+  RUN_AARCH64(R"(
+    mov x0, #1024
+    mov x1, #1024
+    mov x2, #1
+
+    uqdecw x0, all, mul #7
+    uqdecw x1
+    uqdecw x2, all, mul #7
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 912);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 1008);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0);
+}
+
 TEST_P(InstSve, uzp1) {
   RUN_AARCH64(R"(
     dup z0.s, #1
@@ -2484,6 +2592,23 @@ TEST_P(InstSve, whilelo) {
   )");
   CHECK_PREDICATE(4, uint32_t, {0, 0, 0, 0, 0, 0, 0, 0});
   EXPECT_EQ(getNZCV(), 0b0110);
+}
+
+TEST_P(InstSve, zip) {
+  // VL = 512-bits
+  // d arrangement
+  RUN_AARCH64(R"(
+    fdup z0.d, #0.5
+    fdup z1.d, #-0.5
+    fdup z2.d, #0.75
+    fdup z3.d, #-0.75
+
+    zip1 z4.d, z0.d, z1.d
+    zip2 z5.d, z2.d, z3.d
+  )");
+
+  CHECK_NEON(4, double, {0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5});
+  CHECK_NEON(5, double, {0.75, -0.75, 0.75, -0.75, 0.75, -0.75, 0.75, -0.75});
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstSve, ::testing::Values(EMULATION),

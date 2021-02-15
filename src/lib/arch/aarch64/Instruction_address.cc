@@ -846,6 +846,12 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[1].get<uint64_t>(), 16, 1}});
       break;
     }
+    case Opcode::AArch64_STRQpre: {  // str qt, [xn, #imm]!
+      setMemoryAddresses(
+          {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 16,
+            1}});
+      break;
+    }
     case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend {#amount}}]
       uint64_t offset =
           extendOffset(operands[2].get<uint64_t>(), metadata.operands[1]);
