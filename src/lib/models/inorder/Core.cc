@@ -365,6 +365,18 @@ void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
     return;
   }
 
+  if (instruction->getTraceId() != 0) {
+    std::map<uint64_t, Trace*>::iterator it =
+        traceMap.find(instruction->getTraceId());
+    if (it != traceMap.end()) {
+      cycleTrace tr = it->second->getCycleTraces();
+      if (tr.finished != 1) {
+        tr.complete = trace_cycle;
+        it->second->setCycleTraces(tr);
+      }
+    }
+  }
+
   forwardOperands(instruction->getDestinationRegisters(),
                   instruction->getResults());
   // Manually add the instruction to the writeback input buffer

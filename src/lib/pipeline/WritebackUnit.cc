@@ -21,6 +21,20 @@ void WritebackUnit::tick() {
       continue;
     }
 
+    if (uop->getTraceId() != 0) {
+      std::map<uint64_t, Trace*>::iterator it =
+          traceMap.find(uop->getTraceId());
+      if (it != traceMap.end()) {
+        cycleTrace tr = it->second->getCycleTraces();
+        if (tr.finished != 1) {
+          if (tr.complete != 0 && tr.rename == 0) {
+            tr.finished = 1;
+            it->second->setCycleTraces(tr);
+          }
+        }
+      }
+    }
+
     auto& results = uop->getResults();
     auto& destinations = uop->getDestinationRegisters();
     for (size_t i = 0; i < results.size(); i++) {

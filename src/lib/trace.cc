@@ -21,10 +21,9 @@ int Trace::writeCycleOut(char (&str)[1000], uint64_t traceId,
               fetch.microOpNum, traceId, fetch.disasm.c_str());
     } else {
       sprintf(str,
-              "%" PRId64 ":%" PRId64 ":%" PRId64 ":%" PRId64
-              ":%#010x:%d:%" PRId64 ":%s\n",
-              fetch.cycle, element.decode, element.complete, element.retire,
-              fetch.address, fetch.microOpNum, traceId, fetch.disasm.c_str());
+              "%" PRId64 ":%" PRId64 ":%" PRId64 ":%#010x:%d:%" PRId64 ":%s\n",
+              fetch.cycle, element.decode, element.complete, fetch.address,
+              fetch.microOpNum, traceId, fetch.disasm.c_str());
     }
     // Kept so we can print for gem5 and compare visualisers
     // if(model == std::string("outoforder")){
