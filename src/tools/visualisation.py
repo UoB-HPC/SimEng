@@ -420,17 +420,20 @@ def readTrace(file, index):
             entries.append(line.split(':'))
             # Convert data into string
             trace_string = ""
-            trace_string += trace_stages[0] + (
-                (stages[1] - stages[0] - 1) * ".")
-            for i in range(1, num_stages - 1):
-                if (stages[i] != 0):
-                    # If two stages occur on the same cycle, display former
-                    if (stages[i] == stages[i + 1]):
-                        continue
-                    trace_string += trace_stages[i] + (
-                        (stages[i + 1] - stages[i] - 1) * ".")
-                else:
-                    break
+            if (num_stages == 1):
+                trace_string += trace_stages[0]
+            else:
+                trace_string += trace_stages[0] + (
+                    (stages[1] - stages[0] - 1) * ".")
+                for i in range(1, num_stages - 1):
+                    if (stages[i] != 0):
+                        # If two stages occur on the same cycle, display former
+                        if (stages[i] == stages[i + 1]):
+                            continue
+                        trace_string += trace_stages[i] + (
+                            (stages[i + 1] - stages[i] - 1) * ".")
+                    else:
+                        break
             # Dynamically space out instruction data
             info_string = ""
             num_sep = " "
