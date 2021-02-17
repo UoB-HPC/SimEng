@@ -166,7 +166,7 @@ class TracePad(Pad):
             for ch in trace_data[i][1]:
                 # Switch colours between pipeline stages
                 if (ch != '.'):
-                    current_colour = trace_stages.index(ch) + 1
+                    current_colour = (trace_stages.index(ch) + 1) % 8
                 self.pad.addstr(index_y, index_x, ch,
                                 curses.color_pair(current_colour))
                 index_x += 1
@@ -988,7 +988,6 @@ def main():
     trace_line_offsets = cacheLineOffsets(args.trace, args.force, "trace")
     # Split stages argument into trace_stages
     trace_stages = [s for s in args.stages]
-    print(trace_stages)
     with open(args.trace, 'r') as trace:
         with open(args.probe, 'r') as probe:
             visualiser(trace, probe)
