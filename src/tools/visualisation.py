@@ -8,8 +8,7 @@ from array import array
 # import heartrate; heartrate.trace(browser=True)
 
 # Constants
-trace_stages_inorder = ["f", "d", "c"]
-trace_stages_O3 = ["f", "d", "n", "p", "i", "c", "r"]
+trace_stages = []
 probe_colour_mapping = ["e", "h", "s", "b", "f"]
 probe_titles = [("Stalled.fetch.instructionFetch", "s"),
                 ("Stalled.fetch.instructionDecode", "s"),
@@ -167,7 +166,7 @@ class TracePad(Pad):
             for ch in trace_data[i][1]:
                 # Switch colours between pipeline stages
                 if (ch != '.'):
-                    current_colour = trace_stages_O3.index(ch) + 1
+                    current_colour = trace_stages.index(ch) + 1
                 self.pad.addstr(index_y, index_x, ch,
                                 curses.color_pair(current_colour))
                 index_x += 1
@@ -397,8 +396,7 @@ def cacheLineOffsets(file, force, type):
 
 
 def readTrace(file, index):
-    global trace_stages_inorder
-    global trace_stages_O3
+    global trace_stages
     global trace_data
     global top
     global width_left
@@ -417,71 +415,40 @@ def readTrace(file, index):
         line = file.readline()
         # Ensure we haven't reached the eof
         if (line != ''):
-            if (len(line.split(':')) == 11):
-                stages = list(map(lambda x: int(x), line.split(':')[0:7]))
-                entries.append(line.split(':'))
-                # Convert data into string
-                trace_string = ""
-                trace_string += "f" + ((stages[1] - stages[0] - 1) * ".")
-                for i in range(1, len(trace_stages_O3) - 1):
-                    if (stages[i] != 0):
-                        # If dispatch and issue occur on the same cycle display issue only
-                        if (stages[i] == stages[i + 1]):
-                            continue
-                        trace_string += trace_stages_O3[i] + (
-                            (stages[i + 1] - stages[i] - 1) * ".")
-                    else:
-                        break
-                # Dynamically space out instruction data
-                info_string = ""
-                num_sep = " "
-                info_string += num_sep + entries[0][9]
-                cyc_sep = (info_seperations[1] - len(info_string)) * " "
-                info_string += cyc_sep + entries[0][0]
-                pc_sep = (info_seperations[2] - len(info_string)) * " "
-                info_string += pc_sep + entries[0][7]
-                dis_sep = (info_seperations[3] - len(info_string)) * " "
-                info_string += dis_sep + entries[0][10].rstrip()
-                # Determine whether instruction has been flushed
-                flushed = 0
-                if (stages[6] != 0):
-                    trace_string += "r"
+            num_stages = len(trace_stages)
+            stages = list(map(lambda x: int(x), line.split(':')[0:num_stages]))
+            entries.append(line.split(':'))
+            # Convert data into string
+            trace_string = ""
+            trace_string += trace_stages[0] + (
+                (stages[1] - stages[0] - 1) * ".")
+            for i in range(1, num_stages - 1):
+                if (stages[i] != 0):
+                    # If two stages occur on the same cycle, display former
+                    if (stages[i] == stages[i + 1]):
+                        continue
+                    trace_string += trace_stages[i] + (
+                        (stages[i + 1] - stages[i] - 1) * ".")
                 else:
-                    flushed = 1
-                # Change entry in trace_data
-                trace_data[index] = (stages[0], trace_string, info_string,
-                                     flushed)
+                    break
+            # Dynamically space out instruction data
+            info_string = ""
+            num_sep = " "
+            info_string += num_sep + entries[0][num_stages + 2]
+            cyc_sep = (info_seperations[1] - len(info_string)) * " "
+            info_string += cyc_sep + entries[0][0]
+            pc_sep = (info_seperations[2] - len(info_string)) * " "
+            info_string += pc_sep + entries[0][num_stages]
+            dis_sep = (info_seperations[3] - len(info_string)) * " "
+            info_string += dis_sep + entries[0][num_stages + 3].rstrip()
+            # Determine whether instruction has been flushed
+            flushed = 0
+            if (stages[num_stages - 1] != 0):
+                trace_string += trace_stages[-1]
             else:
-                stages = list(map(lambda x: int(x), line.split(':')[0:3]))
-                entries.append(line.split(':'))
-                # Convert data into string
-                trace_string = ""
-                trace_string += "f" + ((stages[1] - stages[0] - 1) * ".")
-                for i in range(1, len(trace_stages_inorder) - 1):
-                    if (stages[i] != 0):
-                        trace_string += trace_stages_inorder[i] + (
-                            (stages[i + 1] - stages[i] - 1) * ".")
-                    else:
-                        break
-                # Dynamically space out instruction data
-                info_string = ""
-                num_sep = " "
-                info_string += num_sep + entries[0][5]
-                cyc_sep = (info_seperations[1] - len(info_string)) * " "
-                info_string += cyc_sep + entries[0][0]
-                pc_sep = (info_seperations[2] - len(info_string)) * " "
-                info_string += pc_sep + entries[0][3]
-                dis_sep = (info_seperations[3] - len(info_string)) * " "
-                info_string += dis_sep + entries[0][6].rstrip()
-                # Determine whether instruction has been flushed
-                flushed = 0
-                if (stages[2] != 0):
-                    trace_string += "r"
-                else:
-                    flushed = 1
-                # Change entry in trace_data
-                trace_data[index] = (stages[0], trace_string, info_string,
-                                     flushed)
+                flushed = 1
+            # Change entry in trace_data
+            trace_data[index] = (stages[0], trace_string, info_string, flushed)
         else:
             index = -1
 
@@ -559,6 +526,8 @@ def readProbe(file, index):
 def calcInfoOffsets(file):
     global info_seperations
     global trace_line_offsets
+    global trace_stages
+    num_stages = len(trace_stages)
     # Get line at bottom of trace pad
     prev_pos = file.tell()
     if (bottom < len(trace_line_offsets)):
@@ -570,14 +539,10 @@ def calcInfoOffsets(file):
     num_len = 0
     cycle_len = 0
     pc_len = 0
-    if (len(split) == 11):
-        num_len = len(split[9]) if len(split[9]) > 9 else 9
-        cycle_len = len(split[0]) if len(split[0]) > 7 else 7
-        pc_len = len(split[7]) if len(split[7]) > 4 else 4
-    else:
-        num_len = len(split[5]) if len(split[5]) > 9 else 9
-        cycle_len = len(split[0]) if len(split[0]) > 7 else 7
-        pc_len = len(split[3]) if len(split[3]) > 4 else 4
+    num_len = len(split[num_stages +
+                        2]) if len(split[num_stages + 2]) > 9 else 9
+    cycle_len = len(split[0]) if len(split[0]) > 7 else 7
+    pc_len = len(split[num_stages]) if len(split[num_stages]) > 4 else 4
     cycle_title_offset = 3 + num_len
     pc_title_offset = 2 + cycle_title_offset + cycle_len
     disasm_title_offset = 2 + pc_title_offset + pc_len
@@ -1004,9 +969,15 @@ def main():
     global trace_line_offsets
     global probe_data
     global probe_line_offsets
+    global trace_stages
     parser = argparse.ArgumentParser()
     parser.add_argument('trace', help='Input directory for trace file')
     parser.add_argument('probe', help='Input directory for probe file')
+    parser.add_argument(
+        'stages',
+        help=
+        'A string of single character pipeline stages used in generation of trace file'
+    )
     parser.add_argument('--force',
                         action='store_true',
                         default=False,
@@ -1015,6 +986,9 @@ def main():
     # Create or read byte offsets for trace and probe files
     probe_line_offsets = cacheLineOffsets(args.probe, args.force, "probe")
     trace_line_offsets = cacheLineOffsets(args.trace, args.force, "trace")
+    # Split stages argument into trace_stages
+    trace_stages = [s for s in args.stages]
+    print(trace_stages)
     with open(args.trace, 'r') as trace:
         with open(args.probe, 'r') as probe:
             visualiser(trace, probe)
