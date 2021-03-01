@@ -118,6 +118,7 @@ void Core::tick() {
     } else {
       // Early execution due to lacking addresses
       execute(uop);
+      return;
     }
   } else if (uop->isStore()) {
     uop->generateAddresses();
