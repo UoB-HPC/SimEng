@@ -1,7 +1,6 @@
 #include "InstructionMetadata.hh"
 
 #include <cassert>
-#include <cstring>
 #include <iostream>
 
 namespace simeng {
@@ -21,7 +20,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
   std::memcpy(encoding, insn.bytes, sizeof(encoding));
   // Copy printed output
   std::strncpy(mnemonic, insn.mnemonic, CS_MNEMONIC_SIZE);
-  std::strncpy(operandStr, insn.op_str, sizeof(operandStr));
+  operandStr = std::string(insn.op_str);
 
   // Copy register/group/operand information
   std::memcpy(implicitSources, insn.detail->regs_read,
@@ -71,8 +70,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_CNTW_XPiI: {
       // lacking access specifiers for destination
       operands[0].access = CS_AC_WRITE;
-      std::string str(operandStr);
-      if (str.length() < 4) {
+      if (operandStr.length() < 4) {
         operandCount = 2;
         operands[1].type = ARM64_OP_IMM;
         operands[1].imm = 1;
@@ -165,8 +163,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[3].access = CS_AC_READ;
       // Doesn't recognise immediate operands
       // Extract two possible values, 0.5 or 2.0
-      std::string str(operandStr);
-      if (str.substr(str.length() - 1, 1) == "5") {
+      if (operandStr.substr(operandStr.length() - 1, 1) == "5") {
         operands[3].fp = 0.5f;
       } else {
         operands[3].fp = 2.0f;
@@ -223,8 +220,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_INCW_XPiI: {
       // lacking access specifiers for destination
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
-      std::string str(operandStr);
-      if (str.length() < 4) {
+      if (operandStr.length() < 4) {
         operandCount = 2;
         operands[1].type = ARM64_OP_IMM;
         operands[1].imm = 1;
@@ -254,13 +250,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_LD1W_IMM_REAL: {
       // LD1RW doesn't correctly identify destination register
-      std::string str(operandStr);
       uint16_t reg_enum = ARM64_REG_Z0;
       // Single or double digit Z register identifier
       if (operandStr[3] == '.') {
-        reg_enum += std::stoi(str.substr(2, 1));
+        reg_enum += std::stoi(operandStr.substr(2, 1));
       } else {
-        reg_enum += std::stoi(str.substr(2, 2));
+        reg_enum += std::stoi(operandStr.substr(2, 2));
       }
 
       operands[0].reg = static_cast<arm64_reg>(reg_enum);
@@ -364,13 +359,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_ST1W_IMM: {
       // ST1W doesn't correctly identify first source register
-      std::string str(operandStr);
       uint16_t reg_enum = ARM64_REG_Z0;
       // Single or double digit Z register identifier
       if (operandStr[3] == '.') {
-        reg_enum += std::stoi(str.substr(2, 1));
+        reg_enum += std::stoi(operandStr.substr(2, 1));
       } else {
-        reg_enum += std::stoi(str.substr(2, 2));
+        reg_enum += std::stoi(operandStr.substr(2, 2));
       }
 
       operands[0].reg = static_cast<arm64_reg>(reg_enum);
@@ -736,7 +730,6 @@ void InstructionMetadata::revertAliasing() {
         operands[1].type = ARM64_OP_IMM;
         operands[1].access = CS_AC_READ;
 
-        std::string str(operandStr);
         uint8_t start = operandStr[6] == '#' ? 7 : 8;
 
         if (opcode == Opcode::AArch64_DUPM_ZI) {
@@ -768,26 +761,15 @@ void InstructionMetadata::revertAliasing() {
 
         uint8_t end = start + 1;
         while (true) {
-          if (unsigned(operandStr[end]) < 48) {
+          if (operandStr[end] < '0') {
             break;
           }
           end++;
         }
 
-        std::string sub = str.substr(start, end);
+        std::string sub = operandStr.substr(start, end);
         if (hex) {
-          uint64_t immediate = 0;
-          uint64_t base = 1;
-          for (int i = sub.size(); i > -1; i--) {
-            if (sub[i] >= '0' && sub[i] <= '9') {
-              immediate += (sub[i] - 48) * base;
-              base *= 16;
-            } else if (sub[i] >= 'a' && sub[i] <= 'f') {
-              immediate += (sub[i] - 87) * base;
-              base *= 16;
-            }
-          }
-          operands[1].imm = immediate;
+          operands[1].imm = std::stoul(sub, 0, 16);
         } else {
           operands[1].imm = stoi(sub);
         }
@@ -809,13 +791,12 @@ void InstructionMetadata::revertAliasing() {
         operands[1].type = ARM64_OP_REG;
         operands[1].access = CS_AC_READ;
 
-        std::string str(operandStr);
         uint8_t start = operandStr[2] == '.' ? 7 : 8;
-        uint8_t end = str.length() - start;
+        uint8_t end = operandStr.length() - start;
 
         // ARM64_REG_Z0 == 245
         operands[1].reg =
-            static_cast<arm64_reg>(245 + stoi(str.substr(start, end)));
+            static_cast<arm64_reg>(245 + stoi(operandStr.substr(start, end)));
         operands[1].vector_index = 0;
         return;
       }
@@ -1056,9 +1037,8 @@ void InstructionMetadata::revertAliasing() {
       return aliasNYI();
     case ARM64_INS_SYS: {
       // Extract IC/DC/AT/TLBI operation
-      std::string str(operandStr);
       if (std::string(mnemonic) == "dc") {
-        if (str.substr(0, 3) == "zva") {
+        if (operandStr.substr(0, 3) == "zva") {
           id = ARM64_INS_DC;
           operandCount = 3;
           operands[1] = operands[0];
