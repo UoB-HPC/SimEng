@@ -1,6 +1,7 @@
 #include "InstructionMetadata.hh"
 
 #include <cassert>
+#include <cstring>
 #include <iostream>
 
 namespace simeng {
