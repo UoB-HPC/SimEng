@@ -761,10 +761,10 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            p[(int)i / 16] & (uint64_t)std::pow(2, ((i % 16) * 4));
+            p[i / 16] & (uint64_t)std::pow(2, ((i % 16) * 4));
         if (shifted_active) {
-          out[(int)i / 16] = (n[i] != m) ? (out[(int)i / 16] | shifted_active)
-                                         : out[(int)i / 16];
+          out[i / 16] =
+              (n[i] != m) ? (out[i / 16] | shifted_active) : out[i / 16];
         }
       }
 
@@ -1121,7 +1121,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = ::fabs(n[i]);
         } else {
           out[i] = n[i];
@@ -1153,7 +1153,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           out[0] += m[i];
         }
       }
@@ -1205,7 +1205,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           out[i] = b[i] + c[i];
         } else {
           out[i] = b[i];
@@ -1294,10 +1294,9 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            p[(int)i / 8] & (uint64_t)std::pow(2, ((i % 8) * 8));
+            p[i / 8] & (uint64_t)std::pow(2, ((i % 8) * 8));
         if (shifted_active) {
-          out[(int)i / 8] = (n[i] >= m) ? (out[(int)i / 8] | shifted_active)
-                                        : out[(int)i / 8];
+          out[i / 8] = (n[i] >= m) ? (out[i / 8] | shifted_active) : out[i / 8];
         }
       }
 
@@ -1315,10 +1314,10 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            p[(int)i / 16] & (uint64_t)std::pow(2, ((i % 16) * 4));
+            p[i / 16] & (uint64_t)std::pow(2, ((i % 16) * 4));
         if (shifted_active) {
-          out[(int)i / 16] = (n[i] >= m) ? (out[(int)i / 16] | shifted_active)
-                                         : out[(int)i / 16];
+          out[i / 16] =
+              (n[i] >= m) ? (out[i / 16] | shifted_active) : out[i / 16];
         }
       }
 
@@ -1352,10 +1351,10 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            p[(int)i / 8] & (uint64_t)std::pow(2, ((i % 8) * 8));
+            p[i / 8] & (uint64_t)std::pow(2, ((i % 8) * 8));
         if (shifted_active) {
-          out[(int)i / 8] = (n[i] > m[i]) ? (out[(int)i / 8] | shifted_active)
-                                          : out[(int)i / 8];
+          out[i / 8] =
+              (n[i] > m[i]) ? (out[i / 8] | shifted_active) : out[i / 8];
         }
       }
 
@@ -1373,10 +1372,10 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            p[(int)i / 16] & (uint64_t)std::pow(2, ((i % 16) * 4));
+            p[i / 16] & (uint64_t)std::pow(2, ((i % 16) * 4));
         if (shifted_active) {
-          out[(int)i / 16] = (n[i] > m[i]) ? (out[(int)i / 16] | shifted_active)
-                                           : out[(int)i / 16];
+          out[i / 16] =
+              (n[i] > m[i]) ? (out[i / 16] | shifted_active) : out[i / 16];
         }
       }
 
@@ -1404,10 +1403,10 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            p[(int)i / 16] & (uint64_t)std::pow(2, ((i % 16) * 4));
+            p[i / 16] & (uint64_t)std::pow(2, ((i % 16) * 4));
         if (shifted_active) {
-          out[(int)i / 16] = (n[i] < m) ? (out[(int)i / 16] | shifted_active)
-                                        : out[(int)i / 16];
+          out[i / 16] =
+              (n[i] < m) ? (out[i / 16] | shifted_active) : out[i / 16];
         }
       }
 
@@ -1545,7 +1544,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           if (b[i] > 2147483647) {
             out[(2 * i)] = 2147483647;
           } else if (b[i] < -2147483648) {
@@ -1597,7 +1596,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           out[i] = b[i] / c[i];
         } else {
           out[i] = a[i];
@@ -1668,7 +1667,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = c[i] + (a[i] * b[i]);
         } else {
           out[i] = a[i];
@@ -1756,7 +1755,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           out[i] = a[i] + (b[i] * c[i]);
         } else {
           out[i] = a[i];
@@ -1777,7 +1776,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = a[i] + (b[i] * c[i]);
         } else {
           out[i] = a[i];
@@ -1817,7 +1816,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = a[i] + (-b[i] * c[i]);
         } else {
           out[i] = a[i];
@@ -1914,7 +1913,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = c[i] + (-a[i] * b[i]);
         } else {
           out[i] = a[i];
@@ -2014,7 +2013,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           out[i] = n[i] * fp;
         } else {
           out[i] = n[i];
@@ -2034,7 +2033,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = n[i] * fp;
         } else {
           out[i] = n[i];
@@ -2054,7 +2053,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           out[i] = n[i] * m[i];
         } else {
           out[i] = n[i];
@@ -2074,7 +2073,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = n[i] * m[i];
         } else {
           out[i] = n[i];
@@ -2104,7 +2103,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           out[i] = -n[i];
         } else {
           out[i] = n[i];
@@ -2124,7 +2123,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = -n[i];
         } else {
           out[i] = n[i];
@@ -2187,7 +2186,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = ::sqrt(n[i]);
         } else {
           out[i] = n[i];
@@ -2338,7 +2337,7 @@ void Instruction::execute() {
         uint64_t data = memoryData[0].get<uint64_t>();
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active =
-              p[(int)index / 8] & (uint64_t)std::pow(2, ((index % 8) * 8));
+              p[index / 8] & (uint64_t)std::pow(2, ((index % 8) * 8));
           out[i] = shifted_active ? data : 0;
           index++;
         }
@@ -2366,7 +2365,7 @@ void Instruction::execute() {
         uint32_t data = memoryData[0].get<uint32_t>();
         for (int i = 0; i < partition_num; i++) {
           uint64_t shifted_active =
-              p[(int)index / 16] & (uint64_t)std::pow(2, ((index % 16) * 4));
+              p[index / 16] & (uint64_t)std::pow(2, ((index % 16) * 4));
           out[i] = shifted_active ? data : 0;
           index++;
         }
@@ -2397,7 +2396,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, i);
-        if (p[(int)i / 64] & shifted_active) {
+        if (p[i / 64] & shifted_active) {
           out[i] = memoryData[index].get<uint8_t>();
           index++;
         } else {
@@ -2417,7 +2416,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           out[i] = memoryData[index].get<uint64_t>();
           index++;
         } else {
@@ -2438,7 +2437,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           out[i] = memoryData[index].get<uint64_t>();
           index++;
         } else {
@@ -2458,7 +2457,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = memoryData[index].get<uint32_t>();
           index++;
         } else {
@@ -2479,7 +2478,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = memoryData[index].get<uint32_t>();
           index++;
         } else {
@@ -2798,7 +2797,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         uint8_t data = memoryData[i].get<uint8_t>();
         for (int j = 0; j < 8; j++) {
-          out[(int)i / 8] |=
+          out[i / 8] |=
               (data & (1 << j)) ? (uint64_t)std::pow(2, (j + (i * 8))) : 0;
         }
       }
@@ -3158,7 +3157,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, i);
-        out[(int)i / 64] |= shifted_active;
+        out[i / 64] |= shifted_active;
       }
 
       results[0] = out;
@@ -3171,7 +3170,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        out[(int)i / 8] |= shifted_active;
+        out[i / 8] |= shifted_active;
       }
 
       results[0] = out;
@@ -3184,7 +3183,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        out[(int)i / 16] |= shifted_active;
+        out[i / 16] |= shifted_active;
       }
       results[0] = out;
       break;
@@ -3197,8 +3196,8 @@ void Instruction::execute() {
       uint8_t index = 0;
 
       for (int i = partition_num / 2; i < partition_num; i++) {
-        if (n[(int)i / 64] & ((uint64_t)std::pow(2, (i % 64)))) {
-          out[(int)index / 32] |= (uint64_t)std::pow(2, (index * 2));
+        if (n[i / 64] & ((uint64_t)std::pow(2, (i % 64)))) {
+          out[index / 32] |= (uint64_t)std::pow(2, (index * 2));
         }
         index++;
       }
@@ -3213,8 +3212,8 @@ void Instruction::execute() {
       uint64_t out[4] = {0, 0, 0, 0};
 
       for (int i = 0; i < partition_num / 2; i++) {
-        if (n[(int)i / 64] & ((uint64_t)std::pow(2, (i % 64)))) {
-          out[(int)i / 32] |= (uint64_t)std::pow(2, (i * 2));
+        if (n[i / 64] & ((uint64_t)std::pow(2, (i % 64)))) {
+          out[i / 32] |= (uint64_t)std::pow(2, (i * 2));
         }
       }
 
@@ -3360,7 +3359,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           out[i] = n[i];
         } else {
           out[i] = m[i];
@@ -3380,7 +3379,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = n[i];
         } else {
           out[i] = m[i];
@@ -3426,7 +3425,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = std::max(n[i], m[i]);
         } else {
           out[i] = d[i];
@@ -3456,7 +3455,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out[i] = std::min(n[i], m[i]);
         } else {
           out[i] = d[i];
@@ -3476,7 +3475,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           out = std::min(out, n[i]);
         }
       }
@@ -3540,7 +3539,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, i);
-        if (p[(int)i / 64] & shifted_active) {
+        if (p[i / 64] & shifted_active) {
           memoryData[index] = d[i];
           index++;
         }
@@ -3557,7 +3556,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           memoryData[index] = d[i];
           index++;
         }
@@ -3574,7 +3573,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           memoryData[index] = d[i];
           index++;
         }
@@ -3591,7 +3590,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           memoryData[index] = d[i];
           index++;
         }
@@ -3608,7 +3607,7 @@ void Instruction::execute() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           memoryData[index] = d[i];
           index++;
         }
@@ -4261,7 +4260,7 @@ void Instruction::execute() {
         // Determine whether lane should be active and shift to align with
         // element in predicate register.
         uint64_t shifted_active = (n + i) < m ? std::pow(2, i) : 0;
-        out[(int)index / 64] = out[(int)index / 64] | shifted_active;
+        out[index / 64] = out[index / 64] | shifted_active;
         index++;
       }
 
@@ -4295,7 +4294,7 @@ void Instruction::execute() {
         // Determine whether lane should be active and shift to align with
         // element in predicate register.
         uint64_t shifted_active = (n + i) < m ? std::pow(2, (i * 8)) : 0;
-        out[(int)index / 8] = out[(int)index / 8] | shifted_active;
+        out[index / 8] = out[index / 8] | shifted_active;
         index++;
       }
 
@@ -4329,7 +4328,7 @@ void Instruction::execute() {
         // Determine whether lane should be active and shift to align with
         // element in predicate register.
         uint64_t shifted_active = (n + i) < m ? std::pow(2, (i * 4)) : 0;
-        out[(int)index / 16] = out[(int)index / 16] | shifted_active;
+        out[index / 16] = out[index / 16] | shifted_active;
         index++;
       }
 

@@ -79,7 +79,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, i);
-        if (p[(int)i / 64] & shifted_active) {
+        if (p[i / 64] & shifted_active) {
           addresses.push_back({base + (offset + i), 1, 0, 1});
         }
       }
@@ -99,7 +99,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           addresses.push_back({base + ((offset + i) * 8), 8, 0, 1});
         }
       }
@@ -123,7 +123,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           addresses.push_back({addr, 8, 0, 1});
         }
         addr += 8;
@@ -144,7 +144,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           addresses.push_back({base + ((offset + i) * 4), 4, 0, 1});
         }
       }
@@ -168,7 +168,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           addresses.push_back({addr, 4, 0, 1});
         }
         addr += 4;
@@ -379,12 +379,12 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       const uint64_t offset =
           static_cast<uint64_t>(metadata.operands[1].mem.disp);
 
-      std::vector<MemoryAccessTarget> addresses;
+      std::vector<MemoryAccessTarget> addresses(partition_num);
 
       uint64_t addr = base + (offset * partition_num);
 
       for (int i = 0; i < partition_num; i++) {
-        addresses.push_back({addr, 1, 0, 1});
+        addresses[i] = {addr, 1, 0, 1};
         addr += 1;
       }
 
@@ -399,11 +399,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       const uint64_t offset =
           static_cast<uint64_t>(metadata.operands[1].mem.disp);
 
-      std::vector<MemoryAccessTarget> addresses;
+      std::vector<MemoryAccessTarget> addresses(partition_num);
 
       uint64_t addr = base + (offset * partition_num);
       for (int i = 0; i < partition_num; i++) {
-        addresses.push_back({addr, 1, 0, 1});
+        addresses[i] = {addr, 1, 0, 1};
         addr += 1;
       }
 
@@ -592,7 +592,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, i);
-        if (p[(int)i / 64] & shifted_active) {
+        if (p[i / 64] & shifted_active) {
           addresses.push_back({base + (offset + i), 1, 0, 1});
         }
       }
@@ -612,7 +612,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           addresses.push_back({base + ((offset + i) * 8), 8, 0, 1});
         }
       }
@@ -635,7 +635,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
-        if (p[(int)i / 8] & shifted_active) {
+        if (p[i / 8] & shifted_active) {
           addresses.push_back({addr, 8, 0, 1});
         }
         addr += 8;
@@ -656,7 +656,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           addresses.push_back({base + ((offset + i) * 4), 4, 0, 1});
         }
       }
@@ -679,7 +679,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
-        if (p[(int)i / 16] & shifted_active) {
+        if (p[i / 16] & shifted_active) {
           addresses.push_back({addr, 4, 0, 1});
         }
         addr += 4;
@@ -952,12 +952,12 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       const uint64_t offset =
           static_cast<uint64_t>(metadata.operands[1].mem.disp);
 
-      std::vector<MemoryAccessTarget> addresses;
+      std::vector<MemoryAccessTarget> addresses(partition_num);
 
       uint64_t addr = base + (offset * partition_num);
 
       for (int i = 0; i < partition_num; i++) {
-        addresses.push_back({addr, 1, 0, 1});
+        addresses[i] = {addr, 1, 0, 1};
         addr += 1;
       }
 
@@ -972,11 +972,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       const uint64_t offset =
           static_cast<uint64_t>(metadata.operands[1].mem.disp);
 
-      std::vector<MemoryAccessTarget> addresses;
+      std::vector<MemoryAccessTarget> addresses(partition_num);
 
       uint64_t addr = base + (offset * partition_num);
       for (int i = 0; i < partition_num; i++) {
-        addresses.push_back({addr, 1, 0, 1});
+        addresses[i] = {addr, 1, 0, 1};
         addr += 1;
       }
 
