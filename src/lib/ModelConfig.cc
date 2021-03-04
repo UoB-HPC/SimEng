@@ -101,7 +101,7 @@ void ModelConfig::validate() {
     YAML::Node port_node = configFile[root][i];
     // Get port number into a string format
     char port_msg[10];
-    sprintf(port_msg, "Port %d ", i);
+    sprintf(port_msg, "Port %zu ", i);
     std::string port_num = std::string(port_msg);
     // Check for existance of Portname field and record name
     if (nodeChecker(port_node["Portname"], port_num + "Portname",
@@ -125,7 +125,7 @@ void ModelConfig::validate() {
       YAML::Node group = port_node["Instruction-Support"][j];
       // Get group number into a string format
       char group_msg[10];
-      sprintf(group_msg, "Group %d ", j);
+      sprintf(group_msg, "Group %zu ", j);
       std::string group_num = std::string(group_msg);
       // Check for existance of Compulsory field
       if (!(group["Compulsory"].IsDefined()) || group["Compulsory"].IsNull()) {
@@ -159,7 +159,7 @@ void ModelConfig::validate() {
     YAML::Node rs = configFile[root][i];
     // Get rs number into a string format
     char rs_msg[25];
-    sprintf(rs_msg, "Reservation Station %d ", i);
+    sprintf(rs_msg, "Reservation Station %zu ", i);
     std::string rs_num = std::string(rs_msg);
     nodeChecker<uint16_t>(rs["Size"], rs_num + "Size", {1, UINT16_MAX}, true,
                           ExpectedValue::UInteger);
@@ -172,7 +172,7 @@ void ModelConfig::validate() {
       YAML::Node port_node = rs["Ports"][j];
       // Get port index into a string format
       char port_msg[25];
-      sprintf(port_msg, "Port %d ", j);
+      sprintf(port_msg, "Port %zu ", j);
       std::string port_num = std::string(port_msg);
       if (nodeChecker(port_node, rs_num + port_num, portNames)) {
         // Change port name to port index
@@ -237,7 +237,7 @@ void ModelConfig::validate() {
   }
   for (size_t i = 0; i < num_units; i++) {
     char msg[50];
-    sprintf(msg, "Execution Unit %d ", i);
+    sprintf(msg, "Execution Unit %zu ", i);
     nodeChecker(configFile[root][i][subFields[0]],
                 (std::string(msg) + subFields[0]));
     if (nodeChecker(configFile[root][i][subFields[1]],
