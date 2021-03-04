@@ -126,7 +126,7 @@ uint16_t Architecture::getSystemRegisterTag(uint16_t reg) const {
 ProcessStateChange Architecture::getInitialState() const {
   ProcessStateChange changes;
   // Set ProcessStateChange type
-  changes.type = REPLACEMENT;
+  changes.type = ChangeType::REPLACEMENT;
 
   uint64_t stackPointer = linux_.getInitialStackPointer();
   // Set the stack pointer register
@@ -146,7 +146,7 @@ ProcessStateChange Architecture::getInitialState() const {
 ProcessStateChange Architecture::getUpdateState() const {
   ProcessStateChange changes;
   // Set ProcessStateChange type
-  changes.type = INCREMENT;
+  changes.type = ChangeType::INCREMENT;
 
   // Increment the Counter-timer Virtual Count (CNTVCT) register by 1
   /* TODO: CNTVCT value should be equal to the physical count value minus the

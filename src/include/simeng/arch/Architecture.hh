@@ -14,7 +14,7 @@ using MacroOp = std::vector<std::shared_ptr<Instruction>>;
 
 namespace arch {
 
-enum ChangeType { REPLACEMENT, INCREMENT, DECREMENT };
+enum class ChangeType { REPLACEMENT, INCREMENT, DECREMENT };
 
 /** A structure describing a set of changes to the process state. */
 struct ProcessStateChange {
