@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
   } else {
     config = YAML::Load(
         "{Core: {"
-        "Simulation-Mode: inorder, Clock-Frequency: 2.5,"
+        "Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5,"
         "Fetch-Block-Alignment-Bits: 5"
         "}, Register-Set: {"
         "GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90,"
