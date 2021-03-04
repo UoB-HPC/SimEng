@@ -31,8 +31,8 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine)
 
   span<char> elfProcessImage = elf.getProcessImage();
 
-  // Align heap start to a 16-byte boundary
-  heapStart_ = alignToBoundary(elfProcessImage.size(), 16);
+  // Align heap start to a 32-byte boundary
+  heapStart_ = alignToBoundary(elfProcessImage.size(), 32);
 
   // Calculate process image size, including heap + stack
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
@@ -50,8 +50,8 @@ LinuxProcess::LinuxProcess(span<char> instructions) {
 
   isValid_ = true;
 
-  // Align heap start to a 16-byte boundary
-  heapStart_ = alignToBoundary(instructions.size(), 16);
+  // Align heap start to a 32-byte boundary
+  heapStart_ = alignToBoundary(instructions.size(), 32);
 
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
   processImage_ = new char[size_];
@@ -95,7 +95,7 @@ void LinuxProcess::createStack() {
   for (size_t i = 0; i < commandLine_.size(); i++) {
     // Push argv[i] to the stack
     size_t argSize = commandLine_[i].size() + 1;
-    stackPointer_ -= alignToBoundary(argSize, 16);
+    stackPointer_ -= alignToBoundary(argSize, 32);
     std::memcpy(processImage_ + stackPointer_, commandLine_[i].data(), argSize);
 
     initialStackFrame.push_back(stackPointer_);  // pointer to argv[i]
@@ -114,9 +114,9 @@ void LinuxProcess::createStack() {
 
   size_t stackFrameSize = initialStackFrame.size() * 8;
 
-  // Round the stack offset up to the nearest multiple of 16, as the stack
-  // pointer must be aligned to a 16-byte interval on some architectures
-  uint64_t stackOffset = alignToBoundary(stackFrameSize, 16);
+  // Round the stack offset up to the nearest multiple of 32, as the stack
+  // pointer must be aligned to a 32-byte interval on some architectures
+  uint64_t stackOffset = alignToBoundary(stackFrameSize, 32);
 
   stackPointer_ -= stackOffset;
 

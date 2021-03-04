@@ -18,9 +18,9 @@ namespace outoforder {
 // TODO: Physical registers are configured for TX2 booted with 4-way SMT
 // TODO: System register count has to match number of supported system registers
 const std::initializer_list<uint16_t> physicalRegisterQuantities = {154, 90,
-                                                                    128, 48, 5};
+                                                                    128, 48, 6};
 const std::initializer_list<RegisterFileStructure> physicalRegisterStructures =
-    {{8, 154}, {256, 90}, {32, 48}, {1, 128}, {8, 5}};
+    {{8, 154}, {256, 90}, {32, 48}, {1, 128}, {8, 6}};
 const unsigned int robSize = 180;
 const unsigned int loadQueueSize = 64;
 const unsigned int storeQueueSize = 36;
@@ -94,6 +94,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 
 void Core::tick() {
   ticks_++;
+
+  applyStateChange(isa_.getUpdateState());
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -292,13 +294,33 @@ void Core::processExceptionHandler() {
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  // Update registers
-  for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-    mappedRegisterFileSet_.set(change.modifiedRegisters[i],
-                               change.modifiedRegisterValues[i]);
+  // Update registers in accoradance with the ProcessStateChange type
+  if (change.type == arch::ChangeType::REPLACEMENT) {
+    // If type is ChangeType::REPLACEMENT, set new values
+    for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+      mappedRegisterFileSet_.set(change.modifiedRegisters[i],
+                                 change.modifiedRegisterValues[i]);
+    }
+  } else {
+    for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+      // Get source and value to update by
+      uint64_t sourceValue =
+          mappedRegisterFileSet_.get(change.modifiedRegisters[i])
+              .get<uint64_t>();
+      uint64_t updatedValue = change.modifiedRegisterValues[i].get<uint64_t>();
+      // Based on type, add or subtract update value and set new
+      RegisterValue updateRegisterValue =
+          (change.type == arch::ChangeType::INCREMENT)
+              ? sourceValue + updatedValue
+              : sourceValue - updatedValue;
+      mappedRegisterFileSet_.set(change.modifiedRegisters[i],
+                                 updateRegisterValue);
+    }
   }
 
   // Update memory
+  // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
+  // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
     const auto& target = change.memoryAddresses[i];
     const auto& data = change.memoryAddressValues[i];

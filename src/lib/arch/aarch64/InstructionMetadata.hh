@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "capstone/capstone.h"
 
 namespace simeng {
@@ -44,7 +46,7 @@ struct InstructionMetadata {
   /** The instruction's mnemonic. */
   char mnemonic[CS_MNEMONIC_SIZE];
   /** The remainder of the instruction's assembly representation. */
-  char operandStr[MAX_OPERAND_STR_LENGTH];
+  std::string operandStr;
 
   /** The implicitly referenced registers. */
   uint16_t implicitSources[MAX_IMPLICIT_SOURCES];

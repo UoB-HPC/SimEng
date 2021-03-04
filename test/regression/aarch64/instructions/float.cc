@@ -1,6 +1,6 @@
-#include "AArch64RegressionTest.hh"
-
 #include <cmath>
+
+#include "AArch64RegressionTest.hh"
 
 namespace {
 
@@ -344,6 +344,72 @@ TEST_P(InstFloat, fcsel64) {
   CHECK_NEON(3, double, {1.0, 0.0});
   CHECK_NEON(4, double, {1.0, 0.0});
   CHECK_NEON(5, double, {1.0, 0.0});
+}
+
+TEST_P(InstFloat, fcvta) {
+  // 64-bit negative
+  initialHeapData_.resize(48);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = -3.75;
+  dheap[1] = -3.5;
+  dheap[2] = -3.125;
+  dheap[3] = -3.0;
+  dheap[4] = -0.5;
+  dheap[5] = -0.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    ldp d4, d5, [x0, #32]
+    fcvtas x6, d0
+    fcvtas x7, d1
+    fcvtas x8, d2
+    fcvtas x9, d3
+    fcvtas x10, d4
+    fcvtas x11, d5
+  )");
+  EXPECT_EQ((getGeneralRegister<int64_t>(6)), -4);
+  EXPECT_EQ((getGeneralRegister<int64_t>(7)), -4);
+  EXPECT_EQ((getGeneralRegister<int64_t>(8)), -3);
+  EXPECT_EQ((getGeneralRegister<int64_t>(9)), -3);
+  EXPECT_EQ((getGeneralRegister<int64_t>(10)), -1);
+  EXPECT_EQ((getGeneralRegister<int64_t>(11)), -0);
+
+  // 64-bit positive
+  dheap[0] = 3.75;
+  dheap[1] = 3.5;
+  dheap[2] = 3.125;
+  dheap[3] = 3.0;
+  dheap[4] = 0.5;
+  dheap[5] = 0.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    ldp d4, d5, [x0, #32]
+    fcvtas x6, d0
+    fcvtas x7, d1
+    fcvtas x8, d2
+    fcvtas x9, d3
+    fcvtas x10, d4
+    fcvtas x11, d5
+  )");
+  EXPECT_EQ((getGeneralRegister<int64_t>(6)), 4);
+  EXPECT_EQ((getGeneralRegister<int64_t>(7)), 4);
+  EXPECT_EQ((getGeneralRegister<int64_t>(8)), 3);
+  EXPECT_EQ((getGeneralRegister<int64_t>(9)), 3);
+  EXPECT_EQ((getGeneralRegister<int64_t>(10)), 1);
+  EXPECT_EQ((getGeneralRegister<int64_t>(11)), 0);
 }
 
 TEST_P(InstFloat, fcvt) {

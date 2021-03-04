@@ -4,6 +4,61 @@ namespace {
 
 using InstLoad = AArch64RegressionTest;
 
+TEST_P(InstLoad, ld1_single_struct) {
+  // 32-bit
+  initialHeapData_.resize(8);
+  uint32_t* heapi32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heapi32[0] = 0xDEADBEEF;
+  heapi32[1] = 0x12345678;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ld1r {v0.4s}, [x0]
+    ld1r {v1.4s}, [x0]
+    ld1r {v2.4s}, [x0]
+    ld1r {v3.4s}, [x0], 4
+    ld1 {v0.s}[0], [x0]
+    ld1 {v1.s}[1], [x0]
+    ld1 {v2.s}[2], [x0]
+    ld1 {v3.s}[3], [x0]
+  )");
+  CHECK_NEON(0, uint32_t, {0x12345678, 0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF});
+  CHECK_NEON(1, uint32_t, {0xDEADBEEF, 0x12345678, 0xDEADBEEF, 0xDEADBEEF});
+  CHECK_NEON(2, uint32_t, {0xDEADBEEF, 0xDEADBEEF, 0x12345678, 0xDEADBEEF});
+  CHECK_NEON(3, uint32_t, {0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF, 0x12345678});
+
+  // 64-bit
+  initialHeapData_.resize(32);
+  uint64_t* heapi64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heapi64[0] = 0xDEADBEEF;
+  heapi64[1] = UINT64_C(0x12345678) << 16;
+  heapi64[2] = UINT64_C(0x98765432) << 8;
+  heapi64[3] = UINT64_C(0xABCDEF12) << 4;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ld1r {v0.4s}, [x0]
+    ld1r {v1.4s}, [x0]
+    ld1r {v2.4s}, [x0]
+    add x0, x0, #8
+    ld1 {v0.d}[0], [x0], 8
+    ld1 {v1.d}[1], [x0]
+    ld1 {v2.d}[0], [x0], 8
+  )");
+  CHECK_NEON(0, uint64_t, {UINT64_C(0x12345678) << 16, 0xDEADBEEFDEADBEEF});
+  CHECK_NEON(1, uint64_t, {0xDEADBEEFDEADBEEF, UINT64_C(0x98765432) << 8});
+  CHECK_NEON(2, uint64_t, {UINT64_C(0x98765432) << 8, 0xDEADBEEFDEADBEEF});
+}
+
 TEST_P(InstLoad, ld1_tworeg) {  // 128-bit
   initialHeapData_.resize(64);
   uint64_t* heapi64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
