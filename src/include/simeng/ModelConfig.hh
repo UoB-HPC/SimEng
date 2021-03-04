@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <climits>
 #include <fstream>
 #include <iostream>
 #include <map>

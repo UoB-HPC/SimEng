@@ -97,7 +97,7 @@ void ModelConfig::validate() {
   if (!num_ports) {
     missing += ("\t- " + root + "\n");
   }
-  for (int i = 0; i < num_ports; i++) {
+  for (size_t i = 0; i < num_ports; i++) {
     YAML::Node port_node = configFile[root][i];
     // Get port number into a string format
     char port_msg[10];
@@ -121,7 +121,7 @@ void ModelConfig::validate() {
       missing += ("\t- " + port_num + "Instruction-Support\n");
       continue;
     }
-    for (int j = 0; j < port_node["Instruction-Support"].size(); j++) {
+    for (size_t j = 0; j < port_node["Instruction-Support"].size(); j++) {
       YAML::Node group = port_node["Instruction-Support"][j];
       // Get group number into a string format
       char group_msg[10];
@@ -131,7 +131,7 @@ void ModelConfig::validate() {
       if (!(group["Compulsory"].IsDefined()) || group["Compulsory"].IsNull()) {
         missing += ("\t- " + port_num + group_num + "Compulsory\n");
       }
-      for (int k = 0; k < group["Compulsory"].size(); k++) {
+      for (size_t k = 0; k < group["Compulsory"].size(); k++) {
         if (nodeChecker(group["Compulsory"][k],
                         port_num + group_num + "Compulsory", groupOptions)) {
           configFile["Ports"][i]["Instruction-Support"][j]["Compulsory"][k] =
@@ -139,7 +139,7 @@ void ModelConfig::validate() {
         }
       }
       // If optional instruction identifiers are defined within the group
-      for (int k = 0; k < group["Optional"].size(); k++) {
+      for (size_t k = 0; k < group["Optional"].size(); k++) {
         if (nodeChecker(group["Optional"][k], port_num + group_num + "Optional",
                         groupOptions)) {
           configFile["Ports"][i]["Instruction-Support"][j]["Optional"][k] =
@@ -155,7 +155,7 @@ void ModelConfig::validate() {
   if (!num_rs) {
     missing += ("\t- " + root + "\n");
   }
-  for (int i = 0; i < num_rs; i++) {
+  for (size_t i = 0; i < num_rs; i++) {
     YAML::Node rs = configFile[root][i];
     // Get rs number into a string format
     char rs_msg[25];
@@ -168,7 +168,7 @@ void ModelConfig::validate() {
       missing += ("\t- " + rs_num + "Ports\n");
       continue;
     }
-    for (int j = 0; j < rs["Ports"].size(); j++) {
+    for (size_t j = 0; j < rs["Ports"].size(); j++) {
       YAML::Node port_node = rs["Ports"][j];
       // Get port index into a string format
       char port_msg[25];
@@ -235,7 +235,7 @@ void ModelConfig::validate() {
     invalid +=
         "\t- Number of issue ports and execution units should be equal\n";
   }
-  for (int i = 0; i < num_units; i++) {
+  for (size_t i = 0; i < num_units; i++) {
     char msg[50];
     sprintf(msg, "Execution Unit %d ", i);
     nodeChecker(configFile[root][i][subFields[0]],
