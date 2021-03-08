@@ -14,8 +14,6 @@ namespace simeng {
 namespace models {
 namespace outoforder {
 
-// TODO: Replace with config options
-// TODO: Physical registers are configured for TX2 booted with 4-way SMT
 // TODO: System register count has to match number of supported system registers
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
