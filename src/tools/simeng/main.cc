@@ -61,54 +61,7 @@ int main(int argc, char** argv) {
       mode = SimulationMode::OutOfOrder;
     }
   } else {
-    config = YAML::Load(
-        "{Core: {"
-        "Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5,"
-        "Fetch-Block-Alignment-Bits: 5"
-        "}, Register-Set: {"
-        "GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90,"
-        "Conditional-Count: 128"
-        "}, Pipeline-Widths: {"
-        "Commit: 4, Dispatch-Rate: 4, FrontEnd: 4,"
-        "LSQ-Completion: 2"
-        "}, Queue-Sizes: {"
-        "ROB: 180, Load: 64, Store: 36"
-        "}, Branch-Predictor: {"
-        "BTB-bitlength: 16"
-        "}, L1-Cache: {"
-        "GeneralPurpose-Latency: 4, FloatingPoint-Latency: 4,"
-        "SVE-Latency: 11, Bandwidth: 32,"
-        "Permitted-Requests-Per-Cycle: 2,"
-        "Permitted-Loads-Per-Cycle: 2,"
-        "Permitted-Stores-Per-Cycle: 1"
-        "}, Ports: {"
-        "'0': {Portname: Port 0, Instruction-Support: "
-        "[{Compulsory: [0], Optional: [1, 2]},"
-        "{Compulsory: [4], Optional: [1, 2, 3]}]},"
-        "'1': {Portname: Port 1, Instruction-Support: "
-        "[{Compulsory: [0], Optional: [1, 2, 3]},"
-        "{Compulsory: [4], Optional: [1, 2, 3]}]},"
-        "'2': {Portname: Port 2, Instruction-Support: "
-        "[{Compulsory: [0], Optional: [1, 2]},"
-        "{Compulsory: [7]}]},"
-        "'3': {Portname: Port 4, Instruction-Support: "
-        "[{Compulsory: [5], Optional: [1, 4]}]},"
-        "'4': {Portname: Port 5, Instruction-Support: "
-        "[{Compulsory: [5], Optional: [1, 4]}]},"
-        "'5': {Portname: Port 3, Instruction-Support: "
-        "[{Compulsory: [6], Optional: [1, 4]}]}"
-        "}, Reservation-Stations: {"
-        "'0': {Size: 60,"
-        "Ports: [0, 1, 2, 3, 4, 5]}"
-        "}, Execution-Units: {"
-        "'0': {Pipelined: true, Blocking-Group: 0},"
-        "'1': {Pipelined: true, Blocking-Group: 0},"
-        "'2': {Pipelined: true, Blocking-Group: 0},"
-        "'3': {Pipelined: true, Blocking-Group: 0},"
-        "'4': {Pipelined: true, Blocking-Group: 0},"
-        "'5': {Pipelined: true, Blocking-Group: 0}"
-        "}"
-        "}");
+    config = YAML::Load(DEFAULT_CONFIG);
   }
 
   if (argc > 2) {
@@ -238,29 +191,33 @@ int main(int argc, char** argv) {
   auto predictor = simeng::BTBPredictor(
       config["Branch-Predictor"]["BTB-bitlength"].as<uint8_t>());
 
-  std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
-      portArrangement;
-
   auto config_ports = config["Ports"];
+  std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
+      portArrangement(config_ports.size());
   // Extract number of ports
   for (size_t i = 0; i < config_ports.size(); i++) {
     auto config_groups = config_ports[i]["Instruction-Support"];
-    std::vector<std::vector<std::pair<uint16_t, uint8_t>>> groups;
+    std::vector<std::vector<std::pair<uint16_t, uint8_t>>> groups(
+        config_groups.size());
     // Extract number of groups in port
     for (size_t j = 0; j < config_groups.size(); j++) {
-      std::vector<std::pair<uint16_t, uint8_t>> group;
       auto config_group = config_groups[j];
+      size_t num_compulsory = config_group["Compulsory"].size();
+      size_t num_optional = config_group["Optional"].size();
+      std::vector<std::pair<uint16_t, uint8_t>> group(num_compulsory +
+                                                      num_optional);
       // Extract compulsory instructiuon group types in group
-      for (size_t k = 0; k < config_group["Compulsory"].size(); k++) {
-        group.push_back({config_group["Compulsory"][k].as<uint8_t>(), 0});
+      for (size_t k = 0; k < num_compulsory; k++) {
+        group[k] = {config_group["Compulsory"][k].as<uint8_t>(), 0};
       }
       // Extract optional instructiuon group types in group
-      for (size_t k = 0; k < config_group["Optional"].size(); k++) {
-        group.push_back({config_group["Optional"][k].as<uint8_t>(), 1});
+      for (size_t k = num_compulsory; k < num_compulsory + num_optional; k++) {
+        group[k] = {config_group["Optional"][k - num_compulsory].as<uint8_t>(),
+                    1};
       }
-      groups.push_back(group);
+      groups[j] = group;
     }
-    portArrangement.push_back(groups);
+    portArrangement[i] = groups;
   }
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
