@@ -13,54 +13,31 @@
 #include "simeng/arch/aarch64/Instruction.hh"
 #include "yaml-cpp/yaml.h"
 
-#define DEFAULT_CONFIG \
-  ("{Core: {                                                \
-   Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5, \
-   Fetch-Block-Alignment-Bits: 5                            \
-   }, Register-Set: {                                       \
-   GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90,  \
-   Conditional-Count: 128                                   \
-   }, Pipeline-Widths: {                                    \
-   Commit: 4, Dispatch-Rate: 4, FrontEnd: 4,                \
-   LSQ-Completion: 2                                        \
-   }, Queue-Sizes: {                                        \
-   ROB: 180, Load: 64, Store: 36                            \
-   }, Branch-Predictor: {                                   \
-   BTB-bitlength: 16                                        \
-   }, L1-Cache: {                                           \
-   GeneralPurpose-Latency: 4, FloatingPoint-Latency: 4,     \
-   SVE-Latency: 11, Bandwidth: 32,                          \
-   Permitted-Requests-Per-Cycle: 2,                         \
-   Permitted-Loads-Per-Cycle: 2,                            \
-   Permitted-Stores-Per-Cycle: 1                            \
-   }, Ports: {                                              \
-   '0': {Portname: Port 0, Instruction-Support:             \
-   [{Compulsory: [0], Optional: [1, 2]},                    \
-   {Compulsory: [4], Optional: [1, 2, 3]}]},                \
-   '1': {Portname: Port 1, Instruction-Support:             \
-   [{Compulsory: [0], Optional: [1, 2, 3]},                 \
-   {Compulsory: [4], Optional: [1, 2, 3]}]},                \
-   '2': {Portname: Port 2, Instruction-Support:             \
-   [{Compulsory: [0], Optional: [1, 2]},                    \
-   {Compulsory: [7]}]},                                     \
-   '3': {Portname: Port 4, Instruction-Support:             \
-   [{Compulsory: [5], Optional: [1, 4]}]},                  \
-   '4': {Portname: Port 5, Instruction-Support:             \
-   [{Compulsory: [5], Optional: [1, 4]}]},                  \
-   '5': {Portname: Port 3, Instruction-Support:             \
-   [{Compulsory: [6], Optional: [1, 4]}]}                   \
-   }, Reservation-Stations: {                               \
-   '0': {Size: 60,                                          \
-   Ports: [0, 1, 2, 3, 4, 5]}                               \
-   }, Execution-Units: {                                    \
-   '0': {Pipelined: true, Blocking-Group: 0},               \
-   '1': {Pipelined: true, Blocking-Group: 0},               \
-   '2': {Pipelined: true, Blocking-Group: 0},               \
-   '3': {Pipelined: true, Blocking-Group: 0},               \
-   '4': {Pipelined: true, Blocking-Group: 0},               \
-   '5': {Pipelined: true, Blocking-Group: 0}                \
-   }                                                        \
-   }")
+#define DEFAULT_CONFIG                                                         \
+  ("{Core: {Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5, "         \
+   "Fetch-Block-Alignment-Bits: 5}, Register-Set: {GeneralPurpose-Count: "     \
+   "154, FloatingPoint/SVE-Count: 90,  Conditional-Count: 128}, "              \
+   "Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, FrontEnd: 4, "              \
+   "LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, "        \
+   "Branch-Predictor: {BTB-bitlength: 16}, L1-Cache: "                         \
+   "{GeneralPurpose-Latency: 4, FloatingPoint-Latency: 4, SVE-Latency: 11, "   \
+   "Bandwidth: 32, Permitted-Requests-Per-Cycle: 2, "                          \
+   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "     \
+   "{'0': {Portname: Port 0, Instruction-Support: [{Compulsory: [0], "         \
+   "Optional: [1, 2]}, {Compulsory: [4], Optional: [1, 2, 3]}]}, '1': "        \
+   "{Portname: Port 1, Instruction-Support: [{Compulsory: [0], Optional: [1, " \
+   "2, 3]}, {Compulsory: [4], Optional: [1, 2, 3]}]}, '2': {Portname: Port "   \
+   "2, Instruction-Support: [{Compulsory: [0], Optional: [1, 2]}, "            \
+   "{Compulsory: [7]}]}, '3': {Portname: Port 4, Instruction-Support: "        \
+   "[{Compulsory: [5], Optional: [1, 4]}]}, '4': {Portname: Port 5, "          \
+   "Instruction-Support: [{Compulsory: [5], Optional: [1, 4]}]}, '5': "        \
+   "{Portname: Port 3, Instruction-: [{Compulsory: [6], Optional: [1, "        \
+   "4]}]}}, Reservation-Stations: {'0': {Size: 60, Ports: [0, 1, 2, 3, 4, "    \
+   "5]}}, Execution-Units: {'0': {Pipelined: true, Blocking-Group: 0}, '1': "  \
+   "{Pipelined: true, Blocking-Group: 0}, '2': {Pipelined: true, "             \
+   "Blocking-Group: 0}, '3': {Pipelined: true, Blocking-Group: 0}, '4': "      \
+   "{Pipelined: true, Blocking-Group: 0}, '5': {Pipelined: true, "             \
+   "Blocking-Group: 0}}}")
 
 namespace simeng {
 std::vector<std::string> groupOptions = {"ARITHMETIC", "SHIFT",  "MULTIPLY",
