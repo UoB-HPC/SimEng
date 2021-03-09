@@ -8,3 +8,6 @@
 [submodule "external/llvm"]
 	path = external/llvm
 	url = https://github.com/llvm-mirror/llvm
+[submodule "external/yaml-cpp"]
+	path = external/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git

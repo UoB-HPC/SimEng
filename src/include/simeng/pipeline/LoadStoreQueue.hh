@@ -23,7 +23,7 @@ class LoadStoreQueue {
       unsigned int maxCombinedSpace, MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      uint64_t L1Bandwidth = UINT64_MAX, uint8_t permittedRequests = UINT8_MAX,
+      uint8_t L1Bandwidth = UINT8_MAX, uint8_t permittedRequests = UINT8_MAX,
       uint8_t permittedLoads = UINT8_MAX, uint8_t permittedStores = UINT8_MAX);
 
   /** Constructs a split load/store queue model, simulating discrete queues for
@@ -34,7 +34,7 @@ class LoadStoreQueue {
       MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      uint64_t L1Bandwidth = UINT64_MAX, uint8_t permittedRequests = UINT8_MAX,
+      uint8_t L1Bandwidth = UINT8_MAX, uint8_t permittedRequests = UINT8_MAX,
       uint8_t permittedLoads = UINT8_MAX, uint8_t permittedStores = UINT8_MAX);
 
   /** Retrieve the available space for load uops. For combined queue this is the

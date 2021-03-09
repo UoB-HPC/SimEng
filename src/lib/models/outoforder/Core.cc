@@ -14,73 +14,84 @@ namespace simeng {
 namespace models {
 namespace outoforder {
 
-// TODO: Replace with config options
-// TODO: Physical registers are configured for TX2 booted with 4-way SMT
 // TODO: System register count has to match number of supported system registers
-const std::initializer_list<uint16_t> physicalRegisterQuantities = {154, 90,
-                                                                    128, 48, 6};
-const std::initializer_list<RegisterFileStructure> physicalRegisterStructures =
-    {{8, 154}, {256, 90}, {32, 48}, {1, 128}, {8, 6}};
-const unsigned int robSize = 180;
-const unsigned int loadQueueSize = 64;
-const unsigned int storeQueueSize = 36;
-const unsigned int fetchBlockAlignmentBits = 5;
-const unsigned int frontendWidth = 4;
-const unsigned int commitWidth = 4;
-const unsigned int executionUnitCount = 6;
-const unsigned int lsqCompletionSlots = 2;
-const unsigned int clockFrequency = 2.5 * 1e9;
-const uint64_t L1Bandwidth = 32;
-const uint8_t permittedRequestsPerCycle = 2;
-const uint8_t permittedLoadsPerCycle = 2;
-const uint8_t permittedWritesPerCycle = 1;
-const uint8_t dispatchRate = 4;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator,
-           std::vector<std::pair<uint8_t, uint64_t>> rsArrangement)
+           std::vector<std::pair<uint8_t, uint64_t>> rsArrangement,
+           YAML::Node config)
     : isa_(isa),
-      registerFileSet_(physicalRegisterStructures),
+      physicalRegisterStructures_(
+          {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
+           {256,
+            config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>()},
+           {32, config["Register-Set"]["Predicate-Count"].as<uint16_t>()},
+           {1, config["Register-Set"]["Conditional-Count"].as<uint16_t>()},
+           {8, 6}}),
+      physicalRegisterQuantities_(
+          {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
+           config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>(),
+           config["Register-Set"]["Predicate-Count"].as<uint16_t>(),
+           config["Register-Set"]["Conditional-Count"].as<uint16_t>(), 6}),
+      registerFileSet_(physicalRegisterStructures_),
       registerAliasTable_(isa.getRegisterFileStructures(),
-                          physicalRegisterQuantities),
+                          physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       dataMemory_(dataMemory),
-      fetchToDecodeBuffer_(frontendWidth, {}),
-      decodeToRenameBuffer_(frontendWidth, nullptr),
-      renameToDispatchBuffer_(frontendWidth, nullptr),
-      issuePorts_(executionUnitCount, {1, nullptr}),
-      completionSlots_(executionUnitCount + lsqCompletionSlots, {1, nullptr}),
+      fetchToDecodeBuffer_(
+          config["Pipeline-Widths"]["FrontEnd"].as<unsigned int>(), {}),
+      decodeToRenameBuffer_(
+          config["Pipeline-Widths"]["FrontEnd"].as<unsigned int>(), nullptr),
+      renameToDispatchBuffer_(
+          config["Pipeline-Widths"]["FrontEnd"].as<unsigned int>(), nullptr),
+      issuePorts_(config["Execution-Units"].size(), {1, nullptr}),
+      completionSlots_(
+          config["Execution-Units"].size() +
+              config["Pipeline-Widths"]["LSQ-Completion"].as<unsigned int>(),
+          {1, nullptr}),
       loadStoreQueue_(
-          loadQueueSize, storeQueueSize, dataMemory,
-          {completionSlots_.data() + executionUnitCount, lsqCompletionSlots},
+          config["Queue-Sizes"]["Load"].as<unsigned int>(),
+          config["Queue-Sizes"]["Store"].as<unsigned int>(), dataMemory,
+          {completionSlots_.data() + config["Execution-Units"].size(),
+           config["Pipeline-Widths"]["LSQ-Completion"].as<unsigned int>()},
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          L1Bandwidth, permittedRequestsPerCycle, permittedLoadsPerCycle,
-          permittedWritesPerCycle),
-      reorderBuffer_(robSize, registerAliasTable_, loadStoreQueue_,
+          config["L1-Cache"]["Bandwidth"].as<uint8_t>(),
+          config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint8_t>(),
+          config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint8_t>(),
+          config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint8_t>()),
+      reorderBuffer_(config["Queue-Sizes"]["ROB"].as<unsigned int>(),
+                     registerAliasTable_, loadStoreQueue_,
                      [this](auto instruction) { raiseException(instruction); }),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, fetchBlockAlignmentBits, isa, branchPredictor),
+                 entryPoint,
+                 config["Core"]["Fetch-Block-Alignment-Bits"].as<uint8_t>(),
+                 isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
-                  physicalRegisterStructures.size()),
-      dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities,
-                         rsArrangement, dispatchRate),
+                  physicalRegisterStructures_.size()),
+      dispatchIssueUnit_(
+          renameToDispatchBuffer_, issuePorts_, registerFileSet_, portAllocator,
+          physicalRegisterQuantities_, rsArrangement,
+          config["Pipeline-Widths"]["Dispatch-Rate"].as<unsigned int>()),
       writebackUnit_(completionSlots_, registerFileSet_),
-      portAllocator_(portAllocator) {
-  for (size_t i = 0; i < executionUnitCount; i++) {
+      portAllocator_(portAllocator),
+      clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
+      commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
+  for (size_t i = 0; i < config["Execution-Units"].size(); i++) {
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
         [this](auto regs, auto values) {
           dispatchIssueUnit_.forwardOperands(regs, values);
         },
         [this](auto uop) { loadStoreQueue_.startLoad(uop); }, [](auto uop) {},
-        [](auto uop) { uop->setCommitReady(); }, branchPredictor, true, 0);
+        [](auto uop) { uop->setCommitReady(); }, branchPredictor,
+        config["Execution-Units"][i]["Pipelined"].as<bool>(),
+        config["Execution-Units"][i]["Blocking-Group"].as<uint16_t>());
   }
   // Provide reservation size getter to A64FX port allocator
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {
@@ -138,7 +149,7 @@ void Core::tick() {
   }
 
   // Commit instructions from ROB
-  reorderBuffer_.commit(commitWidth);
+  reorderBuffer_.commit(commitWidth_);
 
   if (exceptionGenerated_) {
     handleException();
@@ -340,7 +351,7 @@ uint64_t Core::getInstructionsRetiredCount() const {
 
 uint64_t Core::getSystemTimer() const {
   // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency / 1e9);
+  return ticks_ / (clockFrequency_ / 1e9);
 }
 
 std::map<std::string, std::string> Core::getStats() const {

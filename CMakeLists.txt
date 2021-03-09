@@ -89,3 +89,6 @@ add_subdirectory(docs)
 enable_testing()
 add_subdirectory(external/googletest EXCLUDE_FROM_ALL)
 add_subdirectory(test)
+
+# yaml-cpp
+add_subdirectory(external/yaml-cpp EXCLUDE_FROM_ALL)

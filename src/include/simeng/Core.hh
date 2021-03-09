@@ -3,6 +3,8 @@
 #include <map>
 #include <string>
 
+#include "yaml-cpp/yaml.h"
+
 namespace simeng {
 
 class ArchitecturalRegisterFileSet;

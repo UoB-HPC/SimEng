@@ -12,6 +12,7 @@
 #include "simeng/Elf.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
+#include "simeng/ModelConfig.hh"
 #include "simeng/VariableLatencyMemoryInterface.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
@@ -22,6 +23,7 @@
 #include "simeng/models/outoforder/Core.hh"
 #include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
+#include "yaml-cpp/yaml.h"
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
@@ -47,17 +49,23 @@ int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
 int main(int argc, char** argv) {
   SimulationMode mode = SimulationMode::InOrderPipelined;
   std::string executablePath = "";
+  YAML::Node config;
 
   if (argc > 1) {
-    if (!strcmp(argv[1], "emulation")) {
+    config = simeng::ModelConfig(argv[1]).getConfigFile();
+
+    if (config["Core"]["Simulation-Mode"].as<std::string>() == "emulation") {
       mode = SimulationMode::Emulation;
-    } else if ((!strcmp(argv[1], "outoforder"))) {
+    } else if (config["Core"]["Simulation-Mode"].as<std::string>() ==
+               "outoforder") {
       mode = SimulationMode::OutOfOrder;
     }
+  } else {
+    config = YAML::Load(DEFAULT_CONFIG);
+  }
 
-    if (argc > 2) {
-      executablePath = std::string(argv[2]);
-    }
+  if (argc > 2) {
+    executablePath = std::string(argv[2]);
   }
 
   // Create the process image
@@ -180,50 +188,58 @@ int main(int argc, char** argv) {
   // Create the architecture, with knowledge of the kernel
   auto arch = simeng::arch::aarch64::Architecture(kernel);
 
-  auto predictor = simeng::BTBPredictor(16);
+  auto predictor = simeng::BTBPredictor(
+      config["Branch-Predictor"]["BTB-bitlength"].as<uint8_t>());
 
-  // TODO: Construct port arrangement from config options
-  const std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
-      portArrangement = {
-          {{{simeng::arch::aarch64::InstructionGroups::LOAD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 4
-          {{{simeng::arch::aarch64::InstructionGroups::LOAD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 5
-          {{{simeng::arch::aarch64::InstructionGroups::STORE, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 3
-          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1}},
-           {{simeng::arch::aarch64::InstructionGroups::BRANCH, 0}}},  // Port 2
-          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1}},
-           {{simeng::arch::aarch64::InstructionGroups::ASIMD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
-            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}}},  // Port 0
-          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
-            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}},
-           {{simeng::arch::aarch64::InstructionGroups::ASIMD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
-            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}}}  // Port 1
-      };
+  auto config_ports = config["Ports"];
+  std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
+      portArrangement(config_ports.size());
+  // Extract number of ports
+  for (size_t i = 0; i < config_ports.size(); i++) {
+    auto config_groups = config_ports[i]["Instruction-Support"];
+    std::vector<std::vector<std::pair<uint16_t, uint8_t>>> groups(
+        config_groups.size());
+    // Extract number of groups in port
+    for (size_t j = 0; j < config_groups.size(); j++) {
+      auto config_group = config_groups[j];
+      size_t num_compulsory = config_group["Compulsory"].size();
+      size_t num_optional = config_group["Optional"].size();
+      std::vector<std::pair<uint16_t, uint8_t>> group(num_compulsory +
+                                                      num_optional);
+      // Extract compulsory instructiuon group types in group
+      for (size_t k = 0; k < num_compulsory; k++) {
+        group[k] = {config_group["Compulsory"][k].as<uint8_t>(), 0};
+      }
+      // Extract optional instructiuon group types in group
+      for (size_t k = num_compulsory; k < num_compulsory + num_optional; k++) {
+        group[k] = {config_group["Optional"][k - num_compulsory].as<uint8_t>(),
+                    1};
+      }
+      groups[j] = group;
+    }
+    portArrangement[i] = groups;
+  }
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
-  // TODO: Construct reservation station arrangement from config options
-  const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {
-      {0, 60}, {0, 60}, {0, 60}, {0, 60}, {0, 60}, {0, 60}};
+  // Configure reservation station arrangment
+  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement;
+  for (size_t i = 0; i < config["Reservation-Stations"].size(); i++) {
+    auto reservation_station = config["Reservation-Stations"][i];
+    for (size_t j = 0; j < reservation_station["Ports"].size(); j++) {
+      uint8_t port = reservation_station["Ports"][j].as<uint8_t>();
+      if (rsArrangement.size() < port + 1) {
+        rsArrangement.resize(port + 1);
+      }
+      rsArrangement[port] = {i, reservation_station["Size"].as<uint16_t>()};
+    }
+  }
 
-  // TODO: Expose as config option
-  const uint16_t intDataMemoryLatency = 4;
-  const uint16_t fpDataMemoryLatency = 4;
-  const uint16_t SVEDataMemoryLatency = 11;
+  const uint16_t intDataMemoryLatency =
+      config["L1-Cache"]["GeneralPurpose-Latency"].as<uint16_t>();
+  const uint16_t fpDataMemoryLatency =
+      config["L1-Cache"]["FloatingPoint-Latency"].as<uint16_t>();
+  const uint16_t SVEDataMemoryLatency =
+      config["L1-Cache"]["SVE-Latency"].as<uint16_t>();
 
   int iterations = 0;
 
@@ -238,7 +254,7 @@ int main(int argc, char** argv) {
           fpDataMemoryLatency, SVEDataMemoryLatency);
       core = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
-          predictor, portAllocator, rsArrangement);
+          predictor, portAllocator, rsArrangement, config);
       break;
     }
     case SimulationMode::InOrderPipelined: {

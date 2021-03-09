@@ -32,6 +32,7 @@ set(SIMENG_SOURCES
     FixedLatencyMemoryInterface.cc
     FlatMemoryInterface.cc
     Instruction.cc
+    ModelConfig.cc
     RegisterFileSet.cc
     RegisterValue.cc
     VariableLatencyMemoryInterface.cc
@@ -45,7 +46,8 @@ set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(libsimeng PRIVATE ${PROJECT_SOURCE_DIR}/external/capstone/include)
-target_link_libraries(libsimeng PRIVATE capstone-static)
+target_include_directories(libsimeng PRIVATE ${PROJECT_SOURCE_DIR}/external/yaml-cpp)
+target_link_libraries(libsimeng capstone-static yaml-cpp)
 
 set_target_properties(libsimeng PROPERTIES VERSION ${SimEng_VERSION})
 set_target_properties(libsimeng PROPERTIES SOVERSION ${SimEng_VERSION_MAJOR})
