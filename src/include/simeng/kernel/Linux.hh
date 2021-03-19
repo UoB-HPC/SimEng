@@ -153,6 +153,8 @@ struct pmuEntry {
   bool state;
   /** The value of the event. */
   uint64_t value;
+  /** The previous count of this event. */
+  uint64_t prev;
   /** The id of the performance event counter. */
   uint8_t id;
   /** The group id assigned to the event to be later utilised when event
@@ -249,7 +251,8 @@ class Linux {
                         uint64_t flags);
 
   /** Increment the value of the performance event held within the pmu_ map, if
-  it exists, by the provided quantity. */
+  it exists, by the difference between the previous known count and the newly
+  supplied value. */
   void pmuIncrement(uint16_t event, uint64_t value);
 
   /** readlinkat syscall: read value of a symbolic link. */

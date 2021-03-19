@@ -109,7 +109,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 
 void Core::tick() {
   ticks_++;
-  isa_.forwardPMUInc(0x11, 1);
+  isa_.forwardPMUInc(0x11, ticks_);
 
   if (hasHalted_) return;
 
@@ -154,7 +154,8 @@ void Core::tick() {
   }
 
   // Commit instructions from ROB
-  isa_.forwardPMUInc(0x8, reorderBuffer_.commit(commitWidth_));
+  reorderBuffer_.commit(commitWidth_);
+  isa_.forwardPMUInc(0x8, reorderBuffer_.getInstructionsCommittedCount());
 
   if (exceptionGenerated_) {
     handleException();

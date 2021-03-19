@@ -577,12 +577,11 @@ int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
 int64_t Linux::perfEventOpen(uint64_t attr, pid_t pid, int64_t cpu,
                              int64_t group_fd, uint64_t flags) {
   if (flags != 0) {
-    assert(false && "flags in perf_event_open syscall unsupported");
+    // flags in perf_event_open syscall unsupported
     return -1;
   } else if (pid != 0 || cpu != -1) {
-    assert(false &&
-           "in perf_event_open syscall, only pid == 0 and cpu == -1 monitoring "
-           "is supported supported");
+    // in perf_event_open syscall, only pid == 0 and cpu == -1 monitoring is
+    // supported supported
     return -1;
   }
 
@@ -597,17 +596,14 @@ int64_t Linux::perfEventOpen(uint64_t attr, pid_t pid, int64_t cpu,
 
   // Extract exclude _{kernel,hv} bits in eventConfig as thye must be set
   if ((newEvent.eventConfig & 96) != 96) {
-    assert(
-        false &&
-        "in perf_event_open syscall, only user_level monitoring is supported");
+    // in perf_event_open syscall, only user_level monitoring is supported
     return -1;
   }
   // Logical AND eventConfig with mask exlcuding exclude_kernel, and exclude_hv
   // options
   if (newEvent.eventConfig & ~(97)) {
-    assert(false &&
-           "in perf_event_open syscall, only disabled, exclude_kernel, and "
-           "exclude_hv options are supported");
+    // in perf_event_open syscall, only disabled, exclude_kernel, and exclude_hv
+    // options are supported
     return -1;
   }
 
@@ -620,9 +616,7 @@ int64_t Linux::perfEventOpen(uint64_t attr, pid_t pid, int64_t cpu,
     std::pair<int64_t, int16_t> group_hfd =
         processStates_[0].fileDescriptorTable[group_fd];
     if (group_hfd.first < 0 || group_hfd.second == -1) {
-      assert(
-          false &&
-          "in perf_event_open syscall, group_fd file descriptor is not valid");
+      // in perf_event_open syscall, group_fd file descriptor is not valid
       return -1;
     }
     // Leader fd exists, get its groupId and assign new event to it
@@ -631,9 +625,8 @@ int64_t Linux::perfEventOpen(uint64_t attr, pid_t pid, int64_t cpu,
       groupId = pmu_[leaderId].groupId;
       pmuGroups_[groupId].push_back(eventId);
     } else {
-      assert(false &&
-             "in perf_event_open syscall, the group_fd file descriptor PMU "
-             "entry is not valid");
+      // in perf_event_open syscall, the group_fd file descriptor PMU entry is
+      // not valid
       return -1;
     }
   } else {
@@ -646,6 +639,7 @@ int64_t Linux::perfEventOpen(uint64_t attr, pid_t pid, int64_t cpu,
   pmuEntry newEntry = {.eventInfo = newEvent,
                        .state = !(newEvent.eventConfig & 1),
                        .value = 0,
+                       .prev = 0,
                        .id = eventId,
                        .groupId = groupId};
   pmu_.insert({eventId, newEntry});
@@ -683,7 +677,8 @@ void Linux::pmuIncrement(uint16_t event, uint64_t value) {
   // eventsby `value` if true
   if (hwEvents_.find(event) != hwEvents_.end()) {
     for (uint8_t pe : hwEvents_[event]) {
-      pmu_[pe].value += pmu_[pe].state ? value : 0;
+      pmu_[pe].value += pmu_[pe].state ? (value - pmu_[pe].prev) : 0;
+      pmu_[pe].prev = value;
     }
   }
 }
