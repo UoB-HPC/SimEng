@@ -66,7 +66,7 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Create the OS kernel and the process
   simeng::kernel::Linux kernel;
-  kernel.createProcess(*process_);
+  kernel.createProcess(*process_, processMemory_);
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),

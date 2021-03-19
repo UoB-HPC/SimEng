@@ -142,7 +142,7 @@ void CoreInstance::createProcess(std::string executablePath,
   createProcessMemory();
 
   // Create the OS kernel with the process
-  kernel_.createProcess(*process_.get());
+  kernel_.createProcess(*process_.get(), processMemory_.get());
 
   return;
 }

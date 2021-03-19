@@ -89,8 +89,10 @@ struct LinuxProcessState {
   /** The clear_child_tid value. */
   uint64_t clearChildTid = 0;
 
-  /** The virtual file descriptor mapping table. */
-  std::vector<int64_t> fileDescriptorTable;
+  /** The virtual file descriptor mapping table. Each entry contains the
+   * associated host file descriptor and an associated PMU eventId where
+   * necessary (a -1 represents no such association). */
+  std::vector<std::pair<int64_t, int16_t>> fileDescriptorTable;
   /** Set of deallocated virtual file descriptors available for reuse. */
   std::set<int64_t> freeFileDescriptors;
 };
@@ -126,12 +128,44 @@ struct linux_dirent64 {
   char* d_name;       // Filename (null-terminated)
 };
 
+/** Reconstruction of areas of interest in the `perf_event_attr` struct.
+ * Original struct details derived from
+ * https://man7.org/linux/man-pages/man2/perf_event_open.2.html. */
+struct perfEventAttr {
+  /* Type of event. */
+  uint32_t type;
+  /* Size of attribute structure. */
+  uint32_t size;
+  /* Type-specific configuration. */
+  uint64_t config;
+  /* Specifies values returned in read. */
+  uint64_t readFormat;
+  /* Configuration options altering the data collected. */
+  uint64_t eventConfig;
+};
+
+/** A structure representing an event in the Linux Performance Monitor Unit
+ * (PMU). */
+struct pmuEntry {
+  /** The perf_event_attr struct created on perfEventOpen call. */
+  perfEventAttr eventInfo;
+  /** Current state of the event, {enabled, disabled}. */
+  bool state;
+  /** The value of the event. */
+  uint64_t value;
+  /** The id of the performance event counter. */
+  uint8_t id;
+  /** The group id assigned to the event to be later utilised when event
+   * grouping is chosen. */
+  uint8_t groupId;
+};
+
 /** A Linux kernel syscall emulation implementation, which mimics the responses
    to Linux system calls. */
 class Linux {
  public:
   /** Create a new Linux process running above this kernel. */
-  void createProcess(const LinuxProcess& process);
+  void createProcess(const LinuxProcess& process, const char* memory);
 
   /** Retrieve the initial stack pointer. */
   uint64_t getInitialStackPointer() const;
@@ -187,8 +221,9 @@ class Linux {
    * the elements of `tz` to 0. */
   int64_t gettimeofday(uint64_t systemTimer, timeval* tv, timeval* tz);
 
-  /** ioctl syscall: control device. */
-  int64_t ioctl(int64_t fd, uint64_t request, std::vector<char>& out);
+  /** ioctl syscall: control device. When arg is treated as an in parameter,
+   * each index of the vector represents a single bit. */
+  int64_t ioctl(int64_t fd, uint64_t request, std::vector<char>& arg);
 
   /** lseek syscall: reposition read/write file offset. */
   uint64_t lseek(int64_t fd, uint64_t offset, int64_t whence);
@@ -203,6 +238,19 @@ class Linux {
   /** openat syscall: open/create a file. */
   int64_t openat(int64_t dirfd, const std::string& path, int64_t flags,
                  uint16_t mode);
+
+  /** perf_event_open syscall: Create a pmuEntry and an associated
+   * representation of a file descriptor for a specified performance event. The
+   * representation is in the form of the index the newly created pmuEntry
+   * occupies in the `pmu_` unordered_map. Return values are a -1 in the case
+   * of an error or the file descriptor representation in the case of a success.
+   */
+  int64_t perfEventOpen(uint64_t attr, pid_t pid, int64_t cpu, int64_t group_fd,
+                        uint64_t flags);
+
+  /** Increment the value of the performance event held within the pmu_ map, if
+  it exists, by the provided quantity. */
+  void pmuIncrement(uint16_t event, uint64_t value);
 
   /** readlinkat syscall: read value of a symbolic link. */
   int64_t readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
@@ -245,6 +293,9 @@ class Linux {
    * to point to the SimEng equivalent. */
   std::string getSpecialFile(const std::string filename);
 
+  /** A read only array representing the process memory. */
+  const char* memory_;
+
   /** The state of the user-space processes running above the kernel. */
   std::vector<LinuxProcessState> processStates_;
 
@@ -256,6 +307,18 @@ class Linux {
 
   /** Vector of all currently supported special file paths & files.*/
   std::vector<std::string> supportedSpecialFiles_;
+
+  /** The set of PMU events currently created. */
+  std::unordered_map<uint8_t, pmuEntry> pmu_;
+
+  /** Mapping between hardware events and event ids. */
+  std::unordered_map<uint16_t, std::vector<uint8_t>> hwEvents_;
+
+  /** Mapping between group ids and event ids. */
+  std::vector<std::vector<uint8_t>> pmuGroups_;
+
+  /** Vector of supported perf_open_event associated ioctl requests. */
+  std::vector<uint64_t> ioctlPmuReqs = {0x2400, 0x2401, 0x2403, 0x80082407};
 };
 
 }  // namespace kernel
