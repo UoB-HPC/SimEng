@@ -28,6 +28,8 @@ class MockArchitecture : public arch::Architecture {
                      std::vector<uint16_t>(YAML::Node config));
   MOCK_CONST_METHOD2(updateSystemTimerRegisters,
                      void(RegisterFileSet* regFile, const uint64_t iterations));
+
+  MOCK_CONST_METHOD2(forwardPMUInc, void(uint16_t event, uint64_t value));
 };
 
 }  // namespace simeng

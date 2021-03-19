@@ -41,15 +41,28 @@ bool ExceptionHandler::init() {
         uint64_t request = registerFileSet.get(R1).get<uint64_t>();
         uint64_t argp = registerFileSet.get(R2).get<uint64_t>();
 
-        std::vector<char> out;
-        int64_t retval = linux_.ioctl(fd, request, out);
+        std::vector<char> inOutArg;
+        // If ioctl request is PMU associted with argp being an `in` argument
+        std::vector<uint64_t> ioctlInParams = {0x2400, 0x2401, 0x2403};
+        if (std::find(ioctlInParams.begin(), ioctlInParams.end(), request) !=
+            ioctlInParams.end()) {
+          // Determine whether PERF_IOC_FLAG_GROUP was set
+          if (argp & 1)
+            inOutArg.push_back(1);
+          else
+            inOutArg.push_back(0);
+        }
+        int64_t retval = linux_.ioctl(fd, request, inOutArg);
 
-        assert(out.size() < 256 && "large ioctl() output not implemented");
-        uint8_t outSize = static_cast<uint8_t>(out.size());
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
-        stateChange.memoryAddresses.push_back({argp, outSize});
-        stateChange.memoryAddressValues.push_back(
-            RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
+        assert(inOutArg.size() < 256 && "large ioctl() output not implemented");
+        uint8_t argSize = static_cast<uint8_t>(inOutArg.size());
+        // If thrid argument of ioctl syscall is an out parameter
+        if (argSize) {
+          stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
+          stateChange.memoryAddresses.push_back({argp, argSize});
+          stateChange.memoryAddressValues.push_back(RegisterValue(
+              reinterpret_cast<const char*>(inOutArg.data()), argSize));
+        }
         break;
       }
       case 46: {  // ftruncate
@@ -637,7 +650,18 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
+      case 241: {  // perf_event_open
+        uint64_t attr = registerFileSet.get(R0).get<uint64_t>();
+        pid_t pid = signed(registerFileSet.get(R1).get<pid_t>());
+        int64_t cpu = signed(registerFileSet.get(R2).get<int64_t>());
+        int64_t group_fd = signed(registerFileSet.get(R3).get<int64_t>());
+        uint64_t flags = registerFileSet.get(R4).get<uint64_t>();
 
+        int64_t result = linux_.perfEventOpen(attr, pid, cpu, group_fd, flags);
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
+        break;
+      }
       default:
         printException(instruction_);
         std::cout << "\n[SimEng:ExceptionHandler] Unrecognised syscall: "
