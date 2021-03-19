@@ -109,6 +109,9 @@ class Architecture {
   /** Updates System registers of any system-based timers. */
   virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                           const uint64_t iterations) const = 0;
+
+  /** Relays an increment in a perforamnce event to the linux kernel. */
+  virtual void forwardPMUInc(uint16_t event, uint64_t value) const = 0;
 };
 
 }  // namespace arch
