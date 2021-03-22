@@ -42,6 +42,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 
 void Core::tick() {
   ticks_++;
+  isa_.forwardPMUInc(0x11, ticks_);
 
   if (hasHalted_) return;
 
@@ -52,7 +53,8 @@ void Core::tick() {
 
   // Writeback must be ticked at start of cycle, to ensure decode reads the
   // correct values
-  writebackUnit_.tick();
+  instructionsCompleted_ += writebackUnit_.tick();
+  isa_.forwardPMUInc(0x8, instructionsCompleted_);
 
   // Tick units
   fetchUnit_.tick();
@@ -141,7 +143,7 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 }
 
 uint64_t Core::getInstructionsRetiredCount() const {
-  return writebackUnit_.getInstructionsWrittenCount();
+  return instructionsCompleted_;
 }
 
 uint64_t Core::getSystemTimer() const {
@@ -150,7 +152,7 @@ uint64_t Core::getSystemTimer() const {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  auto retired = writebackUnit_.getInstructionsWrittenCount();
+  auto retired = getInstructionsRetiredCount();
   auto ipc = retired / static_cast<float>(ticks_);
   std::ostringstream ipcStr;
   ipcStr << std::setprecision(2) << ipc;
@@ -219,6 +221,7 @@ void Core::processExceptionHandler() {
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
   }
+  instructionsCompleted_++;
 
   exceptionHandler_ = nullptr;
 }
