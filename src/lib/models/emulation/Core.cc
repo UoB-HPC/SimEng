@@ -31,6 +31,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 
 void Core::tick() {
   ticks_++;
+  isa_.forwardPMUInc(0x11, ticks_);
 
   if (hasHalted_) return;
 
@@ -198,6 +199,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isLastMicroOp()) instructionsExecuted_++;
+  isa_.forwardPMUInc(0x8, instructionsExecuted_);
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
@@ -234,6 +236,7 @@ void Core::processExceptionHandler() {
     pc_ = result.instructionAddress;
     applyStateChange(result.stateChange);
   }
+  instructionsExecuted_++;
 
   // Clear the handler
   exceptionHandler_ = nullptr;

@@ -121,6 +121,9 @@ class Core : public simeng::Core {
   /** The number of times this core has been ticked. */
   uint64_t ticks_ = 0;
 
+  /** The number of instructions completed. */
+  uint64_t instructionsCompleted_ = 0;
+
   /** Whether an exception was generated during the cycle. */
   bool exceptionGenerated_ = false;
 
