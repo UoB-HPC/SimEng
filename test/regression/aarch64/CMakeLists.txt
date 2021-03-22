@@ -4,6 +4,7 @@ add_executable(regression-aarch64
                Exception.cc
                LoadStoreQueue.cc
                MicroOperation.cc
+               Pmu.cc
                SmokeTest.cc
                Syscall.cc
                SystemRegisters.cc
