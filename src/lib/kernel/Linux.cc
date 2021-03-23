@@ -398,7 +398,7 @@ int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& arg) {
           break;
         case 0x80082407:  // PERF_EVENT_IOC_ID
                           // Argp is an `out` parameter so resize and store ID
-          arg.resize(1);
+          arg.resize(64);
           arg[0] = pmu_[pe].id;
           return 0;
         default:
