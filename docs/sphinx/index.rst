@@ -1,9 +1,19 @@
 SimEng documentation
 ====================
 
+
 .. toctree::
    :maxdepth: 2
-   :caption: Introduction
+   :caption: User Documentation
+
+   users/index.rst
+   users/running_simeng.rst
+   users/creating_binaries.rst
+   users/docker.rst
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Developer Documentation
 
    developers
 
