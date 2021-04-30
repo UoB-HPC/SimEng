@@ -112,52 +112,44 @@ int main(int argc, char** argv) {
     // at the start of each branch. With an instruction latency of 2 or greater,
     // the `orr` at the start of the next loop should issue/execute while the
     // preceding branch is waiting on the result from the `subs`.
-    // uint32_t hex[] = {
-    //     // 0x321E03E0,  // orr w0, wzr, #4
-    //     // 0x321603E0,  // orr w0, wzr, #1024
-    //     0x320C03E0,  // orr w0, wzr, #1048576
-    //     0x320003E1,  // orr w0, wzr, #1
-    //     0x71000400,  // subs w0, w0, #1
-    //     // 0x00000000,  // invalid
-    //     0x54FFFFC1,  // b.ne -8
-    //     0xfd7bbfa9, //                   stp     x29, x30, [sp, #-16]!
-    //     0x410400b0, //                   adrp    x1, #561152
-    //     0x23008052, //                   mov     w3, #1
-    //     0xe203032a, //                   mov     w2, w3
-    //     0xfd030091, //                   mov     x29, sp
-    //     0x213445f9, //                   ldr     x1, [x1, #2664]
-    //     0x1f2003d5 //                   nop
-    // };
+    uint32_t hex[] = {
+        // 0x321E03E0,  // orr w0, wzr, #4
+        // 0x321603E0,  // orr w0, wzr, #1024
+        0x320C03E0,  // orr w0, wzr, #1048576
+        0x320003E1,  // orr w0, wzr, #1
+        0x71000400,  // subs w0, w0, #1
+        // 0x00000000,  // invalid
+        0x54FFFFC1,  // b.ne -8
+        0xD2800000,
+        0xD2800BC8,
+        0xD4000001 // Graceful exit
+    };
 
     // Load/store consistency test; a simple bubble sort algorithm
-    uint32_t hex[] = {
-        0x320003E0,  //   orr w0, wzr, #1
-        0x51000400,  //   sub w0, w0, #1
+    // uint32_t hex[] = {
+    //     0x320003E0,  //   orr w0, wzr, #1
+    //     0x51000400,  //   sub w0, w0, #1
 
-        0x11013001,  //   add w1, w0, #76
-                     // .start:
-        0x11000002,  //   add w2, w0, #0
-                     // .compare:
-        0xB9400044,  //   ldr w4, [x2, 0]
-        0xB9400445,  //   ldr w5, [x2, 4]
-        0x4B0400A6,  //   sub w6, w5, w4
-        0x37F80046,  //   tbnz w6, #31, #8 (.swap)
-        0x14000003,  //   b #12 (.next)
-                     // .swap:
-        0xB9000444,  //   str w4, [x2, 4]
-        0xB9000045,  //   str w5, [x2, 0]
-                     // .next:
-        0x11001042,  //   add w2, w2, #4
-        0x4B010046,  //   sub w6, w2, w1
-        0x37FFFEE6,  //   tbnz w6, #31, #-36 (.compare)
-        0x51001021,  //   sub w1, w1, #4
-        0x4B010006,  //   sub w6, w0, w1
-        0x37FFFE66,  //   tbnz w6, #31, #-52 (.start)
-
-        0xd2800000,  // Graceful exit
-        0xd2800bc8,
-        0xd4000001
-    };
+    //     0x11013001,  //   add w1, w0, #76
+    //                  // .start:
+    //     0x11000002,  //   add w2, w0, #0
+    //                  // .compare:
+    //     0xB9400044,  //   ldr w4, [x2, 0]
+    //     0xB9400445,  //   ldr w5, [x2, 4]
+    //     0x4B0400A6,  //   sub w6, w5, w4
+    //     0x37F80046,  //   tbnz w6, #31, #8 (.swap)
+    //     0x14000003,  //   b #12 (.next)
+    //                  // .swap:
+    //     0xB9000444,  //   str w4, [x2, 4]
+    //     0xB9000045,  //   str w5, [x2, 0]
+    //                  // .next:
+    //     0x11001042,  //   add w2, w2, #4
+    //     0x4B010046,  //   sub w6, w2, w1
+    //     0x37FFFEE6,  //   tbnz w6, #31, #-36 (.compare)
+    //     0x51001021,  //   sub w1, w1, #4
+    //     0x4B010006,  //   sub w6, w0, w1
+    //     0x37FFFE66,  //   tbnz w6, #31, #-52 (.start)
+    // };
 
     // Force a load/store ordering violation
     // uint32_t hex[] = {
