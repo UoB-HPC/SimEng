@@ -9,7 +9,7 @@ To get an interactive session in a container with SimEng installed, run:
 
 The `simeng` binary is on the default path.
 
-A development version is also available at, which contains the SimEng source code and all the build dependencies installed:
+A development version is also available, which contains the SimEng source code and all the build dependencies installed:
 ::
     docker run -it uobhpc/simeng:dev
 
