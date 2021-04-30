@@ -15,5 +15,5 @@ The purpose of SimEng is to provide an alternative to the existing industry stan
 
 To get started with SimEng, please follow the instructions set out in our [User Documentation](https://uob-hpc.github.io/SimEng-Docs/users/index.html). This will cover how to download, build and run SimEng along with a brief overview on how it works.
 
-If you are interested in developing further SimEng features, and are already familiar with the User Documentation please refer to our [Developer Documentation](https://uob-hpc.github.io/SimEng-Docs/developers.html). This offers further depth on how SimEng works and why design decisions that have been made. 
+If you are interested in developing further SimEng features, and are already familiar with the User Documentation please refer to our [Developer Documentation](https://uob-hpc.github.io/SimEng-Docs/developers.html). This offers further depth on how SimEng works and the reasoning behind design choices.
 
