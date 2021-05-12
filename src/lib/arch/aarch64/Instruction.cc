@@ -119,11 +119,9 @@ const span<RegisterValue> Instruction::getResults() const {
 bool Instruction::isStore() const { return isStore_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
-bool Instruction::isASIMD() const { return isASIMD_; }
 bool Instruction::isRET() const { return isRET_; }
 bool Instruction::isBL() const { return isBL_; }
-bool Instruction::isSVE() const { return isSVE_; }
-bool Instruction::isPredicate() const { return isPredicate_; }
+bool Instruction::isSVE() const { return isWriteSVE_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
@@ -152,18 +150,25 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 }
 
 uint16_t Instruction::getGroup() const {
-  uint16_t group = 0;
-  if (isPredicate()) group |= (1 << InstructionGroups::PREDICATE);
-  if (isBranch()) group |= (1 << InstructionGroups::BRANCH);
-  if (isLoad()) group |= (1 << InstructionGroups::LOAD);
-  if (isStore()) group |= (1 << InstructionGroups::STORE);
-  if (isASIMD_) group |= (1 << InstructionGroups::ASIMD);
-  if (group == 0) group |= (1 << InstructionGroups::ARITHMETIC);
-  if (isShift_) group |= (1 << InstructionGroups::SHIFT);
-  if (isDivide_) group |= (1 << InstructionGroups::DIVIDE);
-  if (isMultiply_) group |= (1 << InstructionGroups::MULTIPLY);
+  // Use identifiers to decide instruction group
+  if (isLoad_) return InstructionGroups::LOAD;
+  if (isStore_) return InstructionGroups::STORE;
+  if (isBranch_) return InstructionGroups::BRANCH;
+  if (isPredicate_) return InstructionGroups::PREDICATE;
 
-  return group;
+  if (isDataFloat_) {
+    if (isMultiply_) return InstructionGroups::FLOAT_MUL;
+    if (isDivideOrSqrt_) return InstructionGroups::FLOAT_DIV_OR_SQRT;
+    if (isNoShift_) return InstructionGroups::FLOAT_ARTH_NOSHIFT;
+    return InstructionGroups::FLOAT_ARTH;
+  } else {
+    if (isMultiply_) return InstructionGroups::INT_MUL;
+    if (isDivideOrSqrt_) return InstructionGroups::INT_DIV_OR_SQRT;
+    if (isNoShift_) return InstructionGroups::INT_ARTH_NOSHIFT;
+  }
+
+  // Retrun simple integer arithmetic as default
+  return InstructionGroups::INT_ARTH;
 }
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }

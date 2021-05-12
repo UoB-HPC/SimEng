@@ -1,10 +1,9 @@
 #pragma once
 
-#include "simeng/Instruction.hh"
-
 #include <array>
 
 #include "simeng/BranchPredictor.hh"
+#include "simeng/Instruction.hh"
 
 struct cs_arm64_op;
 
@@ -18,7 +17,7 @@ struct InstructionMetadata;
 namespace RegisterType {
 /** The 64-bit general purpose register set: [w|x]0-31. */
 const uint8_t GENERAL = 0;
-/** The 128+ bit vector register set: v0-31. */
+/** The 128|2048 bit vector register set: [v|z]0-31. */
 const uint8_t VECTOR = 1;
 /** The 32 bit predicate register set: p0-15. */
 const uint8_t PREDICATE = 2;
@@ -30,15 +29,18 @@ const uint8_t SYSTEM = 4;
 
 /** The IDs of the instruction groups for AArch64 instructions. */
 namespace InstructionGroups {
-const uint8_t ARITHMETIC = 0;
-const uint8_t SHIFT = 1;
-const uint8_t MULTIPLY = 2;
-const uint8_t DIVIDE = 3;
-const uint8_t ASIMD = 4;
-const uint8_t LOAD = 5;
-const uint8_t STORE = 6;
-const uint8_t BRANCH = 7;
-const uint8_t PREDICATE = 8;
+const uint16_t INT_ARTH = 0;
+const uint16_t INT_ARTH_NOSHIFT = 1;
+const uint16_t INT_MUL = 2;
+const uint16_t INT_DIV_OR_SQRT = 3;
+const uint16_t FLOAT_ARTH = 4;
+const uint16_t FLOAT_ARTH_NOSHIFT = 5;
+const uint16_t FLOAT_MUL = 6;
+const uint16_t FLOAT_DIV_OR_SQRT = 7;
+const uint16_t LOAD = 8;
+const uint16_t STORE = 9;
+const uint16_t BRANCH = 10;
+const uint16_t PREDICATE = 11;
 }  // namespace InstructionGroups
 
 enum class InstructionException {
@@ -129,9 +131,6 @@ class Instruction : public simeng::Instruction {
   /** Is this a branch operation? */
   bool isBranch() const override;
 
-  /** Is this a arithmetic simd operation? */
-  bool isASIMD() const override;
-
   /** Is this a return instruction? */
   bool isRET() const override;
 
@@ -140,9 +139,6 @@ class Instruction : public simeng::Instruction {
 
   /** Is this a SVE instruction? */
   bool isSVE() const override;
-
-  /** Is this a predicate setting instruction? */
-  bool isPredicate() const override;
 
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
@@ -219,29 +215,29 @@ class Instruction : public simeng::Instruction {
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
 
-  // Metadata
-  /** Is this a store operation? */
-  bool isStore_ = false;
-  /** Is this a load operation? */
-  bool isLoad_ = false;
-  /** Is this a branch operation? */
-  bool isBranch_ = false;
-  /** Is this an ASIMD operation? */
-  bool isASIMD_ = false;
-  /** Is this a multilpy operation? */
+  // Instruction Identifiers
+  /** Is a multiply operation */
   bool isMultiply_ = false;
-  /** Is this a divide operation? */
-  bool isDivide_ = false;
-  /** Is this a shift operation? */
-  bool isShift_ = false;
-  /** Is this a return instruction? */
-  bool isRET_ = false;
-  /** Is this a branch and link instruction? */
-  bool isBL_ = false;
-  /** Is this a SVE instruction? */
-  bool isSVE_ = false;
-  /** Is this a Predicate instruction? */
+  /** Is a divide or square root operation */
+  bool isDivideOrSqrt_ = false;
+  /** Is a load operation */
+  bool isLoad_ = false;
+  /** Is a store operation */
+  bool isStore_ = false;
+  /** Is a branch operation */
+  bool isBranch_ = false;
+  /** Doesn't have a shift operand */
+  bool isNoShift_ = true;
+  /** Operates on floating point values */
+  bool isDataFloat_ = false;
+  /** Writes SVE values */
+  bool isWriteSVE_ = false;
+  /** Writes to a predicate register */
   bool isPredicate_ = false;
+  /** Is a return instruction */
+  bool isRET_ = false;
+  /** Is a branch and link instructions */
+  bool isBL_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

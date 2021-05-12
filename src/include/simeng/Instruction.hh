@@ -1,11 +1,11 @@
 #pragma once
 
+#include <vector>
+
 #include "simeng/MemoryInterface.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/RegisterValue.hh"
 #include "simeng/span.hh"
-
-#include <vector>
 
 using InstructionException = short;
 
@@ -113,9 +113,6 @@ class Instruction {
   /** Is this a branch operation? */
   virtual bool isBranch() const = 0;
 
-  /** Is this a arithmetic simd operation? */
-  virtual bool isASIMD() const = 0;
-
   /** Is this a return instruction? */
   virtual bool isRET() const = 0;
 
@@ -125,10 +122,6 @@ class Instruction {
   /** Is this a SVE instruction? */
   /** Maybe remove as aarch64 exclusive? */
   virtual bool isSVE() const = 0;
-
-  /** Is this a predicate setting instruction? */
-  /** Maybe remove as aarch64 exclusive? */
-  virtual bool isPredicate() const = 0;
 
   /** Set this instruction's instruction memory address. */
   void setInstructionAddress(uint64_t address);
@@ -160,6 +153,12 @@ class Instruction {
   /** Retrieve the number of cycles this instruction will block the unit
    * executing it. */
   uint16_t getStallCycles() const;
+
+  /** Set this instruction's supported set of ports. */
+  void setSupportedPorts(std::vector<uint8_t> ports);
+
+  /** Get this instruction's supported set of ports. */
+  std::vector<uint8_t> getSupportedPorts() const;
 
  protected:
   /** Whether an exception has been encountered. */
@@ -197,11 +196,14 @@ class Instruction {
   bool flushed_ = false;
 
   /** The number of cycles this instruction takes to execute. */
-  uint16_t latency_ = 1;
+  uint16_t latency_;
 
   /** The number of cycles this instruction will stall the unit executing it
    * for. */
-  uint16_t stallCycles_ = 1;
+  uint16_t stallCycles_;
+
+  /** The execution ports that this instruction can be issued to. */
+  std::vector<uint8_t> supportedPorts_;
 };
 
 }  // namespace simeng
