@@ -6,7 +6,7 @@ namespace pipeline {
 FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
                      MemoryInterface& instructionMemory,
                      uint64_t programByteLength, uint64_t entryPoint,
-                     uint8_t blockAlignmentBits, const arch::Architecture& isa,
+                     uint8_t blockSize, const arch::Architecture& isa,
                      BranchPredictor& branchPredictor)
     : output_(output),
       pc_(entryPoint),
@@ -14,7 +14,7 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
       programByteLength_(programByteLength),
       isa_(isa),
       branchPredictor_(branchPredictor),
-      blockSize_(1 << blockAlignmentBits),
+      blockSize_(blockSize),
       blockMask_(~(blockSize_ - 1)) {
   assert(blockSize_ >= isa_.getMaxInstructionSize() &&
          "fetch block size must be larger than the largest instruction");

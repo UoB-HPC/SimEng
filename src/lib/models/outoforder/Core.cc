@@ -67,8 +67,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                      registerAliasTable_, loadStoreQueue_,
                      [this](auto instruction) { raiseException(instruction); }),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint,
-                 config["Core"]["Fetch-Block-Alignment-Bits"].as<uint8_t>(),
+                 entryPoint, config["Core"]["Fetch-Block-Size"].as<uint8_t>(),
                  isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
@@ -83,6 +82,13 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
   for (size_t i = 0; i < config["Execution-Units"].size(); i++) {
+    // Create vector of blocking groups
+    std::vector<uint16_t> blockingGroups = {};
+    if (config["Execution-Units"][i]["Blocking-Groups"].IsDefined()) {
+      for (YAML::Node gp : config["Execution-Units"][i]["Blocking-Groups"]) {
+        blockingGroups.push_back(gp.as<uint16_t>());
+      }
+    }
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
         [this](auto regs, auto values) {
@@ -90,8 +96,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
         },
         [this](auto uop) { loadStoreQueue_.startLoad(uop); }, [](auto uop) {},
         [](auto uop) { uop->setCommitReady(); }, branchPredictor,
-        config["Execution-Units"][i]["Pipelined"].as<bool>(),
-        config["Execution-Units"][i]["Blocking-Group"].as<uint16_t>());
+        config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
   }
   // Provide reservation size getter to A64FX port allocator
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {

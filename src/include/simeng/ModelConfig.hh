@@ -13,57 +13,46 @@
 #include "simeng/arch/aarch64/Instruction.hh"
 #include "yaml-cpp/yaml.h"
 
-#define DEFAULT_CONFIG                                                         \
-  ("{Core: {Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5, "         \
-   "Fetch-Block-Alignment-Bits: 5}, Register-Set: {GeneralPurpose-Count: "     \
-   "154, FloatingPoint/SVE-Count: 90,  Conditional-Count: 128}, "              \
-   "Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, FrontEnd: 4, "              \
-   "LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, "        \
-   "Branch-Predictor: {BTB-bitlength: 16}, L1-Cache: "                         \
-   "{GeneralPurpose-Latency: 4, FloatingPoint-Latency: 4, SVE-Latency: 11, "   \
-   "Bandwidth: 32, Permitted-Requests-Per-Cycle: 2, "                          \
-   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "     \
-   "{'0': {Portname: Port 0, Instruction-Support: [{Compulsory: [0], "         \
-   "Optional: [1, 2]}, {Compulsory: [4], Optional: [1, 2, 3]}]}, '1': "        \
-   "{Portname: Port 1, Instruction-Support: [{Compulsory: [0], Optional: [1, " \
-   "2, 3]}, {Compulsory: [4], Optional: [1, 2, 3]}]}, '2': {Portname: Port "   \
-   "2, Instruction-Support: [{Compulsory: [0], Optional: [1, 2]}, "            \
-   "{Compulsory: [7]}]}, '3': {Portname: Port 4, Instruction-Support: "        \
-   "[{Compulsory: [5], Optional: [1, 4]}]}, '4': {Portname: Port 5, "          \
-   "Instruction-Support: [{Compulsory: [5], Optional: [1, 4]}]}, '5': "        \
-   "{Portname: Port 3, Instruction-: [{Compulsory: [6], Optional: [1, "        \
-   "4]}]}}, Reservation-Stations: {'0': {Size: 60, Ports: [0, 1, 2, 3, 4, "    \
-   "5]}}, Execution-Units: {'0': {Pipelined: true, Blocking-Group: 0}, '1': "  \
-   "{Pipelined: true, Blocking-Group: 0}, '2': {Pipelined: true, "             \
-   "Blocking-Group: 0}, '3': {Pipelined: true, Blocking-Group: 0}, '4': "      \
-   "{Pipelined: true, Blocking-Group: 0}, '5': {Pipelined: true, "             \
-   "Blocking-Group: 0}}}")
+#define DEFAULT_CONFIG                                                        \
+  ("{Core: {Simulation-Mode: outoforder, Clock-Frequency: 2.5, "              \
+   "Fetch-Block-Size: 32}, Register-Set: {GeneralPurpose-Count: "             \
+   "154, FloatingPoint/SVE-Count: 90, Predicate-Count: 17, "                  \
+   "Conditional-Count: 128}, Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, " \
+   "FrontEnd: 4, LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, "      \
+   "Store: 36}, Branch-Predictor: {BTB-bitlength: 16}, L1-Cache: "            \
+   "{GeneralPurpose-Latency: 4, FloatingPoint-Latency: 4, SVE-Latency: 1, "   \
+   "Bandwidth: 32, Permitted-Requests-Per-Cycle: 2, "                         \
+   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "    \
+   "{'0': {Portname: Port 0, Instruction-Support: [0, 2, 4, 6, 7]}, '1': "    \
+   "{Portname: Port 1, Instruction-Support: [0, 2, 3, 4, 6, 7]}, '2': "       \
+   "{Portname: Port 2, Instruction-Support: [0, 2, 10]}, '3': {Portname: "    \
+   "Port 4, Instruction-Support: [8]}, '4': {Portname: Port 5, "              \
+   "Instruction-Support: [8]}, '5': {Portname: Port 3, Instruction-Support: " \
+   "[9]}}, Reservation-Stations: {'0': {Size: 60, Ports: [0, 1, 2, 3, 4, "    \
+   "5]}}, Execution-Units: {'0': {Pipelined: true}, '1': {Pipelined: true}, " \
+   "'2': {Pipelined: true}, '3': {Pipelined: true}, '4': {Pipelined: true}, " \
+   "'5': {Pipelined: true}}}")
 
 namespace simeng {
-std::vector<std::string> groupOptions = {"ARITHMETIC", "SHIFT",  "MULTIPLY",
-                                         "DIVIDE",     "ASIMD",  "LOAD",
-                                         "STORE",      "BRANCH", "PREDICATE"};
-std::vector<std::string> groupOptionsWithNone = {
-    "ARITHMETIC", "SHIFT", "MULTIPLY", "DIVIDE",    "ASIMD",
-    "LOAD",       "STORE", "BRANCH",   "PREDICATE", "NONE"};
-struct GroupMapping {
-  uint8_t arth = simeng::arch::aarch64::InstructionGroups::ARITHMETIC;
-  uint8_t shft = simeng::arch::aarch64::InstructionGroups::SHIFT;
-  uint8_t mul = simeng::arch::aarch64::InstructionGroups::MULTIPLY;
-  uint8_t div = simeng::arch::aarch64::InstructionGroups::DIVIDE;
-  uint8_t simd = simeng::arch::aarch64::InstructionGroups::ASIMD;
-  uint8_t ld = simeng::arch::aarch64::InstructionGroups::LOAD;
-  uint8_t st = simeng::arch::aarch64::InstructionGroups::STORE;
-  uint8_t br = simeng::arch::aarch64::InstructionGroups::BRANCH;
-  uint8_t pred = simeng::arch::aarch64::InstructionGroups::PREDICATE;
-};
-
-std::map<std::string, uint8_t> group_mapping = {
-    {"ARITHMETIC", simeng::arch::aarch64::InstructionGroups::ARITHMETIC},
-    {"SHIFT", simeng::arch::aarch64::InstructionGroups::SHIFT},
-    {"MULTIPLY", simeng::arch::aarch64::InstructionGroups::MULTIPLY},
-    {"DIVIDE", simeng::arch::aarch64::InstructionGroups::DIVIDE},
-    {"ASIMD", simeng::arch::aarch64::InstructionGroups::ASIMD},
+std::vector<std::string> groupOptions = {"INT_ARTH",   "INT_ARTH_NOSHIFT",
+                                         "INT_MUL",    "INT_DIV_OR_SQRT",
+                                         "FLOAT_ARTH", "FLOAT_ARTH_NOSHIFT",
+                                         "FLOAT_MUL",  "FLOAT_DIV_OR_SQRT",
+                                         "LOAD",       "STORE",
+                                         "BRANCH",     "PREDICATE"};
+std::map<std::string, uint16_t> group_mapping = {
+    {"INT_ARTH", simeng::arch::aarch64::InstructionGroups::INT_ARTH},
+    {"INT_ARTH_NOSHIFT",
+     simeng::arch::aarch64::InstructionGroups::INT_ARTH_NOSHIFT},
+    {"INT_MUL", simeng::arch::aarch64::InstructionGroups::INT_MUL},
+    {"INT_DIV_OR_SQRT",
+     simeng::arch::aarch64::InstructionGroups::INT_DIV_OR_SQRT},
+    {"FLOAT_ARTH", simeng::arch::aarch64::InstructionGroups::FLOAT_ARTH},
+    {"FLOAT_ARTH_NOSHIFT",
+     simeng::arch::aarch64::InstructionGroups::FLOAT_ARTH_NOSHIFT},
+    {"FLOAT_MUL", simeng::arch::aarch64::InstructionGroups::FLOAT_MUL},
+    {"FLOAT_DIV_OR_SQRT",
+     simeng::arch::aarch64::InstructionGroups::FLOAT_DIV_OR_SQRT},
     {"LOAD", simeng::arch::aarch64::InstructionGroups::LOAD},
     {"STORE", simeng::arch::aarch64::InstructionGroups::STORE},
     {"BRANCH", simeng::arch::aarch64::InstructionGroups::BRANCH},
@@ -128,8 +117,8 @@ class ModelConfig {
                   const std::pair<T, T>& bounds, uint8_t expected,
                   T default_value);
 
-  /** Given a set of values (value_set), ensure the supplied node is on of these
-   * options. */
+  /** Given a set of values (value_set), ensure the supplied node is on of
+   * these options. */
   template <typename T>
   int setChecker(YAML::Node node, std::string field,
                  const std::vector<T>& value_set, uint8_t expected) {

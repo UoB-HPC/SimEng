@@ -136,26 +136,13 @@ void ModelConfig::validate() {
       char group_msg[10];
       sprintf(group_msg, "Group %zu ", j);
       std::string group_num = std::string(group_msg);
-      // Check for existance of Compulsory field
-      if (!(group["Compulsory"].IsDefined()) || group["Compulsory"].IsNull()) {
-        missing_ << "\t- " << port_num << group_num << "Compulsory\n";
-      }
-      for (size_t k = 0; k < group["Compulsory"].size(); k++) {
-        if (nodeChecker<std::string>(group["Compulsory"][k],
-                                     port_num + group_num + "Compulsory",
-                                     groupOptions, ExpectedValue::String)) {
-          configFile_["Ports"][i]["Instruction-Support"][j]["Compulsory"][k] =
-              unsigned(group_mapping[group["Compulsory"][k].as<std::string>()]);
-        }
-      }
-      // If optional instruction identifiers are defined within the group
-      for (size_t k = 0; k < group["Optional"].size(); k++) {
-        if (nodeChecker<std::string>(group["Optional"][k],
-                                     port_num + group_num + "Optional",
-                                     groupOptions, ExpectedValue::String)) {
-          configFile_["Ports"][i]["Instruction-Support"][j]["Optional"][k] =
-              unsigned(group_mapping[group["Optional"][k].as<std::string>()]);
-        }
+      // Check for existance of instruction group
+      if (nodeChecker<std::string>(port_node["Instruction-Support"][j],
+                                   port_num + group_num, groupOptions,
+                                   ExpectedValue::String)) {
+        configFile_["Ports"][i]["Instruction-Support"][j] =
+            unsigned(group_mapping[port_node["Instruction-Support"][j]
+                                       .as<std::string>()]);
       }
     }
   }
@@ -257,7 +244,7 @@ void ModelConfig::validate() {
 
   // Execution-Units
   root = "Execution-Units";
-  subFields = {"Pipelined", "Blocking-Group"};
+  subFields = {"Pipelined", "Blocking-Groups"};
   size_t num_units = configFile_[root].size();
   if (!num_units) {
     missing_ << "\t- " << root << "\n";
@@ -266,19 +253,25 @@ void ModelConfig::validate() {
         << "\t- Number of issue ports and execution units should be equal\n";
   }
   for (size_t i = 0; i < num_units; i++) {
-    char msg[50];
-    sprintf(msg, "Execution Unit %zu ", i);
+    char euNum[50];
+    sprintf(euNum, "Execution Unit %zu ", i);
+    YAML::Node euNode = configFile_[root][i];
     nodeChecker<bool>(configFile_[root][i][subFields[0]],
-                      (std::string(msg) + subFields[0]),
+                      (std::string(euNum) + subFields[0]),
                       std::vector({false, true}), ExpectedValue::Bool);
-    if (nodeChecker<std::string>(configFile_[root][i][subFields[1]],
-                                 (std::string(msg) + subFields[1]),
-                                 groupOptionsWithNone, ExpectedValue::String)) {
-      // Map EU Blocking-Group to integer value
-      YAML::Node group = configFile_[root][i][subFields[1]];
-      group = (group.as<std::string>() != "NONE")
-                  ? (1 << group_mapping[group.as<std::string>()])
-                  : 0;
+    if (euNode[subFields[1]].IsDefined() && !(euNode[subFields[1]].IsNull())) {
+      for (size_t j = 0; j < euNode[subFields[1]].size(); j++) {
+        char bgNum[50];
+        sprintf(bgNum, "Blocking group %zu", j);
+        if (nodeChecker<std::string>(configFile_[root][i][subFields[1]][j],
+                                     (std::string(euNum) + std::string(bgNum)),
+                                     groupOptions, ExpectedValue::String)) {
+          YAML::Node group = euNode[subFields[1]][j];
+          // Map EU Blocking-Group to integer value
+          configFile_["Execution-Units"][i]["Blocking-Groups"][j] =
+              group_mapping[group.as<std::string>()];
+        }
+      }
     }
   }
   subFields.clear();
