@@ -1,6 +1,7 @@
 #include "simeng/pipeline/ExecuteUnit.hh"
 
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -12,7 +13,8 @@ ExecuteUnit::ExecuteUnit(
     std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
     std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-    BranchPredictor& predictor, bool pipelined, uint16_t blockingGroup)
+    BranchPredictor& predictor, bool pipelined,
+    std::vector<uint16_t> blockingGroups)
     : input_(input),
       output_(output),
       forwardOperands_(forwardOperands),
@@ -21,7 +23,7 @@ ExecuteUnit::ExecuteUnit(
       raiseException_(raiseException),
       predictor_(predictor),
       pipelined_(pipelined),
-      blockingGroup_(blockingGroup) {}
+      blockingGroups_(blockingGroups) {}
 
 void ExecuteUnit::tick() {
   tickCounter_++;
@@ -38,7 +40,8 @@ void ExecuteUnit::tick() {
         auto latency = uop->getLatency();
         cycles_++;
         // Block uop execution if appropriate
-        if ((uop->getGroup() & blockingGroup_) > 0) {
+        if (std::find(blockingGroups_.begin(), blockingGroups_.end(),
+                      uop->getGroup()) != blockingGroups_.end()) {
           if (operationsStalled_.size() == 0) {
             // Add uop to pipeline
             pipeline_.push_back({nullptr, tickCounter_ + latency - 1});
@@ -80,7 +83,8 @@ void ExecuteUnit::tick() {
   if (head.readyAt <= tickCounter_) {
     // Check if the completion of an operation would unblock
     // another stalled operation.
-    if ((head.insn->getGroup() & blockingGroup_) > 0) {
+    if (std::find(blockingGroups_.begin(), blockingGroups_.end(),
+                  head.insn->getGroup()) != blockingGroups_.end()) {
       operationsStalled_.pop_front();
       if (operationsStalled_.size() > 0) {
         // Add uop to pipeline
