@@ -38,42 +38,15 @@ void RegressionTest::TearDown() {
   }
 }
 
-YAML::Node RegressionTest::generateConfig() {
-  YAML::Node config = YAML::Load(
-      "{Core: {"
-      "Simulation-Mode: outoforder, Clock-Frequency: 2.5,"
-      "Fetch-Block-Alignment-Bits: 5"
-      "}, Register-Set: {"
-      "GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90,"
-      "Predicate-Count: 48, Conditional-Count: 128"
-      "}, Pipeline-Widths: {"
-      "Commit: 4, Dispatch-Rate: 4, FrontEnd: 4,"
-      "LSQ-Completion: 2"
-      "}, Queue-Sizes: {"
-      "ROB: 180, Load: 64, Store: 36"
-      "}, L1-Cache: {"
-      "GeneralPurpose-Latency: 4, FloatingPoint-Latency: 4,"
-      "SVE-Latency: 11, Bandwidth: 32,"
-      "Permitted-Requests-Per-Cycle: 2,"
-      "Permitted-Loads-Per-Cycle: 2,"
-      "Permitted-Stores-Per-Cycle: 1"
-      "}, Execution-Units: ["
-      "{Pipelined: True, Blocking-Group: 0},"
-      "{Pipelined: True, Blocking-Group: 0},"
-      "{Pipelined: True, Blocking-Group: 0},"
-      "{Pipelined: True, Blocking-Group: 0},"
-      "{Pipelined: True, Blocking-Group: 0},"
-      "{Pipelined: True, Blocking-Group: 0}"
-      "]}");
-  return config;
-}
-
 void RegressionTest::run(const char* source, const char* triple) {
   testing::internal::CaptureStdout();
 
   // Assemble the source to a flat binary
   assemble(source, triple);
   if (HasFatalFailure()) return;
+
+  // Get pre-defined config file for OoO model
+  YAML::Node config = generateConfig();
 
   // Create a linux process from the assembled code block
   process_ = std::make_unique<simeng::kernel::LinuxProcess>(
@@ -109,7 +82,7 @@ void RegressionTest::run(const char* source, const char* triple) {
             processMemory_ + process_->getHeapStart());
 
   // Create the architecture
-  architecture_ = createArchitecture(kernel);
+  architecture_ = createArchitecture(kernel, config);
 
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
@@ -121,10 +94,6 @@ void RegressionTest::run(const char* source, const char* triple) {
 
   // Create a branch predictor for a pipelined core
   simeng::BTBPredictor predictor(8);
-
-  // Get pre-defined config file for OoO model
-  YAML::Node config = generateConfig();
-
   // Create the core model
   switch (GetParam()) {
     case EMULATION:

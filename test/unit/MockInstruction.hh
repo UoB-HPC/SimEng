@@ -48,6 +48,10 @@ class MockInstruction : public Instruction {
   }
 
   void setDataPending(uint8_t value) { dataPending_ = value; }
+
+  void setLatency(uint16_t cycles) { latency_ = cycles; }
+
+  void setStallCycles(uint16_t cycles) { stallCycles_ = cycles; }
 };
 
 }  // namespace simeng
