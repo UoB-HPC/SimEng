@@ -58,7 +58,7 @@ void DispatchIssueUnit::tick() {
     }
 
     // Allocate issue port to uop
-    uint8_t port = portAllocator_.allocate(uop->getGroup());
+    uint8_t port = portAllocator_.allocate(uop->getSupportedPorts());
     uint8_t RS_Index = portMapping_[port].first;
     uint8_t RS_Port = portMapping_[port].second;
     assert(RS_Index < reservationStations_.size() &&

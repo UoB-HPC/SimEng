@@ -3,74 +3,21 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
 
 A64FXPortAllocator::A64FXPortAllocator(
-    std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
-        portArrangement) {
-  // Construct the  support matrix
-  for (size_t portIndex = 0; portIndex < portArrangement.size(); portIndex++) {
-    const auto& port = portArrangement[portIndex];
-    uint16_t id = 0;
-    // Add this port to the matrix entry for each group it supports
-    for (const auto& set : port) {
-      std::vector<uint16_t> acceptedSelection;
-      uint16_t compulsoryGroups = 0;
-      std::vector<uint16_t> optionalGroups;
-      for (const auto& group : set) {
-        assert(group.second < 2 && "port type not supported");
-        if (group.second == PortType::COMPULSORY) {
-          // This group is compulsory
-          // Add group to bit representation
-          compulsoryGroups |= (1 << group.first);
-          id |= (1 << group.first);
-        } else if (group.second == PortType::OPTIONAL) {
-          // This group is optional
-          // Add group bit representation
-          optionalGroups.push_back((1 << group.first));
-          id |= (1 << group.first);
-        }
-      }
-
-      acceptedSelection.push_back(compulsoryGroups);
-      if (compulsoryGroups >= supportMatrix.size()) {
-        // New highest group ID; expand matrices
-        supportMatrix.resize(compulsoryGroups + 1);
-        attributeMatrix.resize(compulsoryGroups + 1);
-      }
-      supportMatrix[compulsoryGroups].push_back(portIndex);
-      attributeMatrix[compulsoryGroups] = attributeMapping(compulsoryGroups);
-
-      int n = 0;
-      while (n < optionalGroups.size()) {
-        std::vector<uint16_t> temp = acceptedSelection;
-        for (const auto& entry : temp) {
-          uint16_t groupSet = entry | optionalGroups[n];
-          acceptedSelection.push_back(groupSet);
-          if (groupSet >= supportMatrix.size()) {
-            // New highest group ID; expand matrices
-            supportMatrix.resize(groupSet + 1);
-            attributeMatrix.resize(groupSet + 1);
-          }
-          supportMatrix[groupSet].push_back(portIndex);
-          attributeMatrix[groupSet] = attributeMapping(groupSet);
-        }
-        n++;
-      }
-    }
-  }
+    std::vector<std::vector<uint16_t>> portArrangement) {
   // Initiliase reservation station to port mapping
   rsToPort_ = {{0, 1, 2}, {3, 4}, {5}, {6}, {7}};
 }
 
-uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
-  // Find the list of ports that support this instruction group
-  assert(instructionGroup < supportMatrix.size() &&
-         "instruction group not covered by port allocator");
-  const auto& available = supportMatrix[instructionGroup];
-  const uint8_t attribute = attributeMatrix[instructionGroup];
+uint8_t A64FXPortAllocator::allocate(std::vector<uint8_t> ports) {
+  assert(ports.size() &&
+         "No supported ports supplied; cannot allocate from a empty set");
+  const uint8_t attribute = attributeMapping(ports);
 
   uint8_t rs = 0;
   uint8_t port = 0;
@@ -89,22 +36,20 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
     int thresholdC = 4;
 
     if (diffRSE >= thresholdA) {
-      if ((RSEm_ - RSEf_) >= thresholdB) {
+      if ((freeEntries_[0] - freeEntries_[1]) >= thresholdB) {
         rs = RSEm_;  // Table 1
       } else {
-        rs = decodeSlot % 2 == 0 ? RSEm_ : RSEf_;  // Table 2
-        decodeSlot++;
+        rs = dispatchSlot_ % 2 == 0 ? RSEm_ : RSEf_;  // Table 2
       }
       foundRS = true;
     } else if (diffRSA >= thresholdC) {
-      rs = decodeSlot % 2 == 0 ? RSAm_ : RSAf_;  // Table 3
-      decodeSlot++;
+      rs = dispatchSlot_ % 2 == 0 ? RSAm_ : RSAf_;  // Table 3
       foundRS = true;
     } else {
       // Determine if RSE{0|1} has the most free entries excluding RSBR
       if ((std::max_element(freeEntries_.begin(), freeEntries_.end() - 1) -
            freeEntries_.begin()) < 2) {
-        switch (decodeSlot % 4) {  // Table 4
+        switch (dispatchSlot_ % 4) {  // Table 4
           case 0: {
             rs = RSEm_;
             break;
@@ -123,9 +68,8 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
           }
         }
         foundRS = true;
-        decodeSlot++;
       } else {
-        switch (decodeSlot % 4) {  // Table 5
+        switch (dispatchSlot_ % 4) {  // Table 5
           case 0: {
             rs = RSAm_;
             break;
@@ -144,7 +88,6 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
           }
         }
         foundRS = true;
-        decodeSlot++;
       }
     }
   } else if (attribute == InstructionAttribute::RSE ||
@@ -164,7 +107,7 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
       rs = B;
       foundRS = true;
     } else {
-      switch (decodeSlot % 2) {  // Table 7
+      switch (dispatchSlot_ % 2) {  // Table 7
         case 0: {
           rs = A;
           break;
@@ -175,7 +118,6 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
         }
       }
       foundRS = true;
-      decodeSlot++;
     }
   } else if (attribute == InstructionAttribute::RSE0) {
     rs = 0;
@@ -189,8 +131,9 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
   }
 
   assert(foundRS && "Unsupported group; cannot allocate reservation station");
+  dispatchSlot_++;
 
-  for (auto option : available) {
+  for (auto option : ports) {
     if (std::find(rsToPort_[rs].begin(), rsToPort_[rs].end(), option) !=
         rsToPort_[rs].end()) {
       port = option;
@@ -206,41 +149,30 @@ uint8_t A64FXPortAllocator::allocate(uint16_t instructionGroup) {
 void A64FXPortAllocator::issued(uint8_t port) {}
 void A64FXPortAllocator::deallocate(uint8_t port) { issued(port); };
 
-uint8_t A64FXPortAllocator::attributeMapping(uint16_t group) {
+uint8_t A64FXPortAllocator::attributeMapping(std::vector<uint8_t> ports) {
   uint8_t attribute = 0;
   bool foundAttribute = false;
-  if (group > 255) {
-    attribute = 3;  // RSE0
+  if (ports == std::vector<uint8_t>({2, 4, 5, 6})) {  // EXA,EXB,EAGA,EAGB
+    attribute = InstructionAttribute::RSX;
     foundAttribute = true;
-  } else if (group == 1) {
-    attribute = 0;  // RSX
+  } else if (ports == std::vector<uint8_t>({2, 4}) ||
+             ports == std::vector<uint8_t>({0, 3})) {  // EXA,EXB|FLA,FLB
+    attribute = InstructionAttribute::RSE;
     foundAttribute = true;
-  } else if (group == 3) {
-    attribute = 1;  // RSE
+  } else if (ports == std::vector<uint8_t>({5, 6})) {  // EAGA,EAGB
+    attribute = InstructionAttribute::RSA;
     foundAttribute = true;
-  } else if (group == 16) {
-    attribute = 1;  // RSE
+  } else if (ports == std::vector<uint8_t>({0}) ||
+             ports == std::vector<uint8_t>({1}) ||
+             ports == std::vector<uint8_t>({2})) {  // EXA|FLA|PR
+    attribute = InstructionAttribute::RSE0;
     foundAttribute = true;
-  } else if (group == 18) {
-    attribute = 1;  // RSE
+  } else if (ports == std::vector<uint8_t>({3}) ||
+             ports == std::vector<uint8_t>({4})) {  // EXB|FLB
+    attribute = InstructionAttribute::RSE1;
     foundAttribute = true;
-  } else if (group == 20) {
-    attribute = 1;  // RSE
-    foundAttribute = true;
-  } else if (group == 22) {
-    attribute = 1;  // RSE
-    foundAttribute = true;
-  } else if (group > 31 && group < 83) {
-    attribute = 2;  // RSA
-    foundAttribute = true;
-  } else if ((group & 24) == 24 || (group & 5) == 5) {
-    attribute = 3;  // RSE0
-    foundAttribute = true;
-  } else if ((group & 9) == 9) {
-    attribute = 4;  // RSE1
-    foundAttribute = true;
-  } else if (group == 128) {
-    attribute = 5;  // BR
+  } else if (ports == std::vector<uint8_t>({7})) {  // BR
+    attribute = InstructionAttribute::BR;
     foundAttribute = true;
   }
 
@@ -258,11 +190,11 @@ void A64FXPortAllocator::tick() {
   rsSizes_(freeEntries_);
 
   RSEm_ = freeEntries_[0] >= freeEntries_[1] ? 0 : 1;
-  RSEf_ = abs(RSEm_ - 1);
+  RSEf_ = RSEm_ == 0 ? 1 : 0;
   RSAm_ = freeEntries_[2] >= freeEntries_[3] ? 2 : 3;
-  RSAf_ = abs(RSAm_ - 1);
+  RSAf_ = RSAm_ == 2 ? 3 : 2;
 
-  decodeSlot = 0;
+  dispatchSlot_ = 0;
 }
 
 }  // namespace pipeline

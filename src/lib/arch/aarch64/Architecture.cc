@@ -13,7 +13,8 @@ namespace aarch64 {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
+Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
+    : linux_(kernel) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "Could not create capstone handle" << std::endl;
     exit(1);
@@ -28,8 +29,38 @@ Architecture::Architecture(kernel::Linux& kernel) : linux_(kernel) {
   systemRegisterMap_[ARM64_SYSREG_TPIDR_EL0] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
+
+  // Instantiate keys of portMapping_ for all 12 groups deifned in the
+  // InstructionGroups namespace
+  for (int i = 0; i < 12; i++) {
+    portMapping_.insert({i, {}});
+  }
+  // Port mapping only applies to an outoforder core archetype. Mappings left
+  // blank in the case of an inorderpipeline or emulation archetype
+  if (config["Core"]["Simulation-Mode"].as<std::string>() == "outoforder") {
+    // Create mapping between instructions groups and the ports that support
+    // them
+    for (size_t i = 0; i < config["Ports"].size(); i++) {
+      YAML::Node port_node = config["Ports"][i];
+      for (size_t j = 0; j < port_node["Instruction-Support"].size(); j++) {
+        uint16_t group = port_node["Instruction-Support"][j].as<uint16_t>();
+        portMapping_[group].push_back(static_cast<uint8_t>(i));
+        // Add inherited support for those appropriate groups
+        if (group == InstructionGroups::INT_ARTH)
+          portMapping_[InstructionGroups::INT_ARTH_NOSHIFT].push_back(
+              static_cast<uint8_t>(i));
+        else if (group == InstructionGroups::FLOAT_ARTH)
+          portMapping_[InstructionGroups::FLOAT_ARTH_NOSHIFT].push_back(
+              static_cast<uint8_t>(i));
+      }
+    }
+  }
 }
-Architecture::~Architecture() { cs_close(&capstoneHandle); }
+Architecture::~Architecture() {
+  cs_close(&capstoneHandle);
+  decodeCache.clear();
+  metadataCache.clear();
+}
 
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
@@ -46,6 +77,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                         InstructionException::MisalignedPC);
     uop->setInstructionAddress(instructionAddress);
     uop->setBranchPrediction(prediction);
+    uop->setSupportedPorts({0});
     // Return non-zero value to avoid fatal error
     return 1;
   }
@@ -81,9 +113,12 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     auto latencies = getLatencies(metadata);
 
     // Create and cache an instruction using the metadata and latencies
-    auto result = decodeCache.insert(
-        {insn,
-         {*this, metadataCache.front(), latencies.first, latencies.second}});
+    Instruction newInstruction = Instruction(*this, metadataCache.front(),
+                                             latencies.first, latencies.second);
+    newInstruction.setSupportedPorts(
+        portMapping_.at(newInstruction.getGroup()));
+
+    auto result = decodeCache.insert({insn, newInstruction});
 
     iter = result.first;
   }

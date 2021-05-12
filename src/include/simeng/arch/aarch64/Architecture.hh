@@ -17,7 +17,7 @@ namespace aarch64 {
 /* A basic ARMv8-a implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-  Architecture(kernel::Linux& kernel);
+  Architecture(kernel::Linux& kernel, YAML::Node config);
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -67,6 +67,10 @@ class Architecture : public arch::Architecture {
 
   /** A mapping from system register encoding to a zero-indexed tag. */
   std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
+
+  /** A map to hold the relationship between aarch64 instruction groups and the
+   * user-defined ports that support them. */
+  std::unordered_map<uint16_t, std::vector<uint8_t>> portMapping_;
 
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;
