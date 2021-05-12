@@ -4429,7 +4429,7 @@ void Instruction::execute() {
   // extend to 256 bytes whilst V configurations only extend to 16 bytes.
   // Thus upper 240 bytes must be ignored by being set to 0.
   for (int i = 0; i < destinationRegisterCount; i++) {
-    if ((destinationRegisters[i].type == RegisterType::VECTOR) && !isSVE_) {
+    if ((destinationRegisters[i].type == RegisterType::VECTOR) && !isWriteSVE_) {
       results[i] = results[i].zeroExtend(16, 256);
     }
   }
