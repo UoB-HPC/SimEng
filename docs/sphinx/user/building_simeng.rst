@@ -6,7 +6,7 @@ Prerequisites
 
 Building SimEng requires CMake and a compiler that supports C++17. 
 
-(Optional) Docker, see our Docker instructions `here <https://uob-hpc.github.io/SimEng-Docs/docker.html>`_.
+(Optional) Docker, see our Docker instructions :doc:`here <docker>`.
 
 Building
 --------
@@ -46,5 +46,5 @@ E.G:
 
 5. (Optional) Run ``make test`` to run the SimEng regression tests and unit tests. Please report any test failures as `a GitHub issue <https://github.com/UoB-HPC/SimEng/issues>`_.
 
-6. Finally, run ``make install`` to install SimEng to the directory specified to CMake.
+6. Finally, run ``make install`` to install SimEng to the directory specified by CMake.
 

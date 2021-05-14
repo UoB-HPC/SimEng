@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = u'SimEng'
-copyright = u'2019, SimEng developers'
+copyright = u'2021, SimEng developers'
 author = u'SimEng developers'
 
 # The short X.Y version
