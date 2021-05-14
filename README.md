@@ -8,8 +8,7 @@ The Simulation Engine framework (SimEng) provides a modern cycle-accurate proces
 - Capable of supporting a wide range of ISAs, starting with ARMv8 but eventually including x86, RISC-V, POWER, etc.
 - Open source, with a permissive license to enable collaboration across academia and industry
 
-
-The purpose of SimEng is to provide an alternative to the existing industry standard, gem5, by placing an emphasis on performance and scalability from the start, and maintaining a clean, modern, and well-documented code base.
+SimEng places an emphasis on performance and scalability, whilst maintaining a clean, modern, and well-documented code base.
 
 ## Getting started with SimEng
 
