@@ -2,7 +2,7 @@ Docker
 ======
 
 You can find Docker containers of SimEng `on DockerHub
-<https://hub.docker.com/r/uobhpc/simeng>`_.
+<https://hub.docker.com/r/uobhpc/simeng>`_ (finalise docker containers and correct broken link if necessary).
 To get an interactive session in a container with SimEng installed, run:
 
 .. code-block:: text
