@@ -177,7 +177,7 @@ With N as the number of reservation stations. Each execution port must be mapped
 Execution-Units
 ---------------
 
-An execution unit can be configured to optionally include an internal pipeline and a set of instruction groups for :ref:`operation blocking <operation-blocking>`). The instruction groups referenced here are the same as those used in the Ports section.
+An execution unit can be configured to optionally include an internal pipeline and a set of instruction groups for :ref:`operation blocking <operation-blocking>`. The instruction groups referenced here are the same as those used in the Ports section.
 
 The following structure must be adhered to when defining an execution unit:
 
