@@ -1,0 +1,182 @@
+---
+# Below are the configurable options for the Simulation Engine (SimEng) 
+# framework.
+#
+## TYPES
+# To accompany the options below, some value types are given:
+# L1-Cache:
+#   GeneralPurpose-Latency: Cycles
+#   FloatingPoint-Latency: Cycles
+#   Bandwidth: Bytes
+# Queue-Sizes:
+#   ROB: MacroOps
+#   Load: MicroOps
+#   Store: MicroOps
+# Pipeline-Widths:
+#   Commit: MacroOps
+#   Dispatch-Rate: MicroOps
+#   FrontEnd: MicroOps
+#   LSQ-Completion: MicroOps
+# Core:
+#   Clock-Frequency: GHz
+#
+## PORTS
+# Each port describes which instruction types can be issued from it and 
+# is configured as a set of instruction groups. An instruction group can 
+# be defined as a set of instruction identifiers with the available 
+# options of:
+# - ARITHMETIC (Default assignment)
+# - SHIFT (Instructions containing shifted operands)
+# - MULTIPLY (Instructions containing a multiply operand)
+# - DIVIDE (Instructions containing a divide or sqrt operand)
+# - ASIMD (Floating Point, NEON, and SVE instructions)
+# - LOAD (Load instructions)
+# - STORE (Store instructions)
+# - BRANCH (Branch instructions)
+# - PREDICATE (Instructions that write to predicate registers)
+#
+# An instruction group is comprised of COMPULSORY identifiers (which an 
+# instruction must belong to) and OPTIONAL identifiers (which an 
+# instruction may belong to). The below example defines the instruction 
+# group describing floating-point multiply and divide operations:
+#
+# Compulsory:
+#   - ASIMD
+# Optional:
+#   - MULTIPLY
+#   - DIVIDE
+#
+## EXECUTION PIPELINE RELATIONS
+# Ports and Execution-Unit list entries are numbered in chronological 
+# order with each list entry mapping to the other (i.e. Ports[0] maps to 
+# Execution-Unit[0]). A Reservation-Stations entry contains a Ports list 
+# which utilises the Ports numbering scheme to map ports to reservation 
+# stations.
+#
+## BLOCKING GROUPS
+# A Blocking-Group defines an instruction identifier which is 
+# operation-stalled. The term operation-stalled denotes the stalling of 
+# a specific operation type into an execution unit during the execution of 
+# a similar operation (akin to pipeline stalling but for a specific 
+# operation type). The NONE instruction identifier is used to denote no 
+# operation-stalling.
+
+Core:
+  Simulation-Mode: "outoforder"
+  Clock-Frequency: 2.5
+  Fetch-Block-Size: 32
+Register-Set:
+  GeneralPurpose-Count: 154
+  FloatingPoint/SVE-Count: 90
+  Conditional-Count: 128
+Pipeline-Widths:
+  Commit: 4
+  Dispatch-Rate: 4
+  FrontEnd: 4
+  LSQ-Completion: 2
+Queue-Sizes:
+  ROB: 180
+  Load: 64
+  Store: 36
+Branch-Predictor:
+  BTB-bitlength: 16
+L1-Cache:
+  GeneralPurpose-Latency: 4
+  FloatingPoint-Latency: 4
+  Bandwidth: 32
+  Permitted-Requests-Per-Cycle: 2
+  Permitted-Loads-Per-Cycle: 2
+  Permitted-Stores-Per-Cycle: 1
+Ports:
+  0:
+    Portname: "Port 0"
+    Instruction-Support:
+    - Compulsory:
+      - ARITHMETIC
+      Optional:
+      - SHIFT
+      - MULTIPLY
+    - Compulsory:
+      - ASIMD
+      Optional:
+      - SHIFT
+      - MULTIPLY
+      - DIVIDE
+  1:
+    Portname: "Port 1"
+    Instruction-Support:
+    - Compulsory:
+      - ARITHMETIC
+      Optional:
+      - SHIFT
+      - MULTIPLY
+      - DIVIDE
+    - Compulsory:
+      - ASIMD
+      Optional:
+      - SHIFT
+      - MULTIPLY
+      - DIVIDE
+  2:
+    Portname: "Port 2"
+    Instruction-Support:
+    - Compulsory:
+      - ARITHMETIC
+      Optional:
+      - SHIFT
+      - MULTIPLY
+    - Compulsory:
+      - BRANCH
+  3:
+    Portname: "Port 4"
+    Instruction-Support:
+    - Compulsory:
+      - LOAD
+      Optional:
+      - SHIFT
+      - ASIMD
+  4:
+    Portname: "Port 5"
+    Instruction-Support:
+    - Compulsory:
+      - LOAD
+      Optional:
+      - SHIFT
+      - ASIMD
+  5:
+    Portname: "Port 3"
+    Instruction-Support:
+    - Compulsory:
+      - STORE
+      Optional:
+      - SHIFT
+      - ASIMD
+Reservation-Stations:
+  0:
+    Size: 60
+    Ports:
+      - "Port 0"
+      - "Port 1"
+      - "Port 2"
+      - "Port 4"
+      - "Port 5"
+      - "Port 3"
+Execution-Units:
+  0:
+    Pipelined: True
+    Blocking-Group: NONE
+  1:
+    Pipelined: True
+    Blocking-Group: NONE
+  2:
+    Pipelined: True
+    Blocking-Group: NONE
+  3:
+    Pipelined: True
+    Blocking-Group: NONE
+  4:
+    Pipelined: True
+    Blocking-Group: NONE
+  5:
+    Pipelined: True
+    Blocking-Group: NONE
