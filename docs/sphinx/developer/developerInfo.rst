@@ -74,6 +74,9 @@ work onto the current master branch regularly to keep it up to date.
 Directory structure
 -------------------
 
+``configs/``
+    Pre-generated config files for specific processors
+
 ``docs/``
     Documentation for users and developers
 

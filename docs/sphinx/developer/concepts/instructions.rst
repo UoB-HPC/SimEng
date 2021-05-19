@@ -12,7 +12,7 @@ To permit instructions to function independently of the type of model they exist
 
 Post-Decode
 ***********
-This is the initial step of an instruction. At this stage, the instruction has been fully decoded and is now capable of advertising the registers it reads and writes, as well as various metadata such as whether it's a load, store, or branch, and which architecture-specific instruction group it belongs to. 
+This is the initial step of an instruction. At this stage, the instruction has been fully decoded and is now capable of advertising the registers it reads and writes, as well as various metadata such as whether it's a load, store, or branch. The instruction is also allocated an architecture-specific group and, when appropriate, a set of execution ports that it can flow through. The set of ports available in the model is defined by the user through :ref:`configuration options <execution-ports>`.
 
 The model can use this information to supply the instruction with the appropriate values for each source operand and determine where the instruction should be sent for processing.
 
