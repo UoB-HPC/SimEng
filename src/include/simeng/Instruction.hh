@@ -155,10 +155,10 @@ class Instruction {
   uint16_t getStallCycles() const;
 
   /** Set this instruction's supported set of ports. */
-  void setSupportedPorts(std::vector<uint8_t> ports);
+  virtual void setSupportedPorts(std::vector<uint8_t> ports) = 0;
 
   /** Get this instruction's supported set of ports. */
-  std::vector<uint8_t> getSupportedPorts() const;
+  virtual std::vector<uint8_t> getSupportedPorts() = 0;
 
  protected:
   /** Whether an exception has been encountered. */
@@ -196,14 +196,14 @@ class Instruction {
   bool flushed_ = false;
 
   /** The number of cycles this instruction takes to execute. */
-  uint16_t latency_;
+  uint16_t latency_ = 1;
 
   /** The number of cycles this instruction will stall the unit executing it
    * for. */
-  uint16_t stallCycles_;
+  uint16_t stallCycles_ = 1;
 
   /** The execution ports that this instruction can be issued to. */
-  std::vector<uint8_t> supportedPorts_;
+  std::vector<uint8_t> supportedPorts_ = {};
 };
 
 }  // namespace simeng

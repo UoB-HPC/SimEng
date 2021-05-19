@@ -52,7 +52,8 @@ enum class InstructionException {
   DataAbort,
   SupervisorCall,
   HypervisorCall,
-  SecureMonitorCall
+  SecureMonitorCall,
+  NoAvailablePort
 };
 
 /** A basic ARMv8-a implementation of the `Instruction` interface. */
@@ -142,6 +143,12 @@ class Instruction : public simeng::Instruction {
 
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
+
+  /** Set this instruction's supported set of ports. */
+  void setSupportedPorts(std::vector<uint8_t> ports) override;
+
+  /** Get this instruction's supported set of ports. */
+  std::vector<uint8_t> getSupportedPorts() override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;

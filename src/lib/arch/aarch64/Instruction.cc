@@ -171,6 +171,17 @@ uint16_t Instruction::getGroup() const {
   return InstructionGroups::INT_ARTH;
 }
 
+void Instruction::setSupportedPorts(std::vector<uint8_t> ports) {
+  supportedPorts_ = ports;
+}
+std::vector<uint8_t> Instruction::getSupportedPorts() {
+  if (supportedPorts_.size() == 0) {
+    exception_ = InstructionException::NoAvailablePort;
+    exceptionEncountered_ = true;
+  }
+  return supportedPorts_;
+}
+
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
 
 /** Extend `value` according to `extendType`, and left-shift the result by
