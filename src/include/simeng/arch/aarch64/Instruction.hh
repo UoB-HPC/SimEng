@@ -230,8 +230,8 @@ class Instruction : public simeng::Instruction {
   bool isNoShift_ = true;
   /** Operates on floating point values */
   bool isDataFloat_ = false;
-  /** Writes SVE values */
-  bool isWriteSVE_ = false;
+  /** Uses Z registers as source and/or destination operands */
+  bool isSVEData_ = false;
   /** Writes to a predicate register */
   bool isPredicate_ = false;
   /** Is a return instruction */

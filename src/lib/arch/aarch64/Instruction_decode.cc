@@ -172,7 +172,7 @@ void Instruction::decode() {
           // Writes to Z vector registers must be identified to distinguish Z
           // from V register types during execution
           if (ARM64_REG_Z0 <= op.reg && op.reg <= ARM64_REG_Z31) {
-            isWriteSVE_ = true;
+            isSVEData_ = true;
           }
         } else if (destinationRegisters[destinationRegisterCount].type ==
                    RegisterType::PREDICATE) {
@@ -241,6 +241,13 @@ void Instruction::decode() {
       isBranch_ = true;
     }
   }
+  if (metadata.opcode == 325 || metadata.opcode == 326) {
+    isBL_ = true;
+  }
+  if (metadata.opcode == 2756) {
+    isRET_ = true;
+  }
+
   // Identify loads/stores
   if (accessesMemory) {
     // Check first operand access to determine if it's a load or store
@@ -256,18 +263,29 @@ void Instruction::decode() {
       isStore_ = true;
     }
   }
+  if (isStore_) {
+    // Identify whether a store operation uses Z source registers
+    if (ARM64_REG_Z0 <= metadata.operands[0].reg &&
+        metadata.operands[0].reg <= ARM64_REG_Z31) {
+      isSVEData_ = true;
+    }
+  }
   if (metadata.opcode == Opcode::AArch64_LDRXl ||
       metadata.opcode == Opcode::AArch64_LDRSWl) {
     // Literal loads aren't flagged as having a memory operand, so these must be
     // marked as loads manually
     isLoad_ = true;
   }
+
+  // Identify divide or square root operations
   if ((1189 < metadata.opcode && metadata.opcode < 1204) ||
       (1605 < metadata.opcode && metadata.opcode < 1617) ||
       (2906 < metadata.opcode && metadata.opcode < 2913) ||
       (4045 < metadata.opcode && metadata.opcode < 4052)) {
     isDivideOrSqrt_ = true;
   }
+
+  // Identify multiply operations
   if ((1210 < metadata.opcode && metadata.opcode < 1214) ||
       (1328 < metadata.opcode && metadata.opcode < 1367) ||
       (1393 < metadata.opcode && metadata.opcode < 1444) ||
@@ -282,11 +300,9 @@ void Instruction::decode() {
       (4154 < metadata.opcode && metadata.opcode < 4171)) {
     isMultiply_ = true;
   }
-  if (metadata.opcode == 2756) {
-    isRET_ = true;
-  }
-  if (metadata.opcode == 325 || metadata.opcode == 326) {
-    isBL_ = true;
+
+  if (metadata.opcode == Opcode::AArch64_PTEST_PP) {
+    isPredicate_ = true;
   }
 }
 

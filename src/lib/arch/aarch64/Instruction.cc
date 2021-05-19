@@ -121,7 +121,7 @@ bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
 bool Instruction::isRET() const { return isRET_; }
 bool Instruction::isBL() const { return isBL_; }
-bool Instruction::isSVE() const { return isWriteSVE_; }
+bool Instruction::isSVE() const { return isSVEData_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
