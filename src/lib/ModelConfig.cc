@@ -258,7 +258,7 @@ void ModelConfig::validate() {
     YAML::Node euNode = configFile_[root][i];
     nodeChecker<bool>(configFile_[root][i][subFields[0]],
                       (std::string(euNum) + subFields[0]),
-                      std::vector({false, true}), ExpectedValue::Bool);
+                      std::make_pair(false, true), ExpectedValue::Bool);
     if (euNode[subFields[1]].IsDefined() && !(euNode[subFields[1]].IsNull())) {
       for (size_t j = 0; j < euNode[subFields[1]].size(); j++) {
         char bgNum[50];
@@ -273,6 +273,31 @@ void ModelConfig::validate() {
         }
       }
     }
+  }
+  subFields.clear();
+
+  // Latencies
+  root = "Latencies";
+  subFields = {"Instruction-Group", "Execution-Latency",
+               "Execution-Throughput"};
+  size_t num_groups = configFile_[root].size();
+  for (size_t i = 0; i < num_groups; i++) {
+    char latNum[50];
+    sprintf(latNum, "Latency group %zu ", i);
+    YAML::Node latNode = configFile_[root][i];
+    if (nodeChecker<std::string>(latNode[subFields[0]],
+                                 (std::string(latNum) + subFields[0]),
+                                 groupOptions, ExpectedValue::String)) {
+      // Map latency Instruction-Group to integer value
+      configFile_["Latencies"][i]["Instruction-Group"] =
+          group_mapping[latNode[subFields[0]].as<std::string>()];
+    }
+    nodeChecker<uint16_t>(
+        latNode[subFields[1]], (std::string(latNum) + subFields[1]),
+        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
+    nodeChecker<uint16_t>(
+        latNode[subFields[2]], (std::string(latNum) + subFields[2]),
+        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
   }
   subFields.clear();
 
