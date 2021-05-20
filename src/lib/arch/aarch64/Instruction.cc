@@ -14,12 +14,8 @@ const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
                                              (uint16_t)-1};
 
 Instruction::Instruction(const Architecture& architecture,
-                         const InstructionMetadata& metadata, uint8_t latency,
-                         uint8_t stallCycles)
+                         const InstructionMetadata& metadata)
     : architecture_(architecture), metadata(metadata) {
-  latency_ = latency;
-  stallCycles_ = stallCycles;
-
   decode();
 }
 
@@ -171,8 +167,10 @@ uint16_t Instruction::getGroup() const {
   return InstructionGroups::INT_ARTH;
 }
 
-void Instruction::setSupportedPorts(std::vector<uint8_t> ports) {
-  supportedPorts_ = ports;
+void Instruction::setExecutionInfo(const executionInfo* info) {
+  latency_ = info->latency;
+  stallCycles_ = info->stallCycles;
+  supportedPorts_ = info->ports;
 }
 std::vector<uint8_t> Instruction::getSupportedPorts() {
   if (supportedPorts_.size() == 0) {

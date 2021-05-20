@@ -30,13 +30,24 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
 
-  // Instantiate keys of portMapping_ for all 12 groups deifned in the
+  // Instantiate keys of groupExecutionInfo_ for all 12 groups defined in the
   // InstructionGroups namespace
   for (int i = 0; i < 12; i++) {
-    portMapping_.insert({i, {}});
+    groupExecutionInfo_.insert({i, {1, 1, {}}});
   }
-  // Port mapping only applies to an outoforder core archetype. Mappings left
-  // blank in the case of an inorderpipeline or emulation archetype
+
+  // Extract execution latency/throughput for each group
+  for (size_t i = 0; i < config["Latencies"].size(); i++) {
+    YAML::Node port_node = config["Latencies"][i];
+    uint16_t group = port_node["Instruction-Group"].as<uint16_t>();
+    groupExecutionInfo_[group].latency =
+        port_node["Execution-Latency"].as<uint16_t>();
+    groupExecutionInfo_[group].stallCycles =
+        port_node["Execution-Throughput"].as<uint16_t>();
+  }
+
+  // ports entries in the groupExecutionInfo_ entries only apply for models
+  // using the outoforder core archetype
   if (config["Core"]["Simulation-Mode"].as<std::string>() == "outoforder") {
     // Create mapping between instructions groups and the ports that support
     // them
@@ -44,14 +55,14 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
       YAML::Node port_node = config["Ports"][i];
       for (size_t j = 0; j < port_node["Instruction-Support"].size(); j++) {
         uint16_t group = port_node["Instruction-Support"][j].as<uint16_t>();
-        portMapping_[group].push_back(static_cast<uint8_t>(i));
+        groupExecutionInfo_[group].ports.push_back(static_cast<uint8_t>(i));
         // Add inherited support for those appropriate groups
         if (group == InstructionGroups::INT_ARTH)
-          portMapping_[InstructionGroups::INT_ARTH_NOSHIFT].push_back(
-              static_cast<uint8_t>(i));
+          groupExecutionInfo_[InstructionGroups::INT_ARTH_NOSHIFT]
+              .ports.push_back(static_cast<uint8_t>(i));
         else if (group == InstructionGroups::FLOAT_ARTH)
-          portMapping_[InstructionGroups::FLOAT_ARTH_NOSHIFT].push_back(
-              static_cast<uint8_t>(i));
+          groupExecutionInfo_[InstructionGroups::FLOAT_ARTH_NOSHIFT]
+              .ports.push_back(static_cast<uint8_t>(i));
       }
     }
   }
@@ -77,7 +88,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                         InstructionException::MisalignedPC);
     uop->setInstructionAddress(instructionAddress);
     uop->setBranchPrediction(prediction);
-    uop->setSupportedPorts({0});
     // Return non-zero value to avoid fatal error
     return 1;
   }
@@ -109,14 +119,12 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     // Cache the metadata
     metadataCache.emplace_front(metadata);
 
-    // Get the latencies for this instruction
-    auto latencies = getLatencies(metadata);
+    // Create and cache an instruction using the metadata
+    Instruction newInstruction = Instruction(*this, metadataCache.front());
 
-    // Create and cache an instruction using the metadata and latencies
-    Instruction newInstruction = Instruction(*this, metadataCache.front(),
-                                             latencies.first, latencies.second);
-    newInstruction.setSupportedPorts(
-        portMapping_.at(newInstruction.getGroup()));
+    // Set execution information for this instruction
+    newInstruction.setExecutionInfo(
+        &groupExecutionInfo_.at(newInstruction.getGroup()));
 
     auto result = decodeCache.insert({insn, newInstruction});
 

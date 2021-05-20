@@ -68,9 +68,9 @@ class Architecture : public arch::Architecture {
   /** A mapping from system register encoding to a zero-indexed tag. */
   std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
 
-  /** A map to hold the relationship between aarch64 instruction groups and the
-   * user-defined ports that support them. */
-  std::unordered_map<uint16_t, std::vector<uint8_t>> portMapping_;
+  /** A map to hold the relationship between aarch64 instruction groups and
+   * user-defined execution information. */
+  std::unordered_map<uint16_t, executionInfo> groupExecutionInfo_;
 
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;

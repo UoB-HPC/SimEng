@@ -43,6 +43,19 @@ const uint16_t BRANCH = 10;
 const uint16_t PREDICATE = 11;
 }  // namespace InstructionGroups
 
+/** A struct holding user-defined execution information for a aarch64
+ * instruction. */
+struct executionInfo {
+  /** The latency for the instruction. */
+  uint16_t latency;
+
+  /** The execution throughput for the instruction. */
+  uint16_t stallCycles;
+
+  /** The ports that support the instruction. */
+  std::vector<uint8_t> ports;
+};
+
 enum class InstructionException {
   None = 0,
   EncodingUnallocated,
@@ -62,8 +75,7 @@ class Instruction : public simeng::Instruction {
   /** Construct an instruction instance by decoding a provided instruction word.
    */
   Instruction(const Architecture& architecture,
-              const InstructionMetadata& metadata, uint8_t latency,
-              uint8_t stallCycles);
+              const InstructionMetadata& metadata);
 
   /** Construct an instruction instance that raises an exception. */
   Instruction(const Architecture& architecture,
@@ -144,8 +156,9 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
-  /** Set this instruction's supported set of ports. */
-  void setSupportedPorts(std::vector<uint8_t> ports) override;
+  /** Set this instruction's execution information including it's execution
+   * latency and throughput, and the set of ports which support it. */
+  void setExecutionInfo(const executionInfo* info);
 
   /** Get this instruction's supported set of ports. */
   std::vector<uint8_t> getSupportedPorts() override;

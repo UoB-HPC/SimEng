@@ -154,9 +154,6 @@ class Instruction {
    * executing it. */
   uint16_t getStallCycles() const;
 
-  /** Set this instruction's supported set of ports. */
-  virtual void setSupportedPorts(std::vector<uint8_t> ports) = 0;
-
   /** Get this instruction's supported set of ports. */
   virtual std::vector<uint8_t> getSupportedPorts() = 0;
 
