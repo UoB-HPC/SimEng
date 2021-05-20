@@ -1,13 +1,15 @@
 Running SimEng
 ==============
 
-SimEng uses a configuration file and a program binary to produce a cycle-accurate simulation of a modern processor, these arguments can be specified at the command line. SimEng offers default options for its command-line arguments, that being a configuration for a ThunderX2 processor and a handwritten program located in the ``hex[]`` array, ``src/tools/simeng/main.cc``. SimEng's command-line options are structured as followed:
+SimEng uses a configuration file and a program binary to produce a cycle-accurate simulation of a modern processor. These options are passed to SimEng through the following command line arguments: 
 
 .. code-block:: text
 
         <simeng_install_directory>/bin/simeng <config file> <binary>
 
-**Note**, paths to binaries must be in full, and not relative.
+If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor, and the default program binary is defined in ``src/tools/simeng/main.cc`` under the ``hex[]`` array.
+
+.. Note:: Paths to binaries must be in full, and not relative.
 
 Whilst a configuration file can be specified without a program (will use default program), a specified program must be accompanied by a configuration file.
 
