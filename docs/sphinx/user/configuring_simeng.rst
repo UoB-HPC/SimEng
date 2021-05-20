@@ -3,12 +3,25 @@ Configuring SimEng
 
 SimEng configuration files are written in a YAML format, and provide values for the parameters of the processor architecture to be simulated. 
 
-Currently, the configuration files do not take into account the core archetype being modelled. However, future developments plan for the exemption of those options not used under the selected core archetype. For example, reservation station definitions under the ``inorderpiplined`` archetype will not be required.
-
 The configuration files are split into several sections, each of which is associated with a specific area of the architecture modelled.
 
 Core
 ----
+
+SimEng cores can be one of three types: 
+
+``emulation``
+    An atomic "emulation-style" core which, per cycle, processes an instruction in its entirety before proceeding to the next instruction.
+
+``inorderpipeline``
+    An in-order pipeline processor core with discrete fetch, decode, execute, and writeback stages.
+
+``outoforder``
+    A complex superscalar out-of-order core, similar to those found in modern high-performance processors.
+
+These core types are primarily referred to as core "archetypes".
+
+.. Note:: Currently, the configuration files do not take into account the core archetype being modelled. However, future developments plan for the exemption of those options not used under the selected core archetype. For example, reservation station definitions under the ``inorderpiplined`` archetype will not be required.
 
 Configuration options within the Core section are concerned with the functionality of the simulated processor pipeline. These include:
 
