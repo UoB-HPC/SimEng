@@ -26,7 +26,7 @@ Project Overview
    user/creating_binaries
    user/docker
 
-The Simulation Engine framework (SimEng) provides a modern cycle-accurate processor simulator, with aims to be:
+The Simulation Engine (SimEng) is a framework for building modern cycle-accurate processor simulators. It aims to be:
 
 - Fast
 - Easy to use and modify to desired configurations
@@ -34,13 +34,13 @@ The Simulation Engine framework (SimEng) provides a modern cycle-accurate proces
 - Capable of supporting a wide range of ISAs, starting with ARMv8 but eventually including x86, RISC-V, POWER, etc.
 - Open source, with a permissive license to enable collaboration across academia and industry
 
-The purpose of SimEng is to provide an alternative to the existing industry standard, `gem5 <https://www.gem5.org/>`_, by placing an emphasis on performance and scalability from the start, and maintaining a clean, modern, and well-documented codebase.
+SimEng places an emphasis on performance and scalability, whilst maintaining a clean, modern, and well-documented code base.
 
 
 Current Support
 ---------------
 
-Under its current developed state, SimEng targets the ARMv8+SVE ISA with the ability to model up to out-of-order, superscalar, single-core processors and emulate a subset of system-level function calls. It supports statically compiled C binaries that run on real hardware and models memory as an infinite L1 cache.
+Under its current developed state, SimEng targets the ARMv8+SVE ISA with the ability to model up to out-of-order, superscalar, single-core processors and emulate a subset of Linux system-level function calls. It supports statically compiled C binaries that run on real hardware and models memory as an infinite L1 cache.
 
 The main component provided by the simulator is a discrete processor core model, a generic variant seen below, which accepts a clock signal and supports a memory access interface. A configuration file, YAML format, can be passed to the simulation to modify the core model and tuned to the specification of current or experimental hardware. Currently, SimEng has been configured to model a Marvell ThunderX2 and Fujitsu A64FX processor.
 
