@@ -4,9 +4,7 @@ Building SimEng
 Prerequisites
 -------------
 
-Building SimEng requires CMake and a compiler that supports C++17. 
-
-(Optional) Docker, see our Docker instructions :doc:`here <docker>`.
+Building SimEng requires CMake and a compiler that supports C++17.
 
 Building
 --------
@@ -34,17 +32,15 @@ First obtain the source code using git, including the dependencies:
                 -DCMAKE_BUILD_TYPE=Release                        
                 -DCMAKE_INSTALL_PREFIX=<simeng_install_directory>
 
-E.G:
+1. Once configured, use ``make`` (or your preferred build tool) to build.
 
-.. code-block:: text
+2. (Optional) Run ``make test`` to run the SimEng regression tests and unit tests. Please report any test failures as `a GitHub issue <https://github.com/UoB-HPC/SimEng/issues>`_.
 
-        cd SimEng
-        mkdir install && cd install
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PWD
+3. Finally, run ``make install`` to install SimEng to the directory specified with CMake.
 
-4. Once configured, use ``make`` (or your preferred build tool) to build.
 
-5. (Optional) Run ``make test`` to run the SimEng regression tests and unit tests. Please report any test failures as `a GitHub issue <https://github.com/UoB-HPC/SimEng/issues>`_.
+Docker
+------
 
-6. Finally, run ``make install`` to install SimEng to the directory specified by CMake.
+We have also created a SimEng docker container, offering pre-built images with the SimEng source code and binary. More details on the docker container can be found :doc:`here<docker>`.
 
