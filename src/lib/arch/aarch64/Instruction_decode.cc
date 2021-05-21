@@ -168,8 +168,6 @@ void Instruction::decode() {
         isSVEData_ = true;
       } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
         isFloatData_ = true;
-      } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
-        isPredicate_ = true;
       } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
         isFloatData_ = true;
       }
@@ -181,6 +179,11 @@ void Instruction::decode() {
         destinationRegisters[destinationRegisterCount] =
             csRegToRegister(op.reg);
         destinationRegisterCount++;
+        // Belongs to the predicate group if the detsination register is a
+        // predicate
+        if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
+          isPredicate_ = true;
+        }
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
         // Add register reads to destinations
@@ -270,10 +273,10 @@ void Instruction::decode() {
     isLoad_ = true;
   }
 
-  if ((86 < metadata.opcode && metadata.opcode < 89) ||
-      (96 < metadata.opcode && metadata.opcode < 119) ||
-      (171 < metadata.opcode && metadata.opcode < 176) ||
-      (180 < metadata.opcode && metadata.opcode < 193)) {
+  if ((86 < metadata.id && metadata.id < 89) ||
+      (96 < metadata.id && metadata.id < 119) ||
+      (171 < metadata.id && metadata.id < 176) ||
+      (180 < metadata.id && metadata.id < 193)) {
     isCompare_ = true;
   }
 

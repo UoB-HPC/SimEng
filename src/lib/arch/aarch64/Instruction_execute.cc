@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 #include <limits>
 #include <tuple>
 
@@ -195,6 +196,8 @@ void Instruction::execute() {
       "Attempted to execute an instruction before all operands were provided");
 
   executed_ = true;
+  // std::cout << metadata.opcode << ":{" << latency_ << ", " << stallCycles_
+  //           << "}" << std::endl;
   switch (metadata.opcode) {
     case Opcode::AArch64_ADDv1i64: {  // add dd, dn, dm
       const uint64_t n = operands[0].get<uint64_t>();

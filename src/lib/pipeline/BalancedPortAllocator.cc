@@ -1,6 +1,7 @@
 #include "simeng/pipeline/BalancedPortAllocator.hh"
 
 #include <cassert>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -16,6 +17,7 @@ uint8_t BalancedPortAllocator::allocate(std::vector<uint8_t> ports) {
   uint16_t bestWeight;
   uint8_t bestPort = 0;
   for (const auto& portIndex : ports) {
+    // std::cout << unsigned(portIndex) << "|";
     // Search for the lowest-weighted port available
     if (!foundPort || weights[portIndex] < bestWeight) {
       foundPort = true;
@@ -23,6 +25,7 @@ uint8_t BalancedPortAllocator::allocate(std::vector<uint8_t> ports) {
       bestPort = portIndex;
     }
   }
+  // std::cout << std::endl;
 
   assert(foundPort && "Unsupported group; cannot allocate a port");
 

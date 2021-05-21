@@ -148,6 +148,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   uop = std::make_shared<Instruction>(iter->second);
 
   uop->setInstructionAddress(instructionAddress);
+  // std::cout << std::hex << instructionAddress << std::dec << ":"
+  //           << uop->getGroup() << std::endl;
   uop->setBranchPrediction(prediction);
 
   return 4;

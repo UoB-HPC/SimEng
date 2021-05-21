@@ -158,7 +158,7 @@ uint16_t Instruction::getGroup() const {
     if (isDivideOrSqrt_) return InstructionGroups::FLOAT_DIV_OR_SQRT;
     if (isNoShift_) return InstructionGroups::FLOAT_ARTH_NOSHIFT;
     return InstructionGroups::FLOAT_ARTH;
-  } else if (isVectorData_) {
+  } else if (isVectorData_ || isSVEData_) {
     if (isCompare_) return InstructionGroups::VECTOR_CMP;
     if (isMultiply_) return InstructionGroups::VECTOR_MUL;
     if (isDivideOrSqrt_) return InstructionGroups::VECTOR_DIV_OR_SQRT;
