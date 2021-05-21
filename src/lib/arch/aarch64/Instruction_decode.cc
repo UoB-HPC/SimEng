@@ -160,38 +160,31 @@ void Instruction::decode() {
     const auto& op = metadata.operands[i];
 
     if (op.type == ARM64_OP_REG) {  // Register operand
+      // Determine the data type the instruction operates on based on the
+      // register operand used
+      if (op.reg >= ARM64_REG_V0) {
+        isVectorData_ = true;
+      } else if (op.reg >= ARM64_REG_Z0) {
+        isSVEData_ = true;
+      } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
+        isFloatData_ = true;
+      } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
+        isPredicate_ = true;
+      } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
+        isFloatData_ = true;
+      }
+
       if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&
           op.reg != ARM64_REG_XZR) {
         // Add register writes to destinations, but skip zero-register
         // destinations
         destinationRegisters[destinationRegisterCount] =
             csRegToRegister(op.reg);
-        if (destinationRegisters[destinationRegisterCount].type ==
-            RegisterType::VECTOR) {
-          isDataFloat_ = true;
-          // Writes to Z vector registers must be identified to distinguish Z
-          // from V register types during execution
-          if (ARM64_REG_Z0 <= op.reg && op.reg <= ARM64_REG_Z31) {
-            isSVEData_ = true;
-          }
-        } else if (destinationRegisters[destinationRegisterCount].type ==
-                   RegisterType::PREDICATE) {
-          isPredicate_ = true;
-          // Loads to a predicate register should be identified as a load
-          // instruction
-          if (accessesMemory) {
-            isPredicate_ = false;
-          }
-        }
-
         destinationRegisterCount++;
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
         // Add register reads to destinations
         sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
-        if (sourceRegisters[sourceRegisterCount].type == RegisterType::VECTOR) {
-          isDataFloat_ = true;
-        }
 
         if (sourceRegisters[sourceRegisterCount] ==
             Instruction::ZERO_REGISTER) {
@@ -275,6 +268,13 @@ void Instruction::decode() {
     // Literal loads aren't flagged as having a memory operand, so these must be
     // marked as loads manually
     isLoad_ = true;
+  }
+
+  if ((86 < metadata.opcode && metadata.opcode < 89) ||
+      (96 < metadata.opcode && metadata.opcode < 119) ||
+      (171 < metadata.opcode && metadata.opcode < 176) ||
+      (180 < metadata.opcode && metadata.opcode < 193)) {
+    isCompare_ = true;
   }
 
   // Identify divide or square root operations

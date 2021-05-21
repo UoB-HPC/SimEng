@@ -152,12 +152,20 @@ uint16_t Instruction::getGroup() const {
   if (isBranch_) return InstructionGroups::BRANCH;
   if (isPredicate_) return InstructionGroups::PREDICATE;
 
-  if (isDataFloat_) {
+  if (isFloatData_) {
+    if (isCompare_) return InstructionGroups::FLOAT_CMP;
     if (isMultiply_) return InstructionGroups::FLOAT_MUL;
     if (isDivideOrSqrt_) return InstructionGroups::FLOAT_DIV_OR_SQRT;
     if (isNoShift_) return InstructionGroups::FLOAT_ARTH_NOSHIFT;
     return InstructionGroups::FLOAT_ARTH;
+  } else if (isVectorData_) {
+    if (isCompare_) return InstructionGroups::VECTOR_CMP;
+    if (isMultiply_) return InstructionGroups::VECTOR_MUL;
+    if (isDivideOrSqrt_) return InstructionGroups::VECTOR_DIV_OR_SQRT;
+    if (isNoShift_) return InstructionGroups::VECTOR_ARTH_NOSHIFT;
+    return InstructionGroups::VECTOR_ARTH;
   } else {
+    if (isCompare_) return InstructionGroups::INT_CMP;
     if (isMultiply_) return InstructionGroups::INT_MUL;
     if (isDivideOrSqrt_) return InstructionGroups::INT_DIV_OR_SQRT;
     if (isNoShift_) return InstructionGroups::INT_ARTH_NOSHIFT;

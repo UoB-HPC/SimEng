@@ -34,29 +34,52 @@
    "'5': {Pipelined: true}}}")
 
 namespace simeng {
-std::vector<std::string> groupOptions = {"INT_ARTH",   "INT_ARTH_NOSHIFT",
-                                         "INT_MUL",    "INT_DIV_OR_SQRT",
-                                         "FLOAT_ARTH", "FLOAT_ARTH_NOSHIFT",
-                                         "FLOAT_MUL",  "FLOAT_DIV_OR_SQRT",
-                                         "LOAD",       "STORE",
-                                         "BRANCH",     "PREDICATE"};
+std::vector<std::string> groupOptions = {"INT_ARTH",
+                                         "INT_ARTH_NOSHIFT",
+                                         "INT_CMP",
+                                         "INT_MUL",
+                                         "INT_DIV_OR_SQRT",
+                                         "FLOAT_ARTH",
+                                         "FLOAT_ARTH_NOSHIFT",
+                                         "FLOAT_CMP",
+                                         "FLOAT_MUL",
+                                         "FLOAT_DIV_OR_SQRT",
+                                         "VECTOR_ARTH",
+                                         "VECTOR_ARTH_NOSHIFT",
+                                         "VECTOR_CMP",
+                                         "VECTOR_MUL",
+                                         "VECTOR_DIV_OR_SQRT",
+                                         "LOAD",
+                                         "STORE",
+                                         "BRANCH",
+                                         "PREDICATE"};
 std::map<std::string, uint16_t> group_mapping = {
     {"INT_ARTH", simeng::arch::aarch64::InstructionGroups::INT_ARTH},
     {"INT_ARTH_NOSHIFT",
      simeng::arch::aarch64::InstructionGroups::INT_ARTH_NOSHIFT},
+    {"INT_CMP", simeng::arch::aarch64::InstructionGroups::INT_CMP},
     {"INT_MUL", simeng::arch::aarch64::InstructionGroups::INT_MUL},
     {"INT_DIV_OR_SQRT",
      simeng::arch::aarch64::InstructionGroups::INT_DIV_OR_SQRT},
     {"FLOAT_ARTH", simeng::arch::aarch64::InstructionGroups::FLOAT_ARTH},
     {"FLOAT_ARTH_NOSHIFT",
      simeng::arch::aarch64::InstructionGroups::FLOAT_ARTH_NOSHIFT},
+    {"FLOAT_CMP", simeng::arch::aarch64::InstructionGroups::FLOAT_CMP},
     {"FLOAT_MUL", simeng::arch::aarch64::InstructionGroups::FLOAT_MUL},
     {"FLOAT_DIV_OR_SQRT",
      simeng::arch::aarch64::InstructionGroups::FLOAT_DIV_OR_SQRT},
+    {"VECTOR_ARTH", simeng::arch::aarch64::InstructionGroups::VECTOR_ARTH},
+    {"VECTOR_ARTH_NOSHIFT",
+     simeng::arch::aarch64::InstructionGroups::VECTOR_ARTH_NOSHIFT},
+    {"VECTOR_CMP", simeng::arch::aarch64::InstructionGroups::VECTOR_CMP},
+    {"VECTOR_MUL", simeng::arch::aarch64::InstructionGroups::VECTOR_MUL},
+    {"VECTOR_DIV_OR_SQRT",
+     simeng::arch::aarch64::InstructionGroups::VECTOR_DIV_OR_SQRT},
     {"LOAD", simeng::arch::aarch64::InstructionGroups::LOAD},
     {"STORE", simeng::arch::aarch64::InstructionGroups::STORE},
     {"BRANCH", simeng::arch::aarch64::InstructionGroups::BRANCH},
-    {"PREDICATE", simeng::arch::aarch64::InstructionGroups::PREDICATE}};
+    {"PREDICATE", simeng::arch::aarch64::InstructionGroups::PREDICATE},
+};
 
 namespace ExpectedValue {
 const uint8_t Integer = 0;

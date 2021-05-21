@@ -32,7 +32,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
 
   // Instantiate keys of groupExecutionInfo_ for all 12 groups defined in the
   // InstructionGroups namespace
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < NUM_GROUPS; i++) {
     groupExecutionInfo_.insert({i, {1, 1, {}}});
   }
 
@@ -57,12 +57,22 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
         uint16_t group = port_node["Instruction-Support"][j].as<uint16_t>();
         groupExecutionInfo_[group].ports.push_back(static_cast<uint8_t>(i));
         // Add inherited support for those appropriate groups
-        if (group == InstructionGroups::INT_ARTH)
+        if (group == InstructionGroups::INT_ARTH) {
           groupExecutionInfo_[InstructionGroups::INT_ARTH_NOSHIFT]
               .ports.push_back(static_cast<uint8_t>(i));
-        else if (group == InstructionGroups::FLOAT_ARTH)
+          groupExecutionInfo_[InstructionGroups::INT_CMP].ports.push_back(
+              static_cast<uint8_t>(i));
+        } else if (group == InstructionGroups::FLOAT_ARTH) {
           groupExecutionInfo_[InstructionGroups::FLOAT_ARTH_NOSHIFT]
               .ports.push_back(static_cast<uint8_t>(i));
+          groupExecutionInfo_[InstructionGroups::FLOAT_CMP].ports.push_back(
+              static_cast<uint8_t>(i));
+        } else if (group == InstructionGroups::VECTOR_ARTH) {
+          groupExecutionInfo_[InstructionGroups::VECTOR_ARTH_NOSHIFT]
+              .ports.push_back(static_cast<uint8_t>(i));
+          groupExecutionInfo_[InstructionGroups::VECTOR_CMP].ports.push_back(
+              static_cast<uint8_t>(i));
+        }
       }
     }
   }

@@ -31,17 +31,27 @@ const uint8_t SYSTEM = 4;
 namespace InstructionGroups {
 const uint16_t INT_ARTH = 0;
 const uint16_t INT_ARTH_NOSHIFT = 1;
-const uint16_t INT_MUL = 2;
-const uint16_t INT_DIV_OR_SQRT = 3;
-const uint16_t FLOAT_ARTH = 4;
-const uint16_t FLOAT_ARTH_NOSHIFT = 5;
-const uint16_t FLOAT_MUL = 6;
-const uint16_t FLOAT_DIV_OR_SQRT = 7;
-const uint16_t LOAD = 8;
-const uint16_t STORE = 9;
-const uint16_t BRANCH = 10;
-const uint16_t PREDICATE = 11;
+const uint16_t INT_CMP = 2;
+const uint16_t INT_MUL = 3;
+const uint16_t INT_DIV_OR_SQRT = 4;
+const uint16_t FLOAT_ARTH = 5;
+const uint16_t FLOAT_ARTH_NOSHIFT = 6;
+const uint16_t FLOAT_CMP = 7;
+const uint16_t FLOAT_MUL = 8;
+const uint16_t FLOAT_DIV_OR_SQRT = 9;
+const uint16_t VECTOR_ARTH = 10;
+const uint16_t VECTOR_ARTH_NOSHIFT = 11;
+const uint16_t VECTOR_CMP = 12;
+const uint16_t VECTOR_MUL = 13;
+const uint16_t VECTOR_DIV_OR_SQRT = 14;
+const uint16_t LOAD = 15;
+const uint16_t STORE = 16;
+const uint16_t BRANCH = 17;
+const uint16_t PREDICATE = 18;
 }  // namespace InstructionGroups
+
+/** The number of aarch64 instruction groups. */
+#define NUM_GROUPS 19
 
 /** A struct holding user-defined execution information for a aarch64
  * instruction. */
@@ -236,6 +246,8 @@ class Instruction : public simeng::Instruction {
   void executionNYI();
 
   // Instruction Identifiers
+  /** Is a compare operation. */
+  bool isCompare_ = false;
   /** Is a multiply operation */
   bool isMultiply_ = false;
   /** Is a divide or square root operation */
@@ -249,7 +261,9 @@ class Instruction : public simeng::Instruction {
   /** Doesn't have a shift operand */
   bool isNoShift_ = true;
   /** Operates on floating point values */
-  bool isDataFloat_ = false;
+  bool isFloatData_ = false;
+  /** Operates on vector values. */
+  bool isVectorData_ = false;
   /** Uses Z registers as source and/or destination operands */
   bool isSVEData_ = false;
   /** Writes to a predicate register */
