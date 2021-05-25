@@ -254,19 +254,21 @@ void Instruction::decode() {
         isStore_ = true;
       } else {
         isLoad_ = true;
-        if (metadata.id == ARM64_INS_LDP || metadata.id == ARM64_INS_STP) {
-          splitMemoryRequests_ = true;
-        }
       }
     } else {
       isStore_ = true;
     }
-  }
-  if (isStore_) {
-    // Identify whether a store operation uses Z source registers
-    if (ARM64_REG_Z0 <= metadata.operands[0].reg &&
-        metadata.operands[0].reg <= ARM64_REG_Z31) {
-      isSVEData_ = true;
+
+    if (isStore_) {
+      // Identify whether a store operation uses Z source registers
+      if (ARM64_REG_Z0 <= metadata.operands[0].reg &&
+          metadata.operands[0].reg <= ARM64_REG_Z31) {
+        isSVEData_ = true;
+      }
+    }
+
+    if (metadata.id == ARM64_INS_LDP || metadata.id == ARM64_INS_STP) {
+      splitMemoryRequests_ = true;
     }
   }
   if (metadata.opcode == Opcode::AArch64_LDRXl ||
