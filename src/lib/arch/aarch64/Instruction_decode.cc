@@ -254,6 +254,9 @@ void Instruction::decode() {
         isStore_ = true;
       } else {
         isLoad_ = true;
+        if (metadata.id == ARM64_INS_LDP || metadata.id == ARM64_INS_STP) {
+          splitMemoryRequests_ = true;
+        }
       }
     } else {
       isStore_ = true;

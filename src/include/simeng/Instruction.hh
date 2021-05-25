@@ -150,12 +150,18 @@ class Instruction {
   /** Retrieve the number of cycles this instruction will take to execute. */
   uint16_t getLatency() const;
 
+  /** Retrieve the number of cycles this instruction will take to be prcoessed
+   * by the LSQ. */
+  uint16_t getLSQLatency() const;
+
   /** Retrieve the number of cycles this instruction will block the unit
    * executing it. */
   uint16_t getStallCycles() const;
 
   /** Get this instruction's supported set of ports. */
   virtual std::vector<uint8_t> getSupportedPorts() = 0;
+
+  bool shouldSplitRequests() const;
 
  protected:
   /** Whether an exception has been encountered. */
@@ -195,12 +201,20 @@ class Instruction {
   /** The number of cycles this instruction takes to execute. */
   uint16_t latency_ = 1;
 
+  /** The number of cycles a load or store instruction takes to execute within
+   * the load/store queue. */
+  uint16_t lsqExecutionLatency_ = 1;
+
   /** The number of cycles this instruction will stall the unit executing it
    * for. */
   uint16_t stallCycles_ = 1;
 
   /** The execution ports that this instruction can be issued to. */
   std::vector<uint8_t> supportedPorts_ = {};
+
+  /** Whether this instructions' memory accesses should be treated as many
+   * independent requests. **/
+  bool splitMemoryRequests_ = false;
 };
 
 }  // namespace simeng

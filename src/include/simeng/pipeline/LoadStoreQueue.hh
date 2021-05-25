@@ -12,6 +12,21 @@
 namespace simeng {
 namespace pipeline {
 
+/** A requestQueue_ entry. */
+struct requestEntry {
+  /** When the memory to be accessed by this entry is ready to be requested. */
+  uint64_t readyAt;
+
+  /** The memory address(es) to be accessed. */
+  span<const simeng::MemoryAccessTarget> reqAddresses;
+
+  /** The sequenceId of the instruction sending the request(s). */
+  uint64_t callingSeqId;
+
+  /** Is the access to memory a write request? */
+  bool isWrite = false;
+};
+
 /** A load store queue (known as "load/store buffers" or "memory order buffer").
  * Holds in-flight memory access requests to ensure load/store consistency. */
 class LoadStoreQueue {
@@ -129,11 +144,14 @@ class LoadStoreQueue {
    * order violation. */
   std::shared_ptr<Instruction> violatingLoad_ = nullptr;
 
-  /** A queue of completed loads ready for writeback. */
-  std::queue<std::shared_ptr<Instruction>> completedLoads_;
+  /** The number of times this unit has been ticked. */
+  uint64_t tickCounter_ = 0;
 
   /** A ready to hold memory requests. */
-  std::deque<std::pair<uint8_t, std::shared_ptr<Instruction>>> requestQueue_;
+  std::deque<requestEntry> requestQueue_;
+
+  /** A queue of completed loads ready for writeback. */
+  std::queue<std::shared_ptr<Instruction>> completedLoads_;
 
   /** The amount of data transferable to the L1 cache per cycle. */
   uint64_t L1Bandwidth_;

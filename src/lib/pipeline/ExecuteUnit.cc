@@ -42,8 +42,8 @@ void ExecuteUnit::tick() {
         // Block uop execution if appropriate
         if (std::find(blockingGroups_.begin(), blockingGroups_.end(),
                       uop->getGroup()) != blockingGroups_.end()) {
-          std::cout << std::hex << uop->getInstructionAddress() << std::hex
-                    << ":Blocked" << std::endl;
+          // std::cout << std::hex << uop->getInstructionAddress() << std::hex
+          //           << ":Blocked" << std::endl;
           if (operationsStalled_.size() == 0) {
             // Add uop to pipeline
             pipeline_.push_back({nullptr, tickCounter_ + latency - 1});
