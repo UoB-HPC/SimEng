@@ -20,11 +20,8 @@ struct requestEntry {
   /** The memory address(es) to be accessed. */
   span<const simeng::MemoryAccessTarget> reqAddresses;
 
-  /** The sequenceId of the instruction sending the request(s). */
-  uint64_t callingSeqId;
-
-  /** Is the access to memory a write request? */
-  bool isWrite = false;
+  /** The instruction sending the request(s). */
+  std::shared_ptr<Instruction> insn;
 };
 
 /** A load store queue (known as "load/store buffers" or "memory order buffer").

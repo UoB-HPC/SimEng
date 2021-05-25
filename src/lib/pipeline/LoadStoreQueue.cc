@@ -100,10 +100,13 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
                 << insn->getInstructionAddress() << std::dec << ":"
                 << tickCounter_ + insn->getLSQLatency() << ":{";
       for (size_t i = 0; i < addresses.size(); i++) {
-        std::cout << (addresses.data() + i)->address << ", ";
+        std::cout << "(" << (addresses.data() + i) << ":"
+                  << (addresses.data() + i)->address << ":"
+                  << unsigned((addresses.data() + i)->size) << ")"
+                  << ", ";
         requestQueue_.push_back({tickCounter_ + insn->getLSQLatency(),
                                  {addresses.data() + i, 1},
-                                 insn->getSequenceId()});
+                                 insn});
       }
       std::cout << "}:" << insn->getSequenceId() << std::endl;
     } else {
@@ -111,11 +114,14 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
                 << std::hex << insn->getInstructionAddress() << std::dec << ":"
                 << tickCounter_ + insn->getLSQLatency() << ":{";
       for (size_t i = 0; i < addresses.size(); i++) {
-        std::cout << (addresses.data() + i)->address << ", ";
+        std::cout << "(" << (addresses.data() + i) << ":"
+                  << (addresses.data() + i)->address << ":"
+                  << unsigned((addresses.data() + i)->size) << ")"
+                  << ", ";
       }
-      std::cout << "}:" << insn->getSequenceId() << std::endl;
-      requestQueue_.push_back({tickCounter_ + insn->getLSQLatency(), addresses,
-                               insn->getSequenceId()});
+      std::cout << "}" << std::endl;
+      requestQueue_.push_back(
+          {tickCounter_ + insn->getLSQLatency(), addresses, insn});
     }
     requestedLoads_.emplace(insn->getSequenceId(), insn);
   }
@@ -135,12 +141,14 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
               << uop->getInstructionAddress() << std::dec << ":"
               << tickCounter_ + uop->getLSQLatency() << ":{";
     for (size_t i = 0; i < addresses.size(); i++) {
-      std::cout << (addresses.data() + i)->address << ", ";
+      std::cout << "(" << (addresses.data() + i) << ":"
+                << (addresses.data() + i)->address << ":"
+                << unsigned((addresses.data() + i)->size) << ")"
+                << ", ";
       memory_.requestWrite(addresses[i], data[i]);
       requestQueue_.push_back({tickCounter_ + uop->getLSQLatency(),
                                {addresses.data() + i, 1},
-                               uop->getSequenceId(),
-                               true});
+                               uop});
     }
     std::cout << "}:" << uop->getSequenceId() << std::endl;
   } else {
@@ -148,11 +156,14 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
               << std::hex << uop->getInstructionAddress() << std::dec << ":"
               << tickCounter_ + uop->getLSQLatency() << ":{";
     for (size_t i = 0; i < addresses.size(); i++) {
-      std::cout << (addresses.data() + i)->address << ", ";
+      std::cout << "(" << (addresses.data() + i) << ":"
+                << (addresses.data() + i)->address << ":"
+                << unsigned((addresses.data() + i)->size) << ")"
+                << ", ";
     }
-    std::cout << "}:" << uop->getSequenceId() << std::endl;
-    requestQueue_.push_back({tickCounter_ + uop->getLSQLatency(), addresses,
-                             uop->getSequenceId(), true});
+    std::cout << "}" << std::endl;
+    requestQueue_.push_back(
+        {tickCounter_ + uop->getLSQLatency(), addresses, uop});
   }
 
   // Check all loads that have requested memory
@@ -202,14 +213,11 @@ void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
 }
 
 void LoadStoreQueue::purgeFlushed() {
-  uint64_t earliestFlush = UINT64_MAX;
   auto it = loadQueue_.begin();
   while (it != loadQueue_.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {
-      earliestFlush = (entry->getSequenceId() < earliestFlush)
-                          ? entry->getSequenceId()
-                          : earliestFlush;
+      std::cout << "FLUSHED:" << entry->getSequenceId() << std::endl;
       requestedLoads_.erase(entry->getSequenceId());
       it = loadQueue_.erase(it);
     } else {
@@ -221,9 +229,7 @@ void LoadStoreQueue::purgeFlushed() {
   while (it != storeQueue_.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {
-      earliestFlush = (entry->getSequenceId() < earliestFlush)
-                          ? entry->getSequenceId()
-                          : earliestFlush;
+      std::cout << "FLUSHED:" << entry->getSequenceId() << std::endl;
       it = storeQueue_.erase(it);
     } else {
       it++;
@@ -232,7 +238,8 @@ void LoadStoreQueue::purgeFlushed() {
 
   auto it2 = requestQueue_.begin();
   while (it2 != requestQueue_.end()) {
-    if (it2->callingSeqId >= earliestFlush) {
+    auto& entry = it2->insn;
+    if (entry->isFlushed()) {
       it2 = requestQueue_.erase(it2);
     } else {
       it2++;
@@ -249,9 +256,9 @@ void LoadStoreQueue::tick() {
   while (requestQueue_.size() > 0) {
     uint8_t isWrite = 0;
     auto& entry = requestQueue_.front();
-    std::cout << entry.callingSeqId << ":";
+    std::cout << entry.insn->getSequenceId() << ":";
     if (entry.readyAt <= tickCounter_) {
-      if (entry.isWrite) {
+      if (entry.insn->isStore()) {
         isWrite = 1;
       }
       reqCounts[isWrite]++;
@@ -266,12 +273,17 @@ void LoadStoreQueue::tick() {
         break;
       }
       std::cout << "{";
-      for (const MemoryAccessTarget& req : entry.reqAddresses) {
+      for (int i = 0; i < entry.reqAddresses.size(); i++) {
+        // for (const MemoryAccessTarget& req : entry.reqAddresses) {
+        const MemoryAccessTarget req = entry.reqAddresses[i];
         dataTransfered += req.size;
+        std::cout << &entry.reqAddresses[i] << ":";
         if (!isWrite) {
-          std::cout << req.address << ", ";
-          memory_.requestRead(req, entry.callingSeqId);
+          std::cout << req.address;
+          memory_.requestRead(req, entry.insn->getSequenceId());
         }
+        std::cout << " (" << unsigned(req.size) << " -> " << dataTransfered
+                  << "), ";
       }
       std::cout << "}" << std::endl;
       requestQueue_.pop_front();
