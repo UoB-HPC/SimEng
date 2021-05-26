@@ -147,7 +147,15 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 
 uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group
-  if (isLoad_) return InstructionGroups::LOAD;
+  if (isLoad_) {
+    if (isFloatData_)
+      return InstructionGroups::FLOAT_LOAD;
+    else if (isVectorData_)
+      return InstructionGroups::VECTOR_LOAD;
+    else if (isSVEData_)
+      return InstructionGroups::SVE_LOAD;
+    return InstructionGroups::INT_LOAD;
+  }
   if (isStore_) return InstructionGroups::STORE;
   if (isBranch_) return InstructionGroups::BRANCH;
   if (isPredicate_) return InstructionGroups::PREDICATE;

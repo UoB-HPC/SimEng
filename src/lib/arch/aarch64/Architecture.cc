@@ -72,6 +72,24 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
               .ports.push_back(static_cast<uint8_t>(i));
           groupExecutionInfo_[InstructionGroups::VECTOR_CMP].ports.push_back(
               static_cast<uint8_t>(i));
+        } else if (group == InstructionGroups::LOAD) {
+          groupExecutionInfo_[InstructionGroups::INT_LOAD].ports.push_back(
+              static_cast<uint8_t>(i));
+          groupExecutionInfo_[InstructionGroups::FLOAT_LOAD].ports.push_back(
+              static_cast<uint8_t>(i));
+          groupExecutionInfo_[InstructionGroups::VECTOR_LOAD].ports.push_back(
+              static_cast<uint8_t>(i));
+          groupExecutionInfo_[InstructionGroups::SVE_LOAD].ports.push_back(
+              static_cast<uint8_t>(i));
+        } else if (group == InstructionGroups::STORE) {
+          groupExecutionInfo_[InstructionGroups::INT_STORE].ports.push_back(
+              static_cast<uint8_t>(i));
+          groupExecutionInfo_[InstructionGroups::FLOAT_STORE].ports.push_back(
+              static_cast<uint8_t>(i));
+          groupExecutionInfo_[InstructionGroups::VECTOR_STORE].ports.push_back(
+              static_cast<uint8_t>(i));
+          groupExecutionInfo_[InstructionGroups::SVE_STORE].ports.push_back(
+              static_cast<uint8_t>(i));
         }
       }
     }

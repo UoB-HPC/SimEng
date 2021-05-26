@@ -234,9 +234,8 @@ int main(int argc, char** argv) {
   switch (mode) {
     case SimulationMode::OutOfOrder: {
       modeString = "Out-of-Order";
-      dataMemory = std::make_unique<simeng::VariableLatencyMemoryInterface>(
-          processMemory, processMemorySize, intDataMemoryLatency,
-          fpDataMemoryLatency, SVEDataMemoryLatency);
+      dataMemory = std::make_unique<simeng::FixedLatencyMemoryInterface>(
+          processMemory, processMemorySize, intDataMemoryLatency);
       core = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
           predictor, portAllocator, rsArrangement, config);

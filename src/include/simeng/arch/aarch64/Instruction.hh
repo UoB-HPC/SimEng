@@ -45,13 +45,21 @@ const uint16_t VECTOR_CMP = 12;
 const uint16_t VECTOR_MUL = 13;
 const uint16_t VECTOR_DIV_OR_SQRT = 14;
 const uint16_t LOAD = 15;
-const uint16_t STORE = 16;
-const uint16_t BRANCH = 17;
-const uint16_t PREDICATE = 18;
+const uint16_t INT_LOAD = 16;
+const uint16_t FLOAT_LOAD = 17;
+const uint16_t VECTOR_LOAD = 18;
+const uint16_t SVE_LOAD = 19;
+const uint16_t STORE = 20;
+const uint16_t INT_STORE = 21;
+const uint16_t FLOAT_STORE = 22;
+const uint16_t VECTOR_STORE = 23;
+const uint16_t SVE_STORE = 24;
+const uint16_t BRANCH = 25;
+const uint16_t PREDICATE = 26;
 }  // namespace InstructionGroups
 
 /** The number of aarch64 instruction groups. */
-#define NUM_GROUPS 19
+#define NUM_GROUPS 27
 
 /** A struct holding user-defined execution information for a aarch64
  * instruction. */
