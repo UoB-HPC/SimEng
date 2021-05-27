@@ -13,25 +13,25 @@
 #include "simeng/arch/aarch64/Instruction.hh"
 #include "yaml-cpp/yaml.h"
 
-#define DEFAULT_CONFIG                                                        \
-  ("{Core: {Simulation-Mode: outoforder, Clock-Frequency: 2.5, "              \
-   "Fetch-Block-Size: 32}, Register-Set: {GeneralPurpose-Count: "             \
-   "154, FloatingPoint/SVE-Count: 90, Predicate-Count: 17, "                  \
-   "Conditional-Count: 128}, Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, " \
-   "FrontEnd: 4, LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, "      \
-   "Store: 36}, Branch-Predictor: {BTB-bitlength: 16}, L1-Cache: "            \
-   "{GeneralPurpose-Latency: 4, FloatingPoint-Latency: 4, SVE-Latency: 1, "   \
-   "Bandwidth: 32, Permitted-Requests-Per-Cycle: 2, "                         \
-   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "    \
-   "{'0': {Portname: Port 0, Instruction-Support: [0, 2, 4, 6, 7]}, '1': "    \
-   "{Portname: Port 1, Instruction-Support: [0, 2, 3, 4, 6, 7]}, '2': "       \
-   "{Portname: Port 2, Instruction-Support: [0, 2, 10]}, '3': {Portname: "    \
-   "Port 4, Instruction-Support: [8]}, '4': {Portname: Port 5, "              \
-   "Instruction-Support: [8]}, '5': {Portname: Port 3, Instruction-Support: " \
-   "[9]}}, Reservation-Stations: {'0': {Size: 60, Ports: [0, 1, 2, 3, 4, "    \
-   "5]}}, Execution-Units: {'0': {Pipelined: true}, '1': {Pipelined: true}, " \
-   "'2': {Pipelined: true}, '3': {Pipelined: true}, '4': {Pipelined: true}, " \
-   "'5': {Pipelined: true}}}")
+#define DEFAULT_CONFIG                                                         \
+  ("{Core: {Simulation-Mode: outoforder, Clock-Frequency: 2.5, "               \
+   "Fetch-Block-Size: 32}, Register-Set: {GeneralPurpose-Count: "              \
+   "154, FloatingPoint/SVE-Count: 90, Predicate-Count: 17, "                   \
+   "Conditional-Count: 128}, Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, "  \
+   "FrontEnd: 4, LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, "       \
+   "Store: 36}, Branch-Predictor: {BTB-bitlength: 16}, L1-Cache: "             \
+   "{GeneralPurpose-Latency: 4, FloatingPoint-Latency: 4, SVE-Latency: 1, "    \
+   "Bandwidth: 32, Permitted-Requests-Per-Cycle: 2, "                          \
+   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "     \
+   "{'0': {Portname: Port 0, Instruction-Support: [0, 3, 5, 8, 9, 10, 13, "    \
+   "14]}, '1': {Portname: Port 1, Instruction-Support: [0, 3, 4, 5, 8, 9, "    \
+   "10, 13, 14]}, '2': {Portname: Port 2, Instruction-Support: [0, 3, 25]}, "  \
+   "'3': {Portname: Port 4, Instruction-Support: [15]}, '4': {Portname: Port " \
+   "5, Instruction-Support: [15]}, '5': {Portname: Port 3, "                   \
+   "Instruction-Support: [20]}}, Reservation-Stations: {'0': {Size: 60, "      \
+   "Ports: [0, 1, 2, 3, 4, 5]}}, Execution-Units: {'0': {Pipelined: true}, "   \
+   "'1': {Pipelined: true}, '2': {Pipelined: true}, '3': {Pipelined: true}, "  \
+   "'4': {Pipelined: true}, '5': {Pipelined: true}}}")
 
 namespace simeng {
 std::vector<std::string> groupOptions = {"INT_ARTH",
