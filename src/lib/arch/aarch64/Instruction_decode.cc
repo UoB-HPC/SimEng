@@ -160,18 +160,6 @@ void Instruction::decode() {
     const auto& op = metadata.operands[i];
 
     if (op.type == ARM64_OP_REG) {  // Register operand
-      // Determine the data type the instruction operates on based on the
-      // register operand used
-      if (op.reg >= ARM64_REG_V0) {
-        isVectorData_ = true;
-      } else if (op.reg >= ARM64_REG_Z0) {
-        isSVEData_ = true;
-      } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
-        isFloatData_ = true;
-      } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
-        isFloatData_ = true;
-      }
-
       if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&
           op.reg != ARM64_REG_XZR) {
         // Add register writes to destinations, but skip zero-register
@@ -181,8 +169,18 @@ void Instruction::decode() {
         destinationRegisterCount++;
         // Belongs to the predicate group if the detsination register is a
         // predicate
-        if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
+        // Determine the data type the instruction operates on based on the
+        // register operand used
+        if (op.reg >= ARM64_REG_V0) {
+          isVectorData_ = true;
+        } else if (op.reg >= ARM64_REG_Z0) {
+          isSVEData_ = true;
+        } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
+          isFloatData_ = true;
+        } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
           isPredicate_ = true;
+        } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
+          isFloatData_ = true;
         }
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
