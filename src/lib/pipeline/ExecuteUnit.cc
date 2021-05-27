@@ -1,7 +1,6 @@
 #include "simeng/pipeline/ExecuteUnit.hh"
 
 #include <cstring>
-#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -38,16 +37,10 @@ void ExecuteUnit::tick() {
       if (!uop->isFlushed()) {
         // Retrieve execution latency from the instruction
         auto latency = uop->getLatency();
-        // std::cout << uop->getTraceId() << ":" << std::hex
-        //           << uop->getInstructionAddress() << std::dec
-        //           << ":LATENCY=" << latency << ":GROUP=" << uop->getGroup()
-        //           << std::endl;
         cycles_++;
         // Block uop execution if appropriate
         if (std::find(blockingGroups_.begin(), blockingGroups_.end(),
                       uop->getGroup()) != blockingGroups_.end()) {
-          // std::cout << std::hex << uop->getInstructionAddress() << std::dec
-          //           << ":Blocked" << std::endl;
           if (operationsStalled_.size() == 0) {
             // Add uop to pipeline
             pipeline_.push_back({nullptr, tickCounter_ + latency - 1});

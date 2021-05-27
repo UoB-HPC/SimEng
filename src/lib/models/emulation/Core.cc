@@ -1,7 +1,6 @@
 #include "simeng/models/emulation/Core.hh"
 
 #include <cstring>
-#include <iostream>
 
 namespace simeng {
 namespace models {

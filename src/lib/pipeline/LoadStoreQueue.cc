@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <cstring>
-#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -91,28 +90,20 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
   const auto& addresses = insn->getGeneratedAddresses();
-  std::cout << "LOAD REQ:" << insn->getTraceId() << ":" << std::hex
-            << insn->getInstructionAddress() << std::dec << ":"
-            << tickCounter_ + insn->getLSQLatency() << std::endl;
   if (addresses.size() == 0) {
     insn->execute();
     completedLoads_.push(insn);
   } else {
     if (insn->shouldSplitRequests()) {
       for (size_t i = 0; i < addresses.size(); i++) {
-        std::cout << (addresses.data() + i)->address << ", ";
         requestQueue_.push_back({tickCounter_ + insn->getLSQLatency(),
                                  {addresses.data() + i, 1},
                                  insn});
       }
     } else {
-      for (size_t i = 0; i < addresses.size(); i++) {
-        std::cout << (addresses.data() + i)->address << ", ";
-      }
       requestQueue_.push_back(
           {tickCounter_ + insn->getLSQLatency(), addresses, insn});
     }
-    std::cout << "}" << std::endl;
     requestedLoads_.emplace(insn->getSequenceId(), insn);
   }
 }
@@ -126,13 +117,9 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
 
   const auto& addresses = uop->getGeneratedAddresses();
   const auto& data = uop->getData();
-  std::cout << "WRITE REQ:" << uop->getTraceId() << ":" << std::hex
-            << uop->getInstructionAddress() << std::dec << ":"
-            << tickCounter_ + uop->getLSQLatency() << std::endl;
   if (uop->shouldSplitRequests()) {
     for (size_t i = 0; i < addresses.size(); i++) {
       memory_.requestWrite(addresses[i], data[i]);
-      std::cout << (addresses.data() + i)->address << ", ";
       requestQueue_.push_back({tickCounter_ + uop->getLSQLatency(),
                                {addresses.data() + i, 1},
                                uop});
@@ -140,12 +127,10 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   } else {
     for (size_t i = 0; i < addresses.size(); i++) {
       memory_.requestWrite(addresses[i], data[i]);
-      std::cout << (addresses.data() + i)->address << ", ";
     }
     requestQueue_.push_back(
         {tickCounter_ + uop->getLSQLatency(), addresses, uop});
   }
-  std::cout << "}" << std::endl;
 
   // Check all loads that have requested memory
   violatingLoad_ = nullptr;
@@ -198,7 +183,6 @@ void LoadStoreQueue::purgeFlushed() {
   while (it != loadQueue_.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {
-      std::cout << "FLUSHED:" << entry->getSequenceId() << std::endl;
       requestedLoads_.erase(entry->getSequenceId());
       it = loadQueue_.erase(it);
     } else {
@@ -210,7 +194,6 @@ void LoadStoreQueue::purgeFlushed() {
   while (it != storeQueue_.end()) {
     auto& entry = *it;
     if (entry->isFlushed()) {
-      std::cout << "FLUSHED:" << entry->getSequenceId() << std::endl;
       it = storeQueue_.erase(it);
     } else {
       it++;
@@ -230,7 +213,6 @@ void LoadStoreQueue::purgeFlushed() {
 
 void LoadStoreQueue::tick() {
   tickCounter_++;
-  std::cout << "========" << tickCounter_ << "=======" << std::endl;
   // Send memory requests adhering to set bandwidth and number of permitted
   // requests per cycle
   uint64_t dataTransfered = 0;
@@ -238,7 +220,6 @@ void LoadStoreQueue::tick() {
   while (requestQueue_.size() > 0) {
     uint8_t isWrite = 0;
     auto& entry = requestQueue_.front();
-    std::cout << entry.insn->getTraceId() << ":";
     if (entry.readyAt <= tickCounter_) {
       if (entry.insn->isStore()) {
         isWrite = 1;
@@ -247,30 +228,20 @@ void LoadStoreQueue::tick() {
 
       if (reqCounts[isWrite] > reqLimits_[isWrite] ||
           reqCounts[isWrite] + reqCounts[!isWrite] > totalLimit_) {
-        std::cout << "EXCEEDED REQ COUNT" << std::endl;
         break;
       }
       if (dataTransfered >= L1Bandwidth_) {
-        std::cout << "EXCEEDED BANDWIDTH:" << dataTransfered << "/"
-                  << L1Bandwidth_ << std::endl;
         break;
       }
-      std::cout << "{";
       for (int i = 0; i < entry.reqAddresses.size(); i++) {
         const MemoryAccessTarget req = entry.reqAddresses[i];
         dataTransfered += req.size;
         if (!isWrite) {
-          std::cout << req.address;
           memory_.requestRead(req, entry.insn->getSequenceId());
         }
-        std::cout << " (" << unsigned(req.size) << " -> " << dataTransfered
-                  << "), ";
       }
-      // std::cout << "}" << std::endl;
-      std::cout << "REQUESTS SENT" << std::endl;
       requestQueue_.pop_front();
     } else {
-      std::cout << "NOT READY" << std::endl;
       break;
     }
   }

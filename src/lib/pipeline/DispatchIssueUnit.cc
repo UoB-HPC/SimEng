@@ -1,6 +1,5 @@
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 
-#include <iostream>
 #include <unordered_set>
 
 namespace simeng {
@@ -66,7 +65,6 @@ void DispatchIssueUnit::tick() {
       continue;
     }
     // Allocate issue port to uop
-    // std::cout << std::hex << uop->getInstructionAddress() << std::dec << ":";
     uint8_t port = portAllocator_.allocate(supportedPorts);
     uint8_t RS_Index = portMapping_[port].first;
     uint8_t RS_Port = portMapping_[port].second;
