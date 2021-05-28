@@ -278,11 +278,17 @@ void Instruction::decode() {
     isLoad_ = true;
   }
 
-  if ((86 < metadata.id && metadata.id < 89) ||
-      (96 < metadata.id && metadata.id < 119) ||
-      (171 < metadata.id && metadata.id < 176) ||
-      (180 < metadata.id && metadata.id < 193)) {
+  if ((379 < metadata.opcode && metadata.opcode < 388) ||
+      (437 < metadata.opcode && metadata.opcode < 625) ||
+      (789 < metadata.opcode && metadata.opcode < 812) ||
+      (850 < metadata.opcode && metadata.opcode < 979)) {
     isCompare_ = true;
+    // Capture those floating point compare instructions with no destination
+    // register
+    if (!(isFloatData_ || isVectorData_) &&
+        sourceRegisters[0].type == RegisterType::VECTOR) {
+      isFloatData_ = true;
+    }
   }
 
   // Identify divide or square root operations
@@ -309,8 +315,25 @@ void Instruction::decode() {
     isMultiply_ = true;
   }
 
+  // Catch exceptions to the above identifier assignments
+  // Uncaught preciate assignment due to lacking destination register
   if (metadata.opcode == Opcode::AArch64_PTEST_PP) {
     isPredicate_ = true;
+  }
+  // Uncaught float data assignment for FMOV move to general instructions
+  if ((1366 < metadata.opcode && metadata.opcode < 1391) &&
+      !(isFloatData_ || isVectorData_)) {
+    isFloatData_ = true;
+  }
+  // Uncaught vector data assignment for SMOV and UMOV instructions
+  if ((3071 < metadata.opcode && metadata.opcode < 3077) ||
+      (4150 < metadata.opcode && metadata.opcode < 4155)) {
+    isVectorData_ = true;
+  }
+  // Uncaught float data assignment for FCVT convert to general instructions
+  if ((984 < metadata.opcode && metadata.opcode < 1190) &&
+      !(isFloatData_ || isVectorData_)) {
+    isFloatData_ = true;
   }
 }
 
