@@ -40,21 +40,21 @@ SimEng places an emphasis on performance and scalability, whilst maintaining a c
 Current Support
 ---------------
 
-Under its current developed state, SimEng targets the ARMv8+SVE ISA with the ability to model up to out-of-order, superscalar, single-core processors and emulate a subset of Linux system-level function calls. It supports statically compiled C binaries that run on real hardware and models memory as an infinite L1 cache.
+Currently, SimEng targets the ARMv8+SVE ISA with the ability to model up to out-of-order, superscalar, single-core processors and to emulate a subset of Linux system-calls. It supports statically compiled C binaries that run on real hardware and models memory as an infinite L1 cache.
 
-The main component provided by the simulator is a discrete processor core model, a generic variant seen below, which accepts a clock signal and supports a memory access interface. A configuration file, YAML format, can be passed to the simulation to modify the core model and tuned to the specification of current or experimental hardware. Currently, SimEng has been configured to model a Marvell ThunderX2 and Fujitsu A64FX processor.
+The main component provided by the simulator is a discrete processor core model, (the generic model is shown below), which accepts a clock signal and supports a memory access interface. A YAML format configuration file can be passed to the simulation to modify the core model, for instance to model other current or future core designs. Current SimEng configurations support Marvell ThunderX2 and Fujitsu A64FX processors.
 
 .. image:: assets/simeng_generic_core_model.png
   :width: 500
   :alt: Generic Core Model
 
-Once the core model is mature enough, integration with the `Structural Simulation Toolkit <http://sst-simulator.org/>`_ (SST) is planned to support multi-core and memory hierarchy simulation. To date, a prototype of SST’s memory hierarchy integration has been created.
+As soon as SimEng is mature enough, we plan to support multi-core and memory hierarchy simulation by integrating SimEng with the `Structural Simulation Toolkit <http://sst-simulator.org/>`_ (SST). So far we have implemented a prototype of SST’s memory hierarchy integration.
 
 
 Talks and presentations
 -----------------------
 
-SimEng has been presented by `Professor Simon McIntosh-Smith <http://uob-hpc.github.io/SimonMS/>`_ at previous Workshop on Modeling & Simulation of Systems and Applications (ModSim) events:
+SimEng was presented by `Professor Simon McIntosh-Smith <http://uob-hpc.github.io/SimonMS/>`_ at the 2019 Workshop on Modeling & Simulation of Systems and Applications (ModSim):
 
 - ModSim 2019 - :download:`Enabling Processor Design Space Exploration with SimEng <assets/simeng_modsim_2019.pdf>`
 
