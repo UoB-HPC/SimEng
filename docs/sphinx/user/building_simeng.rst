@@ -28,15 +28,16 @@ First obtain the source code using git, including the dependencies:
    
 .. code-block:: text
 
-        cmake <path_to_simeng_repository>                       
+        cd SimEng
+        cmake -Bbuild -H. # build files will be generated in a directory called "build"
                 -DCMAKE_BUILD_TYPE=Release                        
                 -DCMAKE_INSTALL_PREFIX=<simeng_install_directory>
 
-1. Once configured, use ``make`` (or your preferred build tool) to build.
+1. Once configured, use ``cmake --build build`` or whichever generator you have selected for CMake to build. Append the ``-j`` flag to build in parallel, keep in mind that building LLVM like this usually has very high (1.5GB per core) memory requirements.
 
-2. (Optional) Run ``make test`` to run the SimEng regression tests and unit tests. Please report any test failures as `a GitHub issue <https://github.com/UoB-HPC/SimEng/issues>`_.
+2. (Optional) Run ``cmake --build build --target test`` to run the SimEng regression tests and unit tests. Please report any test failures as `a GitHub issue <https://github.com/UoB-HPC/SimEng/issues>`_.
 
-3. Finally, run ``make install`` to install SimEng to the directory specified with CMake.
+3. Finally, run ``cmake --build build --target install`` to install SimEng to the directory specified with CMake.
 
 
 Docker
