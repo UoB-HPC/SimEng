@@ -36,18 +36,18 @@ AArch64RegressionTest::createPortAllocator() const {
   // TODO: this is currently tightly coupled to the number of execution units,
   // which is specified in the out-of-order core model
   const std::vector<std::vector<uint16_t>> portArrangement = {
-      {simeng::arch::aarch64::InstructionGroups::INT_ARTH,
+      {simeng::arch::aarch64::InstructionGroups::INT_SIMPLE,
        simeng::arch::aarch64::InstructionGroups::INT_MUL,
-       simeng::arch::aarch64::InstructionGroups::FLOAT_ARTH,
-       simeng::arch::aarch64::InstructionGroups::FLOAT_MUL,
-       simeng::arch::aarch64::InstructionGroups::FLOAT_DIV_OR_SQRT},  // Port 0
-      {simeng::arch::aarch64::InstructionGroups::INT_ARTH,
+       simeng::arch::aarch64::InstructionGroups::FP_SIMPLE,
+       simeng::arch::aarch64::InstructionGroups::FP_MUL,
+       simeng::arch::aarch64::InstructionGroups::FP_DIV_OR_SQRT},  // Port 0
+      {simeng::arch::aarch64::InstructionGroups::INT_SIMPLE,
        simeng::arch::aarch64::InstructionGroups::INT_MUL,
        simeng::arch::aarch64::InstructionGroups::INT_DIV_OR_SQRT,
-       simeng::arch::aarch64::InstructionGroups::FLOAT_ARTH,
-       simeng::arch::aarch64::InstructionGroups::FLOAT_MUL,
-       simeng::arch::aarch64::InstructionGroups::FLOAT_DIV_OR_SQRT},  // Port 1
-      {simeng::arch::aarch64::InstructionGroups::INT_ARTH,
+       simeng::arch::aarch64::InstructionGroups::FP_SIMPLE,
+       simeng::arch::aarch64::InstructionGroups::FP_MUL,
+       simeng::arch::aarch64::InstructionGroups::FP_DIV_OR_SQRT},  // Port 1
+      {simeng::arch::aarch64::InstructionGroups::INT_SIMPLE,
        simeng::arch::aarch64::InstructionGroups::INT_MUL,
        simeng::arch::aarch64::InstructionGroups::BRANCH},  // Port 2
       {simeng::arch::aarch64::InstructionGroups::LOAD},    // Port 4

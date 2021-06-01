@@ -137,12 +137,15 @@ void ModelConfig::validate() {
       sprintf(group_msg, "Group %zu ", j);
       std::string group_num = std::string(group_msg);
       // Check for existance of instruction group
-      if (nodeChecker<std::string>(port_node["Instruction-Support"][j],
-                                   port_num + group_num, groupOptions,
-                                   ExpectedValue::String)) {
+      if (group.as<std::string>()[0] == '*') {
+        // Implement opcode defined ports
+        std::cerr << "Opcode defined ports not yet supported" << std::endl;
+        exit(1);
+      } else if (nodeChecker<std::string>(group, port_num + group_num,
+                                          groupOptions,
+                                          ExpectedValue::String)) {
         configFile_["Ports"][i]["Instruction-Support"][j] =
-            unsigned(group_mapping[port_node["Instruction-Support"][j]
-                                       .as<std::string>()]);
+            unsigned(group_mapping[group.as<std::string>()]);
       }
     }
   }
@@ -278,19 +281,34 @@ void ModelConfig::validate() {
 
   // Latencies
   root = "Latencies";
-  subFields = {"Instruction-Group", "Execution-Latency",
+  subFields = {"Instruction-Groups", "Execution-Latency",
                "Execution-Throughput"};
-  size_t num_groups = configFile_[root].size();
-  for (size_t i = 0; i < num_groups; i++) {
+  for (size_t i = 0; i < configFile_[root].size(); i++) {
     char latNum[50];
     sprintf(latNum, "Latency group %zu ", i);
     YAML::Node latNode = configFile_[root][i];
-    if (nodeChecker<std::string>(latNode[subFields[0]],
-                                 (std::string(latNum) + subFields[0]),
-                                 groupOptions, ExpectedValue::String)) {
-      // Map latency Instruction-Group to integer value
-      configFile_["Latencies"][i]["Instruction-Group"] =
-          group_mapping[latNode[subFields[0]].as<std::string>()];
+    YAML::Node grpNode = latNode[subFields[0]];
+    if (grpNode.IsDefined() && !(grpNode.IsNull())) {
+      for (size_t j = 0; j < grpNode.size(); j++) {
+        char grpNum[50];
+        sprintf(grpNum, "Instruction group %zu ", j);
+        // Determine whether the value is an opcode or an instruction-group
+        // value
+        if (grpNode[j].as<std::string>()[0] == '*') {
+          // Implement opcode defined latencies
+          std::cerr << "Opcode defined latencies not yet supported"
+                    << std::endl;
+          exit(1);
+        } else if (nodeChecker<std::string>(
+                       grpNode[j], (std::string(latNum) + std::string(grpNum)),
+                       groupOptions, ExpectedValue::String)) {
+          // Map latency Instruction-Group to integer value
+          configFile_[root][i][subFields[0]][j] =
+              group_mapping[grpNode[j].as<std::string>()];
+        }
+      }
+    } else {
+      missing_ << "\t- " << (std::string(latNum) + subFields[0]) << "\n";
     }
     nodeChecker<uint16_t>(
         latNode[subFields[1]], (std::string(latNum) + subFields[1]),

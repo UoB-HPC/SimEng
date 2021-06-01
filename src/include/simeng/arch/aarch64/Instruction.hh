@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <unordered_map>
 
 #include "simeng/BranchPredictor.hh"
 #include "simeng/Instruction.hh"
@@ -29,37 +30,143 @@ const uint8_t SYSTEM = 4;
 
 /** The IDs of the instruction groups for AArch64 instructions. */
 namespace InstructionGroups {
-const uint16_t INT_ARTH = 0;
-const uint16_t INT_ARTH_NOSHIFT = 1;
-const uint16_t INT_CMP = 2;
-const uint16_t INT_MUL = 3;
-const uint16_t INT_DIV_OR_SQRT = 4;
-const uint16_t FLOAT_ARTH = 5;
-const uint16_t FLOAT_ARTH_NOSHIFT = 6;
-const uint16_t FLOAT_CMP = 7;
-const uint16_t FLOAT_MUL = 8;
-const uint16_t FLOAT_DIV_OR_SQRT = 9;
-const uint16_t VECTOR_ARTH = 10;
-const uint16_t VECTOR_ARTH_NOSHIFT = 11;
-const uint16_t VECTOR_CMP = 12;
-const uint16_t VECTOR_MUL = 13;
-const uint16_t VECTOR_DIV_OR_SQRT = 14;
-const uint16_t LOAD = 15;
-const uint16_t INT_LOAD = 16;
-const uint16_t FLOAT_LOAD = 17;
-const uint16_t VECTOR_LOAD = 18;
-const uint16_t SVE_LOAD = 19;
-const uint16_t STORE = 20;
-const uint16_t INT_STORE = 21;
-const uint16_t FLOAT_STORE = 22;
-const uint16_t VECTOR_STORE = 23;
-const uint16_t SVE_STORE = 24;
-const uint16_t BRANCH = 25;
-const uint16_t PREDICATE = 26;
+const uint16_t INT = 0;
+const uint16_t INT_SIMPLE = 1;
+const uint16_t INT_ARTH = 2;
+const uint16_t INT_ARTH_NOSHIFT = 3;
+const uint16_t INT_LOGICAL = 4;
+const uint16_t INT_CMP = 5;
+const uint16_t INT_CVT = 6;
+const uint16_t INT_MUL = 7;
+const uint16_t INT_DIV_OR_SQRT = 8;
+const uint16_t FP = 9;
+const uint16_t FP_SIMPLE = 10;
+const uint16_t FP_ARTH = 11;
+const uint16_t FP_ARTH_NOSHIFT = 12;
+const uint16_t FP_LOGICAL = 13;
+const uint16_t FP_CMP = 14;
+const uint16_t FP_CVT = 15;
+const uint16_t FP_MUL = 16;
+const uint16_t FP_DIV_OR_SQRT = 17;
+const uint16_t SCALAR = 18;
+const uint16_t SCALAR_SIMPLE = 19;
+const uint16_t SCALAR_ARTH = 20;
+const uint16_t SCALAR_ARTH_NOSHIFT = 21;
+const uint16_t SCALAR_LOGICAL = 22;
+const uint16_t SCALAR_CMP = 23;
+const uint16_t SCALAR_CVT = 24;
+const uint16_t SCALAR_MUL = 25;
+const uint16_t SCALAR_DIV_OR_SQRT = 26;
+const uint16_t VECTOR = 27;
+const uint16_t VECTOR_SIMPLE = 28;
+const uint16_t VECTOR_ARTH = 29;
+const uint16_t VECTOR_ARTH_NOSHIFT = 30;
+const uint16_t VECTOR_LOGICAL = 31;
+const uint16_t VECTOR_CMP = 32;
+const uint16_t VECTOR_CVT = 33;
+const uint16_t VECTOR_MUL = 34;
+const uint16_t VECTOR_DIV_OR_SQRT = 35;
+const uint16_t SVE = 36;
+const uint16_t SVE_SIMPLE = 37;
+const uint16_t SVE_ARTH = 38;
+const uint16_t SVE_ARTH_NOSHIFT = 39;
+const uint16_t SVE_LOGICAL = 40;
+const uint16_t SVE_CMP = 41;
+const uint16_t SVE_CVT = 42;
+const uint16_t SVE_MUL = 43;
+const uint16_t SVE_DIV_OR_SQRT = 44;
+const uint16_t PREDICATE = 45;
+const uint16_t LOAD = 46;
+const uint16_t LOAD_INT = 47;
+const uint16_t LOAD_FLOAT = 48;
+const uint16_t LOAD_VECTOR = 49;
+const uint16_t LOAD_SVE = 50;
+const uint16_t STORE = 51;
+const uint16_t STORE_INT = 52;
+const uint16_t STORE_FLOAT = 53;
+const uint16_t STORE_VECTOR = 54;
+const uint16_t STORE_SVE = 55;
+const uint16_t BRANCH = 56;
 }  // namespace InstructionGroups
 
 /** The number of aarch64 instruction groups. */
-#define NUM_GROUPS 27
+#define NUM_GROUPS 57
+
+const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
+    {InstructionGroups::INT,
+     {InstructionGroups::INT_ARTH, InstructionGroups::INT_ARTH_NOSHIFT,
+      InstructionGroups::INT_LOGICAL, InstructionGroups::INT_CMP,
+      InstructionGroups::INT_CVT, InstructionGroups::INT_DIV_OR_SQRT,
+      InstructionGroups::INT_MUL}},
+    {InstructionGroups::INT_SIMPLE,
+     {InstructionGroups::INT_ARTH, InstructionGroups::INT_ARTH_NOSHIFT,
+      InstructionGroups::INT_LOGICAL, InstructionGroups::INT_CMP,
+      InstructionGroups::INT_CVT}},
+    {InstructionGroups::INT_ARTH, {InstructionGroups::INT_ARTH_NOSHIFT}},
+    {InstructionGroups::FP,
+     {InstructionGroups::FP_ARTH, InstructionGroups::FP_ARTH_NOSHIFT,
+      InstructionGroups::FP_LOGICAL, InstructionGroups::FP_CMP,
+      InstructionGroups::FP_CVT, InstructionGroups::FP_DIV_OR_SQRT,
+      InstructionGroups::FP_MUL, InstructionGroups::SCALAR,
+      InstructionGroups::VECTOR}},
+    {InstructionGroups::FP_SIMPLE,
+     {InstructionGroups::FP_ARTH, InstructionGroups::FP_ARTH_NOSHIFT,
+      InstructionGroups::FP_LOGICAL, InstructionGroups::FP_CMP,
+      InstructionGroups::FP_CVT, InstructionGroups::SCALAR_SIMPLE,
+      InstructionGroups::VECTOR_SIMPLE}},
+    {InstructionGroups::FP_ARTH,
+     {InstructionGroups::FP_ARTH_NOSHIFT, InstructionGroups::SCALAR_ARTH,
+      InstructionGroups::VECTOR_ARTH}},
+    {InstructionGroups::FP_ARTH_NOSHIFT,
+     {InstructionGroups::SCALAR_ARTH_NOSHIFT,
+      InstructionGroups::VECTOR_ARTH_NOSHIFT}},
+    {InstructionGroups::FP_LOGICAL,
+     {InstructionGroups::SCALAR_LOGICAL, InstructionGroups::VECTOR_LOGICAL}},
+    {InstructionGroups::FP_CMP,
+     {InstructionGroups::SCALAR_CMP, InstructionGroups::VECTOR_CMP}},
+    {InstructionGroups::FP_CVT,
+     {InstructionGroups::SCALAR_CVT, InstructionGroups::VECTOR_CVT}},
+    {InstructionGroups::FP_MUL,
+     {InstructionGroups::SCALAR_MUL, InstructionGroups::VECTOR_MUL}},
+    {InstructionGroups::FP_DIV_OR_SQRT,
+     {InstructionGroups::SCALAR_DIV_OR_SQRT,
+      InstructionGroups::VECTOR_DIV_OR_SQRT}},
+    {InstructionGroups::SCALAR,
+     {InstructionGroups::SCALAR_ARTH, InstructionGroups::SCALAR_ARTH_NOSHIFT,
+      InstructionGroups::SCALAR_LOGICAL, InstructionGroups::SCALAR_CMP,
+      InstructionGroups::SCALAR_CVT, InstructionGroups::SCALAR_DIV_OR_SQRT,
+      InstructionGroups::SCALAR_MUL}},
+    {InstructionGroups::SCALAR_SIMPLE,
+     {InstructionGroups::SCALAR_ARTH, InstructionGroups::SCALAR_ARTH_NOSHIFT,
+      InstructionGroups::SCALAR_LOGICAL, InstructionGroups::SCALAR_CMP,
+      InstructionGroups::SCALAR_CVT}},
+    {InstructionGroups::SCALAR_ARTH, {InstructionGroups::SCALAR_ARTH_NOSHIFT}},
+    {InstructionGroups::VECTOR,
+     {InstructionGroups::VECTOR_ARTH, InstructionGroups::VECTOR_ARTH_NOSHIFT,
+      InstructionGroups::VECTOR_LOGICAL, InstructionGroups::VECTOR_CMP,
+      InstructionGroups::VECTOR_CVT, InstructionGroups::VECTOR_DIV_OR_SQRT,
+      InstructionGroups::VECTOR_MUL}},
+    {InstructionGroups::VECTOR_SIMPLE,
+     {InstructionGroups::VECTOR_ARTH, InstructionGroups::VECTOR_ARTH_NOSHIFT,
+      InstructionGroups::VECTOR_LOGICAL, InstructionGroups::VECTOR_CMP,
+      InstructionGroups::VECTOR_CVT}},
+    {InstructionGroups::VECTOR_ARTH, {InstructionGroups::VECTOR_ARTH_NOSHIFT}},
+    {InstructionGroups::SVE,
+     {InstructionGroups::SVE_ARTH, InstructionGroups::SVE_ARTH_NOSHIFT,
+      InstructionGroups::SVE_LOGICAL, InstructionGroups::SVE_CMP,
+      InstructionGroups::SVE_CVT, InstructionGroups::SVE_DIV_OR_SQRT,
+      InstructionGroups::SVE_MUL}},
+    {InstructionGroups::SVE_SIMPLE,
+     {InstructionGroups::SVE_ARTH, InstructionGroups::SVE_ARTH_NOSHIFT,
+      InstructionGroups::SVE_LOGICAL, InstructionGroups::SVE_CMP,
+      InstructionGroups::SVE_CVT}},
+    {InstructionGroups::SVE_ARTH, {InstructionGroups::SVE_ARTH_NOSHIFT}},
+    {InstructionGroups::LOAD,
+     {InstructionGroups::LOAD_INT, InstructionGroups::LOAD_FLOAT,
+      InstructionGroups::LOAD_VECTOR, InstructionGroups::LOAD_SVE}},
+    {InstructionGroups::STORE,
+     {InstructionGroups::STORE_INT, InstructionGroups::STORE_FLOAT,
+      InstructionGroups::STORE_VECTOR, InstructionGroups::STORE_SVE}}};
 
 /** A struct holding user-defined execution information for a aarch64
  * instruction. */

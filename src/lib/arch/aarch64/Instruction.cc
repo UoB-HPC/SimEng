@@ -149,23 +149,23 @@ uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group
   if (isLoad_) {
     if (isFloatData_)
-      return InstructionGroups::FLOAT_LOAD;
+      return InstructionGroups::LOAD_FLOAT;
     else if (isVectorData_)
-      return InstructionGroups::VECTOR_LOAD;
+      return InstructionGroups::LOAD_VECTOR;
     else if (isSVEData_)
-      return InstructionGroups::SVE_LOAD;
-    return InstructionGroups::INT_LOAD;
+      return InstructionGroups::LOAD_SVE;
+    return InstructionGroups::LOAD_INT;
   }
   if (isStore_) return InstructionGroups::STORE;
   if (isBranch_) return InstructionGroups::BRANCH;
   if (isPredicate_) return InstructionGroups::PREDICATE;
 
   if (isFloatData_) {
-    if (isCompare_) return InstructionGroups::FLOAT_CMP;
-    if (isMultiply_) return InstructionGroups::FLOAT_MUL;
-    if (isDivideOrSqrt_) return InstructionGroups::FLOAT_DIV_OR_SQRT;
-    if (isNoShift_) return InstructionGroups::FLOAT_ARTH_NOSHIFT;
-    return InstructionGroups::FLOAT_ARTH;
+    if (isCompare_) return InstructionGroups::SCALAR_CMP;
+    if (isMultiply_) return InstructionGroups::SCALAR_MUL;
+    if (isDivideOrSqrt_) return InstructionGroups::SCALAR_DIV_OR_SQRT;
+    if (isNoShift_) return InstructionGroups::SCALAR_ARTH_NOSHIFT;
+    return InstructionGroups::SCALAR_ARTH;
   } else if (isVectorData_ || isSVEData_) {
     if (isCompare_) return InstructionGroups::VECTOR_CMP;
     if (isMultiply_) return InstructionGroups::VECTOR_MUL;

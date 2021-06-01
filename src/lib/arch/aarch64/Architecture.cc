@@ -39,11 +39,13 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   // Extract execution latency/throughput for each group
   for (size_t i = 0; i < config["Latencies"].size(); i++) {
     YAML::Node port_node = config["Latencies"][i];
-    uint16_t group = port_node["Instruction-Group"].as<uint16_t>();
-    groupExecutionInfo_[group].latency =
-        port_node["Execution-Latency"].as<uint16_t>();
-    groupExecutionInfo_[group].stallCycles =
-        port_node["Execution-Throughput"].as<uint16_t>();
+    uint16_t latency = port_node["Execution-Latency"].as<uint16_t>();
+    uint16_t throughput = port_node["Execution-Throughput"].as<uint16_t>();
+    for (size_t j = 0; j < port_node["Instruction-Groups"].size(); j++) {
+      uint16_t group = port_node["Instruction-Groups"][j].as<uint16_t>();
+      groupExecutionInfo_[group].latency = latency;
+      groupExecutionInfo_[group].stallCycles = throughput;
+    }
   }
 
   // ports entries in the groupExecutionInfo_ entries only apply for models
@@ -55,41 +57,25 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
       YAML::Node port_node = config["Ports"][i];
       for (size_t j = 0; j < port_node["Instruction-Support"].size(); j++) {
         uint16_t group = port_node["Instruction-Support"][j].as<uint16_t>();
-        groupExecutionInfo_[group].ports.push_back(static_cast<uint8_t>(i));
+        uint8_t newPort = static_cast<uint8_t>(i);
+        groupExecutionInfo_[group].ports.push_back(newPort);
         // Add inherited support for those appropriate groups
-        if (group == InstructionGroups::INT_ARTH) {
-          groupExecutionInfo_[InstructionGroups::INT_ARTH_NOSHIFT]
-              .ports.push_back(static_cast<uint8_t>(i));
-          groupExecutionInfo_[InstructionGroups::INT_CMP].ports.push_back(
-              static_cast<uint8_t>(i));
-        } else if (group == InstructionGroups::FLOAT_ARTH) {
-          groupExecutionInfo_[InstructionGroups::FLOAT_ARTH_NOSHIFT]
-              .ports.push_back(static_cast<uint8_t>(i));
-          groupExecutionInfo_[InstructionGroups::FLOAT_CMP].ports.push_back(
-              static_cast<uint8_t>(i));
-        } else if (group == InstructionGroups::VECTOR_ARTH) {
-          groupExecutionInfo_[InstructionGroups::VECTOR_ARTH_NOSHIFT]
-              .ports.push_back(static_cast<uint8_t>(i));
-          groupExecutionInfo_[InstructionGroups::VECTOR_CMP].ports.push_back(
-              static_cast<uint8_t>(i));
-        } else if (group == InstructionGroups::LOAD) {
-          groupExecutionInfo_[InstructionGroups::INT_LOAD].ports.push_back(
-              static_cast<uint8_t>(i));
-          groupExecutionInfo_[InstructionGroups::FLOAT_LOAD].ports.push_back(
-              static_cast<uint8_t>(i));
-          groupExecutionInfo_[InstructionGroups::VECTOR_LOAD].ports.push_back(
-              static_cast<uint8_t>(i));
-          groupExecutionInfo_[InstructionGroups::SVE_LOAD].ports.push_back(
-              static_cast<uint8_t>(i));
-        } else if (group == InstructionGroups::STORE) {
-          groupExecutionInfo_[InstructionGroups::INT_STORE].ports.push_back(
-              static_cast<uint8_t>(i));
-          groupExecutionInfo_[InstructionGroups::FLOAT_STORE].ports.push_back(
-              static_cast<uint8_t>(i));
-          groupExecutionInfo_[InstructionGroups::VECTOR_STORE].ports.push_back(
-              static_cast<uint8_t>(i));
-          groupExecutionInfo_[InstructionGroups::SVE_STORE].ports.push_back(
-              static_cast<uint8_t>(i));
+        std::queue<uint16_t> groups;
+        groups.push(group);
+        while (groups.size() && (groupInheritance.find(groups.front()) !=
+                                 groupInheritance.end())) {
+          std::vector<uint16_t> inheritedGroups =
+              groupInheritance.at(groups.front());
+          for (int k = 0; k < inheritedGroups.size(); k++) {
+            std::vector<uint8_t> ports =
+                groupExecutionInfo_[inheritedGroups[k]].ports;
+            // Ensure additions are unique
+            if (std::find(ports.begin(), ports.end(), newPort) == ports.end()) {
+              groupExecutionInfo_[inheritedGroups[k]].ports.push_back(newPort);
+            }
+            groups.push(inheritedGroups[k]);
+          }
+          groups.pop();
         }
       }
     }

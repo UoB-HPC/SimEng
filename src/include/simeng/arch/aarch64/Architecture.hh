@@ -1,6 +1,7 @@
 #pragma once
 
 #include <forward_list>
+#include <queue>
 #include <unordered_map>
 
 #include "simeng/arch/Architecture.hh"
@@ -71,6 +72,10 @@ class Architecture : public arch::Architecture {
   /** A map to hold the relationship between aarch64 instruction groups and
    * user-defined execution information. */
   std::unordered_map<uint16_t, executionInfo> groupExecutionInfo_;
+
+  /** A map to hold the relationship between aarch64 instruction opcode and
+   * user-defined execution information. */
+  std::unordered_map<uint16_t, executionInfo> opcodeExecutionInfo_;
 
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;

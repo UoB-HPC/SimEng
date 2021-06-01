@@ -547,7 +547,7 @@ void ExceptionHandler::printException(const Instruction& insn) const {
       std::cout << "secure monitor call";
       break;
     case InstructionException::NoAvailablePort:
-      std::cout << "no support execution port";
+      std::cout << "unsupported execution port";
       break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)
