@@ -29,10 +29,11 @@ First obtain the source code using git, including the dependencies:
 .. code-block:: text
 
         cd SimEng
-        cmake -Bbuild -H. # build files will be generated in a directory called "build"
+        cmake -B build -S . # build files will be generated in a directory called "build"
                 -DCMAKE_BUILD_TYPE=Release                        
                 -DCMAKE_INSTALL_PREFIX=<simeng_install_directory>
-
+                # -GNinja # enable Ninja for faster LLVM builds
+        
 1. Once configured, use ``cmake --build build`` or whichever generator you have selected for CMake to build. Append the ``-j`` flag to build in parallel, keep in mind that building LLVM like this usually has very high (1.5GB per core) memory requirements.
 
 2. (Optional) Run ``cmake --build build --target test`` to run the SimEng regression tests and unit tests. Please report any test failures as `a GitHub issue <https://github.com/UoB-HPC/SimEng/issues>`_.
