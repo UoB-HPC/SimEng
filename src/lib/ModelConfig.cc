@@ -263,17 +263,38 @@ void ModelConfig::validate() {
                       (std::string(euNum) + subFields[0]),
                       std::make_pair(false, true), ExpectedValue::Bool);
     if (euNode[subFields[1]].IsDefined() && !(euNode[subFields[1]].IsNull())) {
+      // Compile set of blocking groups into a queue
+      std::queue<uint16_t> blockingGroups;
       for (size_t j = 0; j < euNode[subFields[1]].size(); j++) {
         char bgNum[50];
         sprintf(bgNum, "Blocking group %zu", j);
         if (nodeChecker<std::string>(configFile_[root][i][subFields[1]][j],
                                      (std::string(euNum) + std::string(bgNum)),
                                      groupOptions, ExpectedValue::String)) {
-          YAML::Node group = euNode[subFields[1]][j];
-          // Map EU Blocking-Group to integer value
-          configFile_["Execution-Units"][i]["Blocking-Groups"][j] =
-              group_mapping[group.as<std::string>()];
+          uint16_t mappedGroup =
+              group_mapping[euNode[subFields[1]][j].as<std::string>()];
+          blockingGroups.push(mappedGroup);
+          configFile_["Execution-Units"][i]["Blocking-Groups"][j] = mappedGroup;
         }
+      }
+      // Expand set of blocking groups to include those that inherit from the
+      // user defined set
+      uint16_t config_index =
+          configFile_["Execution-Units"][i]["Blocking-Groups"].size();
+      while (blockingGroups.size()) {
+        // Determine if there's any inheritance
+        if (arch::aarch64::groupInheritance.find(blockingGroups.front()) !=
+            arch::aarch64::groupInheritance.end()) {
+          std::vector<uint16_t> inheritedGroups =
+              arch::aarch64::groupInheritance.at(blockingGroups.front());
+          for (int k = 0; k < inheritedGroups.size(); k++) {
+            blockingGroups.push(inheritedGroups[k]);
+            configFile_["Execution-Units"][i]["Blocking-Groups"][config_index] =
+                inheritedGroups[k];
+            config_index++;
+          }
+        }
+        blockingGroups.pop();
       }
     }
   }

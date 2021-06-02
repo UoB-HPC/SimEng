@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <queue>
 #include <string>
 
 #include "simeng/arch/aarch64/Instruction.hh"

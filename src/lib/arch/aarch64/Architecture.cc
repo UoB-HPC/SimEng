@@ -68,14 +68,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
             std::vector<uint16_t> inheritedGroups =
                 groupInheritance.at(groups.front());
             for (int k = 0; k < inheritedGroups.size(); k++) {
-              std::vector<uint8_t> ports =
-                  groupExecutionInfo_[inheritedGroups[k]].ports;
-              // Ensure additions are unique
-              if (std::find(ports.begin(), ports.end(), newPort) ==
-                  ports.end()) {
-                groupExecutionInfo_[inheritedGroups[k]].ports.push_back(
-                    newPort);
-              }
+              groupExecutionInfo_[inheritedGroups[k]].ports.push_back(newPort);
               groups.push(inheritedGroups[k]);
             }
           }
