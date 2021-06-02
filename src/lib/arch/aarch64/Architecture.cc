@@ -30,7 +30,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
 
-  // Instantiate keys of groupExecutionInfo_ for all 12 groups defined in the
+  // Instantiate keys of groupExecutionInfo_ for all groups defined in the
   // InstructionGroups namespace
   for (int i = 0; i < NUM_GROUPS; i++) {
     groupExecutionInfo_.insert({i, {1, 1, {}}});
@@ -62,18 +62,22 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
         // Add inherited support for those appropriate groups
         std::queue<uint16_t> groups;
         groups.push(group);
-        while (groups.size() && (groupInheritance.find(groups.front()) !=
-                                 groupInheritance.end())) {
-          std::vector<uint16_t> inheritedGroups =
-              groupInheritance.at(groups.front());
-          for (int k = 0; k < inheritedGroups.size(); k++) {
-            std::vector<uint8_t> ports =
-                groupExecutionInfo_[inheritedGroups[k]].ports;
-            // Ensure additions are unique
-            if (std::find(ports.begin(), ports.end(), newPort) == ports.end()) {
-              groupExecutionInfo_[inheritedGroups[k]].ports.push_back(newPort);
+        while (groups.size()) {
+          // Determine if there's any inheritance
+          if (groupInheritance.find(groups.front()) != groupInheritance.end()) {
+            std::vector<uint16_t> inheritedGroups =
+                groupInheritance.at(groups.front());
+            for (int k = 0; k < inheritedGroups.size(); k++) {
+              std::vector<uint8_t> ports =
+                  groupExecutionInfo_[inheritedGroups[k]].ports;
+              // Ensure additions are unique
+              if (std::find(ports.begin(), ports.end(), newPort) ==
+                  ports.end()) {
+                groupExecutionInfo_[inheritedGroups[k]].ports.push_back(
+                    newPort);
+              }
+              groups.push(inheritedGroups[k]);
             }
-            groups.push(inheritedGroups[k]);
           }
           groups.pop();
         }

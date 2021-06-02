@@ -278,6 +278,13 @@ void Instruction::decode() {
     isLoad_ = true;
   }
 
+  if ((227 < metadata.opcode && metadata.opcode < 254) ||    // AND
+      (299 < metadata.opcode && metadata.opcode < 321) ||    // BIC
+      (733 < metadata.opcode && metadata.opcode < 759) ||    // EOR/EON
+      (2626 < metadata.opcode && metadata.opcode < 2655)) {  // ORR/ORN
+    isLogical_ = true;
+  }
+
   if ((379 < metadata.opcode && metadata.opcode < 388) ||
       (437 < metadata.opcode && metadata.opcode < 625) ||
       (789 < metadata.opcode && metadata.opcode < 812) ||
@@ -287,6 +294,18 @@ void Instruction::decode() {
     // register
     if (!(isFloatData_ || isVectorData_) &&
         sourceRegisters[0].type == RegisterType::VECTOR) {
+      isFloatData_ = true;
+    }
+  }
+
+  if ((984 < metadata.opcode && metadata.opcode < 1190) ||
+      (metadata.opcode == 1210) ||
+      (2871 < metadata.opcode && metadata.opcode < 2907) ||
+      (4010 < metadata.opcode && metadata.opcode < 4046)) {
+    isConvert_ = true;
+    // Capture those floating point convert instructions whose destination
+    // register is general purpose
+    if (!(isFloatData_ || isVectorData_ || isSVEData_)) {
       isFloatData_ = true;
     }
   }

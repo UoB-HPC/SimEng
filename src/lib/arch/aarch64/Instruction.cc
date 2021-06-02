@@ -147,40 +147,29 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 
 uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group
-  if (isLoad_) {
-    if (isFloatData_)
-      return InstructionGroups::LOAD_FLOAT;
-    else if (isVectorData_)
-      return InstructionGroups::LOAD_VECTOR;
-    else if (isSVEData_)
-      return InstructionGroups::LOAD_SVE;
-    return InstructionGroups::LOAD_INT;
-  }
-  if (isStore_) return InstructionGroups::STORE;
+  // Set base
+  uint16_t base = InstructionGroups::INT;
+  if (isFloatData_)
+    base = InstructionGroups::SCALAR;
+  else if (isVectorData_)
+    base = InstructionGroups::VECTOR;
+  else if (isSVEData_)
+    base = InstructionGroups::SVE;
+
+  if (isLoad_) return base + 10;
+  if (isStore_) return base + 11;
   if (isBranch_) return InstructionGroups::BRANCH;
   if (isPredicate_) return InstructionGroups::PREDICATE;
-
-  if (isFloatData_) {
-    if (isCompare_) return InstructionGroups::SCALAR_CMP;
-    if (isMultiply_) return InstructionGroups::SCALAR_MUL;
-    if (isDivideOrSqrt_) return InstructionGroups::SCALAR_DIV_OR_SQRT;
-    if (isNoShift_) return InstructionGroups::SCALAR_ARTH_NOSHIFT;
-    return InstructionGroups::SCALAR_ARTH;
-  } else if (isVectorData_ || isSVEData_) {
-    if (isCompare_) return InstructionGroups::VECTOR_CMP;
-    if (isMultiply_) return InstructionGroups::VECTOR_MUL;
-    if (isDivideOrSqrt_) return InstructionGroups::VECTOR_DIV_OR_SQRT;
-    if (isNoShift_) return InstructionGroups::VECTOR_ARTH_NOSHIFT;
-    return InstructionGroups::VECTOR_ARTH;
-  } else {
-    if (isCompare_) return InstructionGroups::INT_CMP;
-    if (isMultiply_) return InstructionGroups::INT_MUL;
-    if (isDivideOrSqrt_) return InstructionGroups::INT_DIV_OR_SQRT;
-    if (isNoShift_) return InstructionGroups::INT_ARTH_NOSHIFT;
+  if (isDivideOrSqrt_) return base + 9;
+  if (isMultiply_) return base + 8;
+  if (isConvert_) return base + 7;
+  if (isCompare_) return base + 6;
+  if (isLogical_) {
+    if (isNoShift_) return base + 5;
+    return base + 4;
   }
-
-  // Retrun simple integer arithmetic as default
-  return InstructionGroups::INT_ARTH;
+  if (isNoShift_) return base + 3;
+  return base + 2;  // Default return is {Data type}_ARTH
 }
 
 void Instruction::setExecutionInfo(const executionInfo* info) {

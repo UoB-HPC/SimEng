@@ -35,85 +35,91 @@ const uint16_t INT_SIMPLE = 1;
 const uint16_t INT_ARTH = 2;
 const uint16_t INT_ARTH_NOSHIFT = 3;
 const uint16_t INT_LOGICAL = 4;
-const uint16_t INT_CMP = 5;
-const uint16_t INT_CVT = 6;
-const uint16_t INT_MUL = 7;
-const uint16_t INT_DIV_OR_SQRT = 8;
-const uint16_t FP = 9;
-const uint16_t FP_SIMPLE = 10;
-const uint16_t FP_ARTH = 11;
-const uint16_t FP_ARTH_NOSHIFT = 12;
-const uint16_t FP_LOGICAL = 13;
-const uint16_t FP_CMP = 14;
-const uint16_t FP_CVT = 15;
-const uint16_t FP_MUL = 16;
-const uint16_t FP_DIV_OR_SQRT = 17;
-const uint16_t SCALAR = 18;
-const uint16_t SCALAR_SIMPLE = 19;
-const uint16_t SCALAR_ARTH = 20;
-const uint16_t SCALAR_ARTH_NOSHIFT = 21;
-const uint16_t SCALAR_LOGICAL = 22;
-const uint16_t SCALAR_CMP = 23;
-const uint16_t SCALAR_CVT = 24;
-const uint16_t SCALAR_MUL = 25;
-const uint16_t SCALAR_DIV_OR_SQRT = 26;
-const uint16_t VECTOR = 27;
-const uint16_t VECTOR_SIMPLE = 28;
-const uint16_t VECTOR_ARTH = 29;
-const uint16_t VECTOR_ARTH_NOSHIFT = 30;
-const uint16_t VECTOR_LOGICAL = 31;
-const uint16_t VECTOR_CMP = 32;
-const uint16_t VECTOR_CVT = 33;
-const uint16_t VECTOR_MUL = 34;
-const uint16_t VECTOR_DIV_OR_SQRT = 35;
-const uint16_t SVE = 36;
-const uint16_t SVE_SIMPLE = 37;
-const uint16_t SVE_ARTH = 38;
-const uint16_t SVE_ARTH_NOSHIFT = 39;
-const uint16_t SVE_LOGICAL = 40;
-const uint16_t SVE_CMP = 41;
-const uint16_t SVE_CVT = 42;
-const uint16_t SVE_MUL = 43;
-const uint16_t SVE_DIV_OR_SQRT = 44;
-const uint16_t PREDICATE = 45;
-const uint16_t LOAD = 46;
-const uint16_t LOAD_INT = 47;
-const uint16_t LOAD_FLOAT = 48;
-const uint16_t LOAD_VECTOR = 49;
-const uint16_t LOAD_SVE = 50;
-const uint16_t STORE = 51;
-const uint16_t STORE_INT = 52;
-const uint16_t STORE_FLOAT = 53;
-const uint16_t STORE_VECTOR = 54;
-const uint16_t STORE_SVE = 55;
-const uint16_t BRANCH = 56;
+const uint16_t INT_LOGICAL_NOSHIFT = 5;
+const uint16_t INT_CMP = 6;
+const uint16_t INT_CVT = 7;
+const uint16_t INT_MUL = 8;
+const uint16_t INT_DIV_OR_SQRT = 9;
+const uint16_t LOAD_INT = 10;
+const uint16_t STORE_INT = 11;
+const uint16_t FP = 12;
+const uint16_t FP_SIMPLE = 13;
+const uint16_t FP_ARTH = 14;
+const uint16_t FP_ARTH_NOSHIFT = 15;
+const uint16_t FP_LOGICAL = 16;
+const uint16_t FP_LOGICAL_NOSHIFT = 17;
+const uint16_t FP_CMP = 18;
+const uint16_t FP_CVT = 19;
+const uint16_t FP_MUL = 20;
+const uint16_t FP_DIV_OR_SQRT = 21;
+const uint16_t SCALAR = 22;
+const uint16_t SCALAR_SIMPLE = 23;
+const uint16_t SCALAR_ARTH = 24;
+const uint16_t SCALAR_ARTH_NOSHIFT = 25;
+const uint16_t SCALAR_LOGICAL = 26;
+const uint16_t SCALAR_LOGICAL_NOSHIFT = 27;
+const uint16_t SCALAR_CMP = 28;
+const uint16_t SCALAR_CVT = 29;
+const uint16_t SCALAR_MUL = 30;
+const uint16_t SCALAR_DIV_OR_SQRT = 31;
+const uint16_t LOAD_FLOAT = 32;
+const uint16_t STORE_FLOAT = 33;
+const uint16_t VECTOR = 34;
+const uint16_t VECTOR_SIMPLE = 35;
+const uint16_t VECTOR_ARTH = 36;
+const uint16_t VECTOR_ARTH_NOSHIFT = 37;
+const uint16_t VECTOR_LOGICAL = 38;
+const uint16_t VECTOR_LOGICAL_NOSHIFT = 39;
+const uint16_t VECTOR_CMP = 40;
+const uint16_t VECTOR_CVT = 41;
+const uint16_t VECTOR_MUL = 42;
+const uint16_t VECTOR_DIV_OR_SQRT = 43;
+const uint16_t LOAD_VECTOR = 44;
+const uint16_t STORE_VECTOR = 45;
+const uint16_t SVE = 46;
+const uint16_t SVE_SIMPLE = 47;
+const uint16_t SVE_ARTH = 48;
+const uint16_t SVE_ARTH_NOSHIFT = 49;
+const uint16_t SVE_LOGICAL = 50;
+const uint16_t SVE_LOGICAL_NOSHIFT = 51;
+const uint16_t SVE_CMP = 52;
+const uint16_t SVE_CVT = 53;
+const uint16_t SVE_MUL = 54;
+const uint16_t SVE_DIV_OR_SQRT = 55;
+const uint16_t LOAD_SVE = 56;
+const uint16_t STORE_SVE = 57;
+const uint16_t PREDICATE = 58;
+const uint16_t LOAD = 59;
+const uint16_t STORE = 60;
+const uint16_t BRANCH = 61;
 }  // namespace InstructionGroups
 
 /** The number of aarch64 instruction groups. */
-#define NUM_GROUPS 57
+#define NUM_GROUPS 62
 
 const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
     {InstructionGroups::INT,
      {InstructionGroups::INT_ARTH, InstructionGroups::INT_ARTH_NOSHIFT,
-      InstructionGroups::INT_LOGICAL, InstructionGroups::INT_CMP,
-      InstructionGroups::INT_CVT, InstructionGroups::INT_DIV_OR_SQRT,
-      InstructionGroups::INT_MUL}},
+      InstructionGroups::INT_LOGICAL, InstructionGroups::INT_LOGICAL_NOSHIFT,
+      InstructionGroups::INT_CMP, InstructionGroups::INT_CVT,
+      InstructionGroups::INT_DIV_OR_SQRT, InstructionGroups::INT_MUL}},
     {InstructionGroups::INT_SIMPLE,
      {InstructionGroups::INT_ARTH, InstructionGroups::INT_ARTH_NOSHIFT,
-      InstructionGroups::INT_LOGICAL, InstructionGroups::INT_CMP,
-      InstructionGroups::INT_CVT}},
+      InstructionGroups::INT_LOGICAL, InstructionGroups::INT_LOGICAL_NOSHIFT,
+      InstructionGroups::INT_CMP, InstructionGroups::INT_CVT}},
     {InstructionGroups::INT_ARTH, {InstructionGroups::INT_ARTH_NOSHIFT}},
+    {InstructionGroups::INT_LOGICAL, {InstructionGroups::INT_LOGICAL_NOSHIFT}},
     {InstructionGroups::FP,
      {InstructionGroups::FP_ARTH, InstructionGroups::FP_ARTH_NOSHIFT,
-      InstructionGroups::FP_LOGICAL, InstructionGroups::FP_CMP,
-      InstructionGroups::FP_CVT, InstructionGroups::FP_DIV_OR_SQRT,
-      InstructionGroups::FP_MUL, InstructionGroups::SCALAR,
-      InstructionGroups::VECTOR}},
+      InstructionGroups::FP_LOGICAL, InstructionGroups::FP_LOGICAL_NOSHIFT,
+      InstructionGroups::FP_CMP, InstructionGroups::FP_CVT,
+      InstructionGroups::FP_DIV_OR_SQRT, InstructionGroups::FP_MUL,
+      InstructionGroups::SCALAR, InstructionGroups::VECTOR}},
     {InstructionGroups::FP_SIMPLE,
      {InstructionGroups::FP_ARTH, InstructionGroups::FP_ARTH_NOSHIFT,
-      InstructionGroups::FP_LOGICAL, InstructionGroups::FP_CMP,
-      InstructionGroups::FP_CVT, InstructionGroups::SCALAR_SIMPLE,
-      InstructionGroups::VECTOR_SIMPLE}},
+      InstructionGroups::FP_LOGICAL, InstructionGroups::FP_LOGICAL_NOSHIFT,
+      InstructionGroups::FP_CMP, InstructionGroups::FP_CVT,
+      InstructionGroups::SCALAR_SIMPLE, InstructionGroups::VECTOR_SIMPLE}},
     {InstructionGroups::FP_ARTH,
      {InstructionGroups::FP_ARTH_NOSHIFT, InstructionGroups::SCALAR_ARTH,
       InstructionGroups::VECTOR_ARTH}},
@@ -121,7 +127,8 @@ const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
      {InstructionGroups::SCALAR_ARTH_NOSHIFT,
       InstructionGroups::VECTOR_ARTH_NOSHIFT}},
     {InstructionGroups::FP_LOGICAL,
-     {InstructionGroups::SCALAR_LOGICAL, InstructionGroups::VECTOR_LOGICAL}},
+     {InstructionGroups::FP_LOGICAL_NOSHIFT, InstructionGroups::SCALAR_LOGICAL,
+      InstructionGroups::VECTOR_LOGICAL}},
     {InstructionGroups::FP_CMP,
      {InstructionGroups::SCALAR_CMP, InstructionGroups::VECTOR_CMP}},
     {InstructionGroups::FP_CVT,
@@ -133,34 +140,43 @@ const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
       InstructionGroups::VECTOR_DIV_OR_SQRT}},
     {InstructionGroups::SCALAR,
      {InstructionGroups::SCALAR_ARTH, InstructionGroups::SCALAR_ARTH_NOSHIFT,
-      InstructionGroups::SCALAR_LOGICAL, InstructionGroups::SCALAR_CMP,
+      InstructionGroups::SCALAR_LOGICAL,
+      InstructionGroups::SCALAR_LOGICAL_NOSHIFT, InstructionGroups::SCALAR_CMP,
       InstructionGroups::SCALAR_CVT, InstructionGroups::SCALAR_DIV_OR_SQRT,
       InstructionGroups::SCALAR_MUL}},
     {InstructionGroups::SCALAR_SIMPLE,
      {InstructionGroups::SCALAR_ARTH, InstructionGroups::SCALAR_ARTH_NOSHIFT,
-      InstructionGroups::SCALAR_LOGICAL, InstructionGroups::SCALAR_CMP,
+      InstructionGroups::SCALAR_LOGICAL,
+      InstructionGroups::SCALAR_LOGICAL_NOSHIFT, InstructionGroups::SCALAR_CMP,
       InstructionGroups::SCALAR_CVT}},
     {InstructionGroups::SCALAR_ARTH, {InstructionGroups::SCALAR_ARTH_NOSHIFT}},
+    {InstructionGroups::SCALAR_LOGICAL,
+     {InstructionGroups::SCALAR_LOGICAL_NOSHIFT}},
     {InstructionGroups::VECTOR,
      {InstructionGroups::VECTOR_ARTH, InstructionGroups::VECTOR_ARTH_NOSHIFT,
-      InstructionGroups::VECTOR_LOGICAL, InstructionGroups::VECTOR_CMP,
+      InstructionGroups::VECTOR_LOGICAL,
+      InstructionGroups::VECTOR_LOGICAL_NOSHIFT, InstructionGroups::VECTOR_CMP,
       InstructionGroups::VECTOR_CVT, InstructionGroups::VECTOR_DIV_OR_SQRT,
       InstructionGroups::VECTOR_MUL}},
     {InstructionGroups::VECTOR_SIMPLE,
      {InstructionGroups::VECTOR_ARTH, InstructionGroups::VECTOR_ARTH_NOSHIFT,
-      InstructionGroups::VECTOR_LOGICAL, InstructionGroups::VECTOR_CMP,
+      InstructionGroups::VECTOR_LOGICAL,
+      InstructionGroups::VECTOR_LOGICAL_NOSHIFT, InstructionGroups::VECTOR_CMP,
       InstructionGroups::VECTOR_CVT}},
     {InstructionGroups::VECTOR_ARTH, {InstructionGroups::VECTOR_ARTH_NOSHIFT}},
+    {InstructionGroups::VECTOR_LOGICAL,
+     {InstructionGroups::VECTOR_LOGICAL_NOSHIFT}},
     {InstructionGroups::SVE,
      {InstructionGroups::SVE_ARTH, InstructionGroups::SVE_ARTH_NOSHIFT,
-      InstructionGroups::SVE_LOGICAL, InstructionGroups::SVE_CMP,
-      InstructionGroups::SVE_CVT, InstructionGroups::SVE_DIV_OR_SQRT,
-      InstructionGroups::SVE_MUL}},
+      InstructionGroups::SVE_LOGICAL, InstructionGroups::SVE_LOGICAL_NOSHIFT,
+      InstructionGroups::SVE_CMP, InstructionGroups::SVE_CVT,
+      InstructionGroups::SVE_DIV_OR_SQRT, InstructionGroups::SVE_MUL}},
     {InstructionGroups::SVE_SIMPLE,
      {InstructionGroups::SVE_ARTH, InstructionGroups::SVE_ARTH_NOSHIFT,
-      InstructionGroups::SVE_LOGICAL, InstructionGroups::SVE_CMP,
-      InstructionGroups::SVE_CVT}},
+      InstructionGroups::SVE_LOGICAL, InstructionGroups::SVE_LOGICAL_NOSHIFT,
+      InstructionGroups::SVE_CMP, InstructionGroups::SVE_CVT}},
     {InstructionGroups::SVE_ARTH, {InstructionGroups::SVE_ARTH_NOSHIFT}},
+    {InstructionGroups::SVE_LOGICAL, {InstructionGroups::SVE_LOGICAL_NOSHIFT}},
     {InstructionGroups::LOAD,
      {InstructionGroups::LOAD_INT, InstructionGroups::LOAD_FLOAT,
       InstructionGroups::LOAD_VECTOR, InstructionGroups::LOAD_SVE}},
@@ -361,28 +377,32 @@ class Instruction : public simeng::Instruction {
   void executionNYI();
 
   // Instruction Identifiers
-  /** Is a compare operation. */
-  bool isCompare_ = false;
-  /** Is a multiply operation */
-  bool isMultiply_ = false;
-  /** Is a divide or square root operation */
-  bool isDivideOrSqrt_ = false;
-  /** Is a load operation */
-  bool isLoad_ = false;
-  /** Is a store operation */
-  bool isStore_ = false;
-  /** Is a branch operation */
-  bool isBranch_ = false;
-  /** Doesn't have a shift operand */
-  bool isNoShift_ = true;
   /** Operates on floating point values */
   bool isFloatData_ = false;
   /** Operates on vector values. */
   bool isVectorData_ = false;
   /** Uses Z registers as source and/or destination operands */
   bool isSVEData_ = false;
+  /** Doesn't have a shift operand */
+  bool isNoShift_ = true;
+  /** Is a logical operation. */
+  bool isLogical_ = false;
+  /** Is a compare operation. */
+  bool isCompare_ = false;
+  /** Is a convert operation. */
+  bool isConvert_ = false;
+  /** Is a multiply operation */
+  bool isMultiply_ = false;
+  /** Is a divide or square root operation */
+  bool isDivideOrSqrt_ = false;
   /** Writes to a predicate register */
   bool isPredicate_ = false;
+  /** Is a load operation */
+  bool isLoad_ = false;
+  /** Is a store operation */
+  bool isStore_ = false;
+  /** Is a branch operation */
+  bool isBranch_ = false;
   /** Is a return instruction */
   bool isRET_ = false;
   /** Is a branch and link instructions */
