@@ -30,20 +30,14 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
 
-  // Instantiate keys of groupExecutionInfo_ for all groups defined in the
-  // InstructionGroups namespace
-  for (int i = 0; i < NUM_GROUPS; i++) {
-    groupExecutionInfo_.insert({i, {1, 1, {}}});
-  }
-
   // Extract execution latency/throughput for each group
   std::vector<bool> explicitLatency(NUM_GROUPS, false);
   for (size_t i = 0; i < config["Latencies"].size(); i++) {
     YAML::Node port_node = config["Latencies"][i];
     uint16_t latency = port_node["Execution-Latency"].as<uint16_t>();
     uint16_t throughput = port_node["Execution-Throughput"].as<uint16_t>();
-    for (size_t j = 0; j < port_node["Instruction-Groups"].size(); j++) {
-      uint16_t group = port_node["Instruction-Groups"][j].as<uint16_t>();
+    for (size_t j = 0; j < port_node["Instruction-Group"].size(); j++) {
+      uint16_t group = port_node["Instruction-Group"][j].as<uint16_t>();
       groupExecutionInfo_[group].latency = latency;
       groupExecutionInfo_[group].stallCycles = throughput;
       // Tag explicit latency assignment as opposed from assignment due to
@@ -70,6 +64,12 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
         groups.pop();
       }
     }
+    // Store any opcode-based latency override
+    for (size_t j = 0; j < port_node["Instruction-Opcode"].size(); j++) {
+      uint16_t opcode = port_node["Instruction-Opcode"][j].as<uint16_t>();
+      opcodeExecutionInfo_[opcode].latency = latency;
+      opcodeExecutionInfo_[opcode].stallCycles = throughput;
+    }
   }
 
   // ports entries in the groupExecutionInfo_ entries only apply for models
@@ -78,9 +78,10 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     // Create mapping between instructions groups and the ports that support
     // them
     for (size_t i = 0; i < config["Ports"].size(); i++) {
-      YAML::Node port_node = config["Ports"][i];
-      for (size_t j = 0; j < port_node["Instruction-Support"].size(); j++) {
-        uint16_t group = port_node["Instruction-Support"][j].as<uint16_t>();
+      // Store which ports support which groups
+      YAML::Node group_node = config["Ports"][i]["Instruction-Group-Support"];
+      for (size_t j = 0; j < group_node.size(); j++) {
+        uint16_t group = group_node[j].as<uint16_t>();
         uint8_t newPort = static_cast<uint8_t>(i);
         groupExecutionInfo_[group].ports.push_back(newPort);
         // Add inherited support for those appropriate groups
@@ -98,6 +99,17 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
           }
           groups.pop();
         }
+      }
+      // Store any opcode-based port support override
+      YAML::Node opcode_node = config["Ports"][i]["Instruction-Opcode-Support"];
+      for (size_t j = 0; j < opcode_node.size(); j++) {
+        // If latency information hasn't been defined, set to zero as to inform
+        // later access to use group defined latencies instead
+        uint16_t opcode = opcode_node[j].as<uint16_t>();
+        if (opcodeExecutionInfo_.find(opcode) == opcodeExecutionInfo_.end()) {
+          opcodeExecutionInfo_[opcode] = {0, 0, {}};
+        }
+        opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
       }
     }
   }
@@ -159,8 +171,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     Instruction newInstruction = Instruction(*this, metadataCache.front());
 
     // Set execution information for this instruction
-    newInstruction.setExecutionInfo(
-        &groupExecutionInfo_.at(newInstruction.getGroup()));
+    newInstruction.setExecutionInfo(getExecutionInfo(newInstruction));
 
     auto result = decodeCache.insert({insn, newInstruction});
 
@@ -177,6 +188,22 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   uop->setBranchPrediction(prediction);
 
   return 4;
+}
+
+executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
+  // Asusme no opcode-based override
+  executionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
+  if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
+      opcodeExecutionInfo_.end()) {
+    // Replace with overrided values
+    executionInfo overrideInfo =
+        opcodeExecutionInfo_.at(insn.getMetadata().opcode);
+    if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
+    if (overrideInfo.stallCycles != 0)
+      exeInfo.stallCycles = overrideInfo.stallCycles;
+    if (overrideInfo.ports.size()) exeInfo.ports = overrideInfo.ports;
+  }
+  return exeInfo;
 }
 
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
@@ -228,8 +255,8 @@ ProcessStateChange Architecture::getUpdateState() const {
   changes.type = ChangeType::INCREMENT;
 
   // Increment the Counter-timer Virtual Count (CNTVCT) register by 1
-  /* TODO: CNTVCT value should be equal to the physical count value minus the
-   * virtual offset visible in CNTVOFF. */
+  /* TODO: CNTVCT value should be equal to the physical count value minus
+   * the virtual offset visible in CNTVOFF. */
   changes.modifiedRegisters.push_back(
       {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0)});
   changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(1));

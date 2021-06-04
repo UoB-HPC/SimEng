@@ -57,6 +57,12 @@ class Architecture : public arch::Architecture {
    * execution unit for, respectively. */
   std::pair<uint8_t, uint8_t> getLatencies(InstructionMetadata& metadata) const;
 
+  /** Retrieve an executionInfo object for the requested instruction. If a
+   * opcode-based override has been defined for the latency and/or
+   * port information, return that instead of the group-defined execution
+   * information. */
+  executionInfo getExecutionInfo(Instruction& insn) const;
+
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */

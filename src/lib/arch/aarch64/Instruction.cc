@@ -172,14 +172,14 @@ uint16_t Instruction::getGroup() const {
   return base + 2;  // Default return is {Data type}_ARTH
 }
 
-void Instruction::setExecutionInfo(const executionInfo* info) {
+void Instruction::setExecutionInfo(const executionInfo& info) {
   if (isLoad_ || isStore_) {
-    lsqExecutionLatency_ = info->latency;
+    lsqExecutionLatency_ = info.latency;
   } else {
-    latency_ = info->latency;
+    latency_ = info.latency;
   }
-  stallCycles_ = info->stallCycles;
-  supportedPorts_ = info->ports;
+  stallCycles_ = info.stallCycles;
+  supportedPorts_ = info.ports;
 }
 std::vector<uint8_t> Instruction::getSupportedPorts() {
   if (supportedPorts_.size() == 0) {

@@ -166,13 +166,13 @@ const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
  * instruction. */
 struct executionInfo {
   /** The latency for the instruction. */
-  uint16_t latency;
+  uint16_t latency = 1;
 
   /** The execution throughput for the instruction. */
-  uint16_t stallCycles;
+  uint16_t stallCycles = 1;
 
   /** The ports that support the instruction. */
-  std::vector<uint8_t> ports;
+  std::vector<uint8_t> ports = {};
 };
 
 enum class InstructionException {
@@ -277,7 +277,7 @@ class Instruction : public simeng::Instruction {
 
   /** Set this instruction's execution information including it's execution
    * latency and throughput, and the set of ports which support it. */
-  void setExecutionInfo(const executionInfo* info);
+  void setExecutionInfo(const executionInfo& info);
 
   /** Get this instruction's supported set of ports. */
   std::vector<uint8_t> getSupportedPorts() override;

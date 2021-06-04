@@ -198,7 +198,7 @@ int main(int argc, char** argv) {
   std::vector<std::vector<uint16_t>> portArrangement(config_ports.size());
   // Extract number of ports
   for (size_t i = 0; i < config_ports.size(); i++) {
-    auto config_groups = config_ports[i]["Instruction-Support"];
+    auto config_groups = config_ports[i]["Instruction-Group-Support"];
     // Extract number of groups in port
     for (size_t j = 0; j < config_groups.size(); j++) {
       portArrangement[i].push_back(config_groups[j].as<uint16_t>());

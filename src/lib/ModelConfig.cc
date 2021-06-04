@@ -130,6 +130,8 @@ void ModelConfig::validate() {
       missing_ << "\t- " << port_num << "Instruction-Support\n";
       continue;
     }
+    uint16_t groupIndex = 0;
+    uint16_t opcodeIndex = 0;
     for (size_t j = 0; j < port_node["Instruction-Support"].size(); j++) {
       YAML::Node group = port_node["Instruction-Support"][j];
       // Get group number into a string format
@@ -137,15 +139,25 @@ void ModelConfig::validate() {
       sprintf(group_msg, "Group %zu ", j);
       std::string group_num = std::string(group_msg);
       // Check for existance of instruction group
-      if (group.as<std::string>()[0] == '*') {
-        // Implement opcode defined ports
-        std::cerr << "Opcode defined ports not yet supported" << std::endl;
-        exit(1);
+      if (group.as<std::string>()[0] == '~') {
+        // Extract opcode and store in config option
+        uint16_t opcode = std::stoi(
+            group.as<std::string>().substr(1, group.as<std::string>().size()));
+        configFile_["Ports"][i]["Instruction-Opcode-Support"][opcodeIndex] =
+            opcode;
+        // Ensure opcode is between the bounds of 0 and Capstones'
+        // AArch64_INSTRUCTION_LIST_END
+        boundChecker(
+            configFile_["Ports"][i]["Instruction-Opcode-Support"][opcodeIndex],
+            port_num + group_num, std::make_pair(0, 4516),
+            ExpectedValue::UInteger);
+        opcodeIndex++;
       } else if (nodeChecker<std::string>(group, port_num + group_num,
                                           groupOptions,
                                           ExpectedValue::String)) {
-        configFile_["Ports"][i]["Instruction-Support"][j] =
+        configFile_["Ports"][i]["Instruction-Group-Support"][groupIndex] =
             unsigned(group_mapping[group.as<std::string>()]);
+        groupIndex++;
       }
     }
   }
@@ -310,22 +322,31 @@ void ModelConfig::validate() {
     YAML::Node latNode = configFile_[root][i];
     YAML::Node grpNode = latNode[subFields[0]];
     if (grpNode.IsDefined() && !(grpNode.IsNull())) {
+      uint16_t groupIndex = 0;
+      uint16_t opcodeIndex = 0;
       for (size_t j = 0; j < grpNode.size(); j++) {
         char grpNum[50];
         sprintf(grpNum, "Instruction group %zu ", j);
         // Determine whether the value is an opcode or an instruction-group
         // value
-        if (grpNode[j].as<std::string>()[0] == '*') {
-          // Implement opcode defined latencies
-          std::cerr << "Opcode defined latencies not yet supported"
-                    << std::endl;
-          exit(1);
+        if (grpNode[j].as<std::string>()[0] == '~') {
+          // Extract opcode and store in config option
+          uint16_t opcode = std::stoi(grpNode[j].as<std::string>().substr(
+              1, grpNode[j].as<std::string>().size()));
+          configFile_[root][i]["Instruction-Opcode"][opcodeIndex] = opcode;
+          // Ensure opcode is between the bounds of 0 and Capstones'
+          // AArch64_INSTRUCTION_LIST_END
+          boundChecker(configFile_[root][i]["Instruction-Opcode"][opcodeIndex],
+                       (std::string(latNum) + std::string(grpNum)),
+                       std::make_pair(0, 4516), ExpectedValue::UInteger);
+          opcodeIndex++;
         } else if (nodeChecker<std::string>(
                        grpNode[j], (std::string(latNum) + std::string(grpNum)),
                        groupOptions, ExpectedValue::String)) {
           // Map latency Instruction-Group to integer value
-          configFile_[root][i][subFields[0]][j] =
+          configFile_[root][i]["Instruction-Group"][groupIndex] =
               group_mapping[grpNode[j].as<std::string>()];
+          groupIndex++;
         }
       }
     } else {
