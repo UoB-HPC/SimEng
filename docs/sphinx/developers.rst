@@ -1,5 +1,5 @@
-Developer information
-=====================
+Developer Documentation
+=======================
 
 Contributions in the form of GitHub pull requests are always welcome.
 Pull requests will be reviewed carefully, and changes may be requested if they

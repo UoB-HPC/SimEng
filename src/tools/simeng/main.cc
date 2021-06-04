@@ -120,6 +120,10 @@ int main(int argc, char** argv) {
         0x71000400,  // subs w0, w0, #1
         // 0x00000000,  // invalid
         0x54FFFFC1,  // b.ne -8
+                     // .exit:
+        0xD2800000,  // mov x0, #0
+        0xD2800BC8,  // mov x8, #94
+        0xD4000001,  // svc #0
     };
 
     // Load/store consistency test; a simple bubble sort algorithm

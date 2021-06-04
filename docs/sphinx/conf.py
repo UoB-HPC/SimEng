@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = u'SimEng'
-copyright = u'2019, SimEng developers'
+copyright = u'2021, SimEng developers'
 author = u'SimEng developers'
 
 # The short X.Y version
@@ -38,7 +38,7 @@ release = u''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['m2r', 'sphinx.ext.todo']
+extensions = ['m2r2', 'sphinx.ext.todo']
 
 # Enable TODO output.
 todo_include_todos = True
@@ -106,11 +106,11 @@ html_static_path = ['_static']
 htmlhelp_basename = 'SimEngDoc'
 
 html_context = {
-  # Create an "Edit on GitHub" link in the page headers.
-  'display_github': True,
-  'github_user': 'UoB-HPC',
-  'github_repo': 'SimEng',
-  'github_version': 'master/'
+    # Create an "Edit on GitHub" link in the page headers.
+    'display_github': True,
+    'github_user': 'UoB-HPC',
+    'github_repo': 'SimEng',
+    'github_version': 'master/'
 }
 
 

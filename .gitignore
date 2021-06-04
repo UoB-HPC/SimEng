@@ -7,3 +7,11 @@ binaries
 install
 install-debug
 capstone.pc
+
+CMakeCache.txt
+CPackConfig.cmake
+CPackSourceConfig.cmake
+CMakeFiles/
+
+**/capstone-config-version.cmake
+**/capstone-config.cmake
