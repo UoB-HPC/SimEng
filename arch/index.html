@@ -1,0 +1,251 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Overview &mdash; SimEng  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SimEng
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/building_simeng.html">Building SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/running_simeng.html">Running SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/configuring_simeng.html">Configuring SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/creating_binaries.html">Creating Binaries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/docker.html">Docker</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SimEng</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Overview</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            
+              <a href="https://github.com/UoB-HPC/SimEng/blob/master/arch/index.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+<p>SimEng architecture definitions are responsible for describing the features and behaviour of specific Instruction Set Architectures (ISAs) in a standardised way, allowing SimEng to model processors that use these ISAs while itself remaining ISA agnostic.</p>
+<p>To achieve this, SimEng defines a set of abstract architecture-related classes. Discrete implementations of these classes are provided for each of the ISAs SimEng supports by default, and must also be implemented for adding support for new or custom ISAs.</p>
+<div class="section" id="architecture">
+<h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h2>
+<p>The main component of an ISA implementation is the <code class="docutils literal notranslate"><span class="pre">Architecture</span></code> class. During simulation initialisation, a reference to an instance of the modelled architecture is passed to the model, where it is queried to determine how various components should be initialised, and to allow components to perform further architecture-specific operations during simulation.</p>
+<p>Architectures are expected to support querying the following information:</p>
+<ul class="simple">
+<li><p>The architectural register structure: the number of discrete types of registers, and the size and quantity of registers of each type.</p></li>
+<li><p>The initial state of the architectural registers and process memory at the time the simulation begins.</p></li>
+</ul>
+<div class="section" id="pre-decoding">
+<h3>Pre-Decoding<a class="headerlink" href="#pre-decoding" title="Permalink to this headline">¶</a></h3>
+<p>The primary role of the <code class="docutils literal notranslate"><span class="pre">Architecture</span></code> class is to enable the conversion of arbitrary bytes of instruction memory into <code class="docutils literal notranslate"><span class="pre">Instruction</span></code> objects capable of performing operations. This process is referred to as <em>pre-decoding</em>, as it is responsible for grouping bytes into “<a class="reference internal" href="../instruction.html#macroops"><span class="std std-ref">macro ops</span></a>” representing individual machine-code instructions, which in real hardware would be decoded later into one or more instructions (“micro-ops”). In SimEng, all the decoding is expected to be performed up-front: the generated macro-op is simply a vector of micro-ops.</p>
+</div>
+<div class="section" id="exception-handling">
+<h3>Exception Handling<a class="headerlink" href="#exception-handling" title="Permalink to this headline">¶</a></h3>
+<p>Architecture implementations must be capable of generating an <a class="reference internal" href="#exceptionhandler"><span class="std std-ref">Exception Handler</span></a> when presented with an instruction that has encountered an exception. The architecture will be presented with references to the current architectural register state and an interface to access process memory to facilitate this.</p>
+</div>
+</div>
+<div class="section" id="instructions">
+<h2>Instructions<a class="headerlink" href="#instructions" title="Permalink to this headline">¶</a></h2>
+<p>As different ISAs typically define a unique set of instructions, it is expected that each architecture implementation will also supply a custom <a class="reference internal" href="../instruction.html#instructions"><span class="std std-ref">Instruction</span></a> implementation. Instances of these instructions will be created during the pre-decode process performed by the main <code class="docutils literal notranslate"><span class="pre">Architecture</span></code> instance, and will be responsible for modelling the correct behaviour of that individual instruction.</p>
+</div>
+<div class="section" id="exception-handler">
+<span id="exceptionhandler"></span><h2>Exception Handler<a class="headerlink" href="#exception-handler" title="Permalink to this headline">¶</a></h2>
+<p>For handling exceptions, SimEng provides an abstract <code class="docutils literal notranslate"><span class="pre">ExceptionHandler</span></code> class. Instances of <code class="docutils literal notranslate"><span class="pre">ExceptionHandler</span></code> should be generated by an <code class="docutils literal notranslate"><span class="pre">Architecture</span></code> instance upon request, by supplying the exception-generating instruction, a reference to the architectural register state, and a memory interface. As the details of exception handling vary between architecture, each supported architecture is expected to supply its own custom <code class="docutils literal notranslate"><span class="pre">ExceptionHandler</span></code> implementation.</p>
+<div class="section" id="ticking">
+<h3>Ticking<a class="headerlink" href="#ticking" title="Permalink to this headline">¶</a></h3>
+<p>Exception handlers provide a <code class="docutils literal notranslate"><span class="pre">tick</span></code> function, which may be called to process the exception it represents. Upon completing each tick, the exception handler will state whether or not further ticks are required—for example, to wait for a memory request to complete. If the exception requires further processing, the model will continue to tick it each cycle until completed.</p>
+</div>
+<div class="section" id="results">
+<h3>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h3>
+<p>When the exception has been fully processed, the results may be retrieved from the handler to retrieve the following information:</p>
+<ul class="simple">
+<li><p>Whether the exception was fatal</p></li>
+<li><p>The address that execution should resume from</p></li>
+<li><p>Any modifications to registers or process memory</p></li>
+</ul>
+<p>If the exception is fatal, the core model will halt and the simulation will gracefully terminate. If not fatal, the supplied process state modifications will be applied and process execution will resume from the specified instruction address.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, SimEng developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

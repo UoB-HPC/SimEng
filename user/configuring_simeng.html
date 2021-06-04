@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Configuring SimEng &mdash; SimEng  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Creating Binaries" href="creating_binaries.html" />
+    <link rel="prev" title="Running SimEng" href="running_simeng.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SimEng
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="building_simeng.html">Building SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running_simeng.html">Running SimEng</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Configuring SimEng</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#core">Core</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#register-set">Register-set</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pipeline-widths">Pipeline-widths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#queue-sizes">Queue-sizes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#branch-predictor">Branch-Predictor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#l1-cache">L1-Cache</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ports">Ports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reservation-stations">Reservation-Stations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#execution-units">Execution-Units</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="creating_binaries.html">Creating Binaries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SimEng</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Configuring SimEng</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            
+              <a href="https://github.com/UoB-HPC/SimEng/blob/master/user/configuring_simeng.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="configuring-simeng">
+<h1>Configuring SimEng<a class="headerlink" href="#configuring-simeng" title="Permalink to this headline">¶</a></h1>
+<p>SimEng configuration files are written in a YAML format, and provide values for the parameters of the processor architecture to be simulated.</p>
+<p>The configuration files are split into several sections, each of which is associated with a specific area of the architecture modelled.</p>
+<div class="section" id="core">
+<h2>Core<a class="headerlink" href="#core" title="Permalink to this headline">¶</a></h2>
+<p>SimEng cores can be one of three types:</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">emulation</span></code></dt><dd><p>An atomic “emulation-style” core which, per cycle, processes an instruction in its entirety before proceeding to the next instruction.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">inorderpipeline</span></code></dt><dd><p>An in-order pipeline processor core with discrete fetch, decode, execute, and writeback stages.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">outoforder</span></code></dt><dd><p>A complex superscalar out-of-order core, similar to those found in modern high-performance processors.</p>
+</dd>
+</dl>
+<p>These core types are primarily referred to as core “archetypes”.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Currently, the configuration files do not take into account the core archetype being modelled. However, future developments plan for the exemption of those options not used under the selected core archetype. For example, reservation station definitions under the <code class="docutils literal notranslate"><span class="pre">inorderpiplined</span></code> archetype will not be required.</p>
+</div>
+<p>Configuration options within the Core section are concerned with the functionality of the simulated processor pipeline. These include:</p>
+<dl class="simple">
+<dt>Simulation-Mode</dt><dd><p>The core archetype to use, the options are <code class="docutils literal notranslate"><span class="pre">emulation</span></code>, <code class="docutils literal notranslate"><span class="pre">inorderpipelined</span></code>, and <code class="docutils literal notranslate"><span class="pre">outoforder</span></code>.</p>
+</dd>
+<dt>Clock-Frequency</dt><dd><p>The clock frequency, in GHz, of the processor being modelled.</p>
+</dd>
+<dt>Fetch-Block-sizes</dt><dd><p>The size, in bytes, of the block fetched from the instruction cache.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="register-set">
+<h2>Register-set<a class="headerlink" href="#register-set" title="Permalink to this headline">¶</a></h2>
+<p>The number of physical registers, of each type, to be used under the register renaming scheme. These types include:</p>
+<dl class="simple">
+<dt>GeneralPurpose-Count</dt><dd><p>The number of physical general-purpose registers.</p>
+</dd>
+<dt>FloatingPoint/SVE-Count</dt><dd><p>The number of physical floating point registers. Also considered as the number of ARM SVE extension <code class="docutils literal notranslate"><span class="pre">z</span></code> registers where appropriate.</p>
+</dd>
+<dt>Predicate-Count (Optional)</dt><dd><p>The number of physical ARM SVE extension predicate registers.</p>
+</dd>
+<dt>Conditional-Count</dt><dd><p>The number of physical status/flag/conditional-code registers.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="pipeline-widths">
+<h2>Pipeline-widths<a class="headerlink" href="#pipeline-widths" title="Permalink to this headline">¶</a></h2>
+<p>This section is concerned with the width of the simulated processor pipeline at specific stages, including:</p>
+<dl class="simple">
+<dt>Commit</dt><dd><p>The commitment/retirement width from the re-order buffer.</p>
+</dd>
+<dt>Dispatch-Rate</dt><dd><p>The width of instruction dispatch into the reservation stations.</p>
+</dd>
+<dt>FrontEnd</dt><dd><p>The width of the pipeline before the execution stage (also excludes the dispatch/issue stage if simulating an <code class="docutils literal notranslate"><span class="pre">outoforder</span></code> core archetype).</p>
+</dd>
+<dt>LSQ-Completion</dt><dd><p>The width between the load/store queue unit and the write-back unit (translates to the number of load instructions that can be sent to the write-back unit per cycle).</p>
+</dd>
+</dl>
+<p>Excluding the Commit option, the value given for these widths denotes the number of Micro-Ops, as opposed to Macro-ops, if the simulated architecture supports them.</p>
+</div>
+<div class="section" id="queue-sizes">
+<h2>Queue-sizes<a class="headerlink" href="#queue-sizes" title="Permalink to this headline">¶</a></h2>
+<p>This section defines the size of specific architectural queues. These queues currently include:</p>
+<dl class="simple">
+<dt>ROB</dt><dd><p>The size of the re-order buffer.</p>
+</dd>
+<dt>Load</dt><dd><p>The size of the load queue within the load/store queue unit.</p>
+</dd>
+<dt>Store</dt><dd><p>The size of the store queue within the load/store queue unit.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="branch-predictor">
+<h2>Branch-Predictor<a class="headerlink" href="#branch-predictor" title="Permalink to this headline">¶</a></h2>
+<p>The Branch-Prediction section contains those options to parameterise the branch predictor used during simulation. Currently, the options are minimal, but, planned developments will see options including the toggling and parameterisation of common branch predictor algorithms/structures.</p>
+<p>The current options include:</p>
+<dl class="simple">
+<dt>BTB-bitlength</dt><dd><p>The number of bits used to denote the size of a Branch Target Buffer (BTB). For example, a <code class="docutils literal notranslate"><span class="pre">bits</span></code> value of 12 would denote 4096 entries with the calculation 1 &lt;&lt; <code class="docutils literal notranslate"><span class="pre">bits</span></code>.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="l1-cache">
+<h2>L1-Cache<a class="headerlink" href="#l1-cache" title="Permalink to this headline">¶</a></h2>
+<p>This section contains the options used to configure SimEng’s simple L1-cache. These options include:</p>
+<dl class="simple">
+<dt>GeneralPurpose-Latency</dt><dd><p>The cycle latency of integer load/store operations.</p>
+</dd>
+<dt>FloatingPoint-Latency</dt><dd><p>The cycle latency of floating point load/store operations.</p>
+</dd>
+<dt>SVE-Latency (Optional)</dt><dd><p>The cycle latency of ARM SVE extension load/store operations.</p>
+</dd>
+<dt>Bandwidth</dt><dd><p>The number of bytes permitted to be loaded and/or stored per cycle.</p>
+</dd>
+<dt>Permitted-Requests-Per-Cycle</dt><dd><p>The number of load and store requests permitted per cycle.</p>
+</dd>
+<dt>Permitted-Loads-Per-Cycle</dt><dd><p>The number of load requests permitted per cycle.</p>
+</dd>
+<dt>Permitted-Stores-Per-Cycle</dt><dd><p>The number of store requests permitted per cycle.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="ports">
+<h2>Ports<a class="headerlink" href="#ports" title="Permalink to this headline">¶</a></h2>
+<p>Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent but, for the supported AArch64 ISA, the instruction groups available include:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">INT_ARTH</span></code>. All integer arithmetic operations excluding multiply, divide, and square root.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">INT_ARTH_NOSHIFT</span></code>. A subset of <code class="docutils literal notranslate"><span class="pre">INT_ARTH</span></code> excluding all operations containing a shift operand.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">INT_MUL</span></code>. Integer multiply operations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">INT_DIV_OR_SQRT</span></code>. Integer divide or square root operations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FLOAT_ARTH</span></code>. All floating point arithmetic operations excluding multiply, divide, and square root.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FLOAT_ARTH_NOSHIFT</span></code>. A subset of <code class="docutils literal notranslate"><span class="pre">FLOAT_ARTH</span></code> excluding all operations containing a shift operand.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FLOAT_MUL</span></code>. Floating point multiply operations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FLOAT_DIV_OR_SQRT</span></code>. Floating point divide or square root operations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">LOAD</span></code>. All load operations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">STORE</span></code>. All store operations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BRANCH</span></code>. All branch operations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PREDICATE</span></code>. All ARM SVE extension instructions that write to a predicate register.</p></li>
+</ul>
+<p>To define a port, the following structure must be adhered to:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0:
+  Portname: &lt;port_name&gt;
+  Instruction-Support:
+  - &lt;instruction_group&gt;
+  - ...
+  - &lt;instruction_group&gt;
+...
+N-1:
+    Portname: &lt;port_name&gt;
+    Instruction-Support:
+    - &lt;instruction_group&gt;
+    - ...
+    - &lt;instruction_group&gt;
+</pre></div>
+</div>
+<p>With N as the number of execution ports.</p>
+</div>
+<div class="section" id="reservation-stations">
+<h2>Reservation-Stations<a class="headerlink" href="#reservation-stations" title="Permalink to this headline">¶</a></h2>
+<p>The relationships between reservation stations and the execution ports, which reservation stations map to which execution ports, are defined in this section. The configuration of each reservation station contains a size value and a set of port names, previously defined in the Ports section.</p>
+<p>The following structure must be adhered to when defining a reservation station:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0:
+  Size: &lt;number_of_entries&gt;
+  Ports:
+  - &lt;port_name&gt;
+  - ...
+  - &lt;port_name&gt;
+...
+N-1:
+    Size: &lt;number_of_entries&gt;
+    Ports:
+    - &lt;port_name&gt;
+    - ...
+    - &lt;port_name&gt;
+</pre></div>
+</div>
+<p>With N as the number of reservation stations. Each execution port must be mapped to a reservation station.</p>
+</div>
+<div class="section" id="execution-units">
+<h2>Execution-Units<a class="headerlink" href="#execution-units" title="Permalink to this headline">¶</a></h2>
+<p>An execution unit can be configured to optionally include an internal pipeline and a set of instruction groups for <span class="xref std std-ref">operation blocking</span>. The instruction groups referenced here are the same as those used in the Ports section.</p>
+<p>The following structure must be adhered to when defining an execution unit:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0:
+  Pipelined: &lt;True/False&gt;
+  Blocking-Groups:
+  - &lt;instruction_group&gt;
+  - ...
+  - &lt;instruction_group&gt;
+...
+N-1:
+    Pipelined: &lt;True/False&gt;
+    Blocking-Groups:
+    - &lt;instruction_group&gt;
+    - ...
+    - &lt;instruction_group&gt;
+</pre></div>
+</div>
+<p>With N as the number of execution units. The number of execution units should be equivalent to the number of execution ports.</p>
+<p><strong>Note</strong>, the indexing used in both the Ports and Execution-Units sections provide a relationship mapping, the 0th execution port maps to the 0th execution unit.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="creating_binaries.html" class="btn btn-neutral float-right" title="Creating Binaries" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="running_simeng.html" class="btn btn-neutral float-left" title="Running SimEng" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, SimEng developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,341 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Pipeline Units &mdash; SimEng  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SimEng
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/building_simeng.html">Building SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/running_simeng.html">Running SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/configuring_simeng.html">Configuring SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/creating_binaries.html">Creating Binaries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/docker.html">Docker</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SimEng</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Pipeline Units</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            
+              <a href="https://github.com/UoB-HPC/SimEng/blob/master/pipeline/units.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="pipeline-units">
+<h1>Pipeline Units<a class="headerlink" href="#pipeline-units" title="Permalink to this headline">¶</a></h1>
+<p>SimEng supplies a set of standard self-contained “units”, which represent the logic for the various stages of a processor pipeline. These units provide a <code class="docutils literal notranslate"><span class="pre">tick</span></code> method, which performs a single cycles’s work when called. When ticked, each unit typically reads from the head of an input <code class="docutils literal notranslate"><span class="pre">PipelineBuffer</span></code> and writes to the tail of an output <code class="docutils literal notranslate"><span class="pre">PipelineBuffer</span></code>. These buffers can be used to chain stages together—with the output from one unit acting as the input to another—to form a complete pipeline. Ticking the buffers at the end of each cycle will cause data to move from the tail to the head, ready to be processed by units in the next cycle.</p>
+<p>The available units are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">FetchUnit</span></code>: Reads instruction data from memory, to produce a stream of macro-ops.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DecodeUnit</span></code>: Reads macro-ops from the input, breaks them into micro-ops, and writes them to the output.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">RenameUnit</span></code>: Reads micro-ops from the input, renames their operands, places an entry in a reorder buffer, and writes them to the output.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DispatchIssueUnit</span></code>: Reads micro-ops from the input, reads operands from register files, and adds them to an internal queue until any missing operands have been broadcast. Writes execution-ready micro-ops to multiple outputs.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ExecuteUnit</span></code>: Reads micro-ops from the input and holds them in an internal queue for a cycle-duration determined by their execution latency, after which they’re written to the output.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">WritebackUnit</span></code>: Reads micro-ops from the input and writes results to register files.</p></li>
+</ul>
+<div class="section" id="fetchunit">
+<h2>FetchUnit<a class="headerlink" href="#fetchunit" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">FetchUnit</span></code> class models the fetch pipeline stage, and is responsible for reading instruction memory and generating a stream of macro-ops.</p>
+<div class="section" id="behaviour">
+<h3>Behaviour<a class="headerlink" href="#behaviour" title="Permalink to this headline">¶</a></h3>
+<p>The fetch unit fetches memory in discrete boundary-aligned blocks, according to the current program counter (PC); this is to prevent the fetched block overlapping an inaccessible or unmapped memory region that may result in the request incorrectly responding with a fault despite the validity of the initial region.</p>
+<p>Each cycle, it will process the most recently fetched memory block by passing it to the supplied <code class="docutils literal notranslate"><span class="pre">Architecture</span></code> instance for pre-decoding into macro-ops. The current program counter is passed to the supplied branch predictor: if the instruction is predicted to be a taken branch, then the PC will be updated to the predicted target address and the cycle will end, otherwise, the PC is incremented by the number of bytes consumed to produce the pre-decoded macro-op, and the remaining bytes in the block are once again passed to the architecture for pre-decoding.</p>
+<p>This process of pre-decoding, predicting, and updating the PC continues until one of the following occurs:</p>
+<dl class="glossary simple">
+<dt id="term-The-maximum-number-of-fetched-macro-ops-is-reached">The maximum number of fetched macro-ops is reached<a class="headerlink" href="#term-The-maximum-number-of-fetched-macro-ops-is-reached" title="Permalink to this term">¶</a></dt><dd><p>The current block is saved and processing resumes in the next cycle.</p>
+</dd>
+<dt id="term-A-branch-is-predicted-as-taken">A branch is predicted as taken<a class="headerlink" href="#term-A-branch-is-predicted-as-taken" title="Permalink to this term">¶</a></dt><dd><p>A block of memory from the new address may be requested, and processing will resume once the data is available.</p>
+</dd>
+<dt id="term-The-fetched-memory-block-is-exhausted">The fetched memory block is exhausted<a class="headerlink" href="#term-The-fetched-memory-block-is-exhausted" title="Permalink to this term">¶</a></dt><dd><p>The next block may be requested, and processing will resume once the data is available.</p>
+</dd>
+</dl>
+<p>If the output buffer is stalled when the cycle begins, the fetch unit will idle and perform no operation.</p>
+</div>
+<div class="section" id="fetching-memory">
+<h3>Fetching memory<a class="headerlink" href="#fetching-memory" title="Permalink to this headline">¶</a></h3>
+<p>As the program counter may be updated by numerous external components thoughout the course of a single cycle, the fetch unit does not perform any memory requests automatically. <strong>The next block must be requested manually</strong>, by calling the <code class="docutils literal notranslate"><span class="pre">requestFromPC</span></code> function. It is advised to do this at the end of a cycle from the core model, once all possible sources of PC updates have been completed.</p>
+</div>
+</div>
+<div class="section" id="decodeunit">
+<h2>DecodeUnit<a class="headerlink" href="#decodeunit" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">DecodeUnit</span></code> class models the decode stage of a processor pipeline, and is responsible for converting a stream of macro-ops into a stream of instructions.</p>
+<div class="section" id="id1">
+<h3>Behaviour<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>Each cycle, the decode unit will read macro-ops from the input buffer, and split them into a stream of <code class="docutils literal notranslate"><span class="pre">Instruction</span></code> objects.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The DecodeUnit is currently only capable of handling macro-ops that split into a single instruction: <a class="reference external" href="https://github.com/UoB-HPC/SimEng/issues/14">https://github.com/UoB-HPC/SimEng/issues/14</a></p>
+</div>
+<p>The now-decoded instructions are checked for any trivially identifiable branch mispredictions (i.e., a non-branch predicted as a taken branch), and if discovered, the branch predictor is informed and a pipeline flush requested.</p>
+<p>The cycle ends when all macro-ops in the input buffer have been processed, or a misprediction is identified and all remaining macro-ops are flushed.</p>
+<p>If the output buffer is stalled when the cycle begins, the decode unit will idle, perform no operation, and will flag its input buffer as having stalled, until the output is no longer stalled.</p>
+</div>
+</div>
+<div class="section" id="renameunit">
+<h2>RenameUnit<a class="headerlink" href="#renameunit" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">RenameUnit</span></code> class models the register renaming stage found in out-of-order processors, and is responsible for renaming the source and destination registers of an instruction to eliminate false dependencies.</p>
+<div class="section" id="id2">
+<h3>Behaviour<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<p>Each cycle, the rename unit will read instructions from the input stream, and perform the following operations:</p>
+<ol class="arabic simple">
+<li><p>Add the instruction to the supplied reorder buffer</p></li>
+<li><p>Obtain up-to-date register mappings for each of the source operands from the supplied register alias table, and rename them in the instruction accordingly</p></li>
+<li><p>Allocate new physical registers for each of the destination registers in the supplied register alias table, and rename them in the instruction accordingly</p></li>
+<li><p>(Loads/stores only) Add the instruction to the supplied load/store queue</p></li>
+</ol>
+<p>Before any of these steps occur, it is ensured that <strong>all</strong> of these steps are possible to carry out for the given instruction: if there is insufficient space in the reorder buffer, insufficient free registers to allocate for the destination registers, or insufficient load/store queue space (where applicable) then the unit will halt and stall the input buffer. If this occurs, processing will be re-attempted each subsequent cycle until successful, at which point the input will be unstalled and normal operation will resume.</p>
+<p>Once an instruction is processed, it’s written into the output buffer and the next instruction in the input buffer begins processing. This continues until the input buffer is empty.</p>
+<p>If the output buffer is stalled when the cycle begins, the rename unit will idle, perform no operation, and will flag its input buffer as having stalled, until the output is no longer stalled.</p>
+</div>
+<div class="section" id="exceptions">
+<h3>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h3>
+<p>If an instruction has been flagged as having encountered an exception, then the rename stage will place it directly into the reorder buffer, skip renaming entirely, and <strong>will not</strong> write it to the output buffer.</p>
+<div class="admonition-todo admonition" id="id3">
+<p class="admonition-title">Todo</p>
+<p>Verify that this doesn’t cause issues with exception-generating load/store instructions, or problems with the register alias table caused by attempting to commit un-renamed registers.</p>
+</div>
+</div>
+</div>
+<div class="section" id="dispatchissueunit">
+<h2>DispatchIssueUnit<a class="headerlink" href="#dispatchissueunit" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">DispatchIssueUnit</span></code> class models the dispatch/issue stages found in out-of-order processors, and is responsible for managing dependencies between instructions. This class contains a reservation station for holding instructions until their dependencies are met, and uses a scoreboard and dependency matrix to track and handle dependencies.</p>
+<p>While the <code class="docutils literal notranslate"><span class="pre">DispatchIssueUnit</span></code> has a single input buffer, it has multiple output buffers. Only a single instruction will ever be placed into any individual output buffer per cycle, even if they are wide enough to support multiple.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The terms “dispatch” and “issue” are often used inconsistently in computer architecture literature. In SimEng, dispatch refers to an instruction being placed into the reservation station, while issue refers to an instruction being removed from the reservation station and placed into an output port.</p>
+</div>
+<div class="section" id="id4">
+<h3>Behaviour<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>Each cycle, the unit performs three discrete tasks: dispatch, operand forwarding, and issue. Dispatch occurs when the unit is ticked, while operand forwarding is expected to occur multiple times as other components in the pipeline generate results that must be delivered to pending instructions. Issue must be independently triggered later in the cycle, once all operand forwarding has concluded.</p>
+<div class="section" id="dispatch">
+<h4>Dispatch<a class="headerlink" href="#dispatch" title="Permalink to this headline">¶</a></h4>
+<p>During dispatch, the unit will read instructions from the input buffer, and check their required source operands against the internal scoreboard—the structure responsible for tracking operand availability. If an operand is available, it is supplied to the instruction; otherwise, an entry is inserted into the internal dependency matrix to track that the instruction depends on that missing operand.</p>
+<p>Using the supplied port allocator, each instruction is allocated a destination port, which corresponds to one of the output buffers. Each port has a corresponding ready queue which contains instructions that are ready to execute.</p>
+<p>The instruction is then added to the reservation station, where it will remain until issued. If at any point the reservation station becomes full while instructions remain in the input, the cycle stops and the input buffer becomes stalled. The remaining instructions will be processed during a future dispatch, once space is available, and the input buffer will be unstalled once emptied. Note that there is no dedicated data structure for the reservation station; all instructions it contains are either in the dependency matrix or one of the ready queues, so we simply keep track of the number of instructions instead.</p>
+</div>
+<div class="section" id="operand-forwarding">
+<h4>Operand forwarding<a class="headerlink" href="#operand-forwarding" title="Permalink to this headline">¶</a></h4>
+<p>When results are forwarded to the unit, the associated registers are looked up in the internal dependency matrix to find the instructions depending on them. The results are supplied to the dependent instructions, and the relevant dependency matrix entries cleared. Once an instruction has all of its dependencies met it is moved to the ready queue for its allocated port.</p>
+</div>
+<div class="section" id="issue">
+<h4>Issue<a class="headerlink" href="#issue" title="Permalink to this headline">¶</a></h4>
+<p>During issue, the ready queue for each port is checked for instructions that can be executed. If a ready instruction’s allocated port is unstalled and has not yet been used this cycle, the instruction will be placed into it and removed from the queue; otherwise, it will be skipped and handled during a future issue stage.</p>
+</div>
+</div>
+</div>
+<div class="section" id="executeunit">
+<h2>ExecuteUnit<a class="headerlink" href="#executeunit" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">ExecuteUnit</span></code> class models the execute stage of a processor pipeline, and is responsible for handling the execution logic of instructions and broadcasting their results once completed. The unit maintains an internal pipeline, which queues instructions according to their execution latency prior to executing them.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">ExecuteUnit</span></code> represents a single functional/execution unit of a pipeline. As a result, only the first slot of the input/output buffers are used; models of superscalar processors with multiple execution units are expected to use multiple instances.</p>
+</div>
+<div class="section" id="id5">
+<h3>Behaviour<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<p>Each cycle, a single instruction is read from the input buffer. The latency of the instruction is checked, and it is added to the internal pipeline queue, where it will remain for at least the duration of its instruction latency.</p>
+<p>Once the input has been processed, the instruction at the head of the pipeline is checked to see if its latency has passed. If not, the cycle ends early, otherwise the instruction proceeds to execution.</p>
+<p>While normal data processing instructions are simply executed, some instruction types are treated slightly differently during execution:</p>
+<dl class="glossary simple">
+<dt id="term-Loads">Loads<a class="headerlink" href="#term-Loads" title="Permalink to this term">¶</a></dt><dd><p>Address generation is performed, before passing the instruction to the unit’s supplied load handling function. Unlike other instructions, load instructions <strong>are not</strong> written to the output buffer, as execution cannot occur until the memory read concludes. It is the responsibility of the load handling function to ensure that the instruction is executed and results broadcast once the loaded data is available.</p>
+</dd>
+<dt id="term-Stores">Stores<a class="headerlink" href="#term-Stores" title="Permalink to this term">¶</a></dt><dd><p>Address generation is performed, and the instruction is executed to determine the memory data to be written. The instruction is passed to the unit’s supplied store handler.</p>
+</dd>
+<dt id="term-Branches">Branches<a class="headerlink" href="#term-Branches" title="Permalink to this term">¶</a></dt><dd><p>The instruction is executed, and queried to determine whether or not the results match the branch prediction originally associated with the instruction. If a misprediction is encountered, the branch predictor is informed, and a flush is raised to instruct the core to reset the program counter to the correct address and remove all incorrectly speculated instructions from the core.</p>
+</dd>
+</dl>
+<p>For all instructions other than loads (as they are removed from the unit after address generation), once executed, the instruction is checked for any exceptions. If an exception was encountered, the instruction is passed to the unit’s supplied exception handler. Otherwise, any register results are broadcast by calling the unit’s supplied operand forwarding handler. In both cases, the instruction is then written to the unit’s output buffer.</p>
+</div>
+</div>
+<div class="section" id="writebackunit">
+<h2>WritebackUnit<a class="headerlink" href="#writebackunit" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">WritebackUnit</span></code> class models the writeback stage of a processor pipeline, responsible for writing the results from executed instructions to the register files, and marking them as ready to commit.</p>
+<div class="section" id="id6">
+<h3>Behaviour<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<p>Each cycle, the unit will read instructions from the input buffer, and retrieve any results generated during execution. All results are written to the supplied register file set, and the instructions are flagged as ready to commit. As the unit has no output buffer, instructions are discarded once writeback is complete.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, SimEng developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

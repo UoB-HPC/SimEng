@@ -1,0 +1,225 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Memory &mdash; SimEng  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> SimEng
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/building_simeng.html">Building SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/running_simeng.html">Running SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/configuring_simeng.html">Configuring SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/creating_binaries.html">Creating Binaries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/docker.html">Docker</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">SimEng</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Memory</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            
+              <a href="https://github.com/UoB-HPC/SimEng/blob/master/memory.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="memory">
+<h1>Memory<a class="headerlink" href="#memory" title="Permalink to this headline">¶</a></h1>
+<p>The SimEng core models simulate everything in a core up to and including the load/store units, but stop short of the memory system. This is to allow integration and interoperability with a wide range of external memory models, and to focus the development of SimEng primarily on the simulation of the core itself.</p>
+<div class="section" id="memoryinterface">
+<h2>MemoryInterface<a class="headerlink" href="#memoryinterface" title="Permalink to this headline">¶</a></h2>
+<p>All SimEng components that interact with the memory system make memory access requests using supplied instances of the abstract <code class="docutils literal notranslate"><span class="pre">MemoryInterface</span></code> class.</p>
+<p><code class="docutils literal notranslate"><span class="pre">MemoryInterface</span></code> access requests are asynchronous, and may be either reads or writes. All requests must supply a <code class="docutils literal notranslate"><span class="pre">MemoryAccessTarget</span></code>, containing both the memory address and the number of bytes to access. While write requests receive no response, a read request may be responded to an indeterminate number of cycles later. The <code class="docutils literal notranslate"><span class="pre">MemoryInterface::getCompletedReads</span></code> function may be used to retrieve a list of the read requests that completed during the previous cycle. Once processed, responses should be dismissed using the <code class="docutils literal notranslate"><span class="pre">MemoryInterface::clearCompletedReads</span></code> function.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Future versions may update the interface to remove the need for the component to manually clear completed reads.</p>
+</div>
+<p>It is expected that all implementations of <code class="docutils literal notranslate"><span class="pre">MemoryInterface</span></code> should respect the order that requests are made: a read request following a write request to the same address should respond with the newly written value, rather than returning the old, stale result.</p>
+<div class="section" id="flatmemoryinterface">
+<h3>FlatMemoryInterface<a class="headerlink" href="#flatmemoryinterface" title="Permalink to this headline">¶</a></h3>
+<p>For simpler models, a <code class="docutils literal notranslate"><span class="pre">FlatMemoryInterface</span></code> implementation is supplied. This is a simple wrapper around a byte array representing the process memory, and will always respond to all requests instantly and synchronously.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, SimEng developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

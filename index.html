@@ -1,0 +1,262 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Project Overview &mdash; SimEng  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview" href="user/index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="#" class="icon icon-home"> SimEng
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="user/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/building_simeng.html">Building SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/running_simeng.html">Running SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/configuring_simeng.html">Configuring SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/creating_binaries.html">Creating Binaries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="user/docker.html">Docker</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">SimEng</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Project Overview</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            
+              <a href="https://github.com/UoB-HPC/SimEng/blob/master/index.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="project-overview">
+<h1>Project Overview<a class="headerlink" href="#project-overview" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+<div class="toctree-wrapper compound">
+</div>
+<p>The Simulation Engine (SimEng) is a framework for building modern cycle-accurate processor simulators. It aims to be:</p>
+<ul class="simple">
+<li><p>Fast</p></li>
+<li><p>Easy to use and modify to desired configurations</p></li>
+<li><p>Scalable, supporting simulation of simple scalar cores, up to superscalar out-of-order designs</p></li>
+<li><p>Capable of supporting a wide range of ISAs, starting with ARMv8 but eventually including x86, RISC-V, POWER, etc.</p></li>
+<li><p>Open source, with a permissive license to enable collaboration across academia and industry</p></li>
+</ul>
+<p>SimEng places an emphasis on performance and scalability, whilst maintaining a clean, modern, and well-documented code base.</p>
+<div class="section" id="current-support">
+<h2>Current Support<a class="headerlink" href="#current-support" title="Permalink to this headline">¶</a></h2>
+<p>Currently, SimEng targets the ARMv8+SVE ISA with the ability to model up to out-of-order, superscalar, single-core processors and to emulate a subset of Linux system-calls. It supports statically compiled C binaries that run on real hardware and models memory as an infinite L1 cache.</p>
+<p>The main component provided by the simulator is a discrete processor core model, (the generic model is shown below), which accepts a clock signal and supports a memory access interface. A YAML format configuration file can be passed to the simulation to modify the core model, for instance to model other current or future core designs. Current SimEng configurations support Marvell ThunderX2 and Fujitsu A64FX processors.</p>
+<a class="reference internal image-reference" href="_images/simeng_generic_core_model.png"><img alt="Generic Core Model" src="_images/simeng_generic_core_model.png" style="width: 500px;" /></a>
+<p>As soon as SimEng is mature enough, we plan to support multi-core and memory hierarchy simulation by integrating SimEng with the <a class="reference external" href="http://sst-simulator.org/">Structural Simulation Toolkit</a> (SST). So far we have implemented a prototype of SST’s memory hierarchy integration.</p>
+</div>
+<div class="section" id="talks-and-presentations">
+<h2>Talks and presentations<a class="headerlink" href="#talks-and-presentations" title="Permalink to this headline">¶</a></h2>
+<p>SimEng was presented by <a class="reference external" href="http://uob-hpc.github.io/SimonMS/">Professor Simon McIntosh-Smith</a> at the 2019 Workshop on Modeling &amp; Simulation of Systems and Applications (ModSim):</p>
+<ul class="simple">
+<li><p>ModSim 2019 - <a class="reference download internal" download="" href="_downloads/49d46ac9c44fb683c396a57b95da5ba5/simeng_modsim_2019.pdf"><code class="xref download docutils literal notranslate"><span class="pre">Enabling</span> <span class="pre">Processor</span> <span class="pre">Design</span> <span class="pre">Space</span> <span class="pre">Exploration</span> <span class="pre">with</span> <span class="pre">SimEng</span></code></a></p></li>
+</ul>
+<p>Additional presentations given:</p>
+<ul class="simple">
+<li><p><a class="reference download internal" download="" href="_downloads/0f5675c2f3b49b0ed658267714946599/simeng_arm_cpus.pdf"><code class="xref download docutils literal notranslate"><span class="pre">Modelling</span> <span class="pre">Advanced</span> <span class="pre">Arm-based</span> <span class="pre">CPUs</span> <span class="pre">with</span> <span class="pre">SimEng</span></code></a></p></li>
+</ul>
+</div>
+<div class="section" id="release">
+<h2>Release<a class="headerlink" href="#release" title="Permalink to this headline">¶</a></h2>
+<p>SimEng is planned for open-source release during summer 2021 under an <a class="reference external" href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0</a> license.</p>
+</div>
+<div class="section" id="external-project-usage">
+<h2>External project usage<a class="headerlink" href="#external-project-usage" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://www.capstone-engine.org/">Capstone disassembly engine</a> - Instruction decoding</p></li>
+<li><p><a class="reference external" href="https://github.com/jbeder/yaml-cpp">Yaml-cpp</a> - Parsing YAML configuration files</p></li>
+<li><p><a class="reference external" href="https://github.com/google/googletest">GoogleTest</a> - Framework for the test suites</p></li>
+<li><p><a class="reference external" href="https://github.com/llvm-mirror/llvm">LLVM</a> - Generation of binaries for use in the regression test suite</p></li>
+</ul>
+</div>
+<div class="section" id="funding">
+<h2>Funding<a class="headerlink" href="#funding" title="Permalink to this headline">¶</a></h2>
+<p>EPSRC ASiMoV project (Advanced Simulation and Modelling of Virtual systems) EP/S005072/1, Arm via a Centre of Excellence in HPC at University of Bristol</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="user/index.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, SimEng developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
