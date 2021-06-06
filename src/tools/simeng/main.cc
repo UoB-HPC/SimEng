@@ -13,7 +13,6 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/ModelConfig.hh"
-#include "simeng/VariableLatencyMemoryInterface.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
@@ -219,13 +218,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  const uint16_t intDataMemoryLatency =
-      config["L1-Cache"]["GeneralPurpose-Latency"].as<uint16_t>();
-  const uint16_t fpDataMemoryLatency =
-      config["L1-Cache"]["FloatingPoint-Latency"].as<uint16_t>();
-  const uint16_t SVEDataMemoryLatency =
-      config["L1-Cache"]["SVE-Latency"].as<uint16_t>();
-
   int iterations = 0;
 
   std::string modeString;
@@ -235,7 +227,8 @@ int main(int argc, char** argv) {
     case SimulationMode::OutOfOrder: {
       modeString = "Out-of-Order";
       dataMemory = std::make_unique<simeng::FixedLatencyMemoryInterface>(
-          processMemory, processMemorySize, intDataMemoryLatency);
+          processMemory, processMemorySize,
+          config["L1-Cache"]["Access-Latency"].as<uint16_t>());
       core = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
           predictor, portAllocator, rsArrangement, config);

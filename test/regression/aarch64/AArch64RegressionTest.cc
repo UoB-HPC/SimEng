@@ -10,7 +10,7 @@ void AArch64RegressionTest::run(const char* source) {
 }
 
 YAML::Node AArch64RegressionTest::generateConfig() const {
-  YAML::Node config = YAML::Load(TX2_CONFIG);
+  YAML::Node config = YAML::Load(AARCH64_CONFIG);
   switch (GetParam()) {
     case EMULATION:
       config["Core"]["Simulation-Mode"] = "emulation";
@@ -38,15 +38,9 @@ AArch64RegressionTest::createPortAllocator() const {
   const std::vector<std::vector<uint16_t>> portArrangement = {
       {simeng::arch::aarch64::InstructionGroups::INT_SIMPLE,
        simeng::arch::aarch64::InstructionGroups::INT_MUL,
-       simeng::arch::aarch64::InstructionGroups::FP_SIMPLE,
-       simeng::arch::aarch64::InstructionGroups::FP_MUL,
-       simeng::arch::aarch64::InstructionGroups::FP_DIV_OR_SQRT},  // Port 0
-      {simeng::arch::aarch64::InstructionGroups::INT_SIMPLE,
-       simeng::arch::aarch64::InstructionGroups::INT_MUL,
-       simeng::arch::aarch64::InstructionGroups::INT_DIV_OR_SQRT,
-       simeng::arch::aarch64::InstructionGroups::FP_SIMPLE,
-       simeng::arch::aarch64::InstructionGroups::FP_MUL,
-       simeng::arch::aarch64::InstructionGroups::FP_DIV_OR_SQRT},  // Port 1
+       simeng::arch::aarch64::InstructionGroups::FP},  // Port 0
+      {simeng::arch::aarch64::InstructionGroups::INT,
+       simeng::arch::aarch64::InstructionGroups::FP},  // Port 1
       {simeng::arch::aarch64::InstructionGroups::INT_SIMPLE,
        simeng::arch::aarch64::InstructionGroups::INT_MUL,
        simeng::arch::aarch64::InstructionGroups::BRANCH},  // Port 2

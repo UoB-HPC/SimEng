@@ -4,25 +4,18 @@
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 
-#define TX2_CONFIG                                                             \
+#define AARCH64_CONFIG                                                         \
   ("{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "                \
    "Fetch-Block-Size: 32}, Register-Set: {GeneralPurpose-Count: "              \
    "154, FloatingPoint/SVE-Count: 90, Predicate-Count: 17, "                   \
    "Conditional-Count: 128}, Pipeline-Widths: { Commit: 4, Dispatch-Rate: 4, " \
    "FrontEnd: 4, LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, "       \
    "Store: 36}, Branch-Predictor: {BTB-bitlength: 16}, L1-Cache: "             \
-   "{GeneralPurpose-Latency: 4, FloatingPoint-Latency: 4, SVE-Latency: 1, "    \
-   "Bandwidth: 32, Permitted-Requests-Per-Cycle: 2, "                          \
+   "{Access-Latency: 4, Bandwidth: 32, Permitted-Requests-Per-Cycle: 2, "      \
    "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "     \
-   "{'0': {Portname: Port 0, Instruction-Support: [0, 1, 7, 10, 16, 17]}, "    \
-   "'1': {Portname: Port 1, Instruction-Support: [0, 1, 7, 8, 10, 16, 17]}, "  \
-   "'2': {Portname: Port 2, Instruction-Support: [1, 7, 56]}, '3': "           \
-   "{Portname: Port 4, Instruction-Support: [46]}, '4': {Portname: Port 5, "   \
-   "Instruction-Support: [46]}, '5': {Portname: Port 3, Instruction-Support: " \
-   "[51]}}, Reservation-Stations: {'0': {Size: 60, Ports: [0, 1, 2, 3, 4, "    \
-   "5]}}, Execution-Units: {'0': {Pipelined: true}, '1': {Pipelined: true}, "  \
-   "'2': {Pipelined: true}, '3': {Pipelined: true}, '4': {Pipelined: true}, "  \
-   "'5': {Pipelined: true}}}")
+   "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 12, 46, 58, 59, "  \
+   "60, 61]}}, Reservation-Stations: {'0': {Size: 60, Ports: [0]}}, "          \
+   "Execution-Units: {'0': {Pipelined: true}}}")
 
 /** A helper macro to run a snippet of Armv8 assembly code, returning from the
  * calling function if a fatal error occurs. Four bytes containing zeros are

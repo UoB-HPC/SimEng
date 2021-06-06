@@ -30,6 +30,11 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
 
+  // Instantiate an executionInfo entry for each group in the InstructionGroup
+  // namespace.
+  for (int i = 0; i < NUM_GROUPS; i++) {
+    groupExecutionInfo_[i] = {1, 1, {}};
+  }
   // Extract execution latency/throughput for each group
   std::vector<bool> explicitLatency(NUM_GROUPS, false);
   for (size_t i = 0; i < config["Latencies"].size(); i++) {
