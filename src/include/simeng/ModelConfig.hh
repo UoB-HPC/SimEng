@@ -7,9 +7,9 @@
 #include <climits>
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <queue>
 #include <string>
+#include <unordered_map>
 
 #include "simeng/arch/aarch64/Instruction.hh"
 #include "yaml-cpp/yaml.h"
@@ -34,150 +34,6 @@
    "true}, '4': {Pipelined: true}, '5': {Pipelined: true}}}")
 
 namespace simeng {
-std::vector<std::string> groupOptions = {"INT",
-                                         "INT_SIMPLE",
-                                         "INT_ARTH",
-                                         "INT_ARTH_NOSHIFT",
-                                         "INT_LOGICAL",
-                                         "INT_LOGICAL_NOSHIFT",
-                                         "INT_CMP",
-                                         "INT_CVT",
-                                         "INT_MUL",
-                                         "INT_DIV_OR_SQRT",
-                                         "LOAD_INT",
-                                         "STORE_INT",
-                                         "FP",
-                                         "FP_SIMPLE",
-                                         "FP_ARTH",
-                                         "FP_ARTH_NOSHIFT",
-                                         "FP_LOGICAL",
-                                         "FP_LOGICAL_NOSHIFT",
-                                         "FP_CMP",
-                                         "FP_CVT",
-                                         "FP_MUL",
-                                         "FP_DIV_OR_SQRT",
-                                         "SCALAR",
-                                         "SCALAR_SIMPLE",
-                                         "SCALAR_ARTH",
-                                         "SCALAR_ARTH_NOSHIFT",
-                                         "SCALAR_LOGICAL",
-                                         "SCALAR_LOGICAL_NOSHIFT",
-                                         "SCALAR_CMP",
-                                         "SCALAR_CVT",
-                                         "SCALAR_MUL",
-                                         "SCALAR_DIV_OR_SQRT",
-                                         "LOAD_FLOAT",
-                                         "STORE_FLOAT",
-                                         "VECTOR",
-                                         "VECTOR_SIMPLE",
-                                         "VECTOR_ARTH",
-                                         "VECTOR_ARTH_NOSHIFT",
-                                         "VECTOR_LOGICAL",
-                                         "VECTOR_LOGICAL_NOSHIFT",
-                                         "VECTOR_CMP",
-                                         "VECTOR_CVT",
-                                         "VECTOR_MUL",
-                                         "VECTOR_DIV_OR_SQRT",
-                                         "LOAD_VECTOR",
-                                         "STORE_VECTOR",
-                                         "SVE",
-                                         "SVE_SIMPLE",
-                                         "SVE_ARTH",
-                                         "SVE_ARTH_NOSHIFT",
-                                         "SVE_LOGICAL",
-                                         "SVE_LOGICAL_NOSHIFT",
-                                         "SVE_CMP",
-                                         "SVE_CVT",
-                                         "SVE_MUL",
-                                         "SVE_DIV_OR_SQRT",
-                                         "LOAD_SVE",
-                                         "STORE_SVE",
-                                         "PREDICATE",
-                                         "LOAD",
-                                         "STORE",
-                                         "BRANCH"};
-
-std::map<std::string, uint16_t> group_mapping = {
-    {"INT", simeng::arch::aarch64::InstructionGroups::INT},
-    {"INT_SIMPLE", simeng::arch::aarch64::InstructionGroups::INT_SIMPLE},
-    {"INT_ARTH", simeng::arch::aarch64::InstructionGroups::INT_ARTH},
-    {"INT_ARTH_NOSHIFT",
-     simeng::arch::aarch64::InstructionGroups::INT_ARTH_NOSHIFT},
-    {"INT_LOGICAL", simeng::arch::aarch64::InstructionGroups::INT_LOGICAL},
-    {"INT_LOGICAL_NOSHIFT",
-     simeng::arch::aarch64::InstructionGroups::INT_LOGICAL_NOSHIFT},
-    {"INT_CMP", simeng::arch::aarch64::InstructionGroups::INT_CMP},
-    {"INT_CVT", simeng::arch::aarch64::InstructionGroups::INT_CVT},
-    {"INT_MUL", simeng::arch::aarch64::InstructionGroups::INT_MUL},
-    {"INT_DIV_OR_SQRT",
-     simeng::arch::aarch64::InstructionGroups::INT_DIV_OR_SQRT},
-    {"LOAD_INT", simeng::arch::aarch64::InstructionGroups::LOAD_INT},
-    {"STORE_INT", simeng::arch::aarch64::InstructionGroups::STORE_INT},
-    {"FP", simeng::arch::aarch64::InstructionGroups::FP},
-    {"FP_SIMPLE", simeng::arch::aarch64::InstructionGroups::FP_SIMPLE},
-    {"FP_ARTH", simeng::arch::aarch64::InstructionGroups::FP_ARTH},
-    {"FP_ARTH_NOSHIFT",
-     simeng::arch::aarch64::InstructionGroups::FP_ARTH_NOSHIFT},
-    {"FP_LOGICAL", simeng::arch::aarch64::InstructionGroups::FP_LOGICAL},
-    {"FP_LOGICAL_NOSHIFT",
-     simeng::arch::aarch64::InstructionGroups::FP_LOGICAL_NOSHIFT},
-    {"FP_CMP", simeng::arch::aarch64::InstructionGroups::FP_CMP},
-    {"FP_CVT", simeng::arch::aarch64::InstructionGroups::FP_CVT},
-    {"FP_MUL", simeng::arch::aarch64::InstructionGroups::FP_MUL},
-    {"FP_DIV_OR_SQRT",
-     simeng::arch::aarch64::InstructionGroups::FP_DIV_OR_SQRT},
-    {"SCALAR", simeng::arch::aarch64::InstructionGroups::SCALAR},
-    {"SCALAR_SIMPLE", simeng::arch::aarch64::InstructionGroups::SCALAR_SIMPLE},
-    {"SCALAR_ARTH", simeng::arch::aarch64::InstructionGroups::SCALAR_ARTH},
-    {"SCALAR_ARTH_NOSHIFT",
-     simeng::arch::aarch64::InstructionGroups::SCALAR_ARTH_NOSHIFT},
-    {"SCALAR_LOGICAL",
-     simeng::arch::aarch64::InstructionGroups::SCALAR_LOGICAL},
-    {"SCALAR_LOGICAL_NOSHIFT",
-     simeng::arch::aarch64::InstructionGroups::SCALAR_LOGICAL_NOSHIFT},
-    {"SCALAR_CMP", simeng::arch::aarch64::InstructionGroups::SCALAR_CMP},
-    {"SCALAR_CVT", simeng::arch::aarch64::InstructionGroups::SCALAR_CVT},
-    {"SCALAR_MUL", simeng::arch::aarch64::InstructionGroups::SCALAR_MUL},
-    {"SCALAR_DIV_OR_SQRT",
-     simeng::arch::aarch64::InstructionGroups::SCALAR_DIV_OR_SQRT},
-    {"LOAD_FLOAT", simeng::arch::aarch64::InstructionGroups::LOAD_FLOAT},
-    {"STORE_FLOAT", simeng::arch::aarch64::InstructionGroups::STORE_FLOAT},
-    {"VECTOR", simeng::arch::aarch64::InstructionGroups::VECTOR},
-    {"VECTOR_SIMPLE", simeng::arch::aarch64::InstructionGroups::VECTOR_SIMPLE},
-    {"VECTOR_ARTH", simeng::arch::aarch64::InstructionGroups::VECTOR_ARTH},
-    {"VECTOR_ARTH_NOSHIFT",
-     simeng::arch::aarch64::InstructionGroups::VECTOR_ARTH_NOSHIFT},
-    {"VECTOR_LOGICAL",
-     simeng::arch::aarch64::InstructionGroups::VECTOR_LOGICAL},
-    {"VECTOR_LOGICAL_NOSHIFT",
-     simeng::arch::aarch64::InstructionGroups::VECTOR_LOGICAL_NOSHIFT},
-    {"VECTOR_CMP", simeng::arch::aarch64::InstructionGroups::VECTOR_CMP},
-    {"VECTOR_CVT", simeng::arch::aarch64::InstructionGroups::VECTOR_CVT},
-    {"VECTOR_MUL", simeng::arch::aarch64::InstructionGroups::VECTOR_MUL},
-    {"VECTOR_DIV_OR_SQRT",
-     simeng::arch::aarch64::InstructionGroups::VECTOR_DIV_OR_SQRT},
-    {"LOAD_VECTOR", simeng::arch::aarch64::InstructionGroups::LOAD_VECTOR},
-    {"STORE_VECTOR", simeng::arch::aarch64::InstructionGroups::STORE_VECTOR},
-    {"SVE", simeng::arch::aarch64::InstructionGroups::SVE},
-    {"SVE_SIMPLE", simeng::arch::aarch64::InstructionGroups::SVE_SIMPLE},
-    {"SVE_ARTH", simeng::arch::aarch64::InstructionGroups::SVE_ARTH},
-    {"SVE_ARTH_NOSHIFT",
-     simeng::arch::aarch64::InstructionGroups::SVE_ARTH_NOSHIFT},
-    {"SVE_LOGICAL", simeng::arch::aarch64::InstructionGroups::SVE_LOGICAL},
-    {"SVE_LOGICAL_NOSHIFT",
-     simeng::arch::aarch64::InstructionGroups::SVE_LOGICAL_NOSHIFT},
-    {"SVE_CMP", simeng::arch::aarch64::InstructionGroups::SVE_CMP},
-    {"SVE_CVT", simeng::arch::aarch64::InstructionGroups::SVE_CVT},
-    {"SVE_MUL", simeng::arch::aarch64::InstructionGroups::SVE_MUL},
-    {"SVE_DIV_OR_SQRT",
-     simeng::arch::aarch64::InstructionGroups::SVE_DIV_OR_SQRT},
-    {"LOAD_SVE", simeng::arch::aarch64::InstructionGroups::LOAD_SVE},
-    {"STORE_SVE", simeng::arch::aarch64::InstructionGroups::STORE_SVE},
-    {"PREDICATE", simeng::arch::aarch64::InstructionGroups::PREDICATE},
-    {"LOAD", simeng::arch::aarch64::InstructionGroups::LOAD},
-    {"STORE", simeng::arch::aarch64::InstructionGroups::STORE},
-    {"BRANCH", simeng::arch::aarch64::InstructionGroups::BRANCH},
-};
 
 namespace ExpectedValue {
 const uint8_t Integer = 0;
@@ -213,6 +69,11 @@ class ModelConfig {
   /** Validate all required fields are filled with an approriate
    * value. */
   void validate();
+
+  /** From a pre-defined vector of instruction group strings, instantiate an ISA
+   * specific mapping between the instruction group strings and the relevant
+   * instruction group variables. */
+  void createGroupMapping();
 
   /** Given a node, value requirements, and possibly a deafult value,
    * validate the value held within the node. All methods perform, at
@@ -299,6 +160,14 @@ class ModelConfig {
 
   /** The YAML formatted config file. */
   YAML::Node configFile_;
+
+  /** The ISA specific vector of instruction group strings for matching against
+   * user inputted groups. */
+  std::vector<std::string> groupOptions_;
+
+  /** ISA specific mapping between the defined instruction strings and the
+   * instruction group variables. */
+  std::unordered_map<std::string, uint16_t> groupMapping_;
 
   /** A string stream containing information about missing config
    * fields. */

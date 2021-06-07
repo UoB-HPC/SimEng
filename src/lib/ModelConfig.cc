@@ -14,6 +14,9 @@ ModelConfig::ModelConfig(std::string path) {
   // Read in the config file
   configFile_ = YAML::LoadFile(path);
 
+  // Generate groupOptions_ and groupMapping_
+  createGroupMapping();
+
   // Check if the config file inherits values from a base config
   inherit();
 
@@ -143,10 +146,10 @@ void ModelConfig::validate() {
             ExpectedValue::UInteger);
         opcodeIndex++;
       } else if (nodeChecker<std::string>(group, port_num + group_num,
-                                          groupOptions,
+                                          groupOptions_,
                                           ExpectedValue::String)) {
         configFile_["Ports"][i]["Instruction-Group-Support"][groupIndex] =
-            unsigned(group_mapping[group.as<std::string>()]);
+            unsigned(groupMapping_[group.as<std::string>()]);
         groupIndex++;
       }
     }
@@ -272,9 +275,9 @@ void ModelConfig::validate() {
         sprintf(bgNum, "Blocking group %zu", j);
         if (nodeChecker<std::string>(configFile_[root][i][subFields[1]][j],
                                      (std::string(euNum) + std::string(bgNum)),
-                                     groupOptions, ExpectedValue::String)) {
+                                     groupOptions_, ExpectedValue::String)) {
           uint16_t mappedGroup =
-              group_mapping[euNode[subFields[1]][j].as<std::string>()];
+              groupMapping_[euNode[subFields[1]][j].as<std::string>()];
           blockingGroups.push(mappedGroup);
           configFile_["Execution-Units"][i]["Blocking-Groups"][j] = mappedGroup;
         }
@@ -332,10 +335,10 @@ void ModelConfig::validate() {
           opcodeIndex++;
         } else if (nodeChecker<std::string>(
                        grpNode[j], (std::string(latNum) + std::string(grpNum)),
-                       groupOptions, ExpectedValue::String)) {
+                       groupOptions_, ExpectedValue::String)) {
           // Map latency Instruction-Group to integer value
           configFile_[root][i]["Instruction-Group"][groupIndex] =
-              group_mapping[grpNode[j].as<std::string>()];
+              groupMapping_[grpNode[j].as<std::string>()];
           groupIndex++;
         }
       }
@@ -367,6 +370,78 @@ void ModelConfig::validate() {
   }
   if (missingStr.length() || invalidStr.length()) exit(1);
   return;
+}
+
+void ModelConfig::createGroupMapping() {
+  groupOptions_ = {"INT",
+                   "INT_SIMPLE",
+                   "INT_ARTH",
+                   "INT_ARTH_NOSHIFT",
+                   "INT_LOGICAL",
+                   "INT_LOGICAL_NOSHIFT",
+                   "INT_CMP",
+                   "INT_CVT",
+                   "INT_MUL",
+                   "INT_DIV_OR_SQRT",
+                   "LOAD_INT",
+                   "STORE_INT",
+                   "FP",
+                   "FP_SIMPLE",
+                   "FP_ARTH",
+                   "FP_ARTH_NOSHIFT",
+                   "FP_LOGICAL",
+                   "FP_LOGICAL_NOSHIFT",
+                   "FP_CMP",
+                   "FP_CVT",
+                   "FP_MUL",
+                   "FP_DIV_OR_SQRT",
+                   "SCALAR",
+                   "SCALAR_SIMPLE",
+                   "SCALAR_ARTH",
+                   "SCALAR_ARTH_NOSHIFT",
+                   "SCALAR_LOGICAL",
+                   "SCALAR_LOGICAL_NOSHIFT",
+                   "SCALAR_CMP",
+                   "SCALAR_CVT",
+                   "SCALAR_MUL",
+                   "SCALAR_DIV_OR_SQRT",
+                   "LOAD_FLOAT",
+                   "STORE_FLOAT",
+                   "VECTOR",
+                   "VECTOR_SIMPLE",
+                   "VECTOR_ARTH",
+                   "VECTOR_ARTH_NOSHIFT",
+                   "VECTOR_LOGICAL",
+                   "VECTOR_LOGICAL_NOSHIFT",
+                   "VECTOR_CMP",
+                   "VECTOR_CVT",
+                   "VECTOR_MUL",
+                   "VECTOR_DIV_OR_SQRT",
+                   "LOAD_VECTOR",
+                   "STORE_VECTOR",
+                   "SVE",
+                   "SVE_SIMPLE",
+                   "SVE_ARTH",
+                   "SVE_ARTH_NOSHIFT",
+                   "SVE_LOGICAL",
+                   "SVE_LOGICAL_NOSHIFT",
+                   "SVE_CMP",
+                   "SVE_CVT",
+                   "SVE_MUL",
+                   "SVE_DIV_OR_SQRT",
+                   "LOAD_SVE",
+                   "STORE_SVE",
+                   "PREDICATE",
+                   "LOAD",
+                   "STORE",
+                   "BRANCH"};
+  // AARCH64 instruction group namespace contains a set of contiguous assigned
+  // uint16_t start from 0. Therefore the index of each groupOptions_ entry is
+  // also its aarch64::InstructionGroups value (assuming groupOptions_ is
+  // ordered exactly as aarch64::InstructionGroups is).
+  for (int grp = 0; grp < groupOptions_.size(); grp++) {
+    groupMapping_[groupOptions_[grp]] = grp;
+  }
 }
 
 template <typename T>
