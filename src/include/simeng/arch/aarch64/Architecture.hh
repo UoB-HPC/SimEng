@@ -51,12 +51,6 @@ class Architecture : public arch::Architecture {
   uint8_t getMaxInstructionSize() const override;
 
  private:
-  /** Retrieve the latencies for the instruction represented by the supplied
-   * metadata. Returns a pair of values {latency, stallCycles}, representing the
-   * cycles the instruction takes to execute and the cycles it blocks the
-   * execution unit for, respectively. */
-  std::pair<uint8_t, uint8_t> getLatencies(InstructionMetadata& metadata) const;
-
   /** Retrieve an executionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
    * port information, return that instead of the group-defined execution
