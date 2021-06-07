@@ -36,18 +36,13 @@ AArch64RegressionTest::createPortAllocator() const {
   // TODO: this is currently tightly coupled to the number of execution units,
   // which is specified in the out-of-order core model
   const std::vector<std::vector<uint16_t>> portArrangement = {
-      {simeng::arch::aarch64::InstructionGroups::INT_SIMPLE,
-       simeng::arch::aarch64::InstructionGroups::INT_MUL,
-       simeng::arch::aarch64::InstructionGroups::FP},  // Port 0
       {simeng::arch::aarch64::InstructionGroups::INT,
-       simeng::arch::aarch64::InstructionGroups::FP},  // Port 1
-      {simeng::arch::aarch64::InstructionGroups::INT_SIMPLE,
-       simeng::arch::aarch64::InstructionGroups::INT_MUL,
-       simeng::arch::aarch64::InstructionGroups::BRANCH},  // Port 2
-      {simeng::arch::aarch64::InstructionGroups::LOAD},    // Port 4
-      {simeng::arch::aarch64::InstructionGroups::LOAD},    // Port 5
-      {simeng::arch::aarch64::InstructionGroups::STORE}    // Port 3
-  };
+       simeng::arch::aarch64::InstructionGroups::FP,
+       simeng::arch::aarch64::InstructionGroups::SVE,
+       simeng::arch::aarch64::InstructionGroups::PREDICATE,
+       simeng::arch::aarch64::InstructionGroups::LOAD,
+       simeng::arch::aarch64::InstructionGroups::STORE,
+       simeng::arch::aarch64::InstructionGroups::BRANCH}};
 
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
