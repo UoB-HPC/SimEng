@@ -36,7 +36,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     groupExecutionInfo_[i] = {1, 1, {}};
   }
   // Extract execution latency/throughput for each group
-  std::vector<bool> explicitLatency(NUM_GROUPS, false);
+  std::vector<uint8_t> inheritanceDistance(NUM_GROUPS, UINT8_MAX);
   for (size_t i = 0; i < config["Latencies"].size(); i++) {
     YAML::Node port_node = config["Latencies"][i];
     uint16_t latency = port_node["Execution-Latency"].as<uint16_t>();
@@ -45,28 +45,32 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
       uint16_t group = port_node["Instruction-Group"][j].as<uint16_t>();
       groupExecutionInfo_[group].latency = latency;
       groupExecutionInfo_[group].stallCycles = throughput;
-      // Tag explicit latency assignment as opposed from assignment due to
-      // inheritance
-      explicitLatency[group] = true;
+      // Set zero inheritance distance for latency assignment as it's explicitly
+      // defined
+      inheritanceDistance[group] = 0;
       // Add inherited support for those appropriate groups
       std::queue<uint16_t> groups;
       groups.push(group);
+      // Set a distance counter as 1 to represent 1 level of inheritance
+      uint8_t distance = 1;
       while (groups.size()) {
         // Determine if there's any inheritance
         if (groupInheritance.find(groups.front()) != groupInheritance.end()) {
           std::vector<uint16_t> inheritedGroups =
               groupInheritance.at(groups.front());
           for (int k = 0; k < inheritedGroups.size(); k++) {
-            // Determine if this group has already been explicitly assigned its
-            // latency values
-            if (!explicitLatency[inheritedGroups[k]]) {
+            // Determine if this group has inherited latency values from a
+            // smaller distance
+            if (inheritanceDistance[inheritedGroups[k]] > distance) {
               groupExecutionInfo_[inheritedGroups[k]].latency = latency;
               groupExecutionInfo_[inheritedGroups[k]].stallCycles = throughput;
+              inheritanceDistance[inheritedGroups[k]] = distance;
             }
             groups.push(inheritedGroups[k]);
           }
         }
         groups.pop();
+        distance++;
       }
     }
     // Store any opcode-based latency override
