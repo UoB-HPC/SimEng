@@ -15,7 +15,7 @@
 #include "yaml-cpp/yaml.h"
 
 #define DEFAULT_CONFIG                                                        \
-  ("{Core: {Simulation-Mode: outoforder, Clock-Frequency: 2.5, "              \
+  ("{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "               \
    "Fetch-Block-Size: 32}, Register-Set: {GeneralPurpose-Count: "             \
    "154, FloatingPoint/SVE-Count: 90, Predicate-Count: 17, "                  \
    "Conditional-Count: 128}, Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, " \
@@ -42,13 +42,6 @@ const uint8_t Float = 2;
 const uint8_t String = 3;
 const uint8_t Bool = 4;
 }  // namespace ExpectedValue
-
-std::map<uint8_t, std::string> invalid_type_map = {
-    {ExpectedValue::Integer, " must be of type integer"},
-    {ExpectedValue::UInteger, " must be of type unsigned integer"},
-    {ExpectedValue::Float, " must be of type float"},
-    {ExpectedValue::String, " must be of type string"},
-    {ExpectedValue::Bool, " must be of type bool"}};
 
 /** A class to correctly validate and format the provided
  * configuration YAML file. */
@@ -123,7 +116,7 @@ class ModelConfig {
         }
       }
     } catch (...) {
-      invalid_ << "\t- " << field << invalid_type_map[expected] << "\n";
+      invalid_ << "\t- " << field << invalidTypeMap_[expected] << "\n";
       return 0;
     }
     return 1;
@@ -152,7 +145,7 @@ class ModelConfig {
         return 0;
       }
     } catch (...) {
-      invalid_ << "\t- " << field << invalid_type_map[expected] << "\n";
+      invalid_ << "\t- " << field << invalidTypeMap_[expected] << "\n";
       return 0;
     }
     return 1;
@@ -168,6 +161,15 @@ class ModelConfig {
   /** ISA specific mapping between the defined instruction strings and the
    * instruction group variables. */
   std::unordered_map<std::string, uint16_t> groupMapping_;
+
+  /** A mapping between the expected data type and the error message if a field
+   * cannot be read as the expected type. */
+  std::unordered_map<uint8_t, std::string> invalidTypeMap_ = {
+      {ExpectedValue::Integer, " must be of type integer"},
+      {ExpectedValue::UInteger, " must be of type unsigned integer"},
+      {ExpectedValue::Float, " must be of type float"},
+      {ExpectedValue::String, " must be of type string"},
+      {ExpectedValue::Bool, " must be of type bool"}};
 
   /** A string stream containing information about missing config
    * fields. */
