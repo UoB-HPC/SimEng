@@ -1,0 +1,277 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Memory &mdash; SimEng  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="System Calls" href="syscalls.html" />
+    <link rel="prev" title="Registers" href="registers.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> SimEng
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developerInfo.html">Developer information</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Simulation Concepts</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="instructions.html">Instructions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="registers.html">Registers</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Memory</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#memoryinterface">MemoryInterface</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#flatmemoryinterface">FlatMemoryInterface</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#fixedmemoryinterface">FixedMemoryInterface</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#variablememoryinterface">VariableMemoryInterface</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="syscalls.html">System Calls</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kernel.html">Kernel</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../components/index.html">Simulation Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/index.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../arch/index.html">Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test/index.html">Testing</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../user/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/building_simeng.html">Building SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/running_simeng.html">Running SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/docker.html">Docker</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">SimEng</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Simulation Concepts</a> &raquo;</li>
+        
+      <li>Memory</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            
+              <a href="https://github.com/UoB-HPC/SimEng/blob/master/developer/concepts/memory.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="memory">
+<h1>Memory<a class="headerlink" href="#memory" title="Permalink to this headline">¶</a></h1>
+<p>The SimEng core models simulate everything in a core up to and including the load/store units, but stop short of the memory system. This is to allow integration and interoperability with a wide range of external memory models, and to focus the development of SimEng primarily on the simulation of the core itself.</p>
+<div class="section" id="memoryinterface">
+<h2>MemoryInterface<a class="headerlink" href="#memoryinterface" title="Permalink to this headline">¶</a></h2>
+<p>All SimEng components that interact with the memory system make memory access requests using supplied instances of the abstract <code class="docutils literal notranslate"><span class="pre">MemoryInterface</span></code> class.</p>
+<p><code class="docutils literal notranslate"><span class="pre">MemoryInterface</span></code> access requests are asynchronous, and may be either read or write. All requests must supply a <code class="docutils literal notranslate"><span class="pre">MemoryAccessTarget</span></code>, containing the memory address, the number of bytes to access, and identifiers to denote the type of data accessed.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Future versions will move the logic associated with the type of data accessed to model specific areas of SimEng, thereby removing the need for the aforementioned identifiers. The planned change has been chosen as to maintain the modularity of previous developments made.</p>
+</div>
+<p>While write requests receive no response, a read request may be responded to an indeterminate number of cycles later. The <code class="docutils literal notranslate"><span class="pre">MemoryInterface::getCompletedReads</span></code> function may be used to retrieve a list of the read requests that completed during the previous cycle. Once processed, responses should be dismissed using the <code class="docutils literal notranslate"><span class="pre">MemoryInterface::clearCompletedReads</span></code> function.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Future versions may update the interface to remove the need for the component to manually clear completed reads.</p>
+</div>
+<p>In addition to the <code class="docutils literal notranslate"><span class="pre">MemoryAccessTarget</span></code>, a write request must be supplied with the data to be stored via a <code class="docutils literal notranslate"><span class="pre">RegisterValue</span></code> class instance, and a read request must be supplied with a unique identifier via a <code class="docutils literal notranslate"><span class="pre">uint64_t</span></code> value.</p>
+<p>It is expected that all implementations of <code class="docutils literal notranslate"><span class="pre">MemoryInterface</span></code> should respect the order that requests are made: a read request following a write request to the same address should respond with the newly written value, rather than returning the old, stale result.</p>
+<div class="section" id="flatmemoryinterface">
+<h3>FlatMemoryInterface<a class="headerlink" href="#flatmemoryinterface" title="Permalink to this headline">¶</a></h3>
+<p>For simpler models, a <code class="docutils literal notranslate"><span class="pre">FlatMemoryInterface</span></code> implementation is supplied. This is a simple wrapper around a byte array representing the process memory, and will always respond to all requests instantly and synchronously.</p>
+</div>
+<div class="section" id="fixedmemoryinterface">
+<h3>FixedMemoryInterface<a class="headerlink" href="#fixedmemoryinterface" title="Permalink to this headline">¶</a></h3>
+<p>For more complex models, a <code class="docutils literal notranslate"><span class="pre">FixedMemoryInterface</span></code> implementation is supplied. Similar to the <code class="docutils literal notranslate"><span class="pre">FlatMemoryInterface</span></code>, a simple wrapper around a byte array is used to represent the process memory. However, a <code class="docutils literal notranslate"><span class="pre">pendingRequests_</span></code> queue is utilised in combination with an internal clock, <code class="docutils literal notranslate"><span class="pre">tickCounter_</span></code>, to support memory requests with a predefined fixed latency value named <code class="docutils literal notranslate"><span class="pre">latency_</span></code>.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">MemoryAccessTarget</span></code> is transformed into a <code class="docutils literal notranslate"><span class="pre">FixedLatencyMemoryInterfaceRequest</span></code> when pushed onto the <code class="docutils literal notranslate"><span class="pre">pendingRequests_</span></code> queue. Each <code class="docutils literal notranslate"><span class="pre">FixedLatencyMemoryInterfaceRequest</span></code> contains the original <code class="docutils literal notranslate"><span class="pre">MemoryAccessTarget</span></code>, an optional <code class="docutils literal notranslate"><span class="pre">data</span></code> or <code class="docutils literal notranslate"><span class="pre">requestId</span></code> value to hold a write’s <code class="docutils literal notranslate"><span class="pre">RegisterValue</span></code> or read’s unique id respectively, and a <code class="docutils literal notranslate"><span class="pre">readyAt</span></code> value. The <code class="docutils literal notranslate"><span class="pre">readyAt</span></code> value defines when the request is ready to be performed in relation to the <code class="docutils literal notranslate"><span class="pre">tickCounter_</span></code>, with <code class="docutils literal notranslate"><span class="pre">readyAt</span> <span class="pre">=</span> <span class="pre">tickCounter_</span> <span class="pre">+</span> <span class="pre">latency_</span></code> at the time of the initial request. When <code class="docutils literal notranslate"><span class="pre">tickCounter_</span></code> is equivalent to the <code class="docutils literal notranslate"><span class="pre">readyAt</span></code> value, the request is performed.</p>
+</div>
+<div class="section" id="variablememoryinterface">
+<h3>VariableMemoryInterface<a class="headerlink" href="#variablememoryinterface" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">VariableMemoryInterface</span></code> operates similarly to the <code class="docutils literal notranslate"><span class="pre">FixedMemoryInterface</span></code> implementation. However, multiple latencies can be defined and are chosen in relation to the type of data being operated on by the request.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Future versions will move the logic associated with the type of data accessed to model specific areas of SimEng, thereby removing the need for the VariableMemoryInterface. The planned change has been chosen as to maintain the modularity of previous developments made.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="syscalls.html" class="btn btn-neutral float-right" title="System Calls" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="registers.html" class="btn btn-neutral float-left" title="Registers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, SimEng developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

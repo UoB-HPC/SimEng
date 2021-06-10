@@ -84,7 +84,17 @@
               
             
             
-              <p class="caption"><span class="caption-text">User Documentation</span></p>
+              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../developer/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/developerInfo.html">Developer information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/concepts/index.html">Simulation Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/components/index.html">Simulation Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/models/index.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/arch/index.html">Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developer/test/index.html">Testing</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Documentation</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="building_simeng.html">Building SimEng</a></li>
@@ -273,7 +283,7 @@
 </dl>
 </div>
 <div class="section" id="ports">
-<h2>Ports<a class="headerlink" href="#ports" title="Permalink to this headline">¶</a></h2>
+<span id="execution-ports"></span><h2>Ports<a class="headerlink" href="#ports" title="Permalink to this headline">¶</a></h2>
 <p>Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent but, for the supported AArch64 ISA, the instruction groups available include:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">INT_ARTH</span></code>. All integer arithmetic operations excluding multiply, divide, and square root.</p></li>
@@ -330,7 +340,7 @@ N-1:
 </div>
 <div class="section" id="execution-units">
 <h2>Execution-Units<a class="headerlink" href="#execution-units" title="Permalink to this headline">¶</a></h2>
-<p>An execution unit can be configured to optionally include an internal pipeline and a set of instruction groups for <span class="xref std std-ref">operation blocking</span>. The instruction groups referenced here are the same as those used in the Ports section.</p>
+<p>An execution unit can be configured to optionally include an internal pipeline and a set of instruction groups for <a class="reference internal" href="../developer/components/pipeline/units.html#operation-blocking"><span class="std std-ref">operation blocking</span></a>. The instruction groups referenced here are the same as those used in the Ports section.</p>
 <p>The following structure must be adhered to when defining an execution unit:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0:
   Pipelined: &lt;True/False&gt;

@@ -1,0 +1,333 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Developer information &mdash; SimEng  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Simulation Concepts" href="concepts/index.html" />
+    <link rel="prev" title="Overview" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> SimEng
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Developer information</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#coding-style">Coding style</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tests">Tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#commit-style">Commit style</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#directory-structure">Directory structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="concepts/index.html">Simulation Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="components/index.html">Simulation Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/index.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="arch/index.html">Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test/index.html">Testing</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../user/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/building_simeng.html">Building SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/running_simeng.html">Running SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/configuring_simeng.html">Configuring SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/creating_binaries.html">Creating Binaries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user/docker.html">Docker</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SimEng</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Developer information</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            
+              <a href="https://github.com/UoB-HPC/SimEng/blob/master/developer/developerInfo.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="developer-information">
+<h1>Developer information<a class="headerlink" href="#developer-information" title="Permalink to this headline">¶</a></h1>
+<p>Contributions in the form of GitHub pull requests are always welcome.
+Pull requests will be reviewed carefully, and changes may be requested if they
+do not adhere to the guidelines below.</p>
+<p>Any given pull request should deliver a single small feature or bug fix.
+Large pieces of new functionality should be broken up into multiple pull
+requests that incrementally build up the desired functionality, in order to
+expedite the code review process and minimise disruption for other people
+working on the codebase.
+Please discuss large functionality changes with the core development team
+before starting to work on them, to ensure that the new code will align with
+the overall direction of SimEng and to avoid duplicated work.</p>
+<div class="section" id="coding-style">
+<h2>Coding style<a class="headerlink" href="#coding-style" title="Permalink to this headline">¶</a></h2>
+<p>New contributions should always adhere to the SimEng coding style.
+It should generally be possible to glean the coding style from the existing
+code, but there is also a <code class="docutils literal notranslate"><span class="pre">.clang_format</span></code> file that helps automate the
+process of checking the formatting.
+The recommendation is to run <code class="docutils literal notranslate"><span class="pre">git-clang-format</span></code> after staging changes to
+ensure the changes will match the SimEng coding style.
+Please avoid commits that solely change formatting; use <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span> <span class="pre">--amend</span></code>
+or <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">commit</span> <span class="pre">--fixup</span></code> to fold formatting changes into the commit that
+introduced the code.</p>
+<p>Code should be well commented.
+New class and method declarations should use Doxygen <code class="docutils literal notranslate"><span class="pre">/**</span> <span class="pre">*/</span></code> syntax to allow
+documentation to be generated automatically.</p>
+</div>
+<div class="section" id="tests">
+<h2>Tests<a class="headerlink" href="#tests" title="Permalink to this headline">¶</a></h2>
+<p>SimEng has an internal test suite that should be run before any pull request is
+opened to ensure that there are no regressions.
+Changes that add new functionality or fix serious bugs should almost always be
+accompanied by new tests (or additions to existing tests where appropriate).</p>
+<p>Further information about the internal test suite and guidance on adding new, or
+appending to existing, test cases can be found in the <a class="reference internal" href="test/index.html"><span class="doc">Testing</span></a>
+section of the developer documentation.</p>
+<p>Currently, there are CircleCI and Jenkins configurations that will automatically
+test that each pull request builds and passes the test suite for multiple compilers
+before being merged. Those compilers include:</p>
+<ul class="simple">
+<li><p>GCC 7/8/9</p></li>
+<li><p>CLANG 5/7</p></li>
+<li><p>ARMCLANG 20</p></li>
+</ul>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<p>Define testing processes for accuracy and performance</p>
+</div>
+</div>
+<div class="section" id="commit-style">
+<h2>Commit style<a class="headerlink" href="#commit-style" title="Permalink to this headline">¶</a></h2>
+<p>Commits should be atomic, with each commit introducing a single, self-contained
+change.</p>
+<p>Please use <a class="reference external" href="https://chris.beams.io/posts/git-commit/#seven-rules">meaningful commit messages</a>.</p>
+<p>Please avoid merge commits; the git history should be linear.
+<a class="reference external" href="https://git-scm.com/book/en/v2/Git-Branching-Rebasing">Rebase</a> your local
+work onto the current master branch regularly to keep it up to date.</p>
+</div>
+<div class="section" id="directory-structure">
+<h2>Directory structure<a class="headerlink" href="#directory-structure" title="Permalink to this headline">¶</a></h2>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">configs/</span></code></dt><dd><p>Pre-generated config files for specific processors</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">docs/</span></code></dt><dd><p>Documentation for users and developers</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">external/</span></code></dt><dd><p>Third-party dependencies, as submodules</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">src/include/simeng/</span></code></dt><dd><p>Header files for publicly visible SimEng APIs</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">src/lib/</span></code></dt><dd><p>Source code for core SimEng library</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">src/tools/</span></code></dt><dd><p>Source code for SimEng executables</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">test/kernels/</span></code></dt><dd><p>Tests for simulation accuracy and performance</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">test/regression/</span></code></dt><dd><p>Regression test suite covering end-to-end simulator functionality</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">test/unit/</span></code></dt><dd><p>Unit tests for core SimEng library</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<p>Significant new features should generally also be accompanied by documentation
+provided using <a class="reference external" href="http://www.sphinx-doc.org/en/master/">Sphinx</a>.
+These docs are built and deployed to a
+<a class="reference external" href="https://uob-hpc.github.io/SimEng">GitHub Pages site</a>.</p>
+<p>Building the documentation locally requires a few Sphinx packages, which are
+simplest to install via <code class="docutils literal notranslate"><span class="pre">pip</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">user</span> <span class="n">Sphinx</span> <span class="n">m2r2</span> <span class="n">sphinx</span><span class="o">-</span><span class="n">rtd</span><span class="o">-</span><span class="n">theme</span>
+</pre></div>
+</div>
+<p>To build the docs, run <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">&lt;path_to_docs_root&gt;</span></code> from the build directory
+to generate the associate Makefile followed by <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">docs</span></code>.
+This will generate HTML documentation which can be found in
+<code class="docutils literal notranslate"><span class="pre">&lt;build_directory&gt;/sphinx/index.html</span></code>.</p>
+<div class="admonition-todo admonition" id="id2">
+<p class="admonition-title">Todo</p>
+<p>Doxygen documentation.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="concepts/index.html" class="btn btn-neutral float-right" title="Simulation Concepts" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, SimEng developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

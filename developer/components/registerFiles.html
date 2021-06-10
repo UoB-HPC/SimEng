@@ -1,0 +1,282 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Register Files &mdash; SimEng  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Models" href="../models/index.html" />
+    <link rel="prev" title="Branch prediction" href="branchPred.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> SimEng
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developerInfo.html">Developer information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../concepts/index.html">Simulation Concepts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Simulation Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pipeline/index.html">Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="branchPred.html">Branch prediction</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Register Files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#registerfileset">RegisterFileSet</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#registeraliastable">RegisterAliasTable</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#allocation">Allocation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#rewinding">Rewinding</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#committing">Committing</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#architecturalregisterfileset">ArchitecturalRegisterFileSet</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#mappedregisterfileset">MappedRegisterFileSet</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../models/index.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../arch/index.html">Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../test/index.html">Testing</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../user/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/building_simeng.html">Building SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/running_simeng.html">Running SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/docker.html">Docker</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">SimEng</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="index.html">Simulation Components</a> &raquo;</li>
+        
+      <li>Register Files</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            
+              <a href="https://github.com/UoB-HPC/SimEng/blob/master/developer/components/registerFiles.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="register-files">
+<h1>Register Files<a class="headerlink" href="#register-files" title="Permalink to this headline">¶</a></h1>
+<p>SimEng provides a set of register related objects to aid and facilitate access to both physical and architectural registers.</p>
+<div class="section" id="registerfileset">
+<h2>RegisterFileSet<a class="headerlink" href="#registerfileset" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">RegisterFileSet</span></code> class models a set of register files, each containing any number of equally-sized registers. The default models each contain a single <code class="docutils literal notranslate"><span class="pre">RegisterFileSet</span></code> instance, with each register file within the set representing all registers of a discrete type (i.e., general purpose, floating point, etc.).</p>
+<p>All data within the register files are stored as <code class="docutils literal notranslate"><span class="pre">RegisterValue</span></code> instances, and may be retrieved or modified using a <code class="docutils literal notranslate"><span class="pre">Register</span></code> identifier (see <a class="reference internal" href="../concepts/registers.html#registers"><span class="std std-ref">Registers</span></a> for more information).</p>
+</div>
+<div class="section" id="registeraliastable">
+<h2>RegisterAliasTable<a class="headerlink" href="#registeraliastable" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">RegisterAliasTable</span></code> class models the register alias table (RAT) found in most out-of-order processors to facilitate register renaming as a method of false dependency elimination. This component is responsible for handling the mappings between the conceptual “architectural registers” that the architecture defines, and the raw “physical registers” that the core contains.</p>
+<p>Each architectural register is assigned a corresponding physical register, and recorded in an internal mapping table. The RAT can translate an architectural register to its corresponding physical register when queried.</p>
+<div class="section" id="allocation">
+<h3>Allocation<a class="headerlink" href="#allocation" title="Permalink to this headline">¶</a></h3>
+<p>At any time, a new physical register may be allocated to an architectural register. The RAT keeps an internal list of unallocated (“free”) physical registers, and will supply a new one and update its mapping table accordingly: future mapping queries on that architectural register will supply the newly allocated physical register instead.</p>
+<p>The physical register previously allocated to the architectural register is internally recorded to facilitate rewinding (see below).</p>
+</div>
+<div class="section" id="rewinding">
+<h3>Rewinding<a class="headerlink" href="#rewinding" title="Permalink to this headline">¶</a></h3>
+<p>It may sometimes be necessary to reverse the effects of an allocation - when an instruction is flushed, for example. The RAT provides a rewind system accordingly: the supplied physical register is freed, and the mapping table updated to reinstate the former physical register for the corresponding architectural register.</p>
+</div>
+<div class="section" id="committing">
+<h3>Committing<a class="headerlink" href="#committing" title="Permalink to this headline">¶</a></h3>
+<p>At any point, a physical register may be “committed”. This locks the physical register to the architectural register it represents, freeing the previously allocated physical register. This increases the number of registers available to be allocated, at the cost of preventing safe rewind beyond this point. Register commitment is typically performed at instruction commitment/retirement, when the instruction’s effects become irreversible and being able to rewind it is no longer necessary.</p>
+</div>
+</div>
+<div class="section" id="architecturalregisterfileset">
+<h2>ArchitecturalRegisterFileSet<a class="headerlink" href="#architecturalregisterfileset" title="Permalink to this headline">¶</a></h2>
+<p>To handle the conceptual distinction between physical and architectural registers, some components use an <code class="docutils literal notranslate"><span class="pre">ArchitecturalRegisterFileSet</span></code>, which guarantees that the registers accessed represent the architectural register identifier supplied. The base <code class="docutils literal notranslate"><span class="pre">ArchitecturalRegisterFileSet</span></code> class is a simple wrapper around a <code class="docutils literal notranslate"><span class="pre">RegisterFileSet</span></code>, with accesses performed with a 1:1 mapping.</p>
+<div class="section" id="mappedregisterfileset">
+<h3>MappedRegisterFileSet<a class="headerlink" href="#mappedregisterfileset" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">MappedRegisterFileSet</span></code> is an <code class="docutils literal notranslate"><span class="pre">ArchitecturalRegisterFileSet</span></code> implementation which uses a <code class="docutils literal notranslate"><span class="pre">RegisterAliasTable</span></code> to map between the supplied architectural register and a physical register in the underlying <code class="docutils literal notranslate"><span class="pre">RegisterFileSet</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For mappings to be valid, the <code class="docutils literal notranslate"><span class="pre">RegisterAliasTable</span></code> must be in a “synchronised” state, with no uncommitted mappings, otherwise mappings will point to registers expected to hold the specified value in future. To satisfy this, <code class="docutils literal notranslate"><span class="pre">MappedRegisterFileSet</span></code> instances should only be used during exception handling, after the simulation has terminated, or other similar situations where no in-flight instructions remain.</p>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../models/index.html" class="btn btn-neutral float-right" title="Models" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="branchPred.html" class="btn btn-neutral float-left" title="Branch prediction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, SimEng developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

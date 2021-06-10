@@ -1,0 +1,297 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Common Components &mdash; SimEng  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Branch prediction" href="../branchPred.html" />
+    <link rel="prev" title="Pipeline Units" href="units.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> SimEng
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../developerInfo.html">Developer information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../concepts/index.html">Simulation Concepts</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Simulation Components</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Pipeline</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="units.html">Pipeline Units</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Common Components</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#reorder-buffer">Reorder Buffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#loadstorequeue">LoadStoreQueue</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../branchPred.html">Branch prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../registerFiles.html">Register Files</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../models/index.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../arch/index.html">Architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../test/index.html">Testing</a></li>
+</ul>
+<p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/building_simeng.html">Building SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/running_simeng.html">Running SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/configuring_simeng.html">Configuring SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/creating_binaries.html">Creating Binaries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../user/docker.html">Docker</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">SimEng</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+          <li><a href="../index.html">Simulation Components</a> &raquo;</li>
+        
+          <li><a href="index.html">Pipeline</a> &raquo;</li>
+        
+      <li>Common Components</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            
+              <a href="https://github.com/UoB-HPC/SimEng/blob/master/developer/components/pipeline/components.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="common-components">
+<h1>Common Components<a class="headerlink" href="#common-components" title="Permalink to this headline">¶</a></h1>
+<p>The SimEng library contains numerous components for use within the default models, as well as for facilitating the creation of custom models.</p>
+<div class="section" id="reorder-buffer">
+<h2>Reorder Buffer<a class="headerlink" href="#reorder-buffer" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">ReorderBuffer</span></code> class models the in-order retirement/commitment buffer (Re-order buffer or ROB) common to many out-of-order architectures. A queue is maintained to store instructions and facilitate their in-order commitment from the simulated processor pipeline.</p>
+<div class="section" id="reserve">
+<h3>Reserve<a class="headerlink" href="#reserve" title="Permalink to this headline">¶</a></h3>
+<p>When the <code class="docutils literal notranslate"><span class="pre">reserve</span></code> function is called, the passed instruction is appended to the queue and assigned a sequence id. This sequence id is used throughout the remainder of the pipeline to distinguish the in-order position of the instruction, in relation to other instructions, when flowing out-of-order.</p>
+<p>The instructions should be appended to the queue in program order; this typically happens during the last in-order stage of an out-of-order model. In the default SimEng pipeline units, <code class="docutils literal notranslate"><span class="pre">RenameUnit</span></code> performs this task.</p>
+</div>
+<div class="section" id="commit">
+<h3>Commit<a class="headerlink" href="#commit" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">commit</span></code> function is called in a similar fashion to other pipeline units’ <code class="docutils literal notranslate"><span class="pre">tick</span></code> function. Each cycle, a set of instructions at the front of the queue have their state analysed. If the instruction has completed its flow through the processor pipeline, it is deemed ready to be committed. As to enforce the in-order commitment of instructions imposed by the ROB, any instruction at the head of the buffer that is not ready to be committed halts all instructions behind it from committing until it is ready.</p>
+<p>When an instruction is committed, any destination operands are committed to the architectural state and the processing of exceptions such as supervisor or system calls begin. Additionally, if the committed instruction is a store operation, all associated requests to memory are generated and possible memory order violations performed by out-of-order loads are checked for (described <a class="reference internal" href="#store-retire"><span class="std std-ref">here</span></a>).</p>
+<p>Only a specific number of instructions can be committed per cycle as defined by the model.</p>
+</div>
+</div>
+<div class="section" id="loadstorequeue">
+<h2>LoadStoreQueue<a class="headerlink" href="#loadstorequeue" title="Permalink to this headline">¶</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">LoadStoreQueue</span></code> class models the load/store queue (LSQ) common to many out-of-order architectures. This structure contains in-order references to all in-flight load and store instructions, which it uses to ensure memory operations occur in program order.</p>
+<p>To accommodate multiple varieties of LSQ, this model provides two modes: <strong>split</strong>, representing an LSQ with two discrete independently sized queues for holding loads and stores respectively, and <strong>combined</strong>, representing an LSQ with a single shared queue that holds both loads and stores.</p>
+<div class="admonition-todo admonition" id="id1">
+<p class="admonition-title">Todo</p>
+<p>Allow for combined option to be defined via configuration files.</p>
+</div>
+<p>In order to enforce restrictions such as the number of loads/stores requests permitted per cycle, a secondary request queue, <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code>, is utilised. This queue holds all distinct requests made by in-flight loads and stores, with some instructions having multiple entries due to multiple addresses requiring access.</p>
+<p>All load and store instructions should be added to the LSQ in program order; this typically happens during the last in-order stage of an out-of-order model. In the default SimEng pipeline units, <code class="docutils literal notranslate"><span class="pre">RenameUnit</span></code> performs this task.</p>
+<div class="section" id="loads">
+<h3>Loads<a class="headerlink" href="#loads" title="Permalink to this headline">¶</a></h3>
+<p>When initially added to the LSQ, loads are considered pending: they exist primarily to hold their place in the load queue, and aren’t considered for memory order logic.</p>
+<p>Once the addresses have been calculated for the load, the LSQ should be informed that the load operation can now be started. At this point, all the addresses the load instruction has generated are placed into the <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code>. Once an entry is selected in the <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code>, the LSQ will send the required data over the memory interface as a read request. When these requests receive responses, during a later cycle, the data will be passed to the relevant load instructions and the load flagged as complete.</p>
+<p>Once a completion slot is available, the load will be executed, the results broadcast to the supplied operand-forwarding handle, and the load instruction written into the completion slot. The load instruction will remain in the load queue until it commits.</p>
+</div>
+<div class="section" id="stores">
+<span id="store-retire"></span><h3>Stores<a class="headerlink" href="#stores" title="Permalink to this headline">¶</a></h3>
+<p>As with loads, stores are considered pending when initially added to the LSQ.</p>
+<p>The generation of store instruction write requests are carried out after its commitment. The reasoning for this design decision is as followed. With SimEng supporting speculative execution, processed store instruction may come from an incorrectly speculated branch direction and will inevitably be removed from the pipeline. Therefore, it is important to ensure any write requests are valid, with respect to speculative execution, as the performance cost of reversing a completed write request is high.</p>
+<p>Store write requests are placed into the <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code> similar to load read requests. Unlike load instructions read requests, the write requests are submitted to the memory interface prior to being selected from the <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code>. Since store instruction write requests are appended to the <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code> after their commitment, we can be confident that the data to be stored and the order in which it is occurring is correct.</p>
+<p>To minimise simulation errors, write requests are sent to the memory interface early. These errors derived from write requests occurring too late after a store instruction’s commitment. Rarely, such latencies caused following load instructions to read incorrect data.</p>
+<p>Although the write request has been submitted, it continues to occupy an entry in the <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code> to simulate the contention of LSQ resources between load and store operations (e.g. the number of permitted requests per cycle). Once selected from the <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code>, the write request is simply deleted with no additional logic.</p>
+<p>Concluding the store instruction request generation, a memory-order violation check takes place: all loads in the LSQ are searched in ascending age order to see if their addresses overlap with the store. If any are discovered, a flush is triggered to re-execute the invalid load instruction and everything after it.</p>
+</div>
+<div class="section" id="ticking">
+<h3>Ticking<a class="headerlink" href="#ticking" title="Permalink to this headline">¶</a></h3>
+<p>The LSQ is expected to be ticked once per clock cycle. This tick is used to select requests from the <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code>, handle responses to memory read requests, and finish execution of completed load instructions.</p>
+<dl class="simple">
+<dt>Request selection</dt><dd><p>Requests are removed from the <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code> in a queue-like fashion and processed. Adherence to model defined restrictions, such as the per cycles bandwidth or the number of store/load requests permitted per cycle, are maintained during removal.</p>
+</dd>
+<dt>Handling responses</dt><dd><p>The memory interface is scanned for completed read requests. If any are present, the relevant load instruction is found and the data supplied, marking the load as complete.</p>
+</dd>
+<dt>Finishing execution</dt><dd><p>Depending on the number of completion slots available, completed load instructions are identified and executed to arrange the loaded data into the output register format, before writing the instructions into the completion slots.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../branchPred.html" class="btn btn-neutral float-right" title="Branch prediction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="units.html" class="btn btn-neutral float-left" title="Pipeline Units" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, SimEng developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

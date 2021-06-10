@@ -1,0 +1,329 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <title>Testing &mdash; SimEng  documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+
+  
+  
+
+  
+  
+
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Overview" href="../../user/index.html" />
+    <link rel="prev" title="AArch64" href="../arch/supported/aarch64.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> SimEng
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Developer Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../developerInfo.html">Developer information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../concepts/index.html">Simulation Concepts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../components/index.html">Simulation Components</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models/index.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../arch/index.html">Architectures</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#regression-suite">Regression suite</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#test-lifecycle">Test lifecycle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#current-regression-suites">Current regression suites</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#aarch64-regression-suite">AArch64 regression suite</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#unit-suite">Unit suite</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#running-the-test-suites">Running the test suites</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">User Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../user/index.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/building_simeng.html">Building SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/running_simeng.html">Running SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../user/docker.html">Docker</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">SimEng</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Testing</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            
+              <a href="https://github.com/UoB-HPC/SimEng/blob/master/developer/test/index.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="testing">
+<h1><a class="toc-backref" href="#id1">Testing</a><a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h1>
+<p>SimEng’s internal test suite has been created to ensure the correct functionality of its core components and simulation of instructions are maintained throughout development. The former case is supported through the unit test suite whilst the latter the regression test suite.</p>
+<p>SimEng uses the <a class="reference external" href="https://github.com/google/googletest">GoogleTest</a> framework to create both the regression and unit test suites. The regression suite also utilises the <a class="reference external" href="https://github.com/llvm-mirror/llvm">LLVM Project</a> to assemble hand-written assembly code into a source program as to then be run through the SimEng pipeline.</p>
+<div class="contents topic" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#testing" id="id1">Testing</a></p>
+<ul>
+<li><p><a class="reference internal" href="#regression-suite" id="id2">Regression suite</a></p>
+<ul>
+<li><p><a class="reference internal" href="#test-lifecycle" id="id3">Test lifecycle</a></p></li>
+<li><p><a class="reference internal" href="#current-regression-suites" id="id4">Current regression suites</a></p>
+<ul>
+<li><p><a class="reference internal" href="#aarch64-regression-suite" id="id5">AArch64 regression suite</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#unit-suite" id="id6">Unit suite</a></p></li>
+<li><p><a class="reference internal" href="#running-the-test-suites" id="id7">Running the test suites</a></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="regression-suite">
+<h2><a class="toc-backref" href="#id2">Regression suite</a><a class="headerlink" href="#regression-suite" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="test-lifecycle">
+<h3><a class="toc-backref" href="#id3">Test lifecycle</a><a class="headerlink" href="#test-lifecycle" title="Permalink to this headline">¶</a></h3>
+<p>The regression suite tests consist of a set of assembly instructions, an instance of a SimEng model, and an expectation of values in registers or memory. The creation of the SimEng model is performed by the <code class="docutils literal notranslate"><span class="pre">RegressionTest</span></code> class’s <code class="docutils literal notranslate"><span class="pre">run</span></code> function in <code class="docutils literal notranslate"><span class="pre">test/regression/RegressionTest.cc</span></code>. The <code class="docutils literal notranslate"><span class="pre">RegressionTest</span></code> class serves as an ISA agnostic mediator to a SimEng model instance during testing.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">run</span></code> function takes a source and triple parameter, which supply the assembly instructions and target information (e.g. aarch64) respectively. Both are passed to the <code class="docutils literal notranslate"><span class="pre">assemble</span></code> function, which creates a flat binary containing the supplied instructions for the defined target. After the flat binary is loaded into the simulated process memory, the SimEng model is created in a similar fashion to that outside of the test environment in <code class="docutils literal notranslate"><span class="pre">src/tools/simeng/main.cc</span></code>.</p>
+<p>Once the simulation has been run, the SimEng model instance persists so that the test can inspect the value of architectural registers and memory for comparison against an expected value. Each test can be parameterised with one of three values from the set <code class="docutils literal notranslate"><span class="pre">{EMULATION,</span> <span class="pre">INORDER,</span> <span class="pre">OUTOFORDER}</span></code> to denote the <a class="reference internal" href="../models/index.html#archetypes"><span class="std std-ref">archetype</span></a> of the SimEng core to be used.</p>
+<p>Prior to the test being run, a <code class="docutils literal notranslate"><span class="pre">initialHeapData_</span></code> vector can be manipulated from within a test. Later, this vector can be used to populate the SimEng model heap and accessed during simulation.</p>
+</div>
+<div class="section" id="current-regression-suites">
+<h3><a class="toc-backref" href="#id4">Current regression suites</a><a class="headerlink" href="#current-regression-suites" title="Permalink to this headline">¶</a></h3>
+<p>Each ISA is expected to have its own folder within the regression test directory. Each folder should have an inherited instance of the <code class="docutils literal notranslate"><span class="pre">RegressionTest</span></code> class (for example <code class="docutils literal notranslate"><span class="pre">AArch64RegressionTest.cc</span></code>) to supply ISA specific conversions between the test and the <code class="docutils literal notranslate"><span class="pre">RegressionTest</span></code> class’s instance of the SimEng model.</p>
+<div class="section" id="aarch64-regression-suite">
+<h4><a class="toc-backref" href="#id5">AArch64 regression suite</a><a class="headerlink" href="#aarch64-regression-suite" title="Permalink to this headline">¶</a></h4>
+<p>In addition to tests for the instruction functionality of the ISA, that are located in the <code class="docutils literal notranslate"><span class="pre">test/regression/aarch64/instructions/</span></code> folder, the aarch64 regression test suite also offers the following test cases:</p>
+<ul class="simple">
+<li><p>Exception: Test non-supervisor call based exceptions.</p></li>
+<li><p>LoadStoreQueue: Test the correct implementation of load and store instructions concerning their interaction with the LSQ.</p></li>
+<li><p>SmokeTest: Trivial ISA related tests.</p></li>
+<li><p>Syscall: Ensure the correct functionality of aarch64 system calls.</p></li>
+<li><p>SystemRegisters: Ensure aarch64 system registers are correctly written to and read from.</p></li>
+</ul>
+<p>Each aarch64 test case structure consists of a set of GoogleTest parameterised test functions, <code class="docutils literal notranslate"><span class="pre">TEST_P</span></code>, and a single <code class="docutils literal notranslate"><span class="pre">INSTANTIATE_TEST_SUITE_P</span></code> call to instantiate and run all <code class="docutils literal notranslate"><span class="pre">TEST_P</span></code> calls. The test case name is defined at the top of each <code class="docutils literal notranslate"><span class="pre">*.cc</span></code> test file (e.g. <code class="docutils literal notranslate"><span class="pre">using</span> <span class="pre">SmokeTest</span> <span class="pre">=</span> <span class="pre">AArch64RegressionTest</span></code>) and the name of the test is defined as the second parameter in each <code class="docutils literal notranslate"><span class="pre">TEST_P</span></code> call.</p>
+<p>Within the <code class="docutils literal notranslate"><span class="pre">INSTANTIATE_TEST_SUITE_P</span></code> call, multiple parameters (from the <code class="docutils literal notranslate"><span class="pre">{EMULATION,</span> <span class="pre">INORDER,</span> <span class="pre">OUTOFORDER}</span></code> set) can be selected, allowing for multiple instances of the same test to be run through different core archetypes.</p>
+<p>The standard structure of an AArch64 regression test body is as followed:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>TEST_P(Test_Case_Name, Test_Name) {
+   ** Any additions to initialHeapData_ **
+
+   RUN_AARCH64(&quot;R(
+      ...
+      instructions to be run
+      ...
+   )&quot;);
+
+   ** Comparisons against values in the SimEng model after simulation **
+}
+</pre></div>
+</div>
+<p><strong>Note</strong>, the <code class="docutils literal notranslate"><span class="pre">RUN_AARCH64</span></code> function is a proxy call to the <code class="docutils literal notranslate"><span class="pre">run</span></code> function in the <code class="docutils literal notranslate"><span class="pre">RegressionTest</span></code> class with the “aarch64” target defined. Also, helper functions for comparrisons against the SimEng model are implemented and well documented in <code class="docutils literal notranslate"><span class="pre">test/regression/aarch64/AArch64RegressionTest.hh</span></code>.</p>
+</div>
+</div>
+</div>
+<div class="section" id="unit-suite">
+<h2><a class="toc-backref" href="#id6">Unit suite</a><a class="headerlink" href="#unit-suite" title="Permalink to this headline">¶</a></h2>
+<p>The tests contained in SimEng’s unit test suite create an isolated instance of a SimEng component. During the tests, hardcoded inputs are supplied to the component and specific functions belonging to the component are invoked. GoogleTest <code class="docutils literal notranslate"><span class="pre">EXPECT</span></code> functions are used throughout this process to form expectations. These expectations relate to the return values of functions and the logic held within them, for example, the calling of other functions with defined parameters.</p>
+<p>Due to the use of isolated instances of SimEng components, certain linked objects or passed inputs have not interacted with the expected prior stages of the processor pipeline. Therefore, they are deemed to be in an incorrect state, for the test context, and may cause unrealistic behaviour. To combat this, the GoogleTest <a class="reference external" href="https://github.com/google/googletest/tree/master/googlemock">gMock</a> library has been used to create mock instances of these objects. When using these mock instances, function logic and return values can be pre-defined and thus mimic the correct behaviour for the test context. Currently, mock instances exist for the following abstract classes:</p>
+<ul class="simple">
+<li><p>Architecture</p></li>
+<li><p>BranchPredictor</p></li>
+<li><p>Instruction</p></li>
+<li><p>MemoryInterface</p></li>
+</ul>
+</div>
+<div class="section" id="running-the-test-suites">
+<h2><a class="toc-backref" href="#id7">Running the test suites</a><a class="headerlink" href="#running-the-test-suites" title="Permalink to this headline">¶</a></h2>
+<p>Whilst <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">test</span></code> can be used to run both the unit and regression test suites sequentially, further refinement on what test are run can be achieved via GoogleTest functionality. GoogleTest provides a <code class="docutils literal notranslate"><span class="pre">--gtest_filter=&quot;&lt;regex&gt;&quot;</span></code> filter command which can be passed as an argument to either test suite, the filter is passed via a regular expression (regex). Full test names typically take the form of:</p>
+<dl class="simple">
+<dt>Parameterised test:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">&lt;INSTANTIATE_TEST_SUITE_P</span> <span class="pre">name&gt;/&lt;test</span> <span class="pre">case</span> <span class="pre">name&gt;.&lt;test</span> <span class="pre">name&gt;/&lt;parameter</span> <span class="pre">value&gt;</span></code></p>
+</dd>
+<dt>Non-parameterised test:</dt><dd><p><code class="docutils literal notranslate"><span class="pre">&lt;test</span> <span class="pre">case</span> <span class="pre">name&gt;.&lt;test</span> <span class="pre">name&gt;</span></code></p>
+</dd>
+</dl>
+<p>An example of its use to filter the aarch64 regression test suite:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>./test/regression/aarch64/regression-aarch64 --gtest_filter=&quot;*InstNeon*&quot;
+</pre></div>
+</div>
+<p>This applied filter would only run those tests in the aarch64 regression test suite with the <em>InstNeon</em> string in their full test name.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+        <a href="../../user/index.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../arch/supported/aarch64.html" class="btn btn-neutral float-left" title="AArch64" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &#169; Copyright 2021, SimEng developers.
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -123,6 +123,8 @@ Permitted-Loads-Per-Cycle
 Permitted-Stores-Per-Cycle
     The number of store requests permitted per cycle.
 
+.. _execution-ports:
+
 Ports
 -----
 
