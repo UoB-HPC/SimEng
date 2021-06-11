@@ -42,7 +42,7 @@ jobs:
           name: Check code formatting
           command: |
             # Generate a formatting diff
-            git-clang-format-8 --diff origin/master --extensions cc,hh \
+            git-clang-format-8 --diff origin/main --extensions cc,hh \
               >FORMATTING
 
             # Check whether any source files were modified

@@ -68,7 +68,7 @@ Please use `meaningful commit messages
 
 Please avoid merge commits; the git history should be linear.
 `Rebase <https://git-scm.com/book/en/v2/Git-Branching-Rebasing>`_ your local
-work onto the current master branch regularly to keep it up to date.
+work onto the current main branch regularly to keep it up to date.
 
 
 Directory structure
