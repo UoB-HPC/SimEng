@@ -21,7 +21,7 @@ First obtain the source code using git, including the dependencies:
    
 .. code-block:: text
 
-        git pull origin master
+        git pull origin main
         git submodule update --init
 
 3. Configure with CMake, specifying the path to your desired installation directory if necessary:
