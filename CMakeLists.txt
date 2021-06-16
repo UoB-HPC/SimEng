@@ -1,7 +1,44 @@
 cmake_minimum_required(VERSION 3.13)
-cmake_policy(SET CMP0048 NEW)
+include(FetchContent)
+set(FETCHCONTENT_QUIET OFF)
 
-project(SimEng VERSION 0.1)
+# FetchContent_MakeAvailable was introduced in 3.14
+# there also isn't a version that accepts extra args at the end for add_subdirectory
+# hence we write one ourselves
+macro(FetchContent_MakeAvailable_Args NAME ARGS)
+    FetchContent_GetProperties(${NAME})
+    if(NOT ${NAME}_POPULATED)
+        FetchContent_Populate(${NAME})
+        add_subdirectory(${${NAME}_SOURCE_DIR} ${${NAME}_BINARY_DIR} ${ARGS})
+    endif()
+endmacro()
+
+# we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a small part of it
+FetchContent_Declare(
+  llvm
+  URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/llvm-12.0.0.src.tar.xz
+  URL_HASH MD5=ceab21c9081e122a88d82216a80d0dc0
+)
+
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  # this versions requires CMake >= 2.8.12 which silences the deprecation warning
+  GIT_TAG        release-1.11.0
+  GIT_PROGRESS   TRUE
+)
+
+FetchContent_Declare(
+  yaml-cpp
+  GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+  # the latest tagged version (0.6.3) is fairly old and doesn't contain the needed CMake stuff for this to work properly
+  # hence we pick the latest working commit
+  GIT_TAG        a6bbe0e50ac4074f0b9b44188c28cf00caf1a723
+  GIT_PROGRESS   TRUE
+)
+
+cmake_policy(SET CMP0048 NEW)
+project(SimEng VERSION 0.1 LANGUAGES C CXX)
 
 # Require and enable C++17 support, and disable compiler extensions.
 set(CMAKE_CXX_STANDARD 17)
@@ -50,45 +87,77 @@ set(CAPSTONE_RISCV_SUPPORT OFF CACHE BOOL "Disable RISCV support")
 
 add_subdirectory(external/capstone EXCLUDE_FROM_ALL)
 
-# Add LLVM
-option(SIMENG_USE_EXTERNAL_LLVM
-       "Use an external LLVM rather than building it as a submodule")
-if (SIMENG_USE_EXTERNAL_LLVM)
-  find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
-else()
-  set(LLVM_TARGETS_TO_BUILD "AArch64" CACHE INTERNAL "")
-  set(LLVM_BUILD_RUNTIME OFF)
-  set(LLVM_INCLUDE_TOOLS OFF)
-  set(LLVM_INCLUDE_EXAMPLES OFF)
-  set(LLVM_INCLUDE_TESTS OFF)
-  set(LLVM_INCLUDE_BENCHMARKS OFF)
-  set(LLVM_INCLUDE_DOCS OFF)
-  set(LLVM_INCLUDE_UTILS OFF)
-  add_subdirectory(external/llvm EXCLUDE_FROM_ALL)
-  find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH
-               PATHS "${PROJECT_BINARY_DIR}/external/llvm/lib/cmake/llvm")
-endif()
-message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+## Setup yaml-cpp ##
+set(YAML_CPP_BUILD_TESTS OFF)
+set(YAML_CPP_INSTALL OFF)
+FetchContent_MakeAvailable_Args(yaml-cpp EXCLUDE_FROM_ALL)
 
-# Check LLVM version
-if (${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0")
-  message(FATAL_ERROR "LLVM version must be >= 8.0")
-endif()
-
-# Check LLVM was built with the correct targets enabled
-if (NOT "AArch64" IN_LIST LLVM_TARGETS_TO_BUILD)
-  message(FATAL_ERROR "LLVM was built without AArch64 target")
-endif()
-
+# include sources
 add_subdirectory(src)
-
 add_subdirectory(docs)
 
-# googletest
-enable_testing()
-add_subdirectory(external/googletest EXCLUDE_FROM_ALL)
-add_subdirectory(test)
+option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
+option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule")
 
-# yaml-cpp
-add_subdirectory(external/yaml-cpp EXCLUDE_FROM_ALL)
+if(SIMENG_ENABLE_TESTS)
+
+  ## Setup LLVM ##
+  if (SIMENG_USE_EXTERNAL_LLVM)
+    find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
+  else()
+
+    set(LLVM_TARGETS_TO_BUILD "AArch64" CACHE INTERNAL "")
+
+    set(LLVM_BUILD_TOOLS OFF)
+    set(LLVM_INCLUDE_TOOLS OFF)
+
+    set(LLVM_BUILD_EXAMPLES OFF)
+    set(LLVM_INCLUDE_EXAMPLES OFF)
+
+    set(LLVM_BUILD_TESTS OFF)
+    set(LLVM_INCLUDE_TESTS OFF)
+
+    set(LLVM_BUILD_BENCHMARKS OFF)
+    set(LLVM_INCLUDE_BENCHMARKS OFF)
+
+    set(LLVM_BUILD_DOCS OFF)
+    set(LLVM_INCLUDE_DOCS OFF)
+
+    set(LLVM_ENABLE_BINDINGS OFF)
+
+    set(LLVM_INSTALL_UTILS OFF)
+
+    # XXX all LLVM specific cmake variables must be set BEFORE FetchContent_MakeAvailable otherwise they have no effect
+    FetchContent_MakeAvailable_Args(llvm EXCLUDE_FROM_ALL)
+
+
+    find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
+    # add_subdirectory(external/llvm EXCLUDE_FROM_ALL)
+    # find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH
+    #              PATHS "${PROJECT_BINARY_DIR}/external/llvm/lib/cmake/llvm")
+  endif()
+
+  message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+  message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+  # Check LLVM version
+  if (${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0")
+    message(FATAL_ERROR "LLVM version must be >= 8.0")
+  endif()
+
+  # Check LLVM was built with the correct targets enabled
+  if (NOT "AArch64" IN_LIST LLVM_TARGETS_TO_BUILD)
+    message(FATAL_ERROR "LLVM was built without AArch64 target")
+  endif()
+
+  ## Setup googletest ##
+  FetchContent_MakeAvailable_Args(googletest EXCLUDE_FROM_ALL)
+  enable_testing()
+
+  add_subdirectory(test)
+  # saves us from having to build all targets before running the tests
+  add_custom_target(test-all
+    COMMAND ${CMAKE_CTEST_COMMAND}
+    DEPENDS unittests regression-aarch64
+  )
+endif()
