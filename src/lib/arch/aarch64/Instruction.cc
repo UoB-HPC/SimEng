@@ -149,7 +149,7 @@ uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group
   // Set base
   uint16_t base = InstructionGroups::INT;
-  if (isFloatData_)
+  if (isScalarData_)
     base = InstructionGroups::SCALAR;
   else if (isVectorData_)
     base = InstructionGroups::VECTOR;
@@ -169,7 +169,7 @@ uint16_t Instruction::getGroup() const {
     return base + 4;
   }
   if (isNoShift_) return base + 3;
-  return base + 2;  // Default return is {Data type}_ARTH
+  return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
 void Instruction::setExecutionInfo(const executionInfo& info) {

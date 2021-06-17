@@ -176,11 +176,11 @@ void Instruction::decode() {
         } else if (op.reg >= ARM64_REG_Z0) {
           isSVEData_ = true;
         } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
-          isFloatData_ = true;
+          isScalarData_ = true;
         } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
           isPredicate_ = true;
         } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
-          isFloatData_ = true;
+          isScalarData_ = true;
         }
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
@@ -292,9 +292,9 @@ void Instruction::decode() {
     isCompare_ = true;
     // Capture those floating point compare instructions with no destination
     // register
-    if (!(isFloatData_ || isVectorData_) &&
+    if (!(isScalarData_ || isVectorData_) &&
         sourceRegisters[0].type == RegisterType::VECTOR) {
-      isFloatData_ = true;
+      isScalarData_ = true;
     }
   }
 
@@ -305,8 +305,8 @@ void Instruction::decode() {
     isConvert_ = true;
     // Capture those floating point convert instructions whose destination
     // register is general purpose
-    if (!(isFloatData_ || isVectorData_ || isSVEData_)) {
-      isFloatData_ = true;
+    if (!(isScalarData_ || isVectorData_ || isSVEData_)) {
+      isScalarData_ = true;
     }
   }
 
@@ -341,8 +341,8 @@ void Instruction::decode() {
   }
   // Uncaught float data assignment for FMOV move to general instructions
   if ((1366 < metadata.opcode && metadata.opcode < 1391) &&
-      !(isFloatData_ || isVectorData_)) {
-    isFloatData_ = true;
+      !(isScalarData_ || isVectorData_)) {
+    isScalarData_ = true;
   }
   // Uncaught vector data assignment for SMOV and UMOV instructions
   if ((3071 < metadata.opcode && metadata.opcode < 3077) ||
@@ -351,8 +351,8 @@ void Instruction::decode() {
   }
   // Uncaught float data assignment for FCVT convert to general instructions
   if ((984 < metadata.opcode && metadata.opcode < 1190) &&
-      !(isFloatData_ || isVectorData_)) {
-    isFloatData_ = true;
+      !(isScalarData_ || isVectorData_)) {
+    isScalarData_ = true;
   }
 }
 
