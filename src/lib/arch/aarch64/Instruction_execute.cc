@@ -671,6 +671,18 @@ void Instruction::execute() {
       }
       break;
     }
+    case Opcode::AArch64_CCMNXi: {  // ccmn xn, #imm, #nzcv, cc
+      if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        uint8_t nzcv;
+        std::tie(std::ignore, nzcv) =
+            addWithCarry(operands[1].get<uint64_t>(),
+                         static_cast<uint64_t>(metadata.operands[1].imm), 0);
+        results[0] = nzcv;
+      } else {
+        results[0] = static_cast<uint8_t>(metadata.operands[2].imm);
+      }
+      break;
+    }
     case Opcode::AArch64_CCMPWi: {  // ccmp wn, #imm, #nzcv, cc
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         uint8_t nzcv;
