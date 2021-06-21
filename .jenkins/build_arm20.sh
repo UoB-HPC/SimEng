@@ -6,6 +6,7 @@ source .jenkins/build_test_run.sh
 checkout
 
 ## Setup environment
+module load cdt/20.03
 export CMAKE_C_COMPILER=cc
 export CMAKE_CXX_COMPILER=CC
 
