@@ -78,6 +78,6 @@ compare_outputs() {
         echo "ERROR: ${STAGE_NAME} run failed due to an incorrect number of $3."
         echo -e "\tExpect \"$2\""
         echo -e "\tGot \"$1\""
-        currentBuild.result = 'FAILURE'
+        sh 'false'
     fi
 }
