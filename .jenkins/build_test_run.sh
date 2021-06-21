@@ -53,16 +53,18 @@ test () {
 # Run default program with and without specified configuration
 run () {
     cd "$SIMENG_INSTALL" || exit
+    echo "Runnning default program with built in config"
     ./bin/simeng > run
-    if [[ "$(tail -n 3 run | head -n 1)" != "retired: 3145731" ]]
+    if [[ "$(tail -n 3 run | head -n 1)" != "retired: 3145732" ]]
     then
         echo "ERROR: ${STAGE_NAME} run without passed config failed. Output:"
         cat run
         false
     fi
 
+    echo "Runnning default program with passed config"
     ./bin/simeng "$SIMENG_TOP"/configs/tx2.yaml > run
-    if [[ "$(tail -n 3 run | head -n 1)" != "retired: 3145732" ]]
+    if [[ "$(tail -n 3 run | head -n 1)" != "retired: 3145731" ]]
     then
         echo "ERROR: ${STAGE_NAME} run with passed config failed. Output:"
         cat run
