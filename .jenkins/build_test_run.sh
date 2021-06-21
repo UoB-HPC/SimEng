@@ -54,14 +54,16 @@ test () {
 run () {
     cd "$SIMENG_INSTALL" || exit
     ./bin/simeng > run
-    if [[ "$(tail -n 3 run | head -n 1)" != "retired: 3145731" ]]
+    if [[ "$(tail -n 3 run | head -n 1)" != "retired: 3145732" ]]
     then
+        error "ERR"
         false
     fi
 
     ./bin/simeng "$SIMENG_TOP"/configs/tx2.yaml > run
     if [[ "$(tail -n 3 run | head -n 1)" != "retired: 3145731" ]]
     then
+        error "ERR"
         false
     fi
 }
