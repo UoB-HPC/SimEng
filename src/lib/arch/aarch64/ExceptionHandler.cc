@@ -333,6 +333,13 @@ bool ExceptionHandler::init() {
         stateChange.memoryAddressValues.push_back(nanoseconds);
         break;
       }
+      case 134: {  // rt_sigaction
+        // TODO Implement syscall logic. Ignored for now as it's assumed the
+        // current use of this syscall is to setup error handlers. Simualted
+        // code is expected to work so no need for these handlers.
+        stateChange = {};
+        break;
+      }
       case 160: {  // uname
         const uint64_t base = registerFileSet.get(R0).get<uint64_t>();
         const uint8_t len =
