@@ -6,6 +6,19 @@ namespace {
 
 using InstFloat = AArch64RegressionTest;
 
+TEST_P(InstFloat, fabd) {
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 12.5
+    fmov d3, 6.0
+    fabd d4, d0, d1
+    fabd d5, d2, d3
+  )");
+  CHECK_NEON(4, double, {2.125, 0.0});
+  CHECK_NEON(5, double, {6.5, 0.0});
+}
+
 TEST_P(InstFloat, fabs) {
   RUN_AARCH64(R"(
     fmov s0, 2.0
@@ -347,43 +360,12 @@ TEST_P(InstFloat, fcsel64) {
 }
 
 TEST_P(InstFloat, fcvta) {
-  // 64-bit negative
+  // 64-bit
   initialHeapData_.resize(48);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
   dheap[0] = -3.75;
   dheap[1] = -3.5;
   dheap[2] = -3.125;
-  dheap[3] = -3.0;
-  dheap[4] = -0.5;
-  dheap[5] = -0.0;
-
-  RUN_AARCH64(R"(
-    # Get heap address
-    mov x0, 0
-    mov x8, 214
-    svc #0
-
-    ldp d0, d1, [x0]
-    ldp d2, d3, [x0, #16]
-    ldp d4, d5, [x0, #32]
-    fcvtas x6, d0
-    fcvtas x7, d1
-    fcvtas x8, d2
-    fcvtas x9, d3
-    fcvtas x10, d4
-    fcvtas x11, d5
-  )");
-  EXPECT_EQ((getGeneralRegister<int64_t>(6)), -4);
-  EXPECT_EQ((getGeneralRegister<int64_t>(7)), -4);
-  EXPECT_EQ((getGeneralRegister<int64_t>(8)), -3);
-  EXPECT_EQ((getGeneralRegister<int64_t>(9)), -3);
-  EXPECT_EQ((getGeneralRegister<int64_t>(10)), -1);
-  EXPECT_EQ((getGeneralRegister<int64_t>(11)), -0);
-
-  // 64-bit positive
-  dheap[0] = 3.75;
-  dheap[1] = 3.5;
-  dheap[2] = 3.125;
   dheap[3] = 3.0;
   dheap[4] = 0.5;
   dheap[5] = 0.0;
@@ -404,12 +386,43 @@ TEST_P(InstFloat, fcvta) {
     fcvtas x10, d4
     fcvtas x11, d5
   )");
-  EXPECT_EQ((getGeneralRegister<int64_t>(6)), 4);
-  EXPECT_EQ((getGeneralRegister<int64_t>(7)), 4);
-  EXPECT_EQ((getGeneralRegister<int64_t>(8)), 3);
+  EXPECT_EQ((getGeneralRegister<int64_t>(6)), -4);
+  EXPECT_EQ((getGeneralRegister<int64_t>(7)), -4);
+  EXPECT_EQ((getGeneralRegister<int64_t>(8)), -3);
   EXPECT_EQ((getGeneralRegister<int64_t>(9)), 3);
   EXPECT_EQ((getGeneralRegister<int64_t>(10)), 1);
   EXPECT_EQ((getGeneralRegister<int64_t>(11)), 0);
+
+  // 32-bit
+  dheap[0] = 3.75;
+  dheap[1] = 3.5;
+  dheap[2] = 3.125;
+  dheap[3] = -3.0;
+  dheap[4] = -0.5;
+  dheap[5] = -0.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    ldp d4, d5, [x0, #32]
+    fcvtas w6, d0
+    fcvtas w7, d1
+    fcvtas w8, d2
+    fcvtas w9, d3
+    fcvtas w10, d4
+    fcvtas w11, d5
+  )");
+  EXPECT_EQ((getGeneralRegister<int32_t>(6)), 4);
+  EXPECT_EQ((getGeneralRegister<int32_t>(7)), 4);
+  EXPECT_EQ((getGeneralRegister<int32_t>(8)), 3);
+  EXPECT_EQ((getGeneralRegister<int32_t>(9)), -3);
+  EXPECT_EQ((getGeneralRegister<int32_t>(10)), -1);
+  EXPECT_EQ((getGeneralRegister<int32_t>(11)), -0);
 }
 
 TEST_P(InstFloat, fcvt) {

@@ -569,6 +569,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
       break;
     }
+    case Opcode::AArch64_LDXRX: {  // ldxr xt, [xn]
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
+      break;
+    }
     case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend {#amount}}]
       // TODO: Implement prefetching
       break;
@@ -978,6 +982,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     case Opcode::AArch64_STURDi: {  // stur dt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});
+      break;
+    }
+    case Opcode::AArch64_STURHHi: {  // sturh wt, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
       break;
     }
     case Opcode::AArch64_STURQi: {  // stur qt, [xn, #imm]

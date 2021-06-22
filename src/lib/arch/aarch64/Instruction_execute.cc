@@ -1111,6 +1111,13 @@ void Instruction::execute() {
       }
       break;
     }
+    case Opcode::AArch64_FABD64: {  // fabd dd, dn, dm
+      double n = operands[0].get<double>();
+      double m = operands[1].get<double>();
+      double out[2] = {std::fabs(n - m), 0.0};
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FABSDr: {  // fabs dd, dn
       double n = operands[0].get<double>();
       double out[2] = {std::fabs(n), 0.0};
@@ -1513,6 +1520,10 @@ void Instruction::execute() {
           conditionHolds(metadata.cc, operands[0].get<uint8_t>()) ? n : m, 0.f,
           0.f, 0.f};
       results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FCVTASUWDr: {  // fcvtas xd, dn
+      results[0] = static_cast<int32_t>(round(operands[0].get<double>()));
       break;
     }
     case Opcode::AArch64_FCVTASUXDr: {  // fcvtas xd, dn
@@ -2858,6 +2869,10 @@ void Instruction::execute() {
       results[0] = memoryData[0].zeroExtend(4, 8);
       break;
     }
+    case Opcode::AArch64_LDXRX: {  // ldxr xt, [xn]
+      results[0] = memoryData[0];
+      break;
+    }
     case Opcode::AArch64_LSLVWr: {  // lslv wd, wn, wm
       auto x = operands[0].get<uint32_t>();
       auto y = operands[1].get<uint32_t>();
@@ -3881,6 +3896,10 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_STURDi: {  // stur dt, [xn, #imm]
+      memoryData[0] = operands[0];
+      break;
+    }
+    case Opcode::AArch64_STURHHi: {  // sturh wt, [xn, #imm]
       memoryData[0] = operands[0];
       break;
     }
