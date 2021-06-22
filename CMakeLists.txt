@@ -102,7 +102,7 @@ set(CAPSTONE_EVM_SUPPORT OFF CACHE BOOL "Disable EVM support")
 set(CAPSTONE_MOS65XX_SUPPORT OFF CACHE BOOL "Disable MSO65XX support")
 set(CAPSTONE_WASM_SUPPORT OFF CACHE BOOL "Disable WASM support")
 set(CAPSTONE_BPF_SUPPORT OFF CACHE BOOL "Disable BPF support")
-set(CAPSTONE_RISCV_SUPPORT OFF CACHE BOOL "Disable RISCV support")
+#set(CAPSTONE_RISCV_SUPPORT OFF CACHE BOOL "Disable RISCV support")
 
 FetchContent_MakeAvailable_Args(capstone EXCLUDE_FROM_ALL)
 include_directories("${capstone_BINARY_DIR}/include" "${capstone_SOURCE_DIR}/include")

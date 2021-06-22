@@ -3,6 +3,7 @@
 #include <cstring>
 #include <iomanip>
 #include <iostream>
+#include <simeng/arch/riscv/Architecture.hh>
 #include <string>
 
 #include "simeng/AlwaysNotTakenPredictor.hh"
@@ -139,19 +140,19 @@ int main(int argc, char** argv) {
     // at the start of each branch. With an instruction latency of 2 or greater,
     // the `orr` at the start of the next loop should issue/execute while the
     // preceding branch is waiting on the result from the `subs`.
-    uint32_t hex[] = {
-        // 0x321E03E0,  // orr w0, wzr, #4
-        // 0x321603E0,  // orr w0, wzr, #1024
-        0x320C03E0,  // orr w0, wzr, #1048576
-        0x320003E1,  // orr w0, wzr, #1
-        0x71000400,  // subs w0, w0, #1
-        // 0x00000000,  // invalid
-        0x54FFFFC1,  // b.ne -8
-                     // .exit:
-        0xD2800000,  // mov x0, #0
-        0xD2800BC8,  // mov x8, #94
-        0xD4000001,  // svc #0
-    };
+//    uint32_t hex[] = {
+//        // 0x321E03E0,  // orr w0, wzr, #4
+//        // 0x321603E0,  // orr w0, wzr, #1024
+//        0x320C03E0,  // orr w0, wzr, #1048576
+//        0x320003E1,  // orr w0, wzr, #1
+//        0x71000400,  // subs w0, w0, #1
+//        // 0x00000000,  // invalid
+//        0x54FFFFC1,  // b.ne -8
+//                     // .exit:
+//        0xD2800000,  // mov x0, #0
+//        0xD2800BC8,  // mov x8, #94
+//        0xD4000001,  // svc #0
+//    };
 
     // Load/store consistency test; a simple bubble sort algorithm
     // uint32_t hex[] = {
@@ -196,6 +197,11 @@ int main(int argc, char** argv) {
     // std::vector<int> memoryValues = {9,  6, 7, 20, 5,   0,  80, 2,  1,  6,
     //                                  17, 4, 3, 22, 117, 11, 4,  12, 10, 18};
     // memcpy(memory, memoryValues.data(), memoryValues.size() * sizeof(int));
+
+    // RISCV instructions
+    uint32_t hex[] = {
+        0x04c78793, // addi a5, a5, 76
+    };
 
     process = std::make_unique<simeng::kernel::LinuxProcess>(
         simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)), config);
