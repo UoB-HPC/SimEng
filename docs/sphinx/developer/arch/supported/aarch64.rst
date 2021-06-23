@@ -28,6 +28,10 @@ The logic held in ``src/lib/arch/aarch64/Instruction_decode.cc`` is primarily as
 - ``isRET_``, is a return instruction.
 - ``isBL_``, is a branch and link instructions.
 
+.. _aarch64-instruction-groups:
+
+Instruction Groups
+******************
 Through a combination of the above identifiers, an instruction can be allocated an :ref:`instruction group <instruction-group>`. The instruction groups available to the AArch64 ISA are detailed below:
 
 .. image:: ../../../assets/instruction_groups.png
@@ -37,11 +41,14 @@ The above diagram describes the instruction groups currently implemented for the
 
 This hierarchy-based naming convention has been chosen to provide the user with greater control over the number of instructions grouped under one name, whilst also remaining intuitive. A variety of combinations/instruction scopes can be defined through this method and only uses a small set of easily interpreted operation descriptions. Quality of life improvements such as not forcing the user to exhaustively list all instruction groups representing a set of operations, but rather a few higher-level groups, are also provided.
 
+If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/external/capstone/arch/AArch64/AArch64GenInstrInfo.inc``) with the format ``~{CAPSTONE_OPCODE}``.
+
 Additional information
-**********************
+''''''''''''''''''''''
+
 The ``FP`` primary identifier is a placeholder to denote both the ``SCALAR`` and ``VECTOR`` primary identifiers such that, amongst the other combinations, ``FP_SIMPLE_ARTH`` expands to be ``SCALAR_SIMPLE_ARTH`` and ``VECTOR_SIMPLE_ARTH``. In some cases it was unnecessary and inconvenient to separate ``SCALAR`` and ``VECTOR`` operations within configuration options, therefore, this instruction group option was provided to solve the issue.
 
-If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/external/capstone/arch/AArch64/AArch64GenInstrInfo.inc``) with the format ``~{CAPSTONE_OPCODE}``.
+When setting the latencies for instruction groups, within the :ref:`Latencies <config-latencies>` section of the configurable options, the inheritance between instruction groups is taken into account (e.g. the ``VECTOR`` group latency assignment would be inherited by all ``VECTOR_*`` groups). If multiple entries could assign a latency value to an instruction group, the option with the least levels of inheritance to the instruction group takes priority. As an example, take the groups ``INT_SIMPLE`` and ``INT_SIMPLE_ARTH``. ``INT_SIMPLE_ARTH_NOSHIFT`` inherits from both of these groups but because ``INT_SIMPLE_ARTH`` has one less level of inheritance to traverse, ``INT_SIMPLE_ARTH_NOSHIFT`` inherits ``INT_SIMPLE_ARTH`` latency values.
 
 Adding instructions
 -------------------
