@@ -15,7 +15,7 @@
 #include "yaml-cpp/yaml.h"
 
 #define DEFAULT_CONFIG                                                        \
-  ("{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "               \
+  ("{Core: {Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5, "        \
    "Fetch-Block-Size: 32}, Register-Set: {GeneralPurpose-Count: "             \
    "154, FloatingPoint/SVE-Count: 90, Predicate-Count: 17, "                  \
    "Conditional-Count: 128}, Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, " \
