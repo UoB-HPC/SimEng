@@ -14,12 +14,8 @@ const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
                                              (uint16_t)-1};
 
 Instruction::Instruction(const Architecture& architecture,
-                         const InstructionMetadata& metadata, uint8_t latency,
-                         uint8_t stallCycles)
+                         const InstructionMetadata& metadata)
     : architecture_(architecture), metadata(metadata) {
-  latency_ = latency;
-  stallCycles_ = stallCycles;
-
   decode();
 }
 
@@ -119,11 +115,9 @@ const span<RegisterValue> Instruction::getResults() const {
 bool Instruction::isStore() const { return isStore_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
-bool Instruction::isASIMD() const { return isASIMD_; }
 bool Instruction::isRET() const { return isRET_; }
 bool Instruction::isBL() const { return isBL_; }
-bool Instruction::isSVE() const { return isSVE_; }
-bool Instruction::isPredicate() const { return isPredicate_; }
+bool Instruction::isSVE() const { return isSVEData_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
@@ -152,18 +146,47 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 }
 
 uint16_t Instruction::getGroup() const {
-  uint16_t group = 0;
-  if (isPredicate()) group |= (1 << InstructionGroups::PREDICATE);
-  if (isBranch()) group |= (1 << InstructionGroups::BRANCH);
-  if (isLoad()) group |= (1 << InstructionGroups::LOAD);
-  if (isStore()) group |= (1 << InstructionGroups::STORE);
-  if (isASIMD_) group |= (1 << InstructionGroups::ASIMD);
-  if (group == 0) group |= (1 << InstructionGroups::ARITHMETIC);
-  if (isShift_) group |= (1 << InstructionGroups::SHIFT);
-  if (isDivide_) group |= (1 << InstructionGroups::DIVIDE);
-  if (isMultiply_) group |= (1 << InstructionGroups::MULTIPLY);
+  // Use identifiers to decide instruction group
+  // Set base
+  uint16_t base = InstructionGroups::INT;
+  if (isScalarData_)
+    base = InstructionGroups::SCALAR;
+  else if (isVectorData_)
+    base = InstructionGroups::VECTOR;
+  else if (isSVEData_)
+    base = InstructionGroups::SVE;
 
-  return group;
+  if (isLoad_) return base + 10;
+  if (isStore_) return base + 11;
+  if (isBranch_) return InstructionGroups::BRANCH;
+  if (isPredicate_) return InstructionGroups::PREDICATE;
+  if (isDivideOrSqrt_) return base + 9;
+  if (isMultiply_) return base + 8;
+  if (isConvert_) return base + 7;
+  if (isCompare_) return base + 6;
+  if (isLogical_) {
+    if (isNoShift_) return base + 5;
+    return base + 4;
+  }
+  if (isNoShift_) return base + 3;
+  return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
+}
+
+void Instruction::setExecutionInfo(const executionInfo& info) {
+  if (isLoad_ || isStore_) {
+    lsqExecutionLatency_ = info.latency;
+  } else {
+    latency_ = info.latency;
+  }
+  stallCycles_ = info.stallCycles;
+  supportedPorts_ = info.ports;
+}
+std::vector<uint8_t> Instruction::getSupportedPorts() {
+  if (supportedPorts_.size() == 0) {
+    exception_ = InstructionException::NoAvailablePort;
+    exceptionEncountered_ = true;
+  }
+  return supportedPorts_;
 }
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }

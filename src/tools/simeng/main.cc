@@ -13,7 +13,6 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/ModelConfig.hh"
-#include "simeng/VariableLatencyMemoryInterface.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
@@ -53,15 +52,15 @@ int main(int argc, char** argv) {
 
   if (argc > 1) {
     config = simeng::ModelConfig(argv[1]).getConfigFile();
-
-    if (config["Core"]["Simulation-Mode"].as<std::string>() == "emulation") {
-      mode = SimulationMode::Emulation;
-    } else if (config["Core"]["Simulation-Mode"].as<std::string>() ==
-               "outoforder") {
-      mode = SimulationMode::OutOfOrder;
-    }
   } else {
     config = YAML::Load(DEFAULT_CONFIG);
+  }
+
+  if (config["Core"]["Simulation-Mode"].as<std::string>() == "emulation") {
+    mode = SimulationMode::Emulation;
+  } else if (config["Core"]["Simulation-Mode"].as<std::string>() ==
+             "outoforder") {
+    mode = SimulationMode::OutOfOrder;
   }
 
   if (argc > 2) {
@@ -190,38 +189,19 @@ int main(int argc, char** argv) {
                                                 processMemorySize);
 
   // Create the architecture, with knowledge of the kernel
-  auto arch = simeng::arch::aarch64::Architecture(kernel);
+  auto arch = simeng::arch::aarch64::Architecture(kernel, config);
 
   auto predictor = simeng::BTBPredictor(
       config["Branch-Predictor"]["BTB-bitlength"].as<uint8_t>());
-
   auto config_ports = config["Ports"];
-  std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
-      portArrangement(config_ports.size());
+  std::vector<std::vector<uint16_t>> portArrangement(config_ports.size());
   // Extract number of ports
   for (size_t i = 0; i < config_ports.size(); i++) {
-    auto config_groups = config_ports[i]["Instruction-Support"];
-    std::vector<std::vector<std::pair<uint16_t, uint8_t>>> groups(
-        config_groups.size());
+    auto config_groups = config_ports[i]["Instruction-Group-Support"];
     // Extract number of groups in port
     for (size_t j = 0; j < config_groups.size(); j++) {
-      auto config_group = config_groups[j];
-      size_t num_compulsory = config_group["Compulsory"].size();
-      size_t num_optional = config_group["Optional"].size();
-      std::vector<std::pair<uint16_t, uint8_t>> group(num_compulsory +
-                                                      num_optional);
-      // Extract compulsory instructiuon group types in group
-      for (size_t k = 0; k < num_compulsory; k++) {
-        group[k] = {config_group["Compulsory"][k].as<uint8_t>(), 0};
-      }
-      // Extract optional instructiuon group types in group
-      for (size_t k = num_compulsory; k < num_compulsory + num_optional; k++) {
-        group[k] = {config_group["Optional"][k - num_compulsory].as<uint8_t>(),
-                    1};
-      }
-      groups[j] = group;
+      portArrangement[i].push_back(config_groups[j].as<uint16_t>());
     }
-    portArrangement[i] = groups;
   }
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
@@ -238,13 +218,6 @@ int main(int argc, char** argv) {
     }
   }
 
-  const uint16_t intDataMemoryLatency =
-      config["L1-Cache"]["GeneralPurpose-Latency"].as<uint16_t>();
-  const uint16_t fpDataMemoryLatency =
-      config["L1-Cache"]["FloatingPoint-Latency"].as<uint16_t>();
-  const uint16_t SVEDataMemoryLatency =
-      config["L1-Cache"]["SVE-Latency"].as<uint16_t>();
-
   int iterations = 0;
 
   std::string modeString;
@@ -253,9 +226,9 @@ int main(int argc, char** argv) {
   switch (mode) {
     case SimulationMode::OutOfOrder: {
       modeString = "Out-of-Order";
-      dataMemory = std::make_unique<simeng::VariableLatencyMemoryInterface>(
-          processMemory, processMemorySize, intDataMemoryLatency,
-          fpDataMemoryLatency, SVEDataMemoryLatency);
+      dataMemory = std::make_unique<simeng::FixedLatencyMemoryInterface>(
+          processMemory, processMemorySize,
+          config["L1-Cache"]["Access-Latency"].as<uint16_t>());
       core = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
           predictor, portAllocator, rsArrangement, config);

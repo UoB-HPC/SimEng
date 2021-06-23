@@ -10,7 +10,7 @@ namespace models {
 namespace inorder {
 
 // TODO: Replace with config options
-const unsigned int fetchBlockAlignmentBits = 4;  // 2^4 = 16 bytes
+const unsigned int blockSize = 16;
 const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(FlatMemoryInterface& instructionMemory,
@@ -25,7 +25,7 @@ Core::Core(FlatMemoryInterface& instructionMemory,
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, fetchBlockAlignmentBits, isa, branchPredictor),
+                 entryPoint, blockSize, isa, branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
                   branchPredictor),
       executeUnit_(

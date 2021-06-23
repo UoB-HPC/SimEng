@@ -102,14 +102,8 @@ L1-Cache
 
 This section contains the options used to configure SimEng's simple L1-cache. These options include:
 
-GeneralPurpose-Latency
-    The cycle latency of integer load/store operations.
-
-FloatingPoint-Latency
-    The cycle latency of floating point load/store operations.
-
-SVE-Latency (Optional)
-    The cycle latency of ARM SVE extension load/store operations.
+Access-Latency
+    The cycle latency of L1 cache access.
 
 Bandwidth
     The number of bytes permitted to be loaded and/or stored per cycle.
@@ -128,20 +122,7 @@ Permitted-Stores-Per-Cycle
 Ports
 -----
 
-Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent but, for the supported AArch64 ISA, the instruction groups available include:
-
-- ``INT_ARTH``. All integer arithmetic operations excluding multiply, divide, and square root.
-- ``INT_ARTH_NOSHIFT``. A subset of ``INT_ARTH`` excluding all operations containing a shift operand.
-- ``INT_MUL``. Integer multiply operations.
-- ``INT_DIV_OR_SQRT``. Integer divide or square root operations.
-- ``FLOAT_ARTH``. All floating point arithmetic operations excluding multiply, divide, and square root. 
-- ``FLOAT_ARTH_NOSHIFT``. A subset of ``FLOAT_ARTH`` excluding all operations containing a shift operand. 
-- ``FLOAT_MUL``. Floating point multiply operations. 
-- ``FLOAT_DIV_OR_SQRT``. Floating point divide or square root operations. 
-- ``LOAD``. All load operations.
-- ``STORE``. All store operations.
-- ``BRANCH``. All branch operations.
-- ``PREDICATE``. All ARM SVE extension instructions that write to a predicate register.
+Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent, but, the available AArch64 instruction groups can be found :ref:`here <aarch64-instruction-groups>`.
 
 To define a port, the following structure must be adhered to:
 
@@ -215,3 +196,34 @@ The following structure must be adhered to when defining an execution unit:
 With N as the number of execution units. The number of execution units should be equivalent to the number of execution ports.
 
 **Note**, the indexing used in both the Ports and Execution-Units sections provide a relationship mapping, the 0th execution port maps to the 0th execution unit.
+
+.. _config-latencies:
+
+Latencies
+---------
+
+The execution latency and throughput can be configured under the Latencies section. A latency/throughput pair can be defined for a set of instruction groups, the groups available are the same as the set discussed in the Ports section.
+
+The following structure must be adhered to when defining group latencies:
+
+.. code-block:: text
+
+    0:
+      Instruction-Groups:
+      - <instruction_group>
+      - ...
+      - <instruction_group>
+      Execution-Latency: <number_of_cycles>
+      Execution-Throughput: <number_of_cycles>
+    ...
+    N-1:
+        Instruction-Groups:
+        - <instruction_group>
+        - ...
+        - <instruction_group>
+        Execution-Latency: <number_of_cycles>
+        Execution-Throughput: <number_of_cycles>
+
+With N as the number of user-defined latency mappings. The default latencies, both execution and throughput, for those instruction groups not covered are 1.
+
+**Note**, unlike other operations, the execution latency defined for load/store operations are triggered in the LoadStoreQueue as opposed to within the execution unit (more details :ref:`here <lsq-restrict>`).

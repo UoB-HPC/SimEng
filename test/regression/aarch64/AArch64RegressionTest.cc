@@ -9,46 +9,40 @@ void AArch64RegressionTest::run(const char* source) {
   RegressionTest::run(source, "aarch64");
 }
 
+YAML::Node AArch64RegressionTest::generateConfig() const {
+  YAML::Node config = YAML::Load(AARCH64_CONFIG);
+  switch (GetParam()) {
+    case EMULATION:
+      config["Core"]["Simulation-Mode"] = "emulation";
+      break;
+    case INORDER:
+      config["Core"]["Simulation-Mode"] = "inorderpipeline";
+      break;
+    case OUTOFORDER:
+      config["Core"]["Simulation-Mode"] = "outoforder";
+      break;
+  }
+  return config;
+}
+
 std::unique_ptr<simeng::arch::Architecture>
-AArch64RegressionTest::createArchitecture(simeng::kernel::Linux& kernel) const {
-  return std::make_unique<Architecture>(kernel);
+AArch64RegressionTest::createArchitecture(simeng::kernel::Linux& kernel,
+                                          YAML::Node config) const {
+  return std::make_unique<Architecture>(kernel, config);
 }
 
 std::unique_ptr<simeng::pipeline::PortAllocator>
 AArch64RegressionTest::createPortAllocator() const {
   // TODO: this is currently tightly coupled to the number of execution units,
   // which is specified in the out-of-order core model
-  const std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
-      portArrangement = {
-          {{{simeng::arch::aarch64::InstructionGroups::LOAD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 4
-          {{{simeng::arch::aarch64::InstructionGroups::LOAD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 5
-          {{{simeng::arch::aarch64::InstructionGroups::STORE, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::ASIMD, 1}}},  // Port 3
-          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1}},
-           {{simeng::arch::aarch64::InstructionGroups::BRANCH, 0}}},  // Port 2
-          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1}},
-           {{simeng::arch::aarch64::InstructionGroups::ASIMD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
-            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}}},  // Port 0
-          {{{simeng::arch::aarch64::InstructionGroups::ARITHMETIC, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
-            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}},
-           {{simeng::arch::aarch64::InstructionGroups::ASIMD, 0},
-            {simeng::arch::aarch64::InstructionGroups::SHIFT, 1},
-            {simeng::arch::aarch64::InstructionGroups::MULTIPLY, 1},
-            {simeng::arch::aarch64::InstructionGroups::DIVIDE, 1}}}  // Port 1
-      };
+  const std::vector<std::vector<uint16_t>> portArrangement = {
+      {simeng::arch::aarch64::InstructionGroups::INT,
+       simeng::arch::aarch64::InstructionGroups::FP,
+       simeng::arch::aarch64::InstructionGroups::SVE,
+       simeng::arch::aarch64::InstructionGroups::PREDICATE,
+       simeng::arch::aarch64::InstructionGroups::LOAD,
+       simeng::arch::aarch64::InstructionGroups::STORE,
+       simeng::arch::aarch64::InstructionGroups::BRANCH}};
 
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);

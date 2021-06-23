@@ -94,8 +94,15 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     insn->execute();
     completedLoads_.push(insn);
   } else {
-    for (size_t i = 0; i < addresses.size(); i++) {
-      requestQueue_.push_back({i, insn});
+    if (insn->shouldSplitRequests()) {
+      for (size_t i = 0; i < addresses.size(); i++) {
+        requestQueue_.push_back({tickCounter_ + insn->getLSQLatency(),
+                                 {addresses.data() + i, 1},
+                                 insn});
+      }
+    } else {
+      requestQueue_.push_back(
+          {tickCounter_ + insn->getLSQLatency(), addresses, insn});
     }
     requestedLoads_.emplace(insn->getSequenceId(), insn);
   }
@@ -110,9 +117,19 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
 
   const auto& addresses = uop->getGeneratedAddresses();
   const auto& data = uop->getData();
-  for (size_t i = 0; i < addresses.size(); i++) {
-    memory_.requestWrite(addresses[i], data[i]);
-    requestQueue_.push_back({i, uop});
+  if (uop->shouldSplitRequests()) {
+    for (size_t i = 0; i < addresses.size(); i++) {
+      memory_.requestWrite(addresses[i], data[i]);
+      requestQueue_.push_back({tickCounter_ + uop->getLSQLatency(),
+                               {addresses.data() + i, 1},
+                               uop});
+    }
+  } else {
+    for (size_t i = 0; i < addresses.size(); i++) {
+      memory_.requestWrite(addresses[i], data[i]);
+    }
+    requestQueue_.push_back(
+        {tickCounter_ + uop->getLSQLatency(), addresses, uop});
   }
 
   // Check all loads that have requested memory
@@ -185,7 +202,7 @@ void LoadStoreQueue::purgeFlushed() {
 
   auto it2 = requestQueue_.begin();
   while (it2 != requestQueue_.end()) {
-    auto& entry = it2->second;
+    auto& entry = it2->insn;
     if (entry->isFlushed()) {
       it2 = requestQueue_.erase(it2);
     } else {
@@ -195,36 +212,38 @@ void LoadStoreQueue::purgeFlushed() {
 }
 
 void LoadStoreQueue::tick() {
+  tickCounter_++;
   // Send memory requests adhering to set bandwidth and number of permitted
   // requests per cycle
   uint64_t dataTransfered = 0;
   std::vector<uint8_t> reqCounts = {0, 0};
-  uint64_t seq = 0;
   while (requestQueue_.size() > 0) {
     uint8_t isWrite = 0;
     auto& entry = requestQueue_.front();
-    const auto& addresses = entry.second->getGeneratedAddresses();
-    if (entry.second->isStore()) {
-      isWrite = 1;
-    }
-    if (entry.second->getSequenceId() != seq || !entry.second->isSVE()) {
+    if (entry.readyAt <= tickCounter_) {
+      if (entry.insn->isStore()) {
+        isWrite = 1;
+      }
       reqCounts[isWrite]++;
-    }
 
-    if (reqCounts[isWrite] > reqLimits_[isWrite] ||
-        reqCounts[isWrite] + reqCounts[!isWrite] > totalLimit_) {
-      break;
-    } else if (dataTransfered + addresses[entry.first].size > L1Bandwidth_) {
+      if (reqCounts[isWrite] > reqLimits_[isWrite] ||
+          reqCounts[isWrite] + reqCounts[!isWrite] > totalLimit_) {
+        break;
+      }
+      if (dataTransfered >= L1Bandwidth_) {
+        break;
+      }
+      for (int i = 0; i < entry.reqAddresses.size(); i++) {
+        const MemoryAccessTarget req = entry.reqAddresses[i];
+        dataTransfered += req.size;
+        if (!isWrite) {
+          memory_.requestRead(req, entry.insn->getSequenceId());
+        }
+      }
+      requestQueue_.pop_front();
+    } else {
       break;
     }
-
-    dataTransfered += addresses[entry.first].size;
-    seq = entry.second->getSequenceId();
-    if (!isWrite) {
-      memory_.requestRead(addresses[entry.first],
-                          entry.second->getSequenceId());
-    }
-    requestQueue_.pop_front();
   }
 
   // Process completed read requests

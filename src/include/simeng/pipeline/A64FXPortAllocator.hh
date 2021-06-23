@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+
 #include "simeng/pipeline/PortAllocator.hh"
 
 namespace simeng {
@@ -20,18 +21,16 @@ const uint8_t BR = 5;
  * described in the A64FX Microarchitecture manual. */
 class A64FXPortAllocator : public PortAllocator {
  public:
-  A64FXPortAllocator(
-      std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
-          portArrangement);
+  A64FXPortAllocator(std::vector<std::vector<uint16_t>> portArrangement);
 
-  uint8_t allocate(uint16_t instructionGroup) override;
+  uint8_t allocate(std::vector<uint8_t> ports) override;
 
   void issued(uint8_t port) override;
 
   void deallocate(uint8_t port) override;
 
-  /** A mapping from instruction group to instruction attribute */
-  uint8_t attributeMapping(uint16_t group);
+  /** A mapping from issye ports to instruction attribute */
+  uint8_t attributeMapping(std::vector<uint8_t> ports);
 
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */
@@ -42,19 +41,10 @@ class A64FXPortAllocator : public PortAllocator {
   void tick() override;
 
  private:
-  /** The instruction group support matrix. An instruction-group-indexed map
-   * containing lists of the ports that support each instruction group. */
-  std::vector<std::vector<uint8_t>> supportMatrix;
-
-  /** The instruction group attribute matrix. An instruction-group-indexed map
-   * containing the instruction attribute that relates to each instruction
-   * group. */
-  std::vector<uint8_t> attributeMatrix;
-
   /** An approximate estimation of the index of an instruction within the input
    * buffer of the dispatch unit. Increments slot at each allocation thus cannot
    * account for nullptr entries in buffer.*/
-  uint8_t decodeSlot;
+  uint8_t dispatchSlot_;
 
   /** Get the current sizes an capacity of the reservation stations. */
   std::function<void(std::vector<uint64_t>&)> rsSizes_;

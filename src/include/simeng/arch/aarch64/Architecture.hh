@@ -1,6 +1,7 @@
 #pragma once
 
 #include <forward_list>
+#include <queue>
 #include <unordered_map>
 
 #include "simeng/arch/Architecture.hh"
@@ -17,7 +18,7 @@ namespace aarch64 {
 /* A basic ARMv8-a implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-  Architecture(kernel::Linux& kernel);
+  Architecture(kernel::Linux& kernel, YAML::Node config);
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -50,11 +51,11 @@ class Architecture : public arch::Architecture {
   uint8_t getMaxInstructionSize() const override;
 
  private:
-  /** Retrieve the latencies for the instruction represented by the supplied
-   * metadata. Returns a pair of values {latency, stallCycles}, representing the
-   * cycles the instruction takes to execute and the cycles it blocks the
-   * execution unit for, respectively. */
-  std::pair<uint8_t, uint8_t> getLatencies(InstructionMetadata& metadata) const;
+  /** Retrieve an executionInfo object for the requested instruction. If a
+   * opcode-based override has been defined for the latency and/or
+   * port information, return that instead of the group-defined execution
+   * information. */
+  executionInfo getExecutionInfo(Instruction& insn) const;
 
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
@@ -67,6 +68,14 @@ class Architecture : public arch::Architecture {
 
   /** A mapping from system register encoding to a zero-indexed tag. */
   std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
+
+  /** A map to hold the relationship between aarch64 instruction groups and
+   * user-defined execution information. */
+  std::unordered_map<uint16_t, executionInfo> groupExecutionInfo_;
+
+  /** A map to hold the relationship between aarch64 instruction opcode and
+   * user-defined execution information. */
+  std::unordered_map<uint16_t, executionInfo> opcodeExecutionInfo_;
 
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;

@@ -57,8 +57,15 @@ void DispatchIssueUnit::tick() {
       continue;
     }
 
+    std::vector<uint8_t> supportedPorts = uop->getSupportedPorts();
+    if (uop->exceptionEncountered()) {
+      // Exception; mark as ready to commit, and remove from pipeline
+      uop->setCommitReady();
+      input_.getHeadSlots()[slot] = nullptr;
+      continue;
+    }
     // Allocate issue port to uop
-    uint8_t port = portAllocator_.allocate(uop->getGroup());
+    uint8_t port = portAllocator_.allocate(supportedPorts);
     uint8_t RS_Index = portMapping_[port].first;
     uint8_t RS_Port = portMapping_[port].second;
     assert(RS_Index < reservationStations_.size() &&
