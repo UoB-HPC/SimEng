@@ -33,8 +33,10 @@ To accommodate multiple varieties of LSQ, this model provides two modes: **split
 
 .. Todo::
     Allow for combined option to be defined via configuration files.
-    
-In order to enforce restrictions such as the number of loads/stores requests permitted per cycle, a secondary request queue, ``requestQueue_``, is utilised. This queue holds all distinct requests made by in-flight loads and stores, with some instructions having multiple entries due to multiple addresses requiring access.
+
+.. _lsq-restrict:
+
+To enforce restrictions such as the number of loads/stores requests permitted per cycle, a secondary request queue, ``requestQueue_``, is utilised. This queue holds all distinct requests made by in-flight loads and stores, with some instructions having multiple entries due to multiple addresses requiring access. Additionally, the entries in this queue can only be processed after a defined number of cycles. This value is the pre-defined latency for a memory operation beyond that of the fixed L1 cache access latency. An internal clock is used to facilitate this delayed removal from the ``requestQueue_``.
 
 All load and store instructions should be added to the LSQ in program order; this typically happens during the last in-order stage of an out-of-order model. In the default SimEng pipeline units, ``RenameUnit`` performs this task.
 
@@ -57,7 +59,7 @@ As with loads, stores are considered pending when initially added to the LSQ.
 
 The generation of store instruction write requests are carried out after its commitment. The reasoning for this design decision is as followed. With SimEng supporting speculative execution, processed store instruction may come from an incorrectly speculated branch direction and will inevitably be removed from the pipeline. Therefore, it is important to ensure any write requests are valid, with respect to speculative execution, as the performance cost of reversing a completed write request is high.
 
-Store write requests are placed into the ``requestQueue_`` similar to load read requests. Unlike load instructions read requests, the write requests are submitted to the memory interface prior to being selected from the ``requestQueue_``. Since store instruction write requests are appended to the ``requestQueue_`` after their commitment, we can be confident that the data to be stored and the order in which it is occurring is correct. 
+Store write requests are placed into the ``requestQueue_`` similar to load read requests. Unlike load instructions read requests, the write requests are submitted to the memory interface prior to being selected from the ``requestQueue_``. Since store instruction write requests are appended to the ``requestQueue_`` after their commitment, we can be confident that the data to be stored and the order in which it is occurring is correct.
 
 To minimise simulation errors, write requests are sent to the memory interface early. These errors derived from write requests occurring too late after a store instruction's commitment. Rarely, such latencies caused following load instructions to read incorrect data.
 

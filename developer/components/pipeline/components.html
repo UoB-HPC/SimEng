@@ -214,7 +214,7 @@
 <p class="admonition-title">Todo</p>
 <p>Allow for combined option to be defined via configuration files.</p>
 </div>
-<p>In order to enforce restrictions such as the number of loads/stores requests permitted per cycle, a secondary request queue, <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code>, is utilised. This queue holds all distinct requests made by in-flight loads and stores, with some instructions having multiple entries due to multiple addresses requiring access.</p>
+<p id="lsq-restrict">To enforce restrictions such as the number of loads/stores requests permitted per cycle, a secondary request queue, <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code>, is utilised. This queue holds all distinct requests made by in-flight loads and stores, with some instructions having multiple entries due to multiple addresses requiring access. Additionally, the entries in this queue can only be processed after a defined number of cycles. This value is the pre-defined latency for a memory operation beyond that of the fixed L1 cache access latency. An internal clock is used to facilitate this delayed removal from the <code class="docutils literal notranslate"><span class="pre">requestQueue_</span></code>.</p>
 <p>All load and store instructions should be added to the LSQ in program order; this typically happens during the last in-order stage of an out-of-order model. In the default SimEng pipeline units, <code class="docutils literal notranslate"><span class="pre">RenameUnit</span></code> performs this task.</p>
 <div class="section" id="loads">
 <h3>Loads<a class="headerlink" href="#loads" title="Permalink to this headline">¶</a></h3>

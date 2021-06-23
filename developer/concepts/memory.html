@@ -95,7 +95,6 @@
 <li class="toctree-l3"><a class="reference internal" href="#memoryinterface">MemoryInterface</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#flatmemoryinterface">FlatMemoryInterface</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#fixedmemoryinterface">FixedMemoryInterface</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#variablememoryinterface">VariableMemoryInterface</a></li>
 </ul>
 </li>
 </ul>
@@ -194,11 +193,7 @@
 <div class="section" id="memoryinterface">
 <h2>MemoryInterface<a class="headerlink" href="#memoryinterface" title="Permalink to this headline">¶</a></h2>
 <p>All SimEng components that interact with the memory system make memory access requests using supplied instances of the abstract <code class="docutils literal notranslate"><span class="pre">MemoryInterface</span></code> class.</p>
-<p><code class="docutils literal notranslate"><span class="pre">MemoryInterface</span></code> access requests are asynchronous, and may be either read or write. All requests must supply a <code class="docutils literal notranslate"><span class="pre">MemoryAccessTarget</span></code>, containing the memory address, the number of bytes to access, and identifiers to denote the type of data accessed.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Future versions will move the logic associated with the type of data accessed to model specific areas of SimEng, thereby removing the need for the aforementioned identifiers. The planned change has been chosen as to maintain the modularity of previous developments made.</p>
-</div>
+<p><code class="docutils literal notranslate"><span class="pre">MemoryInterface</span></code> access requests are asynchronous, and may be either read or write. All requests must supply a <code class="docutils literal notranslate"><span class="pre">MemoryAccessTarget</span></code>, containing the memory address and the number of bytes to access</p>
 <p>While write requests receive no response, a read request may be responded to an indeterminate number of cycles later. The <code class="docutils literal notranslate"><span class="pre">MemoryInterface::getCompletedReads</span></code> function may be used to retrieve a list of the read requests that completed during the previous cycle. Once processed, responses should be dismissed using the <code class="docutils literal notranslate"><span class="pre">MemoryInterface::clearCompletedReads</span></code> function.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -214,14 +209,6 @@
 <h3>FixedMemoryInterface<a class="headerlink" href="#fixedmemoryinterface" title="Permalink to this headline">¶</a></h3>
 <p>For more complex models, a <code class="docutils literal notranslate"><span class="pre">FixedMemoryInterface</span></code> implementation is supplied. Similar to the <code class="docutils literal notranslate"><span class="pre">FlatMemoryInterface</span></code>, a simple wrapper around a byte array is used to represent the process memory. However, a <code class="docutils literal notranslate"><span class="pre">pendingRequests_</span></code> queue is utilised in combination with an internal clock, <code class="docutils literal notranslate"><span class="pre">tickCounter_</span></code>, to support memory requests with a predefined fixed latency value named <code class="docutils literal notranslate"><span class="pre">latency_</span></code>.</p>
 <p>A <code class="docutils literal notranslate"><span class="pre">MemoryAccessTarget</span></code> is transformed into a <code class="docutils literal notranslate"><span class="pre">FixedLatencyMemoryInterfaceRequest</span></code> when pushed onto the <code class="docutils literal notranslate"><span class="pre">pendingRequests_</span></code> queue. Each <code class="docutils literal notranslate"><span class="pre">FixedLatencyMemoryInterfaceRequest</span></code> contains the original <code class="docutils literal notranslate"><span class="pre">MemoryAccessTarget</span></code>, an optional <code class="docutils literal notranslate"><span class="pre">data</span></code> or <code class="docutils literal notranslate"><span class="pre">requestId</span></code> value to hold a write’s <code class="docutils literal notranslate"><span class="pre">RegisterValue</span></code> or read’s unique id respectively, and a <code class="docutils literal notranslate"><span class="pre">readyAt</span></code> value. The <code class="docutils literal notranslate"><span class="pre">readyAt</span></code> value defines when the request is ready to be performed in relation to the <code class="docutils literal notranslate"><span class="pre">tickCounter_</span></code>, with <code class="docutils literal notranslate"><span class="pre">readyAt</span> <span class="pre">=</span> <span class="pre">tickCounter_</span> <span class="pre">+</span> <span class="pre">latency_</span></code> at the time of the initial request. When <code class="docutils literal notranslate"><span class="pre">tickCounter_</span></code> is equivalent to the <code class="docutils literal notranslate"><span class="pre">readyAt</span></code> value, the request is performed.</p>
-</div>
-<div class="section" id="variablememoryinterface">
-<h3>VariableMemoryInterface<a class="headerlink" href="#variablememoryinterface" title="Permalink to this headline">¶</a></h3>
-<p>The <code class="docutils literal notranslate"><span class="pre">VariableMemoryInterface</span></code> operates similarly to the <code class="docutils literal notranslate"><span class="pre">FixedMemoryInterface</span></code> implementation. However, multiple latencies can be defined and are chosen in relation to the type of data being operated on by the request.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Future versions will move the logic associated with the type of data accessed to model specific areas of SimEng, thereby removing the need for the VariableMemoryInterface. The planned change has been chosen as to maintain the modularity of previous developments made.</p>
-</div>
 </div>
 </div>
 </div>

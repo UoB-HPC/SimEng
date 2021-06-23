@@ -109,6 +109,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#ports">Ports</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#reservation-stations">Reservation-Stations</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#execution-units">Execution-Units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#latencies">Latencies</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="creating_binaries.html">Creating Binaries</a></li>
@@ -266,11 +267,7 @@
 <h2>L1-Cache<a class="headerlink" href="#l1-cache" title="Permalink to this headline">¶</a></h2>
 <p>This section contains the options used to configure SimEng’s simple L1-cache. These options include:</p>
 <dl class="simple">
-<dt>GeneralPurpose-Latency</dt><dd><p>The cycle latency of integer load/store operations.</p>
-</dd>
-<dt>FloatingPoint-Latency</dt><dd><p>The cycle latency of floating point load/store operations.</p>
-</dd>
-<dt>SVE-Latency (Optional)</dt><dd><p>The cycle latency of ARM SVE extension load/store operations.</p>
+<dt>Access-Latency</dt><dd><p>The cycle latency of L1 cache access.</p>
 </dd>
 <dt>Bandwidth</dt><dd><p>The number of bytes permitted to be loaded and/or stored per cycle.</p>
 </dd>
@@ -284,21 +281,7 @@
 </div>
 <div class="section" id="ports">
 <span id="execution-ports"></span><h2>Ports<a class="headerlink" href="#ports" title="Permalink to this headline">¶</a></h2>
-<p>Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent but, for the supported AArch64 ISA, the instruction groups available include:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">INT_ARTH</span></code>. All integer arithmetic operations excluding multiply, divide, and square root.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">INT_ARTH_NOSHIFT</span></code>. A subset of <code class="docutils literal notranslate"><span class="pre">INT_ARTH</span></code> excluding all operations containing a shift operand.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">INT_MUL</span></code>. Integer multiply operations.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">INT_DIV_OR_SQRT</span></code>. Integer divide or square root operations.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">FLOAT_ARTH</span></code>. All floating point arithmetic operations excluding multiply, divide, and square root.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">FLOAT_ARTH_NOSHIFT</span></code>. A subset of <code class="docutils literal notranslate"><span class="pre">FLOAT_ARTH</span></code> excluding all operations containing a shift operand.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">FLOAT_MUL</span></code>. Floating point multiply operations.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">FLOAT_DIV_OR_SQRT</span></code>. Floating point divide or square root operations.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">LOAD</span></code>. All load operations.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">STORE</span></code>. All store operations.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">BRANCH</span></code>. All branch operations.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">PREDICATE</span></code>. All ARM SVE extension instructions that write to a predicate register.</p></li>
-</ul>
+<p>Within this section, execution unit port definitions are constructed. Each port is defined with a name and a set of instruction groups it supports. The instruction groups are architecture-dependent, but, the available AArch64 instruction groups can be found <a class="reference internal" href="../developer/arch/supported/aarch64.html#aarch64-instruction-groups"><span class="std std-ref">here</span></a>.</p>
 <p>To define a port, the following structure must be adhered to:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0:
   Portname: &lt;port_name&gt;
@@ -359,6 +342,30 @@ N-1:
 </div>
 <p>With N as the number of execution units. The number of execution units should be equivalent to the number of execution ports.</p>
 <p><strong>Note</strong>, the indexing used in both the Ports and Execution-Units sections provide a relationship mapping, the 0th execution port maps to the 0th execution unit.</p>
+</div>
+<div class="section" id="latencies">
+<span id="config-latencies"></span><h2>Latencies<a class="headerlink" href="#latencies" title="Permalink to this headline">¶</a></h2>
+<p>The execution latency and throughput can be configured under the Latencies section. A latency/throughput pair can be defined for a set of instruction groups, the groups available are the same as the set discussed in the Ports section.</p>
+<p>The following structure must be adhered to when defining group latencies:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>0:
+  Instruction-Groups:
+  - &lt;instruction_group&gt;
+  - ...
+  - &lt;instruction_group&gt;
+  Execution-Latency: &lt;number_of_cycles&gt;
+  Execution-Throughput: &lt;number_of_cycles&gt;
+...
+N-1:
+    Instruction-Groups:
+    - &lt;instruction_group&gt;
+    - ...
+    - &lt;instruction_group&gt;
+    Execution-Latency: &lt;number_of_cycles&gt;
+    Execution-Throughput: &lt;number_of_cycles&gt;
+</pre></div>
+</div>
+<p>With N as the number of user-defined latency mappings. The default latencies, both execution and throughput, for those instruction groups not covered are 1.</p>
+<p><strong>Note</strong>, unlike other operations, the execution latency defined for load/store operations are triggered in the LoadStoreQueue as opposed to within the execution unit (more details <a class="reference internal" href="../developer/components/pipeline/components.html#lsq-restrict"><span class="std std-ref">here</span></a>).</p>
 </div>
 </div>
 

@@ -91,9 +91,9 @@ Directory structure
 
 ``src/tools/``
     Source code for SimEng executables
-
-``test/kernels/``
-    Tests for simulation accuracy and performance
+    
+.. ``test/kernels/``
+..     Tests for simulation accuracy and performance
 
 ``test/regression/``
     Regression test suite covering end-to-end simulator functionality
