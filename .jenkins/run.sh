@@ -2,6 +2,6 @@
 
 pwd
 
-source .jenkins/build_and_run.sh
+source .jenkins/build_test_run.sh
 
 run
