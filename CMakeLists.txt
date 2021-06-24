@@ -46,6 +46,13 @@ FetchContent_Declare(
 cmake_policy(SET CMP0048 NEW)
 project(SimEng VERSION 0.1 LANGUAGES C CXX)
 
+# If no build type was defined, default to Release
+if(NOT CMAKE_BUILD_TYPE)
+  message(STATUS "Setting build type to Release as none was specified.")
+  set(CMAKE_BUILD_TYPE "Release" CACHE
+      STRING "Choose the type of build." FORCE)
+endif()
+
 # Require and enable C++17 support, and disable compiler extensions.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -98,9 +105,6 @@ set(YAML_CPP_BUILD_TESTS OFF)
 set(YAML_CPP_INSTALL OFF)
 FetchContent_MakeAvailable_Args(yaml-cpp EXCLUDE_FROM_ALL)
 
-# include sources
-add_subdirectory(src)
-add_subdirectory(docs)
 
 option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule")
@@ -115,6 +119,7 @@ if(SIMENG_ENABLE_TESTS)
     if (${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0")
       message(FATAL_ERROR "LLVM version must be >= 8.0")
     endif()
+    set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
 
   else()
 
@@ -145,6 +150,7 @@ if(SIMENG_ENABLE_TESTS)
     FetchContent_MakeAvailable_Args(llvm EXCLUDE_FROM_ALL)
     # make sure we get the headers too
     include_directories("${llvm_BINARY_DIR}/include" "${llvm_SOURCE_DIR}/include")
+    set(SIMENG_LLVM_VERSION 9 CACHE INTERNAL "LLVM major version number used.")
 
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
     # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
@@ -170,3 +176,7 @@ if(SIMENG_ENABLE_TESTS)
     DEPENDS unittests regression-aarch64
   )
 endif()
+
+# include sources
+add_subdirectory(src)
+add_subdirectory(docs)

@@ -38,7 +38,7 @@ build () {
     cd "$SIMENG_TOP" || exit
     rm -rf build/* install/*
 
-    cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SIMENG_INSTALL"
+    cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SIMENG_INSTALL" -DSIMENG_ENABLE_TESTS=ON
     cmake --build build -j
     cmake --build build --target install
 }

@@ -22,6 +22,7 @@
 #include "simeng/models/outoforder/Core.hh"
 #include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
+#include "simeng/version.hh"
 #include "yaml-cpp/yaml.h"
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
@@ -46,6 +47,16 @@ int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
 }
 
 int main(int argc, char** argv) {
+  // Print out build metadata
+  std::cout << "Build metadata:" << std::endl;
+  std::cout << "\tVersion: " SIMENG_VERSION << std::endl;
+  std::cout << "\tCompile Time - Date: " __TIME__ " - " __DATE__ << std::endl;
+  std::cout << "\tBuild type: " SIMENG_BUILD_TYPE << std::endl;
+  std::cout << "\tCompile options: " SIMENG_COMPILE_OPTIONS << std::endl;
+  std::cout << "\tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
+  std::cout << "\tWith LLVM version " << SIMENG_LLVM_VERSION << std::endl;
+  std::cout << std::endl;
+
   SimulationMode mode = SimulationMode::InOrderPipelined;
   std::string executablePath = "";
   YAML::Node config;
