@@ -14,10 +14,16 @@ macro(FetchContent_MakeAvailable_Args NAME ARGS)
 endmacro()
 
 # we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a small part of it
+
+# FetchContent_Declare(
+#   llvm
+#   URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/llvm-12.0.0.src.tar.xz
+#   URL_HASH MD5=ceab21c9081e122a88d82216a80d0dc0
+# )
+
 FetchContent_Declare(
   llvm
-  URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/llvm-12.0.0.src.tar.xz
-  URL_HASH MD5=ceab21c9081e122a88d82216a80d0dc0
+  URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/llvm-9.0.1.src.tar.xz
 )
 
 FetchContent_Declare(
@@ -104,9 +110,17 @@ if(SIMENG_ENABLE_TESTS)
   ## Setup LLVM ##
   if (SIMENG_USE_EXTERNAL_LLVM)
     find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
+
+      # Check LLVM version
+    if (${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0")
+      message(FATAL_ERROR "LLVM version must be >= 8.0")
+    endif()
+
   else()
 
     set(LLVM_TARGETS_TO_BUILD "AArch64" CACHE INTERNAL "")
+
+    set(LLVM_BUILD_RUNTIME OFF)
 
     set(LLVM_BUILD_TOOLS OFF)
     set(LLVM_INCLUDE_TOOLS OFF)
@@ -123,27 +137,22 @@ if(SIMENG_ENABLE_TESTS)
     set(LLVM_BUILD_DOCS OFF)
     set(LLVM_INCLUDE_DOCS OFF)
 
+    set(LLVM_INCLUDE_DOCS OFF)
     set(LLVM_ENABLE_BINDINGS OFF)
-
     set(LLVM_INSTALL_UTILS OFF)
 
     # XXX all LLVM specific cmake variables must be set BEFORE FetchContent_MakeAvailable otherwise they have no effect
     FetchContent_MakeAvailable_Args(llvm EXCLUDE_FROM_ALL)
+    # make sure we get the headers too
+    include_directories("${llvm_BINARY_DIR}/include" "${llvm_SOURCE_DIR}/include")
 
-
-    find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
-    # add_subdirectory(external/llvm EXCLUDE_FROM_ALL)
-    # find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH
-    #              PATHS "${PROJECT_BINARY_DIR}/external/llvm/lib/cmake/llvm")
+    # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
+    # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
+ 
   endif()
 
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
   message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
-
-  # Check LLVM version
-  if (${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0")
-    message(FATAL_ERROR "LLVM version must be >= 8.0")
-  endif()
 
   # Check LLVM was built with the correct targets enabled
   if (NOT "AArch64" IN_LIST LLVM_TARGETS_TO_BUILD)
