@@ -54,7 +54,6 @@ int main(int argc, char** argv) {
   std::cout << "\tBuild type: " SIMENG_BUILD_TYPE << std::endl;
   std::cout << "\tCompile options: " SIMENG_COMPILE_OPTIONS << std::endl;
   std::cout << "\tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
-  std::cout << "\tWith LLVM version " << SIMENG_LLVM_VERSION << std::endl;
   std::cout << std::endl;
 
   SimulationMode mode = SimulationMode::InOrderPipelined;
