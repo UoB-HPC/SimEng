@@ -38,7 +38,7 @@ build () {
     cd "$SIMENG_TOP" || exit
     rm -rf build/* install/*
 
-    cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SIMENG_INSTALL" -DSIMENG_ENABLE_TESTS=ON
+    cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SIMENG_INSTALL" -DSIMENG_ENABLE_TESTS=ON -DSIMENG_USE_EXTERNAL_LLVM=ON -DLLVM_DIR=/home/br-jjones/llvm-project/xci-install/12.0.0/lib/cmake/llvm/
     cmake --build build -j
     cmake --build build --target install
 }

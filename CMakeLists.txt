@@ -119,7 +119,6 @@ if(SIMENG_ENABLE_TESTS)
     if (${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0")
       message(FATAL_ERROR "LLVM version must be >= 8.0")
     endif()
-    set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
 
   else()
 
@@ -150,13 +149,16 @@ if(SIMENG_ENABLE_TESTS)
     FetchContent_MakeAvailable_Args(llvm EXCLUDE_FROM_ALL)
     # make sure we get the headers too
     include_directories("${llvm_BINARY_DIR}/include" "${llvm_SOURCE_DIR}/include")
-    set(SIMENG_LLVM_VERSION 9 CACHE INTERNAL "LLVM major version number used.")
 
+    find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH 
+                 PATHS "${llvm_BINARY_DIR}/lib/cmake/llvm")
+                 
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
     # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
  
   endif()
 
+  set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
   message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
