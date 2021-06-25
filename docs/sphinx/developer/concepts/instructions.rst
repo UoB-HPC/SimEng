@@ -21,7 +21,7 @@ The model can use this information to supply the instruction with the appropriat
 Instruction group
 '''''''''''''''''
 
-An instruction group is architecture-dependent. A ``InstructionGroups`` namespace is used to define the set of instruction groups available in an enum style. It is assumed that the user and developer have prior knowledge of the available groups, therefore, any configuration options or architecture-specific code should refer to the ``InstructionGroups`` namespace defined.
+An instruction group is architecture-dependent. An ``InstructionGroups`` namespace is used to define the set of instruction groups available in an enum style. It is assumed that the user and developer have prior knowledge of the available groups, therefore, any configuration options or architecture-specific code should refer to the ``InstructionGroups`` namespace defined.
 
 Ready to execute
 ****************

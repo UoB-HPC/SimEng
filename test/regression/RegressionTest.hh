@@ -11,6 +11,7 @@
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/pipeline/PortAllocator.hh"
+#include "simeng/version.hh"
 
 /** The different types of core model that can be used in tests. */
 enum CoreType { EMULATION, INORDER, OUTOFORDER };
@@ -48,14 +49,14 @@ class RegressionTest : public ::testing::TestWithParam<CoreType> {
   virtual void TearDown() override;
 
   /** Generate a default YAML-formatted configuration. */
-  YAML::Node generateConfig();
+  virtual YAML::Node generateConfig() const = 0;
 
   /** Run the assembly in `source`, building it for the target `triple`. */
   void run(const char* source, const char* triple);
 
   /** Create an ISA instance from a kernel. */
   virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      simeng::kernel::Linux& kernel) const = 0;
+      simeng::kernel::Linux& kernel, YAML::Node config) const = 0;
 
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()

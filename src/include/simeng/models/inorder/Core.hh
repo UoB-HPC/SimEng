@@ -1,11 +1,9 @@
 #pragma once
 
-#include "simeng/Core.hh"
-
-#include <iostream>
 #include <vector>
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
+#include "simeng/Core.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/ExecuteUnit.hh"

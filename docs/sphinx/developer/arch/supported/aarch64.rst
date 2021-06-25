@@ -12,67 +12,43 @@ Instruction decoding is performed using the `Capstone <https://github.com/aquynh
 
 The logic held in ``src/lib/arch/aarch64/Instruction_decode.cc`` is primarily associated with converting the provided Capstone instruction metadata into the appropriate SimEng ``instruction`` format. Additionally, an instruction's identifiers are defined here through operand usage and opcode values. For the AArch64 architecture model, the following identifiers are defined:
 
+- ``isScalarData_``, operates on scalar values.
+- ``isVectorData_``, operates on vector values.
+- ``isSVEData_``, uses Z registers as source and/or destination operands.
+- ``isNoShift_``, doesn't have a shift operand.
+- ``isLogical_``, is a logical operation.
+- ``isCompare_``, is a compare operation.
+- ``isConvert_``, is a convert operation.
 - ``isMultiply_``, is a multiply operation.
 - ``isDivideOrSqrt_``, is a divide or square root operation.
+- ``isPredicate_``, writes to a predicate register.
 - ``isLoad_``, is a load operation.
 - ``isStore_``, is a store operation.
 - ``isBranch_``, is a branch operation.
-- ``isNoShift_``, doesn't have a shift operand.
-- ``isDataFloat_``, operates on floating point values.
-- ``isSVEData_``, uses ARM SVE extension Z registers as source and/or destination operands.
-- ``isPredicate_``, writes to an ARM SVE extension predicate register.
 - ``isRET_``, is a return instruction.
 - ``isBL_``, is a branch and link instructions.
 
-Through a combination of the above identifiers, an instruction can be allocated an :ref:`instruction group <instruction-group>`. The instruction groups available to the AArch64 ISA, and the mapping between groups and identifiers, are detailed below:
+.. _aarch64-instruction-groups:
 
-- ``INT_ARTH``, all integer arithmetic operations excluding multiply, divide, and square root.
+Instruction Groups
+******************
+Through a combination of the above identifiers, an instruction can be allocated an :ref:`instruction group <instruction-group>`. The instruction groups available to the AArch64 ISA are detailed below:
 
-  - All identifiers are false.
+.. image:: ../../../assets/instruction_groups.png
+  :alt: AArch64 instruction groups
 
-- ``INT_ARTH_NOSHIFT``, a subset of ``INT_ARTH`` excluding all operations containing a shift operand.
+The above diagram describes the instruction groups currently implemented for the AArch64 ISA. Each level of the diagram represents a different scope of instructions supported, the primary/top-level encapsulates the most instructions whilst the tertiary/bottom-level the least. The naming convention of the AArch64 instruction groups combines each of the levels within the above diagram through ``_`` characters, the top level is used first and connected to the required lower levels following the relationships shown. For example, to express an instruction group containing integer logical operations without any shift operands, the group ``INT_SIMPLE_LOGICAL_NOSHIFT`` would be used. Another example for all operations (excluding loads and stores) that operate on vector values would simply be ``VECTOR``. The groups/subgroups chosen in the above diagram are derived from common separations in execution unit support and execution latencies of studied HPC processors.
 
-  - Only the ``isNoShift_`` identifier is true.
+This hierarchy-based naming convention has been chosen to provide the user with greater control over the number of instructions grouped under one name, whilst also remaining intuitive. A variety of combinations/instruction scopes can be defined through this method and only uses a small set of easily interpreted operation descriptions. Quality of life improvements such as not forcing the user to exhaustively list all instruction groups representing a set of operations, but rather a few higher-level groups, are also provided.
 
-- ``INT_MUL``, integer multiply operations.
+If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/external/capstone/arch/AArch64/AArch64GenInstrInfo.inc``) with the format ``~{CAPSTONE_OPCODE}``.
 
-  - Only the ``isMultiply_`` identifier is true.
+Additional information
+''''''''''''''''''''''
 
-- ``INT_DIV_OR_SQRT``, integer divide or square root operations.
+The ``FP`` primary identifier is a placeholder to denote both the ``SCALAR`` and ``VECTOR`` primary identifiers such that, amongst the other combinations, ``FP_SIMPLE_ARTH`` expands to be ``SCALAR_SIMPLE_ARTH`` and ``VECTOR_SIMPLE_ARTH``. In some cases it was unnecessary and inconvenient to separate ``SCALAR`` and ``VECTOR`` operations within configuration options, therefore, this instruction group option was provided to solve the issue.
 
-  - Only the ``isDivideOrSqrt_`` identifier is true.
-
-- ``FLOAT_ARTH``, all floating point arithmetic operations excluding multiply, divide, and square root.
-
-  - Only the ``isDataFloat_`` identifier is true.
-
-- ``FLOAT_ARTH_NOSHIFT``, a subset of ``FLOAT_ARTH`` excluding all operations containing a shift operand.
-
-  - The ``isDataFloat_`` and ``isNoShift_`` identifiers are true.
-
-- ``FLOAT_MUL``, floating point multiply operations.
-
-  - The ``isDataFloat_`` and ``isMultiply_`` identifiers are true.
-
-- ``FLOAT_DIV_OR_SQRT``, floating point divide or square root operations.
-
-  - The ``isDataFloat_`` and ``isDivideOrSqrt_`` identifiers are true.
-
-- ``LOAD``, all load operations.
-
-  - The ``isLoad_`` identifier is true.
-
-- ``STORE``, all store operations.
-
-  - The ``isStore_`` identifier is true.
-
-- ``BRANCH``, all branch operations.
-
-  - The ``isBranch_`` identifier is true.
-
-- ``PREDICATE``, all ARM SVE extension instructions that write to a predicate register.
-
-  - The ``isPredicate_`` identifier is true.
+When setting the latencies for instruction groups, within the :ref:`Latencies <config-latencies>` section of the configurable options, the inheritance between instruction groups is taken into account (e.g. the ``VECTOR`` group latency assignment would be inherited by all ``VECTOR_*`` groups). If multiple entries could assign a latency value to an instruction group, the option with the least levels of inheritance to the instruction group takes priority. As an example, take the groups ``INT_SIMPLE`` and ``INT_SIMPLE_ARTH``. ``INT_SIMPLE_ARTH_NOSHIFT`` inherits from both of these groups but because ``INT_SIMPLE_ARTH`` has one less level of inheritance to traverse, ``INT_SIMPLE_ARTH_NOSHIFT`` inherits ``INT_SIMPLE_ARTH`` latency values.
 
 Adding instructions
 -------------------

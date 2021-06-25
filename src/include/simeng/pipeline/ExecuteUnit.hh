@@ -34,7 +34,7 @@ class ExecuteUnit {
       std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
       BranchPredictor& predictor, bool pipelined = true,
-      uint16_t blockingGroup = 0);
+      std::vector<uint16_t> blockingGroups = {});
 
   /** Tick the execute unit. Places incoming instructions into the pipeline and
    * executes an instruction that has reached the head of the pipeline, if
@@ -102,7 +102,7 @@ class ExecuteUnit {
 
   /** A group of operation types that are blocked whilst a similar operation
    * is being executed. */
-  uint16_t blockingGroup_;
+  std::vector<uint16_t> blockingGroups_;
 
   /** A queue to hold blocked instructions of a similar group type to
    * blockingGroup_. */

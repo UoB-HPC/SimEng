@@ -14,6 +14,9 @@ ModelConfig::ModelConfig(std::string path) {
   // Read in the config file
   configFile_ = YAML::LoadFile(path);
 
+  // Generate groupOptions_ and groupMapping_
+  createGroupMapping();
+
   // Check if the config file inherits values from a base config
   inherit();
 
@@ -71,27 +74,17 @@ void ModelConfig::validate() {
 
   // L1-Cache
   root = "L1-Cache";
-  subFields = {"GeneralPurpose-Latency",
-               "FloatingPoint-Latency",
-               "SVE-Latency",
-               "Bandwidth",
-               "Permitted-Requests-Per-Cycle",
-               "Permitted-Loads-Per-Cycle",
-               "Permitted-Stores-Per-Cycle"};
+  subFields = {"Access-Latency", "Bandwidth", "Permitted-Requests-Per-Cycle",
+               "Permitted-Loads-Per-Cycle", "Permitted-Stores-Per-Cycle"};
   nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
                         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
   nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
                         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
-  nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        1);
+  nodeChecker<uint8_t>(configFile_[root][subFields[2]], subFields[2],
+                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
   nodeChecker<uint8_t>(configFile_[root][subFields[3]], subFields[3],
                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
   nodeChecker<uint8_t>(configFile_[root][subFields[4]], subFields[4],
-                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
-  nodeChecker<uint8_t>(configFile_[root][subFields[5]], subFields[5],
-                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
-  nodeChecker<uint8_t>(configFile_[root][subFields[6]], subFields[6],
                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
   subFields.clear();
 
@@ -130,32 +123,34 @@ void ModelConfig::validate() {
       missing_ << "\t- " << port_num << "Instruction-Support\n";
       continue;
     }
+    uint16_t groupIndex = 0;
+    uint16_t opcodeIndex = 0;
     for (size_t j = 0; j < port_node["Instruction-Support"].size(); j++) {
       YAML::Node group = port_node["Instruction-Support"][j];
       // Get group number into a string format
       char group_msg[10];
       sprintf(group_msg, "Group %zu ", j);
       std::string group_num = std::string(group_msg);
-      // Check for existance of Compulsory field
-      if (!(group["Compulsory"].IsDefined()) || group["Compulsory"].IsNull()) {
-        missing_ << "\t- " << port_num << group_num << "Compulsory\n";
-      }
-      for (size_t k = 0; k < group["Compulsory"].size(); k++) {
-        if (nodeChecker<std::string>(group["Compulsory"][k],
-                                     port_num + group_num + "Compulsory",
-                                     groupOptions, ExpectedValue::String)) {
-          configFile_["Ports"][i]["Instruction-Support"][j]["Compulsory"][k] =
-              unsigned(group_mapping[group["Compulsory"][k].as<std::string>()]);
-        }
-      }
-      // If optional instruction identifiers are defined within the group
-      for (size_t k = 0; k < group["Optional"].size(); k++) {
-        if (nodeChecker<std::string>(group["Optional"][k],
-                                     port_num + group_num + "Optional",
-                                     groupOptions, ExpectedValue::String)) {
-          configFile_["Ports"][i]["Instruction-Support"][j]["Optional"][k] =
-              unsigned(group_mapping[group["Optional"][k].as<std::string>()]);
-        }
+      // Check for existance of instruction group
+      if (group.as<std::string>()[0] == '~') {
+        // Extract opcode and store in config option
+        uint16_t opcode = std::stoi(
+            group.as<std::string>().substr(1, group.as<std::string>().size()));
+        configFile_["Ports"][i]["Instruction-Opcode-Support"][opcodeIndex] =
+            opcode;
+        // Ensure opcode is between the bounds of 0 and Capstones'
+        // AArch64_INSTRUCTION_LIST_END
+        boundChecker(
+            configFile_["Ports"][i]["Instruction-Opcode-Support"][opcodeIndex],
+            port_num + group_num, std::make_pair(0, 4516),
+            ExpectedValue::UInteger);
+        opcodeIndex++;
+      } else if (nodeChecker<std::string>(group, port_num + group_num,
+                                          groupOptions_,
+                                          ExpectedValue::String)) {
+        configFile_["Ports"][i]["Instruction-Group-Support"][groupIndex] =
+            unsigned(groupMapping_[group.as<std::string>()]);
+        groupIndex++;
       }
     }
   }
@@ -257,7 +252,7 @@ void ModelConfig::validate() {
 
   // Execution-Units
   root = "Execution-Units";
-  subFields = {"Pipelined", "Blocking-Group"};
+  subFields = {"Pipelined", "Blocking-Groups"};
   size_t num_units = configFile_[root].size();
   if (!num_units) {
     missing_ << "\t- " << root << "\n";
@@ -266,20 +261,96 @@ void ModelConfig::validate() {
         << "\t- Number of issue ports and execution units should be equal\n";
   }
   for (size_t i = 0; i < num_units; i++) {
-    char msg[50];
-    sprintf(msg, "Execution Unit %zu ", i);
+    char euNum[50];
+    sprintf(euNum, "Execution Unit %zu ", i);
+    YAML::Node euNode = configFile_[root][i];
     nodeChecker<bool>(configFile_[root][i][subFields[0]],
-                      (std::string(msg) + subFields[0]),
-                      std::vector({false, true}), ExpectedValue::Bool);
-    if (nodeChecker<std::string>(configFile_[root][i][subFields[1]],
-                                 (std::string(msg) + subFields[1]),
-                                 groupOptionsWithNone, ExpectedValue::String)) {
-      // Map EU Blocking-Group to integer value
-      YAML::Node group = configFile_[root][i][subFields[1]];
-      group = (group.as<std::string>() != "NONE")
-                  ? (1 << group_mapping[group.as<std::string>()])
-                  : 0;
+                      (std::string(euNum) + subFields[0]),
+                      std::make_pair(false, true), ExpectedValue::Bool);
+    if (euNode[subFields[1]].IsDefined() && !(euNode[subFields[1]].IsNull())) {
+      // Compile set of blocking groups into a queue
+      std::queue<uint16_t> blockingGroups;
+      for (size_t j = 0; j < euNode[subFields[1]].size(); j++) {
+        char bgNum[50];
+        sprintf(bgNum, "Blocking group %zu", j);
+        if (nodeChecker<std::string>(configFile_[root][i][subFields[1]][j],
+                                     (std::string(euNum) + std::string(bgNum)),
+                                     groupOptions_, ExpectedValue::String)) {
+          uint16_t mappedGroup =
+              groupMapping_[euNode[subFields[1]][j].as<std::string>()];
+          blockingGroups.push(mappedGroup);
+          configFile_["Execution-Units"][i]["Blocking-Groups"][j] = mappedGroup;
+        }
+      }
+      // Expand set of blocking groups to include those that inherit from the
+      // user defined set
+      uint16_t config_index =
+          configFile_["Execution-Units"][i]["Blocking-Groups"].size();
+      while (blockingGroups.size()) {
+        // Determine if there's any inheritance
+        if (arch::aarch64::groupInheritance.find(blockingGroups.front()) !=
+            arch::aarch64::groupInheritance.end()) {
+          std::vector<uint16_t> inheritedGroups =
+              arch::aarch64::groupInheritance.at(blockingGroups.front());
+          for (int k = 0; k < inheritedGroups.size(); k++) {
+            blockingGroups.push(inheritedGroups[k]);
+            configFile_["Execution-Units"][i]["Blocking-Groups"][config_index] =
+                inheritedGroups[k];
+            config_index++;
+          }
+        }
+        blockingGroups.pop();
+      }
     }
+  }
+  subFields.clear();
+
+  // Latencies
+  root = "Latencies";
+  subFields = {"Instruction-Groups", "Execution-Latency",
+               "Execution-Throughput"};
+  for (size_t i = 0; i < configFile_[root].size(); i++) {
+    char latNum[50];
+    sprintf(latNum, "Latency group %zu ", i);
+    YAML::Node latNode = configFile_[root][i];
+    YAML::Node grpNode = latNode[subFields[0]];
+    if (grpNode.IsDefined() && !(grpNode.IsNull())) {
+      uint16_t groupIndex = 0;
+      uint16_t opcodeIndex = 0;
+      for (size_t j = 0; j < grpNode.size(); j++) {
+        char grpNum[50];
+        sprintf(grpNum, "Instruction group %zu ", j);
+        // Determine whether the value is an opcode or an instruction-group
+        // value
+        if (grpNode[j].as<std::string>()[0] == '~') {
+          // Extract opcode and store in config option
+          uint16_t opcode = std::stoi(grpNode[j].as<std::string>().substr(
+              1, grpNode[j].as<std::string>().size()));
+          configFile_[root][i]["Instruction-Opcode"][opcodeIndex] = opcode;
+          // Ensure opcode is between the bounds of 0 and Capstones'
+          // AArch64_INSTRUCTION_LIST_END
+          boundChecker(configFile_[root][i]["Instruction-Opcode"][opcodeIndex],
+                       (std::string(latNum) + std::string(grpNum)),
+                       std::make_pair(0, 4516), ExpectedValue::UInteger);
+          opcodeIndex++;
+        } else if (nodeChecker<std::string>(
+                       grpNode[j], (std::string(latNum) + std::string(grpNum)),
+                       groupOptions_, ExpectedValue::String)) {
+          // Map latency Instruction-Group to integer value
+          configFile_[root][i]["Instruction-Group"][groupIndex] =
+              groupMapping_[grpNode[j].as<std::string>()];
+          groupIndex++;
+        }
+      }
+    } else {
+      missing_ << "\t- " << (std::string(latNum) + subFields[0]) << "\n";
+    }
+    nodeChecker<uint16_t>(
+        latNode[subFields[1]], (std::string(latNum) + subFields[1]),
+        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
+    nodeChecker<uint16_t>(
+        latNode[subFields[2]], (std::string(latNum) + subFields[2]),
+        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
   }
   subFields.clear();
 
@@ -299,6 +370,78 @@ void ModelConfig::validate() {
   }
   if (missingStr.length() || invalidStr.length()) exit(1);
   return;
+}
+
+void ModelConfig::createGroupMapping() {
+  groupOptions_ = {"INT",
+                   "INT_SIMPLE",
+                   "INT_SIMPLE_ARTH",
+                   "INT_SIMPLE_ARTH_NOSHIFT",
+                   "INT_SIMPLE_LOGICAL",
+                   "INT_SIMPLE_LOGICAL_NOSHIFT",
+                   "INT_SIMPLE_CMP",
+                   "INT_SIMPLE_CVT",
+                   "INT_MUL",
+                   "INT_DIV_OR_SQRT",
+                   "LOAD_INT",
+                   "STORE_INT",
+                   "FP",
+                   "FP_SIMPLE",
+                   "FP_SIMPLE_ARTH",
+                   "FP_SIMPLE_ARTH_NOSHIFT",
+                   "FP_SIMPLE_LOGICAL",
+                   "FP_SIMPLE_LOGICAL_NOSHIFT",
+                   "FP_SIMPLE_CMP",
+                   "FP_SIMPLE_CVT",
+                   "FP_MUL",
+                   "FP_DIV_OR_SQRT",
+                   "SCALAR",
+                   "SCALAR_SIMPLE",
+                   "SCALAR_SIMPLE_ARTH",
+                   "SCALAR_SIMPLE_ARTH_NOSHIFT",
+                   "SCALAR_SIMPLE_LOGICAL",
+                   "SCALAR_SIMPLE_LOGICAL_NOSHIFT",
+                   "SCALAR_SIMPLE_CMP",
+                   "SCALAR_SIMPLE_CVT",
+                   "SCALAR_MUL",
+                   "SCALAR_DIV_OR_SQRT",
+                   "LOAD_SCALAR",
+                   "STORE_SCALAR",
+                   "VECTOR",
+                   "VECTOR_SIMPLE",
+                   "VECTOR_SIMPLE_ARTH",
+                   "VECTOR_SIMPLE_ARTH_NOSHIFT",
+                   "VECTOR_SIMPLE_LOGICAL",
+                   "VECTOR_SIMPLE_LOGICAL_NOSHIFT",
+                   "VECTOR_SIMPLE_CMP",
+                   "VECTOR_SIMPLE_CVT",
+                   "VECTOR_MUL",
+                   "VECTOR_DIV_OR_SQRT",
+                   "LOAD_VECTOR",
+                   "STORE_VECTOR",
+                   "SVE",
+                   "SVE_SIMPLE",
+                   "SVE_SIMPLE_ARTH",
+                   "SVE_SIMPLE_ARTH_NOSHIFT",
+                   "SVE_SIMPLE_LOGICAL",
+                   "SVE_SIMPLE_LOGICAL_NOSHIFT",
+                   "SVE_SIMPLE_CMP",
+                   "SVE_SIMPLE_CVT",
+                   "SVE_MUL",
+                   "SVE_DIV_OR_SQRT",
+                   "LOAD_SVE",
+                   "STORE_SVE",
+                   "PREDICATE",
+                   "LOAD",
+                   "STORE",
+                   "BRANCH"};
+  // AARCH64 instruction group namespace contains a set of contiguous assigned
+  // uint16_t start from 0. Therefore the index of each groupOptions_ entry is
+  // also its aarch64::InstructionGroups value (assuming groupOptions_ is
+  // ordered exactly as aarch64::InstructionGroups is).
+  for (int grp = 0; grp < groupOptions_.size(); grp++) {
+    groupMapping_[groupOptions_[grp]] = grp;
+  }
 }
 
 template <typename T>

@@ -36,6 +36,9 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(isPredicate, bool());
   MOCK_CONST_METHOD0(getGroup, uint16_t());
 
+  MOCK_METHOD1(setSupportedPorts, void(std::vector<uint8_t>));
+  MOCK_METHOD0(getSupportedPorts, std::vector<uint8_t>());
+
   void setBranchResults(bool wasTaken, uint64_t targetAddress) {
     branchTaken_ = wasTaken;
     branchAddress_ = targetAddress;
@@ -48,6 +51,10 @@ class MockInstruction : public Instruction {
   }
 
   void setDataPending(uint8_t value) { dataPending_ = value; }
+
+  void setLatency(uint16_t cycles) { latency_ = cycles; }
+
+  void setStallCycles(uint16_t cycles) { stallCycles_ = cycles; }
 };
 
 }  // namespace simeng

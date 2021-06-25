@@ -35,7 +35,6 @@ set(SIMENG_SOURCES
     ModelConfig.cc
     RegisterFileSet.cc
     RegisterValue.cc
-    VariableLatencyMemoryInterface.cc
     )
 
 configure_file(${PROJECT_SOURCE_DIR}/external/capstone/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
@@ -53,3 +52,9 @@ set_target_properties(libsimeng PROPERTIES VERSION ${SimEng_VERSION})
 set_target_properties(libsimeng PROPERTIES SOVERSION ${SimEng_VERSION_MAJOR})
 
 install(TARGETS libsimeng DESTINATION lib)
+
+# Store build metadata in version.hh
+get_target_property(SIMENG_COMPILE_OPTIONS libsimeng COMPILE_OPTIONS)
+get_target_property(SIMENG_COMPILE_DEFINITIONS libsimeng COMPILE_DEFINITIONS)
+get_target_property(SIMENG_VERSION libsimeng VERSION)
+configure_file(${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh.in ${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh)

@@ -20,7 +20,7 @@ class PortAllocator {
 
   /** Allocate a port for the specified instruction group; returns the allocated
    * port. */
-  virtual uint8_t allocate(uint16_t instructionGroup) = 0;
+  virtual uint8_t allocate(std::vector<uint8_t> ports) = 0;
 
   /** Inform the allocator that an instruction was issued to the specified port.
    */

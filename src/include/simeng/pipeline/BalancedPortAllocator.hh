@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+
 #include "simeng/pipeline/PortAllocator.hh"
 
 namespace simeng {
@@ -16,14 +17,12 @@ class BalancedPortAllocator : public PortAllocator {
    * port, and contain a list of the instruction groups that port supports and
    * a port type which denotes the matching requirements of said instruction
    * groups. */
-  BalancedPortAllocator(
-      std::vector<std::vector<std::vector<std::pair<uint16_t, uint8_t>>>>
-          portArrangement);
+  BalancedPortAllocator(std::vector<std::vector<uint16_t>> portArrangement);
 
   /** Allocate the lowest weighted port available for the specified instruction
    * group. Returns the allocated port, and increases the weight of the port.
    */
-  uint8_t allocate(uint16_t instructionGroup) override;
+  uint8_t allocate(std::vector<uint8_t> ports) override;
 
   /** Decrease the weight for the specified port. */
   void issued(uint8_t port) override;

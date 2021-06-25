@@ -10,9 +10,9 @@ export CMAKE_C_COMPILER=cc
 export CMAKE_CXX_COMPILER=CC
 
 ## Load compilers/libraries
-echo "Compiler GCC 8"
+echo "Compiler GCC 10"
 module swap PrgEnv-cray PrgEnv-gnu
-module swap gcc gcc/8.3.0
+module swap gcc gcc/10.3.0
 module load tools/cmake
 
 ## Build, test, and run SimEng

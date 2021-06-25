@@ -166,30 +166,26 @@ void Instruction::decode() {
         // destinations
         destinationRegisters[destinationRegisterCount] =
             csRegToRegister(op.reg);
-        if (destinationRegisters[destinationRegisterCount].type ==
-            RegisterType::VECTOR) {
-          isASIMD_ = true;
-        }
-        if (destinationRegisters[destinationRegisterCount].type ==
-            RegisterType::PREDICATE) {
-          isPredicate_ = true;
-          if (metadata.id == ARM64_INS_FCMGE ||
-              metadata.id == ARM64_INS_FCMGT ||
-              metadata.id == ARM64_INS_FCMLT ||
-              metadata.opcode == Opcode::AArch64_LDR_PXI ||
-              metadata.opcode == Opcode::AArch64_STR_PXI) {
-            isPredicate_ = false;
-          }
-        }
-
         destinationRegisterCount++;
+        // Belongs to the predicate group if the detsination register is a
+        // predicate
+        // Determine the data type the instruction operates on based on the
+        // register operand used
+        if (op.reg >= ARM64_REG_V0) {
+          isVectorData_ = true;
+        } else if (op.reg >= ARM64_REG_Z0) {
+          isSVEData_ = true;
+        } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
+          isScalarData_ = true;
+        } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
+          isPredicate_ = true;
+        } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
+          isScalarData_ = true;
+        }
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
         // Add register reads to destinations
         sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
-        if (sourceRegisters[sourceRegisterCount].type == RegisterType::VECTOR) {
-          isASIMD_ = true;
-        }
 
         if (sourceRegisters[sourceRegisterCount] ==
             Instruction::ZERO_REGISTER) {
@@ -198,6 +194,9 @@ void Instruction::decode() {
         } else {
           operandsPending++;
         }
+
+        if (op.shift.value > 0) isNoShift_ = false;  // Identify shift operands
+
         sourceRegisterCount++;
       }
     } else if (op.type == ARM64_OP_MEM) {  // Memory operand
@@ -228,11 +227,7 @@ void Instruction::decode() {
           RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
       destinationRegisterCount++;
     }
-
-    if (op.shift.value > 0) isShift_ = true;  // Identify shift operations
   }
-
-  if (metadata.setsFlags) isShift_ = true;
 
   // Identify branches
   for (size_t i = 0; i < metadata.groupCount; i++) {
@@ -240,6 +235,13 @@ void Instruction::decode() {
       isBranch_ = true;
     }
   }
+  if (metadata.opcode == 325 || metadata.opcode == 326) {
+    isBL_ = true;
+  }
+  if (metadata.opcode == 2756) {
+    isRET_ = true;
+  }
+
   // Identify loads/stores
   if (accessesMemory) {
     // Check first operand access to determine if it's a load or store
@@ -254,6 +256,20 @@ void Instruction::decode() {
     } else {
       isStore_ = true;
     }
+
+    if (isStore_) {
+      // Identify whether a store operation uses Z source registers
+      if (ARM64_REG_Z0 <= metadata.operands[0].reg &&
+          metadata.operands[0].reg <= ARM64_REG_Z31) {
+        isSVEData_ = true;
+      }
+    }
+
+    if (metadata.id == ARM64_INS_LDP || metadata.id == ARM64_INS_STP) {
+      splitMemoryRequests_ = true;
+    } else if (metadata.opcode > 1958 && metadata.opcode < 1975) {
+      splitMemoryRequests_ = true;
+    }
   }
   if (metadata.opcode == Opcode::AArch64_LDRXl ||
       metadata.opcode == Opcode::AArch64_LDRSWl) {
@@ -261,12 +277,48 @@ void Instruction::decode() {
     // marked as loads manually
     isLoad_ = true;
   }
+
+  if ((227 < metadata.opcode && metadata.opcode < 254) ||    // AND
+      (299 < metadata.opcode && metadata.opcode < 321) ||    // BIC
+      (733 < metadata.opcode && metadata.opcode < 759) ||    // EOR/EON
+      (2626 < metadata.opcode && metadata.opcode < 2655)) {  // ORR/ORN
+    isLogical_ = true;
+  }
+
+  if ((379 < metadata.opcode && metadata.opcode < 388) ||
+      (437 < metadata.opcode && metadata.opcode < 625) ||
+      (789 < metadata.opcode && metadata.opcode < 812) ||
+      (850 < metadata.opcode && metadata.opcode < 979)) {
+    isCompare_ = true;
+    // Capture those floating point compare instructions with no destination
+    // register
+    if (!(isScalarData_ || isVectorData_) &&
+        sourceRegisters[0].type == RegisterType::VECTOR) {
+      isScalarData_ = true;
+    }
+  }
+
+  if ((984 < metadata.opcode && metadata.opcode < 1190) ||
+      (metadata.opcode == 1210) ||
+      (2871 < metadata.opcode && metadata.opcode < 2907) ||
+      (4010 < metadata.opcode && metadata.opcode < 4046)) {
+    isConvert_ = true;
+    // Capture those floating point convert instructions whose destination
+    // register is general purpose
+    if (!(isScalarData_ || isVectorData_ || isSVEData_)) {
+      isScalarData_ = true;
+    }
+  }
+
+  // Identify divide or square root operations
   if ((1189 < metadata.opcode && metadata.opcode < 1204) ||
       (1605 < metadata.opcode && metadata.opcode < 1617) ||
       (2906 < metadata.opcode && metadata.opcode < 2913) ||
       (4045 < metadata.opcode && metadata.opcode < 4052)) {
-    isDivide_ = true;
+    isDivideOrSqrt_ = true;
   }
+
+  // Identify multiply operations
   if ((1210 < metadata.opcode && metadata.opcode < 1214) ||
       (1328 < metadata.opcode && metadata.opcode < 1367) ||
       (1393 < metadata.opcode && metadata.opcode < 1444) ||
@@ -281,51 +333,26 @@ void Instruction::decode() {
       (4154 < metadata.opcode && metadata.opcode < 4171)) {
     isMultiply_ = true;
   }
-  if (metadata.opcode == 2756) {
-    isRET_ = true;
-  }
-  if (metadata.opcode == 325 || metadata.opcode == 326) {
-    isBL_ = true;
-  }
-  if (metadata.id == ARM64_INS_PTEST) {
+
+  // Catch exceptions to the above identifier assignments
+  // Uncaught preciate assignment due to lacking destination register
+  if (metadata.opcode == Opcode::AArch64_PTEST_PP) {
     isPredicate_ = true;
   }
-  if (metadata.id == ARM64_INS_ADDVL || metadata.id == ARM64_INS_FDUP ||
-      metadata.id == ARM64_INS_FMSB || metadata.id == ARM64_INS_LD1B ||
-      metadata.id == ARM64_INS_LD1RD || metadata.id == ARM64_INS_LD1RW ||
-      metadata.id == ARM64_INS_LD1D || metadata.id == ARM64_INS_LD1W ||
-      metadata.id == ARM64_INS_MOVPRFX || metadata.id == ARM64_INS_PTEST ||
-      metadata.id == ARM64_INS_PTRUE || metadata.id == ARM64_INS_ST1B ||
-      metadata.id == ARM64_INS_ST1D || metadata.id == ARM64_INS_ST1W ||
-      metadata.id == ARM64_INS_PUNPKHI || metadata.id == ARM64_INS_PUNPKLO ||
-      metadata.id == ARM64_INS_UZP1 || metadata.id == ARM64_INS_WHILELO ||
-      (244 < metadata.opcode && metadata.opcode < 252) ||
-      (705 < metadata.opcode && metadata.opcode < 720) ||
-      (781 < metadata.opcode && metadata.opcode < 785) ||
-      (825 < metadata.opcode && metadata.opcode < 838) ||
-      (881 < metadata.opcode && metadata.opcode < 888) ||
-      (903 < metadata.opcode && metadata.opcode < 910) ||
-      (946 < metadata.opcode && metadata.opcode < 950) ||
-      (1125 < metadata.opcode && metadata.opcode < 1133) ||
-      (1195 < metadata.opcode && metadata.opcode < 1199) ||
-      (1203 < metadata.opcode && metadata.opcode < 1207) ||
-      (1213 < metadata.opcode && metadata.opcode < 1217) ||
-      (1328 < metadata.opcode && metadata.opcode < 1335) ||
-      (1347 < metadata.opcode && metadata.opcode < 1354) ||
-      (1418 < metadata.opcode && metadata.opcode < 1431) ||
-      (1446 < metadata.opcode && metadata.opcode < 1450) ||
-      (1625 < metadata.opcode && metadata.opcode < 1635) ||
-      (1608 < metadata.opcode && metadata.opcode < 1612) ||
-      (2342 < metadata.opcode && metadata.opcode < 2345) ||
-      (2466 < metadata.opcode && metadata.opcode < 2483) ||
-      (metadata.opcode == 2648) ||
-      (2920 < metadata.opcode && metadata.opcode < 2926) ||
-      (3007 < metadata.opcode && metadata.opcode < 3016) ||
-      (3037 < metadata.opcode && metadata.opcode < 3046) ||
-      (3773 < metadata.opcode && metadata.opcode < 3776) ||
-      (4484 < metadata.opcode && metadata.opcode < 4493) ||
-      (4499 < metadata.opcode && metadata.opcode < 4508)) {
-    isSVE_ = true;
+  // Uncaught float data assignment for FMOV move to general instructions
+  if ((1366 < metadata.opcode && metadata.opcode < 1391) &&
+      !(isScalarData_ || isVectorData_)) {
+    isScalarData_ = true;
+  }
+  // Uncaught vector data assignment for SMOV and UMOV instructions
+  if ((3071 < metadata.opcode && metadata.opcode < 3077) ||
+      (4150 < metadata.opcode && metadata.opcode < 4155)) {
+    isVectorData_ = true;
+  }
+  // Uncaught float data assignment for FCVT convert to general instructions
+  if ((984 < metadata.opcode && metadata.opcode < 1190) &&
+      !(isScalarData_ || isVectorData_)) {
+    isScalarData_ = true;
   }
 }
 

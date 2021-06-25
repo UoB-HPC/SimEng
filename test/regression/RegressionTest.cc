@@ -38,42 +38,15 @@ void RegressionTest::TearDown() {
   }
 }
 
-YAML::Node RegressionTest::generateConfig() {
-  YAML::Node config = YAML::Load(
-      "{Core: {"
-      "Simulation-Mode: outoforder, Clock-Frequency: 2.5,"
-      "Fetch-Block-Alignment-Bits: 5"
-      "}, Register-Set: {"
-      "GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90,"
-      "Predicate-Count: 48, Conditional-Count: 128"
-      "}, Pipeline-Widths: {"
-      "Commit: 4, Dispatch-Rate: 4, FrontEnd: 4,"
-      "LSQ-Completion: 2"
-      "}, Queue-Sizes: {"
-      "ROB: 180, Load: 64, Store: 36"
-      "}, L1-Cache: {"
-      "GeneralPurpose-Latency: 4, FloatingPoint-Latency: 4,"
-      "SVE-Latency: 11, Bandwidth: 32,"
-      "Permitted-Requests-Per-Cycle: 2,"
-      "Permitted-Loads-Per-Cycle: 2,"
-      "Permitted-Stores-Per-Cycle: 1"
-      "}, Execution-Units: ["
-      "{Pipelined: True, Blocking-Group: 0},"
-      "{Pipelined: True, Blocking-Group: 0},"
-      "{Pipelined: True, Blocking-Group: 0},"
-      "{Pipelined: True, Blocking-Group: 0},"
-      "{Pipelined: True, Blocking-Group: 0},"
-      "{Pipelined: True, Blocking-Group: 0}"
-      "]}");
-  return config;
-}
-
 void RegressionTest::run(const char* source, const char* triple) {
   testing::internal::CaptureStdout();
 
   // Assemble the source to a flat binary
   assemble(source, triple);
   if (HasFatalFailure()) return;
+
+  // Get pre-defined config file for OoO model
+  YAML::Node config = generateConfig();
 
   // Create a linux process from the assembled code block
   process_ = std::make_unique<simeng::kernel::LinuxProcess>(
@@ -109,22 +82,17 @@ void RegressionTest::run(const char* source, const char* triple) {
             processMemory_ + process_->getHeapStart());
 
   // Create the architecture
-  architecture_ = createArchitecture(kernel);
+  architecture_ = createArchitecture(kernel, config);
 
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
       createPortAllocator();
 
   // Create the reservationStation-Port mapping relationship
-  const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {
-      {0, 60}, {0, 60}, {0, 60}, {0, 60}, {0, 60}, {0, 60}};
+  const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {{0, 60}};
 
   // Create a branch predictor for a pipelined core
   simeng::BTBPredictor predictor(8);
-
-  // Get pre-defined config file for OoO model
-  YAML::Node config = generateConfig();
-
   // Create the core model
   switch (GetParam()) {
     case EMULATION:
@@ -188,8 +156,14 @@ void RegressionTest::assemble(const char* source, const char* triple) {
   ASSERT_NE(regInfo, nullptr) << "Failed to create LLVM register info";
 
   // Create MC asm info
+  llvm::MCTargetOptions options;
+#if SIMENG_LLVM_VERSION < 10
   std::unique_ptr<llvm::MCAsmInfo> asmInfo(
       target->createMCAsmInfo(*regInfo, triple));
+#else
+  std::unique_ptr<llvm::MCAsmInfo> asmInfo(
+      target->createMCAsmInfo(*regInfo, triple, options));
+#endif
   ASSERT_NE(asmInfo, nullptr) << "Failed to create LLVM asm info";
 
   // Create MC context and object file info
@@ -209,7 +183,6 @@ void RegressionTest::assemble(const char* source, const char* triple) {
   ASSERT_NE(instrInfo, nullptr) << "Failed to create LLVM instruction info";
 
   // Create MC asm backend
-  llvm::MCTargetOptions options;
   std::unique_ptr<llvm::MCAsmBackend> asmBackend(
       target->createMCAsmBackend(*subtargetInfo, *regInfo, options));
   ASSERT_NE(asmBackend, nullptr) << "Failed to create LLVM asm backend";
@@ -257,12 +230,16 @@ void RegressionTest::assemble(const char* source, const char* triple) {
   auto& elf = *elfOrErr;
 
   // Get handle to .text section
-  auto textOrErr = elf.getSection(".text");
+  auto textOrErr = elf.getSection(2);
   ASSERT_FALSE(textOrErr.takeError()) << "Failed to find .text section";
   auto& text = *textOrErr;
 
   // Get reference to .text section data
+#if SIMENG_LLVM_VERSION < 12
   auto textDataOrErr = elf.getSectionContents(text);
+#else
+  auto textDataOrErr = elf.getSectionContents(*text);
+#endif
   ASSERT_FALSE(textDataOrErr.takeError()) << "Failed to get .text contents";
   llvm::ArrayRef<uint8_t> textData = *textDataOrErr;
 
