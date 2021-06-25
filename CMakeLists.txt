@@ -15,16 +15,16 @@ endmacro()
 
 # we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a small part of it
 
-# FetchContent_Declare(
-#   llvm
-#   URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/llvm-12.0.0.src.tar.xz
-#   URL_HASH MD5=ceab21c9081e122a88d82216a80d0dc0
-# )
-
 FetchContent_Declare(
   llvm
-  URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/llvm-9.0.1.src.tar.xz
+  URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/llvm-12.0.0.src.tar.xz
+  URL_HASH MD5=ceab21c9081e122a88d82216a80d0dc0
 )
+
+# FetchContent_Declare(
+#   llvm
+#   URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/llvm-9.0.1.src.tar.xz
+# )
 
 FetchContent_Declare(
   googletest
@@ -41,6 +41,12 @@ FetchContent_Declare(
   # hence we pick the latest working commit
   GIT_TAG        a6bbe0e50ac4074f0b9b44188c28cf00caf1a723
   GIT_PROGRESS   TRUE
+)
+
+FetchContent_Declare(
+  capstone
+  GIT_REPOSITORY https://github.com/UoB-HPC/capstone.git
+  GIT_TAG        e7be7d99e718ef9741026b80fc6f5e100fdf4f94 # trunk
 )
 
 cmake_policy(SET CMP0048 NEW)
@@ -98,7 +104,7 @@ set(CAPSTONE_WASM_SUPPORT OFF CACHE BOOL "Disable WASM support")
 set(CAPSTONE_BPF_SUPPORT OFF CACHE BOOL "Disable BPF support")
 set(CAPSTONE_RISCV_SUPPORT OFF CACHE BOOL "Disable RISCV support")
 
-add_subdirectory(external/capstone EXCLUDE_FROM_ALL)
+FetchContent_MakeAvailable_Args(capstone EXCLUDE_FROM_ALL)
 
 ## Setup yaml-cpp ##
 set(YAML_CPP_BUILD_TESTS OFF)
