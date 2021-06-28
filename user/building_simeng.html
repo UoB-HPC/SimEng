@@ -190,17 +190,33 @@
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/UoB-HPC/SimEng.git
 </pre></div>
 </div>
-<ol class="arabic simple" start="2">
-<li><p>Configure with CMake, specifying the path to your desired installation directory if necessary:</p></li>
-</ol>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>cd SimEng
-cmake -B build -S . # build files will be generated in a directory called &quot;build&quot;
-        -DCMAKE_BUILD_TYPE=Release
-        -DCMAKE_INSTALL_PREFIX=&lt;simeng_install_directory&gt;
-        # -GNinja # enable Ninja for faster LLVM builds
+<ol class="arabic" start="2">
+<li><p>Configure with CMake, specifying the path to your desired installation directory if necessary:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">SimEng</span>
+<span class="n">cmake</span> <span class="o">-</span><span class="n">B</span> <span class="n">build</span> <span class="o">-</span><span class="n">S</span> <span class="o">.</span> <span class="c1"># build files will be generated in a directory called &quot;build&quot;</span>
+        <span class="o">-</span><span class="n">DCMAKE_BUILD_TYPE</span><span class="o">=</span><span class="n">Release</span>
+        <span class="o">-</span><span class="n">DCMAKE_INSTALL_PREFIX</span><span class="o">=&lt;</span><span class="n">simeng_install_directory</span><span class="o">&gt;</span>
+        <span class="o">-</span><span class="n">DSIMENG_ENABLE_TESTS</span><span class="o">=</span><span class="p">{</span><span class="n">ON</span><span class="p">,</span> <span class="n">OFF</span><span class="p">}</span> <span class="c1"># Defaults to OFF</span>
+        <span class="c1"># -GNinja # enable Ninja for faster LLVM builds</span>
 </pre></div>
 </div>
-<ol class="arabic simple">
+</li>
+</ol>
+<blockquote>
+<div><ol class="loweralpha">
+<li><p>The SimEng test suites depend on a selection of LLVM libraries. Building this dependency can take a while, therefore, the use of prebuilt LLVM libraries is supported. The following cmake configuration flags should be set to enable this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">-</span><span class="n">DSIMENG_USE_EXTERNAL_LLVM</span><span class="o">=</span><span class="n">ON</span>
+<span class="o">-</span><span class="n">DLLVM_DIR</span><span class="o">=&lt;</span><span class="n">llvm_library_directory</span><span class="o">&gt;</span> <span class="c1"># directory of LLVM libraries as CMake targets</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>More information about the LLVM_DIR value can be found <a class="reference external" href="https://llvm.org/docs/CMake.html#embedding-llvm-in-your-project">here</a>.</p>
+</div>
+</div></blockquote>
+<ol class="arabic simple" start="3">
 <li><p>Once configured, use <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span></code> or whichever generator you have selected for CMake to build. Append the <code class="docutils literal notranslate"><span class="pre">-j</span></code> flag to build in parallel, keep in mind that building LLVM like this usually has very high (1.5GB per core) memory requirements.</p></li>
 <li><p>(Optional) Run <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span> <span class="pre">--target</span> <span class="pre">test</span></code> to run the SimEng regression tests and unit tests. Please report any test failures as <a class="reference external" href="https://github.com/UoB-HPC/SimEng/issues">a GitHub issue</a>.</p></li>
 <li><p>Finally, run <code class="docutils literal notranslate"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span> <span class="pre">--target</span> <span class="pre">install</span></code> to install SimEng to the directory specified with CMake.</p></li>
