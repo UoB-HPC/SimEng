@@ -36,14 +36,24 @@ constexpr int32_t signExtend(uint32_t value, int currentLength) {
   return static_cast<int32_t>(value) | (negative ? mask : 0);
 }
 
-/** Parses the Capstone `arm64_reg` value to generate an architectural register
+/** Parses the Capstone `riscv_reg` value to generate an architectural register
  * representation.
  *
  * WARNING: this conversion is FRAGILE, and relies on the structure of the
- * `arm64_reg` enum. Updates to the Capstone library version may cause this to
+ * `riscv_reg` enum. Updates to the Capstone library version may cause this to
  * break. */
-Register csRegToRegister(arm64_reg reg) {
+Register csRegToRegister(unsigned int reg) {
   // Check from top of the range downwards
+
+
+  if (reg <= RISCV_REG_X31 &&  reg >= RISCV_REG_X1) {
+    return {RegisterType::GENERAL, static_cast<uint16_t>(reg)};
+  }
+
+  if (reg == RISCV_REG_X0) {
+    // Zero register
+    return Instruction::ZERO_REGISTER;
+  }
 
   assert(false && "Decoding failed due to unknown register identifier");
   return {std::numeric_limits<uint8_t>::max(),
@@ -61,12 +71,12 @@ const Register& filterZR(const Register& reg) {
  * DECODING LOGIC
  *****************/
 void Instruction::decode() {
-//  if (metadata.id == ARM64_INS_INVALID) {
-//    exception_ = InstructionException::EncodingUnallocated;
-//    exceptionEncountered_ = true;
-//    return;
-//  }
-//
+  if (metadata.id == RISCV_INS_INVALID) {
+    exception_ = InstructionException::EncodingUnallocated;
+    exceptionEncountered_ = true;
+    return;
+  }
+
 //  // Extract implicit writes
 //  for (size_t i = 0; i < metadata.implicitDestinationCount; i++) {
 //    destinationRegisters[destinationRegisterCount] = csRegToRegister(
@@ -83,32 +93,39 @@ void Instruction::decode() {
 //
 //  bool accessesMemory = false;
 //
-//  // Extract explicit register accesses
-//  for (size_t i = 0; i < metadata.operandCount; i++) {
-//    const auto& op = metadata.operands[i];
-//
-//    if (op.type == ARM64_OP_REG) {  // Register operand
-//      if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&
-//          op.reg != ARM64_REG_XZR) {
+  // Extract explicit register accesses
+  for (size_t i = 0; i < metadata.operandCount; i++) {
+    const auto& op = metadata.operands[i];
+
+    if (i == 0 && op.type == RISCV_OP_REG) {
+      destinationRegisters[destinationRegisterCount] = csRegToRegister(op.reg);
+
+      destinationRegisterCount++;
+    }
+
+    if (i > 0 && op.type == RISCV_OP_REG) {
+      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
+
+      if (sourceRegisters[sourceRegisterCount] ==
+          Instruction::ZERO_REGISTER) {
+        // Catch zero register references and pre-complete those operands
+        operands[sourceRegisterCount] = RegisterValue(0, 8);
+      } else {
+        operandsPending++;
+      }
+
+
+      sourceRegisterCount ++;
+    }
+  }
+
+//    if (op.type == RISCV_OP_REG) {  // Register operand
+//      // writes
+//      if ((op. ) && op.reg != 0) {
 //        // Add register writes to destinations, but skip zero-register
 //        // destinations
 //        destinationRegisters[destinationRegisterCount] =
 //            csRegToRegister(op.reg);
-//        if (destinationRegisters[destinationRegisterCount].type ==
-//            RegisterType::VECTOR) {
-//          isASIMD_ = true;
-//        }
-//        if (destinationRegisters[destinationRegisterCount].type ==
-//            RegisterType::PREDICATE) {
-//          isPredicate_ = true;
-//          if (metadata.id == ARM64_INS_FCMGE ||
-//              metadata.id == ARM64_INS_FCMGT ||
-//              metadata.id == ARM64_INS_FCMLT ||
-//              metadata.opcode == Opcode::AArch64_LDR_PXI ||
-//              metadata.opcode == Opcode::AArch64_STR_PXI) {
-//            isPredicate_ = false;
-//          }
-//        }
 //
 //        destinationRegisterCount++;
 //      }
