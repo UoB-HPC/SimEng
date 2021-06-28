@@ -184,21 +184,13 @@
 </div>
 <div class="section" id="building">
 <h2>Building<a class="headerlink" href="#building" title="Permalink to this headline">¶</a></h2>
-<p>First obtain the source code using git, including the dependencies:</p>
 <ol class="arabic simple">
-<li><p>If cloning for the first time, use the <code class="docutils literal notranslate"><span class="pre">--recurse-submodules</span></code> option:</p></li>
+<li><p>Obtain the source code using git:</p></li>
 </ol>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>git clone --recurse-submodules https://github.com/UoB-HPC/SimEng.git
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/UoB-HPC/SimEng.git
 </pre></div>
 </div>
 <ol class="arabic simple" start="2">
-<li><p>If you already have a clone, update the source and submodules:</p></li>
-</ol>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>git pull origin main
-git submodule update --init
-</pre></div>
-</div>
-<ol class="arabic simple" start="3">
 <li><p>Configure with CMake, specifying the path to your desired installation directory if necessary:</p></li>
 </ol>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>cd SimEng
