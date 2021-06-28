@@ -17,7 +17,7 @@ jobs:
             cmake .. \
               -DCMAKE_BUILD_TYPE=Debug \
               -DCMAKE_INSTALL_PREFIX=$PWD/../build \
-              -DSIMENG_USE_EXTERNAL_LLVM=OFF \
+              -DSIMENG_USE_EXTERNAL_LLVM=ON \
               -DLLVM_DIR=/usr/lib/llvm-8/cmake \
               -DSIMENG_ENABLE_TESTS=ON \
               << parameters.cmake >>
