@@ -15,10 +15,6 @@ RUN apt-get update && \
 COPY . /root/SimEng
 
 RUN cd /root/SimEng && \
-    git submodule update --init \
-      external/googletest \
-      external/yaml-cpp && \
-    git submodule update --init --remote external/capstone && \
     rm -rf build && \
     CC=gcc CXX=g++ cmake -Bbuild -S. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DSIMENG_USE_EXTERNAL_LLVM=ON -DLLVM_DIR=/usr/lib/llvm-9/cmake && \
     cd build && \

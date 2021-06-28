@@ -11,6 +11,7 @@
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/pipeline/PortAllocator.hh"
+#include "simeng/version.hh"
 
 /** The different types of core model that can be used in tests. */
 enum CoreType { EMULATION, INORDER, OUTOFORDER };

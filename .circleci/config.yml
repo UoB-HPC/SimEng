@@ -10,12 +10,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Pull submodules
-          command: |
-            # Don't pull LLVM submodule to save time (use packaged version)
-            git submodule init external/{capstone,googletest,yaml-cpp}
-            git submodule update
-      - run:
           name: Build SimEng
           command: |
             mkdir -p obj
@@ -25,6 +19,7 @@ jobs:
               -DCMAKE_INSTALL_PREFIX=$PWD/../build \
               -DSIMENG_USE_EXTERNAL_LLVM=ON \
               -DLLVM_DIR=/usr/lib/llvm-8/cmake \
+              -DSIMENG_ENABLE_TESTS=ON \
               << parameters.cmake >>
             make -j 2
             ctest --output-on-failure

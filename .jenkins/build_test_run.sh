@@ -24,13 +24,6 @@ checkout () {
     cd "$SIMENG_TOP" || exit
     rm -rf build install
     mkdir build install
-
-    cd external/capstone || exit
-    git fetch
-    git checkout next
-
-    cd "$SIMENG_TOP" || exit
-    # git reset --hard
 }
 
 # Build common function
@@ -38,7 +31,7 @@ build () {
     cd "$SIMENG_TOP" || exit
     rm -rf build/* install/*
 
-    cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SIMENG_INSTALL"
+    cmake -B build -S . -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$SIMENG_INSTALL" -DSIMENG_ENABLE_TESTS=ON -DSIMENG_USE_EXTERNAL_LLVM=ON -DLLVM_DIR=/home/br-jjones/llvm-project/xci-install/9.0.0/lib/cmake/llvm/
     cmake --build build -j
     cmake --build build --target install
 }

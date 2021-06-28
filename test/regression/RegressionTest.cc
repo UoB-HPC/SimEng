@@ -156,8 +156,14 @@ void RegressionTest::assemble(const char* source, const char* triple) {
   ASSERT_NE(regInfo, nullptr) << "Failed to create LLVM register info";
 
   // Create MC asm info
+  llvm::MCTargetOptions options;
+#if SIMENG_LLVM_VERSION < 10
   std::unique_ptr<llvm::MCAsmInfo> asmInfo(
       target->createMCAsmInfo(*regInfo, triple));
+#else
+  std::unique_ptr<llvm::MCAsmInfo> asmInfo(
+      target->createMCAsmInfo(*regInfo, triple, options));
+#endif
   ASSERT_NE(asmInfo, nullptr) << "Failed to create LLVM asm info";
 
   // Create MC context and object file info
@@ -177,7 +183,6 @@ void RegressionTest::assemble(const char* source, const char* triple) {
   ASSERT_NE(instrInfo, nullptr) << "Failed to create LLVM instruction info";
 
   // Create MC asm backend
-  llvm::MCTargetOptions options;
   std::unique_ptr<llvm::MCAsmBackend> asmBackend(
       target->createMCAsmBackend(*subtargetInfo, *regInfo, options));
   ASSERT_NE(asmBackend, nullptr) << "Failed to create LLVM asm backend";
@@ -225,12 +230,16 @@ void RegressionTest::assemble(const char* source, const char* triple) {
   auto& elf = *elfOrErr;
 
   // Get handle to .text section
-  auto textOrErr = elf.getSection(".text");
+  auto textOrErr = elf.getSection(2);
   ASSERT_FALSE(textOrErr.takeError()) << "Failed to find .text section";
   auto& text = *textOrErr;
 
   // Get reference to .text section data
+#if SIMENG_LLVM_VERSION < 12
   auto textDataOrErr = elf.getSectionContents(text);
+#else
+  auto textDataOrErr = elf.getSectionContents(*text);
+#endif
   ASSERT_FALSE(textDataOrErr.takeError()) << "Failed to get .text contents";
   llvm::ArrayRef<uint8_t> textData = *textDataOrErr;
 
