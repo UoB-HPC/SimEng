@@ -16,7 +16,7 @@ set(TEST_SOURCES
     LatencyMemoryInterfaceTest.cc
     )
 
-configure_file(${PROJECT_SOURCE_DIR}/external/capstone/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
+configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
 
 add_executable(unittests ${TEST_SOURCES})
 

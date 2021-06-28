@@ -37,15 +37,14 @@ set(SIMENG_SOURCES
     RegisterValue.cc
     )
 
-configure_file(${PROJECT_SOURCE_DIR}/external/capstone/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
+configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
 
 add_library(libsimeng SHARED ${SIMENG_SOURCES} ${SIMENG_HEADERS})
 set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_include_directories(libsimeng PRIVATE ${PROJECT_SOURCE_DIR}/external/capstone/include)
-target_include_directories(libsimeng PRIVATE ${PROJECT_SOURCE_DIR}/external/yaml-cpp)
+target_include_directories(libsimeng PRIVATE ${capstone_SOURCE_DIR}/include)
 target_link_libraries(libsimeng capstone-static yaml-cpp)
 
 set_target_properties(libsimeng PROPERTIES VERSION ${SimEng_VERSION})

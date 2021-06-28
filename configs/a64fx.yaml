@@ -61,17 +61,17 @@ Ports:
     Instruction-Support:
     - LOAD
     - STORE
-    - INT_ARTH_NOSHIFT
-    - INT_LOGICAL_NOSHIFT
-    - INT_CMP
+    - INT_SIMPLE_ARTH_NOSHIFT
+    - INT_SIMPLE_LOGICAL_NOSHIFT
+    - INT_SIMPLE_CMP
   6:
     Portname: EAGB
     Instruction-Support:
     - LOAD
     - STORE
-    - INT_ARTH_NOSHIFT
-    - INT_LOGICAL_NOSHIFT
-    - INT_CMP
+    - INT_SIMPLE_ARTH_NOSHIFT
+    - INT_SIMPLE_LOGICAL_NOSHIFT
+    - INT_SIMPLE_CMP
   7:
     Portname: BR
     Instruction-Support:
@@ -157,9 +157,9 @@ Latencies:
     Execution-Throughput: 2
   1:
     Instruction-Groups: 
-    - INT_ARTH_NOSHIFT
-    - INT_LOGICAL_NOSHIFT
-    - INT_CVT
+    - INT_SIMPLE_ARTH_NOSHIFT
+    - INT_SIMPLE_LOGICAL_NOSHIFT
+    - INT_SIMPLE_CVT
     Execution-Latency: 1
     Execution-Throughput: 1
   2:
@@ -175,10 +175,10 @@ Latencies:
   4:
     Instruction-Groups: 
     - SCALAR_SIMPLE
-    - VECTOR_LOGICAL
-    - SVE_LOGICAL
-    - VECTOR_CMP
-    - SVE_CMP
+    - VECTOR_SIMPLE_LOGICAL
+    - SVE_SIMPLE_LOGICAL
+    - VECTOR_SIMPLE_CMP
+    - SVE_SIMPLE_CMP
     Execution-Latency: 4
     Execution-Throughput: 1
   5:
@@ -190,7 +190,7 @@ Latencies:
     Instruction-Groups: 
     - VECTOR_SIMPLE
     - SVE_SIMPLE
-    - SCALAR_CVT
+    - SCALAR_SIMPLE_CVT
     - FP_MUL
     - SVE_MUL
     Execution-Latency: 9
@@ -207,9 +207,9 @@ Latencies:
     Execution-Throughput: 1
   9:
     Instruction-Groups: 
-    - LOAD_FLOAT
+    - LOAD_SCALAR
     - LOAD_VECTOR
-    - STORE_FLOAT
+    - STORE_SCALAR
     - STORE_VECTOR
     Execution-Latency: 3
     Execution-Throughput: 1

@@ -109,8 +109,8 @@ FetchContent_MakeAvailable_Args(capstone EXCLUDE_FROM_ALL)
 ## Setup yaml-cpp ##
 set(YAML_CPP_BUILD_TESTS OFF)
 set(YAML_CPP_INSTALL OFF)
-FetchContent_MakeAvailable_Args(yaml-cpp EXCLUDE_FROM_ALL)
 
+FetchContent_MakeAvailable_Args(yaml-cpp EXCLUDE_FROM_ALL)
 
 option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule")
