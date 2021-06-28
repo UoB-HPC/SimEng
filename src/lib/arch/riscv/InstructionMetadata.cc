@@ -13,11 +13,11 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       opcode(insn.opcode),
       implicitSourceCount(insn.detail->regs_read_count),
       implicitDestinationCount(insn.detail->regs_write_count),
-      groupCount(insn.detail->groups_count),
-      cc(insn.detail->arm64.cc - 1),
-      setsFlags(insn.detail->arm64.update_flags),
-      writeback(insn.detail->arm64.writeback),
-      operandCount(insn.detail->arm64.op_count) {
+//      groupCount(insn.detail->groups_count),
+//      cc(insn.detail->arm64.cc - 1),
+//      setsFlags(insn.detail->arm64.update_flags),
+//      writeback(insn.detail->arm64.writeback),
+      operandCount(insn.detail->riscv.op_count) {
   std::memcpy(encoding, insn.bytes, sizeof(encoding));
   // Copy printed output
   std::strncpy(mnemonic, insn.mnemonic, CS_MNEMONIC_SIZE);
@@ -28,18 +28,18 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
               sizeof(uint16_t) * implicitSourceCount);
   std::memcpy(implicitDestinations, insn.detail->regs_write,
               sizeof(uint16_t) * implicitDestinationCount);
-  std::memcpy(groups, insn.detail->groups, sizeof(uint8_t) * groupCount);
-  std::memcpy(operands, insn.detail->arm64.operands,
-              sizeof(cs_arm64_op) * operandCount);
+//  std::memcpy(groups, insn.detail->groups, sizeof(uint8_t) * groupCount);
+  std::memcpy(operands, insn.detail->riscv.operands,
+              sizeof(cs_riscv_op) * operandCount);
 
   // Fix some inaccuracies in the decoded metadata
-  switch (opcode) {
-//    case Opcode::RISCV_ADDI:
-//
-//      break;
-  }
+//  switch (opcode) {
+////    case Opcode::RISCV_ADDI:
+////
+////      break;
+//  }
 
-  revertAliasing();
+//  revertAliasing();
 }
 
 InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
@@ -49,8 +49,8 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
       implicitSourceCount(0),
       implicitDestinationCount(0),
       groupCount(0),
-      setsFlags(false),
-      writeback(false),
+//      setsFlags(false),
+//      writeback(false),
       operandCount(0) {
   assert(bytes <= sizeof(encoding));
   std::memcpy(encoding, invalidEncoding, bytes);
@@ -58,12 +58,12 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
   operandStr[0] = '\0';
 }
 
-void InstructionMetadata::revertAliasing() {
-  // Check mnemonics known to be aliases and see if their opcode matches
-  // something else
-  switch (id) {
-  }
-}
+//void InstructionMetadata::revertAliasing() {
+//  // Check mnemonics known to be aliases and see if their opcode matches
+//  // something else
+//  switch (id) {
+//  }
+//}
 
 void InstructionMetadata::aliasNYI() { id = RISCV_INS_INVALID; }
 

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 #include <limits>
 #include <tuple>
 
@@ -182,19 +183,28 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
 
+  std::cout << metadata.mnemonic << " " << metadata.operandStr << std::endl;
+
   executed_ = true;
   switch (metadata.opcode) {
+    case Opcode::RISCV_ADDI: {  // addi ad, an, #imm
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = metadata.operands[2].imm;
+      uint64_t out = static_cast<uint64_t>(n + m);
+      results[0] = out;
+      break;
+    }
     default:
       return executionNYI();
   }
   // Zero-out upper bits of vector registers because Z configuration
   // extend to 256 bytes whilst V configurations only extend to 16 bytes.
   // Thus upper 240 bytes must be ignored by being set to 0.
-  for (int i = 0; i < destinationRegisterCount; i++) {
-    if ((destinationRegisters[i].type == RegisterType::VECTOR) && !isSVE_) {
-      results[i] = results[i].zeroExtend(16, 256);
-    }
-  }
+//  for (int i = 0; i < destinationRegisterCount; i++) {
+//    if ((destinationRegisters[i].type == RegisterType::VECTOR) && !isSVE_) {
+//      results[i] = results[i].zeroExtend(16, 256);
+//    }
+//  }
 }
 
 }  // namespace aarch64

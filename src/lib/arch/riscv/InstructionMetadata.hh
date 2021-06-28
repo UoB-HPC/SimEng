@@ -32,7 +32,7 @@ struct InstructionMetadata {
       sizeof(cs_detail::regs_write) / sizeof(uint16_t);
   static const size_t MAX_GROUPS = sizeof(cs_detail::groups) / sizeof(uint8_t);
   static const size_t MAX_OPERANDS =
-      sizeof(cs_arm64::operands) / sizeof(cs_arm64_op);
+      sizeof(cs_riscv::operands) / sizeof(cs_riscv_op);
 
   /** The instruction's mnemonic ID. */
   unsigned int id;
@@ -63,16 +63,16 @@ struct InstructionMetadata {
   /** The number of instruction groups this instruction belongs to. */
   uint8_t groupCount;
 
-  /** The condition code of the instruction. */
-  uint8_t cc;
-  /** Whether this instruction sets the condition flags. */
-  bool setsFlags;
-  /** Whether this instruction performs a base-address register writeback
-   * operation. */
-  bool writeback;
+//  /** The condition code of the instruction. */
+//  uint8_t cc;
+//  /** Whether this instruction sets the condition flags. */
+//  bool setsFlags;
+//  /** Whether this instruction performs a base-address register writeback
+//   * operation. */
+//  bool writeback;
 
   /** The explicit operands. */
-  cs_arm64_op operands[MAX_OPERANDS];
+  cs_riscv_op operands[MAX_OPERANDS];
   /** The number of explicit operands. */
   uint8_t operandCount;
 
