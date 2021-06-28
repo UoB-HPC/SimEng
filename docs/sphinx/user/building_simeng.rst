@@ -9,13 +9,11 @@ Building SimEng requires CMake and a compiler that supports C++17.
 Building
 --------
 
-First obtain the source code using git:
-
-1. 
+1. Obtain the source code using git:
    
 .. code-block:: text
 
-        git clone  https://github.com/UoB-HPC/SimEng.git
+        git clone https://github.com/UoB-HPC/SimEng.git
 
 
 2. Configure with CMake, specifying the path to your desired installation directory if necessary:
