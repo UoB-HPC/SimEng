@@ -1,0 +1,17 @@
+.clang_complete
+.vscode
+.DS_Store
+obj
+build
+binaries
+install
+install-debug
+capstone.pc
+
+CMakeCache.txt
+CPackConfig.cmake
+CPackSourceConfig.cmake
+CMakeFiles/
+
+**/capstone-config-version.cmake
+**/capstone-config.cmake
