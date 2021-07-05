@@ -447,7 +447,7 @@ bool ExceptionHandler::init() {
         // current use of this syscall is to setup error handlers. Simualted
         // code is expected to work so no need for these handlers.
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
-        break;
+       break;
       }
       case 135: {  // rt_sigprocmask
         // TODO: Implement syscall logic. Ignored for now as it's assumed the
