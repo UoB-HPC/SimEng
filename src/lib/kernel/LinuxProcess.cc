@@ -86,24 +86,57 @@ uint64_t LinuxProcess::getStackPointer() const { return stackPointer_; }
 void LinuxProcess::createStack() {
   // Decrement the stack pointer and populate with initial stack state
   // (https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html)
+  // The argv and env strings are added to the top of the stack first and the
+  // lower section of the initial stack is populated from the initialStackFrame
+  // vector
 
   stackPointer_ = getStackStart();
   std::vector<uint64_t> initialStackFrame;
+  // Stack strings are split into bytes to easily support the injection of null
+  // bytes dictating the end of a string
+  std::vector<uint8_t> stringBytes;
 
   // Program arguments (argc, argv[])
   initialStackFrame.push_back(commandLine_.size());  // argc
   for (size_t i = 0; i < commandLine_.size(); i++) {
-    // Push argv[i] to the stack
-    size_t argSize = commandLine_[i].size() + 1;
-    stackPointer_ -= alignToBoundary(argSize, 32);
-    std::memcpy(processImage_ + stackPointer_, commandLine_[i].data(), argSize);
-
-    initialStackFrame.push_back(stackPointer_);  // pointer to argv[i]
+    char* argvi = commandLine_[i].data();
+    for (int j = 0; j < commandLine_[i].size(); j++) {
+      stringBytes.push_back(argvi[j]);
+    }
+    stringBytes.push_back(0);
   }
-  initialStackFrame.push_back(0);  // null terminator
+  // Environment strings
+  std::vector<std::string> envStrings = {"OMP_NUM_THREADS=1"};
+  for (std::string& env : envStrings) {
+    for (int i = 0; i < env.size(); i++) {
+      stringBytes.push_back(env.c_str()[i]);
+    }
+    // Null entry to seperate strings
+    stringBytes.push_back(0);
+  }
+  // NULL entry at the top of initial stack
+  for (int i = 0; i < 8; i++) {
+    stringBytes.push_back(1);
+  }
 
-  // Environment variable pointers (envp[])
-  // TODO: pass environment variables to program
+  // Store strings and record both argv and environment pointers
+  // Block out stack space for strings to be stored in
+  stackPointer_ -= alignToBoundary(stringBytes.size() + 1, 32);
+  uint16_t ptrCount = 1;
+  initialStackFrame.push_back(stackPointer_);  // argv[0] ptr
+  for (int i = 0; i < stringBytes.size(); i++) {
+    if (ptrCount == commandLine_.size()) {
+      // null terminator to seperate argv and env strings
+      initialStackFrame.push_back(0);
+      ptrCount++;
+    }
+    if (i > 0 && stringBytes[i - 1] == 0x0) {            // i - 1 == null
+      initialStackFrame.push_back(stackPointer_ + (i));  // argv/env ptr
+      ptrCount++;
+    }
+    processImage_[stackPointer_ + i] = stringBytes[i];
+  }
+
   initialStackFrame.push_back(0);  // null terminator
 
   // ELF auxillary vector, keys defined in `uapi/linux/auxvec.h`
