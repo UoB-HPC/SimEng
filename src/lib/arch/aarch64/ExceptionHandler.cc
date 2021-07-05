@@ -316,6 +316,18 @@ bool ExceptionHandler::init() {
             ChangeType::REPLACEMENT, {R0}, {linux_.setTidAddress(ptr)}};
         break;
       }
+      case 98: {  // futex
+        // TODO: Functionality temporarily omitted as it is unused within
+        // workloads regions of interest and not required for their simulation
+        stateChange = {};
+        break;
+      }
+      case 99: {  // set_robust_list
+        // TODO: Functionality temporarily omitted as it is unused within
+        // workloads regions of interest and not required for their simulation
+        stateChange = {};
+        break;
+      }
       case 113: {  // clock_gettime
         uint64_t clkId = registerFileSet.get(R0).get<uint64_t>();
         uint64_t systemTimer = core.getSystemTimer();
@@ -333,8 +345,21 @@ bool ExceptionHandler::init() {
         stateChange.memoryAddressValues.push_back(nanoseconds);
         break;
       }
+      case 123: {  // sched_getaffinity
+        // TODO: Functionality temporarily omitted as it is unused within
+        // workloads regions of interest and not required for their simulation
+        stateChange = {};
+        break;
+      }
       case 134: {  // rt_sigaction
-        // TODO Implement syscall logic. Ignored for now as it's assumed the
+        // TODO: Implement syscall logic. Ignored for now as it's assumed the
+        // current use of this syscall is to setup error handlers. Simualted
+        // code is expected to work so no need for these handlers.
+        stateChange = {};
+        break;
+      }
+      case 135: {  // rt_sigprocmask
+        // TODO: Implement syscall logic. Ignored for now as it's assumed the
         // current use of this syscall is to setup error handlers. Simualted
         // code is expected to work so no need for these handlers.
         stateChange = {};
