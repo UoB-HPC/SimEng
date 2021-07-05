@@ -342,6 +342,15 @@ void Instruction::execute() {
       results[0] = x + (VL * y);
       break;
     }
+    case Opcode::AArch64_ADDVv8i8v: {  // addv bd, vn.8b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      uint8_t out[16] = {0};
+      for (int i = 0; i < 8; i++) {
+        out[0] += n[i];
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm{, shift}
       auto x = operands[0].get<uint32_t>();
       auto y = shiftValue(static_cast<uint32_t>(metadata.operands[2].imm),
@@ -356,6 +365,14 @@ void Instruction::execute() {
                           metadata.operands[2].shift.type,
                           metadata.operands[2].shift.value);
       results[0] = static_cast<uint64_t>(x + y);
+      break;
+    }
+    case Opcode::AArch64_ADDWrx: {  // add wd, wn, wm{, extend #amount}
+      auto x = operands[0].get<uint32_t>();
+      auto y =
+          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.value);
+      results[0] = x + y;
       break;
     }
     case Opcode::AArch64_ADDXri: {  // add xd, xn, #imm{, shift}
@@ -814,6 +831,18 @@ void Instruction::execute() {
       const uint64_t VL_bits = 512;
       const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
       results[0] = (VL_bits / 32) * imm;
+      break;
+    }
+    case Opcode::AArch64_CNTv8i8: {  // cnt vd.8b, vn.8b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      uint8_t out[16] = {0};
+      for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+          // Move queried bit to LSB and extract via an AND operator
+          out[i] += ((n[i] >> j) & 1);
+        }
+      }
+      results[0] = out;
       break;
     }
     case Opcode::AArch64_CPYi32: {  // dup vd, vn.s[index]
@@ -2524,6 +2553,10 @@ void Instruction::execute() {
       results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
       break;
     }
+    case Opcode::AArch64_LDARW: {  // ldar wt, [xn]
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      break;
+    }
     case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
       results[0] = memoryData[0].zeroExtend(4, 8);
       break;
@@ -3642,6 +3675,10 @@ void Instruction::execute() {
 
       break;
     }
+    case Opcode::AArch64_STLRW: {  // stlr wt, [xn]
+      memoryData[0] = operands[0];
+      break;
+    }
     case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]
       memoryData[0] = operands[0];
       // TODO: Implement atomic memory access
@@ -3925,6 +3962,12 @@ void Instruction::execute() {
       results[0] = static_cast<uint64_t>(0);
       break;
     }
+    case Opcode::AArch64_STXRX: {  // stxr ws, xt, [xn]
+      memoryData[0] = operands[0];
+      // TODO: Implement atomic memory access
+      results[0] = static_cast<uint64_t>(0);
+      break;
+    }
     case Opcode::AArch64_SUBv4i32: {  // sub vd.4s, vn.4s, vm.4s
       const uint32_t* n = operands[0].getAsVector<uint32_t>();
       const uint32_t* m = operands[1].getAsVector<uint32_t>();
@@ -4045,6 +4088,14 @@ void Instruction::execute() {
       auto y = shiftValue(operands[1].get<uint64_t>(),
                           metadata.operands[2].shift.type,
                           metadata.operands[2].shift.value);
+      results[0] = x - y;
+      break;
+    }
+    case Opcode::AArch64_SUBXrx: {  // sub xd, xn, wm{, extend #amount}
+      auto x = operands[0].get<uint64_t>();
+      auto y =
+          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.value);
       results[0] = x - y;
       break;
     }
@@ -4244,6 +4295,18 @@ void Instruction::execute() {
     case Opcode::AArch64_UMOVvi64: {  // umov xd, vn.d[index]
       const uint64_t* vec = operands[0].getAsVector<uint64_t>();
       results[0] = vec[metadata.operands[1].vector_index];
+      break;
+    }
+    case Opcode::AArch64_UMOVvi8: {  // umov wd, vn.b[index]
+      const uint8_t* vec = operands[0].getAsVector<uint8_t>();
+      results[0] = vec[metadata.operands[1].vector_index];
+      break;
+    }
+    case Opcode::AArch64_UMSUBLrrr: {  // umsubl xd, wn, wm, xa
+      uint64_t n = static_cast<uint64_t>(operands[0].get<uint32_t>());
+      uint64_t m = static_cast<uint64_t>(operands[1].get<uint32_t>());
+      uint64_t a = operands[2].get<uint64_t>();
+      results[0] = a - (n * m);
       break;
     }
     case Opcode::AArch64_UMULHrr: {  // umulh xd, xn, xm
