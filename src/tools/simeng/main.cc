@@ -290,6 +290,32 @@ int main(int argc, char** argv) {
             << std::round(khz) << " kHz, " << std::setprecision(2) << mips
             << " MIPS)" << std::endl;
 
+#ifdef YAML_OUTPUT
+
+  YAML::Emitter out;
+  out << YAML::BeginDoc << YAML::BeginMap;
+  out << YAML::Key << "build metadata" << YAML::Value;
+  out << YAML::BeginSeq;
+  out << "Version: " SIMENG_VERSION;
+  out << "Compile Time - Date: " __TIME__ " - " __DATE__;
+  out << "Build type: " SIMENG_BUILD_TYPE;
+  out << "Compile options: " SIMENG_COMPILE_OPTIONS;
+  out << "Test suite: " SIMENG_ENABLE_TESTS;
+  out << YAML::EndSeq;
+  for (const auto& [key, value] : stats) {
+    out << YAML::Key << key << YAML::Value << value;
+  }
+  out << YAML::Key << "duration" << YAML::Value << duration;
+  out << YAML::Key << "mips" << YAML::Value << mips;
+  out << YAML::Key << "cycles_per_sec" << YAML::Value
+      << std::stod(stats["cycles"]) / (duration / 1000.0);
+  out << YAML::EndMap << YAML::EndDoc;
+
+  std::cout << "YAML-SEQ\n";
+  std::cout << out.c_str() << std::endl;
+
+#endif
+
   delete[] processMemory;
 
   return 0;
