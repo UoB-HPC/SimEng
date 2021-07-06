@@ -164,6 +164,10 @@ void FetchUnit::requestFromPC() {
   // Do nothing if buffer already contains enough data
   if (bufferedBytes_ >= isa_.getMaxInstructionSize()) return;
 
+  // Do nothing if unit has halted to avoid invalid speculative memory reads
+  // beyond the programByteLength_
+  if (hasHalted_) return;
+
   uint64_t blockAddress;
   if (bufferedBytes_ > 0) {
     // There's already some data in the buffer, so fetch the next block
