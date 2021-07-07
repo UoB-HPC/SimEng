@@ -14,7 +14,7 @@ std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
 Architecture::Architecture(kernel::Linux& kernel, YAML::Node config) : linux_(kernel) {
-  cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCVC, &capstoneHandle);
+  cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
   if (n != CS_ERR_OK) {
     std::cerr << "Could not create capstone handle due to error " << n << std::endl;
     exit(1);
@@ -130,6 +130,12 @@ ProcessStateChange Architecture::getInitialState() const {
   ProcessStateChange changes;
   // Set ProcessStateChange type
   changes.type = ChangeType::REPLACEMENT;
+
+  // TODO Remove after testing
+  for (int i = 0; i < 32; i++) {
+    changes.modifiedRegisters.push_back({RegisterType::GENERAL, static_cast<uint16_t>(i)});
+    changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(5));
+  }
 
   uint64_t stackPointer = linux_.getInitialStackPointer();
   // Set the stack pointer register

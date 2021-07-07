@@ -187,11 +187,150 @@ void Instruction::execute() {
 
   executed_ = true;
   switch (metadata.opcode) {
-    case Opcode::RISCV_ADDI: {  // addi ad, an, #imm
+    case Opcode::RISCV_SLLW: {
+      // TODO check this for output size
+      const int32_t rs1 = operands[0].get<int32_t>();
+      const int32_t rs2 = operands[1].get<int32_t>();
+      int64_t out = static_cast<int32_t>(rs1 << rs2);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_SLLIW: {
+      const int32_t n = operands[0].get<uint32_t>();
+      const int32_t m = metadata.operands[2].imm;
+      uint64_t out = static_cast<uint32_t>(n << m);
+      results[0] = out;
+      break;
+    }case Opcode::RISCV_SRLW: {
+      // TODO check this for output size
+      const uint32_t n = operands[0].get<uint32_t>();
+      const uint32_t m = operands[1].get<uint32_t>();
+      uint64_t out = static_cast<uint32_t>(n >> m);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_SRLIW: {
+      const uint32_t n = operands[0].get<uint32_t>();
+      const uint32_t m = metadata.operands[2].imm;
+      uint64_t out = static_cast<uint32_t>(n >> m);
+      results[0] = out;
+      break;
+    }case Opcode::RISCV_SRAW: {
+      // TODO check this for output size
+      const int32_t n = operands[0].get<int32_t>();
+      const int32_t m = operands[1].get<int32_t>();
+      int64_t out = static_cast<int32_t>(n >> m);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_SRAIW: {
+      const int32_t n = operands[0].get<int32_t>();
+      const int32_t m = metadata.operands[2].imm;
+      int64_t out = static_cast<int32_t>(n >> m);
+      results[0] = out;
+      break;
+    }case Opcode::RISCV_ADD: {
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = operands[1].get<uint64_t>();
+      uint64_t out = static_cast<uint64_t>(n + m);
+      results[0] = out;
+      break;
+    }case Opcode::RISCV_ADDW: {
+      //TODO check this
+      const int32_t n = operands[0].get<int32_t>();
+      const int32_t m = operands[1].get<int32_t>();
+      int64_t out = static_cast<int64_t>(static_cast<int32_t>(n + m));
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_ADDI: {  // addi ad, an, #imm
       const uint64_t n = operands[0].get<uint64_t>();
       const uint64_t m = metadata.operands[2].imm;
       uint64_t out = static_cast<uint64_t>(n + m);
       results[0] = out;
+      break;
+    } case Opcode::RISCV_SUB: {
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = operands[1].get<uint64_t>();
+      uint64_t out = static_cast<uint64_t>(m - n);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_SUBW: {
+      const int32_t n = operands[0].get<int32_t>();
+      const int32_t m = operands[1].get<int32_t>();
+      int64_t out = static_cast<int64_t>(static_cast<int32_t>(m - n));
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_XOR: {
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = operands[1].get<uint64_t>();
+      uint64_t out = static_cast<uint64_t>(m ^ n);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_XORI: {
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = metadata.operands[2].imm;
+      uint64_t out = static_cast<uint64_t>(n ^ m);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_OR: {
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = operands[1].get<uint64_t>();
+      uint64_t out = static_cast<uint64_t>(m | n);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_ORI: {
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = metadata.operands[2].imm;
+      uint64_t out = static_cast<uint64_t>(n | m);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_AND: {
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = operands[1].get<uint64_t>();
+      uint64_t out = static_cast<uint64_t>(m & n);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_ANDI: {
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = metadata.operands[2].imm;
+      uint64_t out = static_cast<uint64_t>(n & m);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_SLT: {
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs2 = operands[1].get<int64_t>();
+      if (rs1 < rs2) {
+        results[0] = static_cast<uint64_t>(1);
+      } else {
+        results[0] = static_cast<uint64_t>(0);
+      }
+      break;
+    } case Opcode::RISCV_SLTU: {
+      //TODO test this
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = operands[1].get<uint64_t>();
+      if (rs1 < rs2) {
+        results[0] = static_cast<uint64_t>(1);
+      } else {
+        results[0] = static_cast<uint64_t>(0);
+      }
+      break;
+    } case Opcode::RISCV_SLTI: {
+      // TODO test this
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t imm = metadata.operands[2].imm;
+      if (rs1 < imm) {
+        results[0] = static_cast<uint64_t>(1);
+      } else {
+        results[0] = static_cast<uint64_t>(0);
+      }
+      break;
+    } case Opcode::RISCV_SLTIU: {
+      // TODO test this
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t imm = static_cast<int64_t>(metadata.operands[2].imm);
+      if (rs1 < imm) {
+        results[0] = static_cast<uint64_t>(1);
+      } else {
+        results[0] = static_cast<uint64_t>(0);
+      }
       break;
     }
     default:
