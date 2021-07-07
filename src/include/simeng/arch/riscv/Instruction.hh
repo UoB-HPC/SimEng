@@ -129,9 +129,6 @@ class Instruction : public simeng::Instruction {
   /** Is this a branch operation? */
   bool isBranch() const override;
 
-  /** Is this a arithmetic simd operation? */
-  bool isASIMD() const override;
-
   /** Is this a return instruction? */
   bool isRET() const override;
 
@@ -141,11 +138,11 @@ class Instruction : public simeng::Instruction {
   /** Is this a SVE instruction? */
   bool isSVE() const override;
 
-  /** Is this a predicate setting instruction? */
-  bool isPredicate() const override;
-
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
+
+  /** Get this instruction's supported set of ports. */
+  std::vector<uint8_t> getSupportedPorts() override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;

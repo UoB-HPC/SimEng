@@ -97,14 +97,15 @@ void Instruction::decode() {
   for (size_t i = 0; i < metadata.operandCount; i++) {
     const auto& op = metadata.operands[i];
 
+    // Capstone produces 1 indexed register operands
     if (i == 0 && op.type == RISCV_OP_REG) {
-      destinationRegisters[destinationRegisterCount] = csRegToRegister(op.reg);
+      destinationRegisters[destinationRegisterCount] = csRegToRegister(op.reg - 1);
 
       destinationRegisterCount++;
     }
 
     if (i > 0 && op.type == RISCV_OP_REG) {
-      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
+      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg - 1);
 
       if (sourceRegisters[sourceRegisterCount] ==
           Instruction::ZERO_REGISTER) {

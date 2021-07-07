@@ -200,7 +200,30 @@ int main(int argc, char** argv) {
 
     // RISCV instructions
     uint32_t hex[] = {
-        0x04c78793, // addi a5, a5, 76
+//        0x04c78793, // addi a5, a5, 76
+//        0x00f707bb,
+//        0x02b50533,
+
+        0x02010413,  //        	addi	s0,sp,32
+        0x00f707bb,  //        	addw	a5,a4,a5
+        0x40f707bb,  //        	subw	a5,a4,a5
+        0xff017113,  //       	andi	sp,sp,-16
+        0x40f585b3,  //        	sub	a1,a1,a5
+        0x00f747b3,  //        	xor	a5,a4,a5
+        0x03f8c793,  //        	xori	a5,a7,63
+        0x03f7e793,  //        	ori	a5,a5,63
+        0xfc178793,  //         addi    a5,a5,-63
+        0x00f767b3,  //        	or	a5,a4,a5
+        0x00178793,  //         addi    a5,a5,1
+        0x00f777b3,  //        	and	a5,a4,a5
+        0x00f717bb,  //        	sllw	a5,a4,a5
+        0x0067979b,  //        	slliw	a5,a5,0x6
+        0x40f757bb,  //        	sraw	a5,a4,a5
+        0x4067d79b,  //        	sraiw	a5,a5,0x6
+        0x00f727b3,  //        	slt	a5,a4,a5
+        0x0007879b,  //        	sext.w	a5,a5
+        0x00050793,  //        	mv	a5,a0
+
     };
 
     process = std::make_unique<simeng::kernel::LinuxProcess>(
