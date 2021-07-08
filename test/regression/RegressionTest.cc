@@ -134,9 +134,13 @@ void RegressionTest::run(const char* source, const char* triple) {
 
 void RegressionTest::assemble(const char* source, const char* triple) {
   // Initialise LLVM
-  LLVMInitializeAArch64TargetInfo();
-  LLVMInitializeAArch64TargetMC();
-  LLVMInitializeAArch64AsmParser();
+//  LLVMInitializeAArch64TargetInfo();
+//  LLVMInitializeAArch64TargetMC();
+//  LLVMInitializeAArch64AsmParser();
+
+  LLVMInitializeRISCVTargetInfo();
+  LLVMInitializeRISCVTargetMC();
+  LLVMInitializeRISCVAsmParser();
 
   // Get LLVM target
   std::string errStr;

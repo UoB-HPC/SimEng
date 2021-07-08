@@ -131,12 +131,6 @@ ProcessStateChange Architecture::getInitialState() const {
   // Set ProcessStateChange type
   changes.type = ChangeType::REPLACEMENT;
 
-  // TODO Remove after testing
-  for (int i = 0; i < 32; i++) {
-    changes.modifiedRegisters.push_back({RegisterType::GENERAL, static_cast<uint16_t>(i)});
-    changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(5));
-  }
-
   uint64_t stackPointer = linux_.getInitialStackPointer();
   // Set the stack pointer register
   changes.modifiedRegisters.push_back({RegisterType::GENERAL, 2});
