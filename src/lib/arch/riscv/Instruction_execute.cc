@@ -130,6 +130,16 @@ uint64_t mulhi(uint64_t a, uint64_t b) {
   return multhi;
 }
 
+/** Extend 'bits' by value in position 'msb' of 'bits' (1 indexed) */
+uint64_t bitExtend(uint64_t bits, uint64_t msb) {
+  int64_t leftShift = bits << (64 - msb);
+  int64_t rightShift = leftShift >> (64 - msb);
+  return rightShift;
+}
+
+uint64_t signExtendW(uint64_t bits) {
+  return bitExtend(bits, 32);
+}
 bool conditionHolds(uint8_t cond, uint8_t nzcv) {
   if (cond == 0b1111) {
     return true;
@@ -185,45 +195,84 @@ void Instruction::execute() {
 
   std::cout << metadata.mnemonic << " " << metadata.operandStr << std::endl;
 
+  //      std::cout << rs1 << ">>" << operands[1].get<uint32_t>() << std::endl;
+//      std::cout << out << std::endl;
+
   executed_ = true;
   switch (metadata.opcode) {
-    case Opcode::RISCV_SLLW: {
+    case Opcode::RISCV_SLL: {
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs2 = operands[1].get<int64_t>() & 63; // Only use lowest 6 bits
+      int64_t out = static_cast<int64_t>(rs1 << rs2);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_SLLI: {
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs2 = metadata.operands[2].imm & 63; // Only use lowest 6 bits
+      int64_t out = static_cast<int64_t>(rs1 << rs2);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_SLLW: {
       // TODO check this for output size
       const int32_t rs1 = operands[0].get<int32_t>();
-      const int32_t rs2 = operands[1].get<int32_t>();
-      int64_t out = static_cast<int32_t>(rs1 << rs2);
+      const int32_t rs2 = operands[1].get<int32_t>() & 63; // Only use lowest 6 bits
+      int64_t out = signExtendW(static_cast<int32_t>(rs1 << rs2));
       results[0] = out;
       break;
     } case Opcode::RISCV_SLLIW: {
-      const int32_t n = operands[0].get<uint32_t>();
-      const int32_t m = metadata.operands[2].imm;
-      uint64_t out = static_cast<uint32_t>(n << m);
+      const int32_t rs1 = operands[0].get<uint32_t>();
+      const int32_t rs2 = metadata.operands[2].imm & 63; // Only use lowest 6 bits
+      uint64_t out = signExtendW(static_cast<uint32_t>(rs1 << rs2));
       results[0] = out;
       break;
-    }case Opcode::RISCV_SRLW: {
-      // TODO check this for output size
-      const uint32_t n = operands[0].get<uint32_t>();
-      const uint32_t m = operands[1].get<uint32_t>();
-      uint64_t out = static_cast<uint32_t>(n >> m);
+    } case Opcode::RISCV_SRL: {
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = operands[1].get<uint64_t>() & 63;  // Only use lowest 6 bits
+      uint64_t out = static_cast<uint64_t>(rs1 >> rs2);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_SRLI: {
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = metadata.operands[2].imm & 63; // Only use lowest 6 bits
+      uint64_t out = static_cast<uint64_t>(rs1 >> rs2);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_SRLW: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      const uint32_t rs2 = operands[1].get<uint32_t>() & 63; // Only use lowest 6 bits
+      uint64_t out = signExtendW(static_cast<uint64_t>(rs1 >> rs2));
       results[0] = out;
       break;
     } case Opcode::RISCV_SRLIW: {
-      const uint32_t n = operands[0].get<uint32_t>();
-      const uint32_t m = metadata.operands[2].imm;
-      uint64_t out = static_cast<uint32_t>(n >> m);
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      const uint32_t rs2 =
+          metadata.operands[2].imm & 63;  // Only use lowest 6 bits
+      uint64_t out = signExtendW(static_cast<uint32_t>(rs1 >> rs2));
       results[0] = out;
       break;
-    }case Opcode::RISCV_SRAW: {
+    } case Opcode::RISCV_SRA: {
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs2 = operands[1].get<int64_t>() & 63; // Only use lowest 6 bits
+      int64_t out = static_cast<int64_t>(rs1 >> rs2);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_SRAI: {
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs2 = metadata.operands[2].imm & 63; // Only use lowest 6 bits
+      int64_t out = static_cast<int64_t>(rs1 >> rs2);
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_SRAW: {
       // TODO check this for output size
-      const int32_t n = operands[0].get<int32_t>();
-      const int32_t m = operands[1].get<int32_t>();
-      int64_t out = static_cast<int32_t>(n >> m);
+      const int32_t rs1 = operands[0].get<int32_t>();
+      const int32_t rs2 = operands[1].get<int32_t>() & 63; // Only use lowest 6 bits
+      int64_t out = static_cast<int32_t>(rs1 >> rs2);
       results[0] = out;
       break;
     } case Opcode::RISCV_SRAIW: {
-      const int32_t n = operands[0].get<int32_t>();
-      const int32_t m = metadata.operands[2].imm;
-      int64_t out = static_cast<int32_t>(n >> m);
+      const int32_t rs1 = operands[0].get<int32_t>();
+      const int32_t rs2 = metadata.operands[2].imm & 63; // Only use lowest 6 bits
+      int64_t out = static_cast<int32_t>(rs1 >> rs2);
       results[0] = out;
       break;
     }case Opcode::RISCV_ADD: {
@@ -240,21 +289,21 @@ void Instruction::execute() {
       results[0] = out;
       break;
     } case Opcode::RISCV_ADDI: {  // addi ad, an, #imm
-      const uint64_t n = operands[0].get<uint64_t>();
-      const uint64_t m = metadata.operands[2].imm;
-      uint64_t out = static_cast<uint64_t>(n + m);
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = metadata.operands[2].imm;
+      uint64_t out = static_cast<uint64_t>(rs1 + rs2);
       results[0] = out;
       break;
     } case Opcode::RISCV_SUB: {
-      const uint64_t n = operands[0].get<uint64_t>();
-      const uint64_t m = operands[1].get<uint64_t>();
-      uint64_t out = static_cast<uint64_t>(m - n);
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = operands[1].get<uint64_t>();
+      uint64_t out = static_cast<uint64_t>(rs1 - rs2);
       results[0] = out;
       break;
     } case Opcode::RISCV_SUBW: {
-      const int32_t n = operands[0].get<int32_t>();
-      const int32_t m = operands[1].get<int32_t>();
-      int64_t out = static_cast<int64_t>(static_cast<int32_t>(m - n));
+      const int32_t rs1 = operands[0].get<int32_t>();
+      const int32_t rs2 = operands[1].get<int32_t>();
+      int64_t out = static_cast<int64_t>(static_cast<int32_t>(rs1 - rs2));
       results[0] = out;
       break;
     } case Opcode::RISCV_XOR: {

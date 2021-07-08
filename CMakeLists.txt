@@ -149,7 +149,7 @@ if(SIMENG_ENABLE_TESTS)
 
   else()
 
-    set(LLVM_TARGETS_TO_BUILD "AArch64" CACHE INTERNAL "")
+    set(LLVM_TARGETS_TO_BUILD "AArch64;RISCV" CACHE INTERNAL "")
 
     set(LLVM_BUILD_RUNTIME OFF)
 
@@ -193,6 +193,9 @@ if(SIMENG_ENABLE_TESTS)
   if (NOT "AArch64" IN_LIST LLVM_TARGETS_TO_BUILD)
     message(FATAL_ERROR "LLVM was built without AArch64 target")
   endif()
+  if (NOT "RISCV" IN_LIST LLVM_TARGETS_TO_BUILD)
+      message(FATAL_ERROR "LLVM was built without RISCV target")
+  endif()
 
   ## Setup googletest ##
   FetchContent_MakeAvailable_Args(googletest EXCLUDE_FROM_ALL)
@@ -200,10 +203,14 @@ if(SIMENG_ENABLE_TESTS)
 
   add_subdirectory(test)
   # saves us from having to build all targets before running the tests
-  add_custom_target(test-all
-    COMMAND ${CMAKE_CTEST_COMMAND}
-    DEPENDS unittests regression-aarch64
-  )
+#  add_custom_target(test-all
+#    COMMAND ${CMAKE_CTEST_COMMAND}
+#    DEPENDS unittests regression-aarch64
+#  )
+    add_custom_target(test-all
+        COMMAND ${CMAKE_CTEST_COMMAND}
+        DEPENDS unittests regression-riscv
+    )
 endif()
 
 # include sources

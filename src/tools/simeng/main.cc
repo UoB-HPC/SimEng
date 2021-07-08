@@ -221,8 +221,9 @@ int main(int argc, char** argv) {
         0x40f757bb,  //        	sraw	a5,a4,a5
         0x4067d79b,  //        	sraiw	a5,a5,0x6
         0x00f727b3,  //        	slt	a5,a4,a5
-        0x0007879b,  //        	sext.w	a5,a5
-        0x00050793,  //        	mv	a5,a0
+        0xfff7c793,  //         not	a5,a5
+//        0x0007879b,  //        	sext.w	a5,a5
+//        0x00050793,  //        	mv	a5,a0
 
     };
 
