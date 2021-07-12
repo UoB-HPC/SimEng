@@ -188,7 +188,7 @@ class Instruction {
   uint64_t branchAddress_;
 
   /** Was the branch taken? */
-  bool branchTaken_;
+  bool branchTaken_ = false;
 
   // Flushing
   /** This instruction's sequence ID; a higher ID represents a chronologically
