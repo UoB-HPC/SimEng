@@ -37,6 +37,49 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
   }
 }
 
+/** Extend `value` according to `extendType`, and left-shift the result by
+ * `shift` */
+uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
+  if (extendType == ARM64_EXT_INVALID && shift == 0) {
+    // Special case: an invalid shift type with a shift amount of 0 implies an
+    // identity operation
+    return value;
+  }
+
+  uint64_t extended;
+  switch (extendType) {
+    case ARM64_EXT_UXTB:
+      extended = static_cast<uint8_t>(value);
+      break;
+    case ARM64_EXT_UXTH:
+      extended = static_cast<uint16_t>(value);
+      break;
+    case ARM64_EXT_UXTW:
+      extended = static_cast<uint32_t>(value);
+      break;
+    case ARM64_EXT_UXTX:
+      extended = value;
+      break;
+    case ARM64_EXT_SXTB:
+      extended = static_cast<int8_t>(value);
+      break;
+    case ARM64_EXT_SXTH:
+      extended = static_cast<int16_t>(value);
+      break;
+    case ARM64_EXT_SXTW:
+      extended = static_cast<int32_t>(value);
+      break;
+    case ARM64_EXT_SXTX:
+      extended = value;
+      break;
+    default:
+      assert(false && "Invalid extension type");
+      return 0;
+  }
+
+  return extended << shift;
+}
+
 /** Manipulate the bitfield `value` according to the logic of the (U|S)BFM ARMv8
  * instructions. */
 template <typename T>
@@ -189,14 +232,81 @@ void Instruction::executionNYI() {
 }
 
 template <typename T>
-void ADDSrs(RegisterValue operand0, RegisterValue operand1, InstructionMetadata metadata, std::array<RegisterValue,3>& results) {
-  T x = operand0.get<T>();
-  T y = shiftValue(operand1.get<T>(),
-                   metadata.operands[2].shift.type,
-                   metadata.operands[2].shift.value);
+void addBehaviour(unsigned int op, T x, T y,
+                  std::array<RegisterValue, 3>& results) {
   auto [result, nzcv] = addWithCarry(x, y, 0);
-  results[0] = nzcv;
-  results[1] = RegisterValue(result,8);
+  if (op >= Opcode::AArch64_ADDSWri && op <= Opcode::AArch64_ADDSXrx64) {
+    results[0] = nzcv;
+    results[1] = RegisterValue(result, 8);
+    return;
+  }
+  if (op >= Opcode::AArch64_ADDWri && op <= Opcode::AArch64_ADDXrx64) {
+    results[0] = RegisterValue(result, 8);
+    return;
+  }
+  assert(false && "Attempted to execute ADD with wrong opcode");
+}
+
+template <typename RegType>
+void addHelper(RegisterValue operand0, RegisterValue operand1,
+               InstructionMetadata metadata,
+               std::array<RegisterValue, 3>& results) {
+  RegType x = operand0.get<RegType>();
+  RegType y;
+  switch (metadata.opcode) {
+    case Opcode::AArch64_ADDSWri:
+    case Opcode::AArch64_ADDSXri:
+    case Opcode::AArch64_ADDWri:
+    case Opcode::AArch64_ADDXri:
+      y = shiftValue(static_cast<RegType>(metadata.operands[2].imm),
+                     metadata.operands[2].shift.type,
+                     metadata.operands[2].shift.value);
+      break;
+    case Opcode::AArch64_ADDSWrs:
+    case Opcode::AArch64_ADDSXrs:
+    case Opcode::AArch64_ADDWrs:
+    case Opcode::AArch64_ADDXrs:
+      y = shiftValue(operand1.get<RegType>(), metadata.operands[2].shift.type,
+                     metadata.operands[2].shift.value);
+      break;
+    case Opcode::AArch64_ADDSWrx:
+    case Opcode::AArch64_ADDSXrx:
+    case Opcode::AArch64_ADDWrx:
+    case Opcode::AArch64_ADDXrx:
+      y = static_cast<RegType>(extendValue(operand1.get<uint32_t>(),
+                                           metadata.operands[2].ext,
+                                           metadata.operands[2].shift.value));
+      break;
+    case Opcode::AArch64_ADDSXrx64:
+    case Opcode::AArch64_ADDXrx64:
+      y = static_cast<RegType>(extendValue(operand1.get<uint64_t>(),
+                                           metadata.operands[2].ext,
+                                           metadata.operands[2].shift.value));
+      break;
+    default:
+      assert(false && "Attempted to execute ADD with wrong opcode");
+      return;
+  }
+  addBehaviour<RegType>(metadata.opcode, x, y, results);
+}
+
+template <typename ElemType, typename VecType>
+void ADDv(RegisterValue operand0, RegisterValue operand1,
+          std::array<RegisterValue, 3>& results) {
+  assert(sizeof(VecType) >= sizeof(ElemType) &&
+         "Attempted to execute SIMD operation with invalid vector size");
+  const ElemType* n = operand0.getAsVector<ElemType>();
+  const ElemType* m = operand1.getAsVector<ElemType>();
+  int outSize = sizeof(__uint128_t) / sizeof(ElemType);
+  int ops = sizeof(VecType) / sizeof(ElemType);
+  ElemType out[outSize];
+  for (int i = 0; i < outSize; i++) {
+    out[i] = 0;
+  }
+  for (int i = 0; i < ops; i++) {
+    out[i] = static_cast<ElemType>(n[i] + m[i]);
+  }
+  results[0] = RegisterValue(out, sizeof(ElemType) * outSize);
 }
 
 void Instruction::execute() {
@@ -222,6 +332,8 @@ void Instruction::execute() {
                          static_cast<uint32_t>(n[2] + m[2]),
                          static_cast<uint32_t>(n[3] + m[3])};
       results[0] = out;
+
+      // ADDv<uint32_t,__uint128_t>(operands[0],operands[1],results);
       break;
     }
     case Opcode::AArch64_ADDPv16i8: {  // addp vd.16b, vn.16b, vm.16b
@@ -275,77 +387,31 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_ADDSWri: {  // adds wd, wn, #imm{, shift}
-      auto x = operands[0].get<uint32_t>();
-      auto y = shiftValue(static_cast<uint32_t>(metadata.operands[2].imm),
-                          metadata.operands[2].shift.type,
-                          metadata.operands[2].shift.value);
-      auto [result, nzcv] = addWithCarry(x, y, 0);
-      results[0] = nzcv;
-      results[1] = RegisterValue(result, 8);
+      addHelper<uint32_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDSWrs: {  // adds wd, wn, wm{, shift}
-      // auto x = operands[0].get<uint32_t>();
-      // auto y = shiftValue(operands[1].get<uint32_t>(),
-      //                     metadata.operands[2].shift.type,
-      //                     metadata.operands[2].shift.value);
-      // auto [result, nzcv] = addWithCarry(x, y, 0);
-      // results[0] = nzcv;
-      // results[1] = RegisterValue(result, 8);
-
-      ADDSrs<uint32_t>(operands[0],operands[1],metadata,results);
-
+      addHelper<uint32_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDSWrx: {  // adds wd, wn, wm{, extend {#amount}}
-      auto x = operands[0].get<uint32_t>();
-      auto y = static_cast<uint32_t>(
-          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
-                      metadata.operands[2].shift.value));
-      auto [result, nzcv] = addWithCarry(x, y, 0);
-      results[0] = nzcv;
-      results[1] = RegisterValue(result, 8);
+      addHelper<uint32_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDSXri: {  // adds xd, xn, #imm{, shift}
-      auto x = operands[0].get<uint64_t>();
-      auto y = shiftValue(static_cast<uint64_t>(metadata.operands[2].imm),
-                          metadata.operands[2].shift.type,
-                          metadata.operands[2].shift.value);
-      auto [result, nzcv] = addWithCarry(x, y, 0);
-      results[0] = nzcv;
-      results[1] = result;
+      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDSXrs: {  // adds xd, xn, xm{, shift}
-      // auto x = operands[0].get<uint64_t>();
-      // auto y = shiftValue(operands[1].get<uint64_t>(),
-      //                     metadata.operands[2].shift.type,
-      //                     metadata.operands[2].shift.value);
-      // auto [result, nzcv] = addWithCarry(x, y, 0);
-      // results[0] = nzcv;
-      // results[1] = result;
-      ADDSrs<uint64_t>(operands[0],operands[1],metadata,results);
+      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDSXrx: {  // adds xd, xn, xm{, extend {#amount}}
-      auto x = operands[0].get<uint64_t>();
-      auto y =
-          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
-                      metadata.operands[2].shift.value);
-      auto [result, nzcv] = addWithCarry(x, y, 0);
-      results[0] = nzcv;
-      results[1] = result;
+      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDSXrx64: {  // adds xd, xn, xm{, extend {#amount}}
-      auto x = operands[0].get<uint64_t>();
-      auto y =
-          extendValue(operands[1].get<uint64_t>(), metadata.operands[2].ext,
-                      metadata.operands[2].shift.value);
-      auto [result, nzcv] = addWithCarry(x, y, 0);
-      results[0] = nzcv;
-      results[1] = result;
+      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDVL_XXI: {  // addvl xd, xn, #imm
@@ -358,51 +424,27 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm{, shift}
-      auto x = operands[0].get<uint32_t>();
-      auto y = shiftValue(static_cast<uint32_t>(metadata.operands[2].imm),
-                          metadata.operands[2].shift.type,
-                          metadata.operands[2].shift.value);
-      results[0] = RegisterValue(x + y, 8);
+      addHelper<uint32_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDWrs: {  // add wd, wn, wm{, shift #amount}
-      auto x = operands[0].get<uint32_t>();
-      auto y = shiftValue(operands[1].get<uint32_t>(),
-                          metadata.operands[2].shift.type,
-                          metadata.operands[2].shift.value);
-      results[0] = static_cast<uint64_t>(x + y);
+      addHelper<uint32_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDXri: {  // add xd, xn, #imm{, shift}
-      auto x = operands[0].get<uint64_t>();
-      auto y = shiftValue(static_cast<uint64_t>(metadata.operands[2].imm),
-                          metadata.operands[2].shift.type,
-                          metadata.operands[2].shift.value);
-      results[0] = RegisterValue(x + y);
+      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDXrs: {  // add xd, xn, xm, {shift #amount}
-      auto x = operands[0].get<uint64_t>();
-      auto y = shiftValue(operands[1].get<uint64_t>(),
-                          metadata.operands[2].shift.type,
-                          metadata.operands[2].shift.value);
-      results[0] = x + y;
+      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDXrx: {  // add xd, xn, wm{, extend {#amount}}
-      auto x = operands[0].get<uint64_t>();
-      auto y =
-          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
-                      metadata.operands[2].shift.value);
-      results[0] = x + y;
+      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADDXrx64: {  // add xd, xn, xm{, extend {#amount}}
-      auto x = operands[0].get<uint64_t>();
-      auto y =
-          extendValue(operands[1].get<uint64_t>(), metadata.operands[2].ext,
-                      metadata.operands[2].shift.value);
-      results[0] = x + y;
+      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADR: {  // adr xd, #imm
