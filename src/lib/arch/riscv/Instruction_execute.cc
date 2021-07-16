@@ -140,6 +140,13 @@ uint64_t bitExtend(uint64_t bits, uint64_t msb) {
 uint64_t signExtendW(uint64_t bits) {
   return bitExtend(bits, 32);
 }
+
+uint64_t zeroExtend(uint64_t bits, uint64_t msb) {
+  uint64_t leftShift = bits << (64 - msb);
+  uint64_t rightShift = leftShift >> (64 - msb);
+  return rightShift;
+}
+
 bool conditionHolds(uint8_t cond, uint8_t nzcv) {
   if (cond == 0b1111) {
     return true;
@@ -200,7 +207,34 @@ void Instruction::execute() {
 
   executed_ = true;
   switch (metadata.opcode) {
-    case Opcode::RISCV_SLL: {
+    case Opcode::RISCV_BEQ: {  // Temporary syscall to get heap address
+      exceptionEncountered_ = true;
+      exception_ = InstructionException::SupervisorCall;
+      break;
+    } case Opcode::RISCV_LB: {
+      results[0] = bitExtend(memoryData[0].get<uint64_t>(), 8);
+      break;
+    } case Opcode::RISCV_LBU: {
+      results[0] = zeroExtend(memoryData[0].get<uint64_t>(), 8);
+      break;
+    } case Opcode::RISCV_LH: {
+      results[0] = bitExtend(memoryData[0].get<uint64_t>(), 16);
+      break;
+    } case Opcode::RISCV_LHU: {
+      results[0] = zeroExtend(memoryData[0].get<uint64_t>(), 16);
+      break;
+    } case Opcode::RISCV_LW: {
+      results[0] = bitExtend(memoryData[0].get<uint64_t>(), 32);
+      break;
+    } case Opcode::RISCV_LWU: {
+      results[0] = zeroExtend(memoryData[0].get<uint64_t>(), 32);
+      break;
+    } case Opcode::RISCV_LD: {
+      results[0] = memoryData[0];
+//      std::cout << operands[0].get<uint64_t>() << "+" << metadata.operands[1].mem.disp << std::endl;
+//      std::cout << std::hex << results[0].get<uint64_t>() << std::dec << std::endl;
+      break;
+    } case Opcode::RISCV_SLL: {
       const int64_t rs1 = operands[0].get<int64_t>();
       const int64_t rs2 = operands[1].get<int64_t>() & 63; // Only use lowest 6 bits
       int64_t out = static_cast<int64_t>(rs1 << rs2);

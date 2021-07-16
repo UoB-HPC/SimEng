@@ -5,6 +5,7 @@ add_executable(regression-riscv
             LoadStoreQueue.cc
             SmokeTest.cc
             instructions/arithmetic.cc
+            instructions/load.cc
                )
 target_include_directories(regression-riscv PRIVATE
                            ${CMAKE_CURRENT_SOURCE_DIR})
