@@ -357,12 +357,14 @@ bool ExceptionHandler::init() {
 //      case 177:  // getegid
 //        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getegid()}};
 //        break;
-//      case 214: {  // brk
-//        auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
-//        stateChange = {
-//            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
-//        break;
-//      }
+      case 214: {  // brk
+        std::cout << "SYS CALL CORRECT:" << std::endl;
+        auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
+        std::cout << "SYS CALL CORRECT:" << result << std::endl;
+        break;
+      }
       default:
         printException(instruction_);
         std::cout << "Unrecognised syscall: " << syscallId << std::endl;

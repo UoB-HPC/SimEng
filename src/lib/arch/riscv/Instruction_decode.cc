@@ -90,16 +90,17 @@ void Instruction::decode() {
 //    sourceRegisterCount++;
 //    operandsPending++;
 //  }
-//
-//  bool accessesMemory = false;
-//
+
+  bool accessesMemory = false;
+
   // Extract explicit register accesses
   for (size_t i = 0; i < metadata.operandCount; i++) {
     const auto& op = metadata.operands[i];
 
     // Capstone produces 1 indexed register operands
     if (i == 0 && op.type == RISCV_OP_REG) {
-      destinationRegisters[destinationRegisterCount] = csRegToRegister(op.reg - 1);
+      destinationRegisters[destinationRegisterCount] =
+          csRegToRegister(op.reg - 1);
 
       destinationRegisterCount++;
     }
@@ -107,76 +108,72 @@ void Instruction::decode() {
     if (i > 0 && op.type == RISCV_OP_REG) {
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg - 1);
 
-      if (sourceRegisters[sourceRegisterCount] ==
-          Instruction::ZERO_REGISTER) {
+      if (sourceRegisters[sourceRegisterCount] == Instruction::ZERO_REGISTER) {
         // Catch zero register references and pre-complete those operands
         operands[sourceRegisterCount] = RegisterValue(0, 8);
       } else {
         operandsPending++;
       }
 
+      sourceRegisterCount++;
+    }
 
-      sourceRegisterCount ++;
+    if (i > 0 && op.type == RISCV_OP_REG) {  // Register operand
+                                    //      // writes
+                                    //      if ((op. ) && op.reg != 0) {
+      //        // Add register writes to destinations, but skip zero-register
+      //        // destinations
+      //        destinationRegisters[destinationRegisterCount] =
+      //            csRegToRegister(op.reg);
+      //
+      //        destinationRegisterCount++;
+      //      }
+      //      if (op.access & cs_ac_type::CS_AC_READ) {
+      //        // Add register reads to destinations
+      //        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
+      //        if (sourceRegisters[sourceRegisterCount].type == RegisterType::VECTOR) {
+      //          isASIMD_ = true;
+      //        }
+      //
+      //        if (sourceRegisters[sourceRegisterCount] ==
+      //            Instruction::ZERO_REGISTER) {
+      //          // Catch zero register references and pre-complete those operands operands[sourceRegisterCount] = RegisterValue(0, 8);
+      //        } else {
+      //          operandsPending++;
+      //        }
+      //        sourceRegisterCount++;
+      //      }
+    } else if (i > 0 && op.type == RISCV_OP_MEM) {  // Memory operand
+      accessesMemory = true;
+      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base - 1);
+      sourceRegisterCount++;
+      operandsPending++;
+      //
+      //      if (metadata.writeback) {
+      //        // Writeback instructions modify the base address
+      //        destinationRegisters[destinationRegisterCount] =
+      //            csRegToRegister(op.mem.base);
+      //        destinationRegisterCount++;
+      //      }
+      //      if (op.mem.index) {
+      //        // Register offset; add to sources
+      //        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.index); sourceRegisterCount++;
+      //        operandsPending++;
+      //      }
+      //    } else if (op.type == ARM64_OP_REG_MRS) {
+      //      sourceRegisters[sourceRegisterCount] = {
+      //          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
+      //      sourceRegisterCount++;
+      //      operandsPending++;
+      //    } else if (op.type == ARM64_OP_REG_MSR) {
+      //      destinationRegisters[destinationRegisterCount] = {
+      //          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
+      //      destinationRegisterCount++;
+      //    }
+      //
+      //    if (op.shift.value > 0) isShift_ = true;  // Identify shift operations
     }
   }
-
-//    if (op.type == RISCV_OP_REG) {  // Register operand
-//      // writes
-//      if ((op. ) && op.reg != 0) {
-//        // Add register writes to destinations, but skip zero-register
-//        // destinations
-//        destinationRegisters[destinationRegisterCount] =
-//            csRegToRegister(op.reg);
-//
-//        destinationRegisterCount++;
-//      }
-//      if (op.access & cs_ac_type::CS_AC_READ) {
-//        // Add register reads to destinations
-//        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
-//        if (sourceRegisters[sourceRegisterCount].type == RegisterType::VECTOR) {
-//          isASIMD_ = true;
-//        }
-//
-//        if (sourceRegisters[sourceRegisterCount] ==
-//            Instruction::ZERO_REGISTER) {
-//          // Catch zero register references and pre-complete those operands
-//          operands[sourceRegisterCount] = RegisterValue(0, 8);
-//        } else {
-//          operandsPending++;
-//        }
-//        sourceRegisterCount++;
-//      }
-//    } else if (op.type == ARM64_OP_MEM) {  // Memory operand
-//      accessesMemory = true;
-//      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
-//      sourceRegisterCount++;
-//      operandsPending++;
-//
-//      if (metadata.writeback) {
-//        // Writeback instructions modify the base address
-//        destinationRegisters[destinationRegisterCount] =
-//            csRegToRegister(op.mem.base);
-//        destinationRegisterCount++;
-//      }
-//      if (op.mem.index) {
-//        // Register offset; add to sources
-//        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.index);
-//        sourceRegisterCount++;
-//        operandsPending++;
-//      }
-//    } else if (op.type == ARM64_OP_REG_MRS) {
-//      sourceRegisters[sourceRegisterCount] = {
-//          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
-//      sourceRegisterCount++;
-//      operandsPending++;
-//    } else if (op.type == ARM64_OP_REG_MSR) {
-//      destinationRegisters[destinationRegisterCount] = {
-//          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
-//      destinationRegisterCount++;
-//    }
-//
-//    if (op.shift.value > 0) isShift_ = true;  // Identify shift operations
-//  }
 //
 //  if (metadata.setsFlags) isShift_ = true;
 //
@@ -186,21 +183,22 @@ void Instruction::decode() {
 //      isBranch_ = true;
 //    }
 //  }
-//  // Identify loads/stores
-//  if (accessesMemory) {
-//    // Check first operand access to determine if it's a load or store
-//    if (metadata.operands[0].access & CS_AC_WRITE) {
-//      if (metadata.id == ARM64_INS_STXR || metadata.id == ARM64_INS_STLXR) {
-//        // Exceptions to this is load condition are exclusive store with a
-//        // success flag as first operand
-//        isStore_ = true;
-//      } else {
-//        isLoad_ = true;
-//      }
-//    } else {
-//      isStore_ = true;
-//    }
-//  }
+  // Identify loads/stores
+  if (accessesMemory) {
+    switch (metadata.opcode) {
+      case Opcode::RISCV_LB:
+      case Opcode::RISCV_LBU:
+      case Opcode::RISCV_LH:
+      case Opcode::RISCV_LHU:
+      case Opcode::RISCV_LW:
+      case Opcode::RISCV_LWU:
+      case Opcode::RISCV_LD:
+        isLoad_ = true;
+    }
+    if (!isLoad()) {
+      isStore_ = true;
+    }
+  }
 //  if (metadata.opcode == Opcode::AArch64_LDRXl ||
 //      metadata.opcode == Opcode::AArch64_LDRSWl) {
 //    // Literal loads aren't flagged as having a memory operand, so these must be
