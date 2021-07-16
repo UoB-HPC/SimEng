@@ -11,23 +11,32 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
   assert((isLoad() || isStore()) &&
          "generateAddresses called on non-load-or-store instruction");
 
-  uint64_t address = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+  uint64_t address;
+  if (isLoad()) {
+    address = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
+  } else {
+    address = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
+  }
 
   switch (metadata.opcode) {
+    case Opcode::RISCV_SD:
     case Opcode::RISCV_LD: {
       setMemoryAddresses({{address, 8}});
       break;
     }
+    case Opcode::RISCV_SW:
     case Opcode::RISCV_LW:
     case Opcode::RISCV_LWU: {
       setMemoryAddresses({{address, 4}});
       break;
     }
+    case Opcode::RISCV_SH:
     case Opcode::RISCV_LH:
     case Opcode::RISCV_LHU: {
       setMemoryAddresses({{address, 2}});
       break;
     }
+    case Opcode::RISCV_SB:
     case Opcode::RISCV_LB:
     case Opcode::RISCV_LBU: {
       setMemoryAddresses({{address, 1}});

@@ -222,12 +222,12 @@ int main(int argc, char** argv) {
         0x4067d79b,  //        	sraiw	a5,a5,0x6
         0x00f727b3,  //        	slt	a5,a4,a5
         0x000F3783,  //        	ld	a5,0(t5)
-        0x000FA783,  //        	lw	a5,0(t6)
-//        0x02113c23,  //        	sd	ra,56(sp)
+//        0x000FA783,  //        	lw	a5,0(t6)
+        0x02113c23,  //        	sd	ra,56(sp)
 //        0x00813083,  //        	ld	ra,8(sp)
-//        0xfff7c793,  //         not	a5,a5
+        0xfff7c793,  //         not	a5,a5
 //        0x0007879b,  //        	sext.w	a5,a5
-//        0x00050793,  //        	mv	a5,a0
+        0x00050793,  //        	mv	a5,a0
 
     };
 

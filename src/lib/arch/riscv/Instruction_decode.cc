@@ -47,7 +47,7 @@ Register csRegToRegister(unsigned int reg) {
 
 
   if (reg <= RISCV_REG_X31 &&  reg >= RISCV_REG_X1) {
-    return {RegisterType::GENERAL, static_cast<uint16_t>(reg)};
+    return {RegisterType::GENERAL, static_cast<uint16_t>(reg - 1)};
   }
 
   if (reg == RISCV_REG_X0) {
@@ -99,14 +99,33 @@ void Instruction::decode() {
 
     // Capstone produces 1 indexed register operands
     if (i == 0 && op.type == RISCV_OP_REG) {
-      destinationRegisters[destinationRegisterCount] =
-          csRegToRegister(op.reg - 1);
 
-      destinationRegisterCount++;
+      switch (metadata.opcode) {
+        case Opcode::RISCV_SB:
+        case Opcode::RISCV_SW:
+        case Opcode::RISCV_SH:
+        case Opcode::RISCV_SD:
+          sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
+
+          if (sourceRegisters[sourceRegisterCount] == Instruction::ZERO_REGISTER) {
+            // Catch zero register references and pre-complete those operands
+            operands[sourceRegisterCount] = RegisterValue(0, 8);
+          } else {
+            operandsPending++;
+          }
+
+          sourceRegisterCount++;
+          break;
+        default:
+          destinationRegisters[destinationRegisterCount] =
+              csRegToRegister(op.reg);
+
+          destinationRegisterCount++;
+      }
     }
 
     if (i > 0 && op.type == RISCV_OP_REG) {
-      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg - 1);
+      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
 
       if (sourceRegisters[sourceRegisterCount] == Instruction::ZERO_REGISTER) {
         // Catch zero register references and pre-complete those operands
@@ -145,7 +164,7 @@ void Instruction::decode() {
       //      }
     } else if (i > 0 && op.type == RISCV_OP_MEM) {  // Memory operand
       accessesMemory = true;
-      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base - 1);
+      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
       sourceRegisterCount++;
       operandsPending++;
       //
@@ -194,9 +213,11 @@ void Instruction::decode() {
       case Opcode::RISCV_LWU:
       case Opcode::RISCV_LD:
         isLoad_ = true;
-    }
-    if (!isLoad()) {
-      isStore_ = true;
+      case Opcode::RISCV_SB:
+      case Opcode::RISCV_SW:
+      case Opcode::RISCV_SH:
+      case Opcode::RISCV_SD:
+        isStore_ = true;
     }
   }
 //  if (metadata.opcode == Opcode::AArch64_LDRXl ||

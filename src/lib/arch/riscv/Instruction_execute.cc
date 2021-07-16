@@ -204,6 +204,7 @@ void Instruction::execute() {
 
   //      std::cout << rs1 << ">>" << operands[1].get<uint32_t>() << std::endl;
 //      std::cout << out << std::endl;
+  //      std::cout << operands[0].get<uint64_t>() << "+" << metadata.operands[1].mem.disp << std::endl; std::cout << std::hex << results[0].get<uint64_t>() << std::dec << std::endl;
 
   executed_ = true;
   switch (metadata.opcode) {
@@ -231,8 +232,13 @@ void Instruction::execute() {
       break;
     } case Opcode::RISCV_LD: {
       results[0] = memoryData[0];
-//      std::cout << operands[0].get<uint64_t>() << "+" << metadata.operands[1].mem.disp << std::endl;
-//      std::cout << std::hex << results[0].get<uint64_t>() << std::dec << std::endl;
+      break;
+    }
+    case Opcode::RISCV_SB:
+    case Opcode::RISCV_SH:
+    case Opcode::RISCV_SW:
+    case Opcode::RISCV_SD: {
+      memoryData[0] = operands[0];
       break;
     } case Opcode::RISCV_SLL: {
       const int64_t rs1 = operands[0].get<int64_t>();
