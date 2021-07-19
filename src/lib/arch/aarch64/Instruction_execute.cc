@@ -1,6 +1,7 @@
 #include <cmath>
 #include <limits>
 #include <tuple>
+#include <iostream>
 
 #include "InstructionMetadata.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
@@ -231,6 +232,12 @@ void Instruction::executionNYI() {
   return;
 }
 
+typedef enum OperandType {
+  INVALID,
+  W,
+  X
+} OperandType;
+
 template <typename T>
 void addBehaviour(unsigned int op, T x, T y,
                   std::array<RegisterValue, 3>& results) {
@@ -247,66 +254,137 @@ void addBehaviour(unsigned int op, T x, T y,
   assert(false && "Attempted to execute ADD with wrong opcode");
 }
 
-template <typename RegType>
-void addHelper(RegisterValue operand0, RegisterValue operand1,
-               InstructionMetadata metadata,
-               std::array<RegisterValue, 3>& results) {
-  RegType x = operand0.get<RegType>();
-  RegType y;
-  switch (metadata.opcode) {
-    case Opcode::AArch64_ADDSWri:
-    case Opcode::AArch64_ADDSXri:
-    case Opcode::AArch64_ADDWri:
-    case Opcode::AArch64_ADDXri:
-      y = shiftValue(static_cast<RegType>(metadata.operands[2].imm),
-                     metadata.operands[2].shift.type,
-                     metadata.operands[2].shift.value);
-      break;
-    case Opcode::AArch64_ADDSWrs:
-    case Opcode::AArch64_ADDSXrs:
-    case Opcode::AArch64_ADDWrs:
-    case Opcode::AArch64_ADDXrs:
-      y = shiftValue(operand1.get<RegType>(), metadata.operands[2].shift.type,
-                     metadata.operands[2].shift.value);
-      break;
-    case Opcode::AArch64_ADDSWrx:
-    case Opcode::AArch64_ADDSXrx:
-    case Opcode::AArch64_ADDWrx:
-    case Opcode::AArch64_ADDXrx:
-      y = static_cast<RegType>(extendValue(operand1.get<uint32_t>(),
-                                           metadata.operands[2].ext,
-                                           metadata.operands[2].shift.value));
-      break;
-    case Opcode::AArch64_ADDSXrx64:
-    case Opcode::AArch64_ADDXrx64:
-      y = static_cast<RegType>(extendValue(operand1.get<uint64_t>(),
-                                           metadata.operands[2].ext,
-                                           metadata.operands[2].shift.value));
-      break;
-    default:
-      assert(false && "Attempted to execute ADD with wrong opcode");
-      return;
+OperandType operandTypeSelector(cs_arm64_op operand) {
+  assert(operand.type == arm64_op_type::ARM64_OP_REG && "Attempted to find register type of non-register operand");
+  int reg = operand.reg;
+  if(reg == 6 || reg == 7 || (185 <= reg && reg <= 215)) {
+    return OperandType::W;
   }
-  addBehaviour<RegType>(metadata.opcode, x, y, results);
+  if(reg == 5 || reg == 9 || (216 <= reg && reg <= 244)) {
+    return OperandType::X;
+  }
+  return OperandType::INVALID;
 }
 
-template <typename ElemType, typename VecType>
-void ADDv(RegisterValue operand0, RegisterValue operand1,
-          std::array<RegisterValue, 3>& results) {
-  assert(sizeof(VecType) >= sizeof(ElemType) &&
-         "Attempted to execute SIMD operation with invalid vector size");
-  const ElemType* n = operand0.getAsVector<ElemType>();
-  const ElemType* m = operand1.getAsVector<ElemType>();
-  int outSize = sizeof(__uint128_t) / sizeof(ElemType);
-  int ops = sizeof(VecType) / sizeof(ElemType);
-  ElemType out[outSize];
-  for (int i = 0; i < outSize; i++) {
-    out[i] = 0;
+std::vector<cs_arm64_op> getDestinationOperands(InstructionMetadata metadata) {
+  std::vector<cs_arm64_op> destinations = {};
+  for(int i = 0; i < metadata.operandCount; i++) {
+    if(metadata.operands[i].access & cs_ac_type::CS_AC_WRITE) {
+      destinations.push_back(metadata.operands[i]);
+    }
   }
-  for (int i = 0; i < ops; i++) {
-    out[i] = static_cast<ElemType>(n[i] + m[i]);
+  return destinations;
+}
+
+std::vector<cs_arm64_op> getSourceOperands(InstructionMetadata metadata) {
+  std::vector<cs_arm64_op> sources = {};
+  for(int i = 0; i < metadata.operandCount; i++) {
+    if(metadata.operands[i].access & cs_ac_type::CS_AC_READ) {
+      sources.push_back(metadata.operands[i]);
+    }
   }
-  results[0] = RegisterValue(out, sizeof(ElemType) * outSize);
+  return sources;
+}
+
+template <typename T>
+T extractRegValue(RegisterValue operand, cs_arm64_op operandInfo) {
+  T value = operand.get<T>(); // for no extend and no shift
+  if(operandInfo.ext != arm64_extender::ARM64_EXT_INVALID) {
+    if(operandTypeSelector(operandInfo) == OperandType::W) {
+      value = static_cast<T>(extendValue(operand.get<uint32_t>(),
+                                        operandInfo.ext,
+                                        operandInfo.shift.value));
+    }
+    else {
+      value = static_cast<T>(extendValue(operand.get<uint64_t>(),
+                                        operandInfo.ext,
+                                        operandInfo.shift.value));
+    }
+  }
+  else if(operandInfo.shift.type != arm64_shifter::ARM64_SFT_INVALID) {
+    value = shiftValue(operand.get<T>(),
+                  operandInfo.shift.type,
+                  operandInfo.shift.value);
+  }
+  return value;
+}
+
+template <typename T>
+T extractImmValue(cs_arm64_op operandInfo) {
+  T value = operandInfo.imm;
+  if(operandInfo.ext != arm64_extender::ARM64_EXT_INVALID) {
+    value = static_cast<T>(extendValue(value,
+                                      operandInfo.ext,
+                                      operandInfo.shift.value));
+  }
+  else if(operandInfo.shift.type != arm64_shifter::ARM64_SFT_INVALID) {
+    value = shiftValue(value,
+                    operandInfo.shift.type,
+                    operandInfo.shift.value);
+  }
+  return value;
+}
+
+template <typename T>
+T extractOperandValue(RegisterValue operand, cs_arm64_op operandInfo) {
+  T value = 0;
+  switch (operandInfo.type) {
+    case arm64_op_type::ARM64_OP_REG:
+      value = extractRegValue<T>(operand, operandInfo);
+      break;
+    case arm64_op_type::ARM64_OP_IMM:
+      value = extractImmValue<T>(operandInfo);
+      break;
+    default:
+      assert(false && "not yet implemented");
+      break;
+  }
+  return value;
+}
+
+void operandsChecker(InstructionMetadata metadata) {
+  std::cout << metadata.mnemonic << " (" << metadata.opcode << ") ";
+  for(int i = 0; i < metadata.operandCount; i++) {
+    std::cout << "operand" << i << ": ";
+    switch (metadata.operands[i].type) {
+    case arm64_op_type::ARM64_OP_INVALID:
+      std::cout << "{type: INVALID}";
+      break;
+    case arm64_op_type::ARM64_OP_REG:
+      std::cout << "{type: " << operandTypeSelector(metadata.operands[i]) << ", reg: " << metadata.operands[i].reg << "} ";
+      break;
+    case arm64_op_type::ARM64_OP_IMM:
+      std::cout << "{type: IMM, imm: " << metadata.operands[i].imm << "} ";
+      break;
+    case arm64_op_type::ARM64_OP_MEM:
+      std::cout << "{type: MEM} ";
+      break;
+    default:
+      std::cout << "null ";
+      break;
+    }
+    std::cout << "shift: {type: " << metadata.operands[i].shift.type << ", value: " << metadata.operands[i].shift.value << "} ";
+    std::cout << "extender: " << metadata.operands[i].ext << " ";
+    std::cout << "access: " << static_cast<int>(metadata.operands[i].access) << " ";
+  }
+  std::cout << std::endl;
+}
+
+void addHelper(std::array<RegisterValue, 6>& operands,
+               InstructionMetadata metadata,
+               std::array<RegisterValue, 3>& results) {
+  cs_arm64_op destInfo = getDestinationOperands(metadata)[0];
+  std::vector<cs_arm64_op> sourceInfo = getSourceOperands(metadata);
+  if(operandTypeSelector(destInfo) == OperandType::W) {
+    auto x = extractOperandValue<uint32_t>(operands[0], sourceInfo[0]);
+    auto y = extractOperandValue<uint32_t>(operands[1], sourceInfo[1]);
+    addBehaviour<uint32_t>(metadata.opcode, x, y, results);
+  }
+  else {
+    auto x = extractOperandValue<uint64_t>(operands[0], sourceInfo[0]);
+    auto y = extractOperandValue<uint64_t>(operands[1], sourceInfo[1]);
+    addBehaviour<uint64_t>(metadata.opcode, x, y, results);
+  }
 }
 
 void Instruction::execute() {
@@ -333,7 +411,6 @@ void Instruction::execute() {
                          static_cast<uint32_t>(n[3] + m[3])};
       results[0] = out;
 
-      // ADDv<uint32_t,__uint128_t>(operands[0],operands[1],results);
       break;
     }
     case Opcode::AArch64_ADDPv16i8: {  // addp vd.16b, vn.16b, vm.16b
@@ -386,32 +463,20 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
-    case Opcode::AArch64_ADDSWri: {  // adds wd, wn, #imm{, shift}
-      addHelper<uint32_t>(operands[0], operands[1], metadata, results);
-      break;
-    }
-    case Opcode::AArch64_ADDSWrs: {  // adds wd, wn, wm{, shift}
-      addHelper<uint32_t>(operands[0], operands[1], metadata, results);
-      break;
-    }
-    case Opcode::AArch64_ADDSWrx: {  // adds wd, wn, wm{, extend {#amount}}
-      addHelper<uint32_t>(operands[0], operands[1], metadata, results);
-      break;
-    }
-    case Opcode::AArch64_ADDSXri: {  // adds xd, xn, #imm{, shift}
-      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
-      break;
-    }
-    case Opcode::AArch64_ADDSXrs: {  // adds xd, xn, xm{, shift}
-      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
-      break;
-    }
-    case Opcode::AArch64_ADDSXrx: {  // adds xd, xn, xm{, extend {#amount}}
-      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
-      break;
-    }
-    case Opcode::AArch64_ADDSXrx64: {  // adds xd, xn, xm{, extend {#amount}}
-      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
+    case Opcode::AArch64_ADDSWri:    // adds wd, wn, #imm{, shift}
+    case Opcode::AArch64_ADDSWrs:    // adds wd, wn, wm{, shift}
+    case Opcode::AArch64_ADDSWrx:    // adds wd, wn, wm{, extend {#amount}}
+    case Opcode::AArch64_ADDSXri:    // adds xd, xn, #imm{, shift}
+    case Opcode::AArch64_ADDSXrs:    // adds xd, xn, xm{, shift}
+    case Opcode::AArch64_ADDSXrx:    // adds xd, xn, xm{, extend {#amount}}
+    case Opcode::AArch64_ADDSXrx64:  // adds xd, xn, xm{, extend {#amount}}
+    case Opcode::AArch64_ADDWri:     // add wd, wn, #imm{, shift}
+    case Opcode::AArch64_ADDWrs:     // add wd, wn, wm{, shift #amount}
+    case Opcode::AArch64_ADDXri:     // add xd, xn, #imm{, shift}
+    case Opcode::AArch64_ADDXrs:     // add xd, xn, xm, {shift #amount}
+    case Opcode::AArch64_ADDXrx:     // add xd, xn, wm{, extend {#amount}}
+    case Opcode::AArch64_ADDXrx64: { // add xd, xn, xm{, extend {#amount}} 
+      addHelper(operands,metadata,results);
       break;
     }
     case Opcode::AArch64_ADDVL_XXI: {  // addvl xd, xn, #imm
@@ -421,30 +486,6 @@ void Instruction::execute() {
       // convert VL from LEN (number of 128-bits) to bytes
       const uint64_t VL = VL_bits / 8;
       results[0] = x + (VL * y);
-      break;
-    }
-    case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm{, shift}
-      addHelper<uint32_t>(operands[0], operands[1], metadata, results);
-      break;
-    }
-    case Opcode::AArch64_ADDWrs: {  // add wd, wn, wm{, shift #amount}
-      addHelper<uint32_t>(operands[0], operands[1], metadata, results);
-      break;
-    }
-    case Opcode::AArch64_ADDXri: {  // add xd, xn, #imm{, shift}
-      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
-      break;
-    }
-    case Opcode::AArch64_ADDXrs: {  // add xd, xn, xm, {shift #amount}
-      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
-      break;
-    }
-    case Opcode::AArch64_ADDXrx: {  // add xd, xn, wm{, extend {#amount}}
-      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
-      break;
-    }
-    case Opcode::AArch64_ADDXrx64: {  // add xd, xn, xm{, extend {#amount}}
-      addHelper<uint64_t>(operands[0], operands[1], metadata, results);
       break;
     }
     case Opcode::AArch64_ADR: {  // adr xd, #imm
