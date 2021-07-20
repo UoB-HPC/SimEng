@@ -253,7 +253,6 @@ void Instruction::execute() {
       results[0] = out;
       break;
     } case Opcode::RISCV_SLLW: {
-      // TODO check this for output size
       const int32_t rs1 = operands[0].get<int32_t>();
       const int32_t rs2 = operands[1].get<int32_t>() & 63; // Only use lowest 6 bits
       int64_t out = signExtendW(static_cast<int32_t>(rs1 << rs2));
@@ -303,7 +302,6 @@ void Instruction::execute() {
       results[0] = out;
       break;
     } case Opcode::RISCV_SRAW: {
-      // TODO check this for output size
       const int32_t rs1 = operands[0].get<int32_t>();
       const int32_t rs2 = operands[1].get<int32_t>() & 63; // Only use lowest 6 bits
       int64_t out = static_cast<int32_t>(rs1 >> rs2);
@@ -322,7 +320,6 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }case Opcode::RISCV_ADDW: {
-      //TODO check this
       const int32_t n = operands[0].get<int32_t>();
       const int32_t m = operands[1].get<int32_t>();
       int64_t out = static_cast<int64_t>(static_cast<int32_t>(n + m));
@@ -392,7 +389,6 @@ void Instruction::execute() {
       }
       break;
     } case Opcode::RISCV_SLTU: {
-      //TODO test this
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       if (rs1 < rs2) {
@@ -402,7 +398,6 @@ void Instruction::execute() {
       }
       break;
     } case Opcode::RISCV_SLTI: {
-      // TODO test this
       const int64_t rs1 = operands[0].get<int64_t>();
       const int64_t imm = metadata.operands[2].imm;
       if (rs1 < imm) {
@@ -412,7 +407,6 @@ void Instruction::execute() {
       }
       break;
     } case Opcode::RISCV_SLTIU: {
-      // TODO test this
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t imm = static_cast<int64_t>(metadata.operands[2].imm);
       if (rs1 < imm) {
@@ -420,6 +414,16 @@ void Instruction::execute() {
       } else {
         results[0] = static_cast<uint64_t>(0);
       }
+      break;
+    } case Opcode::RISCV_JAL: {
+      branchAddress_ = instructionAddress_ + metadata.operands[1].imm; // Set LSB of result to 0
+      branchTaken_ = true; // TODO Jumps should not need the branch predictor
+      results[0] = instructionAddress_ + 4;
+      break;
+    } case Opcode::RISCV_JALR: {
+      branchAddress_ = (operands[0].get<uint64_t>() + metadata.operands[2].imm) & ~1; // Set LSB of result to 0
+      branchTaken_ = true; // TODO Jumps should not need the branch predictor
+      results[0] = instructionAddress_ + 4;
       break;
     }
     default:

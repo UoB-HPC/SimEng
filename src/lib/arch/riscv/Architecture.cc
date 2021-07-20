@@ -36,8 +36,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
                                 BranchPrediction prediction,
                                 MacroOp& output) const {
-  // Check that instruction address is 4-byte aligned as required by Armv8
-  // TODO Check this is a requirement in RISCV
+  // Check that instruction address is 4-byte aligned as required by RISCV
   if (instructionAddress & 0x3) {
     // Consume 1-byte and raise a misaligned PC exception
     auto metadata = InstructionMetadata((uint8_t*)ptr, 1);
