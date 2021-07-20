@@ -304,6 +304,12 @@ class Instruction : public simeng::Instruction {
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
 
+  // Execution helpers
+  /** Extend `value` according to `extendType`, and left-shift the result by
+   * `shift` */
+  static uint64_t extendValue(uint64_t value, uint8_t extendType,
+                              uint8_t shift);
+
  private:
   /** The maximum number of source registers any supported AArch64 instruction
    * can have. */
@@ -413,11 +419,6 @@ class Instruction : public simeng::Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
-
-  // Execution helpers
-  /** Extend `value` according to `extendType`, and left-shift the result by
-   * `shift` */
-  uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) const;
 
   /** Extend `value` using extension/shifting rules defined in `op`. */
   uint64_t extendOffset(uint64_t value, const cs_arm64_op& op) const;

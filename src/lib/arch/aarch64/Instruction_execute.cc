@@ -38,49 +38,6 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
   }
 }
 
-/** Extend `value` according to `extendType`, and left-shift the result by
- * `shift` */
-uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) {
-  if (extendType == ARM64_EXT_INVALID && shift == 0) {
-    // Special case: an invalid shift type with a shift amount of 0 implies an
-    // identity operation
-    return value;
-  }
-
-  uint64_t extended;
-  switch (extendType) {
-    case ARM64_EXT_UXTB:
-      extended = static_cast<uint8_t>(value);
-      break;
-    case ARM64_EXT_UXTH:
-      extended = static_cast<uint16_t>(value);
-      break;
-    case ARM64_EXT_UXTW:
-      extended = static_cast<uint32_t>(value);
-      break;
-    case ARM64_EXT_UXTX:
-      extended = value;
-      break;
-    case ARM64_EXT_SXTB:
-      extended = static_cast<int8_t>(value);
-      break;
-    case ARM64_EXT_SXTH:
-      extended = static_cast<int16_t>(value);
-      break;
-    case ARM64_EXT_SXTW:
-      extended = static_cast<int32_t>(value);
-      break;
-    case ARM64_EXT_SXTX:
-      extended = value;
-      break;
-    default:
-      assert(false && "Invalid extension type");
-      return 0;
-  }
-
-  return extended << shift;
-}
-
 /** Manipulate the bitfield `value` according to the logic of the (U|S)BFM ARMv8
  * instructions. */
 template <typename T>
@@ -311,14 +268,12 @@ T extractRegValue(RegisterValue operand, cs_arm64_op operandInfo) {
   T value = operand.get<T>(); // for no extend and no shift
   if(operandInfo.ext != arm64_extender::ARM64_EXT_INVALID) {
     if(operandTypeSelector(operandInfo) == OperandType::W) {
-      value = static_cast<T>(extendValue(operand.get<uint32_t>(),
-                                        operandInfo.ext,
-                                        operandInfo.shift.value));
+      value = static_cast<T>(Instruction::extendValue(
+          operand.get<uint32_t>(), operandInfo.ext, operandInfo.shift.value));
     }
     else {
-      value = static_cast<T>(extendValue(operand.get<uint64_t>(),
-                                        operandInfo.ext,
-                                        operandInfo.shift.value));
+      value = static_cast<T>(Instruction::extendValue(
+          operand.get<uint64_t>(), operandInfo.ext, operandInfo.shift.value));
     }
   }
   else if(operandInfo.shift.type != arm64_shifter::ARM64_SFT_INVALID) {
@@ -333,9 +288,8 @@ template <typename T>
 T extractImmValue(cs_arm64_op operandInfo) {
   T value = static_cast<T>(operandInfo.imm);
   if(operandInfo.ext != arm64_extender::ARM64_EXT_INVALID) {
-    value = static_cast<T>(extendValue(value,
-                                      operandInfo.ext,
-                                      operandInfo.shift.value));
+    value = static_cast<T>(Instruction::extendValue(value, operandInfo.ext,
+                                                    operandInfo.shift.value));
   }
   else if(operandInfo.shift.type != arm64_shifter::ARM64_SFT_INVALID) {
     value = shiftValue(value,

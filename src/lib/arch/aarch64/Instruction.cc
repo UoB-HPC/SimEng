@@ -194,7 +194,7 @@ const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
 /** Extend `value` according to `extendType`, and left-shift the result by
  * `shift` */
 uint64_t Instruction::extendValue(uint64_t value, uint8_t extendType,
-                                  uint8_t shift) const {
+                                  uint8_t shift) {
   if (extendType == ARM64_EXT_INVALID && shift == 0) {
     // Special case: an invalid shift type with a shift amount of 0 implies an
     // identity operation
