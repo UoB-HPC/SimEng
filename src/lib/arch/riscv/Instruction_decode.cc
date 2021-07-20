@@ -91,6 +91,38 @@ void Instruction::decode() {
 //    operandsPending++;
 //  }
 
+
+  // Identify branches
+  switch (metadata.opcode) {
+    case Opcode::RISCV_BEQ:
+    case Opcode::RISCV_BNE:
+    case Opcode::RISCV_BLT:
+    case Opcode::RISCV_BLTU:
+    case Opcode::RISCV_BGE:
+    case Opcode::RISCV_BGEU:
+    case Opcode::RISCV_JAL:
+    case Opcode::RISCV_JALR:
+      isBranch_ = true;
+      break;
+  // Identify loads/stores
+    case Opcode::RISCV_LB:
+    case Opcode::RISCV_LBU:
+    case Opcode::RISCV_LH:
+    case Opcode::RISCV_LHU:
+    case Opcode::RISCV_LW:
+    case Opcode::RISCV_LWU:
+    case Opcode::RISCV_LD:
+      isLoad_ = true;
+      break;
+    case Opcode::RISCV_SB:
+    case Opcode::RISCV_SW:
+    case Opcode::RISCV_SH:
+    case Opcode::RISCV_SD:
+      isStore_ = true;
+      break;
+  }
+
+
   bool accessesMemory = false;
 
   // Extract explicit register accesses
@@ -100,23 +132,19 @@ void Instruction::decode() {
     // Capstone produces 1 indexed register operands
     if (i == 0 && op.type == RISCV_OP_REG) {
 
-      switch (metadata.opcode) {
-        case Opcode::RISCV_SB:
-        case Opcode::RISCV_SW:
-        case Opcode::RISCV_SH:
-        case Opcode::RISCV_SD:
-          sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
+      if ((isBranch() && metadata.opcode != Opcode::RISCV_JAL &&  metadata.opcode != Opcode::RISCV_JALR) || isStore()) {
+        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
 
-          if (sourceRegisters[sourceRegisterCount] == Instruction::ZERO_REGISTER) {
-            // Catch zero register references and pre-complete those operands
-            operands[sourceRegisterCount] = RegisterValue(0, 8);
-          } else {
-            operandsPending++;
-          }
+        if (sourceRegisters[sourceRegisterCount] ==
+            Instruction::ZERO_REGISTER) {
+          // Catch zero register references and pre-complete those operands
+          operands[sourceRegisterCount] = RegisterValue(0, 8);
+        } else {
+          operandsPending++;
+        }
 
-          sourceRegisterCount++;
-          break;
-        default:
+        sourceRegisterCount++;
+      } else {
           destinationRegisters[destinationRegisterCount] =
               csRegToRegister(op.reg);
 
@@ -137,7 +165,7 @@ void Instruction::decode() {
       sourceRegisterCount++;
     }
 
-    if (i > 0 && op.type == RISCV_OP_REG) {  // Register operand
+//    if (i > 0 && op.type == RISCV_OP_REG) {  // Register operand
                                     //      // writes
                                     //      if ((op. ) && op.reg != 0) {
       //        // Add register writes to destinations, but skip zero-register
@@ -162,7 +190,7 @@ void Instruction::decode() {
       //        }
       //        sourceRegisterCount++;
       //      }
-    } else if (i > 0 && op.type == RISCV_OP_MEM) {  // Memory operand
+    else if (i > 0 && op.type == RISCV_OP_MEM) {  // Memory operand
       accessesMemory = true;
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
       sourceRegisterCount++;
@@ -194,38 +222,7 @@ void Instruction::decode() {
     }
   }
 
-  // Identify branches
-  switch (metadata.opcode) {
-    case Opcode::RISCV_BEQ:
-    case Opcode::RISCV_BNE:
-    case Opcode::RISCV_BLT:
-    case Opcode::RISCV_BLTU:
-    case Opcode::RISCV_BGE:
-    case Opcode::RISCV_BGEU:
-    case Opcode::RISCV_JAL:
-    case Opcode::RISCV_JALR:
-      isBranch_ = true;
-  }
 
-
-  // Identify loads/stores
-  if (accessesMemory) {
-    switch (metadata.opcode) {
-      case Opcode::RISCV_LB:
-      case Opcode::RISCV_LBU:
-      case Opcode::RISCV_LH:
-      case Opcode::RISCV_LHU:
-      case Opcode::RISCV_LW:
-      case Opcode::RISCV_LWU:
-      case Opcode::RISCV_LD:
-        isLoad_ = true;
-      case Opcode::RISCV_SB:
-      case Opcode::RISCV_SW:
-      case Opcode::RISCV_SH:
-      case Opcode::RISCV_SD:
-        isStore_ = true;
-    }
-  }
 //  if (metadata.opcode == Opcode::AArch64_LDRXl ||
 //      metadata.opcode == Opcode::AArch64_LDRSWl) {
 //    // Literal loads aren't flagged as having a memory operand, so these must be
