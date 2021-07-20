@@ -33,11 +33,32 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
               sizeof(cs_riscv_op) * operandCount);
 
   // Fix some inaccuracies in the decoded metadata
-//  switch (opcode) {
-////    case Opcode::RISCV_ADDI:
-////
-////      break;
-//  }
+  switch (opcode) {
+    case Opcode::RISCV_JALR:
+      if (operandCount == 1) {
+        operands[0].type = RISCV_OP_REG;
+        operands[0].reg = 2;
+
+        operands[1] = insn.detail->riscv.operands[0];
+
+        operands[2].type = RISCV_OP_IMM;
+        operands[2].imm = 0;
+
+        operandCount = 3;
+      }
+      break;
+    case Opcode::RISCV_JAL:
+      if (operandCount == 1) {
+        operands[0].type = RISCV_OP_REG;
+        operands[0].reg = 2;
+
+        operands[1].type = RISCV_OP_IMM;
+        operands[1].imm = insn.detail->riscv.operands[0].imm;
+
+        operandCount = 2;
+      }
+      break;
+  }
 
 //  revertAliasing();
 }

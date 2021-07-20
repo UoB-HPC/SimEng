@@ -228,6 +228,10 @@ int main(int argc, char** argv) {
         0xfff7c793,  //         not	a5,a5
 //        0x0007879b,  //        	sext.w	a5,a5
         0x00050793,  //        	mv	a5,a0
+//        0x000780e7,  //        	jalr	ra,a5,4
+//        0x000e0367,  //        	jalr	t1,t3
+        0xf89ff0ef,  //        	jal	ra,103f4
+        0xfe9912e3,  //        	bne	s2,s1,1055c
 
     };
 

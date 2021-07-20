@@ -193,15 +193,21 @@ void Instruction::decode() {
       //    if (op.shift.value > 0) isShift_ = true;  // Identify shift operations
     }
   }
-//
-//  if (metadata.setsFlags) isShift_ = true;
-//
-//  // Identify branches
-//  for (size_t i = 0; i < metadata.groupCount; i++) {
-//    if (metadata.groups[i] == ARM64_GRP_JUMP) {
-//      isBranch_ = true;
-//    }
-//  }
+
+  // Identify branches
+  switch (metadata.opcode) {
+    case Opcode::RISCV_BEQ:
+    case Opcode::RISCV_BNE:
+    case Opcode::RISCV_BLT:
+    case Opcode::RISCV_BLTU:
+    case Opcode::RISCV_BGE:
+    case Opcode::RISCV_BGEU:
+    case Opcode::RISCV_JAL:
+    case Opcode::RISCV_JALR:
+      isBranch_ = true;
+  }
+
+
   // Identify loads/stores
   if (accessesMemory) {
     switch (metadata.opcode) {
