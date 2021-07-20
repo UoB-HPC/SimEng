@@ -240,11 +240,13 @@ typedef enum OperandType {
 
 template <typename T>
 void addBehaviour(unsigned int op, T x, T y,
-                  std::array<RegisterValue, 3>& results) {
+                  std::array<RegisterValue, 3>& results, uint8_t destRegCount) {
   auto [result, nzcv] = addWithCarry(x, y, 0);
   if (op >= Opcode::AArch64_ADDSWri && op <= Opcode::AArch64_ADDSXrx64) {
-    results[0] = nzcv;
-    results[1] = RegisterValue(result, 8);
+    results[0] = RegisterValue(nzcv);
+    if (destRegCount > 1) {
+      results[1] = RegisterValue(result, 8);
+    }
     return;
   }
   if (op >= Opcode::AArch64_ADDWri && op <= Opcode::AArch64_ADDXrx64) {
@@ -252,6 +254,24 @@ void addBehaviour(unsigned int op, T x, T y,
     return;
   }
   assert(false && "Attempted to execute ADD with wrong opcode");
+}
+
+template <typename T>
+void subBehaviour(unsigned int op, T x, T y,
+                  std::array<RegisterValue, 3>& results, uint8_t destRegCount) {
+  auto [result, nzcv] = addWithCarry(x, ~y, true);
+  if (Opcode::AArch64_SUBSWri <= op && op <= Opcode::AArch64_SUBSXrx64) {
+    results[0] = RegisterValue(nzcv);
+    if (destRegCount > 1) {
+      results[1] = RegisterValue(result, 8);
+    }
+    return;
+  }
+  if (Opcode::AArch64_SUBWri <= op && op <= Opcode::AArch64_SUBXrx64) {
+    results[0] = RegisterValue(result, 8);
+    return;
+  }
+  assert(false && "Attempted to execute SUB with wrong opcode");
 }
 
 OperandType operandTypeSelector(cs_arm64_op operand) {
@@ -311,7 +331,7 @@ T extractRegValue(RegisterValue operand, cs_arm64_op operandInfo) {
 
 template <typename T>
 T extractImmValue(cs_arm64_op operandInfo) {
-  T value = operandInfo.imm;
+  T value = static_cast<T>(operandInfo.imm);
   if(operandInfo.ext != arm64_extender::ARM64_EXT_INVALID) {
     value = static_cast<T>(extendValue(value,
                                       operandInfo.ext,
@@ -370,20 +390,37 @@ void operandsChecker(InstructionMetadata metadata) {
   std::cout << std::endl;
 }
 
-void addHelper(std::array<RegisterValue, 6>& operands,
-               InstructionMetadata metadata,
-               std::array<RegisterValue, 3>& results) {
+void arithmeticHelper(std::array<RegisterValue, 6>& operands,
+                      InstructionMetadata metadata,
+                      std::array<RegisterValue, 3>& results,
+                      uint8_t destRegCount) {
   cs_arm64_op destInfo = getDestinationOperands(metadata)[0];
   std::vector<cs_arm64_op> sourceInfo = getSourceOperands(metadata);
   if(operandTypeSelector(destInfo) == OperandType::W) {
     auto x = extractOperandValue<uint32_t>(operands[0], sourceInfo[0]);
     auto y = extractOperandValue<uint32_t>(operands[1], sourceInfo[1]);
-    addBehaviour<uint32_t>(metadata.opcode, x, y, results);
+    if ((157 <= metadata.opcode && metadata.opcode <= 165) ||
+        (172 <= metadata.opcode && metadata.opcode <= 180)) {
+      addBehaviour<uint32_t>(metadata.opcode, x, y, results, destRegCount);
+      return;
+    }
+    if (3809 <= metadata.opcode && metadata.opcode <= 3826) {
+      subBehaviour<uint32_t>(metadata.opcode, x, y, results, destRegCount);
+      return;
+    }
   }
   else {
     auto x = extractOperandValue<uint64_t>(operands[0], sourceInfo[0]);
     auto y = extractOperandValue<uint64_t>(operands[1], sourceInfo[1]);
-    addBehaviour<uint64_t>(metadata.opcode, x, y, results);
+    if ((157 <= metadata.opcode && metadata.opcode <= 165) ||
+        (172 <= metadata.opcode && metadata.opcode <= 180)) {
+      addBehaviour<uint64_t>(metadata.opcode, x, y, results, destRegCount);
+      return;
+    }
+    if (3809 <= metadata.opcode && metadata.opcode <= 3826) {
+      subBehaviour<uint64_t>(metadata.opcode, x, y, results, destRegCount);
+      return;
+    }
   }
 }
 
@@ -475,8 +512,8 @@ void Instruction::execute() {
     case Opcode::AArch64_ADDXri:     // add xd, xn, #imm{, shift}
     case Opcode::AArch64_ADDXrs:     // add xd, xn, xm, {shift #amount}
     case Opcode::AArch64_ADDXrx:     // add xd, xn, wm{, extend {#amount}}
-    case Opcode::AArch64_ADDXrx64: { // add xd, xn, xm{, extend {#amount}} 
-      addHelper(operands,metadata,results);
+    case Opcode::AArch64_ADDXrx64: { // add xd, xn, xm{, extend {#amount}}
+      arithmeticHelper(operands, metadata, results, destinationRegisterCount);
       break;
     }
     case Opcode::AArch64_ADDVL_XXI: {  // addvl xd, xn, #imm
@@ -3999,128 +4036,20 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
-    case Opcode::AArch64_SUBSWri: {  // subs wd, wn, #imm
-      auto x = operands[0].get<uint32_t>();
-      auto y = ~shiftValue(static_cast<uint32_t>(metadata.operands[2].imm),
-                           metadata.operands[2].shift.type,
-                           metadata.operands[2].shift.value);
-      auto [result, nzcv] = addWithCarry(x, y, true);
-      results[0] = RegisterValue(nzcv);
-      if (destinationRegisterCount > 1) {
-        results[1] = RegisterValue(result, 8);
-      }
-      break;
-    }
-    case Opcode::AArch64_SUBSWrs: {  // subs wd, wn, wm{, shift #amount}
-      auto x = operands[0].get<uint32_t>();
-      auto y = ~shiftValue(operands[1].get<uint32_t>(),
-                           metadata.operands[2].shift.type,
-                           metadata.operands[2].shift.value);
-      auto [result, nzcv] = addWithCarry(x, y, true);
-      results[0] = RegisterValue(nzcv);
-      if (destinationRegisterCount > 1) {
-        results[1] = RegisterValue(result, 8);
-      }
-      break;
-    }
-    case Opcode::AArch64_SUBSWrx: {  // subs wd, wn, wm{, extend #amount}
-      auto x = operands[0].get<uint32_t>();
-      auto y = static_cast<uint32_t>(
-          ~extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
-                       metadata.operands[2].shift.value));
-      auto [result, nzcv] = addWithCarry(x, y, true);
-      results[0] = RegisterValue(nzcv);
-      if (destinationRegisterCount > 1) {
-        results[1] = RegisterValue(result, 8);
-      }
-      break;
-    }
-    case Opcode::AArch64_SUBSXri: {  // subs xd, xn, #imm
-      auto x = operands[0].get<uint64_t>();
-      auto y = ~shiftValue(static_cast<uint64_t>(metadata.operands[2].imm),
-                           metadata.operands[2].shift.type,
-                           metadata.operands[2].shift.value);
-      auto [result, nzcv] = addWithCarry(x, y, true);
-      results[0] = RegisterValue(nzcv);
-      if (destinationRegisterCount > 1) {
-        results[1] = RegisterValue(result);
-      }
-      break;
-    }
-    case Opcode::AArch64_SUBSXrs: {  // subs xd, xn, xm{, shift #amount}
-      auto x = operands[0].get<uint64_t>();
-      auto y = ~shiftValue(operands[1].get<uint64_t>(),
-                           metadata.operands[2].shift.type,
-                           metadata.operands[2].shift.value);
-      auto [result, nzcv] = addWithCarry(x, y, true);
-      results[0] = RegisterValue(nzcv);
-      if (destinationRegisterCount > 1) {
-        results[1] = RegisterValue(result);
-      }
-      break;
-    }
-    case Opcode::AArch64_SUBSXrx: {  // subs xd, xn, wm{, extend #amount}
-      auto x = operands[0].get<uint64_t>();
-      auto y =
-          ~extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
-                       metadata.operands[2].shift.value);
-      auto [result, nzcv] = addWithCarry(x, y, true);
-      results[0] = RegisterValue(nzcv);
-      if (destinationRegisterCount > 1) {
-        results[1] = result;
-      }
-      break;
-    }
-    case Opcode::AArch64_SUBSXrx64: {  // subs xd, xn, xm{, extend #amount}
-      auto x = operands[0].get<uint64_t>();
-      auto y =
-          ~extendValue(operands[1].get<uint64_t>(), metadata.operands[2].ext,
-                       metadata.operands[2].shift.value);
-      auto [result, nzcv] = addWithCarry(x, y, true);
-      results[0] = RegisterValue(nzcv);
-      if (destinationRegisterCount > 1) {
-        results[1] = result;
-      }
-      break;
-    }
-    case Opcode::AArch64_SUBWri: {  // sub wd, wn, #imm
-      auto x = operands[0].get<uint32_t>();
-      auto y = shiftValue(static_cast<uint32_t>(metadata.operands[2].imm),
-                          metadata.operands[2].shift.type,
-                          metadata.operands[2].shift.value);
-      results[0] = RegisterValue(x - y, 8);
-      break;
-    }
-    case Opcode::AArch64_SUBWrs: {  // sub wd, wn, wm{, shift #amount}
-      auto x = operands[0].get<uint32_t>();
-      auto y = shiftValue(operands[1].get<uint32_t>(),
-                          metadata.operands[2].shift.type,
-                          metadata.operands[2].shift.value);
-      results[0] = RegisterValue(x - y, 8);
-      break;
-    }
-    case Opcode::AArch64_SUBXri: {  // sub xd, xn, #imm
-      auto x = operands[0].get<uint64_t>();
-      auto y = shiftValue(static_cast<uint64_t>(metadata.operands[2].imm),
-                          metadata.operands[2].shift.type,
-                          metadata.operands[2].shift.value);
-      results[0] = RegisterValue(x - y);
-      break;
-    }
-    case Opcode::AArch64_SUBXrs: {  // sub xd, xn, xm{, shift #amount}
-      auto x = operands[0].get<uint64_t>();
-      auto y = shiftValue(operands[1].get<uint64_t>(),
-                          metadata.operands[2].shift.type,
-                          metadata.operands[2].shift.value);
-      results[0] = x - y;
-      break;
-    }
+    case Opcode::AArch64_SUBSWri:     // subs wd, wn, #imm
+    case Opcode::AArch64_SUBSWrs:     // subs wd, wn, wm{, shift #amount}
+    case Opcode::AArch64_SUBSWrx:     // subs wd, wn, wm{, extend #amount}
+    case Opcode::AArch64_SUBSXri:     // subs xd, xn, #imm
+    case Opcode::AArch64_SUBSXrs:     // subs xd, xn, xm{, shift #amount}
+    case Opcode::AArch64_SUBSXrx:     // subs xd, xn, wm{, extend #amount}
+    case Opcode::AArch64_SUBSXrx64:   // subs xd, xn, xm{, extend #amount}
+    case Opcode::AArch64_SUBWri:      // sub wd, wn, #imm
+    case Opcode::AArch64_SUBWrs:      // sub wd, wn, wm{, shift #amount}
+    case Opcode::AArch64_SUBXri:      // sub wd, wn, wm{, extend #amount}
+    case Opcode::AArch64_SUBXrs:      // sub xd, xn, xm{, shift #amount}
+    case Opcode::AArch64_SUBXrx:      // sub xd, xn, wm{, extend #amount}
     case Opcode::AArch64_SUBXrx64: {  // sub xd, xn, xm{, extend #amount}
-      auto x = operands[0].get<uint64_t>();
-      auto y =
-          extendValue(operands[1].get<uint64_t>(), metadata.operands[2].ext,
-                      metadata.operands[2].shift.value);
-      results[0] = x - y;
+      arithmeticHelper(operands, metadata, results, destinationRegisterCount);
       break;
     }
     case Opcode::AArch64_SVC: {  // svc #imm
