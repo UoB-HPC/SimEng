@@ -212,8 +212,23 @@ int main(int argc, char** argv) {
         0x00050793,  //        	mv	a5,a0
 //        0x000780e7,  //        	jalr	ra,a5,4
 //        0x000e0367,  //        	jalr	t1,t3
-        0xf89ff0ef,  //        	jal	ra,103f4
-        0xfe9912e3,  //        	bne	s2,s1,1055c
+//        0xf89ff0ef,  //        	jal	ra,103f4
+        0x00050793,  //        	mv	a5,a0
+        0x00050713,  //        	mv	a4,a0
+
+        0x00f70a63,  //        	beq	a4,a5,10418
+        0x02010413,  //        	addi	s0,sp,32
+        0x00f707bb,  //        	addw	a5,a4,a5
+        0x40f707bb,  //        	subw	a5,a4,a5
+        0xff017113,  //       	andi	sp,sp,-16
+        0x40f585b3,  //        	sub	a1,a1,a5
+        0x00f747b3,  //        	xor	a5,a4,a5
+        0x03f8c793,  //        	xori	a5,a7,63
+        0x00504463,  //         bgtz t0, $ $8
+//        0x00505463,   //        blez t1, $ $8
+//        0x00079863,  //        	bnez	a5,10478
+//        0x00078663,  //        	beqz	a5,10418
+//        0xfe9912e3,  //        	bne	s2,s1,1055c
 
     };
 

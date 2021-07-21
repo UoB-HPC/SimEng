@@ -8,6 +8,7 @@ add_executable(regression-riscv
             instructions/load.cc
             instructions/store.cc
             instructions/jump.cc
+            instructions/branch.cc
                )
 target_include_directories(regression-riscv PRIVATE
                            ${CMAKE_CURRENT_SOURCE_DIR})

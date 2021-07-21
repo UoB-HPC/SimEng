@@ -200,7 +200,8 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
 
-  std::cout << metadata.mnemonic << " " << metadata.operandStr << std::endl;
+  std::cout << std::hex << +metadata.encoding[3] << "," << +metadata.encoding[2]<< ","  << +metadata.encoding[1]<< ","  << +metadata.encoding[0] <<
+      std::dec << " " << metadata.mnemonic << " " << metadata.operandStr << std::endl;
 
   //      std::cout << rs1 << ">>" << operands[1].get<uint32_t>() << std::endl;
 //      std::cout << out << std::endl;
@@ -208,11 +209,11 @@ void Instruction::execute() {
 
   executed_ = true;
   switch (metadata.opcode) {
-    case Opcode::RISCV_BEQ: {  // Temporary syscall to get heap address
-      exceptionEncountered_ = true;
-      exception_ = InstructionException::SupervisorCall;
-      break;
-    } case Opcode::RISCV_LB: {
+//    case Opcode::RISCV_BEQ: {  // Temporary syscall to get heap address
+//      exceptionEncountered_ = true;
+//      exception_ = InstructionException::SupervisorCall;
+//      break;
+    case Opcode::RISCV_LB: {
       results[0] = bitExtend(memoryData[0].get<uint64_t>(), 8);
       break;
     } case Opcode::RISCV_LBU: {
@@ -413,6 +414,74 @@ void Instruction::execute() {
         results[0] = static_cast<uint64_t>(1);
       } else {
         results[0] = static_cast<uint64_t>(0);
+      }
+      break;
+    } case Opcode::RISCV_BEQ: {
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = operands[1].get<uint64_t>();
+      if (rs1 == rs2) {
+        branchAddress_ = instructionAddress_ + metadata.operands[2].imm; // Set LSB of result to 0
+        branchTaken_ = true;
+      } else {
+        branchAddress_ = instructionAddress_ + 4;
+        branchTaken_ = false;
+      }
+      break;
+    } case Opcode::RISCV_BNE: {
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = operands[1].get<uint64_t>();
+      if (rs1 != rs2) {
+        branchAddress_ = instructionAddress_ + metadata.operands[2].imm; // Set LSB of result to 0
+        branchTaken_ = true;
+      } else {
+        branchAddress_ = instructionAddress_ + 4;
+        branchTaken_ = false;
+      }
+      break;
+    } case Opcode::RISCV_BLT: {
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs2 = operands[1].get<int64_t>();
+      if (rs1 < rs2) {
+        branchAddress_ = instructionAddress_ + metadata.operands[2].imm; // Set LSB of result to 0
+        branchTaken_ = true;
+      } else {
+        branchAddress_ = instructionAddress_ + 4;
+        branchTaken_ = false;
+      }
+      break;
+    } case Opcode::RISCV_BLTU: {
+//      std::cout << "BLTU" << std::endl;
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = operands[1].get<uint64_t>();
+      if (rs1 < rs2) {
+        branchAddress_ = instructionAddress_ + metadata.operands[2].imm; // Set LSB of result to 0
+        branchTaken_ = true;
+      } else {
+        branchAddress_ = instructionAddress_ + 4;
+        branchTaken_ = false;
+      }
+      break;
+    } case Opcode::RISCV_BGE: {
+//      std::cout << "BGE" << std::endl;
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs2 = operands[1].get<int64_t>();
+      if (rs1 >= rs2) {
+        branchAddress_ = instructionAddress_ + metadata.operands[2].imm; // Set LSB of result to 0
+        branchTaken_ = true;
+      } else {
+        branchAddress_ = instructionAddress_ + 4;
+        branchTaken_ = false;
+      }
+      break;
+    } case Opcode::RISCV_BGEU: {
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = operands[1].get<uint64_t>();
+      if (rs1 >= rs2) {
+        branchAddress_ = instructionAddress_ + metadata.operands[2].imm; // Set LSB of result to 0
+        branchTaken_ = true;
+      } else {
+        branchAddress_ = instructionAddress_ + 4;
+        branchTaken_ = false;
       }
       break;
     } case Opcode::RISCV_JAL: {
