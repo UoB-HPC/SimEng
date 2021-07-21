@@ -35,7 +35,28 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
     case Opcode::RISCV_JALR: {
-      if (operandCount == 1) {
+      if (operandCount == 0 && strcmp(mnemonic, "ret") == 0) { // jalr zero, ra, 0
+        operands[0].type = RISCV_OP_REG;
+        operands[0].reg = 1;
+
+        operands[1].type = RISCV_OP_REG;
+        operands[1].reg = 2;
+
+        operands[2].type = RISCV_OP_IMM;
+        operands[2].imm = 0;
+
+        operandCount = 3;
+      } else if (operandCount == 1 && strcmp(mnemonic, "jr") == 0) { // jalr zero, ra, 0
+        operands[0].type = RISCV_OP_REG;
+        operands[0].reg = 1;
+
+        operands[1] = insn.detail->riscv.operands[0];
+
+        operands[2].type = RISCV_OP_IMM;
+        operands[2].imm = 0;
+
+        operandCount = 3;
+      } else if (operandCount == 1 && strcmp(mnemonic, "jalr") == 0) {
         operands[0].type = RISCV_OP_REG;
         operands[0].reg = 2;
 
@@ -48,9 +69,17 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     } case Opcode::RISCV_JAL: {
-      if (operandCount == 1) {
+      if (operandCount == 1 && strcmp(mnemonic, "jal") == 0) {
         operands[0].type = RISCV_OP_REG;
         operands[0].reg = 2;
+
+        operands[1].type = RISCV_OP_IMM;
+        operands[1].imm = insn.detail->riscv.operands[0].imm;
+
+        operandCount = 2;
+      } else if (operandCount == 1 && strcmp(mnemonic, "j") == 0) {
+        operands[0].type = RISCV_OP_REG;
+        operands[0].reg = 1;
 
         operands[1].type = RISCV_OP_IMM;
         operands[1].imm = insn.detail->riscv.operands[0].imm;

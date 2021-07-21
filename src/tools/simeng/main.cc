@@ -242,7 +242,9 @@ int main(int argc, char** argv) {
         0x40f585b3,  //        	sub	a1,a1,a5
         0x00f747b3,  //        	xor	a5,a4,a5
         0x03f8c793,  //        	xori	a5,a7,63
-        0x00504463,  //         bgtz t0, $ $8
+        0x00028067,  //         jr t0
+//        0x00008067,  //         ret
+//        0x00504463,  //         bgtz t0, $ $8
 //        0x00505463,   //        blez t1, $ $8
 //        0x00079863,  //        	bnez	a5,10478
 //        0x00078663,  //        	beqz	a5,10418

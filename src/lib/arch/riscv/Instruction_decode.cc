@@ -145,10 +145,12 @@ void Instruction::decode() {
 
         sourceRegisterCount++;
       } else {
+        if (csRegToRegister(op.reg) != Instruction::ZERO_REGISTER) {
           destinationRegisters[destinationRegisterCount] =
               csRegToRegister(op.reg);
 
           destinationRegisterCount++;
+        }
       }
     }
 
