@@ -103,10 +103,12 @@ RUN_RISCV(R"(
       addi t3, t3, 3
       addi t4, t4, 6
       add t5, t3, t4
+      addi zero, t4, 16
   )");
 EXPECT_EQ(getGeneralRegister<uint64_t>(28), 3u);
 EXPECT_EQ(getGeneralRegister<uint64_t>(29), 6u);
 EXPECT_EQ(getGeneralRegister<uint64_t>(30), 9u);
+EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
 }
 
 TEST_P(InstArithmetic, addw) {
