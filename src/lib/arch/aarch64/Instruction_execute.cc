@@ -1551,8 +1551,9 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
-    case Opcode::AArch64_FCVTASUWDr: {  // fcvtas xd, dn
-      results[0] = static_cast<int32_t>(round(operands[0].get<double>()));
+    case Opcode::AArch64_FCVTASUWDr: {  // fcvtas wd, dn
+      results[0] = RegisterValue(
+          static_cast<int32_t>(round(operands[0].get<double>())), 8);
       break;
     }
     case Opcode::AArch64_FCVTASUXDr: {  // fcvtas xd, dn
@@ -4299,7 +4300,7 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_UMOVvi8: {  // umov wd, vn.b[index]
       const uint8_t* vec = operands[0].getAsVector<uint8_t>();
-      results[0] = vec[metadata.operands[1].vector_index];
+      results[0] = RegisterValue(vec[metadata.operands[1].vector_index], 8);
       break;
     }
     case Opcode::AArch64_UMSUBLrrr: {  // umsubl xd, wn, wm, xa
