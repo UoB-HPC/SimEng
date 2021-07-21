@@ -83,7 +83,16 @@ struct InstructionMetadata {
 
   /** Flag the instruction as invalid due to a detected unsupported alias. */
   void aliasNYI();
-};
+
+  /** RISCV helper function
+   * Use register zero as operands[1] and immediate value as operands[2] */
+  void includeZeroRegisterPosOne();
+
+  /** RISCV helper function
+ * Use register zero as operands[0] and immediate value as operands[2] */
+  void includeZeroRegisterPosZero();
+
+  };
 
 }  // namespace aarch64
 }  // namespace arch

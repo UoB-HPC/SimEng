@@ -34,7 +34,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
-    case Opcode::RISCV_JALR:
+    case Opcode::RISCV_JALR: {
       if (operandCount == 1) {
         operands[0].type = RISCV_OP_REG;
         operands[0].reg = 2;
@@ -47,7 +47,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         operandCount = 3;
       }
       break;
-    case Opcode::RISCV_JAL:
+    } case Opcode::RISCV_JAL: {
       if (operandCount == 1) {
         operands[0].type = RISCV_OP_REG;
         operands[0].reg = 2;
@@ -58,6 +58,31 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         operandCount = 2;
       }
       break;
+    } case Opcode::RISCV_BEQ: {
+      if (operandCount == 2 && strcmp(mnemonic, "beqz") == 0) {
+        includeZeroRegisterPosOne();
+      }
+      break;
+    } case Opcode::RISCV_BNE: {
+      if (operandCount == 2 && strcmp(mnemonic, "bnez") == 0) {
+        includeZeroRegisterPosOne();
+      }
+      break;
+    } case Opcode::RISCV_BLT: {
+      if (operandCount == 2 && strcmp(mnemonic, "bltz") == 0) {
+        includeZeroRegisterPosOne();
+      } else if (operandCount == 2 && strcmp(mnemonic, "bgtz") == 0) {
+        includeZeroRegisterPosZero();
+      }
+      break;
+    } case Opcode::RISCV_BGE: {
+      if (operandCount == 2 && strcmp(mnemonic, "blez") == 0) {
+        includeZeroRegisterPosZero();
+      } else  if (operandCount == 2 && strcmp(mnemonic, "bgez") == 0) {
+        includeZeroRegisterPosOne();
+      }
+      break;
+    }
   }
 
 //  revertAliasing();
@@ -87,6 +112,25 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
 //}
 
 void InstructionMetadata::aliasNYI() { id = RISCV_INS_INVALID; }
+
+void InstructionMetadata::includeZeroRegisterPosOne() {
+  operands[2] = operands[1];
+
+  operands[1].type = RISCV_OP_REG;
+  operands[1].reg = 1;
+
+  operandCount = 3;
+}
+
+void InstructionMetadata::includeZeroRegisterPosZero() {
+  operands[2] = operands[1];
+  operands[1] = operands[0];
+
+  operands[0].type = RISCV_OP_REG;
+  operands[0].reg = 1;
+
+  operandCount = 3;
+}
 
 }  // namespace aarch64
 }  // namespace arch
