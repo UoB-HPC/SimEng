@@ -160,6 +160,24 @@ EXPECT_EQ(getGeneralRegister<uint64_t>(31), 3);
 // TODO SUBW
 }
 
+TEST_P(InstArithmetic, lui) {
+RUN_RISCV(R"(
+      lui t3, 4
+      lui t4, 0xFFFFC
+  )");
+EXPECT_EQ(getGeneralRegister<uint64_t>(28), 4 << 12);
+EXPECT_EQ(getGeneralRegister<uint64_t>(29), -4 << 12);
+}
+
+TEST_P(InstArithmetic, auipc) {
+RUN_RISCV(R"(
+      auipc t3, 4
+      auipc t4, 1048572
+  )");
+EXPECT_EQ(getGeneralRegister<uint64_t>(28), 4 << 12);
+EXPECT_EQ(getGeneralRegister<uint64_t>(29), (-4 << 12) + 4);
+}
+
 TEST_P(InstArithmetic, xor) {
 RUN_RISCV(R"(
       addi t3, t3, 3
