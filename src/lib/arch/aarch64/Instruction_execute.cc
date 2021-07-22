@@ -1140,6 +1140,13 @@ void Instruction::execute() {
       }
       break;
     }
+    case Opcode::AArch64_FABD32: {  // fabd sd, sn, sm
+      float n = operands[0].get<float>();
+      float m = operands[1].get<float>();
+      float out[4] = {std::fabs(n - m), 0.f, 0.f, 0.f};
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FABD64: {  // fabd dd, dn, dm
       double n = operands[0].get<double>();
       double m = operands[1].get<double>();

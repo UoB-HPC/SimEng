@@ -7,6 +7,19 @@ namespace {
 using InstFloat = AArch64RegressionTest;
 
 TEST_P(InstFloat, fabd) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fmov s2, 12.5
+    fmov s3, 6.0
+    fabd s4, s0, s1
+    fabd s5, s2, s3
+  )");
+  CHECK_NEON(4, float, {2.125f, 0.f, 0.f, 0.f});
+  CHECK_NEON(5, float, {6.5f, 0.f, 0.f, 0.f});
+  
+  // 64-bit
   RUN_AARCH64(R"(
     fmov d0, 2.0
     fmov d1, -0.125
