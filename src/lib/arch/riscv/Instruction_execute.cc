@@ -350,6 +350,16 @@ void Instruction::execute() {
       int64_t out = static_cast<int64_t>(static_cast<int32_t>(rs1 - rs2));
       results[0] = out;
       break;
+    } case Opcode::RISCV_LUI: {
+      uint64_t out = signExtendW(metadata.operands[1].imm << 12);  // Shift into upper 20 bits
+      results[0] = out;
+      break;
+    } case Opcode::RISCV_AUIPC: {
+      const int64_t pc = instructionAddress_;
+      const int64_t uimm = signExtendW(metadata.operands[1].imm << 12);  // Shift into upper 20 bits
+      uint64_t out = static_cast<uint64_t>(pc + uimm);
+      results[0] = out;
+      break;
     } case Opcode::RISCV_XOR: {
       const uint64_t n = operands[0].get<uint64_t>();
       const uint64_t m = operands[1].get<uint64_t>();

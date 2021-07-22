@@ -203,6 +203,8 @@ int main(int argc, char** argv) {
 //        0x04c78793, // addi a5, a5, 76
 //        0x00f707bb,
 //        0x02b50533,
+        0xffffceb7,  //         lui t4, 0xffffc
+        0x00004e17,  //         auipc t3, 4
         0x01f024b3,  //         sgtz s1, $ $t6
         0x000faeb3,  //         sltz t4, $ $t6
         0x00603f33,  //         snez t5, $ $t1
