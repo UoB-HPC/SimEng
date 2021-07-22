@@ -13,7 +13,7 @@ uint8_t BalancedPortAllocator::allocate(std::vector<uint8_t> ports) {
   assert(ports.size() &&
          "No supported ports supplied; cannot allocate from a empty set");
   bool foundPort = false;
-  uint16_t bestWeight;
+  uint16_t bestWeight = 0xFFFF;
   uint8_t bestPort = 0;
   for (const auto& portIndex : ports) {
     // Search for the lowest-weighted port available
