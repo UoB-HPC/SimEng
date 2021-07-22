@@ -185,7 +185,15 @@ int main(int argc, char** argv) {
 //        0x04c78793, // addi a5, a5, 76
 //        0x00f707bb,
 //        0x02b50533,
-
+        0x01f024b3,  //         sgtz s1, $ $t6
+        0x000faeb3,  //         sltz t4, $ $t6
+        0x00603f33,  //         snez t5, $ $t1
+        0x00133e13,  //         seqz t3, $ $t1
+        0x41e00fbb,  //         negw t6, $ $t5
+        0x41c00eb3,  //         neg t4, $ $t3
+        0x000e0e9b,  //         sext.w t4, $ $t3
+        0x00000013,  //         nop
+        0x00030393,  //         mv t2, $ $t1
         0x02010413,  //        	addi	s0,sp,32
         0x00f707bb,  //        	addw	a5,a4,a5
         0x40f707bb,  //        	subw	a5,a4,a5
@@ -208,7 +216,7 @@ int main(int argc, char** argv) {
         0x02113c23,  //        	sd	ra,56(sp)
 //        0x00813083,  //        	ld	ra,8(sp)
         0xfff7c793,  //         not	a5,a5
-//        0x0007879b,  //        	sext.w	a5,a5
+        0x0007879b,  //        	sext.w	a5,a5
         0x00050793,  //        	mv	a5,a0
 //        0x000780e7,  //        	jalr	ra,a5,4
 //        0x000e0367,  //        	jalr	t1,t3
@@ -224,7 +232,7 @@ int main(int argc, char** argv) {
         0x40f585b3,  //        	sub	a1,a1,a5
         0x00f747b3,  //        	xor	a5,a4,a5
         0x03f8c793,  //        	xori	a5,a7,63
-        0x00028067,  //         jr t0
+//        0x00028067,  //         jr t0
 //        0x00008067,  //         ret
 //        0x00504463,  //         bgtz t0, $ $8
 //        0x00505463,   //        blez t1, $ $8

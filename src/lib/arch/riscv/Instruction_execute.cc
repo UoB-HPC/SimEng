@@ -332,6 +332,12 @@ void Instruction::execute() {
       uint64_t out = static_cast<uint64_t>(rs1 + rs2);
       results[0] = out;
       break;
+    } case Opcode::RISCV_ADDIW: {  // addi ad, an, #imm
+      const int32_t rs1 = operands[0].get<int32_t>();
+      const int32_t rs2 = metadata.operands[2].imm;
+      uint64_t out = signExtendW(rs1 + rs2);
+      results[0] = out;
+      break;
     } case Opcode::RISCV_SUB: {
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
