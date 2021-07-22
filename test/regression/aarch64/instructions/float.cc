@@ -560,6 +560,32 @@ TEST_P(InstFloat, fmadd) {
 }
 
 TEST_P(InstFloat, fmaxnm) {
+  // 32-bit numeric
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fmov s2, 7.5
+    fmaxnm s3, s0, s2
+    fmaxnm s4, s1, s2
+  )");
+  CHECK_NEON(3, float, {7.5f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {7.5f, 0.f, 0.f, 0.f});
+
+  // 32-bit with NAN
+  initialHeapData_.resize(4);
+  reinterpret_cast<float*>(initialHeapData_.data())[0] = std::nan("");
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fmov s0, -2.0
+    ldr s1, [x0]
+    fmaxnm s2, s0, s1
+  )");
+  CHECK_NEON(2, float, {-2.0f, 0.f, 0.f, 0.f});
+
   // 64-bit numeric
   RUN_AARCH64(R"(
     fmov d0, 2.0

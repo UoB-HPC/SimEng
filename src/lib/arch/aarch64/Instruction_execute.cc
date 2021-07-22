@@ -1757,6 +1757,13 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_FMAXNMSrr : {  // fmaxnm sd, sn, sm
+      float n = operands[0].get<float>();
+      float m = operands[1].get<float>();
+      float out[4] = {std::fmax(n, m), 0.f, 0.f, 0.f};
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FMINNMDrr: {  // fminnm dd, dn, dm
       double n = operands[0].get<double>();
       double m = operands[1].get<double>();
