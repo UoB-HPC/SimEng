@@ -133,6 +133,20 @@ EXPECT_EQ(getGeneralRegister<uint64_t>(31), -4);
 
 }
 
+TEST_P(InstArithmetic, addiw) {
+RUN_RISCV(R"(
+    addi t3, t3, 91
+    slli t3, t3, 28
+    addi t4, t4, -5
+    addiw t5, t3, -5
+    addiw t6, t2, -5
+  )");
+EXPECT_EQ(getGeneralRegister<uint64_t>(28), 24427626496);
+EXPECT_EQ(getGeneralRegister<int64_t>(29), -5);
+EXPECT_EQ(getGeneralRegister<int32_t>(30), -1342177285);
+EXPECT_EQ(getGeneralRegister<int64_t>(31), -5);
+}
+
 TEST_P(InstArithmetic, sub) {
 RUN_RISCV(R"(
     addi t3, t3, 3
@@ -217,6 +231,70 @@ EXPECT_EQ(getGeneralRegister<uint64_t>(30), 1);
 EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0);
 EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
 EXPECT_EQ(getGeneralRegister<uint64_t>(7), 1);
+}
+
+TEST_P(InstArithmetic, addiPseudoinstructions) {
+RUN_RISCV(R"(
+      nop
+      addi t1, t1, 5
+      mv t2, t1
+      addi t3, t3, -5
+      sext.w t4, t3
+  )");
+EXPECT_EQ(getGeneralRegister<uint64_t>(6), 5);
+EXPECT_EQ(getGeneralRegister<uint64_t>(7), 5);
+EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
+EXPECT_EQ(getGeneralRegister<int64_t>(28), -5);
+EXPECT_EQ(getGeneralRegister<int64_t>(29), -5);
+}
+
+TEST_P(InstArithmetic, subwPseudoinstructions) {
+RUN_RISCV(R"(
+      addi t3, t3, 91
+      neg t4, t3
+      addi t5, t5, 181
+      slli t5, t5, 28
+      sext.w t2, t5
+      negw t6, t5
+  )");
+EXPECT_EQ(getGeneralRegister<uint64_t>(28), 91);
+EXPECT_EQ(getGeneralRegister<int64_t>(29), -91);
+EXPECT_EQ(getGeneralRegister<uint64_t>(30), 48586817536);
+EXPECT_EQ(getGeneralRegister<int64_t>(7), 1342177280);
+EXPECT_EQ(getGeneralRegister<int64_t>(31), -1342177280);
+}
+
+TEST_P(InstArithmetic, setPseudoinstructions) {
+RUN_RISCV(R"(
+      addi t1, t1, 1
+      seqz t2, t0
+      seqz t3, t1
+      snez t4, t0
+      snez t5, t1
+  )");
+EXPECT_EQ(getGeneralRegister<uint64_t>(7), 1);
+EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
+EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
+EXPECT_EQ(getGeneralRegister<uint64_t>(30), 1);
+
+RUN_RISCV(R"(
+      addi t1, t1, 1
+      addi t6, t6, -1
+      sltz t2, t0
+      sltz t3, t1
+      sltz t4, t6
+      sgtz t5, t0
+      sgtz s0, t1
+      sgtz s1, t6
+  )");
+EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0);
+EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
+EXPECT_EQ(getGeneralRegister<uint64_t>(29), 1);
+EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0);
+EXPECT_EQ(getGeneralRegister<uint64_t>(8), 1);
+EXPECT_EQ(getGeneralRegister<uint64_t>(9), 0);
+
+
 }
 
 //TEST_P(InstArithmetic, addi) {

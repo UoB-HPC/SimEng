@@ -34,7 +34,60 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
-    case Opcode::RISCV_JALR: {
+    case Opcode::RISCV_ADDI: {
+      if (operandCount == 0 && strcmp(mnemonic, "nop") == 0) {
+        operands[0].type = RISCV_OP_REG;
+        operands[0].reg = 1;
+
+        operands[1].type = RISCV_OP_REG;
+        operands[1].reg = 1;
+
+        operands[2].type = RISCV_OP_IMM;
+        operands[2].imm = 0;
+
+        operandCount = 3;
+      } else if (operandCount == 2 && strcmp(mnemonic, "mv") == 0) {
+        operands[2].type = RISCV_OP_IMM;
+        operands[2].imm = 0;
+
+        operandCount = 3;
+      }
+    } case Opcode::RISCV_ADDIW: {
+      if (operandCount == 2 && strcmp(mnemonic, "sext.w") == 0) {
+        operands[2].type = RISCV_OP_IMM;
+        operands[2].imm = 0;
+
+        operandCount = 3;
+      }
+    } case Opcode::RISCV_SUB: {
+      if (operandCount == 2 && strcmp(mnemonic, "neg") == 0) {
+        includeZeroRegisterPosOne();
+      }
+    } case Opcode::RISCV_SUBW: {
+      if (operandCount == 2 && strcmp(mnemonic, "negw") == 0) {
+        includeZeroRegisterPosOne();
+      }
+    } case Opcode::RISCV_SLTIU: {
+      if (operandCount == 2 && strcmp(mnemonic, "seqz") == 0) {
+        operands[2].type = RISCV_OP_IMM;
+        operands[2].imm = 1;
+
+        operandCount = 3;
+      }
+    } case Opcode::RISCV_SLTU: {
+      if (operandCount == 2 && strcmp(mnemonic, "snez") == 0) {
+        includeZeroRegisterPosOne();
+      }
+    } case Opcode::RISCV_SLT: {
+      if (operandCount == 2 && strcmp(mnemonic, "sltz") == 0) {
+        operands[2].type = RISCV_OP_REG;
+        operands[2].reg = 1;
+
+        operandCount = 3;
+      } else if (operandCount == 2 && strcmp(mnemonic, "sgtz") == 0) {
+        includeZeroRegisterPosOne();
+      }
+    } case Opcode::RISCV_JALR: {
       if (operandCount == 0 && strcmp(mnemonic, "ret") == 0) { // jalr zero, ra, 0
         operands[0].type = RISCV_OP_REG;
         operands[0].reg = 1;
