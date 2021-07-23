@@ -311,8 +311,20 @@ EXPECT_EQ(getGeneralRegister<uint64_t>(29), 1);
 EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0);
 EXPECT_EQ(getGeneralRegister<uint64_t>(8), 1);
 EXPECT_EQ(getGeneralRegister<uint64_t>(9), 0);
+}
 
-
+TEST_P(InstArithmetic, liPseudoinstruction) {
+  RUN_RISCV(R"(
+      addi a5, a5, 12
+      li a5, 0
+      addi a4, a4, 12
+      li a4, 192
+      addi a3, a3, 12
+      li a3, -180
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(15), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(14), 192);
+  EXPECT_EQ(getGeneralRegister<int64_t>(13), -180);
 }
 
 //TEST_P(InstArithmetic, addi) {
