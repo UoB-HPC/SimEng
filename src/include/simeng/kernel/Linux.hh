@@ -50,6 +50,16 @@ struct timeval {
   int64_t tv_usec;  // microseconds
 };
 
+/** Struct to hold information about a contiguous virtual memory area. */
+struct vm_area_struct {
+  /** The address representing the end of the memory allocation. */
+  uint64_t vm_end = 0;
+  /** The address representing the start of the memory allocation. */
+  uint64_t vm_start = 0;
+  /** The next allocation in the contiguous list. */
+  std::shared_ptr<struct vm_area_struct> vm_next = NULL;
+};
+
 /** A state container for a Linux process. */
 struct LinuxProcessState {
   /** The process ID. */
@@ -62,6 +72,14 @@ struct LinuxProcessState {
   uint64_t currentBrk;
   /** The initial stack pointer. */
   uint64_t initialStackPointer;
+  /** The address of the start of the mmap region. */
+  uint64_t mmapRegion;
+  /** The page size of the process memory. */
+  uint64_t pageSize;
+  /** Contiguous memory allocations from the mmap system call. */
+  std::vector<vm_area_struct> contiguousAllocations;
+  /** Non-Contiguous memory allocations from the mmap system call. */
+  std::vector<vm_area_struct> nonContiguousAllocations;
 
   // Thread state
   // TODO: Support multiple threads per process
@@ -130,6 +148,13 @@ class Linux {
 
   /** lseek syscall: reposition read/write file offset. */
   uint64_t lseek(int64_t fd, uint64_t offset, int64_t whence);
+
+  /** munmap syscall: deletes the mappings for the specified address range. */
+  int64_t munmap(uint64_t addr, size_t length);
+
+  /** mmap syscall: map files or devices into memory. */
+  uint64_t mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
+                off_t offset);
 
   /** openat syscall: open/create a file. */
   int64_t openat(int64_t dirfd, const std::string& path, int64_t flags,
