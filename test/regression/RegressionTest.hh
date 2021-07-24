@@ -5,6 +5,22 @@
 #include <vector>
 
 #include "gtest/gtest.h"
+#include "llvm/MC/MCAsmBackend.h"
+#include "llvm/MC/MCAsmInfo.h"
+#include "llvm/MC/MCCodeEmitter.h"
+#include "llvm/MC/MCContext.h"
+#include "llvm/MC/MCInstrInfo.h"
+#include "llvm/MC/MCObjectFileInfo.h"
+#include "llvm/MC/MCObjectWriter.h"
+#include "llvm/MC/MCParser/MCAsmParser.h"
+#include "llvm/MC/MCParser/MCTargetAsmParser.h"
+#include "llvm/MC/MCRegisterInfo.h"
+#include "llvm/MC/MCStreamer.h"
+#include "llvm/Object/ELF.h"
+#include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
 #include "simeng/arch/Architecture.hh"
@@ -37,8 +53,9 @@ class RegressionTest
   /** Generate a default YAML-formatted configuration. */
   virtual YAML::Node generateConfig() const = 0;
 
-  /** Run the assembly in `source`, building it for the target `triple`. */
-  void run(const char* source, const char* triple);
+  /** Run the assembly in `source`, building it for the target `triple` and ISA
+   * extensions. */
+  void run(const char* source, const char* triple, const char* extensions);
 
   /** Create an ISA instance from a kernel. */
   virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
@@ -98,8 +115,9 @@ class RegressionTest
   bool programFinished_ = false;
 
  private:
-  /** Assemble test source to a flat binary for the given triple. */
-  void assemble(const char* source, const char* triple);
+  /** Assemble test source to a flat binary for the given triple and ISA
+   * extensions. */
+  void assemble(const char* source, const char* triple, const char* extensions);
 
   /** The flat binary produced by assembling the test source. */
   uint8_t* code_ = nullptr;
