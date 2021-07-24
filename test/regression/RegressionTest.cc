@@ -2,22 +2,6 @@
 
 #include <string>
 
-#include "llvm/MC/MCAsmBackend.h"
-#include "llvm/MC/MCAsmInfo.h"
-#include "llvm/MC/MCCodeEmitter.h"
-#include "llvm/MC/MCContext.h"
-#include "llvm/MC/MCInstrInfo.h"
-#include "llvm/MC/MCObjectFileInfo.h"
-#include "llvm/MC/MCObjectWriter.h"
-#include "llvm/MC/MCParser/MCAsmParser.h"
-#include "llvm/MC/MCParser/MCTargetAsmParser.h"
-#include "llvm/MC/MCRegisterInfo.h"
-#include "llvm/MC/MCStreamer.h"
-#include "llvm/Object/ELF.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
 #include "simeng/BTBPredictor.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
@@ -38,11 +22,12 @@ void RegressionTest::TearDown() {
   }
 }
 
-void RegressionTest::run(const char* source, const char* triple) {
+void RegressionTest::run(const char* source, const char* triple,
+                         const char* extensions) {
   testing::internal::CaptureStdout();
 
   // Assemble the source to a flat binary
-  assemble(source, triple);
+  assemble(source, triple, extensions);
   if (HasFatalFailure()) return;
 
   // Get pre-defined config file for OoO model
@@ -132,16 +117,8 @@ void RegressionTest::run(const char* source, const char* triple) {
   programFinished_ = true;
 }
 
-void RegressionTest::assemble(const char* source, const char* triple) {
-  // Initialise LLVM
-//  LLVMInitializeAArch64TargetInfo();
-//  LLVMInitializeAArch64TargetMC();
-//  LLVMInitializeAArch64AsmParser();
-
-  LLVMInitializeRISCVTargetInfo();
-  LLVMInitializeRISCVTargetMC();
-  LLVMInitializeRISCVAsmParser();
-
+void RegressionTest::assemble(const char* source, const char* triple,
+                              const char* extensions) {
   // Get LLVM target
   std::string errStr;
   const llvm::Target* target =
@@ -180,7 +157,7 @@ void RegressionTest::assemble(const char* source, const char* triple) {
 
   // Create MC subtarget info
   std::unique_ptr<llvm::MCSubtargetInfo> subtargetInfo(
-      target->createMCSubtargetInfo(triple, "", "+sve,+lse"));
+      target->createMCSubtargetInfo(triple, "", extensions));
   ASSERT_NE(subtargetInfo, nullptr) << "Failed to create LLVM subtarget info";
 
   // Create MC instruction info

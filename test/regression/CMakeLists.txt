@@ -10,16 +10,15 @@ target_link_libraries(regression-test-base libsimeng)
 target_link_libraries(regression-test-base gtest_main)
 
 # Add LLVM includes
-target_include_directories(regression-test-base PRIVATE ${LLVM_INCLUDE_DIRS})
+target_include_directories(regression-test-base PUBLIC ${LLVM_INCLUDE_DIRS})
 
 # Link to LLVM libraries
-#llvm_map_components_to_libnames(LLVM_LIBS aarch64asmparser object)
-llvm_map_components_to_libnames(LLVM_LIBS riscvasmparser object)
+llvm_map_components_to_libnames(LLVM_LIBS aarch64asmparser riscvasmparser object)
 target_link_libraries(regression-test-base ${LLVM_LIBS})
 
 # Add regression test directories for each architecture
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-add_subdirectory(aarch64)
+add_subdirectory(aarch64) 
 add_subdirectory(riscv)
 
 # Link to yaml-cpp libraries

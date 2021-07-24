@@ -6,7 +6,12 @@
 using namespace simeng::arch::riscv;
 
 void RISCVRegressionTest::run(const char* source) {
-  RegressionTest::run(source, "riscv64");
+  // Initialise LLVM
+  LLVMInitializeRISCVTargetInfo();
+  LLVMInitializeRISCVTargetMC();
+  LLVMInitializeRISCVAsmParser();
+
+  RegressionTest::run(source, "riscv64", "");
 }
 // TODO create yaml
 YAML::Node RISCVRegressionTest::generateConfig() const {
@@ -27,7 +32,7 @@ YAML::Node RISCVRegressionTest::generateConfig() const {
 
 std::unique_ptr<simeng::arch::Architecture>
 RISCVRegressionTest::createArchitecture(simeng::kernel::Linux& kernel,
-                                          YAML::Node config) const {
+                                        YAML::Node config) const {
   return std::make_unique<Architecture>(kernel, config);
 }
 

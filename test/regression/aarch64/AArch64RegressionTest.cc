@@ -6,7 +6,12 @@
 using namespace simeng::arch::aarch64;
 
 void AArch64RegressionTest::run(const char* source) {
-  RegressionTest::run(source, "aarch64");
+  // Initialise LLVM
+  LLVMInitializeAArch64TargetInfo();
+  LLVMInitializeAArch64TargetMC();
+  LLVMInitializeAArch64AsmParser();
+
+  RegressionTest::run(source, "aarch64", "+sve");
 }
 
 YAML::Node AArch64RegressionTest::generateConfig() const {
