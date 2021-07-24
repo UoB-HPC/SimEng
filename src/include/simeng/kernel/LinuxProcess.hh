@@ -5,6 +5,10 @@
 namespace simeng {
 namespace kernel {
 
+/** Align `address` to an `alignTo`-byte boundary by rounding up to the nearest
+ * multiple. */
+uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
+
 /** The initial state of a Linux process, constructed from a binary executable.
  *
  * The constructed process follows a typical layout:
@@ -12,6 +16,10 @@ namespace kernel {
  * |---------------| <- start of stack
  * |     Stack     |    stack grows downwards
  * |-v-----------v-|
+ * |               |
+ * |-^-----------^-|
+ * |  mmap region  |    mmap region grows upwards
+ * |---------------| <- start of mmap region
  * |               |
  * |-^-----------^-|
  * |     Heap      |    heap grows upwards
@@ -41,6 +49,12 @@ class LinuxProcess {
 
   /** Get the address of the top of the stack. */
   uint64_t getStackStart() const;
+
+  /** Get the address of the start of the mmpa region. */
+  uint64_t getMmapStart() const;
+
+  /** Get the page size. */
+  uint64_t getPageSize() const;
 
   /** Get the process image. */
   const span<char> getProcessImage() const;
@@ -72,6 +86,12 @@ class LinuxProcess {
 
   /** The address of the start of the heap region. */
   uint64_t heapStart_;
+
+  /** The address of the start of region of memory given to mmap. */
+  uint64_t mmapStart_;
+
+  /** The page size of the process memory. */
+  const uint64_t pageSize_ = 4096;
 
   /** The address of the stack pointer. */
   uint64_t stackPointer_;
