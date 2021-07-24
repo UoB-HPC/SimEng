@@ -113,7 +113,7 @@ set(YAML_CPP_INSTALL OFF)
 FetchContent_MakeAvailable_Args(yaml-cpp EXCLUDE_FROM_ALL)
 
 option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
-option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule")
+option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
 
 if(SIMENG_ENABLE_TESTS)
 
