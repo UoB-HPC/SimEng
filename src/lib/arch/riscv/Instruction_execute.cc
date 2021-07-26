@@ -214,22 +214,22 @@ void Instruction::execute() {
 //      exception_ = InstructionException::SupervisorCall;
 //      break;
     case Opcode::RISCV_LB: {
-      results[0] = bitExtend(memoryData[0].get<uint64_t>(), 8);
+      results[0] = bitExtend(memoryData[0].get<uint8_t>(), 8);
       break;
     } case Opcode::RISCV_LBU: {
-      results[0] = zeroExtend(memoryData[0].get<uint64_t>(), 8);
+      results[0] = zeroExtend(memoryData[0].get<uint8_t>(), 8);
       break;
     } case Opcode::RISCV_LH: {
-      results[0] = bitExtend(memoryData[0].get<uint64_t>(), 16);
+      results[0] = bitExtend(memoryData[0].get<uint16_t>(), 16);
       break;
     } case Opcode::RISCV_LHU: {
-      results[0] = zeroExtend(memoryData[0].get<uint64_t>(), 16);
+      results[0] = zeroExtend(memoryData[0].get<uint16_t>(), 16);
       break;
     } case Opcode::RISCV_LW: {
-      results[0] = bitExtend(memoryData[0].get<uint64_t>(), 32);
+      results[0] = bitExtend(memoryData[0].get<uint32_t>(), 32);
       break;
     } case Opcode::RISCV_LWU: {
-      results[0] = zeroExtend(memoryData[0].get<uint64_t>(), 32);
+      results[0] = zeroExtend(memoryData[0].get<uint32_t>(), 32);
       break;
     } case Opcode::RISCV_LD: {
       results[0] = memoryData[0];
@@ -506,7 +506,9 @@ void Instruction::execute() {
       results[0] = instructionAddress_ + 4;
       break;
     } case Opcode::RISCV_JALR: {
+      std::cout << "rs1:" << operands[0].get<uint64_t>() << "imm:" << metadata.operands[2].imm << std::endl;
       branchAddress_ = (operands[0].get<uint64_t>() + metadata.operands[2].imm) & ~1; // Set LSB of result to 0
+      std::cout << "branchAddr:" << static_cast<int64_t>(branchAddress_) << std::endl;
       branchTaken_ = true; // TODO Jumps should not need the branch predictor
       results[0] = instructionAddress_ + 4;
       break;
