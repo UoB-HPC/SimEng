@@ -27,9 +27,9 @@ bool ExceptionHandler::init() {
   const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
 
   if (exception == InstructionException::SupervisorCall) {
-    // Retrieve syscall ID held in register x8
+    // Retrieve syscall ID held in register a7
     auto syscallId =
-        registerFileSet.get({RegisterType::GENERAL, 8}).get<uint64_t>();
+        registerFileSet.get({RegisterType::GENERAL, 17}).get<uint64_t>();
 
     ProcessStateChange stateChange;
     switch (syscallId) {
@@ -200,53 +200,55 @@ bool ExceptionHandler::init() {
 //          return concludeSyscall(stateChange);
 //        });
 //      }
-//      case 66: {  // writev
-//        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-//        uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
-//        int64_t iovcnt = registerFileSet.get(R2).get<int64_t>();
-//
-//        // The pointer `iov` points to an array of structures that each contain
-//        // a pointer to the data and the size of the data as an integer.
-//        //
-//        // We're going to queue up a chain of handlers:
-//        // - First, read the iovec structures that describe each buffer.
-//        // - Next, read the data for each buffer.
-//        // - Finally, invoke the kernel to perform the write operation.
-//
-//        // Create the final handler in the chain, which invokes the kernel
-//        std::function<bool()> last = [=]() {
-//          // Rebuild the iovec structures using pointers to `dataBuffer` data
-//          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
-//          uint8_t* bufferPtr = dataBuffer.data() + iovcnt * 16;
-//          for (int64_t i = 0; i < iovcnt; i++) {
-//            iovdata[i * 2 + 0] = reinterpret_cast<uint64_t>(bufferPtr);
-//
-//            // Get the length of this buffer and add it to the current pointer
-//            uint64_t len = iovdata[i * 2 + 1];
-//            bufferPtr += len;
-//          }
-//
-//          // Invoke the kernel
-//          int64_t retval = linux_.writev(fd, dataBuffer.data(), iovcnt);
-//          ProcessStateChange stateChange = {
-//              ChangeType::REPLACEMENT, {R0}, {retval}};
-//          return concludeSyscall(stateChange);
-//        };
-//
-//        // Build the chain of buffer loads backwards through the iov buffers
-//        for (int64_t i = iovcnt - 1; i >= 0; i--) {
-//          last = [=]() {
-//            uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
-//            uint64_t ptr = iovdata[i * 2 + 0];
-//            uint64_t len = iovdata[i * 2 + 1];
-//            return readBufferThen(ptr, len, last);
-//          };
-//        }
-//
-//        // Run the first buffer read to load the buffer structures, before
-//        // performing each of the buffer loads.
-//        return readBufferThen(iov, iovcnt * 16, last);
-//      }
+      case 66: {  // writev
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
+        int64_t iovcnt = registerFileSet.get(R2).get<int64_t>();
+
+        std::cout << fd << ":" << iov << ":" << iovcnt << std::endl;
+
+        // The pointer `iov` points to an array of structures that each contain
+        // a pointer to the data and the size of the data as an integer.
+        //
+        // We're going to queue up a chain of handlers:
+        // - First, read the iovec structures that describe each buffer.
+        // - Next, read the data for each buffer.
+        // - Finally, invoke the kernel to perform the write operation.
+
+        // Create the final handler in the chain, which invokes the kernel
+        std::function<bool()> last = [=]() {
+          // Rebuild the iovec structures using pointers to `dataBuffer` data
+          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
+          uint8_t* bufferPtr = dataBuffer.data() + iovcnt * 16;
+          for (int64_t i = 0; i < iovcnt; i++) {
+            iovdata[i * 2 + 0] = reinterpret_cast<uint64_t>(bufferPtr);
+
+            // Get the length of this buffer and add it to the current pointer
+            uint64_t len = iovdata[i * 2 + 1];
+            bufferPtr += len;
+          }
+
+          // Invoke the kernel
+          int64_t retval = linux_.writev(fd, dataBuffer.data(), iovcnt);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {retval}};
+          return concludeSyscall(stateChange);
+        };
+
+        // Build the chain of buffer loads backwards through the iov buffers
+        for (int64_t i = iovcnt - 1; i >= 0; i--) {
+          last = [=]() {
+            uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
+            uint64_t ptr = iovdata[i * 2 + 0];
+            uint64_t len = iovdata[i * 2 + 1];
+            return readBufferThen(ptr, len, last);
+          };
+        }
+
+        // Run the first buffer read to load the buffer structures, before
+        // performing each of the buffer loads.
+        return readBufferThen(iov, iovcnt * 16, last);
+      }
 //      case 78: {  // readlinkat
 //        const auto pathnameAddress = registerFileSet.get(R1).get<uint64_t>();
 //
@@ -302,29 +304,29 @@ bool ExceptionHandler::init() {
 //        stateChange.memoryAddressValues.push_back(nanoseconds);
 //        break;
 //      }
-//      case 160: {  // uname
-//        const uint64_t base = registerFileSet.get(R0).get<uint64_t>();
-//        const uint8_t len =
-//            65;  // Reserved length of each string field in Linux
-//        const char sysname[] = "Linux";
-//        const char nodename[] = "simeng.hpc.cs.bris.ac.uk";
-//        const char release[] = "4.14.0";
-//        const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019";
-//        const char machine[] = "aarch64";
-//
-//        stateChange = {ChangeType::REPLACEMENT,
-//                       {R0},
-//                       {static_cast<uint64_t>(0)},
-//                       {{base, sizeof(sysname)},
-//                        {base + len, sizeof(nodename)},
-//                        {base + (len * 2), sizeof(release)},
-//                        {base + (len * 3), sizeof(version)},
-//                        {base + (len * 4), sizeof(machine)}},
-//                       {RegisterValue(sysname), RegisterValue(nodename),
-//                        RegisterValue(release), RegisterValue(version),
-//                        RegisterValue(machine)}};
-//        break;
-//      }
+      case 160: {  // uname
+        const uint64_t base = registerFileSet.get(R0).get<uint64_t>();
+        const uint8_t len =
+            65;  // Reserved length of each string field in Linux
+        const char sysname[] = "Linux";
+        const char nodename[] = "simeng.hpc.cs.bris.ac.uk";
+        const char release[] = "4.14.0";
+        const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019";
+        const char machine[] = "riscv64";
+
+        stateChange = {ChangeType::REPLACEMENT,
+                       {R0},
+                       {static_cast<uint64_t>(0)},
+                       {{base, sizeof(sysname)},
+                        {base + len, sizeof(nodename)},
+                        {base + (len * 2), sizeof(release)},
+                        {base + (len * 3), sizeof(version)},
+                        {base + (len * 4), sizeof(machine)}},
+                       {RegisterValue(sysname), RegisterValue(nodename),
+                        RegisterValue(release), RegisterValue(version),
+                        RegisterValue(machine)}};
+        break;
+      }
 //      case 169: {  // gettimeofday
 //        uint64_t tvPtr = registerFileSet.get(R0).get<uint64_t>();
 //        uint64_t tzPtr = registerFileSet.get(R1).get<uint64_t>();
@@ -345,24 +347,22 @@ bool ExceptionHandler::init() {
 //        }
 //        break;
 //      }
-//      case 174:  // getuid
-//        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getuid()}};
-//        break;
-//      case 175:  // geteuid
-//        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.geteuid()}};
-//        break;
-//      case 176:  // getgid
-//        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getgid()}};
-//        break;
-//      case 177:  // getegid
-//        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getegid()}};
-//        break;
+      case 174:  // getuid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getuid()}};
+        break;
+      case 175:  // geteuid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.geteuid()}};
+        break;
+      case 176:  // getgid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getgid()}};
+        break;
+      case 177:  // getegid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getegid()}};
+        break;
       case 214: {  // brk
-        std::cout << "SYS CALL CORRECT:" << std::endl;
         auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
         stateChange = {
             ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
-        std::cout << "SYS CALL CORRECT:" << result << std::endl;
         break;
       }
       default:

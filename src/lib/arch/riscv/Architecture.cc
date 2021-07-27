@@ -147,15 +147,15 @@ ProcessStateChange Architecture::getInitialState() const {
 
 ProcessStateChange Architecture::getUpdateState() const {
   ProcessStateChange changes;
-  // Set ProcessStateChange type~constructor
-  changes.type = ChangeType::INCREMENT;
-
-  // Increment the Counter-timer Virtual Count (CNTVCT) register by 1
-  /* TODO: CNTVCT value should be equal to the physical count value minus the
-   * virtual offset visible in CNTVOFF. */
-  changes.modifiedRegisters.push_back(
-      {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0)});
-  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(1));
+//  // Set ProcessStateChange type~constructor
+//  changes.type = ChangeType::INCREMENT;
+//
+//  // Increment the Counter-timer Virtual Count (CNTVCT) register by 1
+//  /* TODO: CNTVCT value should be equal to the physical count value minus the
+//   * virtual offset visible in CNTVOFF. */
+//  changes.modifiedRegisters.push_back(
+//      {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0)});
+//  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(1));
 
   return changes;
 }
