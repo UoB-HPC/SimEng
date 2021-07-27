@@ -209,10 +209,6 @@ void Instruction::execute() {
 
   executed_ = true;
   switch (metadata.opcode) {
-//    case Opcode::RISCV_BEQ: {  // Temporary syscall to get heap address
-//      exceptionEncountered_ = true;
-//      exception_ = InstructionException::SupervisorCall;
-//      break;
     case Opcode::RISCV_LB: {
       results[0] = bitExtend(memoryData[0].get<uint8_t>(), 8);
       break;
@@ -506,11 +502,18 @@ void Instruction::execute() {
       results[0] = instructionAddress_ + 4;
       break;
     } case Opcode::RISCV_JALR: {
-      std::cout << "rs1:" << operands[0].get<uint64_t>() << "imm:" << metadata.operands[2].imm << std::endl;
+//      std::cout << "rs1:" << operands[0].get<uint64_t>() << "imm:" << metadata.operands[2].imm << std::endl;
       branchAddress_ = (operands[0].get<uint64_t>() + metadata.operands[2].imm) & ~1; // Set LSB of result to 0
-      std::cout << "branchAddr:" << static_cast<int64_t>(branchAddress_) << std::endl;
+//      std::cout << "branchAddr:" << static_cast<int64_t>(branchAddress_) << std::endl;
       branchTaken_ = true; // TODO Jumps should not need the branch predictor
       results[0] = instructionAddress_ + 4;
+      break;
+    } case Opcode::RISCV_ECALL: {
+      exceptionEncountered_ = true;
+      exception_ = InstructionException::SupervisorCall;
+      break;
+    } case Opcode::RISCV_FENCE: {
+      // Currenlty modelled as a NOP
       break;
     }
     default:

@@ -90,11 +90,11 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   /** A function to call to resume handling an exception. */
   std::function<bool()> resumeHandling_;
 
-  /** Helper constants for AArch64 general-purpose registers. */
-  static constexpr Register R0 = {RegisterType::GENERAL, 0};
-  static constexpr Register R1 = {RegisterType::GENERAL, 1};
-  static constexpr Register R2 = {RegisterType::GENERAL, 2};
-  static constexpr Register R3 = {RegisterType::GENERAL, 3};
+  /** Helper constants for RISCV general-purpose registers. */
+  static constexpr Register R0 = {RegisterType::GENERAL, 10};
+  static constexpr Register R1 = {RegisterType::GENERAL, 11};
+  static constexpr Register R2 = {RegisterType::GENERAL, 12};
+  static constexpr Register R3 = {RegisterType::GENERAL, 13};
 };
 
 }  // namespace aarch64
