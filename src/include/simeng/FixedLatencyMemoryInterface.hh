@@ -79,6 +79,11 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
 
   /** The number of times this interface has been ticked. */
   uint64_t tickCounter_ = 0;
+
+  /** Returns true if unsigned overflow occurs. */
+  bool unsignedOverflow_(uint64_t a, uint64_t b) const {
+    return (a + b) < a || (a + b) < b;
+  }
 };
 
 }  // namespace simeng
