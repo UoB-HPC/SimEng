@@ -1553,7 +1553,7 @@ void Instruction::execute() {
             out[(2 * i)] = static_cast<int32_t>(std::trunc(b[i]));
           }
           // 4294967295 = 0xFFFFFFFF
-          out[(2 * i) + 1] = (b[i] < 0) ? 4294967295 : 0;
+          out[(2 * i) + 1] = (b[i] < 0) ? 4294967295u : 0;
         } else {
           out[(2 * i)] = a[(2 * i)];
           out[(2 * i) + 1] = a[(2 * i) + 1];
