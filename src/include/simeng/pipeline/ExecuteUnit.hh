@@ -109,7 +109,7 @@ class ExecuteUnit {
   std::deque<std::shared_ptr<Instruction>> operationsStalled_;
 
   /** Whether the core should be flushed after this cycle. */
-  bool shouldFlush_;
+  bool shouldFlush_ = false;
 
   /** The target instruction address the PC should be reset to after this cycle.
    */
