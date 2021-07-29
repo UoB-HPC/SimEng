@@ -2966,13 +2966,13 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_MOVZWi: {  // movz wd, #imm
       uint8_t shift = metadata.operands[1].shift.value;
-      uint32_t value = metadata.operands[1].imm << shift;
+      uint32_t value = static_cast<uint64_t>(metadata.operands[1].imm) << shift;
       results[0] = RegisterValue(value, 8);
       break;
     }
     case Opcode::AArch64_MOVZXi: {  // movz xd, #imm
       uint8_t shift = metadata.operands[1].shift.value;
-      uint64_t value = metadata.operands[1].imm << shift;
+      uint64_t value = static_cast<uint64_t>(metadata.operands[1].imm) << shift;
       results[0] = value;
       break;
     }
