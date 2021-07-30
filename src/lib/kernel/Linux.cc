@@ -29,6 +29,10 @@ void Linux::createProcess(const LinuxProcess& process) {
   processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
+
+  // Define special file path replacement paths
+  specialPathTranslations_.insert(
+      {"/sys/devices/system/cpu/online", specialFilesDir_ + "online"});
 }
 
 uint64_t Linux::getInitialStackPointer() const {
@@ -311,20 +315,35 @@ int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
   // Resolve absolute path to target file
   char absolutePath[LINUX_PATH_MAX];
   realpath(pathname.c_str(), absolutePath);
+  // Setup variable to record if an alternative path is available for use
+  bool altPath = false;
 
-  // Check if path may be a special file, bail out if it is
-  // TODO: Add support for special files
-  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
+  // Check if path may be a special file
+  for (auto prefix : {"/dev", "/proc", "/sys"}) {
     if (strncmp(absolutePath, prefix, strlen(prefix)) == 0) {
-      std::cerr << "ERROR: attempted to open special file: "
-                << "'" << absolutePath << "'" << std::endl;
-      exit(1);
+      // Check if there's an assigned replacement path
+      if (specialPathTranslations_.find(pathname) !=
+          specialPathTranslations_.end()) {
+        altPath = true;
+        break;
+      } else {
+        std::cerr << "-- ERROR: attempted to open unsupported special file: "
+                  << "'" << pathname.c_str() << "'" << std::endl
+                  << "--        "
+                  << "allowing simulation to continue in case alternative "
+                     "supported special file can be used"
+                  << std::endl;
+        break;
+      }
     }
   }
 
   // Pass syscall through to host
   assert(dirfd == -100 && "unsupported dirfd argument in openat syscall");
-  int64_t hfd = ::openat(AT_FDCWD, pathname.c_str(), flags, mode);
+  // Use path replacement for pathname argument of openat, if chosen
+  const char* newPathname =
+      altPath ? specialPathTranslations_[pathname].c_str() : pathname.c_str();
+  int64_t hfd = ::openat(AT_FDCWD, newPathname, flags, mode);
   if (hfd < 0) {
     return hfd;
   }

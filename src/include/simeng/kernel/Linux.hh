@@ -2,8 +2,10 @@
 
 #include <memory>
 #include <set>
+#include <unordered_map>
 
 #include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/version.hh"
 
 namespace simeng {
 namespace kernel {
@@ -185,6 +187,13 @@ class Linux {
  private:
   /** The state of the user-space processes running above the kernel. */
   std::vector<LinuxProcessState> processStates_;
+
+  /** Translation between special files paths and simeng replacement files. */
+  std::unordered_map<std::string, const std::string> specialPathTranslations_;
+
+  /** Path to the root of the replacement special files. */
+  std::string specialFilesDir_ =
+      SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles/";
 };
 
 }  // namespace kernel
