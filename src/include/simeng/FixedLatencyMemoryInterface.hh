@@ -1,9 +1,9 @@
 #pragma once
 
-#include "simeng/MemoryInterface.hh"
-
 #include <queue>
 #include <vector>
+
+#include "simeng/MemoryInterface.hh"
 
 namespace simeng {
 

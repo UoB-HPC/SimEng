@@ -58,7 +58,6 @@ TEST(LatencyMemoryInterfaceTest, OutofBoundsRead) {
   EXPECT_EQ(result.requestId, 2);
   EXPECT_EQ(result.data, simeng::RegisterValue());
   EXPECT_EQ(result.target, target);
-
 }
 
 }  // namespace
