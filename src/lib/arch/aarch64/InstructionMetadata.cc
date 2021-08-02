@@ -848,8 +848,11 @@ void InstructionMetadata::revertAliasing() {
           opcode == Opcode::AArch64_SEL_ZPZZ_D) {
         // mov Zd.T, Pg/M, Zn.T; alias for: sel Zd.T, Pg, Zn.T, Zd.T
         if (mnemonic[0] == 'm') {
+          // SEL instructions id sometimes set as ARM64_INS_MOV even if aliasing
+          // hasn't occured so double check mnemoic is MOV alias
           operandCount = 4;
-          operands[3].reg = operands[0].reg;
+          operands[3] = operands[0];
+          operands[3].access = CS_AC_READ;
         }
         return;
       }
