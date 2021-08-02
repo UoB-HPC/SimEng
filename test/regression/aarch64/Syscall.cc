@@ -1,7 +1,7 @@
-#include "AArch64RegressionTest.hh"
-
 #include <cstring>
 #include <fstream>
+
+#include "AArch64RegressionTest.hh"
 
 namespace {
 

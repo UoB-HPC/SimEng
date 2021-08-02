@@ -1,7 +1,6 @@
 #pragma once
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
-
 #include "simeng/pipeline/RegisterAliasTable.hh"
 
 namespace simeng {

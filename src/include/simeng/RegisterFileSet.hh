@@ -1,8 +1,8 @@
 #pragma once
 
-#include "simeng/RegisterValue.hh"
-
 #include <vector>
+
+#include "simeng/RegisterValue.hh"
 
 namespace simeng {
 
