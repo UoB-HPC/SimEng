@@ -115,9 +115,8 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
         // If latency information hasn't been defined, set to zero as to inform
         // later access to use group defined latencies instead
         uint16_t opcode = opcode_node[j].as<uint16_t>();
-        if (opcodeExecutionInfo_.find(opcode) == opcodeExecutionInfo_.end()) {
-          opcodeExecutionInfo_[opcode] = {0, 0, {}};
-        }
+        opcodeExecutionInfo_.try_emplace(
+            opcode, simeng::arch::aarch64::executionInfo{0, 0, {}});
         opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
       }
     }
