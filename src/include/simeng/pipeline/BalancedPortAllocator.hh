@@ -17,7 +17,8 @@ class BalancedPortAllocator : public PortAllocator {
    * port, and contain a list of the instruction groups that port supports and
    * a port type which denotes the matching requirements of said instruction
    * groups. */
-  BalancedPortAllocator(std::vector<std::vector<uint16_t>> portArrangement);
+  BalancedPortAllocator(
+      const std::vector<std::vector<uint16_t>>& portArrangement);
 
   /** Allocate the lowest weighted port available for the specified instruction
    * group. Returns the allocated port, and increases the weight of the port.

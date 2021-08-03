@@ -25,10 +25,9 @@ LoadStoreQueue::LoadStoreQueue(
       combined_(true),
       memory_(memory),
       L1Bandwidth_(L1Bandwidth),
-      totalLimit_(permittedRequests) {
-  // Set per-cycle limits for each request type
-  reqLimits_ = {permittedLoads, permittedStores};
-};
+      totalLimit_(permittedRequests),
+      // Set per-cycle limits for each request type
+      reqLimits_{permittedLoads, permittedStores} {};
 
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
@@ -44,10 +43,9 @@ LoadStoreQueue::LoadStoreQueue(
       combined_(false),
       memory_(memory),
       L1Bandwidth_(L1Bandwidth),
-      totalLimit_(permittedRequests) {
-  // Set per-cycle limits for each request type
-  reqLimits_ = {permittedLoads, permittedStores};
-};
+      totalLimit_(permittedRequests),
+      // Set per-cycle limits for each request type
+      reqLimits_{permittedLoads, permittedStores} {};
 
 unsigned int LoadStoreQueue::getLoadQueueSpace() const {
   if (combined_) {

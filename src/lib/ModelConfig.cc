@@ -445,7 +445,7 @@ void ModelConfig::createGroupMapping() {
 }
 
 template <typename T>
-int ModelConfig::nodeChecker(YAML::Node node, std::string field,
+int ModelConfig::nodeChecker(const YAML::Node& node, const std::string& field,
                              const std::vector<T>& value_set,
                              uint8_t expected) {
   // Check for the existance of the given node
@@ -458,7 +458,7 @@ int ModelConfig::nodeChecker(YAML::Node node, std::string field,
 }
 
 template <typename T>
-int ModelConfig::nodeChecker(YAML::Node node, std::string field,
+int ModelConfig::nodeChecker(YAML::Node node, const std::string& field,
                              const std::vector<T>& value_set, uint8_t expected,
                              T default_value) {
   // Check for the existance of the given node
@@ -471,7 +471,7 @@ int ModelConfig::nodeChecker(YAML::Node node, std::string field,
 }
 
 template <typename T>
-int ModelConfig::nodeChecker(YAML::Node node, std::string field,
+int ModelConfig::nodeChecker(const YAML::Node& node, const std::string& field,
                              const std::pair<T, T>& bounds, uint8_t expected) {
   // Check for the existance of the given node
   if (!(node.IsDefined()) || node.IsNull()) {
@@ -483,9 +483,9 @@ int ModelConfig::nodeChecker(YAML::Node node, std::string field,
 }
 
 template <typename T>
-int ModelConfig::nodeChecker(YAML::Node node, std::string field,
+int ModelConfig::nodeChecker(YAML::Node node, const std::string& field,
                              const std::pair<T, T>& bounds, uint8_t expected,
-                             T default_value) {
+                             const T& default_value) {
   // Check for the existance of the given node
   if (!(node.IsDefined()) || node.IsNull()) {
     node = default_value;

@@ -8,10 +8,9 @@ namespace simeng {
 namespace pipeline {
 
 A64FXPortAllocator::A64FXPortAllocator(
-    std::vector<std::vector<uint16_t>> portArrangement) {
-  // Initiliase reservation station to port mapping
-  rsToPort_ = {{0, 1, 2}, {3, 4}, {5}, {6}, {7}};
-}
+    const std::vector<std::vector<uint16_t>>& portArrangement)
+    :  // Initiliase reservation station to port mapping
+      rsToPort_({{0, 1, 2}, {3, 4}, {5}, {6}, {7}}) {}
 
 uint8_t A64FXPortAllocator::allocate(std::vector<uint8_t> ports) {
   assert(ports.size() &&
@@ -148,7 +147,8 @@ uint8_t A64FXPortAllocator::allocate(std::vector<uint8_t> ports) {
 void A64FXPortAllocator::issued(uint8_t port) {}
 void A64FXPortAllocator::deallocate(uint8_t port) { issued(port); };
 
-uint8_t A64FXPortAllocator::attributeMapping(std::vector<uint8_t> ports) {
+uint8_t A64FXPortAllocator::attributeMapping(
+    const std::vector<uint8_t>& ports) {
   uint8_t attribute = 0;
   bool foundAttribute = false;
   if (ports == std::vector<uint8_t>({2, 4, 5, 6})) {  // EXA,EXB,EAGA,EAGB

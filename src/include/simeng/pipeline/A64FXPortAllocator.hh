@@ -21,7 +21,7 @@ const uint8_t BR = 5;
  * described in the A64FX Microarchitecture manual. */
 class A64FXPortAllocator : public PortAllocator {
  public:
-  A64FXPortAllocator(std::vector<std::vector<uint16_t>> portArrangement);
+  A64FXPortAllocator(const std::vector<std::vector<uint16_t>>& portArrangement);
 
   uint8_t allocate(std::vector<uint8_t> ports) override;
 
@@ -30,7 +30,7 @@ class A64FXPortAllocator : public PortAllocator {
   void deallocate(uint8_t port) override;
 
   /** A mapping from issye ports to instruction attribute */
-  uint8_t attributeMapping(std::vector<uint8_t> ports);
+  uint8_t attributeMapping(const std::vector<uint8_t>& ports);
 
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */
