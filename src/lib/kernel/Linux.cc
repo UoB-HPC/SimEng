@@ -327,12 +327,9 @@ int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
         altPath = true;
         break;
       } else {
-        std::cerr << "-- ERROR: attempted to open unsupported special file: "
+        std::cerr << "-- WARNING: unable to open unsupported special file: "
                   << "'" << pathname.c_str() << "'" << std::endl
-                  << "--        "
-                  << "allowing simulation to continue in case alternative "
-                     "supported special file can be used"
-                  << std::endl;
+                  << "--          allowing simulation to continue" << std::endl;
         break;
       }
     }
@@ -399,6 +396,22 @@ int64_t Linux::readv(int64_t fd, const void* iovdata, int iovcnt) {
   return ::readv(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 
+int64_t Linux::schedGetAffinity(pid_t pid, size_t cpusetsize, uint64_t mask) {
+  if (mask != 0 && pid == 0) {
+    // Always return a bit mask of 1 to represent 1 available CPU
+    return 1;
+  }
+  return -1;
+}
+
+int64_t Linux::schedSetAffinity(pid_t pid, size_t cpusetsize, uint64_t mask) {
+  // Currently, the bit mask can only be 1 so capture any error which would
+  // occur but otherwise omit functionality
+  if (mask == 0) return -EFAULT;
+  if (pid != 0) return -ESRCH;
+  if (cpusetsize == 0) return -EINVAL;
+  return 0;
+}
 int64_t Linux::setTidAddress(uint64_t tidptr) {
   assert(processStates_.size() > 0);
   processStates_[0].clearChildTid = tidptr;

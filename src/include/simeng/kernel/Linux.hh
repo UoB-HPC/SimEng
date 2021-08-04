@@ -166,6 +166,12 @@ class Linux {
   int64_t readlinkat(int64_t dirfd, const std::string pathname, char* buf,
                      size_t bufsize) const;
 
+  /** get a process's CPU affinity mask. */
+  int64_t schedGetAffinity(pid_t pid, size_t cpusetsize, uint64_t mask);
+
+  /** set a process's CPU affinity mask. */
+  int64_t schedSetAffinity(pid_t pid, size_t cpusetsize, uint64_t mask);
+
   /** set_tid_address syscall: set clear_child_tid value for calling thread. */
   int64_t setTidAddress(uint64_t tidptr);
 
