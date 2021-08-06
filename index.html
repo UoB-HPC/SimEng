@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -28,10 +28,20 @@
   <![endif]-->
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'./',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
     
     <script type="text/javascript" src="_static/js/theme.js"></script>
 
@@ -178,11 +188,11 @@
 </div>
 <p>The Simulation Engine (SimEng) is a framework for building modern cycle-accurate processor simulators. It aims to be:</p>
 <ul class="simple">
-<li><p>Fast</p></li>
-<li><p>Easy to use and modify to desired configurations</p></li>
-<li><p>Scalable, supporting simulation of simple scalar cores, up to superscalar out-of-order designs</p></li>
-<li><p>Capable of supporting a wide range of ISAs, starting with ARMv8 but eventually including x86, RISC-V, POWER, etc.</p></li>
-<li><p>Open source, with a permissive license to enable collaboration across academia and industry</p></li>
+<li>Fast</li>
+<li>Easy to use and modify to desired configurations</li>
+<li>Scalable, supporting simulation of simple scalar cores, up to superscalar out-of-order designs</li>
+<li>Capable of supporting a wide range of ISAs, starting with ARMv8 but eventually including x86, RISC-V, POWER, etc.</li>
+<li>Open source, with a permissive license to enable collaboration across academia and industry</li>
 </ul>
 <p>SimEng places an emphasis on performance and scalability, whilst maintaining a clean, modern, and well-documented code base.</p>
 <div class="section" id="current-support">
@@ -196,11 +206,11 @@
 <h2>Talks and presentations<a class="headerlink" href="#talks-and-presentations" title="Permalink to this headline">¶</a></h2>
 <p>SimEng was presented by <a class="reference external" href="http://uob-hpc.github.io/SimonMS/">Professor Simon McIntosh-Smith</a> at the 2019 Workshop on Modeling &amp; Simulation of Systems and Applications (ModSim):</p>
 <ul class="simple">
-<li><p>ModSim 2019 - <a class="reference download internal" download="" href="_downloads/49d46ac9c44fb683c396a57b95da5ba5/simeng_modsim_2019.pdf"><code class="xref download docutils literal notranslate"><span class="pre">Enabling</span> <span class="pre">Processor</span> <span class="pre">Design</span> <span class="pre">Space</span> <span class="pre">Exploration</span> <span class="pre">with</span> <span class="pre">SimEng</span></code></a></p></li>
+<li>ModSim 2019 - <a class="reference download internal" href="_downloads/simeng_modsim_2019.pdf" download=""><code class="xref download docutils literal"><span class="pre">Enabling</span> <span class="pre">Processor</span> <span class="pre">Design</span> <span class="pre">Space</span> <span class="pre">Exploration</span> <span class="pre">with</span> <span class="pre">SimEng</span></code></a></li>
 </ul>
 <p>Additional presentations given:</p>
 <ul class="simple">
-<li><p><a class="reference download internal" download="" href="_downloads/0f5675c2f3b49b0ed658267714946599/simeng_arm_cpus.pdf"><code class="xref download docutils literal notranslate"><span class="pre">Modelling</span> <span class="pre">Advanced</span> <span class="pre">Arm-based</span> <span class="pre">CPUs</span> <span class="pre">with</span> <span class="pre">SimEng</span></code></a></p></li>
+<li><a class="reference download internal" href="_downloads/simeng_arm_cpus.pdf" download=""><code class="xref download docutils literal"><span class="pre">Modelling</span> <span class="pre">Advanced</span> <span class="pre">Arm-based</span> <span class="pre">CPUs</span> <span class="pre">with</span> <span class="pre">SimEng</span></code></a></li>
 </ul>
 </div>
 <div class="section" id="release">
@@ -210,10 +220,10 @@
 <div class="section" id="external-project-usage">
 <h2>External project usage<a class="headerlink" href="#external-project-usage" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><p><a class="reference external" href="https://www.capstone-engine.org/">Capstone disassembly engine</a> - Instruction decoding</p></li>
-<li><p><a class="reference external" href="https://github.com/jbeder/yaml-cpp">Yaml-cpp</a> - Parsing YAML configuration files</p></li>
-<li><p><a class="reference external" href="https://github.com/google/googletest">GoogleTest</a> - Framework for the test suites</p></li>
-<li><p><a class="reference external" href="https://github.com/llvm-mirror/llvm">LLVM</a> - Generation of binaries for use in the regression test suite</p></li>
+<li><a class="reference external" href="https://www.capstone-engine.org/">Capstone disassembly engine</a> - Instruction decoding</li>
+<li><a class="reference external" href="https://github.com/jbeder/yaml-cpp">Yaml-cpp</a> - Parsing YAML configuration files</li>
+<li><a class="reference external" href="https://github.com/google/googletest">GoogleTest</a> - Framework for the test suites</li>
+<li><a class="reference external" href="https://github.com/llvm-mirror/llvm">LLVM</a> - Generation of binaries for use in the regression test suite</li>
 </ul>
 </div>
 <div class="section" id="funding">

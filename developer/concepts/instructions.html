@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -28,10 +28,20 @@
   <![endif]-->
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/doctools.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -201,7 +211,7 @@
 <p>The model can use this information to supply the instruction with the appropriate values for each source operand and determine where the instruction should be sent for processing.</p>
 <div class="section" id="instruction-group">
 <span id="id2"></span><h4>Instruction group<a class="headerlink" href="#instruction-group" title="Permalink to this headline">¶</a></h4>
-<p>An instruction group is architecture-dependent. An <code class="docutils literal notranslate"><span class="pre">InstructionGroups</span></code> namespace is used to define the set of instruction groups available in an enum style. It is assumed that the user and developer have prior knowledge of the available groups, therefore, any configuration options or architecture-specific code should refer to the <code class="docutils literal notranslate"><span class="pre">InstructionGroups</span></code> namespace defined.</p>
+<p>An instruction group is architecture-dependent. An <code class="docutils literal"><span class="pre">InstructionGroups</span></code> namespace is used to define the set of instruction groups available in an enum style. It is assumed that the user and developer have prior knowledge of the available groups, therefore, any configuration options or architecture-specific code should refer to the <code class="docutils literal"><span class="pre">InstructionGroups</span></code> namespace defined.</p>
 </div>
 </div>
 <div class="section" id="ready-to-execute">

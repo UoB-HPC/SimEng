@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -28,10 +28,20 @@
   <![endif]-->
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/doctools.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -177,18 +187,18 @@
   <div class="section" id="running-simeng">
 <h1>Running SimEng<a class="headerlink" href="#running-simeng" title="Permalink to this headline">¶</a></h1>
 <p>SimEng uses a configuration file and a program binary to produce a cycle-accurate simulation of a modern processor. These options are passed to SimEng through the following command line arguments:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>&lt;simeng_install_directory&gt;/bin/simeng &lt;config file&gt; &lt;binary&gt;
+<div class="highlight-text"><div class="highlight"><pre><span></span>&lt;simeng_install_directory&gt;/bin/simeng &lt;config file&gt; &lt;binary&gt;
 </pre></div>
 </div>
-<p>If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor, and the default program binary is defined in <code class="docutils literal notranslate"><span class="pre">src/tools/simeng/main.cc</span></code> under the <code class="docutils literal notranslate"><span class="pre">hex[]</span></code> array.</p>
+<p>If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor, and the default program binary is defined in <code class="docutils literal"><span class="pre">src/tools/simeng/main.cc</span></code> under the <code class="docutils literal"><span class="pre">hex[]</span></code> array.</p>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Paths to binaries must be in full, and not relative.</p>
+<p class="first admonition-title">Note</p>
+<p class="last">Paths to binaries must be in full, and not relative.</p>
 </div>
 <p>Whilst a configuration file can be specified without a program (will use default program), a specified program must be accompanied by a configuration file.</p>
 <div class="section" id="configuration-files">
 <h2>Configuration files<a class="headerlink" href="#configuration-files" title="Permalink to this headline">¶</a></h2>
-<p>SimEng provides several configuration files that parameterise the simulated model. These can be found in <code class="docutils literal notranslate"><span class="pre">&lt;simeng_repository&gt;/configs</span></code> and more information about their content can be found <a class="reference internal" href="configuring_simeng.html"><span class="doc">here</span></a>.</p>
+<p>SimEng provides several configuration files that parameterise the simulated model. These can be found in <code class="docutils literal"><span class="pre">&lt;simeng_repository&gt;/configs</span></code> and more information about their content can be found <a class="reference internal" href="configuring_simeng.html"><span class="doc">here</span></a>.</p>
 </div>
 </div>
 

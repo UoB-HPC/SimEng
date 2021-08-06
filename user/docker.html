@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -28,10 +28,20 @@
   <![endif]-->
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script src="../_static/jquery.js"></script>
-        <script src="../_static/underscore.js"></script>
-        <script src="../_static/doctools.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
@@ -174,17 +184,17 @@
 <h1>Docker<a class="headerlink" href="#docker" title="Permalink to this headline">¶</a></h1>
 <p>You can find Docker containers of SimEng <a class="reference external" href="https://hub.docker.com/r/uobhpc/simeng">on DockerHub</a> (finalise docker containers and correct broken link if necessary).
 To get an interactive session in a container with SimEng installed, run:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>docker run -it uobhpc/simeng
+<div class="highlight-text"><div class="highlight"><pre><span></span>docker run -it uobhpc/simeng
 </pre></div>
 </div>
 <p>The <cite>simeng</cite> binary is on the default path.</p>
 <p>A development version is also available, which contains the SimEng source code and all the build dependencies installed:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>docker run -it uobhpc/simeng:dev
+<div class="highlight-text"><div class="highlight"><pre><span></span>docker run -it uobhpc/simeng:dev
 </pre></div>
 </div>
 <p>In the development container, the source code can be found in <cite>/root/SimEng</cite>.</p>
 <p>If you don’t want to use the pre-built container images, you can build your own:</p>
-<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>docker build -t uobhpc/simeng .                   # For the release container
+<div class="highlight-text"><div class="highlight"><pre><span></span>docker build -t uobhpc/simeng .                   # For the release container
 docker build --target dev -t uobhpc/simeng:dev .  # For the development container
 </pre></div>
 </div>

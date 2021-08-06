@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -28,10 +28,20 @@
   <![endif]-->
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/doctools.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -194,28 +204,28 @@
 <h3>In-Order<a class="headerlink" href="#in-order" title="Permalink to this headline">¶</a></h3>
 <p>The in-order model simulates a simple in-order pipelined processor core, with discrete fetch, decode, execute, and writeback stages. This model is capable of speculatively fetching instructions via a supplied branch prediction model, with a flush mechanism for mispredictions.</p>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Due to a lack of dependency handling, this model only supports single-cycle instructions, which necessitates a zero-cycle memory model. Attempting to use this model with a multi-cycle memory model will result in incorrect execution and undefined behaviour.</p>
+<p class="first admonition-title">Note</p>
+<p class="last">Due to a lack of dependency handling, this model only supports single-cycle instructions, which necessitates a zero-cycle memory model. Attempting to use this model with a multi-cycle memory model will result in incorrect execution and undefined behaviour.</p>
 </div>
 </div>
 <div class="section" id="out-of-order">
 <h3>Out-of-order<a class="headerlink" href="#out-of-order" title="Permalink to this headline">¶</a></h3>
 <p>The out-of-order model simulates a complex superscalar out-of-order core, similar to those found in modern high-performance processors. This core contains the following pipeline stages:</p>
 <ul class="simple">
-<li><p>Fetch</p></li>
-<li><p>Decode</p></li>
-<li><p>Rename</p></li>
-<li><p>Dispatch/Issue</p></li>
-<li><p>Execute</p></li>
-<li><p>Writeback</p></li>
-<li><p>Commit</p></li>
+<li>Fetch</li>
+<li>Decode</li>
+<li>Rename</li>
+<li>Dispatch/Issue</li>
+<li>Execute</li>
+<li>Writeback</li>
+<li>Commit</li>
 </ul>
 <p>To facilitate out-of-order execution, this model contains the following features:</p>
 <ul class="simple">
-<li><p>A reorder buffer for holding in-flight instructions</p></li>
-<li><p>A set of reservation stations for dependency management and instruction scheduling</p></li>
-<li><p>A load/store queue to enable out-of-order memory access while ensuring memory order correctness</p></li>
-<li><p>A register alias table to allow register renaming and false dependency elimination</p></li>
+<li>A reorder buffer for holding in-flight instructions</li>
+<li>A set of reservation stations for dependency management and instruction scheduling</li>
+<li>A load/store queue to enable out-of-order memory access while ensuring memory order correctness</li>
+<li>A register alias table to allow register renaming and false dependency elimination</li>
 </ul>
 <p>This model also supports speculative execution, using a supplied branch prediction model, and is capable of selectively flushing only mispredicted instructions from the pipeline while leaving correct instructions in place.</p>
 </div>
@@ -223,18 +233,18 @@
 <div class="section" id="current-hardware-models">
 <h2>Current Hardware Models<a class="headerlink" href="#current-hardware-models" title="Permalink to this headline">¶</a></h2>
 <p>Through SimEng’s configurable options, the above archetypes can be transformed into models based on existing processors. More information on the configurable options of SimEng can be found here.</p>
-<div class="admonition-todo admonition" id="id2">
-<p class="admonition-title">Todo</p>
-<p>Insert link to user documentation configuration options Pages</p>
+<div class="admonition-todo admonition" id="index-0">
+<p class="first admonition-title">Todo</p>
+<p class="last">Insert link to user documentation configuration options Pages</p>
 </div>
 <p>The current existing processors have supplied configuration files:</p>
 <ul class="simple">
-<li><p><a class="reference external" href="https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan">ThunderX2</a></p></li>
-<li><p><a class="reference external" href="https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_Microarchitecture_Manual_en_1.4.pdf">A64FX</a></p></li>
+<li><a class="reference external" href="https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan">ThunderX2</a></li>
+<li><a class="reference external" href="https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_Microarchitecture_Manual_en_1.4.pdf">A64FX</a></li>
 </ul>
-<div class="admonition-todo admonition" id="id3">
-<p class="admonition-title">Todo</p>
-<p>Insert path to config files</p>
+<div class="admonition-todo admonition" id="index-1">
+<p class="first admonition-title">Todo</p>
+<p class="last">Insert path to config files</p>
 </div>
 </div>
 </div>

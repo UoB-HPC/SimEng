@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -28,10 +28,20 @@
   <![endif]-->
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/doctools.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -189,8 +199,8 @@
 <p>Many syscalls are emulated entirely inside SimEng, with some exceptions detailed below.</p>
 <div class="section" id="file-input-output">
 <h2>File input/output<a class="headerlink" href="#file-input-output" title="Permalink to this headline">¶</a></h2>
-<p>Syscalls that interact with files are passed through to the host, in order to allow the simulated program to read and write data files on the host filesystem and interact with <code class="docutils literal notranslate"><span class="pre">stdin</span></code>, <code class="docutils literal notranslate"><span class="pre">stdout</span></code> and <code class="docutils literal notranslate"><span class="pre">stderr</span></code>. When a file is opened (e.g. with <code class="docutils literal notranslate"><span class="pre">open</span></code> or <code class="docutils literal notranslate"><span class="pre">openat</span></code>), the emulated kernel maps the host file descriptor to a virtual file descriptor (<code class="docutils literal notranslate"><span class="pre">fileDescriptorTable</span></code>) which is returned to the simulated program. When handling syscalls that operate on file descriptors (e.g. <code class="docutils literal notranslate"><span class="pre">lseek</span></code> or <code class="docutils literal notranslate"><span class="pre">writev</span></code>), the kernel looks up the corresponding host file descriptor in the map before passing the call onwards to the host.</p>
-<p>The kernel detects attempts to open special files (such as those in <code class="docutils literal notranslate"><span class="pre">/dev/</span></code> or <code class="docutils literal notranslate"><span class="pre">/proc</span></code>) and emulates their access inside SimEng rather than passing the call through to the host.</p>
+<p>Syscalls that interact with files are passed through to the host, in order to allow the simulated program to read and write data files on the host filesystem and interact with <code class="docutils literal"><span class="pre">stdin</span></code>, <code class="docutils literal"><span class="pre">stdout</span></code> and <code class="docutils literal"><span class="pre">stderr</span></code>. When a file is opened (e.g. with <code class="docutils literal"><span class="pre">open</span></code> or <code class="docutils literal"><span class="pre">openat</span></code>), the emulated kernel maps the host file descriptor to a virtual file descriptor (<code class="docutils literal"><span class="pre">fileDescriptorTable</span></code>) which is returned to the simulated program. When handling syscalls that operate on file descriptors (e.g. <code class="docutils literal"><span class="pre">lseek</span></code> or <code class="docutils literal"><span class="pre">writev</span></code>), the kernel looks up the corresponding host file descriptor in the map before passing the call onwards to the host.</p>
+<p>The kernel detects attempts to open special files (such as those in <code class="docutils literal"><span class="pre">/dev/</span></code> or <code class="docutils literal"><span class="pre">/proc</span></code>) and emulates their access inside SimEng rather than passing the call through to the host.</p>
 </div>
 </div>
 

@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -28,10 +28,20 @@
   <![endif]-->
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/doctools.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -195,19 +205,19 @@
 <h1>Abstract Structure<a class="headerlink" href="#abstract-structure" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="architecture">
 <h2>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h2>
-<p>The main component of an ISA implementation is the <code class="docutils literal notranslate"><span class="pre">Architecture</span></code> class. During simulation initialisation, a reference to an instance of the modelled architecture is passed to the model. It is later queried to determine how various components should be initialised, and supports components in performing architecture-specific operations during simulation.</p>
+<p>The main component of an ISA implementation is the <code class="docutils literal"><span class="pre">Architecture</span></code> class. During simulation initialisation, a reference to an instance of the modelled architecture is passed to the model. It is later queried to determine how various components should be initialised, and supports components in performing architecture-specific operations during simulation.</p>
 <p>Architectures are expected to support querying the following information:</p>
 <ul class="simple">
-<li><p>The architectural register structure: the number of discrete types of registers, and the size and quantity of registers of each type.</p></li>
-<li><p>The initial state of the architectural registers and process memory at the time the simulation begins.</p></li>
-<li><p>Any updates to the state of the architectural registers and process memory throughout the simulation.</p></li>
+<li>The architectural register structure: the number of discrete types of registers, and the size and quantity of registers of each type.</li>
+<li>The initial state of the architectural registers and process memory at the time the simulation begins.</li>
+<li>Any updates to the state of the architectural registers and process memory throughout the simulation.</li>
 </ul>
 <div class="section" id="pre-decoding">
 <h3>Pre-Decoding<a class="headerlink" href="#pre-decoding" title="Permalink to this headline">¶</a></h3>
-<p>The primary role of the <code class="docutils literal notranslate"><span class="pre">Architecture</span></code> class is to enable the conversion of arbitrary bytes of instruction memory into <code class="docutils literal notranslate"><span class="pre">Instruction</span></code> objects capable of performing operations. This process is referred to as <em>pre-decoding</em>, as it is responsible for grouping bytes into “macro ops” representing individual machine-code instructions, which in real hardware would be decoded later into one or more instructions (“micro-ops”). In SimEng, all the decoding is expected to be performed up-front: the generated macro-op is simply a vector of micro-ops.</p>
+<p>The primary role of the <code class="docutils literal"><span class="pre">Architecture</span></code> class is to enable the conversion of arbitrary bytes of instruction memory into <code class="docutils literal"><span class="pre">Instruction</span></code> objects capable of performing operations. This process is referred to as <em>pre-decoding</em>, as it is responsible for grouping bytes into “macro ops” representing individual machine-code instructions, which in real hardware would be decoded later into one or more instructions (“micro-ops”). In SimEng, all the decoding is expected to be performed up-front: the generated macro-op is simply a vector of micro-ops.</p>
 <div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>At this time, SimEng does not support the logic to convert macro-ops into micro-ops thus it is currently a 1:1 mapping.</p>
+<p class="first admonition-title">Note</p>
+<p class="last">At this time, SimEng does not support the logic to convert macro-ops into micro-ops thus it is currently a 1:1 mapping.</p>
 </div>
 </div>
 <div class="section" id="exception-handling">
@@ -216,41 +226,41 @@
 </div>
 <div class="section" id="state-changing">
 <h3>State changing<a class="headerlink" href="#state-changing" title="Permalink to this headline">¶</a></h3>
-<p>As stated, the <code class="docutils literal notranslate"><span class="pre">Architecture</span></code> class is expected to support queries for the initial and updated architectural/memory state. These queries are detailed within a <code class="docutils literal notranslate"><span class="pre">ProcessStateChange</span></code> structure which contains:</p>
-<dl class="simple">
-<dt>ChangeType</dt><dd><p>The type of changes to be applied with the available options being <strong>REPLACEMENT</strong>, <strong>INCREMENT</strong>, and <strong>DECREMENT</strong>.</p>
-</dd>
-<dt>modifiedRegisters</dt><dd><p>The registers to be modified.</p>
-</dd>
-<dt>modifiedRegisterValues</dt><dd><p>The values to modify the defined registers with. How these registers are modified is dictated by the ChangeType.</p>
-</dd>
-<dt>memoryAddresses</dt><dd><p>The memory addresses to be written to.</p>
-</dd>
-<dt>memoryAddressValues</dt><dd><p>The values to be written to the defined memory addresses. Note the ChangeType for memory modifications is currently limited to <strong>REPLACEMENT</strong> only.</p>
-</dd>
+<p>As stated, the <code class="docutils literal"><span class="pre">Architecture</span></code> class is expected to support queries for the initial and updated architectural/memory state. These queries are detailed within a <code class="docutils literal"><span class="pre">ProcessStateChange</span></code> structure which contains:</p>
+<dl class="docutils">
+<dt>ChangeType</dt>
+<dd>The type of changes to be applied with the available options being <strong>REPLACEMENT</strong>, <strong>INCREMENT</strong>, and <strong>DECREMENT</strong>.</dd>
+<dt>modifiedRegisters</dt>
+<dd>The registers to be modified.</dd>
+<dt>modifiedRegisterValues</dt>
+<dd>The values to modify the defined registers with. How these registers are modified is dictated by the ChangeType.</dd>
+<dt>memoryAddresses</dt>
+<dd>The memory addresses to be written to.</dd>
+<dt>memoryAddressValues</dt>
+<dd>The values to be written to the defined memory addresses. Note the ChangeType for memory modifications is currently limited to <strong>REPLACEMENT</strong> only.</dd>
 </dl>
 </div>
 </div>
 <div class="section" id="instructions">
 <h2>Instructions<a class="headerlink" href="#instructions" title="Permalink to this headline">¶</a></h2>
-<p>As different ISAs typically define a unique set of instructions, it is expected that each architecture implementation will also supply a custom <a class="reference internal" href="../concepts/instructions.html#instructions"><span class="std std-ref">Instruction</span></a> implementation. Instances of these instructions will be created during the pre-decode process performed by the main <code class="docutils literal notranslate"><span class="pre">Architecture</span></code> instance, and will be responsible for modelling the correct behaviour of that individual instruction.</p>
+<p>As different ISAs typically define a unique set of instructions, it is expected that each architecture implementation will also supply a custom <a class="reference internal" href="../concepts/instructions.html#instructions"><span class="std std-ref">Instruction</span></a> implementation. Instances of these instructions will be created during the pre-decode process performed by the main <code class="docutils literal"><span class="pre">Architecture</span></code> instance, and will be responsible for modelling the correct behaviour of that individual instruction.</p>
 </div>
 <div class="section" id="exception-handler">
 <span id="exceptionhandler"></span><h2>Exception Handler<a class="headerlink" href="#exception-handler" title="Permalink to this headline">¶</a></h2>
-<p>For handling exceptions, SimEng provides an abstract <code class="docutils literal notranslate"><span class="pre">ExceptionHandler</span></code> class. Instances of <code class="docutils literal notranslate"><span class="pre">ExceptionHandler</span></code> should be generated by an <code class="docutils literal notranslate"><span class="pre">Architecture</span></code> instance upon request, by supplying the exception-generating instruction, a reference to the core model, and a reference to the process memory interface. As the details of exception handling vary between architecture, each supported architecture is expected to supply its own custom <code class="docutils literal notranslate"><span class="pre">ExceptionHandler</span></code> implementation.</p>
+<p>For handling exceptions, SimEng provides an abstract <code class="docutils literal"><span class="pre">ExceptionHandler</span></code> class. Instances of <code class="docutils literal"><span class="pre">ExceptionHandler</span></code> should be generated by an <code class="docutils literal"><span class="pre">Architecture</span></code> instance upon request, by supplying the exception-generating instruction, a reference to the core model, and a reference to the process memory interface. As the details of exception handling vary between architecture, each supported architecture is expected to supply its own custom <code class="docutils literal"><span class="pre">ExceptionHandler</span></code> implementation.</p>
 <div class="section" id="ticking">
 <h3>Ticking<a class="headerlink" href="#ticking" title="Permalink to this headline">¶</a></h3>
-<p>Exception handlers provide a <code class="docutils literal notranslate"><span class="pre">tick</span></code> function, which may be called to process the exception it represents. Upon completing each tick, the exception handler will state whether or not further ticks are required, for example, to wait for a memory request to complete. If the exception requires further processing, the model will continue to tick it each cycle until completed.</p>
+<p>Exception handlers provide a <code class="docutils literal"><span class="pre">tick</span></code> function, which may be called to process the exception it represents. Upon completing each tick, the exception handler will state whether or not further ticks are required, for example, to wait for a memory request to complete. If the exception requires further processing, the model will continue to tick it each cycle until completed.</p>
 </div>
 <div class="section" id="results">
 <h3>Results<a class="headerlink" href="#results" title="Permalink to this headline">¶</a></h3>
 <p>When the exception has been fully processed, the results may be retrieved from the handler to supply the following information:</p>
 <ul class="simple">
-<li><p>Whether the exception was fatal</p></li>
-<li><p>The address that execution should resume from</p></li>
-<li><p>Any modifications to registers or process memory</p></li>
+<li>Whether the exception was fatal</li>
+<li>The address that execution should resume from</li>
+<li>Any modifications to registers or process memory</li>
 </ul>
-<p>If the exception is fatal, the core model will halt and the simulation will gracefully terminate with printed reasoning for termination. If not fatal, the supplied process state modifications, through a <code class="docutils literal notranslate"><span class="pre">ProcessStateChange</span></code> structure, will be applied and process execution will resume from the specified instruction address.</p>
+<p>If the exception is fatal, the core model will halt and the simulation will gracefully terminate with printed reasoning for termination. If not fatal, the supplied process state modifications, through a <code class="docutils literal"><span class="pre">ProcessStateChange</span></code> structure, will be applied and process execution will resume from the specified instruction address.</p>
 </div>
 </div>
 </div>

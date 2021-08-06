@@ -74,7 +74,7 @@ Due to the use of isolated instances of SimEng components, certain linked object
 Running the test suites
 -----------------------
 
-Whilst ``cmake --build {BUILD_DIR} --target test`` can be used to run both the unit and regression test suites sequentially, further refinement on what test are run can be achieved via GoogleTest functionality. GoogleTest provides a ``--gtest_filter="<regex>"`` filter command which can be passed as an argument to either test suite, the filter is passed via a regular expression (regex). Full test names typically take the form of:
+Whilst ``make test`` can be used to run both the unit and regression test suites sequentially, further refinement on what test are run can be achieved via GoogleTest functionality. GoogleTest provides a ``--gtest_filter="<regex>"`` filter command which can be passed as an argument to either test suite, the filter is passed via a regular expression (regex). Full test names typically take the form of:
 
 Parameterised test: 
    ``<INSTANTIATE_TEST_SUITE_P name>/<test case name>.<test name>/<parameter value>``

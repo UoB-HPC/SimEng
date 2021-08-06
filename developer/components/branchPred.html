@@ -1,7 +1,7 @@
 
 
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html4" lang="en" >
 <head>
   <meta charset="utf-8" />
   
@@ -28,10 +28,20 @@
   <![endif]-->
   
     
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script src="../../_static/jquery.js"></script>
-        <script src="../../_static/underscore.js"></script>
-        <script src="../../_static/doctools.js"></script>
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../',
+              VERSION:'',
+              LANGUAGE:'None',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -185,21 +195,21 @@
             
   <div class="section" id="branch-prediction">
 <h1>Branch prediction<a class="headerlink" href="#branch-prediction" title="Permalink to this headline">¶</a></h1>
-<p>SimEng’s fetch unit is supplied with an instance of the abstract <code class="docutils literal notranslate"><span class="pre">BranchPredictor</span></code> class to enable speculative execution.</p>
-<p>Access to the <code class="docutils literal notranslate"><span class="pre">BranchPredictor</span></code> is supported through the <code class="docutils literal notranslate"><span class="pre">predict</span></code> and <code class="docutils literal notranslate"><span class="pre">update</span></code> functions with the former providing a branch prediction, both target and direction, and the latter updating an instructions’ prediction. The <code class="docutils literal notranslate"><span class="pre">predict</span></code> function is passed an instruction object allowing for branch algorithms to utilise instruction information such as address and architecture-specific instruction classifiers. The <code class="docutils literal notranslate"><span class="pre">update</span></code> function is passed the branch outcome, along with the instruction object itself, so that any algorithms or branch structures may be updated.</p>
-<p>The algorithm(s) held within a <code class="docutils literal notranslate"><span class="pre">BranchPredictor</span></code> class instance can be model-specific, however, SimEng provides a set of predictors detailed below.</p>
+<p>SimEng’s fetch unit is supplied with an instance of the abstract <code class="docutils literal"><span class="pre">BranchPredictor</span></code> class to enable speculative execution.</p>
+<p>Access to the <code class="docutils literal"><span class="pre">BranchPredictor</span></code> is supported through the <code class="docutils literal"><span class="pre">predict</span></code> and <code class="docutils literal"><span class="pre">update</span></code> functions with the former providing a branch prediction, both target and direction, and the latter updating an instructions’ prediction. The <code class="docutils literal"><span class="pre">predict</span></code> function is passed an instruction object allowing for branch algorithms to utilise instruction information such as address and architecture-specific instruction classifiers. The <code class="docutils literal"><span class="pre">update</span></code> function is passed the branch outcome, along with the instruction object itself, so that any algorithms or branch structures may be updated.</p>
+<p>The algorithm(s) held within a <code class="docutils literal"><span class="pre">BranchPredictor</span></code> class instance can be model-specific, however, SimEng provides a set of predictors detailed below.</p>
 <div class="section" id="alwaysnottakenpredictor">
 <h2>AlwaysNotTakenPredictor<a class="headerlink" href="#alwaysnottakenpredictor" title="Permalink to this headline">¶</a></h2>
-<p>The <code class="docutils literal notranslate"><span class="pre">AlwaysNotTakenPredictor</span></code> is the simplest available branch predictor. It is a static predictor, only providing a “not taken” branch direction with no branch target prediction and no update functionality.</p>
+<p>The <code class="docutils literal"><span class="pre">AlwaysNotTakenPredictor</span></code> is the simplest available branch predictor. It is a static predictor, only providing a “not taken” branch direction with no branch target prediction and no update functionality.</p>
 </div>
 <div class="section" id="btbpredictor">
 <h2>BTBPredictor<a class="headerlink" href="#btbpredictor" title="Permalink to this headline">¶</a></h2>
-<p>A more complex branch predictor is the <code class="docutils literal notranslate"><span class="pre">BTBPredictor</span></code> utilising a Branch Target Buffer (BTB) and a branch direction buffer. Both structures are indexed by the instruction address, after the application of a mask, and store previous outcomes of executed branches.</p>
-<p>Access to a structure entry with no previous history will supply a “not taken” direction prediction with no known target, similar to the <code class="docutils literal notranslate"><span class="pre">AlwaysNotTakenPredictor</span></code>.</p>
+<p>A more complex branch predictor is the <code class="docutils literal"><span class="pre">BTBPredictor</span></code> utilising a Branch Target Buffer (BTB) and a branch direction buffer. Both structures are indexed by the instruction address, after the application of a mask, and store previous outcomes of executed branches.</p>
+<p>Access to a structure entry with no previous history will supply a “not taken” direction prediction with no known target, similar to the <code class="docutils literal"><span class="pre">AlwaysNotTakenPredictor</span></code>.</p>
 </div>
 <div class="section" id="btb-bwtpredictor">
 <h2>BTB_BWTPredictor<a class="headerlink" href="#btb-bwtpredictor" title="Permalink to this headline">¶</a></h2>
-<p>Based on the algorithms used by the A64FX processor, the <code class="docutils literal notranslate"><span class="pre">BTB_BWTPredictor</span></code> branch predictor utilises a 4-way associative BTB-style structure with each entry storing a 2-bit direction agreement policy and branch target. An agreement policy assigns an agreement bias value against a chosen branch direction such that, <code class="docutils literal notranslate"><span class="pre">11</span></code> relates to a strong agreement and <code class="docutils literal notranslate"><span class="pre">00</span></code> a strong disagreement.</p>
+<p>Based on the algorithms used by the A64FX processor, the <code class="docutils literal"><span class="pre">BTB_BWTPredictor</span></code> branch predictor utilises a 4-way associative BTB-style structure with each entry storing a 2-bit direction agreement policy and branch target. An agreement policy assigns an agreement bias value against a chosen branch direction such that, <code class="docutils literal"><span class="pre">11</span></code> relates to a strong agreement and <code class="docutils literal"><span class="pre">00</span></code> a strong disagreement.</p>
 <p>To index this structure, the instructions’ address is used in conjunction with a set of branch directions histories via an XOR operation. This indexing policy aims to reduce the contention of structure entries between branch instructions.</p>
 <p>To accompany the BTB-style structure, a return address stack (RAS) is also used. The RAS allows for branch and link instructions to push a return address onto a stack, and return instructions to pop an address from the stack. This methodology allows for a strong prediction of the branch target for return instructions.</p>
 </div>
