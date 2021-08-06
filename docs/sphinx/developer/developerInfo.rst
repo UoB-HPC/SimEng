@@ -125,5 +125,3 @@ This will generate HTML documentation which can be found in
 .. todo::
 
     Doxygen documentation.
-
-.. mdinclude:: ../../README.md
