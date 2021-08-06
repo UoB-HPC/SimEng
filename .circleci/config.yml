@@ -43,13 +43,10 @@ workflows:
   version: 2
   build:
     jobs:
-      - docs-build:
-            filters:
-              branches:
-                only: docs-update
+      - docs-build
       - docs-deploy:
           requires:
             - docs-build
           filters:
             branches:
-              only: docs-update
+              only: main
