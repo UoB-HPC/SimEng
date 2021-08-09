@@ -33,6 +33,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
+    case Opcode::AArch64_BICv4i32:
+      // BIC incorrectly flags destination as WRITE only
+      operands[0].access = CS_AC_WRITE | CS_AC_READ;
+      break;
     case Opcode::AArch64_ADDSWri:
       // adds incorrectly flags destination as READ
       operands[0].access = CS_AC_WRITE;
@@ -278,6 +282,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1Twov16b_POST:
       // Fix incorrect access types
       operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_WRITE;
+      break;
+    case Opcode::AArch64_LDADDLW:
+      [[fallthrough]];
+    case Opcode::AArch64_LDADDW:
+      operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_WRITE;
       break;
     case Opcode::AArch64_LDR_PXI:
@@ -814,6 +824,11 @@ void InstructionMetadata::revertAliasing() {
         operands[1].reg =
             static_cast<arm64_reg>(245 + stoi(operandStr.substr(start, end)));
         operands[1].vector_index = 0;
+        return;
+      }
+      if (opcode == Opcode::AArch64_INSvi32lane) {
+        // mov vd.T[index1], vn.T[index2]; alias for ins vd.T[index1],
+        // vn.T[index2]
         return;
       }
       if (opcode == Opcode::AArch64_ORRWri ||

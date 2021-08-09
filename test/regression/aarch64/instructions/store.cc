@@ -4,6 +4,28 @@ namespace {
 
 using InstStore = AArch64RegressionTest;
 
+TEST_P(InstStore, stlr) {
+  RUN_AARCH64(R"(
+    mov w0, 0xAB
+    mov w1, 0x12
+    mov w2, 0xCD
+    mov w3, 0x34
+    sub sp, sp, #4
+    stlrb w0, [sp]
+    add sp, sp, #1
+    stlrb w1, [sp]
+    add sp, sp, #1
+    stlrb w2, [sp]
+    add sp, sp, #1
+    stlrb w3, [sp]
+    add sp, sp, #1
+  )");
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 4), 0xAB);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 3), 0x12);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 2), 0xCD);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1), 0x34);
+}
+
 TEST_P(InstStore, strb) {
   RUN_AARCH64(R"(
     mov w0, 0xAB
@@ -231,6 +253,29 @@ TEST_P(InstStore, stpwi) {
   )");
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 8), 7u);
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 4), 42u);
+}
+
+TEST_P(InstStore, stpx) {
+  RUN_AARCH64(R"(
+    movz x0, #7
+    movz x1, #42
+    movz x2, #8
+    movz x3, #43
+    movz x4, #9
+    movz x5, #44
+
+    sub sp, sp, #1024
+
+    stp x0, x1, [sp], #16
+    stp x2, x3, [sp]
+    stp x4, x5, [sp, #16]!
+  )");
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1024), 7u);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1016), 42u);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1008), 8u);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1000), 43u);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 992), 9u);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 984), 44u);
 }
 
 TEST_P(InstStore, stur) {

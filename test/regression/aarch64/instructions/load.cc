@@ -105,6 +105,49 @@ TEST_P(InstLoad, ld1r) {
   CHECK_NEON(1, uint32_t, {0x12345678, 0x12345678, 0x12345678, 0x12345678});
 }
 
+TEST_P(InstLoad, ldadd) {
+  RUN_AARCH64(R"(
+    sub sp, sp, #1024
+    mov w0, #16
+    mov w1, #32
+    mov w2, #48
+    mov w3, #64
+    mov w4, #80
+    mov w5, #96
+    mov w6, #112
+    mov w7, #128
+
+    str w0, [sp], #32
+    str w1, [sp], #32
+    str w2, [sp], #32
+    str w3, [sp], #32
+
+    sub sp, sp, #128
+
+    ldadd w5, w4, [sp]
+    add sp, sp, #32
+    ldadd w1, w1, [sp]
+    add sp, sp, #32
+    ldaddl w7, w6, [sp]
+    add sp, sp, #32
+    ldaddl w3, w3, [sp]
+  )");
+
+  EXPECT_EQ(getGeneralRegister<uint32_t>(0), 16);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 32);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 48);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 64);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 16);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 96);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 48);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 128);
+
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 1024), 112);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 992), 64);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 960), 176);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 928), 128);
+}
+
 TEST_P(InstLoad, ldrb) {
   initialHeapData_.resize(8);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
@@ -627,6 +670,7 @@ TEST_P(InstLoad, ldrsw) {
   heap[2] = -5;
   heap[3] = 256;
 
+  // ldrsw
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -643,6 +687,23 @@ TEST_P(InstLoad, ldrsw) {
   EXPECT_EQ(getGeneralRegister<int64_t>(2), -2);
   EXPECT_EQ(getGeneralRegister<int64_t>(3), INT32_MAX);
   EXPECT_EQ(getGeneralRegister<int64_t>(4), -5);
+
+  // ldursw
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    # Load 32-bit values from heap and sign-extend to 64-bits
+    ldursw x1, [x0]
+    ldursw x2, [x0, #4]
+    ldursw x3, [x0, #8]
+    ldursw x4, [x0, #12]
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(1), -2);
+  EXPECT_EQ(getGeneralRegister<int64_t>(2), INT32_MAX);
+  EXPECT_EQ(getGeneralRegister<int64_t>(3), -5);
+  EXPECT_EQ(getGeneralRegister<int64_t>(4), 256);
 }
 
 TEST_P(InstLoad, ldxr) {

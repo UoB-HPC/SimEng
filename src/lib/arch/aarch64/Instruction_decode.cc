@@ -257,6 +257,11 @@ void Instruction::decode() {
       isStore_ = true;
     }
 
+    // LDADD* are considered to be both a load and a store
+    if (metadata.id >= ARM64_INS_LDADD && metadata.id <= ARM64_INS_LDADDLH) {
+      isLoad_ = true;
+    }
+
     if (isStore_) {
       // Identify whether a store operation uses Z source registers
       if (ARM64_REG_Z0 <= metadata.operands[0].reg &&
