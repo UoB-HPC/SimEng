@@ -698,6 +698,22 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_MNEG:
+      if (opcode == Opcode::AArch64_MSUBXrrr) {
+        // mneg xd, xn, xm; alias for msub xd, xn, xm, xzr
+        operandCount = 4;
+        operands[3].type = ARM64_OP_REG;
+        operands[3].access = CS_AC_READ;
+        operands[3].reg = ARM64_REG_XZR;
+        return;
+      }
+      if (opcode == Opcode::AArch64_MSUBWrrr) {
+        // mneg wd, wn, wm; alias for msub wd, wn, wm, wzr
+        operandCount = 4;
+        operands[3].type = ARM64_OP_REG;
+        operands[3].access = CS_AC_READ;
+        operands[3].reg = ARM64_REG_WZR;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_MOV:
       if (opcode == Opcode::AArch64_ADDXri ||
@@ -1117,6 +1133,17 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_UXTB:
+      // uxtb wd, wn; alias for: ubfm wd, wn, #0, #7
+      if (opcode == Opcode::AArch64_UBFMWri) {
+        operandCount = 4;
+        operands[2].type = ARM64_OP_IMM;
+        operands[2].access = CS_AC_READ;
+        operands[2].imm = 0;
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].access = CS_AC_READ;
+        operands[3].imm = 7;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_UXTH:
       return aliasNYI();

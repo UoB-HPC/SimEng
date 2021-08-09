@@ -213,6 +213,14 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_ADCXr: {  // adc xd, xn, xm
+      const uint8_t carry = operands[0].get<uint8_t>() & 0b0010;
+      const uint64_t n = operands[1].get<uint64_t>();
+      const uint64_t m = operands[2].get<uint64_t>();
+      auto [result, nzcv] = addWithCarry(n, m, carry);
+      results[0] = result;
+      break;
+    }
     case Opcode::AArch64_ADDPv16i8: {  // addp vd.16b, vn.16b, vm.16b
       const uint8_t* n = operands[0].getAsVector<uint8_t>();
       const uint8_t* m = operands[1].getAsVector<uint8_t>();
@@ -1573,6 +1581,18 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_FCVTLv2i32: {  // fcvtl vd.2d, vn.2s
+      const float* n = operands[0].getAsVector<float>();
+      double out[2] = {static_cast<double>(n[0]), static_cast<double>(n[1])};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FCVTLv4i32: {  // fcvtl2 vd.2d, vn.4s
+      const float* n = operands[0].getAsVector<float>();
+      double out[2] = {static_cast<double>(n[2]), static_cast<double>(n[3])};
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FCVTSDr: {  // fcvt sd, dn
       // TODO: Handle NaNs, denorms, and saturation?
       float out[4] = {static_cast<float>(operands[0].get<double>()), 0.f, 0.f,
@@ -1757,7 +1777,7 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
-    case Opcode::AArch64_FMAXNMSrr : {  // fmaxnm sd, sn, sm
+    case Opcode::AArch64_FMAXNMSrr: {  // fmaxnm sd, sn, sm
       float n = operands[0].get<float>();
       float m = operands[1].get<float>();
       float out[4] = {std::fmax(n, m), 0.f, 0.f, 0.f};
@@ -1850,6 +1870,14 @@ void Instruction::execute() {
         }
       }
 
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FMLSv2f64: {  // fmls vd.2d, vn.2d, vm.2d
+      const double* a = operands[0].getAsVector<double>();
+      const double* b = operands[1].getAsVector<double>();
+      const double* c = operands[2].getAsVector<double>();
+      double out[2] = {a[0] - (b[0] * c[0]), a[1] - (b[1] * c[1])};
       results[0] = out;
       break;
     }
@@ -2228,6 +2256,20 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_FNMULDrr: {  // fnmul dd, dn, dm
+      double n = operands[0].get<double>();
+      double m = operands[1].get<double>();
+      double out[2] = {-(n * m), 0.0};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FNMULSrr: {  // fnmul sd, sn, sm
+      float n = operands[0].get<float>();
+      float m = operands[1].get<float>();
+      float out[4] = {-(n * m), 0.0, 0.0, 0.0};
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FRINTADr: {  // frinta dd, dn
       double out[2] = {round(operands[0].get<double>()), 0.0};
       results[0] = out;
@@ -2260,6 +2302,12 @@ void Instruction::execute() {
         }
       }
 
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FSQRTv2f64: {  // fsqrt vd.2d, vn.2d
+      const double* n = operands[0].getAsVector<double>();
+      double out[2] = {::sqrtf(n[0]), ::sqrtf(n[1])};
       results[0] = out;
       break;
     }
@@ -2901,6 +2949,10 @@ void Instruction::execute() {
       results[0] = memoryData[0].zeroExtend(8, 16);
       break;
     }
+    case Opcode::AArch64_LDURHHi: {  // ldurh wt, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(2, 8);
+      break;
+    }
     case Opcode::AArch64_LDURQi: {  // ldur qt, [xn, #imm]
       results[0] = memoryData[0];
       break;
@@ -3403,6 +3455,13 @@ void Instruction::execute() {
     case Opcode::AArch64_SCVTFv2f64: {  // scvtf vd.2d, vn.2d
       const int64_t* n = operands[0].getAsVector<int64_t>();
       double out[2] = {static_cast<double>(n[0]), static_cast<double>(n[1])};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_SCVTFv4f32: {  // scvtf vd.4s, vn.4s
+      const int32_t* n = operands[0].getAsVector<int32_t>();
+      float out[4] = {static_cast<float>(n[0]), static_cast<float>(n[1]),
+                      static_cast<float>(n[2]), static_cast<float>(n[3])};
       results[0] = out;
       break;
     }

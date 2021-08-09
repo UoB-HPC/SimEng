@@ -49,6 +49,13 @@ bool ExceptionHandler::init() {
             RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
         break;
       }
+      case 46: {  // ftruncate
+        uint64_t fd = registerFileSet.get(R0).get<uint64_t>();
+        uint64_t length = registerFileSet.get(R1).get<uint64_t>();
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {linux_.ftruncate(fd, length)}};
+        break;
+      }
       case 56: {  // openat
         int64_t dirfd = registerFileSet.get(R0).get<int64_t>();
         uint64_t pathnamePtr = registerFileSet.get(R1).get<uint64_t>();
@@ -261,6 +268,30 @@ bool ExceptionHandler::init() {
                                 delete[] pathname;
                                 return true;
                               });
+      }
+      case 79: {  // newfstatat AKA fstatat
+        int64_t dfd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t filenamePtr = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t statbufPtr = registerFileSet.get(R2).get<uint64_t>();
+        int64_t flag = registerFileSet.get(R3).get<int64_t>();
+
+        char* filename = new char[kernel::Linux::LINUX_PATH_MAX];
+        return readStringThen(
+            filename, filenamePtr, kernel::Linux::LINUX_PATH_MAX,
+            [=](auto length) {
+              // Invoke the kernel
+              kernel::stat statOut;
+              uint64_t retval = linux_.newfstatat(dfd, filename, statOut, flag);
+              ProcessStateChange stateChange = {
+                  ChangeType::REPLACEMENT, {R0}, {retval}};
+              delete[] filename;
+              stateChange.memoryAddresses.push_back(
+                  {statbufPtr, sizeof(statOut)});
+              stateChange.memoryAddressValues.push_back(statOut);
+              return concludeSyscall(stateChange);
+            });
+
+        break;
       }
       case 80: {  // fstat
         int64_t fd = registerFileSet.get(R0).get<int64_t>();

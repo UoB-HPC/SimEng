@@ -18,7 +18,7 @@ TEST_P(InstFloat, fabd) {
   )");
   CHECK_NEON(4, float, {2.125f, 0.f, 0.f, 0.f});
   CHECK_NEON(5, float, {6.5f, 0.f, 0.f, 0.f});
-  
+
   // 64-bit
   RUN_AARCH64(R"(
     fmov d0, 2.0
@@ -885,6 +885,30 @@ TEST_P(InstFloat, fnmsub) {
   )");
   CHECK_NEON(3, double, {-7.75, 0.0});
   CHECK_NEON(4, double, {-2.9375, 0.0});
+}
+
+TEST_P(InstFloat, fnmul) {
+  // 64-bit
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 7.5
+    fnmul d3, d0, d1
+    fnmul d4, d0, d2
+  )");
+  CHECK_NEON(3, double, {0.25, 0.0});
+  CHECK_NEON(4, double, {-15.0, 0.0});
+
+  // 32-bit
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fmov s2, 7.5
+    fnmul s3, s0, s1
+    fnmul s4, s0, s2
+  )");
+  CHECK_NEON(3, float, {0.25, 0.0, 0.0, 0.0});
+  CHECK_NEON(4, float, {-15.0, 0.0, 0.0, 0.0});
 }
 
 TEST_P(InstFloat, fsqrt) {

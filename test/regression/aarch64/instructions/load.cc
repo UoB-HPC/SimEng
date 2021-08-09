@@ -359,6 +359,28 @@ TEST_P(InstLoad, ldr_vector) {
   CHECK_NEON(1, double, {-0.00032, 123456});
 }
 
+TEST_P(InstLoad, ldurh) {
+  initialHeapData_.resize(16);
+  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap[0] = 0xDEADBEEF;
+  heap[1] = 0x12345678;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ldurh w1, [x0]
+    ldurh w2, [x0, #2]
+    ldurh w3, [x0, #4]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0x0000BEEF);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x0000DEAD);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0x00005678);
+}
+
 TEST_P(InstLoad, ldrw) {
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());

@@ -24,6 +24,60 @@ TEST_P(InstArithmetic, add) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), (5u << 12));
 }
 
+TEST_P(InstArithmetic, adc) {
+  // 5 + 9 + carry(1) = 15
+  RUN_AARCH64(R"(
+    # set carry flag
+    movz w0, #7, lsl #16
+    # 255 will be -1 when sign-extended from 8-bits
+    mov w2, 255
+    adds w3, w0, w2, sxtb
+    
+    mov x10, #5
+    mov x11, #9
+    adc x12, x10, x11
+  )");
+  EXPECT_EQ(getNZCV(), 0b0010);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 15u);
+
+  // 8 + 29 + carry(0) = 37
+  RUN_AARCH64(R"(
+    mov x1, #8
+    mov x2, #29
+    adc x3, x1, x2
+  )");
+  EXPECT_EQ(getNZCV(), 0b0000);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 37u);
+
+  // 7 + 15 + carry(0) = 22, but with zero flag set to true
+  RUN_AARCH64(R"(
+    adds x0, x0, #0
+    mov x1, #7
+    mov x2, #15
+    adc x3, x1, x2
+  )");
+  EXPECT_EQ(getNZCV(), 0b0100);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 22u);
+
+  // 25 + 102 + carry(0) = 127, but with negative flag and overflow flag set to
+  // true
+  RUN_AARCH64(R"(
+    # set overflow and negative flags
+    mov w0, wzr
+    mov w1, #1
+    add w1, w0, w1, lsl #31
+    sub w1, w1, #1
+    add w2, w0, #1
+    adds w0, w1, w2
+    
+    mov x10, #25
+    mov x11, #102
+    adc x12, x10, x11
+  )");
+  EXPECT_EQ(getNZCV(), 0b1001);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 127u);
+}
+
 // Test that NZCV flags are set correctly by 32-bit adds
 TEST_P(InstArithmetic, addsw) {
   // 0 + 0 = 0

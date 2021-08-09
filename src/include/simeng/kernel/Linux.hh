@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <set>
 
 #include "simeng/kernel/LinuxProcess.hh"
@@ -94,8 +95,15 @@ class Linux {
   uint64_t clockGetTime(uint64_t clkId, uint64_t systemTimer, uint64_t& seconds,
                         uint64_t& nanoseconds);
 
+  /** ftruncate syscall: truncate a file to an exact size. */
+  int64_t ftruncate(uint64_t fd, uint64_t length);
+
   /** close syscall: close a file descriptor. */
   int64_t close(int64_t fd);
+
+  /** newfstatat syscall: get file status; AKA fstatat. */
+  int64_t newfstatat(int64_t dfd, const std::string& filename, stat& out,
+                     int64_t flag);
 
   /** fstat syscall: get file status. */
   int64_t fstat(int64_t fd, stat& out);
