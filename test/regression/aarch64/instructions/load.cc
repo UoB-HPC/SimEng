@@ -623,6 +623,64 @@ TEST_P(InstLoad, ldrsw) {
   EXPECT_EQ(getGeneralRegister<int64_t>(4), -5);
 }
 
+TEST_P(InstLoad, ldxr) {
+  // 32-bit
+  initialHeapData_.resize(16);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap32[0] = -2;
+  heap32[1] = INT32_MAX;
+  heap32[2] = -5;
+  heap32[3] = 256;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x5, 1
+
+    ldxr x1, [x0]
+    add x0, x0, 4
+    ldxr x2, [x0]
+    add x0, x0, 4
+    ldxr x3, [x0]
+    add x0, x0, 4
+    ldxr x4, [x0]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), -2);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), INT32_MAX);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), -5);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 256);
+
+  // 64-bit
+  initialHeapData_.resize(32);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = -4;
+  heap64[1] = INT64_MAX;
+  heap64[2] = -10;
+  heap64[3] = 512;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x5, 1
+
+    ldxr x1, [x0]
+    add x0, x0, 8
+    ldxr x2, [x0]
+    add x0, x0, 8
+    ldxr x3, [x0]
+    add x0, x0, 8
+    ldxr x4, [x0]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), -4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), INT64_MAX);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), -10);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 512);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstLoad, ::testing::Values(EMULATION),
                          coreTypeToString);
 

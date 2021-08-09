@@ -9,9 +9,11 @@ TEST_P(InstArithmetic, add) {
     mov w0, wzr
     add w1, w0, #2
     add w2, w0, #7, lsl #12
+    add w3, w0, w1, uxtb #1
   )");
   EXPECT_EQ(getGeneralRegister<uint32_t>(1), 2u);
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), (7u << 12));
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), (4u));
 
   RUN_AARCH64(R"(
     mov x0, xzr
@@ -394,9 +396,13 @@ TEST_P(InstArithmetic, sub) {
     movk x0, #7, lsl #48
     movz x1, #15
     sub x3, x0, x1, lsl 33
+
+    movz w5, #32
+    sub x4, x0, w5, uxtw #4
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(2), -2);
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), (7ul << 48) - (15ul << 33));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), (7ul << 48) - (32ul << 4));
 }
 
 // Test that NZCV flags are set correctly by 32-bit subs
@@ -566,6 +572,17 @@ TEST_P(InstArithmetic, subsx) {
   )");
   EXPECT_EQ(getNZCV(), 0b0010);
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), (7ul << 48) - (255ul << 4));
+}
+
+TEST_P(InstArithmetic, umsubl) {
+  RUN_AARCH64(R"(
+    mov w0, #255
+    mov w1, #15
+    movz x2, #7, lsl #48
+
+    umsubl x3, w0, w1, x2
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), (7ul << 48) - (255 * 15));
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstArithmetic, ::testing::Values(EMULATION),

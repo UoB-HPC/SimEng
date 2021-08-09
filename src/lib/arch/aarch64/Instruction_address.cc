@@ -177,6 +177,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses(addresses);
       break;
     }
+    case Opcode::AArch64_LDARW: {  // ldar wt, [xn]
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
+      break;
+    }
     case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
       setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
       break;
@@ -569,6 +573,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
       break;
     }
+    case Opcode::AArch64_LDXRX: {  // ldxr xt, [xn]
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
+      break;
+    }
     case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend {#amount}}]
       // TODO: Implement prefetching
       break;
@@ -678,6 +686,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         addr += 4;
       }
       setMemoryAddresses(addresses);
+      break;
+    }
+    case Opcode::AArch64_STLRW: {  // stlr wt, [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;
     }
     case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]
@@ -980,6 +992,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 8}});
       break;
     }
+    case Opcode::AArch64_STURHHi: {  // sturh wt, [xn, #imm]
+      setMemoryAddresses(
+          {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 2}});
+      break;
+    }
     case Opcode::AArch64_STURQi: {  // stur qt, [xn, #imm]
       setMemoryAddresses(
           {{operands[1].get<uint64_t>() + metadata.operands[1].mem.disp, 16}});
@@ -1002,6 +1019,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     }
     case Opcode::AArch64_STXRW: {  // stxr ws, wt, [xn]
       setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
+      break;
+    }
+    case Opcode::AArch64_STXRX: {  // stxr ws, xt, [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
       break;
     }
     default:
