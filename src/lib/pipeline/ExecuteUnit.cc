@@ -118,6 +118,9 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
       return;
     }
     handleLoad_(uop);
+    if (uop->isStore()) {
+      handleStore_(uop);
+    }
     return;
   } else if (uop->isStore()) {
     uop->generateAddresses();
