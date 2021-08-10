@@ -78,6 +78,16 @@ External project usage
 - `LLVM <https://github.com/llvm-mirror/llvm>`_ - Generation of binaries for use in the regression test suite
 
 
+Contributors
+------------
+The following is a list of key contributors to the SimEng framework.
+
+**Current development team**: Jack Jones and Harry Waugh
+
+**Former developers and code reviewers**: James Price, Hal Jones, and Andrei Poenaru
+
+**Internship roles**: Daniel Weaver, Finn Wilkinson, Mutalib Mohammed, and Seunghun Lee
+
 Funding
 -------
 
