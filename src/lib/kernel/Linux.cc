@@ -12,7 +12,6 @@
 #include <cassert>
 #include <cstring>
 #include <iostream>
-#include <memory>
 
 namespace simeng {
 namespace kernel {
