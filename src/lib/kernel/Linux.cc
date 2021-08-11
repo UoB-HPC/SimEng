@@ -88,7 +88,8 @@ int64_t Linux::close(int64_t fd) {
   return ::close(hfd);
 }
 
-int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out, int64_t flag) {
+int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
+                          int64_t flag) {
   // Resolve absolute path to target file
   char absolutePath[LINUX_PATH_MAX];
   realpath(filename.c_str(), absolutePath);
@@ -104,9 +105,9 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out, i
   }
 
   // Pass call through to host
-  assert(dfd == AT_FDCWD && "Unsupported dirfd argument in fstatat syscall");
+  assert(dfd == -100 && "Unsupported dirfd argument in fstatat syscall");
   struct ::stat statbuf;
-  int64_t retval = ::fstatat(dfd, filename.c_str(), &statbuf, flag);
+  int64_t retval = ::fstatat(AT_FDCWD, filename.c_str(), &statbuf, flag);
 
   // Copy results to output struct
   out.dev = statbuf.st_dev;

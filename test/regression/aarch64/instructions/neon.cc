@@ -1433,6 +1433,7 @@ TEST_P(InstNeon, frinta) {
 }
 
 TEST_P(InstNeon, fsqrt) {
+  // vector, 32-bit, 4 elements
   initialHeapData_.resize(32);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   fheap[0] = 1.0;
@@ -1450,6 +1451,28 @@ TEST_P(InstNeon, fsqrt) {
     fsqrt v2.4s, v0.4s
   )");
   CHECK_NEON(2, float, {1.0, 6.53911309, 0.3535533906, 17.91647287});
+
+  // vector, 64-bit, 2 elements
+  initialHeapData_.resize(32);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = 42.76;
+  dheap[2] = 0.125;
+  dheap[3] = 321.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fsqrt v2.2d, v0.2d
+    fsqrt v3.2d, v1.2d
+  )");
+  CHECK_NEON(2, double, {1.0, 6.53911308971});
+  CHECK_NEON(3, double, {0.35355339059, 17.9164728672});
 }
 
 TEST_P(InstNeon, fsub) {
@@ -1867,6 +1890,34 @@ TEST_P(InstNeon, scvtf) {
   CHECK_NEON(0, double, {1.0, -1.0});
   CHECK_NEON(1, double,
              {static_cast<double>(INT64_MAX), static_cast<double>(INT64_MIN)});
+
+  // 32-bit integer (vector of 4)
+  initialHeapData_.resize(32);
+  int32_t* heap32 = reinterpret_cast<int32_t*>(initialHeapData_.data());
+  heap32[0] = 1;
+  heap32[1] = 2;
+  heap32[2] = -1;
+  heap32[3] = -2;
+  heap32[4] = INT32_MIN;
+  heap32[5] = INT32_MAX;
+  heap32[6] = INT32_MAX;
+  heap32[7] = INT32_MIN;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load and convert integer values
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    scvtf v0.4s, v0.4s
+    scvtf v1.4s, v1.4s
+  )");
+  CHECK_NEON(0, float, {1.0f, 2.0f, -1.0f, -2.0f});
+  CHECK_NEON(1, float,
+             {static_cast<float>(INT32_MIN), static_cast<float>(INT32_MAX),
+              static_cast<float>(INT32_MAX), static_cast<float>(INT32_MIN)});
 }
 
 TEST_P(InstNeon, shl) {
