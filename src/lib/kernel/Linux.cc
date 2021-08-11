@@ -299,9 +299,6 @@ uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
     // The end of the allocation must be rounded up to the nearest page size
     newAlloc->vm_end =
         alignToBoundary(newAlloc->vm_start + length, lps->pageSize);
-    // std::cout << &newAlloc << ":" << newAlloc->vm_start << ":" << length <<
-    // ":"
-    //           << newAlloc->vm_end << ":" << lps->pageSize << std::endl;
     lps->contiguousAllocations.push_back(*newAlloc);
   } else {  // Use hint to provide allocation
     return 0;
