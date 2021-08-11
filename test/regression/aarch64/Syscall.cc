@@ -230,6 +230,17 @@ TEST_P(Syscall, stdout) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), sizeof(str) - 1);
 }
 
+TEST_P(Syscall, mprotect) {
+  RUN_AARCH64(R"(
+    mov x0, #47472
+    mov x1, #4096
+    mov x2, #1
+    mov x8, #226
+    svc #0
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, Syscall,
                          ::testing::Values(EMULATION, INORDER, OUTOFORDER),
                          coreTypeToString);

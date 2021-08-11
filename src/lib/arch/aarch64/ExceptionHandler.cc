@@ -394,6 +394,13 @@ bool ExceptionHandler::init() {
             ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
         break;
       }
+      case 226: {  // mprotect
+        // mprotect is not supported
+        // always return zero to indicate success
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(0)}};
+        break;
+      }
       default:
         printException(instruction_);
         std::cout << "Unrecognised syscall: " << syscallId << std::endl;

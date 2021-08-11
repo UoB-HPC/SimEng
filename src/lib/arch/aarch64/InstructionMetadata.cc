@@ -47,6 +47,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_BICv8i8:
+      // access specifier for last operand was missing
+      operands[2].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_CBNZW:
       [[fallthrough]];
     case Opcode::AArch64_CBNZX:
@@ -290,6 +294,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_WRITE;
       break;
+    case Opcode::AArch64_LD2Twov4s_POST:
+      // Fixing wrong access flag for offset register operand
+      if (operandCount == 4) {
+        operands[3].access = CS_AC_READ;
+      }
+      break;
     case Opcode::AArch64_LDR_PXI:
       [[fallthrough]];
     case Opcode::AArch64_LDR_ZXI:
@@ -384,6 +394,19 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_ST1Twov16b:
+      // ST1 incorrectly flags read and write
+      operands[1].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_ST2Twov4s_POST:
+      // ST2 post incorrectly flags read and write
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ | CS_AC_WRITE;
+      // Another incorrect acess flag for register offset operand
+      if (operandCount == 4) {
+        operands[3].access = CS_AC_READ;
+      }
+      break;
     case Opcode::AArch64_STR_PXI:
       [[fallthrough]];
     case Opcode::AArch64_STR_ZXI:
@@ -907,6 +930,13 @@ void InstructionMetadata::revertAliasing() {
         operands[1].access = CS_AC_READ;
         operands[1].shift = {ARM64_SFT_LSL, 0};
         operands[1].imm = ~(operands[1].imm);
+        return;
+      }
+      if (opcode == Opcode::AArch64_INSvi8gpr ||
+          opcode == Opcode::AArch64_INSvi16gpr ||
+          opcode == Opcode::AArch64_INSvi32gpr ||
+          opcode == Opcode::AArch64_INSvi64gpr) {
+        // mov vd.ts[index], rn; alias for: ins vd.ts[index], rn
         return;
       }
       return aliasNYI();

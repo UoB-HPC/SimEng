@@ -372,6 +372,42 @@ TEST_P(InstFloat, fcsel64) {
   CHECK_NEON(5, double, {1.0, 0.0});
 }
 
+TEST_P(InstFloat, fcmeq_zero) {
+  // Vector single-precision
+  RUN_AARCH64(R"(
+    # v0 = {0.5f, 0.5f, 0.5f, 0.5f}
+    fmov v0.4s, #0.5
+
+    # v1 = {0.f, 1.5f, 0.f, 1.5f}
+    fmov v1.4s, #1.5
+    mov v1.s[0], wzr
+    mov v1.s[2], wzr
+
+    # v2 = {2.5f, 0.f, 2.5f, 0.f}
+    fmov v2.4s, #2.5
+    mov v2.s[1], wzr
+    mov v2.s[3], wzr
+
+    fcmeq v4.4s, v0.4s, #0.0
+    fcmeq v5.4s, v1.4s, #0.0
+    fcmeq v6.4s, v2.4s, #0.0
+    fcmeq v7.4s, v3.4s, #0.0
+    fcmeq v8.2s, v0.2s, #0.0
+    fcmeq v9.2s, v1.2s, #0.0
+    fcmeq v10.2s, v2.2s, #0.0
+    fcmeq v11.2s, v3.2s, #0.0
+  )");
+  CHECK_NEON(4, uint32_t, {0x00000000, 0x00000000, 0x00000000, 0x00000000});
+  CHECK_NEON(5, uint32_t, {0xffffffff, 0x00000000, 0xffffffff, 0x00000000});
+  CHECK_NEON(6, uint32_t, {0x00000000, 0xffffffff, 0x00000000, 0xffffffff});
+  CHECK_NEON(7, uint32_t, {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff});
+
+  CHECK_NEON(8, uint32_t, {0x00000000, 0x00000000, 0x00000000, 0x00000000});
+  CHECK_NEON(9, uint32_t, {0xffffffff, 0x00000000, 0x00000000, 0x00000000});
+  CHECK_NEON(10, uint32_t, {0x00000000, 0xffffffff, 0x00000000, 0x00000000});
+  CHECK_NEON(11, uint32_t, {0xffffffff, 0xffffffff, 0x00000000, 0x00000000});
+}
+
 TEST_P(InstFloat, fcvta) {
   // 64-bit
   initialHeapData_.resize(48);
@@ -511,6 +547,49 @@ TEST_P(InstFloat, fcvt) {
   EXPECT_EQ((getGeneralRegister<int32_t>(3)), 321);
 }
 
+TEST_P(InstFloat, fcvtl) {
+  // 2 floats to 2 doubles
+  RUN_AARCH64(R"(
+    fmov v0.2s, 2.25
+    fcvtl v1.2d, v0.2s
+  )");
+  CHECK_NEON(1, double, {static_cast<double>(2.25), static_cast<double>(2.25)});
+
+  // 4 floats to 2 doubles
+  RUN_AARCH64(R"(
+    # Preparing {1.0, 2.0, 3.0, 4.0} for v0.4s
+    mov w0, #0x3f800000
+    mov w1, #0x40000000
+    mov w2, #0x40400000
+    mov w3, #0x40800000
+
+    # inserting elements
+    mov v0.s[0], w0
+    mov v0.s[1], w1
+    mov v0.s[2], w2
+    mov v0.s[3], w3
+
+    fcvtl2 v1.2d, v0.4s
+  )");
+  CHECK_NEON(1, double, {static_cast<double>(3.0), static_cast<double>(4.0)});
+}
+
+TEST_P(InstFloat, fcvtn) {
+  // 2 doubles to 2 floats
+  RUN_AARCH64(R"(
+    fmov v0.2d, #0.125
+    fcvtn v1.2s, v0.2d
+  )");
+  CHECK_NEON(1, float, {0.125f, 0.125f, 0.f, 0.f});
+
+  // 2 doubles to 4 floats
+  RUN_AARCH64(R"(
+    fmov v0.2d, #0.125
+    fcvtn2 v1.4s, v0.2d
+  )");
+  CHECK_NEON(1, float, {0.f, 0.f, 0.125f, 0.125f});
+}
+
 TEST_P(InstFloat, fdiv) {
   // FP32
   RUN_AARCH64(R"(
@@ -611,6 +690,21 @@ TEST_P(InstFloat, fmaxnm) {
     fmaxnm d2, d0, d1
   )");
   CHECK_NEON(2, double, {-2.0, 0.0});
+
+  // 32-bit with NAN in s2
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fsqrt s2, s1
+    fmaxnm s3, s0, s1
+    fmaxnm s4, s1, s0
+    fmaxnm s5, s1, s2
+    fmaxnm s6, s2, s1
+  )");
+  CHECK_NEON(3, float, {2.0f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {2.0f, 0.f, 0.f, 0.f});
+  CHECK_NEON(5, float, {-0.125f, 0.f, 0.f, 0.f});
+  CHECK_NEON(6, float, {-0.125f, 0.f, 0.f, 0.f});
 }
 
 TEST_P(InstFloat, fminnm) {
@@ -639,6 +733,21 @@ TEST_P(InstFloat, fminnm) {
     fminnm d2, d0, d1
   )");
   CHECK_NEON(2, double, {2.0, 0.0});
+
+  // 32-bit with nan in s2
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fsqrt s2, s1
+    fminnm s3, s0, s1
+    fminnm s4, s1, s0
+    fminnm s5, s0, s2
+    fminnm s6, s2, s0
+  )");
+  CHECK_NEON(3, float, {-0.125f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {-0.125f, 0.f, 0.f, 0.f});
+  CHECK_NEON(5, float, {2.0f, 0.f, 0.f, 0.f});
+  CHECK_NEON(6, float, {2.0f, 0.f, 0.f, 0.f});
 }
 
 TEST_P(InstFloat, fmov) {
@@ -935,6 +1044,156 @@ TEST_P(InstFloat, fsqrt) {
   CHECK_NEON(2, double, {::sqrt(2.0), 0.0});
   EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(3)));
   EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+}
+
+TEST_P(InstFloat, frsqrte) {
+  // single precision
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+
+    frsqrte s3, s0
+    frsqrte s4, s1
+    frsqrte s5, s2
+  )");
+  CHECK_NEON(3, float, {1.f / sqrtf(2.f), 0.f, 0.f, 0.f});
+
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(4)));
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(5)));
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(5)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(5)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(5)), 0.f);
+
+  // double precision
+  RUN_AARCH64(R"(
+    fmov d1, 2.0
+    fmov d2, -0.125
+    fmov d4, 0.0
+    frsqrte d0, d1
+    frsqrte d3, d2
+    frsqrte d5, d4
+  )");
+  CHECK_NEON(0, double, {1.0 / sqrt(2.0), 0.0});
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(3)));
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 0>(5)));
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(5)), 0.0);
+
+  // Vector single precision
+  RUN_AARCH64(R"(
+    fmov v0.4s, 2.0
+    fmov v1.4s, -0.125
+
+    frsqrte v4.4s, v0.4s
+    frsqrte v5.4s, v1.4s
+    frsqrte v6.4s, v2.4s
+  )");
+  CHECK_NEON(4, float,
+             {
+                 1.f / sqrtf(2.f),
+                 1.f / sqrtf(2.f),
+                 1.f / sqrtf(2.f),
+                 1.f / sqrtf(2.f),
+             });
+
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(5)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 1>(5)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 2>(5)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 3>(5)));
+
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(6)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 1>(6)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 2>(6)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 3>(6)));
+
+  // Vector single precision (2S)
+  RUN_AARCH64(R"(
+    fmov v0.4s, 2.0
+    fmov v1.4s, -0.125
+
+    frsqrte v4.2s, v0.2s
+    frsqrte v5.2s, v1.2s
+    frsqrte v6.2s, v2.2s
+  )");
+  CHECK_NEON(4, float, {1.f / sqrtf(2.f), 1.f / sqrtf(2.f), 0.f, 0.f});
+
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(5)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 1>(5)));
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(5)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(5)), 0.f);
+
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(6)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 1>(6)));
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(6)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(6)), 0.f);
+
+  // Vector double precison
+  RUN_AARCH64(R"(
+    fmov v0.2d, 2.0
+    fmov v1.2d, -0.125
+
+    frsqrte v3.2d, v0.2d
+    frsqrte v4.2d, v1.2d
+    frsqrte v5.2d, v2.2d
+  )");
+  CHECK_NEON(3, double, {1.0 / sqrt(2.0), 1.0 / sqrt(2.0)});
+
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(4)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 1>(4)));
+
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 0>(5)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 1>(5)));
+}
+
+TEST_P(InstFloat, frsqrts) {
+  // Single precision
+  RUN_AARCH64(R"(
+    fmov s0, 1.25
+    fmov s1, 2.0
+    frsqrts s2, s1, s0
+  )");
+  CHECK_NEON(2, float, {(3.f - 1.25f * 2.f) / 2.f, 0.f, 0.f, 0.f});
+
+  // Double precision
+  RUN_AARCH64(R"(
+    fmov d0, 1.25
+    fmov d1, 2.0
+    frsqrts d2, d1, d0 
+  )");
+  CHECK_NEON(2, double, {(3.0L - (1.25L * 2.0L)) / 2.0, 0.0});
+
+  // Vector single precision
+  RUN_AARCH64(R"(
+    fmov v0.4s, 1.25
+    fmov v1.4s, 2.0
+    frsqrts v2.4s, v1.4s, v0.4s
+  )");
+  CHECK_NEON(2, float,
+             {((3.f - (1.25f * 2.f)) / 2.f), ((3.f - (1.25f * 2.f)) / 2.f),
+              ((3.f - (1.25f * 2.f)) / 2.f), ((3.f - (1.25f * 2.f)) / 2.f)});
+
+  // Vector single precision (2S)
+  RUN_AARCH64(R"(
+    fmov v0.4s, 1.25
+    fmov v1.4s, 2.0
+    frsqrts v2.2s, v1.2s, v0.2s
+  )");
+  CHECK_NEON(
+      2, float,
+      {((3.f - (1.25f * 2.f)) / 2.f), ((3.f - (1.25f * 2.f)) / 2.f), 0.f, 0.f});
+
+  // Vector double precision
+  RUN_AARCH64(R"(
+    fmov v0.2d, 1.25
+    fmov v1.2d, 2.0
+    frsqrts v2.2d, v1.2d, v0.2d
+  )");
+  CHECK_NEON(2, double,
+             {(3.0L - (1.25L * 2.0L)) / 2.0, (3.0L - (1.25L * 2.0L)) / 2.0})
 }
 
 TEST_P(InstFloat, fsub) {

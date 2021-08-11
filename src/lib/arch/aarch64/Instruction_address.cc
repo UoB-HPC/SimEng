@@ -177,6 +177,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses(addresses);
       break;
     }
+    case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn], #imm
+      const uint64_t base = operands[2].get<uint64_t>();
+      setMemoryAddresses({{base, 16}, {base + 16, 16}});
+      break;
+    }
     case Opcode::AArch64_LDADDLW:  // ldaddl ws, wt, [xn]
       [[fallthrough]];
     case Opcode::AArch64_LDADDW: {  // ldadd ws, wt, [xn]
@@ -704,6 +709,40 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses(addresses);
       break;
     }
+    case Opcode::AArch64_ST1Twov16b: {  // st1v {vt.16b, vt2.16b}, [xn]
+      const uint64_t base = operands[2].get<uint64_t>();
+      std::vector<MemoryAccessTarget> addresses;
+      for (int i = 0; i < 32; i++) {
+        addresses.push_back({base + i, 1});
+      }
+      setMemoryAddresses(addresses);
+      break;
+    }
+    case Opcode::AArch64_ST1i8: {  // st1 {vt.b}[index], [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 1}});
+      break;
+    }
+    case Opcode::AArch64_ST1i16: {  // st1 {vt.h}[index], [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 2}});
+      break;
+    }
+    case Opcode::AArch64_ST1i32: {  // st1 {vt.s}[index], [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
+      break;
+    }
+    case Opcode::AArch64_ST1i64: {  // st1 {vt.d}[index], [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+      break;
+    }
+    case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn], #imm
+      const uint64_t base = operands[2].get<uint64_t>();
+      std::vector<MemoryAccessTarget> addresses;
+      for (int i = 0; i < 8; i++) {
+        addresses.push_back({base + 4 * i, 4});
+      }
+      setMemoryAddresses(addresses);
+      break;
+    }
     case Opcode::AArch64_STLRB: {  // stlrb wt, [xn]
       setMemoryAddresses({{operands[1].get<uint64_t>(), 1}});
       break;
@@ -772,6 +811,12 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       break;
     }
     case Opcode::AArch64_STPQi: {  // stp qt1, qt2, [xn, #imm]
+      uint64_t base =
+          operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
+      setMemoryAddresses({{base, 16}, {base + 16, 16}});
+      break;
+    }
+    case Opcode::AArch64_STPQpre: {  // stp qt1, qt2, [xn, #imm]!
       uint64_t base =
           operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
       setMemoryAddresses({{base, 16}, {base + 16, 16}});

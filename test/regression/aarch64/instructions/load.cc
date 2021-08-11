@@ -105,6 +105,48 @@ TEST_P(InstLoad, ld1r) {
   CHECK_NEON(1, uint32_t, {0x12345678, 0x12345678, 0x12345678, 0x12345678});
 }
 
+TEST_P(InstLoad, ld2_multi_struct) {
+  // 32-bit Post index
+  initialHeapData_.resize(64);
+  float* heap = reinterpret_cast<float*>(initialHeapData_.data());
+  heap[0] = 0.25;
+  heap[1] = 2.0;
+  heap[2] = 1.25;
+  heap[3] = 7.5;
+  heap[4] = 0.125;
+  heap[5] = 0.75;
+  heap[6] = 5.0;
+  heap[7] = -0.5;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Save heap address before ld2
+    mov x10, x0
+
+    # Load values from heap
+    ld2 {v0.4s, v1.4s}, [x0], #32
+    
+    # Save heap address after ld2
+    mov x11, x0
+
+    mov x0, x10
+    mov x1, #48
+    ld2 {v2.4s, v3.4s}, [x0], x1
+    mov x12, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            getGeneralRegister<uint64_t>(10) + 32);
+  CHECK_NEON(0, float, {0.25f, 1.25f, 0.125f, 5.0f});
+  CHECK_NEON(1, float, {2.0f, 7.5f, 0.75f, -0.5f});
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12),
+            getGeneralRegister<uint64_t>(10) + 48);
+  CHECK_NEON(2, float, {0.25f, 1.25f, 0.125f, 5.0f});
+  CHECK_NEON(3, float, {2.0f, 7.5f, 0.75f, -0.5f});
+}
+
 TEST_P(InstLoad, ldadd) {
   RUN_AARCH64(R"(
     sub sp, sp, #1024
