@@ -345,7 +345,7 @@ bool ExceptionHandler::init() {
 
         stateChange = {ChangeType::REPLACEMENT,
                        {R0},
-                       {static_cast<uint64_t>(0)},
+                       {0ull},
                        {{base, sizeof(sysname)},
                         {base + len, sizeof(nodename)},
                         {base + (len * 2), sizeof(release)},
@@ -397,8 +397,7 @@ bool ExceptionHandler::init() {
       case 226: {  // mprotect
         // mprotect is not supported
         // always return zero to indicate success
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(0)}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
       default:

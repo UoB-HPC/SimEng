@@ -608,7 +608,7 @@ void Instruction::execute() {
       results[1] = result;
       break;
     }
-    case Opcode::AArch64_BICv16i8: {  // bics vd.16b, vn.16b, vm.16b
+    case Opcode::AArch64_BICv16i8: {  // bic vd.16b, vn.16b, vm.16b
       const uint8_t* n = operands[0].getAsVector<uint8_t>();
       const uint8_t* m = operands[1].getAsVector<uint8_t>();
       uint8_t out[16];
@@ -627,7 +627,7 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
-    case Opcode::AArch64_BICv8i8: {
+    case Opcode::AArch64_BICv8i8: {  // bic vd.8b, vn.8b, vm.8b
       const uint8_t* n = operands[0].getAsVector<uint8_t>();
       const uint8_t* m = operands[1].getAsVector<uint8_t>();
       uint8_t out[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
@@ -732,14 +732,15 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_CCMNWi: {  // ccmn wn, #imm, #nzcv, cc
-      uint8_t nzcv =
-          static_cast<uint8_t>(metadata.operands[2].imm);  // new nzcv
       if (conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+        uint8_t nzcv;
         std::tie(std::ignore, nzcv) =
             addWithCarry(operands[1].get<uint32_t>(),
                          static_cast<uint32_t>(metadata.operands[1].imm), 0);
+        results[0] = nzcv;
+      } else {
+        results[0] = static_cast<uint8_t>(metadata.operands[2].imm);
       }
-      results[0] = nzcv;
       break;
     }
     case Opcode::AArch64_CCMNXi: {  // ccmn xn, #imm, #nzcv, cc
@@ -1191,7 +1192,6 @@ void Instruction::execute() {
       }
       results[0] = out;
       break;
-      break;
     }
     case Opcode::AArch64_EXTRWrri: {  // extr wd, wn, wm, #lsb
       uint32_t n = operands[0].get<uint32_t>();
@@ -1326,7 +1326,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FADDPv4f32: {  // faddp vd.4s, vn.4s, vm.4s
-      // TODO: Handle floating point exceptions
       // swap the order of operands to have correct behaviour
       const float* n = operands[1].getAsVector<float>();
       const float* m = operands[0].getAsVector<float>();
@@ -1343,7 +1342,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FADDPv2f32: {  // faddp vd.2s, vn.2s, vm.2s
-      // TODO: Handle floating point exceptions
       // swap the order of operands to have correct behaviour
       const float* n = operands[1].getAsVector<float>();
       const float* m = operands[0].getAsVector<float>();
@@ -1360,7 +1358,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FADDPv2f64: {  // faddp vd.2d, vn.2d, vm.2d
-      // TODO: Handle floating point exceptions
       // swap the order of operands to have correct behaviour
       const double* n = operands[1].getAsVector<double>();
       const double* m = operands[0].getAsVector<double>();
@@ -1376,8 +1373,9 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
-    case Opcode::AArch64_FADDPv8f16:
-    case Opcode::AArch64_FADDPv4f16: {
+    case Opcode::AArch64_FADDPv8f16:  // faddp vd.8h, vn.8h, vm.8h
+      [[fallthrough]];
+    case Opcode::AArch64_FADDPv4f16: {  // faddp vd.4h, vn.4h, vm.4h
       executionNYI();
       break;
     }
@@ -1673,9 +1671,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCMEQv2i32rz: {  // fcmeq vd.2s, vd.2s, #0.0
-      // TODO: Handle floating point exceptions
       const float* n = operands[0].getAsVector<float>();
-      uint32_t out[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+      uint32_t out[4] = {0};
       for (int i = 0; i < 2; i++) {
         if (n[i] == 0.f) {
           out[i] = 0xffffffff;
@@ -1685,9 +1682,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCMEQv4i32rz: {  // fcmeq vd.4s vn.4s, #0.0
-      // TODO: Handle floating point exceptions
       const float* n = operands[0].getAsVector<float>();
-      uint32_t out[4] = {0x00000000, 0x00000000, 0x00000000, 0x00000000};
+      uint32_t out[4] = {0};
       for (int i = 0; i < 4; i++) {
         if (n[i] == 0.f) {
           out[i] = 0xffffffff;
@@ -1741,7 +1737,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTNv2i32: {  // fcvtn vd.2s, vn.2d
-      // TODO: Handle floating point exceptions
       const double* n = operands[0].getAsVector<double>();
       float out[4] = {static_cast<float>(n[0]), static_cast<float>(n[1]), 0.f,
                       0.f};
@@ -1749,7 +1744,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTNv4i32: {  // fcvtn2 vd.4s, vn.2d
-      // TODO: Handle floating point exceptions
       const double* n = operands[0].getAsVector<double>();
       float out[4] = {0.f, 0.f, static_cast<float>(n[0]),
                       static_cast<float>(n[1])};
@@ -2674,53 +2668,40 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_INSvi8gpr: {  // ins vd.b[index], wn
-                                       // mov vd.b[index], wn
-      const uint8_t* vd = operands[0].getAsVector<uint8_t>();
+      const uint8_t* d = operands[0].getAsVector<uint8_t>();
       const uint8_t n = operands[1].get<uint32_t>();
       uint8_t out[16];
       for (int i = 0; i < 16; i++) {
-        out[i] = vd[i];
+        out[i] = d[i];
       }
-      int index = metadata.operands[0].vector_index;
-      assert(index >= 0 && "Attempted to use invalid vector index");
-      out[index] = n;
+      out[metadata.operands[0].vector_index] = n;
       results[0] = out;
       break;
     }
     case Opcode::AArch64_INSvi16gpr: {  // ins vd.h[index], wn
-                                        // mov vd.h[index], wn
-      const uint16_t* vd = operands[0].getAsVector<uint16_t>();
+      const uint16_t* d = operands[0].getAsVector<uint16_t>();
       const uint16_t n = operands[1].get<uint32_t>();
       uint16_t out[8];
       for (int i = 0; i < 8; i++) {
-        out[i] = vd[i];
+        out[i] = d[i];
       }
-      int index = metadata.operands[0].vector_index;
-      assert(index >= 0 && "Attempted to use invalid vector index");
-      out[index] = n;
+      out[metadata.operands[0].vector_index] = n;
       results[0] = out;
-      break;
       break;
     }
     case Opcode::AArch64_INSvi32gpr: {  // ins vd.s[index], wn
-                                        // mov vd.s[index], wn
-      const uint32_t* vd = operands[0].getAsVector<uint32_t>();
+      const uint32_t* d = operands[0].getAsVector<uint32_t>();
       const uint32_t n = operands[1].get<uint32_t>();
-      uint32_t out[4] = {vd[0], vd[1], vd[2], vd[3]};
-      int index = metadata.operands[0].vector_index;
-      assert(index >= 0 && "Attempted to use invalid vector index");
-      out[index] = n;
+      uint32_t out[4] = {d[0], d[1], d[2], d[3]};
+      out[metadata.operands[0].vector_index] = n;
       results[0] = out;
       break;
     }
     case Opcode::AArch64_INSvi64gpr: {  // ins vd.d[index], xn
-                                        // mov vd.d[index], xn
-      const uint64_t* vd = operands[0].getAsVector<uint64_t>();
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
       const uint64_t n = operands[1].get<uint64_t>();
-      uint64_t out[2] = {vd[0], vd[1]};
-      int index = metadata.operands[0].vector_index;
-      assert(index >= 0 && "Attempted to use invalid vector index");
-      out[index] = n;
+      uint64_t out[2] = {d[0], d[1]};
+      out[metadata.operands[0].vector_index] = n;
       results[0] = out;
       break;
     }
@@ -3280,7 +3261,7 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
-    case Opcode::AArch64_LDTRSBXi: {
+    case Opcode::AArch64_LDTRSBXi: {  // ldtrsb xt, [xn, #imm]
       // TODO: implement
       results[0] = RegisterValue(0, 8);
       break;
@@ -4123,34 +4104,22 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_ST1i8: {  // st1 {vt.b}[index], [xn]
       const uint8_t* t = operands[0].getAsVector<uint8_t>();
-      int index = metadata.operands[0].vector_index;
-      assert(index >= 0 && "Attempted to use invalid vector index");
-      uint8_t element = t[index];
-      memoryData[0] = RegisterValue(element, 1);
+      memoryData[0] = t[metadata.operands[0].vector_index];
       break;
     }
     case Opcode::AArch64_ST1i16: {  // st1 {vt.h}[index], [xn]
       const uint16_t* t = operands[0].getAsVector<uint16_t>();
-      int index = metadata.operands[0].vector_index;
-      assert(index >= 0 && "Attempted to use invalid vector index");
-      uint16_t element = t[index];
-      memoryData[0] = element;
+      memoryData[0] = t[metadata.operands[0].vector_index];
       break;
     }
     case Opcode::AArch64_ST1i32: {  // st1 {vt.s}[index], [xn]
       const uint32_t* t = operands[0].getAsVector<uint32_t>();
-      int index = metadata.operands[0].vector_index;
-      assert(index >= 0 && "Attempted to use invalid vector index");
-      uint32_t element = t[index];
-      memoryData[0] = element;
+      memoryData[0] = t[metadata.operands[0].vector_index];
       break;
     }
     case Opcode::AArch64_ST1i64: {  // st1 {vt.d}[index], [xn]
       const uint64_t* t = operands[0].getAsVector<uint64_t>();
-      int index = metadata.operands[0].vector_index;
-      assert(index >= 0 && "Attempted to use invalid vector index");
-      uint64_t element = t[index];
-      memoryData[0] = element;
+      memoryData[0] = t[metadata.operands[0].vector_index];
       break;
     }
     case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn], #imm
