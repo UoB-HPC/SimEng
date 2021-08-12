@@ -1,0 +1,22 @@
+This file contains a list of people who have made large contributions
+to the SimEng framework.
+
+Original SimEng design and implementation:
+    James Price
+    Hal Jones
+
+Current development team:
+    Jack Jones
+    Harry Waugh
+
+Code reviewers:
+    Andrei Poenaru
+
+Large build structure contributions:
+    Tom Lin
+
+Internship contributions:
+    Daniel Weaver
+    Finn Wilkinson
+    Mutalib Mohammed
+    Seunghun Lee
