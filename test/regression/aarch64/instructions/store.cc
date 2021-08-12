@@ -208,7 +208,7 @@ TEST_P(InstStore, st1_single_struct) {
     mov w1, #2
     mov w2, #3
     mov w3, #4
-    mov x4, #1
+    mov x4, #16
 
     # inserting values to vector
     mov v0.b[0], w0
@@ -217,23 +217,21 @@ TEST_P(InstStore, st1_single_struct) {
     mov v0.b[12], w3
 
     # storing vector elements
-    sub sp, sp, #4
-    # st1 {v0.b}[0], [sp], #1
-    # st1 {v0.b}[3], [sp], x4
-    # st1 {v0.b}[8], [sp], #1
+    sub sp, sp, #64
+    st1 {v0.b}[0], [sp], #1
+    add sp, sp, #15
+    st1 {v0.b}[3], [sp], x4
+    st1 {v0.b}[8], [sp], #1
+    add sp, sp, #15
     st1 {v0.b}[12], [sp]
   )");
-  // EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() -
-  // 1); EXPECT_EQ(getMemoryValue<uint8_t>(getGeneralRegister<uint64_t>(31) -
-  // 3),
-  //           static_cast<uint8_t>(1));
-  // EXPECT_EQ(getMemoryValue<uint8_t>(getGeneralRegister<uint64_t>(31) - 2),
-  //           static_cast<uint8_t>(2));
-  // EXPECT_EQ(getMemoryValue<uint8_t>(getGeneralRegister<uint64_t>(31) - 1),
-  //           static_cast<uint8_t>(3));
-  // EXPECT_EQ(getMemoryValue<uint8_t>(getGeneralRegister<uint64_t>(31)),
-  //           static_cast<uint8_t>(4));
-  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 16);
+  EXPECT_EQ(getMemoryValue<uint8_t>(getGeneralRegister<uint64_t>(31) - 48),
+            static_cast<uint8_t>(1));
+  EXPECT_EQ(getMemoryValue<uint8_t>(getGeneralRegister<uint64_t>(31) - 32),
+            static_cast<uint8_t>(2));
+  EXPECT_EQ(getMemoryValue<uint8_t>(getGeneralRegister<uint64_t>(31) - 16),
+            static_cast<uint8_t>(3));
   EXPECT_EQ(getMemoryValue<uint8_t>(getGeneralRegister<uint64_t>(31)),
             static_cast<uint8_t>(4));
 
@@ -244,32 +242,30 @@ TEST_P(InstStore, st1_single_struct) {
     mov w1, #0xcd
     mov w2, #0xef
     mov w3, #0x12
-    mov x4, #2
+    mov x4, #16
 
     # inserting values to vector
     mov v0.h[2], w0
     mov v0.h[3], w1
     mov v0.h[5], w2
     mov v0.h[7], w3
-    sub sp, sp, #8
+    sub sp, sp, #64
 
     # storing vector elements
-    # st1 {v0.h}[2], [sp], #2
-    # st1 {v0.h}[3], [sp], x4
-    # st1 {v0.h}[5], [sp], #2
+    st1 {v0.h}[2], [sp], #2
+    add sp, sp, #14
+    st1 {v0.h}[3], [sp], x4
+    st1 {v0.h}[5], [sp], #2
+    add sp, sp, #14
     st1 {v0.h}[7], [sp]
   )");
-  // EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() -
-  // 2); EXPECT_EQ(getMemoryValue<uint16_t>(getGeneralRegister<uint64_t>(31) -
-  // 6),
-  //           0xab);
-  // EXPECT_EQ(getMemoryValue<uint16_t>(getGeneralRegister<uint64_t>(31) - 4),
-  //           0xcd);
-  // EXPECT_EQ(getMemoryValue<uint16_t>(getGeneralRegister<uint64_t>(31) - 2),
-  //           0xef);
-  // EXPECT_EQ(getMemoryValue<uint16_t>(getGeneralRegister<uint64_t>(31)),
-  // 0x12);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 8);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 16);
+  EXPECT_EQ(getMemoryValue<uint16_t>(getGeneralRegister<uint64_t>(31) - 48),
+            0xab);
+  EXPECT_EQ(getMemoryValue<uint16_t>(getGeneralRegister<uint64_t>(31) - 32),
+            0xcd);
+  EXPECT_EQ(getMemoryValue<uint16_t>(getGeneralRegister<uint64_t>(31) - 16),
+            0xef);
   EXPECT_EQ(getMemoryValue<uint16_t>(getGeneralRegister<uint64_t>(31)), 0x12);
 
   // 32-bit
@@ -278,7 +274,7 @@ TEST_P(InstStore, st1_single_struct) {
     mov w1, #1
     mov w2, #2
     mov w3, #3
-    mov x4, #4
+    mov x4, #16
 
     # inserting values to vector
     fmov s0, #0.5
@@ -287,28 +283,26 @@ TEST_P(InstStore, st1_single_struct) {
     mov v0.s[3], w3
 
     # storing vector elements
-    sub sp, sp, #16
-    # st1 {v0.s}[0], [sp], #4
-    # st1 {v0.s}[1], [sp], x4
-    # st1 {v0.s}[2], [sp], #4
+    sub sp, sp, #64
+    st1 {v0.s}[0], [sp], #4
+    add sp, sp, #12
+    st1 {v0.s}[1], [sp], x4
+    st1 {v0.s}[2], [sp], #4
+    add sp, sp, #12
     st1 {v0.s}[3], [sp]
   )");
-  // EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() -
-  // 4); EXPECT_EQ(getMemoryValue<float>(getGeneralRegister<uint64_t>(31) - 12),
-  // 0.5f); EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31)
-  // - 8), 1);
-  // EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) - 4),
-  // 2); EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31)),
-  // 3);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 16);
-  EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31)), 3);
+  EXPECT_EQ(getMemoryValue<float>(getGeneralRegister<uint64_t>(31) - 48), 0.5f);
+  EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) - 32), 1);
+  EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) - 16), 2);
+  EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) - 0), 3);
 
   // 64-bit
   RUN_AARCH64(R"(
     # preparing values
     mov x1, #1000
     mov x2, #2000
-    mov x4, #8
+    mov x4, #16
 
     # inserting values to vector
     fmov d0, #0.5
@@ -316,19 +310,16 @@ TEST_P(InstStore, st1_single_struct) {
     mov v1.d[0], x2
 
     # storing vector elements
-    sub sp, sp, #32
-    # st1 {v0.d}[0], [sp], #8
-    # st1 {v0.d}[1], [sp], x4
+    sub sp, sp, #48
+    st1 {v0.d}[0], [sp], #8
+    add sp, sp, #8
+    st1 {v0.d}[1], [sp], x4
     st1 {v1.d}[0], [sp]
   )");
-  // EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() -
-  // 32); EXPECT_EQ(getMemoryValue<double>(getGeneralRegister<uint64_t>(31) -
-  // 16), 0.5);
-  // EXPECT_EQ(getMemoryValue<uint64_t>(getGeneralRegister<uint64_t>(31) - 8),
-  //           1000UL);
-  // EXPECT_EQ(getMemoryValue<uint64_t>(getGeneralRegister<uint64_t>(31)),
-  // 2000UL);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 16);
+  EXPECT_EQ(getMemoryValue<double>(getGeneralRegister<uint64_t>(31) - 32), 0.5);
+  EXPECT_EQ(getMemoryValue<uint64_t>(getGeneralRegister<uint64_t>(31) - 16),
+            1000UL);
   EXPECT_EQ(getMemoryValue<uint64_t>(getGeneralRegister<uint64_t>(31)), 2000UL);
 }
 

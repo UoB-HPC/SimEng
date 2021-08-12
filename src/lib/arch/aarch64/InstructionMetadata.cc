@@ -394,6 +394,18 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_ST1i8_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1i16_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1i32_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1i64_POST:
+      // fixing incorrect access type for register offset
+      if (operandCount == 3) {
+        operands[2].access = CS_AC_READ;
+      }
+      break;
     case Opcode::AArch64_ST1Twov16b:
       // ST1 incorrectly flags read and write
       operands[1].access = CS_AC_READ;

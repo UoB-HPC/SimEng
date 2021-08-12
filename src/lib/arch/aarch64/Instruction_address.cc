@@ -718,18 +718,26 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses(addresses);
       break;
     }
+    case Opcode::AArch64_ST1i8_POST:
+      [[fallthrough]];
     case Opcode::AArch64_ST1i8: {  // st1 {vt.b}[index], [xn]
       setMemoryAddresses({{operands[1].get<uint64_t>(), 1}});
       break;
     }
+    case Opcode::AArch64_ST1i16_POST:
+      [[fallthrough]];
     case Opcode::AArch64_ST1i16: {  // st1 {vt.h}[index], [xn]
       setMemoryAddresses({{operands[1].get<uint64_t>(), 2}});
       break;
     }
+    case Opcode::AArch64_ST1i32_POST:
+      [[fallthrough]];
     case Opcode::AArch64_ST1i32: {  // st1 {vt.s}[index], [xn]
       setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;
     }
+    case Opcode::AArch64_ST1i64_POST:
+      [[fallthrough]];
     case Opcode::AArch64_ST1i64: {  // st1 {vt.d}[index], [xn]
       setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
       break;

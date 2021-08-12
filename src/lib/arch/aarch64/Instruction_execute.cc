@@ -4122,6 +4122,50 @@ void Instruction::execute() {
       memoryData[0] = t[metadata.operands[0].vector_index];
       break;
     }
+    case Opcode::AArch64_ST1i8_POST: {  // st1 {vt.b}[index], [xn], xm
+                                        // st1 {vt.b}[index], [xn], #1
+      const uint8_t* t = operands[0].getAsVector<uint8_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
+      uint64_t offset = 1;
+      if (metadata.operandCount == 3) {
+        offset = operands[2].get<uint64_t>();
+      }
+      results[0] = RegisterValue(operands[1].get<uint64_t>() + offset, 8);
+      break;
+    }
+    case Opcode::AArch64_ST1i16_POST: {  // st1 {vt.h}[index], [xn], xm
+                                         // st1 {vt.h}[index], [xn], #2
+      const uint16_t* t = operands[0].getAsVector<uint16_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
+      uint64_t offset = 2;
+      if (metadata.operandCount == 3) {
+        offset = operands[2].get<uint64_t>();
+      }
+      results[0] = operands[1].get<uint64_t>() + offset;
+      break;
+    }
+    case Opcode::AArch64_ST1i32_POST: {  // st1 {vt.s}[index], [xn], xm
+                                         // st1 {vt.s}[index], [xn], #4
+      const uint32_t* t = operands[0].getAsVector<uint32_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
+      uint64_t offset = 4;
+      if (metadata.operandCount == 3) {
+        offset = operands[2].get<uint64_t>();
+      }
+      results[0] = operands[1].get<uint64_t>() + offset;
+      break;
+    }
+    case Opcode::AArch64_ST1i64_POST: {  // st1 {vt.d}[index], [xn], xm
+                                         // st1 {vt.d}[index], [xn], #8
+      const uint64_t* t = operands[0].getAsVector<uint64_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
+      uint64_t offset = 8;
+      if (metadata.operandCount == 3) {
+        offset = operands[2].get<uint64_t>();
+      }
+      results[0] = operands[1].get<uint64_t>() + offset;
+      break;
+    }
     case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn], #imm
       const float* t1 = operands[0].getAsVector<float>();
       const float* t2 = operands[1].getAsVector<float>();
