@@ -50,7 +50,7 @@ class LinuxProcess {
   /** Get the address of the top of the stack. */
   uint64_t getStackStart() const;
 
-  /** Get the address of the start of the mmpa region. */
+  /** Get the address of the start of the mmap region. */
   uint64_t getMmapStart() const;
 
   /** Get the page size. */

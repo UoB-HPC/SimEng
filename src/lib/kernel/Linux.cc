@@ -229,7 +229,7 @@ uint64_t Linux::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 int64_t Linux::munmap(uint64_t addr, size_t length) {
   LinuxProcessState* lps = &processStates_[0];
   if (addr % lps->pageSize != 0) {
-    // addr must be a multilpe of the process page size
+    // addr must be a multiple of the process page size
     return -1;
   }
   int i;
