@@ -4180,20 +4180,14 @@ void Instruction::execute() {
       results[0] = operands[2].get<uint64_t>() + offset;
       break;
     }
-    case Opcode::AArch64_STLRB: {  // stlrb wt, [xn]
-      memoryData[0] = operands[0];
-      break;
-    }
+    case Opcode::AArch64_STLRB:  // stlrb wt, [xn]
+      [[fallthrough]];
     case Opcode::AArch64_STLRW: {  // stlr wt, [xn]
       memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]
-      memoryData[0] = operands[0];
-      // TODO: Implement atomic memory access
-      results[0] = static_cast<uint64_t>(0);
-      break;
-    }
+    case Opcode::AArch64_STLXRW:  // stlxr ws, wt, [xn]
+      [[fallthrough]];
     case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
       memoryData[0] = operands[0];
       // TODO: Implement atomic memory access
