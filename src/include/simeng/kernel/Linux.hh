@@ -198,7 +198,7 @@ class Linux {
   std::unordered_map<std::string, const std::string> specialPathTranslations_;
 
   /** Path to the root of the replacement special files. */
-  std::string specialFilesDir_ =
+  const std::string specialFilesDir_ =
       SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles/";
 };
 
