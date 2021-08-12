@@ -22,3 +22,5 @@ Internship contributions:
     Finn Wilkinson
     Mutalib Mohammed
     Seunghun Lee
+    
+SimEng's development has been funded by the UKRI/EPSRC ASiMoV project, EP/S005072/1.
