@@ -2848,13 +2848,13 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_LSLVWr: {  // lslv wd, wn, wm
       auto x = operands[0].get<uint32_t>();
-      auto y = operands[1].get<uint32_t>() % 32;
+      auto y = operands[1].get<uint32_t>() & 0b11111;
       results[0] = static_cast<uint64_t>(x << y);
       break;
     }
     case Opcode::AArch64_LSLVXr: {  // lslv xd, xn, xm
       auto x = operands[0].get<uint64_t>();
-      auto y = operands[1].get<uint64_t>() % 64;
+      auto y = operands[1].get<uint64_t>() & 0b111111;
       results[0] = x << y;
       break;
     }
@@ -2875,13 +2875,13 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_LSRVWr: {  // lsrv wd, wn, wm
       auto x = operands[0].get<uint32_t>();
-      auto y = operands[1].get<uint32_t>() % 32;
+      auto y = operands[1].get<uint32_t>() & 0b11111;
       results[0] = static_cast<uint64_t>(x >> y);
       break;
     }
     case Opcode::AArch64_LSRVXr: {  // lsrv xd, xn, xm
       auto x = operands[0].get<uint64_t>();
-      auto y = operands[1].get<uint64_t>() % 64;
+      auto y = operands[1].get<uint64_t>() & 0b111111;
       results[0] = x >> y;
       break;
     }
