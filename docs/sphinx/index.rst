@@ -66,7 +66,9 @@ Additional presentations given:
 Release
 -------
 
-SimEng is planned for open-source release during summer 2021 under an `Apache 2.0 <https://www.apache.org/licenses/LICENSE-2.0>`_ license.
+Currently, SimEng is still in its alpha version (1.0.0-alpha) which can be found `here<>`_. The file RELEASE_NOTES.txt, found in the root of the project, explains the status of the project at that release along with relevant information from the SimEng development team.
+
+SimEng is release under an `Apache 2.0 <https://www.apache.org/licenses/LICENSE-2.0>`_ license.
 
 
 External project usage
@@ -80,13 +82,37 @@ External project usage
 
 Contributors
 ------------
-The following is a list of key contributors to the SimEng framework.
 
-**Current development team**: Jack Jones and Harry Waugh
+Major contributors to SimEng to date include:
 
-**Former developers and code reviewers**: James Price, Hal Jones, and Andrei Poenaru
+Project leader
 
-**Internship roles**: Daniel Weaver, Finn Wilkinson, Mutalib Mohammed, and Seunghun Lee
+    Simon McIntosh-Smith
+    
+Original SimEng design and implementation:
+
+- Hal Jones
+- James Price
+
+Current development team:
+
+- Jack Jones (lead developer) 
+- Harry Waugh
+
+Code reviewers:
+
+- Andrei Poenaru
+
+Build structure design:
+
+- Tom Lin
+
+Internship contributions:
+
+- Daniel Weaver
+- Finn Wilkinson
+- Mutalib Mohammed
+- Seunghun Lee
 
 Funding
 -------
