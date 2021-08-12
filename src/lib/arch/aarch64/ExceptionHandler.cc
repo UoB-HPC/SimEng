@@ -326,15 +326,13 @@ bool ExceptionHandler::init() {
                     << std::endl;
           return fatal();
         }
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(1)}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {1ull}};
         break;
       }
       case 99: {  // set_robust_list
         // TODO: Functionality temporarily omitted as it is unused within
         // workloads regions of interest and not required for their simulation
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(0)}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
       case 113: {  // clock_gettime
@@ -383,8 +381,7 @@ bool ExceptionHandler::init() {
           stateChange.memoryAddresses.push_back({mask, 1});
           stateChange.memoryAddressValues.push_back(bitmask);
         } else {
-          stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-1)}};
+          stateChange = {ChangeType::REPLACEMENT, {R0}, {-1ll}};
         }
         break;
       }
@@ -392,16 +389,14 @@ bool ExceptionHandler::init() {
         // TODO: Implement syscall logic. Ignored for now as it's assumed the
         // current use of this syscall is to setup error handlers. Simualted
         // code is expected to work so no need for these handlers.
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(0)}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
       case 135: {  // rt_sigprocmask
         // TODO: Implement syscall logic. Ignored for now as it's assumed the
         // current use of this syscall is to setup error handlers. Simualted
         // code is expected to work so no need for these handlers.
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(0)}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
       case 160: {  // uname
@@ -463,8 +458,7 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getegid()}};
         break;
       case 179:  // sysinfo
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(0)}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       case 214: {  // brk
         auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
@@ -517,8 +511,7 @@ bool ExceptionHandler::init() {
       case 261: {  // prlimit64
         // TODO: Functionality temporarily omitted as it is unused within
         // workloads regions of interest and not required for their simulation
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(0)}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
       default:
