@@ -283,7 +283,7 @@ TEST_P(Syscall, mmap) {
     svc #0
     mov x12, x0
 
-    # Allocation a region larger than the new empty space
+    # Allocate a region larger than the new empty space
     # mmap(addr=NULL, length=16384, prot=3, flags=34, fd=-1, offset=0)
     mov x0, #0
     mov x1, #16384
