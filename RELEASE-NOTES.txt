@@ -9,7 +9,7 @@ You can find all the user and developer documentation on the SimEng webpage:
 SimEng should be fast, much faster than other cycle-level CPU simulators. The fastest hardware we’ve run it on is a 2021 Apple M1 Mac mini, where we’ve measured SimEng running at up to 1.5 MIPS for the Out of Order (OoO) core in our ThunderX2 and A64fx models. SVE (vector) codes are more complex to simulate and tend to be slower - on the same hardware we saw simulated SVE codes running at around 0.6 MIPS. SimEng should also be accurate - most of the codes we’ve tested report cycle counts within 5-10% of real hardware, for our ThunderX2 and A64fx models.
 
 Things that should work in this first release include:
-* Static AArch64 binaries compiled with either GCC 9.3 or later, or Arm Clang/LLVM 20 or later
+* Static AArch64 binaries compiled with either GCC 9.3 or later, or Arm Clang 20/LLVM 9 or later
 * Single thread OpenMP programs
 * Binaries compiled from Fortran or C programs
 
@@ -45,7 +45,7 @@ Some benchmarks we’ve run ourselves and so should work:
 * miniBUDE - https://github.com/UoB-HPC/miniBUDE 
 * CloverLeaf - https://github.com/UK-MAC/CloverLeaf_Serial 
 
-When you hit issues building or running SimEng, please do let us know, either by submitting a PR, or filing and issue via the SimEng Github repo:
+When you hit issues building or running SimEng, please do let us know, either by submitting a PR, or filing an issue via the SimEng Github repo:
 
   https://github.com/UoB-HPC/SimEng/
 
