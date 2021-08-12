@@ -105,13 +105,13 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'SimEngDoc'
 
-html_context = {
-    # Create an "Edit on GitHub" link in the page headers.
-    'display_github': True,
-    'github_user': 'UoB-HPC',
-    'github_repo': 'SimEng',
-    'github_version': 'main/'
-}
+# html_context = {
+#     # Create an "Edit on GitHub" link in the page headers.
+#     'display_github': True,
+#     'github_user': 'UoB-HPC',
+#     'github_repo': 'SimEng',
+#     'github_version': 'main/'
+# }
 
 
 # -- Options for LaTeX output ------------------------------------------------
