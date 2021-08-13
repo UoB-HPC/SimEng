@@ -17,3 +17,12 @@ Configuration files
 -------------------
 
 SimEng provides several configuration files that parameterise the simulated model. These can be found in ``<simeng_repository>/configs`` and more information about their content can be found :doc:`here <configuring_simeng>`.
+
+The following examples illustrate the use of both the ThunderX2 and A64FX configurations:
+
+ThunderX2 processor
+        ``<simeng_install_directory>/bin/simeng <simeng_repository>/configs/tx2.yaml <binary>``
+
+A64FX processor
+        ``<simeng_install_directory>/bin/simeng <simeng_repository>/configs/a64fx.yaml <binary>``
+

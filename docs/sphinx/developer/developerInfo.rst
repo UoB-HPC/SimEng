@@ -57,6 +57,16 @@ before being merged. Those compilers include:
     Define testing processes for accuracy and performance
 
 
+Contributions
+-------------
+        
+To contribute to the SimEng framework, you should either open a `pull request <https://github.com/UoB-HPC/SimEng/pulls>`_ for new code contributions or `submit an issue <https://github.com/UoB-HPC/SimEng/issues>`_ for raising bugs and requesting help. 
+
+For pull requests (PR), the description should contain a summary of what work was done within the PR to help the reviewers understand the changes made. Please select one of the labels provided to denote the nature of the PR also.
+
+For issues, in conjunction with choosing a label, the description should outline the problem that has occurred. Additionally, any relevant system or build information should also be included as it may be of use when identifying or solving the problem at hand.
+    
+    
 Commit style
 ------------
 
@@ -125,5 +135,3 @@ This will generate HTML documentation which can be found in
 .. todo::
 
     Doxygen documentation.
-
-.. mdinclude:: ../../README.md

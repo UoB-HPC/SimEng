@@ -1,86 +1,52 @@
-version: 2.1
+version: 2
 
 jobs:
-  build:
-    parameters:
-      cmake:
-        type: string
+  docs-build:
     docker:
-      - image: uobhpc/simeng-circleci:1
+      - image: python:3.7
     steps:
       - checkout
       - run:
-          name: Build SimEng
-          command: |
-            mkdir -p obj
-            cd obj
-            cmake .. \
-              -DCMAKE_BUILD_TYPE=Debug \
-              -DCMAKE_INSTALL_PREFIX=$PWD/../build \
-              -DSIMENG_USE_EXTERNAL_LLVM=ON \
-              -DLLVM_DIR=/usr/lib/llvm-8/cmake \
-              -DSIMENG_ENABLE_TESTS=ON \
-              << parameters.cmake >>
-            make -j 2
-            ctest --output-on-failure
-            make install
+          name: Install dependencies
+          command: pip install -r docs/requirements.txt
       - run:
-          name: Run SimEng
-          command: build/bin/simeng
+          name: Build docs
+          command: cd docs/ && sphinx-build -b html sphinx/ _build/html
+      - persist_to_workspace:
+          root: docs/_build
+          paths: html
 
-  check-format:
+  docs-deploy:
     docker:
-      - image: uobhpc/simeng-circleci:1
+      - image: node:8.10.0
     steps:
       - checkout
+      - attach_workspace:
+          at: docs/_build
       - run:
-          name: Check code formatting
+          name: Disable jekyll builds
+          command: touch docs/_build/html/.nojekyll
+      - run:
+          name: Install and configure dependencies
           command: |
-            # Generate a formatting diff
-            git-clang-format-8 --diff origin/main --extensions cc,hh \
-              >FORMATTING
-
-            # Check whether any source files were modified
-            if grep 'no modified files to format' FORMATTING
-            then
-              exit 0
-            fi
-
-            # Check whether any formatting changes are necessary
-            if grep 'clang-format did not modify any files' FORMATTING
-            then
-              exit 0
-            fi
-
-            echo
-            echo "Code formatting issues detected (see below)."
-            echo
-            cat FORMATTING
-            exit 1
+            npm install -g --silent gh-pages@2.0.1
+            git config user.email "jj16791@bristol.ac.uk"
+            git config user.name "jj16791"
+      - add_ssh_keys:
+          fingerprints:
+            - "84:b0:fe:c6:8e:4a:bd:c0:ae:57:85:4b:26:8f:db:54"
+      - run:
+          name: Deploy docs to gh-pages branch
+          command: gh-pages --dotfiles --message "[skip ci] Updates" --dist docs/_build/html
 
 workflows:
-  version: 2.1
+  version: 2
   build:
     jobs:
-      - build:
-          name: gcc-8
-          cmake: -DCMAKE_C_COMPILER=gcc-8 -DCMAKE_CXX_COMPILER=g++-8
-      - build:
-          name: gcc-7
-          cmake: -DCMAKE_C_COMPILER=gcc-7 -DCMAKE_CXX_COMPILER=g++-7
+      - docs-build
+      - docs-deploy:
           requires:
-            - gcc-8
-      - build:
-          name: clang-7
-          cmake: -DCMAKE_C_COMPILER=clang-7 -DCMAKE_CXX_COMPILER=clang++-7
-          requires:
-            - gcc-8
-      - build:
-          name: clang-5
-          cmake: -DCMAKE_C_COMPILER=clang-5.0 -DCMAKE_CXX_COMPILER=clang++-5.0
-          requires:
-            - gcc-8
-      - check-format:
-          name: formatting
-          requires:
-            - gcc-8
+            - docs-build
+          filters:
+            branches:
+              only: main
