@@ -2,8 +2,10 @@
 
 #include <memory>
 #include <set>
+#include <unordered_map>
 
 #include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/version.hh"
 
 namespace simeng {
 namespace kernel {
@@ -164,6 +166,12 @@ class Linux {
   int64_t readlinkat(int64_t dirfd, const std::string pathname, char* buf,
                      size_t bufsize) const;
 
+  /** get a process's CPU affinity mask. */
+  int64_t schedGetAffinity(pid_t pid, size_t cpusetsize, uint64_t mask);
+
+  /** set a process's CPU affinity mask. */
+  int64_t schedSetAffinity(pid_t pid, size_t cpusetsize, uint64_t mask);
+
   /** set_tid_address syscall: set clear_child_tid value for calling thread. */
   int64_t setTidAddress(uint64_t tidptr);
 
@@ -185,6 +193,13 @@ class Linux {
  private:
   /** The state of the user-space processes running above the kernel. */
   std::vector<LinuxProcessState> processStates_;
+
+  /** Translation between special files paths and simeng replacement files. */
+  std::unordered_map<std::string, const std::string> specialPathTranslations_;
+
+  /** Path to the root of the replacement special files. */
+  const std::string specialFilesDir_ =
+      SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles/";
 };
 
 }  // namespace kernel

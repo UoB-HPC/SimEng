@@ -117,7 +117,8 @@ void RenameUnit::tick() {
     // Add to the load/store queue if appropriate
     if (isLoad) {
       lsq_.addLoad(uop);
-    } else if (isStore) {
+    }
+    if (isStore) {
       lsq_.addStore(uop);
     }
 

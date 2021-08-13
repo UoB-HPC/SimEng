@@ -48,6 +48,9 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     // If it's a memory op, commit the entry at the head of the respective queue
+    if (uop->isLoad()) {
+      lsq_.commitLoad(uop);
+    }
     if (uop->isStore()) {
       bool violationFound = lsq_.commitStore(uop);
       if (violationFound) {
@@ -60,8 +63,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
         buffer_.pop_front();
         return n + 1;
       }
-    } else if (uop->isLoad()) {
-      lsq_.commitLoad(uop);
     }
     buffer_.pop_front();
   }

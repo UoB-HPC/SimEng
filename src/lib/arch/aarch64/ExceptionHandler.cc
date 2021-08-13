@@ -316,6 +316,25 @@ bool ExceptionHandler::init() {
             ChangeType::REPLACEMENT, {R0}, {linux_.setTidAddress(ptr)}};
         break;
       }
+      case 98: {  // futex
+        // TODO: Functionality temporarily omitted as it is unused within
+        // workloads regions of interest and not required for their simulation
+        int op = registerFileSet.get(R1).get<int>();
+        if (op != 129) {
+          printException(instruction_);
+          std::cout << "Unsupported arguments for syscall: " << syscallId
+                    << std::endl;
+          return fatal();
+        }
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {1ull}};
+        break;
+      }
+      case 99: {  // set_robust_list
+        // TODO: Functionality temporarily omitted as it is unused within
+        // workloads regions of interest and not required for their simulation
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+        break;
+      }
       case 113: {  // clock_gettime
         uint64_t clkId = registerFileSet.get(R0).get<uint64_t>();
         uint64_t systemTimer = core.getSystemTimer();
@@ -331,6 +350,53 @@ bool ExceptionHandler::init() {
         stateChange.memoryAddressValues.push_back(seconds);
         stateChange.memoryAddresses.push_back({timespecPtr + 8, 8});
         stateChange.memoryAddressValues.push_back(nanoseconds);
+        break;
+      }
+      case 122: {  // sched_setaffinity
+        pid_t pid = registerFileSet.get(R0).get<pid_t>();
+        size_t cpusetsize = registerFileSet.get(R1).get<size_t>();
+        uint64_t mask = registerFileSet.get(R2).get<uint64_t>();
+
+        int64_t retval = linux_.schedSetAffinity(pid, cpusetsize, mask);
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
+        break;
+      }
+      case 123: {  // sched_getaffinity
+        pid_t pid = registerFileSet.get(R0).get<pid_t>();
+        size_t cpusetsize = registerFileSet.get(R1).get<size_t>();
+        uint64_t mask = registerFileSet.get(R2).get<uint64_t>();
+        int64_t bitmask = linux_.schedGetAffinity(pid, cpusetsize, mask);
+        // If returned bitmask is 0, assume an error
+        if (bitmask > 0) {
+          // Currently, only a single CPU bitmask is supported
+          if (bitmask != 1) {
+            printException(instruction_);
+            std::cout
+                << "Unexpected CPU affinity mask returned in exception handler"
+                << std::endl;
+            return fatal();
+          }
+          uint64_t retval = (pid == 0) ? 1 : 0;
+          stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
+          stateChange.memoryAddresses.push_back({mask, 1});
+          stateChange.memoryAddressValues.push_back(bitmask);
+        } else {
+          stateChange = {ChangeType::REPLACEMENT, {R0}, {-1ll}};
+        }
+        break;
+      }
+      case 134: {  // rt_sigaction
+        // TODO: Implement syscall logic. Ignored for now as it's assumed the
+        // current use of this syscall is to setup error handlers. Simualted
+        // code is expected to work so no need for these handlers.
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+        break;
+      }
+      case 135: {  // rt_sigprocmask
+        // TODO: Implement syscall logic. Ignored for now as it's assumed the
+        // current use of this syscall is to setup error handlers. Simualted
+        // code is expected to work so no need for these handlers.
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
       case 160: {  // uname
@@ -376,6 +442,9 @@ bool ExceptionHandler::init() {
         }
         break;
       }
+      case 172:  // getpid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getpid()}};
+        break;
       case 174:  // getuid
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getuid()}};
         break;
@@ -387,6 +456,9 @@ bool ExceptionHandler::init() {
         break;
       case 177:  // getegid
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getegid()}};
+        break;
+      case 179:  // sysinfo
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       case 214: {  // brk
         auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
@@ -439,7 +511,7 @@ bool ExceptionHandler::init() {
       case 261: {  // prlimit64
         // TODO: Functionality temporarily omitted as it is unused within
         // workloads regions of interest and not required for their simulation
-        stateChange = {};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
       default:
