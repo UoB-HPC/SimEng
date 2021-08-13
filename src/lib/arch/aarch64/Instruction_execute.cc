@@ -4058,7 +4058,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_TBNZX: {  // tbnz xn, #imm, label
-      if (operands[0].get<uint64_t>() & (1ll << metadata.operands[1].imm)) {
+      if (operands[0].get<uint64_t>() & (1ull << metadata.operands[1].imm)) {
         branchTaken_ = true;
         branchAddress_ = instructionAddress_ + metadata.operands[2].imm;
       } else {
