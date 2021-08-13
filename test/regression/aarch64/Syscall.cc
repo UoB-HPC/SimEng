@@ -230,6 +230,110 @@ TEST_P(Syscall, stdout) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), sizeof(str) - 1);
 }
 
+TEST_P(Syscall, mprotect) {
+  RUN_AARCH64(R"(
+    mov x0, #47472
+    mov x1, #4096
+    mov x2, #1
+    mov x8, #226
+    svc #0
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
+}
+
+TEST_P(Syscall, newfstatat) {
+  const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/input.txt";
+  // Reserve 128 bytes for statbuf
+  initialHeapData_.resize(128 + strlen(filepath) + 1);
+  // Copy filepath to heap
+  memcpy(initialHeapData_.data() + 128, filepath, strlen(filepath) + 1);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # newfstatat(dirfd=AT_FDCWD, pathname=/data/input.txt, statbuf, flags=0)
+    mov x0, #-100
+    add x1, x20, #128
+    mov x2, x20
+    mov x3, #0
+    mov x8, #79
+    svc #0
+    mov x21, x0
+  )");
+  // Check fstatat returned 0
+  EXPECT_EQ(getGeneralRegister<uint64_t>(21), 0);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # newfstatat(dirfd=AT_FDCWD, pathname=/data/input.txt, statbuf, flags=0)
+    mov x0, #-100
+    add x1, x20, #129
+    mov x2, x20
+    mov x3, #0
+    mov x8, #79
+    svc #0
+    mov x21, x0
+  )");
+  // Check fstatat returned -1 (file not found)
+  EXPECT_EQ(getGeneralRegister<uint64_t>(21), -1);
+}
+
+TEST_P(Syscall, ftruncate) {
+  const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/truncate-test.txt";
+
+  // Copy filepath to heap
+  initialHeapData_.resize(strlen(filepath) + 1);
+  memcpy(initialHeapData_.data(), filepath, strlen(filepath) + 1);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # <input> = openat(AT_FDCWD, filepath, O_WRONLY, S_IRUSR)
+    mov x0, -100
+    mov x1, x20
+    mov x2, 0x0001
+    mov x3, 400
+    mov x8, #56
+    svc #0
+    mov x21, x0
+
+    # ftruncate(fd, length) - increase length of file
+    mov x0, x21
+    mov x1, #100
+    mov x8, #46
+    svc #0
+    mov x22, x0
+
+    # ftruncate(fd, length) - decrease length of file
+    mov x0, x21
+    mov x1, #46
+    mov x8, #46
+    svc #0
+    mov x23, x0
+
+    # close(fd)
+    mov x0, x21
+    mov x8, #57
+    svc #0
+  )");
+  // Check returned 0
+  EXPECT_EQ(getGeneralRegister<uint64_t>(22), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(23), 0);
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, Syscall,
                          ::testing::Values(EMULATION, INORDER, OUTOFORDER),
                          coreTypeToString);

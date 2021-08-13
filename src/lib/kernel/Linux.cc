@@ -62,6 +62,17 @@ uint64_t Linux::clockGetTime(uint64_t clkId, uint64_t systemTimer,
   }
 }
 
+int64_t Linux::ftruncate(uint64_t fd, uint64_t length) {
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
+
+  int64_t retval = ::ftruncate(hfd, length);
+  return retval;
+}
+
 int64_t Linux::close(int64_t fd) {
   assert(fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
@@ -75,6 +86,45 @@ int64_t Linux::close(int64_t fd) {
   processStates_[0].fileDescriptorTable[fd] = -1;
 
   return ::close(hfd);
+}
+
+int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
+                          int64_t flag) {
+  // Resolve absolute path to target file
+  char absolutePath[LINUX_PATH_MAX];
+  realpath(filename.c_str(), absolutePath);
+
+  // Check if path may be a special file, bail out if it is
+  // TODO: Add support for special files
+  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
+    if (strncmp(absolutePath, prefix, strlen(prefix)) == 0) {
+      std::cerr << "ERROR: attempted to return information on a special file: "
+                << "'" << absolutePath << "'" << std::endl;
+      exit(1);
+    }
+  }
+
+  // Pass call through to host
+  assert(dfd == -100 && "Unsupported dirfd argument in fstatat syscall");
+  struct ::stat statbuf;
+  int64_t retval = ::fstatat(AT_FDCWD, filename.c_str(), &statbuf, flag);
+
+  // Copy results to output struct
+  out.dev = statbuf.st_dev;
+  out.ino = statbuf.st_ino;
+  out.mode = statbuf.st_mode;
+  out.nlink = statbuf.st_nlink;
+  out.uid = statbuf.st_uid;
+  out.gid = statbuf.st_gid;
+  out.rdev = statbuf.st_rdev;
+  out.size = statbuf.st_size;
+  out.blksize = statbuf.st_blksize;
+  out.blocks = statbuf.st_blocks;
+  out.atime = statbuf.st_atime;
+  out.mtime = statbuf.st_mtime;
+  out.ctime = statbuf.st_ctime;
+
+  return retval;
 }
 
 int64_t Linux::fstat(int64_t fd, stat& out) {

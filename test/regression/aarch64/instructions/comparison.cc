@@ -54,6 +54,53 @@ TEST_P(InstComparison, cmnx) {
   EXPECT_EQ(getNZCV(), 0b0110);
 }
 
+// Test that NZCV flags are set correctly by the 32-bit ccmn instruction
+TEST_P(InstComparison, ccmnw) {
+  // ccmn 0, 0, 0b0000, al => nzcv = 0b0100
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    ccmn w0, #0x0, #0b0000, al
+  )");
+  EXPECT_EQ(getNZCV(), 0b0100);
+
+  // ccmn 0, 0, 0b1111, vs => nzcv = 0b1111
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    ccmn w0, #0x0, #0b1111, vs
+  )");
+  EXPECT_EQ(getNZCV(), 0b1111);
+
+  // ccmn 1, 1, 0b1111, al => nzcv = 0b0000
+  RUN_AARCH64(R"(
+    mov w0, #0x1
+    ccmn w0, #0x1, #0b1111, al
+  )");
+  EXPECT_EQ(getNZCV(), 0b0000);
+
+  // ccmn 1, 1, 0b1111, vs => nzcv = 0b1111
+  RUN_AARCH64(R"(
+    mov w0, #0x1
+    ccmn w0, #0x1, #0b1111, vs
+  )");
+  EXPECT_EQ(getNZCV(), 0b1111);
+
+  // ccmn -1, 1, 0b0000, al => nzcv = 0b0110
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    sub w0, w0, #0x1
+    ccmn w0, #0x1, #0b0000, al
+  )");
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // ccmn -1, 1, 0b0000, vs => nzcv = 0b0000
+  RUN_AARCH64(R"(
+    mov w0, wzr
+    sub w0, w0, #0x1
+    ccmn w0, #0x1, #0b0000, vs
+  )");
+  EXPECT_EQ(getNZCV(), 0b0000);
+}
+
 // Test that NZCV flags are set correctly by 32-bit tst
 TEST_P(InstComparison, tstw) {
   // tst 0, 1 = false

@@ -33,6 +33,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
+    case Opcode::AArch64_BICv4i32:
+      // BIC incorrectly flags destination as WRITE only
+      operands[0].access = CS_AC_WRITE | CS_AC_READ;
+      break;
     case Opcode::AArch64_ADDSWri:
       // adds incorrectly flags destination as READ
       operands[0].access = CS_AC_WRITE;
@@ -41,6 +45,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // lacking access specifiers for all operands
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_BICv8i8:
+      // access specifier for last operand was missing
       operands[2].access = CS_AC_READ;
       break;
     case Opcode::AArch64_CBNZW:
@@ -280,6 +288,18 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_WRITE;
       break;
+    case Opcode::AArch64_LDADDLW:
+      [[fallthrough]];
+    case Opcode::AArch64_LDADDW:
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_WRITE;
+      break;
+    case Opcode::AArch64_LD2Twov4s_POST:
+      // Fixing wrong access flag for offset register operand
+      if (operandCount == 4) {
+        operands[3].access = CS_AC_READ;
+      }
+      break;
     case Opcode::AArch64_LDR_PXI:
       [[fallthrough]];
     case Opcode::AArch64_LDR_ZXI:
@@ -374,6 +394,31 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_ST1i8_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1i16_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1i32_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1i64_POST:
+      // fixing incorrect access type for register offset
+      if (operandCount == 3) {
+        operands[2].access = CS_AC_READ;
+      }
+      break;
+    case Opcode::AArch64_ST1Twov16b:
+      // ST1 incorrectly flags read and write
+      operands[1].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_ST2Twov4s_POST:
+      // ST2 post incorrectly flags read and write
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ | CS_AC_WRITE;
+      // Another incorrect acess flag for register offset operand
+      if (operandCount == 4) {
+        operands[3].access = CS_AC_READ;
+      }
+      break;
     case Opcode::AArch64_STR_PXI:
       [[fallthrough]];
     case Opcode::AArch64_STR_ZXI:
@@ -698,6 +743,22 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_MNEG:
+      if (opcode == Opcode::AArch64_MSUBXrrr) {
+        // mneg xd, xn, xm; alias for msub xd, xn, xm, xzr
+        operandCount = 4;
+        operands[3].type = ARM64_OP_REG;
+        operands[3].access = CS_AC_READ;
+        operands[3].reg = ARM64_REG_XZR;
+        return;
+      }
+      if (opcode == Opcode::AArch64_MSUBWrrr) {
+        // mneg wd, wn, wm; alias for msub wd, wn, wm, wzr
+        operandCount = 4;
+        operands[3].type = ARM64_OP_REG;
+        operands[3].access = CS_AC_READ;
+        operands[3].reg = ARM64_REG_WZR;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_MOV:
       if (opcode == Opcode::AArch64_ADDXri ||
@@ -800,6 +861,11 @@ void InstructionMetadata::revertAliasing() {
         operands[1].vector_index = 0;
         return;
       }
+      if (opcode == Opcode::AArch64_INSvi32lane) {
+        // mov vd.T[index1], vn.T[index2]; alias for ins vd.T[index1],
+        // vn.T[index2]
+        return;
+      }
       if (opcode == Opcode::AArch64_ORRWri ||
           opcode == Opcode::AArch64_ORRWrs ||
           opcode == Opcode::AArch64_ORRXri ||
@@ -876,6 +942,13 @@ void InstructionMetadata::revertAliasing() {
         operands[1].access = CS_AC_READ;
         operands[1].shift = {ARM64_SFT_LSL, 0};
         operands[1].imm = ~(operands[1].imm);
+        return;
+      }
+      if (opcode == Opcode::AArch64_INSvi8gpr ||
+          opcode == Opcode::AArch64_INSvi16gpr ||
+          opcode == Opcode::AArch64_INSvi32gpr ||
+          opcode == Opcode::AArch64_INSvi64gpr) {
+        // mov vd.ts[index], rn; alias for: ins vd.ts[index], rn
         return;
       }
       return aliasNYI();
@@ -1117,6 +1190,17 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_UXTB:
+      // uxtb wd, wn; alias for: ubfm wd, wn, #0, #7
+      if (opcode == Opcode::AArch64_UBFMWri) {
+        operandCount = 4;
+        operands[2].type = ARM64_OP_IMM;
+        operands[2].access = CS_AC_READ;
+        operands[2].imm = 0;
+        operands[3].type = ARM64_OP_IMM;
+        operands[3].access = CS_AC_READ;
+        operands[3].imm = 7;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_UXTH:
       return aliasNYI();

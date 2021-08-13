@@ -176,7 +176,7 @@ void RegressionTest::assemble(const char* source, const char* triple) {
 
   // Create MC subtarget info
   std::unique_ptr<llvm::MCSubtargetInfo> subtargetInfo(
-      target->createMCSubtargetInfo(triple, "", "+sve"));
+      target->createMCSubtargetInfo(triple, "", "+sve,+lse"));
   ASSERT_NE(subtargetInfo, nullptr) << "Failed to create LLVM subtarget info";
 
   // Create MC instruction info
