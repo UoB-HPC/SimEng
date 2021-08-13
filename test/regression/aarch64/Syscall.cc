@@ -199,6 +199,199 @@ TEST_P(Syscall, filenotfound) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), -1);
 }
 
+TEST_P(Syscall, mmap) {
+  // Test for 3 consecutive allocations
+  RUN_AARCH64(R"(
+    # mmap(addr=NULL, length=65536, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #65536
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x9, x0
+
+    # mmap(addr=NULL, length=1024, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #1024
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x10, x0
+
+    # mmap(addr=NULL, length=16384, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #16384
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x11, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getMmapStart());
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), process_->getMmapStart() + 65536);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), process_->getMmapStart() + 69632);
+
+  // Test for mmap allocation between two previous allocations
+  RUN_AARCH64(R"(
+    # Setup 3 contiguous allocations
+    # mmap(addr=NULL, length=1024, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #1024
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x9, x0
+
+    # mmap(addr=NULL, length=12288, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #12288
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x10, x0
+
+    # mmap(addr=NULL, length=1024, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #1024
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x11, x0
+
+    # unmap second allocation to create an empty space between allocations
+    # munmap(addr=x10, length=12288, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, x10
+    mov x1, #12288
+    mov x8, #215
+    svc #0
+    mov x12, x0
+
+    # Allocate a region larger than the new empty space
+    # mmap(addr=NULL, length=16384, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #16384
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x13, x0
+
+    # Two allocations whose combined length equals the new empty space
+    # mmap(addr=NULL, length=4096, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #4096
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x14, x0
+
+    # mmap(addr=NULL, length=8192, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #8192
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x15, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getMmapStart());
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), process_->getMmapStart() + 4096);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), process_->getMmapStart() + 16384);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(13), process_->getMmapStart() + 20480);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(14), process_->getMmapStart() + 4096);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(15), process_->getMmapStart() + 8192);
+}
+
+TEST_P(Syscall, munmap) {
+  // Test that no errors are given during expected usage
+  RUN_AARCH64(R"(
+    # mmap(addr=NULL, length=65536, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #65536
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x9, x0
+
+    # munmap(addr=mmapStart_, length=65536, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, x9
+    mov x1, #65536
+    mov x8, #215
+    svc #0
+    mov x10, x0
+
+    # munmap(addr=mmapStart_, length=65536, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, x9
+    mov x1, #65536
+    mov x8, #215
+    svc #0
+    mov x11, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getMmapStart());
+  EXPECT_EQ(getGeneralRegister<int64_t>(10), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(11), 0);
+
+  // Test that EINVAL error types trigger
+  RUN_AARCH64(R"(
+    # mmap(addr=NULL, length=1024, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #1024
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x9, x0
+
+    # munmap(addr=mmapStart_, length=65536, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, x9
+    mov x1, #65536
+    mov x8, #215
+    svc #0
+    mov x10, x0
+
+    # munmap(addr=mmapStart_, length=65536, prot=3, flags=34, fd=-1, offset=0)
+    add x9, x9, #1024
+    mov x0, x9
+    mov x1, #65536
+    mov x8, #215
+    svc #0
+    mov x11, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getMmapStart() + 1024);
+  EXPECT_EQ(getGeneralRegister<int64_t>(10), -1);
+  EXPECT_EQ(getGeneralRegister<int64_t>(11), -1);
+}
+
 TEST_P(Syscall, stdout) {
   const char str[] = "Hello, World!\n";
   for (char c : str) {

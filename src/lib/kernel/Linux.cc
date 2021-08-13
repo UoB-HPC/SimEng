@@ -23,7 +23,9 @@ void Linux::createProcess(const LinuxProcess& process) {
                             .path = process.getPath(),
                             .startBrk = process.getHeapStart(),
                             .currentBrk = process.getHeapStart(),
-                            .initialStackPointer = process.getStackPointer()});
+                            .initialStackPointer = process.getStackPointer(),
+                            .mmapRegion = process.getMmapStart(),
+                            .pageSize = process.getPageSize()});
   processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
@@ -222,6 +224,86 @@ uint64_t Linux::lseek(int64_t fd, uint64_t offset, int64_t whence) {
     return EBADF;
   }
   return ::lseek(hfd, offset, whence);
+}
+
+int64_t Linux::munmap(uint64_t addr, size_t length) {
+  LinuxProcessState* lps = &processStates_[0];
+  if (addr % lps->pageSize != 0) {
+    // addr must be a multiple of the process page size
+    return -1;
+  }
+  int i;
+  vm_area_struct alloc;
+  // Find addr in allocations
+  for (i = 0; i < lps->contiguousAllocations.size(); i++) {
+    alloc = lps->contiguousAllocations[i];
+    if (alloc.vm_start == addr) {
+      if ((alloc.vm_end - alloc.vm_start) < length) {
+        // length must not be larger than the original allocation
+        return -1;
+      }
+      if (i != 0) {
+        lps->contiguousAllocations[i - 1].vm_next =
+            lps->contiguousAllocations[i].vm_next;
+      }
+      lps->contiguousAllocations.erase(lps->contiguousAllocations.begin() + i);
+      return 0;
+    }
+  }
+
+  for (int i = 0; i < lps->nonContiguousAllocations.size(); i++) {
+    alloc = lps->nonContiguousAllocations[i];
+    if (alloc.vm_start == addr) {
+      if ((alloc.vm_end - alloc.vm_start) < length) {
+        // length must not be larger than the original allocation
+        return -1;
+      }
+      lps->nonContiguousAllocations.erase(
+          lps->nonContiguousAllocations.begin() + i);
+      return 0;
+    }
+  }
+  // Not an error if the indicated range does no contain any mapped pages
+  return 0;
+}
+
+uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
+                     off_t offset) {
+  LinuxProcessState* lps = &processStates_[0];
+  std::shared_ptr<struct vm_area_struct> newAlloc(new vm_area_struct);
+  if (addr == 0) {  // Kernel decides allocation
+    if (lps->contiguousAllocations.size() > 1) {
+      // Determine if the new allocation can fit between existing allocations,
+      // append to end of allocations if not
+      for (auto& alloc : lps->contiguousAllocations) {
+        if (alloc.vm_next != NULL &&
+            (alloc.vm_next->vm_start - alloc.vm_end) >= length) {
+          newAlloc->vm_start = alloc.vm_end;
+          // Re-link contiguous allocation to include new allocation
+          newAlloc->vm_next = alloc.vm_next;
+          alloc.vm_next = newAlloc;
+        }
+      }
+      if (newAlloc->vm_start == 0) {
+        newAlloc->vm_start = lps->contiguousAllocations.back().vm_end;
+        lps->contiguousAllocations.back().vm_next = newAlloc;
+      }
+    } else if (lps->contiguousAllocations.size() > 0) {
+      // Append allocation to end of list and link first entry to new allocation
+      newAlloc->vm_start = lps->contiguousAllocations[0].vm_end;
+      lps->contiguousAllocations[0].vm_next = newAlloc;
+    } else {
+      // If no allocation exists, allocate to start of the mmap region
+      newAlloc->vm_start = lps->mmapRegion;
+    }
+    // The end of the allocation must be rounded up to the nearest page size
+    newAlloc->vm_end =
+        alignToBoundary(newAlloc->vm_start + length, lps->pageSize);
+    lps->contiguousAllocations.push_back(*newAlloc);
+  } else {  // Use hint to provide allocation
+    return 0;
+  }
+  return newAlloc->vm_start;
 }
 
 int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,

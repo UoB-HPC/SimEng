@@ -6,8 +6,6 @@
 namespace simeng {
 namespace kernel {
 
-/** Align `address` to an `alignTo`-byte boundary by rounding up to the nearest
- * multiple. */
 uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
   auto remainder = value % boundary;
   if (remainder == 0) {
@@ -34,6 +32,11 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine)
   // Align heap start to a 32-byte boundary
   heapStart_ = alignToBoundary(elfProcessImage.size(), 32);
 
+  // Set mmap region start to be an equal distance from the stack and heap
+  // starts. Additionally, align to the page size (4kb)
+  mmapStart_ =
+      alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
+
   // Calculate process image size, including heap + stack
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
   processImage_ = new char[size_];
@@ -53,6 +56,11 @@ LinuxProcess::LinuxProcess(span<char> instructions) {
   // Align heap start to a 32-byte boundary
   heapStart_ = alignToBoundary(instructions.size(), 32);
 
+  // Set mmap region start to be an equal distance from the stack and heap
+  // starts. Additionally, align to the page size (4kb)
+  mmapStart_ =
+      alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
+
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
   processImage_ = new char[size_];
 
@@ -70,6 +78,10 @@ LinuxProcess::~LinuxProcess() {
 uint64_t LinuxProcess::getHeapStart() const { return heapStart_; }
 
 uint64_t LinuxProcess::getStackStart() const { return size_; }
+
+uint64_t LinuxProcess::getMmapStart() const { return mmapStart_; }
+
+uint64_t LinuxProcess::getPageSize() const { return pageSize_; }
 
 std::string LinuxProcess::getPath() const { return commandLine_[0]; }
 
@@ -108,9 +120,9 @@ void LinuxProcess::createStack() {
 
   // ELF auxillary vector, keys defined in `uapi/linux/auxvec.h`
   // TODO: populate remaining auxillary vector entries
-  initialStackFrame.push_back(6);     // AT_PAGESZ
-  initialStackFrame.push_back(4096);  // = 4KB
-  initialStackFrame.push_back(0);     // null terminator
+  initialStackFrame.push_back(6);  // AT_PAGESZ
+  initialStackFrame.push_back(pageSize_);
+  initialStackFrame.push_back(0);  // null terminator
 
   size_t stackFrameSize = initialStackFrame.size() * 8;
 
