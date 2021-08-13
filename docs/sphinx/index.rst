@@ -66,7 +66,7 @@ Additional presentations given:
 Release
 -------
 
-Currently, SimEng is still in its alpha version (1.0.0-alpha) which can be found `here<>`_. The file RELEASE_NOTES.txt, found in the root of the project, explains the status of the project at that release along with relevant information from the SimEng development team.
+Currently, SimEng is still in its alpha version (0.8.0) which can be found on the `GitHub repository <https://github.com/UoB-HPC/SimEng>`_. The file RELEASE_NOTES.txt, found in the root of the project, explains the status of the project at that release along with relevant information from the SimEng development team.
 
 SimEng is release under an `Apache 2.0 <https://www.apache.org/licenses/LICENSE-2.0>`_ license.
 
