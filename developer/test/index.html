@@ -178,9 +178,7 @@
       <li class="wy-breadcrumbs-aside">
         
           
-            
-              <a href="https://github.com/UoB-HPC/SimEng/blob/main/developer/test/index.rst" class="fa fa-github"> Edit on GitHub</a>
-            
+            <a href="../../_sources/developer/test/index.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -270,7 +268,7 @@
 </div>
 <div class="section" id="running-the-test-suites">
 <h2><a class="toc-backref" href="#id7">Running the test suites</a><a class="headerlink" href="#running-the-test-suites" title="Permalink to this headline">¶</a></h2>
-<p>Whilst <code class="docutils literal"><span class="pre">make</span> <span class="pre">test</span></code> can be used to run both the unit and regression test suites sequentially, further refinement on what test are run can be achieved via GoogleTest functionality. GoogleTest provides a <code class="docutils literal"><span class="pre">--gtest_filter=&quot;&lt;regex&gt;&quot;</span></code> filter command which can be passed as an argument to either test suite, the filter is passed via a regular expression (regex). Full test names typically take the form of:</p>
+<p>Whilst <code class="docutils literal"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">{BUILD_DIR}</span> <span class="pre">--target</span> <span class="pre">test</span></code> can be used to run both the unit and regression test suites sequentially, further refinement on what test are run can be achieved via GoogleTest functionality. GoogleTest provides a <code class="docutils literal"><span class="pre">--gtest_filter=&quot;&lt;regex&gt;&quot;</span></code> filter command which can be passed as an argument to either test suite, the filter is passed via a regular expression (regex). Full test names typically take the form of:</p>
 <dl class="docutils">
 <dt>Parameterised test:</dt>
 <dd><code class="docutils literal"><span class="pre">&lt;INSTANTIATE_TEST_SUITE_P</span> <span class="pre">name&gt;/&lt;test</span> <span class="pre">case</span> <span class="pre">name&gt;.&lt;test</span> <span class="pre">name&gt;/&lt;parameter</span> <span class="pre">value&gt;</span></code></dd>
