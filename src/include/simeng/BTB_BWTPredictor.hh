@@ -1,12 +1,12 @@
 #pragma once
 
-#include "simeng/BranchPredictor.hh"
-
 #include <deque>
 #include <stack>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
+
+#include "simeng/BranchPredictor.hh"
 
 namespace simeng {
 

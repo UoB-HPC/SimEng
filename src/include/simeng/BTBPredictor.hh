@@ -1,8 +1,8 @@
 #pragma once
 
-#include "simeng/BranchPredictor.hh"
-
 #include <vector>
+
+#include "simeng/BranchPredictor.hh"
 
 namespace simeng {
 

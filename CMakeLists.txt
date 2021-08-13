@@ -114,6 +114,13 @@ FetchContent_MakeAvailable_Args(yaml-cpp EXCLUDE_FROM_ALL)
 
 option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
+option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
+
+set(SANITIZE_OPTIONS -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-sanitize-recover=address,undefined)
+if (SIMENG_SANITIZE)
+    add_compile_options(${SANITIZE_OPTIONS})
+    add_link_options(${SANITIZE_OPTIONS})
+endif()
 
 if(SIMENG_ENABLE_TESTS)
 

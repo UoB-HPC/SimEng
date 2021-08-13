@@ -1,9 +1,8 @@
 #pragma once
 
-#include "simeng/arch/Architecture.hh"
-
 #include <functional>
 
+#include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 #include "simeng/kernel/Linux.hh"
 

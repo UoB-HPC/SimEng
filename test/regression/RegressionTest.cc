@@ -57,6 +57,7 @@ void RegressionTest::run(const char* source, const char* triple) {
   // Allocate memory for the process and copy the full process image to it
   simeng::span<char> processImage = process_->getProcessImage();
   processMemorySize_ = processImage.size();
+  if (processMemory_) delete[] processMemory_;
   processMemory_ = new char[processMemorySize_];
   std::copy(processImage.begin(), processImage.end(), processMemory_);
 
@@ -245,6 +246,7 @@ void RegressionTest::assemble(const char* source, const char* triple) {
 
   // Make copy of .text section data
   codeSize_ = textData.size();
+  if (code_) delete[] code_;
   code_ = new uint8_t[codeSize_];
   std::copy(textData.begin(), textData.end(), code_);
 }

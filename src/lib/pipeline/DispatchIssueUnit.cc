@@ -217,7 +217,7 @@ void DispatchIssueUnit::purgeFlushed() {
   // Collect flushed instructions and remove them from the dependency matrix
   std::vector<std::unordered_set<std::shared_ptr<Instruction>>> flushed(
       reservationStations_.size(),
-      *(new std::unordered_set<std::shared_ptr<Instruction>>));
+      std::unordered_set<std::shared_ptr<Instruction>>());
   for (auto& registerType : dependencyMatrix_) {
     for (auto& dependencyList : registerType) {
       auto it = dependencyList.begin();

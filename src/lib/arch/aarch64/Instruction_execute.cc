@@ -1553,7 +1553,7 @@ void Instruction::execute() {
             out[(2 * i)] = static_cast<int32_t>(std::trunc(b[i]));
           }
           // 4294967295 = 0xFFFFFFFF
-          out[(2 * i) + 1] = (b[i] < 0) ? 4294967295 : 0;
+          out[(2 * i) + 1] = (b[i] < 0) ? 4294967295u : 0;
         } else {
           out[(2 * i)] = a[(2 * i)];
           out[(2 * i) + 1] = a[(2 * i) + 1];
@@ -2848,13 +2848,13 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_LSLVWr: {  // lslv wd, wn, wm
       auto x = operands[0].get<uint32_t>();
-      auto y = operands[1].get<uint32_t>();
+      auto y = operands[1].get<uint32_t>() & 0b11111;
       results[0] = static_cast<uint64_t>(x << y);
       break;
     }
     case Opcode::AArch64_LSLVXr: {  // lslv xd, xn, xm
       auto x = operands[0].get<uint64_t>();
-      auto y = operands[1].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>() & 0b111111;
       results[0] = x << y;
       break;
     }
@@ -2875,13 +2875,13 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_LSRVWr: {  // lsrv wd, wn, wm
       auto x = operands[0].get<uint32_t>();
-      auto y = operands[1].get<uint32_t>();
+      auto y = operands[1].get<uint32_t>() & 0b11111;
       results[0] = static_cast<uint64_t>(x >> y);
       break;
     }
     case Opcode::AArch64_LSRVXr: {  // lsrv xd, xn, xm
       auto x = operands[0].get<uint64_t>();
-      auto y = operands[1].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>() & 0b111111;
       results[0] = x >> y;
       break;
     }
@@ -2947,13 +2947,15 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_MOVNWi: {  // movn wd, #imm{, LSL #shift}
       uint8_t shift = metadata.operands[1].shift.value;
-      uint32_t value = ~(metadata.operands[1].imm << shift);
+      uint32_t value =
+          ~(static_cast<uint64_t>(metadata.operands[1].imm) << shift);
       results[0] = static_cast<uint64_t>(value);
       break;
     }
     case Opcode::AArch64_MOVNXi: {  // movn xd, #imm{, LSL #shift}
       uint8_t shift = metadata.operands[1].shift.value;
-      uint64_t value = ~(metadata.operands[1].imm << shift);
+      uint64_t value =
+          ~(static_cast<uint64_t>(metadata.operands[1].imm) << shift);
       results[0] = value;
       break;
     }
@@ -2964,13 +2966,13 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_MOVZWi: {  // movz wd, #imm
       uint8_t shift = metadata.operands[1].shift.value;
-      uint32_t value = metadata.operands[1].imm << shift;
+      uint32_t value = static_cast<uint64_t>(metadata.operands[1].imm) << shift;
       results[0] = RegisterValue(value, 8);
       break;
     }
     case Opcode::AArch64_MOVZXi: {  // movz xd, #imm
       uint8_t shift = metadata.operands[1].shift.value;
-      uint64_t value = metadata.operands[1].imm << shift;
+      uint64_t value = static_cast<uint64_t>(metadata.operands[1].imm) << shift;
       results[0] = value;
       break;
     }
@@ -3505,24 +3507,26 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SSHLLv2i32_shift: {  // sshll vd.2d, vn.2s, #imm
-      const int32_t* n = operands[0].getAsVector<int32_t>();
-      int64_t shift = metadata.operands[2].imm;
-      int64_t out[2] = {static_cast<int64_t>(n[0] << shift),
-                        static_cast<int64_t>(n[1] << shift)};
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      uint64_t shift = metadata.operands[2].imm;
+      int64_t out[2] = {
+          static_cast<int64_t>(static_cast<int32_t>(n[0] << shift)),
+          static_cast<int64_t>(static_cast<int32_t>(n[1] << shift))};
       results[0] = out;
       break;
     }
     case Opcode::AArch64_SSHLLv4i32_shift: {  // sshll2 vd.2d, vn.4s, #imm
-      const int32_t* n = operands[0].getAsVector<int32_t>();
-      int64_t shift = metadata.operands[2].imm;
-      int64_t out[2] = {static_cast<int64_t>(n[2] << shift),
-                        static_cast<int64_t>(n[3] << shift)};
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      uint64_t shift = metadata.operands[2].imm;
+      int64_t out[2] = {
+          static_cast<int64_t>(static_cast<int32_t>(n[2] << shift)),
+          static_cast<int64_t>(static_cast<int32_t>(n[3] << shift))};
       results[0] = out;
       break;
     }
     case Opcode::AArch64_SSHRv4i32_shift: {  // sshr vd.4s, vn.4s, #imm
       const int32_t* n = operands[1].getAsVector<int32_t>();
-      int64_t shift = metadata.operands[2].imm;
+      uint64_t shift = metadata.operands[2].imm;
       int32_t out[4] = {static_cast<int32_t>(std::trunc(n[0] >> shift)),
                         static_cast<int32_t>(std::trunc(n[1] >> shift)),
                         static_cast<int32_t>(std::trunc(n[2] >> shift)),
@@ -4054,7 +4058,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_TBNZX: {  // tbnz xn, #imm, label
-      if (operands[0].get<uint64_t>() & (1 << metadata.operands[1].imm)) {
+      if (operands[0].get<uint64_t>() & (1ull << metadata.operands[1].imm)) {
         branchTaken_ = true;
         branchAddress_ = instructionAddress_ + metadata.operands[2].imm;
       } else {
@@ -4074,7 +4078,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_TBZX: {  // tbz xn, #imm, label
-      if (operands[0].get<uint64_t>() & (1ul << metadata.operands[1].imm)) {
+      if (operands[0].get<uint64_t>() & (1ull << metadata.operands[1].imm)) {
         branchTaken_ = false;
         branchAddress_ = instructionAddress_ + 4;
       } else {

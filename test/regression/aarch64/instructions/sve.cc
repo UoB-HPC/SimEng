@@ -2136,12 +2136,13 @@ TEST_P(InstSve, st1d) {
     st1d {z2.d}, p0, [x4]
 
     mov x2, #4
-    mov x3, #2
+    mov x3, #8
+    mov x4, #2
     whilelo p1.d, xzr, x2
-    ld1d {z1.d}, p1/z, [x0, x3, lsl #3]
-    ld1d {z3.d}, p1/z, [x0, x3, lsl #3]
-    st1d {z1.d}, p1, [x2, x3, lsl #3]
-    st1d {z3.d}, p1, [x2, #4, mul vl]
+    ld1d {z1.d}, p1/z, [x0, x4, lsl #3]
+    ld1d {z3.d}, p1/z, [x0, x4, lsl #3]
+    st1d {z1.d}, p1, [x3, x4, lsl #3]
+    st1d {z3.d}, p1, [x3, #4, mul vl]
   )");
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer()), 0xDEADBEEF);
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() + 8),
@@ -2168,15 +2169,15 @@ TEST_P(InstSve, st1d) {
   EXPECT_EQ(getMemoryValue<uint64_t>(512 + 48), 0x98765432);
   EXPECT_EQ(getMemoryValue<uint64_t>(512 + 56), 0xABCDEF01);
 
-  EXPECT_EQ(getMemoryValue<uint64_t>(4 + 16), 0x98765432);
-  EXPECT_EQ(getMemoryValue<uint64_t>(4 + 24), 0xABCDEF01);
-  EXPECT_EQ(getMemoryValue<uint64_t>(4 + 32), 0xDEADBEEF);
-  EXPECT_EQ(getMemoryValue<uint64_t>(4 + 40), 0x12345678);
+  EXPECT_EQ(getMemoryValue<uint64_t>(8 + 16), 0x98765432);
+  EXPECT_EQ(getMemoryValue<uint64_t>(8 + 24), 0xABCDEF01);
+  EXPECT_EQ(getMemoryValue<uint64_t>(8 + 32), 0xDEADBEEF);
+  EXPECT_EQ(getMemoryValue<uint64_t>(8 + 40), 0x12345678);
 
-  EXPECT_EQ(getMemoryValue<uint64_t>(260), 0x98765432);
-  EXPECT_EQ(getMemoryValue<uint64_t>(260 + 8), 0xABCDEF01);
-  EXPECT_EQ(getMemoryValue<uint64_t>(260 + 16), 0xDEADBEEF);
-  EXPECT_EQ(getMemoryValue<uint64_t>(260 + 24), 0x12345678);
+  EXPECT_EQ(getMemoryValue<uint64_t>(264), 0x98765432);
+  EXPECT_EQ(getMemoryValue<uint64_t>(264 + 8), 0xABCDEF01);
+  EXPECT_EQ(getMemoryValue<uint64_t>(264 + 16), 0xDEADBEEF);
+  EXPECT_EQ(getMemoryValue<uint64_t>(264 + 24), 0x12345678);
 }
 
 TEST_P(InstSve, st1w) {

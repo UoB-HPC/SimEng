@@ -66,7 +66,7 @@ TEST(BalancedPortAllocatorTest, MultipleSupportedPorts) {
 
   // Ensure multi-port support is correctly balanced
   for (int i = 0; i < 10; i++) {
-    EXPECT_EQ(portAllocator.allocate({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}), i);
+    EXPECT_EQ(portAllocator.allocate({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), i);
   }
 }
 

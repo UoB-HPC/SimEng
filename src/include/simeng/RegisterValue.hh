@@ -50,6 +50,7 @@ class RegisterValue {
       dest = static_cast<char*>(malloc(bytes));
       this->ptr = std::shared_ptr<char>(dest, free);
     }
+    assert(dest && "Attempted to dereference a NULL pointer");
     std::memcpy(dest, ptr, bytes);
   }
 

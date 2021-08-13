@@ -1,4 +1,5 @@
 #include "simeng/BTB_BWTPredictor.hh"
+
 #include <cassert>
 
 namespace simeng {

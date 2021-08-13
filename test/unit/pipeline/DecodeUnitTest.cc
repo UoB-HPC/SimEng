@@ -2,10 +2,9 @@
 
 #include "../MockBranchPredictor.hh"
 #include "../MockInstruction.hh"
-#include "simeng/pipeline/DecodeUnit.hh"
-
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "simeng/pipeline/DecodeUnit.hh"
 
 namespace simeng {
 namespace pipeline {

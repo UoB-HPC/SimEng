@@ -31,7 +31,7 @@ constexpr Register nzcvReg() { return {RegisterType::NZCV, 0}; }
 
 // Sign-extend a bitstring of length `currentLength`
 constexpr int32_t signExtend(uint32_t value, int currentLength) {
-  uint32_t mask = (-1) << currentLength;
+  uint32_t mask = (0xFFFFFFFF) << currentLength;
   bool negative = bit(value, currentLength - 1);
   return static_cast<int32_t>(value) | (negative ? mask : 0);
 }

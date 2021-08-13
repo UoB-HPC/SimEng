@@ -1,8 +1,8 @@
 #pragma once
 
-#include "simeng/MemoryInterface.hh"
-
 #include <vector>
+
+#include "simeng/MemoryInterface.hh"
 
 namespace simeng {
 
