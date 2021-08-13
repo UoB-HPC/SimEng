@@ -7,7 +7,7 @@ namespace {
 using InstNeon = AArch64RegressionTest;
 
 TEST_P(InstNeon, add) {
-  // 32-bit
+  // Quad 32-bit : add vd.4s, vn.4s, vm.4s
   initialHeapData_.resize(32);
   uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
   heap32[0] = 0xDEADBEEF;
@@ -32,7 +32,22 @@ TEST_P(InstNeon, add) {
   CHECK_NEON(2, uint32_t,
              {0xDEADBEEFu + 0xF0F0F0F0u, 0x01234567u + 0x0F0F0F0F0u,
               0x89ABCDEFu + 0xDEADBEEFu, 0x0F0F0F0Fu + 0xDEADBEEFu});
-  // 64-bit
+
+  // Double 32-bit : add vd.2s, vn.2s, vm.2s
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #8]
+    add v2.2s, v0.2s, v1.2s
+  )");
+  CHECK_NEON(2, uint32_t,
+             {0xDEADBEEFu + 0x89ABCDEFu, 0x01234567u + 0x0F0F0F0Fu, 0u, 0u});
+
+  // Single 64-bit : add dd, dn, dm
   initialHeapData_.resize(32);
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
   heap64[0] = 0xDEADBEEF;
@@ -54,6 +69,20 @@ TEST_P(InstNeon, add) {
   )");
   CHECK_NEON(4, uint64_t, {0x168598CDE});
   CHECK_NEON(5, uint64_t, {0x10325476});
+
+  // Double 64-bit : add vd.2d, vn.2d, vm.2d
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    add v2.2d, v0.2d, v1.2d
+  )");
+  CHECK_NEON(2, uint64_t,
+             {0xDEADBEEFul + 0x89ABCDEFul, 0x01234567ul + 0x0F0F0F0Ful});
 }
 
 TEST_P(InstNeon, addp) {

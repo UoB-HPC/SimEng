@@ -210,6 +210,22 @@ void Instruction::execute() {
       results[0] = {n + m, 256};
       break;
     }
+    case Opcode::AArch64_ADDv2i32: {  // add vd.2s, vn.2s, vm.2s
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      const uint32_t* m = operands[1].getAsVector<uint32_t>();
+      uint32_t out[4] = {static_cast<uint32_t>(n[0] + m[0]),
+                         static_cast<uint32_t>(n[1] + m[1]), 0, 0};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_ADDv2i64: {  // add vd.2d, vn.2d, vm.2d
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t* m = operands[1].getAsVector<uint64_t>();
+      uint64_t out[2] = {static_cast<uint64_t>(n[0] + m[0]),
+                         static_cast<uint64_t>(n[1] + m[1])};
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_ADDv4i32: {  // add vd.4s, vn.4s, vm.4s
       const uint32_t* n = operands[0].getAsVector<uint32_t>();
       const uint32_t* m = operands[1].getAsVector<uint32_t>();
