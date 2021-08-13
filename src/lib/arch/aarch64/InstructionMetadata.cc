@@ -863,7 +863,8 @@ void InstructionMetadata::revertAliasing() {
         operands[1].vector_index = 0;
         return;
       }
-      if (opcode == Opcode::AArch64_INSvi32lane) {
+      if (opcode == Opcode::AArch64_INSvi32lane ||
+          opcode == Opcode::AArch64_INSvi64lane) {
         // mov vd.T[index1], vn.T[index2]; alias for ins vd.T[index1],
         // vn.T[index2]
         return;

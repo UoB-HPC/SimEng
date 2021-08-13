@@ -2617,6 +2617,16 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
+    case Opcode::AArch64_INSvi64lane: {  // ins vd.d[index1], vn.d[index2]
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* n = operands[1].getAsVector<uint64_t>();
+
+      uint64_t out[4] = {d[0], d[1]};
+      out[metadata.operands[0].vector_index] =
+          n[metadata.operands[1].vector_index];
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_INSvi8gpr: {  // ins vd.b[index], wn
       const uint8_t* d = operands[0].getAsVector<uint8_t>();
       const uint8_t n = operands[1].get<uint32_t>();

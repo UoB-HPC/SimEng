@@ -1520,6 +1520,7 @@ TEST_P(InstNeon, fsub) {
 }
 
 TEST_P(InstNeon, ins) {
+  // 32-bit
   initialHeapData_.resize(32);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   fheap[0] = 1.0f;
@@ -1546,6 +1547,31 @@ TEST_P(InstNeon, ins) {
   )");
   CHECK_NEON(0, float, {123.0f, -321.f, -0.125f, 2.0f});
   CHECK_NEON(1, float, {2.0f, -1.0f, -321.0f, -0.125f});
+
+  // 64-bit
+  initialHeapData_.resize(32);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = -42.76;
+  dheap[2] = -0.125;
+  dheap[3] = 321.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    ldr q2, [x0]
+    ins v2.d[0], v1.d[1]
+    ins v1.d[1], v0.d[0]
+    ins v0.d[0], v2.d[0]
+  )");
+  CHECK_NEON(0, double, {321.0, -42.76});
+  CHECK_NEON(1, double, {-0.125, 1.0});
+  CHECK_NEON(2, double, {321.0, -42.76});
 }
 
 TEST_P(InstNeon, mov_from_general) {
