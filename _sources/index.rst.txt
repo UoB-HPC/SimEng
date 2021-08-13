@@ -1,5 +1,5 @@
-Project Overview
-================
+The Simulation Engine - SimEng
+==============================
 
 .. toctree::
    :maxdepth: 2
@@ -26,39 +26,40 @@ Project Overview
    user/creating_binaries
    user/docker
 
-The Simulation Engine (SimEng) is a framework for building modern cycle-accurate processor simulators. It aims to be:
+SimEng is a framework for building modern, cycle-accurate processor simulators. Its goals are to be:
 
-- Fast
-- Easy to use and modify to desired configurations
-- Scalable, supporting simulation of simple scalar cores, up to superscalar out-of-order designs
-- Capable of supporting a wide range of ISAs, starting with ARMv8 but eventually including x86, RISC-V, POWER, etc.
+- Fast, typically 4-5X faster than gem5
+- Easy to use and modify to model desired microarchitecture configurations. New cores can be configured in just a few hours
+- Scalable, from simple scalar microarchitectures up to the most sophisticated, superscalar, out-of-order designs
+- Capable of supporting a wide range of instruction set architectures (ISAs), starting with Armv8 but eventually including RISC-V, x86, POWER, etc.
+- Accurate, aiming for simulated cycle times being within 5-10% of real hardware
 - Open source, with a permissive license to enable collaboration across academia and industry
 
-SimEng places an emphasis on performance and scalability, whilst maintaining a clean, modern, and well-documented code base.
+SimEng places an emphasis on performance and ease of use, whilst maintaining a clean, modern, simple and well-documented code base. For example, the current out-of-order (OoO) model is implemented in around 8,000 lines of simple C++, with another 8,000 lines or so implementing the specifics of the Armv8 ISA, and around 11,000 lines of code in the accompanying test suite. SimEng should be simple to read and understand, making it ideal to modify to your requirements and include it in your projects.
 
 
-Current Support
----------------
+Features
+--------
 
-Currently, SimEng targets the ARMv8+SVE ISA with the ability to model up to out-of-order, superscalar, single-core processors and to emulate a subset of Linux system-calls. It supports statically compiled C binaries that run on real hardware and models memory as an infinite L1 cache.
+Currently, SimEng targets the Armv8+SVE ISA with the ability to model up to out-of-order, superscalar, single-core processors, and to emulate a subset of Linux system-calls. It supports statically compiled C and Fortran binaries that run on real hardware. SimEng currently models memory as an infinite L1 cache, i.e. it assumes that all loads and stores hit the L1 cache; a future release will add a proper memory hierarchy model (see the discussion about SST below).
 
-The main component provided by the simulator is a discrete processor core model, (the generic model is shown below), which accepts a clock signal and supports a memory access interface. A YAML format configuration file can be passed to the simulation to modify the core model, for instance to model other current or future core designs. Current SimEng configurations support Marvell ThunderX2 and Fujitsu A64FX processors.
+The main component provided by the simulator is a discrete processor core model, shown in diagrammatic form below.  This model accepts a clock signal and supports a memory access interface. A single YAML format configuration file can be passed to the simulation to specify models of existing microarchitectures, such as Marvell's ThunderX2 or Fujitsu's A64fx, or to model hypothetical core designs.
 
 .. image:: assets/simeng_generic_core_model.png
   :width: 500
   :alt: Generic Core Model
 
-As soon as SimEng is mature enough, we plan to support multi-core and memory hierarchy simulation by integrating SimEng with the `Structural Simulation Toolkit <http://sst-simulator.org/>`_ (SST). So far we have implemented a prototype of SST’s memory hierarchy integration.
+A future release of SimEng will support multi-core and memory hierarchy simulation by integrating with the `Structural Simulation Toolkit <http://sst-simulator.org/>`_ (SST). We have already implemented a prototype integrating SimEng with SST to provide a model of the memory hierarchy, and this worked well.
 
 
 Talks and presentations
 -----------------------
 
-SimEng was presented by `Professor Simon McIntosh-Smith <http://uob-hpc.github.io/SimonMS/>`_ at the 2019 Workshop on Modeling & Simulation of Systems and Applications (ModSim):
+SimEng was first presented by `Professor Simon McIntosh-Smith <http://uob-hpc.github.io/SimonMS/>`_ at the 2019 Workshop on Modeling & Simulation of Systems and Applications (ModSim):
 
 - ModSim 2019 - :download:`Enabling Processor Design Space Exploration with SimEng <assets/simeng_modsim_2019.pdf>`
 
-Additional presentations given:
+For the most recent presentation on SimEng's progress and status, see:
 
 - :download:`Modelling Advanced Arm-based CPUs with SimEng <assets/simeng_arm_cpus.pdf>`
 
@@ -66,15 +67,17 @@ Additional presentations given:
 Release
 -------
 
-Currently, SimEng is still in its alpha version (0.8.0) which can be found on the `GitHub repository <https://github.com/UoB-HPC/SimEng>`_. The file RELEASE_NOTES.txt, found in the root of the project, explains the status of the project at that release along with relevant information from the SimEng development team.
+This is SimEng's first release, so should be considered alpha level software (version 0.8.0). We expect you to find issues, primarily in unimplemented instructions or unimplemented system calls. Please let us know when you hit these, either by submitting a pull request (PR), or by filing an issue on the Github repo. You can find the all the code and associated test suites for SimEng in the `GitHub repository <https://github.com/UoB-HPC/SimEng>`_. The file `RELEASE_NOTES.txt <https://github.com/UoB-HPC/SimEng/blob/main/RELEASE-NOTES.txt>`, found in the root of the project, explains the status of the project and includes other relevant information from the SimEng development team.
 
-SimEng is release under an `Apache 2.0 <https://www.apache.org/licenses/LICENSE-2.0>`_ license.
+SimEng is released under the same license as LLVM, the permissive `Apache 2.0 <https://www.apache.org/licenses/LICENSE-2.0>`_ license. We are passionate about enabling experimentation with computer architectures, and want users and developers in academic and industry to have complete freedom to use SimEng anyway they wish, including using it in commercial settings.
 
 
 External project usage
 ----------------------
 
-- `Capstone disassembly engine <https://www.capstone-engine.org/>`_ - Instruction decoding
+While we have tried to minimise SimEng's dependencies to keep it as simple as possible, it does make use of a small number of libraries and frameworks to provide crucial capabilities:
+
+- `Capstone disassembly engine <https://www.capstone-engine.org/>`_ - Provides instruction decoding for Armv8, RISC-V, x86 and other important ISAs
 - `Yaml-cpp <https://github.com/jbeder/yaml-cpp>`_ - Parsing YAML configuration files
 - `GoogleTest <https://github.com/google/googletest>`_ - Framework for the test suites
 - `LLVM <https://github.com/llvm-mirror/llvm>`_ - Generation of binaries for use in the regression test suite
@@ -85,9 +88,9 @@ Contributors
 
 Major contributors to SimEng to date include:
 
-Project leader
+Project leader:
 
-    Simon McIntosh-Smith
+- Simon McIntosh-Smith
     
 Original SimEng design and implementation:
 
@@ -113,9 +116,10 @@ Internship contributions:
 - Finn Wilkinson
 - Mutalib Mohammed
 - Seunghun Lee
+- Ainsley Rutterford
 
 Funding
 -------
 
-EPSRC ASiMoV project (Advanced Simulation and Modelling of Virtual systems) EP/S005072/1, Arm via a Centre of Excellence in HPC at University of Bristol
+The SimEng development team is grateful for the funding which has made this project possible, which to date has been from the UKRI/EPSRC ASiMoV project (Advanced Simulation and Modelling of Virtual systems), number EP/S005072/1, and from Arm via the Arm Centre of Excellence in HPC at the University of Bristol.
 
