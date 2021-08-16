@@ -64,6 +64,17 @@ class A64FXPortAllocator : public PortAllocator {
   uint8_t RSAm_;
   /** RSA with least free entries. */
   uint8_t RSAf_;
+
+  const std::vector<uint8_t> EXA_EXB_EAGA_EAGB = {2, 4, 5, 6};
+  const std::vector<uint8_t> EXA_EXB = {2, 4};
+  const std::vector<uint8_t> FLA_FLB = {0, 3};
+  const std::vector<uint8_t> EAGA_EAGB = {5, 6};
+  const std::vector<uint8_t> EXA = {2};
+  const std::vector<uint8_t> FLA = {0};
+  const std::vector<uint8_t> PR = {1};
+  const std::vector<uint8_t> EXB = {4};
+  const std::vector<uint8_t> FLB = {3};
+  const std::vector<uint8_t> BR = {7};
 };
 
 }  // namespace pipeline
