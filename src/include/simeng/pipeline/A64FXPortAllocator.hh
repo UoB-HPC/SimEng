@@ -23,7 +23,7 @@ class A64FXPortAllocator : public PortAllocator {
  public:
   A64FXPortAllocator(const std::vector<std::vector<uint16_t>>& portArrangement);
 
-  uint8_t allocate(std::vector<uint8_t> ports) override;
+  uint8_t allocate(const std::vector<uint8_t>& ports) override;
 
   void issued(uint8_t port) override;
 

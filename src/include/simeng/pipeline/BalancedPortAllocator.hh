@@ -23,7 +23,7 @@ class BalancedPortAllocator : public PortAllocator {
   /** Allocate the lowest weighted port available for the specified instruction
    * group. Returns the allocated port, and increases the weight of the port.
    */
-  uint8_t allocate(std::vector<uint8_t> ports) override;
+  uint8_t allocate(const std::vector<uint8_t>& ports) override;
 
   /** Decrease the weight for the specified port. */
   void issued(uint8_t port) override;

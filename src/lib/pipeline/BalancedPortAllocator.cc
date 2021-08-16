@@ -9,7 +9,7 @@ BalancedPortAllocator::BalancedPortAllocator(
     const std::vector<std::vector<uint16_t>>& portArrangement)
     : weights(portArrangement.size(), 0) {}
 
-uint8_t BalancedPortAllocator::allocate(std::vector<uint8_t> ports) {
+uint8_t BalancedPortAllocator::allocate(const std::vector<uint8_t>& ports) {
   assert(ports.size() &&
          "No supported ports supplied; cannot allocate from a empty set");
   bool foundPort = false;
