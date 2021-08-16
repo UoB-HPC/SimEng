@@ -58,7 +58,12 @@ uint64_t Linux::clockGetTime(uint64_t clkId, uint64_t systemTimer,
                              uint64_t& seconds, uint64_t& nanoseconds) {
   // TODO: Ideally this should get the system timer from the core directly
   // rather than having it passed as an argument.
+
   if (clkId == CLOCK_REALTIME) {
+    seconds = systemTimer / 1e9;
+    nanoseconds = systemTimer - (seconds * 1e9);
+    return 0;
+  } else if (clkId = CLOCK_MONOTONIC) {
     seconds = systemTimer / 1e9;
     nanoseconds = systemTimer - (seconds * 1e9);
     return 0;
