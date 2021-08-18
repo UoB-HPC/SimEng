@@ -200,12 +200,14 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
 
-  std::cout << std::hex << +metadata.encoding[3] << "," << +metadata.encoding[2]<< ","  << +metadata.encoding[1]<< ","  << +metadata.encoding[0] <<
-      std::dec << " " << metadata.mnemonic << " " << metadata.operandStr << std::endl;
+//  std::cout << std::hex << +metadata.encoding[3] << "," << +metadata.encoding[2]<< ","  << +metadata.encoding[1]<< ","  << +metadata.encoding[0] <<
+//      std::dec << " " << metadata.mnemonic << " " << metadata.operandStr << std::endl;
 
   //      std::cout << rs1 << ">>" << operands[1].get<uint32_t>() << std::endl;
 //      std::cout << out << std::endl;
   //      std::cout << operands[0].get<uint64_t>() << "+" << metadata.operands[1].mem.disp << std::endl; std::cout << std::hex << results[0].get<uint64_t>() << std::dec << std::endl;
+
+//  std::cout << metadata.mnemonic << " " << metadata.operandStr << std::endl;
 
   executed_ = true;
   switch (metadata.opcode) {
@@ -513,7 +515,45 @@ void Instruction::execute() {
       exception_ = InstructionException::SupervisorCall;
       break;
     } case Opcode::RISCV_FENCE: {
-      // Currenlty modelled as a NOP
+      // TODO currently modelled as a NOP as all codes are currently single threaded
+      // "Informally, no other RISC-V hart or external device can observe any
+      // operation in the successor set following a FENCE before any operation
+      // in the predecessor set preceding the FENCE."
+      // https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#fence
+      break;
+    }
+
+      // Atomic Extension
+      // TODO not implemented atomically
+    case Opcode::RISCV_LR_W: {
+      // TODO set "reservation set" in memory, currently not needed as all codes
+      //  are single threaded
+      results[0] = bitExtend(memoryData[0].get<uint32_t>(), 32);
+      break;
+    } case Opcode::RISCV_SC_W_AQ: {
+      // TODO check "reservation set" hasn't been written to before performing store
+      // TODO write rd correctly based on whether sc succeeds
+      memoryData[0] = operands[0];
+      results[0] = static_cast<uint64_t>(0);
+      break;
+    }
+    case Opcode::RISCV_AMOSWAP_W:
+//    case Opcode::RISCV_AMOSWAP_W_AQ:
+//    case Opcode::RISCV_AMOSWAP_W_RL:
+//    case Opcode::RISCV_AMOSWAP_W_AQ_RL:
+    {
+      // Load memory at address rs1 into rd
+      // Swap rd and rs2
+      // Store rd to memory at address rs1
+      // TODO raise address misaligned or access-fault errors
+      // TODO account for AQ and RL bits
+//      std::cout << "amoswap" << ">>" << operands[0].get<uint64_t>() << std::endl;
+      int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
+      int32_t rs2 = operands[0].get<int32_t>();
+      results[0] = rd;
+//      results[1] = rs2;
+      memoryData[0] = rs2;
+//      std::cout << std::hex << rd << std::dec << ":" << rs2 << ":" << operands[1].get<uint64_t>() << std::endl;
       break;
     }
     default:

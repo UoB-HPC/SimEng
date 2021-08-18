@@ -138,6 +138,9 @@ class Instruction : public simeng::Instruction {
   /** Is this a SVE instruction? */
   bool isSVE() const override;
 
+  /** Is this an atomic instruction? */
+  bool isAtomic();
+
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
@@ -239,6 +242,8 @@ class Instruction : public simeng::Instruction {
   bool isSVE_ = false;
   /** Is this a Predicate instruction? */
   bool isPredicate_ = false;
+  /** Is this an atomic instruction? */
+  bool isAtomic_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

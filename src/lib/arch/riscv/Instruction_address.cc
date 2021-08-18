@@ -12,7 +12,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
          "generateAddresses called on non-load-or-store instruction");
 
   uint64_t address;
-  if (isLoad()) {
+  if (isLoad() && isStore()) {
+    // Atomics
+    address = operands[1].get<uint64_t>();
+  } else if (isLoad()) {
     address = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
   } else {
     address = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
@@ -40,6 +43,36 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     case Opcode::RISCV_LB:
     case Opcode::RISCV_LBU: {
       setMemoryAddresses({{address, 1}});
+      break;
+    }
+
+      // Atomic Extension
+    case Opcode::RISCV_AMOSWAP_W:
+    case Opcode::RISCV_AMOSWAP_W_AQ:
+    case Opcode::RISCV_AMOSWAP_W_RL:
+    case Opcode::RISCV_AMOSWAP_W_AQ_RL: {
+      setMemoryAddresses({{address, 4}});
+      break;
+    }
+    case Opcode::RISCV_AMOSWAP_D:
+    case Opcode::RISCV_AMOSWAP_D_AQ:
+    case Opcode::RISCV_AMOSWAP_D_RL:
+    case Opcode::RISCV_AMOSWAP_D_AQ_RL: {
+      setMemoryAddresses({{address, 8}});
+      break;
+    }
+    case Opcode::RISCV_LR_W: {
+//    case Opcode::RISCV_LR_W_AQ:
+//    case Opcode::RISCV_LR_W_RL:
+//    case Opcode::RISCV_LR_W_AQ_RL: {
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
+      break;
+    }
+//    case Opcode::RISCV_SC_W:
+    case Opcode::RISCV_SC_W_AQ: {
+//    case Opcode::RISCV_SC_W_RL:
+//    case Opcode::RISCV_SC_W_AQ_RL: {
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;
     }
     default:

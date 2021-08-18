@@ -121,6 +121,7 @@ bool Instruction::isBranch() const { return isBranch_; }
 bool Instruction::isRET() const { return isRET_; }
 bool Instruction::isBL() const { return isBL_; }
 bool Instruction::isSVE() const { return isSVE_; }
+bool Instruction::isAtomic() { return isAtomic_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
