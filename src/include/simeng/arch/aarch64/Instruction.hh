@@ -294,7 +294,7 @@ class Instruction : public simeng::Instruction {
   void setExecutionInfo(const executionInfo& info);
 
   /** Get this instruction's supported set of ports. */
-  std::vector<uint8_t> getSupportedPorts() override;
+  const std::vector<uint8_t>& getSupportedPorts() override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;

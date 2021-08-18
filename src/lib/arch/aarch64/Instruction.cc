@@ -181,7 +181,7 @@ void Instruction::setExecutionInfo(const executionInfo& info) {
   stallCycles_ = info.stallCycles;
   supportedPorts_ = info.ports;
 }
-std::vector<uint8_t> Instruction::getSupportedPorts() {
+const std::vector<uint8_t>& Instruction::getSupportedPorts() {
   if (supportedPorts_.size() == 0) {
     exception_ = InstructionException::NoAvailablePort;
     exceptionEncountered_ = true;

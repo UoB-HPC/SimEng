@@ -159,7 +159,7 @@ class Instruction {
   uint16_t getStallCycles() const;
 
   /** Get this instruction's supported set of ports. */
-  virtual std::vector<uint8_t> getSupportedPorts() = 0;
+  virtual const std::vector<uint8_t>& getSupportedPorts() = 0;
 
   bool shouldSplitRequests() const;
 
