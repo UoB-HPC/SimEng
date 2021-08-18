@@ -1,5 +1,6 @@
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 
+#include <algorithm>
 #include <unordered_set>
 
 namespace simeng {
@@ -44,13 +45,15 @@ DispatchIssueUnit::DispatchIssueUnit(
     reservationStations_[RS.first].ports.resize(port_index + 1);
     reservationStations_[RS.first].ports[port_index].issuePort = port;
   }
-};
+  dispatches.resize(reservationStations_.size());
+}
 
 void DispatchIssueUnit::tick() {
-  // Maintain record of dispatch amounts made
-  std::vector<uint8_t> dispatches(reservationStations_.size(), 0);
-
   input_.stall(false);
+
+  // Reset the counters
+  std::fill(dispatches.begin(), dispatches.end(), 0);
+
   for (size_t slot = 0; slot < input_.getWidth(); slot++) {
     auto& uop = input_.getHeadSlots()[slot];
     if (uop == nullptr) {

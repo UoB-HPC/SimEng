@@ -110,6 +110,10 @@ class DispatchIssueUnit {
   /** Reservation stations */
   std::vector<ReservationStation> reservationStations_;
 
+  /** Stores the number of instructions dispatched each cycle, for each
+  reservation station. */
+  std::vector<uint8_t> dispatches = {};
+
   /** A mapping from port to RS port */
   std::vector<std::pair<uint8_t, uint8_t>> portMapping_;
 
