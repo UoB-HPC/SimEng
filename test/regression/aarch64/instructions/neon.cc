@@ -320,27 +320,6 @@ TEST_P(InstNeon, addv) {
   CHECK_NEON(1, uint8_t, {36});
 }
 
-TEST_P(InstNeon, addv) {
-  // 8-bit
-  initialHeapData_.resize(16);
-  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
-  for (int i = 0; i < 16; i++) {
-    heap8[i] = (i + 1);
-  }
-
-  RUN_AARCH64(R"(
-    # Get heap address
-    mov x0, 0
-    mov x8, 214
-    svc #0
-
-    ldr q0, [x0]
-    addv b1, v0.8b
-  )");
-
-  CHECK_NEON(1, uint8_t, {36});
-}
-
 TEST_P(InstNeon, and) {
   initialHeapData_.resize(32);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
