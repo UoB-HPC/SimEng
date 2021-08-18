@@ -11,7 +11,7 @@ void AArch64RegressionTest::run(const char* source) {
   LLVMInitializeAArch64TargetMC();
   LLVMInitializeAArch64AsmParser();
 
-  RegressionTest::run(source, "aarch64", "+sve");
+  RegressionTest::run(source, "aarch64", "+sve,+lse");
 }
 
 YAML::Node AArch64RegressionTest::generateConfig() const {
