@@ -155,7 +155,7 @@ void DispatchIssueUnit::issue() {
   }
 
   if (issued == 0) {
-    for (auto rs : reservationStations_) {
+    for (const auto& rs : reservationStations_) {
       if (rs.currentSize != 0) {
         backendStalls_++;
         return;
