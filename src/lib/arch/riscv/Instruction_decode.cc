@@ -105,6 +105,15 @@ void Instruction::decode() {
       isBranch_ = true;
       break;
   // Identify loads/stores
+    case Opcode::RISCV_LR_D:
+    case Opcode::RISCV_LR_D_AQ:
+    case Opcode::RISCV_LR_D_RL:
+    case Opcode::RISCV_LR_D_AQ_RL:
+    case Opcode::RISCV_LR_W:
+    case Opcode::RISCV_LR_W_AQ:
+    case Opcode::RISCV_LR_W_RL:
+    case Opcode::RISCV_LR_W_AQ_RL:
+      isAtomic_ = true;
     case Opcode::RISCV_LB:
     case Opcode::RISCV_LBU:
     case Opcode::RISCV_LH:
@@ -114,11 +123,35 @@ void Instruction::decode() {
     case Opcode::RISCV_LD:
       isLoad_ = true;
       break;
+    case Opcode::RISCV_SC_D:
+    case Opcode::RISCV_SC_D_AQ:
+    case Opcode::RISCV_SC_D_RL:
+    case Opcode::RISCV_SC_D_AQ_RL:
+    case Opcode::RISCV_SC_W:
+    case Opcode::RISCV_SC_W_AQ:
+    case Opcode::RISCV_SC_W_RL:
+    case Opcode::RISCV_SC_W_AQ_RL:
+      isAtomic_ = true;
     case Opcode::RISCV_SB:
     case Opcode::RISCV_SW:
     case Opcode::RISCV_SH:
     case Opcode::RISCV_SD:
       isStore_ = true;
+      break;
+      // Atomics: both load and store
+    case Opcode::RISCV_AMOSWAP_W:
+    case Opcode::RISCV_AMOSWAP_W_AQ:
+    case Opcode::RISCV_AMOSWAP_W_RL:
+    case Opcode::RISCV_AMOSWAP_W_AQ_RL:
+    case Opcode::RISCV_AMOSWAP_D:
+    case Opcode::RISCV_AMOSWAP_D_AQ:
+    case Opcode::RISCV_AMOSWAP_D_RL:
+    case Opcode::RISCV_AMOSWAP_D_AQ_RL:
+      isLoad_ = true;
+      isStore_ = true;
+      isAtomic_ = true;
+      // Don't mark as atomic as will break first operand ordering
+      // TODO set isAtomic_ true for consistency and fix decode loop to allow this
       break;
   }
 
@@ -132,7 +165,7 @@ void Instruction::decode() {
     // Capstone produces 1 indexed register operands
     if (i == 0 && op.type == RISCV_OP_REG) {
 
-      if ((isBranch() && metadata.opcode != Opcode::RISCV_JAL &&  metadata.opcode != Opcode::RISCV_JALR) || isStore()) {
+      if ((isBranch() && metadata.opcode != Opcode::RISCV_JAL &&  metadata.opcode != Opcode::RISCV_JALR) || (isStore() && !isAtomic())) {
         sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
 
         if (sourceRegisters[sourceRegisterCount] ==
