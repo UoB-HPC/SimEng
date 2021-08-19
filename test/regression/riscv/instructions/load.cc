@@ -13,8 +13,6 @@ TEST_P(InstLoad, lb) {
   heap[3] = 0x87654321;
 
   RUN_RISCV(R"(
-      #addi s0, s0, 214
-      #beq s0, s0, 4094 #temporarily used to force syscall to get heap address
       addi t5, t5, 32  # Static heap address
       lb t6, 0(t5)
       lb t4, 4(t5)
@@ -27,9 +25,9 @@ TEST_P(InstLoad, lb) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x0000000000000012);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFAD);
 
+
+  // Load byte unsigned
   RUN_RISCV(R"(
-      #addi s0, s0, 214
-      #beq s0, s0, 4094 #temporarily used to force syscall to get heap address
       addi t5, t5, 32  # Static heap address
       lbu t6, 0(t5)
       lbu t4, 4(t5)
@@ -51,9 +49,8 @@ TEST_P(InstLoad, lh) {
   heap[2] = 0xFEEBDAED;
   heap[3] = 0x87654321;
 
+  // Load half word unsigned
   RUN_RISCV(R"(
-      #addi s0, s0, 214
-      #beq s0, s0, 4094 #temporarily used to force syscall to get heap address
       addi t5, t5, 32  # Static heap address
       lh t6, 0(t5)
       lh t4, 4(t5)
@@ -67,8 +64,6 @@ TEST_P(InstLoad, lh) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFDEAD);
 
   RUN_RISCV(R"(
-      #addi s0, s0, 214
-      #beq s0, s0, 4094 #temporarily used to force syscall to get heap address
       addi t5, t5, 32  # Static heap address
       lhu t6, 0(t5)
       lhu t4, 4(t5)
@@ -91,8 +86,6 @@ TEST_P(InstLoad, lw) {
   heap[3] = 0x87654321;
 
   RUN_RISCV(R"(
-      #addi s0, s0, 214
-      #beq s0, s0, 4094 #temporarily used to force syscall to get heap address
       addi t5, t5, 32  # Static heap address
       lw t6, 0(t5)
       lw t4, 4(t5)
@@ -106,8 +99,6 @@ TEST_P(InstLoad, lw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x000000005678DEAD);
 
   RUN_RISCV(R"(
-      #addi s0, s0, 214
-      #beq s0, s0, 4094 #temporarily used to force syscall to get heap address
       addi t5, t5, 32  # Static heap address
       lwu t6, 0(t5)
       lwu t4, 4(t5)
@@ -130,18 +121,16 @@ TEST_P(InstLoad, ld) {
   heap[3] = 0x87654321;
 
   RUN_RISCV(R"(
-      #addi s0, s0, 214
-      #beq s0, s0, 4094 #temporarily used to force syscall to get heap address
       addi t5, t5, 32  # Static heap address
       ld t6, 0(t5)
       ld t4, 4(t5)
-      ld t3, 6(t5)
+      ld t3, 7(t5)
       addi t5, t5, 4
       ld t2, -2(t5)
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678DEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFEEBDAED12345678);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4321FEEBDAED1234);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x654321FEEBDAED12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xDAED12345678DEAD);
 }
 

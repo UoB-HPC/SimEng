@@ -11,7 +11,7 @@ void RISCVRegressionTest::run(const char* source) {
   LLVMInitializeRISCVTargetMC();
   LLVMInitializeRISCVAsmParser();
 
-  RegressionTest::run(source, "riscv64", "+m,+a,+f,+d,+q");
+  RegressionTest::run(source, "riscv64", "+m,+a,+f,+d");
 }
 // TODO create yaml
 YAML::Node RISCVRegressionTest::generateConfig() const {
