@@ -63,7 +63,7 @@ uint64_t Linux::clockGetTime(uint64_t clkId, uint64_t systemTimer,
     seconds = systemTimer / 1e9;
     nanoseconds = systemTimer - (seconds * 1e9);
     return 0;
-  } else if (clkId = CLOCK_MONOTONIC) {
+  } else if (clkId == CLOCK_MONOTONIC) {
     seconds = systemTimer / 1e9;
     nanoseconds = systemTimer - (seconds * 1e9);
     return 0;
