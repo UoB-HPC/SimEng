@@ -149,8 +149,14 @@ void Instruction::decode() {
   for (size_t i = 0; i < metadata.implicitSourceCount; i++) {
     sourceRegisters[sourceRegisterCount] =
         csRegToRegister(static_cast<arm64_reg>(metadata.implicitSources[i]));
+
+    if (sourceRegisters[sourceRegisterCount] == Instruction::ZERO_REGISTER) {
+      // Catch zero register references and pre-complete those operands
+      operands[sourceRegisterCount] = RegisterValue(0, 8);
+    } else {
+      operandsPending++;
+    }
     sourceRegisterCount++;
-    operandsPending++;
   }
 
   bool accessesMemory = false;
@@ -202,8 +208,14 @@ void Instruction::decode() {
     } else if (op.type == ARM64_OP_MEM) {  // Memory operand
       accessesMemory = true;
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
+
+      if (sourceRegisters[sourceRegisterCount] == Instruction::ZERO_REGISTER) {
+        // Catch zero register references and pre-complete those operands
+        operands[sourceRegisterCount] = RegisterValue(0, 8);
+      } else {
+        operandsPending++;
+      }
       sourceRegisterCount++;
-      operandsPending++;
 
       if (metadata.writeback) {
         // Writeback instructions modify the base address
@@ -214,8 +226,15 @@ void Instruction::decode() {
       if (op.mem.index) {
         // Register offset; add to sources
         sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.index);
+
+        if (sourceRegisters[sourceRegisterCount] ==
+            Instruction::ZERO_REGISTER) {
+          // Catch zero register references and pre-complete those operands
+          operands[sourceRegisterCount] = RegisterValue(0, 8);
+        } else {
+          operandsPending++;
+        }
         sourceRegisterCount++;
-        operandsPending++;
       }
     } else if (op.type == ARM64_OP_REG_MRS) {
       sourceRegisters[sourceRegisterCount] = {
