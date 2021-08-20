@@ -14,7 +14,7 @@ TEST_P(InstBranch, BEQ) {
       beq zero, t4, 8
       j 16
       addi t4, t4, 7
-      beq s0, zero, -8  # beqz s0, -8
+      beqz s0, -8
       addi t2, t2, 4
       addi t3, t3, 5
   )");

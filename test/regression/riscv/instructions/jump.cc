@@ -70,11 +70,11 @@ TEST_P(InstJump, jal) {
 
 TEST_P(InstJump, jalAlias) {
   RUN_RISCV(R"(
-    jal zero, 12     #j 0xc
+    j 12              #j 0xc
     addi t6, t6, 10
-    jal t1, 12       #jal t1, 0xc
+    jal t1, 12        #jal t1, 0xc
     addi t5, t5, 5
-    jal ra, -12      #jal -0xc
+    jal -12           #jal -0xc
     addi t4, t4, 3
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 5);
@@ -84,22 +84,6 @@ TEST_P(InstJump, jalAlias) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 20);
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
-
-RUN_RISCV(R"(
-    j 12              #j 0xc
-    addi t6, t6, 10
-    jal t1, 12        #jal t1, 0xc
-    addi t5, t5, 5
-    jal -12           #jal -0xc
-    addi t4, t4, 3
-  )");
-EXPECT_EQ(getGeneralRegister<uint64_t>(30), 5);
-EXPECT_EQ(getGeneralRegister<uint64_t>(31), 10);
-EXPECT_EQ(getGeneralRegister<uint64_t>(29), 3);
-EXPECT_EQ(getGeneralRegister<uint64_t>(6), 12);
-EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0);
-EXPECT_EQ(getGeneralRegister<uint64_t>(1), 20);
-EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstJump,

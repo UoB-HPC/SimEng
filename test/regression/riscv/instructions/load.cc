@@ -49,7 +49,6 @@ TEST_P(InstLoad, lh) {
   heap[2] = 0xFEEBDAED;
   heap[3] = 0x87654321;
 
-  // Load half word unsigned
   RUN_RISCV(R"(
       addi t5, t5, 32  # Static heap address
       lh t6, 0(t5)
@@ -63,6 +62,7 @@ TEST_P(InstLoad, lh) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0xFFFFFFFFFFFFED12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFDEAD);
 
+// Load half word unsigned
   RUN_RISCV(R"(
       addi t5, t5, 32  # Static heap address
       lhu t6, 0(t5)
