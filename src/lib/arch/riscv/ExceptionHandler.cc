@@ -31,6 +31,8 @@ bool ExceptionHandler::init() {
     auto syscallId =
         registerFileSet.get({RegisterType::GENERAL, 17}).get<uint64_t>();
 
+//    std::cout << std::endl << "SYSCALL " << syscallId << " " << std::flush;
+
     ProcessStateChange stateChange;
     switch (syscallId) {
 //      case 29: {  // ioctl
@@ -49,6 +51,13 @@ bool ExceptionHandler::init() {
 //            RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
 //        break;
 //      }
+//      case 46: {  // ftruncate
+//        uint64_t fd = registerFileSet.get(R0).get<uint64_t>();
+//        uint64_t length = registerFileSet.get(R1).get<uint64_t>();
+//        stateChange = {
+//            ChangeType::REPLACEMENT, {R0}, {linux_.ftruncate(fd, length)}};
+//        break;
+//      }
 //      case 56: {  // openat
 //        int64_t dirfd = registerFileSet.get(R0).get<int64_t>();
 //        uint64_t pathnamePtr = registerFileSet.get(R1).get<uint64_t>();
@@ -58,14 +67,14 @@ bool ExceptionHandler::init() {
 //        char* pathname = new char[kernel::Linux::LINUX_PATH_MAX];
 //        return readStringThen(pathname, pathnamePtr,
 //                              kernel::Linux::LINUX_PATH_MAX, [=](auto length) {
-//                                // Invoke the kernel
-//                                uint64_t retval =
-//                                    linux_.openat(dirfd, pathname, flags, mode);
-//                                ProcessStateChange stateChange = {
-//                                    ChangeType::REPLACEMENT, {R0}, {retval}};
-//                                delete[] pathname;
-//                                return concludeSyscall(stateChange);
-//                              });
+//              // Invoke the kernel
+//              uint64_t retval =
+//                  linux_.openat(dirfd, pathname, flags, mode);
+//              ProcessStateChange stateChange = {
+//                  ChangeType::REPLACEMENT, {R0}, {retval}};
+//              delete[] pathname;
+//              return concludeSyscall(stateChange);
+//            });
 //        break;
 //      }
 //      case 57: {  // close
@@ -189,23 +198,21 @@ bool ExceptionHandler::init() {
 //        // the kernel.
 //        return readBufferThen(iov, iovcnt * 16, invokeKernel);
 //      }
-//      case 64: {  // write
-//        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-//        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
-//        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
-//        return readBufferThen(bufPtr, count, [=]() {
-//          int64_t retval = linux_.write(fd, dataBuffer.data(), count);
-//          ProcessStateChange stateChange = {
-//              ChangeType::REPLACEMENT, {R0}, {retval}};
-//          return concludeSyscall(stateChange);
-//        });
-//      }
+      case 64: {  // write
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t retval = linux_.write(fd, dataBuffer.data(), count);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {retval}};
+          return concludeSyscall(stateChange);
+        });
+      }
       case 66: {  // writev
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
         int64_t iovcnt = registerFileSet.get(R2).get<int64_t>();
-
-        std::cout << fd << ":" << iov << ":" << iovcnt << std::endl;
 
         // The pointer `iov` points to an array of structures that each contain
         // a pointer to the data and the size of the data as an integer.
@@ -249,21 +256,45 @@ bool ExceptionHandler::init() {
         // performing each of the buffer loads.
         return readBufferThen(iov, iovcnt * 16, last);
       }
-//      case 78: {  // readlinkat
-//        const auto pathnameAddress = registerFileSet.get(R1).get<uint64_t>();
-//
-//        // Copy string at `pathnameAddress`
-//        auto pathname = new char[kernel::Linux::LINUX_PATH_MAX];
-//        return readStringThen(pathname, pathnameAddress,
-//                              kernel::Linux::LINUX_PATH_MAX,
-//                              [this, pathname](auto length) {
-//                                // Pass the string `readLinkAt`, then destroy
-//                                // the buffer and resolve the handler.
-//                                readLinkAt({pathname, length});
-//                                delete[] pathname;
-//                                return true;
-//                              });
-//      }
+      case 78: {  // readlinkat
+        const auto pathnameAddress = registerFileSet.get(R1).get<uint64_t>();
+
+        // Copy string at `pathnameAddress`
+        auto pathname = new char[kernel::Linux::LINUX_PATH_MAX];
+        return readStringThen(pathname, pathnameAddress,
+                              kernel::Linux::LINUX_PATH_MAX,
+                              [this, pathname](auto length) {
+                                // Pass the string `readLinkAt`, then destroy
+                                // the buffer and resolve the handler.
+                                readLinkAt({pathname, length});
+                                delete[] pathname;
+                                return true;
+                              });
+      }
+      case 79: {  // newfstatat AKA fstatat
+        int64_t dfd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t filenamePtr = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t statbufPtr = registerFileSet.get(R2).get<uint64_t>();
+        int64_t flag = registerFileSet.get(R3).get<int64_t>();
+
+        char* filename = new char[kernel::Linux::LINUX_PATH_MAX];
+        return readStringThen(
+            filename, filenamePtr, kernel::Linux::LINUX_PATH_MAX,
+            [=](auto length) {
+              // Invoke the kernel
+              kernel::stat statOut;
+              uint64_t retval = linux_.newfstatat(dfd, filename, statOut, flag);
+              ProcessStateChange stateChange = {
+                  ChangeType::REPLACEMENT, {R0}, {retval}};
+              delete[] filename;
+              stateChange.memoryAddresses.push_back(
+                  {statbufPtr, sizeof(statOut)});
+              stateChange.memoryAddressValues.push_back(statOut);
+              return concludeSyscall(stateChange);
+            });
+
+        break;
+      }
 //      case 80: {  // fstat
 //        int64_t fd = registerFileSet.get(R0).get<int64_t>();
 //        uint64_t statbufPtr = registerFileSet.get(R1).get<uint64_t>();
@@ -275,16 +306,35 @@ bool ExceptionHandler::init() {
 //        stateChange.memoryAddressValues.push_back(statOut);
 //        break;
 //      }
-//      case 94: {  // exit_group
-//        auto exitCode = registerFileSet.get(R0).get<uint64_t>();
-//        std::cout << "Received exit_group syscall: terminating with exit code "
-//                  << exitCode << std::endl;
-//        return fatal();
-//      }
+      case 94: {  // exit_group
+        auto exitCode = registerFileSet.get(R0).get<uint64_t>();
+        std::cout << "Received exit_group syscall: terminating with exit code "
+                  << exitCode << std::endl;
+        return fatal();
+      }
 //      case 96: {  // set_tid_address
 //        uint64_t ptr = registerFileSet.get(R0).get<uint64_t>();
 //        stateChange = {
 //            ChangeType::REPLACEMENT, {R0}, {linux_.setTidAddress(ptr)}};
+//        break;
+//      }
+//      case 98: {  // futex
+//        // TODO: Functionality temporarily omitted as it is unused within
+//        // workloads regions of interest and not required for their simulation
+//        int op = registerFileSet.get(R1).get<int>();
+//        if (op != 129) {
+//          printException(instruction_);
+//          std::cout << "Unsupported arguments for syscall: " << syscallId
+//                    << std::endl;
+//          return fatal();
+//        }
+//        stateChange = {ChangeType::REPLACEMENT, {R0}, {1ull}};
+//        break;
+//      }
+//      case 99: {  // set_robust_list
+//        // TODO: Functionality temporarily omitted as it is unused within
+//        // workloads regions of interest and not required for their simulation
+//        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
 //        break;
 //      }
 //      case 113: {  // clock_gettime
@@ -304,27 +354,76 @@ bool ExceptionHandler::init() {
 //        stateChange.memoryAddressValues.push_back(nanoseconds);
 //        break;
 //      }
+//      case 122: {  // sched_setaffinity
+//        pid_t pid = registerFileSet.get(R0).get<pid_t>();
+//        size_t cpusetsize = registerFileSet.get(R1).get<size_t>();
+//        uint64_t mask = registerFileSet.get(R2).get<uint64_t>();
+//
+//        int64_t retval = linux_.schedSetAffinity(pid, cpusetsize, mask);
+//        stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
+//        break;
+//      }
+//      case 123: {  // sched_getaffinity
+//        pid_t pid = registerFileSet.get(R0).get<pid_t>();
+//        size_t cpusetsize = registerFileSet.get(R1).get<size_t>();
+//        uint64_t mask = registerFileSet.get(R2).get<uint64_t>();
+//        int64_t bitmask = linux_.schedGetAffinity(pid, cpusetsize, mask);
+//        // If returned bitmask is 0, assume an error
+//        if (bitmask > 0) {
+//          // Currently, only a single CPU bitmask is supported
+//          if (bitmask != 1) {
+//            printException(instruction_);
+//            std::cout
+//                << "Unexpected CPU affinity mask returned in exception handler"
+//                << std::endl;
+//            return fatal();
+//          }
+//          uint64_t retval = (pid == 0) ? 1 : 0;
+//          stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
+//          stateChange.memoryAddresses.push_back({mask, 1});
+//          stateChange.memoryAddressValues.push_back(bitmask);
+//        } else {
+//          stateChange = {ChangeType::REPLACEMENT, {R0}, {-1ll}};
+//        }
+//        break;
+//      }
+//      case 134: {  // rt_sigaction
+//        // TODO: Implement syscall logic. Ignored for now as it's assumed the
+//        // current use of this syscall is to setup error handlers. Simualted
+//        // code is expected to work so no need for these handlers.
+//        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+//        break;
+//      }
+//      case 135: {  // rt_sigprocmask
+//        // TODO: Implement syscall logic. Ignored for now as it's assumed the
+//        // current use of this syscall is to setup error handlers. Simualted
+//        // code is expected to work so no need for these handlers.
+//        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+//        break;
+//      }
       case 160: {  // uname
         const uint64_t base = registerFileSet.get(R0).get<uint64_t>();
         const uint8_t len =
             65;  // Reserved length of each string field in Linux
         const char sysname[] = "Linux";
-        const char nodename[] = "simeng.hpc.cs.bris.ac.uk";
-        const char release[] = "4.14.0";
-        const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019";
+        const char nodename[] = "fedora-riscv";
+        const char release[] = "5.5.0-0.rc5.git0.1.1.riscv64.fc32.riscv64";
+        const char version[] = "#1 SMP Mon Jan 6 17:31:22 UTC 2020";
         const char machine[] = "riscv64";
+        const char domainname[] = "(none)";
 
         stateChange = {ChangeType::REPLACEMENT,
                        {R0},
-                       {static_cast<uint64_t>(0)},
+                       {0ull},
                        {{base, sizeof(sysname)},
                         {base + len, sizeof(nodename)},
                         {base + (len * 2), sizeof(release)},
                         {base + (len * 3), sizeof(version)},
-                        {base + (len * 4), sizeof(machine)}},
+                        {base + (len * 4), sizeof(machine)},
+                        {base + (len * 5), sizeof(domainname)}},
                        {RegisterValue(sysname), RegisterValue(nodename),
                         RegisterValue(release), RegisterValue(version),
-                        RegisterValue(machine)}};
+                        RegisterValue(machine), RegisterValue(domainname)}};
         break;
       }
 //      case 169: {  // gettimeofday
@@ -347,6 +446,9 @@ bool ExceptionHandler::init() {
 //        }
 //        break;
 //      }
+//      case 172:  // getpid
+//        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getpid()}};
+//        break;
       case 174:  // getuid
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getuid()}};
         break;
@@ -359,12 +461,63 @@ bool ExceptionHandler::init() {
       case 177:  // getegid
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getegid()}};
         break;
+//      case 179:  // sysinfo
+//        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+//        break;
       case 214: {  // brk
         auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
         stateChange = {
             ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
         break;
       }
+//      case 215: {  // munmap
+//        uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
+//        size_t length = registerFileSet.get(R1).get<size_t>();
+//
+//        int64_t result = linux_.munmap(addr, length);
+//        stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
+//        break;
+//      }
+//      case 222: {  // mmap
+//        uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
+//        size_t length = registerFileSet.get(R1).get<size_t>();
+//        int prot = registerFileSet.get(R2).get<int>();
+//        int flags = registerFileSet.get(R3).get<int>();
+//        int fd = registerFileSet.get(R4).get<int>();
+//        off_t offset = registerFileSet.get(R5).get<off_t>();
+//
+//        // Currently, only support mmap from a malloc() call whose arguments
+//        // match the first condition
+//        if (addr == 0 && flags == 34 && fd == -1 && offset == 0) {
+//          uint64_t result = linux_.mmap(addr, length, prot, flags, fd, offset);
+//          // An allocation of 0 signifies a failed allocation, return value from
+//          // syscall is changed to -1
+//          if (result == 0) {
+//            stateChange = {
+//                ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-1)}};
+//          } else {
+//            stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
+//          }
+//          break;
+//        } else {
+//          printException(instruction_);
+//          std::cout << "Unsupported arguments for syscall: " << syscallId
+//                    << std::endl;
+//          return fatal();
+//        }
+//      }
+//      case 226: {  // mprotect
+//        // mprotect is not supported
+//        // always return zero to indicate success
+//        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+//        break;
+//      }
+//      case 261: {  // prlimit64
+//        // TODO: Functionality temporarily omitted as it is unused within
+//        // workloads regions of interest and not required for their simulation
+//        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+//        break;
+//      }
       default:
         printException(instruction_);
         std::cout << "Unrecognised syscall: " << syscallId << std::endl;
