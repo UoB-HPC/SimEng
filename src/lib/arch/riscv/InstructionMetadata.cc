@@ -67,6 +67,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       if (operandCount == 2 && strcmp(mnemonic, "negw") == 0) {
         includeZeroRegisterPosOne();
       }
+    } case Opcode::RISCV_XORI: {
+      if (operandCount == 2 && strcmp(mnemonic, "not") == 0) {
+        operands[2].type = RISCV_OP_IMM;
+        operands[2].imm = -1;
+
+        operandCount = 3;
+      }
     } case Opcode::RISCV_SLTIU: {
       if (operandCount == 2 && strcmp(mnemonic, "seqz") == 0) {
         operands[2].type = RISCV_OP_IMM;
