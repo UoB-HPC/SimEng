@@ -90,6 +90,20 @@ RUN_RISCV(R"(
       addi t3, t3, 2
       addi t4, t4, 1
       slli t5, t4, 31
+      li t2, 31
+      sraw t5, t5, t2
+
+      li t2, 30
+      slli t6, t4, 30
+      sraw t6, t6, t2
+  )");
+EXPECT_EQ(getGeneralRegister<uint64_t>(30), -1);
+EXPECT_EQ(getGeneralRegister<uint64_t>(31), 1);
+
+RUN_RISCV(R"(
+      addi t3, t3, 2
+      addi t4, t4, 1
+      slli t5, t4, 31
       sraiw t5, t5, 31
       slli t6, t4, 30
       sraiw t6, t6, 30
@@ -148,16 +162,34 @@ EXPECT_EQ(getGeneralRegister<int64_t>(31), -5);
 }
 
 TEST_P(InstArithmetic, sub) {
-RUN_RISCV(R"(
+  RUN_RISCV(R"(
     addi t3, t3, 3
     addi t4, t4, 6
     sub t5, t3, t4
     sub t6, t4, t3
   )");
-EXPECT_EQ(getGeneralRegister<uint64_t>(30), -3);
-EXPECT_EQ(getGeneralRegister<uint64_t>(31), 3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), -3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 3);
+}
 
-// TODO SUBW
+TEST_P(InstArithmetic, subw) {
+  RUN_RISCV(R"(
+    addi t3, t3, 3
+    addi t4, t4, 6
+    subw t5, t3, t4
+    subw t6, t4, t3
+
+    li t3, -1
+    addi t4, t4, -8
+    subw t1, t3, t4
+
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), -3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 3);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0xFFFFFFFFFFFFFFFF);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), -2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000000000001);
 }
 
 TEST_P(InstArithmetic, lui) {
@@ -238,8 +270,6 @@ EXPECT_EQ(getGeneralRegister<uint64_t>(30), 1);
 EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0);
 EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
 EXPECT_EQ(getGeneralRegister<uint64_t>(7), 1);
-// TODO SNEZ
-//    stlu s0, x0, t1
 }
 
 TEST_P(InstArithmetic, slti) {
