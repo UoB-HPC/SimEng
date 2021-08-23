@@ -95,6 +95,8 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   static constexpr Register R1 = {RegisterType::GENERAL, 11};
   static constexpr Register R2 = {RegisterType::GENERAL, 12};
   static constexpr Register R3 = {RegisterType::GENERAL, 13};
+  static constexpr Register R4 = {RegisterType::GENERAL, 14};
+  static constexpr Register R5 = {RegisterType::GENERAL, 15};
 };
 
 }  // namespace aarch64
