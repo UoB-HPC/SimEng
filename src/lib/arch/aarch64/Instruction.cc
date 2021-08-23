@@ -121,9 +121,16 @@ bool Instruction::isSVE() const { return isSVEData_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
-  memoryData = std::vector<RegisterValue>(addresses.size());
+  memoryData.resize(addresses.size());
   memoryAddresses = addresses;
   dataPending_ = addresses.size();
+}
+
+void Instruction::setMemoryAddresses(
+    std::vector<MemoryAccessTarget>&& addresses) {
+  dataPending_ = addresses.size();
+  memoryData.resize(addresses.size());
+  memoryAddresses = std::move(addresses);
 }
 
 span<const MemoryAccessTarget> Instruction::getGeneratedAddresses() const {
