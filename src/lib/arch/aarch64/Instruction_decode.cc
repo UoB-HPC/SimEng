@@ -281,6 +281,12 @@ void Instruction::decode() {
       isLoad_ = true;
     }
 
+    // CASAL* are considered to be both a load and a store
+    if (metadata.opcode == Opcode::AArch64_CASALW ||
+        metadata.opcode == Opcode::AArch64_CASALX) {
+      isLoad_ = true;
+    }
+
     if (isStore_) {
       // Identify whether a store operation uses Z source registers
       if (ARM64_REG_Z0 <= metadata.operands[0].reg &&

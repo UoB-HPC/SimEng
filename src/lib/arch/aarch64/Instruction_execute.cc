@@ -713,6 +713,20 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
+    case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
+      const uint32_t s = operands[0].get<uint32_t>();
+      const uint32_t t = operands[1].get<uint32_t>();
+      const uint32_t n = memoryData[0].get<uint32_t>();
+      if (n == s) memoryData[0] = t;
+      break;
+    }
+    case Opcode::AArch64_CASALX: {  // casal xs, xt, [xn|sp]
+      const uint64_t s = operands[0].get<uint64_t>();
+      const uint64_t t = operands[1].get<uint64_t>();
+      const uint64_t n = memoryData[0].get<uint64_t>();
+      if (n == s) memoryData[0] = t;
+      break;
+    }
     case Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
       if (operands[0].get<uint32_t>() == 0) {
         branchTaken_ = false;

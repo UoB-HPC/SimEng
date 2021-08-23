@@ -12,6 +12,14 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
          "generateAddresses called on non-load-or-store instruction");
 
   switch (metadata.opcode) {
+    case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
+      setMemoryAddresses({{operands[2].get<uint64_t>(), 4}});
+      break;
+    }
+    case Opcode::AArch64_CASALX: {  // casal xs, xt, [xn|sp]
+      setMemoryAddresses({{operands[2].get<uint64_t>(), 8}});
+      break;
+    }
     case Opcode::AArch64_LD1i32: {  // ld1 {vt.s}[index], [xn]
       setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;
