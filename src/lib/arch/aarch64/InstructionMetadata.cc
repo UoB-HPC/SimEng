@@ -133,6 +133,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       operands[3].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_INDEX_II_B:
+      [[fallthrough]];
+    case Opcode::AArch64_INDEX_II_H:
+      [[fallthrough]];
+    case Opcode::AArch64_INDEX_II_S:
+      [[fallthrough]];
+    case Opcode::AArch64_INDEX_II_D:
+      [[fallthrough]];
     case Opcode::AArch64_FABS_ZPmZ_S:
       [[fallthrough]];
     case Opcode::AArch64_FADD_ZZZ_D:

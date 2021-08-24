@@ -2637,6 +2637,54 @@ void Instruction::execute() {
       results[0] = n + ((VL_bits / 32) * imm);
       break;
     }
+    case Opcode::AArch64_INDEX_II_B: {  // index zd.b, #imm, #imm
+      const int8_t imm1 = static_cast<int8_t>(metadata.operands[1].imm);
+      const int8_t imm2 = static_cast<int8_t>(metadata.operands[2].imm);
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      int8_t out[256] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint8_t>(imm1 + (i * imm2));
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_INDEX_II_H: {  // index zd.h, #imm, #imm
+      const int16_t imm1 = static_cast<int16_t>(metadata.operands[1].imm);
+      const int16_t imm2 = static_cast<int16_t>(metadata.operands[2].imm);
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      int16_t out[128] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint16_t>(imm1 + (i * imm2));
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_INDEX_II_S: {  // index zd.s, #imm, #imm
+      const int32_t imm1 = static_cast<int32_t>(metadata.operands[1].imm);
+      const int32_t imm2 = static_cast<int32_t>(metadata.operands[2].imm);
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      int32_t out[64] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint32_t>(imm1 + (i * imm2));
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_INDEX_II_D: {  // index zd.d, #imm, #imm
+      const int64_t imm1 = static_cast<int64_t>(metadata.operands[1].imm);
+      const int64_t imm2 = static_cast<int64_t>(metadata.operands[2].imm);
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      int64_t out[32] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint64_t>(imm1 + (i * imm2));
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_INSvi32lane: {  // ins vd.s[index1], vn.s[index2]
       const uint32_t* d = operands[0].getAsVector<uint32_t>();
       const uint32_t* n = operands[1].getAsVector<uint32_t>();
