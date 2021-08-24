@@ -4651,6 +4651,62 @@ void Instruction::execute() {
       results[0] = x - y;
       break;
     }
+    case Opcode::AArch64_SUB_ZZZ_B: {  // sub zd.b, zn.b, zm.b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint8_t* m = operands[1].getAsVector<uint8_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      uint8_t out[256] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint8_t>(n[i] - m[i]);
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_SUB_ZZZ_H: {  // sub zd.h, zn.h, zm.h
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      const uint16_t* m = operands[1].getAsVector<uint16_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint16_t out[128] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint16_t>(n[i] - m[i]);
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_SUB_ZZZ_S: {  // sub zd.s, zn.s, zm.s
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      const uint32_t* m = operands[1].getAsVector<uint32_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint32_t out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint32_t>(n[i] - m[i]);
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_SUB_ZZZ_D: {  // sub zd.d, zn.d, zm.d
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t* m = operands[1].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint64_t>(n[i] - m[i]);
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_SVC: {  // svc #imm
       exceptionEncountered_ = true;
       exception_ = InstructionException::SupervisorCall;
