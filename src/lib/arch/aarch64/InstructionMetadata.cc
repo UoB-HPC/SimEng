@@ -514,6 +514,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // XTN2 incorrectly flags destination as only WRITE
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       break;
+    case Opcode::AArch64_ZIP1_ZZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_ZIP1_ZZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_ZIP2_ZZZ_D:

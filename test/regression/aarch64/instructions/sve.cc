@@ -2728,6 +2728,7 @@ TEST_P(InstSve, zip) {
   // VL = 512-bits
   // d arrangement
   RUN_AARCH64(R"(
+    # 64-bit  
     fdup z0.d, #0.5
     fdup z1.d, #-0.5
     fdup z2.d, #0.75
@@ -2735,10 +2736,18 @@ TEST_P(InstSve, zip) {
 
     zip1 z4.d, z0.d, z1.d
     zip2 z5.d, z2.d, z3.d
+
+    #32-bit
+    fdup z6.s, #0.5
+    fdup z7.s, #-0.75
+    zip1 z8.s, z6.s, z7.s
   )");
 
   CHECK_NEON(4, double, {0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5});
   CHECK_NEON(5, double, {0.75, -0.75, 0.75, -0.75, 0.75, -0.75, 0.75, -0.75});
+  CHECK_NEON(8, float,
+             {0.5, -0.75, 0.5, -0.75, 0.5, -0.75, 0.5, -0.75, 0.5, -0.75, 0.5,
+              -0.75, 0.5, -0.75, 0.5, -0.75});
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstSve, ::testing::Values(EMULATION),
