@@ -5108,6 +5108,28 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_ZIP2_ZZZ_S: {  // zip2 zd.s, zn.s, zm.s
+      const float* n = operands[0].getAsVector<float>();
+      const float* m = operands[1].getAsVector<float>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      float out[64] = {0};
+
+      bool interleave = false;
+      int index = partition_num / 2;
+      for (int i = 0; i < partition_num; i++) {
+        if (interleave) {
+          out[i] = m[index];
+          index++;
+        } else {
+          out[i] = n[index];
+        }
+        interleave = !interleave;
+      }
+
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_ZIP2_ZZZ_D: {  // zip2 zd.d, zn.d, zm.d
       const double* n = operands[0].getAsVector<double>();
       const double* m = operands[1].getAsVector<double>();

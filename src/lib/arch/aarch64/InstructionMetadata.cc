@@ -518,6 +518,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_ZIP1_ZZZ_D:
       [[fallthrough]];
+    case Opcode::AArch64_ZIP2_ZZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_ZIP2_ZZZ_D:
       // ZIP lacks access types
       operands[0].access = CS_AC_WRITE;
