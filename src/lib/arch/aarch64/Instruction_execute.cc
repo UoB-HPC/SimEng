@@ -3790,6 +3790,102 @@ void Instruction::execute() {
       results[0] = bitfieldManipulate(source, UINT64_C(0), r, s, true);
       break;
     }
+    case Opcode::AArch64_SCVTF_ZPmZ_DtoD: {  // scvtf zd.d, pg/m, zn.d
+      const double* d = operands[0].getAsVector<double>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const int64_t* n = operands[2].getAsVector<int64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      double out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active) {
+          if (n[i] < std::numeric_limits<double>::lowest())
+            out[i] = std::numeric_limits<double>::lowest();
+          else if (n[i] > std::numeric_limits<double>::max())
+            out[i] = std::numeric_limits<double>::max();
+          else
+            out[i] = static_cast<double>(n[i]);
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_SCVTF_ZPmZ_DtoS: {  // scvtf zd.s, pg/m, zn.d
+      const float* d = operands[0].getAsVector<float>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const int64_t* n = operands[2].getAsVector<int64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      float out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active) {
+          if (n[i] > std::numeric_limits<float>::max())
+            out[(2 * i)] = std::numeric_limits<float>::max();
+          else if (n[i] < std::numeric_limits<float>::lowest())
+            out[(2 * i)] = std::numeric_limits<float>::lowest();
+          else
+            out[(2 * i)] = static_cast<float>(n[i]);
+        } else {
+          out[(2 * i)] = d[(2 * i)];
+        }
+        out[(2 * i) + 1] = d[(2 * i) + 1];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_SCVTF_ZPmZ_StoD: {  // scvtf zd.d, pg/m, zn.s
+      const double* d = operands[0].getAsVector<double>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const int32_t* n = operands[2].getAsVector<int32_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      double out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active) {
+          out[i] = static_cast<double>(n[(2 * i)]);
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_SCVTF_ZPmZ_StoS: {  // scvtf zd.s, pg/m, zn.s
+      const float* d = operands[0].getAsVector<float>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const int32_t* n = operands[2].getAsVector<int32_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      float out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 4));
+        if (p[i / 16] & shifted_active) {
+          if (n[i] < std::numeric_limits<float>::lowest())
+            out[i] = std::numeric_limits<float>::lowest();
+          else if (n[i] > std::numeric_limits<float>::max())
+            out[i] = std::numeric_limits<float>::max();
+          else
+            out[i] = static_cast<float>(n[i]);
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_SCVTFUWDri: {  // scvtf dd, wn
       results[0] =
           RegisterValue(static_cast<double>(operands[0].get<int32_t>()), 256);

@@ -526,6 +526,18 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_SCVTF_ZPmZ_DtoS:
+      [[fallthrough]];
+    case Opcode::AArch64_SCVTF_ZPmZ_StoD:
+      [[fallthrough]];
+    case Opcode::AArch64_SCVTF_ZPmZ_StoS:
+      [[fallthrough]];
+    case Opcode::AArch64_SCVTF_ZPmZ_DtoD:
+      // Need to see if Destination vector elements are active
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
   }
 
   revertAliasing();

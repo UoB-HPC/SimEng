@@ -1872,6 +1872,55 @@ TEST_P(InstSve, rdvl) {
   EXPECT_EQ(getGeneralRegister<int64_t>(4), 1984);
 }
 
+TEST_P(InstSve, scvtf) {
+  // VL = 512-bits
+  RUN_AARCH64(R"(
+    index z0.s, #-6, #0
+    index z1.s, #12, #14
+    index z2.d, #-5, #-9
+    index z3.d, #10, #10
+
+    ptrue p0.s
+    ptrue p1.d
+    mov x1, #8
+    whilelo p2.s, xzr, x1
+    whilelo p3.d, xzr, x1
+
+    # int64 -> double
+    scvtf z5.d, p1/m, z2.d
+    scvtf z6.d, p3/m, z3.d
+
+    # int64 -> float
+    scvtf z7.s, p1/m, z2.d
+    scvtf z8.s, p3/m, z3.d
+
+    # int32 -> double
+    scvtf z9.d, p0/m, z0.s
+    scvtf z10.d, p2/m, z1.s
+
+    # int32 -> float
+    scvtf z11.s, p0/m, z0.s
+    scvtf z12.s, p2/m, z1.s
+  )");
+  CHECK_NEON(5, double,
+             {-5.0, -14.0, -23.0, -32.0, -41.0, -50.0, -59.0, -68.0});
+  CHECK_NEON(6, double, {0xa, 0x14, 0x1e, 0x28, 0x32, 0x3c, 0x46, 0x50});
+  CHECK_NEON(7, float,
+             {-5.0f, 0x0, -14.0f, 0x0, -23.0f, 0x0, -32.0f, 0x0, -41.0f, 0x0,
+              -50.0f, 0x0, -59.0f, 0x0, -68.0f, 0x0});
+  CHECK_NEON(8, float,
+             {0xa, 0x0, 0x14, 0x0, 0x1e, 0x0, 0x28, 0x0, 0x32, 0x0, 0x3c, 0x0,
+              0x46, 0x0, 0x50, 0x0});
+  CHECK_NEON(9, double, {-6.0, -6.0, -6.0, -6.0, -6.0, -6.0, -6.0, -6.0});
+  CHECK_NEON(10, double, {0xc, 0x28, 0x44, 0x60, 0x0, 0x0, 0x0, 0x0});
+  CHECK_NEON(11, float,
+             {-6.0f, -6.0f, -6.0f, -6.0f, -6.0f, -6.0f, -6.0f, -6.0f, -6.0f,
+              -6.0f, -6.0f, -6.0f, -6.0f, -6.0f, -6.0f, -6.0f});
+  CHECK_NEON(12, float,
+             {0xc, 0x1a, 0x28, 0x36, 0x44, 0x52, 0x60, 0x6e, 0x0, 0x0, 0x0, 0x0,
+              0x0, 0x0, 0x0, 0x0});
+}
+
 TEST_P(InstSve, sel) {
   // VL = 512-bits
   // 64-bit
