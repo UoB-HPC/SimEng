@@ -265,10 +265,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_INCD_ZPiI:
+      [[fallthrough]];
+    case Opcode::AArch64_INCH_ZPiI:
+      [[fallthrough]];
     case Opcode::AArch64_INCW_ZPiI: {
       // lacking access specifiers for destination
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
-      if (operandStr.length() < 5) {
+      if (operandStr.length() < 6) {
         operandCount = 2;
         operands[1].type = ARM64_OP_IMM;
         operands[1].imm = 1;
@@ -840,6 +844,7 @@ void InstructionMetadata::revertAliasing() {
       if (opcode == Opcode::AArch64_DUPM_ZI ||
           opcode == Opcode::AArch64_DUP_ZI_B ||
           opcode == Opcode::AArch64_DUP_ZI_D ||
+          opcode == Opcode::AArch64_DUP_ZI_H ||
           opcode == Opcode::AArch64_DUP_ZI_S) {
         // mov Zd.T, #imm; alias for dupm Zd.T, #imm
         // or

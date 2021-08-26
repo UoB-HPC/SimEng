@@ -1064,6 +1064,20 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_DUP_ZI_H: {  // dup zd.h, #imm{, shift}
+      const int8_t imm = static_cast<int8_t>(metadata.operands[1].imm);
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      int16_t out[128] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = imm;
+      }
+
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_DUP_ZI_S: {  // dup zd.s, #imm{, shift}
       const int8_t imm = static_cast<int8_t>(metadata.operands[1].imm);
 
@@ -2681,6 +2695,30 @@ void Instruction::execute() {
       int32_t out[64] = {0};
       for (int i = 0; i < partition_num; i++) {
         out[i] = n[i] + ((VL_bits / 32) * imm);
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_INCD_ZPiI: {  // incd zdn.d{, pattern{, #imm}}
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      int64_t out[32] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = n[i] + ((VL_bits / 64) * imm);
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_INCH_ZPiI: {  // inch zdn.h{, pattern{, #imm}}
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      int16_t out[128] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = n[i] + ((VL_bits / 16) * imm);
       }
       results[0] = out;
       break;
