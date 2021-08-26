@@ -1,3 +1,5 @@
+#include <limits>
+
 #include "AArch64RegressionTest.hh"
 
 namespace {
@@ -1919,6 +1921,117 @@ TEST_P(InstSve, scvtf) {
   CHECK_NEON(12, float,
              {0xc, 0x1a, 0x28, 0x36, 0x44, 0x52, 0x60, 0x6e, 0x0, 0x0, 0x0, 0x0,
               0x0, 0x0, 0x0, 0x0});
+
+  // Boundary tests
+  // Double
+  initialHeapData_.resize(32);
+  int64_t* dheap = reinterpret_cast<int64_t*>(initialHeapData_.data());
+  dheap[0] = INT64_MAX;
+  dheap[1] = INT64_MIN;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ptrue p0.d
+    
+    mov x1, #8
+    whilelo p1.d, xzr, x1
+
+    ldr x2, [x0]
+    ldr x3, [x0, #8]
+
+    dup z0.d, x2
+    dup z1.d, x3
+
+    # int64 -> double
+    scvtf z2.d, p0/m, z0.d
+    scvtf z3.d, p1/m, z1.d
+
+    # int64 -> single
+    scvtf z4.s, p0/m, z0.d
+    scvtf z5.s, p1/m, z1.d
+  )");
+  CHECK_NEON(2, double,
+             {static_cast<double>(INT64_MAX), static_cast<double>(INT64_MAX),
+              static_cast<double>(INT64_MAX), static_cast<double>(INT64_MAX),
+              static_cast<double>(INT64_MAX), static_cast<double>(INT64_MAX),
+              static_cast<double>(INT64_MAX), static_cast<double>(INT64_MAX)});
+  CHECK_NEON(3, double,
+             {static_cast<double>(INT64_MIN), static_cast<double>(INT64_MIN),
+              static_cast<double>(INT64_MIN), static_cast<double>(INT64_MIN),
+              static_cast<double>(INT64_MIN), static_cast<double>(INT64_MIN),
+              static_cast<double>(INT64_MIN), static_cast<double>(INT64_MIN)});
+  CHECK_NEON(
+      4, float,
+      {static_cast<float>(INT64_MAX), 0.0f, static_cast<float>(INT64_MAX), 0.0f,
+       static_cast<float>(INT64_MAX), 0.0f, static_cast<float>(INT64_MAX), 0.0f,
+       static_cast<float>(INT64_MAX), 0.0f, static_cast<float>(INT64_MAX), 0.0f,
+       static_cast<float>(INT64_MAX), 0.0f, static_cast<float>(INT64_MAX),
+       0.0f});
+  CHECK_NEON(
+      5, float,
+      {static_cast<float>(INT64_MIN), 0.0f, static_cast<float>(INT64_MIN), 0.0f,
+       static_cast<float>(INT64_MIN), 0.0f, static_cast<float>(INT64_MIN), 0.0f,
+       static_cast<float>(INT64_MIN), 0.0f, static_cast<float>(INT64_MIN), 0.0f,
+       static_cast<float>(INT64_MIN), 0.0f, static_cast<float>(INT64_MIN),
+       0.0f});
+
+  // Single
+  initialHeapData_.resize(32);
+  int32_t* fheap = reinterpret_cast<int32_t*>(initialHeapData_.data());
+  fheap[0] = INT32_MAX;
+  fheap[1] = INT32_MIN;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ptrue p0.s
+    
+    mov x1, #8
+    whilelo p1.s, xzr, x1
+
+    ldr w2, [x0]
+    ldr w3, [x0, #4]
+
+    dup z0.s, w2
+    dup z1.s, w3
+
+    # int32 -> double
+    scvtf z2.d, p0/m, z0.s
+    scvtf z3.d, p1/m, z1.s
+
+    # int32 -> single
+    scvtf z4.s, p0/m, z0.s
+    scvtf z5.s, p1/m, z1.s
+  )");
+  CHECK_NEON(2, double,
+             {static_cast<double>(INT32_MAX), static_cast<double>(INT32_MAX),
+              static_cast<double>(INT32_MAX), static_cast<double>(INT32_MAX),
+              static_cast<double>(INT32_MAX), static_cast<double>(INT32_MAX),
+              static_cast<double>(INT32_MAX), static_cast<double>(INT32_MAX)});
+  CHECK_NEON(3, double,
+             {static_cast<double>(INT32_MIN), static_cast<double>(INT32_MIN),
+              static_cast<double>(INT32_MIN), static_cast<double>(INT32_MIN),
+              0.0, 0.0, 0.0, 0.0});
+  CHECK_NEON(4, float,
+             {static_cast<float>(INT32_MAX), static_cast<float>(INT32_MAX),
+              static_cast<float>(INT32_MAX), static_cast<float>(INT32_MAX),
+              static_cast<float>(INT32_MAX), static_cast<float>(INT32_MAX),
+              static_cast<float>(INT32_MAX), static_cast<float>(INT32_MAX),
+              static_cast<float>(INT32_MAX), static_cast<float>(INT32_MAX),
+              static_cast<float>(INT32_MAX), static_cast<float>(INT32_MAX),
+              static_cast<float>(INT32_MAX), static_cast<float>(INT32_MAX),
+              static_cast<float>(INT32_MAX), static_cast<float>(INT32_MAX)});
+  CHECK_NEON(5, float,
+             {static_cast<float>(INT32_MIN), static_cast<float>(INT32_MIN),
+              static_cast<float>(INT32_MIN), static_cast<float>(INT32_MIN),
+              static_cast<float>(INT32_MIN), static_cast<float>(INT32_MIN),
+              static_cast<float>(INT32_MIN), static_cast<float>(INT32_MIN),
+              0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
 }
 
 TEST_P(InstSve, sel) {

@@ -1092,6 +1092,20 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_DUP_ZR_D: {  // dup zd.d, xn
+      const int64_t n = operands[0].get<int64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      int64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = n;
+      }
+
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_DUP_ZZI_D: {  // dup zd.d, zn.d[#imm]
       const uint8_t index =
           static_cast<uint8_t>(metadata.operands[1].vector_index);
@@ -3802,9 +3816,10 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
         if (p[i / 8] & shifted_active) {
-          if (n[i] < std::numeric_limits<double>::lowest())
+          if (static_cast<double>(n[i]) < std::numeric_limits<double>::lowest())
             out[i] = std::numeric_limits<double>::lowest();
-          else if (n[i] > std::numeric_limits<double>::max())
+          else if (static_cast<double>(n[i]) >
+                   std::numeric_limits<double>::max())
             out[i] = std::numeric_limits<double>::max();
           else
             out[i] = static_cast<double>(n[i]);
@@ -3827,9 +3842,10 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
         if (p[i / 8] & shifted_active) {
-          if (n[i] > std::numeric_limits<float>::max())
+          if (static_cast<float>(n[i]) > std::numeric_limits<float>::max())
             out[(2 * i)] = std::numeric_limits<float>::max();
-          else if (n[i] < std::numeric_limits<float>::lowest())
+          else if (static_cast<float>(n[i]) <
+                   std::numeric_limits<float>::lowest())
             out[(2 * i)] = std::numeric_limits<float>::lowest();
           else
             out[(2 * i)] = static_cast<float>(n[i]);
@@ -3853,7 +3869,14 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 8));
         if (p[i / 8] & shifted_active) {
-          out[i] = static_cast<double>(n[(2 * i)]);
+          if (static_cast<double>(n[(2 * i)]) >
+              std::numeric_limits<double>::max())
+            out[i] = std::numeric_limits<double>::max();
+          else if (static_cast<double>(n[(2 * i)]) <
+                   std::numeric_limits<double>::lowest())
+            out[i] = std::numeric_limits<double>::lowest();
+          else
+            out[i] = static_cast<double>(n[(2 * i)]);
         } else {
           out[i] = d[i];
         }
@@ -3873,9 +3896,9 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = std::pow(2, (i * 4));
         if (p[i / 16] & shifted_active) {
-          if (n[i] < std::numeric_limits<float>::lowest())
+          if (static_cast<float>(n[i]) < std::numeric_limits<float>::lowest())
             out[i] = std::numeric_limits<float>::lowest();
-          else if (n[i] > std::numeric_limits<float>::max())
+          else if (static_cast<float>(n[i]) > std::numeric_limits<float>::max())
             out[i] = std::numeric_limits<float>::max();
           else
             out[i] = static_cast<float>(n[i]);

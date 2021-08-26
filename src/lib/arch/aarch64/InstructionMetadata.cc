@@ -879,7 +879,8 @@ void InstructionMetadata::revertAliasing() {
 
         return;
       }
-      if (opcode == Opcode::AArch64_DUP_ZR_S) {
+      if (opcode == Opcode::AArch64_DUP_ZR_S ||
+          opcode == Opcode::AArch64_DUP_ZR_D) {
         // mov Zd.T, <rn|sp>; alias for dup Zd.T, <rn|sp>
         operands[0].access = CS_AC_WRITE;
         operands[0].vas = ARM64_VAS_1S;
