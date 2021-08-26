@@ -316,6 +316,11 @@ TEST_P(InstSve, inc) {
     incd x5, all, mul #3
     inch x6, all, mul #3
     incw x7, all, mul #3
+
+    dup z0.s, #15
+    dup z1.s, #37
+    incw z0.s
+    incw z1.s, all, mul #3
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 128);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 204);
@@ -325,6 +330,11 @@ TEST_P(InstSve, inc) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 220);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 192);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 176);
+
+  CHECK_NEON(0, int32_t,
+             {31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31, 31});
+  CHECK_NEON(1, int32_t,
+             {85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85, 85});
 }
 
 TEST_P(InstSve, fabs) {

@@ -265,6 +265,20 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_INCW_ZPiI: {
+      // lacking access specifiers for destination
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      if (operandStr.length() < 5) {
+        operandCount = 2;
+        operands[1].type = ARM64_OP_IMM;
+        operands[1].imm = 1;
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_INVALID, 0};
+        operands[1].ext = ARM64_EXT_INVALID;
+        operands[1].vector_index = -1;
+      }
+      break;
+    }
     case Opcode::AArch64_LD1i32:
       [[fallthrough]];
     case Opcode::AArch64_LD1i64:

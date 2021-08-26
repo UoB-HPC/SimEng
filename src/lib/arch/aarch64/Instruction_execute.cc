@@ -2673,6 +2673,18 @@ void Instruction::execute() {
       results[0] = n + ((VL_bits / 32) * imm);
       break;
     }
+    case Opcode::AArch64_INCW_ZPiI: {  // incw zdn.s{, pattern{, #imm}}
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      int32_t out[64] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = n[i] + ((VL_bits / 32) * imm);
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_INDEX_II_B: {  // index zd.b, #imm, #imm
       const int8_t imm1 = static_cast<int8_t>(metadata.operands[1].imm);
       const int8_t imm2 = static_cast<int8_t>(metadata.operands[2].imm);
