@@ -861,6 +861,49 @@ TEST_P(InstSve, fmad) {
              {-33.71f, -3.54907989502f, -0.125f, 0.0f, -5019.2142f,
               -677.872741699f, -105.4350113f, 862.88f, -34.71f, -0.917f, 0.0f,
               80.72f, -125.67f, -0.01f, 701.90f, 7.0f});
+
+  // double
+  initialHeapData_.resize(136);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = -42.76;
+  dheap[2] = -0.125;
+  dheap[3] = 0.0;
+  dheap[4] = 40.26;
+  dheap[5] = -684.72;
+  dheap[6] = -0.15;
+  dheap[7] = 107.86;
+
+  dheap[8] = -34.71;
+  dheap[9] = -0.917;
+  dheap[10] = 0.0;
+  dheap[11] = 80.72;
+  dheap[12] = -125.67;
+  dheap[13] = -0.01;
+  dheap[14] = 701.90;
+  dheap[15] = 7.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #8
+    whilelo p0.d, xzr, x2
+    ptrue p1.d
+
+    ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
+    ld1d {z2.d}, p1/z, [x0, x1, lsl #3]
+
+    fmad z2.d, p0/m, z1.d, z0.d
+  )");
+
+  CHECK_NEON(2, double,
+             {-33.71, -3.54907989502, -0.125, 0.0, -5019.2142, -677.872741699,
+              -105.4350113, 862.88});
 }
 
 TEST_P(InstSve, fmla) {
