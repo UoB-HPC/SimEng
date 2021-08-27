@@ -83,6 +83,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_CNTH_XPiI:
       [[fallthrough]];
+    case Opcode::AArch64_CNTD_XPiI:
+      [[fallthrough]];
     case Opcode::AArch64_CNTW_XPiI: {
       // lacking access specifiers for destination
       operands[0].access = CS_AC_WRITE;

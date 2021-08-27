@@ -107,16 +107,20 @@ TEST_P(InstSve, cnt) {
     cntb x0
     cnth x1
     cntw x2
-    cntb x3, all, mul #3
-    cnth x4, all, mul #3
-    cntw x5, all, mul #3
+    cntd x3
+    cntb x4, all, mul #3
+    cnth x5, all, mul #3
+    cntw x6, all, mul #3
+    cntd x7, all, mul #3
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 64);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 32);
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 16);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 192);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 96);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 48);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 8);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 192);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 96);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 48);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 24);
 }
 
 TEST_P(InstSve, dec) {

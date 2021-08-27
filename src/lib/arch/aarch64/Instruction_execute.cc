@@ -926,6 +926,12 @@ void Instruction::execute() {
       results[0] = (VL_bits / 16) * imm;
       break;
     }
+    case Opcode::AArch64_CNTD_XPiI: {  // cntd xd{, pattern{, #imm}}
+      const uint64_t VL_bits = 512;
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = (VL_bits / 64) * imm;
+      break;
+    }
     case Opcode::AArch64_CNTW_XPiI: {  // cntw xd{, pattern{, #imm}}
       const uint64_t VL_bits = 512;
       const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
