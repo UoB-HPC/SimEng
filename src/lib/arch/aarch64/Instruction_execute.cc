@@ -3632,6 +3632,46 @@ void Instruction::execute() {
       results[0] = value;
       break;
     }
+    case Opcode::AArch64_MOVPRFX_ZPzZ_D: {  // movprfx zd.d, pg/z, zn.d
+      // TODO: Adopt hint logic of the MOVPRFX instruction
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const uint64_t* n = operands[1].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active)
+          out[i] = n[i];
+        else
+          out[i] = 0;
+      }
+
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_MOVPRFX_ZPzZ_S: {  // movprfx zd.s, pg/z, zn.s
+      // TODO: Adopt hint logic of the MOVPRFX instruction
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const uint32_t* n = operands[1].getAsVector<uint32_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint32_t out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 4));
+        if (p[i / 16] & shifted_active)
+          out[i] = n[i];
+        else
+          out[i] = 0;
+      }
+
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_MOVPRFX_ZZ: {  // movprfx zd, zn
       // TODO: Adopt hint logic of the MOVPRFX instruction
       results[0] = operands[0];

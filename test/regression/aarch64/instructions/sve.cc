@@ -1972,6 +1972,7 @@ TEST_P(InstSve, lsl) {
 
 TEST_P(InstSve, movprfx) {
   // VL = 512-bits
+  // Non-predicated
   RUN_AARCH64(R"(
     fdup z0.s, #7
     fdup z1.s, #-7
@@ -2001,6 +2002,27 @@ TEST_P(InstSve, movprfx) {
   CHECK_NEON(5, double, {14, 14, 14, 14, 14, 14, 14, 14});
   CHECK_NEON(6, float,
              {91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91, 91});
+
+  // Predicated
+  RUN_AARCH64(R"(
+    mov x1, #8
+    whilelo p0.s, xzr, x1
+    whilelo p1.d, xzr, x1
+
+    dup z0.s, #9
+    dup z1.d, #5
+
+    dup z2.s, #0
+    dup z3.d, #0
+
+    movprfx z4.s, p0/z, z0.s
+    fmla z4.s, p0/m, z2.s, z2.s
+    movprfx z5.d, p1/z, z1.d
+    fmla z5.d, p1/m, z3.d, z3.d
+  )");
+  CHECK_NEON(4, uint32_t,
+             {9u, 9u, 9u, 9u, 9u, 9u, 9u, 9u, 0, 0, 0, 0, 0, 0, 0, 0});
+  CHECK_NEON(5, uint64_t, {5u, 5u, 5u, 5u, 5u, 5u, 5u, 5u});
 }
 
 TEST_P(InstSve, orr) {
