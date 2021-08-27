@@ -207,6 +207,24 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
       break;
     }
+    case Opcode::AArch64_FADD_ZPmI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FADD_ZPmI_S:
+      // No defined access types
+      operandCount = 4;
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].type = ARM64_OP_FP;
+      operands[3].access = CS_AC_READ;
+      // Doesn't recognise immediate operands
+      // Extract two possible values, 0.5 or 2.0
+      if (operandStr.substr(operandStr.length() - 1, 1) == "5") {
+        operands[3].fp = 0.5f;
+      } else {
+        operands[3].fp = 1.0f;
+      }
+      break;
     case Opcode::AArch64_AND_PPzPP:
       [[fallthrough]];
     case Opcode::AArch64_FADD_ZPmZ_D:

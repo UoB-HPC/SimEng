@@ -502,11 +502,18 @@ TEST_P(InstSve, fadd) {
 
     fadd z2.d, z1.d, z0.d
     fadd z4.d, p0/m, z4.d, z3.d
+
+    # FADD with constant
+    ld1d {z5.d}, p1/z, [x0, x3, lsl #3]
+    fadd z5.d, p0/m, z5.d, z3.d
+    fadd z5.d, p0/m, z5.d, 0.5
   )");
 
   CHECK_NEON(2, double, {-33.71, -43.677, -0.125, 80.72, 0, 0, 0, 0});
   CHECK_NEON(4, double,
              {-33.71, -43.677, -0.125, 80.72, -125.67, -0.01, 701.90, 7.0});
+  CHECK_NEON(5, double,
+             {-33.21, -43.177, 0.375, 81.22, -125.67, -0.01, 701.90, 7.0});
 
   // float
   initialHeapData_.resize(68);
@@ -543,11 +550,20 @@ TEST_P(InstSve, fadd) {
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
 
     fadd z2.s, z1.s, z0.s
+
+    # FADD with constant
+    ptrue p1.s
+    ld1w {z3.s}, p0/z, [x0, x2, lsl #2]
+    fadd z3.s, z1.s, z0.s
+    fadd z3.s, p1/m, z3.s, 0.5
   )");
 
   CHECK_NEON(2, float,
              {-33.71f, -43.677f, -0.125f, 80.72f, -85.41f, -684.73f, 701.75f,
               114.86f, 0, 0, 0, 0, 0, 0, 0, 0});
+  CHECK_NEON(3, float,
+             {-33.21f, -43.177f, 0.375f, 81.22f, -84.91f, -684.23f, 702.25f,
+              115.36f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f});
 }
 
 TEST_P(InstSve, fadda) {

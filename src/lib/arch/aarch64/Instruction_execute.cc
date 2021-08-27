@@ -1440,6 +1440,46 @@ void Instruction::execute() {
       executionNYI();
       break;
     }
+    case Opcode::AArch64_FADD_ZPmI_D: {  // fadd zdn.d, pg/m, zdn.d, const
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const double* d = operands[1].getAsVector<double>();
+      const float con = metadata.operands[3].fp;
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      double out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active)
+          out[i] = d[i] + con;
+        else
+          out[i] = d[i];
+      }
+
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FADD_ZPmI_S: {  // fadd zdn.s, pg/m, zdn.s, const
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const float* d = operands[1].getAsVector<float>();
+      const float con = metadata.operands[3].fp;
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      float out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 4));
+        if (p[i / 16] & shifted_active)
+          out[i] = d[i] + con;
+        else
+          out[i] = d[i];
+      }
+
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FADD_ZPmZ_D: {  // fadd zdn.d, pg/m, zdn.d, zm.d
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
       const double* b = operands[1].getAsVector<double>();
