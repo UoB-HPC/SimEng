@@ -1,7 +1,10 @@
 #pragma once
 
 #include <deque>
+#include <initializer_list>
 #include <queue>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
@@ -121,6 +124,10 @@ class DispatchIssueUnit {
    * operand. For a register `{type,tag}`, the vector of dependents may be found
    * at `dependencyMatrix[type][tag]`. */
   std::vector<std::vector<std::vector<dependencyEntry>>> dependencyMatrix_;
+
+  /** A map to collect flushed instructions for each reservation station. */
+  std::unordered_map<uint8_t, std::unordered_set<std::shared_ptr<Instruction>>>
+      flushed_;
 
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;

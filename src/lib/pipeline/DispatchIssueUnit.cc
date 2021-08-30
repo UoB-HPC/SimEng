@@ -46,6 +46,8 @@ DispatchIssueUnit::DispatchIssueUnit(
     reservationStations_[RS.first].ports[port_index].issuePort = port;
   }
   dispatches.resize(reservationStations_.size());
+  for (uint8_t i = 0; i < reservationStations_.size(); i++)
+    flushed_.emplace(i, std::initializer_list<std::shared_ptr<Instruction>>{});
 }
 
 void DispatchIssueUnit::tick() {
@@ -218,9 +220,7 @@ void DispatchIssueUnit::purgeFlushed() {
   }
 
   // Collect flushed instructions and remove them from the dependency matrix
-  std::vector<std::unordered_set<std::shared_ptr<Instruction>>> flushed(
-      reservationStations_.size(),
-      std::unordered_set<std::shared_ptr<Instruction>>());
+  for (auto& it : flushed_) it.second.clear();
   for (auto& registerType : dependencyMatrix_) {
     for (auto& dependencyList : registerType) {
       auto it = dependencyList.begin();
@@ -228,8 +228,8 @@ void DispatchIssueUnit::purgeFlushed() {
         auto& entry = *it;
         if (entry.uop->isFlushed()) {
           auto rsIndex = portMapping_[entry.port].first;
-          if (!flushed[rsIndex].count(entry.uop)) {
-            flushed[rsIndex].insert(entry.uop);
+          if (!flushed_[rsIndex].count(entry.uop)) {
+            flushed_[rsIndex].insert(entry.uop);
             portAllocator_.deallocate(entry.port);
           }
           it = dependencyList.erase(it);
@@ -241,9 +241,9 @@ void DispatchIssueUnit::purgeFlushed() {
   }
 
   // Update reservation station size
-  for (int i = 0; i < reservationStations_.size(); i++) {
-    assert(reservationStations_[i].currentSize >= flushed[i].size());
-    reservationStations_[i].currentSize -= flushed[i].size();
+  for (uint8_t i = 0; i < reservationStations_.size(); i++) {
+    assert(reservationStations_[i].currentSize >= flushed_[i].size());
+    reservationStations_[i].currentSize -= flushed_[i].size();
   }
 }
 
