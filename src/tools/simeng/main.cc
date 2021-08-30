@@ -262,6 +262,7 @@ int main(int argc, char** argv) {
 ////        0xfe9912e3,  //        	bne	s2,s1,1055c
 //        0x1ce426af,  //          sc.w.aq a3, a4, (s0)
 //        0x100427af,  //          lr.w a5, (s0)
+        0x0055232f,  //        	amoadd.w	t1,t0,(a0)
         0x0807a02f,  //          amoswap.w zero, zero, (a5)
         0x00000073,  //          ecall
         0x000f0f83,      //           lb t6, 0(t5)

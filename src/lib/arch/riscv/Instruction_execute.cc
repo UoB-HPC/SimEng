@@ -464,7 +464,6 @@ void Instruction::execute() {
       }
       break;
     } case Opcode::RISCV_BLTU: {
-//      std::cout << "BLTU" << std::endl;
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       if (rs1 < rs2) {
@@ -476,7 +475,6 @@ void Instruction::execute() {
       }
       break;
     } case Opcode::RISCV_BGE: {
-//      std::cout << "BGE" << std::endl;
       const int64_t rs1 = operands[0].get<int64_t>();
       const int64_t rs2 = operands[1].get<int64_t>();
       if (rs1 >= rs2) {
@@ -504,9 +502,7 @@ void Instruction::execute() {
       results[0] = instructionAddress_ + 4;
       break;
     } case Opcode::RISCV_JALR: {
-//      std::cout << "rs1:" << operands[0].get<uint64_t>() << "imm:" << metadata.operands[2].imm << std::endl;
       branchAddress_ = (operands[0].get<uint64_t>() + metadata.operands[2].imm) & ~1; // Set LSB of result to 0
-//      std::cout << "branchAddr:" << static_cast<int64_t>(branchAddress_) << std::endl;
       branchTaken_ = true; // TODO Jumps should not need the branch predictor
       results[0] = instructionAddress_ + 4;
       break;
@@ -525,48 +521,214 @@ void Instruction::execute() {
 
       // Atomic Extension
       // TODO not implemented atomically
-    case Opcode::RISCV_LR_W: {
+    case Opcode::RISCV_LR_W:
+    case Opcode::RISCV_LR_W_AQ:
+    case Opcode::RISCV_LR_W_RL:
+    case Opcode::RISCV_LR_W_AQ_RL: {
       // TODO set "reservation set" in memory, currently not needed as all codes
       //  are single threaded
+      // TODO check that address is naturally aligned to operand size,
+      //  if not raise address-misaligned/access-fault exception
+      // TODO use aq and rl bits to prevent reordering with other memory operations
       results[0] = bitExtend(memoryData[0].get<uint32_t>(), 32);
       break;
-    } case Opcode::RISCV_SC_W_AQ: {
+    }
+    case Opcode::RISCV_LR_D:
+    case Opcode::RISCV_LR_D_AQ:
+    case Opcode::RISCV_LR_D_RL:
+    case Opcode::RISCV_LR_D_AQ_RL: {
+      results[0] = memoryData[0].get<uint64_t>();
+      break;
+    }
+    case Opcode::RISCV_SC_W:
+    case Opcode::RISCV_SC_W_AQ:
+    case Opcode::RISCV_SC_W_RL:
+    case Opcode::RISCV_SC_W_AQ_RL:
+    case Opcode::RISCV_SC_D:
+    case Opcode::RISCV_SC_D_AQ:
+    case Opcode::RISCV_SC_D_RL:
+    case Opcode::RISCV_SC_D_AQ_RL: {
       // TODO check "reservation set" hasn't been written to before performing store
       // TODO write rd correctly based on whether sc succeeds
+      // TODO check that address is naturally aligned to operand size,
+      //  if not raise address-misaligned/access-fault exception
+      // TODO use aq and rl bits to prevent reordering with other memory operations
       memoryData[0] = operands[0];
       results[0] = static_cast<uint64_t>(0);
       break;
     }
     case Opcode::RISCV_AMOSWAP_W:
-//    case Opcode::RISCV_AMOSWAP_W_AQ:
-//    case Opcode::RISCV_AMOSWAP_W_RL:
-//    case Opcode::RISCV_AMOSWAP_W_AQ_RL:
+    case Opcode::RISCV_AMOSWAP_W_AQ:
+    case Opcode::RISCV_AMOSWAP_W_RL:
+    case Opcode::RISCV_AMOSWAP_W_AQ_RL:
     {
       // Load memory at address rs1 into rd
       // Swap rd and rs2
       // Store rd to memory at address rs1
       // TODO raise address misaligned or access-fault errors
       // TODO account for AQ and RL bits
-//      std::cout << "amoswap" << ">>" << operands[0].get<uint64_t>() << std::endl;
       int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
       int32_t rs2 = operands[0].get<int32_t>();
       results[0] = rd;
-//      results[1] = rs2;
       memoryData[0] = rs2;
-//      std::cout << std::hex << rd << std::dec << ":" << rs2 << ":" << operands[1].get<uint64_t>() << std::endl;
+      break;
+    }
+    case Opcode::RISCV_AMOSWAP_D:
+    case Opcode::RISCV_AMOSWAP_D_AQ:
+    case Opcode::RISCV_AMOSWAP_D_RL:
+    case Opcode::RISCV_AMOSWAP_D_AQ_RL:
+    {
+      uint64_t rd = memoryData[0].get<uint64_t>();
+      uint64_t rs2 = operands[0].get<uint64_t>();
+      results[0] = rd;
+      memoryData[0] = rs2;
+      break;
+    }
+    case Opcode::RISCV_AMOADD_W:
+    case Opcode::RISCV_AMOADD_W_AQ:
+    case Opcode::RISCV_AMOADD_W_RL:
+    case Opcode::RISCV_AMOADD_W_AQ_RL: {
+      int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
+      results[0] = rd;
+      memoryData[0] = static_cast<int32_t>(rd + operands[0].get<int64_t>());
+      break;
+    }
+    case Opcode::RISCV_AMOADD_D:
+    case Opcode::RISCV_AMOADD_D_AQ:
+    case Opcode::RISCV_AMOADD_D_RL:
+    case Opcode::RISCV_AMOADD_D_AQ_RL: {
+      int64_t rd = memoryData[0].get<uint64_t>();
+      results[0] = rd;
+      memoryData[0] = static_cast<int64_t>(rd + operands[0].get<int64_t>());
+      break;
+    }
+    case Opcode::RISCV_AMOAND_W:
+    case Opcode::RISCV_AMOAND_W_AQ:
+    case Opcode::RISCV_AMOAND_W_RL:
+    case Opcode::RISCV_AMOAND_W_AQ_RL: {
+      int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
+      results[0] = rd;
+      memoryData[0] = static_cast<int32_t>(rd & operands[0].get<int64_t>());
+      break;
+    }
+    case Opcode::RISCV_AMOAND_D:
+    case Opcode::RISCV_AMOAND_D_AQ:
+    case Opcode::RISCV_AMOAND_D_RL:
+    case Opcode::RISCV_AMOAND_D_AQ_RL: {
+      int64_t rd = memoryData[0].get<uint64_t>();
+      results[0] = rd;
+      memoryData[0] = static_cast<int64_t>(rd & operands[0].get<int64_t>());
+      break;
+    }
+    case Opcode::RISCV_AMOOR_W:
+    case Opcode::RISCV_AMOOR_W_AQ:
+    case Opcode::RISCV_AMOOR_W_RL:
+    case Opcode::RISCV_AMOOR_W_AQ_RL: {
+      int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
+      results[0] = rd;
+      memoryData[0] = static_cast<int32_t>(rd | operands[0].get<int64_t>());
+      break;
+    }
+    case Opcode::RISCV_AMOOR_D:
+    case Opcode::RISCV_AMOOR_D_AQ:
+    case Opcode::RISCV_AMOOR_D_RL:
+    case Opcode::RISCV_AMOOR_D_AQ_RL: {
+      int64_t rd = memoryData[0].get<uint64_t>();
+      results[0] = rd;
+      memoryData[0] = static_cast<int64_t>(rd | operands[0].get<int64_t>());
+      break;
+    }
+    case Opcode::RISCV_AMOXOR_W:
+    case Opcode::RISCV_AMOXOR_W_AQ:
+    case Opcode::RISCV_AMOXOR_W_RL:
+    case Opcode::RISCV_AMOXOR_W_AQ_RL: {
+      int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
+      results[0] = rd;
+      memoryData[0] = static_cast<int32_t>(rd ^ operands[0].get<int64_t>());
+      break;
+    }
+    case Opcode::RISCV_AMOXOR_D:
+    case Opcode::RISCV_AMOXOR_D_AQ:
+    case Opcode::RISCV_AMOXOR_D_RL:
+    case Opcode::RISCV_AMOXOR_D_AQ_RL: {
+      int64_t rd = memoryData[0].get<uint64_t>();
+      results[0] = rd;
+      memoryData[0] = static_cast<int64_t>(rd ^ operands[0].get<int64_t>());
+      break;
+    }
+
+    case Opcode::RISCV_AMOMIN_W:
+    case Opcode::RISCV_AMOMIN_W_AQ:
+    case Opcode::RISCV_AMOMIN_W_RL:
+    case Opcode::RISCV_AMOMIN_W_AQ_RL: {
+      results[0] = signExtendW(memoryData[0].get<int32_t>());
+      memoryData[0] = std::min(memoryData[0].get<int32_t>(), operands[0].get<int32_t>());
+      break;
+    }
+    case Opcode::RISCV_AMOMIN_D:
+    case Opcode::RISCV_AMOMIN_D_AQ:
+    case Opcode::RISCV_AMOMIN_D_RL:
+    case Opcode::RISCV_AMOMIN_D_AQ_RL: {
+      int64_t rd = memoryData[0].get<int64_t>();
+      results[0] = rd;
+      memoryData[0] = static_cast<int64_t>(std::min(rd, operands[0].get<int64_t>()));
+      break;
+    }
+    case Opcode::RISCV_AMOMINU_W:
+    case Opcode::RISCV_AMOMINU_W_AQ:
+    case Opcode::RISCV_AMOMINU_W_RL:
+    case Opcode::RISCV_AMOMINU_W_AQ_RL: {
+      results[0] = signExtendW(memoryData[0].get<uint32_t>());
+      memoryData[0] = std::min(memoryData[0].get<uint32_t>(), operands[0].get<uint32_t>());
+      break;
+    }
+    case Opcode::RISCV_AMOMINU_D:
+    case Opcode::RISCV_AMOMINU_D_AQ:
+    case Opcode::RISCV_AMOMINU_D_RL:
+    case Opcode::RISCV_AMOMINU_D_AQ_RL: {
+      uint64_t rd = memoryData[0].get<uint64_t>();
+      results[0] = rd;
+      memoryData[0] = static_cast<uint64_t>(std::min(rd, operands[0].get<uint64_t>()));
+      break;
+    }
+
+    case Opcode::RISCV_AMOMAX_W:
+    case Opcode::RISCV_AMOMAX_W_AQ:
+    case Opcode::RISCV_AMOMAX_W_RL:
+    case Opcode::RISCV_AMOMAX_W_AQ_RL: {
+      results[0] = signExtendW(memoryData[0].get<int32_t>());
+      memoryData[0] = std::max(memoryData[0].get<int32_t>(), operands[0].get<int32_t>());
+      break;
+    }
+    case Opcode::RISCV_AMOMAX_D:
+    case Opcode::RISCV_AMOMAX_D_AQ:
+    case Opcode::RISCV_AMOMAX_D_RL:
+    case Opcode::RISCV_AMOMAX_D_AQ_RL: {
+      int64_t rd = memoryData[0].get<int64_t>();
+      results[0] = rd;
+      memoryData[0] = static_cast<int64_t>(std::max(rd, operands[0].get<int64_t>()));
+      break;
+    }
+    case Opcode::RISCV_AMOMAXU_W:
+    case Opcode::RISCV_AMOMAXU_W_AQ:
+    case Opcode::RISCV_AMOMAXU_W_RL:
+    case Opcode::RISCV_AMOMAXU_W_AQ_RL: {
+      results[0] = signExtendW(memoryData[0].get<uint32_t>());
+      memoryData[0] = std::max(memoryData[0].get<uint32_t>(), operands[0].get<uint32_t>());
+      break;
+    }
+    case Opcode::RISCV_AMOMAXU_D:
+    case Opcode::RISCV_AMOMAXU_D_AQ:
+    case Opcode::RISCV_AMOMAXU_D_RL:
+    case Opcode::RISCV_AMOMAXU_D_AQ_RL: {
+      uint64_t rd = memoryData[0].get<uint64_t>();
+      results[0] = rd;
+      memoryData[0] = static_cast<uint64_t>(std::max(rd, operands[0].get<uint64_t>()));
       break;
     }
     default:
       return executionNYI();
   }
-  // Zero-out upper bits of vector registers because Z configuration
-  // extend to 256 bytes whilst V configurations only extend to 16 bytes.
-  // Thus upper 240 bytes must be ignored by being set to 0.
-//  for (int i = 0; i < destinationRegisterCount; i++) {
-//    if ((destinationRegisters[i].type == RegisterType::VECTOR) && !isSVE_) {
-//      results[i] = results[i].zeroExtend(16, 256);
-//    }
-//  }
 }
 
 }  // namespace aarch64

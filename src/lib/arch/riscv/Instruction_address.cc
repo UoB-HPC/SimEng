@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 
 #include "InstructionMetadata.hh"
 #include "simeng/arch/riscv/Instruction.hh"
@@ -19,6 +20,20 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     address = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
   } else {
     address = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
+  }
+
+  // Atomics
+  if (Opcode::RISCV_AMOADD_D <= metadata.opcode && metadata.opcode <= Opcode::RISCV_AMOXOR_W_RL) { // Atomics
+    // THIS IS DEPENDENT ON CAPSTONE ENCODING AND COULD BREAK IF CHANGED
+    int size = ((metadata.opcode - 182)/4) % 2; // 1 = Word, 0 = Double
+    if (size == 1) {
+      // Word
+      setMemoryAddresses({{address, 4}});
+    } else {
+      // Double
+      setMemoryAddresses({{address, 8}});
+    }
+    return getGeneratedAddresses();
   }
 
   switch (metadata.opcode) {
@@ -46,33 +61,33 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       break;
     }
 
-      // Atomic Extension
-    case Opcode::RISCV_AMOSWAP_W:
-    case Opcode::RISCV_AMOSWAP_W_AQ:
-    case Opcode::RISCV_AMOSWAP_W_RL:
-    case Opcode::RISCV_AMOSWAP_W_AQ_RL: {
-      setMemoryAddresses({{address, 4}});
-      break;
-    }
-    case Opcode::RISCV_AMOSWAP_D:
-    case Opcode::RISCV_AMOSWAP_D_AQ:
-    case Opcode::RISCV_AMOSWAP_D_RL:
-    case Opcode::RISCV_AMOSWAP_D_AQ_RL: {
-      setMemoryAddresses({{address, 8}});
-      break;
-    }
-    case Opcode::RISCV_LR_W: {
-//    case Opcode::RISCV_LR_W_AQ:
-//    case Opcode::RISCV_LR_W_RL:
-//    case Opcode::RISCV_LR_W_AQ_RL: {
+    // Atomics
+    case Opcode::RISCV_LR_W:
+    case Opcode::RISCV_LR_W_AQ:
+    case Opcode::RISCV_LR_W_RL:
+    case Opcode::RISCV_LR_W_AQ_RL: {
       setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
       break;
     }
-//    case Opcode::RISCV_SC_W:
-    case Opcode::RISCV_SC_W_AQ: {
-//    case Opcode::RISCV_SC_W_RL:
-//    case Opcode::RISCV_SC_W_AQ_RL: {
+    case Opcode::RISCV_LR_D:
+    case Opcode::RISCV_LR_D_AQ:
+    case Opcode::RISCV_LR_D_RL:
+    case Opcode::RISCV_LR_D_AQ_RL: {
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
+      break;
+    }
+    case Opcode::RISCV_SC_W:
+    case Opcode::RISCV_SC_W_AQ:
+    case Opcode::RISCV_SC_W_RL:
+    case Opcode::RISCV_SC_W_AQ_RL: {
       setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
+      break;
+    }
+    case Opcode::RISCV_SC_D:
+    case Opcode::RISCV_SC_D_AQ:
+    case Opcode::RISCV_SC_D_RL:
+    case Opcode::RISCV_SC_D_AQ_RL: {
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
       break;
     }
     default:
