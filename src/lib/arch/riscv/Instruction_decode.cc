@@ -138,21 +138,13 @@ void Instruction::decode() {
     case Opcode::RISCV_SD:
       isStore_ = true;
       break;
-      // Atomics: both load and store
-    case Opcode::RISCV_AMOSWAP_W:
-    case Opcode::RISCV_AMOSWAP_W_AQ:
-    case Opcode::RISCV_AMOSWAP_W_RL:
-    case Opcode::RISCV_AMOSWAP_W_AQ_RL:
-    case Opcode::RISCV_AMOSWAP_D:
-    case Opcode::RISCV_AMOSWAP_D_AQ:
-    case Opcode::RISCV_AMOSWAP_D_RL:
-    case Opcode::RISCV_AMOSWAP_D_AQ_RL:
-      isLoad_ = true;
-      isStore_ = true;
-      isAtomic_ = true;
-      // Don't mark as atomic as will break first operand ordering
-      // TODO set isAtomic_ true for consistency and fix decode loop to allow this
-      break;
+  }
+
+  if (Opcode::RISCV_AMOADD_D <= metadata.opcode && metadata.opcode <= Opcode::RISCV_AMOXOR_W_RL) {
+    // Atomics: both load and store
+    isLoad_ = true;
+    isStore_ = true;
+    isAtomic_ = true;
   }
 
 
