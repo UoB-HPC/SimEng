@@ -107,11 +107,12 @@ TEST_P(InstStore, sd) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), 68);
   EXPECT_EQ(getMemoryValue<uint64_t>(64), 0x0154000000AA5678);
   EXPECT_EQ(getMemoryValue<uint64_t>(68), 0x8765000001540000);
-  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() + 4), 0x000154000000AA01);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() + 4),
+            0x000154000000AA01);
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstStore,
-    ::testing::Values(EMULATION, INORDER),
-    coreTypeToString);
+                         ::testing::Values(EMULATION, INORDER),
+                         coreTypeToString);
 
 }  // namespace

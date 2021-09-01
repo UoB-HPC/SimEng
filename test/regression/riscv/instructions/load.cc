@@ -25,7 +25,6 @@ TEST_P(InstLoad, lb) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x0000000000000012);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFAD);
 
-
   // Load byte unsigned
   RUN_RISCV(R"(
       addi t5, t5, 32  # Static heap address
@@ -62,7 +61,7 @@ TEST_P(InstLoad, lh) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0xFFFFFFFFFFFFED12);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFDEAD);
 
-// Load half word unsigned
+  // Load half word unsigned
   RUN_RISCV(R"(
       addi t5, t5, 32  # Static heap address
       lhu t6, 0(t5)
@@ -134,8 +133,7 @@ TEST_P(InstLoad, ld) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xDAED12345678DEAD);
 }
 
-INSTANTIATE_TEST_SUITE_P(RISCV, InstLoad,
-    ::testing::Values(EMULATION, INORDER),
-    coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(RISCV, InstLoad, ::testing::Values(EMULATION, INORDER),
+                         coreTypeToString);
 
 }  // namespace

@@ -8,13 +8,13 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-/** AArch64 opcodes. Each opcode represents a unique AArch64 operation. */
+/** RISCV opcodes. Each opcode represents a unique RISCV operation. */
 namespace Opcode {
 #define GET_INSTRINFO_ENUM
 #include "RISCVGenInstrInfo.inc"
 }  // namespace Opcode
 
-/** A simplified AArch64-only version of the Capstone instruction structure. */
+/** A simplified RISCV-only version of the Capstone instruction structure. */
 struct InstructionMetadata {
  public:
   /** Constructs a metadata object from a Capstone instruction representation.
@@ -63,14 +63,6 @@ struct InstructionMetadata {
   /** The number of instruction groups this instruction belongs to. */
   uint8_t groupCount;
 
-//  /** The condition code of the instruction. */
-//  uint8_t cc;
-//  /** Whether this instruction sets the condition flags. */
-//  bool setsFlags;
-//  /** Whether this instruction performs a base-address register writeback
-//   * operation. */
-//  bool writeback;
-
   /** The explicit operands. */
   cs_riscv_op operands[MAX_OPERANDS];
   /** The number of explicit operands. */
@@ -89,11 +81,10 @@ struct InstructionMetadata {
   void includeZeroRegisterPosOne();
 
   /** RISCV helper function
- * Use register zero as operands[0] and immediate value as operands[2] */
+   * Use register zero as operands[0] and immediate value as operands[2] */
   void includeZeroRegisterPosZero();
+};
 
-  };
-
-}  // namespace aarch64
+}  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

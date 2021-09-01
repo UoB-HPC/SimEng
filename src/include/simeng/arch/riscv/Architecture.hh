@@ -14,7 +14,7 @@ namespace simeng {
 namespace arch {
 namespace riscv{
 
-/* A basic ARMv8-a implementation of the `Architecture` interface. */
+/* A basic RISCV implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
   Architecture(kernel::Linux& kernel, YAML::Node config);
@@ -26,7 +26,7 @@ class Architecture : public arch::Architecture {
                     uint64_t instructionAddress, BranchPrediction prediction,
                     MacroOp& output) const override;
 
-  /** Returns an ARMv8-a register file structure description. */
+  /** Returns an RISCV register file structure description. */
   std::vector<RegisterFileStructure> getRegisterFileStructures() const override;
 
   /** Returns a zero-indexed register tag for a system register encoding. */

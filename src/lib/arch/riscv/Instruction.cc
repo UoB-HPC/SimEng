@@ -34,7 +34,7 @@ InstructionException Instruction::getException() const { return exception_; }
 
 void Instruction::setSourceRegisters(const std::vector<Register>& registers) {
   assert(registers.size() <= MAX_SOURCE_REGISTERS &&
-         "Exceeded maximum source registers for an AArch64 instruction");
+         "Exceeded maximum source registers for a RISCV instruction");
 
   sourceRegisterCount = registers.size();
   operandsPending = registers.size();
@@ -53,7 +53,7 @@ void Instruction::setSourceRegisters(const std::vector<Register>& registers) {
 void Instruction::setDestinationRegisters(
     const std::vector<Register>& registers) {
   assert(registers.size() <= MAX_DESTINATION_REGISTERS &&
-         "Exceeded maximum destination registers for an AArch64 instruction");
+         "Exceeded maximum destination registers for a RISCV instruction");
   destinationRegisterCount = registers.size();
   std::copy(registers.begin(), registers.end(), destinationRegisters.begin());
 }
@@ -163,46 +163,10 @@ uint16_t Instruction::getGroup() const {
   return group;
 }
 
-std::vector<uint8_t> Instruction::getSupportedPorts() {
-  return {0};
-}
+std::vector<uint8_t> Instruction::getSupportedPorts() { return {0}; }
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
 
-/** Extend `value` according to `extendType`, and left-shift the result by
- * `shift` */
-uint64_t Instruction::extendValue(uint64_t value, uint8_t extendType,
-                                  uint8_t shift) const {
-  if (extendType == ARM64_EXT_INVALID && shift == 0) {
-    // Special case: an invalid shift type with a shift amount of 0 implies an
-    // identity operation
-    return value;
-  }
-
-  uint64_t extended;
-  switch (extendType) {
-    default:
-      assert(false && "Invalid extension type");
-      return 0;
-  }
-
-  return extended << shift;
-}
-
-/** Extend `value` using extension/shifting rules defined in `op`. */
-uint64_t Instruction::extendOffset(uint64_t value,
-                                   const cs_arm64_op& op) const {
-//  if (op.ext == 0) {
-//    if (op.shift.value == 0) {
-//      return value;
-//    }
-//    if (op.shift.type == 1) {
-//      return extendValue(value, ARM64_EXT_UXTX, op.shift.value);
-//    }
-//  }
-  return extendValue(value, op.ext, op.shift.value);
-}
-
-}  // namespace aarch64
+}  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

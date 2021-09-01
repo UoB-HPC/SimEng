@@ -14,7 +14,7 @@ TEST_P(SmokeTest, instruction) {
 
 //
 //// Test a loop executing 1024 times, adding 3 to w1 each time
-//TEST_P(SmokeTest, loop) {
+// TEST_P(SmokeTest, loop) {
 //  RUN_AARCH64(R"(
 //    orr w0, wzr, #1024
 //    mov w1, wzr
@@ -28,7 +28,7 @@ TEST_P(SmokeTest, instruction) {
 //}
 //
 //// Test that we can store values to the stack
-//TEST_P(SmokeTest, stack) {
+// TEST_P(SmokeTest, stack) {
 //  RUN_AARCH64(R"(
 //    mov w0, #7
 //    mov w1, #42
@@ -40,7 +40,7 @@ TEST_P(SmokeTest, instruction) {
 //}
 //
 //// Test that we can store values to the heap
-//TEST_P(SmokeTest, heap) {
+// TEST_P(SmokeTest, heap) {
 //  RUN_AARCH64(R"(
 //    # Use brk syscall to move program brk by eight bytes
 //    mov w0, 0
