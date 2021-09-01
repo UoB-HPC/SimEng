@@ -16,19 +16,13 @@ class Architecture;
 struct InstructionMetadata;
 
 namespace RegisterType {
-/** The 64-bit general purpose register set: [w|x]0-31. */
+/** The 64-bit general purpose register set. */
 const uint8_t GENERAL = 0;
-/** The 128+ bit vector register set: v0-31. */
-const uint8_t VECTOR = 1;
-/** The 32 bit predicate register set: p0-15. */
-const uint8_t PREDICATE = 2;
-/** The 4-bit NZCV condition flag register. */
-const uint8_t NZCV = 3;
-/** The system registers. */
-const uint8_t SYSTEM = 4;
+/** The 64-bit bit floating point register set. */
+const uint8_t FLOAT = 1;
 }  // namespace RegisterType
 
-/** The IDs of the instruction groups for AArch64 instructions. */
+/** The IDs of the instruction groups for RISCV instructions. */
 namespace InstructionGroups {
 const uint8_t ARITHMETIC = 0;
 const uint8_t SHIFT = 1;
@@ -53,7 +47,7 @@ enum class InstructionException {
   SecureMonitorCall
 };
 
-/** A basic ARMv8-a implementation of the `Instruction` interface. */
+/** A basic RISCV implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.
@@ -156,12 +150,12 @@ class Instruction : public simeng::Instruction {
   static const Register ZERO_REGISTER;
 
  private:
-  /** The maximum number of source registers any supported AArch64 instruction
+  /** The maximum number of source registers any supported RISCV instruction
    * can have. */
-  static const uint8_t MAX_SOURCE_REGISTERS = 6;
+  static const uint8_t MAX_SOURCE_REGISTERS = 2;
   /** The maximum number of destination registers any supported AArch64
    * instruction can have. */
-  static const uint8_t MAX_DESTINATION_REGISTERS = 3;
+  static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
@@ -219,6 +213,7 @@ class Instruction : public simeng::Instruction {
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
 
+  // TODO not all needed for RISCV
   // Metadata
   /** Is this a store operation? */
   bool isStore_ = false;
@@ -258,14 +253,7 @@ class Instruction : public simeng::Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
-
-  // Execution helpers
-  /** Extend `value` according to `extendType`, and left-shift the result by
-   * `shift` */
-  uint64_t extendValue(uint64_t value, uint8_t extendType, uint8_t shift) const;
-
-  /** Extend `value` using extension/shifting rules defined in `op`. */
-  uint64_t extendOffset(uint64_t value, const cs_arm64_op& op) const;
+  
 };
 
 }  // namespace aarch64

@@ -13,22 +13,16 @@ namespace riscv {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(kernel::Linux& kernel, YAML::Node config) : linux_(kernel) {
+Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
+    : linux_(kernel) {
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
   if (n != CS_ERR_OK) {
-    std::cerr << "Could not create capstone handle due to error " << n << std::endl;
+    std::cerr << "Could not create capstone handle due to error " << n
+              << std::endl;
     exit(1);
   }
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
-
-  // Generate zero-indexed system register map
-//  systemRegisterMap_[ARM64_SYSREG_DCZID_EL0] = systemRegisterMap_.size();
-//  systemRegisterMap_[ARM64_SYSREG_FPCR] = systemRegisterMap_.size();
-//  systemRegisterMap_[ARM64_SYSREG_FPSR] = systemRegisterMap_.size();
-//  systemRegisterMap_[ARM64_SYSREG_TPIDR_EL0] = systemRegisterMap_.size();
-//  systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
-//  systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
 }
 Architecture::~Architecture() { cs_close(&capstoneHandle); }
 
@@ -51,8 +45,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     return 1;
   }
 
-  assert(bytesAvailable >= 4 &&
-         "Fewer than 4 bytes supplied to AArch64 decoder");
+  assert(bytesAvailable >= 4 && "Fewer than 4 bytes supplied to RISCV decoder");
 
   // Dereference the instruction pointer to obtain the instruction word
   const uint32_t insn = *static_cast<const uint32_t*>(ptr);
@@ -111,12 +104,9 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
     const {
   uint16_t numSysRegs = static_cast<uint16_t>(systemRegisterMap_.size());
   return {
-      {8, 32},          // General purpose
-      {8, 32},          // Floating Point
-//      {256, 32},        // Vector
-//      {32, 17},         // Predicate
-//      {1, 1},           // NZCV
-      {8, numSysRegs},  // System
+      {8, 32},  // General purpose
+      {8, 32},  // Floating Point
+                //      {8, numSysRegs},  // System
   };
 }
 
@@ -135,39 +125,30 @@ ProcessStateChange Architecture::getInitialState() const {
   changes.modifiedRegisters.push_back({RegisterType::GENERAL, 2});
   changes.modifiedRegisterValues.push_back(stackPointer);
 
-  // Set the system registers
-  // Temporary: state that DCZ can support clearing 64 bytes at a time,
-  // but is disabled due to bit 4 being set
-  // changes.modifiedRegisters.push_back(
-  //     {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)});
-  // changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
-
   return changes;
 }
 
 ProcessStateChange Architecture::getUpdateState() const {
   ProcessStateChange changes;
-//  // Set ProcessStateChange type~constructor
-//  changes.type = ChangeType::INCREMENT;
-//
-//  // Increment the Counter-timer Virtual Count (CNTVCT) register by 1
-//  /* TODO: CNTVCT value should be equal to the physical count value minus the
-//   * virtual offset visible in CNTVOFF. */
-//  changes.modifiedRegisters.push_back(
-//      {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0)});
-//  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(1));
+  //  // Set ProcessStateChange type~constructor
+  //  changes.type = ChangeType::INCREMENT;
+  //
+  //  // Increment the Counter-timer Virtual Count (CNTVCT) register by 1
+  //  /* TODO: CNTVCT value should be equal to the physical count value minus
+  //  the
+  //   * virtual offset visible in CNTVOFF. */
+  //  changes.modifiedRegisters.push_back(
+  //      {RegisterType::SYSTEM,
+  //      getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0)});
+  //  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(1));
 
   return changes;
 }
 
 std::pair<uint8_t, uint8_t> Architecture::getLatencies(
     InstructionMetadata& metadata) const {
-  const std::pair<uint8_t, uint8_t> FPSIMD_LATENCY = {6, 1};
-
   // Look up the instruction opcode to get the latency
-  switch (metadata.opcode) {
-
-  }
+  switch (metadata.opcode) {}
 
   // Assume single-cycle, non-blocking for all other instructions
   return {1, 1};
@@ -175,6 +156,6 @@ std::pair<uint8_t, uint8_t> Architecture::getLatencies(
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
-}  // namespace aarch64
+}  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

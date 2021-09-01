@@ -11,7 +11,7 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-/** An AArch64 exception handler. */
+/** An RISCV exception handler. */
 class ExceptionHandler : public simeng::arch::ExceptionHandler {
  public:
   /** Create an exception handler with references to the instruction that caused

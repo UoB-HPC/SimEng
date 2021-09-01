@@ -51,7 +51,7 @@ TEST_P(InstAtomic, lr) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0xFFFFFFFFDEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x012345678);
 
-  //Software should not set only the RL bit, but this is not guaranteed
+  // Software should not set only the RL bit, but this is not guaranteed
   RUN_RISCV(R"(
     # Get heap address
     li a7, 214
@@ -144,9 +144,8 @@ TEST_P(InstAtomic, sc_w) {
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 4), 0x12345678);
 }
 
-
 TEST_P(InstAtomic, sc_w_aq) {
-  //Software should not set only the AQ bit, but this is not guaranteed
+  // Software should not set only the AQ bit, but this is not guaranteed
 
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
@@ -715,7 +714,8 @@ TEST_P(InstAtomic, amoadd_w) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x7FFFFFFF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x80000000000003DB);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
-  EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 0x800003DA); // +ve + +ve = -ve as per GDB
+  EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12),
+            0x800003DA);  // +ve + +ve = -ve as per GDB
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x12365478);
 }
 
@@ -757,7 +757,8 @@ TEST_P(InstAtomic, amoadd_w_aq) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x7FFFFFFF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x80000000000003DB);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
-  EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 0x800003DA); // +ve + +ve = -ve as per GDB
+  EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12),
+            0x800003DA);  // +ve + +ve = -ve as per GDB
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x12365478);
 }
 
@@ -799,7 +800,8 @@ TEST_P(InstAtomic, amoadd_w_rl) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x7FFFFFFF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x80000000000003DB);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
-  EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 0x800003DA); // +ve + +ve = -ve as per GDB
+  EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12),
+            0x800003DA);  // +ve + +ve = -ve as per GDB
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x12365478);
 }
 
@@ -841,11 +843,12 @@ TEST_P(InstAtomic, amoadd_w_aq_rl) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x7FFFFFFF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x80000000000003DB);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
-  EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12), 0x800003DA); // +ve + +ve = -ve as per GDB
+  EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 12),
+            0x800003DA);  // +ve + +ve = -ve as per GDB
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x12365478);
 }
 
-//TODO add aq rl tests for all instructions below, ommited as currenlty
+// TODO add aq rl tests for all instructions below, ommited as currenlty
 // they have the same functionality
 
 TEST_P(InstAtomic, amoadd_d) {
@@ -884,8 +887,10 @@ TEST_P(InstAtomic, amoadd_d) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x7FFFFFFFFFFFFFFF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x00000000000003DB);
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 8), 0xFEEBDAED);
-  EXPECT_EQ(getMemoryValue<uint64_t>(heapStart + 12), 0x80000000000003DA); // +ve + +ve = -ve as per GDB
-  EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 20), 0x12365478); // +ve + +ve = -ve as per GDB
+  EXPECT_EQ(getMemoryValue<uint64_t>(heapStart + 12),
+            0x80000000000003DA);  // +ve + +ve = -ve as per GDB
+  EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 20),
+            0x12365478);  // +ve + +ve = -ve as per GDB
 }
 
 TEST_P(InstAtomic, amoand_w) {
@@ -913,7 +918,7 @@ TEST_P(InstAtomic, amoand_w) {
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5555555555555555);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333);
-  EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567811111111); // 0b0001
+  EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567811111111);  // 0b0001
 }
 
 TEST_P(InstAtomic, amoand_d) {
@@ -970,7 +975,7 @@ TEST_P(InstAtomic, amoor_w) {
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5555555555555555);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333);
-  EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x12345678F7777777); //0b0111
+  EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x12345678F7777777);  // 0b0111
 }
 
 TEST_P(InstAtomic, amoor_d) {
@@ -1003,16 +1008,16 @@ TEST_P(InstAtomic, amoor_d) {
 }
 
 TEST_P(InstAtomic, amoxor_w) {
-initialHeapData_.resize(24);
-uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
-heap[0] = 0xB3333333;
-heap[1] = 0x12345678;
-heap[2] = 0xFEEBDAED;
-heap[3] = 0xFFFFFFFF;
-heap[4] = 0x7FFFFFFF;
-heap[5] = 0x12365478;
+  initialHeapData_.resize(24);
+  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap[0] = 0xB3333333;
+  heap[1] = 0x12345678;
+  heap[2] = 0xFEEBDAED;
+  heap[3] = 0xFFFFFFFF;
+  heap[4] = 0x7FFFFFFF;
+  heap[5] = 0x12365478;
 
-RUN_RISCV(R"(
+  RUN_RISCV(R"(
     # Get heap address
     li a7, 214
     ecall
@@ -1023,11 +1028,11 @@ RUN_RISCV(R"(
     amoxor.w t1, t0, (a0)
   )");
 
-auto heapStart = process_->getHeapStart();
+  auto heapStart = process_->getHeapStart();
 
-EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5555555555555555);
-EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333);
-EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x12345678E6666666); //0b0110
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5555555555555555);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333);
+  EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x12345678E6666666);  // 0b0110
 }
 
 TEST_P(InstAtomic, amoxor_d) {
@@ -1083,8 +1088,8 @@ TEST_P(InstAtomic, amomin_w) {
 
   auto heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000555555); // small +ve
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000033333333); // large +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000555555);  // small +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000033333333);  // large +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567800555555);
 
   heap[0] = 0xB3333333;
@@ -1107,8 +1112,9 @@ TEST_P(InstAtomic, amomin_w) {
 
   heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF000000055555555); // (+ve word),  large -ve double
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333); // small -ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
+            0xF000000055555555);  // (+ve word),  large -ve double
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333);  // small -ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x12345678B3333333);
 
   heap[0] = 0x03333333;
@@ -1131,13 +1137,14 @@ TEST_P(InstAtomic, amomin_w) {
 
   heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF000000055555555); // (large +ve word), -ve double
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333); // small +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
+            0xF000000055555555);  // (large +ve word), -ve double
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333);  // small +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567803333333);
 }
 
 TEST_P(InstAtomic, amomin_d) {
-initialHeapData_.resize(24);
+  initialHeapData_.resize(24);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
   heap[0] = 0xB3333333;
   heap[1] = 0x12345678;
@@ -1166,12 +1173,12 @@ initialHeapData_.resize(24);
 
   auto heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF555555555555555); // -ve
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x12345678B3333333); // +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF555555555555555);  // -ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x12345678B3333333);  // +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0xF555555555555555);
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x0034567899999999); // small +ve
-  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678FEEBDAED); // large +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x0034567899999999);  // small +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678FEEBDAED);  // large +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart + 8), 0x0034567899999999);
 }
 
@@ -1199,8 +1206,8 @@ TEST_P(InstAtomic, amominu_w) {
 
   auto heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000555555); // small +ve
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000033333333); // large +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000555555);  // small +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000033333333);  // large +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567800555555);
 
   heap[0] = 0xB3333333;
@@ -1223,8 +1230,10 @@ TEST_P(InstAtomic, amominu_w) {
 
   heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF000000055555555); // (small +ve word),  large -ve double
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333); // (large +ve), small -ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
+            0xF000000055555555);  // (small +ve word),  large -ve double
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6),
+            0xFFFFFFFFB3333333);  // (large +ve), small -ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567855555555);
 
   heap[0] = 0x03333333;
@@ -1247,8 +1256,9 @@ TEST_P(InstAtomic, amominu_w) {
 
   heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF000000055555555); // (large +ve word), -ve double
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333); // small +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
+            0xF000000055555555);  // (large +ve word), -ve double
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333);  // small +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567803333333);
 }
 
@@ -1282,12 +1292,13 @@ TEST_P(InstAtomic, amominu_d) {
 
   auto heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF555555555555555); // (large +ve), -ve
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x12345678B3333333); // +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
+            0xF555555555555555);  // (large +ve), -ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x12345678B3333333);  // +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x12345678B3333333);
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x0034567899999999); // small +ve
-  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678FEEBDAED); // large +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x0034567899999999);  // small +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), 0x12345678FEEBDAED);  // large +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart + 8), 0x0034567899999999);
 }
 
@@ -1315,8 +1326,8 @@ TEST_P(InstAtomic, amomax_w) {
 
   auto heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000555555); // small +ve
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000033333333); // large +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000555555);  // small +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000033333333);  // large +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567833333333);
 
   heap[0] = 0xB3333333;
@@ -1339,8 +1350,9 @@ TEST_P(InstAtomic, amomax_w) {
 
   heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF000000055555555); // (+ve word),  large -ve double
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333); // small -ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
+            0xF000000055555555);  // (+ve word),  large -ve double
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333);  // small -ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567855555555);
 
   heap[0] = 0x03333333;
@@ -1363,8 +1375,9 @@ TEST_P(InstAtomic, amomax_w) {
 
   heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF000000055555555); // (large +ve word), -ve double
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333); // small +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
+            0xF000000055555555);  // (large +ve word), -ve double
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333);  // small +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567855555555);
 }
 
@@ -1398,8 +1411,8 @@ TEST_P(InstAtomic, amomax_d) {
 
   auto heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF555555555555555); // -ve
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x12345678B3333333); // +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF555555555555555);  // -ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x12345678B3333333);  // +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x12345678B3333333);
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0x0034567899999999);  // small +ve
@@ -1431,8 +1444,8 @@ TEST_P(InstAtomic, amomaxu_w) {
 
   auto heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000555555); // small +ve
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000033333333); // large +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x0000000000555555);  // small +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000033333333);  // large +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567833333333);
 
   heap[0] = 0xB3333333;
@@ -1455,8 +1468,10 @@ TEST_P(InstAtomic, amomaxu_w) {
 
   heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF000000055555555); // (small +ve word),  large -ve double
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFB3333333); // (large +ve), small -ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
+            0xF000000055555555);  // (small +ve word),  large -ve double
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6),
+            0xFFFFFFFFB3333333);  // (large +ve), small -ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x12345678B3333333);
 
   heap[0] = 0x03333333;
@@ -1479,8 +1494,9 @@ TEST_P(InstAtomic, amomaxu_w) {
 
   heapStart = process_->getHeapStart();
 
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xF000000055555555); // (large +ve word), -ve double
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333); // small +ve
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5),
+            0xF000000055555555);  // (large +ve word), -ve double
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x0000000003333333);  // small +ve
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart), 0x1234567855555555);
 }
 
@@ -1525,11 +1541,8 @@ TEST_P(InstAtomic, amomaxu_d) {
 
 // TODO AMOMIN AMOMINU AMOMAX AMOMAXU
 
-
-
-
 INSTANTIATE_TEST_SUITE_P(RISCV, InstAtomic,
-    ::testing::Values(EMULATION, INORDER),
-    coreTypeToString);
+                         ::testing::Values(EMULATION, INORDER),
+                         coreTypeToString);
 
 }  // namespace

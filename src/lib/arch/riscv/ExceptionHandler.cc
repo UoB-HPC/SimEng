@@ -31,8 +31,6 @@ bool ExceptionHandler::init() {
     auto syscallId =
         registerFileSet.get({RegisterType::GENERAL, 17}).get<uint64_t>();
 
-//    std::cout << std::endl << "SYSCALL " << syscallId << " " << std::flush;
-
     ProcessStateChange stateChange;
     switch (syscallId) {
       case 29: {  // ioctl
@@ -67,14 +65,14 @@ bool ExceptionHandler::init() {
         char* pathname = new char[kernel::Linux::LINUX_PATH_MAX];
         return readStringThen(pathname, pathnamePtr,
                               kernel::Linux::LINUX_PATH_MAX, [=](auto length) {
-              // Invoke the kernel
-              uint64_t retval =
-                  linux_.openat(dirfd, pathname, flags, mode);
-              ProcessStateChange stateChange = {
-                  ChangeType::REPLACEMENT, {R0}, {retval}};
-              delete[] pathname;
-              return concludeSyscall(stateChange);
-            });
+                                // Invoke the kernel
+                                uint64_t retval =
+                                    linux_.openat(dirfd, pathname, flags, mode);
+                                ProcessStateChange stateChange = {
+                                    ChangeType::REPLACEMENT, {R0}, {retval}};
+                                delete[] pathname;
+                                return concludeSyscall(stateChange);
+                              });
         break;
       }
       case 57: {  // close
@@ -446,9 +444,9 @@ bool ExceptionHandler::init() {
         }
         break;
       }
-//      case 172:  // getpid
-//        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getpid()}};
-//        break;
+      case 172:  // getpid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getpid()}};
+        break;
       case 174:  // getuid
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getuid()}};
         break;
@@ -731,6 +729,6 @@ bool ExceptionHandler::fatal() {
   return true;
 }
 
-}  // namespace aarch64
+}  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

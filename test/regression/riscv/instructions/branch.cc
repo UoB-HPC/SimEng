@@ -198,7 +198,6 @@ TEST_P(InstBranch, BGEU) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 14);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 11);
 
-
   RUN_RISCV(R"(
       addi t0, t0, -5
       addi t1, t1, 5
@@ -217,7 +216,7 @@ TEST_P(InstBranch, BGEU) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstBranch,
-    ::testing::Values(EMULATION, INORDER),
-    coreTypeToString);
+                         ::testing::Values(EMULATION, INORDER),
+                         coreTypeToString);
 
 }  // namespace

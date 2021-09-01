@@ -51,7 +51,6 @@ TEST_P(InstJump, jalrAlias) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
 }
 
-
 TEST_P(InstJump, jal) {
   RUN_RISCV(R"(
     jal t0, 12
@@ -86,8 +85,7 @@ TEST_P(InstJump, jalAlias) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
 }
 
-INSTANTIATE_TEST_SUITE_P(RISCV, InstJump,
-    ::testing::Values(EMULATION, INORDER),
-    coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(RISCV, InstJump, ::testing::Values(EMULATION, INORDER),
+                         coreTypeToString);
 
 }  // namespace
