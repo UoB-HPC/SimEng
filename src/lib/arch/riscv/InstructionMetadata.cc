@@ -48,6 +48,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
         operandCount = 3;
       }
+      break;
     }
     case Opcode::RISCV_ADDIW: {
       if (operandCount == 2 && strcmp(mnemonic, "sext.w") == 0) {
@@ -56,16 +57,19 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
         operandCount = 3;
       }
+      break;
     }
     case Opcode::RISCV_SUB: {
       if (operandCount == 2 && strcmp(mnemonic, "neg") == 0) {
         includeZeroRegisterPosOne();
       }
+      break;
     }
     case Opcode::RISCV_SUBW: {
       if (operandCount == 2 && strcmp(mnemonic, "negw") == 0) {
         includeZeroRegisterPosOne();
       }
+      break;
     }
     case Opcode::RISCV_XORI: {
       if (operandCount == 2 && strcmp(mnemonic, "not") == 0) {
@@ -74,6 +78,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
         operandCount = 3;
       }
+      break;
     }
     case Opcode::RISCV_SLTIU: {
       if (operandCount == 2 && strcmp(mnemonic, "seqz") == 0) {
@@ -82,11 +87,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
         operandCount = 3;
       }
+      break;
     }
     case Opcode::RISCV_SLTU: {
       if (operandCount == 2 && strcmp(mnemonic, "snez") == 0) {
         includeZeroRegisterPosOne();
       }
+      break;
     }
     case Opcode::RISCV_SLT: {
       if (operandCount == 2 && strcmp(mnemonic, "sltz") == 0) {
@@ -97,6 +104,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       } else if (operandCount == 2 && strcmp(mnemonic, "sgtz") == 0) {
         includeZeroRegisterPosOne();
       }
+      break;
     }
     case Opcode::RISCV_JALR: {
       if (operandCount == 0 &&
