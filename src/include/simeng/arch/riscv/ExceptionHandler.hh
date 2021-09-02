@@ -99,6 +99,6 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   static constexpr Register R5 = {RegisterType::GENERAL, 15};
 };
 
-}  // namespace aarch64
+}  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

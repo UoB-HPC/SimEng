@@ -153,7 +153,7 @@ class Instruction : public simeng::Instruction {
   /** The maximum number of source registers any supported RISCV instruction
    * can have. */
   static const uint8_t MAX_SOURCE_REGISTERS = 2;
-  /** The maximum number of destination registers any supported AArch64
+  /** The maximum number of destination registers any supported RISCV
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 
@@ -256,6 +256,6 @@ class Instruction : public simeng::Instruction {
   
 };
 
-}  // namespace aarch64
+}  // namespace riscv
 }  // namespace arch
 }  // namespace simeng
