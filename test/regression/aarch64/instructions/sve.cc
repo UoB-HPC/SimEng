@@ -864,6 +864,118 @@ TEST_P(InstSve, fcvtzs) {
               4294967297, 4294967297});
 }
 
+TEST_P(InstSve, fcvt) {
+  // VL = 512
+  // double to single
+  initialHeapData_.resize(96);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 2.0;
+  dheap[1] = -2.0;
+  dheap[2] = 4.5;
+  dheap[3] = -4.5;
+  dheap[4] = 3.2;
+  dheap[5] = -3.2;
+  dheap[6] = 7.9;
+  dheap[7] = -7.9;
+  dheap[8] = std::numeric_limits<double>::max();
+  dheap[9] = std::numeric_limits<double>::lowest();
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fdup z0.s, #1.0
+    fdup z1.s, #1.0
+    fdup z2.s, #1.0
+    fdup z3.s, #1.0
+
+    ptrue p0.d
+
+    mov x1, #0
+    mov x2, #4
+    mov x3, #8
+    whilelo p1.d, xzr, x3
+
+    ld1d {z4.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z5.d}, p1/z, [x0, x2, lsl #3]
+
+    fcvt z0.s, p0/m, z4.d
+    fcvt z1.s, p1/m, z4.d
+
+    fcvt z2.s, p0/m, z5.d
+    fcvt z3.s, p1/m, z5.d    
+  )");
+  CHECK_NEON(0, float,
+             {2.0f, 1.0f, -2.0f, 1.0f, 4.5f, 1.0f, -4.5f, 1.0f, 3.2f, 1.0f,
+              -3.2f, 1.0f, 7.9f, 1.0f, -7.9f, 1.0f});
+  CHECK_NEON(1, float,
+             {2.0f, 1.0f, -2.0f, 1.0f, 4.5f, 1.0f, -4.5f, 1.0f, 3.2f, 1.0f,
+              -3.2f, 1.0f, 7.9f, 1.0f, -7.9f, 1.0f});
+  CHECK_NEON(
+      2, float,
+      {3.2f, 1.0f, -3.2f, 1.0f, 7.9f, 1.0f, -7.9f, 1.0f,
+       std::numeric_limits<float>::max(), 1.0f,
+       std::numeric_limits<float>::lowest(), 1.0f, 0.0f, 1.0f, 0.0f, 1.0f});
+  CHECK_NEON(
+      3, float,
+      {3.2f, 1.0f, -3.2f, 1.0f, 7.9f, 1.0f, -7.9f, 1.0f,
+       std::numeric_limits<float>::max(), 1.0f,
+       std::numeric_limits<float>::lowest(), 1.0f, 0.0f, 1.0f, 0.0f, 1.0f});
+
+  // single to double
+  initialHeapData_.resize(68);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 2.0f;
+  fheap[1] = -42.76f;
+  fheap[2] = -0.125f;
+  fheap[3] = 0.0f;
+  fheap[4] = 40.26f;
+  fheap[5] = -684.72f;
+  fheap[6] = std::numeric_limits<float>::lowest();
+  fheap[7] = 107.86f;
+
+  fheap[8] = std::numeric_limits<float>::max();
+  fheap[9] = -0.15f;
+  fheap[10] = 0.0f;
+  fheap[11] = 80.72f;
+  fheap[12] = -125.67f;
+  fheap[13] = -0.01f;
+  fheap[14] = 701.90f;
+  fheap[15] = 7.0f;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fdup z0.d, #1.0
+    fdup z1.d, #1.0
+
+    ptrue p0.s
+
+    mov x1, #0
+    mov x2, #4
+    mov x3, #8
+    whilelo p1.s, xzr, x3
+
+    ld1w {z4.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z5.s}, p1/z, [x0, x2, lsl #2]
+
+    fcvt z0.d, p0/m, z4.s
+    fcvt z1.d, p1/m, z4.s  
+  )");
+  CHECK_NEON(0, double,
+             {2.0, -0.125, 40.26,
+              static_cast<double>(std::numeric_limits<float>::lowest()),
+              static_cast<double>(std::numeric_limits<float>::max()), 0.0,
+              -125.67, 701.90});
+  CHECK_NEON(1, double,
+             {2.0, -0.125, 40.26,
+              static_cast<double>(std::numeric_limits<float>::lowest()), 1.0,
+              1.0, 1.0, 1.0});
+}
+
 TEST_P(InstSve, fdiv) {
   // VL = 512-bits
   // double

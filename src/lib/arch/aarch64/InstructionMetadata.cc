@@ -584,6 +584,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_FCVT_ZPmZ_DtoS:
+      [[fallthrough]];
+    case Opcode::AArch64_FCVT_ZPmZ_StoD:
+      [[fallthrough]];
     case Opcode::AArch64_SCVTF_ZPmZ_DtoS:
       [[fallthrough]];
     case Opcode::AArch64_SCVTF_ZPmZ_StoD:
