@@ -1,6 +1,4 @@
 #include <cmath>
-#include <iostream>
-#include <limits>
 #include <tuple>
 
 #include "InstructionMetadata.hh"
@@ -91,8 +89,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_SB:
+      [[fallthrough]];
     case Opcode::RISCV_SH:
+      [[fallthrough]];
     case Opcode::RISCV_SW:
+      [[fallthrough]];
     case Opcode::RISCV_SD: {
       memoryData[0] = operands[0];
       break;

@@ -90,6 +90,7 @@ void Instruction::decode() {
     case Opcode::RISCV_LR_W_RL:
     case Opcode::RISCV_LR_W_AQ_RL:
       isAtomic_ = true;
+      [[fallthrough]];
     case Opcode::RISCV_LB:
     case Opcode::RISCV_LBU:
     case Opcode::RISCV_LH:
@@ -108,6 +109,7 @@ void Instruction::decode() {
     case Opcode::RISCV_SC_W_RL:
     case Opcode::RISCV_SC_W_AQ_RL:
       isAtomic_ = true;
+      [[fallthrough]];
     case Opcode::RISCV_SB:
     case Opcode::RISCV_SW:
     case Opcode::RISCV_SH:

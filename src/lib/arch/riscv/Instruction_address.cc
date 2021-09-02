@@ -38,24 +38,31 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
   switch (metadata.opcode) {
     case Opcode::RISCV_SD:
+      [[fallthrough]];
     case Opcode::RISCV_LD: {
       setMemoryAddresses({{address, 8}});
       break;
     }
     case Opcode::RISCV_SW:
+      [[fallthrough]];
     case Opcode::RISCV_LW:
+      [[fallthrough]];
     case Opcode::RISCV_LWU: {
       setMemoryAddresses({{address, 4}});
       break;
     }
     case Opcode::RISCV_SH:
+      [[fallthrough]];
     case Opcode::RISCV_LH:
+      [[fallthrough]];
     case Opcode::RISCV_LHU: {
       setMemoryAddresses({{address, 2}});
       break;
     }
     case Opcode::RISCV_SB:
+      [[fallthrough]];
     case Opcode::RISCV_LB:
+      [[fallthrough]];
     case Opcode::RISCV_LBU: {
       setMemoryAddresses({{address, 1}});
       break;
@@ -63,29 +70,41 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
     // Atomics
     case Opcode::RISCV_LR_W:
+      [[fallthrough]];
     case Opcode::RISCV_LR_W_AQ:
+      [[fallthrough]];
     case Opcode::RISCV_LR_W_RL:
+      [[fallthrough]];
     case Opcode::RISCV_LR_W_AQ_RL: {
       setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
       break;
     }
     case Opcode::RISCV_LR_D:
+      [[fallthrough]];
     case Opcode::RISCV_LR_D_AQ:
+      [[fallthrough]];
     case Opcode::RISCV_LR_D_RL:
+      [[fallthrough]];
     case Opcode::RISCV_LR_D_AQ_RL: {
       setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
       break;
     }
     case Opcode::RISCV_SC_W:
+      [[fallthrough]];
     case Opcode::RISCV_SC_W_AQ:
+      [[fallthrough]];
     case Opcode::RISCV_SC_W_RL:
+      [[fallthrough]];
     case Opcode::RISCV_SC_W_AQ_RL: {
       setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;
     }
     case Opcode::RISCV_SC_D:
+      [[fallthrough]];
     case Opcode::RISCV_SC_D_AQ:
+      [[fallthrough]];
     case Opcode::RISCV_SC_D_RL:
+      [[fallthrough]];
     case Opcode::RISCV_SC_D_AQ_RL: {
       setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
       break;
