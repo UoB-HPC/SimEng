@@ -75,6 +75,6 @@ class Architecture : public arch::Architecture {
   kernel::Linux& linux_;
 };
 
-}  // namespace aarch64
+}  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

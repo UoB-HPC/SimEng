@@ -1,5 +1,4 @@
 #include <cmath>
-#include <iostream>
 
 #include "InstructionMetadata.hh"
 #include "simeng/arch/riscv/Instruction.hh"
