@@ -133,7 +133,7 @@ TEST_P(InstLoad, ld) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xDAED12345678DEAD);
 }
 
-INSTANTIATE_TEST_SUITE_P(RISCV, InstLoad, ::testing::Values(EMULATION, INORDER),
+INSTANTIATE_TEST_SUITE_P(RISCV, InstLoad, ::testing::Values(EMULATION, INORDER, OUTOFORDER),
                          coreTypeToString);
 
 }  // namespace

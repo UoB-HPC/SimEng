@@ -112,7 +112,7 @@ TEST_P(InstStore, sd) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstStore,
-                         ::testing::Values(EMULATION, INORDER),
+                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
                          coreTypeToString);
 
 }  // namespace

@@ -8,7 +8,6 @@
 
 // Temporary; until config options are available
 #include "simeng/arch/aarch64/Instruction.hh"
-
 namespace simeng {
 namespace models {
 namespace outoforder {

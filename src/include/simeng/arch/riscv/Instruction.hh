@@ -32,8 +32,25 @@ const uint8_t ASIMD = 4;
 const uint8_t LOAD = 5;
 const uint8_t STORE = 6;
 const uint8_t BRANCH = 7;
-const uint8_t PREDICATE = 8;
+//const uint8_t FP = 8;
 }  // namespace InstructionGroups
+
+#define NUM_GROUPS 8
+
+const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {};
+
+/** A struct holding user-defined execution information for a aarch64
+ * instruction. */
+struct executionInfo {
+  /** The latency for the instruction. */
+  uint16_t latency = 1;
+
+  /** The execution throughput for the instruction. */
+  uint16_t stallCycles = 1;
+
+  /** The ports that support the instruction. */
+  std::vector<uint8_t> ports = {};
+};
 
 enum class InstructionException {
   None = 0,
@@ -50,6 +67,11 @@ enum class InstructionException {
 /** A basic RISCV implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
+ /** Construct an instruction instance by decoding a provided instruction word.
+   */
+  Instruction(const Architecture& architecture,
+              const InstructionMetadata& metadata);
+
   /** Construct an instruction instance by decoding a provided instruction word.
    */
   Instruction(const Architecture& architecture,
@@ -137,6 +159,10 @@ class Instruction : public simeng::Instruction {
 
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
+
+  /** Set this instruction's execution information including it's execution
+ * latency and throughput, and the set of ports which support it. */
+  void setExecutionInfo(const executionInfo& info);
 
   /** Get this instruction's supported set of ports. */
   std::vector<uint8_t> getSupportedPorts() override;

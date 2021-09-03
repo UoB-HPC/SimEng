@@ -359,7 +359,7 @@ TEST_P(InstArithmetic, liPseudoinstruction) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstArithmetic,
-                         ::testing::Values(EMULATION, INORDER),
+                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
                          coreTypeToString);
 
 }  // namespace

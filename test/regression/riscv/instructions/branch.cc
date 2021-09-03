@@ -216,7 +216,7 @@ TEST_P(InstBranch, BGEU) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstBranch,
-                         ::testing::Values(EMULATION, INORDER),
+                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
                          coreTypeToString);
 
 }  // namespace

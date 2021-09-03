@@ -85,7 +85,7 @@ TEST_P(InstJump, jalAlias) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
 }
 
-INSTANTIATE_TEST_SUITE_P(RISCV, InstJump, ::testing::Values(EMULATION, INORDER),
+INSTANTIATE_TEST_SUITE_P(RISCV, InstJump, ::testing::Values(EMULATION, INORDER, OUTOFORDER),
                          coreTypeToString);
 
 }  // namespace

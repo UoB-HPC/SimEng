@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <queue>
 
 #include "InstructionMetadata.hh"
 
@@ -23,6 +24,99 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   }
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
+
+  // Instantiate an executionInfo entry for each group in the InstructionGroup
+  // namespace.
+  for (int i = 0; i < NUM_GROUPS; i++) {
+    groupExecutionInfo_[i] = {1, 1, {}};
+  }
+  // Extract execution latency/throughput for each group
+  std::vector<uint8_t> inheritanceDistance(NUM_GROUPS, UINT8_MAX);
+  for (size_t i = 0; i < config["Latencies"].size(); i++) {
+    YAML::Node port_node = config["Latencies"][i];
+    uint16_t latency = port_node["Execution-Latency"].as<uint16_t>();
+    uint16_t throughput = port_node["Execution-Throughput"].as<uint16_t>();
+    for (size_t j = 0; j < port_node["Instruction-Group"].size(); j++) {
+      uint16_t group = port_node["Instruction-Group"][j].as<uint16_t>();
+      groupExecutionInfo_[group].latency = latency;
+      groupExecutionInfo_[group].stallCycles = throughput;
+      // Set zero inheritance distance for latency assignment as it's explicitly
+      // defined
+      inheritanceDistance[group] = 0;
+      // Add inherited support for those appropriate groups
+      std::queue<uint16_t> groups;
+      groups.push(group);
+      // Set a distance counter as 1 to represent 1 level of inheritance
+      uint8_t distance = 1;
+      while (groups.size()) {
+        // Determine if there's any inheritance
+        if (groupInheritance.find(groups.front()) != groupInheritance.end()) {
+          std::vector<uint16_t> inheritedGroups =
+              groupInheritance.at(groups.front());
+          for (int k = 0; k < inheritedGroups.size(); k++) {
+            // Determine if this group has inherited latency values from a
+            // smaller distance
+            if (inheritanceDistance[inheritedGroups[k]] > distance) {
+              groupExecutionInfo_[inheritedGroups[k]].latency = latency;
+              groupExecutionInfo_[inheritedGroups[k]].stallCycles = throughput;
+              inheritanceDistance[inheritedGroups[k]] = distance;
+            }
+            groups.push(inheritedGroups[k]);
+          }
+        }
+        groups.pop();
+        distance++;
+      }
+    }
+    // Store any opcode-based latency override
+    for (size_t j = 0; j < port_node["Instruction-Opcode"].size(); j++) {
+      uint16_t opcode = port_node["Instruction-Opcode"][j].as<uint16_t>();
+      opcodeExecutionInfo_[opcode].latency = latency;
+      opcodeExecutionInfo_[opcode].stallCycles = throughput;
+    }
+  }
+
+  // ports entries in the groupExecutionInfo_ entries only apply for models
+  // using the outoforder core archetype
+  if (config["Core"]["Simulation-Mode"].as<std::string>() == "outoforder") {
+    // Create mapping between instructions groups and the ports that support
+    // them
+    for (size_t i = 0; i < config["Ports"].size(); i++) {
+      // Store which ports support which groups
+      YAML::Node group_node = config["Ports"][i]["Instruction-Group-Support"];
+      for (size_t j = 0; j < group_node.size(); j++) {
+        uint16_t group = group_node[j].as<uint16_t>();
+        uint8_t newPort = static_cast<uint8_t>(i);
+        groupExecutionInfo_[group].ports.push_back(newPort);
+        // Add inherited support for those appropriate groups
+        std::queue<uint16_t> groups;
+        groups.push(group);
+        while (groups.size()) {
+          // Determine if there's any inheritance
+          if (groupInheritance.find(groups.front()) != groupInheritance.end()) {
+            std::vector<uint16_t> inheritedGroups =
+                groupInheritance.at(groups.front());
+            for (int k = 0; k < inheritedGroups.size(); k++) {
+              groupExecutionInfo_[inheritedGroups[k]].ports.push_back(newPort);
+              groups.push(inheritedGroups[k]);
+            }
+          }
+          groups.pop();
+        }
+      }
+      // Store any opcode-based port support override
+      YAML::Node opcode_node = config["Ports"][i]["Instruction-Opcode-Support"];
+      for (size_t j = 0; j < opcode_node.size(); j++) {
+        // If latency information hasn't been defined, set to zero as to inform
+        // later access to use group defined latencies instead
+        uint16_t opcode = opcode_node[j].as<uint16_t>();
+        if (opcodeExecutionInfo_.find(opcode) == opcodeExecutionInfo_.end()) {
+          opcodeExecutionInfo_[opcode] = {0, 0, {}};
+        }
+        opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
+      }
+    }
+  }
 }
 Architecture::~Architecture() { cs_close(&capstoneHandle); }
 
@@ -45,7 +139,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     return 1;
   }
 
-  assert(bytesAvailable >= 4 && "Fewer than 4 bytes supplied to RISCV decoder");
+  assert(bytesAvailable >= 4 &&
+         "Fewer than 4 bytes supplied to AArch64 decoder");
 
   // Dereference the instruction pointer to obtain the instruction word
   const uint32_t insn = *static_cast<const uint32_t*>(ptr);
@@ -71,13 +166,13 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     // Cache the metadata
     metadataCache.emplace_front(metadata);
 
-    // Get the latencies for this instruction
-    auto latencies = getLatencies(metadata);
+    // Create and cache an instruction using the metadata
+    Instruction newInstruction = Instruction(*this, metadataCache.front());
 
-    // Create and cache an instruction using the metadata and latencies
-    auto result = decodeCache.insert(
-        {insn,
-         {*this, metadataCache.front(), latencies.first, latencies.second}});
+    // Set execution information for this instruction
+    newInstruction.setExecutionInfo(getExecutionInfo(newInstruction));
+
+    auto result = decodeCache.insert({insn, newInstruction});
 
     iter = result.first;
   }
@@ -94,6 +189,22 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   return 4;
 }
 
+executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
+  // Assume no opcode-based override
+  executionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
+  if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
+      opcodeExecutionInfo_.end()) {
+    // Replace with overrided values
+    executionInfo overrideInfo =
+        opcodeExecutionInfo_.at(insn.getMetadata().opcode);
+    if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
+    if (overrideInfo.stallCycles != 0)
+      exeInfo.stallCycles = overrideInfo.stallCycles;
+    if (overrideInfo.ports.size()) exeInfo.ports = overrideInfo.ports;
+  }
+  return exeInfo;
+}
+
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory) const {
@@ -106,7 +217,11 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
   return {
       {8, 32},  // General purpose
       {8, 32},  // Floating Point
-                //      {8, numSysRegs},  // System
+
+    // TODO remove. Needed to allow OoO core to work. Otherwise RegisterAliasTable.cc:15 triggers
+      {32, 17},         // Predicate
+      {1, 1},           // NZCV
+      {8, numSysRegs},  // System
   };
 }
 
@@ -143,15 +258,6 @@ ProcessStateChange Architecture::getUpdateState() const {
   //  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(1));
 
   return changes;
-}
-
-std::pair<uint8_t, uint8_t> Architecture::getLatencies(
-    InstructionMetadata& metadata) const {
-  // Look up the instruction opcode to get the latency
-  switch (metadata.opcode) {}
-
-  // Assume single-cycle, non-blocking for all other instructions
-  return {1, 1};
 }
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }

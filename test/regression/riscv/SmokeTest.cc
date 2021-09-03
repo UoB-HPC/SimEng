@@ -13,7 +13,7 @@ TEST_P(SmokeTest, instruction) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, SmokeTest,
-                         ::testing::Values(EMULATION, INORDER),
+                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
                          coreTypeToString);
 
 }  // namespace

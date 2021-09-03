@@ -13,6 +13,12 @@ namespace riscv {
 const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL, 0};
 
 Instruction::Instruction(const Architecture& architecture,
+                         const InstructionMetadata& metadata)
+    : architecture_(architecture), metadata(metadata) {
+  decode();
+}
+
+Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata, uint8_t latency,
                          uint8_t stallCycles)
     : architecture_(architecture), metadata(metadata) {
@@ -154,13 +160,23 @@ uint16_t Instruction::getGroup() const {
   if (isBranch()) group |= (1 << InstructionGroups::BRANCH);
   if (isLoad()) group |= (1 << InstructionGroups::LOAD);
   if (isStore()) group |= (1 << InstructionGroups::STORE);
-  if (isASIMD_) group |= (1 << InstructionGroups::ASIMD);
+//  if (isASIMD_) group |= (1 << InstructionGroups::ASIMD);
   if (group == 0) group |= (1 << InstructionGroups::ARITHMETIC);
   if (isShift_) group |= (1 << InstructionGroups::SHIFT);
   if (isDivide_) group |= (1 << InstructionGroups::DIVIDE);
   if (isMultiply_) group |= (1 << InstructionGroups::MULTIPLY);
 
   return group;
+}
+
+void Instruction::setExecutionInfo(const executionInfo& info) {
+  if (isLoad_ || isStore_) {
+    lsqExecutionLatency_ = info.latency;
+  } else {
+    latency_ = info.latency;
+  }
+  stallCycles_ = info.stallCycles;
+  supportedPorts_ = info.ports;
 }
 
 std::vector<uint8_t> Instruction::getSupportedPorts() { return {0}; }
