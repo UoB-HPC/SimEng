@@ -976,6 +976,102 @@ TEST_P(InstSve, fcvt) {
               1.0, 1.0, 1.0});
 }
 
+TEST_P(InstSve, fdivr) {
+  // VL = 512-bits
+  // double
+  initialHeapData_.resize(128);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = -42.76;
+  dheap[2] = -0.125;
+  dheap[3] = 1.0;
+  dheap[4] = 40.26;
+  dheap[5] = -684.72;
+  dheap[6] = -0.15;
+  dheap[7] = 107.86;
+
+  dheap[8] = -34.71;
+  dheap[9] = -0.917;
+  dheap[10] = 1.0;
+  dheap[11] = 80.72;
+  dheap[12] = -125.67;
+  dheap[13] = -0.01;
+  dheap[14] = 701.90;
+  dheap[15] = 7.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #4
+    whilelo p0.d, xzr, x2
+    ptrue p1.d
+
+    mov x3, #8
+    ld1d {z0.d}, p1/z, [x0, x3, lsl #3]
+    ld1d {z1.d}, p1/z, [x0, x1, lsl #3]
+    ld1d {z2.d}, p1/z, [x0, x1, lsl #3]
+
+    fdivr z1.d, p1/m, z1.d, z0.d
+    fdivr z2.d, p0/m, z2.d, z0.d
+  )");
+
+  CHECK_NEON(1, double,
+             {-34.71, 0.02144527595884003837, -8.0, 80.72,
+              -3.1214605067064087329, 0.0000146045098726486738,
+              -4679.333333333333030168, 0.06489894307435564724});
+  CHECK_NEON(2, double,
+             {-34.71, 0.02144527595884003837, -8.0, 80.72, 40.26, -684.72,
+              -0.15, 107.86});
+
+  // float
+  initialHeapData_.resize(128);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 1.0f;
+  fheap[1] = -42.76f;
+  fheap[2] = -0.125f;
+  fheap[3] = 1.0f;
+  fheap[4] = 40.26f;
+  fheap[5] = -684.72f;
+  fheap[6] = -0.15f;
+  fheap[7] = 107.86f;
+
+  fheap[8] = -34.71f;
+  fheap[9] = -0.917f;
+  fheap[10] = 1.0f;
+  fheap[11] = 80.72f;
+  fheap[12] = -125.67f;
+  fheap[13] = -0.01f;
+  fheap[14] = 701.90f;
+  fheap[15] = 7.0f;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #8
+    whilelo p0.s, xzr, x2
+    ptrue p1.s
+
+    ld1w {z0.s}, p1/z, [x0, x2, lsl #2]
+    ld1w {z1.s}, p1/z, [x0, x1, lsl #2]
+
+    fdivr z1.s, p0/m, z1.s, z0.s
+  )");
+
+  CHECK_NEON(1, float,
+             {-34.71f, 0.02144527595884003837f, -8.0f, 80.72f,
+              -3.1214605067064087329f, 0.0000146045098726486738f,
+              -4679.333333333333030168f, 0.06489894307435564724f, -34.71f,
+              -0.917f, 1.0f, 80.72f, -125.67f, -0.01f, 701.90f, 7.0f});
+}
+
 TEST_P(InstSve, fdiv) {
   // VL = 512-bits
   // double

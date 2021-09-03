@@ -1962,6 +1962,44 @@ void Instruction::execute() {
       results[0] = {n / m, 256};
       break;
     }
+    case Opcode::AArch64_FDIVR_ZPmZ_D: {  // fdivr zdn.d, pg/m, zdn.d, zm.d
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const double* d = operands[1].getAsVector<double>();
+      const double* m = operands[2].getAsVector<double>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      double out[32] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active) {
+          out[i] = m[i] / d[i];
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FDIVR_ZPmZ_S: {  // fdivr zdn.s, pg/m, zdn.s, zm.s
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const float* d = operands[1].getAsVector<float>();
+      const float* m = operands[2].getAsVector<float>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      float out[64] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 4));
+        if (p[i / 16] & shifted_active) {
+          out[i] = m[i] / d[i];
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FDIV_ZPmZ_D: {  // fdiv zd.d, pg/m, zn.d, zm.d
       const double* a = operands[0].getAsVector<double>();
       const uint64_t* p = operands[1].getAsVector<uint64_t>();

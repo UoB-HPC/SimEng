@@ -255,6 +255,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         operands[3].fp = 1.0f;
       }
       break;
+    case Opcode::AArch64_FDIVR_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FDIVR_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_AND_PPzPP:
       [[fallthrough]];
     case Opcode::AArch64_FADD_ZPmZ_D:
