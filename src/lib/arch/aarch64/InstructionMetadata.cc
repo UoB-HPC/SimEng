@@ -177,8 +177,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FADD_ZZZ_S:
       [[fallthrough]];
-    case Opcode::AArch64_FSQRT_ZPmZ_S:
-      [[fallthrough]];
     case Opcode::AArch64_FSUB_ZZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FSUB_ZZZ_S:
@@ -199,6 +197,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_FSQRT_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FSQRT_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FCVTZS_ZPmZ_DtoS:
       // No defined access types
       operands[0].access = CS_AC_READ | CS_AC_WRITE;

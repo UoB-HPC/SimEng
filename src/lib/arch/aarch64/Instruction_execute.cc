@@ -2732,23 +2732,41 @@ void Instruction::execute() {
       results[0] = RegisterValue(::sqrtf(operands[0].get<float>()), 256);
       break;
     }
+    case Opcode::AArch64_FSQRT_ZPmZ_D: {  // fsqrt zd.d, pg/m, zn.d
+      const double* d = operands[0].getAsVector<double>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const double* n = operands[2].getAsVector<double>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      double out[32] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active) {
+          out[i] = ::sqrt(n[i]);
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FSQRT_ZPmZ_S: {  // fsqrt zd.s, pg/m, zn.s
-      const uint64_t* p = operands[0].getAsVector<uint64_t>();
-      const float* n = operands[1].getAsVector<float>();
+      const float* d = operands[0].getAsVector<float>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const float* n = operands[2].getAsVector<float>();
 
       const uint64_t VL_bits = 512;
       const uint16_t partition_num = VL_bits / 32;
       float out[64] = {0};
-
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = 1ull << (i * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = ::sqrt(n[i]);
         } else {
-          out[i] = n[i];
+          out[i] = d[i];
         }
       }
-
       results[0] = out;
       break;
     }

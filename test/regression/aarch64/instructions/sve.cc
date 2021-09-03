@@ -1605,7 +1605,7 @@ TEST_P(InstSve, fneg) {
 
 TEST_P(InstSve, fsqrt) {
   // VL = 512-bits
-  // float
+  // Float
   initialHeapData_.resize(68);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   fheap[0] = 1.0;
@@ -1640,6 +1640,9 @@ TEST_P(InstSve, fsqrt) {
     ld1w {z0.s}, p1/z, [x0, x1, lsl #2]
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
 
+    fdup z2.s, #0.5
+    fdup z3.s, #0.5
+
     fsqrt z2.s, p1/m, z0.s
     fsqrt z3.s, p0/m, z1.s
   )");
@@ -1654,8 +1657,48 @@ TEST_P(InstSve, fsqrt) {
   CHECK_NEON(3, float,
              {5.891519069671630859375f, 0.95760118961334228515625f, 0,
               8.98443126678466796875f, 11.21026325225830078125f, 0.1f,
-              26.493396759033203125f, 2.6457512378692626953125f, 0, 0, 0, 0, 0,
-              0, 0, 0});
+              26.493396759033203125f, 2.6457512378692626953125f, 0.5f, 0.5f,
+              0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f});
+
+  // Double
+  initialHeapData_.resize(68);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = 42.76;
+  dheap[2] = 0.125;
+  dheap[3] = 0.0;
+  dheap[4] = 40.26;
+  dheap[5] = 684.72;
+  dheap[6] = 0.15;
+  dheap[7] = 107.86;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #4
+    whilelo p0.d, xzr, x2
+    ptrue p1.d
+
+    ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
+
+    fdup z2.d, #0.5
+    fdup z3.d, #0.5
+
+    fsqrt z2.d, p1/m, z0.d
+    fsqrt z3.d, p0/m, z0.d
+  )");
+
+  CHECK_NEON(2, double,
+             {1, 6.53911304473876953125f, 0.3535533845424652099609375f, 0,
+              6.34507656097412109375f, 26.1671543121337890625f,
+              0.3872983455657958984375f, 10.38556671142578125f});
+  CHECK_NEON(3, double,
+             {1, 6.53911304473876953125f, 0.3535533845424652099609375f, 0, 0.5,
+              0.5, 0.5, 0.5});
 }
 
 TEST_P(InstSve, fsub) {
