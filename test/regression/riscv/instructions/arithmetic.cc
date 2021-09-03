@@ -193,7 +193,7 @@ TEST_P(InstArithmetic, lui) {
       lui t4, 0xFFFFC
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 4 << 12);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(29), -4 << 12);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), -4ull << 12);
 }
 
 TEST_P(InstArithmetic, auipc) {
@@ -202,7 +202,7 @@ TEST_P(InstArithmetic, auipc) {
       auipc t4, 1048572
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 4 << 12);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(29), (-4 << 12) + 4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), (-4ull << 12) + 4);
 }
 
 TEST_P(InstArithmetic, xor) {

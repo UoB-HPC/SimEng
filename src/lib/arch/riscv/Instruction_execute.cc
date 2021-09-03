@@ -33,6 +33,7 @@ uint64_t mulhi(uint64_t a, uint64_t b) {
 
 /** Extend 'bits' by value in position 'msb' of 'bits' (1 indexed) */
 uint64_t bitExtend(uint64_t bits, uint64_t msb) {
+  assert(msb != 0 && "Attempted to bit extend 0th bit");
   int64_t leftShift = bits << (64 - msb);
   int64_t rightShift = leftShift >> (64 - msb);
   return rightShift;
