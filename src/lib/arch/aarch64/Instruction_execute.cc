@@ -2441,17 +2441,24 @@ void Instruction::execute() {
       results[0] = {n * m, 256};
       break;
     }
-    case Opcode::AArch64_FMULv2f64: {  // fmul vd.2d, vn.2d, vm.2d
-      const double* a = operands[0].getAsVector<double>();
-      const double* b = operands[1].getAsVector<double>();
-      double out[2] = {a[0] * b[0], a[1] * b[1]};
-      results[0] = {out, 256};
-      break;
-    }
     case Opcode::AArch64_FMULv4f32: {  // fmul vd.4s, vn.4s, vm.4s
       const float* a = operands[0].getAsVector<float>();
       const float* b = operands[1].getAsVector<float>();
       float out[4] = {a[0] * b[0], a[1] * b[1], a[2] * b[2], a[3] * b[3]};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FMULv2f32: {  // fmul vd.2s, vn.2s, vm.2s
+      const float* a = operands[0].getAsVector<float>();
+      const float* b = operands[1].getAsVector<float>();
+      float out[4] = {a[0] * b[0], a[1] * b[1], 0.0f, 0.0f};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FMULv2f64: {  // fmul vd.2d, vn.2d, vm.2d
+      const double* a = operands[0].getAsVector<double>();
+      const double* b = operands[1].getAsVector<double>();
+      double out[2] = {a[0] * b[0], a[1] * b[1]};
       results[0] = {out, 256};
       break;
     }
@@ -2461,6 +2468,22 @@ void Instruction::execute() {
       const float b = operands[1].getAsVector<float>()[index];
       float out[4] = {a[0] * b, a[1] * b, a[2] * b, a[3] * b};
       results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_FMULv2i32_indexed: {  // fmul vd.2s, vn.2s, vm.s[index]
+      int index = metadata.operands[2].vector_index;
+      const float* a = operands[0].getAsVector<float>();
+      const float b = operands[1].getAsVector<float>()[index];
+      float out[4] = {a[0] * b, a[1] * b, a[2] * b, a[3] * b};
+      results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_FMULv2i64_indexed: {  // fmul vd.2d, vn.2d, vm.d[index]
+      int index = metadata.operands[2].vector_index;
+      const double* a = operands[0].getAsVector<double>();
+      const double b = operands[1].getAsVector<double>()[index];
+      double out[2] = {a[0] * b, a[1] * b};
+      results[0] = out;
       break;
     }
     case Opcode::AArch64_FMUL_ZZZ_D: {  // fmul zd.d, zn.d, zm.d

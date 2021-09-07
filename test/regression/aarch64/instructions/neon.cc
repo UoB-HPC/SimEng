@@ -1306,6 +1306,8 @@ TEST_P(InstNeon, fmul) {
     fmul s5, s1, v1.s[0]
     fmul s6, s0, v0.s[1]
     fmul s7, s0, v1.s[3]
+    fmul v8.2s, v0.2s, v1.2s
+    fmul v9.2s, v1.2s, v0.s[0]
   )");
   EXPECT_EQ((getVectorRegisterElement<float, 0>(2)), -5.f);
   EXPECT_EQ((getVectorRegisterElement<float, 1>(2)), -1400832.f);
@@ -1322,6 +1324,8 @@ TEST_P(InstNeon, fmul) {
   EXPECT_EQ((getVectorRegisterElement<float, 1>(7)), 0.f);
   EXPECT_EQ((getVectorRegisterElement<float, 2>(7)), 0.f);
   EXPECT_EQ((getVectorRegisterElement<float, 3>(7)), 0.f);
+  CHECK_NEON(8, float, {-5.0f, -1400832.0f, 0.0f, 0.0f});
+  CHECK_NEON(9, float, {-5.0f, 65536.0f, 0.0f, 0.0f});
 
   // 64-bit
   initialHeapData_.resize(32);
@@ -1341,10 +1345,12 @@ TEST_P(InstNeon, fmul) {
     fmul v2.2d, v0.2d, v1.2d
     fmul d3, d0, v1.d[1]
     fmul d4, d1, v1.d[0]
+    fmul v5.2d, v1.2d, v0.d[0]
   )");
   CHECK_NEON(2, double, {-0.25, -13725.96});
   CHECK_NEON(3, double, {642.0, 0.0});
   CHECK_NEON(4, double, {0.015625, 0.0});
+  CHECK_NEON(5, double, {-0.25, 642.0});
 }
 
 TEST_P(InstNeon, fneg) {
