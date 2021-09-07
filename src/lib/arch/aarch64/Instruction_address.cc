@@ -201,6 +201,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;
     }
+    case Opcode::AArch64_LDARB: {  // ldar wt, [<xn|sp>]
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 1}});
+      break;
+    }
     case Opcode::AArch64_LDARW: {  // ldar wt, [xn]
       setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
       break;

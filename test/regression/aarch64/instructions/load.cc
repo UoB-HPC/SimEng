@@ -190,6 +190,72 @@ TEST_P(InstLoad, ldadd) {
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 928), 128);
 }
 
+TEST_P(InstLoad, ldarb) {
+  initialHeapData_.resize(8);
+  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap[0] = 0xDEADBEEF;
+  heap[1] = 0x12345678;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldarb w1, [x0]
+    add x0, x0, #1
+    ldarb w2, [x0]
+    add x0, x0, #1
+    ldarb w3, [x0]
+    add x0, x0, #1
+    ldarb w4, [x0]
+    add x0, x0, #1
+    ldarb w5, [x0]
+    add x0, x0, #1
+    ldarb w6, [x0]
+    add x0, x0, #1
+    ldarb w7, [x0]
+    add x0, x0, #1
+    ldarb w8, [x0]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xEF);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0xBE);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0xAD);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xDE);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0x78);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0x56);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0x34);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(8), 0x12);
+
+  RUN_AARCH64(R"(
+    sub sp, sp, #1024
+    mov w0, #16
+    mov w1, #32
+    mov w2, #48
+    mov w3, #64
+
+    str w0, [sp], #32
+    str w1, [sp], #32
+    str w2, [sp], #32
+    str w3, [sp], #32
+
+    sub sp, sp, #128
+
+    ldarb w4, [sp]
+    add sp, sp, #32
+    ldarb w5, [sp]
+    add sp, sp, #32
+    ldarb w6, [sp]
+    add sp, sp, #32
+    ldarb w7, [sp]
+  )");
+
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 16);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 32);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 48);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 64);
+}
+
 TEST_P(InstLoad, ldrb) {
   initialHeapData_.resize(8);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
