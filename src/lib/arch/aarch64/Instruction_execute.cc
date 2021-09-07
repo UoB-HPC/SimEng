@@ -3248,6 +3248,73 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_LD1Rv16b: {  // ld1r {vt.16b}, [xn]
+      uint8_t val = memoryData[0].get<uint8_t>();
+      uint8_t out[16] = {val, val, val, val, val, val, val, val,
+                         val, val, val, val, val, val, val, val};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv16b_POST: {  // ld1r {vt.16b}, [xn], #imm
+      uint8_t val = memoryData[0].get<uint8_t>();
+      uint8_t out[16] = {val, val, val, val, val, val, val, val,
+                         val, val, val, val, val, val, val, val};
+      results[0] = out;
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv1d: {  // ld1r {vt.1d}, [xn]
+      uint64_t val = memoryData[0].get<uint64_t>();
+      uint64_t out[2] = {val, 0};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv1d_POST: {  // ld1r {vt.1d}, [xn], #imm
+      uint64_t val = memoryData[0].get<uint64_t>();
+      uint64_t out[2] = {val, 0};
+      results[0] = out;
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv2d: {  // ld1r {vt.2d}, [xn]
+      uint64_t val = memoryData[0].get<uint64_t>();
+      uint64_t out[2] = {val, val};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv2d_POST: {  // ld1r {vt.2d}, [xn], #imm
+      uint64_t val = memoryData[0].get<uint64_t>();
+      uint64_t out[2] = {val, val};
+      results[0] = out;
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv2s: {  // ld1r {vt.2s}, [xn]
+      uint32_t val = memoryData[0].get<uint32_t>();
+      uint32_t out[4] = {val, val, 0, 0};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv2s_POST: {  // ld1r {vt.2s}, [xn], #imm
+      uint32_t val = memoryData[0].get<uint32_t>();
+      uint32_t out[4] = {val, val, 0, 0};
+      results[0] = out;
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv4h: {  // ld1r {vt.4h}, [xn]
+      uint16_t val = memoryData[0].get<uint16_t>();
+      uint16_t out[8] = {val, val, val, val, 0, 0, 0, 0};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv4h_POST: {  // ld1r {vt.4h}, [xn], #imm
+      uint16_t val = memoryData[0].get<uint16_t>();
+      uint16_t out[8] = {val, val, val, val, 0, 0, 0, 0};
+      results[0] = out;
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+      break;
+    }
     case Opcode::AArch64_LD1Rv4s: {  // ld1r {vt.4s}, [xn]
       uint32_t val = memoryData[0].get<uint32_t>();
       uint32_t out[4] = {val, val, val, val};
@@ -3258,6 +3325,34 @@ void Instruction::execute() {
       uint32_t val = memoryData[0].get<uint32_t>();
       uint32_t out[4] = {val, val, val, val};
       results[0] = {out, 256};
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv8b: {  // ld1r {vt.8b}, [xn]
+      uint8_t val = memoryData[0].get<uint8_t>();
+      uint8_t out[16] = {val, val, val, val, val, val, val, val,
+                         0,   0,   0,   0,   0,   0,   0,   0};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv8b_POST: {  // ld1r {vt.8b}, [xn], #imm
+      uint8_t val = memoryData[0].get<uint8_t>();
+      uint8_t out[16] = {val, val, val, val, val, val, val, val,
+                         0,   0,   0,   0,   0,   0,   0,   0};
+      results[0] = out;
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv8h: {  // ld1r {vt.8h}, [xn]
+      uint16_t val = memoryData[0].get<uint16_t>();
+      uint16_t out[8] = {val, val, val, val, val, val, val, val};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_LD1Rv8h_POST: {  // ld1r {vt.8h}, [xn], #imm
+      uint16_t val = memoryData[0].get<uint16_t>();
+      uint16_t out[8] = {val, val, val, val, val, val, val, val};
+      results[0] = out;
       results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }

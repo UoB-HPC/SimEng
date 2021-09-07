@@ -371,6 +371,38 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_LD1Rv4h_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Rv8h_POST:
+      // Fix for exclusion of post_index immediate in disassembly
+      operandCount = 3;
+      operands[2].type = ARM64_OP_IMM;
+      operands[2].access = CS_AC_READ;
+      // For vector arrangment of 16-bit, post_index immediate is 2
+      operands[2].imm = 2;
+      break;
+    case Opcode::AArch64_LD1Rv1d_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Rv2d_POST:
+      // Fix for exclusion of post_index immediate in disassembly
+      operandCount = 3;
+      operands[2].type = ARM64_OP_IMM;
+      operands[2].access = CS_AC_READ;
+      // For vector arrangment of 64-bit, post_index immediate is 8
+      operands[2].imm = 8;
+      break;
+    case Opcode::AArch64_LD1Rv16b_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Rv8b_POST:
+      // Fix for exclusion of post_index immediate in disassembly
+      operandCount = 3;
+      operands[2].type = ARM64_OP_IMM;
+      operands[2].access = CS_AC_READ;
+      // For vector arrangment of 8-bit, post_index immediate is 1
+      operands[2].imm = 1;
+      break;
+    case Opcode::AArch64_LD1Rv2s_POST:
+      [[fallthrough]];
     case Opcode::AArch64_LD1Rv4s_POST:
       // Fix for exclusion of post_index immediate in disassembly
       operandCount = 3;
