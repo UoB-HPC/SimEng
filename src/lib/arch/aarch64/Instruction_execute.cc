@@ -5172,11 +5172,71 @@ void Instruction::execute() {
       results[0] = static_cast<uint64_t>(0);
       break;
     }
+    case Opcode::AArch64_SUBv16i8: {  // sub vd.16b, vn.16b, vm.16b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint8_t* m = operands[1].getAsVector<uint8_t>();
+      uint8_t out[16] = {0u};
+      for (int i = 0; i < 16; i++) {
+        out[i] = n[i] - m[i];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_SUBv2i32: {  // sub vd.2s, vn.2s, vm.2s
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      const uint32_t* m = operands[1].getAsVector<uint32_t>();
+      uint32_t out[4] = {0u};
+      for (int i = 0; i < 2; i++) {
+        out[i] = n[i] - m[i];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_SUBv2i64: {  // sub vd.2d, vn.2d, vm.2d
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t* m = operands[1].getAsVector<uint64_t>();
+      uint64_t out[2] = {0u};
+      for (int i = 0; i < 2; i++) {
+        out[i] = n[i] - m[i];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_SUBv4i16: {  // sub vd.4h, vn.4h, vm.4h
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      const uint16_t* m = operands[1].getAsVector<uint16_t>();
+      uint16_t out[8] = {0u};
+      for (int i = 0; i < 4; i++) {
+        out[i] = n[i] - m[i];
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_SUBv4i32: {  // sub vd.4s, vn.4s, vm.4s
       const uint32_t* n = operands[0].getAsVector<uint32_t>();
       const uint32_t* m = operands[1].getAsVector<uint32_t>();
       uint32_t out[4] = {n[0] - m[0], n[1] - m[1], n[2] - m[2], n[3] - m[3]};
       results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_SUBv8i16: {  // sub vd.8h, vn.8h, vm.8h
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      const uint16_t* m = operands[1].getAsVector<uint16_t>();
+      uint16_t out[8] = {0u};
+      for (int i = 0; i < 8; i++) {
+        out[i] = n[i] - m[i];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_SUBv8i8: {  // sub vd.8b, vn.8b, vm.8b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint8_t* m = operands[1].getAsVector<uint8_t>();
+      uint8_t out[16] = {0u};
+      for (int i = 0; i < 8; i++) {
+        out[i] = n[i] - m[i];
+      }
+      results[0] = out;
       break;
     }
     case Opcode::AArch64_SUBSWri: {  // subs wd, wn, #imm
