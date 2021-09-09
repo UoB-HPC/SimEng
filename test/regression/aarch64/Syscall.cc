@@ -480,6 +480,50 @@ TEST_P(Syscall, newfstatat) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(21), -1);
 }
 
+TEST_P(Syscall, getrusage) {
+  // Reserve 128 bytes for usage
+  initialHeapData_.resize(128);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # getrusage(who = RUSAGE_SELF, usage)
+    mov x0, #0
+    mov x1, x20
+    mov x8, #165
+    svc #0
+    mov x21, x0
+
+    # getrusage(who = RUSAGE_CHILDREN, usage)
+    mov x0, #-1
+    mov x1, x20
+    mov x8, #165
+    svc #0
+    mov x22, x0
+
+    # getrusage(who = RUSAGE_THREAD, usage)
+    mov x0, #1
+    mov x1, x20
+    mov x8, #165
+    svc #0
+    mov x23, x0
+
+    # getrusage(who = 2, usage)
+    mov x0, #2
+    mov x1, x20
+    mov x8, #165
+    svc #0
+    mov x24, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(22), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(23), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(24), -1);
+}
+
 TEST_P(Syscall, ftruncate) {
   const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/truncate-test.txt";
 

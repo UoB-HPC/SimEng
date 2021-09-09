@@ -422,6 +422,17 @@ bool ExceptionHandler::init() {
                         RegisterValue(machine)}};
         break;
       }
+      case 165: {  // getrusage
+        int who = registerFileSet.get(R0).get<int>();
+        uint64_t usagePtr = registerFileSet.get(R1).get<uint64_t>();
+
+        kernel::rusage usageOut;
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {linux_.getrusage(who, usageOut)}};
+        stateChange.memoryAddresses.push_back({usagePtr, sizeof(usageOut)});
+        stateChange.memoryAddressValues.push_back(usageOut);
+        break;
+      }
       case 169: {  // gettimeofday
         uint64_t tvPtr = registerFileSet.get(R0).get<uint64_t>();
         uint64_t tzPtr = registerFileSet.get(R1).get<uint64_t>();

@@ -10,7 +10,7 @@
 namespace simeng {
 namespace kernel {
 
-/** Fixed-width definition of `timeval`.
+/** Fixed-width definition of `stat`.
  * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
 struct stat {
   uint64_t dev;       // offset =   0
@@ -94,6 +94,26 @@ struct LinuxProcessState {
   std::set<int64_t> freeFileDescriptors;
 };
 
+/** Fixed-width definition of 'rusage' (from <sys/resource.h>). */
+struct rusage {
+  struct ::timeval ru_utime;  // user CPU time used
+  struct ::timeval ru_stime;  // system CPU time used
+  int64_t ru_maxrss;          // maximum resident set size
+  int64_t ru_ixrss;           // integral shared memory size
+  int64_t ru_idrss;           // integral unshared data size
+  int64_t ru_isrss;           // integral unshared stack size
+  int64_t ru_minflt;          // page reclaims (soft page faults)
+  int64_t ru_majflt;          // page faults (hard page faults)
+  int64_t ru_nswap;           // swaps
+  int64_t ru_inblock;         // block input operations
+  int64_t ru_oublock;         // block output operations
+  int64_t ru_msgsnd;          // IPC messages sent
+  int64_t ru_msgrcv;          // IPC messages received
+  int64_t ru_nsignals;        // signals received
+  int64_t ru_nvcsw;           // voluntary context switches
+  int64_t ru_nivcsw;          // involuntary context switches
+};
+
 /** A Linux kernel syscall emulation implementation, which mimics the responses
    to Linux system calls. */
 class Linux {
@@ -127,6 +147,9 @@ class Linux {
 
   /** fstat syscall: get file status. */
   int64_t fstat(int64_t fd, stat& out);
+
+  /** getrusage syscall: get recource usage measures for Who*/
+  int64_t getrusage(int64_t who, rusage& out);
 
   /** getpid syscall: get the process owner's process ID. */
   int64_t getpid() const;

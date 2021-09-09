@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/termios.h>
 #include <sys/uio.h>
@@ -163,6 +164,39 @@ int64_t Linux::fstat(int64_t fd, stat& out) {
   out.atime = statbuf.st_atime;
   out.mtime = statbuf.st_mtime;
   out.ctime = statbuf.st_ctime;
+
+  return retval;
+}
+
+// TODO: Current implementation will get whole SimEng resource usage stats, not
+// just the usage stats of binary
+int64_t Linux::getrusage(int64_t who, rusage& out) {
+  if (!(who == 0 || who == -1 || who == 1)) {
+    assert(false && "Un-recognised RUSAGE descriptor.");
+    return -1;
+  }
+
+  // Pass call through host
+  struct ::rusage usage;
+  int64_t retval = ::getrusage(who, &usage);
+
+  // Copy results to output struct
+  out.ru_utime = usage.ru_utime;
+  out.ru_stime = usage.ru_stime;
+  out.ru_maxrss = usage.ru_maxrss;
+  out.ru_ixrss = usage.ru_ixrss;
+  out.ru_idrss = usage.ru_idrss;
+  out.ru_isrss = usage.ru_isrss;
+  out.ru_minflt = usage.ru_minflt;
+  out.ru_majflt = usage.ru_majflt;
+  out.ru_nswap = usage.ru_nswap;
+  out.ru_inblock = usage.ru_inblock;
+  out.ru_oublock = usage.ru_oublock;
+  out.ru_msgsnd = usage.ru_msgsnd;
+  out.ru_msgrcv = usage.ru_msgrcv;
+  out.ru_nsignals = usage.ru_nsignals;
+  out.ru_nvcsw = usage.ru_nvcsw;
+  out.ru_nivcsw = usage.ru_nivcsw;
 
   return retval;
 }
