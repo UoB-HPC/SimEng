@@ -60,7 +60,8 @@ bool ExceptionHandler::init() {
         int64_t dfd = registerFileSet.get(R0).get<int64_t>();
         uint64_t filenamePtr = registerFileSet.get(R1).get<uint64_t>();
         int64_t mode = registerFileSet.get(R2).get<int64_t>();
-        int64_t flag = registerFileSet.get(R3).get<int64_t>();
+        // flag component not used, although function definition includes it
+        int64_t flag = 0;
 
         char* filename = new char[kernel::Linux::LINUX_PATH_MAX];
         return readStringThen(filename, filenamePtr,

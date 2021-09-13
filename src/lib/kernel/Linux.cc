@@ -113,7 +113,7 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
     // paths.
     if (strlen(filename.c_str()) != strlen(absolutePath)) {
       assert("Unsupported dirfd argument in fstatat syscall");
-      return -1;
+      return EBADF;
     }
   }
 
