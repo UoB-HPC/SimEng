@@ -1899,6 +1899,26 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
+    case Opcode::AArch64_FCVTZUUWDr: {  // fcvtzu wd, dn
+      const double n = operands[0].get<double>();
+      results[0] = static_cast<uint32_t>(std::trunc(n));
+      break;
+    }
+    case Opcode::AArch64_FCVTZUUWSr: {  // fcvtzu wd, sn
+      const float n = operands[0].get<float>();
+      results[0] = static_cast<uint32_t>(std::trunc(n));
+      break;
+    }
+    case Opcode::AArch64_FCVTZUUXDr: {  // fcvtzu xd, dn
+      const double n = operands[0].get<double>();
+      results[0] = static_cast<uint64_t>(std::trunc(n));
+      break;
+    }
+    case Opcode::AArch64_FCVTZUUXSr: {  // fcvtzu xd, sn
+      const float n = operands[0].get<float>();
+      results[0] = static_cast<uint64_t>(std::trunc(n));
+      break;
+    }
     case Opcode::AArch64_FCVT_ZPmZ_DtoS: {  // fcvt zd.s, pg/m, zn.d
       const float* d = operands[0].getAsVector<float>();
       const uint64_t* p = operands[1].getAsVector<uint64_t>();
