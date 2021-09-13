@@ -138,6 +138,11 @@ class Linux {
   /** ftruncate syscall: truncate a file to an exact size. */
   int64_t ftruncate(uint64_t fd, uint64_t length);
 
+  /** faccessat syscall: checks whether the calling process can access the file
+   * 'pathname'. */
+  int64_t faccessat(int64_t dfd, const std::string& filename, int64_t mode,
+                    int64_t flag);
+
   /** close syscall: close a file descriptor. */
   int64_t close(int64_t fd);
 

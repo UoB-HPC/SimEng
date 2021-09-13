@@ -31,6 +31,83 @@ TEST_P(Syscall, ioctl) {
   EXPECT_NE(getMemoryValue<uint16_t>(process_->getHeapStart() + 6), -1);
 }
 
+TEST_P(Syscall, faccessat) {
+  const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/input.txt";
+  initialHeapData_.resize(strlen(filepath) + 1);
+  // Copy filepath to heap
+  memcpy(initialHeapData_.data(), filepath, strlen(filepath) + 1);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # faccessat(AT_FDCWD, filepath, F_OK, 0) = 0
+    mov x0, #-100
+    mov x1, x20
+    mov x2, #0
+    mov x3, #0
+    mov x8, #48
+    svc #0
+    mov x21, x0
+
+    # faccessat(AT_FDCWD, filepath, R_OK, 0) = 0
+    mov x0, #-100
+    mov x1, x20
+    mov x2, #0x04
+    mov x3, #0
+    mov x8, #48
+    svc #0
+    mov x22, x0
+
+    # faccessat(AT_FDCWD, filepath, W_OK, 0) = 0
+    mov x0, #-100
+    mov x1, x20
+    mov x2, #0x02
+    mov x3, #0
+    mov x8, #48
+    svc #0
+    mov x23, x0
+
+    # faccessat(AT_FDCWD, filepath, X_OK, 0) = -1
+    # File targeted isn't executable
+    mov x0, #-100
+    mov x1, x20
+    mov x2, #0x01
+    mov x3, #0
+    mov x8, #48
+    svc #0
+    mov x24, x0
+
+    # faccessat(AT_FDCWD, wrongFilepath, F_OK, 0) = -1
+    mov x0, #-100
+    add x1, x20, #1
+    mov x2, #0
+    mov x3, #0
+    mov x8, #48
+    svc #0
+    mov x25, x0
+
+    # faccessat(2, fullFilePath, F_OK, 0) = 0
+    # If an absolute filepath is referenced, dirfd is ignored
+    mov x0, #2
+    mov x1, x20
+    mov x2, #0
+    mov x3, #0
+    mov x8, #48
+    svc #0
+    mov x26, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(22), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(23), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(24), -1);
+  EXPECT_EQ(getGeneralRegister<int64_t>(25), -1);
+  EXPECT_EQ(getGeneralRegister<int64_t>(26), 0);
+}
+
 // Test reading from and seeking through a file
 TEST_P(Syscall, file_read) {
   const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/input.txt";
@@ -467,7 +544,7 @@ TEST_P(Syscall, newfstatat) {
     svc #0
     mov x20, x0
 
-    # newfstatat(dirfd=AT_FDCWD, pathname=/data/input.txt, statbuf, flags=0)
+    # newfstatat(dirfd=AT_FDCWD, pathname=data/input.txt, statbuf, flags=0)
     mov x0, #-100
     add x1, x20, #129
     mov x2, x20

@@ -56,6 +56,25 @@ bool ExceptionHandler::init() {
             ChangeType::REPLACEMENT, {R0}, {linux_.ftruncate(fd, length)}};
         break;
       }
+      case 48: {  // faccessat
+        int64_t dfd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t filenamePtr = registerFileSet.get(R1).get<uint64_t>();
+        int64_t mode = registerFileSet.get(R2).get<int64_t>();
+        int64_t flag = registerFileSet.get(R3).get<int64_t>();
+
+        char* filename = new char[kernel::Linux::LINUX_PATH_MAX];
+        return readStringThen(filename, filenamePtr,
+                              kernel::Linux::LINUX_PATH_MAX, [=](auto length) {
+                                // Invoke the kernel
+                                int64_t retval =
+                                    linux_.faccessat(dfd, filename, mode, flag);
+                                ProcessStateChange stateChange = {
+                                    ChangeType::REPLACEMENT, {R0}, {retval}};
+                                delete[] filename;
+                                return concludeSyscall(stateChange);
+                              });
+        break;
+      }
       case 56: {  // openat
         int64_t dirfd = registerFileSet.get(R0).get<int64_t>();
         uint64_t pathnamePtr = registerFileSet.get(R1).get<uint64_t>();

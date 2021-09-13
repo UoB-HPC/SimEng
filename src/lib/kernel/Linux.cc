@@ -85,6 +85,43 @@ int64_t Linux::ftruncate(uint64_t fd, uint64_t length) {
   return retval;
 }
 
+int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
+                         int64_t flag) {
+  // Resolve absolute path to target file
+  char absolutePath[LINUX_PATH_MAX];
+  realpath(filename.c_str(), absolutePath);
+
+  // Setup variable to record if an alternative path is available for use
+  bool altPath = false;
+
+  // Check if path may be a special file, bail out if it is
+  // TODO: Add support for special files
+  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
+    if (strncmp(absolutePath, prefix, strlen(prefix)) == 0) {
+      std::cerr << "ERROR: attempted to return information on a special file: "
+                << "'" << absolutePath << "'" << std::endl;
+      exit(1);
+    }
+  }
+
+  int64_t dfd_temp = AT_FDCWD;
+  // Pass syscall through to host
+  if (dfd != -100) {
+    dfd_temp = dfd;
+    // If absolute path used then dfd is dis-regarded.
+    // Otherwise, a dirfd != AT_FDCWD isn't currently supported for relative
+    // paths.
+    if (strlen(filename.c_str()) != strlen(absolutePath)) {
+      assert("Unsupported dirfd argument in fstatat syscall");
+      return -1;
+    }
+  }
+
+  int64_t retval = ::faccessat(dfd_temp, filename.c_str(), mode, flag);
+
+  return retval;
+}
+
 int64_t Linux::close(int64_t fd) {
   assert(fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
