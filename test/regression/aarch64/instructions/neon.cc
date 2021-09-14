@@ -858,6 +858,7 @@ TEST_P(InstNeon, fcmge) {
   CHECK_NEON(3, uint32_t, {UINT32_MAX, 0, UINT32_MAX, 0});
 }
 TEST_P(InstNeon, fcmgt) {
+  // Float
   initialHeapData_.resize(32);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   fheap[0] = 7.0f;
@@ -878,8 +879,35 @@ TEST_P(InstNeon, fcmgt) {
     ldr q0, [x0]
     ldr q1, [x0, #16]
     fcmgt v2.4s, v0.4s, v1.4s
+
+    fcmgt v3.2s, v1.2s, #0.0
+    fcmgt v4.4s, v0.4s, #0.0
   )");
   CHECK_NEON(2, uint32_t, {0, UINT32_MAX, 0, UINT32_MAX});
+  CHECK_NEON(3, uint32_t, {UINT32_MAX, 0, 0, 0});
+  CHECK_NEON(4, uint32_t, {UINT32_MAX, 0, 0, 0});
+
+  // Double
+  initialHeapData_.resize(32);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 7.0;
+  dheap[1] = -34.71;
+  dheap[2] = -0.917;
+  dheap[3] = 0.0;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    
+    fcmgt v2.2d, v0.2d, #0.0
+    fcmgt v3.2d, v1.2d, #0.0
+  )");
+  CHECK_NEON(2, uint64_t, {UINT64_MAX, 0});
+  CHECK_NEON(3, uint64_t, {0, 0});
 }
 TEST_P(InstNeon, fcmlt) {
   initialHeapData_.resize(32);

@@ -1673,6 +1673,33 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
+    case Opcode::AArch64_FCMGTv2i32rz: {  // fcmgt vd.2s, vn.2s, #0.0
+      const float* n = operands[0].getAsVector<float>();
+      uint32_t out[4] = {0};
+      for (int i = 0; i < 2; i++) {
+        if (n[i] > 0) out[i] = 0xFFFFFFFF;
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FCMGTv2i64rz: {  // fcmgt vd.2d, vn.2d, #0.0
+      const double* n = operands[0].getAsVector<double>();
+      uint64_t out[2] = {0};
+      for (int i = 0; i < 2; i++) {
+        if (n[i] > 0) out[i] = 0xFFFFFFFFFFFFFFFF;
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FCMGTv4i32rz: {  // fcmgt vd.4s, vn.4s, #0.0
+      const float* n = operands[0].getAsVector<float>();
+      uint32_t out[4] = {0};
+      for (int i = 0; i < 4; i++) {
+        if (n[i] > 0) out[i] = 0xFFFFFFFF;
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FCMLT_PPzZ0_S: {  // fcmlt pd.s, pg/z, zn.s, #0.0
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
       const float* n = operands[1].getAsVector<float>();
