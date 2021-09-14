@@ -21,11 +21,11 @@ class BTB_BWTPredictor : public BranchPredictor {
   /** Generate a branch prediction for the supplied instruction address.
    * Use a combination of a BTB entry, a global history, and an agreement
    * policy. */
-  BranchPrediction predict(std::shared_ptr<Instruction> uop) override;
+  BranchPrediction predict(std::shared_ptr<Instruction>& uop) override;
 
   /** Update the BTB entry for the supplied instruction address with the taken
    * state and targt address. Also update the global state of the predictor*/
-  void update(std::shared_ptr<Instruction> uop, bool taken,
+  void update(std::shared_ptr<Instruction>& uop, bool taken,
               uint64_t targetAddress) override;
 
  private:

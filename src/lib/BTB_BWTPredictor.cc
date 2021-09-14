@@ -18,7 +18,7 @@ BTB_BWTPredictor::BTB_BWTPredictor(uint8_t bits, uint8_t associative)
   ghrUnsigned = 0;
 }
 
-BranchPrediction BTB_BWTPredictor::predict(std::shared_ptr<Instruction> uop) {
+BranchPrediction BTB_BWTPredictor::predict(std::shared_ptr<Instruction>& uop) {
   auto instructionAddress = uop->getInstructionAddress();
   std::pair<uint64_t, uint8_t>& btbIndex = mappings[instructionAddress];
 
@@ -64,7 +64,7 @@ BranchPrediction BTB_BWTPredictor::predict(std::shared_ptr<Instruction> uop) {
   return prediction;
 }
 
-void BTB_BWTPredictor::update(std::shared_ptr<Instruction> uop, bool taken,
+void BTB_BWTPredictor::update(std::shared_ptr<Instruction>& uop, bool taken,
                               uint64_t targetAddress) {
   auto instructionAddress = uop->getInstructionAddress();
   std::pair<uint64_t, uint8_t>& btbIndex = mappings[instructionAddress];
