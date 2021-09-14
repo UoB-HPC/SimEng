@@ -665,8 +665,10 @@ TEST_P(InstNeon, eor) {
     ldr q0, [x0]
     ldr q1, [x0, #16]
     eor v2.16b, v0.16b, v1.16b
+    eor v3.8b, v0.8b, v1.8b
   )");
   CHECK_NEON(2, uint8_t, {1, 3, 1, 7, 1, 3, 1, 15, 1, 3, 1, 7, 1, 3, 1, 31});
+  CHECK_NEON(3, uint8_t, {1, 3, 1, 7, 1, 3, 1, 15, 0, 0, 0, 0, 0, 0, 0, 0});
 }
 
 TEST_P(InstNeon, fabs) {

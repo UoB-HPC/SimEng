@@ -1254,11 +1254,21 @@ void Instruction::execute() {
     case Opcode::AArch64_EORv16i8: {  // eor vd.16b, vn.16b, vm.16b
       const uint8_t* n = operands[0].getAsVector<uint8_t>();
       const uint8_t* m = operands[1].getAsVector<uint8_t>();
-      uint8_t out[16];
+      uint8_t out[16] = {0};
       for (int i = 0; i < 16; i++) {
         out[i] = n[i] ^ m[i];
       }
       results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_EORv8i8: {  // eor vd.8b, vn.8b, vm.8b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint8_t* m = operands[1].getAsVector<uint8_t>();
+      uint8_t out[16] = {0};
+      for (int i = 0; i < 8; i++) {
+        out[i] = n[i] ^ m[i];
+      }
+      results[0] = out;
       break;
     }
     case Opcode::AArch64_EXTRWrri: {  // extr wd, wn, wm, #lsb
