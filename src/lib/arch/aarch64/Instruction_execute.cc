@@ -1730,6 +1730,20 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_FCMLTv2i32rz: {  // fcmlt vd.2s, vn.2s, #0.0
+      const float* n = operands[0].getAsVector<float>();
+      uint32_t out[4] = {static_cast<uint32_t>(n[0] < 0.0 ? -1 : 0),
+                         static_cast<uint32_t>(n[1] < 0.0 ? -1 : 0), 0, 0};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FCMLTv2i64rz: {  // fcmlt vd.2d, vn.2d, #0.0
+      const double* n = operands[0].getAsVector<double>();
+      uint64_t out[2] = {static_cast<uint64_t>(n[0] < 0.0 ? -1 : 0),
+                         static_cast<uint64_t>(n[1] < 0.0 ? -1 : 0)};
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FCMLTv4i32rz: {  // fcmlt vd.4s, vn.4s, #0.0
       const float* n = operands[0].getAsVector<float>();
       uint32_t out[4] = {static_cast<uint32_t>(n[0] < 0.0 ? -1 : 0),
