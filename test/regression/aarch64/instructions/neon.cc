@@ -1952,17 +1952,37 @@ TEST_P(InstNeon, scvtf) {
   CHECK_NEON(1, double,
              {static_cast<double>(INT64_MAX), static_cast<double>(INT64_MIN)});
 
-  // 32-bit integer (vector of 4)
+  // 32-bit integer
   initialHeapData_.resize(32);
   int32_t* heap32 = reinterpret_cast<int32_t*>(initialHeapData_.data());
   heap32[0] = 1;
-  heap32[1] = 2;
+  heap32[1] = -2;
   heap32[2] = -1;
-  heap32[3] = -2;
+  heap32[3] = 2;
   heap32[4] = INT32_MIN;
   heap32[5] = INT32_MAX;
   heap32[6] = INT32_MAX;
   heap32[7] = INT32_MIN;
+
+  // Vector of 2
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load and convert integer values
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    scvtf v0.2s, v0.2s
+    scvtf v1.2s, v1.2s
+  )");
+  CHECK_NEON(0, float, {1.0f, -2.0f, 0.0f, 0.0f});
+  CHECK_NEON(1, float,
+             {static_cast<float>(INT32_MIN), static_cast<float>(INT32_MAX),
+              0.0f, 0.0f});
+
+  // Vector of 4
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -1975,7 +1995,7 @@ TEST_P(InstNeon, scvtf) {
     scvtf v0.4s, v0.4s
     scvtf v1.4s, v1.4s
   )");
-  CHECK_NEON(0, float, {1.0f, 2.0f, -1.0f, -2.0f});
+  CHECK_NEON(0, float, {1.0f, -2.0f, -1.0f, 2.0f});
   CHECK_NEON(1, float,
              {static_cast<float>(INT32_MIN), static_cast<float>(INT32_MAX),
               static_cast<float>(INT32_MAX), static_cast<float>(INT32_MIN)});

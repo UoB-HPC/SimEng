@@ -4529,6 +4529,13 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
+    case Opcode::AArch64_SCVTFv2f32: {  // scvtf vd.2s, vn.2s
+      const int32_t* n = operands[0].getAsVector<int32_t>();
+      float out[4] = {static_cast<float>(n[0]), static_cast<float>(n[1]), 0.0f,
+                      0.0f};
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_SCVTFv4f32: {  // scvtf vd.4s, vn.4s
       const int32_t* n = operands[0].getAsVector<int32_t>();
       float out[4] = {static_cast<float>(n[0]), static_cast<float>(n[1]),
