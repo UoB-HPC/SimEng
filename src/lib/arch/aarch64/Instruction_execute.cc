@@ -3590,6 +3590,11 @@ void Instruction::execute() {
       results[2] = operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
       break;
     }
+    case Opcode::AArch64_LDPSWi: {  // ldpsw xt1, xt2, [xn {, #imm}]
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      results[1] = memoryData[1].zeroExtend(4, 8);
+      break;
+    }
     case Opcode::AArch64_LDPSi: {  // ldp st1, st2, [xn, #imm]
       results[0] = memoryData[0].zeroExtend(4, 256);
       results[1] = memoryData[1].zeroExtend(4, 256);

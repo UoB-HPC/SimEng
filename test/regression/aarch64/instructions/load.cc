@@ -642,6 +642,34 @@ TEST_P(InstLoad, ldrw) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(8), 0xABCDEF12);
 }
 
+TEST_P(InstLoad, ldpsw) {
+  // 32-bit signed integer
+  initialHeapData_.resize(16);
+  uint32_t* heapi32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heapi32[0] = 0xDEADBEEF;
+  heapi32[1] = 0x12345678;
+  heapi32[2] = 0x98765432;
+  heapi32[3] = 0xABCDEF12;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ldpsw x1, x2, [x0]
+    ldpsw x3, x4, [x0, #8]
+    add x0, x0, #8
+    ldpsw x5, x6, [x0, #-8]
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(1), 0x00000000DEADBEEF);
+  EXPECT_EQ(getGeneralRegister<int64_t>(2), 0x0000000012345678);
+  EXPECT_EQ(getGeneralRegister<int64_t>(3), 0x0000000098765432);
+  EXPECT_EQ(getGeneralRegister<int64_t>(4), 0x00000000ABCDEF12);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5), 0x00000000DEADBEEF);
+  EXPECT_EQ(getGeneralRegister<int64_t>(6), 0x0000000012345678);
+}
+
 TEST_P(InstLoad, ldp) {
   // 32-bit integer
   initialHeapData_.resize(16);
