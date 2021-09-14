@@ -1138,6 +1138,10 @@ void InstructionMetadata::revertAliasing() {
         }
         return;
       }
+      if (opcode == Opcode::AArch64_NOTv16i8) {
+        // mvn vd.t, vn.t; alias for : not vd.t, vn.t
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_NEG:
       if (opcode == Opcode::AArch64_SUBWrs ||
