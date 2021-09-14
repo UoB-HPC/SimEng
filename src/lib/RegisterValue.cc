@@ -4,6 +4,9 @@
 
 namespace simeng {
 
+std::pmr::unsynchronized_pool_resource mem_pool =
+    std::pmr::unsynchronized_pool_resource();
+
 RegisterValue::RegisterValue() : bytes(0) {}
 
 RegisterValue::operator bool() const { return (bytes > 0); }
