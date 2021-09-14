@@ -1138,7 +1138,8 @@ void InstructionMetadata::revertAliasing() {
         }
         return;
       }
-      if (opcode == Opcode::AArch64_NOTv16i8) {
+      if (opcode == Opcode::AArch64_NOTv16i8 ||
+          opcode == Opcode::AArch64_NOTv8i8) {
         // mvn vd.t, vn.t; alias for : not vd.t, vn.t
         return;
       }
