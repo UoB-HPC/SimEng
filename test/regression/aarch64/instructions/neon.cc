@@ -1786,6 +1786,55 @@ TEST_P(InstNeon, mvni) {
   CHECK_NEON(5, uint32_t, {~(3u << 24), ~(3u << 24), 0, 0});
 }
 
+TEST_P(InstNeon, not ) {
+  initialHeapData_.resize(128);
+  uint8_t* heap = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  heap[0] = 0b11111111;
+  heap[1] = 0b00000000;
+  heap[2] = 0b01010101;
+  heap[3] = 0b11001100;
+  heap[4] = 0b00000001;
+  heap[5] = 0b00000011;
+  heap[6] = 0b00000111;
+  heap[7] = 0b00001111;
+  heap[8] = 0b00011111;
+  heap[9] = 0b00111111;
+  heap[10] = 0b01111111;
+  heap[11] = 0b10000000;
+  heap[12] = 0b11000000;
+  heap[13] = 0b11100000;
+  heap[14] = 0b11110000;
+  heap[15] = 0b11111001;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+
+    not v1.16b, v0.16b
+    not v2.8b, v0.8b
+  )");
+  CHECK_NEON(
+      1, uint8_t,
+      {static_cast<uint8_t>(0b00000000), static_cast<uint8_t>(0b11111111),
+       static_cast<uint8_t>(0b10101010), static_cast<uint8_t>(0b00110011),
+       static_cast<uint8_t>(0b11111110), static_cast<uint8_t>(0b11111100),
+       static_cast<uint8_t>(0b11111000), static_cast<uint8_t>(0b11110000),
+       static_cast<uint8_t>(0b11100000), static_cast<uint8_t>(0b11000000),
+       static_cast<uint8_t>(0b10000000), static_cast<uint8_t>(0b01111111),
+       static_cast<uint8_t>(0b00111111), static_cast<uint8_t>(0b00011111),
+       static_cast<uint8_t>(0b00001111), static_cast<uint8_t>(0b00000110)});
+  CHECK_NEON(
+      2, uint8_t,
+      {static_cast<uint8_t>(0b00000000), static_cast<uint8_t>(0b11111111),
+       static_cast<uint8_t>(0b10101010), static_cast<uint8_t>(0b00110011),
+       static_cast<uint8_t>(0b11111110), static_cast<uint8_t>(0b11111100),
+       static_cast<uint8_t>(0b11111000), static_cast<uint8_t>(0b11110000), 0, 0,
+       0, 0, 0, 0, 0, 0});
+}
+
 TEST_P(InstNeon, orr) {
   initialHeapData_.resize(32);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());

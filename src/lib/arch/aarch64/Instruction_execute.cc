@@ -4163,6 +4163,24 @@ void Instruction::execute() {
       results[0] = {vector, 256};
       break;
     }
+    case Opcode::AArch64_NOTv16i8: {  // not vd.16b, vn.16b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      uint8_t out[16] = {0};
+      for (int i = 0; i < 16; i++) {
+        out[i] = ~n[i];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_NOTv8i8: {  // not vd.8b, vn.8b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      uint8_t out[16] = {0};
+      for (int i = 0; i < 8; i++) {
+        out[i] = ~n[i];
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
       // TODO: Observe hints
       break;
