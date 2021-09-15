@@ -5,12 +5,8 @@
 #include <cassert>
 #include <cstring>
 #include <memory>
-#include <memory_resource>
 
 namespace simeng {
-
-/** A memory pool used to allocate memory for the RegisterValue class. */
-extern std::pmr::unsynchronized_pool_resource mem_pool;
 
 /** A class that holds an arbitrary region of immutable data, providing casting
  * and data accessor functions. For values smaller than or equal to
@@ -18,7 +14,32 @@ extern std::pmr::unsynchronized_pool_resource mem_pool;
  * allocated and the data is stored there. */
 class RegisterValue {
  public:
-  RegisterValue();
+  RegisterValue() noexcept {};
+
+  RegisterValue(const RegisterValue& other) noexcept : bytes(other.bytes) {
+    if (isLocal()) {
+      std::memcpy(value, other.value, bytes);
+    } else {
+      ptr = new (std::nothrow) char[bytes];
+      std::memcpy(ptr, other.ptr, bytes);
+    }
+  }
+  RegisterValue& operator=(RegisterValue other) noexcept {
+    swap(*this, other);
+    return *this;
+  }
+
+  RegisterValue(RegisterValue&& other) noexcept { swap(*this, other); }
+
+  ~RegisterValue() { delete[] ptr; }
+
+  friend void swap(RegisterValue& first, RegisterValue& second) {
+    using std::swap;
+
+    swap(first.bytes, second.bytes);
+    swap(first.ptr, second.ptr);
+    swap(first.value, second.value);
+  }
 
   /** Create a new RegisterValue from a value of arbitrary type (except
    * pointers), zero-extending the allocated memory space to the specified
@@ -36,36 +57,30 @@ class RegisterValue {
                                    0);
       }
     } else {
-      void* data = mem_pool.allocate(bytes);
-      std::memset(data, 0, bytes);
+      void* data = static_cast<void*>(new (std::nothrow) char[bytes]{});
 
       T* view = reinterpret_cast<T*>(data);
       view[0] = value;
 
-      this->ptr = std::shared_ptr<char>(
-          static_cast<char*>(data),
-          [bytes](void* ptr) { mem_pool.deallocate(ptr, bytes); });
+      this->ptr = static_cast<char*>(data);
     }
   }
 
   /** Create a new RegisterValue of size `capacity`, copying `bytes`
    * from `ptr`.
    */
-  RegisterValue(const char* ptr, uint16_t bytes, uint16_t capacity)
+  RegisterValue(const char* ptr, uint16_t bytes, uint16_t capacity) noexcept
       : bytes(capacity) {
     assert(capacity >= bytes && "Capacity is less then requested bytes");
     char* dest;
     if (isLocal()) {
       dest = this->value;
     } else {
-      dest = static_cast<char*>(mem_pool.allocate(capacity));
-      this->ptr = std::shared_ptr<char>(
-          dest, [capacity](void* ptr) { mem_pool.deallocate(ptr, capacity); });
+      dest = new (std::nothrow) char[capacity]{};
+      this->ptr = dest;
     }
     assert(dest && "Attempted to dereference a NULL pointer");
     std::memcpy(dest, ptr, bytes);
-
-    if (capacity > bytes) std::fill(dest + bytes, dest + capacity, 0u);
   }
 
   /** Create a new RegisterValue of size `bytes`, copying data from `ptr`. */
@@ -98,7 +113,7 @@ class RegisterValue {
     if (isLocal()) {
       return reinterpret_cast<const T*>(value);
     } else {
-      return reinterpret_cast<const T*>(ptr.get());
+      return reinterpret_cast<const T*>(ptr);
     }
   }
 
@@ -124,7 +139,7 @@ class RegisterValue {
   uint16_t bytes = 0;
 
   /** The underlying pointer each instance references. */
-  std::shared_ptr<char> ptr;
+  char* ptr = nullptr;
 
   /** The underlying local member value. Aligned to 8 bytes to prevent
    * potential alignment issue when casting. */
