@@ -711,11 +711,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     }
     case Opcode::AArch64_ST1Twov16b: {  // st1v {vt.16b, vt2.16b}, [xn]
       const uint64_t base = operands[2].get<uint64_t>();
-      std::vector<MemoryAccessTarget> addresses;
-      for (int i = 0; i < 32; i++) {
-        addresses.push_back({base + i, 1});
-      }
-      setMemoryAddresses(addresses);
+      setMemoryAddresses({{base, 16}, {base + 16, 16}});
       break;
     }
     case Opcode::AArch64_ST1i8_POST:

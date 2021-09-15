@@ -4092,14 +4092,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_ST1Twov16b: {  // st1v {vt.16b, vt2.16b}, [xn]
-      const uint8_t* t = operands[0].getAsVector<uint8_t>();
-      const uint8_t* t2 = operands[1].getAsVector<uint8_t>();
-      for (int i = 0; i < 16; i++) {
-        memoryData[i] = t[i];
-      }
-      for (int i = 0; i < 16; i++) {
-        memoryData[i + 16] = t2[i];
-      }
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
       break;
     }
     case Opcode::AArch64_ST1i8: {  // st1 {vt.b}[index], [xn]
@@ -4167,8 +4161,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn], #imm
-      const float* t1 = operands[0].getAsVector<float>();
-      const float* t2 = operands[1].getAsVector<float>();
+      const uint32_t* t1 = operands[0].getAsVector<uint32_t>();
+      const uint32_t* t2 = operands[1].getAsVector<uint32_t>();
       for (int i = 0; i < 4; i++) {
         memoryData[2 * i] = t1[i];
         memoryData[2 * i + 1] = t2[i];
