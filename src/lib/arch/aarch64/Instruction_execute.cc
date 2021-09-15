@@ -5795,6 +5795,42 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
+    case Opcode::AArch64_UUNPKHI_ZZ_D: {  // uunpkhi zd.d, zn.s
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint64_t>(n[partition_num + i]);
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_UUNPKHI_ZZ_H: {  // uunpkhi zd.h, zn.b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint16_t out[128] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint16_t>(n[partition_num + i]);
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_UUNPKHI_ZZ_S: {  // uunpkhi zd.s, zn.h
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint32_t out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint32_t>(n[partition_num + i]);
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_UUNPKLO_ZZ_D: {  // uunpklo zd.d, zn.s
       const uint32_t* n = operands[0].getAsVector<uint32_t>();
       const uint64_t VL_bits = 512;

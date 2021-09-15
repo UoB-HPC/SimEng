@@ -601,6 +601,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_UUNPKHI_ZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_UUNPKHI_ZZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_UUNPKHI_ZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_UUNPKLO_ZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_UUNPKLO_ZZ_H:
