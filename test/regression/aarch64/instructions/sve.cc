@@ -3454,6 +3454,38 @@ TEST_P(InstSve, uqdec) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0);
 }
 
+TEST_P(InstSve, uunpklo) {
+  // VL = 512-bit
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    dup z0.b, #-1
+    dup z1.h, #-1
+    dup z2.s, #-1
+
+    uunpklo z3.h, z0.b
+    uunpklo z4.s, z1.h
+    uunpklo z5.d, z2.s 
+  )");
+  CHECK_NEON(3, uint16_t,
+             {0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
+              0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
+              0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF,
+              0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF, 0x00FF});
+  CHECK_NEON(
+      4, uint32_t,
+      {0x0000FFFF, 0x0000FFFF, 0x0000FFFF, 0x0000FFFF, 0x0000FFFF, 0x0000FFFF,
+       0x0000FFFF, 0x0000FFFF, 0x0000FFFF, 0x0000FFFF, 0x0000FFFF, 0x0000FFFF,
+       0x0000FFFF, 0x0000FFFF, 0x0000FFFF, 0x0000FFFF});
+  CHECK_NEON(5, uint64_t,
+             {0x00000000FFFFFFFF, 0x00000000FFFFFFFF, 0x00000000FFFFFFFF,
+              0x00000000FFFFFFFF, 0x00000000FFFFFFFF, 0x00000000FFFFFFFF,
+              0x00000000FFFFFFFF, 0x00000000FFFFFFFF});
+}
+
 TEST_P(InstSve, uzp1) {
   RUN_AARCH64(R"(
     dup z0.s, #1
