@@ -6,7 +6,12 @@
 #include <cstring>
 #include <memory>
 
+#include "simeng/Pool.hh"
+
 namespace simeng {
+
+/** Global memory pool used by RegisterValue class. */
+extern Pool pool;
 
 /** A class that holds an arbitrary region of immutable data, providing casting
  * and data accessor functions. For values smaller than or equal to
@@ -32,12 +37,16 @@ class RegisterValue {
                                    0);
       }
     } else {
-      void* data = calloc(1, bytes);
+      // void* data = calloc(1, bytes);
+      void* data = pool.allocate(bytes);
+      std::memset(data, 0, bytes);
 
       T* view = reinterpret_cast<T*>(data);
       view[0] = value;
 
-      this->ptr = std::shared_ptr<char>(static_cast<char*>(data), free);
+      this->ptr = std::shared_ptr<char>(
+          static_cast<char*>(data),
+          [bytes](void* ptr) { pool.deallocate(ptr, bytes); });
     }
   }
 
@@ -51,8 +60,10 @@ class RegisterValue {
     if (isLocal()) {
       dest = this->value;
     } else {
-      dest = static_cast<char*>(calloc(1, capacity));
-      this->ptr = std::shared_ptr<char>(dest, free);
+      dest = static_cast<char*>(pool.allocate(capacity));
+      std::memset(dest, 0, capacity);
+      this->ptr = std::shared_ptr<char>(
+          dest, [capacity](void* ptr) { pool.deallocate(ptr, capacity); });
     }
     assert(dest && "Attempted to dereference a NULL pointer");
     std::memcpy(dest, ptr, bytes);
