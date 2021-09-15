@@ -1633,6 +1633,32 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
+    case Opcode::AArch64_FCMGEv2f32: {  // fcmge vd.2s, vn.2s, vm.2s
+      const float* n = operands[0].getAsVector<float>();
+      const float* m = operands[1].getAsVector<float>();
+      uint32_t out[4] = {static_cast<uint32_t>(n[0] >= m[0] ? -1 : 0),
+                         static_cast<uint32_t>(n[1] >= m[1] ? -1 : 0), 0, 0};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FCMGEv2f64: {  // fcmge vd.2d, vn.2d, vm.2d
+      const double* n = operands[0].getAsVector<double>();
+      const double* m = operands[1].getAsVector<double>();
+      uint64_t out[4] = {static_cast<uint64_t>(n[0] >= m[0] ? -1 : 0),
+                         static_cast<uint64_t>(n[1] >= m[1] ? -1 : 0)};
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FCMGEv4f32: {  // fcmge vd.4s, vn.4s, vm.4s
+      const float* n = operands[0].getAsVector<float>();
+      const float* m = operands[1].getAsVector<float>();
+      uint32_t out[4] = {static_cast<uint32_t>(n[0] >= m[0] ? -1 : 0),
+                         static_cast<uint32_t>(n[1] >= m[1] ? -1 : 0),
+                         static_cast<uint32_t>(n[2] >= m[2] ? -1 : 0),
+                         static_cast<uint32_t>(n[3] >= m[3] ? -1 : 0)};
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FCMGT_PPzZZ_D: {  // fcmgt pd.d, pg/z, zn.d, zm.d
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
       const double* n = operands[1].getAsVector<double>();
