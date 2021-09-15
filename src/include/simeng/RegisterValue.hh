@@ -14,32 +14,7 @@ namespace simeng {
  * allocated and the data is stored there. */
 class RegisterValue {
  public:
-  RegisterValue() noexcept {};
-
-  RegisterValue(const RegisterValue& other) noexcept : bytes(other.bytes) {
-    if (isLocal()) {
-      std::memcpy(value, other.value, bytes);
-    } else {
-      ptr = new (std::nothrow) char[bytes];
-      std::memcpy(ptr, other.ptr, bytes);
-    }
-  }
-  RegisterValue& operator=(RegisterValue other) noexcept {
-    swap(*this, other);
-    return *this;
-  }
-
-  RegisterValue(RegisterValue&& other) noexcept { swap(*this, other); }
-
-  ~RegisterValue() { delete[] ptr; }
-
-  friend void swap(RegisterValue& first, RegisterValue& second) {
-    using std::swap;
-
-    swap(first.bytes, second.bytes);
-    swap(first.ptr, second.ptr);
-    swap(first.value, second.value);
-  }
+  RegisterValue();
 
   /** Create a new RegisterValue from a value of arbitrary type (except
    * pointers), zero-extending the allocated memory space to the specified
@@ -57,27 +32,27 @@ class RegisterValue {
                                    0);
       }
     } else {
-      void* data = static_cast<void*>(new (std::nothrow) char[bytes]{});
+      void* data = calloc(1, bytes);
 
       T* view = reinterpret_cast<T*>(data);
       view[0] = value;
 
-      this->ptr = static_cast<char*>(data);
+      this->ptr = std::shared_ptr<char>(static_cast<char*>(data), free);
     }
   }
 
   /** Create a new RegisterValue of size `capacity`, copying `bytes`
    * from `ptr`.
    */
-  RegisterValue(const char* ptr, uint16_t bytes, uint16_t capacity) noexcept
+  RegisterValue(const char* ptr, uint16_t bytes, uint16_t capacity)
       : bytes(capacity) {
     assert(capacity >= bytes && "Capacity is less then requested bytes");
     char* dest;
     if (isLocal()) {
       dest = this->value;
     } else {
-      dest = new (std::nothrow) char[capacity]{};
-      this->ptr = dest;
+      dest = static_cast<char*>(calloc(1, capacity));
+      this->ptr = std::shared_ptr<char>(dest, free);
     }
     assert(dest && "Attempted to dereference a NULL pointer");
     std::memcpy(dest, ptr, bytes);
@@ -113,7 +88,7 @@ class RegisterValue {
     if (isLocal()) {
       return reinterpret_cast<const T*>(value);
     } else {
-      return reinterpret_cast<const T*>(ptr);
+      return reinterpret_cast<const T*>(ptr.get());
     }
   }
 
@@ -139,7 +114,7 @@ class RegisterValue {
   uint16_t bytes = 0;
 
   /** The underlying pointer each instance references. */
-  char* ptr = nullptr;
+  std::shared_ptr<char> ptr;
 
   /** The underlying local member value. Aligned to 8 bytes to prevent
    * potential alignment issue when casting. */
