@@ -619,6 +619,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_WHILELO_PXX_D:
       [[fallthrough]];
+    case Opcode::AArch64_WHILELO_PXX_H:
+      [[fallthrough]];
     case Opcode::AArch64_WHILELO_PXX_S:
       // WHILELO doesn't label access or vector specifiers
       operands[0].access = CS_AC_WRITE;

@@ -5950,6 +5950,40 @@ void Instruction::execute() {
       results[1] = out;
       break;
     }
+    case Opcode::AArch64_WHILELO_PXX_H: {  // whilelo pd.h, xn, xm
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = operands[1].get<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      uint64_t out[4] = {0, 0, 0, 0};
+      uint8_t index = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        // Determine whether lane should be active and shift to align with
+        // element in predicate register.
+        uint64_t shifted_active = (n + i) < m ? std::pow(2, (i * 2)) : 0;
+        out[index / 32] = out[index / 32] | shifted_active;
+        index++;
+      }
+
+      uint8_t N = (out[0] & 1);
+      uint8_t Z = 1;
+      // (int)(VL_bits - 1)/512 derives which block of 64-bits within the
+      // predicate register we're working in. std::pow(2, (VL_bits / 8) - 1)
+      // derives a 1 in the last position of the current predicate. Both
+      // dictated by vector length.
+      uint8_t C =
+          !(out[(int)((VL_bits - 1) / 512)] & (uint64_t)std::pow(2, 64 - 2));
+      for (int i = 0; i < (int)((VL_bits - 1) / 512) + 1; i++) {
+        if (out[i]) {
+          Z = 0;
+          break;
+        }
+      }
+      results[0] = nzcv(N, Z, C, 0);
+      results[1] = out;
+      break;
+    }
     case Opcode::AArch64_WHILELO_PXX_S: {  // whilelo pd.s, xn, xm
       const uint64_t n = operands[0].get<uint64_t>();
       const uint64_t m = operands[1].get<uint64_t>();
