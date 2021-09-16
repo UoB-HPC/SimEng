@@ -1051,12 +1051,18 @@ TEST_P(InstFloat, frsqrte) {
   RUN_AARCH64(R"(
     fmov s0, 2.0
     fmov s1, -0.125
+    fmov s6, 0.25
+    fmov s8, 0.375
 
     frsqrte s3, s0
     frsqrte s4, s1
     frsqrte s5, s2
+    frsqrte s7, s6
+    frsqrte s9, s8
   )");
-  CHECK_NEON(3, float, {1.f / sqrtf(2.f), 0.f, 0.f, 0.f});
+  CHECK_NEON(3, float, {0.705078125f, 0.f, 0.f, 0.f});  // vale from xci
+  CHECK_NEON(7, float, {1.99609375f, 0.f, 0.f, 0.f});   // value from xci
+  CHECK_NEON(9, float, {1.6328125f, 0.f, 0.f, 0.f});    // value from xci
 
   EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(4)));
   EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);

@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 #include <limits>
 #include <tuple>
 
@@ -180,6 +181,98 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
   }
 
   return (inverse ? !result : result);
+}
+
+void fpUnpack(uint32_t* sign, uint32_t* exponent, uint32_t* mantisa, float fp) {
+  uint32_t fp_casted = reinterpret_cast<uint32_t&>(fp);
+  *sign = (fp_casted >> 31) & 1;
+  *mantisa = fp_casted & (1 << 23 - 1);
+  *exponent = fp_casted >> 23 & 255;
+
+  // handling subnormal
+  if (*exponent == 0) {
+    while (*mantisa >> 23 == 0) {
+      *mantisa = (*mantisa << 1) & (1 << 23 - 1);
+      *exponent -= 1;
+    }
+    *mantisa = (*mantisa << 1) & (1 << 23 - 1);
+  }
+}
+
+uint32_t recipSqrtEstimate(uint32_t scaled) {
+  assert((128 <= scaled && scaled < 512) &&
+         "Invalid argument, not in the range of 128 to 511");
+  if (scaled < 256) {  // 0.25 to 0.5
+    scaled = scaled * 2 + 1;
+  } else {  // 0.5 to 1.0
+    scaled = (scaled >> 1) << 1;
+    scaled = (scaled + 1) * 2;
+  }
+  int b = 512;
+  while (scaled * (b + 1) * (b + 1) < pow(2, 28)) {
+    b += 1;
+  }
+  uint32_t result = (b + 1) / 2;
+  assert((256 <= result && result < 512) &&
+         "Result is not in the range of 256 to 511");
+  return result;
+}
+
+float FPRSqrtEstimate(float x) {
+  // std::cout.precision(9);
+  // std::cout << "input: " << x << std::endl;
+  float result;
+  if (std::isnan(x) || x < 0) {
+    result = std::numeric_limits<float>::quiet_NaN();
+  } else if (x == 0.f) {
+    result = std::numeric_limits<float>::infinity();
+  } else if (std::isinf(x)) {
+    result = 0.f;
+  } else {
+    // unpacking floating point
+    uint32_t fp = reinterpret_cast<uint32_t&>(x);
+    uint32_t fraction = fp & (1 << 23 - 1);
+    uint32_t exp = fp >> 23 & 255;
+    // std::cout << std::hex << "fp: 0x" << fp << " fraction: 0x" << fraction
+    //           << " exp: 0x" << exp << std::dec << std::endl;
+
+    // handling subnormal
+    if (exp == 0) {
+      // std::cout << "handled subnormal" << std::endl;
+      while (fraction >> 23 == 0) {
+        fraction = (fraction << 1) & (1 << 23 - 1);
+        exp -= 1;
+      }
+      fraction = (fraction << 1) & (1 << 23 - 1);
+      // std::cout << std::hex << "new fraction: 0x" << fraction << " new exp:
+      // 0x"
+      //           << exp << std::dec << std::endl;
+    }
+
+    uint32_t scaled;
+    // std::cout << "exp & 1 == 0: " << ((exp & 1) == 0) << std::endl;
+    if ((exp & 1) == 0) {
+      scaled = 0b100000000 | (fraction >> 15);
+    } else {
+      scaled = 0b010000000 | (fraction >> 16);
+    }
+
+    uint32_t result_exp = (380 - exp) >> 1;
+    // std::cout << std::hex << "scaled: 0x" << scaled << " result_exp: 0x"
+    //           << result_exp << std::dec << std::endl;
+
+    uint32_t estimate = recipSqrtEstimate(scaled);
+    // std::cout << std::hex << "estimate: 0x" << estimate << std::dec
+    //           << std::endl;
+
+    uint32_t packed = (result_exp << 23) | ((estimate & 0xff) << 15);
+    assert(sizeof(packed) == sizeof(result) &&
+           "size of packed bits are different with floating point type");
+    memcpy(&result, &packed, sizeof(float));
+    // std::cout << std::hex << "packed: 0x" << packed << std::dec << std::endl;
+  }
+  // std::cout << "output: " << result << std::endl;
+  return result;
 }
 
 void Instruction::executionNYI() {
@@ -2447,7 +2540,8 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_FRSQRTEv1i32: {  // frsqrte sd, sn
       float n = operands[0].get<float>();
-      float out[4] = {1.f / sqrtf(n), 0.f, 0.f, 0.f};
+      float estimate = FPRSqrtEstimate(n);
+      float out[4] = {estimate, 0.f, 0.f, 0.f};
       results[0] = out;
       break;
     }
