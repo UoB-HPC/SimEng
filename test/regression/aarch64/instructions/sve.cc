@@ -2278,6 +2278,73 @@ TEST_P(InstSve, ld1d) {
              {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01, 0, 0, 0, 0});
 }
 
+TEST_P(InstSve, ld1h) {
+  // VL = 512-bits
+  initialHeapData_.resize(128);
+  uint16_t* heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+  heap16[0] = 0xBEEF;
+  heap16[1] = 0xDEAD;
+  heap16[2] = 0x5678;
+  heap16[3] = 0x1234;
+  heap16[4] = 0x5432;
+  heap16[5] = 0x9876;
+  heap16[6] = 0xEF01;
+  heap16[7] = 0xABCD;
+  heap16[8] = 0xBEEF;
+  heap16[9] = 0xDEAD;
+  heap16[10] = 0x5678;
+  heap16[11] = 0x1234;
+  heap16[12] = 0x5432;
+  heap16[13] = 0x9876;
+  heap16[14] = 0xEF01;
+  heap16[15] = 0xABCD;
+  heap16[16] = 0xBEEF;
+  heap16[17] = 0xDEAD;
+  heap16[18] = 0x5678;
+  heap16[19] = 0x1234;
+  heap16[20] = 0x5432;
+  heap16[21] = 0x9876;
+  heap16[22] = 0xEF01;
+  heap16[23] = 0xABCD;
+  heap16[24] = 0xBEEF;
+  heap16[25] = 0xDEAD;
+  heap16[26] = 0x5678;
+  heap16[27] = 0x1234;
+  heap16[28] = 0x5432;
+  heap16[29] = 0x9876;
+  heap16[30] = 0xEF01;
+  heap16[31] = 0xABCD;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #32
+    whilelo p0.h, xzr, x2
+    # Load and broadcast values from heap
+    ld1h {z0.h}, p0/z, [x0, x1, lsl #1]
+
+    # Test for inactive lanes
+    mov x1, #16
+    mov x2, #0
+    whilelo p1.h, xzr, x1
+    ld1h {z1.h}, p1/z, [x0, x2, lsl #1]
+  )");
+  CHECK_NEON(0, uint16_t,
+             {0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876, 0xEF01, 0xABCD,
+              0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876, 0xEF01, 0xABCD,
+              0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876, 0xEF01, 0xABCD,
+              0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876, 0xEF01, 0xABCD});
+  CHECK_NEON(1, uint16_t,
+             {0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876, 0xEF01, 0xABCD,
+              0xBEEF, 0xDEAD, 0x5678, 0x1234, 0x5432, 0x9876, 0xEF01, 0xABCD,
+              0,      0,      0,      0,      0,      0,      0,      0,
+              0,      0,      0,      0,      0,      0,      0,      0});
+}
+
 TEST_P(InstSve, ld1w) {
   // VL = 512-bits
   initialHeapData_.resize(128);

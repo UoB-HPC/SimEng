@@ -3537,6 +3537,26 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_LD1H: {  // ld1h  {zt.h}, pg/z, [xn, xm, lsl #1]
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint8_t index = 0;
+      uint16_t out[128] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 2));
+        if (p[i / 32] & shifted_active) {
+          out[i] = memoryData[index].get<uint16_t>();
+          index++;
+        } else {
+          out[i] = 0;
+        }
+      }
+
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_LD1W: {  // ld1w  {zt.s}, pg/z, [xn, xm, lsl #2]
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
       const uint64_t VL_bits = 512;
@@ -5954,7 +5974,7 @@ void Instruction::execute() {
       const uint64_t n = operands[0].get<uint64_t>();
       const uint64_t m = operands[1].get<uint64_t>();
       const uint64_t VL_bits = 512;
-      const uint16_t partition_num = VL_bits / 8;
+      const uint16_t partition_num = VL_bits / 16;
       uint64_t out[4] = {0, 0, 0, 0};
       uint8_t index = 0;
 

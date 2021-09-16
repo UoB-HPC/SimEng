@@ -352,6 +352,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_LD1RW_IMM:
       [[fallthrough]];
+    case Opcode::AArch64_LD1H:
+      [[fallthrough]];
     case Opcode::AArch64_LD1W:
       [[fallthrough]];
     case Opcode::AArch64_LD1W_IMM_REAL: {

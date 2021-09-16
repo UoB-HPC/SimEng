@@ -199,6 +199,26 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses(std::move(addresses));
       break;
     }
+    case Opcode::AArch64_LD1H: {  // ld1h {zt.h}, pg/z, [xn, xm, lsl #1]
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint8_t partition_num = VL_bits / 16;
+
+      const uint64_t base = operands[1].get<uint64_t>();
+      const uint64_t offset = operands[2].get<uint64_t>();
+
+      std::vector<MemoryAccessTarget> addresses;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 2));
+        if (p[i / 32] & shifted_active) {
+          addresses.push_back({base + ((offset + i) * 2), 2});
+        }
+      }
+
+      setMemoryAddresses(addresses);
+      break;
+    }
     case Opcode::AArch64_LD1W: {  // ld1w {zt.s}, pg/z, [xn, xm, lsl #2]
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
       const uint64_t VL_bits = 512;
