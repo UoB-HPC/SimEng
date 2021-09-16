@@ -4372,6 +4372,10 @@ void Instruction::execute() {
       results[0] = nzcv(n, z, c, 0);
       break;
     }
+    case Opcode::AArch64_PFALSE: {  // pfalse pd.b
+      uint64_t out[4] = {0, 0, 0, 0};
+      results[0] = out;
+    }
     case Opcode::AArch64_PTRUE_B: {  // ptrue pd.b{, pattern}
       const uint64_t VL_bits = 512;
       const uint16_t partition_num = VL_bits / 8;

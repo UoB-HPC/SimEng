@@ -2619,6 +2619,14 @@ TEST_P(InstSve, ptest) {
   EXPECT_EQ(getNZCV(), 0b1010);
 }
 
+TEST_P(InstSve, pfalse) {
+  // VL = 512-bits
+  RUN_AARCH64(R"(
+    pfalse p0.b
+  )");
+  CHECK_PREDICATE(0, uint32_t, {0, 0, 0, 0, 0, 0, 0, 0});
+}
+
 TEST_P(InstSve, ptrue) {
   // VL = 512-bits
   // 64/32-bit arrangement
