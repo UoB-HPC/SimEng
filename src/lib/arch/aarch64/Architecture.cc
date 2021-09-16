@@ -151,7 +151,10 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
          "Fewer than 4 bytes supplied to AArch64 decoder");
 
   // Dereference the instruction pointer to obtain the instruction word
-  const uint32_t insn = *static_cast<const uint32_t*>(ptr);
+  // `ptr` is not guaranteed to be aligned.
+  uint32_t insn;
+  memcpy(&insn, ptr, 4);
+  const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
   // Try to find the decoding in the decode cache
   auto iter = decodeCache.find(insn);
