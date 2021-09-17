@@ -2634,10 +2634,12 @@ TEST_P(InstSve, ptrue) {
     ptrue p0.s
     ptrue p1.d
     ptrue p2.b
+    ptrue p3.h
   )");
   CHECK_PREDICATE(0, uint32_t, {286331153, 286331153, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(1, uint32_t, {0x1010101, 0x1010101, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(2, uint32_t, {0xFFFFFFFF, 0xFFFFFFFF, 0, 0, 0, 0, 0, 0});
+  CHECK_PREDICATE(3, uint32_t, {0x55555555, 0x55555555, 0, 0, 0, 0, 0, 0});
 }
 
 TEST_P(InstSve, punpk) {
@@ -3915,6 +3917,41 @@ TEST_P(InstSve, whilelo) {
   )");
   CHECK_PREDICATE(4, uint32_t, {0, 0, 0, 0, 0, 0, 0, 0});
   EXPECT_EQ(getNZCV(), 0b0110);
+}
+
+TEST_P(InstSve, zip_pred) {
+  // VL = 512-bits
+  RUN_AARCH64(R"(
+    ptrue p0.b
+    ptrue p1.h
+    ptrue p2.s
+    ptrue p3.d
+
+    whilelo p4.b, xzr, xzr
+    whilelo p5.h, xzr, xzr
+    whilelo p6.s, xzr, xzr
+    whilelo p7.d, xzr, xzr
+
+    # Interleave (or Zip) true with false
+    zip1 p0.b, p0.b, p4.b
+    zip1 p1.h, p1.h, p5.h
+    zip1 p2.s, p2.s, p6.s
+    zip1 p3.d, p3.d, p7.d
+  )");
+  CHECK_PREDICATE(
+      0, uint8_t,
+      {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0, 0, 0, 0, 0, 0, 0, 0,
+       0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0});
+  CHECK_PREDICATE(
+      1, uint8_t,
+      {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0, 0, 0, 0, 0, 0, 0, 0,
+       0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0});
+  CHECK_PREDICATE(2, uint8_t, {0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0, 0, 0,
+                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 0,
+                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0});
+  CHECK_PREDICATE(3, uint8_t,
+                  {0x1, 0, 0x1, 0, 0x1, 0, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0,   0, 0,   0, 0,   0, 0,   0, 0, 0, 0, 0, 0, 0, 0, 0});
 }
 
 TEST_P(InstSve, zip) {

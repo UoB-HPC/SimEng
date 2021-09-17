@@ -4402,6 +4402,19 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_PTRUE_H: {  // ptrue pd.h{, pattern}
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 2));
+        out[i / 32] |= shifted_active;
+      }
+
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_PTRUE_S: {  // ptrue pd.s{, pattern}
       const uint64_t VL_bits = 512;
       const uint16_t partition_num = VL_bits / 32;
@@ -6062,6 +6075,108 @@ void Instruction::execute() {
       uint32_t out[4] = {d[0], d[1], static_cast<uint32_t>(n[0]),
                          static_cast<uint32_t>(n[1])};
       results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_ZIP1_PPP_B: {  // zip1 pd.b, pn.b, pm.b
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t* m = operands[1].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      bool interleave = false;
+      int index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        if (interleave) {
+          out[i / 64] |=
+              (m[index / 64] > 0) ? static_cast<uint64_t>(std::pow(2, i)) : 0;
+          index++;
+        } else {
+          out[i / 64] |=
+              (n[index / 64] > 0) ? static_cast<uint64_t>(std::pow(2, i)) : 0;
+        }
+        interleave = !interleave;
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_ZIP1_PPP_D: {  // zip1 pd.d, pn.d, pm.d
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t* m = operands[1].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      bool interleave = false;
+      int index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        if (interleave) {
+          out[i / 8] |= (m[index / 8] > 0)
+                            ? static_cast<uint64_t>(std::pow(2, (i * 8)))
+                            : 0;
+          index++;
+        } else {
+          out[i / 8] |= (n[index / 8] > 0)
+                            ? static_cast<uint64_t>(std::pow(2, (i * 8)))
+                            : 0;
+        }
+        interleave = !interleave;
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_ZIP1_PPP_H: {  // zip1 pd.h, pn.h, pm.h
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t* m = operands[1].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      bool interleave = false;
+      int index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        if (interleave) {
+          out[i / 32] |= (m[index / 32] > 0)
+                             ? static_cast<uint64_t>(std::pow(2, (i * 2)))
+                             : 0;
+          index++;
+        } else {
+          out[i / 32] |= (n[index / 32] > 0)
+                             ? static_cast<uint64_t>(std::pow(2, (i * 2)))
+                             : 0;
+        }
+        interleave = !interleave;
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_ZIP1_PPP_S: {  // zip1 pd.s, pn.s, pm.s
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t* m = operands[1].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      bool interleave = false;
+      int index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        if (interleave) {
+          out[i / 16] |= (m[index / 16] > 0)
+                             ? static_cast<uint64_t>(std::pow(2, (i * 4)))
+                             : 0;
+          index++;
+        } else {
+          out[i / 16] |= (n[index / 16] > 0)
+                             ? static_cast<uint64_t>(std::pow(2, (i * 4)))
+                             : 0;
+        }
+        interleave = !interleave;
+      }
+      results[0] = out;
       break;
     }
     case Opcode::AArch64_ZIP1_ZZZ_S: {  // zip1 zd.s, zn.s, zm.s
