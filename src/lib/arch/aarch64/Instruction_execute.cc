@@ -183,23 +183,7 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
   return (inverse ? !result : result);
 }
 
-void fpUnpack(uint32_t* sign, uint32_t* exponent, uint32_t* mantisa, float fp) {
-  uint32_t fp_casted = reinterpret_cast<uint32_t&>(fp);
-  *sign = (fp_casted >> 31) & 1;
-  *mantisa = fp_casted & (1 << 23 - 1);
-  *exponent = fp_casted >> 23 & 255;
-
-  // handling subnormal
-  if (*exponent == 0) {
-    while (*mantisa >> 23 == 0) {
-      *mantisa = (*mantisa << 1) & (1 << 23 - 1);
-      *exponent -= 1;
-    }
-    *mantisa = (*mantisa << 1) & (1 << 23 - 1);
-  }
-}
-
-uint32_t recipSqrtEstimate(uint32_t scaled) {
+uint64_t recipSqrtEstimate(uint64_t scaled) {
   assert((128 <= scaled && scaled < 512) &&
          "Invalid argument, not in the range of 128 to 511");
   if (scaled < 256) {  // 0.25 to 0.5
@@ -218,60 +202,83 @@ uint32_t recipSqrtEstimate(uint32_t scaled) {
   return result;
 }
 
-float FPRSqrtEstimate(float x) {
-  // std::cout.precision(9);
-  // std::cout << "input: " << x << std::endl;
-  float result;
+std::array<uint64_t, 3> fp32Unpack(float x) {
+  uint32_t fp;
+  memcpy(&fp, &x, sizeof(float));
+  uint64_t sign = fp >> 31;
+  uint64_t exp = (fp >> 23) & 0xff;
+  uint64_t mantisa = (fp & ((1ULL << 23) - 1)) << 29;
+  return {sign, exp, mantisa};
+}
+
+std::array<uint64_t, 3> fp64Unpack(double x) {
+  uint64_t fp;
+  memcpy(&fp, &x, sizeof(double));
+  uint64_t sign = fp >> 63;
+  uint64_t exp = (fp >> 52) & 0x7ff;
+  uint64_t mantisa = fp & ((1ULL << 52) - 1);
+  return {sign, exp, mantisa};
+}
+
+template <typename T>
+T FPRSqrtEstimate(T x) {
+  T result;
   if (std::isnan(x) || x < 0) {
-    result = std::numeric_limits<float>::quiet_NaN();
-  } else if (x == 0.f) {
-    result = std::numeric_limits<float>::infinity();
+    result = std::numeric_limits<T>::quiet_NaN();
+  } else if (x == 0) {
+    result = std::numeric_limits<T>::infinity();
   } else if (std::isinf(x)) {
-    result = 0.f;
+    result = 0;
   } else {
+    result = 0;
     // unpacking floating point
-    uint32_t fp = reinterpret_cast<uint32_t&>(x);
-    uint32_t fraction = fp & (1 << 23 - 1);
-    uint32_t exp = fp >> 23 & 255;
-    // std::cout << std::hex << "fp: 0x" << fp << " fraction: 0x" << fraction
-    //           << " exp: 0x" << exp << std::dec << std::endl;
+    uint64_t fraction;
+    uint64_t exp;
+    std::array<uint64_t, 3> unpacked;
+    if (sizeof(T) == sizeof(float)) {
+      unpacked = fp32Unpack(x);
+    } else {
+      unpacked = fp64Unpack(x);
+    }
+    exp = unpacked[1];
+    fraction = unpacked[2];
 
     // handling subnormal
     if (exp == 0) {
-      // std::cout << "handled subnormal" << std::endl;
-      while (fraction >> 23 == 0) {
-        fraction = (fraction << 1) & (1 << 23 - 1);
+      while ((fraction >> 51) == 0) {
+        fraction = (fraction << 1) & ((1ULL << 52) - 1);
         exp -= 1;
       }
-      fraction = (fraction << 1) & (1 << 23 - 1);
-      // std::cout << std::hex << "new fraction: 0x" << fraction << " new exp:
-      // 0x"
-      //           << exp << std::dec << std::endl;
+      fraction = (fraction << 1) & ((1ULL << 52) - 1);
     }
 
-    uint32_t scaled;
-    // std::cout << "exp & 1 == 0: " << ((exp & 1) == 0) << std::endl;
-    if ((exp & 1) == 0) {
-      scaled = 0b100000000 | (fraction >> 15);
+    uint64_t scaled;
+    if ((exp & 1ULL) == 0) {
+      scaled = 0b100000000 | (fraction >> 44);
     } else {
-      scaled = 0b010000000 | (fraction >> 16);
+      scaled = 0b010000000 | (fraction >> 45);
     }
 
-    uint32_t result_exp = (380 - exp) >> 1;
-    // std::cout << std::hex << "scaled: 0x" << scaled << " result_exp: 0x"
-    //           << result_exp << std::dec << std::endl;
+    uint64_t result_exp;
+    if (sizeof(T) == sizeof(float)) {
+      result_exp = (380 - exp) >> 1;
+    } else {
+      result_exp = (3068 - exp) >> 1;
+    }
+    uint64_t estimate = recipSqrtEstimate(scaled);
 
-    uint32_t estimate = recipSqrtEstimate(scaled);
-    // std::cout << std::hex << "estimate: 0x" << estimate << std::dec
-    //           << std::endl;
-
-    uint32_t packed = (result_exp << 23) | ((estimate & 0xff) << 15);
-    assert(sizeof(packed) == sizeof(result) &&
-           "size of packed bits are different with floating point type");
-    memcpy(&result, &packed, sizeof(float));
-    // std::cout << std::hex << "packed: 0x" << packed << std::dec << std::endl;
+    if (sizeof(T) == sizeof(float)) {
+      uint32_t packed = (result_exp << 23) | ((estimate & 0xff) << 15);
+      assert(sizeof(packed) == sizeof(result) &&
+             "size of packed bits are different with floating point type");
+      memcpy(&result, &packed, sizeof(T));
+    } else {
+      uint64_t packed = (result_exp << 52) | ((estimate & 0xff) << 44);
+      assert(sizeof(packed) == sizeof(result) &&
+             "size of packed bits are different with floating point type");
+      memcpy(&result, &packed, sizeof(T));
+    }
   }
-  // std::cout << "output: " << result << std::endl;
   return result;
 }
 
@@ -2540,14 +2547,15 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_FRSQRTEv1i32: {  // frsqrte sd, sn
       float n = operands[0].get<float>();
-      float estimate = FPRSqrtEstimate(n);
+      float estimate = FPRSqrtEstimate<float>(n);
       float out[4] = {estimate, 0.f, 0.f, 0.f};
       results[0] = out;
       break;
     }
     case Opcode::AArch64_FRSQRTEv1i64: {  // frsqrte dd, dn
       double n = operands[0].get<double>();
-      double out[2] = {1.0 / ::sqrt(n), 0.0};
+      double estimate = FPRSqrtEstimate<double>(n);
+      double out[2] = {estimate, 0.0};
       results[0] = out;
       break;
     }
@@ -2555,7 +2563,7 @@ void Instruction::execute() {
       const float* n = operands[0].getAsVector<float>();
       float out[4] = {0.f, 0.f, 0.f, 0.f};
       for (int i = 0; i < 2; i++) {
-        out[i] = 1.f / sqrtf(n[i]);
+        out[i] = FPRSqrtEstimate<float>(n[i]);
       }
       results[0] = out;
       break;
@@ -2564,7 +2572,7 @@ void Instruction::execute() {
       const float* n = operands[0].getAsVector<float>();
       float out[4];
       for (int i = 0; i < 4; i++) {
-        out[i] = 1.f / ::sqrtf(n[i]);
+        out[i] = FPRSqrtEstimate<float>(n[i]);
       }
       results[0] = out;
       break;
@@ -2573,7 +2581,7 @@ void Instruction::execute() {
       const double* n = operands[0].getAsVector<double>();
       double out[2];
       for (int i = 0; i < 2; i++) {
-        out[i] = 1.0 / sqrt(n[i]);
+        out[i] = FPRSqrtEstimate<double>(n[i]);
       }
       results[0] = out;
       break;

@@ -1050,109 +1050,195 @@ TEST_P(InstFloat, frsqrte) {
   // single precision
   RUN_AARCH64(R"(
     fmov s0, 2.0
-    fmov s1, -0.125
-    fmov s6, 0.25
-    fmov s8, 0.375
+    fmov s1, 0.375
+    fmov s2, 0.25
+    fmov s3, -0.125
 
-    frsqrte s3, s0
-    frsqrte s4, s1
-    frsqrte s5, s2
-    frsqrte s7, s6
-    frsqrte s9, s8
+    # subnormals
+    mov w0, #0x00000002
+    mov w1, #0x00000100
+    mov w2, #0x00000001
+    mov v10.s[0], w0
+    mov v11.s[0], w1
+    mov v12.s[0], w2
+
+    frsqrte s5, s0
+    frsqrte s6, s1
+    frsqrte s7, s2
+    frsqrte s8, s3
+    frsqrte s9, s4
+    frsqrte s13, s10
+    frsqrte s14, s11
+    frsqrte s15, s12
   )");
-  CHECK_NEON(3, float, {0.705078125f, 0.f, 0.f, 0.f});  // vale from xci
-  CHECK_NEON(7, float, {1.99609375f, 0.f, 0.f, 0.f});   // value from xci
-  CHECK_NEON(9, float, {1.6328125f, 0.f, 0.f, 0.f});    // value from xci
+  CHECK_NEON(5, float, {0.705078125f, 0.f, 0.f, 0.f});  // value from hardware
+  CHECK_NEON(6, float, {1.6328125f, 0.f, 0.f, 0.f});    // value from hardware
+  CHECK_NEON(7, float, {1.99609375f, 0.f, 0.f, 0.f});   // value from hardware
 
-  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(4)));
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(8)));
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(3)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(3)), 0.f);
 
-  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(5)));
-  EXPECT_EQ((getVectorRegisterElement<float, 1>(5)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(5)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(5)), 0.f);
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(9)));
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(9)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(9)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(9)), 0.f);
+  // value from hardware
+  CHECK_NEON(13, uint32_t, {0x647f8000, 0, 0, 0});
+  CHECK_NEON(14, uint32_t, {0x62b48000, 0, 0, 0});
+  CHECK_NEON(15, uint32_t, {0x64b48000, 0, 0, 0});
 
   // double precision
   RUN_AARCH64(R"(
-    fmov d1, 2.0
-    fmov d2, -0.125
-    fmov d4, 0.0
-    frsqrte d0, d1
-    frsqrte d3, d2
-    frsqrte d5, d4
+    fmov d0, #0.1953125
+    fmov d1, #3.875
+    fmov d2, #0.875
+    fmov d3, #1.9375
+    fmov d4, #-0.5
+
+    # subnormals
+    mov x0, #0x0000000000000001
+    mov x1, #0x0000000000001000
+    mov v12.d[0], x0
+    mov v13.d[0], x1
+
+    frsqrte d6, d0
+    frsqrte d7, d1
+    frsqrte d8, d2
+    frsqrte d9, d3
+    frsqrte d10, d4
+    frsqrte d11, d5 
+    frsqrte d14, d12
+    frsqrte d15, d13
   )");
-  CHECK_NEON(0, double, {1.0 / sqrt(2.0), 0.0});
-  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(3)));
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
-  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 0>(5)));
-  EXPECT_EQ((getVectorRegisterElement<double, 1>(5)), 0.0);
+  CHECK_NEON(6, double, {2.2578125, 0.0});    // value from hardware
+  CHECK_NEON(7, double, {0.5078125, 0.0});    // value from hardware
+  CHECK_NEON(8, double, {1.06640625, 0.0});   // value from hardware
+  CHECK_NEON(9, double, {0.716796875, 0.0});  // value from hardware
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(10)));
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(10)), 0.0);
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 0>(11)));
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(11)), 0.0);
+  // value from hardware
+  CHECK_NEON(14, uint64_t, {0x617ff00000000000, 0});
+  CHECK_NEON(15, uint64_t, {0x611ff00000000000, 0});
 
   // Vector single precision
   RUN_AARCH64(R"(
     fmov v0.4s, 2.0
-    fmov v1.4s, -0.125
+    fmov v1.4s, 0.375
+    fmov v2.4s, 0.25
+    fmov v3.4s, -0.125
 
-    frsqrte v4.4s, v0.4s
-    frsqrte v5.4s, v1.4s
-    frsqrte v6.4s, v2.4s
+    # subnormals
+    mov w0, #0x00000002
+    mov w1, #0x00000100
+    mov w2, #0x00000001
+    mov v10.s[0], w0
+    mov v10.s[1], w1
+    mov v10.s[2], w2
+
+    frsqrte v5.4s, v0.4s
+    frsqrte v6.4s, v1.4s
+    frsqrte v7.4s, v2.4s
+    frsqrte v8.4s, v3.4s
+    frsqrte v9.4s, v4.4s
+    frsqrte v11.4s, v10.4s 
   )");
-  CHECK_NEON(4, float,
-             {
-                 1.f / sqrtf(2.f),
-                 1.f / sqrtf(2.f),
-                 1.f / sqrtf(2.f),
-                 1.f / sqrtf(2.f),
-             });
+  CHECK_NEON(5, float,
+             {0.705078125f, 0.705078125f, 0.705078125f,
+              0.705078125f});  // value from hardware
+  CHECK_NEON(
+      6, float,
+      {1.6328125f, 1.6328125f, 1.6328125f, 1.6328125f});  // value from hardware
+  CHECK_NEON(7, float,
+             {1.99609375f, 1.99609375f, 1.99609375f,
+              1.99609375f});  // value from hardware
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(8)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 1>(8)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 2>(8)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 3>(8)));
 
-  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(5)));
-  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 1>(5)));
-  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 2>(5)));
-  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 3>(5)));
-
-  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(6)));
-  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 1>(6)));
-  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 2>(6)));
-  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 3>(6)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(9)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 1>(9)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 2>(9)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 3>(9)));
+  // value from hardware
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 0>(11)), 0x647f8000);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 1>(11)), 0x62b48000);
+  EXPECT_EQ((getVectorRegisterElement<uint32_t, 2>(11)), 0x64b48000);
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 3>(11)));
 
   // Vector single precision (2S)
   RUN_AARCH64(R"(
     fmov v0.4s, 2.0
-    fmov v1.4s, -0.125
+    fmov v1.4s, 0.375
+    fmov v2.4s, 0.25
+    fmov v3.4s, -0.125
 
-    frsqrte v4.2s, v0.2s
-    frsqrte v5.2s, v1.2s
-    frsqrte v6.2s, v2.2s
+    # subnormals
+    mov w0, #0x00000002
+    mov w1, #0x00000100
+    mov v10.s[0], w0
+    mov v10.s[1], w1
+
+    frsqrte v5.2s, v0.2s
+    frsqrte v6.2s, v1.2s
+    frsqrte v7.2s, v2.2s
+    frsqrte v8.2s, v3.2s
+    frsqrte v9.2s, v4.2s
+    frsqrte v11.2s, v10.2s
   )");
-  CHECK_NEON(4, float, {1.f / sqrtf(2.f), 1.f / sqrtf(2.f), 0.f, 0.f});
-
-  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(5)));
-  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 1>(5)));
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(5)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(5)), 0.f);
-
-  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(6)));
-  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 1>(6)));
-  EXPECT_EQ((getVectorRegisterElement<float, 2>(6)), 0.f);
-  EXPECT_EQ((getVectorRegisterElement<float, 3>(6)), 0.f);
+  CHECK_NEON(5, float,
+             {0.705078125f, 0.705078125f, 0.f, 0.f});  // value from hardware
+  CHECK_NEON(6, float,
+             {1.6328125f, 1.6328125f, 0.f, 0.f});  // value from hardware
+  CHECK_NEON(7, float,
+             {1.99609375f, 1.99609375f, 0.f, 0.f});  // value from hardware
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(8)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 1>(8)));
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(8)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(8)), 0.f);
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(9)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 1>(9)));
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(9)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(9)), 0.f);
+  CHECK_NEON(11, uint32_t,
+             {0x647f8000, 0x62b48000, 0, 0});  // value from hardware
 
   // Vector double precison
   RUN_AARCH64(R"(
-    fmov v0.2d, 2.0
-    fmov v1.2d, -0.125
+    fmov v0.2d, #0.1953125
+    fmov v1.2d, #3.875
+    fmov v2.2d, #0.875
+    fmov v3.2d, #1.9375
+    fmov v4.2d, #-0.5
 
-    frsqrte v3.2d, v0.2d
-    frsqrte v4.2d, v1.2d
-    frsqrte v5.2d, v2.2d
+    # subnormals
+    mov x0, #0x0000000000000001
+    mov x1, #0x0000000000001000
+    mov v12.d[0], x0
+    mov v12.d[1], x1
+
+    frsqrte v6.2d, v0.2d
+    frsqrte v7.2d, v1.2d
+    frsqrte v8.2d, v2.2d
+    frsqrte v9.2d, v3.2d
+    frsqrte v10.2d, v4.2d
+    frsqrte v11.2d, v5.2d 
+    frsqrte v13.2d, v12.2d
   )");
-  CHECK_NEON(3, double, {1.0 / sqrt(2.0), 1.0 / sqrt(2.0)});
-
-  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(4)));
-  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 1>(4)));
-
-  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 0>(5)));
-  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 1>(5)));
+  CHECK_NEON(6, double, {2.2578125, 2.2578125});      // value from hardware
+  CHECK_NEON(7, double, {0.5078125, 0.5078125});      // value from hardware
+  CHECK_NEON(8, double, {1.06640625, 1.06640625});    // value from hardware
+  CHECK_NEON(9, double, {0.716796875, 0.716796875});  // value from hardware
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(10)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 1>(10)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 0>(11)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 1>(11)));
+  CHECK_NEON(13, uint64_t,
+             {0x617ff00000000000, 0x611ff00000000000});  // value from hardware
 }
 
 TEST_P(InstFloat, frsqrts) {
