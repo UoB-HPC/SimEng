@@ -3225,6 +3225,54 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_INDEX_RR_B: {  // index zd.b, wn, wm
+      const int8_t n = static_cast<int8_t>(operands[0].get<int32_t>());
+      const int8_t m = static_cast<int8_t>(operands[1].get<int32_t>());
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      int8_t out[256] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<int8_t>(n + (i * m));
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_INDEX_RR_D: {  // index zd.d, xn, xm
+      const int64_t n = operands[0].get<int64_t>();
+      const int64_t m = operands[1].get<int64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      int64_t out[32] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<int64_t>(n + (i * m));
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_INDEX_RR_H: {  // index zd.h, wn, wm
+      const int16_t n = static_cast<int16_t>(operands[0].get<int32_t>());
+      const int16_t m = static_cast<int16_t>(operands[1].get<int32_t>());
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      int16_t out[128] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<int16_t>(n + (i * m));
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_INDEX_RR_S: {  // index zd.s, wn, wm
+      const int32_t n = operands[0].get<int32_t>();
+      const int32_t m = operands[1].get<int32_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      int32_t out[64] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<int32_t>(n + (i * m));
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_INSvi32lane: {  // ins vd.s[index1], vn.s[index2]
       const uint32_t* d = operands[0].getAsVector<uint32_t>();
       const uint32_t* n = operands[1].getAsVector<uint32_t>();

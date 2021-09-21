@@ -181,6 +181,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_INDEX_RI_S:
       [[fallthrough]];
+    case Opcode::AArch64_INDEX_RR_B:
+      [[fallthrough]];
+    case Opcode::AArch64_INDEX_RR_D:
+      [[fallthrough]];
+    case Opcode::AArch64_INDEX_RR_H:
+      [[fallthrough]];
+    case Opcode::AArch64_INDEX_RR_S:
+      [[fallthrough]];
     case Opcode::AArch64_FABS_ZPmZ_S:
       [[fallthrough]];
     case Opcode::AArch64_FADD_ZZZ_D:
