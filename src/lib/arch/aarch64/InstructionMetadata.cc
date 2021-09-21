@@ -660,6 +660,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_ZIP1_ZZZ_D:
       [[fallthrough]];
+    case Opcode::AArch64_ZIP2_PPP_B:
+      [[fallthrough]];
+    case Opcode::AArch64_ZIP2_PPP_D:
+      [[fallthrough]];
+    case Opcode::AArch64_ZIP2_PPP_H:
+      [[fallthrough]];
+    case Opcode::AArch64_ZIP2_PPP_S:
+      [[fallthrough]];
     case Opcode::AArch64_ZIP2_ZZZ_S:
       [[fallthrough]];
     case Opcode::AArch64_ZIP2_ZZZ_D:
