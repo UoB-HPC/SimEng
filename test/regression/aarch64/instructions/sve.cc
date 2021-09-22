@@ -2296,6 +2296,30 @@ TEST_P(InstSve, ld1b) {
               0,    0,    0,    0,    0,    0,    0,    0,    0});
 }
 
+TEST_P(InstSve, ld1d_gather) {
+  // VL = 512-bits
+  RUN_AARCH64(R"(
+    mov x0, #-24
+    mov x1, #800
+    index z1.d, x1, x0
+    index z2.d, #8, #-4
+    index z3.d, #8, #-4
+
+    ptrue p0.d
+    mov x1, #4
+    whilelo p1.d, xzr, x1
+
+    # Put data into memory so we have something to load
+    st1d {z2.d}, p0, [z1.d]
+    st1d {z3.d}, p1, [z1.d, #240]
+
+    ld1d {z4.d}, p0/z, [z1.d]
+    ld1d {z5.d}, p1/z, [z1.d, #240]
+  )");
+  CHECK_NEON(4, int64_t, {8, 4, 0, -4, -8, -12, -16, -20});
+  CHECK_NEON(5, int64_t, {8, 4, 0, -4, 0, 0, 0, 0});
+}
+
 TEST_P(InstSve, ld1d) {
   // VL = 512-bits
   initialHeapData_.resize(128);

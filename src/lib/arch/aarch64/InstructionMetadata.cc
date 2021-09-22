@@ -350,6 +350,41 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1i64:
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_GLD1D_IMM_REAL: {
+      // LD1D gather instruction doesn't correctly identify destination register
+      uint16_t reg_enum = ARM64_REG_Z0;
+      // Single or double digit Z register identifier
+      if (operandStr[3] == '.') {
+        reg_enum += std::stoi(operandStr.substr(2, 1));
+      } else {
+        reg_enum += std::stoi(operandStr.substr(2, 2));
+      }
+
+      operands[0].reg = static_cast<arm64_reg>(reg_enum);
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      // LD1D gather instruction doesn't correctly identify second Z reg as
+      // memory operand
+      operands[2].type = ARM64_OP_MEM;
+      operands[2].access = CS_AC_READ;
+      // LD1D gather instruction doesn't recognise memory-offset immediate
+      // correctly
+      if (operandStr[operandStr.length() - 3] != '.') {
+        int64_t startPos = operandStr.find('#') + 1;
+        int64_t immSize = (operandStr.length() - 1) - startPos;
+        if (immSize == 1) {
+          operands[2].mem.disp =
+              std::stoi(operandStr.substr(startPos, immSize));
+        } else {
+          // double or tripple digit immediates are converted to hex, and so
+          // require a different conversion to uint
+          operands[2].mem.disp =
+              std::stoul(operandStr.substr(startPos, immSize), nullptr, 16);
+        }
+      }
+      break;
+    }
     case Opcode::AArch64_LD1B:
       [[fallthrough]];
     case Opcode::AArch64_LD1D:
