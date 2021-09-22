@@ -2316,8 +2316,14 @@ TEST_P(InstSve, ld1d_gather) {
     ld1d {z4.d}, p0/z, [z1.d]
     ld1d {z5.d}, p1/z, [z1.d, #240]
   )");
-  CHECK_NEON(4, int64_t, {8, 4, 0, -4, -8, -12, -16, -20});
-  CHECK_NEON(5, int64_t, {8, 4, 0, -4, 0, 0, 0, 0});
+  CHECK_NEON(4, uint64_t,
+             {static_cast<uint64_t>(8), static_cast<uint64_t>(4), 0,
+              static_cast<uint64_t>(-4), static_cast<uint64_t>(-8),
+              static_cast<uint64_t>(-12), static_cast<uint64_t>(-16),
+              static_cast<uint64_t>(-20)});
+  CHECK_NEON(5, uint64_t,
+             {static_cast<uint64_t>(8), static_cast<uint64_t>(4), 0,
+              static_cast<uint64_t>(-4), 0, 0, 0, 0});
 }
 
 TEST_P(InstSve, ld1d) {
@@ -3232,19 +3238,23 @@ TEST_P(InstSve, st1d_scatter) {
     st1d {z2.d}, p0, [z1.d]
     st1d {z3.d}, p1, [z1.d, #240]
   )");
-  EXPECT_EQ(getMemoryValue<int64_t>(800), 8);
-  EXPECT_EQ(getMemoryValue<int64_t>(800 - 24), 4);
-  EXPECT_EQ(getMemoryValue<int64_t>(800 - 48), 0);
-  EXPECT_EQ(getMemoryValue<int64_t>(800 - 72), -4);
-  EXPECT_EQ(getMemoryValue<int64_t>(800 - 96), -8);
-  EXPECT_EQ(getMemoryValue<int64_t>(800 - 120), -12);
-  EXPECT_EQ(getMemoryValue<int64_t>(800 - 144), -16);
-  EXPECT_EQ(getMemoryValue<int64_t>(800 - 168), -20);
+  EXPECT_EQ(getMemoryValue<uint64_t>(800), static_cast<uint64_t>(8));
+  EXPECT_EQ(getMemoryValue<uint64_t>(800 - 24), static_cast<uint64_t>(4));
+  EXPECT_EQ(getMemoryValue<uint64_t>(800 - 48), static_cast<uint64_t>(0));
+  EXPECT_EQ(getMemoryValue<uint64_t>(800 - 72), static_cast<uint64_t>(-4));
+  EXPECT_EQ(getMemoryValue<uint64_t>(800 - 96), static_cast<uint64_t>(-8));
+  EXPECT_EQ(getMemoryValue<uint64_t>(800 - 120), static_cast<uint64_t>(-12));
+  EXPECT_EQ(getMemoryValue<uint64_t>(800 - 144), static_cast<uint64_t>(-16));
+  EXPECT_EQ(getMemoryValue<uint64_t>(800 - 168), static_cast<uint64_t>(-20));
 
-  EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 0), 8);
-  EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 24), 4);
-  EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 48), 0);
-  EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 72), -4);
+  EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 0),
+            static_cast<uint64_t>(8));
+  EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 24),
+            static_cast<uint64_t>(4));
+  EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 48),
+            static_cast<uint64_t>(0));
+  EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 72),
+            static_cast<uint64_t>(-4));
 }
 
 TEST_P(InstSve, st1d) {
@@ -3343,31 +3353,39 @@ TEST_P(InstSve, st1w_scatter) {
     st1w {z2.s}, p0, [z1.s]
     st1w {z3.s}, p1, [z1.s, #80]
   )");
-  EXPECT_EQ(getMemoryValue<int32_t>(0), 8);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 12), 4);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 24), 0);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 36), -4);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 48), -8);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 60), -12);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 72), -16);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 84), -20);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 96), -24);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 108), -28);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 120), -32);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 132), -36);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 144), -40);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 156), -44);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 168), -48);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 180), -52);
+  EXPECT_EQ(getMemoryValue<uint32_t>(0), static_cast<uint32_t>(8));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 12), static_cast<uint32_t>(4));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 24), static_cast<uint32_t>(0));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 36), static_cast<uint32_t>(-4));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 48), static_cast<uint32_t>(-8));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 60), static_cast<uint32_t>(-12));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 72), static_cast<uint32_t>(-16));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 84), static_cast<uint32_t>(-20));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 96), static_cast<uint32_t>(-24));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 108), static_cast<uint32_t>(-28));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 120), static_cast<uint32_t>(-32));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 132), static_cast<uint32_t>(-36));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 144), static_cast<uint32_t>(-40));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 156), static_cast<uint32_t>(-44));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 168), static_cast<uint32_t>(-48));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 180), static_cast<uint32_t>(-52));
 
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 0), 8);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 12), 4);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 24), 0);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 36), -4);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 48), -8);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 60), -12);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 72), -16);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 84), -20);
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 0),
+            static_cast<uint32_t>(8));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 12),
+            static_cast<uint32_t>(4));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 24),
+            static_cast<uint32_t>(0));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 36),
+            static_cast<uint32_t>(-4));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 48),
+            static_cast<uint32_t>(-8));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 60),
+            static_cast<uint32_t>(-12));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 72),
+            static_cast<uint32_t>(-16));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 84),
+            static_cast<uint32_t>(-20));
 
   // 64-bit
   RUN_AARCH64(R"(
@@ -3382,19 +3400,23 @@ TEST_P(InstSve, st1w_scatter) {
     st1w {z2.d}, p0, [z1.d]
     st1w {z3.d}, p1, [z1.d, #80]
   )");
-  EXPECT_EQ(getMemoryValue<int32_t>(0), 8);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 12), 4);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 24), 0);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 36), -4);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 48), -8);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 60), -12);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 72), -16);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + 84), -20);
+  EXPECT_EQ(getMemoryValue<uint32_t>(0), static_cast<uint32_t>(8));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 12), static_cast<uint32_t>(4));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 24), static_cast<uint32_t>(0));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 36), static_cast<uint32_t>(-4));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 48), static_cast<uint32_t>(-8));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 60), static_cast<uint32_t>(-12));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 72), static_cast<uint32_t>(-16));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + 84), static_cast<uint32_t>(-20));
 
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 0), 8);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 12), 4);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 24), 0);
-  EXPECT_EQ(getMemoryValue<int32_t>(0 + (4 * 80) + 36), -4);
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 0),
+            static_cast<uint32_t>(8));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 12),
+            static_cast<uint32_t>(4));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 24),
+            static_cast<uint32_t>(0));
+  EXPECT_EQ(getMemoryValue<uint32_t>(0 + (4 * 80) + 36),
+            static_cast<uint32_t>(-4));
 }
 
 TEST_P(InstSve, st1w) {
