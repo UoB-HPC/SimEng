@@ -538,10 +538,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_SST1D_IMM:
+      [[fallthrough]];
     case Opcode::AArch64_SST1W_D_IMM:
       [[fallthrough]];
     case Opcode::AArch64_SST1W_IMM: {
-      // ST1W doesn't correctly identify first source register
+      // ST1W scatter instruction doesn't correctly identify first source
+      // register
       uint16_t reg_enum = ARM64_REG_Z0;
       // Single or double digit Z register identifier
       if (operandStr[3] == '.') {
@@ -554,10 +557,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // No defined access types
       operands[0].access = CS_AC_READ;
       operands[1].access = CS_AC_READ;
-      // ST1W doesn't correctly identify Z reg as memory operand
+      // ST1W scatter instruction doesn't correctly identify second Z reg as
+      // memory operand
       operands[2].type = ARM64_OP_MEM;
       operands[2].access = CS_AC_READ;
-      // ST1W doesn't recognise immediate correctly
+      // ST1W scatter instruction doesn't recognise memory-offset immediate
+      // correctly
       if (operandStr[operandStr.length() - 3] != '.') {
         int64_t startPos = operandStr.find('#') + 1;
         int64_t immSize = (operandStr.length() - 1) - startPos;
