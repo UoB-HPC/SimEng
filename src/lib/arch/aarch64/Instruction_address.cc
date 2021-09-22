@@ -813,6 +813,48 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses(std::move(addresses));
       break;
     }
+    case Opcode::AArch64_SST1W_D_IMM: {  // st1w {zt.d}, pg, [zn.d{, #imm}]
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint8_t partition_num = VL_bits / 64;
+
+      const uint64_t* n = operands[2].getAsVector<uint64_t>();
+      const uint64_t offset =
+          static_cast<uint64_t>(metadata.operands[2].mem.disp);
+
+      std::vector<MemoryAccessTarget> addresses;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active) {
+          uint64_t addr = n[i] + (offset * 4);
+          addresses.push_back({addr, 4});
+        }
+      }
+      setMemoryAddresses(addresses);
+      break;
+    }
+    case Opcode::AArch64_SST1W_IMM: {  // st1w {zt.s}, pg, [zn.s{, #imm}]
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint8_t partition_num = VL_bits / 32;
+
+      const uint32_t* n = operands[2].getAsVector<uint32_t>();
+      const uint64_t offset = static_cast<uint64_t>(
+          static_cast<uint32_t>(metadata.operands[2].mem.disp));
+
+      std::vector<MemoryAccessTarget> addresses;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 4));
+        if (p[i / 16] & shifted_active) {
+          uint64_t addr = static_cast<uint64_t>(n[i]) + (offset * 4);
+          addresses.push_back({addr, 4});
+        }
+      }
+      setMemoryAddresses(addresses);
+      break;
+    }
     case Opcode::AArch64_ST1Twov16b: {  // st1v {vt.16b, vt2.16b}, [xn]
       const uint64_t base = operands[2].get<uint64_t>();
       std::vector<MemoryAccessTarget> addresses;
