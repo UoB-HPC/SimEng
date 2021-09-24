@@ -236,6 +236,58 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
+    case Opcode::AArch64_ADD_ZZZ_B: {  // add zd.b, zn.b, zm.b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint8_t* m = operands[1].getAsVector<uint8_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      uint8_t out[256] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = n[i] + m[i];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_ADD_ZZZ_D: {  // add zd.d, zn.d, zm.d
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t* m = operands[1].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = n[i] + m[i];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_ADD_ZZZ_H: {  // add zd.h, zn.h, zm.h
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      const uint16_t* m = operands[1].getAsVector<uint16_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint16_t out[128] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = n[i] + m[i];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_ADD_ZZZ_S: {  // add zd.s, zn.s, zm.s
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      const uint32_t* m = operands[1].getAsVector<uint32_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint32_t out[64] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = n[i] + m[i];
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_ADCXr: {  // adc xd, xn, xm
       const uint8_t carry = operands[0].get<uint8_t>() & 0b0010;
       const uint64_t n = operands[1].get<uint64_t>();

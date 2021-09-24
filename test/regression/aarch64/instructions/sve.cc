@@ -460,6 +460,39 @@ TEST_P(InstSve, fabs) {
               0, 0, 0, 0, 0, 0});
 }
 
+TEST_P(InstSve, add) {
+  // VL = 512-bits
+  // Unpredicated
+  RUN_AARCH64(R"(
+    dup z0.b, #8
+    dup z1.h, #7
+    dup z2.s, #6
+    dup z3.d, #5
+
+    add z0.b, z0.b, z0.b
+    add z1.h, z1.h, z1.h
+    add z2.s, z2.s, z2.s
+    add z3.d, z3.d, z3.d
+  )");
+  CHECK_NEON(
+      0, uint8_t,
+      {
+          16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
+          16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
+          16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
+          16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
+          16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u, 16u,
+      });
+  CHECK_NEON(1, uint16_t,
+             {14u, 14u, 14u, 14u, 14u, 14u, 14u, 14u, 14u, 14u, 14u,
+              14u, 14u, 14u, 14u, 14u, 14u, 14u, 14u, 14u, 14u, 14u,
+              14u, 14u, 14u, 14u, 14u, 14u, 14u, 14u, 14u, 14u});
+  CHECK_NEON(2, uint32_t,
+             {12u, 12u, 12u, 12u, 12u, 12u, 12u, 12u, 12u, 12u, 12u, 12u, 12u,
+              12u, 12u, 12u});
+  CHECK_NEON(3, uint64_t, {10u, 10u, 10u, 10u, 10u, 10u, 10u, 10u});
+}
+
 TEST_P(InstSve, fadd) {
   // VL = 512-bits
   // double
