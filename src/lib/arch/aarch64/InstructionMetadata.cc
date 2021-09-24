@@ -350,6 +350,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1i64:
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_GLD1SW_D_IMM_REAL:
+      [[fallthrough]];
     case Opcode::AArch64_GLD1D_IMM_REAL: {
       // LD1D gather instruction doesn't correctly identify destination register
       uint16_t reg_enum = ARM64_REG_Z0;
