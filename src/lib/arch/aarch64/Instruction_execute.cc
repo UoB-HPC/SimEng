@@ -183,43 +183,63 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
   return (inverse ? !result : result);
 }
 
-uint64_t recipSqrtEstimate(uint64_t scaled) {
-  assert((128 <= scaled && scaled < 512) &&
+/** Returns estimate of reciprocal square root of 9-bit fixed-point number.
+ * The argument 'a' must be in range from 128 to 511 representing a number
+ * in range 0.25 <= n < 1.0.
+ * The result is in the range from 256 to 511 representing a number in the
+ * range 1.0 to 511/256.
+ */
+uint64_t recipSqrtEstimate(uint64_t a) {
+  assert((128 <= a && a < 512) &&
          "Invalid argument, not in the range of 128 to 511");
-  if (scaled < 256) {  // 0.25 to 0.5
-    scaled = scaled * 2 + 1;
-  } else {  // 0.5 to 1.0
-    scaled = (scaled >> 1) << 1;
-    scaled = (scaled + 1) * 2;
+  if (a < 256) {        // from 0.25 to 0.5
+    a = a * 2 + 1;      // a in units of 1/512 rounded to nearest
+  } else {              // from 0.5 to 1.0
+    a = (a >> 1) << 1;  // Discard bottom bit
+    a = (a + 1) * 2;    // a in units of 1/256 rounded to nearest
   }
   int b = 512;
-  while (scaled * (b + 1) * (b + 1) < pow(2, 28)) {
+  // Finding largest b such that b < (2^14 / sqrt(a))
+  while (a * (b + 1) * (b + 1) < pow(2, 28)) {
     b += 1;
   }
-  uint32_t result = (b + 1) / 2;
+  uint32_t result = (b + 1) / 2;  // Round to nearest
   assert((256 <= result && result < 512) &&
          "Result is not in the range of 256 to 511");
   return result;
 }
 
+/** Unpacks 32-bit floating point number into an array of components.
+ * Zeroth element is sign bit, first element is exponent, and second element is
+ * mantissa.
+ */
 std::array<uint64_t, 3> fp32Unpack(float x) {
   uint32_t fp;
   memcpy(&fp, &x, sizeof(float));
   uint64_t sign = fp >> 31;
   uint64_t exp = (fp >> 23) & 0xff;
-  uint64_t mantisa = (fp & ((1ULL << 23) - 1)) << 29;
-  return {sign, exp, mantisa};
+  uint64_t mantissa = (fp & ((1ULL << 23) - 1));
+  return {sign, exp, mantissa};
 }
 
+/** Unpacks 64-bit floating point number into an array of components.
+ * Zeroth element is sign bit, first element is exponent, and second element is
+ * mantissa.
+ */
 std::array<uint64_t, 3> fp64Unpack(double x) {
   uint64_t fp;
   memcpy(&fp, &x, sizeof(double));
   uint64_t sign = fp >> 63;
   uint64_t exp = (fp >> 52) & 0x7ff;
-  uint64_t mantisa = fp & ((1ULL << 52) - 1);
-  return {sign, exp, mantisa};
+  uint64_t mantissa = fp & ((1ULL << 52) - 1);
+  return {sign, exp, mantissa};
 }
 
+/** Returns estimate of reciprocal square root of floating point number 'x'
+ * based on pseudo code from "Arm Architecture Reference Manual Armv8, for
+ * Armv8-A architecture profile". The type of argument 'x' must be either float
+ * or double.
+ */
 template <typename T>
 T FPRSqrtEstimate(T x) {
   T result;
@@ -237,11 +257,12 @@ T FPRSqrtEstimate(T x) {
     std::array<uint64_t, 3> unpacked;
     if (sizeof(T) == sizeof(float)) {
       unpacked = fp32Unpack(x);
+      fraction = unpacked[2] << 29;
     } else {
       unpacked = fp64Unpack(x);
+      fraction = unpacked[2];
     }
     exp = unpacked[1];
-    fraction = unpacked[2];
 
     // handling subnormal
     if (exp == 0) {
