@@ -2945,6 +2945,10 @@ void Instruction::execute() {
       results[0] = memoryData[0].zeroExtend(4, 8);
       break;
     }
+    case Opcode::AArch64_LDARX: {  // ldar xt, [xn]
+      results[0] = memoryData[0];
+      break;
+    }
     case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
       results[0] = memoryData[0].zeroExtend(4, 8);
       break;
@@ -4181,6 +4185,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_STLRB:  // stlrb wt, [xn]
+      [[fallthrough]];
+    case Opcode::AArch64_STLRX:  // stlr xt, [xn]
       [[fallthrough]];
     case Opcode::AArch64_STLRW: {  // stlr wt, [xn]
       memoryData[0] = operands[0];
