@@ -5,6 +5,7 @@ namespace {
 using InstStore = AArch64RegressionTest;
 
 TEST_P(InstStore, stlr) {
+  // stlrb
   RUN_AARCH64(R"(
     mov w0, 0xAB
     mov w1, 0x12
@@ -24,6 +25,33 @@ TEST_P(InstStore, stlr) {
   EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 3), 0x12);
   EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 2), 0xCD);
   EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() - 1), 0x34);
+
+  // stlr
+  RUN_AARCH64(R"(
+    mov x0, xzr
+    sub x0, x0, #1
+    mov x1, #0xBEEF
+    mov w2, wzr
+    sub w2, w2, #1
+    mov w3, #0xBABA
+
+    sub sp, sp, #24
+    stlr x0, [sp]
+    add sp, sp, #8
+    stlr x1, [sp]
+    add sp, sp, #8
+    stlr w2, [sp]
+    add sp, sp, #4
+    stlr w3, [sp]
+    add sp, sp, #4
+  )");
+
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 24),
+            0xFFFFFFFFFFFFFFFF);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 16), 0xBEEF);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 8),
+            0xFFFFFFFF);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 4), 0xBABA);
 }
 
 TEST_P(InstStore, strb) {
