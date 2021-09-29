@@ -2354,6 +2354,7 @@ TEST_P(InstSve, ld1sw_gather) {
 
 TEST_P(InstSve, ld1d_gather) {
   // VL = 512-bits
+  // Vector plus immediate
   RUN_AARCH64(R"(
     mov x0, #-24
     mov x1, #800
@@ -2380,6 +2381,38 @@ TEST_P(InstSve, ld1d_gather) {
   CHECK_NEON(5, uint64_t,
              {static_cast<uint64_t>(8), static_cast<uint64_t>(4), 0,
               static_cast<uint64_t>(-4), 0, 0, 0, 0});
+
+  // Scalar plus vector
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, #-24
+    mov x1, #800
+    index z1.d, x1, x0
+    index z2.d, #8, #-4
+    index z3.d, #8, #-4
+    index z4.d, x1, #8
+
+    ptrue p0.d
+    mov x2, #4
+    whilelo p1.d, xzr, x2
+
+    # Put data into memory so we have something to load
+    st1d {z2.d}, p0, [z1.d]
+    st1d {z3.d}, p0, [z4.d]    
+
+    index z4.d, #0, #1
+    mov x4, #0
+    ld1d {z5.d}, p1/z, [x4, z1.d]
+    ld1d {z6.d}, p0/z, [x1, z4.d, lsl #3]
+  )");
+  CHECK_NEON(5, uint64_t,
+             {static_cast<uint64_t>(8), static_cast<uint64_t>(4), 0,
+              static_cast<uint64_t>(-4), 0, 0, 0, 0});
+  CHECK_NEON(6, uint64_t,
+             {static_cast<uint64_t>(8), static_cast<uint64_t>(4), 0,
+              static_cast<uint64_t>(-4), static_cast<uint64_t>(-8),
+              static_cast<uint64_t>(-12), static_cast<uint64_t>(-16),
+              static_cast<uint64_t>(-20)});
 }
 
 TEST_P(InstSve, ld1d) {
