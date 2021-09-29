@@ -208,6 +208,34 @@ TEST_P(InstLoad, ldar) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x12345678);
 }
 
+TEST_P(InstLoad, ldarb) {
+  initialHeapData_.resize(4);
+  uint8_t* heap = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  heap[0] = 0xAB;
+  heap[1] = 0xCD;
+  heap[2] = 0xEF;
+  heap[3] = 0x12;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldarb w1, [x0]
+    add x0, x0, #1
+    ldarb w2, [x0]
+    add x0, x0, #1
+    ldarb w3, [x0]
+    add x0, x0, #1
+    ldarb w4, [x0]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xAB);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0xCD);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0xEF);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0x12);
+}
+
 TEST_P(InstLoad, ldrb) {
   initialHeapData_.resize(8);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());

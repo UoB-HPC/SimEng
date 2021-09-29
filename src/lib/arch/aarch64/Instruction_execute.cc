@@ -2941,6 +2941,10 @@ void Instruction::execute() {
       results[2] = operands[2].get<uint64_t>() + offset;
       break;
     }
+    case Opcode::AArch64_LDARB: {  // ldarb wt, [xn]
+      results[0] = memoryData[0].zeroExtend(1, 8);
+      break;
+    }
     case Opcode::AArch64_LDARW: {  // ldar wt, [xn]
       results[0] = memoryData[0].zeroExtend(4, 8);
       break;
