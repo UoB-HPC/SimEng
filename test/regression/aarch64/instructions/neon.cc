@@ -2336,6 +2336,7 @@ TEST_P(InstNeon, sub) {
 }
 
 TEST_P(InstNeon, ushll) {
+  // ushll half precision to single precision
   initialHeapData_.resize(32);
   uint16_t* heap = reinterpret_cast<uint16_t*>(initialHeapData_.data());
   heap[0] = 31;
@@ -2360,6 +2361,76 @@ TEST_P(InstNeon, ushll) {
   )");
   CHECK_NEON(2, uint32_t, {31, 333, (UINT16_MAX), 7});
   CHECK_NEON(3, uint32_t, {168, 1u << 15, 2808, 0});
+
+  // ushll2 half precision to single precision
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+
+    ushll2 v1.4s, v0.8h, #0
+    ushll2 v2.4s, v0.8h, #8
+    ushll2 v3.4s, v0.8h, #15
+  )");
+  CHECK_NEON(1, uint32_t, {42, 1u << 13, 702, 0});
+  CHECK_NEON(2, uint32_t, {10752, 0, 48640, 0});
+  CHECK_NEON(3, uint32_t, {0, 0, 0, 0});
+
+  // ushll byte to half precision
+  initialHeapData_.resize(16);
+  uint8_t* heap2 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  heap2[0] = 0x7F;
+  heap2[1] = (UINT8_MAX);
+  heap2[2] = 0xAA;
+  heap2[3] = 0x80;
+  heap2[4] = 0;
+  heap2[5] = 0xbc;
+  heap2[6] = 0xde;
+  heap2[7] = 0xf0;
+  heap2[8] = 0x11;
+  heap2[9] = 0x22;
+  heap2[10] = 0x33;
+  heap2[11] = 0x44;
+  heap2[12] = 0x55;
+  heap2[13] = 0x66;
+  heap2[14] = 0x77;
+  heap2[15] = 0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, #214
+    svc #0
+
+    ldr q0, [x0]
+
+    ushll v2.8h, v0.8b, #0
+    ushll v3.8h, v0.8b, #4
+    ushll v4.8h, v0.8b, #7
+  )");
+  CHECK_NEON(2, uint16_t, {0x7F, (UINT8_MAX), 0xAA, 0x80, 0, 0xbc, 0xde, 0xf0});
+  CHECK_NEON(3, uint16_t, {0xF0, 0xF0, 0xA0, 0, 0, 0xC0, 0xE0, 0});
+  CHECK_NEON(4, uint16_t, {0x80, 0x80, 0, 0, 0, 0, 0, 0});
+
+  // ushll2 byte to half precision
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, #214
+    svc #0
+
+    ldr q0, [x0]
+
+    ushll2 v2.8h, v0.16b, #0
+    ushll2 v3.8h, v0.16b, #4
+    ushll2 v4.8h, v0.16b, #7
+  )");
+  CHECK_NEON(2, uint16_t, {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0});
+  CHECK_NEON(3, uint16_t, {0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0});
+  CHECK_NEON(4, uint16_t, {0x80, 0, 0x80, 0, 0x80, 0, 0x80, 0});
 }
 
 TEST_P(InstNeon, xtn) {
