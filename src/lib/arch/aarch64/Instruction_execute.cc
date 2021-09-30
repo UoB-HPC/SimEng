@@ -204,6 +204,16 @@ void Instruction::execute() {
 
   executed_ = true;
   switch (metadata.opcode) {
+    case Opcode::AArch64_ADDv16i8: {  // add vd.16b, vn.16b, vm.16b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint8_t* m = operands[1].getAsVector<uint8_t>();
+      uint8_t out[16] = {0};
+      for (int i = 0; i < 16; i++) {
+        out[i] = static_cast<uint8_t>(n[i] + m[i]);
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_ADDv1i64: {  // add dd, dn, dm
       const uint64_t n = operands[0].get<uint64_t>();
       const uint64_t m = operands[1].get<uint64_t>();
@@ -224,6 +234,16 @@ void Instruction::execute() {
       uint64_t out[2] = {static_cast<uint64_t>(n[0] + m[0]),
                          static_cast<uint64_t>(n[1] + m[1])};
       results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_ADDv4i16: {  // add vd.4h, vn.4h, vm.4h
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      const uint16_t* m = operands[1].getAsVector<uint16_t>();
+      uint16_t out[8] = {0};
+      for (int i = 0; i < 4; i++) {
+        out[i] = static_cast<uint16_t>(n[i] + m[i]);
+      }
+      results[0] = out;
       break;
     }
     case Opcode::AArch64_ADDv4i32: {  // add vd.4s, vn.4s, vm.4s
@@ -284,6 +304,26 @@ void Instruction::execute() {
       uint32_t out[64] = {0};
       for (int i = 0; i < partition_num; i++) {
         out[i] = n[i] + m[i];
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_ADDv8i16: {  // add vd.8h, vn.8h, vm.8h
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      const uint16_t* m = operands[1].getAsVector<uint16_t>();
+      uint16_t out[8] = {0};
+      for (int i = 0; i < 8; i++) {
+        out[i] = static_cast<uint16_t>(n[i] + m[i]);
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_ADDv8i8: {  // add vd.8b, vn.8b, vm.8b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint8_t* m = operands[1].getAsVector<uint8_t>();
+      uint8_t out[16] = {0};
+      for (int i = 0; i < 8; i++) {
+        out[i] = static_cast<uint8_t>(n[i] + m[i]);
       }
       results[0] = out;
       break;
