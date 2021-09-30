@@ -722,6 +722,46 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses(std::move(addresses));
       break;
     }
+    case Opcode::AArch64_SST1D: {  // st1d {zt.d}, pg, [xn, zm.d]
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+
+      const uint64_t base = operands[2].get<uint64_t>();
+      const uint64_t* offset = operands[3].getAsVector<uint64_t>();
+
+      std::vector<MemoryAccessTarget> addresses;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active) {
+          uint64_t addr = base + offset[i];
+          addresses.push_back({addr, 8});
+        }
+      }
+      setMemoryAddresses(addresses);
+      break;
+    }
+    case Opcode::AArch64_SST1D_SCALED: {  // st1d {zt.d}, pg, [xn, zm.d, lsl #3]
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+
+      const uint64_t base = operands[2].get<uint64_t>();
+      const uint64_t* offset = operands[3].getAsVector<uint64_t>();
+
+      std::vector<MemoryAccessTarget> addresses;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active) {
+          uint64_t addr = base + (offset[i] << 3);
+          addresses.push_back({addr, 8});
+        }
+      }
+      setMemoryAddresses(addresses);
+      break;
+    }
     case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
       const uint64_t* p = operands[1].getAsVector<uint64_t>();
       const uint64_t VL_bits = 512;

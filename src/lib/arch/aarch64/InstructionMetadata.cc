@@ -579,6 +579,28 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       groupCount = 1;
       groups[0] = CS_GRP_JUMP;
       break;
+    case Opcode::AArch64_SST1D:
+      [[fallthrough]];
+    case Opcode::AArch64_SST1D_SCALED: {
+      // ST1W doesn't correctly identify first source register
+      uint16_t reg_enum = ARM64_REG_Z0;
+      // Single or double digit Z register identifier
+      if (operandStr[3] == '.') {
+        reg_enum += std::stoi(operandStr.substr(2, 1));
+      } else {
+        reg_enum += std::stoi(operandStr.substr(2, 2));
+      }
+
+      operands[0].reg = static_cast<arm64_reg>(reg_enum);
+      // No defined access types
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      // SST1D{_SCALED} gather instruction doesn't correctly identify memory
+      // operands
+      operands[2].type = ARM64_OP_MEM;
+      operands[2].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_ST1B:
       [[fallthrough]];
     case Opcode::AArch64_ST1D:

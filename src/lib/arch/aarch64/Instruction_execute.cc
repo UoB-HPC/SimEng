@@ -5055,6 +5055,13 @@ void Instruction::execute() {
 
       break;
     }
+    case Opcode::AArch64_SST1D: {  // st1d {zt.d}, pg, [xn, zm.d]
+      [[fallthrough]];
+    }
+    case Opcode::AArch64_SST1D_SCALED: {  // st1d {zt.d}, pg, [xn, zm.d, lsl #
+                                          // 3]
+      [[fallthrough]];
+    }
     case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
       const uint64_t* d = operands[0].getAsVector<uint64_t>();
       const uint64_t* p = operands[1].getAsVector<uint64_t>();

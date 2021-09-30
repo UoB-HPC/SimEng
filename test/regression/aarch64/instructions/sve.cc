@@ -3313,12 +3313,13 @@ TEST_P(InstSve, st1b) {
 
 TEST_P(InstSve, st1d_scatter) {
   // VL = 512-bits
+  // Vector plus imm
   RUN_AARCH64(R"(
     mov x0, #-24
     mov x1, #800
     index z1.d, x1, x0
     index z2.d, #8, #-4
-    index z3.d, #8, #-4
+    index z3.d, #8, #-5
 
     ptrue p0.d
     mov x1, #4
@@ -3339,11 +3340,49 @@ TEST_P(InstSve, st1d_scatter) {
   EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 0),
             static_cast<uint64_t>(8));
   EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 24),
-            static_cast<uint64_t>(4));
+            static_cast<uint64_t>(3));
   EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 48),
-            static_cast<uint64_t>(0));
+            static_cast<uint64_t>(-2));
   EXPECT_EQ(getMemoryValue<int64_t>(800 + (8 * 240) - 72),
-            static_cast<uint64_t>(-4));
+            static_cast<uint64_t>(-7));
+
+  // Scalar plus Vector
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, #-24
+    mov x1, #800
+    mov x2, #240
+    index z1.d, xzr, x0
+    index z2.d, #8, #-4
+    index z3.d, #8, #-5
+    index z4.d, #8, #2
+
+    ptrue p0.d
+    mov x3, #4
+    whilelo p1.d, xzr, x3
+
+    st1d {z2.d}, p1, [x1, z1.d]
+    st1d {z3.d}, p0, [x2, z4.d, lsl #3]
+  )");
+  EXPECT_EQ(getMemoryValue<uint64_t>(800), static_cast<uint64_t>(8));
+  EXPECT_EQ(getMemoryValue<uint64_t>(800 - 24), static_cast<uint64_t>(4));
+  EXPECT_EQ(getMemoryValue<uint64_t>(800 - 48), static_cast<uint64_t>(0));
+  EXPECT_EQ(getMemoryValue<uint64_t>(800 - 72), static_cast<uint64_t>(-4));
+
+  EXPECT_EQ(getMemoryValue<int64_t>(240 + (8 << 3)), static_cast<uint64_t>(8));
+  EXPECT_EQ(getMemoryValue<int64_t>(240 + (10 << 3)), static_cast<uint64_t>(3));
+  EXPECT_EQ(getMemoryValue<int64_t>(240 + (12 << 3)),
+            static_cast<uint64_t>(-2));
+  EXPECT_EQ(getMemoryValue<int64_t>(240 + (14 << 3)),
+            static_cast<uint64_t>(-7));
+  EXPECT_EQ(getMemoryValue<int64_t>(240 + (16 << 3)),
+            static_cast<uint64_t>(-12));
+  EXPECT_EQ(getMemoryValue<int64_t>(240 + (18 << 3)),
+            static_cast<uint64_t>(-17));
+  EXPECT_EQ(getMemoryValue<int64_t>(240 + (20 << 3)),
+            static_cast<uint64_t>(-22));
+  EXPECT_EQ(getMemoryValue<int64_t>(240 + (22 << 3)),
+            static_cast<uint64_t>(-27));
 }
 
 TEST_P(InstSve, st1d) {
