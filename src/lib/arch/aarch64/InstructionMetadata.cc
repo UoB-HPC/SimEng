@@ -377,24 +377,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // LD1D gather instruction doesn't correctly identify memory operands
       operands[2].type = ARM64_OP_MEM;
       operands[2].access = CS_AC_READ;
-
-      // LD1D gather instruction doesn't correctly identify second memory
-      // register
-      uint8_t memStrStart = operandStr.find("[");
-      uint8_t memStrLen = operandStr.length() - memStrStart;
-      std::string memStr = operandStr.substr(memStrStart, memStrLen);
-      memStrStart = memStr.find(",");
-      memStrLen = memStr.length() - memStrStart;
-      memStr = memStr.substr(memStrStart, memStrLen);
-      // memStr = ", zn.d{, lsl #3}]"
-      reg_enum = ARM64_REG_Z0;
-      // Single or double digit Z register identifier
-      if (memStr[4] == '.') {
-        reg_enum += std::stoi(memStr.substr(3, 1));
-      } else {
-        reg_enum += std::stoi(memStr.substr(3, 2));
-      }
-      operands[2].mem.index = static_cast<arm64_reg>(reg_enum);
       break;
     }
     case Opcode::AArch64_GLD1SW_D_IMM_REAL:
