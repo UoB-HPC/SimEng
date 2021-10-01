@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace arch {
@@ -822,6 +823,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_SXTW_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FCVT_ZPmZ_DtoS:
       [[fallthrough]];
     case Opcode::AArch64_FCVT_ZPmZ_StoD:
@@ -1458,6 +1461,9 @@ void InstructionMetadata::revertAliasing() {
         operands[3].type = ARM64_OP_IMM;
         operands[3].access = CS_AC_READ;
         operands[3].imm = 31;
+        return;
+      }
+      if (opcode == Opcode::AArch64_SXTW_ZPmZ_D) {
         return;
       }
       return aliasNYI();

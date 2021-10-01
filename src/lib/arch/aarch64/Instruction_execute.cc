@@ -5847,6 +5847,27 @@ void Instruction::execute() {
       exception_ = InstructionException::SupervisorCall;
       break;
     }
+    case Opcode::AArch64_SXTW_ZPmZ_D: {  // sxtw zd.d, pg/m, zn.d
+      const int64_t* d = operands[0].getAsVector<int64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const int64_t* n = operands[2].getAsVector<int64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      int64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active) {
+          // Cast to 32-bit to get 'least significant sub-element'
+          // Then cast back to 64-bit to sign-extend this 'sub-element'
+          out[i] = static_cast<int64_t>(static_cast<int32_t>(n[i]));
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_SYSxt: {  // sys #<op1>, cn, cm, #<op2>{, xt}
       if (metadata.id == ARM64_INS_DC) {
         uint64_t address = operands[0].get<uint64_t>();

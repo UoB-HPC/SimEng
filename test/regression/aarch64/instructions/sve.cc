@@ -3895,6 +3895,43 @@ TEST_P(InstSve, sub) {
   CHECK_NEON(15, uint64_t, {0xf, 0x22, 0x35, 0x48, 0x5b, 0x6e, 0x81, 0x94});
 }
 
+TEST_P(InstSve, sxtw) {
+  // VL = 512-bit
+  initialHeapData_.resize(128);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xFFFFFFFFFFFFFFFF;
+  heap64[1] = 0x0;
+  heap64[2] = 0xDEADBEEFDEADBEEF;
+  heap64[3] = 0x1234567812345678;
+  heap64[4] = 0xFFFFFFFFFFFFFFFF;
+  heap64[5] = 0x98765432ABCDEF01;
+  heap64[6] = 0xDEADBEEFDEADBEEF;
+  heap64[7] = 0x1234567812345678;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    
+    ptrue p0.d
+    mov x1, #4
+    mov x2, #0
+    whilelo p1.d, xzr, x1
+
+    dup z2.d, #0xF
+
+    ld1d {z0.d}, p0/z, [x0, x2, lsl #3]
+
+    sxtw z1.d, p0/m, z0.d
+    sxtw z2.d, p1/m, z0.d
+  )");
+  CHECK_NEON(
+      1, int64_t,
+      {-1, 0, -559038737, 305419896, -1, -1412567295, -559038737, 305419896});
+  CHECK_NEON(2, int64_t, {-1, 0, -559038737, 305419896, 0xF, 0xF, 0xF, 0xF});
+}
+
 TEST_P(InstSve, uqdec) {
   // VL = 512-bit
   // d arrangement
