@@ -2444,15 +2444,15 @@ TEST_P(InstNeon, sub) {
 TEST_P(InstNeon, ushll) {
   // ushll half precision to single precision
   initialHeapData_.resize(32);
-  uint16_t* heap = reinterpret_cast<uint16_t*>(initialHeapData_.data());
-  heap[0] = 31;
-  heap[1] = 333;
-  heap[2] = (UINT16_MAX);
-  heap[3] = 7;
-  heap[4] = 42;
-  heap[5] = 1u << 13;
-  heap[6] = 702;
-  heap[7] = 0;
+  uint16_t* heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+  heap16[0] = 31;
+  heap16[1] = 333;
+  heap16[2] = (UINT16_MAX);
+  heap16[3] = 7;
+  heap16[4] = 42;
+  heap16[5] = 1u << 13;
+  heap16[6] = 702;
+  heap16[7] = 0;
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -2464,11 +2464,18 @@ TEST_P(InstNeon, ushll) {
     ldr q1, [x0, #8]
     ushll v2.4s, v0.4h, #0
     ushll v3.4s, v1.4h, #2
+    ushll v4.4s, v0.4h, #15
   )");
   CHECK_NEON(2, uint32_t, {31, 333, (UINT16_MAX), 7});
   CHECK_NEON(3, uint32_t, {168, 1u << 15, 2808, 0});
+  CHECK_NEON(4, uint32_t, {31 << 15, 333 << 15, (UINT16_MAX) << 15, 7 << 15});
 
   // ushll2 half precision to single precision
+  heap16[4] = 0;
+  heap16[5] = (UINT16_MAX);
+  heap16[6] = 1u << 13;
+  heap16[7] = 27;
+
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2481,29 +2488,29 @@ TEST_P(InstNeon, ushll) {
     ushll2 v2.4s, v0.8h, #8
     ushll2 v3.4s, v0.8h, #15
   )");
-  CHECK_NEON(1, uint32_t, {42, 1u << 13, 702, 0});
-  CHECK_NEON(2, uint32_t, {10752, 0, 48640, 0});
-  CHECK_NEON(3, uint32_t, {0, 0, 0, 0});
+  CHECK_NEON(1, uint32_t, {0, (UINT16_MAX), 1u << 13, 27});
+  CHECK_NEON(2, uint32_t, {0, (UINT16_MAX) << 8, 1u << 21, 27 << 8});
+  CHECK_NEON(3, uint32_t, {0, (UINT16_MAX) << 15, 1u << 28, 27 << 15});
 
   // ushll byte to half precision
   initialHeapData_.resize(16);
-  uint8_t* heap2 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
-  heap2[0] = 0x7F;
-  heap2[1] = (UINT8_MAX);
-  heap2[2] = 0xAA;
-  heap2[3] = 0x80;
-  heap2[4] = 0;
-  heap2[5] = 0xbc;
-  heap2[6] = 0xde;
-  heap2[7] = 0xf0;
-  heap2[8] = 0x11;
-  heap2[9] = 0x22;
-  heap2[10] = 0x33;
-  heap2[11] = 0x44;
-  heap2[12] = 0x55;
-  heap2[13] = 0x66;
-  heap2[14] = 0x77;
-  heap2[15] = 0;
+  uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  heap8[0] = 0x7F;
+  heap8[1] = (UINT8_MAX);
+  heap8[2] = 0xAA;
+  heap8[3] = 0x80;
+  heap8[4] = 0;
+  heap8[5] = 0xbc;
+  heap8[6] = 0xde;
+  heap8[7] = 0xf0;
+  heap8[8] = 0x11;
+  heap8[9] = 0x22;
+  heap8[10] = 0x33;
+  heap8[11] = 0x44;
+  heap8[12] = 0x55;
+  heap8[13] = 0x66;
+  heap8[14] = 0x77;
+  heap8[15] = 0;
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -2518,10 +2525,22 @@ TEST_P(InstNeon, ushll) {
     ushll v4.8h, v0.8b, #7
   )");
   CHECK_NEON(2, uint16_t, {0x7F, (UINT8_MAX), 0xAA, 0x80, 0, 0xbc, 0xde, 0xf0});
-  CHECK_NEON(3, uint16_t, {0xF0, 0xF0, 0xA0, 0, 0, 0xC0, 0xE0, 0});
-  CHECK_NEON(4, uint16_t, {0x80, 0x80, 0, 0, 0, 0, 0, 0});
+  CHECK_NEON(3, uint16_t,
+             {0x7F << 4, (UINT8_MAX) << 4, 0xAA << 4, 0x80 << 4, 0, 0xbc << 4,
+              0xde << 4, 0xf0 << 4});
+  CHECK_NEON(4, uint16_t,
+             {0x7F << 7, (UINT8_MAX) << 7, 0xAA << 7, 0x80 << 7, 0, 0xbc << 7,
+              0xde << 7, 0xf0 << 7});
 
   // ushll2 byte to half precision
+  heap8[8] = heap8[0];
+  heap8[9] = heap8[1];
+  heap8[10] = heap8[2];
+  heap8[11] = heap8[3];
+  heap8[12] = heap8[4];
+  heap8[13] = heap8[5];
+  heap8[14] = heap8[6];
+  heap8[15] = heap8[7];
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, #0
@@ -2534,9 +2553,13 @@ TEST_P(InstNeon, ushll) {
     ushll2 v3.8h, v0.16b, #4
     ushll2 v4.8h, v0.16b, #7
   )");
-  CHECK_NEON(2, uint16_t, {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0});
-  CHECK_NEON(3, uint16_t, {0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0});
-  CHECK_NEON(4, uint16_t, {0x80, 0, 0x80, 0, 0x80, 0, 0x80, 0});
+  CHECK_NEON(2, uint16_t, {0x7F, (UINT8_MAX), 0xAA, 0x80, 0, 0xbc, 0xde, 0xf0});
+  CHECK_NEON(3, uint16_t,
+             {0x7F << 4, (UINT8_MAX) << 4, 0xAA << 4, 0x80 << 4, 0, 0xbc << 4,
+              0xde << 4, 0xf0 << 4});
+  CHECK_NEON(4, uint16_t,
+             {0x7F << 7, (UINT8_MAX) << 7, 0xAA << 7, 0x80 << 7, 0, 0xbc << 7,
+              0xde << 7, 0xf0 << 7});
 }
 
 TEST_P(InstNeon, xtn) {
