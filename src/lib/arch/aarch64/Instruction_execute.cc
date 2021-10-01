@@ -6207,10 +6207,10 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_USHLLv16i8_shift: {  // ushll2 vd.8h, vn.16b, #imm
       const uint8_t* n = operands[0].getAsVector<uint8_t>();
-      int64_t shift = metadata.operands[2].imm;
+      const uint64_t shift = metadata.operands[2].imm;
       uint16_t out[8] = {0};
       for (int i = 0; i < 8; i++) {
-        out[i] = (n[i + 8] << shift) & 0xff;
+        out[i] = n[i + 8] << shift;
       }
       results[0] = out;
       break;
@@ -6227,20 +6227,20 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_USHLLv8i16_shift: {  // ushll2 vd.4s, vn.8h, #imm
       const uint16_t* n = operands[0].getAsVector<uint16_t>();
-      int64_t shift = metadata.operands[2].imm;
+      const uint64_t shift = metadata.operands[2].imm;
       uint32_t out[4] = {0};
       for (int i = 0; i < 4; i++) {
-        out[i] = (n[i + 4] << shift) & 0xffff;
+        out[i] = n[i + 4] << shift;
       }
       results[0] = out;
       break;
     }
     case Opcode::AArch64_USHLLv8i8_shift: {  // ushll vd.8h, vn.8b, #imm
       const uint8_t* n = operands[0].getAsVector<uint8_t>();
-      int64_t shift = metadata.operands[2].imm;
+      const uint64_t shift = metadata.operands[2].imm;
       uint16_t out[8] = {0};
       for (int i = 0; i < 8; i++) {
-        out[i] = (n[i] << shift) & 0xff;
+        out[i] = n[i] << shift;
       }
       results[0] = out;
       break;
