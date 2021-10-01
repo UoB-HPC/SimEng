@@ -19,7 +19,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator,
-           std::vector<std::pair<uint8_t, uint64_t>> rsArrangement,
+           const std::vector<std::pair<uint8_t, uint64_t>>& rsArrangement,
            YAML::Node config)
     : isa_(isa),
       physicalRegisterStructures_(

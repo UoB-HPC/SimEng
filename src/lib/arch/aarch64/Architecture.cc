@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 
 #include "InstructionMetadata.hh"
 
@@ -115,9 +114,8 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
         // If latency information hasn't been defined, set to zero as to inform
         // later access to use group defined latencies instead
         uint16_t opcode = opcode_node[j].as<uint16_t>();
-        if (opcodeExecutionInfo_.find(opcode) == opcodeExecutionInfo_.end()) {
-          opcodeExecutionInfo_[opcode] = {0, 0, {}};
-        }
+        opcodeExecutionInfo_.try_emplace(
+            opcode, simeng::arch::aarch64::executionInfo{0, 0, {}});
         opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
       }
     }
@@ -154,7 +152,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
   // Dereference the instruction pointer to obtain the instruction word
   const uint32_t insn = *static_cast<const uint32_t*>(ptr);
-  const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
   // Try to find the decoding in the decode cache
   auto iter = decodeCache.find(insn);
@@ -167,6 +164,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     size_t size = 4;
     uint64_t address = 0;
 
+    const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
+
     bool success =
         cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
 
@@ -177,14 +176,10 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     metadataCache.emplace_front(metadata);
 
     // Create and cache an instruction using the metadata
-    Instruction newInstruction = Instruction(*this, metadataCache.front());
+    iter = decodeCache.try_emplace(insn, *this, metadataCache.front()).first;
 
     // Set execution information for this instruction
-    newInstruction.setExecutionInfo(getExecutionInfo(newInstruction));
-
-    auto result = decodeCache.insert({insn, newInstruction});
-
-    iter = result.first;
+    iter->second.setExecutionInfo(getExecutionInfo(iter->second));
   }
 
   output.resize(1);

@@ -363,7 +363,7 @@ int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
   return vfd;
 }
 
-int64_t Linux::readlinkat(int64_t dirfd, const std::string pathname, char* buf,
+int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
                           size_t bufsize) const {
   const auto& processState = processStates_[0];
   if (pathname == "/proc/self/exe") {

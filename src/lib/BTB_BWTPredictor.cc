@@ -10,15 +10,15 @@ BTB_BWTPredictor::BTB_BWTPredictor(uint8_t bits, uint8_t associative)
       mask((1 << bits) - 1),
       btb(1 << bits, *(new std::vector<std::tuple<uint64_t, uint64_t, int64_t>>(
                          associative))),
-      pht(1 << bits, 1) {
+      pht(1 << bits, 1),
+      touched(std::vector<std::vector<uint64_t>>(
+          1 << bits, *(new std::vector<uint64_t>(associative)))),
+      associativeIndex(1 << 11, 0) {
   thr = 0;
   ghrUnsigned = 0;
-  touched = std::vector<std::vector<uint64_t>>(
-      1 << bits, *(new std::vector<uint64_t>(associative)));
-  associativeIndex = std::vector<uint8_t>(1 << 11, 0);
 }
 
-BranchPrediction BTB_BWTPredictor::predict(std::shared_ptr<Instruction> uop) {
+BranchPrediction BTB_BWTPredictor::predict(std::shared_ptr<Instruction>& uop) {
   auto instructionAddress = uop->getInstructionAddress();
   std::pair<uint64_t, uint8_t>& btbIndex = mappings[instructionAddress];
 
@@ -64,7 +64,7 @@ BranchPrediction BTB_BWTPredictor::predict(std::shared_ptr<Instruction> uop) {
   return prediction;
 }
 
-void BTB_BWTPredictor::update(std::shared_ptr<Instruction> uop, bool taken,
+void BTB_BWTPredictor::update(std::shared_ptr<Instruction>& uop, bool taken,
                               uint64_t targetAddress) {
   auto instructionAddress = uop->getInstructionAddress();
   std::pair<uint64_t, uint8_t>& btbIndex = mappings[instructionAddress];

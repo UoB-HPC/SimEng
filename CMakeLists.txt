@@ -115,6 +115,19 @@ FetchContent_MakeAvailable_Args(yaml-cpp EXCLUDE_FROM_ALL)
 option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
+option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizatoins" OFF)
+
+if(SIMENG_OPTIMIZE)
+  # Turn on link time optimization for all targets.
+  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
+
+  check_cxx_compiler_flag(-march=native X86)
+
+  if(X86)
+    add_compile_options(-march=native -mtune=native)
+    add_link_options(-march=native -mtune=native)
+  endif()
+endif()
 
 set(SANITIZE_OPTIONS -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-sanitize-recover=address,undefined)
 if (SIMENG_SANITIZE)

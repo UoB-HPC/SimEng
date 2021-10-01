@@ -1,5 +1,6 @@
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 
+#include <algorithm>
 #include <unordered_set>
 
 namespace simeng {
@@ -44,20 +45,24 @@ DispatchIssueUnit::DispatchIssueUnit(
     reservationStations_[RS.first].ports.resize(port_index + 1);
     reservationStations_[RS.first].ports[port_index].issuePort = port;
   }
-};
+  dispatches.resize(reservationStations_.size());
+  for (uint8_t i = 0; i < reservationStations_.size(); i++)
+    flushed_.emplace(i, std::initializer_list<std::shared_ptr<Instruction>>{});
+}
 
 void DispatchIssueUnit::tick() {
-  // Maintain record of dispatch amounts made
-  std::vector<uint8_t> dispatches(reservationStations_.size(), 0);
-
   input_.stall(false);
+
+  // Reset the counters
+  std::fill(dispatches.begin(), dispatches.end(), 0);
+
   for (size_t slot = 0; slot < input_.getWidth(); slot++) {
     auto& uop = input_.getHeadSlots()[slot];
     if (uop == nullptr) {
       continue;
     }
 
-    std::vector<uint8_t> supportedPorts = uop->getSupportedPorts();
+    const std::vector<uint8_t>& supportedPorts = uop->getSupportedPorts();
     if (uop->exceptionEncountered()) {
       // Exception; mark as ready to commit, and remove from pipeline
       uop->setCommitReady();
@@ -152,7 +157,7 @@ void DispatchIssueUnit::issue() {
   }
 
   if (issued == 0) {
-    for (auto rs : reservationStations_) {
+    for (const auto& rs : reservationStations_) {
       if (rs.currentSize != 0) {
         backendStalls_++;
         return;
@@ -215,9 +220,7 @@ void DispatchIssueUnit::purgeFlushed() {
   }
 
   // Collect flushed instructions and remove them from the dependency matrix
-  std::vector<std::unordered_set<std::shared_ptr<Instruction>>> flushed(
-      reservationStations_.size(),
-      std::unordered_set<std::shared_ptr<Instruction>>());
+  for (auto& it : flushed_) it.second.clear();
   for (auto& registerType : dependencyMatrix_) {
     for (auto& dependencyList : registerType) {
       auto it = dependencyList.begin();
@@ -225,8 +228,8 @@ void DispatchIssueUnit::purgeFlushed() {
         auto& entry = *it;
         if (entry.uop->isFlushed()) {
           auto rsIndex = portMapping_[entry.port].first;
-          if (!flushed[rsIndex].count(entry.uop)) {
-            flushed[rsIndex].insert(entry.uop);
+          if (!flushed_[rsIndex].count(entry.uop)) {
+            flushed_[rsIndex].insert(entry.uop);
             portAllocator_.deallocate(entry.port);
           }
           it = dependencyList.erase(it);
@@ -238,9 +241,9 @@ void DispatchIssueUnit::purgeFlushed() {
   }
 
   // Update reservation station size
-  for (int i = 0; i < reservationStations_.size(); i++) {
-    assert(reservationStations_[i].currentSize >= flushed[i].size());
-    reservationStations_[i].currentSize -= flushed[i].size();
+  for (uint8_t i = 0; i < reservationStations_.size(); i++) {
+    assert(reservationStations_[i].currentSize >= flushed_[i].size());
+    reservationStations_[i].currentSize -= flushed_[i].size();
   }
 }
 
