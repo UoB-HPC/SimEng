@@ -2753,6 +2753,89 @@ TEST_P(InstSve, movprfx) {
   CHECK_NEON(5, uint64_t, {5u, 5u, 5u, 5u, 5u, 5u, 5u, 5u});
 }
 
+TEST_P(InstSve, mul) {
+  // VL = 512-bits
+  // Vectors
+  // 8-bit
+  RUN_AARCH64(R"(
+    ptrue p0.b
+    mov x0, #32
+    whilelo p1.b, xzr, x0
+
+    mov z0.b, #2
+    mov z1.b, #3
+    index z2.b, #1, #1
+
+    mul z0.b, p0/m, z0.b, z2.b
+    mul z1.b, p1/m, z1.b, z2.b
+  )");
+  CHECK_NEON(0, uint8_t,
+             {2,   4,   6,   8,   10,  12,  14,  16,  18,  20,  22,  24,  26,
+              28,  30,  32,  34,  36,  38,  40,  42,  44,  46,  48,  50,  52,
+              54,  56,  58,  60,  62,  64,  66,  68,  70,  72,  74,  76,  78,
+              80,  82,  84,  86,  88,  90,  92,  94,  96,  98,  100, 102, 104,
+              106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128});
+  CHECK_NEON(1, uint8_t,
+             {3,  6,  9,  12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48,
+              51, 54, 57, 60, 63, 66, 69, 72, 75, 78, 81, 84, 87, 90, 93, 96,
+              3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,
+              3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3});
+
+  // 16-bit
+  RUN_AARCH64(R"(
+    ptrue p0.h
+    mov x0, #16
+    whilelo p1.h, xzr, x0
+
+    mov z0.h, #2
+    mov z1.h, #3
+    index z2.h, #1, #1
+
+    mul z0.h, p0/m, z0.h, z2.h
+    mul z1.h, p1/m, z1.h, z2.h
+  )");
+  CHECK_NEON(0, uint16_t,
+             {2,  4,  6,  8,  10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32,
+              34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64});
+  CHECK_NEON(1, uint16_t,
+             {3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48,
+              3, 3, 3, 3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3});
+
+  // 32-bit
+  RUN_AARCH64(R"(
+    ptrue p0.s
+    mov x0, #8
+    whilelo p1.s, xzr, x0
+
+    mov z0.s, #2
+    mov z1.s, #3
+    index z2.s, #1, #1
+
+    mul z0.s, p0/m, z0.s, z2.s
+    mul z1.s, p1/m, z1.s, z2.s
+  )");
+  CHECK_NEON(0, uint32_t,
+             {2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32});
+  CHECK_NEON(1, uint32_t,
+             {3, 6, 9, 12, 15, 18, 21, 24, 3, 3, 3, 3, 3, 3, 3, 3});
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    ptrue p0.d
+    mov x0, #4
+    whilelo p1.d, xzr, x0
+
+    mov z0.d, #2
+    mov z1.d, #3
+    index z2.d, #1, #1
+
+    mul z0.d, p0/m, z0.d, z2.d
+    mul z1.d, p1/m, z1.d, z2.d
+  )");
+  CHECK_NEON(0, uint64_t, {2, 4, 6, 8, 10, 12, 14, 16});
+  CHECK_NEON(1, uint64_t, {3, 6, 9, 12, 3, 3, 3, 3});
+}
+
 TEST_P(InstSve, orr) {
   // VL = 512-bits
   RUN_AARCH64(R"(

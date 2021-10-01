@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <cstring>
-#include <iostream>
 
 namespace simeng {
 namespace arch {
@@ -293,6 +292,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_FMUL_ZPmZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FMUL_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_MUL_ZPmZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_MUL_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_MUL_ZPmZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_MUL_ZPmZ_S:
       [[fallthrough]];
     case Opcode::AArch64_SEL_ZPZZ_D:
       [[fallthrough]];
@@ -1311,6 +1318,14 @@ void InstructionMetadata::revertAliasing() {
         } else {
           operands[3].reg = ARM64_REG_XZR;
         }
+        return;
+      }
+      if (opcode == Opcode::AArch64_MUL_ZPmZ_B ||
+          opcode == Opcode::AArch64_MUL_ZPmZ_D ||
+          opcode == Opcode::AArch64_MUL_ZPmZ_H ||
+          opcode == Opcode::AArch64_MUL_ZPmZ_S) {
+        // Decode doesn't recognise instruction properly - akin to a self alias
+        // in essence
         return;
       }
       return aliasNYI();
