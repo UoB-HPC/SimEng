@@ -265,7 +265,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[3].type = ARM64_OP_FP;
       operands[3].access = CS_AC_READ;
       // Doesn't recognise immediate operands
-      // Extract two possible values, 0.5 or 2.0
+      // Extract two possible values, 0.5 or 1.0
       if (operandStr.substr(operandStr.length() - 1, 1) == "5") {
         operands[3].fp = 0.5f;
       } else {
@@ -573,10 +573,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // If no register supplied to RET, default to x30 (LR)
       if (operandCount == 0) {
         operandCount = 1;
+        operands[0].type = ARM64_OP_REG;
         operands[0].reg = ARM64_REG_LR;
+        operands[0].access = CS_AC_READ;
       }
-      operands[0].type = ARM64_OP_REG;
-      operands[0].access = CS_AC_READ;
       groupCount = 1;
       groups[0] = CS_GRP_JUMP;
       break;

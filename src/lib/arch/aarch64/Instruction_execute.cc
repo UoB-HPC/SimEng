@@ -6073,12 +6073,12 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_USHLLv4i16_shift: {  // ushll vd.4s, vn.4h, #imm
       const uint16_t* n = operands[0].getAsVector<uint16_t>();
-      int64_t shift = metadata.operands[2].imm;
-      uint16_t out[8] = {static_cast<uint16_t>(n[0] << shift), 0,
-                         static_cast<uint16_t>(n[1] << shift), 0,
-                         static_cast<uint16_t>(n[2] << shift), 0,
-                         static_cast<uint16_t>(n[3] << shift), 0};
-      results[0] = {out, 256};
+      const uint64_t shift = metadata.operands[2].imm;
+      uint32_t out[4] = {0};
+      for (int i = 0; i < 4; i++) {
+        out[i] = n[i] << shift;
+      }
+      results[0] = out;
       break;
     }
     case Opcode::AArch64_UUNPKHI_ZZ_D: {  // uunpkhi zd.d, zn.s
