@@ -37,7 +37,6 @@ class RegisterValue {
                                    0);
       }
     } else {
-      // void* data = calloc(1, bytes);
       void* data = pool.allocate(bytes);
       std::memset(data, 0, bytes);
 
