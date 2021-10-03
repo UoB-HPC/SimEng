@@ -1324,8 +1324,6 @@ void InstructionMetadata::revertAliasing() {
           opcode == Opcode::AArch64_MUL_ZPmZ_D ||
           opcode == Opcode::AArch64_MUL_ZPmZ_H ||
           opcode == Opcode::AArch64_MUL_ZPmZ_S) {
-        // Decode doesn't recognise instruction properly - akin to a self alias
-        // in essence
         return;
       }
       return aliasNYI();
@@ -1349,6 +1347,8 @@ void InstructionMetadata::revertAliasing() {
       if (opcode == Opcode::AArch64_NOTv16i8 ||
           opcode == Opcode::AArch64_NOTv8i8) {
         // mvn vd.t, vn.t; alias for : not vd.t, vn.t
+        // Blank entry was for a legitimate alias, however operands were
+        // identical so nothing to alter between the instructions.
         return;
       }
       return aliasNYI();

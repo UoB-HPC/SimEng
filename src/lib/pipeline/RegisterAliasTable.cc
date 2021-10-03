@@ -48,15 +48,6 @@ Register RegisterAliasTable::getMapping(Register architectural) const {
          "Invalid register type. Cannot find RAT mapping.");
   assert(architectural.type >= 0 &&
          "Invalid register type. Cannot find RAT mapping.");
-  // Validate tags
-  for (int i = 0; i < mappingTable_.size(); i++) {
-    if (architectural.type != i) continue;
-    assert(architectural.tag < mappingTable_[i].size() &&
-           "Invalid register tag. Cannot find RAT mapping.");
-    assert(architectural.tag >= 0 &&
-           "Invalid register tag. Cannot find RAT mapping.");
-    break;
-  }
 
   auto tag = mappingTable_[architectural.type][architectural.tag];
   return {architectural.type, tag};
