@@ -411,6 +411,26 @@ int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
     }
   }
 
+  // Need to re-create flag input to correct values for host OS
+  int64_t newFlags = 0;
+  if (flags & 0x00002000) newFlags |= O_APPEND;
+  if (flags & 0x00020000) newFlags |= O_ASYNC;
+  if (flags & 0x02000000) newFlags |= O_CLOEXEC;
+  if (flags & 0x00000100) newFlags |= O_CREAT;
+  if (flags & 0x00040000) newFlags |= O_DIRECT;
+  if (flags & 0x00200000) newFlags |= O_DIRECTORY;
+  if (flags & 0x00010000) newFlags |= O_DSYNC;
+  if (flags & 0x00000200) newFlags |= O_EXCL;
+  if (flags & 0x00100000) newFlags |= O_LARGEFILE;
+  if (flags & 0x01000000) newFlags |= O_NOATIME;
+  if (flags & 0x00000400) newFlags |= O_NOCTTY;
+  if (flags & 0x00400000) newFlags |= O_NOFOLLOW;
+  if (flags & 0x00004000) newFlags |= O_NONBLOCK;  // O_NDELAY
+  if (flags & 0x010000000) newFlags |= O_PATH;
+  if (flags & (0x04000000 | 0x00010000)) newFlags |= O_SYNC;
+  if (flags & (0x020000000 | 0x00200000)) newFlags |= O_TMPFILE;
+  if (flags & 0x00001000) newFlags |= O_TRUNC;
+
   // Pass syscall through to host
   assert(dirfd == -100 && "unsupported dirfd argument in openat syscall");
   // Use path replacement for pathname argument of openat, if chosen
