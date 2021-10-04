@@ -580,17 +580,9 @@ TEST_P(Syscall, getrusage) {
     mov x8, #165
     svc #0
     mov x22, x0
-
-    # getrusage(who = RUSAGE_THREAD, usage)
-    mov x0, #1
-    mov x1, x20
-    mov x8, #165
-    svc #0
-    mov x23, x0
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
   EXPECT_EQ(getGeneralRegister<int64_t>(22), 0);
-  EXPECT_EQ(getGeneralRegister<int64_t>(23), 0);
 }
 
 TEST_P(Syscall, ftruncate) {

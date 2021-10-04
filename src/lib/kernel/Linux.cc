@@ -208,7 +208,7 @@ int64_t Linux::fstat(int64_t fd, stat& out) {
 // TODO: Current implementation will get whole SimEng resource usage stats, not
 // just the usage stats of binary
 int64_t Linux::getrusage(int64_t who, rusage& out) {
-  if (!(who == 0 || who == -1 || who == 1)) {
+  if (!(who == 0 || who == -1)) {
     assert(false && "Un-recognised RUSAGE descriptor.");
     return -1;
   }
