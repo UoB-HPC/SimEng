@@ -413,30 +413,33 @@ int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
 
   // Need to re-create flag input to correct values for host OS
   int64_t newFlags = 0;
-  if (flags & 0x00002000) newFlags |= O_APPEND;
-  if (flags & 0x00020000) newFlags |= O_ASYNC;
-  if (flags & 0x02000000) newFlags |= O_CLOEXEC;
-  if (flags & 0x00000100) newFlags |= O_CREAT;
-  if (flags & 0x00040000) newFlags |= O_DIRECT;
-  if (flags & 0x00200000) newFlags |= O_DIRECTORY;
-  if (flags & 0x00010000) newFlags |= O_DSYNC;
-  if (flags & 0x00000200) newFlags |= O_EXCL;
-  if (flags & 0x00100000) newFlags |= O_LARGEFILE;
-  if (flags & 0x01000000) newFlags |= O_NOATIME;
-  if (flags & 0x00000400) newFlags |= O_NOCTTY;
-  if (flags & 0x00400000) newFlags |= O_NOFOLLOW;
-  if (flags & 0x00004000) newFlags |= O_NONBLOCK;  // O_NDELAY
-  if (flags & 0x010000000) newFlags |= O_PATH;
-  if (flags & (0x04000000 | 0x00010000)) newFlags |= O_SYNC;
-  if (flags & (0x020000000 | 0x00200000)) newFlags |= O_TMPFILE;
-  if (flags & 0x00001000) newFlags |= O_TRUNC;
+  if (flags & 0x0) newFlags |= O_RDONLY;
+  if (flags & 0x1) newFlags |= O_WRONLY;
+  if (flags & 0x2) newFlags |= O_RDWR;
+  if (flags & 0x400) newFlags |= O_APPEND;
+  if (flags & 0x2000) newFlags |= O_ASYNC;
+  if (flags & 0x80000) newFlags |= O_CLOEXEC;
+  if (flags & 0x40) newFlags |= O_CREAT;
+  if (flags & 0x4000) newFlags |= O_DIRECT;
+  if (flags & 0x10000) newFlags |= O_DIRECTORY;
+  if (flags & 0x1000) newFlags |= O_DSYNC;
+  if (flags & 0x80) newFlags |= O_EXCL;
+  if (flags & 0x0) newFlags |= O_LARGEFILE;
+  if (flags & 0x40000) newFlags |= O_NOATIME;
+  if (flags & 0x100) newFlags |= O_NOCTTY;
+  if (flags & 0x20000) newFlags |= O_NOFOLLOW;
+  if (flags & 0x800) newFlags |= O_NONBLOCK;  // O_NDELAY
+  if (flags & 0x200000) newFlags |= O_PATH;
+  if (flags & 0x101000) newFlags |= O_SYNC;
+  if (flags & 0x410000) newFlags |= O_TMPFILE;
+  if (flags & 0x200) newFlags |= O_TRUNC;
 
   // Pass syscall through to host
   assert(dirfd == -100 && "unsupported dirfd argument in openat syscall");
   // Use path replacement for pathname argument of openat, if chosen
   const char* newPathname =
       altPath ? specialPathTranslations_[pathname].c_str() : pathname.c_str();
-  int64_t hfd = ::openat(AT_FDCWD, newPathname, flags, mode);
+  int64_t hfd = ::openat(AT_FDCWD, newPathname, newFlags, mode);
   if (hfd < 0) {
     return hfd;
   }
