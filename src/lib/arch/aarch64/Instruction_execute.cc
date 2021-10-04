@@ -1078,10 +1078,18 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::AArch64_DECB_XPiI: {  // decb xdn{, pattern{, #imm}}
+    // TODO : Add support for patterns
+    case Opcode::AArch64_DECB_XPiI: {  // decb xdn{, pattern{, MUL #imm}}
       const uint64_t n = operands[0].get<uint64_t>();
       const uint64_t VL_bits = 512;
       results[0] = n - (VL_bits / 8);
+      break;
+    }
+    // TODO : Add support for patterns
+    case Opcode::AArch64_DECD_XPiI: {  // decd xdn{, pattern{, MUL #imm}}
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t VL_bits = 512;
+      results[0] = n - (VL_bits / 64);
       break;
     }
     case Opcode::AArch64_DUPM_ZI: {  // dupm zd.t, #imm

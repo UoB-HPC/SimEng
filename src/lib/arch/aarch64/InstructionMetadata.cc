@@ -99,6 +99,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_DECD_XPiI:
+      [[fallthrough]];
     case Opcode::AArch64_DECB_XPiI:
       // lacking access specifiers for destination
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
