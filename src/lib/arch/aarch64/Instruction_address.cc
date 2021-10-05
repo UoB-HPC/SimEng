@@ -277,12 +277,16 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
       break;
     }
-    case Opcode::AArch64_LDARB: {  // ldar wt, [<xn|sp>]
+    case Opcode::AArch64_LDARB: {  // ldarb wt, [xn]
       setMemoryAddresses({{operands[0].get<uint64_t>(), 1}});
       break;
     }
     case Opcode::AArch64_LDARW: {  // ldar wt, [xn]
       setMemoryAddresses({{operands[0].get<uint64_t>(), 4}});
+      break;
+    }
+    case Opcode::AArch64_LDARX: {  // ldar xt, [xn]
+      setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
       break;
     }
     case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
@@ -1071,6 +1075,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     }
     case Opcode::AArch64_STLRW: {  // stlr wt, [xn]
       setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
+      break;
+    }
+    case Opcode::AArch64_STLRX: {  // stlr xt, [xn]
+      setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
       break;
     }
     case Opcode::AArch64_STLXRW: {  // stlxr ws, wt, [xn]

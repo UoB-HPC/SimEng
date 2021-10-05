@@ -265,6 +265,24 @@ TEST_P(InstLoad, ldadd) {
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 928), 128);
 }
 
+TEST_P(InstLoad, ldar) {
+  initialHeapData_.resize(8);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap[0] = 0xDEADBEEF12345678;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldar x1, [x0]
+    ldar w2, [x0]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0xDEADBEEF12345678);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x12345678);
+}
+
 TEST_P(InstLoad, ldarb) {
   initialHeapData_.resize(8);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
@@ -276,7 +294,6 @@ TEST_P(InstLoad, ldarb) {
     mov x0, 0
     mov x8, 214
     svc #0
-
     ldarb w1, [x0]
     add x0, x0, #1
     ldarb w2, [x0]
@@ -308,14 +325,11 @@ TEST_P(InstLoad, ldarb) {
     mov w1, #32
     mov w2, #48
     mov w3, #64
-
     str w0, [sp], #32
     str w1, [sp], #32
     str w2, [sp], #32
     str w3, [sp], #32
-
     sub sp, sp, #128
-
     ldarb w4, [sp]
     add sp, sp, #32
     ldarb w5, [sp]
@@ -342,12 +356,10 @@ TEST_P(InstLoad, ldrb) {
     mov x0, 0
     mov x8, 214
     svc #0
-
     ldrb w1, [x0], 1
     ldrb w2, [x0]
     ldrb w3, [x0, 1]!
     ldrb w4, [x0, 2]
-
     mov w5, 1
     ldrb w6, [x0, w5, uxtw]
     mov w5, 3
