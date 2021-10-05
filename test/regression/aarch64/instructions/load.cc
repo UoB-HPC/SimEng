@@ -4,6 +4,100 @@ namespace {
 
 using InstLoad = AArch64RegressionTest;
 
+TEST_P(InstLoad, ld1r) {
+  // 8-bit
+  initialHeapData_.resize(12);
+  uint32_t* heapi32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heapi32[0] = 0xDEADBEEF;
+  heapi32[1] = 0x12345678;
+  heapi32[2] = 0xABCDEFAB;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ld1r {v0.16b}, [x0]
+    ld1r {v1.8b}, [x0], 1
+    ld1r {v2.16b}, [x0], 1
+    ld1r {v3.8b}, [x0]
+  )");
+  CHECK_NEON(0, uint8_t,
+             {0xEF, 0xEF, 0xEF, 0xEF, 0xEF, 0xEF, 0xEF, 0xEF, 0xEF, 0xEF, 0xEF,
+              0xEF, 0xEF, 0xEF, 0xEF, 0xEF});
+  CHECK_NEON(
+      1, uint8_t,
+      {0xEF, 0xEF, 0xEF, 0xEF, 0xEF, 0xEF, 0xEF, 0xEF, 0, 0, 0, 0, 0, 0, 0, 0});
+  CHECK_NEON(2, uint8_t,
+             {0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE,
+              0xBE, 0xBE, 0xBE, 0xBE, 0xBE});
+  CHECK_NEON(
+      3, uint8_t,
+      {0xAD, 0xAD, 0xAD, 0xAD, 0xAD, 0xAD, 0xAD, 0xAD, 0, 0, 0, 0, 0, 0, 0, 0});
+
+  // 16-bit
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ld1r {v0.8h}, [x0]
+    ld1r {v1.4h}, [x0], 2
+    ld1r {v2.8h}, [x0], 2
+    ld1r {v3.4h}, [x0]
+  )");
+  CHECK_NEON(0, uint16_t,
+             {0xBEEF, 0xBEEF, 0xBEEF, 0xBEEF, 0xBEEF, 0xBEEF, 0xBEEF, 0xBEEF});
+  CHECK_NEON(1, uint16_t, {0xBEEF, 0xBEEF, 0xBEEF, 0xBEEF, 0, 0, 0, 0});
+  CHECK_NEON(2, uint16_t,
+             {0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD, 0xDEAD});
+  CHECK_NEON(3, uint16_t, {0x5678, 0x5678, 0x5678, 0x5678, 0, 0, 0, 0});
+
+  // 32-bit
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ld1r {v0.4s}, [x0]
+    ld1r {v1.2s}, [x0], 4
+    ld1r {v2.4s}, [x0], 4
+    ld1r {v3.2s}, [x0]
+  )");
+  CHECK_NEON(0, uint32_t, {0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF});
+  CHECK_NEON(1, uint32_t, {0xDEADBEEF, 0xDEADBEEF, 0, 0});
+  CHECK_NEON(2, uint32_t, {0x12345678, 0x12345678, 0x12345678, 0x12345678});
+  CHECK_NEON(3, uint32_t, {0xABCDEFAB, 0xABCDEFAB, 0, 0});
+
+  // 64-bit
+  initialHeapData_.resize(24);
+  uint64_t* heapi64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heapi64[0] = 0xDEADBEEFDEADFEEB;
+  heapi64[1] = 0x1234567898765432;
+  heapi64[2] = 0xABCDEFABCDEFABCD;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ld1r {v0.2d}, [x0]
+    ld1r {v1.1d}, [x0], 8
+    ld1r {v2.2d}, [x0], 8
+    ld1r {v3.1d}, [x0]
+  )");
+  CHECK_NEON(0, uint64_t, {0xDEADBEEFDEADFEEB, 0xDEADBEEFDEADFEEB});
+  CHECK_NEON(1, uint64_t, {0xDEADBEEFDEADFEEB, 0});
+  CHECK_NEON(2, uint64_t, {0x1234567898765432, 0x1234567898765432});
+  CHECK_NEON(3, uint64_t, {0xABCDEFABCDEFABCD, 0});
+}
+
 TEST_P(InstLoad, ld1_single_struct) {
   // 32-bit
   initialHeapData_.resize(8);
@@ -84,25 +178,6 @@ TEST_P(InstLoad, ld1_tworeg) {  // 128-bit
   CHECK_NEON(1, uint64_t, {(0x98765432ull << 8), (0xABCDEF12ull << 4)});
   CHECK_NEON(2, uint64_t, {(0xDEADBEEFull << 4), (0x12345678ull << 8)});
   CHECK_NEON(3, uint64_t, {(0x98765432ull << 16), (0xABCDEF12ull << 32)});
-}
-
-TEST_P(InstLoad, ld1r) {
-  initialHeapData_.resize(8);
-  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
-  heap[0] = 0xDEADBEEF;
-  heap[1] = 0x12345678;
-  RUN_AARCH64(R"(
-    # Get heap address
-    mov x0, 0
-    mov x8, 214
-    svc #0
-
-    # Load values from heap
-    ld1r {v0.4s}, [x0], 4
-    ld1r {v1.4s}, [x0]
-  )");
-  CHECK_NEON(0, uint32_t, {0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF, 0xDEADBEEF});
-  CHECK_NEON(1, uint32_t, {0x12345678, 0x12345678, 0x12345678, 0x12345678});
 }
 
 TEST_P(InstLoad, ld2_multi_struct) {
@@ -188,6 +263,72 @@ TEST_P(InstLoad, ldadd) {
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 992), 64);
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 960), 176);
   EXPECT_EQ(getMemoryValue<uint32_t>(process_->getStackPointer() - 928), 128);
+}
+
+TEST_P(InstLoad, ldarb) {
+  initialHeapData_.resize(8);
+  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap[0] = 0xDEADBEEF;
+  heap[1] = 0x12345678;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldarb w1, [x0]
+    add x0, x0, #1
+    ldarb w2, [x0]
+    add x0, x0, #1
+    ldarb w3, [x0]
+    add x0, x0, #1
+    ldarb w4, [x0]
+    add x0, x0, #1
+    ldarb w5, [x0]
+    add x0, x0, #1
+    ldarb w6, [x0]
+    add x0, x0, #1
+    ldarb w7, [x0]
+    add x0, x0, #1
+    ldarb w8, [x0]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xEF);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0xBE);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0xAD);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xDE);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0x78);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0x56);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0x34);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(8), 0x12);
+
+  RUN_AARCH64(R"(
+    sub sp, sp, #1024
+    mov w0, #16
+    mov w1, #32
+    mov w2, #48
+    mov w3, #64
+
+    str w0, [sp], #32
+    str w1, [sp], #32
+    str w2, [sp], #32
+    str w3, [sp], #32
+
+    sub sp, sp, #128
+
+    ldarb w4, [sp]
+    add sp, sp, #32
+    ldarb w5, [sp]
+    add sp, sp, #32
+    ldarb w6, [sp]
+    add sp, sp, #32
+    ldarb w7, [sp]
+  )");
+
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 16);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 32);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(6), 48);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(7), 64);
 }
 
 TEST_P(InstLoad, ldrb) {
@@ -499,6 +640,34 @@ TEST_P(InstLoad, ldrw) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(6), 0x12345678);
   EXPECT_EQ(getGeneralRegister<uint32_t>(7), 0xABCDEF12);
   EXPECT_EQ(getGeneralRegister<uint32_t>(8), 0xABCDEF12);
+}
+
+TEST_P(InstLoad, ldpsw) {
+  // 32-bit signed integer
+  initialHeapData_.resize(16);
+  uint32_t* heapi32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heapi32[0] = 0xDEADBEEF;
+  heapi32[1] = 0x12345678;
+  heapi32[2] = 0x98765432;
+  heapi32[3] = 0xABCDEF12;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ldpsw x1, x2, [x0]
+    ldpsw x3, x4, [x0, #8]
+    add x0, x0, #8
+    ldpsw x5, x6, [x0, #-8]
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(1), 0x00000000DEADBEEF);
+  EXPECT_EQ(getGeneralRegister<int64_t>(2), 0x0000000012345678);
+  EXPECT_EQ(getGeneralRegister<int64_t>(3), 0x0000000098765432);
+  EXPECT_EQ(getGeneralRegister<int64_t>(4), 0x00000000ABCDEF12);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5), 0x00000000DEADBEEF);
+  EXPECT_EQ(getGeneralRegister<int64_t>(6), 0x0000000012345678);
 }
 
 TEST_P(InstLoad, ldp) {

@@ -129,6 +129,15 @@ const Register& filterZR(const Register& reg) {
               : reg);
 }
 
+void Instruction::checkZeroReg() {
+  if (sourceRegisters[sourceRegisterCount] == Instruction::ZERO_REGISTER) {
+    // Catch zero register references and pre-complete those operands
+    operands[sourceRegisterCount] = RegisterValue(0, 8);
+  } else {
+    operandsPending++;
+  }
+}
+
 /******************
  * DECODING LOGIC
  *****************/
@@ -149,8 +158,8 @@ void Instruction::decode() {
   for (size_t i = 0; i < metadata.implicitSourceCount; i++) {
     sourceRegisters[sourceRegisterCount] =
         csRegToRegister(static_cast<arm64_reg>(metadata.implicitSources[i]));
+    checkZeroReg();
     sourceRegisterCount++;
-    operandsPending++;
   }
 
   bool accessesMemory = false;
@@ -187,13 +196,7 @@ void Instruction::decode() {
         // Add register reads to destinations
         sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
 
-        if (sourceRegisters[sourceRegisterCount] ==
-            Instruction::ZERO_REGISTER) {
-          // Catch zero register references and pre-complete those operands
-          operands[sourceRegisterCount] = RegisterValue(0, 8);
-        } else {
-          operandsPending++;
-        }
+        checkZeroReg();
 
         if (op.shift.value > 0) isNoShift_ = false;  // Identify shift operands
 
@@ -202,8 +205,9 @@ void Instruction::decode() {
     } else if (op.type == ARM64_OP_MEM) {  // Memory operand
       accessesMemory = true;
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
+
+      checkZeroReg();
       sourceRegisterCount++;
-      operandsPending++;
 
       if (metadata.writeback) {
         // Writeback instructions modify the base address
@@ -214,8 +218,9 @@ void Instruction::decode() {
       if (op.mem.index) {
         // Register offset; add to sources
         sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.index);
+
+        checkZeroReg();
         sourceRegisterCount++;
-        operandsPending++;
       }
     } else if (op.type == ARM64_OP_REG_MRS) {
       sourceRegisters[sourceRegisterCount] = {
@@ -259,6 +264,12 @@ void Instruction::decode() {
 
     // LDADD* are considered to be both a load and a store
     if (metadata.id >= ARM64_INS_LDADD && metadata.id <= ARM64_INS_LDADDLH) {
+      isLoad_ = true;
+    }
+
+    // CASAL* are considered to be both a load and a store
+    if (metadata.opcode == Opcode::AArch64_CASALW ||
+        metadata.opcode == Opcode::AArch64_CASALX) {
       isLoad_ = true;
     }
 

@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <sys/termios.h>
 #include <sys/uio.h>
@@ -58,7 +59,11 @@ uint64_t Linux::clockGetTime(uint64_t clkId, uint64_t systemTimer,
                              uint64_t& seconds, uint64_t& nanoseconds) {
   // TODO: Ideally this should get the system timer from the core directly
   // rather than having it passed as an argument.
-  if (clkId == CLOCK_REALTIME) {
+  if (clkId == 0) {  // CLOCK_REALTIME
+    seconds = systemTimer / 1e9;
+    nanoseconds = systemTimer - (seconds * 1e9);
+    return 0;
+  } else if (clkId == 1) {  // CLOCK_MONOTONIC
     seconds = systemTimer / 1e9;
     nanoseconds = systemTimer - (seconds * 1e9);
     return 0;
@@ -76,6 +81,43 @@ int64_t Linux::ftruncate(uint64_t fd, uint64_t length) {
   }
 
   int64_t retval = ::ftruncate(hfd, length);
+  return retval;
+}
+
+int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
+                         int64_t flag) {
+  // Resolve absolute path to target file
+  char absolutePath[LINUX_PATH_MAX];
+  realpath(filename.c_str(), absolutePath);
+
+  // Setup variable to record if an alternative path is available for use
+  bool altPath = false;
+
+  // Check if path may be a special file, bail out if it is
+  // TODO: Add support for special files
+  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
+    if (strncmp(absolutePath, prefix, strlen(prefix)) == 0) {
+      std::cerr << "ERROR: attempted to return information on a special file: "
+                << "'" << absolutePath << "'" << std::endl;
+      exit(1);
+    }
+  }
+
+  int64_t dfd_temp = AT_FDCWD;
+  // Pass syscall through to host
+  if (dfd != -100) {
+    dfd_temp = dfd;
+    // If absolute path used then dfd is dis-regarded.
+    // Otherwise, a dirfd != AT_FDCWD isn't currently supported for relative
+    // paths.
+    if (strlen(filename.c_str()) != strlen(absolutePath)) {
+      assert("Unsupported dirfd argument in fstatat syscall");
+      return EBADF;
+    }
+  }
+
+  int64_t retval = ::faccessat(dfd_temp, filename.c_str(), mode, flag);
+
   return retval;
 }
 
@@ -158,6 +200,39 @@ int64_t Linux::fstat(int64_t fd, stat& out) {
   out.atime = statbuf.st_atime;
   out.mtime = statbuf.st_mtime;
   out.ctime = statbuf.st_ctime;
+
+  return retval;
+}
+
+// TODO: Current implementation will get whole SimEng resource usage stats, not
+// just the usage stats of binary
+int64_t Linux::getrusage(int64_t who, rusage& out) {
+  if (!(who == 0 || who == -1)) {
+    assert(false && "Un-recognised RUSAGE descriptor.");
+    return -1;
+  }
+
+  // Pass call through host
+  struct ::rusage usage;
+  int64_t retval = ::getrusage(who, &usage);
+
+  // Copy results to output struct
+  out.ru_utime = usage.ru_utime;
+  out.ru_stime = usage.ru_stime;
+  out.ru_maxrss = usage.ru_maxrss;
+  out.ru_ixrss = usage.ru_ixrss;
+  out.ru_idrss = usage.ru_idrss;
+  out.ru_isrss = usage.ru_isrss;
+  out.ru_minflt = usage.ru_minflt;
+  out.ru_majflt = usage.ru_majflt;
+  out.ru_nswap = usage.ru_nswap;
+  out.ru_inblock = usage.ru_inblock;
+  out.ru_oublock = usage.ru_oublock;
+  out.ru_msgsnd = usage.ru_msgsnd;
+  out.ru_msgrcv = usage.ru_msgrcv;
+  out.ru_nsignals = usage.ru_nsignals;
+  out.ru_nvcsw = usage.ru_nvcsw;
+  out.ru_nivcsw = usage.ru_nivcsw;
 
   return retval;
 }
@@ -335,12 +410,35 @@ int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
     }
   }
 
+  // Need to re-create flag input to correct values for host OS
+  int64_t newFlags = 0;
+  if (flags & 0x0) newFlags |= O_RDONLY;
+  if (flags & 0x1) newFlags |= O_WRONLY;
+  if (flags & 0x2) newFlags |= O_RDWR;
+  if (flags & 0x400) newFlags |= O_APPEND;
+  if (flags & 0x2000) newFlags |= O_ASYNC;
+  if (flags & 0x80000) newFlags |= O_CLOEXEC;
+  if (flags & 0x40) newFlags |= O_CREAT;
+  // if (flags & 0x4000) newFlags |= O_DIRECT;
+  if (flags & 0x10000) newFlags |= O_DIRECTORY;
+  if (flags & 0x1000) newFlags |= O_DSYNC;
+  if (flags & 0x80) newFlags |= O_EXCL;
+  // if (flags & 0x0) newFlags |= O_LARGEFILE;
+  // if (flags & 0x40000) newFlags |= O_NOATIME;
+  if (flags & 0x100) newFlags |= O_NOCTTY;
+  if (flags & 0x20000) newFlags |= O_NOFOLLOW;
+  if (flags & 0x800) newFlags |= O_NONBLOCK;  // O_NDELAY
+  // if (flags & 0x200000) newFlags |= O_PATH;
+  if (flags & 0x101000) newFlags |= O_SYNC;
+  // if (flags & 0x410000) newFlags |= O_TMPFILE;
+  if (flags & 0x200) newFlags |= O_TRUNC;
+
   // Pass syscall through to host
   assert(dirfd == -100 && "unsupported dirfd argument in openat syscall");
   // Use path replacement for pathname argument of openat, if chosen
   const char* newPathname =
       altPath ? specialPathTranslations_[pathname].c_str() : pathname.c_str();
-  int64_t hfd = ::openat(AT_FDCWD, newPathname, flags, mode);
+  int64_t hfd = ::openat(AT_FDCWD, newPathname, newFlags, mode);
   if (hfd < 0) {
     return hfd;
   }

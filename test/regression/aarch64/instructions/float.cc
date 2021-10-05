@@ -547,6 +547,96 @@ TEST_P(InstFloat, fcvt) {
   EXPECT_EQ((getGeneralRegister<int32_t>(3)), 321);
 }
 
+TEST_P(InstFloat, fcvtzu) {
+  initialHeapData_.resize(32);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = -42.76;
+  dheap[2] = -0.125;
+  dheap[3] = 321.5;
+
+  // Double to uint32
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    fcvtzu w0, d0
+    fcvtzu w1, d1
+    fcvtzu w2, d2
+    fcvtzu w3, d3
+  )");
+  EXPECT_EQ((getGeneralRegister<uint32_t>(0)), 1);
+  EXPECT_EQ((getGeneralRegister<uint32_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<uint32_t>(2)), 0);
+  EXPECT_EQ((getGeneralRegister<uint32_t>(3)), 321);
+
+  // Double to uint64
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    fcvtzu x0, d0
+    fcvtzu x1, d1
+    fcvtzu x2, d2
+    fcvtzu x3, d3
+  )");
+  EXPECT_EQ((getGeneralRegister<uint64_t>(0)), 1);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(2)), 0);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(3)), 321);
+
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 1.0;
+  fheap[1] = -42.76;
+  fheap[2] = -0.125;
+  fheap[3] = 321.5;
+  // Float to uint32
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp s0, s1, [x0]
+    ldp s2, s3, [x0, #8]
+    fcvtzu w0, s0
+    fcvtzu w1, s1
+    fcvtzu w2, s2
+    fcvtzu w3, s3
+  )");
+  EXPECT_EQ((getGeneralRegister<uint32_t>(0)), 1);
+  EXPECT_EQ((getGeneralRegister<uint32_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<uint32_t>(2)), 0);
+  EXPECT_EQ((getGeneralRegister<uint32_t>(3)), 321);
+
+  // Float to uint64
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp s0, s1, [x0]
+    ldp s2, s3, [x0, #8]
+    fcvtzu x0, s0
+    fcvtzu x1, s1
+    fcvtzu x2, s2
+    fcvtzu x3, s3
+  )");
+  EXPECT_EQ((getGeneralRegister<uint64_t>(0)), 1);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(2)), 0);
+  EXPECT_EQ((getGeneralRegister<uint64_t>(3)), 321);
+}
+
 TEST_P(InstFloat, fcvtl) {
   // 2 floats to 2 doubles
   RUN_AARCH64(R"(

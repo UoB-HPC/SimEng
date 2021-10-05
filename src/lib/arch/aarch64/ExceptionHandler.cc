@@ -56,6 +56,26 @@ bool ExceptionHandler::init() {
             ChangeType::REPLACEMENT, {R0}, {linux_.ftruncate(fd, length)}};
         break;
       }
+      case 48: {  // faccessat
+        int64_t dfd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t filenamePtr = registerFileSet.get(R1).get<uint64_t>();
+        int64_t mode = registerFileSet.get(R2).get<int64_t>();
+        // flag component not used, although function definition includes it
+        int64_t flag = 0;
+
+        char* filename = new char[kernel::Linux::LINUX_PATH_MAX];
+        return readStringThen(filename, filenamePtr,
+                              kernel::Linux::LINUX_PATH_MAX, [=](auto length) {
+                                // Invoke the kernel
+                                int64_t retval =
+                                    linux_.faccessat(dfd, filename, mode, flag);
+                                ProcessStateChange stateChange = {
+                                    ChangeType::REPLACEMENT, {R0}, {retval}};
+                                delete[] filename;
+                                return concludeSyscall(stateChange);
+                              });
+        break;
+      }
       case 56: {  // openat
         int64_t dirfd = registerFileSet.get(R0).get<int64_t>();
         uint64_t pathnamePtr = registerFileSet.get(R1).get<uint64_t>();
@@ -420,6 +440,17 @@ bool ExceptionHandler::init() {
                        {RegisterValue(sysname), RegisterValue(nodename),
                         RegisterValue(release), RegisterValue(version),
                         RegisterValue(machine)}};
+        break;
+      }
+      case 165: {  // getrusage
+        int who = registerFileSet.get(R0).get<int>();
+        uint64_t usagePtr = registerFileSet.get(R1).get<uint64_t>();
+
+        kernel::rusage usageOut;
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {linux_.getrusage(who, usageOut)}};
+        stateChange.memoryAddresses.push_back({usagePtr, sizeof(usageOut)});
+        stateChange.memoryAddressValues.push_back(usageOut);
         break;
       }
       case 169: {  // gettimeofday

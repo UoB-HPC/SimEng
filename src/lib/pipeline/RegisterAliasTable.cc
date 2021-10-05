@@ -42,6 +42,13 @@ RegisterAliasTable::RegisterAliasTable(
 };
 
 Register RegisterAliasTable::getMapping(Register architectural) const {
+  // Asserts to ensure mapping isn't attempted for an out-of-bound index (i.e.
+  // mapping of WZR / XZR)
+  assert(architectural.type < mappingTable_.size() &&
+         "Invalid register type. Cannot find RAT mapping.");
+  assert(architectural.type >= 0 &&
+         "Invalid register type. Cannot find RAT mapping.");
+
   auto tag = mappingTable_[architectural.type][architectural.tag];
   return {architectural.type, tag};
 }

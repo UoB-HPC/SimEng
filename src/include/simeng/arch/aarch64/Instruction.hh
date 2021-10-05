@@ -344,6 +344,12 @@ class Instruction : public simeng::Instruction {
    * registers. */
   void decode();
 
+  /** Helper function to check if the current source register is a
+   * Zero-register. If it is then it is immediatly decoded as such and added to
+   * the instruction's operands list. Otherwise, the count for operands pending
+   * is incremented by 1.*/
+  void checkZeroReg();
+
   /** Generate an EncodingNotYetImplemented exception. */
   void nyi();
 
