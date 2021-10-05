@@ -163,7 +163,7 @@ class Linux {
                  uint16_t mode);
 
   /** readlinkat syscall: read value of a symbolic link. */
-  int64_t readlinkat(int64_t dirfd, const std::string pathname, char* buf,
+  int64_t readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
                      size_t bufsize) const;
 
   /** get a process's CPU affinity mask. */

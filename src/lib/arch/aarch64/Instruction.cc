@@ -121,9 +121,16 @@ bool Instruction::isSVE() const { return isSVEData_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
-  memoryData = std::vector<RegisterValue>(addresses.size());
+  memoryData.resize(addresses.size());
   memoryAddresses = addresses;
   dataPending_ = addresses.size();
+}
+
+void Instruction::setMemoryAddresses(
+    std::vector<MemoryAccessTarget>&& addresses) {
+  dataPending_ = addresses.size();
+  memoryData.resize(addresses.size());
+  memoryAddresses = std::move(addresses);
 }
 
 span<const MemoryAccessTarget> Instruction::getGeneratedAddresses() const {
@@ -181,7 +188,7 @@ void Instruction::setExecutionInfo(const executionInfo& info) {
   stallCycles_ = info.stallCycles;
   supportedPorts_ = info.ports;
 }
-std::vector<uint8_t> Instruction::getSupportedPorts() {
+const std::vector<uint8_t>& Instruction::getSupportedPorts() {
   if (supportedPorts_.size() == 0) {
     exception_ = InstructionException::NoAvailablePort;
     exceptionEncountered_ = true;

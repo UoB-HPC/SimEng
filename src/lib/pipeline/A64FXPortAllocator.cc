@@ -8,12 +8,11 @@ namespace simeng {
 namespace pipeline {
 
 A64FXPortAllocator::A64FXPortAllocator(
-    std::vector<std::vector<uint16_t>> portArrangement) {
-  // Initiliase reservation station to port mapping
-  rsToPort_ = {{0, 1, 2}, {3, 4}, {5}, {6}, {7}};
-}
+    const std::vector<std::vector<uint16_t>>& portArrangement)
+    :  // Initiliase reservation station to port mapping
+      rsToPort_({{0, 1, 2}, {3, 4}, {5}, {6}, {7}}) {}
 
-uint8_t A64FXPortAllocator::allocate(std::vector<uint8_t> ports) {
+uint8_t A64FXPortAllocator::allocate(const std::vector<uint8_t>& ports) {
   assert(ports.size() &&
          "No supported ports supplied; cannot allocate from a empty set");
   const uint8_t attribute = attributeMapping(ports);
@@ -148,29 +147,26 @@ uint8_t A64FXPortAllocator::allocate(std::vector<uint8_t> ports) {
 void A64FXPortAllocator::issued(uint8_t port) {}
 void A64FXPortAllocator::deallocate(uint8_t port) { issued(port); };
 
-uint8_t A64FXPortAllocator::attributeMapping(std::vector<uint8_t> ports) {
+uint8_t A64FXPortAllocator::attributeMapping(
+    const std::vector<uint8_t>& ports) {
   uint8_t attribute = 0;
   bool foundAttribute = false;
-  if (ports == std::vector<uint8_t>({2, 4, 5, 6})) {  // EXA,EXB,EAGA,EAGB
+  if (ports == EXA_EXB_EAGA_EAGB) {  // EXA,EXB,EAGA,EAGB
     attribute = InstructionAttribute::RSX;
     foundAttribute = true;
-  } else if (ports == std::vector<uint8_t>({2, 4}) ||
-             ports == std::vector<uint8_t>({0, 3})) {  // EXA,EXB|FLA,FLB
+  } else if (ports == EXA_EXB || ports == FLA_FLB) {  // EXA,EXB|FLA,FLB
     attribute = InstructionAttribute::RSE;
     foundAttribute = true;
-  } else if (ports == std::vector<uint8_t>({5, 6})) {  // EAGA,EAGB
+  } else if (ports == EAGA_EAGB) {  // EAGA,EAGB
     attribute = InstructionAttribute::RSA;
     foundAttribute = true;
-  } else if (ports == std::vector<uint8_t>({0}) ||
-             ports == std::vector<uint8_t>({1}) ||
-             ports == std::vector<uint8_t>({2})) {  // EXA|FLA|PR
+  } else if (ports == EXA || ports == FLA || ports == PR) {  // EXA|FLA|PR
     attribute = InstructionAttribute::RSE0;
     foundAttribute = true;
-  } else if (ports == std::vector<uint8_t>({3}) ||
-             ports == std::vector<uint8_t>({4})) {  // EXB|FLB
+  } else if (ports == EXB || ports == FLB) {  // EXB|FLB
     attribute = InstructionAttribute::RSE1;
     foundAttribute = true;
-  } else if (ports == std::vector<uint8_t>({7})) {  // BR
+  } else if (ports == BR) {  // BR
     attribute = InstructionAttribute::BR;
     foundAttribute = true;
   }

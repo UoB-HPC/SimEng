@@ -75,27 +75,27 @@ class ModelConfig {
    * expressions. */
   // Set of values requirement, no default value
   template <typename T>
-  int nodeChecker(YAML::Node node, std::string field,
+  int nodeChecker(const YAML::Node& node, const std::string& field,
                   const std::vector<T>& value_set, uint8_t expected);
   // Set of values requirement, with default value
   template <typename T>
-  int nodeChecker(YAML::Node node, std::string field,
+  int nodeChecker(YAML::Node node, const std::string& field,
                   const std::vector<T>& value_set, uint8_t expected,
                   T default_value);
   // Pair of inclusive bounds requirement, no default value
   template <typename T>
-  int nodeChecker(YAML::Node node, std::string field,
+  int nodeChecker(const YAML::Node& node, const std::string& field,
                   const std::pair<T, T>& bounds, uint8_t expected);
   // Pair of inclusive bounds requirement, with default value
   template <typename T>
-  int nodeChecker(YAML::Node node, std::string field,
+  int nodeChecker(YAML::Node node, const std::string& field,
                   const std::pair<T, T>& bounds, uint8_t expected,
-                  T default_value);
+                  const T& default_value);
 
   /** Given a set of values (value_set), ensure the supplied node is on of
    * these options. */
   template <typename T>
-  int setChecker(YAML::Node node, std::string field,
+  int setChecker(YAML::Node node, const std::string& field,
                  const std::vector<T>& value_set, uint8_t expected) {
     // Ensure node value can be read as specified type
     try {
@@ -125,7 +125,7 @@ class ModelConfig {
   /** Given a set of bounds (bounds) ensure the supplied node is betwene these
    * value inclusively. */
   template <typename T>
-  int boundChecker(YAML::Node node, std::string field,
+  int boundChecker(YAML::Node node, const std::string& field,
                    const std::pair<T, T>& bounds, uint8_t expected) {
     // Ensure node value can be read as specified type
     try {

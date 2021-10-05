@@ -1,5 +1,6 @@
 #include "simeng/pipeline/LoadStoreQueue.hh"
 
+#include <array>
 #include <cassert>
 #include <cstring>
 
@@ -25,10 +26,9 @@ LoadStoreQueue::LoadStoreQueue(
       combined_(true),
       memory_(memory),
       L1Bandwidth_(L1Bandwidth),
-      totalLimit_(permittedRequests) {
-  // Set per-cycle limits for each request type
-  reqLimits_ = {permittedLoads, permittedStores};
-};
+      totalLimit_(permittedRequests),
+      // Set per-cycle limits for each request type
+      reqLimits_{permittedLoads, permittedStores} {};
 
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
@@ -44,10 +44,9 @@ LoadStoreQueue::LoadStoreQueue(
       combined_(false),
       memory_(memory),
       L1Bandwidth_(L1Bandwidth),
-      totalLimit_(permittedRequests) {
-  // Set per-cycle limits for each request type
-  reqLimits_ = {permittedLoads, permittedStores};
-};
+      totalLimit_(permittedRequests),
+      // Set per-cycle limits for each request type
+      reqLimits_{permittedLoads, permittedStores} {};
 
 unsigned int LoadStoreQueue::getLoadQueueSpace() const {
   if (combined_) {
@@ -219,7 +218,7 @@ void LoadStoreQueue::tick() {
   // Send memory requests adhering to set bandwidth and number of permitted
   // requests per cycle
   uint64_t dataTransfered = 0;
-  std::vector<uint8_t> reqCounts = {0, 0};
+  std::array<uint8_t, 2> reqCounts = {0, 0};
   while (requestQueue_.size() > 0) {
     uint8_t isWrite = 0;
     auto& entry = requestQueue_.front();
@@ -236,7 +235,7 @@ void LoadStoreQueue::tick() {
       if (dataTransfered >= L1Bandwidth_) {
         break;
       }
-      for (int i = 0; i < entry.reqAddresses.size(); i++) {
+      for (size_t i = 0; i < entry.reqAddresses.size(); i++) {
         const MemoryAccessTarget req = entry.reqAddresses[i];
         dataTransfered += req.size;
         if (!isWrite) {

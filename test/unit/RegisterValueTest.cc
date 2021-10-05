@@ -52,4 +52,14 @@ TEST(RegisterValueTest, ZeroExtend) {
   EXPECT_EQ(extended.get<uint64_t>(), 1);
 }
 
+TEST(RegisterValueTest, Array) {
+  uint64_t arr[] = {0, 0xffffffffffffffff};
+  simeng::RegisterValue z_reg = {arr, 256};
+  EXPECT_EQ(z_reg.size(), 256);
+  auto ptr = z_reg.getAsVector<uint64_t>();
+  EXPECT_EQ(ptr[0], 0);
+  EXPECT_EQ(ptr[1], 0xffffffffffffffff);
+  EXPECT_EQ(ptr[2], 0);
+  EXPECT_EQ(ptr[3], 0);
+}
 }  // namespace

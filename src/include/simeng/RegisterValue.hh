@@ -6,7 +6,12 @@
 #include <cstring>
 #include <memory>
 
+#include "simeng/Pool.hh"
+
 namespace simeng {
+
+/** Global memory pool used by RegisterValue class. */
+extern Pool pool;
 
 /** A class that holds an arbitrary region of immutable data, providing casting
  * and data accessor functions. For values smaller than or equal to
@@ -16,10 +21,11 @@ class RegisterValue {
  public:
   RegisterValue();
 
-  /** Create a new RegisterValue from a value of arbitrary type, zero-extending
-   * the allocated memory space to the specified number of bytes (defaulting to
-   * the size of the template type). */
-  template <class T>
+  /** Create a new RegisterValue from a value of arbitrary type (except
+   * pointers), zero-extending the allocated memory space to the specified
+   * number of bytes (defaulting to the size of the template type). */
+  template <class T,
+            typename std::enable_if_t<!std::is_pointer_v<T>, T>* = nullptr>
   RegisterValue(T value, uint16_t bytes = sizeof(T)) : bytes(bytes) {
     if (isLocal()) {
       T* view = reinterpret_cast<T*>(this->value);
@@ -31,35 +37,48 @@ class RegisterValue {
                                    0);
       }
     } else {
-      void* data = calloc(1, bytes);
+      void* data = pool.allocate(bytes);
+      std::memset(data, 0, bytes);
 
       T* view = reinterpret_cast<T*>(data);
       view[0] = value;
 
-      this->ptr = std::shared_ptr<char>(static_cast<char*>(data), free);
+      this->ptr = std::shared_ptr<char>(
+          static_cast<char*>(data),
+          [bytes](void* ptr) { pool.deallocate(ptr, bytes); });
     }
   }
 
-  /** Create a new RegisterValue of size `bytes`, copying data from `ptr`.
+  /** Create a new RegisterValue of size `capacity`, copying `bytes`
+   * from `ptr`.
    */
-  RegisterValue(const char* ptr, uint16_t bytes) : bytes(bytes) {
+  RegisterValue(const char* ptr, uint16_t bytes, uint16_t capacity)
+      : bytes(capacity) {
+    assert(capacity >= bytes && "Capacity is less then requested bytes");
     char* dest;
     if (isLocal()) {
       dest = this->value;
     } else {
-      dest = static_cast<char*>(malloc(bytes));
-      this->ptr = std::shared_ptr<char>(dest, free);
+      dest = static_cast<char*>(pool.allocate(capacity));
+      std::memset(dest, 0, capacity);
+      this->ptr = std::shared_ptr<char>(
+          dest, [capacity](void* ptr) { pool.deallocate(ptr, capacity); });
     }
     assert(dest && "Attempted to dereference a NULL pointer");
     std::memcpy(dest, ptr, bytes);
   }
 
+  /** Create a new RegisterValue of size `bytes`, copying data from `ptr`. */
+  RegisterValue(const char* ptr, uint16_t bytes)
+      : RegisterValue(ptr, bytes, bytes) {}
+
   /** Create a new RegisterValue by copying bytes from a fixed-size array. The
-   * resultant RegisterValue will have the same byte size as the original array.
+   * resultant RegisterValue will have size `C` (defaulting to the no. of bytes
+   * in the array).
    */
   template <class T, size_t N>
-  RegisterValue(T (&array)[N])
-      : RegisterValue(reinterpret_cast<const char*>(array), sizeof(T) * N) {}
+  RegisterValue(T (&array)[N], size_t C = N * sizeof(T))
+      : RegisterValue(reinterpret_cast<const char*>(array), sizeof(T) * N, C) {}
 
   /** Read the encapsulated raw memory as a specified datatype. */
   template <class T>
@@ -71,6 +90,7 @@ class RegisterValue {
    * the specified datatype. */
   template <class T>
   const T* getAsVector() const {
+    static_assert(alignof(T) <= 8 && "Alignment over 8 bytes not guranteed");
     assert(bytes > 0 && "Attempted to access an uninitialised RegisterValue");
     assert(sizeof(T) <= bytes &&
            "Attempted to access a RegisterValue as a datatype larger than the "
@@ -83,7 +103,7 @@ class RegisterValue {
   }
 
   /** Retrieve the number of bytes stored. */
-  size_t size() const { return bytes; }
+  constexpr size_t size() const { return bytes; }
 
   /** Check whether this RegisterValue has an assigned value or is empty. */
   operator bool() const;
@@ -95,10 +115,10 @@ class RegisterValue {
 
  private:
   /** Check whether the value is held locally or behind a pointer. */
-  bool isLocal() const { return bytes <= MAX_LOCAL_BYTES; }
+  constexpr bool isLocal() const { return bytes <= MAX_LOCAL_BYTES; }
 
   /** The maximum number of bytes that can be held locally. */
-  static const uint16_t MAX_LOCAL_BYTES = 16;
+  static constexpr uint16_t MAX_LOCAL_BYTES = 16;
 
   /** The number of bytes held. */
   uint16_t bytes = 0;

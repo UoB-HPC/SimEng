@@ -21,16 +21,16 @@ const uint8_t BR = 5;
  * described in the A64FX Microarchitecture manual. */
 class A64FXPortAllocator : public PortAllocator {
  public:
-  A64FXPortAllocator(std::vector<std::vector<uint16_t>> portArrangement);
+  A64FXPortAllocator(const std::vector<std::vector<uint16_t>>& portArrangement);
 
-  uint8_t allocate(std::vector<uint8_t> ports) override;
+  uint8_t allocate(const std::vector<uint8_t>& ports) override;
 
   void issued(uint8_t port) override;
 
   void deallocate(uint8_t port) override;
 
   /** A mapping from issye ports to instruction attribute */
-  uint8_t attributeMapping(std::vector<uint8_t> ports);
+  uint8_t attributeMapping(const std::vector<uint8_t>& ports);
 
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */
@@ -64,6 +64,17 @@ class A64FXPortAllocator : public PortAllocator {
   uint8_t RSAm_;
   /** RSA with least free entries. */
   uint8_t RSAf_;
+
+  const std::vector<uint8_t> EXA_EXB_EAGA_EAGB = {2, 4, 5, 6};
+  const std::vector<uint8_t> EXA_EXB = {2, 4};
+  const std::vector<uint8_t> FLA_FLB = {0, 3};
+  const std::vector<uint8_t> EAGA_EAGB = {5, 6};
+  const std::vector<uint8_t> EXA = {2};
+  const std::vector<uint8_t> FLA = {0};
+  const std::vector<uint8_t> PR = {1};
+  const std::vector<uint8_t> EXB = {4};
+  const std::vector<uint8_t> FLB = {3};
+  const std::vector<uint8_t> BR = {7};
 };
 
 }  // namespace pipeline

@@ -13,6 +13,8 @@ set(TEST_SOURCES
     BTBPredictorTest.cc
     ISATest.cc
     RegisterValueTest.cc
+    PoolTest.cc
+    ShiftValueTest.cc
     LatencyMemoryInterfaceTest.cc
     )
 

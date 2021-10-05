@@ -79,7 +79,11 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
       break;
     }
 
-    for (const auto& reg : uop->getDestinationRegisters()) {
+    // To rewind destination registers in correct history order, rewinding of
+    // register renaming is done backwards
+    auto destinations = uop->getDestinationRegisters();
+    for (int i = destinations.size() - 1; i >= 0; i--) {
+      const auto& reg = destinations[i];
       rat_.rewind(reg);
     }
     uop->setFlushed();
