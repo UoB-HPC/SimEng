@@ -35,7 +35,7 @@ SimEng is a framework for building modern, cycle-accurate processor simulators. 
 - Accurate, aiming for simulated cycle times being within 5-10% of real hardware
 - Open source, with a permissive license to enable collaboration across academia and industry
 
-SimEng places an emphasis on performance and ease of use, whilst maintaining a clean, modern, simple and well-documented code base. For example, the current out-of-order (OoO) model is implemented in around 8,000 lines of simple C++, with another 8,000 lines or so implementing the specifics of the Armv8 ISA, and around 11,000 lines of code in the accompanying test suite. SimEng should be simple to read and understand, making it ideal to modify to your requirements and include it in your projects.
+SimEng places an emphasis on performance and ease of use, whilst maintaining a clean, modern, simple and well-documented code base. For example, the current out-of-order (OoO) model is implemented in around 10,000 lines of simple C++, with another 9,000 lines or so implementing the specifics of the Armv8 ISA, and around 13,000 lines of code in the accompanying test suite. SimEng should be simple to read and understand, making it ideal to modify to your requirements and include it in your projects.
 
 
 Features
@@ -67,7 +67,7 @@ For the most recent presentation on SimEng's progress and status, see:
 Release
 -------
 
-This is SimEng's first release, so should be considered alpha level software (version 0.8.0). We expect you to find issues, primarily in unimplemented instructions or unimplemented system calls. Please let us know when you hit these, either by submitting a pull request (PR), or by filing an issue on the Github repo. You can find the all the code and associated test suites for SimEng in the `GitHub repository <https://github.com/UoB-HPC/SimEng>`_. The file `RELEASE_NOTES.txt <https://github.com/UoB-HPC/SimEng/blob/main/RELEASE-NOTES.txt>`_, found in the root of the project, explains the status of the project and includes other relevant information from the SimEng development team.
+This is SimEng's second release, so should be considered beta level software (version 0.9.0). We expect you to find issues, primarily in unimplemented instructions or unimplemented system calls. Please let us know when you hit these, either by submitting a pull request (PR), or by filing an issue on the Github repo. You can find the all the code and associated test suites for SimEng in the `GitHub repository <https://github.com/UoB-HPC/SimEng>`_. The file `RELEASE_NOTES.txt <https://github.com/UoB-HPC/SimEng/blob/main/RELEASE-NOTES.txt>`_, found in the root of the project, explains the status of the project and includes other relevant information from the SimEng development team.
 
 SimEng is released under the same license as LLVM, the permissive `Apache 2.0 <https://www.apache.org/licenses/LICENSE-2.0>`_ license. We are passionate about enabling experimentation with computer architectures, and want users and developers in academic and industry to have complete freedom to use SimEng anyway they wish, including using it in commercial settings.
 
