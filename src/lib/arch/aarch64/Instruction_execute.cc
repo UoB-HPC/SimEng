@@ -211,7 +211,7 @@ void Instruction::execute() {
       for (int i = 0; i < 16; i++) {
         out[i] = static_cast<uint8_t>(n[i] + m[i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ADDv1i64: {  // add dd, dn, dm
@@ -243,7 +243,7 @@ void Instruction::execute() {
       for (int i = 0; i < 4; i++) {
         out[i] = static_cast<uint16_t>(n[i] + m[i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ADDv4i32: {  // add vd.4s, vn.4s, vm.4s
@@ -315,7 +315,7 @@ void Instruction::execute() {
       for (int i = 0; i < 8; i++) {
         out[i] = static_cast<uint16_t>(n[i] + m[i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ADDv8i8: {  // add vd.8b, vn.8b, vm.8b
@@ -325,7 +325,7 @@ void Instruction::execute() {
       for (int i = 0; i < 8; i++) {
         out[i] = static_cast<uint8_t>(n[i] + m[i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ADCXr: {  // adc xd, xn, xm
@@ -6212,7 +6212,7 @@ void Instruction::execute() {
       for (int i = 0; i < 8; i++) {
         out[i] = n[i + 8] << shift;
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_USHLLv4i16_shift: {  // ushll vd.4s, vn.4h, #imm
@@ -6232,7 +6232,7 @@ void Instruction::execute() {
       for (int i = 0; i < 4; i++) {
         out[i] = n[i + 4] << shift;
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_USHLLv8i8_shift: {  // ushll vd.8h, vn.8b, #imm
@@ -6241,6 +6241,18 @@ void Instruction::execute() {
       uint16_t out[8] = {0};
       for (int i = 0; i < 8; i++) {
         out[i] = n[i] << shift;
+      }
+      results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_UUNPKHI_ZZ_D: {  // uunpkhi zd.d, zn.s
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = static_cast<uint64_t>(n[partition_num + i]);
       }
       results[0] = out;
       break;
