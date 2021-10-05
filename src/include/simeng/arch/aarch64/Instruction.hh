@@ -294,7 +294,7 @@ class Instruction : public simeng::Instruction {
   void setExecutionInfo(const executionInfo& info);
 
   /** Get this instruction's supported set of ports. */
-  std::vector<uint8_t> getSupportedPorts() override;
+  const std::vector<uint8_t>& getSupportedPorts() override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
@@ -404,6 +404,8 @@ class Instruction : public simeng::Instruction {
   /** Set the accessed memory addresses, and create a corresponding memory data
    * vector. */
   void setMemoryAddresses(const std::vector<MemoryAccessTarget>& addresses);
+
+  void setMemoryAddresses(std::vector<MemoryAccessTarget>&& addresses);
 
   /** The memory addresses this instruction accesses, as a vector of {offset,
    * width} pairs. */

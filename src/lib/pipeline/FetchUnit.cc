@@ -70,17 +70,14 @@ void FetchUnit::tick() {
     assert(fetched[fetchIndex].data && "Memory read failed");
     const uint8_t* fetchData = fetched[fetchIndex].data.getAsVector<uint8_t>();
 
-    if (bufferedBytes_ > 0) {
-      // Copy fetched data to fetch buffer after existing data
-      std::memcpy(fetchBuffer_ + bufferedBytes_, fetchData + bufferOffset,
-                  blockSize_ - bufferOffset);
-      bufferedBytes_ += blockSize_ - bufferOffset;
-      buffer = fetchBuffer_;
-    } else {
-      // Use the incoming fetch data directly to avoid a copy
-      buffer = fetchData;
-      bufferedBytes_ = blockSize_ - bufferOffset;
-    }
+    // Copy fetched data to fetch buffer after existing data
+    std::memcpy(fetchBuffer_ + bufferedBytes_, fetchData + bufferOffset,
+                blockSize_ - bufferOffset);
+
+    bufferedBytes_ += blockSize_ - bufferOffset;
+    buffer = fetchBuffer_;
+    // Decoding should start from the beginning of the fetchBuffer_.
+    bufferOffset = 0;
   } else {
     // There is already enough data in the fetch buffer, so use that
     buffer = fetchBuffer_;

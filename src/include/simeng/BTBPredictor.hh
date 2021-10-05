@@ -16,11 +16,11 @@ class BTBPredictor : public BranchPredictor {
   /** Generate a branch prediction for the supplied instruction address. Finds
    * the corresponding BTB entry and returns a "taken" prediction with the
    * stored target. If no entry is found, predicts "not taken". */
-  BranchPrediction predict(std::shared_ptr<Instruction> uop) override;
+  BranchPrediction predict(std::shared_ptr<Instruction>& uop) override;
 
   /** Update the BTB entry for the supplied instruction address with the taken
    * state and targt address. */
-  void update(std::shared_ptr<Instruction> uop, bool taken,
+  void update(std::shared_ptr<Instruction>& uop, bool taken,
               uint64_t targetAddress) override;
 
  private:
