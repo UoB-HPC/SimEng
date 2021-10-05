@@ -209,7 +209,7 @@ int64_t Linux::fstat(int64_t fd, stat& out) {
 // just the usage stats of binary
 int64_t Linux::getrusage(int64_t who, rusage& out) {
   // MacOS doesn't support the final enum RUSAGE_THREAD
-#ifdef __APPLE__&& __MACH__
+#ifdef __MACH__
   if (!(who == 0 || who == -1)) {
     assert(false && "Un-recognised RUSAGE descriptor.");
     return -1;
@@ -438,7 +438,7 @@ int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
 
   if (flags & 0x200) newFlags |= O_TRUNC;
 
-#ifdef __APPLE__&& __MACH__
+#ifdef __MACH__
   // Apple only flags
   if (flags & 0x0010) newFlags |= O_SHLOCK;
   if (flags & 0x0020) newFlags |= O_EXLOCK;

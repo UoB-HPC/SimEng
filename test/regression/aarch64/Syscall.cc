@@ -627,8 +627,7 @@ TEST_P(Syscall, getrusage) {
   EXPECT_EQ(getGeneralRegister<int64_t>(22), 0);
 
   // MacOS doesn't support the final enum RUSAGE_THREAD
-#ifdef __APPLE__&& __MACH__
-#else
+#ifndef __MACH__
   // Reserve 128 bytes for usage
   initialHeapData_.resize(128);
   RUN_AARCH64(R"(
