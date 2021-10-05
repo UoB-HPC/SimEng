@@ -625,6 +625,28 @@ TEST_P(Syscall, getrusage) {
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
   EXPECT_EQ(getGeneralRegister<int64_t>(22), 0);
+
+  // MacOS doesn't support the final enum RUSAGE_THREAD
+#ifdef __APPLE__&& __MACH__
+#else
+  // Reserve 128 bytes for usage
+  initialHeapData_.resize(128);
+  RUN_AARCH64(R"(
+      # Get heap address
+      mov x0, 0
+      mov x8, 214
+      svc #0
+      mov x20, x0
+
+      # getrusage(who = RUSAGE_THREAD, usage)
+      mov x0, #1
+      mov x1, x20
+      mov x8, #165
+      svc #0
+      mov x21, x0
+    )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
+#endif
 }
 
 TEST_P(Syscall, ftruncate) {

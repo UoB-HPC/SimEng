@@ -208,10 +208,18 @@ int64_t Linux::fstat(int64_t fd, stat& out) {
 // TODO: Current implementation will get whole SimEng resource usage stats, not
 // just the usage stats of binary
 int64_t Linux::getrusage(int64_t who, rusage& out) {
+  // MacOS doesn't support the final enum RUSAGE_THREAD
+#ifdef __APPLE__&& __MACH__
   if (!(who == 0 || who == -1)) {
     assert(false && "Un-recognised RUSAGE descriptor.");
     return -1;
   }
+#else
+  if (!(who == 0 || who == -1 || who == 1)) {
+    assert(false && "Un-recognised RUSAGE descriptor.");
+    return -1;
+  }
+#endif
 
   // Pass call through host
   struct ::rusage usage;
@@ -420,19 +428,29 @@ int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
   if (flags & 0x2000) newFlags |= O_ASYNC;
   if (flags & 0x80000) newFlags |= O_CLOEXEC;
   if (flags & 0x40) newFlags |= O_CREAT;
-  // if (flags & 0x4000) newFlags |= O_DIRECT;
   if (flags & 0x10000) newFlags |= O_DIRECTORY;
   if (flags & 0x1000) newFlags |= O_DSYNC;
   if (flags & 0x80) newFlags |= O_EXCL;
-  // if (flags & 0x0) newFlags |= O_LARGEFILE;
-  // if (flags & 0x40000) newFlags |= O_NOATIME;
   if (flags & 0x100) newFlags |= O_NOCTTY;
   if (flags & 0x20000) newFlags |= O_NOFOLLOW;
   if (flags & 0x800) newFlags |= O_NONBLOCK;  // O_NDELAY
-  // if (flags & 0x200000) newFlags |= O_PATH;
   if (flags & 0x101000) newFlags |= O_SYNC;
-  // if (flags & 0x410000) newFlags |= O_TMPFILE;
+
   if (flags & 0x200) newFlags |= O_TRUNC;
+
+#ifdef __APPLE__&& __MACH__
+  // Apple only flags
+  if (flags & 0x0010) newFlags |= O_SHLOCK;
+  if (flags & 0x0020) newFlags |= O_EXLOCK;
+  if (flags & 0x200000) newFlags |= O_SYMLINK;
+#else
+  // Linux only flags
+  if (flags & 0x4000) newFlags |= O_DIRECT;
+  if (flags & 0x0) newFlags |= O_LARGEFILE;
+  if (flags & 0x40000) newFlags |= O_NOATIME;
+  if (flags & 0x200000) newFlags |= O_PATH;
+  if (flags & 0x410000) newFlags |= O_TMPFILE;
+#endif
 
   // Pass syscall through to host
   assert(dirfd == -100 && "unsupported dirfd argument in openat syscall");
