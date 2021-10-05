@@ -7,7 +7,6 @@ namespace {
 using InstNeon = AArch64RegressionTest;
 
 TEST_P(InstNeon, add) {
-  // Quad 32-bit : add vd.4s, vn.4s, vm.4s
   // 8-bit vector
   initialHeapData_.resize(32);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
