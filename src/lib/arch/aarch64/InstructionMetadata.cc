@@ -589,6 +589,17 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       groupCount = 1;
       groups[0] = CS_GRP_JUMP;
       break;
+    case Opcode::AArch64_REV_PP_B:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_PP_D:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_PP_H:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_PP_S: {
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_SST1D:
       [[fallthrough]];
     case Opcode::AArch64_SST1D_SCALED: {

@@ -2951,6 +2951,36 @@ TEST_P(InstSve, rdvl) {
   EXPECT_EQ(getGeneralRegister<int64_t>(4), 1984);
 }
 
+TEST_P(InstSve, rev) {
+  // VL = 512-bits
+  // Predicate
+  RUN_AARCH64(R"(
+    mov x1, #32
+    mov x2, #16
+    mov x3, #8
+    mov x4, #4
+
+    whilelo p0.b, xzr, x1
+    whilelo p1.h, xzr, x2
+    whilelo p2.s, xzr, x3
+    whilelo p3.d, xzr, x4
+
+    rev p4.b, p0.b
+    rev p5.h, p1.h
+    rev p6.s, p2.s
+    rev p7.d, p3.d
+  )");
+  CHECK_PREDICATE(0, uint64_t, {0x00000000FFFFFFFFu, 0, 0, 0});
+  CHECK_PREDICATE(1, uint64_t, {0x0000000055555555u, 0, 0, 0});
+  CHECK_PREDICATE(2, uint64_t, {0x0000000011111111u, 0, 0, 0});
+  CHECK_PREDICATE(3, uint64_t, {0x000000001010101u, 0, 0, 0});
+
+  CHECK_PREDICATE(4, uint64_t, {0xFFFFFFFF00000000u, 0, 0, 0});
+  CHECK_PREDICATE(5, uint64_t, {0x5555555500000000u, 0, 0, 0});
+  CHECK_PREDICATE(6, uint64_t, {0x1111111100000000u, 0, 0, 0});
+  CHECK_PREDICATE(7, uint64_t, {0x101010100000000u, 0, 0, 0});
+}
+
 TEST_P(InstSve, scvtf) {
   // VL = 512-bits
   RUN_AARCH64(R"(

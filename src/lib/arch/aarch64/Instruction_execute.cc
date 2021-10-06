@@ -4785,6 +4785,82 @@ void Instruction::execute() {
       results[0] = reversed;
       break;
     }
+    case Opcode::AArch64_REV_PP_B: {  // rev pd.b, pn.b
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      int index = partition_num - 1;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t rev_shifted_active =
+            static_cast<uint64_t>(std::pow(2, (index)));
+        uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i)));
+        out[i / 64] |= ((n[i / 64] & shifted_active) == shifted_active)
+                           ? rev_shifted_active
+                           : 0;
+        index--;
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_REV_PP_D: {  // rev pd.d, pn.d
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      int index = partition_num - 1;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t rev_shifted_active =
+            static_cast<uint64_t>(std::pow(2, (index * 8)));
+        uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i * 8)));
+        out[i / 8] |= ((n[i / 8] & shifted_active) == shifted_active)
+                          ? rev_shifted_active
+                          : 0;
+        index--;
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_REV_PP_H: {  // rev pd.h, pn.h
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      int index = partition_num - 1;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t rev_shifted_active =
+            static_cast<uint64_t>(std::pow(2, (index * 2)));
+        uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i * 2)));
+        out[i / 32] |= ((n[i / 32] & shifted_active) == shifted_active)
+                           ? rev_shifted_active
+                           : 0;
+        index--;
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_REV_PP_S: {  // rev pd.s, pn.s
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      int index = partition_num - 1;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t rev_shifted_active =
+            static_cast<uint64_t>(std::pow(2, (index * 4)));
+        uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i * 4)));
+        out[i / 16] |= ((n[i / 16] & shifted_active) == shifted_active)
+                           ? rev_shifted_active
+                           : 0;
+        index--;
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_SBCWr: {  // sbc wd, wn, wm
       auto nzcv = operands[0].get<uint8_t>();
       auto x = operands[1].get<uint32_t>();
