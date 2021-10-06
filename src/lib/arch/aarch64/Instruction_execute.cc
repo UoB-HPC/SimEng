@@ -4796,9 +4796,9 @@ void Instruction::execute() {
         uint64_t rev_shifted_active =
             static_cast<uint64_t>(std::pow(2, (index)));
         uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i)));
-        out[i / 64] |= ((n[i / 64] & shifted_active) == shifted_active)
-                           ? rev_shifted_active
-                           : 0;
+        out[index / 64] |= ((n[i / 64] & shifted_active) == shifted_active)
+                               ? rev_shifted_active
+                               : 0;
         index--;
       }
       results[0] = out;
@@ -4815,9 +4815,9 @@ void Instruction::execute() {
         uint64_t rev_shifted_active =
             static_cast<uint64_t>(std::pow(2, (index * 8)));
         uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i * 8)));
-        out[i / 8] |= ((n[i / 8] & shifted_active) == shifted_active)
-                          ? rev_shifted_active
-                          : 0;
+        out[index / 8] |= ((n[i / 8] & shifted_active) == shifted_active)
+                              ? rev_shifted_active
+                              : 0;
         index--;
       }
       results[0] = out;
@@ -4834,9 +4834,9 @@ void Instruction::execute() {
         uint64_t rev_shifted_active =
             static_cast<uint64_t>(std::pow(2, (index * 2)));
         uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i * 2)));
-        out[i / 32] |= ((n[i / 32] & shifted_active) == shifted_active)
-                           ? rev_shifted_active
-                           : 0;
+        out[index / 32] |= ((n[i / 32] & shifted_active) == shifted_active)
+                               ? rev_shifted_active
+                               : 0;
         index--;
       }
       results[0] = out;
@@ -4853,9 +4853,9 @@ void Instruction::execute() {
         uint64_t rev_shifted_active =
             static_cast<uint64_t>(std::pow(2, (index * 4)));
         uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i * 4)));
-        out[i / 16] |= ((n[i / 16] & shifted_active) == shifted_active)
-                           ? rev_shifted_active
-                           : 0;
+        out[index / 16] |= ((n[i / 16] & shifted_active) == shifted_active)
+                               ? rev_shifted_active
+                               : 0;
         index--;
       }
       results[0] = out;
