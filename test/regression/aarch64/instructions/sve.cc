@@ -4493,42 +4493,42 @@ TEST_P(InstSve, zip_pred) {
     whilelo p7.d, xzr, xzr
 
     # Interleave (or Zip) true with false
-    zip1 p0.b, p0.b, p4.b
-    zip1 p1.h, p1.h, p5.h
-    zip1 p2.s, p2.s, p6.s
-    zip1 p3.d, p3.d, p7.d
+    zip1 p8.b, p0.b, p4.b
+    zip1 p9.h, p1.h, p5.h
+    zip1 p10.s, p2.s, p6.s
+    zip1 p11.d, p3.d, p7.d
 
-    zip2 p4.b, p0.b, p4.b
-    zip2 p5.h, p1.h, p5.h
-    zip2 p6.s, p2.s, p6.s
-    zip2 p7.d, p3.d, p7.d
+    zip2 p12.b, p0.b, p4.b
+    zip2 p13.h, p1.h, p5.h
+    zip2 p14.s, p2.s, p6.s
+    zip2 p15.d, p3.d, p7.d
   )");
   CHECK_PREDICATE(
-      0, uint8_t,
+      8, uint8_t,
       {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0, 0, 0, 0, 0, 0, 0, 0,
        0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(
-      1, uint8_t,
+      9, uint8_t,
       {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0, 0, 0, 0, 0, 0, 0, 0,
        0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0});
-  CHECK_PREDICATE(2, uint8_t, {0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0, 0, 0,
-                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 0,
-                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0});
-  CHECK_PREDICATE(3, uint8_t,
+  CHECK_PREDICATE(10, uint8_t, {0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0, 0, 0,
+                                0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 0,
+                                0,   0,   0,   0,   0,   0,   0,   0,   0, 0});
+  CHECK_PREDICATE(11, uint8_t,
                   {0x1, 0, 0x1, 0, 0x1, 0, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                    0,   0, 0,   0, 0,   0, 0,   0, 0, 0, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(
-      4, uint8_t,
+      12, uint8_t,
       {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0, 0, 0, 0, 0, 0, 0, 0,
        0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(
-      5, uint8_t,
+      13, uint8_t,
       {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0, 0, 0, 0, 0, 0, 0, 0,
        0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0});
-  CHECK_PREDICATE(6, uint8_t, {0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0, 0, 0,
-                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 0,
-                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0});
-  CHECK_PREDICATE(7, uint8_t,
+  CHECK_PREDICATE(14, uint8_t, {0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0, 0, 0,
+                                0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 0,
+                                0,   0,   0,   0,   0,   0,   0,   0,   0, 0});
+  CHECK_PREDICATE(15, uint8_t,
                   {0x1, 0, 0x1, 0, 0x1, 0, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                    0,   0, 0,   0, 0,   0, 0,   0, 0, 0, 0, 0, 0, 0, 0, 0});
 }
