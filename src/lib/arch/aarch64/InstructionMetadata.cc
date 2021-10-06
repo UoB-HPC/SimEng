@@ -589,6 +589,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       groupCount = 1;
       groups[0] = CS_GRP_JUMP;
       break;
+    case Opcode::AArch64_REV_ZZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_ZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_ZZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_ZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_REV_PP_B:
       [[fallthrough]];
     case Opcode::AArch64_REV_PP_D:
