@@ -18,6 +18,27 @@ uint8_t nzcv(bool n, bool z, bool c, bool v) {
   return (n << 3) | (z << 2) | (c << 1) | v;
 }
 
+/** Calculate the corresponding NZCV values from select SVE instructions that
+ * set the First(N), None(Z), !Last(C) condition flags based on the predicate
+ * result, and the V flag to 0. */
+uint8_t getNZCVfromPred(uint64_t* predResult, uint64_t VL_bits, int byteCount) {
+  uint8_t N = (predResult[0] & 1);
+  uint8_t Z = 1;
+  // (int)(VL_bits - 1)/512 derives which block of 64-bits within the
+  // predicate register we're working in. 1ull << (VL_bits / 8) - byteCount)
+  // derives a 1 in the last position of the current predicate. Both
+  // dictated by vector length.
+  uint8_t C = !(predResult[(int)((VL_bits - 1) / 512)] &
+                1ull << ((VL_bits / 8) - byteCount));
+  for (int i = 0; i < (int)((VL_bits - 1) / 512) + 1; i++) {
+    if (predResult[i]) {
+      Z = 0;
+      break;
+    }
+  }
+  return nzcv(N, Z, C, 0);
+}
+
 /** Apply the shift specified by `shiftType` to the unsigned integer `value`,
  * shifting by `amount`. */
 template <typename T>
@@ -989,20 +1010,8 @@ void Instruction::execute() {
         }
       }
 
-      uint8_t N = (out[0] & 1);
-      uint8_t Z = 1;
-      // (int)(VL_bits - 1)/512 derives which block of 64-bits within the
-      // predicate register we're working in. 1ull << (VL_bits / 8) - 1)
-      // derives a 1 in the last position of the current predicate. Both
-      // dictated by vector length.
-      uint8_t C = !(out[(int)((VL_bits - 1) / 512)] & 1ull << (64 - 4));
-      for (int i = 0; i < (int)((VL_bits - 1) / 512) + 1; i++) {
-        if (out[i]) {
-          Z = 0;
-          break;
-        }
-      }
-      results[0] = nzcv(N, Z, C, 0);
+      // Byte count = 4 as destination predicate is regarding words.
+      results[0] = getNZCVfromPred(out, VL_bits, 4);
       results[1] = out;
       break;
     }
@@ -4644,20 +4653,8 @@ void Instruction::execute() {
       uint64_t masked_n[4] = {(g[0] & s[0]), (g[1] & s[1]), (g[2] & s[2]),
                               (g[3] & s[3])};
 
-      uint8_t n = (masked_n[0] & 1);
-      uint8_t z = 1;
-      // (int)(VL_bits - 1)/512 derives which block of 64-bits within the
-      // predicate register we're working in. 1ull << (VL_bits / 8) - 1)
-      // derives a 1 in the last position of the current predicate. Both
-      // dictated by vector length.
-      uint8_t c = !(masked_n[(int)((VL_bits - 1) / 512)] & 1ull << (64 - 1));
-      for (int i = 0; i < (int)((VL_bits - 1) / 512) + 1; i++) {
-        if (masked_n[i]) {
-          z = 0;
-          break;
-        }
-      }
-      results[0] = nzcv(n, z, c, 0);
+      // Byte count = 1 as destination predicate is regarding single bytes.
+      results[0] = getNZCVfromPred(masked_n, VL_bits, 1);
       break;
     }
     case Opcode::AArch64_PFALSE: {  // pfalse pd.b
@@ -6482,20 +6479,8 @@ void Instruction::execute() {
         index++;
       }
 
-      uint8_t N = (out[0] & 1);
-      uint8_t Z = 1;
-      // (int)(VL_bits - 1)/512 derives which block of 64-bits within the
-      // predicate register we're working in. 1ull << (VL_bits / 8) - 1)
-      // derives a 1 in the last position of the current predicate. Both
-      // dictated by vector length.
-      uint8_t C = !(out[(int)((VL_bits - 1) / 512)] & 1ull << (64 - 1));
-      for (int i = 0; i < (int)((VL_bits - 1) / 512) + 1; i++) {
-        if (out[i]) {
-          Z = 0;
-          break;
-        }
-      }
-      results[0] = nzcv(N, Z, C, 0);
+      // Byte count = 1 as destination predicate is regarding single bytes.
+      results[0] = getNZCVfromPred(out, VL_bits, 1);
       results[1] = out;
       break;
     }
@@ -6515,20 +6500,8 @@ void Instruction::execute() {
         index++;
       }
 
-      uint8_t N = (out[0] & 1);
-      uint8_t Z = 1;
-      // (int)(VL_bits - 1)/512 derives which block of 64-bits within the
-      // predicate register we're working in. 1ull << (VL_bits / 8) - 1)
-      // derives a 1 in the last position of the current predicate. Both
-      // dictated by vector length.
-      uint8_t C = !(out[(int)((VL_bits - 1) / 512)] & 1ull << (64 - 8));
-      for (int i = 0; i < (int)((VL_bits - 1) / 512) + 1; i++) {
-        if (out[i]) {
-          Z = 0;
-          break;
-        }
-      }
-      results[0] = nzcv(N, Z, C, 0);
+      // Byte count = 8 as destination predicate is regarding double words.
+      results[0] = getNZCVfromPred(out, VL_bits, 8);
       results[1] = out;
       break;
     }
@@ -6548,21 +6521,8 @@ void Instruction::execute() {
         index++;
       }
 
-      uint8_t N = (out[0] & 1);
-      uint8_t Z = 1;
-      // (int)(VL_bits - 1)/512 derives which block of 64-bits within the
-      // predicate register we're working in. std::pow(2, (VL_bits / 8) - 1)
-      // derives a 1 in the last position of the current predicate. Both
-      // dictated by vector length.
-      uint8_t C =
-          !(out[(int)((VL_bits - 1) / 512)] & (uint64_t)std::pow(2, 64 - 2));
-      for (int i = 0; i < (int)((VL_bits - 1) / 512) + 1; i++) {
-        if (out[i]) {
-          Z = 0;
-          break;
-        }
-      }
-      results[0] = nzcv(N, Z, C, 0);
+      // Byte count = 2 as destination predicate is regarding half words.
+      results[0] = getNZCVfromPred(out, VL_bits, 2);
       results[1] = out;
       break;
     }
@@ -6582,20 +6542,8 @@ void Instruction::execute() {
         index++;
       }
 
-      uint8_t N = (out[0] & 1);
-      uint8_t Z = 1;
-      // (int)(VL_bits - 1)/512 derives which block of 64-bits within the
-      // predicate register we're working in. 1ull << (VL_bits / 8) - 1)
-      // derives a 1 in the last position of the current predicate. Both
-      // dictated by vector length.
-      uint8_t C = !(out[(int)((VL_bits - 1) / 512)] & 1ull << (64 - 4));
-      for (int i = 0; i < (int)((VL_bits - 1) / 512) + 1; i++) {
-        if (out[i]) {
-          Z = 0;
-          break;
-        }
-      }
-      results[0] = nzcv(N, Z, C, 0);
+      // Byte count = 4 as destination predicate is regarding words.
+      results[0] = getNZCVfromPred(out, VL_bits, 4);
       results[1] = out;
       break;
     }
