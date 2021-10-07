@@ -281,6 +281,15 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         operands[3].fp = 1.0f;
       }
       break;
+    case Opcode::AArch64_FCMGT_PPzZ0_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMGT_PPzZ0_S: {
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_FDIVR_ZPmZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FDIVR_ZPmZ_S:

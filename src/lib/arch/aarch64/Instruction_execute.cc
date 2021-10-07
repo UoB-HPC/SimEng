@@ -1852,6 +1852,40 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
+    case Opcode::AArch64_FCMGT_PPzZ0_D: {  // gcmgt pd.d, pg/z, zn.d, #0.0
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const double* n = operands[1].getAsVector<double>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 8));
+        if (p[i / 8] & shifted_active) {
+          out[i / 8] |= (n[i] > 0.0) ? shifted_active : 0;
+        }
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FCMGT_PPzZ0_S: {  // gcmgt pd.s, pg/z, zn.s, #0.0
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const float* n = operands[1].getAsVector<float>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = std::pow(2, (i * 4));
+        if (p[i / 16] & shifted_active) {
+          out[i / 16] |= (n[i] > 0.0) ? shifted_active : 0;
+        }
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FCMGT_PPzZZ_D: {  // fcmgt pd.d, pg/z, zn.d, zm.d
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
       const double* n = operands[1].getAsVector<double>();
