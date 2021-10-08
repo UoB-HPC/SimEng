@@ -113,6 +113,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // lacking access specifiers for destination
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       break;
+    case Opcode::AArch64_EOR_PPzPP: {
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_FMOVXDHighr:
       // FMOVXDHighr incorrectly flags destination as only WRITE
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
@@ -1431,6 +1438,17 @@ void InstructionMetadata::revertAliasing() {
     case ARM64_INS_NGC:
       return aliasNYI();
     case ARM64_INS_NGCS:
+      return aliasNYI();
+    case ARM64_INS_NOT:
+      if (opcode == Opcode::AArch64_EOR_PPzPP) {
+        // not pd.b, pg/z, pn.b; alisas for: eor pd.b, pg/z, pn.b, pg.b
+        operandCount = 4;
+        operands[0].access = CS_AC_WRITE;
+        operands[1].access = CS_AC_READ;
+        operands[2].access = CS_AC_READ;
+        operands[3] = operands[1];
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_REV64:
       return aliasNYI();

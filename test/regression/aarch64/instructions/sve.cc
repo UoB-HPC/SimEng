@@ -491,6 +491,31 @@ TEST_P(InstSve, dups) {
   CHECK_NEON(9, int64_t, {-3, -3, -3, -3, -3, -3, -3, -3});
 }
 
+TEST_P(InstSve, eor) {
+  // VL = 512-bits
+  RUN_AARCH64(R"(
+    mov x0, #48
+    mov x1, #32
+    ptrue p0.b
+    whilelo p1.b, xzr, x0
+    whilelo p2.b, xzr, x1
+    rev p3.b, p1.b
+
+    eor p4.b, p0/z, p0.b, p1.b
+    eor p5.b, p1/z, p0.b, p2.b
+    eor p6.b, p0/z, p2.b, p3.b
+    eor p7.b, p1/z, p3.b, p0.b
+
+    # Test alias of not
+    not p8.b, p0/z, p6.b
+  )");
+  CHECK_PREDICATE(4, uint64_t, {0xFFFF000000000000u, 0, 0, 0});
+  CHECK_PREDICATE(5, uint64_t, {0x0000FFFF00000000u, 0, 0, 0});
+  CHECK_PREDICATE(6, uint64_t, {0xFFFFFFFF0000FFFFu, 0, 0, 0});
+  CHECK_PREDICATE(7, uint64_t, {0x000000000000FFFFu, 0, 0, 0});
+  CHECK_PREDICATE(8, uint64_t, {0x00000000FFFF0000u, 0, 0, 0});
+}
+
 TEST_P(InstSve, inc) {
   // VL = 512-bits
   // pattern = all
