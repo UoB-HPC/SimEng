@@ -315,6 +315,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FCMGT_PPzZZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_FCMLE_PPzZ0_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMLE_PPzZ0_S:
+      [[fallthrough]];
     case Opcode::AArch64_FCMLT_PPzZ0_S:
       [[fallthrough]];
     case Opcode::AArch64_FMUL_ZPmZ_D:
