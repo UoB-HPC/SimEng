@@ -4507,6 +4507,90 @@ void Instruction::execute() {
       results[0] = static_cast<uint64_t>(a + (x * y));
       break;
     }
+    case Opcode::AArch64_MLA_ZPmZZ_B: {  // mla zda.b, pg/m, zn.b, zm.b
+      const uint8_t* d = operands[0].getAsVector<uint8_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint8_t* n = operands[2].getAsVector<uint8_t>();
+      const uint8_t* m = operands[3].getAsVector<uint8_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      uint8_t out[256] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << i;
+        if (p[i / 64] & shifted_active) {
+          out[i] = d[i] + (n[i] * m[i]);
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_MLA_ZPmZZ_D: {  // mla zda.d, pg/m, zn.d, zm.d
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t* n = operands[2].getAsVector<uint64_t>();
+      const uint64_t* m = operands[3].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 8);
+        if (p[i / 8] & shifted_active) {
+          out[i] = d[i] + (n[i] * m[i]);
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_MLA_ZPmZZ_H: {  // mla zda.h, pg/m, zn.h, zm.h
+      const uint16_t* d = operands[0].getAsVector<uint16_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint16_t* n = operands[2].getAsVector<uint16_t>();
+      const uint16_t* m = operands[3].getAsVector<uint16_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint16_t out[128] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 2);
+        if (p[i / 32] & shifted_active) {
+          out[i] = d[i] + (n[i] * m[i]);
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_MLA_ZPmZZ_S: {  // mla zda.s, pg/m, zn.s, zm.s
+      const uint32_t* d = operands[0].getAsVector<uint32_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint32_t* n = operands[2].getAsVector<uint32_t>();
+      const uint32_t* m = operands[3].getAsVector<uint32_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint32_t out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 4);
+        if (p[i / 16] & shifted_active) {
+          out[i] = d[i] + (n[i] * m[i]);
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_MOVID: {  // movi dd, #imm
       uint64_t bits = static_cast<uint64_t>(metadata.operands[1].imm);
       results[0] = {bits, 256};
