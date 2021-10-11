@@ -1504,6 +1504,36 @@ void Instruction::execute() {
       }
       break;
     }
+    case Opcode::AArch64_EXTv16i8: {  // ext vd.16b, vn.16b, vm.16b, #index
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint8_t* m = operands[1].getAsVector<uint8_t>();
+      const uint64_t index = static_cast<uint64_t>(metadata.operands[3].imm);
+      uint8_t out[16] = {0};
+
+      for (int i = index; i < 16; i++) {
+        out[i - index] = n[i];
+      }
+      for (int i = 0; i < index; i++) {
+        out[16 - index + i] = m[i];
+      }
+      results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_EXTv8i8: {  // ext vd.8b, vn.8b, vm.8b, #index
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint8_t* m = operands[1].getAsVector<uint8_t>();
+      const uint64_t index = static_cast<uint64_t>(metadata.operands[3].imm);
+      uint8_t out[8] = {0};
+
+      for (int i = index; i < 8; i++) {
+        out[i - index] = n[i];
+      }
+      for (int i = 0; i < index; i++) {
+        out[8 - index + i] = m[i];
+      }
+      results[0] = {out, 256};
+      break;
+    }
     case Opcode::AArch64_FABD32: {  // fabd sd, sn, sm
       float n = operands[0].get<float>();
       float m = operands[1].get<float>();
