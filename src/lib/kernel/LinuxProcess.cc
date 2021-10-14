@@ -126,10 +126,6 @@ void LinuxProcess::createStack() {
     // Null entry to seperate strings
     stringBytes.push_back(0);
   }
-  // NULL entry at the top of initial stack
-  for (int i = 0; i < 8; i++) {
-    stringBytes.push_back(1);
-  }
 
   // Store strings and record both argv and environment pointers
   // Block out stack space for strings to be stored in
