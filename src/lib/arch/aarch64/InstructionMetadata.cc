@@ -69,6 +69,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // incorrectly adds implicit nzcv dependency
       implicitSourceCount = 0;
       break;
+    case Opcode::AArch64_CMPHI_PPzZZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPHI_PPzZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPHI_PPzZZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPHI_PPzZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_CMPGT_PPzZZ_B:
       [[fallthrough]];
     case Opcode::AArch64_CMPGT_PPzZZ_D:
