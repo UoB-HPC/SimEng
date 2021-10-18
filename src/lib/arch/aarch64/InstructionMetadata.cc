@@ -650,6 +650,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_SST1B_D:
+      [[fallthrough]];
     case Opcode::AArch64_SST1D:
       [[fallthrough]];
     case Opcode::AArch64_SST1D_SCALED: {
