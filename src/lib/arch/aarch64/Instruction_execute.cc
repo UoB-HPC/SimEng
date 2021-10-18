@@ -995,8 +995,8 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_CMPGT_PPzZZ_B: {  // cmpgt pd.b, pg/z, zn.b, zm.b
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
-      const uint8_t* n = operands[1].getAsVector<uint8_t>();
-      const uint8_t* m = operands[2].getAsVector<uint8_t>();
+      const int8_t* n = operands[1].getAsVector<int8_t>();
+      const int8_t* m = operands[2].getAsVector<int8_t>();
 
       const uint64_t VL_bits = 512;
       const uint16_t partition_num = VL_bits / 8;
@@ -1016,8 +1016,8 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_CMPGT_PPzZZ_D: {  // cmpgt pd.d, pg/z, zn.d, zm.d
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
-      const uint64_t* n = operands[1].getAsVector<uint64_t>();
-      const uint64_t* m = operands[2].getAsVector<uint64_t>();
+      const int64_t* n = operands[1].getAsVector<int64_t>();
+      const int64_t* m = operands[2].getAsVector<int64_t>();
 
       const uint64_t VL_bits = 512;
       const uint16_t partition_num = VL_bits / 64;
@@ -1037,8 +1037,8 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_CMPGT_PPzZZ_H: {  // cmpgt pd.h, pg/z, zn.h, zm.h
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
-      const uint16_t* n = operands[1].getAsVector<uint16_t>();
-      const uint16_t* m = operands[2].getAsVector<uint16_t>();
+      const int16_t* n = operands[1].getAsVector<int16_t>();
+      const int16_t* m = operands[2].getAsVector<int16_t>();
 
       const uint64_t VL_bits = 512;
       const uint16_t partition_num = VL_bits / 16;
@@ -1058,8 +1058,8 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_CMPGT_PPzZZ_S: {  // cmpgt pd.s, pg/z, zn.s, zm.s
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
-      const uint32_t* n = operands[1].getAsVector<uint32_t>();
-      const uint32_t* m = operands[2].getAsVector<uint32_t>();
+      const int32_t* n = operands[1].getAsVector<int32_t>();
+      const int32_t* m = operands[2].getAsVector<int32_t>();
 
       const uint64_t VL_bits = 512;
       const uint16_t partition_num = VL_bits / 32;
