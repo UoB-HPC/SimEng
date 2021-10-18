@@ -5662,6 +5662,22 @@ void Instruction::execute() {
 
       break;
     }
+    case Opcode::AArch64_SST1B_D: {  // st1b {zd.d}, pg, [xn, zm.d]
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint8_t index = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 8);
+        if (p[i / 8] & shifted_active) {
+          memoryData[index] = static_cast<uint8_t>(d[i]);
+          index++;
+        }
+      }
+      break;
+    }
     case Opcode::AArch64_SST1D: {  // st1d {zt.d}, pg, [xn, zm.d]
       [[fallthrough]];
     }

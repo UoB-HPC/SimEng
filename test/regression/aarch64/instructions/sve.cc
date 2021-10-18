@@ -3973,6 +3973,77 @@ TEST_P(InstSve, st1b) {
   EXPECT_EQ(getMemoryValue<uint64_t>(32 + 24), 0xABCDEF0198765432);
 }
 
+TEST_P(InstSve, st1b_scatter) {
+  // VL = 512-bit
+  initialHeapData_.resize(128);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xDEADBEEF;
+  heap64[1] = 0x12345678;
+  heap64[2] = 0x98765432;
+  heap64[3] = 0xABCDEF01;
+  heap64[4] = 0xDEADBEEF;
+  heap64[5] = 0x12345678;
+  heap64[6] = 0x98765432;
+  heap64[7] = 0xABCDEF01;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #4
+    mov x3, #107
+    mov x4, #2
+    mov x5, #512
+    ptrue p0.d
+    whilelo p1.d, xzr, x2
+
+    index z0.d, #0, #3
+    index z1.d, #0, #1
+    index z2.d, #4, #10
+    index z3.d, #15, #-10
+
+    ld1d {z4.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z5.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z6.d}, p1/z, [x0, x4, lsl #3]
+    ld1d {z7.d}, p1/z, [x0, x4, lsl #3]
+
+    st1b {z4.d}, p0, [sp, z0.d]
+    st1b {z5.d}, p0, [x5, z1.d]
+    st1b {z6.d}, p1, [x3, z2.d]
+    st1b {z7.d}, p1, [x3, z3.d]
+  )");
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer()), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 3), 0x78);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 6), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 9), 0x01);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 12), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 15), 0x78);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 18), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 21), 0x01);
+
+  EXPECT_EQ(getMemoryValue<uint8_t>(512), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 1), 0x78);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 2), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 3), 0x01);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 4), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 5), 0x78);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 6), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 7), 0x01);
+
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 4), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 14), 0x01);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 24), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 34), 0x78);
+
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 15), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 5), 0x01);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + -5), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + -15), 0x78);
+}
+
 TEST_P(InstSve, st1d_scatter) {
   // VL = 512-bits
   // Vector plus imm
