@@ -3456,6 +3456,70 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_INCP_XP_B: {  // incp xdn, pm.b
+      const uint64_t dn = operands[0].get<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      uint64_t count = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << i;
+        if (p[i / 64] & shifted_active) {
+          count++;
+        }
+      }
+      results[0] = dn + count;
+      break;
+    }
+    case Opcode::AArch64_INCP_XP_D: {  // incp xdn, pm.d
+      const uint64_t dn = operands[0].get<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t count = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 8);
+        if (p[i / 8] & shifted_active) {
+          count++;
+        }
+      }
+      results[0] = dn + count;
+      break;
+    }
+    case Opcode::AArch64_INCP_XP_H: {  // incp xdn, pm.h
+      const uint64_t dn = operands[0].get<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint64_t count = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 2);
+        if (p[i / 32] & shifted_active) {
+          count++;
+        }
+      }
+      results[0] = dn + count;
+      break;
+    }
+    case Opcode::AArch64_INCP_XP_S: {  // incp xdn, pm.s
+      const uint64_t dn = operands[0].get<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint64_t count = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 4);
+        if (p[i / 16] & shifted_active) {
+          count++;
+        }
+      }
+      results[0] = dn + count;
+      break;
+    }
     case Opcode::AArch64_INDEX_II_B: {  // index zd.b, #imm, #imm
       const int8_t imm1 = static_cast<int8_t>(metadata.operands[1].imm);
       const int8_t imm2 = static_cast<int8_t>(metadata.operands[2].imm);

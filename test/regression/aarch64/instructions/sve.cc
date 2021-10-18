@@ -2393,6 +2393,56 @@ TEST_P(InstSve, fsub) {
   CHECK_NEON(2, double, {-35.71, 41.842999999999996, 0.125, 80.72, 0, 0, 0, 0});
 }
 
+TEST_P(InstSve, incp) {
+  // VL = 512-bits
+  // Scalar
+  RUN_AARCH64(R"(
+    # 8-bit
+    mov x0, #48
+    mov x1, #66
+    mov x2, #402
+    ptrue p0.b
+    whilelo p1.b, xzr, x0
+    incp x1, p0.b
+    incp x2, p1.b
+
+    # 16-bit
+    mov x3, #24
+    mov x4, #70
+    mov x5, #109
+    ptrue p0.h
+    whilelo p1.h, xzr, x3
+    incp x4, p0.h
+    incp x5, p1.h
+
+    # 32-bit
+    mov x6, #12
+    mov x7, #41
+    mov x8, #527
+    ptrue p0.s
+    whilelo p1.s, xzr, x6
+    incp x7, p0.s
+    incp x8, p1.s
+
+    # 64-bit
+    mov x9, #6
+    mov x10, #50
+    mov x11, #375
+    ptrue p0.d
+    whilelo p1.d, xzr, x9
+    incp x10, p0.d
+    incp x11, p1.d
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 66 + 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 402 + 48);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 70 + 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 109 + 24);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 41 + 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 527 + 12);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 50 + 8);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), 375 + 6);
+}
+
 TEST_P(InstSve, index) {
   // VL = 512-bits
   // Immediate, Immediate
