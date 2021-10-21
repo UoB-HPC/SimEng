@@ -108,6 +108,48 @@ TEST_P(Syscall, faccessat) {
   EXPECT_EQ(getGeneralRegister<int64_t>(26), 0);
 }
 
+// TODO : Change how special files are delt with in OpenAt syscall before
+// implementing test
+
+//  TEST_P(Syscall, getdents64) {
+//   const char filepath[] = "/sys/devices/system/cpu/";
+
+//   // Reserve 32768 bytes for buffer
+//   initialHeapData_.resize(32768 + strlen(filepath) + 1);
+
+//   // Copy filepath to heap
+//   memcpy(initialHeapData_.data() + 32768, filepath, strlen(filepath) + 1);
+
+//   RUN_AARCH64(R"(
+//     # Get heap address
+//     mov x0, 0
+//     mov x8, 214
+//     svc #0
+//     mov x20, x0
+
+//     # Need to open the file
+//     # fd = openat(AT_FDCWD, filepath, O_RDONLY|O_NONBLOCK|O_CLOEXEC)
+//     # Flags = 0x00000000 + 0x00004000 + 0x02000000
+//     mov x0, -100
+//     add x1, x20, 32768
+//     mov x2, 0x2
+//     lsl x2, x2, #24
+//     add x2, x2, #0x4000
+//     mov x8, #56
+//     svc #0
+//     mov x21, x0
+
+//     # getdents64(fd, bufptr, count)
+//     mov x0, x21
+//     mov x1, x20
+//     mov x2, #32768
+//     mov x8, #61
+//     svc #0
+//     mov x22, x0
+//   )");
+//   EXPECT_EQ(getGeneralRegister<int64_t>(22), 656);
+// }
+
 // Test reading from and seeking through a file
 TEST_P(Syscall, file_read) {
   const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/input.txt";

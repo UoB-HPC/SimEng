@@ -1,5 +1,6 @@
 #include "simeng/kernel/Linux.hh"
 
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -474,6 +475,15 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
 
   // TODO: resolve symbolic link for other paths
   return -1;
+}
+
+int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
+  return ::getdents64(hfd, buf, count);
 }
 
 int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
