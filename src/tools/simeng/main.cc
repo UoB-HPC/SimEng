@@ -28,9 +28,10 @@
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
 /** Tick the provided core model until it halts. */
-int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
-             simeng::MemoryInterface& dataMemory) {
-  int iterations = 0;
+uint64_t simulate(simeng::Core& core,
+                  simeng::MemoryInterface& instructionMemory,
+                  simeng::MemoryInterface& dataMemory) {
+  uint64_t iterations = 0;
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
     // Tick the core
@@ -228,7 +229,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  int iterations = 0;
+  uint64_t iterations = 0;
 
   std::string modeString;
   std::unique_ptr<simeng::Core> core;
@@ -274,10 +275,10 @@ int main(int argc, char** argv) {
   auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)
           .count();
-  auto hz = iterations / (static_cast<double>(duration) / 1000.0);
-  auto khz = hz / 1000.0;
-  auto retired = core->getInstructionsRetiredCount();
-  auto mips = retired / static_cast<double>(duration) / 1000.0;
+  uint64_t hz = iterations / (static_cast<double>(duration) / 1000.0);
+  uint64_t khz = hz / 1000.0;
+  uint64_t retired = core->getInstructionsRetiredCount();
+  double mips = retired / static_cast<double>(duration) / 1000.0;
 
   // Print stats
   std::cout << "\n";

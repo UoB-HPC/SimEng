@@ -73,10 +73,10 @@ class LinuxProcess {
 
  private:
   /** The size of the stack, in bytes. */
-  static const uint64_t STACK_SIZE = 1024 * 1024;  // 1MiB
+  static const uint64_t STACK_SIZE = 1024 * 1024 * 100;  // 100MiB
 
   /** The space to reserve for the heap, in bytes. */
-  static const uint64_t HEAP_SIZE = 1024 * 1024 * 10;  // 10MiB
+  static const uint64_t HEAP_SIZE = 1024 * 1024 * 1000;  // 1GiB
 
   /** Create and populate the initial process stack. */
   void createStack();
