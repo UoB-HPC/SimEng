@@ -155,6 +155,16 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
   // Pass call through to host
   assert(dfd == -100 && "Unsupported dirfd argument in fstatat syscall");
   struct ::stat statbuf;
+
+  // Need to translate flag input to correct values for host OS
+  if (flag == 0x100)
+    flag = AT_SYMLINK_NOFOLLOW;
+  else if (flag != 0) {
+    std::cerr << "ERROR: newfstatat uses unsupported flag argument: " << flag
+              << std::endl;
+    exit(1);
+  }
+
   int64_t retval = ::fstatat(AT_FDCWD, filename.c_str(), &statbuf, flag);
 
   // Copy results to output struct
@@ -202,6 +212,10 @@ int64_t Linux::fstat(int64_t fd, stat& out) {
   out.ctime = statbuf.st_ctime;
 
   return retval;
+}
+
+char* Linux::getcwd(void* buf, size_t size) {
+  return ::getcwd((char*)buf, size);
 }
 
 // TODO: Current implementation will get whole SimEng resource usage stats, not
@@ -532,6 +546,15 @@ int64_t Linux::writev(int64_t fd, const void* iovdata, int iovcnt) {
     return EBADF;
   }
   return ::writev(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
+}
+
+int64_t Linux::pread64(int64_t fd, void* buf, size_t count, off_t offset) {
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
+  return ::pread(hfd, buf, count, offset);
 }
 
 }  // namespace kernel

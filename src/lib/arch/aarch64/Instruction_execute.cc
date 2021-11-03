@@ -2100,6 +2100,12 @@ void Instruction::execute() {
       results[0] = static_cast<int64_t>(std::trunc(n));
       break;
     }
+    case Opcode::AArch64_FCVTZUv1i64: {  // fcvtzu dd, dn
+      const double n = operands[0].get<double>();
+      // TODO: Handle NaNs, denorms, and saturation
+      results[0] = RegisterValue(static_cast<int64_t>(std::trunc(n)), 256);
+      break;
+    }
     case Opcode::AArch64_FCVT_ZPmZ_DtoS: {  // fcvt zd.s, pg/m, zn.d
       const float* d = operands[0].getAsVector<float>();
       const uint64_t* p = operands[1].getAsVector<uint64_t>();

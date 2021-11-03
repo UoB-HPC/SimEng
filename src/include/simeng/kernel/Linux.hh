@@ -153,6 +153,9 @@ class Linux {
   /** fstat syscall: get file status. */
   int64_t fstat(int64_t fd, stat& out);
 
+  /** getcwd syscall: get current working directory. */
+  char* getcwd(void* buf, size_t size);
+
   /** getrusage syscall: get recource usage measures for Who*/
   int64_t getrusage(int64_t who, rusage& out);
 
@@ -214,6 +217,9 @@ class Linux {
 
   /** writev syscall: write buffers to a file. */
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
+
+  /** pread64 syscall: read buffer from a file at an offset. */
+  int64_t pread64(int64_t fd, void* buf, size_t count, off_t offset);
 
   /** The maximum size of a filesystem path. */
   static const size_t LINUX_PATH_MAX = 4096;

@@ -33,6 +33,40 @@ bool ExceptionHandler::init() {
 
     ProcessStateChange stateChange;
     switch (syscallId) {
+      case 17: {  // getcwd
+        uint64_t bufPtr = registerFileSet.get(R0).get<uint64_t>();
+        size_t size = registerFileSet.get(R1).get<size_t>();
+        return readBufferThen(bufPtr, size, [=]() {
+          char* path = linux_.getcwd(dataBuffer.data(), size);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {bufPtr}};
+          // Check for failure
+          if (path == NULL) {
+            return concludeSyscall(stateChange);
+          }
+
+          int64_t bytesRemaining = std::string(path).length();
+          // Get pointer and size of the buffer
+          uint64_t iDst = bufPtr;
+          uint64_t iLength = bytesRemaining;
+          if (iLength > bytesRemaining) {
+            iLength = bytesRemaining;
+          }
+          bytesRemaining -= iLength;
+
+          // Write data for this buffer in 128-byte chunks
+          auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
+          while (iLength > 0) {
+            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+            stateChange.memoryAddresses.push_back({iDst, len});
+            stateChange.memoryAddressValues.push_back({iSrc, len});
+            iDst += len;
+            iSrc += len;
+            iLength -= len;
+          }
+          return concludeSyscall(stateChange);
+        });
+      }
       case 29: {  // ioctl
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t request = registerFileSet.get(R1).get<uint64_t>();
@@ -47,6 +81,10 @@ bool ExceptionHandler::init() {
         stateChange.memoryAddresses.push_back({argp, outSize});
         stateChange.memoryAddressValues.push_back(
             RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
+        break;
+      }
+      case 32: {  // flock
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
       case 46: {  // ftruncate
@@ -273,6 +311,43 @@ bool ExceptionHandler::init() {
         // Run the first buffer read to load the buffer structures, before
         // performing each of the buffer loads.
         return readBufferThen(iov, iovcnt * 16, last);
+      }
+      case 67: {  // pread64
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
+        size_t count = registerFileSet.get(R2).get<size_t>();
+        off_t offset = registerFileSet.get(R3).get<off_t>();
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t totalRead =
+              linux_.pread64(fd, dataBuffer.data(), count, offset);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {totalRead}};
+          // Check for failure
+          if (totalRead < 0) {
+            return concludeSyscall(stateChange);
+          }
+
+          int64_t bytesRemaining = totalRead;
+          // Get pointer and size of the buffer
+          uint64_t iDst = bufPtr;
+          uint64_t iLength = bytesRemaining;
+          if (iLength > bytesRemaining) {
+            iLength = bytesRemaining;
+          }
+          bytesRemaining -= iLength;
+
+          // Write data for this buffer in 128-byte chunks
+          auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
+          while (iLength > 0) {
+            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+            stateChange.memoryAddresses.push_back({iDst, len});
+            stateChange.memoryAddressValues.push_back({iSrc, len});
+            iDst += len;
+            iSrc += len;
+            iLength -= len;
+          }
+          return concludeSyscall(stateChange);
+        });
       }
       case 78: {  // readlinkat
         const auto pathnameAddress = registerFileSet.get(R1).get<uint64_t>();

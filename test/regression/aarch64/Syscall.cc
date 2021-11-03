@@ -7,6 +7,28 @@ namespace {
 
 using Syscall = AArch64RegressionTest;
 
+TEST_P(Syscall, getcwd) {
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # getcwd(bufptr=x0, size=80)
+    mov x0, x20
+    mov x1, #80
+    mov x8, #17
+    svc #0
+  )");
+  // Check result of read operations
+  const char* reference = std::filesystem::current_path().c_str();
+  char* data = processMemory_ + process_->getHeapStart();
+  for (int i = 0; i < sizeof(reference); i++) {
+    EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
+  }
+}
+
 TEST_P(Syscall, ioctl) {
   // TIOCGWINSZ: test it returns zero and sets the output to anything
   initialHeapData_.resize(8);
@@ -183,6 +205,61 @@ TEST_P(Syscall, file_read) {
 
   // Check result of read operations
   const char reference[] = "ABCD\0UV\0EFGH\0\0\0\0MNOPQRST";
+  char* data = processMemory_ + process_->getHeapStart();
+  for (int i = 0; i < sizeof(reference); i++) {
+    EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
+  }
+}
+
+TEST_P(Syscall, file_pread) {
+  const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/input.txt";
+
+  // Reserve 100 bytes for input read from file
+  initialHeapData_.resize(100 + strlen(filepath) + 1);
+
+  // Copy filepath to heap
+  memcpy(initialHeapData_.data() + 100, filepath, strlen(filepath) + 1);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # <input> = openat(AT_FDCWD, filepath, O_RDONLY, S_IRUSR)
+    mov x0, -100
+    add x1, x20, 100
+    mov x2, 0x0000
+    mov x3, 400
+    mov x8, #56
+    svc #0
+    mov x21, x0
+
+    # pread(fd=<input>, buf=x0, count=10, offset=0)
+    mov x0, x21
+    mov x1, x20
+    mov x2, #10
+    mov x3, #0
+    mov x8, #67
+    svc #0
+
+    # pread(fd=<input>, buf=x0+10, count=16, offset=10)
+    mov x0, x21
+    add x1, x1, #10
+    mov x2, #16
+    mov x3, #10
+    mov x8, #67
+    svc #0
+
+    # close(fd=<input>)
+    mov x0, x21
+    mov x8, #57
+    svc #0
+  )");
+
+  // Check result of read operations
+  const char reference[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   char* data = processMemory_ + process_->getHeapStart();
   for (int i = 0; i < sizeof(reference); i++) {
     EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
