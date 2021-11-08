@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "capstone/capstone.h"
+#include "simeng/arch/aarch64/Instruction.hh"
 
 namespace simeng {
 namespace arch {
