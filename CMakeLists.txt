@@ -105,6 +105,7 @@ set(CAPSTONE_BPF_SUPPORT OFF CACHE BOOL "Disable BPF support")
 set(CAPSTONE_RISCV_SUPPORT OFF CACHE BOOL "Disable RISCV support")
 
 FetchContent_MakeAvailable_Args(capstone EXCLUDE_FROM_ALL)
+include_directories("${capstone_BINARY_DIR}/include" "${capstone_SOURCE_DIR}/include")
 
 ## Setup yaml-cpp ##
 set(YAML_CPP_BUILD_TESTS OFF)

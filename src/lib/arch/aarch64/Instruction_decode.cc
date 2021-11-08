@@ -1,6 +1,5 @@
 #include "InstructionMetadata.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
-#include "simeng/arch/aarch64/Instruction.hh"
 
 #define NOT(bits, length) (~bits & (1 << length - 1))
 #define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)

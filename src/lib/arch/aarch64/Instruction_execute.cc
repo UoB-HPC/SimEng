@@ -8,7 +8,6 @@
 #endif
 
 #include "InstructionMetadata.hh"
-#include "simeng/arch/aarch64/Instruction.hh"
 
 namespace simeng {
 namespace arch {
@@ -37,33 +36,6 @@ uint8_t getNZCVfromPred(uint64_t* predResult, uint64_t VL_bits, int byteCount) {
     }
   }
   return nzcv(N, Z, C, 0);
-}
-
-/** Apply the shift specified by `shiftType` to the unsigned integer `value`,
- * shifting by `amount`. */
-template <typename T>
-std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
-    T value, uint8_t shiftType, uint8_t amount) {
-  switch (shiftType) {
-    case ARM64_SFT_LSL:
-      return value << amount;
-    case ARM64_SFT_LSR:
-      return value >> amount;
-    case ARM64_SFT_ASR:
-      return static_cast<std::make_signed_t<T>>(value) >> amount;
-    case ARM64_SFT_ROR: {
-      // Assuming sizeof(T) is a power of 2.
-      const auto mask = sizeof(T) * 8 - 1;
-      assert((amount <= mask) && "Rotate amount exceeds type width");
-      amount &= mask;
-      return (value >> amount) | (value << ((-amount) & mask));
-    }
-    case ARM64_SFT_INVALID:
-      return value;
-    default:
-      assert(false && "Unknown shift type");
-      return 0;
-  }
 }
 
 /** Manipulate the bitfield `value` according to the logic of the (U|S)BFM ARMv8

@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "capstone/capstone.h"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/RegisterValue.hh"
