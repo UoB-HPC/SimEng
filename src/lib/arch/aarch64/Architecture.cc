@@ -232,11 +232,9 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
 }
 
 uint16_t Architecture::getSystemRegisterTag(uint16_t reg) const {
-  assert(systemRegisterMap_.count(reg) && "unhandled system register");
   // Check below is done for speculative instructions that may be passed into
-  // the function but will not be executed. Currently the above assertion is not
-  // performed on release mode, and so such invalid speculative instructions get
-  // through with the potential to cause an out-of-range error.
+  // the function but will not be executed. If such invalid speculative
+  // instructions get through they can cause an out-of-range error.
   if (!systemRegisterMap_.count(reg)) return 0;
   return systemRegisterMap_.at(reg);
 }
