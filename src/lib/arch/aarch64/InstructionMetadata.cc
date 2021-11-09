@@ -863,6 +863,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_WHILELO_PWW_B:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELO_PWW_D:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELO_PWW_H:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELO_PWW_S:
+      [[fallthrough]];
     case Opcode::AArch64_WHILELO_PXX_B:
       [[fallthrough]];
     case Opcode::AArch64_WHILELO_PXX_D:

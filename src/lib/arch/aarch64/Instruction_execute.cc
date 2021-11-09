@@ -6945,6 +6945,90 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_WHILELO_PWW_B: {  // whilelo pd.b, wn, wm
+      const uint32_t n = operands[0].get<uint32_t>();
+      const uint32_t m = operands[1].get<uint32_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      uint64_t out[4] = {0, 0, 0, 0};
+      uint8_t index = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        // Determine whether lane should be active and shift to align with
+        // element in predicate register.
+        uint64_t shifted_active = (n + i) < m ? 1ull << i : 0;
+        out[index / 64] = out[index / 64] | shifted_active;
+        index++;
+      }
+
+      // Byte count = 1 as destination predicate is regarding single bytes.
+      results[0] = getNZCVfromPred(out, VL_bits, 1);
+      results[1] = out;
+      break;
+    }
+    case Opcode::AArch64_WHILELO_PWW_D: {  // whilelo pd.d, wn, wm
+      const uint32_t n = operands[0].get<uint32_t>();
+      const uint32_t m = operands[1].get<uint32_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[4] = {0, 0, 0, 0};
+      uint8_t index = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        // Determine whether lane should be active and shift to align with
+        // element in predicate register.
+        uint64_t shifted_active = (n + i) < m ? 1ull << (i * 8) : 0;
+        out[index / 8] = out[index / 8] | shifted_active;
+        index++;
+      }
+
+      // Byte count = 8 as destination predicate is regarding double words.
+      results[0] = getNZCVfromPred(out, VL_bits, 8);
+      results[1] = out;
+      break;
+    }
+    case Opcode::AArch64_WHILELO_PWW_H: {  // whilelo pd.h, wn, wm
+      const uint32_t n = operands[0].get<uint32_t>();
+      const uint32_t m = operands[1].get<uint32_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint64_t out[4] = {0, 0, 0, 0};
+      uint8_t index = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        // Determine whether lane should be active and shift to align with
+        // element in predicate register.
+        uint64_t shifted_active = (n + i) < m ? std::pow(2, (i * 2)) : 0;
+        out[index / 32] = out[index / 32] | shifted_active;
+        index++;
+      }
+
+      // Byte count = 2 as destination predicate is regarding half words.
+      results[0] = getNZCVfromPred(out, VL_bits, 2);
+      results[1] = out;
+      break;
+    }
+    case Opcode::AArch64_WHILELO_PWW_S: {  // whilelo pd.s, wn, wm
+      const uint32_t n = operands[0].get<uint32_t>();
+      const uint32_t m = operands[1].get<uint32_t>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint64_t out[4] = {0, 0, 0, 0};
+      uint8_t index = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        // Determine whether lane should be active and shift to align with
+        // element in predicate register.
+        uint64_t shifted_active = (n + i) < m ? 1ull << (i * 4) : 0;
+        out[index / 16] = out[index / 16] | shifted_active;
+        index++;
+      }
+
+      // Byte count = 4 as destination predicate is regarding words.
+      results[0] = getNZCVfromPred(out, VL_bits, 4);
+      results[1] = out;
+      break;
+    }
     case Opcode::AArch64_WHILELO_PXX_B: {  // whilelo pd.b, xn, xm
       const uint64_t n = operands[0].get<uint64_t>();
       const uint64_t m = operands[1].get<uint64_t>();

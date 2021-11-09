@@ -5200,6 +5200,54 @@ TEST_P(InstSve, whilelo) {
                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
   EXPECT_EQ(getNZCV(), 0b0110);
 
+  // 16-bit arrangement, 64-bit source operands
+  RUN_AARCH64(R"(
+    mov x0, #32
+
+    whilelo p0.h, xzr, x0
+  )");
+  CHECK_PREDICATE(
+      0, uint16_t,
+      {21845, 21845, 21845, 21845, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    mov x1, #16
+
+    whilelo p1.h, x1, x0
+  )");
+  CHECK_PREDICATE(1, uint16_t,
+                  {21845, 21845, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    mov x2, #27
+
+    whilelo p2.h, x2, x0
+  )");
+  CHECK_PREDICATE(2, uint16_t,
+                  {341, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    mov x3, #10
+
+    whilelo p3.h, x3, x0
+  )");
+  CHECK_PREDICATE(3, uint16_t,
+                  {21845, 21845, 1365, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelo p4.h, xzr, xzr
+  )");
+  CHECK_PREDICATE(4, uint16_t,
+                  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
   // 32-bit arrangement, 64-bit source operands
   RUN_AARCH64(R"(
     mov x0, #16
@@ -5280,6 +5328,191 @@ TEST_P(InstSve, whilelo) {
 
   RUN_AARCH64(R"(
     whilelo p4.d, xzr, xzr
+  )");
+  CHECK_PREDICATE(4, uint32_t, {0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // --------------------------------------------------------------------
+
+  // 8-bit arrangement, 32-bit source operands
+  RUN_AARCH64(R"(
+    mov w0, #64
+
+    whilelo p0.b, wzr, w0
+  )");
+  CHECK_PREDICATE(0, uint8_t, {255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0,
+                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 0,
+                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov w0, #64
+    mov w1, #32
+
+    whilelo p1.b, w1, w0
+  )");
+  CHECK_PREDICATE(1, uint8_t,
+                  {255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0,   0,   0,   0,   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #64
+    mov w2, #44
+
+    whilelo p2.b, w2, w0
+  )");
+  CHECK_PREDICATE(2, uint8_t,
+                  {255, 255, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0,   0,   0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #64
+    mov w3, #20
+
+    whilelo p3.b, w3, w0
+  )");
+  CHECK_PREDICATE(3, uint8_t,
+                  {255, 255, 255, 255, 255, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0,   0,   0,   0,   0,   0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelo p4.b, wzr, wzr
+  )");
+  CHECK_PREDICATE(4, uint8_t, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 16-bit arrangement, 32-bit source operands
+  RUN_AARCH64(R"(
+    mov w0, #32
+
+    whilelo p0.h, wzr, w0
+  )");
+  CHECK_PREDICATE(
+      0, uint16_t,
+      {21845, 21845, 21845, 21845, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov w0, #32
+    mov w1, #16
+
+    whilelo p1.h, w1, w0
+  )");
+  CHECK_PREDICATE(1, uint16_t,
+                  {21845, 21845, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #32
+    mov w2, #27
+
+    whilelo p2.h, w2, w0
+  )");
+  CHECK_PREDICATE(2, uint16_t,
+                  {341, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #32
+    mov w3, #10
+
+    whilelo p3.h, w3, w0
+  )");
+  CHECK_PREDICATE(3, uint16_t,
+                  {21845, 21845, 1365, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelo p4.h, wzr, wzr
+  )");
+  CHECK_PREDICATE(4, uint16_t,
+                  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 32-bit arrangement, 32-bit source operands
+  RUN_AARCH64(R"(
+    mov w0, #16
+
+    whilelo p0.s, wzr, w0
+  )");
+  CHECK_PREDICATE(0, uint32_t, {286331153, 286331153, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov w0, #16
+    mov w1, #8
+
+    whilelo p1.s, w1, w0
+  )");
+  CHECK_PREDICATE(1, uint32_t, {286331153, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #16
+    mov w2, #11
+
+    whilelo p2.s, w2, w0
+  )");
+  CHECK_PREDICATE(2, uint32_t, {69905, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #16
+    mov w3, #5
+
+    whilelo p3.s, w3, w0
+  )");
+  CHECK_PREDICATE(3, uint32_t, {286331153, 273, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelo p4.s, wzr, wzr
+  )");
+  CHECK_PREDICATE(4, uint32_t, {0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 64-bit arrangement, 32-bit source operands
+  RUN_AARCH64(R"(
+    mov w0, #8
+
+    whilelo p0.d, wzr, w0
+  )");
+  CHECK_PREDICATE(0, uint32_t, {0x1010101, 0x1010101, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov w0, #8
+    mov w1, #4
+
+    whilelo p1.d, w1, w0
+  )");
+  CHECK_PREDICATE(1, uint32_t, {0x1010101, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #8
+    mov w2, #5
+
+    whilelo p2.d, w2, w0
+  )");
+  CHECK_PREDICATE(2, uint32_t, {0x10101, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #8
+    mov w3, #2
+
+    whilelo p3.d, w3, w0
+  )");
+  CHECK_PREDICATE(3, uint32_t, {0x1010101, 0x101, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelo p4.d, wzr, wzr
   )");
   CHECK_PREDICATE(4, uint32_t, {0, 0, 0, 0, 0, 0, 0, 0});
   EXPECT_EQ(getNZCV(), 0b0110);
