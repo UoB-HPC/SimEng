@@ -6,6 +6,7 @@
 #include <sys/ioctl.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/termios.h>
 #include <sys/uio.h>
 #include <unistd.h>
