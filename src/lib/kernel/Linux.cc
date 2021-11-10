@@ -501,7 +501,16 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
   if (hfd < 0) {
     return EBADF;
   }
+
+#ifdef __MACH__
+  // The getdents64 does not exist on MacOS (and as such this function will
+  // never be called). But, in order to successfully build SimEng on MacOS the
+  // call to getdents64 in the underlying OS needs to be omitted. (Whole
+  // function isn't omitted as requires changes in multiple places).
+  return 0;
+#else
   return ::getdents64(hfd, buf, count);
+#endif
 }
 
 int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
