@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include <cstring>
 #include <fstream>
 
@@ -6,6 +8,9 @@
 namespace {
 
 using Syscall = AArch64RegressionTest;
+
+/** The maximum size of a filesystem path. */
+static const size_t LINUX_PATH_MAX = 4096;
 
 TEST_P(Syscall, ioctl) {
   // TIOCGWINSZ: test it returns zero and sets the output to anything
@@ -32,7 +37,7 @@ TEST_P(Syscall, ioctl) {
 }
 
 TEST_P(Syscall, faccessat) {
-  const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/input.txt";
+  const char filepath[] = "../../../../test/regression/aarch64/data/input.txt";
   initialHeapData_.resize(strlen(filepath) + 1);
   // Copy filepath to heap
   memcpy(initialHeapData_.data(), filepath, strlen(filepath) + 1);
@@ -89,10 +94,28 @@ TEST_P(Syscall, faccessat) {
     mov x8, #48
     svc #0
     mov x25, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(22), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(23), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(24), -1);
+  EXPECT_EQ(getGeneralRegister<int64_t>(25), -1);
 
-    # faccessat(2, fullFilePath, F_OK, 0) = 0
+  char abs_filepath[LINUX_PATH_MAX];
+  realpath(SIMENG_AARCH64_TEST_ROOT "/data/input.txt", abs_filepath);
+  initialHeapData_.resize(strlen(abs_filepath) + 1);
+  // Copy abs_filepath to heap
+  memcpy(initialHeapData_.data(), abs_filepath, strlen(abs_filepath) + 1);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # faccessat(-1, fullFilePath, F_OK, 0) = 0
     # If an absolute filepath is referenced, dirfd is ignored
-    mov x0, #2
+    mov x0, #-1
     mov x1, x20
     mov x2, #0
     mov x3, #0
@@ -100,11 +123,6 @@ TEST_P(Syscall, faccessat) {
     svc #0
     mov x26, x0
   )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
-  EXPECT_EQ(getGeneralRegister<int64_t>(22), 0);
-  EXPECT_EQ(getGeneralRegister<int64_t>(23), 0);
-  EXPECT_EQ(getGeneralRegister<int64_t>(24), -1);
-  EXPECT_EQ(getGeneralRegister<int64_t>(25), -1);
   EXPECT_EQ(getGeneralRegister<int64_t>(26), 0);
 }
 
