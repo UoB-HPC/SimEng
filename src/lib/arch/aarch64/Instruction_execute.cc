@@ -2459,7 +2459,7 @@ void Instruction::execute() {
       const float* n = operands[2].getAsVector<float>();
 
       const uint64_t VL_bits = 512;
-      const uint16_t partition_num = VL_bits / 32;
+      const uint16_t partition_num = VL_bits / 64;
       double out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
