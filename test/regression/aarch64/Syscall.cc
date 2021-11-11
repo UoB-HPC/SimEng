@@ -127,7 +127,7 @@ TEST_P(Syscall, faccessat) {
 }
 
 // TODO : Change how special files are delt with in OpenAt syscall before
-// implementing test. (Omit test for MacOS)
+// implementing test. (Omit test when on MacOS)
 
 //  TEST_P(Syscall, getdents64) {
 //   const char filepath[] = "/sys/devices/system/cpu/";
