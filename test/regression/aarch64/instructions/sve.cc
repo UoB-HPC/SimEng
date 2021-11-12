@@ -4866,10 +4866,21 @@ TEST_P(InstSve, uqdec) {
     uqdecd x0, all, mul #7
     uqdecd x1
     uqdecd x2, all, mul #7
+
+    mov w3, #1024
+    mov w4, #1024
+    mov w5, #1
+
+    uqdecd w3, all, mul #7
+    uqdecd w4
+    uqdecd w5, all, mul #7
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 968);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 1016);
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 912);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 1008);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
   // h arrangement
   RUN_AARCH64(R"(
     mov x0, #1024
