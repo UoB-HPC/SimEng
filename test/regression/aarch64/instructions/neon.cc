@@ -2466,6 +2466,19 @@ TEST_P(InstNeon, sub) {
   CHECK_NEON(2, uint64_t,
              {0xF0F0F0F0F0F0F0F0u - 0xDEADBEEF01234567u,
               0xDEADBEEF89ABCDEFu - 0x89ABCDEF01234567u});
+
+  // 64-bit single element
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    sub d2, d0, d1
+  )");
+  CHECK_NEON(2, uint64_t, {0xF0F0F0F0F0F0F0F0u - 0xDEADBEEF01234567u, 0});
 }
 
 TEST_P(InstNeon, ushll) {
