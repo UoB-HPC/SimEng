@@ -6332,6 +6332,12 @@ void Instruction::execute() {
       results[0] = static_cast<uint64_t>(0);
       break;
     }
+    case Opcode::AArch64_SUBv1i64: {  // sub dd, dn, dm
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = operands[1].get<uint64_t>();
+      results[0] = {n - m, 256};
+      break;
+    }
     case Opcode::AArch64_SUBv16i8: {  // sub vd.16b, vn.16b, vm.16b
       const uint8_t* n = operands[0].getAsVector<uint8_t>();
       const uint8_t* m = operands[1].getAsVector<uint8_t>();
