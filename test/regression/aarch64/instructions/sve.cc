@@ -4966,8 +4966,8 @@ TEST_P(InstSve, uqdec) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 968);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 1016);
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0);
-  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 912);
-  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 1008);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 968);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 1016);
   EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
   // h arrangement
   RUN_AARCH64(R"(
