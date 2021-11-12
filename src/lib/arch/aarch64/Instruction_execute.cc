@@ -6737,11 +6737,11 @@ void Instruction::execute() {
       // Since this range does not fit in any integral type,
       // a double is used as an intermediate value.
       // The end result must be saturated to fit in uint64_t.
-      auto intermediate = double(d) - (imm * (VL_bits / 32u));
+      auto intermediate = double(d) - (imm * (VL_bits / 64u));
       if (intermediate < 0) {
         results[0] = 0ull;
       } else {
-        results[0] = d - (imm * (VL_bits / 32u));
+        results[0] = d - (imm * (VL_bits / 64u));
       }
       break;
     }
