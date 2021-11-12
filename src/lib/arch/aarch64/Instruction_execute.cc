@@ -6686,6 +6686,23 @@ void Instruction::execute() {
       results[0] = bitfieldManipulate(source, UINT64_C(0), r, s);
       break;
     }
+    case Opcode::AArch64_UQDECD_WPiI: {  // uqdecd wd{, pattern{, MUL #imm}}
+      const uint32_t d = operands[0].get<uint32_t>();
+      const uint8_t imm = metadata.operands[1].imm;
+      const uint64_t VL_bits = 512;
+
+      // The range of possible values is [-128, UINT64_MAX - 8]
+      // Since this range does not fit in any integral type,
+      // a double is used as an intermediate value.
+      // The end result must be saturated to fit in uint64_t.
+      auto intermediate = double(d) - (imm * (VL_bits / 32u));
+      if (intermediate < 0) {
+        results[0] = 0ull;
+      } else {
+        results[0] = d - (imm * (VL_bits / 32u));
+      }
+      break;
+    }
     case Opcode::AArch64_UQDECD_XPiI: {  // uqdecd xd{, pattern{, MUL #imm}}
       const uint64_t d = operands[0].get<uint64_t>();
       const uint8_t imm = metadata.operands[1].imm;
