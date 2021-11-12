@@ -137,6 +137,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[1].type = ARM64_OP_IMM;
       break;
+    case Opcode::AArch64_FNMSB_ZPmZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FNMSB_ZPmZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FNMLS_ZPmZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FNMLS_ZPmZZ_S:

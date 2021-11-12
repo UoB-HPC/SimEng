@@ -3224,6 +3224,48 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_FNMSB_ZPmZZ_D: {  // fnmsb zdn.d, pg/m, zm.d, za.d
+      const double* n = operands[0].getAsVector<double>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const double* m = operands[2].getAsVector<double>();
+      const double* a = operands[3].getAsVector<double>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      double out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 8);
+        if (p[i / 8] & shifted_active) {
+          out[i] = -a[i] + n[i] * m[i];
+        } else {
+          out[i] = n[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
+    case Opcode::AArch64_FNMSB_ZPmZZ_S: {  // fnmsb zdn.s, pg/m, zm.s, za.s
+      const float* n = operands[0].getAsVector<float>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const float* m = operands[2].getAsVector<float>();
+      const float* a = operands[3].getAsVector<float>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      float out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 4);
+        if (p[i / 16] & shifted_active) {
+          out[i] = -a[i] + n[i] * m[i];
+        } else {
+          out[i] = n[i];
+        }
+      }
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_FNMSUBDrrr: {  // fnmsub dd, dn, dm, da
       double n = operands[0].get<double>();
       double m = operands[1].get<double>();
