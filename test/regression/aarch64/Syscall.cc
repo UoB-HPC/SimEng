@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
 #include <cstring>
-#include <filesystem>
 #include <fstream>
 #include <string>
 
@@ -42,13 +41,14 @@ TEST_P(Syscall, faccessat) {
   // `cmake --target test` and
   // `./build/test/regression/aarch64/regression-aarch64` are executed from
   // different places, so filepath needs to change depending on which is used.
-  const std::string cur_path = std::filesystem::current_path().c_str();
+  char tmp[LINUX_PATH_MAX];
+  getcwd(tmp, LINUX_PATH_MAX);
+  const std::string cur_path = tmp;
   const std::string filepath =
       (cur_path.find("aarch64") != std::string::npos)
           ? "../../../../test/regression/aarch64/data/input.txt"
           : "test/regression/aarch64/data/input.txt";
   // ? cmake --target test : ./build/test/regression/aarch64/regression-aarch64
-  printf("%s === %s\n", cur_path.c_str(), filepath.c_str());
 
   initialHeapData_.resize(filepath.length() + 1);
   // Copy filepath to heap
