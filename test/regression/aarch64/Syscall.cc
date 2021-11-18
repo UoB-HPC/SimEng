@@ -1,7 +1,9 @@
 #include <stdlib.h>
 
 #include <cstring>
+#include <filesystem>
 #include <fstream>
+#include <string>
 
 #include "AArch64RegressionTest.hh"
 
@@ -37,10 +39,19 @@ TEST_P(Syscall, ioctl) {
 }
 
 TEST_P(Syscall, faccessat) {
-  const char filepath[] = "../../../../test/regression/aarch64/data/input.txt";
-  initialHeapData_.resize(strlen(filepath) + 1);
+  // `cmake --target test` and
+  // `./build/test/regression/aarch64/regression-aarch64` are executed from
+  // different places, so filepath needs to change depending on which is used.
+  const std::string cur_path = std::filesystem::current_path().c_str();
+  const std::string filepath =
+      (cur_path.find("aarch64") != std::string::npos)
+          ? "../../../../test/regression/aarch64/data/input.txt"
+          : "test/regression/aarch64/data/input.txt";
+  // ? cmake --target test : ./build/test/regression/aarch64/regression-aarch64
+
+  initialHeapData_.resize(filepath.length() + 1);
   // Copy filepath to heap
-  memcpy(initialHeapData_.data(), filepath, strlen(filepath) + 1);
+  memcpy(initialHeapData_.data(), filepath.c_str(), filepath.length() + 1);
 
   RUN_AARCH64(R"(
     # Get heap address

@@ -111,7 +111,7 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
     // If absolute path used then dfd is dis-regarded.
     // Otherwise, a dirfd != AT_FDCWD isn't currently supported for relative
     // paths.
-    if (strlen(filename.c_str()) != strlen(absolutePath)) {
+    if (strncmp(filename.c_str(), absolutePath, strlen(absolutePath)) != 0) {
       assert("Unsupported dirfd argument in fstatat syscall");
       return EBADF;
     }
