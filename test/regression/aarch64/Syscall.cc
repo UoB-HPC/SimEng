@@ -48,6 +48,7 @@ TEST_P(Syscall, faccessat) {
           ? "../../../../test/regression/aarch64/data/input.txt"
           : "test/regression/aarch64/data/input.txt";
   // ? cmake --target test : ./build/test/regression/aarch64/regression-aarch64
+  printf("%s === %s\n", cur_path.c_str(), filepath.c_str());
 
   initialHeapData_.resize(filepath.length() + 1);
   // Copy filepath to heap
