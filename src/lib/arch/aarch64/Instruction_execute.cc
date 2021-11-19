@@ -5772,6 +5772,13 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
+    case Opcode::AArch64_SMSUBLrrr: {  // smsubl xd, wn, wm, xa
+      const int32_t n = operands[0].get<int32_t>();
+      const int32_t m = operands[1].get<int32_t>();
+      const int64_t a = operands[2].get<int64_t>();
+      results[0] = a - (n * m);
+      break;
+    }
     case Opcode::AArch64_SMULHrr: {  // smulh xd, xn, xm
       auto x = operands[0].get<uint64_t>();
       auto y = operands[1].get<uint64_t>();
