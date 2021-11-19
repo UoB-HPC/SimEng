@@ -38,21 +38,10 @@ TEST_P(Syscall, ioctl) {
 }
 
 TEST_P(Syscall, faccessat) {
-  // `cmake --target test` and
-  // `./build/test/regression/aarch64/regression-aarch64` are executed from
-  // different places, so filepath needs to change depending on which is used.
-  char tmp[LINUX_PATH_MAX];
-  getcwd(tmp, LINUX_PATH_MAX);
-  const std::string cur_path = tmp;
-  const std::string filepath =
-      (cur_path.find("aarch64") != std::string::npos)
-          ? "../../../../test/regression/aarch64/data/input.txt"
-          : "test/regression/aarch64/data/input.txt";
-  // ? cmake --target test : ./build/test/regression/aarch64/regression-aarch64
-
-  initialHeapData_.resize(filepath.length() + 1);
+  const char filepath[] = "./tempFile.txt";
+  initialHeapData_.resize(strlen(filepath) + 1);
   // Copy filepath to heap
-  memcpy(initialHeapData_.data(), filepath.c_str(), filepath.length() + 1);
+  memcpy(initialHeapData_.data(), filepath, strlen(filepath) + 1);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -60,6 +49,24 @@ TEST_P(Syscall, faccessat) {
     mov x8, 214
     svc #0
     mov x20, x0
+
+    # Create a new file to access and close immediately
+    # <tempfile> = openat(AT_FDCWD, filepath,
+    #                     O_CREAT | O_TRUNC | O_WRONLY,
+    #                     S_IRUSR)
+    mov x0, -100
+    mov x1, x20 
+    mov x2, 0x0241
+    mov x3, 400
+    mov x8, #56
+    svc #0
+    mov x21, x0
+
+    # close(fd=<input>)
+    mov x0, x21
+    mov x8, #57
+    svc #0
+
 
     # faccessat(AT_FDCWD, filepath, F_OK, 0) = 0
     mov x0, #-100
@@ -100,7 +107,7 @@ TEST_P(Syscall, faccessat) {
 
     # faccessat(AT_FDCWD, wrongFilepath, F_OK, 0) = -1
     mov x0, #-100
-    add x1, x20, #1
+    add x1, x20, #4
     mov x2, #0
     mov x3, #0
     mov x8, #48
@@ -112,6 +119,8 @@ TEST_P(Syscall, faccessat) {
   EXPECT_EQ(getGeneralRegister<int64_t>(23), 0);
   EXPECT_EQ(getGeneralRegister<int64_t>(24), -1);
   EXPECT_EQ(getGeneralRegister<int64_t>(25), -1);
+  // Delete output file after running test
+  unlink(filepath);
 
   char abs_filepath[LINUX_PATH_MAX];
   realpath(SIMENG_AARCH64_TEST_ROOT "/data/input.txt", abs_filepath);
