@@ -1189,6 +1189,74 @@ void Instruction::execute() {
       results[0] = (VL_bits / 32) * imm;
       break;
     }
+    case Opcode::AArch64_CNTP_XPP_B: {  // cntp xd, pg, pn.b
+      const uint64_t* pg = operands[0].getAsVector<uint64_t>();
+      const uint64_t* pn = operands[1].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      uint64_t count = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << i;
+        if (pg[i / 64] & shifted_active) {
+          count += (pn[i / 64] & shifted_active) ? 1 : 0;
+        }
+      }
+      results[0] = count;
+      break;
+    }
+    case Opcode::AArch64_CNTP_XPP_D: {  // cntp xd, pg, pn.d
+      const uint64_t* pg = operands[0].getAsVector<uint64_t>();
+      const uint64_t* pn = operands[1].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t count = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 8);
+        if (pg[i / 8] & shifted_active) {
+          count += (pn[i / 8] & shifted_active) ? 1 : 0;
+        }
+      }
+      results[0] = count;
+      break;
+    }
+    case Opcode::AArch64_CNTP_XPP_H: {  // cntp xd, pg, pn.h
+      const uint64_t* pg = operands[0].getAsVector<uint64_t>();
+      const uint64_t* pn = operands[1].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint64_t count = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 2);
+        if (pg[i / 32] & shifted_active) {
+          count += (pn[i / 32] & shifted_active) ? 1 : 0;
+        }
+      }
+      results[0] = count;
+      break;
+    }
+    case Opcode::AArch64_CNTP_XPP_S: {  // cntp xd, pg, pn.s
+      const uint64_t* pg = operands[0].getAsVector<uint64_t>();
+      const uint64_t* pn = operands[1].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint64_t count = 0;
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 4);
+        if (pg[i / 16] & shifted_active) {
+          count += (pn[i / 16] & shifted_active) ? 1 : 0;
+        }
+      }
+      results[0] = count;
+      break;
+    }
     case Opcode::AArch64_CNTv8i8: {  // cnt vd.8b, vn.8b
       const uint8_t* n = operands[0].getAsVector<uint8_t>();
       uint8_t out[16] = {0};

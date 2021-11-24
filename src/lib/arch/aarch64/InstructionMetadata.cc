@@ -115,6 +115,17 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_CNTP_XPP_B:
+      [[fallthrough]];
+    case Opcode::AArch64_CNTP_XPP_D:
+      [[fallthrough]];
+    case Opcode::AArch64_CNTP_XPP_H:
+      [[fallthrough]];
+    case Opcode::AArch64_CNTP_XPP_S:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_DECD_XPiI:
       [[fallthrough]];
     case Opcode::AArch64_DECB_XPiI:
