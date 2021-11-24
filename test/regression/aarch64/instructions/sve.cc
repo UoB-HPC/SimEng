@@ -401,6 +401,47 @@ TEST_P(InstSve, cnt) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 24);
 }
 
+TEST_P(InstSve, cntp) {
+  // VL = 512-bits
+  RUN_AARCH64(R"(
+    # 8-bit
+    mov x0, #32
+    ptrue p0.b
+    whilelo p1.b, xzr, x0
+    cntp x0, p0, p0.b
+    cntp x1, p1, p0.b
+
+    # 16-bit
+    mov x2, #16
+    ptrue p0.h
+    whilelo p2.h, xzr, x2
+    cntp x2, p0, p0.h
+    cntp x3, p2, p0.h
+
+    # 32-bit
+    mov x4, #8
+    ptrue p0.s
+    whilelo p3.s, xzr, x4
+    cntp x4, p0, p0.s
+    cntp x5, p3, p0.s
+
+    # 64-bit
+    mov x6, #4
+    ptrue p0.d
+    whilelo p4.d, xzr, x6
+    cntp x6, p0, p0.d
+    cntp x7, p4, p0.d
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 8);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 8);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 4);
+}
+
 TEST_P(InstSve, dec) {
   // VL = 512-bits
   // pattern = all
