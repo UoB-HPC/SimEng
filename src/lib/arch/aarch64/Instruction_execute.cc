@@ -1935,6 +1935,26 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_FADD_ZPmZ_S: {  // fadd zdn.s, pg/m, zdn.s, zm.s
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const float* b = operands[1].getAsVector<float>();
+      const float* c = operands[2].getAsVector<float>();
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      float out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 4);
+        if (p[i / 16] & shifted_active) {
+          out[i] = b[i] + c[i];
+        } else {
+          out[i] = b[i];
+        }
+      }
+
+      results[0] = {out, 256};
+      break;
+    }
     case Opcode::AArch64_FADD_ZZZ_D: {  // fadd zd.d, zn.d, zm.d
       const double* n = operands[0].getAsVector<double>();
       const double* m = operands[1].getAsVector<double>();

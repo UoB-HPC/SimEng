@@ -972,17 +972,22 @@ TEST_P(InstSve, fadd) {
     mov x1, #0
     mov x2, #8
     whilelo p0.s, xzr, x2
+    ptrue p1.s
 
     ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+    ld1w {z4.s}, p1/z, [x0, x1, lsl #2]
+    ld1w {z5.s}, p1/z, [x0, x1, lsl #2]
 
     fadd z2.s, z1.s, z0.s
 
     # FADD with constant
-    ptrue p1.s
     ld1w {z3.s}, p0/z, [x0, x2, lsl #2]
     fadd z3.s, z1.s, z0.s
     fadd z3.s, p1/m, z3.s, 0.5
+
+    fadd z4.s, p1/m, z4.s, z3.s
+    fadd z5.s, p0/m, z5.s, z4.s
   )");
 
   CHECK_NEON(2, float,
@@ -991,6 +996,14 @@ TEST_P(InstSve, fadd) {
   CHECK_NEON(3, float,
              {-33.21f, -43.177f, 0.375f, 81.22f, -84.91f, -684.23f, 702.25f,
               115.36f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f});
+  CHECK_NEON(
+      4, float,
+      {-32.21f, -85.937f, 0.25f, 81.22f, -44.65f, -1368.95f, 702.1f, 223.22f,
+       -34.21f, -0.417f, 0.5f, 81.22f, -125.17f, 0.49f, 702.4f, 7.5f});
+  CHECK_NEON(
+      5, float,
+      {-31.21f, -128.697f, 0.125f, 81.22f, -4.39f, -2053.67f, 701.95f, 331.08f,
+       -34.71f, -0.917f, 0.0f, 80.72f, -125.67f, -0.01f, 701.90f, 7.0f});
 }
 
 TEST_P(InstSve, fadda) {
