@@ -2680,7 +2680,7 @@ TEST_P(InstSve, fsqrt) {
 TEST_P(InstSve, fsub) {
   // VL = 512-bits
   // float
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(128);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   fheap[0] = 1.0;
   fheap[1] = -42.76;
@@ -2714,11 +2714,20 @@ TEST_P(InstSve, fsub) {
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
 
     fsub z2.s, z1.s, z0.s
-  )");
 
+    # PREDICATED VECTOR
+    ptrue p1.s
+    ld1w {z4.s}, p1/z, [x0, x1, lsl #2]
+    
+    fsub z4.s, p0/m, z4.s, z1.s
+  )");
   CHECK_NEON(2, float,
              {-35.71f, 41.843f, 0.125f, 80.72f, -165.93f, 684.709960938f,
               702.050048828f, -100.86f, 0, 0, 0, 0, 0, 0, 0, 0});
+  CHECK_NEON(4, float,
+             {35.71f, -41.843f, -0.125f, -80.72f, 165.93f, -684.71f,
+              -702.050048828f, 100.86f, -34.71f, -0.917f, 0.0f, 80.72f,
+              -125.67f, -0.01f, 701.90f, 7.0f});
 
   // double
   initialHeapData_.resize(64);
@@ -2747,9 +2756,18 @@ TEST_P(InstSve, fsub) {
     ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
 
     fsub z2.d, z1.d, z0.d
+
+    # PREDICATED VECTOR
+    ptrue p1.d
+    ld1d {z3.d}, p1/z, [x0, x1, lsl #3]
+    
+    fsub z3.d, p0/m, z3.d, z1.d
   )");
 
   CHECK_NEON(2, double, {-35.71, 41.842999999999996, 0.125, 80.72, 0, 0, 0, 0});
+  CHECK_NEON(
+      3, double,
+      {35.71, -41.842999999999996, -0.125, -80.72, -34.71, -0.917, 0.0, 80.72});
 }
 
 TEST_P(InstSve, incp) {

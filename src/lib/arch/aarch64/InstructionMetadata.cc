@@ -366,6 +366,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FMUL_ZPmZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_FSUB_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FSUB_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_MUL_ZPmZ_B:
       [[fallthrough]];
     case Opcode::AArch64_MUL_ZPmZ_D:
