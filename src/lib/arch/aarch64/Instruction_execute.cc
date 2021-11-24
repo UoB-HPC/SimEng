@@ -183,6 +183,34 @@ bool conditionHolds(uint8_t cond, uint8_t nzcv) {
   return (inverse ? !result : result);
 }
 
+// Rounding function that rounds a double to nearest integer (64-bit). In event
+// of a tie (i.e. 7.5) it will be rounded to the nearest even number.
+int64_t doubleRoundToNearestTiesToEven(double input) {
+  if (std::fabs(input - std::trunc(input)) == 0.5) {
+    if (static_cast<int64_t>(input - 0.5) % 2 == 0) {
+      return static_cast<int64_t>(input - 0.5);
+    } else {
+      return static_cast<int64_t>(input + 0.5);
+    }
+  }
+  // Otherwise round to nearest
+  return static_cast<int64_t>(std::round(input));
+}
+
+// Rounding function that rounds a float to nearest integer (32-bit). In event
+// of a tie (i.e. 7.5) it will be rounded to the nearest even number.
+int32_t floatRoundToNearestTiesToEven(float input) {
+  if (std::fabs(input - std::trunc(input)) == 0.5f) {
+    if (static_cast<int32_t>(input - 0.5f) % 2 == 0) {
+      return static_cast<int32_t>(input - 0.5f);
+    } else {
+      return static_cast<int32_t>(input + 0.5f);
+    }
+  }
+  // Otherwise round to nearest
+  return static_cast<int32_t>(std::round(input));
+}
+
 void Instruction::executionNYI() {
   exceptionEncountered_ = true;
   exception_ = InstructionException::ExecutionNotYetImplemented;
@@ -3372,6 +3400,46 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_FRINTADr: {  // frinta dd, dn
       results[0] = RegisterValue(round(operands[0].get<double>()), 256);
+      break;
+    }
+    case Opcode::AArch64_FRINTN_ZPmZ_D: {  // frintn zd.d, pg/m, zn.d
+      const int64_t* d = operands[0].getAsVector<int64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const double* n = operands[2].getAsVector<double>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      int64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 8);
+        if (p[i / 8] & shifted_active) {
+          out[i] = doubleRoundToNearestTiesToEven(n[i]);
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_FRINTN_ZPmZ_S: {  // frintn zd.s, pg/m, zn.s
+      const int32_t* d = operands[0].getAsVector<int32_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const float* n = operands[2].getAsVector<float>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      int32_t out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 4);
+        if (p[i / 16] & shifted_active) {
+          out[i] = floatRoundToNearestTiesToEven(n[i]);
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FRSQRTEv1i32: {  // frsqrte sd, sn
