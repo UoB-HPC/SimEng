@@ -4994,6 +4994,15 @@ void Instruction::execute() {
       results[0] = {bits, 256};
       break;
     }
+    case Opcode::AArch64_MOVIv8b_ns: {  // movi vd.8b, #imm
+      int8_t bits = static_cast<uint8_t>(metadata.operands[1].imm);
+      uint8_t vector[16] = {0};
+      for (int i = 0; i < 8; i++) {
+        vector[i] = bits;
+      }
+      results[0] = {vector, 256};
+      break;
+    }
     case Opcode::AArch64_MOVIv16b_ns: {  // movi vd.16b, #imm
       uint8_t bits = static_cast<uint8_t>(metadata.operands[1].imm);
       uint8_t vector[16];
