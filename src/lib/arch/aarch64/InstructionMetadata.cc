@@ -33,6 +33,19 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
+    case Opcode::AArch64_AND_ZPmZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_AND_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_AND_ZPmZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_AND_ZPmZ_S:
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_BICv4i32:
       // BIC incorrectly flags destination as WRITE only
       operands[0].access = CS_AC_WRITE | CS_AC_READ;
