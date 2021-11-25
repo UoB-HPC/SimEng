@@ -2491,10 +2491,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTZS_ZPmZ_DtoS: {  // fcvtzs zd.s, pg/m, zn.d
-      const int32_t* a = operands[0].getAsVector<int32_t>();
-
+      const int32_t* d = operands[0].getAsVector<int32_t>();
       const uint64_t* p = operands[1].getAsVector<uint64_t>();
-      const double* b = operands[2].getAsVector<double>();
+      const double* n = operands[2].getAsVector<double>();
 
       const uint64_t VL_bits = 512;
       const uint16_t partition_num = VL_bits / 64;
@@ -2503,22 +2502,99 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = 1ull << (i * 8);
         if (p[i / 8] & shifted_active) {
-          if (b[i] > 2147483647) {
+          if (n[i] > 2147483647) {
             out[(2 * i)] = 2147483647;
-          } else if (b[i] < -2147483648) {
+          } else if (n[i] < -2147483648) {
             out[(2 * i)] = -2147483648;
           } else {
-            out[(2 * i)] = static_cast<int32_t>(std::trunc(b[i]));
+            out[(2 * i)] = static_cast<int32_t>(std::trunc(n[i]));
           }
           // 4294967295 = 0xFFFFFFFF
-          out[(2 * i) + 1] = (b[i] < 0) ? 4294967295u : 0;
+          out[(2 * i) + 1] = (n[i] < 0) ? 4294967295u : 0;
         } else {
-          out[(2 * i)] = a[(2 * i)];
-          out[(2 * i) + 1] = a[(2 * i) + 1];
+          out[(2 * i)] = d[(2 * i)];
+          out[(2 * i) + 1] = d[(2 * i) + 1];
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_FCVTZS_ZPmZ_DtoD: {  // fcvtzs zd.d, pg/m, zn.d
+      const int64_t* d = operands[0].getAsVector<int64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const double* n = operands[2].getAsVector<double>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      int64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 8);
+        if (p[i / 8] & shifted_active) {
+          if (n[i] > INT64_MAX) {
+            out[i] = INT64_MAX;
+          } else if (n[i] < INT64_MIN) {
+            out[i] = INT64_MIN;
+          } else {
+            out[i] = static_cast<int64_t>(std::trunc(n[i]));
+          }
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_FCVTZS_ZPmZ_StoD: {  // fcvtzs zd.d, pg/m, zn.s
+      const int64_t* d = operands[0].getAsVector<int64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const float* n = operands[2].getAsVector<float>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      int64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 8);
+        if (p[i / 8] & shifted_active) {
+          if (n[(2 * i)] > INT64_MAX)
+            out[i] = INT64_MAX;
+          else if (n[(2 * i)] < INT64_MIN)
+            out[i] = INT64_MIN;
+          else
+            out[i] = static_cast<int64_t>(std::trunc(n[(2 * i)]));
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_FCVTZS_ZPmZ_StoS: {  // fcvtzs zd.s, pg/m, zn.s
+      const int32_t* d = operands[0].getAsVector<int32_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const float* n = operands[2].getAsVector<float>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      int32_t out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 4);
+        if (p[i / 16] & shifted_active) {
+          if (n[i] > INT32_MAX) {
+            out[i] = INT32_MAX;
+          } else if (n[i] < INT32_MIN) {
+            out[i] = INT32_MIN;
+          } else {
+            out[i] = static_cast<int32_t>(std::trunc(n[i]));
+          }
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FCVTZSv2f64: {  // fcvtzs vd.2d, vn.2d

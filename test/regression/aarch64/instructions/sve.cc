@@ -1500,11 +1500,6 @@ TEST_P(InstSve, fcvtzs) {
     mov x8, 214
     svc #0
 
-    dup z1.s, #1
-    dup z2.s, #1
-    dup z4.s, #1
-    dup z5.s, #1
-
     ptrue p0.d
 
     mov x1, #0
@@ -1515,10 +1510,21 @@ TEST_P(InstSve, fcvtzs) {
     ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
     ld1d {z3.d}, p1/z, [x0, x3, lsl #3]
 
+    # Double to Int32
+    dup z1.s, #1
+    dup z2.s, #1
+    dup z4.s, #1
     fcvtzs z1.s, p0/m, z0.d
     fcvtzs z2.s, p1/m, z0.d
-
     fcvtzs z4.s, p1/m, z3.d
+
+    # Double to Int64
+    dup z5.d, #1
+    dup z6.d, #1
+    dup z7.d, #1
+    fcvtzs z5.d, p0/m, z0.d
+    fcvtzs z6.d, p1/m, z0.d
+    fcvtzs z7.d, p1/m, z3.d
   )");
 
   CHECK_NEON(1, int64_t, {1, -1, 4, -4, 3, -3, 7, -7});
@@ -1527,6 +1533,75 @@ TEST_P(InstSve, fcvtzs) {
   CHECK_NEON(4, int64_t,
              {2147483647, -2147483648, -10698505, 0, 4294967297, 4294967297,
               4294967297, 4294967297});
+
+  CHECK_NEON(5, int64_t, {1, -1, 4, -4, 3, -3, 7, -7});
+  CHECK_NEON(6, int64_t, {1, -1, 4, -4, 1, 1, 1, 1});
+  CHECK_NEON(7, int64_t,
+             {INT64_MAX, -114458013083425, -10698505, 0, 1, 1, 1, 1});
+
+  // Single
+  initialHeapData_.resize(128);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 1.0f;
+  fheap[1] = -42.76f;
+  fheap[2] = -0.125f;
+  fheap[3] = 0.0f;
+  fheap[4] = 40.26f;
+  fheap[5] = -684.72f;
+  fheap[6] = -1.15f;
+  fheap[7] = 107.86f;
+
+  fheap[8] = -118548568215563221587412.3368451;
+  fheap[9] = 118548568215563221587412.3368451;
+  fheap[10] = 0.0f;
+  fheap[11] = 80.72f;
+  fheap[12] = -125.67f;
+  fheap[13] = -0.01f;
+  fheap[14] = 701.90f;
+  fheap[15] = 7.0f;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ptrue p0.s
+
+    mov x1, #0
+    mov x2, #8
+    whilelo p1.s, xzr, x2
+
+    ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z3.s}, p1/z, [x0, x2, lsl #2]
+
+    # Single to Int64
+    dup z1.d, #1
+    dup z2.d, #1
+    dup z4.d, #1
+    fcvtzs z1.d, p0/m, z0.s
+    fcvtzs z2.d, p1/m, z0.s
+    fcvtzs z4.d, p1/m, z3.s
+
+    # Single to Int32
+    dup z5.s, #10
+    dup z6.s, #10
+    dup z7.s, #10
+    fcvtzs z5.s, p0/m, z0.s
+    fcvtzs z6.s, p1/m, z0.s
+    fcvtzs z7.s, p1/m, z3.s
+  )");
+  CHECK_NEON(1, int64_t, {1, 0, 40, -1, INT64_MIN, 0, -125, 701});
+  CHECK_NEON(2, int64_t, {1, 0, 40, -1, 1, 1, 1, 1});
+  CHECK_NEON(4, int64_t, {INT64_MIN, 0, -125, 701, 1, 1, 1, 1});
+
+  CHECK_NEON(5, int32_t,
+             {1, -42, 0, 0, 40, -684, -1, 107, INT32_MIN, INT32_MAX, 0, 80,
+              -125, 0, 701, 7});
+  CHECK_NEON(6, int32_t,
+             {1, -42, 0, 0, 40, -684, -1, 107, 10, 10, 10, 10, 10, 10, 10, 10});
+  CHECK_NEON(7, int32_t,
+             {INT32_MIN, INT32_MAX, 0, 80, -125, 0, 701, 7, 10, 10, 10, 10, 10,
+              10, 10, 10});
 }
 
 TEST_P(InstSve, fcvt) {
