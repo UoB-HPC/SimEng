@@ -1083,6 +1083,93 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
+    case Opcode::AArch64_CMPEQ_PPzZI_B: {  // cmpeq pd.b, pg/z, zn.b, #imm
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const int8_t* n = operands[1].getAsVector<int8_t>();
+      const int8_t m = static_cast<int8_t>(metadata.operands[3].imm);
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i % 64);
+        if (p[i / 64] & shifted_active) {
+          out[i / 64] =
+              (n[i] == m) ? (out[i / 64] | shifted_active) : out[i / 64];
+        }
+      }
+
+      // Byte count = 1 as destination predicate is regarding bytes.
+      results[0] = getNZCVfromPred(out, VL_bits, 1);
+      results[1] = out;
+      break;
+    }
+    case Opcode::AArch64_CMPEQ_PPzZI_D: {  // cmpeq pd.d, pg/z, zn.d, #imm
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const int64_t* n = operands[1].getAsVector<int64_t>();
+      const int8_t m = static_cast<int8_t>(metadata.operands[3].imm);
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          out[i / 8] = (n[i] == m) ? (out[i / 8] | shifted_active) : out[i / 8];
+        }
+      }
+
+      // Byte count = 8 as destination predicate is regarding double.
+      results[0] = getNZCVfromPred(out, VL_bits, 8);
+      results[1] = out;
+      break;
+    }
+    case Opcode::AArch64_CMPEQ_PPzZI_H: {  // cmpeq pd.h, pg/z, zn.h, #imm
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const int16_t* n = operands[1].getAsVector<int16_t>();
+      const int8_t m = static_cast<int8_t>(metadata.operands[3].imm);
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 32) * 2);
+        if (p[i / 32] & shifted_active) {
+          out[i / 32] =
+              (n[i] == m) ? (out[i / 32] | shifted_active) : out[i / 32];
+        }
+      }
+
+      // Byte count = 2 as destination predicate is regarding half-word.
+      results[0] = getNZCVfromPred(out, VL_bits, 2);
+      results[1] = out;
+      break;
+    }
+    case Opcode::AArch64_CMPEQ_PPzZI_S: {  // cmpeq pd.s, pg/z, zn.s, #imm
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const int32_t* n = operands[1].getAsVector<int32_t>();
+      const int8_t m = static_cast<int8_t>(metadata.operands[3].imm);
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint64_t out[4] = {0, 0, 0, 0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
+        if (p[i / 16] & shifted_active) {
+          out[i / 16] =
+              (n[i] == m) ? (out[i / 16] | shifted_active) : out[i / 16];
+        }
+      }
+
+      // Byte count = 4 as destination predicate is regarding word.
+      results[0] = getNZCVfromPred(out, VL_bits, 4);
+      results[1] = out;
+      break;
+    }
     case Opcode::AArch64_CMPGT_PPzZZ_B: {  // cmpgt pd.b, pg/z, zn.b, zm.b
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
       const int8_t* n = operands[1].getAsVector<int8_t>();
