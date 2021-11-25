@@ -1944,6 +1944,7 @@ TEST_P(InstNeon, movi) {
   // vector 8-bit
   RUN_AARCH64(R"(
     movi v0.16b, #1
+    movi v1.8b, #2
   )");
   CHECK_NEON(0, uint8_t,
              {static_cast<uint8_t>(1), static_cast<uint8_t>(1),
@@ -1954,6 +1955,12 @@ TEST_P(InstNeon, movi) {
               static_cast<uint8_t>(1), static_cast<uint8_t>(1),
               static_cast<uint8_t>(1), static_cast<uint8_t>(1),
               static_cast<uint8_t>(1), static_cast<uint8_t>(1)})
+  CHECK_NEON(1, uint8_t,
+             {static_cast<uint8_t>(2), static_cast<uint8_t>(2),
+              static_cast<uint8_t>(2), static_cast<uint8_t>(2),
+              static_cast<uint8_t>(2), static_cast<uint8_t>(2),
+              static_cast<uint8_t>(2), static_cast<uint8_t>(2), 0, 0, 0, 0, 0,
+              0, 0, 0})
 }
 
 TEST_P(InstNeon, mvni) {
