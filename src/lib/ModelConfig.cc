@@ -44,7 +44,8 @@ void ModelConfig::validate() {
   std::string root = "";
   // Core
   root = "Core";
-  subFields = {"Simulation-Mode", "Clock-Frequency", "Fetch-Block-Size"};
+  subFields = {"Simulation-Mode", "Clock-Frequency", "Fetch-Block-Size",
+               "Checkpoint-File"};
   nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
@@ -62,6 +63,18 @@ void ModelConfig::validate() {
     } else {
       invalid_ << "\t- Fetch-Block-Size must be a power of 2\n";
     }
+  }
+  if (configFile_[root][subFields[3]].IsDefined()) {
+    std::ifstream path(configFile_[root][subFields[3]].as<std::string>());
+    if (!path.is_open()) {
+      invalid_ << "\t- " << subFields[3] << " path "
+               << configFile_[root][subFields[3]].as<std::string>()
+               << " is invalid\n";
+    } else {
+      path.close();
+    }
+  } else {
+    configFile_[root][subFields[3]] = "";
   }
   subFields.clear();
 

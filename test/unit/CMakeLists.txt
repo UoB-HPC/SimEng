@@ -18,8 +18,6 @@ set(TEST_SOURCES
     LatencyMemoryInterfaceTest.cc
     )
 
-configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
-
 add_executable(unittests ${TEST_SOURCES})
 
 target_include_directories(unittests PUBLIC ${CMAKE_CURRENT_BINARY_DIR})

@@ -1,7 +1,6 @@
 #include <cmath>
 
 #include "InstructionMetadata.hh"
-#include "simeng/arch/aarch64/Instruction.hh"
 
 namespace simeng {
 namespace arch {

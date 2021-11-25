@@ -1,5 +1,3 @@
-#include "simeng/arch/aarch64/Instruction.hh"
-
 #include <algorithm>
 #include <cassert>
 #include <vector>
@@ -124,6 +122,11 @@ void Instruction::setMemoryAddresses(
   memoryData.resize(addresses.size());
   memoryAddresses = addresses;
   dataPending_ = addresses.size();
+  if (accessStack_) {
+    for (auto& address : memoryAddresses) {
+      address.stackAccess = true;
+    }
+  }
 }
 
 void Instruction::setMemoryAddresses(
@@ -131,6 +134,11 @@ void Instruction::setMemoryAddresses(
   dataPending_ = addresses.size();
   memoryData.resize(addresses.size());
   memoryAddresses = std::move(addresses);
+  if (accessStack_) {
+    for (auto& address : memoryAddresses) {
+      address.stackAccess = true;
+    }
+  }
 }
 
 span<const MemoryAccessTarget> Instruction::getGeneratedAddresses() const {

@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "capstone/capstone.h"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/RegisterValue.hh"
@@ -70,6 +71,9 @@ class Instruction {
   /** Check whether the instruction has written its values back and is ready to
    * commit. */
   bool canCommit() const;
+
+  /** Check whether the instruction reads or writes to the stack. */
+  bool accessesStack() const;
 
   /** Retrieve register results. */
   virtual const span<RegisterValue> getResults() const = 0;
@@ -176,6 +180,9 @@ class Instruction {
   /** Whether or not this instruction is ready to commit. */
   bool canCommit_ = false;
 
+  /** Whether or not this instruction reads/writes to the stack. */
+  bool accessStack_ = false;
+
   // Memory
   /** The number of data items that still need to be supplied. */
   uint8_t dataPending_ = 0;
@@ -198,6 +205,7 @@ class Instruction {
   /** Has this instruction been flushed? */
   bool flushed_ = false;
 
+  // Latency
   /** The number of cycles this instruction takes to execute. */
   uint16_t latency_ = 1;
 
@@ -209,6 +217,7 @@ class Instruction {
    * for. */
   uint16_t stallCycles_ = 1;
 
+  // Other
   /** The execution ports that this instruction can be issued to. */
   std::vector<uint8_t> supportedPorts_ = {};
 

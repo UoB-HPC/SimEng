@@ -39,6 +39,8 @@ bool Instruction::hasExecuted() const { return executed_; }
 void Instruction::setCommitReady() { canCommit_ = true; }
 bool Instruction::canCommit() const { return canCommit_; }
 
+bool Instruction::accessesStack() const { return accessStack_; }
+
 bool Instruction::hasAllData() const { return (dataPending_ == 0); }
 
 uint16_t Instruction::getLatency() const { return latency_; }
