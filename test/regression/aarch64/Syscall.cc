@@ -25,10 +25,10 @@ TEST_P(Syscall, ioctl) {
     svc #0
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(0), 0);
-  EXPECT_NE(getMemoryValue<uint16_t>(process_->getHeapStart() + 0), -1);
-  EXPECT_NE(getMemoryValue<uint16_t>(process_->getHeapStart() + 2), -1);
-  EXPECT_NE(getMemoryValue<uint16_t>(process_->getHeapStart() + 4), -1);
-  EXPECT_NE(getMemoryValue<uint16_t>(process_->getHeapStart() + 6), -1);
+  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessHeapStart() + 0), -1);
+  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessHeapStart() + 2), -1);
+  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessHeapStart() + 4), -1);
+  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessHeapStart() + 6), -1);
 }
 
 TEST_P(Syscall, faccessat) {
@@ -183,7 +183,7 @@ TEST_P(Syscall, file_read) {
 
   // Check result of read operations
   const char reference[] = "ABCD\0UV\0EFGH\0\0\0\0MNOPQRST";
-  char* data = processMemory_ + process_->getHeapStart();
+  char* data = processMemory_ + process_->getProcessHeapStart();
   for (int i = 0; i < sizeof(reference); i++) {
     EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
   }
@@ -312,9 +312,11 @@ TEST_P(Syscall, mmap) {
     svc #0
     mov x11, x0
   )");
-  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getMmapStart());
-  EXPECT_EQ(getGeneralRegister<uint64_t>(10), process_->getMmapStart() + 65536);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(11), process_->getMmapStart() + 69632);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getProcessMmapStart());
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10),
+            process_->getProcessMmapStart() + 65536);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            process_->getProcessMmapStart() + 69632);
 
   // Test for mmap allocation between two previous allocations
   RUN_AARCH64(R"(
@@ -395,13 +397,18 @@ TEST_P(Syscall, mmap) {
     svc #0
     mov x15, x0
   )");
-  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getMmapStart());
-  EXPECT_EQ(getGeneralRegister<uint64_t>(10), process_->getMmapStart() + 4096);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(11), process_->getMmapStart() + 16384);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getProcessMmapStart());
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10),
+            process_->getProcessMmapStart() + 4096);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            process_->getProcessMmapStart() + 16384);
   EXPECT_EQ(getGeneralRegister<uint64_t>(12), 0);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(13), process_->getMmapStart() + 20480);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(14), process_->getMmapStart() + 4096);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(15), process_->getMmapStart() + 8192);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(13),
+            process_->getProcessMmapStart() + 20480);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(14),
+            process_->getProcessMmapStart() + 4096);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(15),
+            process_->getProcessMmapStart() + 8192);
 }
 
 TEST_P(Syscall, munmap) {
@@ -432,7 +439,7 @@ TEST_P(Syscall, munmap) {
     svc #0
     mov x11, x0
   )");
-  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getMmapStart());
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getProcessMmapStart());
   EXPECT_EQ(getGeneralRegister<int64_t>(10), 0);
   EXPECT_EQ(getGeneralRegister<int64_t>(11), 0);
 
@@ -464,7 +471,8 @@ TEST_P(Syscall, munmap) {
     svc #0
     mov x11, x0
   )");
-  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getMmapStart() + 1024);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9),
+            process_->getProcessMmapStart() + 1024);
   EXPECT_EQ(getGeneralRegister<int64_t>(10), -1);
   EXPECT_EQ(getGeneralRegister<int64_t>(11), -1);
 }

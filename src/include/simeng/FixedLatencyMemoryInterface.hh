@@ -39,7 +39,8 @@ struct FixedLatencyMemoryInterfaceRequest {
 /** A memory interface where all requests respond with a fixed latency. */
 class FixedLatencyMemoryInterface : public MemoryInterface {
  public:
-  FixedLatencyMemoryInterface(char* memory, size_t size, uint16_t latency);
+  FixedLatencyMemoryInterface(char* memory, size_t size, uint16_t latency,
+                              Translator& translator);
 
   /** Queue a read request from the supplied target location.
    *
@@ -79,6 +80,10 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
 
   /** The number of times this interface has been ticked. */
   uint64_t tickCounter_ = 0;
+
+  /** The address translator between program virtual address space and SimEng
+   * process memory. */
+  Translator& translator_;
 
   /** Returns true if unsigned overflow occurs. */
   bool unsignedOverflow_(uint64_t a, uint64_t b) const {

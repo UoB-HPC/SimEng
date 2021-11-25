@@ -1,13 +1,5 @@
 #include "gtest/gtest.h"
-
-namespace simeng::arch::aarch64 {
-
-// Forward declaration of ShiftValue function.
-template <typename T>
-std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
-    T value, uint8_t shiftType, uint8_t amount);
-
-}  // namespace simeng::arch::aarch64
+#include "simeng/arch/aarch64/Instruction.hh"
 
 namespace {
 

@@ -488,7 +488,8 @@ TEST_P(InstLoad, ldrxpre) {
     ldr x1, [x0, #8]!
     ldr x2, [x0, #8]!
   )");
-  EXPECT_EQ(getGeneralRegister<uint64_t>(0), process_->getHeapStart() + 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0),
+            process_->getProcessHeapStart() + 16);
   EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xDEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0x12345678);
 }

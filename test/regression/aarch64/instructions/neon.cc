@@ -2626,7 +2626,6 @@ TEST_P(InstNeon, xtn) {
 
     # Load and narrow integer values
     ldr q0, [x0]
-    ldr q1, [x0, #16]
     xtn v2.4h, v0.4s
   )");
   CHECK_NEON(2, uint16_t, {42, (1u << 15), UINT16_MAX, 7, 0, 0, 0, 0});

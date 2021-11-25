@@ -1,13 +1,18 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 
 #include <cassert>
+#include <iostream>
 
 namespace simeng {
 
 FixedLatencyMemoryInterface::FixedLatencyMemoryInterface(char* memory,
                                                          size_t size,
-                                                         uint16_t latency)
-    : memory_(memory), size_(size), latency_(latency) {}
+                                                         uint16_t latency,
+                                                         Translator& translator)
+    : memory_(memory),
+      size_(size),
+      latency_(latency),
+      translator_(translator) {}
 
 void FixedLatencyMemoryInterface::tick() {
   tickCounter_++;
@@ -21,28 +26,66 @@ void FixedLatencyMemoryInterface::tick() {
     }
 
     const auto& target = request.target;
+    Translation translation = translator_.get_mapping(target.address);
 
     if (request.write) {
+      // std::cout << "FIXED WRITE (" << unsigned(target.size) << " Bytes)";
+      // if (target.stackAccess) {
+      //   std::cout << " to stack";
+      // }
+      // std::cout << ": 0x" << std::hex << target.address << std::dec << " ->
+      // 0x"
+      //           << std::hex << translation.address << std::dec << ":"
+      //           << translation.allocation << std::endl;
       // Write: write data directly to memory
-      assert(target.address + target.size <= size_ &&
+      assert(translation.address + target.size <= size_ &&
              "Attempted to write beyond memory limit");
 
-      auto ptr = memory_ + target.address;
+      assert(translation.allocation && "Attempted to write to unmapped region");
+
+      auto ptr = memory_ + translation.address;
       // Copy the data from the RegisterValue to memory
       memcpy(ptr, request.data.getAsVector<char>(), target.size);
     } else {
+      // std::cout << "FIXED READ (" << unsigned(target.size) << " Bytes)";
+      // if (target.stackAccess) {
+      //   std::cout << " from stack";
+      // }
+      // std::cout << ": 0x" << std::hex << target.address << std::dec << " ->
+      // 0x"
+      //           << std::hex << translation.address << std::dec << ":"
+      //           << translation.allocation;
       // Read: read data into `completedReads`
-      if (target.address + target.size > size_ ||
-          unsignedOverflow_(target.address, target.size)) {
+      if (!translation.allocation ||
+          (translation.address + target.size > size_)) {
         // Read outside of memory; return an invalid value to signal a fault
         completedReads_.push_back({target, RegisterValue(), request.requestId});
       } else {
-        const char* ptr = memory_ + target.address;
+        const char* ptr = memory_ + translation.address;
 
         // Copy the data at the requested memory address into a RegisterValue
         completedReads_.push_back(
             {target, RegisterValue(ptr, target.size), request.requestId});
+
+        //   std::cout << " = " << std::hex;
+
+        //   if (target.size == 1) {
+        //     std::cout << unsigned(RegisterValue(ptr,
+        //     target.size).get<uint8_t>());
+        //   } else if (target.size == 2) {
+        //     std::cout << unsigned(
+        //         RegisterValue(ptr, target.size).get<uint16_t>());
+        //   } else if (target.size == 4) {
+        //     std::cout << unsigned(
+        //         RegisterValue(ptr, target.size).get<uint32_t>());
+        //   } else if (target.size == 8) {
+        //     std::cout << unsigned(
+        //         RegisterValue(ptr, target.size).get<uint64_t>());
+        //   } else {
+        //     std::cout << "?";
+        //   }
       }
+      // std::cout << std::dec << std::endl;
     }
 
     // Remove the request from the queue

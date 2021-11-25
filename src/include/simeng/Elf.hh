@@ -19,6 +19,8 @@ struct ElfHeader {
   uint64_t physicalAddress;
   uint64_t fileSize;
   uint64_t memorySize;
+  uint64_t alignment;
+  char* content;
 };
 
 /** A processed Executable and Linkable Format (ELF) file. */
@@ -26,7 +28,8 @@ class Elf {
  public:
   Elf(std::string path);
   ~Elf();
-  const span<char> getProcessImage() const;
+  // const span<char> getProcessImage() const;
+  const void getContents(std::vector<ElfHeader>& contents) const;
   bool isValid() const;
   uint64_t getEntryPoint() const;
 
@@ -35,7 +38,7 @@ class Elf {
   std::vector<ElfHeader> headers_;
 
   bool isValid_ = false;
-  char* processImage_;
+  // char* processImage_;
   uint64_t processImageSize_;
 };
 

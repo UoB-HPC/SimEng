@@ -60,35 +60,46 @@ Elf::Elf(std::string path) {
     file.read(reinterpret_cast<char*>(&(header.physicalAddress)), fieldBytes);
     file.read(reinterpret_cast<char*>(&(header.fileSize)), fieldBytes);
     file.read(reinterpret_cast<char*>(&(header.memorySize)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.alignment)), fieldBytes);
+    header.content = (char*)malloc(header.fileSize);
+
+    // Read in contents where program header points to
+    file.seekg(header.offset);
+    file.read(header.content, header.fileSize);
 
     if (header.virtualAddress + header.memorySize > processImageSize_) {
       processImageSize_ = header.virtualAddress + header.memorySize;
     }
   }
 
-  processImage_ = new char[processImageSize_];
+  // processImage_ = new char[processImageSize_];
 
   // Process headers; only observe LOAD sections for this basic implementation
-  for (const auto& header : headers_) {
-    if (header.type == 1) {  // LOAD
-      file.seekg(header.offset);
-      // Read `fileSize` bytes from `file` into the appropriate place in process
-      // memory
-      file.read(processImage_ + header.virtualAddress, header.fileSize);
-    }
-  }
+  // for (const auto& header : headers_) {
+  //   if (header.type == 1) {  // LOAD
+  //     file.seekg(header.offset);
+  //     // Read `fileSize` bytes from `file` into the appropriate place in
+  //     process
+  //     // memory
+  //     file.read(processImage_ + header.virtualAddress, header.fileSize);
+  //   }
+  // }
 
   file.close();
 }
 
 Elf::~Elf() {
-  if (isValid_) {
-    delete[] processImage_;
-  }
+  // if (isValid_) {
+  //   delete[] processImage_;
+  // }
 }
 
-const span<char> Elf::getProcessImage() const {
-  return {processImage_, processImageSize_};
+// const span<char> Elf::getProcessImage() const {
+//   return {processImage_, processImageSize_};
+// }
+
+const void Elf::getContents(std::vector<ElfHeader>& contents) const {
+  contents = headers_;
 }
 
 uint64_t Elf::getEntryPoint() const { return entryPoint_; }

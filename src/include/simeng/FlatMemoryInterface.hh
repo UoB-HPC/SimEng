@@ -9,7 +9,7 @@ namespace simeng {
 /** A memory interface to a flat memory system. */
 class FlatMemoryInterface : public MemoryInterface {
  public:
-  FlatMemoryInterface(char* memory, size_t size);
+  FlatMemoryInterface(char* memory, size_t size, Translator& translator);
 
   /** Request a read from the supplied target location.
    *
@@ -38,6 +38,9 @@ class FlatMemoryInterface : public MemoryInterface {
   char* memory_;
   /** The size of accessible memory. */
   size_t size_;
+  /** The address translator between program virtual address space and SimEng
+   * process memory. */
+  Translator& translator_;
   /** A vector containing all completed read requests. */
   std::vector<MemoryReadResult> completedReads_;
 };

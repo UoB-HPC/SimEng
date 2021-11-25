@@ -21,6 +21,7 @@
 #include "simeng/BTBPredictor.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
+#include "simeng/Translator.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/models/emulation/Core.hh"
@@ -48,9 +49,14 @@ void RegressionTest::run(const char* source, const char* triple) {
   // Get pre-defined config file for OoO model
   YAML::Node config = generateConfig();
 
+  // Create instance of address translator
+  std::unique_ptr<simeng::Translator> address_translator =
+      std::make_unique<simeng::Translator>();
+
   // Create a linux process from the assembled code block
   process_ = std::make_unique<simeng::kernel::LinuxProcess>(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_));
+      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_),
+      *address_translator);
   ASSERT_TRUE(process_->isValid());
   uint64_t entryPoint = process_->getEntryPoint();
 
@@ -62,25 +68,31 @@ void RegressionTest::run(const char* source, const char* triple) {
   std::copy(processImage.begin(), processImage.end(), processMemory_);
 
   // Create memory interfaces for instruction and data access
-  simeng::FlatMemoryInterface instructionMemory(processMemory_,
-                                                processMemorySize_);
+  simeng::FlatMemoryInterface instructionMemory(
+      processMemory_, processMemorySize_, *address_translator);
   std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-      std::make_unique<simeng::FlatMemoryInterface>(processMemory_,
-                                                    processMemorySize_);
+      std::make_unique<simeng::FlatMemoryInterface>(
+          processMemory_, processMemorySize_, *address_translator);
   std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
       std::make_unique<simeng::FixedLatencyMemoryInterface>(
-          processMemory_, processMemorySize_, 4);
+          processMemory_, processMemorySize_, 4, *address_translator);
   std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
   // Create the OS kernel and the process
-  simeng::kernel::Linux kernel;
-  kernel.createProcess(*process_);
+  simeng::kernel::Linux kernel(*process_, *address_translator);
 
   // Populate the heap with initial data (specified by the test being run).
-  ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
+  ASSERT_LT(process_->getProcessHeapStart() + initialHeapData_.size(),
             process_->getStackPointer());
   std::copy(initialHeapData_.begin(), initialHeapData_.end(),
-            processMemory_ + process_->getHeapStart());
+            processMemory_ + process_->getProcessHeapStart());
+
+  // Updated mapped region to include initial heap data
+  // std::cout << "Updating from run function" << std::endl;
+  address_translator->update_mapping(
+      {0, process_->getProcessHeapStart()},
+      {0, process_->getProcessHeapStart() + initialHeapData_.size()},
+      {0, process_->getSimulationHeapStart() + initialHeapData_.size()});
 
   // Create the architecture
   architecture_ = createArchitecture(kernel, config);

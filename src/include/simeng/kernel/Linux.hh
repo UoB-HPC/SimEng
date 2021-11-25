@@ -4,6 +4,7 @@
 #include <set>
 #include <unordered_map>
 
+#include "simeng/Translator.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/version.hh"
 
@@ -68,14 +69,17 @@ struct LinuxProcessState {
   int64_t pid;
   /** The path of the executable that created this process. */
   std::string path;
-  /** The address of the start of the heap. */
-  uint64_t startBrk;
-  /** The address of the current end of heap. */
-  uint64_t currentBrk;
+  /** The pair of addresses of the start of the process and simulation heap
+   * respectively. */
+  std::pair<uint64_t, uint64_t> startBrk;
+  /** The pair of addresses of the current end of the process and simulation
+   * heap respectively. */
+  std::pair<uint64_t, uint64_t> currentBrk;
   /** The initial stack pointer. */
   uint64_t initialStackPointer;
-  /** The address of the start of the mmap region. */
-  uint64_t mmapRegion;
+  /** The pair of addresses of the start of the process and simulation
+   * mmap region respectively. */
+  std::pair<uint64_t, uint64_t> mmapRegion;
   /** The page size of the process memory. */
   uint64_t pageSize;
   /** Contiguous memory allocations from the mmap system call. */
@@ -119,7 +123,7 @@ struct rusage {
 class Linux {
  public:
   /** Create a new Linux process running above this kernel. */
-  void createProcess(const LinuxProcess& process);
+  Linux(const LinuxProcess& process, Translator& translator);
 
   /** Retrieve the initial stack pointer. */
   uint64_t getInitialStackPointer() const;
@@ -221,6 +225,10 @@ class Linux {
  private:
   /** The state of the user-space processes running above the kernel. */
   std::vector<LinuxProcessState> processStates_;
+
+  /** The address translator between program virtual address space and SimEng
+   * process memory. */
+  Translator& translator_;
 
   /** Translation between special files paths and simeng replacement files. */
   std::unordered_map<std::string, const std::string> specialPathTranslations_;

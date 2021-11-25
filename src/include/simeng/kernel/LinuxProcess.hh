@@ -1,6 +1,7 @@
 #pragma once
 
 #include "simeng/Elf.hh"
+#include "simeng/Translator.hh"
 
 namespace simeng {
 namespace kernel {
@@ -33,25 +34,34 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
  */
 class LinuxProcess {
  public:
-  /** Construct a Linux process from a vector of command-line arguments.
+  /** Construct a Linux process from a vector of command-line arguments, a
+   * possible coredump file, and a address translator.
    *
-   * The first argument is a path to an executable ELF file. */
-  LinuxProcess(const std::vector<std::string>& commandLine);
+   * The first element of the command-line vector is a path to an executable ELF
+   * file. */
+  LinuxProcess(const std::vector<std::string>& commandLine,
+               const std::string coredumpPath, Translator& translator);
 
   /** Construct a Linux process from region of instruction memory, with the
    * entry point fixed at 0. */
-  LinuxProcess(span<char> instructions);
+  LinuxProcess(span<char> instructions, Translator& translator);
 
   ~LinuxProcess();
 
-  /** Get the address of the start of the heap region. */
-  uint64_t getHeapStart() const;
+  /** Get the address of the start of the process heap region. */
+  uint64_t getProcessHeapStart() const;
+
+  /** Get the address of the start of the simulation heap region. */
+  uint64_t getSimulationHeapStart() const;
 
   /** Get the address of the top of the stack. */
   uint64_t getStackStart() const;
 
-  /** Get the address of the start of the mmap region. */
-  uint64_t getMmapStart() const;
+  /** Get the initial address of the process mmap region. */
+  uint64_t getProcessMmapStart() const;
+
+  /** Get the initial address of the simulation mmap region. */
+  uint64_t getSimulationMmapStart() const;
 
   /** Get the page size. */
   uint64_t getPageSize() const;
@@ -84,11 +94,17 @@ class LinuxProcess {
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
 
-  /** The address of the start of the heap region. */
-  uint64_t heapStart_;
+  /** The address of the start of the process heap region. */
+  uint64_t processHeapStart_ = 0;
 
-  /** The address of the start of region of memory given to mmap. */
-  uint64_t mmapStart_;
+  /** The address of the start of the simulation heap region. */
+  uint64_t simulationHeapStart_ = 0;
+
+  /** The initial address for process memory given to mmap calls . */
+  uint64_t processMmapStart_;
+
+  /** The initial address for simulation memory given to mmap calls. */
+  uint64_t simulationMmapStart_;
 
   /** The page size of the process memory. */
   const uint64_t pageSize_ = 4096;
@@ -104,6 +120,10 @@ class LinuxProcess {
 
   /** The process command and its arguments. */
   std::vector<std::string> commandLine_;
+
+  /** The address translator between program virtual address space and SimEng
+   * process memory. */
+  Translator& translator_;
 
   /** Whether the process image was created successfully. */
   bool isValid_ = false;

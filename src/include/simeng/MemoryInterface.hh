@@ -1,6 +1,7 @@
 #pragma once
 
 #include "simeng/RegisterValue.hh"
+#include "simeng/Translator.hh"
 #include "simeng/span.hh"
 
 namespace simeng {
@@ -11,6 +12,8 @@ struct MemoryAccessTarget {
   uint64_t address;
   /** The number of bytes to access at `address`. */
   uint8_t size;
+  /** The access is to the stack. */
+  bool stackAccess = false;
 
   /** Check for equality of two access targets. */
   bool operator==(const MemoryAccessTarget& other) const {

@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace kernel {
@@ -15,8 +16,10 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
   return value + (boundary - remainder);
 }
 
-LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine)
-    : commandLine_(commandLine) {
+LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
+                           const std::string coredumpPath,
+                           Translator& translator)
+    : commandLine_(commandLine), translator_(translator) {
   // Parse ELF file
   assert(commandLine.size() > 0);
   Elf elf(commandLine[0]);
@@ -25,48 +28,140 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine)
   }
   isValid_ = true;
 
+  // Speculatively parse coredump file
+  Elf coredump(coredumpPath);
+
   entryPoint_ = elf.getEntryPoint();
 
-  span<char> elfProcessImage = elf.getProcessImage();
+  // span<char> elfProcessImage = elf.getProcessImage();
+  std::vector<ElfHeader> headerContents;
+  elf.getContents(headerContents);
+  for (const auto& header : headerContents) {
+    if (header.type == 1) {
+      if (!translator_.add_mapping(
+              {header.virtualAddress,
+               header.virtualAddress + header.memorySize},
+              {simulationHeapStart_,
+               simulationHeapStart_ + header.memorySize})) {
+        isValid_ = false;
+        return;
+      }
+      simulationHeapStart_ += header.memorySize;
+      // #### Won't work for dynamically linked binaries as the stack is a LOAD
+      // segment ####
+      processHeapStart_ =
+          header.virtualAddress + header.memorySize > processHeapStart_
+              ? header.virtualAddress + header.memorySize
+              : processHeapStart_;
+    }
+  }
+
+  translator_.setHeapStart(processHeapStart_, simulationHeapStart_);
+  // std::cout << "# heapStart_: " << std::hex << simulationHeapStart_ <<
+  // std::dec
+  //           << " -> " << std::hex << processHeapStart_ << std::dec <<
+  //           std::endl;
+
+  translator_.add_mapping({processHeapStart_, processHeapStart_},
+                          {simulationHeapStart_, simulationHeapStart_});
 
   // Align heap start to a 32-byte boundary
-  heapStart_ = alignToBoundary(elfProcessImage.size(), 32);
+  // heapStart_ = alignToBoundary(heapStart_, 32);
 
   // Set mmap region start to be an equal distance from the stack and heap
   // starts. Additionally, align to the page size (4kb)
-  mmapStart_ =
-      alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
+  simulationMmapStart_ = alignToBoundary(
+      simulationHeapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
+  processMmapStart_ = 0x400000000000;
 
   // Calculate process image size, including heap + stack
-  size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
+  size_ = simulationHeapStart_ + HEAP_SIZE + STACK_SIZE;
+
   processImage_ = new char[size_];
 
+  uint64_t lastboundary = 0;
+
+  for (const auto& header : headerContents) {
+    if (header.type == 1) {
+      std::memcpy(processImage_ + lastboundary, header.content,
+                  header.fileSize);
+      lastboundary += header.memorySize;
+    }
+  }
+
+  // for (int i = entryPoint_; i < heapStart_; i++) {
+  //   if ((i % 16 == 0)) {
+  //     printf("\n%08x  ", i);
+  //   }
+  //   if ((i != 0) && (i % 16 != 0) && (i % 8 == 0)) {
+  //     printf(" ");
+  //   }
+  //   printf("%02hhx ", processImage_[i]);
+  // }
+
   // Copy ELF process image to process image
-  std::copy(elfProcessImage.begin(), elfProcessImage.end(), processImage_);
+  // std::copy(elfProcessImage.begin(), elfProcessImage.end(), processImage_);
 
   createStack();
+
+  if (!translator_.add_mapping(
+          {getStackStart() - STACK_SIZE, getStackStart()},
+          {getStackStart() - STACK_SIZE, getStackStart()})) {
+    isValid_ = false;
+    return;
+  }
+
+  // for (int i = 0; i < size_; i++) {
+  //   if ((i % 16 == 0)) {
+  //     printf("\n%08x  ", i);
+  //   }
+  //   if ((i != 0) && (i % 16 != 0) && (i % 8 == 0)) {
+  //     printf(" ");
+  //   }
+  //   printf("%02hhx ", processImage_[i]);
+  // }
 }
 
-LinuxProcess::LinuxProcess(span<char> instructions) {
+LinuxProcess::LinuxProcess(span<char> instructions, Translator& translator)
+    : translator_(translator) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 
   isValid_ = true;
 
   // Align heap start to a 32-byte boundary
-  heapStart_ = alignToBoundary(instructions.size(), 32);
+  simulationHeapStart_ = processHeapStart_ =
+      alignToBoundary(instructions.size(), 32);
 
   // Set mmap region start to be an equal distance from the stack and heap
   // starts. Additionally, align to the page size (4kb)
-  mmapStart_ =
-      alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
+  simulationMmapStart_ = processMmapStart_ = alignToBoundary(
+      simulationHeapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
 
-  size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
+  translator_.setHeapStart(processMmapStart_, simulationMmapStart_);
+
+  size_ = simulationHeapStart_ + HEAP_SIZE + STACK_SIZE;
   processImage_ = new char[size_];
 
   std::copy(instructions.begin(), instructions.end(), processImage_);
 
+  if (!translator_.add_mapping({0, processHeapStart_},
+                               {0, simulationHeapStart_})) {
+    isValid_ = false;
+    return;
+  }
+
+  translator_.add_mapping({processHeapStart_, processHeapStart_},
+                          {simulationHeapStart_, simulationHeapStart_});
+
   createStack();
+
+  if (!translator_.add_mapping(
+          {getStackStart() - STACK_SIZE, getStackStart()},
+          {getStackStart() - STACK_SIZE, getStackStart()})) {
+    isValid_ = false;
+    return;
+  }
 }
 
 LinuxProcess::~LinuxProcess() {
@@ -75,11 +170,19 @@ LinuxProcess::~LinuxProcess() {
   }
 }
 
-uint64_t LinuxProcess::getHeapStart() const { return heapStart_; }
+uint64_t LinuxProcess::getProcessHeapStart() const { return processHeapStart_; }
+
+uint64_t LinuxProcess::getSimulationHeapStart() const {
+  return simulationHeapStart_;
+}
 
 uint64_t LinuxProcess::getStackStart() const { return size_; }
 
-uint64_t LinuxProcess::getMmapStart() const { return mmapStart_; }
+uint64_t LinuxProcess::getProcessMmapStart() const { return processMmapStart_; }
+
+uint64_t LinuxProcess::getSimulationMmapStart() const {
+  return simulationMmapStart_;
+}
 
 uint64_t LinuxProcess::getPageSize() const { return pageSize_; }
 
@@ -126,12 +229,17 @@ void LinuxProcess::createStack() {
     // Null entry to seperate strings
     stringBytes.push_back(0);
   }
+  // NULL entry at the top of initial stack
+  for (int i = 0; i < 8; i++) {
+    stringBytes.push_back(1);
+  }
 
   // Store strings and record both argv and environment pointers
   // Block out stack space for strings to be stored in
   stackPointer_ -= alignToBoundary(stringBytes.size() + 1, 32);
   uint16_t ptrCount = 1;
   initialStackFrame.push_back(stackPointer_);  // argv[0] ptr
+  uint64_t stringsStart = stackPointer_;
   for (int i = 0; i < stringBytes.size(); i++) {
     if (ptrCount == commandLine_.size()) {
       // null terminator to seperate argv and env strings
@@ -151,7 +259,9 @@ void LinuxProcess::createStack() {
   // TODO: populate remaining auxillary vector entries
   initialStackFrame.push_back(6);  // AT_PAGESZ
   initialStackFrame.push_back(pageSize_);
-  initialStackFrame.push_back(0);  // null terminator
+  initialStackFrame.push_back(25);            // AT_RANDOM
+  initialStackFrame.push_back(stringsStart);  // Use start of strings
+  initialStackFrame.push_back(0);             // null terminator
 
   size_t stackFrameSize = initialStackFrame.size() * 8;
 

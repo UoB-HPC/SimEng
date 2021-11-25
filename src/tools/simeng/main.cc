@@ -13,6 +13,7 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/ModelConfig.hh"
+#include "simeng/Translator.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
@@ -77,13 +78,19 @@ int main(int argc, char** argv) {
     executablePath = std::string(argv[2]);
   }
 
+  // Create instance of address translator
+  std::unique_ptr<simeng::Translator> address_translator =
+      std::make_unique<simeng::Translator>();
+
   // Create the process image
   std::unique_ptr<simeng::kernel::LinuxProcess> process;
 
   if (executablePath.length() > 0) {
     // Attempt to create the process image from the specified command-line
     std::vector<std::string> commandLine(argv + 2, argv + argc);
-    process = std::make_unique<simeng::kernel::LinuxProcess>(commandLine);
+    process = std::make_unique<simeng::kernel::LinuxProcess>(
+        commandLine, config["Core"]["Checkpoint-File"].as<std::string>(),
+        *address_translator);
     if (!process->isValid()) {
       std::cerr << "Could not read/parse " << argv[2] << std::endl;
       exit(1);
@@ -180,7 +187,8 @@ int main(int argc, char** argv) {
     // memcpy(memory, memoryValues.data(), memoryValues.size() * sizeof(int));
 
     process = std::make_unique<simeng::kernel::LinuxProcess>(
-        simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)));
+        simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)),
+        *address_translator);
   }
 
   // Read the process image and copy to memory
@@ -192,11 +200,10 @@ int main(int argc, char** argv) {
   uint64_t entryPoint = process->getEntryPoint();
 
   // Create the OS kernel with the process
-  simeng::kernel::Linux kernel;
-  kernel.createProcess(*process.get());
+  simeng::kernel::Linux kernel(*process.get(), *address_translator);
 
-  simeng::FlatMemoryInterface instructionMemory(processMemory,
-                                                processMemorySize);
+  simeng::FlatMemoryInterface instructionMemory(
+      processMemory, processMemorySize, *address_translator);
 
   // Create the architecture, with knowledge of the kernel
   auto arch = simeng::arch::aarch64::Architecture(kernel, config);
@@ -238,7 +245,8 @@ int main(int argc, char** argv) {
       modeString = "Out-of-Order";
       dataMemory = std::make_unique<simeng::FixedLatencyMemoryInterface>(
           processMemory, processMemorySize,
-          config["L1-Cache"]["Access-Latency"].as<uint16_t>());
+          config["L1-Cache"]["Access-Latency"].as<uint16_t>(),
+          *address_translator);
       core = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
           predictor, portAllocator, rsArrangement, config);
@@ -247,8 +255,8 @@ int main(int argc, char** argv) {
     case SimulationMode::InOrderPipelined: {
       modeString = "In-Order Pipelined";
       std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-          std::make_unique<simeng::FlatMemoryInterface>(processMemory,
-                                                        processMemorySize);
+          std::make_unique<simeng::FlatMemoryInterface>(
+              processMemory, processMemorySize, *address_translator);
       core = std::make_unique<simeng::models::inorder::Core>(
           instructionMemory, *flatDataMemory, processMemorySize, entryPoint,
           arch, predictor);
@@ -258,7 +266,7 @@ int main(int argc, char** argv) {
     default: {
       modeString = "Emulation";
       dataMemory = std::make_unique<simeng::FlatMemoryInterface>(
-          processMemory, processMemorySize);
+          processMemory, processMemorySize, *address_translator);
       core = std::make_unique<simeng::models::emulation::Core>(
           instructionMemory, *dataMemory, entryPoint, processMemorySize, arch);
       break;

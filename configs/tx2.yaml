@@ -6,6 +6,7 @@ Core:
   Simulation-Mode: outoforder
   Clock-Frequency: 2.5
   Fetch-Block-Size: 32
+  # Checkpoint-File: ../core
 Register-Set:
   GeneralPurpose-Count: 154
   FloatingPoint/SVE-Count: 90

@@ -1,14 +1,20 @@
 #include "gtest/gtest.h"
 #include "simeng/FixedLatencyMemoryInterface.hh"
+#include "simeng/Translator.hh"
 
 namespace {
 
 // Test that we can write data and it completes after a number of cycles.
 TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
+  // Create instance of address translator
+  std::unique_ptr<simeng::Translator> address_translator =
+      std::make_unique<simeng::Translator>();
+  address_translator->add_mapping({0, 4}, {0, 4});
+
   // Create a memory interface with a two cycle latency
   uint32_t memoryData = 0;
   simeng::FixedLatencyMemoryInterface memory(
-      reinterpret_cast<char*>(&memoryData), 4, 2);
+      reinterpret_cast<char*>(&memoryData), 4, 2, *address_translator);
   EXPECT_FALSE(memory.hasPendingRequests());
 
   // Write a 32-bit value to memory
@@ -30,9 +36,12 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
 
 // Test that out-of-bounds memory reads are correctly handled.
 TEST(LatencyMemoryInterfaceTest, OutofBoundsRead) {
+  // Create instance of address translator
+  std::unique_ptr<simeng::Translator> address_translator =
+      std::make_unique<simeng::Translator>();
   uint32_t memoryData = 0;
   simeng::FixedLatencyMemoryInterface memory(
-      reinterpret_cast<char*>(&memoryData), 4, 1);
+      reinterpret_cast<char*>(&memoryData), 4, 1, *address_translator);
 
   // Create a target such that address + size will overflow
   simeng::MemoryAccessTarget overflowTarget = {UINT64_MAX, 4};

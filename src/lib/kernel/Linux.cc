@@ -17,15 +17,19 @@
 namespace simeng {
 namespace kernel {
 
-void Linux::createProcess(const LinuxProcess& process) {
+Linux::Linux(const LinuxProcess& process, Translator& translator)
+    : translator_(translator) {
   assert(process.isValid() && "Attempted to use an invalid process");
   assert(processStates_.size() == 0 && "Multiple processes not yet supported");
   processStates_.push_back({.pid = 0,  // TODO: create unique PIDs
                             .path = process.getPath(),
-                            .startBrk = process.getHeapStart(),
-                            .currentBrk = process.getHeapStart(),
+                            .startBrk = {process.getProcessHeapStart(),
+                                         process.getSimulationHeapStart()},
+                            .currentBrk = {process.getProcessHeapStart(),
+                                           process.getSimulationHeapStart()},
                             .initialStackPointer = process.getStackPointer(),
-                            .mmapRegion = process.getMmapStart(),
+                            .mmapRegion = {process.getProcessMmapStart(),
+                                           process.getSimulationMmapStart()},
                             .pageSize = process.getPageSize()});
   processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
@@ -48,11 +52,20 @@ int64_t Linux::brk(uint64_t address) {
          "Attempted to move the program break before creating a process");
 
   auto& state = processStates_[0];
+
+  uint64_t old_brk = state.currentBrk.first;
   // Move the break if it's within the heap region
-  if (address > state.startBrk) {
-    state.currentBrk = address;
+  if (address > state.startBrk.first) {
+    state.currentBrk.first = address;
+    state.currentBrk.second += (address - old_brk);
+    // std::cout << "Updating from brk function" << std::endl;
+    translator_.update_mapping(
+        {state.startBrk.first, old_brk},
+        {state.startBrk.first, state.currentBrk.first},
+        {state.startBrk.second, state.currentBrk.second});
   }
-  return state.currentBrk;
+
+  return state.currentBrk.first;
 }
 
 uint64_t Linux::clockGetTime(uint64_t clkId, uint64_t systemTimer,
@@ -306,83 +319,93 @@ uint64_t Linux::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 }
 
 int64_t Linux::munmap(uint64_t addr, size_t length) {
-  LinuxProcessState* lps = &processStates_[0];
-  if (addr % lps->pageSize != 0) {
-    // addr must be a multiple of the process page size
-    return -1;
-  }
-  int i;
-  vm_area_struct alloc;
-  // Find addr in allocations
-  for (i = 0; i < lps->contiguousAllocations.size(); i++) {
-    alloc = lps->contiguousAllocations[i];
-    if (alloc.vm_start == addr) {
-      if ((alloc.vm_end - alloc.vm_start) < length) {
-        // length must not be larger than the original allocation
-        return -1;
-      }
-      if (i != 0) {
-        lps->contiguousAllocations[i - 1].vm_next =
-            lps->contiguousAllocations[i].vm_next;
-      }
-      lps->contiguousAllocations.erase(lps->contiguousAllocations.begin() + i);
-      return 0;
-    }
-  }
+  // LinuxProcessState* lps = &processStates_[0];
+  // if (addr % lps->pageSize != 0) {
+  //   // addr must be a multiple of the process page size
+  //   return -1;
+  // }
+  // int i;
+  // vm_area_struct alloc;
+  // // Find addr in allocations
+  // for (i = 0; i < lps->contiguousAllocations.size(); i++) {
+  //   alloc = lps->contiguousAllocations[i];
+  //   if (alloc.vm_start == addr) {
+  //     if ((alloc.vm_end - alloc.vm_start) < length) {
+  //       // length must not be larger than the original allocation
+  //       return -1;
+  //     }
+  //     if (i != 0) {
+  //       lps->contiguousAllocations[i - 1].vm_next =
+  //           lps->contiguousAllocations[i].vm_next;
+  //     }
+  //     lps->contiguousAllocations.erase(lps->contiguousAllocations.begin() +
+  //     i); return 0;
+  //   }
+  // }
 
-  for (int i = 0; i < lps->nonContiguousAllocations.size(); i++) {
-    alloc = lps->nonContiguousAllocations[i];
-    if (alloc.vm_start == addr) {
-      if ((alloc.vm_end - alloc.vm_start) < length) {
-        // length must not be larger than the original allocation
-        return -1;
-      }
-      lps->nonContiguousAllocations.erase(
-          lps->nonContiguousAllocations.begin() + i);
-      return 0;
-    }
-  }
-  // Not an error if the indicated range does no contain any mapped pages
-  return 0;
+  // for (int i = 0; i < lps->nonContiguousAllocations.size(); i++) {
+  //   alloc = lps->nonContiguousAllocations[i];
+  //   if (alloc.vm_start == addr) {
+  //     if ((alloc.vm_end - alloc.vm_start) < length) {
+  //       // length must not be larger than the original allocation
+  //       return -1;
+  //     }
+  //     lps->nonContiguousAllocations.erase(
+  //         lps->nonContiguousAllocations.begin() + i);
+  //     return 0;
+  //   }
+  // }
+  // // Not an error if the indicated range does no contain any mapped pages
+  // return 0;
+  return translator_.munmap_deallocation(addr, length);
 }
 
 uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
                      off_t offset) {
-  LinuxProcessState* lps = &processStates_[0];
-  std::shared_ptr<struct vm_area_struct> newAlloc(new vm_area_struct);
-  if (addr == 0) {  // Kernel decides allocation
-    if (lps->contiguousAllocations.size() > 1) {
-      // Determine if the new allocation can fit between existing allocations,
-      // append to end of allocations if not
-      for (auto& alloc : lps->contiguousAllocations) {
-        if (alloc.vm_next != NULL &&
-            (alloc.vm_next->vm_start - alloc.vm_end) >= length) {
-          newAlloc->vm_start = alloc.vm_end;
-          // Re-link contiguous allocation to include new allocation
-          newAlloc->vm_next = alloc.vm_next;
-          alloc.vm_next = newAlloc;
-        }
-      }
-      if (newAlloc->vm_start == 0) {
-        newAlloc->vm_start = lps->contiguousAllocations.back().vm_end;
-        lps->contiguousAllocations.back().vm_next = newAlloc;
-      }
-    } else if (lps->contiguousAllocations.size() > 0) {
-      // Append allocation to end of list and link first entry to new allocation
-      newAlloc->vm_start = lps->contiguousAllocations[0].vm_end;
-      lps->contiguousAllocations[0].vm_next = newAlloc;
-    } else {
-      // If no allocation exists, allocate to start of the mmap region
-      newAlloc->vm_start = lps->mmapRegion;
-    }
-    // The end of the allocation must be rounded up to the nearest page size
-    newAlloc->vm_end =
-        alignToBoundary(newAlloc->vm_start + length, lps->pageSize);
-    lps->contiguousAllocations.push_back(*newAlloc);
-  } else {  // Use hint to provide allocation
+  // LinuxProcessState* lps = &processStates_[0];
+  // std::shared_ptr<struct vm_area_struct> newAlloc(new vm_area_struct);
+  // if (addr == 0) {  // Kernel decides allocation
+  //   if (lps->contiguousAllocations.size() > 1) {
+  //     // Determine if the new allocation can fit between existing
+  //     allocations,
+  //     // append to end of allocations if not
+  //     for (auto& alloc : lps->contiguousAllocations) {
+  //       // '- 2' to ensure allocation that fits between priors doesn't
+  //       overlap
+  //       // end/start
+  //       if (alloc.vm_next != NULL &&
+  //           (alloc.vm_next->vm_start - alloc.vm_end - 2) >= length) {
+  //         newAlloc->vm_start = alloc.vm_end + 1;
+  //         // Re-link contiguous allocation to include new allocation
+  //         newAlloc->vm_next = alloc.vm_next;
+  //         alloc.vm_next = newAlloc;
+  //       }
+  //     }
+  //     if (newAlloc->vm_start == 0) {
+  //       newAlloc->vm_start = lps->contiguousAllocations.back().vm_end + 1;
+  //       lps->contiguousAllocations.back().vm_next = newAlloc;
+  //     }
+  //   } else if (lps->contiguousAllocations.size() > 0) {
+  //     // Append allocation to end of list and link first entry to new
+  //     allocation newAlloc->vm_start = lps->contiguousAllocations[0].vm_end +
+  //     1; lps->contiguousAllocations[0].vm_next = newAlloc;
+  //   } else {
+  //     // If no allocation exists, allocate to start of the process mmap
+  //     region newAlloc->vm_start = lps->mmapRegion.first;
+  //   }
+  //   // The end of the allocation must be rounded up to the nearest page size
+  //   newAlloc->vm_end =
+  //       alignToBoundary(newAlloc->vm_start + length, lps->pageSize);
+  //   lps->contiguousAllocations.push_back(*newAlloc);
+  // } else {  // Use hint to provide allocation
+  //   return 0;
+  // }
+  // Create region mapping
+  // translator_.add_mapping({newAlloc->vm_start, newAlloc->vm_end}, {});
+  if (addr != 0) {  // Use hint to provide allocation
     return 0;
   }
-  return newAlloc->vm_start;
+  return translator_.mmap_allocation(length);
 }
 
 int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,

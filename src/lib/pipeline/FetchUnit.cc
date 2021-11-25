@@ -65,6 +65,10 @@ void FetchUnit::tick() {
       // Need to wait for fetched instructions
       return;
     }
+    if (!fetched[fetchIndex].data) {
+      // Need to wait for fetched instructions
+      return;
+    }
 
     // TODO: Handle memory faults
     assert(fetched[fetchIndex].data && "Memory read failed");

@@ -7,7 +7,17 @@ namespace {
 
 // Test that we can create an AArch64 Architecture object
 TEST(ISATest, CreateAArch64) {
-  simeng::kernel::Linux kernel;
+  // Create instance of address translator
+  std::unique_ptr<simeng::Translator> address_translator =
+      std::make_unique<simeng::Translator>();
+
+  char* code = "";
+  // Create a linux process from the empty code block
+  std::unique_ptr<simeng::kernel::LinuxProcess> process =
+      std::make_unique<simeng::kernel::LinuxProcess>(
+          simeng::span<char>(code, 0), *address_translator);
+
+  simeng::kernel::Linux kernel(*process, *address_translator);
   // Pass a config file with only the options required by the aarch64
   // architecture class to function
   std::unique_ptr<simeng::arch::Architecture> isa =
