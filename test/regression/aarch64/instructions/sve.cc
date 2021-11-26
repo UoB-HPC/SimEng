@@ -874,6 +874,7 @@ TEST_P(InstSve, dups) {
 
 TEST_P(InstSve, eor) {
   // VL = 512-bits
+  // Predicate, Predicated
   RUN_AARCH64(R"(
     mov x0, #48
     mov x1, #32
@@ -895,6 +896,79 @@ TEST_P(InstSve, eor) {
   CHECK_PREDICATE(6, uint64_t, {0xFFFFFFFF0000FFFFu, 0, 0, 0});
   CHECK_PREDICATE(7, uint64_t, {0x000000000000FFFFu, 0, 0, 0});
   CHECK_PREDICATE(8, uint64_t, {0x00000000FFFF0000u, 0, 0, 0});
+
+  // Vectors, Predicated
+  RUN_AARCH64(R"(
+    # 8-bit
+    mov x0, #32
+    index z0.b, #8, #2
+    dup z1.b, #15
+    dup z2.b, #3
+    ptrue p0.b
+    whilelo p1.b, xzr, x0
+
+    eor z0.b, p0/m, z0.b, z1.b
+    eor z1.b, p1/m, z1.b, z2.b 
+
+    # 16-bit
+    mov x0, #16
+    index z3.h, #8, #2
+    dup z4.h, #15
+    dup z5.h, #3
+    ptrue p0.h
+    whilelo p1.h, xzr, x0
+
+    eor z3.h, p0/m, z3.h, z4.h
+    eor z4.h, p1/m, z4.h, z5.h 
+
+    # 32-bit
+    mov x0, #8
+    index z6.s, #8, #2
+    dup z7.s, #15
+    dup z8.s, #3
+    ptrue p0.s
+    whilelo p1.s, xzr, x0
+
+    eor z6.s, p0/m, z6.s, z7.s
+    eor z7.s, p1/m, z7.s, z8.s 
+
+    # 64-bit
+    mov x0, #4
+    index z9.d, #8, #2
+    dup z10.d, #15
+    dup z11.d, #3
+    ptrue p0.d
+    whilelo p1.d, xzr, x0
+
+    eor z9.d, p0/m, z9.d, z10.d
+    eor z10.d, p1/m, z10.d, z11.d 
+  )");
+  CHECK_NEON(0, uint8_t,
+             {7,   5,   3,   1,   31,  29,  27,  25,  23,  21,  19,  17, 47,
+              45,  43,  41,  39,  37,  35,  33,  63,  61,  59,  57,  55, 53,
+              51,  49,  79,  77,  75,  73,  71,  69,  67,  65,  95,  93, 91,
+              89,  87,  85,  83,  81,  111, 109, 107, 105, 103, 101, 99, 97,
+              127, 125, 123, 121, 119, 117, 115, 113, 143, 141, 139, 137});
+  CHECK_NEON(1, uint8_t,
+             {12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+              12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+              15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+              15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15});
+
+  CHECK_NEON(3, uint16_t,
+             {7,  5,  3,  1,  31, 29, 27, 25, 23, 21, 19, 17, 47, 45, 43, 41,
+              39, 37, 35, 33, 63, 61, 59, 57, 55, 53, 51, 49, 79, 77, 75, 73});
+  CHECK_NEON(4, uint16_t,
+             {12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+              15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15});
+
+  CHECK_NEON(6, uint32_t,
+             {7, 5, 3, 1, 31, 29, 27, 25, 23, 21, 19, 17, 47, 45, 43, 41});
+  CHECK_NEON(7, uint32_t,
+             {12, 12, 12, 12, 12, 12, 12, 12, 15, 15, 15, 15, 15, 15, 15, 15});
+
+  CHECK_NEON(9, uint64_t, {7, 5, 3, 1, 31, 29, 27, 25});
+  CHECK_NEON(10, uint64_t, {12, 12, 12, 12, 15, 15, 15, 15});
 }
 
 TEST_P(InstSve, inc) {

@@ -33,6 +33,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
+    case Opcode::AArch64_EOR_ZPmZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_EOR_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_EOR_ZPmZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_EOR_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_AND_ZPmZ_B:
       [[fallthrough]];
     case Opcode::AArch64_AND_ZPmZ_D:
