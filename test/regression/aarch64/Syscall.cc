@@ -150,7 +150,7 @@ TEST_P(Syscall, faccessat) {
 
 #ifdef SYS_getdents
 TEST_P(Syscall, getdents64) {
-  const char filepath[] = "/sys/devices/system/cpu/online";
+  const char filepath[] = SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles/";
 
   // Reserve 32768 bytes for buffer
   initialHeapData_.resize(32768 + strlen(filepath) + 1);
@@ -165,14 +165,12 @@ TEST_P(Syscall, getdents64) {
     svc #0
     mov x20, x0
 
-    # Need to open the file
-    # fd = openat(AT_FDCWD, filepath, O_RDONLY|O_NONBLOCK|O_CLOEXEC)
-    # Flags = 0x00000000 + 0x00004000 + 0x02000000
+    # Need to open the directory
+    # fd = openat(AT_FDCWD, filepath, O_RDONLY)
+    # Flags = 0x00000000
     mov x0, -100
     add x1, x20, 32768
-    mov x2, 0x2
-    lsl x2, x2, #24
-    add x2, x2, #0x4000
+    mov x2, #0
     mov x8, #56
     svc #0
     mov x21, x0
@@ -185,7 +183,7 @@ TEST_P(Syscall, getdents64) {
     svc #0
     mov x22, x0
   )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(22), 656);
+  EXPECT_EQ(getGeneralRegister<int64_t>(22), 80);
 }
 #endif
 
