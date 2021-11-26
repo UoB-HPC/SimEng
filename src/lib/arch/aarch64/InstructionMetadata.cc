@@ -114,6 +114,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_CMPEQ_PPzZI_S:
       [[fallthrough]];
+    case Opcode::AArch64_CMPEQ_PPzZZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPEQ_PPzZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPEQ_PPzZZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPEQ_PPzZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_CMPNE_PPzZI_S:
       // No defined access types
       operands[0].access = CS_AC_WRITE;
