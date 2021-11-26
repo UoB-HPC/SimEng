@@ -6,6 +6,7 @@
 #include <sys/ioctl.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/termios.h>
 #include <sys/uio.h>
 #include <unistd.h>
@@ -495,26 +496,17 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
   return -1;
 }
 
-// TODO: Implement getdents64 syscall properly (not supported on all systems;
-// Linux and MacOS) int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t
-// count) {
-//   assert(fd < processStates_[0].fileDescriptorTable.size());
-//   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
-//   if (hfd < 0) {
-//     return EBADF;
-//   }
+#ifdef SYS_getdents
+int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
 
-// #ifdef __MACH__
-//   // The getdents64 does not exist on MacOS (and as such this function will
-//   // never be called). But, in order to successfully build SimEng on MacOS
-//   the
-//   // call to getdents64 in the underlying OS needs to be omitted. (Whole
-//   // function isn't omitted as requires changes in multiple places).
-//   return 0;
-// #else
-//   return ::getdents64(hfd, buf, count);
-// #endif
-// }
+  return ::getdents64(hfd, buf, count);
+}
+#endif
 
 int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
   assert(fd < processStates_[0].fileDescriptorTable.size());
