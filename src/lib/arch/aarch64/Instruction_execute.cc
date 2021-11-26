@@ -1811,6 +1811,86 @@ void Instruction::execute() {
       results[0] = out;
       break;
     }
+    case Opcode::AArch64_EOR_ZPmZ_B: {  // eor zdn.b, pg/m, zdn.b, zm.b
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const uint8_t* dn = operands[1].getAsVector<uint8_t>();
+      const uint8_t* m = operands[2].getAsVector<uint8_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 8;
+      uint8_t out[256] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i % 64);
+        if (p[i / 64] & shifted_active) {
+          out[i] = (dn[i] ^ m[i]);
+        } else {
+          out[i] = dn[i];
+        }
+      }
+      results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_EOR_ZPmZ_D: {  // eor zdn.d, pg/m, zdn.d, zm.d
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const uint64_t* dn = operands[1].getAsVector<uint64_t>();
+      const uint64_t* m = operands[2].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          out[i] = (dn[i] ^ m[i]);
+        } else {
+          out[i] = dn[i];
+        }
+      }
+      results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_EOR_ZPmZ_H: {  // eor zdn.h, pg/m, zdn.h, zm.h
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const uint16_t* dn = operands[1].getAsVector<uint16_t>();
+      const uint16_t* m = operands[2].getAsVector<uint16_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 16;
+      uint16_t out[128] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 32) * 2);
+        if (p[i / 32] & shifted_active) {
+          out[i] = (dn[i] ^ m[i]);
+        } else {
+          out[i] = dn[i];
+        }
+      }
+      results[0] = {out, 256};
+      break;
+    }
+    case Opcode::AArch64_EOR_ZPmZ_S: {  // eor zdn.s, pg/m, zdn.s, zm.s
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const uint32_t* dn = operands[1].getAsVector<uint32_t>();
+      const uint32_t* m = operands[2].getAsVector<uint32_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      uint32_t out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
+        if (p[i / 16] & shifted_active) {
+          out[i] = (dn[i] ^ m[i]);
+        } else {
+          out[i] = dn[i];
+        }
+      }
+      results[0] = {out, 256};
+      break;
+    }
     case Opcode::AArch64_EXTRWrri: {  // extr wd, wn, wm, #lsb
       uint32_t n = operands[0].get<uint32_t>();
       uint32_t m = operands[1].get<uint32_t>();
