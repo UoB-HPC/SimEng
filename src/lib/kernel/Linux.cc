@@ -109,6 +109,7 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
 #ifdef __MACH__
   // Pass syscall through to host
   if (dfd != -100) {
+    dfd_temp = dfd;
     // If absolute path used then dfd is dis-regarded.
     // Otherwise, a dirfd != AT_FDCWD isn't currently supported for relative
     // paths for MacOS.
@@ -120,6 +121,7 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
 #else
   // Pass syscall through to host
   if (dfd != -100) {
+    dfd_temp = dfd;
     // If absolute path used then dfd is dis-regarded. Otherwise need to see if
     // fd exists for directory referenced
     if (strncmp(filename.c_str(), absolutePath, strlen(absolutePath)) != 0) {
@@ -169,9 +171,37 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
   }
 
   // Pass call through to host
-  assert(dfd == -100 && "Unsupported dirfd argument in fstatat syscall");
+  int64_t dfd_temp = AT_FDCWD;
+#ifdef __MACH__
+  // Pass syscall through to host
+  if (dfd != -100) {
+    dfd_temp = dfd;
+    // If absolute path used then dfd is dis-regarded.
+    // Otherwise, a dirfd != AT_FDCWD isn't currently supported for relative
+    // paths for MacOS.
+    if (strncmp(filename.c_str(), absolutePath, strlen(absolutePath)) != 0) {
+      assert("Unsupported dirfd argument in fstatat syscall");
+      return EBADF;
+    }
+  }
+#else
+  // Pass syscall through to host
+  if (dfd != -100) {
+    dfd_temp = dfd;
+    // If absolute path used then dfd is dis-regarded. Otherwise need to see if
+    // fd exists for directory referenced
+    if (strncmp(filename.c_str(), absolutePath, strlen(absolutePath)) != 0) {
+      assert(dfd < processStates_[0].fileDescriptorTable.size());
+      dfd_temp = processStates_[0].fileDescriptorTable[dfd];
+      if (dfd_temp < 0) {
+        return EBADF;
+      }
+    }
+  }
+#endif
+
   struct ::stat statbuf;
-  int64_t retval = ::fstatat(AT_FDCWD, filename.c_str(), &statbuf, flag);
+  int64_t retval = ::fstatat(dfd_temp, filename.c_str(), &statbuf, flag);
 
   // Copy results to output struct
   out.dev = statbuf.st_dev;
