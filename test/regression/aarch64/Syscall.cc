@@ -149,6 +149,7 @@ TEST_P(Syscall, faccessat) {
 
 #ifdef __MACH__
 #else
+  // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
   realpath(SIMENG_AARCH64_TEST_ROOT "/data/\0", dirPath);
@@ -645,7 +646,7 @@ TEST_P(Syscall, newfstatat) {
     svc #0
     mov x20, x0
 
-    # newfstatat(dirfd=AT_FDCWD, pathname=/data/input.txt, statbuf, flags=0)
+    # newfstatat(dirfd=AT_FDCWD, filepath, statbuf, flags=0)
     mov x0, #-100
     add x1, x20, #128
     mov x2, x20
@@ -664,9 +665,9 @@ TEST_P(Syscall, newfstatat) {
     svc #0
     mov x20, x0
 
-    # newfstatat(dirfd=AT_FDCWD, pathname=data/input.txt, statbuf, flags=0)
+    # newfstatat(dirfd=AT_FDCWD, wrongFilePath, statbuf, flags=0)
     mov x0, #-100
-    add x1, x20, #129
+    add x1, x20, #130
     mov x2, x20
     mov x3, #0
     mov x8, #79
@@ -675,6 +676,47 @@ TEST_P(Syscall, newfstatat) {
   )");
   // Check fstatat returned -1 (file not found)
   EXPECT_EQ(getGeneralRegister<uint64_t>(21), -1);
+
+#ifdef __MACH__
+#else
+  // Check syscall works using dirfd instead of AT_FDCWD
+  const char file[] = "input.txt\0";
+  char dirPath[LINUX_PATH_MAX];
+  realpath(SIMENG_AARCH64_TEST_ROOT "/data/\0", dirPath);
+
+  initialHeapData_.resize(128 + strlen(dirPath) + strlen(file) + 2);
+  // Copy dirPath to heap
+  memcpy(initialHeapData_.data() + 128, file, strlen(file) + 1);
+  memcpy(initialHeapData_.data() + 128 + strlen(file) + 1, dirPath,
+         strlen(dirPath) + 1);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # Need to open the directory
+    # dfd = openat(AT_FDCWD, dirPath, O_PATH)
+    # Flags = 0x200000
+    mov x0, -100
+    add x1, x20, #138
+    mov x2, #0
+    mov x8, #56
+    svc #0
+    mov x21, x0
+
+    # newfstatat(dfd, file, statbuf, flags=0)
+    mov x0, x21
+    add x1, x20, #128
+    mov x2, x20
+    mov x3, #0
+    mov x8, #79
+    svc #0
+    mov x21, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(27), 0);
+#endif
 }
 
 TEST_P(Syscall, getrusage) {
