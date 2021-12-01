@@ -146,6 +146,47 @@ TEST_P(Syscall, faccessat) {
     mov x26, x0
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(26), 0);
+
+#ifdef __MACH__
+#else
+  const char file[] = "input.txt\0";
+  char dirPath[LINUX_PATH_MAX];
+  realpath(SIMENG_AARCH64_TEST_ROOT "/data/\0", dirPath);
+
+  initialHeapData_.resize(strlen(dirPath) + strlen(file) + 2);
+  // Copy dirPath to heap
+  memcpy(initialHeapData_.data(), file, strlen(file) + 1);
+  memcpy(initialHeapData_.data() + strlen(file) + 1, dirPath,
+         strlen(dirPath) + 1);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # Need to open the directory
+    # dfd = openat(AT_FDCWD, dirPath, O_PATH)
+    # Flags = 0x200000
+    mov x0, -100
+    add x1, x20, #10
+    mov x2, #0
+    mov x8, #56
+    svc #0
+    mov x21, x0
+
+    # faccessat(dfd, fullFilePath, F_OK, 0) = 0
+    # If an absolute filepath is referenced, dirfd is ignored
+    mov x0, x21
+    mov x1, x20
+    mov x2, #0
+    mov x3, #0
+    mov x8, #48
+    svc #0
+    mov x27, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(27), 0);
+#endif
 }
 
 #ifdef SYS_getdents
