@@ -1895,7 +1895,7 @@ TEST_P(InstSve, fcvtzs) {
   dheap[6] = 7.9;
   dheap[7] = -7.9;
 
-  dheap[8] = 0x7FFFFFFFFFFFFFFF;
+  dheap[8] = 1000000000000000000000000000.66;
   dheap[9] = -114458013083425;
   dheap[10] = -10698505.18;
   dheap[11] = 0;
