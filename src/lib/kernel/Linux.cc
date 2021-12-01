@@ -439,7 +439,7 @@ uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
   return newAlloc->vm_start;
 }
 
-int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
+int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
                       uint16_t mode) {
   // Resolve absolute path to target file
   char absolutePath[LINUX_PATH_MAX];
@@ -497,12 +497,39 @@ int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
   if (flags & 0x410000) newFlags |= O_TMPFILE;
 #endif
 
+  int64_t dfd_temp = AT_FDCWD;
+#ifdef __MACH__
   // Pass syscall through to host
-  assert(dirfd == -100 && "unsupported dirfd argument in openat syscall");
+  if (dfd != -100) {
+    dfd_temp = dfd;
+    // If absolute path used then dfd is dis-regarded.
+    // Otherwise, a dirfd != AT_FDCWD isn't currently supported for relative
+    // paths for MacOS.
+    if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
+      assert("Unsupported dirfd argument in fstatat syscall");
+      return EBADF;
+    }
+  }
+#else
+  // Pass syscall through to host
+  if (dfd != -100) {
+    dfd_temp = dfd;
+    // If absolute path used then dfd is dis-regarded. Otherwise need to see if
+    // fd exists for directory referenced
+    if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
+      assert(dfd < processStates_[0].fileDescriptorTable.size());
+      dfd_temp = processStates_[0].fileDescriptorTable[dfd];
+      if (dfd_temp < 0) {
+        return EBADF;
+      }
+    }
+  }
+#endif
+
   // Use path replacement for pathname argument of openat, if chosen
   const char* newPathname =
       altPath ? specialPathTranslations_[pathname].c_str() : pathname.c_str();
-  int64_t hfd = ::openat(AT_FDCWD, newPathname, newFlags, mode);
+  int64_t hfd = ::openat(dfd_temp, newPathname, newFlags, mode);
   if (hfd < 0) {
     return hfd;
   }
