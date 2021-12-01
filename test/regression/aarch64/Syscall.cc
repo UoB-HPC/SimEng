@@ -25,10 +25,10 @@ TEST_P(Syscall, ioctl) {
     svc #0
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(0), 0);
-  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessHeapStart() + 0), -1);
-  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessHeapStart() + 2), -1);
-  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessHeapStart() + 4), -1);
-  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessHeapStart() + 6), -1);
+  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessBrk() + 0), -1);
+  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessBrk() + 2), -1);
+  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessBrk() + 4), -1);
+  EXPECT_NE(getMemoryValue<uint16_t>(process_->getProcessBrk() + 6), -1);
 }
 
 TEST_P(Syscall, faccessat) {
@@ -183,7 +183,7 @@ TEST_P(Syscall, file_read) {
 
   // Check result of read operations
   const char reference[] = "ABCD\0UV\0EFGH\0\0\0\0MNOPQRST";
-  char* data = processMemory_ + process_->getProcessHeapStart();
+  char* data = processMemory_ + process_->getProcessBrk();
   for (int i = 0; i < sizeof(reference); i++) {
     EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
   }

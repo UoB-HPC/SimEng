@@ -23,13 +23,21 @@ struct ElfHeader {
   char* content;
 };
 
+struct NoteEntry {
+  uint32_t n_namesz;
+  uint32_t n_descsz;
+  uint32_t n_type;
+  char* name;
+  char* desc;
+};
+
 /** A processed Executable and Linkable Format (ELF) file. */
 class Elf {
  public:
   Elf(std::string path);
   ~Elf();
-  // const span<char> getProcessImage() const;
   const void getContents(std::vector<ElfHeader>& contents) const;
+  const void getNotes(std::vector<NoteEntry>& notes) const;
   bool isValid() const;
   uint64_t getEntryPoint() const;
 
@@ -38,8 +46,7 @@ class Elf {
   std::vector<ElfHeader> headers_;
 
   bool isValid_ = false;
-  // char* processImage_;
-  uint64_t processImageSize_;
+  std::vector<NoteEntry> noteSegment_;
 };
 
 }  // namespace simeng

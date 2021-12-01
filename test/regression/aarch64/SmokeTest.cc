@@ -53,8 +53,8 @@ TEST_P(SmokeTest, heap) {
     str w1, [x0, -8]
     str w2, [x0, -4]
   )");
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getProcessHeapStart()), 7u);
-  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getProcessHeapStart() + 4), 42u);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getProcessBrk()), 7u);
+  EXPECT_EQ(getMemoryValue<uint32_t>(process_->getProcessBrk() + 4), 42u);
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, SmokeTest,

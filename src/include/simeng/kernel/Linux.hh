@@ -69,11 +69,11 @@ struct LinuxProcessState {
   int64_t pid;
   /** The path of the executable that created this process. */
   std::string path;
-  /** The pair of addresses of the start of the process and simulation heap
-   * respectively. */
+  /** The pair of addresses representing the initial program and simulation
+   * program breaks respectively. */
   std::pair<uint64_t, uint64_t> startBrk;
-  /** The pair of addresses of the current end of the process and simulation
-   * heap respectively. */
+  /** The pair of addresses representing the current program and simulation
+   * program breaks respectively. */
   std::pair<uint64_t, uint64_t> currentBrk;
   /** The initial stack pointer. */
   uint64_t initialStackPointer;

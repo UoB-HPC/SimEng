@@ -89,8 +89,7 @@ int main(int argc, char** argv) {
     // Attempt to create the process image from the specified command-line
     std::vector<std::string> commandLine(argv + 2, argv + argc);
     process = std::make_unique<simeng::kernel::LinuxProcess>(
-        commandLine, config["Core"]["Checkpoint-File"].as<std::string>(),
-        *address_translator);
+        commandLine, *address_translator);
     if (!process->isValid()) {
       std::cerr << "Could not read/parse " << argv[2] << std::endl;
       exit(1);
@@ -206,7 +205,8 @@ int main(int argc, char** argv) {
       processMemory, processMemorySize, *address_translator);
 
   // Create the architecture, with knowledge of the kernel
-  auto arch = simeng::arch::aarch64::Architecture(kernel, config);
+  auto arch =
+      simeng::arch::aarch64::Architecture(kernel, *process.get(), config);
 
   auto predictor = simeng::BTBPredictor(
       config["Branch-Predictor"]["BTB-bitlength"].as<uint8_t>());

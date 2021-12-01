@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <fstream>
+#include <iostream>
 
 namespace simeng {
 
@@ -45,7 +46,7 @@ Elf::Elf(std::string path) {
   file.read(reinterpret_cast<char*>(&headerEntries), sizeof(headerEntries));
 
   headers_.resize(headerEntries);
-  processImageSize_ = 0;
+
   // Extract headers
   for (size_t i = 0; i < headerEntries; i++) {
     file.seekg(headerOffset + (i * headerEntrySize));
@@ -63,43 +64,65 @@ Elf::Elf(std::string path) {
     file.read(reinterpret_cast<char*>(&(header.alignment)), fieldBytes);
     header.content = (char*)malloc(header.fileSize);
 
-    // Read in contents where program header points to
+    // Read in contents where the program header points to
     file.seekg(header.offset);
     file.read(header.content, header.fileSize);
 
-    if (header.virtualAddress + header.memorySize > processImageSize_) {
-      processImageSize_ = header.virtualAddress + header.memorySize;
+    // If the header belongs to a NOTE segment, read in contents
+    if (header.type == 4) {
+      uint64_t totalBytes = header.fileSize;
+      uint64_t bytesRead = 0;
+      file.seekg(header.offset);
+      while (bytesRead < totalBytes) {
+        // Read in each entry member and increment bytesRead by the size of the
+        // member
+        NoteEntry newEntry;
+        // Size of entry name in bytes aligned to 4-byte boundary
+        file.read(reinterpret_cast<char*>(&(newEntry.n_namesz)),
+                  sizeof(newEntry.n_namesz));
+        newEntry.n_namesz +=
+            (newEntry.n_namesz % 4 == 0) ? 0 : (4 - (newEntry.n_namesz % 4));
+        bytesRead += sizeof(newEntry.n_namesz);
+
+        // Size of entry description in bytes aligned to 4-byte boundary
+        file.read(reinterpret_cast<char*>(&(newEntry.n_descsz)),
+                  sizeof(newEntry.n_descsz));
+        newEntry.n_descsz +=
+            (newEntry.n_descsz % 4 == 0) ? 0 : (4 - (newEntry.n_descsz % 4));
+        bytesRead += sizeof(newEntry.n_descsz);
+
+        // The type of the entry
+        file.read(reinterpret_cast<char*>(&(newEntry.n_type)),
+                  sizeof(newEntry.n_type));
+        bytesRead += sizeof(newEntry.n_type);
+
+        // The name of the entry
+        newEntry.name = (char*)malloc(newEntry.n_namesz);
+        file.read(newEntry.name, newEntry.n_namesz);
+        bytesRead += newEntry.n_namesz;
+
+        // The description of the entry
+        newEntry.desc = (char*)malloc(newEntry.n_descsz);
+        file.read(newEntry.desc, newEntry.n_descsz);
+        bytesRead += newEntry.n_descsz;
+
+        // Push back new entry
+        noteSegment_.push_back(newEntry);
+      }
     }
   }
-
-  // processImage_ = new char[processImageSize_];
-
-  // Process headers; only observe LOAD sections for this basic implementation
-  // for (const auto& header : headers_) {
-  //   if (header.type == 1) {  // LOAD
-  //     file.seekg(header.offset);
-  //     // Read `fileSize` bytes from `file` into the appropriate place in
-  //     process
-  //     // memory
-  //     file.read(processImage_ + header.virtualAddress, header.fileSize);
-  //   }
-  // }
 
   file.close();
 }
 
-Elf::~Elf() {
-  // if (isValid_) {
-  //   delete[] processImage_;
-  // }
-}
-
-// const span<char> Elf::getProcessImage() const {
-//   return {processImage_, processImageSize_};
-// }
+Elf::~Elf() {}
 
 const void Elf::getContents(std::vector<ElfHeader>& contents) const {
   contents = headers_;
+}
+
+const void Elf::getNotes(std::vector<NoteEntry>& notes) const {
+  notes = noteSegment_;
 }
 
 uint64_t Elf::getEntryPoint() const { return entryPoint_; }

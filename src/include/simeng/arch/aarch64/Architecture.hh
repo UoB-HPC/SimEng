@@ -18,7 +18,8 @@ namespace aarch64 {
 /* A basic ARMv8-a implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-  Architecture(kernel::Linux& kernel, YAML::Node config);
+  Architecture(kernel::Linux& kernel, const kernel::LinuxProcess& process,
+               YAML::Node config);
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -82,6 +83,10 @@ class Architecture : public arch::Architecture {
 
   /** A reference to a Linux kernel object to forward syscalls to. */
   kernel::Linux& linux_;
+
+  /** A reference to a LinuxProcess object to read the ELF NOTE segement from.
+   */
+  const kernel::LinuxProcess& process_;
 };
 
 }  // namespace aarch64

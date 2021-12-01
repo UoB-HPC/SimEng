@@ -65,6 +65,7 @@ void FetchUnit::tick() {
       // Need to wait for fetched instructions
       return;
     }
+    // Need to allow incorrect speculative to be resolved
     if (!fetched[fetchIndex].data) {
       // Need to wait for fetched instructions
       return;
@@ -125,10 +126,10 @@ void FetchUnit::tick() {
       pc_ = prediction.target;
     }
 
-    if (pc_ >= programByteLength_) {
-      hasHalted_ = true;
-      break;
-    }
+    // if (pc_ >= programByteLength_) {
+    //   hasHalted_ = true;
+    //   break;
+    // }
 
     if (prediction.taken) {
       if (slot + 1 < output_.getWidth()) {
@@ -158,7 +159,7 @@ bool FetchUnit::hasHalted() const { return hasHalted_; }
 void FetchUnit::updatePC(uint64_t address) {
   pc_ = address;
   bufferedBytes_ = 0;
-  hasHalted_ = (pc_ >= programByteLength_);
+  // hasHalted_ = (pc_ >= programByteLength_);
 }
 
 void FetchUnit::requestFromPC() {

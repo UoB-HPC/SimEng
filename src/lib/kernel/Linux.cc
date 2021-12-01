@@ -21,16 +21,15 @@ Linux::Linux(const LinuxProcess& process, Translator& translator)
     : translator_(translator) {
   assert(process.isValid() && "Attempted to use an invalid process");
   assert(processStates_.size() == 0 && "Multiple processes not yet supported");
-  processStates_.push_back({.pid = 0,  // TODO: create unique PIDs
-                            .path = process.getPath(),
-                            .startBrk = {process.getProcessHeapStart(),
-                                         process.getSimulationHeapStart()},
-                            .currentBrk = {process.getProcessHeapStart(),
-                                           process.getSimulationHeapStart()},
-                            .initialStackPointer = process.getStackPointer(),
-                            .mmapRegion = {process.getProcessMmapStart(),
-                                           process.getSimulationMmapStart()},
-                            .pageSize = process.getPageSize()});
+  processStates_.push_back(
+      {.pid = 0,  // TODO: create unique PIDs
+       .path = process.getPath(),
+       .startBrk = {process.getProcessBrk(), process.getSimulationBrk()},
+       .currentBrk = {process.getProcessBrk(), process.getSimulationBrk()},
+       .initialStackPointer = process.getStackPointer(),
+       .mmapRegion = {process.getProcessMmapStart(),
+                      process.getSimulationMmapStart()},
+       .pageSize = process.getPageSize()});
   processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);

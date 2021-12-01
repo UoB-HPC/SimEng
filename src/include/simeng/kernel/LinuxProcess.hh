@@ -40,7 +40,7 @@ class LinuxProcess {
    * The first element of the command-line vector is a path to an executable ELF
    * file. */
   LinuxProcess(const std::vector<std::string>& commandLine,
-               const std::string coredumpPath, Translator& translator);
+               Translator& translator);
 
   /** Construct a Linux process from region of instruction memory, with the
    * entry point fixed at 0. */
@@ -48,11 +48,11 @@ class LinuxProcess {
 
   ~LinuxProcess();
 
-  /** Get the address of the start of the process heap region. */
-  uint64_t getProcessHeapStart() const;
+  /** Get the inital program break of the program. */
+  uint64_t getProcessBrk() const;
 
-  /** Get the address of the start of the simulation heap region. */
-  uint64_t getSimulationHeapStart() const;
+  /** Get the inital program break of the simulation. */
+  uint64_t getSimulationBrk() const;
 
   /** Get the address of the top of the stack. */
   uint64_t getStackStart() const;
@@ -68,6 +68,9 @@ class LinuxProcess {
 
   /** Get the process image. */
   const span<char> getProcessImage() const;
+
+  /** Get a section of the note segment of passed in from the ELF. */
+  const NoteEntry getNote(uint32_t type) const;
 
   /** Get the entry point. */
   uint64_t getEntryPoint() const;
@@ -94,11 +97,11 @@ class LinuxProcess {
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
 
-  /** The address of the start of the process heap region. */
-  uint64_t processHeapStart_ = 0;
+  /** The inital program break of the program. */
+  uint64_t processBrk_ = 0;
 
-  /** The address of the start of the simulation heap region. */
-  uint64_t simulationHeapStart_ = 0;
+  /** The inital program break of the simulation. */
+  uint64_t simulationBrk_ = 0;
 
   /** The initial address for process memory given to mmap calls . */
   uint64_t processMmapStart_;
@@ -110,10 +113,13 @@ class LinuxProcess {
   const uint64_t pageSize_ = 4096;
 
   /** The address of the stack pointer. */
-  uint64_t stackPointer_;
+  uint64_t stackPointer_ = 0;
 
   /** The process image. */
   char* processImage_;
+
+  /** The ELF NOTE segment. */
+  std::vector<NoteEntry> noteSegment_;
 
   /** The process image size. */
   uint64_t size_;

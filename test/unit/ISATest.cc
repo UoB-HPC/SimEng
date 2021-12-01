@@ -11,7 +11,10 @@ TEST(ISATest, CreateAArch64) {
   std::unique_ptr<simeng::Translator> address_translator =
       std::make_unique<simeng::Translator>();
 
-  char* code = "";
+  // Disable translation as there's code
+  address_translator->disable_translation();
+
+  char* code = NULL;
   // Create a linux process from the empty code block
   std::unique_ptr<simeng::kernel::LinuxProcess> process =
       std::make_unique<simeng::kernel::LinuxProcess>(
@@ -22,7 +25,8 @@ TEST(ISATest, CreateAArch64) {
   // architecture class to function
   std::unique_ptr<simeng::arch::Architecture> isa =
       std::make_unique<simeng::arch::aarch64::Architecture>(
-          kernel, YAML::Load("{Core: {Simulation-Mode: emulation}}"));
+          kernel, *process.get(),
+          YAML::Load("{Core: {Simulation-Mode: emulation}}"));
 
   EXPECT_GT(isa->getRegisterFileStructures().size(), 0);
 }

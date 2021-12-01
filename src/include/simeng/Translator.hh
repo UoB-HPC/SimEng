@@ -33,7 +33,7 @@ struct memoryRegion {
 };
 
 /** Struct to hold information about a heap allocation and it's mapped region in
- * simualtion memory. */
+ * SimEng memory. */
 struct heap_allocation {
   /** The address representing the start of the memory allocation. */
   uint64_t start = 0;
@@ -45,36 +45,81 @@ struct heap_allocation {
   memoryRegion mapped_region = {0, 0};
 };
 
-// The specialized hash function for `unordered_map` keys
+// Hash function for memoryRegion keys
 struct hash_fn {
-  std::size_t operator()(const memoryRegion& region) const {
-    std::size_t h1 = std::hash<uint64_t>()(region.addr_start);
-    std::size_t h2 = std::hash<uint64_t>()(region.addr_end);
+  size_t operator()(const memoryRegion& region) const {
+    size_t r_start = std::hash<uint64_t>()(region.addr_start);
+    size_t r_end = std::hash<uint64_t>()(region.addr_end);
 
-    return h1 ^ h2;
+    return r_start ^ r_end;
   }
 };
 
-/** A translator for memory addresses. */
+/** A class to translate program addresses to the SimEng memory address space.
+ * Additionally provides an implementation of mmap and munmap system calls to
+ * the SimEng memory space. */
 class Translator {
  public:
   Translator();
   ~Translator();
-  const Translation get_mapping(uint64_t addr) const;
-  bool add_mapping(memoryRegion process, memoryRegion b);
-  bool update_mapping(memoryRegion a, memoryRegion b, memoryRegion c);
 
+  /** Get the mapping for the supplied program address. */
+  const Translation get_mapping(uint64_t addr) const;
+
+  /** Add the mapping form the supplied process memory region to SimEng
+   * memory region. */
+  bool add_mapping(memoryRegion region_process, memoryRegion region_simulation);
+
+  /** Update a region with the supplied new mapping between process and
+   * SimEng memory regions. */
+  bool update_mapping(memoryRegion region_original, memoryRegion region_process,
+                      memoryRegion region_simulation);
+
+  /** Invoked by a mmap system call. Add a mmap region of a supplied length to
+   * the contiguous list of heapAllocations_. */
   uint64_t mmap_allocation(size_t length);
+
+  /** Register a memory allocation that has preivously been created through a
+   * mmap call. */
+  void register_allocation(uint64_t addr, size_t length,
+                           memoryRegion region_simulation);
+
+  /** Invoked by a munmap system call. Removed a previously mmap allocation and
+   * its memory mapping. */
   int64_t munmap_deallocation(uint64_t addr, size_t length);
 
-  void setHeapStart(uint64_t processAddress, uint64_t simulationAddress);
+  /** Set the initial program break for both process and SimEng memory. */
+  void setInitialBrk(uint64_t processAddress, uint64_t simulationAddress);
+
+  /** Set the page size used by the process being simulated. */
   void setPageSize(uint64_t pagesize);
 
+  /** From a process and simualtion memory region pair, create a set of 1:1
+   * mapping entries in the mappings_ unordered_map. The insert parameters
+   * controls whether keys generated from the provided memory regions are
+   * inserted or erased from mappings_. */
+  void enumerate_region(memoryRegion region_process,
+                        memoryRegion region_simulation, bool insert);
+
+  /** Disable the translation of addresses. Note, mmap and munmap specific logic
+   * is still invoked. */
+  void disable_translation();
+
  private:
-  std::unordered_map<memoryRegion, memoryRegion, hash_fn> mappings;
-  std::pair<uint64_t, uint64_t> heapStarts_ = {0, 0};
+  /** Holds program to SimEng address mappings. */
+  std::unordered_map<uint64_t, uint64_t> mappings_;
+
+  /** Holds the memory regions currently mapped. */
+  std::unordered_map<memoryRegion, memoryRegion, hash_fn> regions_;
+
+  /** Hold the program and SimEng program breaks respectively. */
+  std::pair<uint64_t, uint64_t> programBrks_ = {0, 0};
+
+  /** A vector holding a contiguous list of mmap allocations. */
   std::vector<heap_allocation> heapAllocations_;
+
   uint64_t pageSize_ = 4096;
+  bool disableTranslation_ = false;
 };
 
 }  // namespace simeng

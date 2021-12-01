@@ -6,121 +6,181 @@
 
 namespace simeng {
 
+typedef std::unordered_map<uint64_t, uint64_t> stringmap;
+
+void Translator::enumerate_region(memoryRegion region_process,
+                                  memoryRegion region_simulation, bool insert) {
+  if (!disableTranslation_) {
+    if (insert) {
+      for (int i = 0; i < (region_process.addr_end - region_process.addr_start);
+           i++) {
+        mappings_[region_process.addr_start + i] =
+            region_simulation.addr_start + i;
+      }
+    } else {
+      for (int i = 0; i < (region_process.addr_end - region_process.addr_start);
+           i++) {
+        mappings_.erase({region_process.addr_start + i});
+      }
+    }
+  }
+}
+
 Translator::Translator() {
-  mappings = std::unordered_map<memoryRegion, memoryRegion, hash_fn>();
+  mappings_ = std::unordered_map<uint64_t, uint64_t>();
+  regions_ = std::unordered_map<memoryRegion, memoryRegion, hash_fn>();
 }
 
 Translator::~Translator() {}
 
 const Translation Translator::get_mapping(uint64_t addr) const {
-  auto res = std::find_if(
-      mappings.begin(), mappings.end(),
-      [&](const std::pair<memoryRegion, memoryRegion>& mem) {
-        return (addr >= mem.first.addr_start && addr < mem.first.addr_end);
-      });
-  if (res != mappings.end()) {
-    return {(addr - res->first.addr_start) + res->second.addr_start, true};
+  if (disableTranslation_) {
+    return {addr, true};
   }
-  return {0, false};
+  // auto res = std::find_if(
+  //     regions_.begin(), regions_.end(),
+  //     [&](const std::pair<memoryRegion, memoryRegion>& mem) {
+  //       return (addr >= mem.first.addr_start && addr < mem.first.addr_end);
+  //     });
+  // if (res != regions_.end()) {
+  //   return {(addr - res->first.addr_start) + res->second.addr_start, true};
+  // }
+  // return {0, false};
+  try {
+    return {mappings_.at(addr), true};
+  } catch (const std::out_of_range& e) {
+    // std::cout << "FAILED to get mapping for 0x" << std::hex << addr <<
+    // std::dec
+    //           << std::endl;
+    return {0, false};
+  }
 }
 
-bool Translator::add_mapping(memoryRegion a, memoryRegion b) {
-  // std::cout << "# New mapping:\n 0x" << std::hex << a.addr_start << std::dec
-  //           << ":0x" << std::hex << a.addr_end << std::dec << " -> ";
+bool Translator::add_mapping(memoryRegion region_process,
+                             memoryRegion region_simulation) {
+  if (disableTranslation_) return true;
+  // std::cout << "# New mapping:\n 0x" << std::hex << region_process.addr_start
+  //           << std::dec << ":0x" << std::hex << region_process.addr_end
+  //           << std::dec << " -> ";
   // Ensure translated block is the same size as the original
-  if ((a.addr_end - a.addr_start) != (b.addr_end - b.addr_start)) {
-    // std::cout << "diff size (" << (a.addr_end - a.addr_start) << " vs "
-    //           << (b.addr_end - b.addr_start) << ")" << std::endl;
-    // assert(false && "Differently sized memory regions");
+  if ((region_process.addr_end - region_process.addr_start) !=
+      (region_simulation.addr_end - region_simulation.addr_start)) {
+    // std::cout << "diff size ("
+    //           << (region_process.addr_end - region_process.addr_start) << "
+    //           vs "
+    //           << (region_simulation.addr_end - region_simulation.addr_start)
+    //           << ")" << std::endl;
+    // assert(false && "Differently sized memory regions_");
     return false;
   }
   // std::min used to ensure boundaries compared against don't wrap around to
   // unsigned(-1)
-  auto res = std::find_if(
-      mappings.begin(), mappings.end(),
-      [&](const std::pair<memoryRegion, memoryRegion>& mem) {
-        return !(b.addr_start > std::min(mem.second.addr_end - 1, 0ull) ||
-                 std::min(b.addr_end - 1, 0ull) < mem.second.addr_start);
-      });
-  if (res != mappings.end()) {
+  auto res =
+      std::find_if(regions_.begin(), regions_.end(),
+                   [&](const std::pair<memoryRegion, memoryRegion>& mem) {
+                     return !(region_simulation.addr_start >
+                                  std::min(mem.second.addr_end - 1, 0ull) ||
+                              std::min(region_simulation.addr_end - 1, 0ull) <
+                                  mem.second.addr_start);
+                   });
+  if (res != regions_.end()) {
     // std::cout << "Overlap:" << std::endl;
     // std::cout << "\t0x" << std::hex << res->second.addr_start << std::dec
     //           << " to 0x" << std::hex << res->second.addr_end << std::dec
     //           << std::endl;
-    // std::cout << "\t0x" << std::hex << b.addr_start << std::dec << " to 0x"
-    //           << std::hex << b.addr_end << std::dec << std::endl;
+    // std::cout << "\t0x" << std::hex << region_simulation.addr_start <<
+    // std::dec
+    //           << " to 0x" << std::hex << region_simulation.addr_end <<
+    //           std::dec
+    //           << std::endl;
     // assert(false && "Overlaps with previously allocated region");
     return false;
   }
 
-  mappings.insert({a, b});
+  regions_.insert({region_process, region_simulation});
+  enumerate_region(region_process, region_simulation, true);
 
-  // std::cout << "0x" << std::hex << b.addr_start << std::dec << ":0x" <<
-  // std::hex
-  //           << b.addr_end << std::dec << std::endl;
+  // std::cout << "0x" << std::hex << region_simulation.addr_start << std::dec
+  //           << ":0x" << std::hex << region_simulation.addr_end << std::dec
+  //           << std::endl;
   return true;
 }
 
-bool Translator::update_mapping(memoryRegion a, memoryRegion b,
-                                memoryRegion c) {
-  // std::cout << "# Update mapping:\n 0x" << std::hex << a.addr_start <<
-  // std::dec
-  //           << ":0x" << std::hex << a.addr_end << std::dec << "("
-  //           << (a.addr_end - a.addr_start) << ") = 0x" << std::hex
-  //           << b.addr_start << std::dec << ":0x" << std::hex << b.addr_end
-  //           << std::dec << "(" << (b.addr_end - b.addr_start) << ") -> ";
+bool Translator::update_mapping(memoryRegion region_original,
+                                memoryRegion region_process,
+                                memoryRegion region_simulation) {
+  if (disableTranslation_) return true;
+  // std::cout << "# Update mapping:\n 0x" << std::hex
+  //           << region_original.addr_start << std::dec << ":0x" << std::hex
+  //           << region_original.addr_end << std::dec << "("
+  //           << (region_original.addr_end - region_original.addr_start)
+  //           << ") = 0x" << std::hex << region_process.addr_start << std::dec
+  //           << ":0x" << std::hex << region_process.addr_end << std::dec <<
+  //           "("
+  //           << (region_process.addr_end - region_process.addr_start) << ") ->
+  //           ";
   // Ensure translated block is the same size as the original
-  if ((b.addr_end - b.addr_start) != (c.addr_end - c.addr_start)) {
-    // std::cout << "diff size (" << (b.addr_end - b.addr_start) << " vs "
-    //           << (c.addr_end - c.addr_start) << ")" << std::endl;
+  if ((region_process.addr_end - region_process.addr_start) !=
+      (region_simulation.addr_end - region_simulation.addr_start)) {
+    // std::cout << "diff size ("
+    //           << (region_process.addr_end - region_process.addr_start) << "
+    //           vs "
+    //           << (region_simulation.addr_end - region_simulation.addr_start)
+    //           << ")" << std::endl;
     return false;
   }
   // Ensure old program region exists
-  auto res_old =
-      std::find_if(mappings.begin(), mappings.end(),
-                   [&](const std::pair<memoryRegion, memoryRegion>& mem) {
-                     return (a.addr_start == mem.first.addr_start &&
-                             a.addr_end == mem.first.addr_end);
-                   });
-  if (res_old == mappings.end()) {
+  auto res_old = std::find_if(
+      regions_.begin(), regions_.end(),
+      [&](const std::pair<memoryRegion, memoryRegion>& mem) {
+        return (region_original.addr_start == mem.first.addr_start &&
+                region_original.addr_end == mem.first.addr_end);
+      });
+  if (res_old == regions_.end()) {
     // std::cout << "original doesn't exist" << std::endl;
     return false;
   }
 
   std::pair<memoryRegion, memoryRegion> temp = *res_old;
-  mappings.erase(res_old);
+  regions_.erase(res_old);
 
   // std::cout << "Found entry 0x" << std::hex << temp.first.addr_start <<
   // std::dec
   //           << " to 0x" << std::hex << temp.first.addr_end << std::dec
   //           << " -> ";
 
-  // Ensure new simeng region shares no boundary with previous mappings
+  // Ensure new simeng region shares no boundary with previous region
   // std::min used to ensure boundaries compared against don't wrap around
   // to unsigned(-1)
-  auto res = std::find_if(
-      mappings.begin(), mappings.end(),
-      [&](const std::pair<memoryRegion, memoryRegion>& mem) {
-        return !(c.addr_start > std::min(mem.second.addr_end - 1, 0ull) ||
-                 std::min(c.addr_end - 1, 0ull) < mem.second.addr_start);
-      });
-  if (res != mappings.end()) {
+  auto res =
+      std::find_if(regions_.begin(), regions_.end(),
+                   [&](const std::pair<memoryRegion, memoryRegion>& mem) {
+                     return !(region_simulation.addr_start >
+                                  std::min(mem.second.addr_end - 1, 0ull) ||
+                              std::min(region_simulation.addr_end - 1, 0ull) <
+                                  mem.second.addr_start);
+                   });
+  if (res != regions_.end()) {
     // std::cout << "overlaps prior region 0x" << std::hex
     //           << res->second.addr_start << std::dec << ":0x" << std::hex
     //           << res->second.addr_end << std::dec << " <- 0x" << std::hex
-    //           << c.addr_start << std::dec << ":0x" << std::hex << c.addr_end
-    //           << std::dec << std::endl;
-    mappings.insert(temp);
+    //           << region_simulation.addr_start << std::dec << ":0x" <<
+    //           std::hex
+    //           << region_simulation.addr_end << std::dec << std::endl;
+    regions_.insert(temp);
     return false;
   }
   // Add new mapping
-  mappings.insert({b, c});
+  // add_mapping(b, c);
+  regions_.insert({region_process, region_simulation});
+  enumerate_region(region_process, region_simulation, true);
   // std::cout << "0x" << std::hex << temp.second.addr_start << std::dec <<
   // ":0x"
   //           << std::hex << temp.second.addr_end << std::dec << "("
   //           << (temp.second.addr_end - temp.second.addr_start) << ") = 0x"
-  //           << std::hex << c.addr_start << std::dec << ":0x" << std::hex
-  //           << c.addr_end << std::dec << "(" << (c.addr_end - c.addr_start)
+  //           << std::hex << region_simulation.addr_start << std::dec << ":0x"
+  //           << std::hex << region_simulation.addr_end << std::dec << "("
+  //           << (region_simulation.addr_end - region_simulation.addr_start)
   //           << ")" << std::endl;
 
   return true;
@@ -128,60 +188,90 @@ bool Translator::update_mapping(memoryRegion a, memoryRegion b,
 
 uint64_t Translator::mmap_allocation(size_t length) {
   std::shared_ptr<struct heap_allocation> newAlloc(new heap_allocation);
-  memoryRegion previousAllocation = {0, 0};
   // Find suitable region to allocate
-  for (heap_allocation& alloc : heapAllocations_) {
-    // Determine if the new allocation can fit between existing allocations.
-    // Append to end of allocations if not
-    if (alloc.next != NULL && (alloc.next->start - alloc.end) >= length) {
-      // '- 2' to ensure allocation doesn't overlap with prior allocation
-      // boundaries
-      newAlloc->start = alloc.end;
-      uint64_t region_start = alloc.mapped_region.addr_end;
-      newAlloc->mapped_region.addr_start = region_start;
-      // Re-link contiguous allocation to include new allocation
-      newAlloc->next = alloc.next;
-      alloc.next = newAlloc;
-      break;
+  memoryRegion previousAllocation = {0, 0};
+  // Find if there's space between the first allocation and the set mmap region
+  if (heapAllocations_.size()) {
+    if ((heapAllocations_[0].start - programBrks_.first) > length) {
+      newAlloc->start = programBrks_.first;
+      newAlloc->mapped_region.addr_start = programBrks_.second;
+      std::shared_ptr<heap_allocation> firstAlloc(&heapAllocations_[0]);
+      newAlloc->next = firstAlloc;
     }
   }
+  // Determine if the new allocation can fit between existing allocations
+  if (newAlloc->start == 0) {
+    for (heap_allocation& alloc : heapAllocations_) {
+      if (alloc.next != NULL && (alloc.next->start - alloc.end) >= length) {
+        newAlloc->start = alloc.end;
+        newAlloc->mapped_region.addr_start = alloc.mapped_region.addr_end;
+        // Re-link contiguous allocation to include new allocation
+        newAlloc->next = alloc.next;
+        alloc.next = newAlloc;
+        break;
+      }
+    }
+  }
+  // If still not allocated, append allocation to end of list
   if (newAlloc->start == 0) {
     if (heapAllocations_.size()) {
-      // Append allocation to end of list and link first entry to new
       newAlloc->start = heapAllocations_.back().end;
-      uint64_t region_start = heapAllocations_.back().mapped_region.addr_end;
-      newAlloc->mapped_region.addr_start = region_start;
+      newAlloc->mapped_region.addr_start =
+          heapAllocations_.back().mapped_region.addr_end;
       heapAllocations_.back().next = newAlloc;
     } else {
-      // If no allocations exists, allocate to start of the process mmap region
-      newAlloc->start = heapStarts_.first;
-      newAlloc->mapped_region.addr_start = heapStarts_.second;
+      // If no allocations exists, allocate to start of the simulation mmap
+      // region
+      newAlloc->start = programBrks_.first;
+      newAlloc->mapped_region.addr_start = programBrks_.second;
     }
   }
+  // Define end of regions_
   newAlloc->end = newAlloc->start + length;
-  // '- 1' from region end as bound is exclusive
   newAlloc->mapped_region.addr_end =
       newAlloc->mapped_region.addr_start + length;
-  // The end of the allocation must be
-  // rounded up to the nearest page size
+  // The end of a mmap allocation must be rounded up to the nearest page size
   uint64_t remainder = (newAlloc->start + length) % pageSize_;
   newAlloc->end += (remainder != 0) ? (pageSize_ - remainder) : 0;
   newAlloc->mapped_region.addr_end +=
       (remainder != 0) ? (pageSize_ - remainder) : 0;
+  heapAllocations_.push_back(*newAlloc);
 
-  // std::cout << "Allocation:" << std::endl;
-  // std::cout << "\t0x" << std::hex << newAlloc->start << std::dec << " to 0x"
+  // std::cout << "Add Allocation:" << std::endl;
+  // std::cout << "\t0x" << std::hex << newAlloc->start << std::dec << " to 0x "
   //           << std::hex << newAlloc->end << std::dec << std::endl;
   // std::cout << "\t0x" << std::hex << newAlloc->mapped_region.addr_start
   //           << std::dec << " to 0x" << std::hex
   //           << newAlloc->mapped_region.addr_end << std::dec << std::endl;
 
-  // Register new allocation/region
-
+  // Add mapping for new mmap allocation
   add_mapping({newAlloc->start, newAlloc->end}, newAlloc->mapped_region);
-  heapAllocations_.push_back(*newAlloc);
 
   return newAlloc->start;
+}
+
+void Translator::register_allocation(uint64_t addr, size_t length,
+                                     memoryRegion region_simulation) {
+  // Create new heap_allocation that represents mmap allocation
+  std::shared_ptr<struct heap_allocation> newAlloc(new heap_allocation);
+  newAlloc->start = addr;
+  newAlloc->end = addr + length;
+  newAlloc->mapped_region = region_simulation;
+  // Find where prior allocation would fit in current heapAllocations_
+  for (heap_allocation& alloc : heapAllocations_) {
+    if (alloc.start <= addr) {
+      newAlloc->next = alloc.next;
+      alloc.next = newAlloc;
+      break;
+    }
+  }
+  heapAllocations_.push_back(*newAlloc);
+  // std::cout << "Register Allocation:" << std::endl;
+  // std::cout << "\t0x" << std::hex << newAlloc->start << std::dec << " to 0x"
+  //           << std::hex << newAlloc->end << std::dec << std::endl;
+  // std::cout << "\t0x" << std::hex << newAlloc->mapped_region.addr_start
+  //           << std::dec << " to 0x" << std::hex
+  //           << newAlloc->mapped_region.addr_end << std::dec << std::endl;
 }
 
 int64_t Translator::munmap_deallocation(uint64_t addr, size_t length) {
@@ -204,20 +294,24 @@ int64_t Translator::munmap_deallocation(uint64_t addr, size_t length) {
       if (i != 0) {
         heapAllocations_[i - 1].next = heapAllocations_[i].next;
       }
-      // Ensure program region exists in mappings
-      auto res_old = std::find_if(
-          mappings.begin(), mappings.end(),
-          [&](const std::pair<memoryRegion, memoryRegion>& mem) {
-            return (alloc.mapped_region.addr_start == mem.first.addr_start &&
-                    alloc.mapped_region.addr_end == mem.first.addr_end);
-          });
-      if (res_old == mappings.end()) {
-        // std::cout << "original doesn't exist" << std::endl;
-        return -1;
-      }
-      // Erase allocation/region entries
-      mappings.erase(alloc.mapped_region);
+      // Erase mmap allocation
       heapAllocations_.erase(heapAllocations_.begin() + i);
+      if (!disableTranslation_) {
+        // Ensure program region exists in mappings_
+        auto res_old = std::find_if(
+            regions_.begin(), regions_.end(),
+            [&](const std::pair<memoryRegion, memoryRegion>& mem) {
+              return (alloc.mapped_region.addr_start == mem.second.addr_start &&
+                      alloc.mapped_region.addr_end == mem.second.addr_end);
+            });
+        if (res_old == regions_.end()) {
+          // std::cout << "original doesn't exist" << std::endl;
+          return -1;
+        }
+        // Erase mapping entries
+        regions_.erase(res_old->first);
+        enumerate_region(res_old->first, res_old->second, false);
+      }
       return 0;
     }
   }
@@ -225,11 +319,13 @@ int64_t Translator::munmap_deallocation(uint64_t addr, size_t length) {
   return 0;
 }
 
-void Translator::setHeapStart(uint64_t processAddress,
-                              uint64_t simulationAddress) {
-  heapStarts_ = {processAddress, simulationAddress};
+void Translator::setInitialBrk(uint64_t processAddress,
+                               uint64_t simulationAddress) {
+  programBrks_ = {processAddress, simulationAddress};
 }
 
 void Translator::setPageSize(uint64_t pagesize) { pageSize_ = pagesize; }
+
+void Translator::disable_translation() { disableTranslation_ = true; }
 
 }  // namespace simeng

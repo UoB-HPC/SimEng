@@ -32,10 +32,10 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 void Core::tick() {
   ticks_++;
 
-  if (pc_ >= programByteLength_) {
-    hasHalted_ = true;
-    return;
-  }
+  // if (pc_ >= programByteLength_) {
+  //   hasHalted_ = true;
+  //   return;
+  // }
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -81,6 +81,7 @@ void Core::tick() {
   const auto& instructionBytes = fetched[fetchIndex].data;
   auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
                                   FETCH_SIZE, pc_, {false, 0}, macroOp_);
+  // std::cout << "Fetched 0x" << std::hex << pc_ << std::dec << std::endl;
 
   // Clear the fetched data
   instructionMemory_.clearCompletedReads();
@@ -146,12 +147,30 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   // Writeback
+  // std::cout << "Executed 0x" << std::hex << uop->getInstructionAddress()
+  //           << std::dec << std::endl;
   auto results = uop->getResults();
   auto destinations = uop->getDestinationRegisters();
   for (size_t i = 0; i < results.size(); i++) {
     auto reg = destinations[i];
     registerFileSet_.set(reg, results[i]);
+    // if (results[i].size() == 1) {
+    //   std::cout << "\t" << std::hex << unsigned(results[i].get<uint8_t>())
+    //             << std::dec << std::endl;
+    // } else if (results[i].size() == 2) {
+    //   std::cout << "\t" << std::hex << results[i].get<uint16_t>() << std::dec
+    //             << std::endl;
+    // } else if (results[i].size() == 4) {
+    //   std::cout << "\t" << std::hex << results[i].get<uint32_t>() << std::dec
+    //             << std::endl;
+    // } else if (results[i].size() == 8) {
+    //   std::cout << "\t" << std::hex << results[i].get<uint64_t>() << std::dec
+    //             << std::endl;
+    // } else {
+    //   std::cout << "\t ?" << std::endl;
+    // }
   }
+  // std::cout << "-------" << std::endl;
 
   instructionsExecuted_++;
 

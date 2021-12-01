@@ -13,7 +13,7 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
                                       uint64_t requestId) {
   // Translate address
   Translation translation = translator_.get_mapping(target.address);
-  // std::cout << "FLAT READ (" << unsigned(target.size) << " Bytes)";
+  // std::cout << "\tFLAT READ (" << unsigned(target.size) << " Bytes)";
   // if (target.stackAccess) {
   //   std::cout << " from stack";
   // }
@@ -33,34 +33,35 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
   completedReads_.push_back(
       {target, RegisterValue(ptr, target.size), requestId});
 
-  // std::cout << " = " << std::hex;
-
   // if (target.size == 1) {
-  //   std::cout << unsigned(RegisterValue(ptr, target.size).get<uint8_t>());
+  //   std::cout << " = 0x" << std::hex << unsigned(*(uint8_t*)ptr) << std::dec;
   // } else if (target.size == 2) {
-  //   std::cout << unsigned(RegisterValue(ptr, target.size).get<uint16_t>());
+  //   std::cout << " = 0x" << std::hex << *(uint16_t*)ptr << std::dec;
   // } else if (target.size == 4) {
-  //   std::cout << unsigned(RegisterValue(ptr, target.size).get<uint32_t>());
+  //   std::cout << " = 0x" << std::hex << *(uint32_t*)ptr << std::dec;
   // } else if (target.size == 8) {
-  //   std::cout << unsigned(RegisterValue(ptr, target.size).get<uint64_t>());
+  //   std::cout << " = 0x" << std::hex << *(uint64_t*)ptr << std::dec;
   // } else {
   //   std::cout << "?";
   // }
-  // std::cout << std::dec << std::endl;
+  // std::cout << std::endl;
 }
 
 void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
                                        const RegisterValue& data) {
   // Translate address
   Translation translation = translator_.get_mapping(target.address);
-  // std::cout << "FLAT WRITE (" << unsigned(target.size) << " Bytes)";
+  // std::cout << "\tFLAT WRITE (" << unsigned(target.size) << " Bytes)";
   // if (target.stackAccess) {
   //   std::cout << " to stack";
   // }
   // std::cout << ": 0x" << std::hex << target.address << std::dec << " -> 0x"
   //           << std::hex << translation.address << std::dec << ":"
-  //           << translation.allocation << std::endl;
-
+  //           << translation.allocation << " -> ";
+  // if (translation.address + target.size > size_) {
+  //   std::cout << std::dec << std::endl;
+  //   return;
+  // }
   assert(translation.address + target.size <= size_ &&
          "Attempted to write beyond memory limit");
 
@@ -69,6 +70,7 @@ void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
   auto ptr = memory_ + translation.address;
   // Copy the data from the RegisterValue to memory
   memcpy(ptr, data.getAsVector<char>(), target.size);
+  // std::cout << "written" << std::endl;
 }
 
 const span<MemoryReadResult> FlatMemoryInterface::getCompletedReads() const {

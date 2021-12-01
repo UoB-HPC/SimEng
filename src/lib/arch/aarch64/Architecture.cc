@@ -12,8 +12,10 @@ namespace aarch64 {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
-    : linux_(kernel) {
+Architecture::Architecture(kernel::Linux& kernel,
+                           const kernel::LinuxProcess& process,
+                           YAML::Node config)
+    : linux_(kernel), process_(process) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "Could not create capstone handle" << std::endl;
     exit(1);
@@ -251,12 +253,67 @@ ProcessStateChange Architecture::getInitialState() const {
   changes.modifiedRegisters.push_back({RegisterType::GENERAL, 31});
   changes.modifiedRegisterValues.push_back(stackPointer);
 
+  // Get initial values for registers if passed in workload has NOTE segment
+  // with appropriate sections
+  // Get general registers
+  NoteEntry nt_prstatus = process_.getNote(1);
+  if (nt_prstatus.n_descsz != 0) {
+    for (uint16_t i = 0; i < 31; i++) {
+      changes.modifiedRegisters.push_back({RegisterType::GENERAL, i});
+      changes.modifiedRegisterValues.push_back(
+          {nt_prstatus.desc + (112 + (i * 8)), 8});
+    }
+  }
+
+  // SVE registers
+  NoteEntry nt_arm_sve = process_.getNote(0x405);
+  if (nt_arm_sve.n_descsz != 0) {
+    if (nt_arm_sve.n_descsz == 544) {
+      // NOTE section only contains Z registers
+      for (uint16_t i = 0; i < 32; i++) {
+        changes.modifiedRegisters.push_back({RegisterType::VECTOR, i});
+        changes.modifiedRegisterValues.push_back(
+            {nt_arm_sve.desc + (16 + (i * 8)), 256});
+      }
+    } else if (nt_arm_sve.n_descsz == 2224) {
+      // NOTE section contains Z and P registers
+      for (uint16_t i = 0; i < 32; i++) {
+        changes.modifiedRegisters.push_back({RegisterType::VECTOR, i});
+        changes.modifiedRegisterValues.push_back(
+            {nt_arm_sve.desc + (16 + (i * 8)), 256});
+      }
+      for (uint16_t i = 0; i < 16; i++) {
+        changes.modifiedRegisters.push_back({RegisterType::PREDICATE, i});
+        changes.modifiedRegisterValues.push_back(
+            {nt_arm_sve.desc + (2064 + (i * 8)), 8});
+      }
+    } else {
+      assert(false && "Unexpected size for nt_arm_sve desc size");
+    }
+  } else {
+    // If no SVE registers are present, get NEON registers instead
+    NoteEntry nt_prfpreg = process_.getNote(2);
+    if (nt_prfpreg.n_descsz != 0) {
+      for (uint16_t i = 0; i < 32; i++) {
+        changes.modifiedRegisters.push_back({RegisterType::VECTOR, i});
+        changes.modifiedRegisterValues.push_back(
+            {nt_prfpreg.desc + (i * 16), 256});
+      }
+    }
+  }
+
   // Set the system registers
   // Temporary: state that DCZ can support clearing 64 bytes at a time,
   // but is disabled due to bit 4 being set
   changes.modifiedRegisters.push_back(
       {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)});
   changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
+
+  // Temporary: value based on hardware runs on Isambard Supercomputer
+  changes.modifiedRegisters.push_back(
+      {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_TPIDR_EL0)});
+  changes.modifiedRegisterValues.push_back(
+      static_cast<uint64_t>(0x400000023260));
 
   return changes;
 }

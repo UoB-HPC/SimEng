@@ -52,6 +52,8 @@ void RegressionTest::run(const char* source, const char* triple) {
   // Create instance of address translator
   std::unique_ptr<simeng::Translator> address_translator =
       std::make_unique<simeng::Translator>();
+  // Disable Translation for test suite
+  address_translator->disable_translation();
 
   // Create a linux process from the assembled code block
   process_ = std::make_unique<simeng::kernel::LinuxProcess>(
@@ -82,20 +84,13 @@ void RegressionTest::run(const char* source, const char* triple) {
   simeng::kernel::Linux kernel(*process_, *address_translator);
 
   // Populate the heap with initial data (specified by the test being run).
-  ASSERT_LT(process_->getProcessHeapStart() + initialHeapData_.size(),
+  ASSERT_LT(process_->getProcessBrk() + initialHeapData_.size(),
             process_->getStackPointer());
   std::copy(initialHeapData_.begin(), initialHeapData_.end(),
-            processMemory_ + process_->getProcessHeapStart());
-
-  // Updated mapped region to include initial heap data
-  // std::cout << "Updating from run function" << std::endl;
-  address_translator->update_mapping(
-      {0, process_->getProcessHeapStart()},
-      {0, process_->getProcessHeapStart() + initialHeapData_.size()},
-      {0, process_->getSimulationHeapStart() + initialHeapData_.size()});
+            processMemory_ + process_->getProcessBrk());
 
   // Create the architecture
-  architecture_ = createArchitecture(kernel, config);
+  architecture_ = createArchitecture(kernel, *process_.get(), config);
 
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
