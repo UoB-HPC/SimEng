@@ -680,7 +680,7 @@ void Instruction::execute() {
       uint8_t out[256] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << i;
+        uint64_t shifted_active = 1ull << (i % 64);
         if (p[i / 64] & shifted_active) {
           out[i] = dn[i] & m[i];
         } else {
@@ -700,7 +700,7 @@ void Instruction::execute() {
       uint64_t out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = dn[i] & m[i];
         } else {
@@ -720,7 +720,7 @@ void Instruction::execute() {
       uint16_t out[128] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 2);
+        uint64_t shifted_active = 1ull << ((i % 32) * 2);
         if (p[i / 32] & shifted_active) {
           out[i] = dn[i] & m[i];
         } else {
@@ -740,7 +740,7 @@ void Instruction::execute() {
       uint32_t out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = dn[i] & m[i];
         } else {
@@ -1481,7 +1481,7 @@ void Instruction::execute() {
       uint64_t count = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << i;
+        uint64_t shifted_active = 1ull << (i % 64);
         if (pg[i / 64] & shifted_active) {
           count += (pn[i / 64] & shifted_active) ? 1 : 0;
         }
@@ -1498,7 +1498,7 @@ void Instruction::execute() {
       uint64_t count = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (pg[i / 8] & shifted_active) {
           count += (pn[i / 8] & shifted_active) ? 1 : 0;
         }
@@ -1515,7 +1515,7 @@ void Instruction::execute() {
       uint64_t count = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 2);
+        uint64_t shifted_active = 1ull << ((i % 32) * 2);
         if (pg[i / 32] & shifted_active) {
           count += (pn[i / 32] & shifted_active) ? 1 : 0;
         }
@@ -1532,7 +1532,7 @@ void Instruction::execute() {
       uint64_t count = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (pg[i / 16] & shifted_active) {
           count += (pn[i / 16] & shifted_active) ? 1 : 0;
         }
@@ -2063,7 +2063,7 @@ void Instruction::execute() {
       double out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = ::fabs(n[i]);
         } else {
@@ -2084,7 +2084,7 @@ void Instruction::execute() {
       float out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = ::fabs(n[i]);
         } else {
@@ -2116,7 +2116,7 @@ void Instruction::execute() {
       double out[2] = {operands[2].get<double>(), 0.0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[0] += m[i];
         }
@@ -2259,7 +2259,7 @@ void Instruction::execute() {
       double out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = b[i] + c[i];
         } else {
@@ -2279,7 +2279,7 @@ void Instruction::execute() {
       float out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = b[i] + c[i];
         } else {
@@ -2835,7 +2835,7 @@ void Instruction::execute() {
       int32_t out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           if (n[i] > 2147483647) {
             out[(2 * i)] = 2147483647;
@@ -2865,7 +2865,7 @@ void Instruction::execute() {
       int64_t out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           if (n[i] > INT64_MAX) {
             out[i] = INT64_MAX;
@@ -2891,7 +2891,7 @@ void Instruction::execute() {
       int64_t out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           if (n[(2 * i)] > INT64_MAX)
             out[i] = INT64_MAX;
@@ -2916,7 +2916,7 @@ void Instruction::execute() {
       int32_t out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           if (n[i] > INT32_MAX) {
             out[i] = INT32_MAX;
@@ -3075,7 +3075,7 @@ void Instruction::execute() {
       double out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = b[i] / c[i];
         } else {
@@ -3166,7 +3166,7 @@ void Instruction::execute() {
       float out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = c[i] + (a[i] * b[i]);
         } else {
@@ -3262,7 +3262,7 @@ void Instruction::execute() {
       double out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = a[i] + (b[i] * c[i]);
         } else {
@@ -3283,7 +3283,7 @@ void Instruction::execute() {
       float out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = a[i] + (b[i] * c[i]);
         } else {
@@ -3352,7 +3352,7 @@ void Instruction::execute() {
       float out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = a[i] + (-b[i] * c[i]);
         } else {
@@ -3469,7 +3469,7 @@ void Instruction::execute() {
       float out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = c[i] + (-a[i] * b[i]);
         } else {
@@ -3588,7 +3588,7 @@ void Instruction::execute() {
       double out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = n[i] * fp;
         } else {
@@ -3608,7 +3608,7 @@ void Instruction::execute() {
       float out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = n[i] * fp;
         } else {
@@ -3628,7 +3628,7 @@ void Instruction::execute() {
       double out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = n[i] * m[i];
         } else {
@@ -3648,7 +3648,7 @@ void Instruction::execute() {
       float out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = n[i] * m[i];
         } else {
@@ -3676,7 +3676,7 @@ void Instruction::execute() {
       double out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = -n[i];
         } else {
@@ -3696,7 +3696,7 @@ void Instruction::execute() {
       float out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = -n[i];
         } else {
@@ -3772,7 +3772,7 @@ void Instruction::execute() {
       double out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = -a[i] + n[i] * m[i];
         } else {
@@ -3793,7 +3793,7 @@ void Instruction::execute() {
       float out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = -a[i] + n[i] * m[i];
         } else {
@@ -3843,7 +3843,7 @@ void Instruction::execute() {
       int64_t out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = doubleRoundToNearestTiesToEven(n[i]);
         } else {
@@ -3863,7 +3863,7 @@ void Instruction::execute() {
       int32_t out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = floatRoundToNearestTiesToEven(n[i]);
         } else {
@@ -3990,7 +3990,7 @@ void Instruction::execute() {
       const uint16_t partition_num = VL_bits / 32;
       float out[64] = {0};
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = ::sqrt(n[i]);
         } else {
@@ -4035,7 +4035,7 @@ void Instruction::execute() {
       double out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = dn[i] - m[i];
         } else {
@@ -4055,7 +4055,7 @@ void Instruction::execute() {
       float out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = dn[i] - m[i];
         } else {
@@ -4179,7 +4179,7 @@ void Instruction::execute() {
       uint64_t count = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << i;
+        uint64_t shifted_active = 1ull << (i % 64);
         if (p[i / 64] & shifted_active) {
           count++;
         }
@@ -4195,7 +4195,7 @@ void Instruction::execute() {
       uint64_t count = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           count++;
         }
@@ -4211,7 +4211,7 @@ void Instruction::execute() {
       uint64_t count = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 2);
+        uint64_t shifted_active = 1ull << ((i % 32) * 2);
         if (p[i / 32] & shifted_active) {
           count++;
         }
@@ -4227,7 +4227,7 @@ void Instruction::execute() {
       uint64_t count = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           count++;
         }
@@ -4686,7 +4686,7 @@ void Instruction::execute() {
       uint8_t out[256] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << i;
+        uint64_t shifted_active = 1ull << (i % 64);
         if (p[i / 64] & shifted_active) {
           out[i] = memoryData[index].get<uint8_t>();
           index++;
@@ -4706,7 +4706,7 @@ void Instruction::execute() {
       uint64_t out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = memoryData[index].get<uint64_t>();
           index++;
@@ -4727,7 +4727,7 @@ void Instruction::execute() {
       uint64_t out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = memoryData[index].get<uint64_t>();
           index++;
@@ -4823,7 +4823,7 @@ void Instruction::execute() {
       uint32_t out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = memoryData[index].get<uint32_t>();
           index++;
@@ -4844,7 +4844,7 @@ void Instruction::execute() {
       uint32_t out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = memoryData[index].get<uint32_t>();
           index++;
@@ -5327,7 +5327,7 @@ void Instruction::execute() {
       uint8_t out[256] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << i;
+        uint64_t shifted_active = 1ull << (i % 64);
         if (p[i / 64] & shifted_active) {
           out[i] = d[i] + (n[i] * m[i]);
         } else {
@@ -5348,7 +5348,7 @@ void Instruction::execute() {
       uint64_t out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = d[i] + (n[i] * m[i]);
         } else {
@@ -5369,7 +5369,7 @@ void Instruction::execute() {
       uint16_t out[128] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 2);
+        uint64_t shifted_active = 1ull << ((i % 32) * 2);
         if (p[i / 32] & shifted_active) {
           out[i] = d[i] + (n[i] * m[i]);
         } else {
@@ -5390,7 +5390,7 @@ void Instruction::execute() {
       uint32_t out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = d[i] + (n[i] * m[i]);
         } else {
@@ -5822,7 +5822,7 @@ void Instruction::execute() {
       uint64_t out[4] = {0, 0, 0, 0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << i;
+        uint64_t shifted_active = 1ull << (i % 64);
         out[i / 64] |= shifted_active;
       }
 
@@ -5835,7 +5835,7 @@ void Instruction::execute() {
       uint64_t out[4] = {0, 0, 0, 0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         out[i / 8] |= shifted_active;
       }
 
@@ -5861,7 +5861,7 @@ void Instruction::execute() {
       uint64_t out[4] = {0, 0, 0, 0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         out[i / 16] |= shifted_active;
       }
       results[0] = out;
@@ -6281,7 +6281,7 @@ void Instruction::execute() {
       uint64_t out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out[i] = n[i];
         } else {
@@ -6301,7 +6301,7 @@ void Instruction::execute() {
       uint32_t out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = n[i];
         } else {
@@ -6361,7 +6361,7 @@ void Instruction::execute() {
       int32_t out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = std::max(n[i], m[i]);
         } else {
@@ -6391,7 +6391,7 @@ void Instruction::execute() {
       int32_t out[64] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out[i] = std::min(n[i], m[i]);
         } else {
@@ -6411,7 +6411,7 @@ void Instruction::execute() {
       int32_t out = INT32_MAX;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           out = std::min(out, n[i]);
         }
@@ -6484,7 +6484,7 @@ void Instruction::execute() {
       uint8_t index = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << i;
+        uint64_t shifted_active = 1ull << (i % 64);
         if (p[i / 64] & shifted_active) {
           memoryData[index] = d[i];
           index++;
@@ -6501,7 +6501,7 @@ void Instruction::execute() {
       uint8_t index = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           memoryData[index] = static_cast<uint8_t>(d[i]);
           index++;
@@ -6524,7 +6524,7 @@ void Instruction::execute() {
       uint8_t index = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           memoryData[index] = d[i];
           index++;
@@ -6541,7 +6541,7 @@ void Instruction::execute() {
       uint8_t index = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           memoryData[index] = d[i];
           index++;
@@ -6558,7 +6558,7 @@ void Instruction::execute() {
       uint8_t index = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           memoryData[index] = d[i];
           index++;
@@ -6592,7 +6592,7 @@ void Instruction::execute() {
       uint8_t index = 0;
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 4);
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
           memoryData[index] = d[i];
           index++;
