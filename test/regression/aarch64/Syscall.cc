@@ -166,8 +166,8 @@ TEST_P(Syscall, getdents64) {
     mov x20, x0
 
     # Need to open the directory
-    # fd = openat(AT_FDCWD, filepath, O_RDONLY)
-    # Flags = 0x00000000
+    # fd = openat(AT_FDCWD, filepath, O_PATH)
+    # Flags = 0x200000
     mov x0, -100
     add x1, x20, 32768
     mov x2, #0
