@@ -54,7 +54,7 @@ void ModelConfig::validate() {
                             std::make_pair(4, UINT16_MAX),
                             ExpectedValue::UInteger)) {
     uint16_t block_size = configFile_[root][subFields[2]].as<uint16_t>();
-    // Ensure ftech block size is a power of 2
+    // Ensure fetch block size is a power of 2
     if ((block_size & (block_size - 1)) == 0) {
       uint8_t alignment_bits = log2(block_size);
       configFile_[root]["Fetch-Block-Alignment-Bits"] =
@@ -351,6 +351,53 @@ void ModelConfig::validate() {
     nodeChecker<uint16_t>(
         latNode[subFields[2]], (std::string(latNum) + subFields[2]),
         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
+  }
+  subFields.clear();
+
+  // CPU-Info
+  root = "CPU-Info";
+  subFields = {
+      "Generate-Special-Dir", "Core-Count",       "BogoMIPS",    "Features",
+      "CPU-Implementer",      "CPU-Architecture", "CPU-Variant", "CPU-Part",
+      "CPU-Revision",         "Package-Count"};
+  nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
+                           {"T", "F", ""}, ExpectedValue::String, "F");
+  nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger, 1);
+  nodeChecker<float>(configFile_[root][subFields[2]], subFields[2],
+                     std::make_pair(0.0f, std::numeric_limits<float>::max()),
+                     ExpectedValue::Float, 0.0f);
+  nodeChecker<std::string>(configFile_[root][subFields[3]], subFields[3],
+                           std::vector<std::string>(), ExpectedValue::String,
+                           "");
+  nodeChecker<unsigned int>(configFile_[root][subFields[4]], subFields[4],
+                            std::make_pair(0, UINT_MAX),
+                            ExpectedValue::UInteger, 0x0);
+  nodeChecker<unsigned int>(configFile_[root][subFields[5]], subFields[5],
+                            std::make_pair(0, UINT_MAX),
+                            ExpectedValue::UInteger, 0x0);
+  nodeChecker<unsigned int>(configFile_[root][subFields[6]], subFields[6],
+                            std::make_pair(0, UINT_MAX),
+                            ExpectedValue::UInteger, 0x0);
+  nodeChecker<unsigned int>(configFile_[root][subFields[7]], subFields[7],
+                            std::make_pair(0, UINT_MAX),
+                            ExpectedValue::UInteger, 0x0);
+  nodeChecker<unsigned int>(configFile_[root][subFields[8]], subFields[8],
+                            std::make_pair(0, UINT_MAX),
+                            ExpectedValue::UInteger, 0x0);
+  if (nodeChecker<unsigned int>(configFile_[root][subFields[9]], subFields[9],
+                                std::make_pair(1, UINT_MAX),
+                                ExpectedValue::UInteger, 1)) {
+    uint64_t package_count = configFile_[root][subFields[9]].as<uint64_t>();
+    uint64_t core_count = configFile_[root][subFields[1]].as<uint64_t>();
+    // Ensure package_count size is a less than or equal to the core count, and
+    // that the core count can be divided by the package count
+    if (!((package_count <= core_count) && (core_count % package_count == 0))) {
+      invalid_
+          << "\t- Package-Count must be a Less-than or equal to Core-Count, "
+             "and Core-Count must be divisible by Package-Count.";
+    }
   }
   subFields.clear();
 

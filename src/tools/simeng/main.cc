@@ -73,6 +73,12 @@ int main(int argc, char** argv) {
     mode = SimulationMode::OutOfOrder;
   }
 
+  // Create the Special Files directory
+  if (config["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
+    // Remove current dir
+    // Create new dir
+  }
+
   if (argc > 2) {
     executablePath = std::string(argv[2]);
   }
@@ -289,6 +295,12 @@ int main(int argc, char** argv) {
   std::cout << "\nFinished " << iterations << " ticks in " << duration << "ms ("
             << std::round(khz) << " kHz, " << std::setprecision(2) << mips
             << " MIPS)" << std::endl;
+
+  // If Special Files directory was created, now remove it
+  if (config["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
+    // Remove special files dir
+    std::cout << "Testing new yaml format" << std::endl;
+  }
 
 // Print build metadata and core statistics in YAML format
 // to facilitate parsing. Print "YAML-SEQ" to indicate beginning
