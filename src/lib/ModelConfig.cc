@@ -371,18 +371,18 @@ void ModelConfig::validate() {
   nodeChecker<std::string>(configFile_[root][subFields[3]], subFields[3],
                            std::vector<std::string>(), ExpectedValue::String,
                            "");
-  nodeChecker<unsigned int>(configFile_[root][subFields[4]], subFields[4],
-                            std::make_pair(0, UINT_MAX),
-                            ExpectedValue::UInteger, 0x0);
+  nodeChecker<std::string>(configFile_[root][subFields[4]], subFields[4],  //
+                           std::vector<std::string>(), ExpectedValue::String,
+                           "0x0");
   nodeChecker<unsigned int>(configFile_[root][subFields[5]], subFields[5],
                             std::make_pair(0, UINT_MAX),
-                            ExpectedValue::UInteger, 0x0);
-  nodeChecker<unsigned int>(configFile_[root][subFields[6]], subFields[6],
-                            std::make_pair(0, UINT_MAX),
-                            ExpectedValue::UInteger, 0x0);
-  nodeChecker<unsigned int>(configFile_[root][subFields[7]], subFields[7],
-                            std::make_pair(0, UINT_MAX),
-                            ExpectedValue::UInteger, 0x0);
+                            ExpectedValue::UInteger, 0);
+  nodeChecker<std::string>(configFile_[root][subFields[6]], subFields[6],  //
+                           std::vector<std::string>(), ExpectedValue::String,
+                           "0x0");
+  nodeChecker<std::string>(configFile_[root][subFields[7]], subFields[7],  //
+                           std::vector<std::string>(), ExpectedValue::String,
+                           "0x0");
   nodeChecker<unsigned int>(configFile_[root][subFields[8]], subFields[8],
                             std::make_pair(0, UINT_MAX),
                             ExpectedValue::UInteger, 0x0);
