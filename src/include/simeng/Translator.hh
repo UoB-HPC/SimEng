@@ -94,7 +94,7 @@ class Translator {
   /** Set the page size used by the process being simulated. */
   void setPageSize(uint64_t pagesize);
 
-  /** From a process and simualtion memory region pair, create a set of 1:1
+  /** From a process and simulation memory region pair, create a set of 1:1
    * mapping entries in the mappings_ unordered_map. The insert parameters
    * controls whether keys generated from the provided memory regions are
    * inserted or erased from mappings_. */

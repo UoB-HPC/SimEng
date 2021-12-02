@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
     // Attempt to create the process image from the specified command-line
     std::vector<std::string> commandLine(argv + 2, argv + argc);
     process = std::make_unique<simeng::kernel::LinuxProcess>(
-        commandLine, *address_translator);
+        commandLine, *address_translator, config);
     if (!process->isValid()) {
       std::cerr << "Could not read/parse " << argv[2] << std::endl;
       exit(1);

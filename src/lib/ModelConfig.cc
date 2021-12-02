@@ -65,6 +65,14 @@ void ModelConfig::validate() {
   }
   subFields.clear();
 
+  // Process-Image
+  root = "Process-Image";
+  subFields = {"Mmap-Region-Start"};
+  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
+                        UINT64_MAX);
+  subFields.clear();
+
   // Branch-Predictor
   root = "Branch-Predictor";
   subFields = {"BTB-bitlength"};

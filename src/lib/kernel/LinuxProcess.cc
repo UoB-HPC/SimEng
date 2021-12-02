@@ -17,7 +17,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 }
 
 LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
-                           Translator& translator)
+                           Translator& translator, YAML::Node config)
     : commandLine_(commandLine), translator_(translator) {
   // Parse ELF file
   assert(commandLine.size() > 0);
@@ -37,7 +37,6 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
       });
 
   if (nt_prstatus != noteSegment_.end()) {
-    std::cout << "Reading " << nt_prstatus->name << std::endl;
     // If notes segment contains a PC value, use it
     entryPoint_ = *reinterpret_cast<uint64_t*>(nt_prstatus->desc +
                                                (nt_prstatus->n_descsz - 24));
@@ -46,9 +45,11 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
                                                  (nt_prstatus->n_descsz - 32));
   } else {
     entryPoint_ = elf.getEntryPoint();
+    stackPointer_ = UINT64_MAX;
   }
 
-  processMmapStart_ = 0x400000000000;
+  processMmapStart_ =
+      config["Process-Image"]["Mmap-Region-Start"].as<uint64_t>();
 
   // Get ELF headers and their contents
   std::vector<ElfHeader> headerContents;
@@ -76,10 +77,13 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   translator_.add_mapping({processBrk_, processBrk_},
                           {simulationBrk_, simulationBrk_});
 
-  // Set simualtion mmap region start to be an equal distance from the
+  // Set simulation mmap region start to be an equal distance from the
   // stack and heap starts. Additionally, align to the page size (4kb)
-  simulationMmapStart_ = processMmapStart_ =
+  simulationMmapStart_ =
       alignToBoundary(simulationBrk_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
+  // If the process mmap start region hasn't been explicitly set, use the
+  // simulation's value
+  if (processMmapStart_ == UINT64_MAX) processMmapStart_ = simulationMmapStart_;
 
   // Update translator with mmap start regions to aid with previous and future
   // mmap calls
@@ -142,7 +146,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   }
 
   // If the passed in workload had no stack LOAD segment, create one
-  if (stackPointer_ == 0) {
+  if (stackPointer_ == UINT64_MAX) {
     createStack();
     // Add a mapping for the STACK_SIZE allocated
     if (!translator_.add_mapping({size_ - STACK_SIZE, size_},
@@ -166,7 +170,7 @@ LinuxProcess::LinuxProcess(span<char> instructions, Translator& translator)
   translator_.add_mapping({processBrk_, processBrk_},
                           {simulationBrk_, simulationBrk_});
 
-  // Set simualtion mmap region start to be an equal distance from the
+  // Set simulation mmap region start to be an equal distance from the
   // stack and heap starts. Additionally, align to the page size (4kb)
   simulationMmapStart_ = processMmapStart_ =
       alignToBoundary(simulationBrk_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
@@ -224,10 +228,13 @@ const span<char> LinuxProcess::getProcessImage() const {
   return {processImage_, size_};
 }
 
-const NoteEntry LinuxProcess::getNote(uint32_t type) const {
-  auto nt_section = std::find_if(
-      noteSegment_.begin(), noteSegment_.end(),
-      [type](const NoteEntry entry) { return (entry.n_type == type); });
+const NoteEntry LinuxProcess::getNote(uint32_t type, std::string name) const {
+  auto nt_section =
+      std::find_if(noteSegment_.begin(), noteSegment_.end(),
+                   [type, name](const NoteEntry entry) {
+                     return (entry.n_type == type &&
+                             (std::string(entry.name).compare(name) == 0));
+                   });
   if (nt_section != noteSegment_.end()) {
     return *nt_section;
   }

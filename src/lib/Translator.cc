@@ -1,7 +1,6 @@
 #include "simeng/Translator.hh"
 
 #include <algorithm>
-#include <cassert>
 #include <iostream>
 
 namespace simeng {
@@ -70,19 +69,37 @@ bool Translator::add_mapping(memoryRegion region_process,
     //           vs "
     //           << (region_simulation.addr_end - region_simulation.addr_start)
     //           << ")" << std::endl;
-    // assert(false && "Differently sized memory regions_");
     return false;
   }
-  // std::min used to ensure boundaries compared against don't wrap around to
-  // unsigned(-1)
+
+  // Ensure new program region shares no boundary with previous process region
+  // std::max used to ensure boundaries of 0 don't wrap around to unsigned(-1)
   auto res =
       std::find_if(regions_.begin(), regions_.end(),
                    [&](const std::pair<memoryRegion, memoryRegion>& mem) {
-                     return !(region_simulation.addr_start >
-                                  std::min(mem.second.addr_end - 1, 0ull) ||
-                              std::min(region_simulation.addr_end - 1, 0ull) <
-                                  mem.second.addr_start);
+                     return !(region_process.addr_start >
+                                  (std::max(mem.first.addr_end, 1ull) - 1) ||
+                              (std::max(region_process.addr_end, 1ull) - 1) <
+                                  mem.first.addr_start);
                    });
+  if (res != regions_.end()) {
+    // std::cout << "Overlap:" << std::endl;
+    // std::cout << "\t0x" << std::hex << res->first.addr_start << std::dec
+    //           << " to 0x" << std::hex << res->first.addr_end << std::dec
+    //           << std::endl;
+    // std::cout << "\t0x" << std::hex << region_process.addr_start << std::dec
+    //           << " to 0x" << std::hex << region_process.addr_end << std::dec
+    //           << std::endl;
+    return false;
+  }
+  // Ensure new simeng region shares no boundary with previous simeng region
+  res = std::find_if(regions_.begin(), regions_.end(),
+                     [&](const std::pair<memoryRegion, memoryRegion>& mem) {
+                       return !(region_simulation.addr_start >
+                                    (std::max(mem.second.addr_end, 1ull) - 1) ||
+                                (std::max(region_simulation.addr_end, 1ull) -
+                                 1) < mem.second.addr_start);
+                     });
   if (res != regions_.end()) {
     // std::cout << "Overlap:" << std::endl;
     // std::cout << "\t0x" << std::hex << res->second.addr_start << std::dec
@@ -93,10 +110,10 @@ bool Translator::add_mapping(memoryRegion region_process,
     //           << " to 0x" << std::hex << region_simulation.addr_end <<
     //           std::dec
     //           << std::endl;
-    // assert(false && "Overlaps with previously allocated region");
     return false;
   }
 
+  // Insert new region mapping and enumerate 1:1 address mappings
   regions_.insert({region_process, region_simulation});
   enumerate_region(region_process, region_simulation, true);
 
@@ -141,6 +158,8 @@ bool Translator::update_mapping(memoryRegion region_original,
     return false;
   }
 
+  // Temporarily remove region_original to ensure it's not consdiere din the
+  // following checks
   std::pair<memoryRegion, memoryRegion> temp = *res_old;
   regions_.erase(res_old);
 
@@ -149,29 +168,53 @@ bool Translator::update_mapping(memoryRegion region_original,
   //           << " to 0x" << std::hex << temp.first.addr_end << std::dec
   //           << " -> ";
 
-  // Ensure new simeng region shares no boundary with previous region
-  // std::min used to ensure boundaries compared against don't wrap around
-  // to unsigned(-1)
+  // Ensure new program region shares no boundary with previous process region
+  // std::max used to ensure boundaries of 0 don't wrap around to unsigned(-1)
   auto res =
       std::find_if(regions_.begin(), regions_.end(),
                    [&](const std::pair<memoryRegion, memoryRegion>& mem) {
-                     return !(region_simulation.addr_start >
-                                  std::min(mem.second.addr_end - 1, 0ull) ||
-                              std::min(region_simulation.addr_end - 1, 0ull) <
-                                  mem.second.addr_start);
+                     return !(region_process.addr_start >
+                                  (std::max(mem.first.addr_end, 1ull) - 1) ||
+                              (std::max(region_process.addr_end, 1ull) - 1) <
+                                  mem.first.addr_start);
                    });
+
   if (res != regions_.end()) {
-    // std::cout << "overlaps prior region 0x" << std::hex
-    //           << res->second.addr_start << std::dec << ":0x" << std::hex
-    //           << res->second.addr_end << std::dec << " <- 0x" << std::hex
-    //           << region_simulation.addr_start << std::dec << ":0x" <<
-    //           std::hex
-    //           << region_simulation.addr_end << std::dec << std::endl;
+    // std::cout << "Overlap:" << std::endl;
+    // std::cout << "\t0x" << std::hex << res->first.addr_start << std::dec
+    //           << " to 0x" << std::hex << res->first.addr_end << std::dec
+    //           << std::endl;
+    // std::cout << "\t0x" << std::hex << region_process.addr_start << std::dec
+    //           << " to 0x" << std::hex << region_process.addr_end << std::dec
+    //           << std::endl;
+    // Add region_original back due to failure in above check
     regions_.insert(temp);
     return false;
   }
-  // Add new mapping
-  // add_mapping(b, c);
+  // Ensure new simeng region shares no boundary with previous simeng region
+  res = std::find_if(regions_.begin(), regions_.end(),
+                     [&](const std::pair<memoryRegion, memoryRegion>& mem) {
+                       return !(region_simulation.addr_start >
+                                    (std::max(mem.second.addr_end, 1ull) - 1) ||
+                                (std::max(region_simulation.addr_end, 1ull) -
+                                 1) < mem.second.addr_start);
+                     });
+  if (res != regions_.end()) {
+    // std::cout << "Overlap:" << std::endl;
+    // std::cout << "\t0x" << std::hex << res->second.addr_start << std::dec
+    //           << " to 0x" << std::hex << res->second.addr_end << std::dec
+    //           << std::endl;
+    // std::cout << "\t0x" << std::hex << region_simulation.addr_start <<
+    // std::dec
+    //           << " to 0x" << std::hex << region_simulation.addr_end <<
+    //           std::dec
+    //           << std::endl;
+    // Add region_original back due to failure in above check
+    regions_.insert(temp);
+    return false;
+  }
+
+  // Insert new region mapping and enumerate 1:1 address mappings
   regions_.insert({region_process, region_simulation});
   enumerate_region(region_process, region_simulation, true);
   // std::cout << "0x" << std::hex << temp.second.addr_start << std::dec <<
@@ -182,7 +225,6 @@ bool Translator::update_mapping(memoryRegion region_original,
   //           << std::hex << region_simulation.addr_end << std::dec << "("
   //           << (region_simulation.addr_end - region_simulation.addr_start)
   //           << ")" << std::endl;
-
   return true;
 }
 
@@ -305,7 +347,6 @@ int64_t Translator::munmap_deallocation(uint64_t addr, size_t length) {
                       alloc.mapped_region.addr_end == mem.second.addr_end);
             });
         if (res_old == regions_.end()) {
-          // std::cout << "original doesn't exist" << std::endl;
           return -1;
         }
         // Erase mapping entries

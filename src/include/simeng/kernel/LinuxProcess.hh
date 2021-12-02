@@ -2,6 +2,7 @@
 
 #include "simeng/Elf.hh"
 #include "simeng/Translator.hh"
+#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 namespace kernel {
@@ -40,7 +41,7 @@ class LinuxProcess {
    * The first element of the command-line vector is a path to an executable ELF
    * file. */
   LinuxProcess(const std::vector<std::string>& commandLine,
-               Translator& translator);
+               Translator& translator, YAML::Node config);
 
   /** Construct a Linux process from region of instruction memory, with the
    * entry point fixed at 0. */
@@ -70,7 +71,7 @@ class LinuxProcess {
   const span<char> getProcessImage() const;
 
   /** Get a section of the note segment of passed in from the ELF. */
-  const NoteEntry getNote(uint32_t type) const;
+  const NoteEntry getNote(uint32_t type, std::string name) const;
 
   /** Get the entry point. */
   uint64_t getEntryPoint() const;

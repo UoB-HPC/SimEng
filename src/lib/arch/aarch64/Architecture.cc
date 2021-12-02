@@ -256,7 +256,7 @@ ProcessStateChange Architecture::getInitialState() const {
   // Get initial values for registers if passed in workload has NOTE segment
   // with appropriate sections
   // Get general registers
-  NoteEntry nt_prstatus = process_.getNote(1);
+  NoteEntry nt_prstatus = process_.getNote(1, "CORE\0");
   if (nt_prstatus.n_descsz != 0) {
     for (uint16_t i = 0; i < 31; i++) {
       changes.modifiedRegisters.push_back({RegisterType::GENERAL, i});
@@ -266,7 +266,7 @@ ProcessStateChange Architecture::getInitialState() const {
   }
 
   // SVE registers
-  NoteEntry nt_arm_sve = process_.getNote(0x405);
+  NoteEntry nt_arm_sve = process_.getNote(0x405, "LINUX\0");
   if (nt_arm_sve.n_descsz != 0) {
     if (nt_arm_sve.n_descsz == 544) {
       // NOTE section only contains Z registers
@@ -292,7 +292,7 @@ ProcessStateChange Architecture::getInitialState() const {
     }
   } else {
     // If no SVE registers are present, get NEON registers instead
-    NoteEntry nt_prfpreg = process_.getNote(2);
+    NoteEntry nt_prfpreg = process_.getNote(2, "CORE\0");
     if (nt_prfpreg.n_descsz != 0) {
       for (uint16_t i = 0; i < 32; i++) {
         changes.modifiedRegisters.push_back({RegisterType::VECTOR, i});

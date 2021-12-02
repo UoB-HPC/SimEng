@@ -6,6 +6,8 @@ Core:
   Simulation-Mode: outoforder
   Clock-Frequency: 2.5
   Fetch-Block-Size: 32
+Process-Image:
+  Mmap-Region-Start: 0x400000000000
 Register-Set:
   GeneralPurpose-Count: 154
   FloatingPoint/SVE-Count: 90
