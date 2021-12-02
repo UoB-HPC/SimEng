@@ -13,6 +13,7 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/ModelConfig.hh"
+#include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
@@ -71,12 +72,6 @@ int main(int argc, char** argv) {
   } else if (config["Core"]["Simulation-Mode"].as<std::string>() ==
              "outoforder") {
     mode = SimulationMode::OutOfOrder;
-  }
-
-  // Create the Special Files directory
-  if (config["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
-    // Remove current dir
-    // Create new dir
   }
 
   if (argc > 2) {
@@ -270,6 +265,16 @@ int main(int argc, char** argv) {
       break;
     }
   };
+
+  simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen(config);
+  // Create the Special Files directory if indicated to do so in Config
+  if (config["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
+    // Remove any current special files dir
+    SFdir.RemoveExistingSFDir();
+    // Create new special files dir
+    SFdir.GenerateSFDir();
+  }
+
   std::cout << "Running in " << modeString << " mode\n";
   std::cout << "Starting..." << std::endl;
   auto startTime = std::chrono::high_resolution_clock::now();
@@ -299,7 +304,7 @@ int main(int argc, char** argv) {
   // If Special Files directory was created, now remove it
   if (config["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
     // Remove special files dir
-    std::cout << "Testing new yaml format" << std::endl;
+    // SFdir.RemoveExistingSFDir();
   }
 
 // Print build metadata and core statistics in YAML format
