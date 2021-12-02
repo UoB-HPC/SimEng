@@ -223,6 +223,10 @@ class Linux {
   static const size_t LINUX_PATH_MAX = 4096;
 
  private:
+  /** Resturn correct Dirfd depending on given pathname abd dirfd given to
+   * syscall. */
+  uint64_t getDirFd(int64_t dfd, std::string pathname);
+
   /** The state of the user-space processes running above the kernel. */
   std::vector<LinuxProcessState> processStates_;
 

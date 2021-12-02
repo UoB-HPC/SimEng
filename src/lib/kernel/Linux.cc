@@ -38,6 +38,27 @@ void Linux::createProcess(const LinuxProcess& process) {
       {"/sys/devices/system/cpu/online", specialFilesDir_ + "online"});
 }
 
+uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
+  // Resolve absolute path to target file
+  char absolutePath[LINUX_PATH_MAX];
+  realpath(pathname.c_str(), absolutePath);
+
+  int64_t dfd_temp = AT_FDCWD;
+  if (dfd != -100) {
+    dfd_temp = dfd;
+    // If absolute path used then dfd is dis-regarded. Otherwise need to see if
+    // fd exists for directory referenced
+    if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
+      assert(dfd < processStates_[0].fileDescriptorTable.size());
+      dfd_temp = processStates_[0].fileDescriptorTable[dfd];
+      if (dfd_temp < 0) {
+        return EBADF;
+      }
+    }
+  }
+  return dfd_temp;
+}
+
 uint64_t Linux::getInitialStackPointer() const {
   assert(processStates_.size() > 0 &&
          "Attempted to retrieve a stack pointer before creating a process");
@@ -105,22 +126,12 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
     }
   }
 
-  // Pass syscall through to host
-  int64_t dfd_temp = AT_FDCWD;
-  if (dfd != -100) {
-    dfd_temp = dfd;
-    // If absolute path used then dfd is dis-regarded. Otherwise need to see if
-    // fd exists for directory referenced
-    if (strncmp(filename.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert(dfd < processStates_[0].fileDescriptorTable.size());
-      dfd_temp = processStates_[0].fileDescriptorTable[dfd];
-      if (dfd_temp < 0) {
-        return EBADF;
-      }
-    }
-  }
+  // Get correct dirfd
+  int64_t dirfd = Linux::getDirFd(dfd, filename);
+  if (dirfd == EBADF) return dirfd;
 
-  int64_t retval = ::faccessat(dfd_temp, filename.c_str(), mode, flag);
+  // Pass call through to host
+  int64_t retval = ::faccessat(dirfd, filename.c_str(), mode, flag);
 
   return retval;
 }
@@ -156,23 +167,13 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
     }
   }
 
-  // Pass call through to host
-  int64_t dfd_temp = AT_FDCWD;
-  if (dfd != -100) {
-    dfd_temp = dfd;
-    // If absolute path used then dfd is dis-regarded. Otherwise need to see if
-    // fd exists for directory referenced
-    if (strncmp(filename.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert(dfd < processStates_[0].fileDescriptorTable.size());
-      dfd_temp = processStates_[0].fileDescriptorTable[dfd];
-      if (dfd_temp < 0) {
-        return EBADF;
-      }
-    }
-  }
+  // Get correct dirfd
+  int64_t dirfd = Linux::getDirFd(dfd, filename);
+  if (dirfd == EBADF) return dirfd;
 
+  // Pass call through to host
   struct ::stat statbuf;
-  int64_t retval = ::fstatat(dfd_temp, filename.c_str(), &statbuf, flag);
+  int64_t retval = ::fstatat(dirfd, filename.c_str(), &statbuf, flag);
 
   // Copy results to output struct
   out.dev = statbuf.st_dev;
@@ -467,25 +468,15 @@ int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
   if (flags & 0x410000) newFlags |= O_TMPFILE;
 #endif
 
-  // Pass syscall through to host
-  int64_t dfd_temp = AT_FDCWD;
-  if (dfd != -100) {
-    dfd_temp = dfd;
-    // If absolute path used then dfd is dis-regarded. Otherwise need to see if
-    // fd exists for directory referenced
-    if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert(dfd < processStates_[0].fileDescriptorTable.size());
-      dfd_temp = processStates_[0].fileDescriptorTable[dfd];
-      if (dfd_temp < 0) {
-        return EBADF;
-      }
-    }
-  }
+  // Get correct dirfd
+  int64_t dirfd = Linux::getDirFd(dfd, pathname);
+  if (dirfd == EBADF) return dirfd;
 
   // Use path replacement for pathname argument of openat, if chosen
   const char* newPathname =
       altPath ? specialPathTranslations_[pathname].c_str() : pathname.c_str();
-  int64_t hfd = ::openat(dfd_temp, newPathname, newFlags, mode);
+  // Pass call through to host
+  int64_t hfd = ::openat(dirfd, newPathname, newFlags, mode);
   if (hfd < 0) {
     return hfd;
   }
