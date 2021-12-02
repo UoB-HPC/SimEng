@@ -12,10 +12,11 @@ set(TEST_SOURCES
     pipeline/WritebackUnitTest.cc
     BTBPredictorTest.cc
     ISATest.cc
-    RegisterValueTest.cc
-    PoolTest.cc
-    ShiftValueTest.cc
     LatencyMemoryInterfaceTest.cc
+    PoolTest.cc
+    RegisterValueTest.cc
+    ShiftValueTest.cc
+    TranslatorTest.cc
     )
 
 add_executable(unittests ${TEST_SOURCES})
