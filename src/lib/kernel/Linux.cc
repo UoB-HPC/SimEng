@@ -105,21 +105,8 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
     }
   }
 
+  // Pass syscall through to host
   int64_t dfd_temp = AT_FDCWD;
-#ifdef __MACH__
-  // Pass syscall through to host
-  if (dfd != -100) {
-    dfd_temp = dfd;
-    // If absolute path used then dfd is dis-regarded.
-    // Otherwise, a dirfd != AT_FDCWD isn't currently supported for relative
-    // paths for MacOS.
-    if (strncmp(filename.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert("Unsupported dirfd argument in fstatat syscall");
-      return EBADF;
-    }
-  }
-#else
-  // Pass syscall through to host
   if (dfd != -100) {
     dfd_temp = dfd;
     // If absolute path used then dfd is dis-regarded. Otherwise need to see if
@@ -132,7 +119,6 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
       }
     }
   }
-#endif
 
   int64_t retval = ::faccessat(dfd_temp, filename.c_str(), mode, flag);
 
@@ -172,20 +158,6 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
 
   // Pass call through to host
   int64_t dfd_temp = AT_FDCWD;
-#ifdef __MACH__
-  // Pass syscall through to host
-  if (dfd != -100) {
-    dfd_temp = dfd;
-    // If absolute path used then dfd is dis-regarded.
-    // Otherwise, a dirfd != AT_FDCWD isn't currently supported for relative
-    // paths for MacOS.
-    if (strncmp(filename.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert("Unsupported dirfd argument in fstatat syscall");
-      return EBADF;
-    }
-  }
-#else
-  // Pass syscall through to host
   if (dfd != -100) {
     dfd_temp = dfd;
     // If absolute path used then dfd is dis-regarded. Otherwise need to see if
@@ -198,7 +170,6 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
       }
     }
   }
-#endif
 
   struct ::stat statbuf;
   int64_t retval = ::fstatat(dfd_temp, filename.c_str(), &statbuf, flag);
@@ -480,7 +451,6 @@ int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
   if (flags & 0x20000) newFlags |= O_NOFOLLOW;
   if (flags & 0x800) newFlags |= O_NONBLOCK;  // O_NDELAY
   if (flags & 0x101000) newFlags |= O_SYNC;
-
   if (flags & 0x200) newFlags |= O_TRUNC;
 
 #ifdef __MACH__
@@ -497,21 +467,8 @@ int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
   if (flags & 0x410000) newFlags |= O_TMPFILE;
 #endif
 
+  // Pass syscall through to host
   int64_t dfd_temp = AT_FDCWD;
-#ifdef __MACH__
-  // Pass syscall through to host
-  if (dfd != -100) {
-    dfd_temp = dfd;
-    // If absolute path used then dfd is dis-regarded.
-    // Otherwise, a dirfd != AT_FDCWD isn't currently supported for relative
-    // paths for MacOS.
-    if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert("Unsupported dirfd argument in fstatat syscall");
-      return EBADF;
-    }
-  }
-#else
-  // Pass syscall through to host
   if (dfd != -100) {
     dfd_temp = dfd;
     // If absolute path used then dfd is dis-regarded. Otherwise need to see if
@@ -524,7 +481,6 @@ int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
       }
     }
   }
-#endif
 
   // Use path replacement for pathname argument of openat, if chosen
   const char* newPathname =

@@ -147,8 +147,6 @@ TEST_P(Syscall, faccessat) {
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(26), 0);
 
-#ifdef __MACH__
-#else
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
@@ -167,11 +165,11 @@ TEST_P(Syscall, faccessat) {
     mov x20, x0
 
     # Need to open the directory
-    # dfd = openat(AT_FDCWD, dirPath, O_PATH)
-    # Flags = 0x200000
+    # dfd = openat(AT_FDCWD, dirPath, O_DIRECTORY)
+    # Flags = 0x10000
     mov x0, -100
     add x1, x20, #10
-    mov x2, #0
+    mov x2, #65536
     mov x8, #56
     svc #0
     mov x21, x0
@@ -187,7 +185,6 @@ TEST_P(Syscall, faccessat) {
     mov x27, x0
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(27), 0);
-#endif
 }
 
 #ifdef SYS_getdents
@@ -677,8 +674,6 @@ TEST_P(Syscall, newfstatat) {
   // Check fstatat returned -1 (file not found)
   EXPECT_EQ(getGeneralRegister<uint64_t>(21), -1);
 
-#ifdef __MACH__
-#else
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
   char dirPath[LINUX_PATH_MAX];
@@ -697,11 +692,11 @@ TEST_P(Syscall, newfstatat) {
     mov x20, x0
 
     # Need to open the directory
-    # dfd = openat(AT_FDCWD, dirPath, O_PATH)
-    # Flags = 0x200000
+    # dfd = openat(AT_FDCWD, dirPath, O_DIRECTORY)
+    # Flags = 0x10000
     mov x0, -100
     add x1, x20, #138
-    mov x2, #0
+    mov x2, #65536
     mov x8, #56
     svc #0
     mov x21, x0
@@ -716,7 +711,6 @@ TEST_P(Syscall, newfstatat) {
     mov x21, x0
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(27), 0);
-#endif
 }
 
 TEST_P(Syscall, getrusage) {
