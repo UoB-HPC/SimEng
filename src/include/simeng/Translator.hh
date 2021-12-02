@@ -10,6 +10,15 @@ namespace simeng {
 struct Translation {
   uint64_t address;
   bool allocation;
+
+  Translation(uint64_t address, bool allocation) {
+    this->address = address;
+    this->allocation = allocation;
+  }
+
+  bool operator==(const Translation& t) const {
+    return address == t.address && allocation == t.allocation;
+  }
 };
 
 /** A struct to hold the bounds of memory region. */
@@ -17,18 +26,13 @@ struct memoryRegion {
   uint64_t addr_start;
   uint64_t addr_end;
 
-  bool isStack;
-
-  // constructor
-  memoryRegion(uint64_t addr_start, uint64_t addr_end, bool isStack = false) {
+  memoryRegion(uint64_t addr_start, uint64_t addr_end) {
     this->addr_start = addr_start;
     this->addr_end = addr_end;
-    this->isStack = isStack;
   }
 
-  // `operator==` is required to compare keys in case of a hash collision
-  bool operator==(const memoryRegion& p) const {
-    return addr_start == p.addr_start && addr_end == p.addr_end;
+  bool operator==(const memoryRegion& r) const {
+    return addr_start == r.addr_start && addr_end == r.addr_end;
   }
 };
 
@@ -67,11 +71,11 @@ class Translator {
   const Translation get_mapping(uint64_t addr) const;
 
   /** Add the mapping form the supplied process memory region to SimEng
-   * memory region. */
+   * memory region. Note, upper bound is non-inclusive. */
   bool add_mapping(memoryRegion region_process, memoryRegion region_simulation);
 
   /** Update a region with the supplied new mapping between process and
-   * SimEng memory regions. */
+   * SimEng memory regions. Note, upper bound is non-inclusive. */
   bool update_mapping(memoryRegion region_original, memoryRegion region_process,
                       memoryRegion region_simulation);
 
@@ -81,15 +85,16 @@ class Translator {
 
   /** Register a memory allocation that has preivously been created through a
    * mmap call. */
-  void register_allocation(uint64_t addr, size_t length,
+  bool register_allocation(uint64_t addr, size_t length,
                            memoryRegion region_simulation);
 
   /** Invoked by a munmap system call. Removed a previously mmap allocation and
    * its memory mapping. */
   int64_t munmap_deallocation(uint64_t addr, size_t length);
 
-  /** Set the initial program break for both process and SimEng memory. */
-  void setInitialBrk(uint64_t processAddress, uint64_t simulationAddress);
+  /** Set the initial mmap region address for both process and SimEng memory. */
+  void setInitialMmapRegion(uint64_t processAddress,
+                            uint64_t simulationAddress);
 
   /** Set the page size used by the process being simulated. */
   void setPageSize(uint64_t pagesize);
@@ -113,7 +118,7 @@ class Translator {
   std::unordered_map<memoryRegion, memoryRegion, hash_fn> regions_;
 
   /** Hold the program and SimEng program breaks respectively. */
-  std::pair<uint64_t, uint64_t> programBrks_ = {0, 0};
+  std::pair<uint64_t, uint64_t> mmapStartAddr_ = {0, 0};
 
   /** A vector holding a contiguous list of mmap allocations. */
   std::vector<heap_allocation> heapAllocations_;

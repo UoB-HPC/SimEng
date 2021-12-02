@@ -74,8 +74,8 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   }
 
   // Add mapping for initial program break
-  translator_.add_mapping({processBrk_, processBrk_},
-                          {simulationBrk_, simulationBrk_});
+  translator_.add_mapping({processBrk_, processBrk_ + 1},
+                          {simulationBrk_, simulationBrk_ + 1});
 
   // Set simulation mmap region start to be an equal distance from the
   // stack and heap starts. Additionally, align to the page size (4kb)
@@ -87,7 +87,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
 
   // Update translator with mmap start regions to aid with previous and future
   // mmap calls
-  translator_.setInitialBrk(processMmapStart_, simulationMmapStart_);
+  translator_.setInitialMmapRegion(processMmapStart_, simulationMmapStart_);
 
   // Calculate process image size, including heap + stack
   size_ = simulationBrk_ + HEAP_SIZE + STACK_SIZE;
@@ -104,10 +104,19 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   }
 
   // Next read-in LOAD segments located within the arbitrary mmap region
+  bool first = true;
   lastBoundary = simulationMmapStart_;
   for (const auto& header : headerContents) {
     if (header.type == 1 && header.virtualAddress >= processMmapStart_ &&
         header.virtualAddress < stackPointer_) {
+      // Ensure first mmap region LOAD segment starts at defined mmap start
+      // address
+      if (first && header.virtualAddress != processMmapStart_) {
+        isValid_ = false;
+        return;
+      } else {
+        first = false;
+      }
       // Add a mapping for this header's contents
       if (!translator_.add_mapping(
               {header.virtualAddress,
@@ -117,9 +126,12 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
         return;
       }
       // Register mmap allocation that caused this LOAD segment
-      translator_.register_allocation(
-          header.virtualAddress, header.memorySize,
-          {lastBoundary, lastBoundary + header.memorySize});
+      if (!translator_.register_allocation(
+              header.virtualAddress, header.memorySize,
+              {lastBoundary, lastBoundary + header.memorySize})) {
+        isValid_ = false;
+        return;
+      }
       // Copy header contents into the newly mapped mmap allocation
       std::memcpy(processImage_ + lastBoundary, header.content,
                   header.fileSize);
@@ -167,8 +179,8 @@ LinuxProcess::LinuxProcess(span<char> instructions, Translator& translator)
   // Align heap start to a 32-byte boundary
   simulationBrk_ = processBrk_ = alignToBoundary(instructions.size(), 32);
   // Add mapping for initial program break
-  translator_.add_mapping({processBrk_, processBrk_},
-                          {simulationBrk_, simulationBrk_});
+  translator_.add_mapping({processBrk_, processBrk_ + 1},
+                          {simulationBrk_, simulationBrk_ + 1});
 
   // Set simulation mmap region start to be an equal distance from the
   // stack and heap starts. Additionally, align to the page size (4kb)
@@ -177,7 +189,7 @@ LinuxProcess::LinuxProcess(span<char> instructions, Translator& translator)
 
   // Update translator with mmap start regions to aid with previous and future
   // mmap calls
-  translator_.setInitialBrk(processMmapStart_, simulationMmapStart_);
+  translator_.setInitialMmapRegion(processMmapStart_, simulationMmapStart_);
 
   // Calculate process image size, including heap + stack
   size_ = simulationBrk_ + HEAP_SIZE + STACK_SIZE;
