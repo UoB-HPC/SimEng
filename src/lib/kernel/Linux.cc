@@ -33,9 +33,11 @@ void Linux::createProcess(const LinuxProcess& process) {
   processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
 
-  // Define special file path replacement paths
-  specialPathTranslations_.insert(
-      {"/sys/devices/system/cpu/online", specialFilesDir_ + "online"});
+  // Define vector of all currently supported special file paths & files.
+  supportedSpecialFiles_.insert(
+      supportedSpecialFiles_.end(),
+      {"/proc/cpuinfo", "/sys/devices/system/cpu",
+       "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
 }
 
 uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
@@ -57,6 +59,24 @@ uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
     }
   }
   return dfd_temp;
+}
+
+std::string Linux::getSpecialFile(const std::string filename) {
+  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
+    if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
+      for (int i = 0; i < supportedSpecialFiles_.size(); i++) {
+        if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
+          std::cerr << "Using Special File: " << filename.c_str() << std::endl;
+          return specialFilesDir_ + filename;
+        }
+      }
+      std::cerr << "-- WARNING: unable to open unsupported special file: "
+                << "'" << filename.c_str() << "'" << std::endl
+                << "--          allowing simulation to continue" << std::endl;
+      break;
+    }
+  }
+  return filename;
 }
 
 uint64_t Linux::getInitialStackPointer() const {
@@ -110,28 +130,18 @@ int64_t Linux::ftruncate(uint64_t fd, uint64_t length) {
 int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
                          int64_t flag) {
   // Resolve absolute path to target file
-  char absolutePath[LINUX_PATH_MAX];
-  realpath(filename.c_str(), absolutePath);
+  std::string new_pathname;
 
-  // Setup variable to record if an alternative path is available for use
-  bool altPath = false;
-
-  // Check if path may be a special file, bail out if it is
-  // TODO: Add support for special files
-  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
-    if (strncmp(absolutePath, prefix, strlen(prefix)) == 0) {
-      std::cerr << "ERROR: attempted to return information on a special file: "
-                << "'" << absolutePath << "'" << std::endl;
-      exit(1);
-    }
-  }
+  // Alter special file path to point to SimEng one (if filename points to
+  // special file)
+  new_pathname = Linux::getSpecialFile(filename);
 
   // Get correct dirfd
   int64_t dirfd = Linux::getDirFd(dfd, filename);
   if (dirfd == EBADF) return dirfd;
 
   // Pass call through to host
-  int64_t retval = ::faccessat(dirfd, filename.c_str(), mode, flag);
+  int64_t retval = ::faccessat(dirfd, new_pathname.c_str(), mode, flag);
 
   return retval;
 }
@@ -154,18 +164,11 @@ int64_t Linux::close(int64_t fd) {
 int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
                           int64_t flag) {
   // Resolve absolute path to target file
-  char absolutePath[LINUX_PATH_MAX];
-  realpath(filename.c_str(), absolutePath);
+  std::string new_pathname;
 
-  // Check if path may be a special file, bail out if it is
-  // TODO: Add support for special files
-  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
-    if (strncmp(absolutePath, prefix, strlen(prefix)) == 0) {
-      std::cerr << "ERROR: attempted to return information on a special file: "
-                << "'" << absolutePath << "'" << std::endl;
-      exit(1);
-    }
-  }
+  // Alter special file path to point to SimEng one (if filename points to
+  // special file)
+  new_pathname = Linux::getSpecialFile(filename);
 
   // Get correct dirfd
   int64_t dirfd = Linux::getDirFd(dfd, filename);
@@ -173,7 +176,7 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
 
   // Pass call through to host
   struct ::stat statbuf;
-  int64_t retval = ::fstatat(dirfd, filename.c_str(), &statbuf, flag);
+  int64_t retval = ::fstatat(dirfd, new_pathname.c_str(), &statbuf, flag);
 
   // Copy results to output struct
   out.dev = statbuf.st_dev;
@@ -411,30 +414,13 @@ uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
   return newAlloc->vm_start;
 }
 
-int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
+int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
                       uint16_t mode) {
-  // Resolve absolute path to target file
-  char absolutePath[LINUX_PATH_MAX];
-  realpath(pathname.c_str(), absolutePath);
-  // Setup variable to record if an alternative path is available for use
-  bool altPath = false;
+  std::string new_pathname;
 
-  // Check if path may be a special file
-  for (auto prefix : {"/dev", "/proc", "/sys"}) {
-    if (strncmp(absolutePath, prefix, strlen(prefix)) == 0) {
-      // Check if there's an assigned replacement path
-      if (specialPathTranslations_.find(pathname) !=
-          specialPathTranslations_.end()) {
-        altPath = true;
-        break;
-      } else {
-        std::cerr << "-- WARNING: unable to open unsupported special file: "
-                  << "'" << pathname.c_str() << "'" << std::endl
-                  << "--          allowing simulation to continue" << std::endl;
-        break;
-      }
-    }
-  }
+  // Alter special file path to point to SimEng one (if filename points to
+  // special file)
+  new_pathname = Linux::getSpecialFile(filename);
 
   // Need to re-create flag input to correct values for host OS
   int64_t newFlags = 0;
@@ -469,14 +455,11 @@ int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
 #endif
 
   // Get correct dirfd
-  int64_t dirfd = Linux::getDirFd(dfd, pathname);
+  int64_t dirfd = Linux::getDirFd(dfd, filename);
   if (dirfd == EBADF) return dirfd;
 
-  // Use path replacement for pathname argument of openat, if chosen
-  const char* newPathname =
-      altPath ? specialPathTranslations_[pathname].c_str() : pathname.c_str();
   // Pass call through to host
-  int64_t hfd = ::openat(dirfd, newPathname, newFlags, mode);
+  int64_t hfd = ::openat(dirfd, new_pathname.c_str(), newFlags, mode);
   if (hfd < 0) {
     return hfd;
   }

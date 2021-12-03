@@ -3,6 +3,7 @@
 #include <memory>
 #include <set>
 #include <unordered_map>
+#include <vector>
 
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/version.hh"
@@ -227,6 +228,10 @@ class Linux {
    * syscall. */
   uint64_t getDirFd(int64_t dfd, std::string pathname);
 
+  /** If the given filepath points to a special file, the filepath is replaced
+   * to point to the SimEng equivalent. */
+  std::string getSpecialFile(const std::string filename);
+
   /** The state of the user-space processes running above the kernel. */
   std::vector<LinuxProcessState> processStates_;
 
@@ -236,6 +241,9 @@ class Linux {
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ =
       SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles/";
+
+  /** Vector of all currently supported special file paths & files.*/
+  std::vector<std::string> supportedSpecialFiles_;
 };
 
 }  // namespace kernel
