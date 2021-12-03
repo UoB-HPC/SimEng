@@ -187,7 +187,6 @@ TEST_P(Syscall, faccessat) {
   EXPECT_EQ(getGeneralRegister<int64_t>(27), 0);
 }
 
-#ifdef SYS_getdents
 TEST_P(Syscall, getdents64) {
   const char filepath[] = SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles/";
 
@@ -196,7 +195,6 @@ TEST_P(Syscall, getdents64) {
 
   // Copy filepath to heap
   memcpy(initialHeapData_.data() + 32768, filepath, strlen(filepath) + 1);
-
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -205,11 +203,11 @@ TEST_P(Syscall, getdents64) {
     mov x20, x0
 
     # Need to open the directory
-    # fd = openat(AT_FDCWD, filepath, O_PATH)
-    # Flags = 0x200000
+    # fd = openat(AT_FDCWD, filepath, O_DIRECTORY)
+    # Flags = 0x10000
     mov x0, -100
     add x1, x20, 32768
-    mov x2, #0
+    mov x2, #65536
     mov x8, #56
     svc #0
     mov x21, x0
@@ -222,9 +220,8 @@ TEST_P(Syscall, getdents64) {
     svc #0
     mov x22, x0
   )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(22), 80);
+  EXPECT_EQ(getGeneralRegister<int64_t>(22), 87);
 }
-#endif
 
 // Test reading from and seeking through a file
 TEST_P(Syscall, file_read) {
