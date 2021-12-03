@@ -5,6 +5,8 @@ namespace simeng {
 SpecialFileDirGen::SpecialFileDirGen(YAML::Node config) {
   // Import all values from config file
   core_count = config["CPU-Info"]["Core-Count"].as<uint64_t>();
+  socket_count = config["CPU-Info"]["Socket-Count"].as<uint64_t>();
+  smt = config["CPU-Info"]["SMT"].as<uint64_t>();
   bogoMIPS = config["CPU-Info"]["BogoMIPS"].as<float>();
   features = config["CPU-Info"]["Features"].as<std::string>();
   cpu_implementer = config["CPU-Info"]["CPU-Implementer"].as<std::string>();
@@ -42,14 +44,15 @@ void SpecialFileDirGen::GenerateSFDir() {
   std::filesystem::create_directory(specialFilesParentDir_ +
                                     "/specialFiles/sys/devices/system/cpu/");
 
-  // Create 'online' file
+  // Create 'online' file.
   std::ofstream online_File(online_dir + "online");
-  online_File << "0-" + std::to_string(core_count - 1) + "\n";
+  online_File << "0-" + std::to_string(core_count * socket_count * smt - 1) +
+                     "\n";
   online_File.close();
 
-  // Create 'cpuinfo' file
+  // Create 'cpuinfo' file.
   std::ofstream cpuinfo_File(cpuinfo_dir + "cpuinfo");
-  for (int i = 0; i < core_count; i++) {
+  for (int i = 0; i < core_count * socket_count * smt; i++) {
     cpuinfo_File << "processor\t: " + std::to_string(i) + "\nBogoMIPS\t: " +
                         std::to_string(bogoMIPS).erase(
                             std::to_string(bogoMIPS).length() - 4) +
@@ -64,15 +67,41 @@ void SpecialFileDirGen::GenerateSFDir() {
   }
   cpuinfo_File.close();
 
-  // Create sub dir for each CPU core and required files
-  for (int i = 0; i < core_count; i++) {
+  // Create sub directory for each CPU core and required files.
+  for (int i = 0; i < core_count * socket_count * smt; i++) {
     std::filesystem::create_directory(cpu_base_dir + std::to_string(i) + "/");
     std::filesystem::create_directory(cpu_base_dir + std::to_string(i) +
                                       "/topology/");
+  }
 
-    // Create 'physical_package_id' files
+  // Create 'core_id' files and 'physical_package_id' files
+  uint64_t cores_per_package = core_count / package_count;
+  uint64_t current_package_id = 0;
+  for (int s = 0; s < socket_count; s++) {
+    for (int c = 0; c < core_count; c++) {
+      if (c % cores_per_package == 0 && c != 0) {
+        current_package_id += 1;
+      }
+      for (int t = 0; t < smt; t++) {
+        // core_id File generation
+        std::ofstream core_id_file(
+            cpu_base_dir +
+            std::to_string(c + (t * core_count) + (s * smt * core_count)) +
+            "/topology/core_id");
+        core_id_file << (c % cores_per_package) +
+                            (s * core_count * socket_count * smt);
+        core_id_file.close();
 
-    // Create 'core_id' files
+        // physical_package_id File generation
+        std::ofstream phys_package_id_file(
+            cpu_base_dir +
+            std::to_string(c + (t * core_count) + (s * smt * core_count)) +
+            "/topology/physical_package_id");
+        phys_package_id_file << current_package_id;
+        phys_package_id_file.close();
+      }
+    }
+    current_package_id += 1;
   }
 
   return;
