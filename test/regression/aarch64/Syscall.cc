@@ -187,7 +187,6 @@ TEST_P(Syscall, faccessat) {
   EXPECT_EQ(getGeneralRegister<int64_t>(27), 0);
 }
 
-#ifdef SYS_getdents
 TEST_P(Syscall, getdents64) {
   const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/\0";
 
@@ -196,7 +195,6 @@ TEST_P(Syscall, getdents64) {
 
   // Copy filepath to heap
   memcpy(initialHeapData_.data() + 32768, filepath, strlen(filepath) + 1);
-
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -209,7 +207,7 @@ TEST_P(Syscall, getdents64) {
     # Flags = 0x0
     mov x0, -100
     add x1, x20, 32768
-    mov x2, #0
+    mov x2, #65536
     mov x8, #56
     svc #0
     mov x21, x0
@@ -224,7 +222,6 @@ TEST_P(Syscall, getdents64) {
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(22), 120);
 }
-#endif
 
 // Test reading from and seeking through a file
 TEST_P(Syscall, file_read) {

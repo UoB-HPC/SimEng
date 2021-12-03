@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/termios.h>
+#include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
 
@@ -66,7 +67,8 @@ std::string Linux::getSpecialFile(const std::string filename) {
     if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
       for (int i = 0; i < supportedSpecialFiles_.size(); i++) {
         if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
-          std::cerr << "Using Special File: " << filename.c_str() << std::endl;
+          std::cerr << "-- Using Special File: " << filename.c_str()
+                    << std::endl;
           return specialFilesDir_ + filename;
         }
       }
@@ -497,17 +499,43 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
   return -1;
 }
 
-#ifdef SYS_getdents
 int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
   assert(fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
   }
-
+#ifdef SYS_getdents
   return ::getdents64(hfd, buf, count);
-}
+#else
+  // Need alternative implementation as not all systems support the getdents64
+  // syscall
+  dirent* tmpBuffer[count / sizeof(dirent)];
+  DIR* dir_stream = ::fdopendir(hfd);
+  if (dir_stream == NULL) return NULL;
+
+  ssize_t size_count = 0;
+  int index = 0;
+  while (true) {
+    if (size_count + sizeof(dirent) > count) break;
+    // Get next value
+    dirent* temp_out = ::readdir(dir_stream);
+    // Check if end of directory
+    if (temp_out == NULL) break;
+    tmpBuffer[index] = temp_out;
+    size_count +=
+        sizeof(uint64_t) + sizeof(uint64_t) + sizeof(uint16_t) + sizeof(char) +
+        (sizeof(char) * (temp_out[0].d_reclen - 2 - offsetof(dirent, d_name))) +
+        sizeof(char);
+    index++;
+  }
+  // Check for error
+  if (size_count == 0) return NULL;
+  buf = tmpBuffer;
+  ::closedir(dir_stream);
+  return size_count;
 #endif
+}
 
 int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
   assert(fd < processStates_[0].fileDescriptorTable.size());
