@@ -28,6 +28,8 @@ class SpecialFileDirGen {
   /** Values declared in YAML config file needed to create the Special Files
    * Directory tree. */
   uint64_t core_count;
+  uint64_t smt;
+  uint64_t socket_count;
   float bogoMIPS;
   std::string features;
   std::string cpu_implementer;

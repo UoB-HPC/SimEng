@@ -356,40 +356,54 @@ void ModelConfig::validate() {
 
   // CPU-Info
   root = "CPU-Info";
-  subFields = {
-      "Generate-Special-Dir", "Core-Count",       "BogoMIPS",    "Features",
-      "CPU-Implementer",      "CPU-Architecture", "CPU-Variant", "CPU-Part",
-      "CPU-Revision",         "Package-Count"};
+  subFields = {"Generate-Special-Dir",
+               "Core-Count",
+               "Socket-Count",
+               "SMT",
+               "BogoMIPS",
+               "Features",
+               "CPU-Implementer",
+               "CPU-Architecture",
+               "CPU-Variant",
+               "CPU-Part",
+               "CPU-Revision",
+               "Package-Count"};
   nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
                            {"T", "F", ""}, ExpectedValue::String, "F");
   nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger, 1);
-  nodeChecker<float>(configFile_[root][subFields[2]], subFields[2],
+  nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger, 1);
+  nodeChecker<unsigned int>(configFile_[root][subFields[3]], subFields[3],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger, 1);
+  nodeChecker<float>(configFile_[root][subFields[4]], subFields[4],
                      std::make_pair(0.0f, std::numeric_limits<float>::max()),
                      ExpectedValue::Float, 0.0f);
-  nodeChecker<std::string>(configFile_[root][subFields[3]], subFields[3],
+  nodeChecker<std::string>(configFile_[root][subFields[5]], subFields[5],
                            std::vector<std::string>(), ExpectedValue::String,
                            "");
-  nodeChecker<std::string>(configFile_[root][subFields[4]], subFields[4],  //
-                           std::vector<std::string>(), ExpectedValue::String,
-                           "0x0");
-  nodeChecker<unsigned int>(configFile_[root][subFields[5]], subFields[5],
-                            std::make_pair(0, UINT_MAX),
-                            ExpectedValue::UInteger, 0);
   nodeChecker<std::string>(configFile_[root][subFields[6]], subFields[6],  //
                            std::vector<std::string>(), ExpectedValue::String,
                            "0x0");
-  nodeChecker<std::string>(configFile_[root][subFields[7]], subFields[7],  //
+  nodeChecker<unsigned int>(configFile_[root][subFields[7]], subFields[7],
+                            std::make_pair(0, UINT_MAX),
+                            ExpectedValue::UInteger, 0);
+  nodeChecker<std::string>(configFile_[root][subFields[8]], subFields[8],  //
                            std::vector<std::string>(), ExpectedValue::String,
                            "0x0");
-  nodeChecker<unsigned int>(configFile_[root][subFields[8]], subFields[8],
+  nodeChecker<std::string>(configFile_[root][subFields[9]], subFields[9],  //
+                           std::vector<std::string>(), ExpectedValue::String,
+                           "0x0");
+  nodeChecker<unsigned int>(configFile_[root][subFields[10]], subFields[10],
                             std::make_pair(0, UINT_MAX),
                             ExpectedValue::UInteger, 0x0);
-  if (nodeChecker<unsigned int>(configFile_[root][subFields[9]], subFields[9],
+  if (nodeChecker<unsigned int>(configFile_[root][subFields[11]], subFields[11],
                                 std::make_pair(1, UINT_MAX),
                                 ExpectedValue::UInteger, 1)) {
-    uint64_t package_count = configFile_[root][subFields[9]].as<uint64_t>();
+    uint64_t package_count = configFile_[root][subFields[11]].as<uint64_t>();
     uint64_t core_count = configFile_[root][subFields[1]].as<uint64_t>();
     // Ensure package_count size is a less than or equal to the core count, and
     // that the core count can be divided by the package count
