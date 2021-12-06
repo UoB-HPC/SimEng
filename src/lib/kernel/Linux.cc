@@ -37,7 +37,7 @@ void Linux::createProcess(const LinuxProcess& process) {
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
       supportedSpecialFiles_.end(),
-      {"/proc/cpuinfo", "/sys/devices/system/cpu",
+      {"/proc/cpuinfo", "proc/stat", "/sys/devices/system/cpu",
        "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
 }
 
