@@ -207,7 +207,7 @@ TEST_P(Syscall, getdents64) {
     # Flags = 0x0
     mov x0, -100
     add x1, x20, 32768
-    mov x2, #65536
+    mov x2, #0
     mov x8, #56
     svc #0
     mov x21, x0
@@ -220,6 +220,7 @@ TEST_P(Syscall, getdents64) {
     svc #0
     mov x22, x0
   )");
+  // Return value verified on system that utilises the actual getdents64 syscall
   EXPECT_EQ(getGeneralRegister<int64_t>(22), 120);
 }
 
@@ -690,7 +691,11 @@ TEST_P(Syscall, newfstatat) {
 
     # Need to open the directory
     # dfd = openat(AT_FDCWD, dirPath, O_RDONLY)
+<<<<<<< HEAD
     # Flags = 0x0
+=======
+    # Flags = 0x10000
+>>>>>>> 44e829d (Changed getdents64 test to access a static directory (as specialFiles directory subject to change between config files).)
     mov x0, -100
     add x1, x20, #138
     mov x2, #0
