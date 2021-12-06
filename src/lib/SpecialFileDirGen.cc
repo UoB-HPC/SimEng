@@ -24,8 +24,7 @@ void SpecialFileDirGen::RemoveExistingSFDir() {
 
 void SpecialFileDirGen::GenerateSFDir() {
   // Define frequently accessed root directories in special file tree
-  const std::string cpuinfo_dir =
-      specialFilesParentDir_ + "/specialFiles/proc/";
+  const std::string proc_dir = specialFilesParentDir_ + "/specialFiles/proc/";
   const std::string online_dir =
       specialFilesParentDir_ + "/specialFiles/sys/devices/system/cpu/";
   const std::string cpu_base_dir =
@@ -44,14 +43,8 @@ void SpecialFileDirGen::GenerateSFDir() {
   std::filesystem::create_directory(specialFilesParentDir_ +
                                     "/specialFiles/sys/devices/system/cpu/");
 
-  // Create 'online' file.
-  std::ofstream online_File(online_dir + "online");
-  online_File << "0-" + std::to_string(core_count * socket_count * smt - 1) +
-                     "\n";
-  online_File.close();
-
-  // Create 'cpuinfo' file.
-  std::ofstream cpuinfo_File(cpuinfo_dir + "cpuinfo");
+  // Create '/proc/cpuinfo' file.
+  std::ofstream cpuinfo_File(proc_dir + "cpuinfo");
   for (int i = 0; i < core_count * socket_count * smt; i++) {
     cpuinfo_File << "processor\t: " + std::to_string(i) + "\nBogoMIPS\t: " +
                         std::to_string(bogoMIPS).erase(
@@ -67,6 +60,33 @@ void SpecialFileDirGen::GenerateSFDir() {
   }
   cpuinfo_File.close();
 
+  // Create '/proc/stat' file.
+  std::ofstream stat_File(proc_dir + "stat");
+  stat_File << "cpu  0 0 0 0 0 0 0 0 0 0\n";
+  for (int i = 0; i < core_count * socket_count * smt; i++) {
+    stat_File << "cpu" + std::to_string(i) + " 0 0 0 0 0 0 0 0 0 0\n";
+  }
+  stat_File << "intr 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+               "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+               "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+               "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+               "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+               "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+               "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n";
+  stat_File << "ctxt 0\n";
+  stat_File << "btime 0\n";
+  stat_File << "processes 0\n";
+  stat_File << "procs_running 1\n";
+  stat_File << "procs_blocked 0\n";
+  stat_File << "softirq 0 0 0 0 0 0 0 0 0 0 0\n";
+  stat_File.close();
+
+  // Create '/sys/devices/system/cpu/online' file.
+  std::ofstream online_File(online_dir + "online");
+  online_File << "0-" + std::to_string(core_count * socket_count * smt - 1) +
+                     "\n";
+  online_File.close();
+
   // Create sub directory for each CPU core and required files.
   for (int i = 0; i < core_count * socket_count * smt; i++) {
     std::filesystem::create_directory(cpu_base_dir + std::to_string(i) + "/");
@@ -74,7 +94,8 @@ void SpecialFileDirGen::GenerateSFDir() {
                                       "/topology/");
   }
 
-  // Create 'core_id' files and 'physical_package_id' files
+  // Create '/sys/devices/system/cpu/cpuX/topology/{core_id,
+  // physical_package_id}' files
   uint64_t cores_per_package = core_count / package_count;
   uint64_t current_package_id = 0;
   for (int s = 0; s < socket_count; s++) {

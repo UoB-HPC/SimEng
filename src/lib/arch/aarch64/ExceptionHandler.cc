@@ -32,7 +32,7 @@ bool ExceptionHandler::init() {
     // Retrieve syscall ID held in register x8
     auto syscallId =
         registerFileSet.get({RegisterType::GENERAL, 8}).get<uint64_t>();
-
+    std::cerr << "Syscall ID ==== " << syscallId << std::endl;
     ProcessStateChange stateChange;
     switch (syscallId) {
       case 29: {  // ioctl
