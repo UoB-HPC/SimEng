@@ -165,11 +165,11 @@ TEST_P(Syscall, faccessat) {
     mov x20, x0
 
     # Need to open the directory
-    # dfd = openat(AT_FDCWD, dirPath, O_DIRECTORY)
-    # Flags = 0x10000
+    # dfd = openat(AT_FDCWD, dirPath, O_RDONLY)
+    # Flags = 0x0
     mov x0, -100
     add x1, x20, #10
-    mov x2, #65536
+    mov x2, #0
     mov x8, #56
     svc #0
     mov x21, x0
@@ -188,7 +188,7 @@ TEST_P(Syscall, faccessat) {
 }
 
 TEST_P(Syscall, getdents64) {
-  const char filepath[] = SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles/";
+  const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/\0";
 
   // Reserve 32768 bytes for buffer
   initialHeapData_.resize(32768 + strlen(filepath) + 1);
@@ -203,11 +203,11 @@ TEST_P(Syscall, getdents64) {
     mov x20, x0
 
     # Need to open the directory
-    # fd = openat(AT_FDCWD, filepath, O_DIRECTORY)
-    # Flags = 0x10000
+    # fd = openat(AT_FDCWD, filepath, O_RDONLY)
+    # Flags = 0x0
     mov x0, -100
     add x1, x20, 32768
-    mov x2, #65536
+    mov x2, #0
     mov x8, #56
     svc #0
     mov x21, x0
@@ -220,7 +220,8 @@ TEST_P(Syscall, getdents64) {
     svc #0
     mov x22, x0
   )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(22), 87);
+  // Return value verified on system that utilises the actual getdents64 syscall
+  EXPECT_EQ(getGeneralRegister<int64_t>(22), 120);
 }
 
 // Test reading from and seeking through a file
@@ -689,11 +690,11 @@ TEST_P(Syscall, newfstatat) {
     mov x20, x0
 
     # Need to open the directory
-    # dfd = openat(AT_FDCWD, dirPath, O_DIRECTORY)
+    # dfd = openat(AT_FDCWD, dirPath, O_RDONLY)
     # Flags = 0x10000
     mov x0, -100
     add x1, x20, #138
-    mov x2, #65536
+    mov x2, #0
     mov x8, #56
     svc #0
     mov x21, x0
