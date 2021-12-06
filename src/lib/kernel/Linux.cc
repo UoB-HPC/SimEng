@@ -512,7 +512,7 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
   // syscall
   dirent* tmpBuffer[count / sizeof(dirent)];
   DIR* dir_stream = ::fdopendir(hfd);
-  if (dir_stream == NULL) return NULL;
+  if (dir_stream == NULL) return -1;
 
   ssize_t size_count = 0;
   int index = 0;
@@ -523,15 +523,12 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
     // Check if end of directory
     if (temp_out == NULL) break;
     tmpBuffer[index] = temp_out;
-    size_count +=
-        sizeof(uint64_t) + sizeof(uint64_t) + sizeof(uint16_t) + sizeof(char) +
-        (sizeof(char) * (temp_out[0].d_reclen - 2 - offsetof(dirent, d_name))) +
-        sizeof(char);
-    index++;
+    size_count += temp_out[0].d_reclen;
   }
   // Check for error
-  if (size_count == 0) return NULL;
-  buf = tmpBuffer;
+  if (size_count == 0) return 0;
+  std::memcpy(buf, tmpBuffer, sizeof(tmpBuffer));
+
   ::closedir(dir_stream);
   return size_count;
 #endif

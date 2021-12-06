@@ -106,9 +106,12 @@ bool ExceptionHandler::init() {
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
+        std::cerr << "fd === " << fd << std::endl;
+        std::cerr << "bufPtr === " << &bufPtr << std::endl;
 
         return readBufferThen(bufPtr, count, [=]() {
           int64_t totalRead = linux_.getdents64(fd, dataBuffer.data(), count);
+          std::cerr << "TOTAL READ === " << totalRead << std::endl;
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
@@ -119,15 +122,17 @@ bool ExceptionHandler::init() {
           int64_t bytesRemaining = totalRead;
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
+          std::cerr << "bufPtr === " << &bufPtr << std::endl;
           uint64_t iLength = bytesRemaining;
           if (iLength > bytesRemaining) {
             iLength = bytesRemaining;
           }
           bytesRemaining -= iLength;
-
           // Write data for this buffer in 128-byte chunks
           auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
+          std::cerr << "iSrc === " << iSrc << std::endl;
           while (iLength > 0) {
+            std::cerr << "iLength === " << iLength << std::endl;
             uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
             stateChange.memoryAddresses.push_back({iDst, len});
             stateChange.memoryAddressValues.push_back({iSrc, len});
