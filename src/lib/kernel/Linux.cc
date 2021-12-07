@@ -456,6 +456,12 @@ int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
   if (flags & 0x410000) newFlags |= O_TMPFILE;
 #endif
 
+  // If Special File (or Special File Directory) is being opened then need to
+  // set flags to O_RDONLY and O_CLOEXEC only.
+  if (new_pathname != filename) {
+    newFlags = O_RDONLY | O_CLOEXEC;
+  }
+
   // Get correct dirfd
   int64_t dirfd = Linux::getDirFd(dfd, filename);
   if (dirfd == EBADF) return dirfd;
