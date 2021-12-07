@@ -5477,6 +5477,27 @@ void Instruction::execute() {
       results[0] = value;
       break;
     }
+    case Opcode::AArch64_MOVPRFX_ZPmZ_D: {  // movprfx zd.d, pm/z, zn.d
+      // TODO: Adopt hint logic of the MOVPRFX instruction
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const uint64_t* n = operands[2].getAsVector<uint64_t>();
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i * 8);
+        if (p[i / 8] & shifted_active)
+          out[i] = n[i];
+        else
+          out[i] = d[i];
+      }
+
+      results[0] = out;
+      break;
+    }
     case Opcode::AArch64_MOVPRFX_ZPzZ_D: {  // movprfx zd.d, pg/z, zn.d
       // TODO: Adopt hint logic of the MOVPRFX instruction
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
@@ -6312,6 +6333,21 @@ void Instruction::execute() {
       auto m = static_cast<int64_t>(operands[1].get<int32_t>());
       auto a = operands[2].get<int64_t>();
       results[0] = a + (n * m);
+      break;
+    }
+    case Opcode::AArch64_SMAX_ZI_S: {  // smax zdn.s, zdn.s, #imm
+      const int32_t* n = operands[0].getAsVector<int32_t>();
+      int32_t imm = metadata.operands[2].imm;
+
+      const uint64_t VL_bits = 512;
+      const uint16_t partition_num = VL_bits / 32;
+      int32_t out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = std::max(n[i], static_cast<int32_t>(imm));
+      }
+
+      results[0] = out;
       break;
     }
     case Opcode::AArch64_SMAX_ZPmZ_S: {  // smax zd.s, pg/m, zn.s, zm.s

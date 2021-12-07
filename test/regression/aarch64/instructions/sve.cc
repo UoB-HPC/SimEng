@@ -4169,6 +4169,8 @@ TEST_P(InstSve, movprfx) {
     mov x1, #8
     whilelo p0.s, xzr, x1
     whilelo p1.d, xzr, x1
+    mov x2, #4
+    whilelo p3.d, xzr, x2
 
     dup z0.s, #9
     dup z1.d, #5
@@ -4176,14 +4178,19 @@ TEST_P(InstSve, movprfx) {
     dup z2.s, #0
     dup z3.d, #0
 
+    dup z6.d, #3
+
     movprfx z4.s, p0/z, z0.s
     fmla z4.s, p0/m, z2.s, z2.s
     movprfx z5.d, p1/z, z1.d
     fmla z5.d, p1/m, z3.d, z3.d
+    movprfx z6.d, p3/m, z1.d
+    fmla z6.d, p3/m, z3.d, z3.d
   )");
   CHECK_NEON(4, uint32_t,
              {9u, 9u, 9u, 9u, 9u, 9u, 9u, 9u, 0, 0, 0, 0, 0, 0, 0, 0});
   CHECK_NEON(5, uint64_t, {5u, 5u, 5u, 5u, 5u, 5u, 5u, 5u});
+  CHECK_NEON(6, uint64_t, {5u, 5u, 5u, 5u, 3u, 3u, 3u, 3u});
 }
 
 TEST_P(InstSve, mul) {
@@ -4749,17 +4756,30 @@ TEST_P(InstSve, smax) {
     ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
     ld1w {z2.s}, p0/z, [x0, x2, lsl #2]
+    ld1w {z3.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z4.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z5.s}, p0/z, [x0, x1, lsl #2]
 
     mov x3, #8
     whilelo p1.s, xzr, x3
 
     smax z1.s, p0/m, z1.s, z0.s
     smax z2.s, p1/m, z2.s, z0.s
+
+    smax z3.s, z3.s, #0
+    smax z4.s, z4.s, #-128
+    smax z5.s, z5.s, #127
   )");
   CHECK_NEON(1, int32_t,
              {16, 15, 14, 13, 5, 6, 7, 8, 8, 7, 6, 5, 13, 14, -2, -1});
   CHECK_NEON(2, int32_t,
              {16, 15, 14, 13, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, -2, -1});
+  CHECK_NEON(3, int32_t, {1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 13, 14, 0, 0});
+  CHECK_NEON(4, int32_t,
+             {1, 2, 3, 4, 5, 6, 7, 8, -9, -10, -11, -12, 13, 14, -15, -1});
+  CHECK_NEON(5, int32_t,
+             {127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+              127, 127, 127});
 }
 
 TEST_P(InstSve, smin) {

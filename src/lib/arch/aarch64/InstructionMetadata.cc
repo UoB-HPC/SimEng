@@ -62,12 +62,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // adds incorrectly flags destination as READ
       operands[0].access = CS_AC_WRITE;
       break;
-    case Opcode::AArch64_ADDVL_XXI:
-      // lacking access specifiers for all operands
-      operands[0].access = CS_AC_WRITE;
-      operands[1].access = CS_AC_READ;
-      operands[2].access = CS_AC_READ;
-      break;
     case Opcode::AArch64_BICv8i8:
       // access specifier for last operand was missing
       operands[2].access = CS_AC_READ;
@@ -230,6 +224,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       operands[3].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_ADDVL_XXI:
+      [[fallthrough]];
     case Opcode::AArch64_MOVPRFX_ZPzZ_D:
       [[fallthrough]];
     case Opcode::AArch64_MOVPRFX_ZPzZ_S:
@@ -298,6 +294,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FNEG_ZPmZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_SMAX_ZI_S:
+      [[fallthrough]];
     case Opcode::AArch64_SMINV_VPZ_S:
       [[fallthrough]];
     case Opcode::AArch64_UZP1_ZZZ_S:
@@ -306,6 +304,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_MOVPRFX_ZPmZ_D:
+      [[fallthrough]];
     case Opcode::AArch64_FRINTN_ZPmZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FRINTN_ZPmZ_S:
