@@ -516,26 +516,55 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
 #else
   // Need alternative implementation as not all systems support the getdents64
   // syscall
-  dirent* tmpBuffer[count / sizeof(dirent)];
+  std::vector<linux_dirent64> tmpBuffer;
   DIR* dir_stream = ::fdopendir(hfd);
+  // Check for error
   if (dir_stream == NULL) return -1;
 
   ssize_t size_count = 0;
   int index = 0;
   while (true) {
-    if (size_count + sizeof(dirent) > count) break;
-    // Get next value
+    // If buffer full, break
+    if (size_count + sizeof(linux_dirent64) > count) break;
+    // Get next dirent
     dirent* temp_out = ::readdir(dir_stream);
     // Check if end of directory
     if (temp_out == NULL) break;
-    tmpBuffer[index] = temp_out;
-    size_count += temp_out[0].d_reclen;
-  }
-  // Check for error
-  if (size_count == 0) return 0;
-  std::memcpy(buf, tmpBuffer, sizeof(tmpBuffer));
 
-  ::closedir(dir_stream);
+    linux_dirent64 this_result;
+    this_result.d_ino = temp_out->d_ino;
+    this_result.d_off = 0;
+    this_result.d_type = temp_out->d_type;
+    this_result.d_name = temp_out->d_name;
+    // std::string temp_d_name = temp_out->d_name;
+    // printf("%s\n", temp_d_name.c_str());
+    // std::strcpy(this_result.d_name, temp_d_name.c_str());
+
+    this_result.d_reclen =
+        sizeof(this_result.d_ino) + sizeof(this_result.d_off) +
+        sizeof(this_result.d_reclen) + sizeof(this_result.d_type) +
+        this_result.d_name.length();
+
+    tmpBuffer.push_back(this_result);
+
+    size_count += this_result.d_reclen;
+    index++;
+  }
+  // Check for end of directory
+  if (size_count == 0) return 0;
+  // Calculate offsets
+  int curr_off = 0;
+  for (int i = 0; i < tmpBuffer.size(); i++) {
+    // -1 found from man documentation
+    tmpBuffer[i].d_off = curr_off + tmpBuffer[i].d_reclen - 1;
+    curr_off = tmpBuffer[i].d_off;
+  }
+  // Last offset = -1 as no further dirents
+  tmpBuffer[tmpBuffer.size() - 1].d_off = -1;
+
+  // Copy data to buffer
+  std::memcpy(buf, &tmpBuffer, size_count);
+
   return size_count;
 #endif
 }

@@ -115,6 +115,16 @@ struct rusage {
   int64_t ru_nivcsw;          // involuntary context switches
 };
 
+/** Definition of the structure used in getdents64. Required as not defined on
+ * some systems. */
+struct linux_dirent64 {
+  uint64_t d_ino;      // 64-bit inode number
+  uint64_t d_off;      // 64-bit offset to next structure
+  uint16_t d_reclen;   // Size of this dirent
+  uint8_t d_type;      // File type
+  std::string d_name;  // Filename (null-terminated)
+};
+
 /** A Linux kernel syscall emulation implementation, which mimics the responses
    to Linux system calls. */
 class Linux {
@@ -240,7 +250,7 @@ class Linux {
 
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ =
-      SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles/";
+      SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles";
 
   /** Vector of all currently supported special file paths & files.*/
   std::vector<std::string> supportedSpecialFiles_;
