@@ -806,6 +806,33 @@ TEST_P(InstNeon, eor) {
   CHECK_NEON(3, uint8_t, {1, 3, 1, 7, 1, 3, 1, 15, 0, 0, 0, 0, 0, 0, 0, 0});
 }
 
+TEST_P(InstNeon, ext) {
+  RUN_AARCH64(R"(
+    movi v0.16b, #0xAB
+    movi v1.16b, #0xFF
+    movi v2.16b, #0xDE
+    movi v3.16b, #0xBB
+
+    ext v4.16b, v0.16b, v1.16b, #9
+    ext v5.16b, v1.16b, v0.16b, #13
+
+    ext v6.8b, v2.8b, v3.8b, #3
+    ext v7.8b, v3.8b, v2.8b, #7
+  )");
+  CHECK_NEON(4, uint8_t,
+             {0xABu, 0xABu, 0xABu, 0xABu, 0xABu, 0xABu, 0xABu, 0xFFu, 0xFFu,
+              0xFFu, 0xFFu, 0xFFu, 0xFFu, 0xFFu, 0xFFu, 0xFFu});
+  CHECK_NEON(5, uint8_t,
+             {0xFFu, 0xFFu, 0xFFu, 0xABu, 0xABu, 0xABu, 0xABu, 0xABu, 0xABu,
+              0xABu, 0xABu, 0xABu, 0xABu, 0xABu, 0xABu, 0xABu});
+  CHECK_NEON(6, uint8_t,
+             {0xDEu, 0xDEu, 0xDEu, 0xDEu, 0xDEu, 0xBBu, 0xBBu, 0xBBu, 0, 0, 0,
+              0, 0, 0, 0, 0});
+  CHECK_NEON(7, uint8_t,
+             {0xBBu, 0xDEu, 0xDEu, 0xDEu, 0xDEu, 0xDEu, 0xDEu, 0xDEu, 0, 0, 0,
+              0, 0, 0, 0, 0});
+}
+
 TEST_P(InstNeon, fabs) {
   initialHeapData_.resize(32);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());

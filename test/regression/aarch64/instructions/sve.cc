@@ -39,9 +39,9 @@ TEST_P(InstSve, and) {
   CHECK_PREDICATE(4, uint32_t, {0x11111111, 0, 0, 0, 0, 0, 0, 0});
 }
 
-TEST_P(InstSve, cmp) {
+TEST_P(InstSve, cmpne_imm) {
   // VL = 512-bits
-  // ne, 32-bit
+  // 32-bit
   RUN_AARCH64(R"(
     ptrue p0.s
     dup z0.s, #-3
@@ -98,6 +98,145 @@ TEST_P(InstSve, cmp) {
   )");
   CHECK_PREDICATE(2, uint32_t, {286331153, 0, 0, 0, 0, 0, 0, 0});
   EXPECT_EQ(getNZCV(), 0b1010);
+}
+
+TEST_P(InstSve, cmpgt_vec) {
+  // VL = 512-bits
+  // 8-bit
+  RUN_AARCH64(R"(
+    mov x0, #64
+    whilelo p0.b, xzr, x0
+    dup z0.b, #5
+    dup z1.b, #4
+
+    cmpgt p1.b, p0/z, z0.b, z1.b
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0xFFFFFFFFFFFFFFFFu, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.b, xzr, x0
+    dup z0.b, #5
+    dup z1.b, #4
+
+    cmpgt p1.b, p0/z, z0.b, z1.b
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x00000000FFFFFFFFu, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #64
+    whilelo p0.b, xzr, x0
+    dup z0.b, #5
+    dup z1.b, #4
+
+    cmpgt p1.b, p0/z, z1.b, z0.b
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 16-bit
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.h, xzr, x0
+    dup z0.h, #5
+    dup z1.h, #4
+
+    cmpgt p1.h, p0/z, z0.h, z1.h
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x5555555555555555u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.h, xzr, x0
+    dup z0.h, #5
+    dup z1.h, #4
+
+    cmpgt p1.h, p0/z, z0.h, z1.h
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x0000000055555555u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.h, xzr, x0
+    dup z0.h, #5
+    dup z1.h, #4
+
+    cmpgt p1.h, p0/z, z1.h, z0.h
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.s, xzr, x0
+    dup z0.s, #5
+    dup z1.s, #4
+
+    cmpgt p1.s, p0/z, z0.s, z1.s
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x1111111111111111u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.s, xzr, x0
+    dup z0.s, #5
+    dup z1.s, #4
+
+    cmpgt p1.s, p0/z, z0.s, z1.s
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x0000000011111111u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.s, xzr, x0
+    dup z0.s, #5
+    dup z1.s, #4
+
+    cmpgt p1.s, p0/z, z1.s, z0.s
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.d, xzr, x0
+    dup z0.d, #5
+    dup z1.d, #4
+
+    cmpgt p1.d, p0/z, z0.d, z1.d
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x101010101010101u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #4
+    whilelo p0.d, xzr, x0
+    dup z0.d, #5
+    dup z1.d, #4
+
+    cmpgt p1.d, p0/z, z0.d, z1.d
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x000000001010101u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.d, xzr, x0
+    dup z0.d, #5
+    dup z1.d, #4
+
+    cmpgt p1.d, p0/z, z1.d, z0.d
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
 }
 
 TEST_P(InstSve, cnt) {
@@ -352,6 +491,31 @@ TEST_P(InstSve, dups) {
   CHECK_NEON(9, int64_t, {-3, -3, -3, -3, -3, -3, -3, -3});
 }
 
+TEST_P(InstSve, eor) {
+  // VL = 512-bits
+  RUN_AARCH64(R"(
+    mov x0, #48
+    mov x1, #32
+    ptrue p0.b
+    whilelo p1.b, xzr, x0
+    whilelo p2.b, xzr, x1
+    rev p3.b, p1.b
+
+    eor p4.b, p0/z, p0.b, p1.b
+    eor p5.b, p1/z, p0.b, p2.b
+    eor p6.b, p0/z, p2.b, p3.b
+    eor p7.b, p1/z, p3.b, p0.b
+
+    # Test alias of not
+    not p8.b, p0/z, p6.b
+  )");
+  CHECK_PREDICATE(4, uint64_t, {0xFFFF000000000000u, 0, 0, 0});
+  CHECK_PREDICATE(5, uint64_t, {0x0000FFFF00000000u, 0, 0, 0});
+  CHECK_PREDICATE(6, uint64_t, {0xFFFFFFFF0000FFFFu, 0, 0, 0});
+  CHECK_PREDICATE(7, uint64_t, {0x000000000000FFFFu, 0, 0, 0});
+  CHECK_PREDICATE(8, uint64_t, {0x00000000FFFF0000u, 0, 0, 0});
+}
+
 TEST_P(InstSve, inc) {
   // VL = 512-bits
   // pattern = all
@@ -449,7 +613,9 @@ TEST_P(InstSve, fabs) {
     ptrue p1.s
 
     ld1w {z0.s}, p1/z, [x0, x1, lsl #2]
-    ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+    ld1w {z1.s}, p1/z, [x0, x2, lsl #2]
+
+    fdup z3.s, #3.0
 
     fabs z2.s, p1/m, z0.s
     fabs z3.s, p0/m, z1.s
@@ -459,8 +625,53 @@ TEST_P(InstSve, fabs) {
              {1.0f, 42.76f, 0.125f, 0.0f, 40.26f, 684.72f, 0.15f, 107.86f,
               34.71f, 0.917f, 0.0f, 80.72f, 125.67f, 0.01f, 701.90f, 7.0f});
   CHECK_NEON(3, float,
-             {34.71f, 0.917f, 0.0f, 80.72f, 125.67f, 0.01f, 701.90f, 7.0f, 0, 0,
-              0, 0, 0, 0, 0, 0});
+             {34.71f, 0.917f, 0.0f, 80.72f, 125.67f, 0.01f, 701.90f, 7.0f, 3.0f,
+              3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f, 3.0f});
+
+  // double
+  initialHeapData_.resize(128);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = -42.76;
+  dheap[2] = -0.125;
+  dheap[3] = 0.0;
+  dheap[4] = 40.26;
+  dheap[5] = -684.72;
+  dheap[6] = -0.15;
+  dheap[7] = 107.86;
+
+  dheap[8] = -34.71f;
+  dheap[9] = -0.917f;
+  dheap[10] = 0.0f;
+  dheap[11] = 80.72f;
+  dheap[12] = -125.67f;
+  dheap[13] = -0.01f;
+  dheap[14] = 701.90f;
+  dheap[15] = 7.0f;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #4
+    mov x3, #8
+    whilelo p0.d, xzr, x2
+    ptrue p1.d
+
+    ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
+    ld1d {z1.d}, p1/z, [x0, x3, lsl #3]
+
+    fdup z3.d, #3.0
+
+    fabs z2.d, p1/m, z0.d
+    fabs z3.d, p0/m, z1.d
+  )");
+
+  CHECK_NEON(2, double, {1.0, 42.76, 0.125, 0.0, 40.26, 684.72, 0.15, 107.86});
+  CHECK_NEON(3, double, {34.71, 0.917, 0.0, 80.72, 3.0, 3.0, 3.0, 3.0});
 }
 
 TEST_P(InstSve, add) {
@@ -644,26 +855,27 @@ TEST_P(InstSve, fadda) {
 
 TEST_P(InstSve, fcmge) {
   // VL = 512-bits
+  // Zero
   // double
   initialHeapData_.resize(128);
-  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 1.0;
-  dheap[4] = 40.26;
-  dheap[5] = -684.72;
-  dheap[6] = -0.15;
-  dheap[7] = 107.86;
+  double* dheap_z = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap_z[0] = 1.0;
+  dheap_z[1] = -42.76;
+  dheap_z[2] = -0.125;
+  dheap_z[3] = 1.0;
+  dheap_z[4] = 40.26;
+  dheap_z[5] = -684.72;
+  dheap_z[6] = -0.15;
+  dheap_z[7] = 107.86;
 
-  dheap[8] = -34.71;
-  dheap[9] = -0.917;
-  dheap[10] = 1.0;
-  dheap[11] = 80.72;
-  dheap[12] = -125.67;
-  dheap[13] = -0.01;
-  dheap[14] = 701.90;
-  dheap[15] = 7.0;
+  dheap_z[8] = -34.71;
+  dheap_z[9] = -0.917;
+  dheap_z[10] = 1.0;
+  dheap_z[11] = 80.72;
+  dheap_z[12] = -125.67;
+  dheap_z[13] = -0.01;
+  dheap_z[14] = 701.90;
+  dheap_z[15] = 7.0;
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -684,24 +896,24 @@ TEST_P(InstSve, fcmge) {
 
   // float
   initialHeapData_.resize(68);
-  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0;
-  fheap[1] = -42.76;
-  fheap[2] = -0.125;
-  fheap[3] = 0.0;
-  fheap[4] = 40.26;
-  fheap[5] = -684.72;
-  fheap[6] = -0.15;
-  fheap[7] = 107.86;
+  float* fheap_z = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap_z[0] = 1.0;
+  fheap_z[1] = -42.76;
+  fheap_z[2] = -0.125;
+  fheap_z[3] = 0.0;
+  fheap_z[4] = 40.26;
+  fheap_z[5] = -684.72;
+  fheap_z[6] = -0.15;
+  fheap_z[7] = 107.86;
 
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
+  fheap_z[8] = -34.71f;
+  fheap_z[9] = -0.917f;
+  fheap_z[10] = 0.0f;
+  fheap_z[11] = 80.72f;
+  fheap_z[12] = -125.67f;
+  fheap_z[13] = -0.01f;
+  fheap_z[14] = 701.90f;
+  fheap_z[15] = 7.0f;
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -719,30 +931,112 @@ TEST_P(InstSve, fcmge) {
   )");
 
   CHECK_PREDICATE(1, uint32_t, {0x10011001, 0, 0, 0, 0, 0, 0, 0});
+
+  // Vector
+  // double
+  initialHeapData_.resize(128);
+  double* dheap_v = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap_v[0] = 1.0;
+  dheap_v[1] = -42.76;
+  dheap_v[2] = -0.125;
+  dheap_v[3] = 1.0;
+  dheap_v[4] = 40.26;
+  dheap_v[5] = -684.72;
+  dheap_v[6] = -0.15;
+  dheap_v[7] = 107.86;
+
+  dheap_v[8] = -34.71;
+  dheap_v[9] = -0.917;
+  dheap_v[10] = 80.72;
+  dheap_v[11] = 1.0;
+  dheap_v[12] = -125.67;
+  dheap_v[13] = -0.01;
+  dheap_v[14] = 701.90;
+  dheap_v[15] = 7.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #4
+    mov x3, #8
+    whilelo p0.d, xzr, x2
+    ptrue p1.d
+
+    ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
+    ld1d {z1.d}, p1/z, [x0, x3, lsl #3]
+
+    fcmge p1.d, p0/z, z0.d, z1.d
+  )");
+
+  CHECK_PREDICATE(1, uint64_t, {0x0000000001000001u, 0, 0, 0});
+
+  // float
+  initialHeapData_.resize(68);
+  float* fheap_v = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap_v[0] = 1.0;
+  fheap_v[1] = -42.76;
+  fheap_v[2] = -0.125;
+  fheap_v[3] = 0.0;
+  fheap_v[4] = 40.26;
+  fheap_v[5] = -684.72;
+  fheap_v[6] = -0.15;
+  fheap_v[7] = 107.86;
+
+  fheap_v[8] = -34.71f;
+  fheap_v[9] = -0.917f;
+  fheap_v[10] = 80.72f;
+  fheap_v[11] = 0.0f;
+  fheap_v[12] = -125.67f;
+  fheap_v[13] = -0.01f;
+  fheap_v[14] = 701.90f;
+  fheap_v[15] = 7.0f;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #8
+    whilelo p0.s, xzr, x2
+
+    ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+
+    fcmge p1.s, p0/z, z0.s, z1.s
+  )");
+
+  CHECK_PREDICATE(1, uint64_t, {0x0000000010011001u, 0, 0, 0});
 }
 
 TEST_P(InstSve, fcmgt) {
   // VL = 512-bits
+  // Vector
   // double
   initialHeapData_.resize(128);
-  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 1.0;
-  dheap[4] = 40.26;
-  dheap[5] = -684.72;
-  dheap[6] = -0.15;
-  dheap[7] = 107.86;
+  double* dheap_v = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap_v[0] = 1.0;
+  dheap_v[1] = -42.76;
+  dheap_v[2] = -0.125;
+  dheap_v[3] = 1.0;
+  dheap_v[4] = 40.26;
+  dheap_v[5] = -684.72;
+  dheap_v[6] = -0.15;
+  dheap_v[7] = 107.86;
 
-  dheap[8] = -34.71;
-  dheap[9] = -0.917;
-  dheap[10] = 1.0;
-  dheap[11] = 80.72;
-  dheap[12] = -125.67;
-  dheap[13] = -0.01;
-  dheap[14] = 701.90;
-  dheap[15] = 7.0;
+  dheap_v[8] = -34.71;
+  dheap_v[9] = -0.917;
+  dheap_v[10] = 1.0;
+  dheap_v[11] = 80.72;
+  dheap_v[12] = -125.67;
+  dheap_v[13] = -0.01;
+  dheap_v[14] = 701.90;
+  dheap_v[15] = 7.0;
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -761,9 +1055,118 @@ TEST_P(InstSve, fcmgt) {
 
     fcmgt p2.d, p0/z, z0.d, z1.d
   )");
-
   CHECK_PREDICATE(2, uint32_t, {1, 0, 0, 0, 0, 0, 0});
 
+  // float
+  initialHeapData_.resize(68);
+  float* fheap_v = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap_v[0] = 1.0;
+  fheap_v[1] = -42.76;
+  fheap_v[2] = -0.125;
+  fheap_v[3] = 0.0;
+  fheap_v[4] = 40.26;
+  fheap_v[5] = -684.72;
+  fheap_v[6] = -0.15;
+  fheap_v[7] = 107.86;
+
+  fheap_v[8] = -34.71f;
+  fheap_v[9] = -0.917f;
+  fheap_v[10] = 0.0f;
+  fheap_v[11] = 80.72f;
+  fheap_v[12] = -125.67f;
+  fheap_v[13] = -0.01f;
+  fheap_v[14] = 701.90f;
+  fheap_v[15] = 7.0f;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #8
+    whilelo p0.s, xzr, x2
+    ptrue p1.s
+
+    ld1w {z0.s}, p1/z, [x0, x1, lsl #2]
+    ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+
+    fcmgt p2.s, p0/z, z0.s, z1.s
+  )");
+  CHECK_PREDICATE(2, uint32_t, {0x10010001, 0, 0, 0, 0, 0, 0, 0});
+
+  // Zero
+  // double
+  initialHeapData_.resize(128);
+  double* dheap_z = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap_z[0] = 1.0;
+  dheap_z[1] = -42.76;
+  dheap_z[2] = -0.125;
+  dheap_z[3] = 1.0;
+  dheap_z[4] = 40.26;
+  dheap_z[5] = -684.72;
+  dheap_z[6] = -0.15;
+  dheap_z[7] = 107.86;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #4
+    whilelo p0.d, xzr, x2
+    ptrue p1.d
+    
+    ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
+
+    fcmgt p2.d, p0/z, z0.d, #0.0
+  )");
+  CHECK_PREDICATE(2, uint64_t, {0x000000001000001u, 0, 0, 0});
+
+  // float
+  initialHeapData_.resize(68);
+  float* fheap_z = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap_z[0] = 1.0;
+  fheap_z[1] = -42.76;
+  fheap_z[2] = -0.125;
+  fheap_z[3] = 0.0;
+  fheap_z[4] = 40.26;
+  fheap_z[5] = -684.72;
+  fheap_z[6] = -0.15;
+  fheap_z[7] = 107.86;
+
+  fheap_z[8] = -34.71f;
+  fheap_z[9] = -0.917f;
+  fheap_z[10] = 0.0f;
+  fheap_z[11] = 80.72f;
+  fheap_z[12] = -125.67f;
+  fheap_z[13] = -0.01f;
+  fheap_z[14] = 701.90f;
+  fheap_z[15] = 7.0f;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #8
+    whilelo p0.s, xzr, x2
+    ptrue p1.s
+
+    ld1w {z0.s}, p1/z, [x0, x1, lsl #2]
+
+    fcmgt p2.s, p0/z, z0.s, #0.0
+  )");
+  CHECK_PREDICATE(2, uint64_t, {0x0000000010010001u, 0, 0, 0});
+}
+
+TEST_P(InstSve, fcmle) {
+  // VL = 512-bits
   // float
   initialHeapData_.resize(68);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
@@ -793,16 +1196,49 @@ TEST_P(InstSve, fcmgt) {
 
     mov x1, #0
     mov x2, #8
-    whilelo p0.s, xzr, x2
-    ptrue p1.s
+    ptrue p0.s
+    whilelo p1.s, xzr, x2
 
-    ld1w {z0.s}, p1/z, [x0, x1, lsl #2]
-    ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+    ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z1.s}, p0/z, [x0, x1, lsl #2]
 
-    fcmgt p2.s, p0/z, z0.s, z1.s
+    fcmle p2.s, p0/z, z0.s, #0.0
+    fcmle p3.s, p1/z, z1.s, #0.0
   )");
+  CHECK_PREDICATE(2, uint64_t, {0x0011011101101110u, 0, 0, 0});
+  CHECK_PREDICATE(3, uint64_t, {0x0000000001101110u, 0, 0, 0});
 
-  CHECK_PREDICATE(2, uint32_t, {0x10010001, 0, 0, 0, 0, 0, 0, 0});
+  // double
+  initialHeapData_.resize(68);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = -42.76;
+  dheap[2] = -0.125;
+  dheap[3] = 0.0;
+  dheap[4] = 40.26;
+  dheap[5] = -684.72;
+  dheap[6] = -0.15;
+  dheap[7] = 107.86;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #4
+    ptrue p0.d
+    whilelo p1.d, xzr, x2
+
+    ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z1.d}, p0/z, [x0, x1, lsl #3]
+
+    fcmle p2.d, p0/z, z0.d, #0.0
+    fcmle p3.d, p1/z, z1.d, #0.0
+  )");
+  CHECK_PREDICATE(2, uint64_t, {0x0001010001010100u, 0, 0, 0});
+  CHECK_PREDICATE(3, uint64_t, {0x0000000001010100u, 0, 0, 0});
 }
 
 TEST_P(InstSve, fcmlt) {
@@ -2701,6 +3137,92 @@ TEST_P(InstSve, lsl) {
        2147483648, 2147483648, 2147483648, 2147483648});
 }
 
+TEST_P(InstSve, mla) {
+  // VL = 512-bits
+  // 8-bit
+  RUN_AARCH64(R"(
+    mov x0, #48
+    ptrue p0.b
+    whilelo p1.b, xzr, x0
+
+    dup z0.b, #2
+    dup z1.b, #3 
+    index z2.b, #5, #1
+    index z3.b, #4, #2
+
+    mla z2.b, p0/m, z0.b, z1.b
+    mla z3.b, p1/m, z0.b, z1.b
+  )");
+  CHECK_NEON(2, uint8_t,
+             {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+              27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
+              43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58,
+              59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74});
+  CHECK_NEON(3, uint8_t,
+             {10,  12,  14,  16,  18,  20,  22,  24,  26,  28,  30,  32,  34,
+              36,  38,  40,  42,  44,  46,  48,  50,  52,  54,  56,  58,  60,
+              62,  64,  66,  68,  70,  72,  74,  76,  78,  80,  82,  84,  86,
+              88,  90,  92,  94,  96,  98,  100, 102, 104, 100, 102, 104, 106,
+              108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 130});
+
+  // 16-bit
+  RUN_AARCH64(R"(
+    mov x0, #24
+    ptrue p0.h
+    whilelo p1.h, xzr, x0
+
+    dup z0.h, #2
+    dup z1.h, #3 
+    index z2.h, #5, #1
+    index z3.h, #4, #2
+
+    mla z2.h, p0/m, z0.h, z1.h
+    mla z3.h, p1/m, z0.h, z1.h
+  )");
+  CHECK_NEON(2, uint16_t,
+             {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+              27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42});
+  CHECK_NEON(3, uint16_t,
+             {10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40,
+              42, 44, 46, 48, 50, 52, 54, 56, 52, 54, 56, 58, 60, 62, 64, 66});
+
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov x0, #12
+    ptrue p0.s
+    whilelo p1.s, xzr, x0
+
+    dup z0.s, #2
+    dup z1.s, #3 
+    index z2.s, #5, #1
+    index z3.s, #4, #2
+
+    mla z2.s, p0/m, z0.s, z1.s
+    mla z3.s, p1/m, z0.s, z1.s
+  )");
+  CHECK_NEON(2, uint32_t,
+             {11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26});
+  CHECK_NEON(3, uint32_t,
+             {10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 28, 30, 32, 34});
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, #6
+    ptrue p0.d
+    whilelo p1.d, xzr, x0
+
+    dup z0.d, #2
+    dup z1.d, #3 
+    index z2.d, #5, #1
+    index z3.d, #4, #2
+
+    mla z2.d, p0/m, z0.d, z1.d
+    mla z3.d, p1/m, z0.d, z1.d
+  )");
+  CHECK_NEON(2, uint64_t, {11, 12, 13, 14, 15, 16, 17, 18});
+  CHECK_NEON(3, uint64_t, {10, 12, 14, 16, 18, 20, 16, 18});
+}
+
 TEST_P(InstSve, movprfx) {
   // VL = 512-bits
   // Non-predicated
@@ -2949,6 +3471,60 @@ TEST_P(InstSve, rdvl) {
   EXPECT_EQ(getGeneralRegister<int64_t>(2), 0);
   EXPECT_EQ(getGeneralRegister<int64_t>(3), 192);
   EXPECT_EQ(getGeneralRegister<int64_t>(4), 1984);
+}
+
+TEST_P(InstSve, rev) {
+  // VL = 512-bits
+  // Predicate
+  RUN_AARCH64(R"(
+    mov x1, #32
+    mov x2, #16
+    mov x3, #8
+    mov x4, #4
+
+    whilelo p0.b, xzr, x1
+    whilelo p1.h, xzr, x2
+    whilelo p2.s, xzr, x3
+    whilelo p3.d, xzr, x4
+
+    rev p4.b, p0.b
+    rev p5.h, p1.h
+    rev p6.s, p2.s
+    rev p7.d, p3.d
+  )");
+  CHECK_PREDICATE(0, uint64_t, {0x00000000FFFFFFFFu, 0, 0, 0});
+  CHECK_PREDICATE(1, uint64_t, {0x0000000055555555u, 0, 0, 0});
+  CHECK_PREDICATE(2, uint64_t, {0x0000000011111111u, 0, 0, 0});
+  CHECK_PREDICATE(3, uint64_t, {0x000000001010101u, 0, 0, 0});
+
+  CHECK_PREDICATE(4, uint64_t, {0xFFFFFFFF00000000u, 0, 0, 0});
+  CHECK_PREDICATE(5, uint64_t, {0x5555555500000000u, 0, 0, 0});
+  CHECK_PREDICATE(6, uint64_t, {0x1111111100000000u, 0, 0, 0});
+  CHECK_PREDICATE(7, uint64_t, {0x101010100000000u, 0, 0, 0});
+
+  // Vector
+  RUN_AARCH64(R"(
+    index z0.b, #0, #1
+    index z1.h, #0, #2
+    index z2.s, #0, #4
+    index z3.d, #0, #8
+
+    rev z4.b, z0.b
+    rev z5.h, z1.h
+    rev z6.s, z2.s
+    rev z7.d, z3.d
+  )");
+  CHECK_NEON(4, uint8_t,
+             {63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48,
+              47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32,
+              31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16,
+              15, 14, 13, 12, 11, 10, 9,  8,  7,  6,  5,  4,  3,  2,  1,  0});
+  CHECK_NEON(5, uint16_t,
+             {62, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36, 34, 32,
+              30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10, 8,  6,  4,  2,  0});
+  CHECK_NEON(6, uint32_t,
+             {60, 56, 52, 48, 44, 40, 36, 32, 28, 24, 20, 16, 12, 8, 4, 0});
+  CHECK_NEON(7, uint64_t, {56, 48, 40, 32, 24, 16, 8, 0});
 }
 
 TEST_P(InstSve, scvtf) {
@@ -4463,42 +5039,42 @@ TEST_P(InstSve, zip_pred) {
     whilelo p7.d, xzr, xzr
 
     # Interleave (or Zip) true with false
-    zip1 p0.b, p0.b, p4.b
-    zip1 p1.h, p1.h, p5.h
-    zip1 p2.s, p2.s, p6.s
-    zip1 p3.d, p3.d, p7.d
+    zip1 p8.b, p0.b, p4.b
+    zip1 p9.h, p1.h, p5.h
+    zip1 p10.s, p2.s, p6.s
+    zip1 p11.d, p3.d, p7.d
 
-    zip2 p4.b, p0.b, p4.b
-    zip2 p5.h, p1.h, p5.h
-    zip2 p6.s, p2.s, p6.s
-    zip2 p7.d, p3.d, p7.d
+    zip2 p12.b, p0.b, p4.b
+    zip2 p13.h, p1.h, p5.h
+    zip2 p14.s, p2.s, p6.s
+    zip2 p15.d, p3.d, p7.d
   )");
   CHECK_PREDICATE(
-      0, uint8_t,
+      8, uint8_t,
       {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0, 0, 0, 0, 0, 0, 0, 0,
        0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(
-      1, uint8_t,
+      9, uint8_t,
       {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0, 0, 0, 0, 0, 0, 0, 0,
        0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0});
-  CHECK_PREDICATE(2, uint8_t, {0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0, 0, 0,
-                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 0,
-                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0});
-  CHECK_PREDICATE(3, uint8_t,
+  CHECK_PREDICATE(10, uint8_t, {0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0, 0, 0,
+                                0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 0,
+                                0,   0,   0,   0,   0,   0,   0,   0,   0, 0});
+  CHECK_PREDICATE(11, uint8_t,
                   {0x1, 0, 0x1, 0, 0x1, 0, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                    0,   0, 0,   0, 0,   0, 0,   0, 0, 0, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(
-      4, uint8_t,
+      12, uint8_t,
       {0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0, 0, 0, 0, 0, 0, 0, 0,
        0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(
-      5, uint8_t,
+      13, uint8_t,
       {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0, 0, 0, 0, 0, 0, 0, 0,
        0,    0,    0,    0,    0,    0,    0,    0,    0, 0, 0, 0, 0, 0, 0, 0});
-  CHECK_PREDICATE(6, uint8_t, {0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0, 0, 0,
-                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 0,
-                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0});
-  CHECK_PREDICATE(7, uint8_t,
+  CHECK_PREDICATE(14, uint8_t, {0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0x1, 0, 0, 0,
+                                0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 0,
+                                0,   0,   0,   0,   0,   0,   0,   0,   0, 0});
+  CHECK_PREDICATE(15, uint8_t,
                   {0x1, 0, 0x1, 0, 0x1, 0, 0x1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                    0,   0, 0,   0, 0,   0, 0,   0, 0, 0, 0, 0, 0, 0, 0, 0});
 }

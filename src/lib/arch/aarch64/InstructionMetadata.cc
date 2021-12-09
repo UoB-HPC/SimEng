@@ -69,6 +69,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // incorrectly adds implicit nzcv dependency
       implicitSourceCount = 0;
       break;
+    case Opcode::AArch64_CMPGT_PPzZZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPGT_PPzZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPGT_PPzZZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_CMPGT_PPzZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_CMPNE_PPzZI_S:
       // No defined access types
       operands[0].access = CS_AC_WRITE;
@@ -105,6 +113,13 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // lacking access specifiers for destination
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       break;
+    case Opcode::AArch64_EOR_PPzPP: {
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_FMOVXDHighr:
       // FMOVXDHighr incorrectly flags destination as only WRITE
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
@@ -137,6 +152,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_FMSB_ZPmZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FMSB_ZPmZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_MLA_ZPmZZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_MLA_ZPmZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_MLA_ZPmZZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_MLA_ZPmZZ_S:
       [[fallthrough]];
     case Opcode::AArch64_SMAX_ZPmZ_S:
       [[fallthrough]];
@@ -191,8 +214,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_INDEX_RR_S:
       [[fallthrough]];
-    case Opcode::AArch64_FABS_ZPmZ_S:
-      [[fallthrough]];
     case Opcode::AArch64_ADD_ZZZ_B:
       [[fallthrough]];
     case Opcode::AArch64_ADD_ZZZ_D:
@@ -225,6 +246,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_FABS_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FABS_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FSQRT_ZPmZ_S:
       [[fallthrough]];
     case Opcode::AArch64_FSQRT_ZPmZ_D:
@@ -273,6 +298,15 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         operands[3].fp = 1.0f;
       }
       break;
+    case Opcode::AArch64_FCMGT_PPzZ0_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMGT_PPzZ0_S: {
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_FDIVR_ZPmZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FDIVR_ZPmZ_S:
@@ -281,6 +315,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FADD_ZPmZ_D:
       [[fallthrough]];
+    case Opcode::AArch64_FCMGE_PPzZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMGE_PPzZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_FCMGE_PPzZ0_D:
       [[fallthrough]];
     case Opcode::AArch64_FCMGE_PPzZ0_S:
@@ -288,6 +326,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_FCMGT_PPzZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FCMGT_PPzZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMLE_PPzZ0_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FCMLE_PPzZ0_S:
       [[fallthrough]];
     case Opcode::AArch64_FCMLT_PPzZ0_S:
       [[fallthrough]];
@@ -589,6 +631,25 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       groupCount = 1;
       groups[0] = CS_GRP_JUMP;
       break;
+    case Opcode::AArch64_REV_ZZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_ZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_ZZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_ZZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_PP_B:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_PP_D:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_PP_H:
+      [[fallthrough]];
+    case Opcode::AArch64_REV_PP_S: {
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_SST1D:
       [[fallthrough]];
     case Opcode::AArch64_SST1D_SCALED: {
@@ -1395,6 +1456,17 @@ void InstructionMetadata::revertAliasing() {
     case ARM64_INS_NGC:
       return aliasNYI();
     case ARM64_INS_NGCS:
+      return aliasNYI();
+    case ARM64_INS_NOT:
+      if (opcode == Opcode::AArch64_EOR_PPzPP) {
+        // not pd.b, pg/z, pn.b; alisas for: eor pd.b, pg/z, pn.b, pg.b
+        operandCount = 4;
+        operands[0].access = CS_AC_WRITE;
+        operands[1].access = CS_AC_READ;
+        operands[2].access = CS_AC_READ;
+        operands[3] = operands[1];
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_REV64:
       return aliasNYI();
