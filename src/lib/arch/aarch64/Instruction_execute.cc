@@ -5488,7 +5488,7 @@ void Instruction::execute() {
       uint64_t out[32] = {0};
 
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << (i * 8);
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active)
           out[i] = n[i];
         else
@@ -5946,8 +5946,8 @@ void Instruction::execute() {
       int index = partition_num - 1;
       for (int i = 0; i < partition_num; i++) {
         uint64_t rev_shifted_active =
-            static_cast<uint64_t>(std::pow(2, (index)));
-        uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i)));
+            static_cast<uint64_t>(1ull << (index % 64));
+        uint64_t shifted_active = static_cast<uint64_t>(1ull << (i % 64));
         out[index / 64] |= ((n[i / 64] & shifted_active) == shifted_active)
                                ? rev_shifted_active
                                : 0;
@@ -5965,8 +5965,8 @@ void Instruction::execute() {
       int index = partition_num - 1;
       for (int i = 0; i < partition_num; i++) {
         uint64_t rev_shifted_active =
-            static_cast<uint64_t>(std::pow(2, (index * 8)));
-        uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i * 8)));
+            static_cast<uint64_t>(1ull << ((index % 8) * 8));
+        uint64_t shifted_active = static_cast<uint64_t>(1ull << ((i % 8) * 8));
         out[index / 8] |= ((n[i / 8] & shifted_active) == shifted_active)
                               ? rev_shifted_active
                               : 0;
@@ -5984,8 +5984,8 @@ void Instruction::execute() {
       int index = partition_num - 1;
       for (int i = 0; i < partition_num; i++) {
         uint64_t rev_shifted_active =
-            static_cast<uint64_t>(std::pow(2, (index * 2)));
-        uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i * 2)));
+            static_cast<uint64_t>(1ull << ((index % 32) * 2));
+        uint64_t shifted_active = static_cast<uint64_t>(1ull << ((i % 32) * 2));
         out[index / 32] |= ((n[i / 32] & shifted_active) == shifted_active)
                                ? rev_shifted_active
                                : 0;
@@ -6003,8 +6003,8 @@ void Instruction::execute() {
       int index = partition_num - 1;
       for (int i = 0; i < partition_num; i++) {
         uint64_t rev_shifted_active =
-            static_cast<uint64_t>(std::pow(2, (index * 4)));
-        uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, (i * 4)));
+            static_cast<uint64_t>(1ull << ((index % 16) * 4));
+        uint64_t shifted_active = static_cast<uint64_t>(1ull << ((i % 16) * 4));
         out[index / 16] |= ((n[i / 16] & shifted_active) == shifted_active)
                                ? rev_shifted_active
                                : 0;
@@ -7690,7 +7690,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         // Determine whether lane should be active and shift to align with
         // element in predicate register.
-        uint64_t shifted_active = (n + i) < m ? 1ull << i : 0;
+        uint64_t shifted_active = (n + i) < m ? 1ull << (i % 64) : 0;
         out[index / 64] = out[index / 64] | shifted_active;
         index++;
       }
@@ -7711,7 +7711,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         // Determine whether lane should be active and shift to align with
         // element in predicate register.
-        uint64_t shifted_active = (n + i) < m ? 1ull << (i * 8) : 0;
+        uint64_t shifted_active = (n + i) < m ? 1ull << ((i % 8) * 8) : 0;
         out[index / 8] = out[index / 8] | shifted_active;
         index++;
       }
@@ -7732,7 +7732,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         // Determine whether lane should be active and shift to align with
         // element in predicate register.
-        uint64_t shifted_active = (n + i) < m ? std::pow(2, (i * 2)) : 0;
+        uint64_t shifted_active = (n + i) < m ? s1ull << ((i % 32) * 2) : 0;
         out[index / 32] = out[index / 32] | shifted_active;
         index++;
       }
@@ -7753,7 +7753,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         // Determine whether lane should be active and shift to align with
         // element in predicate register.
-        uint64_t shifted_active = (n + i) < m ? 1ull << (i * 4) : 0;
+        uint64_t shifted_active = (n + i) < m ? 1ull << ((i % 16) * 4) : 0;
         out[index / 16] = out[index / 16] | shifted_active;
         index++;
       }
@@ -7774,7 +7774,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         // Determine whether lane should be active and shift to align with
         // element in predicate register.
-        uint64_t shifted_active = (n + i) < m ? 1ull << i : 0;
+        uint64_t shifted_active = (n + i) < m ? 1ull << (i % 64) : 0;
         out[index / 64] = out[index / 64] | shifted_active;
         index++;
       }
@@ -7795,7 +7795,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         // Determine whether lane should be active and shift to align with
         // element in predicate register.
-        uint64_t shifted_active = (n + i) < m ? 1ull << (i * 8) : 0;
+        uint64_t shifted_active = (n + i) < m ? 1ull << ((i % 8) * 8) : 0;
         out[index / 8] = out[index / 8] | shifted_active;
         index++;
       }
@@ -7816,7 +7816,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         // Determine whether lane should be active and shift to align with
         // element in predicate register.
-        uint64_t shifted_active = (n + i) < m ? std::pow(2, (i * 2)) : 0;
+        uint64_t shifted_active = (n + i) < m ? 1ull << ((i % 32) * 2) : 0;
         out[index / 32] = out[index / 32] | shifted_active;
         index++;
       }
@@ -7837,7 +7837,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         // Determine whether lane should be active and shift to align with
         // element in predicate register.
-        uint64_t shifted_active = (n + i) < m ? 1ull << (i * 4) : 0;
+        uint64_t shifted_active = (n + i) < m ? 1ull << ((i % 16) * 4) : 0;
         out[index / 16] = out[index / 16] | shifted_active;
         index++;
       }
@@ -7881,15 +7881,15 @@ void Instruction::execute() {
       bool interleave = false;
       int index = 0;
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, index));
+        uint64_t shifted_active = static_cast<uint64_t>(1ull << (index % 64));
         if (interleave) {
           out[i / 64] |= ((m[index / 64] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, i))
+                             ? static_cast<uint64_t>(1ull << (i % 64))
                              : 0;
           index++;
         } else {
           out[i / 64] |= ((n[index / 64] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, i))
+                             ? static_cast<uint64_t>(1ull << (i % 64))
                              : 0;
         }
         interleave = !interleave;
@@ -7909,15 +7909,15 @@ void Instruction::execute() {
       int index = 0;
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            static_cast<uint64_t>(std::pow(2, (index * 8)));
+            static_cast<uint64_t>(1ull << ((index % 8) * 8));
         if (interleave) {
           out[i / 8] |= ((m[index / 8] & shifted_active) == shifted_active)
-                            ? static_cast<uint64_t>(std::pow(2, (i * 8)))
+                            ? static_cast<uint64_t>(1ull << ((i % 8) * 8))
                             : 0;
           index++;
         } else {
           out[i / 8] |= ((n[index / 8] & shifted_active) == shifted_active)
-                            ? static_cast<uint64_t>(std::pow(2, (i * 8)))
+                            ? static_cast<uint64_t>(1ull << ((i % 8) * 8))
                             : 0;
         }
         interleave = !interleave;
@@ -7937,15 +7937,15 @@ void Instruction::execute() {
       int index = 0;
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            static_cast<uint64_t>(std::pow(2, (index * 2)));
+            static_cast<uint64_t>(1ull << ((index % 32) * 2));
         if (interleave) {
           out[i / 32] |= ((m[index / 32] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, (i * 2)))
+                             ? static_cast<uint64_t>(1ull << ((i % 32) * 2))
                              : 0;
           index++;
         } else {
           out[i / 32] |= ((n[index / 32] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, (i * 2)))
+                             ? static_cast<uint64_t>(1ull << ((i % 32) * 2))
                              : 0;
         }
         interleave = !interleave;
@@ -7965,15 +7965,15 @@ void Instruction::execute() {
       int index = 0;
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            static_cast<uint64_t>(std::pow(2, (index * 4)));
+            static_cast<uint64_t>(1ull << ((index % 16) * 4));
         if (interleave) {
           out[i / 16] |= ((m[index / 16] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, (i * 4)))
+                             ? static_cast<uint64_t>(1ull << ((i % 16) * 4))
                              : 0;
           index++;
         } else {
           out[i / 16] |= ((n[index / 16] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, (i * 4)))
+                             ? static_cast<uint64_t>(1ull << ((i % 16) * 4))
                              : 0;
         }
         interleave = !interleave;
@@ -8036,15 +8036,15 @@ void Instruction::execute() {
       bool interleave = false;
       int index = partition_num / 2;
       for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = static_cast<uint64_t>(std::pow(2, index));
+        uint64_t shifted_active = static_cast<uint64_t>(1ull << (index % 64));
         if (interleave) {
           out[i / 64] |= ((m[index / 64] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, i))
+                             ? static_cast<uint64_t>(1ull << (i % 64))
                              : 0;
           index++;
         } else {
           out[i / 64] |= ((n[index / 64] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, i))
+                             ? static_cast<uint64_t>(1ull << (i % 64))
                              : 0;
         }
         interleave = !interleave;
@@ -8064,15 +8064,15 @@ void Instruction::execute() {
       int index = partition_num / 2;
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            static_cast<uint64_t>(std::pow(2, (index * 8)));
+            static_cast<uint64_t>(1ull << ((index % 8) * 8));
         if (interleave) {
           out[i / 8] |= ((m[index / 8] & shifted_active) == shifted_active)
-                            ? static_cast<uint64_t>(std::pow(2, (i * 8)))
+                            ? static_cast<uint64_t>(1ull << ((i % 8) * 8))
                             : 0;
           index++;
         } else {
           out[i / 8] |= ((n[index / 8] & shifted_active) == shifted_active)
-                            ? static_cast<uint64_t>(std::pow(2, (i * 8)))
+                            ? static_cast<uint64_t>(1ull << ((i % 8) * 8))
                             : 0;
         }
         interleave = !interleave;
@@ -8092,15 +8092,15 @@ void Instruction::execute() {
       int index = partition_num / 2;
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            static_cast<uint64_t>(std::pow(2, (index * 2)));
+            static_cast<uint64_t>(1ull << ((index % 32) * 2));
         if (interleave) {
           out[i / 32] |= ((m[index / 32] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, (i * 2)))
+                             ? static_cast<uint64_t>(1ull << ((i % 32) * 2))
                              : 0;
           index++;
         } else {
           out[i / 32] |= ((n[index / 32] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, (i * 2)))
+                             ? static_cast<uint64_t>(1ull << ((i % 32) * 2))
                              : 0;
         }
         interleave = !interleave;
@@ -8120,15 +8120,15 @@ void Instruction::execute() {
       int index = partition_num / 2;
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active =
-            static_cast<uint64_t>(std::pow(2, (index * 4)));
+            static_cast<uint64_t>(1ull << ((index % 16) * 4));
         if (interleave) {
           out[i / 16] |= ((m[index / 16] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, (i * 4)))
+                             ? static_cast<uint64_t>(1ull << ((i % 16) * 4))
                              : 0;
           index++;
         } else {
           out[i / 16] |= ((n[index / 16] & shifted_active) == shifted_active)
-                             ? static_cast<uint64_t>(std::pow(2, (i * 4)))
+                             ? static_cast<uint64_t>(1ull << ((i % 16) * 4))
                              : 0;
         }
         interleave = !interleave;
