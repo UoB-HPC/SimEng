@@ -89,7 +89,9 @@ TEST_P(InstMul, umaddl) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x0000002A00000000);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, InstMul, ::testing::Values(EMULATION),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, InstMul,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

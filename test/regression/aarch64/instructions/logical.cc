@@ -477,7 +477,9 @@ TEST_P(InstLogical, orn) {
             UINT64_C(-1) & ~(UINT64_C(0b0101) << 60));
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, InstLogical, ::testing::Values(EMULATION),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, InstLogical,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

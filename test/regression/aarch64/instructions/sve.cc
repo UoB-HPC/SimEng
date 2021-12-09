@@ -722,14 +722,14 @@ TEST_P(InstSve, cnt) {
     cntw x6, all, mul #3
     cntd x7, all, mul #3
   )");
-  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 64);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 32);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 16);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 8);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 192);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 96);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 48);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 24);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), VL / 8);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), VL / 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), VL / 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), VL / 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), (VL / 8) * 3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), (VL / 16) * 3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), (VL / 32) * 3);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), (VL / 64) * 3);
 }
 
 TEST_P(InstSve, cntp) {
@@ -6355,7 +6355,8 @@ TEST_P(InstSve, zip) {
               0.75, -0.5, 0.75, -0.5, 0.75});
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, InstSve, ::testing::Values(EMULATION),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, InstSve,
+                         ::testing::ValuesIn(genCoreTypeVLPairs(EMULATION)),
+                         paramToString);
 
 }  // namespace

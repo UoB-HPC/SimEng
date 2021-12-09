@@ -71,8 +71,11 @@ TEST_P(SystemRegister, sysreg_access) {
   EXPECT_EQ(getSystemRegister(0xde82), 42);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, SystemRegister,
-                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(
+    AArch64, SystemRegister,
+    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
+                      std::make_tuple(INORDER, YAML::Load("{}")),
+                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
+    paramToString);
 
 }  // namespace
