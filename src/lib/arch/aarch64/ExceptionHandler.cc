@@ -32,7 +32,16 @@ bool ExceptionHandler::init() {
     // Retrieve syscall ID held in register x8
     auto syscallId =
         registerFileSet.get({RegisterType::GENERAL, 8}).get<uint64_t>();
-    std::cerr << "Syscall ID ==== " << syscallId << std::endl;
+
+    std::cout << "==========\nSYSCALL ID:" << syscallId
+              << "\n\tR0 = " << registerFileSet.get(R0).get<int64_t>()
+              << "\n\tR1 = " << registerFileSet.get(R1).get<int64_t>()
+              << "\n\tR2 = " << registerFileSet.get(R2).get<int64_t>()
+              << "\n\tR3 = " << registerFileSet.get(R3).get<int64_t>()
+              << "\n\tR4 = " << registerFileSet.get(R4).get<int64_t>()
+              << "\n\tR5 = " << registerFileSet.get(R5).get<int64_t>()
+              << std::endl;
+
     ProcessStateChange stateChange;
     switch (syscallId) {
       case 29: {  // ioctl
@@ -106,12 +115,9 @@ bool ExceptionHandler::init() {
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
-        std::cerr << "fd === " << fd << std::endl;
-        std::cerr << "bufPtr === " << &bufPtr << std::endl;
 
         return readBufferThen(bufPtr, count, [=]() {
           int64_t totalRead = linux_.getdents64(fd, dataBuffer.data(), count);
-          std::cerr << "TOTAL READ === " << totalRead << std::endl;
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
@@ -122,7 +128,6 @@ bool ExceptionHandler::init() {
           int64_t bytesRemaining = totalRead;
           // Get pointer and size of the buffer
           uint64_t iDst = bufPtr;
-          std::cerr << "bufPtr === " << &bufPtr << std::endl;
           uint64_t iLength = bytesRemaining;
           if (iLength > bytesRemaining) {
             iLength = bytesRemaining;
@@ -130,9 +135,10 @@ bool ExceptionHandler::init() {
           bytesRemaining -= iLength;
           // Write data for this buffer in 128-byte chunks
           auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
-          std::cerr << "iSrc === " << iSrc << std::endl;
+          for (int i = 0; i < totalRead; i++) {
+            printf("0x%x\n", iSrc[i]);
+          }
           while (iLength > 0) {
-            std::cerr << "iLength === " << iLength << std::endl;
             uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
             stateChange.memoryAddresses.push_back({iDst, len});
             stateChange.memoryAddressValues.push_back({iSrc, len});
@@ -740,6 +746,46 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
 bool ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
   uint64_t nextInstructionAddress = instruction_.getInstructionAddress() + 4;
   result_ = {false, nextInstructionAddress, stateChange};
+
+  std::cout << "----------" << std::endl;
+  std::cout << "Registers changed:" << std::endl;
+  for (int i = 0; i < stateChange.modifiedRegisters.size(); i++) {
+    std::cout << "\t" << unsigned(stateChange.modifiedRegisters[i].type) << ":"
+              << unsigned(stateChange.modifiedRegisters[i].tag) << " -> ";
+    if (stateChange.modifiedRegisterValues[i].size() == 1)
+      std::cout << stateChange.modifiedRegisterValues[i].get<uint8_t>();
+    else if (stateChange.modifiedRegisterValues[i].size() == 2)
+      std::cout << stateChange.modifiedRegisterValues[i].get<uint16_t>();
+    else if (stateChange.modifiedRegisterValues[i].size() == 4)
+      std::cout << stateChange.modifiedRegisterValues[i].get<uint32_t>();
+    else if (stateChange.modifiedRegisterValues[i].size() == 8)
+      std::cout << stateChange.modifiedRegisterValues[i].get<uint64_t>();
+    else
+      std::cout << "VECTOR";
+    std::cout << std::endl;
+  }
+  std::cout << "Memory changed:" << std::endl;
+  for (int i = 0; i < stateChange.memoryAddresses.size(); i++) {
+    std::cout << "\t" << std::hex << stateChange.memoryAddresses[i].address
+              << ":" << std::dec << stateChange.memoryAddresses[i].size
+              << " -> ";
+    if (stateChange.memoryAddressValues[i].size() == 1)
+      std::cout << std::hex
+                << stateChange.memoryAddressValues[i].get<uint8_t>();
+    else if (stateChange.memoryAddressValues[i].size() == 2)
+      std::cout << std::hex
+                << stateChange.memoryAddressValues[i].get<uint16_t>();
+    else if (stateChange.memoryAddressValues[i].size() == 4)
+      std::cout << std::hex
+                << stateChange.memoryAddressValues[i].get<uint32_t>();
+    else if (stateChange.memoryAddressValues[i].size() == 8)
+      std::cout << std::hex
+                << stateChange.memoryAddressValues[i].get<uint64_t>();
+    else
+      std::cout << "LARGER THAN 8 BYTES WRITTEN";
+    std::cout << std::endl;
+  }
+
   return true;
 }
 
