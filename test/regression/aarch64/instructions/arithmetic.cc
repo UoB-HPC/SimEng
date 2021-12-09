@@ -429,6 +429,21 @@ TEST_P(InstArithmetic, sbc) {
             (7ul << 48) - (15ul << 33) - 15ul - 1ul);
 }
 
+TEST_P(InstArithmetic, smsubl) {
+  RUN_AARCH64(R"(
+    mov w0, #8
+    mov w1, #9
+    mov w2, #-10
+    mov x3, #12
+
+
+    smsubl x4, w0, w1, x3
+    smsubl x5, w0, w2, x3
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(4), -60);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5), 92);
+}
+
 TEST_P(InstArithmetic, sub) {
   // 32-bit
   RUN_AARCH64(R"(

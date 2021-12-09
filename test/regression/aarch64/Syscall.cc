@@ -1,11 +1,18 @@
+#include <stdlib.h>
+#include <sys/syscall.h>
+
 #include <cstring>
 #include <fstream>
+#include <string>
 
 #include "AArch64RegressionTest.hh"
 
 namespace {
 
 using Syscall = AArch64RegressionTest;
+
+/** The maximum size of a filesystem path. */
+static const size_t LINUX_PATH_MAX = 4096;
 
 TEST_P(Syscall, ioctl) {
   // TIOCGWINSZ: test it returns zero and sets the output to anything
@@ -32,7 +39,7 @@ TEST_P(Syscall, ioctl) {
 }
 
 TEST_P(Syscall, faccessat) {
-  const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/input.txt";
+  const char filepath[] = "./tempFile.txt";
   initialHeapData_.resize(strlen(filepath) + 1);
   // Copy filepath to heap
   memcpy(initialHeapData_.data(), filepath, strlen(filepath) + 1);
@@ -43,6 +50,24 @@ TEST_P(Syscall, faccessat) {
     mov x8, 214
     svc #0
     mov x20, x0
+
+    # Create a new file to access and close immediately
+    # <tempfile> = openat(AT_FDCWD, filepath,
+    #                     O_CREAT | O_TRUNC | O_WRONLY,
+    #                     S_IRUSR)
+    mov x0, -100
+    mov x1, x20 
+    mov x2, 0x0241
+    mov x3, 400
+    mov x8, #56
+    svc #0
+    mov x21, x0
+
+    # close(fd=<input>)
+    mov x0, x21
+    mov x8, #57
+    svc #0
+
 
     # faccessat(AT_FDCWD, filepath, F_OK, 0) = 0
     mov x0, #-100
@@ -83,16 +108,36 @@ TEST_P(Syscall, faccessat) {
 
     # faccessat(AT_FDCWD, wrongFilepath, F_OK, 0) = -1
     mov x0, #-100
-    add x1, x20, #1
+    add x1, x20, #4
     mov x2, #0
     mov x3, #0
     mov x8, #48
     svc #0
     mov x25, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(22), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(23), 0);
+  EXPECT_EQ(getGeneralRegister<int64_t>(24), -1);
+  EXPECT_EQ(getGeneralRegister<int64_t>(25), -1);
+  // Delete output file after running test
+  unlink(filepath);
 
-    # faccessat(2, fullFilePath, F_OK, 0) = 0
+  char abs_filepath[LINUX_PATH_MAX];
+  realpath(SIMENG_AARCH64_TEST_ROOT "/data/input.txt", abs_filepath);
+  initialHeapData_.resize(strlen(abs_filepath) + 1);
+  // Copy abs_filepath to heap
+  memcpy(initialHeapData_.data(), abs_filepath, strlen(abs_filepath) + 1);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # faccessat(-1, fullFilePath, F_OK, 0) = 0
     # If an absolute filepath is referenced, dirfd is ignored
-    mov x0, #2
+    mov x0, #-1
     mov x1, x20
     mov x2, #0
     mov x3, #0
@@ -100,13 +145,86 @@ TEST_P(Syscall, faccessat) {
     svc #0
     mov x26, x0
   )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
-  EXPECT_EQ(getGeneralRegister<int64_t>(22), 0);
-  EXPECT_EQ(getGeneralRegister<int64_t>(23), 0);
-  EXPECT_EQ(getGeneralRegister<int64_t>(24), -1);
-  EXPECT_EQ(getGeneralRegister<int64_t>(25), -1);
   EXPECT_EQ(getGeneralRegister<int64_t>(26), 0);
+
+  // Check syscall works using dirfd instead of AT_FDCWD
+  const char file[] = "input.txt\0";
+  char dirPath[LINUX_PATH_MAX];
+  realpath(SIMENG_AARCH64_TEST_ROOT "/data/\0", dirPath);
+
+  initialHeapData_.resize(strlen(dirPath) + strlen(file) + 2);
+  // Copy dirPath to heap
+  memcpy(initialHeapData_.data(), file, strlen(file) + 1);
+  memcpy(initialHeapData_.data() + strlen(file) + 1, dirPath,
+         strlen(dirPath) + 1);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # Need to open the directory
+    # dfd = openat(AT_FDCWD, dirPath, O_DIRECTORY)
+    # Flags = 0x10000
+    mov x0, -100
+    add x1, x20, #10
+    mov x2, #65536
+    mov x8, #56
+    svc #0
+    mov x21, x0
+
+    # faccessat(dfd, fullFilePath, F_OK, 0) = 0
+    # If an absolute filepath is referenced, dirfd is ignored
+    mov x0, x21
+    mov x1, x20
+    mov x2, #0
+    mov x3, #0
+    mov x8, #48
+    svc #0
+    mov x27, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(27), 0);
 }
+
+#ifdef SYS_getdents
+TEST_P(Syscall, getdents64) {
+  const char filepath[] = SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles/";
+
+  // Reserve 32768 bytes for buffer
+  initialHeapData_.resize(32768 + strlen(filepath) + 1);
+
+  // Copy filepath to heap
+  memcpy(initialHeapData_.data() + 32768, filepath, strlen(filepath) + 1);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # Need to open the directory
+    # fd = openat(AT_FDCWD, filepath, O_PATH)
+    # Flags = 0x200000
+    mov x0, -100
+    add x1, x20, 32768
+    mov x2, #0
+    mov x8, #56
+    svc #0
+    mov x21, x0
+
+    # getdents64(fd, bufptr, count)
+    mov x0, x21
+    mov x1, x20
+    mov x2, #32768
+    mov x8, #61
+    svc #0
+    mov x22, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(22), 80);
+}
+#endif
 
 // Test reading from and seeking through a file
 TEST_P(Syscall, file_read) {
@@ -525,7 +643,7 @@ TEST_P(Syscall, newfstatat) {
     svc #0
     mov x20, x0
 
-    # newfstatat(dirfd=AT_FDCWD, pathname=/data/input.txt, statbuf, flags=0)
+    # newfstatat(dirfd=AT_FDCWD, filepath, statbuf, flags=0)
     mov x0, #-100
     add x1, x20, #128
     mov x2, x20
@@ -544,9 +662,9 @@ TEST_P(Syscall, newfstatat) {
     svc #0
     mov x20, x0
 
-    # newfstatat(dirfd=AT_FDCWD, pathname=data/input.txt, statbuf, flags=0)
+    # newfstatat(dirfd=AT_FDCWD, wrongFilePath, statbuf, flags=0)
     mov x0, #-100
-    add x1, x20, #129
+    add x1, x20, #130
     mov x2, x20
     mov x3, #0
     mov x8, #79
@@ -555,6 +673,44 @@ TEST_P(Syscall, newfstatat) {
   )");
   // Check fstatat returned -1 (file not found)
   EXPECT_EQ(getGeneralRegister<uint64_t>(21), -1);
+
+  // Check syscall works using dirfd instead of AT_FDCWD
+  const char file[] = "input.txt\0";
+  char dirPath[LINUX_PATH_MAX];
+  realpath(SIMENG_AARCH64_TEST_ROOT "/data/\0", dirPath);
+
+  initialHeapData_.resize(128 + strlen(dirPath) + strlen(file) + 2);
+  // Copy dirPath to heap
+  memcpy(initialHeapData_.data() + 128, file, strlen(file) + 1);
+  memcpy(initialHeapData_.data() + 128 + strlen(file) + 1, dirPath,
+         strlen(dirPath) + 1);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    # Need to open the directory
+    # dfd = openat(AT_FDCWD, dirPath, O_DIRECTORY)
+    # Flags = 0x10000
+    mov x0, -100
+    add x1, x20, #138
+    mov x2, #65536
+    mov x8, #56
+    svc #0
+    mov x21, x0
+
+    # newfstatat(dfd, file, statbuf, flags=0)
+    mov x0, x21
+    add x1, x20, #128
+    mov x2, x20
+    mov x3, #0
+    mov x8, #79
+    svc #0
+    mov x21, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(27), 0);
 }
 
 TEST_P(Syscall, getrusage) {
@@ -583,6 +739,27 @@ TEST_P(Syscall, getrusage) {
   )");
   EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
   EXPECT_EQ(getGeneralRegister<int64_t>(22), 0);
+
+  // MacOS doesn't support the final enum RUSAGE_THREAD
+#ifndef __MACH__
+  // Reserve 128 bytes for usage
+  initialHeapData_.resize(128);
+  RUN_AARCH64(R"(
+      # Get heap address
+      mov x0, 0
+      mov x8, 214
+      svc #0
+      mov x20, x0
+
+      # getrusage(who = RUSAGE_THREAD, usage)
+      mov x0, #1
+      mov x1, x20
+      mov x8, #165
+      svc #0
+      mov x21, x0
+    )");
+  EXPECT_EQ(getGeneralRegister<int64_t>(21), 0);
+#endif
 }
 
 TEST_P(Syscall, ftruncate) {

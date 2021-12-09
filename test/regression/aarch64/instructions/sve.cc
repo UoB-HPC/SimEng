@@ -24,6 +24,7 @@ TEST_P(InstSve, addvl) {
 
 TEST_P(InstSve, and) {
   // VL = 512-bits
+  // Predicates, Predicated
   RUN_AARCH64(R"(
     mov x0, #8
 
@@ -37,6 +38,78 @@ TEST_P(InstSve, and) {
   )");
   CHECK_PREDICATE(3, uint32_t, {0x11111111, 0x11111111, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(4, uint32_t, {0x11111111, 0, 0, 0, 0, 0, 0, 0});
+
+  // Vectors, Predicated
+  RUN_AARCH64(R"(
+    # 8-bit
+    mov x0, #32
+    index z0.b, #8, #2
+    dup z1.b, #15
+    dup z2.b, #3
+    ptrue p0.b
+    whilelo p1.b, xzr, x0
+
+    and z0.b, p0/m, z0.b, z1.b
+    and z1.b, p1/m, z1.b, z2.b 
+
+    # 16-bit
+    mov x0, #16
+    index z3.h, #8, #2
+    dup z4.h, #15
+    dup z5.h, #3
+    ptrue p0.h
+    whilelo p1.h, xzr, x0
+
+    and z3.h, p0/m, z3.h, z4.h
+    and z4.h, p1/m, z4.h, z5.h 
+
+    # 32-bit
+    mov x0, #8
+    index z6.s, #8, #2
+    dup z7.s, #15
+    dup z8.s, #3
+    ptrue p0.s
+    whilelo p1.s, xzr, x0
+
+    and z6.s, p0/m, z6.s, z7.s
+    and z7.s, p1/m, z7.s, z8.s 
+
+    # 64-bit
+    mov x0, #4
+    index z9.d, #8, #2
+    dup z10.d, #15
+    dup z11.d, #3
+    ptrue p0.d
+    whilelo p1.d, xzr, x0
+
+    and z9.d, p0/m, z9.d, z10.d
+    and z10.d, p1/m, z10.d, z11.d 
+  )");
+  CHECK_NEON(0, uint8_t,
+             {8, 10, 12, 14, 0, 2, 4, 6, 8, 10, 12, 14, 0, 2, 4, 6,
+              8, 10, 12, 14, 0, 2, 4, 6, 8, 10, 12, 14, 0, 2, 4, 6,
+              8, 10, 12, 14, 0, 2, 4, 6, 8, 10, 12, 14, 0, 2, 4, 6,
+              8, 10, 12, 14, 0, 2, 4, 6, 8, 10, 12, 14, 0, 2, 4, 6});
+  CHECK_NEON(1, uint8_t,
+             {3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,
+              3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,
+              15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+              15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15});
+
+  CHECK_NEON(3, uint16_t,
+             {8, 10, 12, 14, 0, 2, 4, 6, 8, 10, 12, 14, 0, 2, 4, 6,
+              8, 10, 12, 14, 0, 2, 4, 6, 8, 10, 12, 14, 0, 2, 4, 6});
+  CHECK_NEON(4, uint16_t,
+             {3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,  3,
+              15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15});
+
+  CHECK_NEON(6, uint32_t,
+             {8, 10, 12, 14, 0, 2, 4, 6, 8, 10, 12, 14, 0, 2, 4, 6});
+  CHECK_NEON(7, uint32_t,
+             {3, 3, 3, 3, 3, 3, 3, 3, 15, 15, 15, 15, 15, 15, 15, 15});
+
+  CHECK_NEON(9, uint64_t, {8, 10, 12, 14, 0, 2, 4, 6});
+  CHECK_NEON(10, uint64_t, {3, 3, 3, 3, 15, 15, 15, 15});
 }
 
 TEST_P(InstSve, cmpne_imm) {
@@ -100,6 +173,264 @@ TEST_P(InstSve, cmpne_imm) {
   EXPECT_EQ(getNZCV(), 0b1010);
 }
 
+TEST_P(InstSve, cmpeq_imm) {
+  // VL = 512-bits
+  // 8-bit
+  RUN_AARCH64(R"(
+    mov x0, #64
+    whilelo p0.b, xzr, x0
+    dup z0.b, #-5
+
+    cmpeq p1.b, p0/z, z0.b, #-5
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0xFFFFFFFFFFFFFFFFu, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.b, xzr, x0
+    dup z0.b, #4
+
+    cmpeq p1.b, p0/z, z0.b, #4
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x00000000FFFFFFFFu, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #64
+    whilelo p0.b, xzr, x0
+    dup z0.b, #-5
+
+    cmpeq p1.b, p0/z, z0.b, #4
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 16-bit
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.h, xzr, x0
+    dup z0.h, #-5
+
+    cmpeq p1.h, p0/z, z0.h, #-5
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x5555555555555555u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.h, xzr, x0
+    dup z0.h, #4
+
+    cmpeq p1.h, p0/z, z0.h, #4
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x0000000055555555u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.h, xzr, x0
+    dup z0.h, #-5
+
+    cmpeq p1.h, p0/z, z0.h, #4
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.s, xzr, x0
+    dup z0.s, #-5
+
+    cmpeq p1.s, p0/z, z0.s, #-5
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x1111111111111111u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.s, xzr, x0
+    dup z0.s, #4
+
+    cmpeq p1.s, p0/z, z0.s, #4
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x0000000011111111u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.s, xzr, x0
+    dup z0.s, #-5
+
+    cmpeq p1.s, p0/z, z0.s, #4
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.d, xzr, x0
+    dup z0.d, #-5
+
+    cmpeq p1.d, p0/z, z0.d, #-5
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x101010101010101u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #4
+    whilelo p0.d, xzr, x0
+    dup z0.d, #4
+
+    cmpeq p1.d, p0/z, z0.d, #4
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x000000001010101u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.d, xzr, x0
+    dup z0.d, #-5
+
+    cmpeq p1.d, p0/z, z0.d, #4
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+}
+
+TEST_P(InstSve, cmpeq_vec) {
+  // VL = 512-bits
+  // 8-bit
+  RUN_AARCH64(R"(
+    mov x0, #64
+    whilelo p0.b, xzr, x0
+    dup z0.b, #-5
+
+    cmpeq p1.b, p0/z, z0.b, z0.b
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0xFFFFFFFFFFFFFFFFu, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.b, xzr, x0
+    dup z0.b, #4
+
+    cmpeq p1.b, p0/z, z0.b, z0.b
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x00000000FFFFFFFFu, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #64
+    whilelo p0.b, xzr, x0
+    dup z0.b, #-5
+    dup z2.b, #4
+
+    cmpeq p1.b, p0/z, z0.b, z2.b
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 16-bit
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.h, xzr, x0
+    dup z0.h, #-5
+
+    cmpeq p1.h, p0/z, z0.h, z0.h
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x5555555555555555u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.h, xzr, x0
+    dup z0.h, #4
+
+    cmpeq p1.h, p0/z, z0.h, z0.h
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x0000000055555555u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.h, xzr, x0
+    dup z0.h, #-5
+    dup z2.h, #4
+
+    cmpeq p1.h, p0/z, z0.h, z2.h
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.s, xzr, x0
+    dup z0.s, #-5
+
+    cmpeq p1.s, p0/z, z0.s, z0.s
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x1111111111111111u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.s, xzr, x0
+    dup z0.s, #4
+
+    cmpeq p1.s, p0/z, z0.s, z0.s
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x0000000011111111u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.s, xzr, x0
+    dup z0.s, #-5
+    dup z2.s, #4
+
+    cmpeq p1.s, p0/z, z0.s, z2.s
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.d, xzr, x0
+    dup z0.d, #-5
+
+    cmpeq p1.d, p0/z, z0.d, z0.d
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x101010101010101u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #4
+    whilelo p0.d, xzr, x0
+    dup z0.d, #4
+
+    cmpeq p1.d, p0/z, z0.d, z0.d
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x000000001010101u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.d, xzr, x0
+    dup z0.d, #-5
+    dup z2.d, #4
+
+    cmpeq p1.d, p0/z, z0.d, z2.d
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+}
+
 TEST_P(InstSve, cmpgt_vec) {
   // VL = 512-bits
   // 8-bit
@@ -107,7 +438,7 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #64
     whilelo p0.b, xzr, x0
     dup z0.b, #5
-    dup z1.b, #4
+    dup z1.b, #-4
 
     cmpgt p1.b, p0/z, z0.b, z1.b
   )");
@@ -118,7 +449,7 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #32
     whilelo p0.b, xzr, x0
     dup z0.b, #5
-    dup z1.b, #4
+    dup z1.b, #-4
 
     cmpgt p1.b, p0/z, z0.b, z1.b
   )");
@@ -129,7 +460,7 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #64
     whilelo p0.b, xzr, x0
     dup z0.b, #5
-    dup z1.b, #4
+    dup z1.b, #-4
 
     cmpgt p1.b, p0/z, z1.b, z0.b
   )");
@@ -141,7 +472,7 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #32
     whilelo p0.h, xzr, x0
     dup z0.h, #5
-    dup z1.h, #4
+    dup z1.h, #-4
 
     cmpgt p1.h, p0/z, z0.h, z1.h
   )");
@@ -152,7 +483,7 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #16
     whilelo p0.h, xzr, x0
     dup z0.h, #5
-    dup z1.h, #4
+    dup z1.h, #-4
 
     cmpgt p1.h, p0/z, z0.h, z1.h
   )");
@@ -163,7 +494,7 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #32
     whilelo p0.h, xzr, x0
     dup z0.h, #5
-    dup z1.h, #4
+    dup z1.h, #-4
 
     cmpgt p1.h, p0/z, z1.h, z0.h
   )");
@@ -175,7 +506,7 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #16
     whilelo p0.s, xzr, x0
     dup z0.s, #5
-    dup z1.s, #4
+    dup z1.s, #-4
 
     cmpgt p1.s, p0/z, z0.s, z1.s
   )");
@@ -186,7 +517,7 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #8
     whilelo p0.s, xzr, x0
     dup z0.s, #5
-    dup z1.s, #4
+    dup z1.s, #-4
 
     cmpgt p1.s, p0/z, z0.s, z1.s
   )");
@@ -197,7 +528,7 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #16
     whilelo p0.s, xzr, x0
     dup z0.s, #5
-    dup z1.s, #4
+    dup z1.s, #-4
 
     cmpgt p1.s, p0/z, z1.s, z0.s
   )");
@@ -209,7 +540,7 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #8
     whilelo p0.d, xzr, x0
     dup z0.d, #5
-    dup z1.d, #4
+    dup z1.d, #-4
 
     cmpgt p1.d, p0/z, z0.d, z1.d
   )");
@@ -220,7 +551,7 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #4
     whilelo p0.d, xzr, x0
     dup z0.d, #5
-    dup z1.d, #4
+    dup z1.d, #-4
 
     cmpgt p1.d, p0/z, z0.d, z1.d
   )");
@@ -231,9 +562,148 @@ TEST_P(InstSve, cmpgt_vec) {
     mov x0, #8
     whilelo p0.d, xzr, x0
     dup z0.d, #5
-    dup z1.d, #4
+    dup z1.d, #-4
 
     cmpgt p1.d, p0/z, z1.d, z0.d
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+}
+
+TEST_P(InstSve, cmphi_vec) {
+  // VL = 512-bits
+  // 8-bit
+  RUN_AARCH64(R"(
+    mov x0, #64
+    whilelo p0.b, xzr, x0
+    dup z0.b, #-5
+    dup z1.b, #4
+
+    cmphi p1.b, p0/z, z0.b, z1.b
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0xFFFFFFFFFFFFFFFFu, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.b, xzr, x0
+    dup z0.b, #-5
+    dup z1.b, #4
+
+    cmphi p1.b, p0/z, z0.b, z1.b
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x00000000FFFFFFFFu, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #64
+    whilelo p0.b, xzr, x0
+    dup z0.b, #-5
+    dup z1.b, #4
+
+    cmphi p1.b, p0/z, z1.b, z0.b
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 16-bit
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.h, xzr, x0
+    dup z0.h, #-5
+    dup z1.h, #4
+
+    cmphi p1.h, p0/z, z0.h, z1.h
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x5555555555555555u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.h, xzr, x0
+    dup z0.h, #-5
+    dup z1.h, #4
+
+    cmphi p1.h, p0/z, z0.h, z1.h
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x0000000055555555u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    whilelo p0.h, xzr, x0
+    dup z0.h, #-5
+    dup z1.h, #4
+
+    cmphi p1.h, p0/z, z1.h, z0.h
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 32-bit
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.s, xzr, x0
+    dup z0.s, #-5
+    dup z1.s, #4
+
+    cmphi p1.s, p0/z, z0.s, z1.s
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x1111111111111111u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.s, xzr, x0
+    dup z0.s, #-5
+    dup z1.s, #4
+
+    cmphi p1.s, p0/z, z0.s, z1.s
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x0000000011111111u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #16
+    whilelo p0.s, xzr, x0
+    dup z0.s, #-5
+    dup z1.s, #4
+
+    cmphi p1.s, p0/z, z1.s, z0.s
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.d, xzr, x0
+    dup z0.d, #-5
+    dup z1.d, #4
+
+    cmphi p1.d, p0/z, z0.d, z1.d
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x101010101010101u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #4
+    whilelo p0.d, xzr, x0
+    dup z0.d, #-5
+    dup z1.d, #4
+
+    cmphi p1.d, p0/z, z0.d, z1.d
+  )");
+  CHECK_PREDICATE(1, uint64_t, {0x000000001010101u, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #8
+    whilelo p0.d, xzr, x0
+    dup z0.d, #-5
+    dup z1.d, #4
+
+    cmphi p1.d, p0/z, z1.d, z0.d
   )");
   CHECK_PREDICATE(1, uint64_t, {0, 0, 0, 0});
   EXPECT_EQ(getNZCV(), 0b0110);
@@ -260,6 +730,47 @@ TEST_P(InstSve, cnt) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 96);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 48);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 24);
+}
+
+TEST_P(InstSve, cntp) {
+  // VL = 512-bits
+  RUN_AARCH64(R"(
+    # 8-bit
+    mov x0, #32
+    ptrue p0.b
+    whilelo p1.b, xzr, x0
+    cntp x0, p0, p0.b
+    cntp x1, p1, p0.b
+
+    # 16-bit
+    mov x2, #16
+    ptrue p0.h
+    whilelo p2.h, xzr, x2
+    cntp x2, p0, p0.h
+    cntp x3, p2, p0.h
+
+    # 32-bit
+    mov x4, #8
+    ptrue p0.s
+    whilelo p3.s, xzr, x4
+    cntp x4, p0, p0.s
+    cntp x5, p3, p0.s
+
+    # 64-bit
+    mov x6, #4
+    ptrue p0.d
+    whilelo p4.d, xzr, x6
+    cntp x6, p0, p0.d
+    cntp x7, p4, p0.d
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 8);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 8);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 4);
 }
 
 TEST_P(InstSve, dec) {
@@ -411,11 +922,12 @@ TEST_P(InstSve, dups) {
   //             14.5f, 14.5f, 14.5f, 14.5f, 14.5f, 14.5f, 14.5f, 14.5f,
   //             14.5f, 14.5f, 14.5f, 14.5f, 14.5f, 14.5f, 14.5f, 14.5f});
   // CHECK_NEON(7, float,
-  //            {-14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f,
-  //             -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f,
-  //             -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f,
+  //            {-14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f,
+  //            -14.5f,
   //             -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f,
-  //             -14.5f});
+  //             -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f,
+  //             -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f, -14.5f,
+  //             -14.5f, -14.5f, -14.5f});
   CHECK_NEON(8, int16_t, {3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
                           3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3});
   CHECK_NEON(9, int16_t,
@@ -493,6 +1005,7 @@ TEST_P(InstSve, dups) {
 
 TEST_P(InstSve, eor) {
   // VL = 512-bits
+  // Predicate, Predicated
   RUN_AARCH64(R"(
     mov x0, #48
     mov x1, #32
@@ -514,6 +1027,79 @@ TEST_P(InstSve, eor) {
   CHECK_PREDICATE(6, uint64_t, {0xFFFFFFFF0000FFFFu, 0, 0, 0});
   CHECK_PREDICATE(7, uint64_t, {0x000000000000FFFFu, 0, 0, 0});
   CHECK_PREDICATE(8, uint64_t, {0x00000000FFFF0000u, 0, 0, 0});
+
+  // Vectors, Predicated
+  RUN_AARCH64(R"(
+    # 8-bit
+    mov x0, #32
+    index z0.b, #8, #2
+    dup z1.b, #15
+    dup z2.b, #3
+    ptrue p0.b
+    whilelo p1.b, xzr, x0
+
+    eor z0.b, p0/m, z0.b, z1.b
+    eor z1.b, p1/m, z1.b, z2.b 
+
+    # 16-bit
+    mov x0, #16
+    index z3.h, #8, #2
+    dup z4.h, #15
+    dup z5.h, #3
+    ptrue p0.h
+    whilelo p1.h, xzr, x0
+
+    eor z3.h, p0/m, z3.h, z4.h
+    eor z4.h, p1/m, z4.h, z5.h 
+
+    # 32-bit
+    mov x0, #8
+    index z6.s, #8, #2
+    dup z7.s, #15
+    dup z8.s, #3
+    ptrue p0.s
+    whilelo p1.s, xzr, x0
+
+    eor z6.s, p0/m, z6.s, z7.s
+    eor z7.s, p1/m, z7.s, z8.s 
+
+    # 64-bit
+    mov x0, #4
+    index z9.d, #8, #2
+    dup z10.d, #15
+    dup z11.d, #3
+    ptrue p0.d
+    whilelo p1.d, xzr, x0
+
+    eor z9.d, p0/m, z9.d, z10.d
+    eor z10.d, p1/m, z10.d, z11.d 
+  )");
+  CHECK_NEON(0, uint8_t,
+             {7,   5,   3,   1,   31,  29,  27,  25,  23,  21,  19,  17, 47,
+              45,  43,  41,  39,  37,  35,  33,  63,  61,  59,  57,  55, 53,
+              51,  49,  79,  77,  75,  73,  71,  69,  67,  65,  95,  93, 91,
+              89,  87,  85,  83,  81,  111, 109, 107, 105, 103, 101, 99, 97,
+              127, 125, 123, 121, 119, 117, 115, 113, 143, 141, 139, 137});
+  CHECK_NEON(1, uint8_t,
+             {12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+              12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+              15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
+              15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15});
+
+  CHECK_NEON(3, uint16_t,
+             {7,  5,  3,  1,  31, 29, 27, 25, 23, 21, 19, 17, 47, 45, 43, 41,
+              39, 37, 35, 33, 63, 61, 59, 57, 55, 53, 51, 49, 79, 77, 75, 73});
+  CHECK_NEON(4, uint16_t,
+             {12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12,
+              15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15});
+
+  CHECK_NEON(6, uint32_t,
+             {7, 5, 3, 1, 31, 29, 27, 25, 23, 21, 19, 17, 47, 45, 43, 41});
+  CHECK_NEON(7, uint32_t,
+             {12, 12, 12, 12, 12, 12, 12, 12, 15, 15, 15, 15, 15, 15, 15, 15});
+
+  CHECK_NEON(9, uint64_t, {7, 5, 3, 1, 31, 29, 27, 25});
+  CHECK_NEON(10, uint64_t, {12, 12, 12, 12, 15, 15, 15, 15});
 }
 
 TEST_P(InstSve, inc) {
@@ -792,17 +1378,22 @@ TEST_P(InstSve, fadd) {
     mov x1, #0
     mov x2, #8
     whilelo p0.s, xzr, x2
+    ptrue p1.s
 
     ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+    ld1w {z4.s}, p1/z, [x0, x1, lsl #2]
+    ld1w {z5.s}, p1/z, [x0, x1, lsl #2]
 
     fadd z2.s, z1.s, z0.s
 
     # FADD with constant
-    ptrue p1.s
     ld1w {z3.s}, p0/z, [x0, x2, lsl #2]
     fadd z3.s, z1.s, z0.s
     fadd z3.s, p1/m, z3.s, 0.5
+
+    fadd z4.s, p1/m, z4.s, z3.s
+    fadd z5.s, p0/m, z5.s, z4.s
   )");
 
   CHECK_NEON(2, float,
@@ -811,6 +1402,14 @@ TEST_P(InstSve, fadd) {
   CHECK_NEON(3, float,
              {-33.21f, -43.177f, 0.375f, 81.22f, -84.91f, -684.23f, 702.25f,
               115.36f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f});
+  CHECK_NEON(
+      4, float,
+      {-32.21f, -85.937f, 0.25f, 81.22f, -44.65f, -1368.95f, 702.1f, 223.22f,
+       -34.21f, -0.417f, 0.5f, 81.22f, -125.17f, 0.49f, 702.4f, 7.5f});
+  CHECK_NEON(
+      5, float,
+      {-31.21f, -128.697f, 0.125f, 81.22f, -4.39f, -2053.67f, 701.95f, 331.08f,
+       -34.71f, -0.917f, 0.0f, 80.72f, -125.67f, -0.01f, 701.90f, 7.0f});
 }
 
 TEST_P(InstSve, fadda) {
@@ -1296,7 +1895,7 @@ TEST_P(InstSve, fcvtzs) {
   dheap[6] = 7.9;
   dheap[7] = -7.9;
 
-  dheap[8] = 0x7FFFFFFFFFFFFFFF;
+  dheap[8] = 1000000000000000000000000000.66;
   dheap[9] = -114458013083425;
   dheap[10] = -10698505.18;
   dheap[11] = 0;
@@ -1306,11 +1905,6 @@ TEST_P(InstSve, fcvtzs) {
     mov x0, 0
     mov x8, 214
     svc #0
-
-    dup z1.s, #1
-    dup z2.s, #1
-    dup z4.s, #1
-    dup z5.s, #1
 
     ptrue p0.d
 
@@ -1322,10 +1916,21 @@ TEST_P(InstSve, fcvtzs) {
     ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
     ld1d {z3.d}, p1/z, [x0, x3, lsl #3]
 
+    # Double to Int32
+    dup z1.s, #1
+    dup z2.s, #1
+    dup z4.s, #1
     fcvtzs z1.s, p0/m, z0.d
     fcvtzs z2.s, p1/m, z0.d
-
     fcvtzs z4.s, p1/m, z3.d
+
+    # Double to Int64
+    dup z5.d, #1
+    dup z6.d, #1
+    dup z7.d, #1
+    fcvtzs z5.d, p0/m, z0.d
+    fcvtzs z6.d, p1/m, z0.d
+    fcvtzs z7.d, p1/m, z3.d
   )");
 
   CHECK_NEON(1, int64_t, {1, -1, 4, -4, 3, -3, 7, -7});
@@ -1334,6 +1939,75 @@ TEST_P(InstSve, fcvtzs) {
   CHECK_NEON(4, int64_t,
              {2147483647, -2147483648, -10698505, 0, 4294967297, 4294967297,
               4294967297, 4294967297});
+
+  CHECK_NEON(5, int64_t, {1, -1, 4, -4, 3, -3, 7, -7});
+  CHECK_NEON(6, int64_t, {1, -1, 4, -4, 1, 1, 1, 1});
+  CHECK_NEON(7, int64_t,
+             {INT64_MAX, -114458013083425, -10698505, 0, 1, 1, 1, 1});
+
+  // Single
+  initialHeapData_.resize(128);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 1.0f;
+  fheap[1] = -42.76f;
+  fheap[2] = -0.125f;
+  fheap[3] = 0.0f;
+  fheap[4] = 40.26f;
+  fheap[5] = -684.72f;
+  fheap[6] = -1.15f;
+  fheap[7] = 107.86f;
+
+  fheap[8] = -118548568215563221587412.3368451;
+  fheap[9] = 118548568215563221587412.3368451;
+  fheap[10] = 0.0f;
+  fheap[11] = 80.72f;
+  fheap[12] = -125.67f;
+  fheap[13] = -0.01f;
+  fheap[14] = 701.90f;
+  fheap[15] = 7.0f;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ptrue p0.s
+
+    mov x1, #0
+    mov x2, #8
+    whilelo p1.s, xzr, x2
+
+    ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z3.s}, p1/z, [x0, x2, lsl #2]
+
+    # Single to Int64
+    dup z1.d, #1
+    dup z2.d, #1
+    dup z4.d, #1
+    fcvtzs z1.d, p0/m, z0.s
+    fcvtzs z2.d, p1/m, z0.s
+    fcvtzs z4.d, p1/m, z3.s
+
+    # Single to Int32
+    dup z5.s, #10
+    dup z6.s, #10
+    dup z7.s, #10
+    fcvtzs z5.s, p0/m, z0.s
+    fcvtzs z6.s, p1/m, z0.s
+    fcvtzs z7.s, p1/m, z3.s
+  )");
+  CHECK_NEON(1, int64_t, {1, 0, 40, -1, INT64_MIN, 0, -125, 701});
+  CHECK_NEON(2, int64_t, {1, 0, 40, -1, 1, 1, 1, 1});
+  CHECK_NEON(4, int64_t, {INT64_MIN, 0, -125, 701, 1, 1, 1, 1});
+
+  CHECK_NEON(5, int32_t,
+             {1, -42, 0, 0, 40, -684, -1, 107, INT32_MIN, INT32_MAX, 0, 80,
+              -125, 0, 701, 7});
+  CHECK_NEON(6, int32_t,
+             {1, -42, 0, 0, 40, -684, -1, 107, 10, 10, 10, 10, 10, 10, 10, 10});
+  CHECK_NEON(7, int32_t,
+             {INT32_MIN, INT32_MAX, 0, 80, -125, 0, 701, 7, 10, 10, 10, 10, 10,
+              10, 10, 10});
 }
 
 TEST_P(InstSve, fcvt) {
@@ -1678,6 +2352,94 @@ TEST_P(InstSve, fnmls) {
     ld1d {z2.d}, p1/z, [x0, x1, lsl #3]
 
     fnmls z2.d, p0/m, z1.d, z0.d
+  )");
+  CHECK_NEON(
+      2, double,
+      {-35.71, 81.97092, 0.125, 0.0, -5099.7342, 691.5672, -105.135, 647.16});
+}
+
+TEST_P(InstSve, fnmsb) {
+  // VL = 512-bits
+  // float
+  initialHeapData_.resize(68);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 1.0f;
+  fheap[1] = -42.76f;
+  fheap[2] = -0.125f;
+  fheap[3] = 0.0f;
+  fheap[4] = 40.26f;
+  fheap[5] = -684.72f;
+  fheap[6] = -0.15f;
+  fheap[7] = 107.86f;
+
+  fheap[8] = -34.71f;
+  fheap[9] = -0.917f;
+  fheap[10] = 0.0f;
+  fheap[11] = 80.72f;
+  fheap[12] = -125.67f;
+  fheap[13] = -0.01f;
+  fheap[14] = 701.90f;
+  fheap[15] = 7.0f;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #8
+    whilelo p0.s, xzr, x2
+    ptrue p1.s
+
+    ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+    ld1w {z2.s}, p1/z, [x0, x1, lsl #2]
+
+    fnmsb z2.s, p0/m, z1.s, z0.s
+  )");
+  CHECK_NEON(2, float,
+             {-35.71f, 81.97092f, 0.125f, 0.0f, -5099.7342f, 691.5672f,
+              -105.135f, 647.16f, -34.71f, -0.917f, 0.0f, 80.72f, -125.67f,
+              -0.01f, 701.90f, 7.0f});
+
+  // double
+  initialHeapData_.resize(136);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0;
+  dheap[1] = -42.76;
+  dheap[2] = -0.125;
+  dheap[3] = 0.0;
+  dheap[4] = 40.26;
+  dheap[5] = -684.72;
+  dheap[6] = -0.15;
+  dheap[7] = 107.86;
+
+  dheap[8] = -34.71;
+  dheap[9] = -0.917;
+  dheap[10] = 0.0;
+  dheap[11] = 80.72;
+  dheap[12] = -125.67;
+  dheap[13] = -0.01;
+  dheap[14] = 701.90;
+  dheap[15] = 7.0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #8
+    whilelo p0.d, xzr, x2
+    ptrue p1.d
+
+    ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
+    ld1d {z2.d}, p1/z, [x0, x1, lsl #3]
+
+    fnmsb z2.d, p0/m, z1.d, z0.d
   )");
   CHECK_NEON(
       2, double,
@@ -2220,6 +2982,84 @@ TEST_P(InstSve, fneg) {
               0, 0, 0, 0, 0, 0, 0, 0});
 }
 
+TEST_P(InstSve, frintn) {
+  // VL = 512-bits
+  // 32-bit
+  initialHeapData_.resize(64);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 1.0f;
+  fheap[1] = -42.5f;
+  fheap[2] = -0.125f;
+  fheap[3] = 0.0f;
+  fheap[4] = 40.5f;
+  fheap[5] = -684.72f;
+  fheap[6] = -0.15f;
+  fheap[7] = 107.86f;
+
+  fheap[8] = -34.5f;
+  fheap[9] = -0.917f;
+  fheap[10] = 0.0f;
+  fheap[11] = 80.72f;
+  fheap[12] = -125.5f;
+  fheap[13] = -0.01f;
+  fheap[14] = 701.90f;
+  fheap[15] = 7.5f;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #8
+    ptrue p0.s
+    whilelo p1.s, xzr, x2
+
+    dup z0.s, #15
+    dup z1.s, #13
+    ld1w {z2.s}, p0/z, [x0, x1, lsl #2]
+
+    frintn z0.s, p0/m, z2.s
+    frintn z1.s, p1/m, z2.s
+  )");
+  CHECK_NEON(0, int32_t,
+             {1, -42, 0, 0, 40, -685, 0, 108, -34, -1, 0, 81, -126, 0, 702, 8});
+  CHECK_NEON(1, int32_t,
+             {1, -42, 0, 0, 40, -685, 0, 108, 13, 13, 13, 13, 13, 13, 13, 13});
+
+  // 64-bit
+  initialHeapData_.resize(64);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  dheap[0] = 1.0f;
+  dheap[1] = -42.5f;
+  dheap[2] = -0.125f;
+  dheap[3] = 0.0f;
+  dheap[4] = 40.5f;
+  dheap[5] = -684.72f;
+  dheap[6] = -3.5f;
+  dheap[7] = 107.5f;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #4
+    ptrue p0.d
+    whilelo p1.d, xzr, x2
+
+    dup z0.d, #15
+    dup z1.d, #13
+    ld1d {z2.d}, p0/z, [x0, x1, lsl #3]
+
+    frintn z0.d, p0/m, z2.d
+    frintn z1.d, p1/m, z2.d
+  )");
+  CHECK_NEON(0, int64_t, {1, -42, 0, 0, 40, -685, -4, 108});
+  CHECK_NEON(1, int64_t, {1, -42, 0, 0, 13, 13, 13, 13});
+}
+
 TEST_P(InstSve, fsqrt) {
   // VL = 512-bits
   // Float
@@ -2321,7 +3161,7 @@ TEST_P(InstSve, fsqrt) {
 TEST_P(InstSve, fsub) {
   // VL = 512-bits
   // float
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(128);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   fheap[0] = 1.0;
   fheap[1] = -42.76;
@@ -2355,11 +3195,20 @@ TEST_P(InstSve, fsub) {
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
 
     fsub z2.s, z1.s, z0.s
-  )");
 
+    # PREDICATED VECTOR
+    ptrue p1.s
+    ld1w {z4.s}, p1/z, [x0, x1, lsl #2]
+    
+    fsub z4.s, p0/m, z4.s, z1.s
+  )");
   CHECK_NEON(2, float,
              {-35.71f, 41.843f, 0.125f, 80.72f, -165.93f, 684.709960938f,
               702.050048828f, -100.86f, 0, 0, 0, 0, 0, 0, 0, 0});
+  CHECK_NEON(4, float,
+             {35.71f, -41.843f, -0.125f, -80.72f, 165.93f, -684.71f,
+              -702.050048828f, 100.86f, -34.71f, -0.917f, 0.0f, 80.72f,
+              -125.67f, -0.01f, 701.90f, 7.0f});
 
   // double
   initialHeapData_.resize(64);
@@ -2388,9 +3237,68 @@ TEST_P(InstSve, fsub) {
     ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
 
     fsub z2.d, z1.d, z0.d
+
+    # PREDICATED VECTOR
+    ptrue p1.d
+    ld1d {z3.d}, p1/z, [x0, x1, lsl #3]
+    
+    fsub z3.d, p0/m, z3.d, z1.d
   )");
 
   CHECK_NEON(2, double, {-35.71, 41.842999999999996, 0.125, 80.72, 0, 0, 0, 0});
+  CHECK_NEON(
+      3, double,
+      {35.71, -41.842999999999996, -0.125, -80.72, -34.71, -0.917, 0.0, 80.72});
+}
+
+TEST_P(InstSve, incp) {
+  // VL = 512-bits
+  // Scalar
+  RUN_AARCH64(R"(
+    # 8-bit
+    mov x0, #48
+    mov x1, #66
+    mov x2, #402
+    ptrue p0.b
+    whilelo p1.b, xzr, x0
+    incp x1, p0.b
+    incp x2, p1.b
+
+    # 16-bit
+    mov x3, #24
+    mov x4, #70
+    mov x5, #109
+    ptrue p0.h
+    whilelo p1.h, xzr, x3
+    incp x4, p0.h
+    incp x5, p1.h
+
+    # 32-bit
+    mov x6, #12
+    mov x7, #41
+    mov x8, #527
+    ptrue p0.s
+    whilelo p1.s, xzr, x6
+    incp x7, p0.s
+    incp x8, p1.s
+
+    # 64-bit
+    mov x9, #6
+    mov x10, #50
+    mov x11, #375
+    ptrue p0.d
+    whilelo p1.d, xzr, x9
+    incp x10, p0.d
+    incp x11, p1.d
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 66 + 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 402 + 48);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 70 + 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 109 + 24);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 41 + 16);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 527 + 12);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 50 + 8);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11), 375 + 6);
 }
 
 TEST_P(InstSve, index) {
@@ -3261,6 +4169,8 @@ TEST_P(InstSve, movprfx) {
     mov x1, #8
     whilelo p0.s, xzr, x1
     whilelo p1.d, xzr, x1
+    mov x2, #4
+    whilelo p3.d, xzr, x2
 
     dup z0.s, #9
     dup z1.d, #5
@@ -3268,14 +4178,19 @@ TEST_P(InstSve, movprfx) {
     dup z2.s, #0
     dup z3.d, #0
 
+    dup z6.d, #3
+
     movprfx z4.s, p0/z, z0.s
     fmla z4.s, p0/m, z2.s, z2.s
     movprfx z5.d, p1/z, z1.d
     fmla z5.d, p1/m, z3.d, z3.d
+    movprfx z6.d, p3/m, z1.d
+    fmla z6.d, p3/m, z3.d, z3.d
   )");
   CHECK_NEON(4, uint32_t,
              {9u, 9u, 9u, 9u, 9u, 9u, 9u, 9u, 0, 0, 0, 0, 0, 0, 0, 0});
   CHECK_NEON(5, uint64_t, {5u, 5u, 5u, 5u, 5u, 5u, 5u, 5u});
+  CHECK_NEON(6, uint64_t, {5u, 5u, 5u, 5u, 3u, 3u, 3u, 3u});
 }
 
 TEST_P(InstSve, mul) {
@@ -3387,10 +4302,10 @@ TEST_P(InstSve, orr) {
     mov z0.s, #4
     mov z1.d, z0.d
   )");
-  // CHECK_PREDICATE(3, uint32_t, {0x11111111, 0x11111111, 0, 0, 0, 0, 0, 0});
-  // CHECK_PREDICATE(4, uint32_t, {0x11111111, 0x11111111, 0, 0, 0, 0, 0, 0});
-  // CHECK_PREDICATE(5, uint32_t, {0x11111111, 0, 0, 0, 0, 0, 0, 0});
-  // CHECK_PREDICATE(6, uint32_t, {0x11111111, 0, 0, 0, 0, 0, 0, 0});
+  // CHECK_PREDICATE(3, uint32_t, {0x11111111, 0x11111111, 0, 0, 0, 0, 0,
+  // 0}); CHECK_PREDICATE(4, uint32_t, {0x11111111, 0x11111111, 0, 0, 0, 0,
+  // 0, 0}); CHECK_PREDICATE(5, uint32_t, {0x11111111, 0, 0, 0, 0, 0, 0,
+  // 0}); CHECK_PREDICATE(6, uint32_t, {0x11111111, 0, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(7, uint32_t, {0x11111111, 0, 0, 0, 0, 0, 0, 0});
   CHECK_PREDICATE(8, uint32_t, {0x11111111, 0x11111111, 0, 0, 0, 0, 0, 0});
 
@@ -3538,8 +4453,9 @@ TEST_P(InstSve, scvtf) {
     ptrue p0.s
     ptrue p1.d
     mov x1, #8
+    mov x2, #4
     whilelo p2.s, xzr, x1
-    whilelo p3.d, xzr, x1
+    whilelo p3.d, xzr, x2
 
     # int64 -> double
     scvtf z5.d, p1/m, z2.d
@@ -3559,13 +4475,13 @@ TEST_P(InstSve, scvtf) {
   )");
   CHECK_NEON(5, double,
              {-5.0, -14.0, -23.0, -32.0, -41.0, -50.0, -59.0, -68.0});
-  CHECK_NEON(6, double, {0xa, 0x14, 0x1e, 0x28, 0x32, 0x3c, 0x46, 0x50});
+  CHECK_NEON(6, double, {0xa, 0x14, 0x1e, 0x28, 0, 0, 0, 0});
   CHECK_NEON(7, float,
              {-5.0f, 0x0, -14.0f, 0x0, -23.0f, 0x0, -32.0f, 0x0, -41.0f, 0x0,
               -50.0f, 0x0, -59.0f, 0x0, -68.0f, 0x0});
   CHECK_NEON(8, float,
-             {0xa, 0x0, 0x14, 0x0, 0x1e, 0x0, 0x28, 0x0, 0x32, 0x0, 0x3c, 0x0,
-              0x46, 0x0, 0x50, 0x0});
+             {0xa, 0x0, 0x14, 0x0, 0x1e, 0x0, 0x28, 0x0, 0, 0x0, 0, 0x0, 0, 0x0,
+              0, 0x0});
   CHECK_NEON(9, double, {-6.0, -6.0, -6.0, -6.0, -6.0, -6.0, -6.0, -6.0});
   CHECK_NEON(10, double, {0xc, 0x28, 0x44, 0x60, 0x0, 0x0, 0x0, 0x0});
   CHECK_NEON(11, float,
@@ -3840,17 +4756,30 @@ TEST_P(InstSve, smax) {
     ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
     ld1w {z2.s}, p0/z, [x0, x2, lsl #2]
+    ld1w {z3.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z4.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z5.s}, p0/z, [x0, x1, lsl #2]
 
     mov x3, #8
     whilelo p1.s, xzr, x3
 
     smax z1.s, p0/m, z1.s, z0.s
     smax z2.s, p1/m, z2.s, z0.s
+
+    smax z3.s, z3.s, #0
+    smax z4.s, z4.s, #-128
+    smax z5.s, z5.s, #127
   )");
   CHECK_NEON(1, int32_t,
              {16, 15, 14, 13, 5, 6, 7, 8, 8, 7, 6, 5, 13, 14, -2, -1});
   CHECK_NEON(2, int32_t,
              {16, 15, 14, 13, 5, 6, 7, 8, 8, 7, 6, 5, 4, 3, -2, -1});
+  CHECK_NEON(3, int32_t, {1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 13, 14, 0, 0});
+  CHECK_NEON(4, int32_t,
+             {1, 2, 3, 4, 5, 6, 7, 8, -9, -10, -11, -12, 13, 14, -15, -1});
+  CHECK_NEON(5, int32_t,
+             {127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127, 127,
+              127, 127, 127});
 }
 
 TEST_P(InstSve, smin) {
@@ -3971,6 +4900,77 @@ TEST_P(InstSve, st1b) {
   EXPECT_EQ(getMemoryValue<uint64_t>(32 + 8), 0xABCDEF0198765432);
   EXPECT_EQ(getMemoryValue<uint64_t>(32 + 16), 0x12345678DEADBEEF);
   EXPECT_EQ(getMemoryValue<uint64_t>(32 + 24), 0xABCDEF0198765432);
+}
+
+TEST_P(InstSve, st1b_scatter) {
+  // VL = 512-bit
+  initialHeapData_.resize(128);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xDEADBEEF;
+  heap64[1] = 0x12345678;
+  heap64[2] = 0x98765432;
+  heap64[3] = 0xABCDEF01;
+  heap64[4] = 0xDEADBEEF;
+  heap64[5] = 0x12345678;
+  heap64[6] = 0x98765432;
+  heap64[7] = 0xABCDEF01;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #4
+    mov x3, #107
+    mov x4, #2
+    mov x5, #512
+    ptrue p0.d
+    whilelo p1.d, xzr, x2
+
+    index z0.d, #0, #3
+    index z1.d, #0, #1
+    index z2.d, #4, #10
+    index z3.d, #15, #-10
+
+    ld1d {z4.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z5.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z6.d}, p1/z, [x0, x4, lsl #3]
+    ld1d {z7.d}, p1/z, [x0, x4, lsl #3]
+
+    st1b {z4.d}, p0, [sp, z0.d]
+    st1b {z5.d}, p0, [x5, z1.d]
+    st1b {z6.d}, p1, [x3, z2.d]
+    st1b {z7.d}, p1, [x3, z3.d]
+  )");
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer()), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 3), 0x78);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 6), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 9), 0x01);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 12), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 15), 0x78);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 18), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(process_->getStackPointer() + 21), 0x01);
+
+  EXPECT_EQ(getMemoryValue<uint8_t>(512), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 1), 0x78);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 2), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 3), 0x01);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 4), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 5), 0x78);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 6), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(512 + 7), 0x01);
+
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 4), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 14), 0x01);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 24), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 34), 0x78);
+
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 15), 0x32);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + 5), 0x01);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + -5), 0xEF);
+  EXPECT_EQ(getMemoryValue<uint8_t>(107 + -15), 0x78);
 }
 
 TEST_P(InstSve, st1d_scatter) {
@@ -4605,10 +5605,21 @@ TEST_P(InstSve, uqdec) {
     uqdecd x0, all, mul #7
     uqdecd x1
     uqdecd x2, all, mul #7
+
+    mov w3, #1024
+    mov w4, #1024
+    mov w5, #1
+
+    uqdecd w3, all, mul #7
+    uqdecd w4
+    uqdecd w5, all, mul #7
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 968);
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 1016);
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 968);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 1016);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(5), 0);
   // h arrangement
   RUN_AARCH64(R"(
     mov x0, #1024
@@ -4940,6 +5951,54 @@ TEST_P(InstSve, whilelo) {
                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
   EXPECT_EQ(getNZCV(), 0b0110);
 
+  // 16-bit arrangement, 64-bit source operands
+  RUN_AARCH64(R"(
+    mov x0, #32
+
+    whilelo p0.h, xzr, x0
+  )");
+  CHECK_PREDICATE(
+      0, uint16_t,
+      {21845, 21845, 21845, 21845, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    mov x1, #16
+
+    whilelo p1.h, x1, x0
+  )");
+  CHECK_PREDICATE(1, uint16_t,
+                  {21845, 21845, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    mov x2, #27
+
+    whilelo p2.h, x2, x0
+  )");
+  CHECK_PREDICATE(2, uint16_t,
+                  {341, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #32
+    mov x3, #10
+
+    whilelo p3.h, x3, x0
+  )");
+  CHECK_PREDICATE(3, uint16_t,
+                  {21845, 21845, 1365, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelo p4.h, xzr, xzr
+  )");
+  CHECK_PREDICATE(4, uint16_t,
+                  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
   // 32-bit arrangement, 64-bit source operands
   RUN_AARCH64(R"(
     mov x0, #16
@@ -5020,6 +6079,191 @@ TEST_P(InstSve, whilelo) {
 
   RUN_AARCH64(R"(
     whilelo p4.d, xzr, xzr
+  )");
+  CHECK_PREDICATE(4, uint32_t, {0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // --------------------------------------------------------------------
+
+  // 8-bit arrangement, 32-bit source operands
+  RUN_AARCH64(R"(
+    mov w0, #64
+
+    whilelo p0.b, wzr, w0
+  )");
+  CHECK_PREDICATE(0, uint8_t, {255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0,
+                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 0,
+                               0,   0,   0,   0,   0,   0,   0,   0,   0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov w0, #64
+    mov w1, #32
+
+    whilelo p1.b, w1, w0
+  )");
+  CHECK_PREDICATE(1, uint8_t,
+                  {255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0,   0,   0,   0,   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #64
+    mov w2, #44
+
+    whilelo p2.b, w2, w0
+  )");
+  CHECK_PREDICATE(2, uint8_t,
+                  {255, 255, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0,   0,   0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #64
+    mov w3, #20
+
+    whilelo p3.b, w3, w0
+  )");
+  CHECK_PREDICATE(3, uint8_t,
+                  {255, 255, 255, 255, 255, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0,   0,   0,   0,   0,   0,  0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelo p4.b, wzr, wzr
+  )");
+  CHECK_PREDICATE(4, uint8_t, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 16-bit arrangement, 32-bit source operands
+  RUN_AARCH64(R"(
+    mov w0, #32
+
+    whilelo p0.h, wzr, w0
+  )");
+  CHECK_PREDICATE(
+      0, uint16_t,
+      {21845, 21845, 21845, 21845, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov w0, #32
+    mov w1, #16
+
+    whilelo p1.h, w1, w0
+  )");
+  CHECK_PREDICATE(1, uint16_t,
+                  {21845, 21845, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #32
+    mov w2, #27
+
+    whilelo p2.h, w2, w0
+  )");
+  CHECK_PREDICATE(2, uint16_t,
+                  {341, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #32
+    mov w3, #10
+
+    whilelo p3.h, w3, w0
+  )");
+  CHECK_PREDICATE(3, uint16_t,
+                  {21845, 21845, 1365, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelo p4.h, wzr, wzr
+  )");
+  CHECK_PREDICATE(4, uint16_t,
+                  {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 32-bit arrangement, 32-bit source operands
+  RUN_AARCH64(R"(
+    mov w0, #16
+
+    whilelo p0.s, wzr, w0
+  )");
+  CHECK_PREDICATE(0, uint32_t, {286331153, 286331153, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov w0, #16
+    mov w1, #8
+
+    whilelo p1.s, w1, w0
+  )");
+  CHECK_PREDICATE(1, uint32_t, {286331153, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #16
+    mov w2, #11
+
+    whilelo p2.s, w2, w0
+  )");
+  CHECK_PREDICATE(2, uint32_t, {69905, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #16
+    mov w3, #5
+
+    whilelo p3.s, w3, w0
+  )");
+  CHECK_PREDICATE(3, uint32_t, {286331153, 273, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelo p4.s, wzr, wzr
+  )");
+  CHECK_PREDICATE(4, uint32_t, {0, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 64-bit arrangement, 32-bit source operands
+  RUN_AARCH64(R"(
+    mov w0, #8
+
+    whilelo p0.d, wzr, w0
+  )");
+  CHECK_PREDICATE(0, uint32_t, {0x1010101, 0x1010101, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov w0, #8
+    mov w1, #4
+
+    whilelo p1.d, w1, w0
+  )");
+  CHECK_PREDICATE(1, uint32_t, {0x1010101, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #8
+    mov w2, #5
+
+    whilelo p2.d, w2, w0
+  )");
+  CHECK_PREDICATE(2, uint32_t, {0x10101, 0, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov w0, #8
+    mov w3, #2
+
+    whilelo p3.d, w3, w0
+  )");
+  CHECK_PREDICATE(3, uint32_t, {0x1010101, 0x101, 0, 0, 0, 0, 0, 0});
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelo p4.d, wzr, wzr
   )");
   CHECK_PREDICATE(4, uint32_t, {0, 0, 0, 0, 0, 0, 0, 0});
   EXPECT_EQ(getNZCV(), 0b0110);

@@ -50,7 +50,7 @@ FetchContent_Declare(
 )
 
 cmake_policy(SET CMP0048 NEW)
-project(SimEng VERSION 0.8.0 LANGUAGES C CXX)
+project(SimEng VERSION 0.9.0 LANGUAGES C CXX)
 
 # If no build type was defined, default to Release
 if(NOT CMAKE_BUILD_TYPE)
@@ -105,6 +105,7 @@ set(CAPSTONE_BPF_SUPPORT OFF CACHE BOOL "Disable BPF support")
 set(CAPSTONE_RISCV_SUPPORT OFF CACHE BOOL "Disable RISCV support")
 
 FetchContent_MakeAvailable_Args(capstone EXCLUDE_FROM_ALL)
+include_directories("${capstone_BINARY_DIR}/include" "${capstone_SOURCE_DIR}/include")
 
 ## Setup yaml-cpp ##
 set(YAML_CPP_BUILD_TESTS OFF)

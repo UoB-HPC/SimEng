@@ -546,6 +546,7 @@ TEST_P(InstNeon, bsl) {
 }
 
 TEST_P(InstNeon, cmeq) {
+  // 8-bit
   initialHeapData_.resize(32);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
   for (int i = 0; i < 16; i++) {
@@ -572,6 +573,30 @@ TEST_P(InstNeon, cmeq) {
   CHECK_NEON(3, uint8_t,
              {0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00,
               0x00, 0xFF, 0x00, 0x00, 0x00});
+
+  // 32-bit
+  initialHeapData_.resize(128);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  heap32[0] = 10;
+  heap32[1] = 11;
+  heap32[2] = 12;
+  heap32[3] = 13;
+
+  heap32[4] = 13;
+  heap32[5] = 11;
+  heap32[6] = 12;
+  heap32[7] = 10;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    cmeq v2.4s, v0.4s, v1.4s
+  )");
+  CHECK_NEON(2, uint32_t, {0, 0xFFFFFFFFu, 0xFFFFFFFFu, 0});
 }
 
 TEST_P(InstNeon, cmhi) {
@@ -1919,6 +1944,7 @@ TEST_P(InstNeon, movi) {
   // vector 8-bit
   RUN_AARCH64(R"(
     movi v0.16b, #1
+    movi v1.8b, #2
   )");
   CHECK_NEON(0, uint8_t,
              {static_cast<uint8_t>(1), static_cast<uint8_t>(1),
@@ -1929,6 +1955,12 @@ TEST_P(InstNeon, movi) {
               static_cast<uint8_t>(1), static_cast<uint8_t>(1),
               static_cast<uint8_t>(1), static_cast<uint8_t>(1),
               static_cast<uint8_t>(1), static_cast<uint8_t>(1)})
+  CHECK_NEON(1, uint8_t,
+             {static_cast<uint8_t>(2), static_cast<uint8_t>(2),
+              static_cast<uint8_t>(2), static_cast<uint8_t>(2),
+              static_cast<uint8_t>(2), static_cast<uint8_t>(2),
+              static_cast<uint8_t>(2), static_cast<uint8_t>(2), 0, 0, 0, 0, 0,
+              0, 0, 0})
 }
 
 TEST_P(InstNeon, mvni) {
@@ -2466,6 +2498,19 @@ TEST_P(InstNeon, sub) {
   CHECK_NEON(2, uint64_t,
              {0xF0F0F0F0F0F0F0F0u - 0xDEADBEEF01234567u,
               0xDEADBEEF89ABCDEFu - 0x89ABCDEF01234567u});
+
+  // 64-bit single element
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    sub d2, d0, d1
+  )");
+  CHECK_NEON(2, uint64_t, {0xF0F0F0F0F0F0F0F0u - 0xDEADBEEF01234567u, 0});
 }
 
 TEST_P(InstNeon, ushll) {

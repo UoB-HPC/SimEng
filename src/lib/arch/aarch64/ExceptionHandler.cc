@@ -1,5 +1,7 @@
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 
+#include <sys/syscall.h>
+
 #include <iomanip>
 #include <iostream>
 
@@ -100,6 +102,44 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.close(fd)}};
         break;
       }
+#ifdef SYS_getdents
+      case 61: {  // getdents64
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
+
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t totalRead = linux_.getdents64(fd, dataBuffer.data(), count);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {totalRead}};
+          // Check for failure
+          if (totalRead < 0) {
+            return concludeSyscall(stateChange);
+          }
+
+          int64_t bytesRemaining = totalRead;
+          // Get pointer and size of the buffer
+          uint64_t iDst = bufPtr;
+          uint64_t iLength = bytesRemaining;
+          if (iLength > bytesRemaining) {
+            iLength = bytesRemaining;
+          }
+          bytesRemaining -= iLength;
+
+          // Write data for this buffer in 128-byte chunks
+          auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
+          while (iLength > 0) {
+            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+            stateChange.memoryAddresses.push_back({iDst, len});
+            stateChange.memoryAddressValues.push_back({iSrc, len});
+            iDst += len;
+            iSrc += len;
+            iLength -= len;
+          }
+          return concludeSyscall(stateChange);
+        });
+      }
+#endif
       case 62: {  // lseek
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t offset = registerFileSet.get(R1).get<uint64_t>();

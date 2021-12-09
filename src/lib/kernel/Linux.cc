@@ -1,10 +1,12 @@
 #include "simeng/kernel/Linux.hh"
 
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/termios.h>
 #include <sys/uio.h>
 #include <unistd.h>
@@ -34,6 +36,27 @@ void Linux::createProcess(const LinuxProcess& process) {
   // Define special file path replacement paths
   specialPathTranslations_.insert(
       {"/sys/devices/system/cpu/online", specialFilesDir_ + "online"});
+}
+
+uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
+  // Resolve absolute path to target file
+  char absolutePath[LINUX_PATH_MAX];
+  realpath(pathname.c_str(), absolutePath);
+
+  int64_t dfd_temp = AT_FDCWD;
+  if (dfd != -100) {
+    dfd_temp = dfd;
+    // If absolute path used then dfd is dis-regarded. Otherwise need to see if
+    // fd exists for directory referenced
+    if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
+      assert(dfd < processStates_[0].fileDescriptorTable.size());
+      dfd_temp = processStates_[0].fileDescriptorTable[dfd];
+      if (dfd_temp < 0) {
+        return EBADF;
+      }
+    }
+  }
+  return dfd_temp;
 }
 
 uint64_t Linux::getInitialStackPointer() const {
@@ -103,20 +126,12 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
     }
   }
 
-  int64_t dfd_temp = AT_FDCWD;
-  // Pass syscall through to host
-  if (dfd != -100) {
-    dfd_temp = dfd;
-    // If absolute path used then dfd is dis-regarded.
-    // Otherwise, a dirfd != AT_FDCWD isn't currently supported for relative
-    // paths.
-    if (strlen(filename.c_str()) != strlen(absolutePath)) {
-      assert("Unsupported dirfd argument in fstatat syscall");
-      return EBADF;
-    }
-  }
+  // Get correct dirfd
+  int64_t dirfd = Linux::getDirFd(dfd, filename);
+  if (dirfd == EBADF) return dirfd;
 
-  int64_t retval = ::faccessat(dfd_temp, filename.c_str(), mode, flag);
+  // Pass call through to host
+  int64_t retval = ::faccessat(dirfd, filename.c_str(), mode, flag);
 
   return retval;
 }
@@ -152,10 +167,13 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
     }
   }
 
+  // Get correct dirfd
+  int64_t dirfd = Linux::getDirFd(dfd, filename);
+  if (dirfd == EBADF) return dirfd;
+
   // Pass call through to host
-  assert(dfd == -100 && "Unsupported dirfd argument in fstatat syscall");
   struct ::stat statbuf;
-  int64_t retval = ::fstatat(AT_FDCWD, filename.c_str(), &statbuf, flag);
+  int64_t retval = ::fstatat(dirfd, filename.c_str(), &statbuf, flag);
 
   // Copy results to output struct
   out.dev = statbuf.st_dev;
@@ -207,10 +225,18 @@ int64_t Linux::fstat(int64_t fd, stat& out) {
 // TODO: Current implementation will get whole SimEng resource usage stats, not
 // just the usage stats of binary
 int64_t Linux::getrusage(int64_t who, rusage& out) {
+  // MacOS doesn't support the final enum RUSAGE_THREAD
+#ifdef __MACH__
   if (!(who == 0 || who == -1)) {
     assert(false && "Un-recognised RUSAGE descriptor.");
     return -1;
   }
+#else
+  if (!(who == 0 || who == -1 || who == 1)) {
+    assert(false && "Un-recognised RUSAGE descriptor.");
+    return -1;
+  }
+#endif
 
   // Pass call through host
   struct ::rusage usage;
@@ -385,7 +411,7 @@ uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
   return newAlloc->vm_start;
 }
 
-int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
+int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
                       uint16_t mode) {
   // Resolve absolute path to target file
   char absolutePath[LINUX_PATH_MAX];
@@ -419,26 +445,38 @@ int64_t Linux::openat(int64_t dirfd, const std::string& pathname, int64_t flags,
   if (flags & 0x2000) newFlags |= O_ASYNC;
   if (flags & 0x80000) newFlags |= O_CLOEXEC;
   if (flags & 0x40) newFlags |= O_CREAT;
-  // if (flags & 0x4000) newFlags |= O_DIRECT;
   if (flags & 0x10000) newFlags |= O_DIRECTORY;
   if (flags & 0x1000) newFlags |= O_DSYNC;
   if (flags & 0x80) newFlags |= O_EXCL;
-  // if (flags & 0x0) newFlags |= O_LARGEFILE;
-  // if (flags & 0x40000) newFlags |= O_NOATIME;
   if (flags & 0x100) newFlags |= O_NOCTTY;
   if (flags & 0x20000) newFlags |= O_NOFOLLOW;
   if (flags & 0x800) newFlags |= O_NONBLOCK;  // O_NDELAY
-  // if (flags & 0x200000) newFlags |= O_PATH;
   if (flags & 0x101000) newFlags |= O_SYNC;
-  // if (flags & 0x410000) newFlags |= O_TMPFILE;
   if (flags & 0x200) newFlags |= O_TRUNC;
 
-  // Pass syscall through to host
-  assert(dirfd == -100 && "unsupported dirfd argument in openat syscall");
+#ifdef __MACH__
+  // Apple only flags
+  if (flags & 0x0010) newFlags |= O_SHLOCK;
+  if (flags & 0x0020) newFlags |= O_EXLOCK;
+  if (flags & 0x200000) newFlags |= O_SYMLINK;
+#else
+  // Linux only flags
+  if (flags & 0x4000) newFlags |= O_DIRECT;
+  if (flags & 0x0) newFlags |= O_LARGEFILE;
+  if (flags & 0x40000) newFlags |= O_NOATIME;
+  if (flags & 0x200000) newFlags |= O_PATH;
+  if (flags & 0x410000) newFlags |= O_TMPFILE;
+#endif
+
+  // Get correct dirfd
+  int64_t dirfd = Linux::getDirFd(dfd, pathname);
+  if (dirfd == EBADF) return dirfd;
+
   // Use path replacement for pathname argument of openat, if chosen
   const char* newPathname =
       altPath ? specialPathTranslations_[pathname].c_str() : pathname.c_str();
-  int64_t hfd = ::openat(AT_FDCWD, newPathname, newFlags, mode);
+  // Pass call through to host
+  int64_t hfd = ::openat(dirfd, newPathname, newFlags, mode);
   if (hfd < 0) {
     return hfd;
   }
@@ -475,6 +513,18 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
   // TODO: resolve symbolic link for other paths
   return -1;
 }
+
+#ifdef SYS_getdents
+int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
+  assert(fd < processStates_[0].fileDescriptorTable.size());
+  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  if (hfd < 0) {
+    return EBADF;
+  }
+
+  return ::getdents64(hfd, buf, count);
+}
+#endif
 
 int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
   assert(fd < processStates_[0].fileDescriptorTable.size());

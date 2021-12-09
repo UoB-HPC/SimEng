@@ -203,6 +203,10 @@ class Linux {
   /** set_tid_address syscall: set clear_child_tid value for calling thread. */
   int64_t setTidAddress(uint64_t tidptr);
 
+  /** getdents64 syscall: read several linux_dirent structures from directory
+   * referred to by open file into a buffer. */
+  int64_t getdents64(int64_t fd, void* buf, uint64_t count);
+
   /** read syscall: read buffer from a file. */
   int64_t read(int64_t fd, void* buf, uint64_t count);
 
@@ -219,6 +223,10 @@ class Linux {
   static const size_t LINUX_PATH_MAX = 4096;
 
  private:
+  /** Resturn correct Dirfd depending on given pathname abd dirfd given to
+   * syscall. */
+  uint64_t getDirFd(int64_t dfd, std::string pathname);
+
   /** The state of the user-space processes running above the kernel. */
   std::vector<LinuxProcessState> processStates_;
 
