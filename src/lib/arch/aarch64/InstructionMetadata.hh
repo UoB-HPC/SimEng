@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 
 namespace simeng {

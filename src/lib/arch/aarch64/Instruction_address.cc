@@ -10,6 +10,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
   assert((isLoad() || isStore()) &&
          "generateAddresses called on non-load-or-store instruction");
 
+  uint16_t VL_bits = architecture.getVectorLength();
   switch (metadata.opcode) {
     case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
       setMemoryAddresses({{operands[2].get<uint64_t>(), 4}});
@@ -132,8 +133,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     }
     case Opcode::AArch64_LD1B: {  // ld1b {zt.b}, pg/z, [xn, xm]
       const uint64_t* p = operands[0].getAsVector<uint64_t>();
-      const uint64_t VL_bits = 512;
-      const uint8_t partition_num = VL_bits / 8;
+      const uint16_t partition_num = VL_bits / 8;
 
       const uint64_t base = operands[1].get<uint64_t>();
       const uint64_t offset = operands[2].get<uint64_t>();

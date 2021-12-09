@@ -13,7 +13,7 @@ std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
 Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
-    : linux_(kernel) {
+    : linux_(kernel), VL_(config["Core"]["Vector-Length"].as<uint64_t>()) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "Could not create capstone handle" << std::endl;
     exit(1);
@@ -275,6 +275,8 @@ ProcessStateChange Architecture::getUpdateState() const {
 }
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
+
+uint64_t Architecture::getVectorLength() const { return VL_; }
 
 }  // namespace aarch64
 }  // namespace arch

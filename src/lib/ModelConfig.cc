@@ -44,7 +44,8 @@ void ModelConfig::validate() {
   std::string root = "";
   // Core
   root = "Core";
-  subFields = {"Simulation-Mode", "Clock-Frequency", "Fetch-Block-Size"};
+  subFields = {"Simulation-Mode", "Clock-Frequency", "Fetch-Block-Size",
+               "Vector-Length"};
   nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
@@ -54,7 +55,7 @@ void ModelConfig::validate() {
                             std::make_pair(4, UINT16_MAX),
                             ExpectedValue::UInteger)) {
     uint16_t block_size = configFile_[root][subFields[2]].as<uint16_t>();
-    // Ensure ftech block size is a power of 2
+    // Ensure fetch block size is a power of 2
     if ((block_size & (block_size - 1)) == 0) {
       uint8_t alignment_bits = log2(block_size);
       configFile_[root]["Fetch-Block-Alignment-Bits"] =
@@ -63,6 +64,10 @@ void ModelConfig::validate() {
       invalid_ << "\t- Fetch-Block-Size must be a power of 2\n";
     }
   }
+  nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
+                        {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
+                         1408, 1536, 1664, 1792, 1920, 2048},
+                        ExpectedValue::UInteger, 512);
   subFields.clear();
 
   // Branch-Predictor
