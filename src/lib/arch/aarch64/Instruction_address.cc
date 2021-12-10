@@ -473,7 +473,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       break;
     }
     case Opcode::AArch64_LDR_PXI: {  // ldr pt, [xn{, #imm, mul vl}]
-      const uint64_t PL_bits = 64;
+      const uint64_t PL_bits = VL_bits / 8;
       const uint16_t partition_num = PL_bits / 8;
 
       const uint64_t base = operands[0].get<uint64_t>();
@@ -1341,7 +1341,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       break;
     }
     case Opcode::AArch64_STR_PXI: {  // str pt, [xn{, #imm, mul vl}]
-      const uint64_t PL_bits = 64;
+      const uint64_t PL_bits = VL_bits / 8;
       const uint16_t partition_num = PL_bits / 8;
 
       const uint64_t base = operands[1].get<uint64_t>();
