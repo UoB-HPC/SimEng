@@ -516,56 +516,54 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
 #else
   // Need alternative implementation as not all systems support the getdents64
   // syscall
-  std::vector<linux_dirent64> tmpBuffer;
   DIR* dir_stream = ::fdopendir(hfd);
   // Check for error
   if (dir_stream == NULL) return -1;
 
-  ssize_t size_count = 0;
-  int index = 0;
+  // Keep a running count of the bytes read
+  uint64_t bytesRead = 0;
   while (true) {
-    // If buffer full, break
-    if (size_count + sizeof(linux_dirent64) > count) break;
     // Get next dirent
-    dirent* temp_out = ::readdir(dir_stream);
+    dirent* next_direct = ::readdir(dir_stream);
     // Check if end of directory
-    if (temp_out == NULL) break;
+    if (next_direct == NULL) break;
 
-    linux_dirent64 this_result;
-    this_result.d_ino = temp_out->d_ino;
-    this_result.d_off = 0;
-    this_result.d_type = temp_out->d_type;
-    this_result.d_name = temp_out->d_name;
-    // std::string temp_d_name = temp_out->d_name;
-    // printf("%s\n", temp_d_name.c_str());
-    // std::strcpy(this_result.d_name, temp_d_name.c_str());
+    // Copy in readdir return and manipulate values for getdents64 usage
+    linux_dirent64 result;
+    result.d_ino = next_direct->d_ino;
+#ifdef __MACH__
+    result.d_off = next_direct->d_seekoff;
+#else
+    result.d_off = next_direct->d_off;
+#endif
+    result.d_type = next_direct->d_type;
+    result.d_namlen = std::string(next_direct->d_name).size();
+    // `+1` for null-terminator in d_name
+    result.d_name = (char*)malloc(result.d_namlen + 1);
+    memcpy(result.d_name, next_direct->d_name, result.d_namlen);
+    // Ensure final char is a null-terminator
+    result.d_name[result.d_namlen] = '\0';
+    // Get size of struct before alignment
+    // 20 = combined size of d_ino, d_off, d_reclen, d_type, and d_name's
+    // null-terminator
+    uint16_t structSize = 20 + result.d_namlen;
+    result.d_reclen = alignToBoundary(structSize, 8);
+    // Copy in all linux_dirent64 members to the buffer at the correct known
+    // offsets from base `buf + bytesRead`
+    std::memcpy((char*)buf + bytesRead, (void*)&result.d_ino, 8);
+    std::memcpy((char*)buf + bytesRead + 8, (void*)&result.d_off, 8);
+    std::memcpy((char*)buf + bytesRead + 16, (void*)&result.d_reclen, 2);
+    std::memcpy((char*)buf + bytesRead + 18, (void*)&result.d_type, 1);
+    std::memcpy((char*)buf + bytesRead + 19, result.d_name,
+                result.d_namlen + 1);
+    // Ensure bytes used to align struct to 8-byte boundary are zeroed out
+    std::memset((char*)buf + bytesRead + structSize, '\0',
+                (result.d_reclen - structSize));
 
-    this_result.d_reclen =
-        sizeof(this_result.d_ino) + sizeof(this_result.d_off) +
-        sizeof(this_result.d_reclen) + sizeof(this_result.d_type) +
-        this_result.d_name.length();
-
-    tmpBuffer.push_back(this_result);
-
-    size_count += this_result.d_reclen;
-    index++;
+    bytesRead += static_cast<uint64_t>(result.d_reclen);
   }
-  // Check for end of directory
-  if (size_count == 0) return 0;
-  // Calculate offsets
-  int curr_off = 0;
-  for (int i = 0; i < tmpBuffer.size(); i++) {
-    // -1 found from man documentation
-    tmpBuffer[i].d_off = curr_off + tmpBuffer[i].d_reclen - 1;
-    curr_off = tmpBuffer[i].d_off;
-  }
-  // Last offset = -1 as no further dirents
-  tmpBuffer[tmpBuffer.size() - 1].d_off = -1;
-
-  // Copy data to buffer
-  std::memcpy(buf, &tmpBuffer, size_count);
-
-  return size_count;
+  // If more bytes have been read than the count arg, return count instead
+  return std::min(count, bytesRead);
 #endif
 }
 
