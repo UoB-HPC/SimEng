@@ -118,11 +118,12 @@ struct rusage {
 /** Definition of the structure used in getdents64. Required as not defined on
  * some systems. */
 struct linux_dirent64 {
-  uint64_t d_ino;      // 64-bit inode number
-  uint64_t d_off;      // 64-bit offset to next structure
-  uint16_t d_reclen;   // Size of this dirent
-  uint8_t d_type;      // File type
-  std::string d_name;  // Filename (null-terminated)
+  uint64_t d_ino;     // 64-bit inode number
+  uint64_t d_off;     // 64-bit offset to next structure
+  uint16_t d_reclen;  // Size of this dirent
+  uint16_t d_namlen;  // Size of the filename
+  uint8_t d_type;     // File type
+  char* d_name;       // Filename (null-terminated)
 };
 
 /** A Linux kernel syscall emulation implementation, which mimics the responses
