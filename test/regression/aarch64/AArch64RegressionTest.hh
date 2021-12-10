@@ -53,14 +53,11 @@ inline std::string paramToString(
 inline std::vector<std::tuple<CoreType, YAML::Node>> genCoreTypeVLPairs(
     CoreType type) {
   std::vector<std::tuple<CoreType, YAML::Node>> coreVLPairs;
-  YAML::Node vlNode;
-  vlNode["Vector-Length"] = 512;
-  coreVLPairs.push_back(std::make_tuple(type, vlNode));
-  // for (uint64_t i = 128; i < 2049; i += 128) {
-  //   YAML::Node vlNode;
-  //   vlNode["Vector-Length"] = i;
-  //   coreVLPairs.push_back(std::make_tuple(type, vlNode));
-  // }
+  for (uint64_t i = 128; i <= 2048; i += 128) {
+    YAML::Node vlNode;
+    vlNode["Vector-Length"] = i;
+    coreVLPairs.push_back(std::make_tuple(type, vlNode));
+  }
   return coreVLPairs;
 }
 
