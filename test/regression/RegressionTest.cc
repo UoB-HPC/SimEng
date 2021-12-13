@@ -50,7 +50,7 @@ void RegressionTest::run(const char* source, const char* triple) {
 
   // Create a linux process from the assembled code block
   process_ = std::make_unique<simeng::kernel::LinuxProcess>(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_));
+      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), config);
   ASSERT_TRUE(process_->isValid());
   uint64_t entryPoint = process_->getEntryPoint();
 

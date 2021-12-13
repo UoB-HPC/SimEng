@@ -84,7 +84,8 @@ int main(int argc, char** argv) {
   if (executablePath.length() > 0) {
     // Attempt to create the process image from the specified command-line
     std::vector<std::string> commandLine(argv + 2, argv + argc);
-    process = std::make_unique<simeng::kernel::LinuxProcess>(commandLine);
+    process =
+        std::make_unique<simeng::kernel::LinuxProcess>(commandLine, config);
     if (!process->isValid()) {
       std::cerr << "Could not read/parse " << argv[2] << std::endl;
       exit(1);
@@ -181,7 +182,7 @@ int main(int argc, char** argv) {
     // memcpy(memory, memoryValues.data(), memoryValues.size() * sizeof(int));
 
     process = std::make_unique<simeng::kernel::LinuxProcess>(
-        simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)));
+        simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)), config);
   }
 
   // Read the process image and copy to memory

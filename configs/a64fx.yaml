@@ -7,6 +7,9 @@ Core:
   Clock-Frequency: 1.8
   Fetch-Block-Size: 32
   Vector-Length: 512
+Process-Image:
+  Heap-Size: 1073741824
+  Stack-Size: 1048576
 Register-Set:
   GeneralPurpose-Count: 96
   FloatingPoint/SVE-Count: 128
@@ -241,4 +244,4 @@ CPU-Info:
   CPU-Revision: 0
   # Package-Count is used to generate 
   # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
-  Package-Count: 4
+  Package-Count: 1
