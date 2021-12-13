@@ -1,6 +1,7 @@
 #pragma once
 
 #include "simeng/Elf.hh"
+#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 namespace kernel {
@@ -36,11 +37,11 @@ class LinuxProcess {
   /** Construct a Linux process from a vector of command-line arguments.
    *
    * The first argument is a path to an executable ELF file. */
-  LinuxProcess(const std::vector<std::string>& commandLine);
+  LinuxProcess(const std::vector<std::string>& commandLine, YAML::Node config);
 
   /** Construct a Linux process from region of instruction memory, with the
    * entry point fixed at 0. */
-  LinuxProcess(span<char> instructions);
+  LinuxProcess(span<char> instructions, YAML::Node config);
 
   ~LinuxProcess();
 
@@ -73,10 +74,10 @@ class LinuxProcess {
 
  private:
   /** The size of the stack, in bytes. */
-  static const uint64_t STACK_SIZE = 1024 * 1024;  // 1MiB
+  const uint64_t STACK_SIZE;
 
   /** The space to reserve for the heap, in bytes. */
-  static const uint64_t HEAP_SIZE = 1024 * 1024 * 1024;  // 1GiB
+  const uint64_t HEAP_SIZE;
 
   /** Create and populate the initial process stack. */
   void createStack();

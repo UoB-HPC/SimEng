@@ -65,6 +65,19 @@ void ModelConfig::validate() {
   }
   subFields.clear();
 
+  // Process-Image
+  root = "Process-Image";
+  subFields = {"Heap-Size", "Stack-Size"};
+  // Default heap size is 1024 * 1024 * 10 = 10MiB
+  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
+                        10485760);
+  // Default stack size is 1024 * 1024 = 1MiB
+  nodeChecker<uint64_t>(configFile_[root][subFields[1]], subFields[1],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
+                        1048576);
+  subFields.clear();
+
   // Branch-Predictor
   root = "Branch-Predictor";
   subFields = {"BTB-bitlength"};
