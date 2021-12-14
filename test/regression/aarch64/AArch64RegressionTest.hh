@@ -270,7 +270,7 @@ class AArch64RegressionTest : public RegressionTest {
     for (int i = 0; i < grouped_lanes; i++) {
       if (pattern[i % pattern.size()]) {
         generatedArray[(int)(i * byte_arrangement) / 64] |=
-            (uint64_t)std::pow(2, (i * byte_arrangement) % 64);
+            1ull << ((i * byte_arrangement) % 64);
       }
     }
     return generatedArray;
