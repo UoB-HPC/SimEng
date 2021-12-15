@@ -479,7 +479,7 @@ void Instruction::execute() {
       results[1] = result;
       break;
     }
-    case Opcode::AArch64_ADDPL_XXI: {  // addvl xd, xn, #imm
+    case Opcode::AArch64_ADDPL_XXI: {  // addpl xd, xn, #imm
       auto x = operands[0].get<uint64_t>();
       auto y = static_cast<int64_t>(metadata.operands[2].imm);
       // convert PL from VL_bits
