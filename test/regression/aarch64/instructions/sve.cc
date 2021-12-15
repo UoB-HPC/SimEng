@@ -2420,7 +2420,7 @@ TEST_P(InstSve, fmsb) {
   CHECK_NEON(2, float, fillNeonCombined<float>(fresults, fsrcB, VL / 8));
 
   // Double
-  initialHeapData_.resize(VL / 8);
+  initialHeapData_.resize(VL / 4);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
   std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
   std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
