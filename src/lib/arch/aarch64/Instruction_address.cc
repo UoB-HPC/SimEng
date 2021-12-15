@@ -895,7 +895,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           uint64_t addr = n[i] + (offset * 4);
-          addresses.push_back({addr, 4});
+          addresses.push_back({addr, 8});
         }
       }
       setMemoryAddresses(addresses);

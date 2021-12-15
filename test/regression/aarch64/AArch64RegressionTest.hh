@@ -233,6 +233,21 @@ class AArch64RegressionTest : public RegressionTest {
     return generatedArray;
   }
 
+  /** Generate an array representing a NEON register from a base value and an
+   * offset. */
+  template <typename T>
+  std::array<T, (256 / sizeof(T))> fillNeonBaseAndOffset(T base, T offset,
+                                                         int num_bytes) const {
+    // Create array to be returned and fill with a default value of 0
+    std::array<T, (256 / sizeof(T))> generatedArray;
+    generatedArray.fill(0);
+    // Fill array by adding an increasing offset value to the base value
+    for (int i = 0; i < (num_bytes / sizeof(T)); i++) {
+      generatedArray[i] = base + (i * offset);
+    }
+    return generatedArray;
+  }
+
   /** Fill an array dest of T entries, representing the initialHeapData_, from a
    * source vector and a number of entries. */
   template <typename T>
@@ -272,6 +287,40 @@ class AArch64RegressionTest : public RegressionTest {
         generatedArray[(int)(i * byte_arrangement) / 64] |=
             1ull << ((i * byte_arrangement) % 64);
       }
+    }
+    return generatedArray;
+  }
+
+  /** Generate an array representing a PREDICATE register from a source vector
+   * and a number of elements defined by a number of bytes used. */
+  template <typename T>
+  std::array<T, (32 / sizeof(T))> fillPredFromSource(std::vector<T> src,
+                                                     int num_bytes) const {
+    // Create array to be returned and fill with a default value of 0
+    std::array<T, (32 / sizeof(T))> generatedArray;
+    generatedArray.fill(0);
+    // Fill array by cycling through source elements
+    for (int i = 0; i < (num_bytes / sizeof(T)); i++) {
+      generatedArray[i] = src[i % src.size()];
+    }
+    return generatedArray;
+  }
+
+  /** Generate an array representing a PREDICATE register by combining two
+   * source vectors and a number of elements defined by a number of bytes used.
+   */
+  template <typename T>
+  std::array<T, (32 / sizeof(T))> fillPredFromTwoSources(std::vector<T> srcA,
+                                                         std::vector<T> srcB,
+                                                         int num_bytes) const {
+    // Create array to be returned and fill with a default value of 0
+    std::array<T, (32 / sizeof(T))> generatedArray;
+    generatedArray.fill(0);
+    // Fill array by cycling through source elements
+    int num_elements = (num_bytes / sizeof(T)) / 2;
+    for (int i = 0; i < num_elements; i++) {
+      generatedArray[i] = srcA[i % srcA.size()];
+      generatedArray[i + num_elements] = srcB[i % srcB.size()];
     }
     return generatedArray;
   }
