@@ -1219,7 +1219,7 @@ TEST_P(InstSve, fabs) {
   std::vector<float> src_f = {
       1.0f,    -42.76f, -0.125f, 0.0f,   40.26f,   -684.72f, -0.15f,  107.86f,
       -34.71f, -0.917f, 0.0f,    80.72f, -125.67f, -0.01f,   701.90f, 7.0f};
-  fillHeap<float>(fheap, src_f, VL / 16);
+  fillHeap<float>(fheap, src_f, VL / 32);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1251,13 +1251,11 @@ TEST_P(InstSve, fabs) {
   CHECK_NEON(3, float, fillNeon<float>(results, VL / 16));
 
   // double
-  initialHeapData_.resize(VL / 2);
+  initialHeapData_.resize(VL / 4);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  std::vector<double> src_d = {1.0,     -42.76, -0.125, 0.0,    40.26, -684.72,
-                               -0.15,   107.86, -34.71, -0.917, 0.0,   80.72,
-                               -125.67, -0.01,  701.90, 7.0};
-  fillHeap<double>(dheap, src_d, VL / 16);
-
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -1266,29 +1264,26 @@ TEST_P(InstSve, fabs) {
 
     mov x1, #0
     mov x2, #0
-    mov x3, #8
-    mov x4, #16
+    mov x3, #16
     addvl x2, x2, #1
-    sdiv x2, x2, x4
+    sdiv x2, x2, x3
+
     whilelo p0.d, xzr, x2
     ptrue p1.d
 
     ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
-    ld1d {z1.d}, p1/z, [x0, x3, lsl #3]
+    ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
 
     fdup z3.d, #3.0
 
     fabs z2.d, p1/m, z0.d
     fabs z3.d, p0/m, z1.d
   )");
-  std::vector<double> res_2 = {1.0,    42.76,  0.125,  0.0,   40.26, 684.72,
-                               0.15,   107.86, 34.71,  0.917, 0.0,   80.72,
-                               125.67, 0.01,   701.90, 7.0};
-  CHECK_NEON(2, double, fillNeon<double>(res_2, VL / 8));
+  std::vector<double> res_2_0 = {1.0, 42.76, 0.125, 0.0};
+  std::vector<double> res_2_1 = {34.71, 0.917, 0.0, 80.72};
+  CHECK_NEON(2, double, fillNeonCombined<double>(res_2_0, res_2_1, VL / 8));
 
-  std::vector<double> src_3 = {34.71,  0.917,  0.0,  80.72, 125.67, 0.01,
-                               701.90, 7.0,    1.0,  42.76, 0.125,  0.0,
-                               40.26,  684.72, 0.15, 107.86};
+  std::vector<double> src_3 = {34.71, 0.917, 0.0, 80.72};
   CHECK_NEON(3, double, fillNeonCombined<double>(src_3, {3.0}, VL / 8));
 }
 
@@ -1391,7 +1386,7 @@ TEST_P(InstSve, fadd) {
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
     ld1w {z3.s}, p0/z, [x0, x2, lsl #2]
     ld1w {z4.s}, p1/z, [x0, x1, lsl #2]
-    ld1w {z5.s}, p1/z, [x0, x1, lsl #2]
+    ld1w {z5.s}, p0/z, [x0, x1, lsl #2]
     
     fadd z2.s, z1.s, z0.s
 
@@ -1410,51 +1405,17 @@ TEST_P(InstSve, fadd) {
                                -125.17f, 0.49f,   702.40f, 7.5f};
   CHECK_NEON(3, float, fillNeonCombined<float>(fsrc_3, {0.5}, VL / 8));
 
-  std::vector<float> fsrc_4_1;
-  std::vector<float> fsrc_4_2 = {-34.71f,  -0.917f, 0.0f,    80.72f,
-                                 -125.67f, -0.01f,  701.90f, 7.0f};
-  int countA = 0;
-  int countB = 0;
-  for (int i = 0; i < (VL / 64); i++) {
-    fsrc_4_1.push_back(fsrcA[countA] + fsrcB[countA]);
-    countA++;
-
-    // if (i < (VL / 128)) {
-    //   fsrc_4_1.push_back(fsrcA[countA] + fsrcB[countB]);
-    //   countA++;
-    //   countB++;
-    // } else {
-    //   fsrc_4_1.push_back(fsrcA[countA]);
-    //   countA++;
-    // }
-  }
-  CHECK_NEON(4, float, fillNeonCombined(fsrc_4_1, fsrc_4_2, VL / 8));
-  // CHECK_NEON(
-  //     4, float,
-  //     {-32.21f, -85.937f, 0.25f, 81.22f, -44.65f, -1368.95f, 702.1f,
-  //     223.22f,
-  //      -34.21f, -0.417f, 0.5f, 81.22f, -125.17f, 0.49f, 702.4f, 7.5f});
-  // CHECK_NEON(
-  //     5, float,
-  //     {-31.21f, -128.697f, 0.125f, 81.22f, -4.39f, -2053.67f, 701.95f,
-  //     331.08f,
-  //      -34.71f, -0.917f, 0.0f, 80.72f, -125.67f, -0.01f, 701.90f, 7.0f});
+  CHECK_NEON(4, float, fillNeonCombined<float>(fresults, fsrcB, VL / 8));
+  CHECK_NEON(5, float, fillNeonCombined<float>(fresults, {0}, VL / 8));
 }
 
 TEST_P(InstSve, fadda) {
-  // VL = 512-bits
   // double
-  initialHeapData_.resize(64);
+  initialHeapData_.resize(VL / 8);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 0.0;
-
-  dheap[4] = -34.71;
-  dheap[5] = -0.917;
-  dheap[6] = 0.0;
-  dheap[7] = 80.72;
+  std::vector<double> dsrc = {1.0,    -42.76, -0.125, 0.0,
+                              -34.71, -0.917, 0.0,    80.72};
+  fillHeap<double>(dheap, dsrc, VL / 64);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1466,7 +1427,10 @@ TEST_P(InstSve, fadda) {
     fmov d3, 2.75
 
     mov x1, #0
-    mov x2, #4
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
     whilelo p1.d, xzr, x2
     ptrue p0.d
 
@@ -1476,34 +1440,22 @@ TEST_P(InstSve, fadda) {
     fadda d1, p1, d1, z0.d
     fadda d3, p1, d3, z2.d
   )");
-
-  CHECK_NEON(1, double, {-39.135, 0});
-  CHECK_NEON(3, double, {47.8429999999999964, 0});
+  double resultA = 2.75;
+  double resultB = 2.75;
+  for (int i = 0; i < VL / 128; i++) {
+    resultA += dsrc[i % 8];
+    resultB += dsrc[(i + VL / 128) % 8];
+  }
+  CHECK_NEON(1, double, {resultA, 0});
+  CHECK_NEON(3, double, {resultB, 0});
 }
 
 TEST_P(InstSve, fcmge) {
-  // VL = 512-bits
-  // Zero
   // double
-  initialHeapData_.resize(128);
-  double* dheap_z = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap_z[0] = 1.0;
-  dheap_z[1] = -42.76;
-  dheap_z[2] = -0.125;
-  dheap_z[3] = 1.0;
-  dheap_z[4] = 40.26;
-  dheap_z[5] = -684.72;
-  dheap_z[6] = -0.15;
-  dheap_z[7] = 107.86;
-
-  dheap_z[8] = -34.71;
-  dheap_z[9] = -0.917;
-  dheap_z[10] = 1.0;
-  dheap_z[11] = 80.72;
-  dheap_z[12] = -125.67;
-  dheap_z[13] = -0.01;
-  dheap_z[14] = 701.90;
-  dheap_z[15] = 7.0;
+  initialHeapData_.resize(VL / 16);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  std::vector<double> dsrc = {1.0, -42.76, -0.125, 1.0};
+  fillHeap<double>(dheap, dsrc, VL / 128);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1512,116 +1464,31 @@ TEST_P(InstSve, fcmge) {
     svc #0
 
     mov x1, #0
-    mov x2, #4
-    whilelo p0.d, xzr, x2
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
 
-    ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
-
-    fcmge p1.d, p0/z, z0.d, #0.0
-  )");
-
-  CHECK_PREDICATE(1, uint32_t, {0x01000001, 0, 0, 0, 0, 0});
-
-  // float
-  initialHeapData_.resize(68);
-  float* fheap_z = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap_z[0] = 1.0;
-  fheap_z[1] = -42.76;
-  fheap_z[2] = -0.125;
-  fheap_z[3] = 0.0;
-  fheap_z[4] = 40.26;
-  fheap_z[5] = -684.72;
-  fheap_z[6] = -0.15;
-  fheap_z[7] = 107.86;
-
-  fheap_z[8] = -34.71f;
-  fheap_z[9] = -0.917f;
-  fheap_z[10] = 0.0f;
-  fheap_z[11] = 80.72f;
-  fheap_z[12] = -125.67f;
-  fheap_z[13] = -0.01f;
-  fheap_z[14] = 701.90f;
-  fheap_z[15] = 7.0f;
-
-  RUN_AARCH64(R"(
-    # Get heap address
-    mov x0, 0
-    mov x8, 214
-    svc #0
-
-    mov x1, #0
-    mov x2, #8
-    whilelo p0.s, xzr, x2
-
-    ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
-
-    fcmge p1.s, p0/z, z0.s, #0.0
-  )");
-
-  CHECK_PREDICATE(1, uint32_t, {0x10011001, 0, 0, 0, 0, 0, 0, 0});
-
-  // Vector
-  // double
-  initialHeapData_.resize(128);
-  double* dheap_v = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap_v[0] = 1.0;
-  dheap_v[1] = -42.76;
-  dheap_v[2] = -0.125;
-  dheap_v[3] = 1.0;
-  dheap_v[4] = 40.26;
-  dheap_v[5] = -684.72;
-  dheap_v[6] = -0.15;
-  dheap_v[7] = 107.86;
-
-  dheap_v[8] = -34.71;
-  dheap_v[9] = -0.917;
-  dheap_v[10] = 80.72;
-  dheap_v[11] = 1.0;
-  dheap_v[12] = -125.67;
-  dheap_v[13] = -0.01;
-  dheap_v[14] = 701.90;
-  dheap_v[15] = 7.0;
-
-  RUN_AARCH64(R"(
-    # Get heap address
-    mov x0, 0
-    mov x8, 214
-    svc #0
-
-    mov x1, #0
-    mov x2, #4
-    mov x3, #8
     whilelo p0.d, xzr, x2
     ptrue p1.d
+    
+    ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z1.d}, p1/z, [x0, x1, lsl #3]
+    dup z2.d, #0
 
-    ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
-    ld1d {z1.d}, p1/z, [x0, x3, lsl #3]
-
-    fcmge p1.d, p0/z, z0.d, z1.d
+    fcmge p2.d, p0/z, z0.d, #0.0
+    fcmge p3.d, p0/z, z1.d, z2.d
   )");
 
-  CHECK_PREDICATE(1, uint64_t, {0x0000000001000001u, 0, 0, 0});
+  CHECK_PREDICATE(2, uint64_t, fillPred(VL / 16, {1, 0, 0, 1}, 8));
+  CHECK_PREDICATE(3, uint64_t, fillPred(VL / 16, {1, 0, 0, 1}, 8));
 
   // float
-  initialHeapData_.resize(68);
-  float* fheap_v = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap_v[0] = 1.0;
-  fheap_v[1] = -42.76;
-  fheap_v[2] = -0.125;
-  fheap_v[3] = 0.0;
-  fheap_v[4] = 40.26;
-  fheap_v[5] = -684.72;
-  fheap_v[6] = -0.15;
-  fheap_v[7] = 107.86;
-
-  fheap_v[8] = -34.71f;
-  fheap_v[9] = -0.917f;
-  fheap_v[10] = 80.72f;
-  fheap_v[11] = 0.0f;
-  fheap_v[12] = -125.67f;
-  fheap_v[13] = -0.01f;
-  fheap_v[14] = 701.90f;
-  fheap_v[15] = 7.0f;
+  initialHeapData_.resize(VL / 16);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  std::vector<float> fsrc = {1.0,   -42.76,  -0.125, 0.0,
+                             40.26, -684.72, -0.15,  107.86};
+  fillHeap<float>(fheap, fsrc, VL / 64);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1630,41 +1497,34 @@ TEST_P(InstSve, fcmge) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.s, xzr, x2
+    ptrue p1.s
 
     ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
-    ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+    ld1w {z1.s}, p1/z, [x0, x1, lsl #2]
+    dup z2.s, #0
 
-    fcmge p1.s, p0/z, z0.s, z1.s
+    fcmge p2.s, p0/z, z0.s, #0.0
+    fcmge p3.s, p0/z, z1.s, z2.s
+
   )");
 
-  CHECK_PREDICATE(1, uint64_t, {0x0000000010011001u, 0, 0, 0});
+  CHECK_PREDICATE(2, uint64_t, fillPred(VL / 16, {1, 0, 0, 1}, 4));
+  CHECK_PREDICATE(3, uint64_t, fillPred(VL / 16, {1, 0, 0, 1}, 4));
 }
 
 TEST_P(InstSve, fcmgt) {
-  // VL = 512-bits
-  // Vector
   // double
-  initialHeapData_.resize(128);
-  double* dheap_v = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap_v[0] = 1.0;
-  dheap_v[1] = -42.76;
-  dheap_v[2] = -0.125;
-  dheap_v[3] = 1.0;
-  dheap_v[4] = 40.26;
-  dheap_v[5] = -684.72;
-  dheap_v[6] = -0.15;
-  dheap_v[7] = 107.86;
-
-  dheap_v[8] = -34.71;
-  dheap_v[9] = -0.917;
-  dheap_v[10] = 1.0;
-  dheap_v[11] = 80.72;
-  dheap_v[12] = -125.67;
-  dheap_v[13] = -0.01;
-  dheap_v[14] = 701.90;
-  dheap_v[15] = 7.0;
+  initialHeapData_.resize(VL / 8);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1673,38 +1533,29 @@ TEST_P(InstSve, fcmgt) {
     svc #0
 
     mov x1, #0
-    mov x2, #4
-    mov x3, #8
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
     whilelo p0.d, xzr, x2
     ptrue p1.d
-    
+
     ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
-    ld1d {z1.d}, p0/z, [x0, x3, lsl #3]
+    ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
+    ld1d {z2.d}, p1/z, [x0, x1, lsl #3]
 
     fcmgt p2.d, p0/z, z0.d, z1.d
+    fcmgt p3.d, p0/z, z2.d, #0.0
   )");
-  CHECK_PREDICATE(2, uint32_t, {1, 0, 0, 0, 0, 0, 0});
+  CHECK_PREDICATE(2, uint64_t, fillPred(VL / 16, {1, 0, 0, 0}, 8));
+  CHECK_PREDICATE(3, uint64_t, fillPred(VL / 16, {1, 0, 0, 0}, 8));
 
   // float
-  initialHeapData_.resize(68);
-  float* fheap_v = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap_v[0] = 1.0;
-  fheap_v[1] = -42.76;
-  fheap_v[2] = -0.125;
-  fheap_v[3] = 0.0;
-  fheap_v[4] = 40.26;
-  fheap_v[5] = -684.72;
-  fheap_v[6] = -0.15;
-  fheap_v[7] = 107.86;
-
-  fheap_v[8] = -34.71f;
-  fheap_v[9] = -0.917f;
-  fheap_v[10] = 0.0f;
-  fheap_v[11] = 80.72f;
-  fheap_v[12] = -125.67f;
-  fheap_v[13] = -0.01f;
-  fheap_v[14] = 701.90f;
-  fheap_v[15] = 7.0f;
+  initialHeapData_.resize(VL / 8);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  std::vector<float> fsrcA = {1.0f, -42.76f, -0.125f, 0.0f};
+  std::vector<float> fsrcB = {-34.71f, -0.917f, 0.0f, 80.72f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1713,108 +1564,32 @@ TEST_P(InstSve, fcmgt) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
     whilelo p0.s, xzr, x2
     ptrue p1.s
 
     ld1w {z0.s}, p1/z, [x0, x1, lsl #2]
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+    ld1w {z2.s}, p1/z, [x0, x1, lsl #2]
+
 
     fcmgt p2.s, p0/z, z0.s, z1.s
+    fcmgt p3.s, p0/z, z2.s, #0.0
   )");
-  CHECK_PREDICATE(2, uint32_t, {0x10010001, 0, 0, 0, 0, 0, 0, 0});
-
-  // Zero
-  // double
-  initialHeapData_.resize(128);
-  double* dheap_z = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap_z[0] = 1.0;
-  dheap_z[1] = -42.76;
-  dheap_z[2] = -0.125;
-  dheap_z[3] = 1.0;
-  dheap_z[4] = 40.26;
-  dheap_z[5] = -684.72;
-  dheap_z[6] = -0.15;
-  dheap_z[7] = 107.86;
-
-  RUN_AARCH64(R"(
-    # Get heap address
-    mov x0, 0
-    mov x8, 214
-    svc #0
-
-    mov x1, #0
-    mov x2, #4
-    whilelo p0.d, xzr, x2
-    ptrue p1.d
-    
-    ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
-
-    fcmgt p2.d, p0/z, z0.d, #0.0
-  )");
-  CHECK_PREDICATE(2, uint64_t, {0x000000001000001u, 0, 0, 0});
-
-  // float
-  initialHeapData_.resize(68);
-  float* fheap_z = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap_z[0] = 1.0;
-  fheap_z[1] = -42.76;
-  fheap_z[2] = -0.125;
-  fheap_z[3] = 0.0;
-  fheap_z[4] = 40.26;
-  fheap_z[5] = -684.72;
-  fheap_z[6] = -0.15;
-  fheap_z[7] = 107.86;
-
-  fheap_z[8] = -34.71f;
-  fheap_z[9] = -0.917f;
-  fheap_z[10] = 0.0f;
-  fheap_z[11] = 80.72f;
-  fheap_z[12] = -125.67f;
-  fheap_z[13] = -0.01f;
-  fheap_z[14] = 701.90f;
-  fheap_z[15] = 7.0f;
-
-  RUN_AARCH64(R"(
-    # Get heap address
-    mov x0, 0
-    mov x8, 214
-    svc #0
-
-    mov x1, #0
-    mov x2, #8
-    whilelo p0.s, xzr, x2
-    ptrue p1.s
-
-    ld1w {z0.s}, p1/z, [x0, x1, lsl #2]
-
-    fcmgt p2.s, p0/z, z0.s, #0.0
-  )");
-  CHECK_PREDICATE(2, uint64_t, {0x0000000010010001u, 0, 0, 0});
+  CHECK_PREDICATE(2, uint64_t, fillPred(VL / 16, {1, 0, 0, 0, 1, 0, 0, 0}, 4));
+  CHECK_PREDICATE(3, uint64_t, fillPred(VL / 16, {1, 0, 0, 0, 1, 0, 0, 0}, 4));
 }
 
 TEST_P(InstSve, fcmle) {
-  // VL = 512-bits
   // float
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0;
-  fheap[1] = -42.76;
-  fheap[2] = -0.125;
-  fheap[3] = 0.0;
-  fheap[4] = 40.26;
-  fheap[5] = -684.72;
-  fheap[6] = -0.15;
-  fheap[7] = 107.86;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
+  std::vector<float> fsrcA = {1.0f,    -42.76f, -0.125f, 0.0f,
+                              -34.71f, -0.917f, 0.0f,    80.72f};
+  fillHeap<float>(fheap, fsrcA, VL / 32);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1823,9 +1598,13 @@ TEST_P(InstSve, fcmle) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
-    ptrue p0.s
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p1.s, xzr, x2
+    ptrue p0.s
 
     ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
     ld1w {z1.s}, p0/z, [x0, x1, lsl #2]
@@ -1833,20 +1612,15 @@ TEST_P(InstSve, fcmle) {
     fcmle p2.s, p0/z, z0.s, #0.0
     fcmle p3.s, p1/z, z1.s, #0.0
   )");
-  CHECK_PREDICATE(2, uint64_t, {0x0011011101101110u, 0, 0, 0});
-  CHECK_PREDICATE(3, uint64_t, {0x0000000001101110u, 0, 0, 0});
+  CHECK_PREDICATE(2, uint64_t, fillPred(VL / 8, {0, 1, 1, 1, 1, 1, 1, 0}, 4));
+  CHECK_PREDICATE(3, uint64_t, fillPred(VL / 16, {0, 1, 1, 1, 1, 1, 1, 0}, 4));
 
   // double
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 8);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 0.0;
-  dheap[4] = 40.26;
-  dheap[5] = -684.72;
-  dheap[6] = -0.15;
-  dheap[7] = 107.86;
+  std::vector<double> dsrcA = {1.0,    -42.76, -0.125, 0.0,
+                               -34.71, -0.917, 0.0,    80.72};
+  fillHeap<double>(dheap, dsrcA, VL / 64);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1855,9 +1629,12 @@ TEST_P(InstSve, fcmle) {
     svc #0
 
     mov x1, #0
-    mov x2, #4
-    ptrue p0.d
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
     whilelo p1.d, xzr, x2
+    ptrue p0.d
 
     ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
     ld1d {z1.d}, p0/z, [x0, x1, lsl #3]
@@ -1865,32 +1642,17 @@ TEST_P(InstSve, fcmle) {
     fcmle p2.d, p0/z, z0.d, #0.0
     fcmle p3.d, p1/z, z1.d, #0.0
   )");
-  CHECK_PREDICATE(2, uint64_t, {0x0001010001010100u, 0, 0, 0});
-  CHECK_PREDICATE(3, uint64_t, {0x0000000001010100u, 0, 0, 0});
+  CHECK_PREDICATE(2, uint64_t, fillPred(VL / 8, {0, 1, 1, 1, 1, 1, 1, 0}, 8));
+  CHECK_PREDICATE(3, uint64_t, fillPred(VL / 16, {0, 1, 1, 1, 1, 1, 1, 0}, 8));
 }
 
 TEST_P(InstSve, fcmlt) {
-  // VL = 512-bits
   // float
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 16);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0;
-  fheap[1] = -42.76;
-  fheap[2] = -0.125;
-  fheap[3] = 0.0;
-  fheap[4] = 40.26;
-  fheap[5] = -684.72;
-  fheap[6] = -0.15;
-  fheap[7] = 107.86;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
+  std::vector<float> fsrc = {1.0,   -42.76,  -0.125, 0.0,
+                             40.26, -684.72, -0.15,  107.86};
+  fillHeap<float>(fheap, fsrc, VL / 64);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1899,7 +1661,10 @@ TEST_P(InstSve, fcmlt) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
     whilelo p0.s, xzr, x2
 
     ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
@@ -1907,27 +1672,17 @@ TEST_P(InstSve, fcmlt) {
     fcmlt p1.s, p0/z, z0.s, #0.0
   )");
 
-  CHECK_PREDICATE(1, uint32_t, {0x01100110, 0, 0, 0, 0, 0, 0, 0});
+  CHECK_PREDICATE(1, uint64_t, fillPred(VL / 16, {0, 1, 1, 0}, 4));
 }
 
 TEST_P(InstSve, fcvtzs) {
-  // VL = 512-bits
   // double
-  initialHeapData_.resize(96);
+  initialHeapData_.resize(VL / 4);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -1.0;
-  dheap[2] = 4.5;
-  dheap[3] = -4.5;
-  dheap[4] = 3.2;
-  dheap[5] = -3.2;
-  dheap[6] = 7.9;
-  dheap[7] = -7.9;
-
-  dheap[8] = 1000000000000000000000000000.66;
-  dheap[9] = -114458013083425;
-  dheap[10] = -10698505.18;
-  dheap[11] = 0;
+  std::vector<double> dsrcA = {1.0, -1.0, 4.5, -4.5, 3.2, -3.2, 7.9, -7.9};
+  std::vector<double> dsrcB = {1000000000000000000000000000.66,
+                               -114458013083425, -10698505, 0};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 32);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -1935,11 +1690,16 @@ TEST_P(InstSve, fcvtzs) {
     mov x8, 214
     svc #0
 
-    ptrue p0.d
-
     mov x1, #0
-    mov x2, #4
-    mov x3, #8
+    mov x2, #0
+    mov x3, #0
+    mov x4, #8
+    mov x5, #2
+    addvl x3, x3, #1
+    sdiv x3, x3, x4
+    sdiv x2, x3, x5
+
+    ptrue p0.d
     whilelo p1.d, xzr, x2
 
     ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
@@ -1961,49 +1721,50 @@ TEST_P(InstSve, fcvtzs) {
     fcvtzs z6.d, p1/m, z0.d
     fcvtzs z7.d, p1/m, z3.d
   )");
+  std::vector<int64_t> results64A = {1, -1, 4, -4, 3, -3, 7, -7};
+  std::vector<int64_t> results64B = {INT32_MAX, INT32_MIN, -10698505, 0};
+  std::vector<int64_t> results64C = {INT64_MAX, -114458013083425, -10698505, 0};
 
-  CHECK_NEON(1, int64_t, {1, -1, 4, -4, 3, -3, 7, -7});
+  CHECK_NEON(1, int64_t, fillNeon<int64_t>(results64A, VL / 8));
   CHECK_NEON(2, int64_t,
-             {1, -1, 4, -4, 4294967297, 4294967297, 4294967297, 4294967297});
+             fillNeonCombined<int64_t>(results64A, {4294967297}, VL / 8));
   CHECK_NEON(4, int64_t,
-             {2147483647, -2147483648, -10698505, 0, 4294967297, 4294967297,
-              4294967297, 4294967297});
+             fillNeonCombined<int64_t>(results64B, {4294967297}, VL / 8));
 
-  CHECK_NEON(5, int64_t, {1, -1, 4, -4, 3, -3, 7, -7});
-  CHECK_NEON(6, int64_t, {1, -1, 4, -4, 1, 1, 1, 1});
-  CHECK_NEON(7, int64_t,
-             {INT64_MAX, -114458013083425, -10698505, 0, 1, 1, 1, 1});
+  CHECK_NEON(5, int64_t, fillNeon<int64_t>(results64A, VL / 8));
+  CHECK_NEON(6, int64_t, fillNeonCombined<int64_t>(results64A, {1}, VL / 8));
+  CHECK_NEON(7, int64_t, fillNeonCombined<int64_t>(results64C, {1}, VL / 8));
 
   // Single
-  initialHeapData_.resize(128);
+  initialHeapData_.resize(VL / 2);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0f;
-  fheap[1] = -42.76f;
-  fheap[2] = -0.125f;
-  fheap[3] = 0.0f;
-  fheap[4] = 40.26f;
-  fheap[5] = -684.72f;
-  fheap[6] = -1.15f;
-  fheap[7] = 107.86f;
-
-  fheap[8] = -118548568215563221587412.3368451;
-  fheap[9] = 118548568215563221587412.3368451;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 0.0f,
+                              40.26f, -684.72f, -1.15f,  107.86f};
+  std::vector<float> fsrcB = {-118548568215563221587412.3368451f,
+                              118548568215563221587412.3368451f,
+                              0.0f,
+                              80.72f,
+                              -125.67f,
+                              -0.01f,
+                              701.90f,
+                              7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
     mov x8, 214
     svc #0
 
-    ptrue p0.s
-
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #0
+    mov x4, #4
+    mov x5, #2
+    addvl x3, x3, #1
+    sdiv x3, x3, x4
+    sdiv x2, x3, x5
+
+    ptrue p0.s
     whilelo p1.s, xzr, x2
 
     ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
@@ -2025,35 +1786,35 @@ TEST_P(InstSve, fcvtzs) {
     fcvtzs z6.s, p1/m, z0.s
     fcvtzs z7.s, p1/m, z3.s
   )");
-  CHECK_NEON(1, int64_t, {1, 0, 40, -1, INT64_MIN, 0, -125, 701});
-  CHECK_NEON(2, int64_t, {1, 0, 40, -1, 1, 1, 1, 1});
-  CHECK_NEON(4, int64_t, {INT64_MIN, 0, -125, 701, 1, 1, 1, 1});
+  std::vector<int64_t> results32A = {1, 0, 40, -1};
+  std::vector<int64_t> results32B = {INT64_MIN, 0, -125, 701};
+  CHECK_NEON(1, int64_t,
+             fillNeonCombined<int64_t>(results32A, results32B, VL / 8));
+  CHECK_NEON(2, int64_t, fillNeonCombined<int64_t>(results32A, {1}, VL / 8));
+  CHECK_NEON(4, int64_t, fillNeonCombined<int64_t>(results32B, {1}, VL / 8));
 
+  std::vector<int32_t> results32C = {1, -42, 0, 0, 40, -684, -1, 107};
+  std::vector<int32_t> results32D = {INT32_MIN, INT32_MAX, 0,   80,
+                                     -125,      0,         701, 7};
   CHECK_NEON(5, int32_t,
-             {1, -42, 0, 0, 40, -684, -1, 107, INT32_MIN, INT32_MAX, 0, 80,
-              -125, 0, 701, 7});
-  CHECK_NEON(6, int32_t,
-             {1, -42, 0, 0, 40, -684, -1, 107, 10, 10, 10, 10, 10, 10, 10, 10});
-  CHECK_NEON(7, int32_t,
-             {INT32_MIN, INT32_MAX, 0, 80, -125, 0, 701, 7, 10, 10, 10, 10, 10,
-              10, 10, 10});
+             fillNeonCombined<int32_t>(results32C, results32D, VL / 8));
+  CHECK_NEON(6, int32_t, fillNeonCombined<int32_t>(results32C, {10}, VL / 8));
+  CHECK_NEON(7, int32_t, fillNeonCombined<int32_t>(results32D, {10}, VL / 8));
 }
 
 TEST_P(InstSve, fcvt) {
-  // VL = 512
   // double to single
-  initialHeapData_.resize(96);
+  initialHeapData_.resize(VL / 4);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 2.0;
-  dheap[1] = -2.0;
-  dheap[2] = 4.5;
-  dheap[3] = -4.5;
-  dheap[4] = 3.2;
-  dheap[5] = -3.2;
-  dheap[6] = 7.9;
-  dheap[7] = -7.9;
-  dheap[8] = std::numeric_limits<double>::max();
-  dheap[9] = std::numeric_limits<double>::lowest();
+  std::vector<double> dsrcA = {2.0,
+                               -2.0,
+                               4.5,
+                               -4.5,
+                               3.2,
+                               -3.2,
+                               std::numeric_limits<double>::max(),
+                               std::numeric_limits<double>::lowest()};
+  fillHeap<double>(dheap, dsrcA, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2065,59 +1826,63 @@ TEST_P(InstSve, fcvt) {
     fdup z2.s, #1.0
     fdup z3.s, #1.0
 
-    ptrue p0.d
-
     mov x1, #0
-    mov x2, #4
-    mov x3, #8
+    mov x2, #0
+    mov x3, #0
+    mov x4, #8
+    mov x5, #2
+    addvl x3, x3, #1
+    sdiv x3, x3, x4
+    sdiv x2, x3, x5
+
+    ptrue p0.d
     whilelo p1.d, xzr, x3
 
     ld1d {z4.d}, p0/z, [x0, x1, lsl #3]
     ld1d {z5.d}, p1/z, [x0, x2, lsl #3]
 
     fcvt z0.s, p0/m, z4.d
-    fcvt z1.s, p1/m, z4.d
-
-    fcvt z2.s, p0/m, z5.d
-    fcvt z3.s, p1/m, z5.d    
+    fcvt z1.s, p1/m, z4.d 
   )");
-  CHECK_NEON(0, float,
-             {2.0f, 1.0f, -2.0f, 1.0f, 4.5f, 1.0f, -4.5f, 1.0f, 3.2f, 1.0f,
-              -3.2f, 1.0f, 7.9f, 1.0f, -7.9f, 1.0f});
-  CHECK_NEON(1, float,
-             {2.0f, 1.0f, -2.0f, 1.0f, 4.5f, 1.0f, -4.5f, 1.0f, 3.2f, 1.0f,
-              -3.2f, 1.0f, 7.9f, 1.0f, -7.9f, 1.0f});
-  CHECK_NEON(
-      2, float,
-      {3.2f, 1.0f, -3.2f, 1.0f, 7.9f, 1.0f, -7.9f, 1.0f,
-       std::numeric_limits<float>::max(), 1.0f,
-       std::numeric_limits<float>::lowest(), 1.0f, 0.0f, 1.0f, 0.0f, 1.0f});
-  CHECK_NEON(
-      3, float,
-      {3.2f, 1.0f, -3.2f, 1.0f, 7.9f, 1.0f, -7.9f, 1.0f,
-       std::numeric_limits<float>::max(), 1.0f,
-       std::numeric_limits<float>::lowest(), 1.0f, 0.0f, 1.0f, 0.0f, 1.0f});
+  std::vector<float> results64A = {2.0f,
+                                   1.0f,
+                                   -2.0f,
+                                   1.0f,
+                                   4.5f,
+                                   1.0f,
+                                   -4.5f,
+                                   1.0f,
+                                   3.2f,
+                                   1.0f,
+                                   -3.2f,
+                                   1.0f,
+                                   std::numeric_limits<float>::max(),
+                                   1.0f,
+                                   std::numeric_limits<float>::lowest(),
+                                   1.0f};
+  CHECK_NEON(0, float, fillNeon<float>(results64A, VL / 8));
+  CHECK_NEON(1, float, fillNeon<float>(results64A, VL / 8));
 
   // single to double
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 2);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 2.0f;
-  fheap[1] = -42.76f;
-  fheap[2] = -0.125f;
-  fheap[3] = 0.0f;
-  fheap[4] = 40.26f;
-  fheap[5] = -684.72f;
-  fheap[6] = std::numeric_limits<float>::lowest();
-  fheap[7] = 107.86f;
-
-  fheap[8] = std::numeric_limits<float>::max();
-  fheap[9] = -0.15f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
+  std::vector<float> fsrcA = {2.0f,
+                              -42.76f,
+                              -0.125f,
+                              0.0f,
+                              40.26f,
+                              -684.72f,
+                              std::numeric_limits<float>::lowest(),
+                              107.86f};
+  std::vector<float> fsrcB = {std::numeric_limits<float>::max(),
+                              -0.15f,
+                              0.0f,
+                              80.72f,
+                              -125.67f,
+                              -0.01f,
+                              701.90f,
+                              7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2127,52 +1892,43 @@ TEST_P(InstSve, fcvt) {
     fdup z0.d, #1.0
     fdup z1.d, #1.0
 
-    ptrue p0.s
-
     mov x1, #0
-    mov x2, #4
-    mov x3, #8
+    mov x3, #0
+    mov x4, #8
+    mov x5, #2
+    addvl x3, x3, #1
+    sdiv x3, x3, x4
+
+    ptrue p0.s
     whilelo p1.s, xzr, x3
 
     ld1w {z4.s}, p0/z, [x0, x1, lsl #2]
-    ld1w {z5.s}, p1/z, [x0, x2, lsl #2]
+    ld1w {z5.s}, p1/z, [x0, x3, lsl #2]
 
     fcvt z0.d, p0/m, z4.s
-    fcvt z1.d, p1/m, z4.s  
+    fcvt z1.d, p1/m, z5.s  
   )");
+  std::vector<double> results32A = {
+      2.0, -0.125, 40.26,
+      static_cast<double>(std::numeric_limits<float>::lowest())};
+  std::vector<double> results32B = {
+      static_cast<double>(std::numeric_limits<float>::max()), 0.0, -125.67,
+      701.90};
+  std::vector<double> results32C = {
+      static_cast<double>(std::numeric_limits<float>::max()), 0.0, -125.67,
+      701.90};
   CHECK_NEON(0, double,
-             {2.0, -0.125, 40.26,
-              static_cast<double>(std::numeric_limits<float>::lowest()),
-              static_cast<double>(std::numeric_limits<float>::max()), 0.0,
-              -125.67, 701.90});
-  CHECK_NEON(1, double,
-             {2.0, -0.125, 40.26,
-              static_cast<double>(std::numeric_limits<float>::lowest()), 1.0,
-              1.0, 1.0, 1.0});
+             fillNeonCombined<double>(results32A, results32B, VL / 8));
+  CHECK_NEON(1, double, fillNeonCombined<double>(results32C, {1.0}, VL / 8));
 }
 
 TEST_P(InstSve, fdivr) {
-  // VL = 512-bits
   // double
-  initialHeapData_.resize(128);
+  initialHeapData_.resize(VL / 4);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 1.0;
-  dheap[4] = 40.26;
-  dheap[5] = -684.72;
-  dheap[6] = -0.15;
-  dheap[7] = 107.86;
-
-  dheap[8] = -34.71;
-  dheap[9] = -0.917;
-  dheap[10] = 1.0;
-  dheap[11] = 80.72;
-  dheap[12] = -125.67;
-  dheap[13] = -0.01;
-  dheap[14] = 701.90;
-  dheap[15] = 7.0;
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 1.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 1.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 32);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -2181,47 +1937,36 @@ TEST_P(InstSve, fdivr) {
     svc #0
 
     mov x1, #0
-    mov x2, #4
-    whilelo p0.d, xzr, x2
-    ptrue p1.d
+    mov x2, #0
+    mov x3, #0
+    mov x4, #8
+    mov x5, #2
+    addvl x3, x3, #1
+    sdiv x3, x3, x4
+    sdiv x2, x3, x5
 
-    mov x3, #8
+    ptrue p1.d
+    whilelo p0.d, xzr, x2
+
     ld1d {z0.d}, p1/z, [x0, x3, lsl #3]
     ld1d {z1.d}, p1/z, [x0, x1, lsl #3]
-    ld1d {z2.d}, p1/z, [x0, x1, lsl #3]
+    ld1d {z2.d}, p0/z, [x0, x1, lsl #3]
 
     fdivr z1.d, p1/m, z1.d, z0.d
     fdivr z2.d, p0/m, z2.d, z0.d
   )");
-
-  CHECK_NEON(1, double,
-             {-34.71, 0.02144527595884003837, -8.0, 80.72,
-              -3.1214605067064087329, 0.0000146045098726486738,
-              -4679.333333333333030168, 0.06489894307435564724});
-  CHECK_NEON(2, double,
-             {-34.71, 0.02144527595884003837, -8.0, 80.72, 40.26, -684.72,
-              -0.15, 107.86});
+  std::vector<double> dresultsA = {-34.71, 0.02144527595884003837, -8.0, 80.72};
+  CHECK_NEON(1, double, fillNeon<double>(dresultsA, VL / 8));
+  CHECK_NEON(2, double, fillNeonCombined<double>(dresultsA, {0}, VL / 8));
 
   // float
-  initialHeapData_.resize(128);
+  initialHeapData_.resize(VL / 4);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0f;
-  fheap[1] = -42.76f;
-  fheap[2] = -0.125f;
-  fheap[3] = 1.0f;
-  fheap[4] = 40.26f;
-  fheap[5] = -684.72f;
-  fheap[6] = -0.15f;
-  fheap[7] = 107.86f;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 1.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 1.0f,
+                              40.26f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.71f,  -0.917f, 1.0f,    80.72f,
+                              -125.67f, -0.01f,  701.90f, 7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -2230,7 +1975,14 @@ TEST_P(InstSve, fdivr) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #0
+    mov x4, #4
+    mov x5, #2
+    addvl x3, x3, #1
+    sdiv x3, x3, x4
+    sdiv x2, x3, x5
+
     whilelo p0.s, xzr, x2
     ptrue p1.s
 
@@ -2239,36 +1991,26 @@ TEST_P(InstSve, fdivr) {
 
     fdivr z1.s, p0/m, z1.s, z0.s
   )");
-
-  CHECK_NEON(1, float,
-             {-34.71f, 0.02144527595884003837f, -8.0f, 80.72f,
-              -3.1214605067064087329f, 0.0000146045098726486738f,
-              -4679.333333333333030168f, 0.06489894307435564724f, -34.71f,
-              -0.917f, 1.0f, 80.72f, -125.67f, -0.01f, 701.90f, 7.0f});
+  std::vector<float> fresultsA = {-34.71f,
+                                  0.02144527595884003837f,
+                                  -8.0f,
+                                  80.72f,
+                                  -3.1214605067064087329f,
+                                  0.0000146045098726486738f,
+                                  -4679.333333333333030168f,
+                                  0.06489894307435564724f};
+  CHECK_NEON(1, float, fillNeonCombined<float>(fresultsA, fsrcB, VL / 8));
 }
 
 TEST_P(InstSve, fdiv) {
-  // VL = 512-bits
   // double
-  initialHeapData_.resize(128);
+  initialHeapData_.resize(VL / 4);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 1.0;
-  dheap[4] = 40.26;
-  dheap[5] = -684.72;
-  dheap[6] = -0.15;
-  dheap[7] = 107.86;
-
-  dheap[8] = -34.71;
-  dheap[9] = -0.917;
-  dheap[10] = 1.0;
-  dheap[11] = 80.72;
-  dheap[12] = -125.67;
-  dheap[13] = -0.01;
-  dheap[14] = 701.90;
-  dheap[15] = 7.0;
+  std::vector<double> dsrcA = {1.0,   -42.76,  -0.125, 1.0,
+                               40.26, -684.72, -0.15,  107.86};
+  std::vector<double> dsrcB = {-34.71,  -0.917, 1.0,    80.72,
+                               -125.67, -0.01,  701.90, 7.0};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 32);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -2277,51 +2019,47 @@ TEST_P(InstSve, fdiv) {
     svc #0
 
     mov x1, #0
-    mov x2, #4
+    mov x2, #0
+    mov x3, #0
+    mov x4, #8
+    mov x5, #2
+    addvl x3, x3, #1
+    sdiv x3, x3, x4
+    sdiv x2, x3, x5
+
     whilelo p0.d, xzr, x2
     ptrue p1.d
 
-    mov x3, #8
     ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
     ld1d {z1.d}, p1/z, [x0, x3, lsl #3]
     ld1d {z2.d}, p1/z, [x0, x3, lsl #3]
-
+    
     fdiv z1.d, p1/m, z1.d, z0.d
     fdiv z2.d, p0/m, z2.d, z0.d
   )");
 
-  CHECK_NEON(1, double,
-             {-34.71, 0.02144527595884003837, -8, 80.72, -3.1214605067064087329,
-              0.0000146045098726486738, -4679.333333333333030168,
-              0.06489894307435564724});
-  CHECK_NEON(
-      2, double,
-      {-34.71, 0.02144527595884003837, -8, 80.72, -125.67, -0.01, 701.90, 7.0});
+  std::vector<double> dresults = {-34.71,
+                                  0.02144527595884003837,
+                                  -8,
+                                  80.72,
+                                  -3.1214605067064087329,
+                                  0.0000146045098726486738,
+                                  -4679.333333333333030168,
+                                  0.06489894307435564724};
+  CHECK_NEON(1, double, fillNeon<double>(dresults, VL / 8));
+  std::rotate(dsrcB.begin(), dsrcB.begin() + ((VL / 128) % 8), dsrcB.end());
+  CHECK_NEON(2, double, fillNeonCombined<double>(dresults, dsrcB, VL / 8));
 }
 
 TEST_P(InstSve, fnmls) {
-  // VL = 512-bits
   // float
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 4);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0f;
-  fheap[1] = -42.76f;
-  fheap[2] = -0.125f;
-  fheap[3] = 0.0f;
-  fheap[4] = 40.26f;
-  fheap[5] = -684.72f;
-  fheap[6] = -0.15f;
-  fheap[7] = 107.86f;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
-
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 0.0f,
+                              40.26f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.71f,  -0.917f, 0.0f,    80.72f,
+                              -125.67f, -0.01f,  701.90f, 7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2329,7 +2067,11 @@ TEST_P(InstSve, fnmls) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.s, xzr, x2
     ptrue p1.s
 
@@ -2339,32 +2081,16 @@ TEST_P(InstSve, fnmls) {
 
     fnmls z2.s, p0/m, z1.s, z0.s
   )");
-  CHECK_NEON(2, float,
-             {-35.71f, 81.97092f, 0.125f, 0.0f, -5099.7342f, 691.5672f,
-              -105.135f, 647.16f, -34.71f, -0.917f, 0.0f, 80.72f, -125.67f,
-              -0.01f, 701.90f, 7.0f});
+  std::vector<float> fresultsA = {-35.71f,     81.97092f, 0.125f,    0.0f,
+                                  -5099.7342f, 691.5672f, -105.135f, 647.16f};
+  CHECK_NEON(2, float, fillNeonCombined(fresultsA, fsrcB, VL / 8));
 
   // double
-  initialHeapData_.resize(136);
+  initialHeapData_.resize(VL / 4);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 0.0;
-  dheap[4] = 40.26;
-  dheap[5] = -684.72;
-  dheap[6] = -0.15;
-  dheap[7] = 107.86;
-
-  dheap[8] = -34.71;
-  dheap[9] = -0.917;
-  dheap[10] = 0.0;
-  dheap[11] = 80.72;
-  dheap[12] = -125.67;
-  dheap[13] = -0.01;
-  dheap[14] = 701.90;
-  dheap[15] = 7.0;
-
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2372,7 +2098,11 @@ TEST_P(InstSve, fnmls) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.d, xzr, x2
     ptrue p1.d
 
@@ -2382,34 +2112,19 @@ TEST_P(InstSve, fnmls) {
 
     fnmls z2.d, p0/m, z1.d, z0.d
   )");
-  CHECK_NEON(
-      2, double,
-      {-35.71, 81.97092, 0.125, 0.0, -5099.7342, 691.5672, -105.135, 647.16});
+  std::vector<double> dresultsA = {-35.71, 81.97092, 0.125, 0.0};
+  CHECK_NEON(2, double, fillNeonCombined(dresultsA, dsrcB, VL / 8));
 }
 
 TEST_P(InstSve, fnmsb) {
-  // VL = 512-bits
   // float
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 4);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0f;
-  fheap[1] = -42.76f;
-  fheap[2] = -0.125f;
-  fheap[3] = 0.0f;
-  fheap[4] = 40.26f;
-  fheap[5] = -684.72f;
-  fheap[6] = -0.15f;
-  fheap[7] = 107.86f;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
-
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 0.0f,
+                              40.26f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.71f,  -0.917f, 0.0f,    80.72f,
+                              -125.67f, -0.01f,  701.90f, 7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2417,7 +2132,11 @@ TEST_P(InstSve, fnmsb) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.s, xzr, x2
     ptrue p1.s
 
@@ -2427,32 +2146,16 @@ TEST_P(InstSve, fnmsb) {
 
     fnmsb z2.s, p0/m, z1.s, z0.s
   )");
-  CHECK_NEON(2, float,
-             {-35.71f, 81.97092f, 0.125f, 0.0f, -5099.7342f, 691.5672f,
-              -105.135f, 647.16f, -34.71f, -0.917f, 0.0f, 80.72f, -125.67f,
-              -0.01f, 701.90f, 7.0f});
+  std::vector<float> fresultsA = {-35.71f,     81.97092f, 0.125f,    0.0f,
+                                  -5099.7342f, 691.5672f, -105.135f, 647.16f};
+  CHECK_NEON(2, float, fillNeonCombined(fresultsA, fsrcB, VL / 8));
 
   // double
-  initialHeapData_.resize(136);
+  initialHeapData_.resize(VL / 4);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 0.0;
-  dheap[4] = 40.26;
-  dheap[5] = -684.72;
-  dheap[6] = -0.15;
-  dheap[7] = 107.86;
-
-  dheap[8] = -34.71;
-  dheap[9] = -0.917;
-  dheap[10] = 0.0;
-  dheap[11] = 80.72;
-  dheap[12] = -125.67;
-  dheap[13] = -0.01;
-  dheap[14] = 701.90;
-  dheap[15] = 7.0;
-
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2460,7 +2163,11 @@ TEST_P(InstSve, fnmsb) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.d, xzr, x2
     ptrue p1.d
 
@@ -2470,34 +2177,18 @@ TEST_P(InstSve, fnmsb) {
 
     fnmsb z2.d, p0/m, z1.d, z0.d
   )");
-  CHECK_NEON(
-      2, double,
-      {-35.71, 81.97092, 0.125, 0.0, -5099.7342, 691.5672, -105.135, 647.16});
+  std::vector<double> dresultsA = {-35.71, 81.97092, 0.125, 0.0};
+  CHECK_NEON(2, double, fillNeonCombined(dresultsA, dsrcB, VL / 8));
 }
 
 TEST_P(InstSve, fmad) {
-  // VL = 512-bits
-  // float
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0;
-  fheap[1] = -42.76;
-  fheap[2] = -0.125;
-  fheap[3] = 0.0;
-  fheap[4] = 40.26;
-  fheap[5] = -684.72;
-  fheap[6] = -0.15;
-  fheap[7] = 107.86;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
-
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 0.0f,
+                              40.26f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.71f,  -0.917f, 0.0f,    80.72f,
+                              -125.67f, -0.01f,  701.90f, 7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2505,7 +2196,11 @@ TEST_P(InstSve, fmad) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.s, xzr, x2
     ptrue p1.s
 
@@ -2516,32 +2211,17 @@ TEST_P(InstSve, fmad) {
     fmad z2.s, p0/m, z1.s, z0.s
   )");
 
-  CHECK_NEON(2, float,
-             {-33.71f, -3.54907989502f, -0.125f, 0.0f, -5019.2142f,
-              -677.872741699f, -105.4350113f, 862.88f, -34.71f, -0.917f, 0.0f,
-              80.72f, -125.67f, -0.01f, 701.90f, 7.0f});
+  std::vector<float> fresults = {
+      -33.71f,     -3.54907989502f, -0.125f,       0.0f,
+      -5019.2142f, -677.872741699f, -105.4350113f, 862.88f};
+  CHECK_NEON(2, float, fillNeonCombined<float>(fresults, fsrcB, VL / 8));
 
   // double
-  initialHeapData_.resize(136);
+  initialHeapData_.resize(VL / 4);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 0.0;
-  dheap[4] = 40.26;
-  dheap[5] = -684.72;
-  dheap[6] = -0.15;
-  dheap[7] = 107.86;
-
-  dheap[8] = -34.71;
-  dheap[9] = -0.917;
-  dheap[10] = 0.0;
-  dheap[11] = 80.72;
-  dheap[12] = -125.67;
-  dheap[13] = -0.01;
-  dheap[14] = 701.90;
-  dheap[15] = 7.0;
-
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2549,7 +2229,11 @@ TEST_P(InstSve, fmad) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.d, xzr, x2
     ptrue p1.d
 
@@ -2559,35 +2243,29 @@ TEST_P(InstSve, fmad) {
 
     fmad z2.d, p0/m, z1.d, z0.d
   )");
-
-  CHECK_NEON(2, double,
-             {-33.71, -3.54907989502, -0.125, 0.0, -5019.2142, -677.872741699,
-              -105.4350113, 862.88});
+  std::vector<double> dresults = {-33.71, -3.54907989502, -0.125, 0.0};
+  CHECK_NEON(2, double, fillNeonCombined<double>(dresults, dsrcB, VL / 8));
 }
 
 TEST_P(InstSve, fmla) {
-  // VL = 512-bits
   // double
-  initialHeapData_.resize(64);
+  initialHeapData_.resize(VL / 8);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 0.0;
-
-  dheap[4] = -34.71;
-  dheap[5] = -0.917;
-  dheap[6] = 0.0;
-  dheap[7] = 80.72;
-
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
     mov x8, 214
     svc #0
-
+    
     mov x1, #0
-    mov x2, #4
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.d, xzr, x2
     ptrue p1.d
 
@@ -2597,32 +2275,17 @@ TEST_P(InstSve, fmla) {
 
     fmla z2.d, p0/m, z1.d, z0.d
   )");
-
-  CHECK_NEON(
-      2, double,
-      {-33.71, -3.5490799999999964, -0.125, 0.0, -34.71, -0.917, 0.0, 80.72});
+  std::vector<double> dresults = {-33.71, -3.5490799999999964, -0.125, 0.0};
+  CHECK_NEON(2, double, fillNeonCombined<double>(dresults, dsrcB, VL / 8));
 
   // float
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0;
-  fheap[1] = -42.76;
-  fheap[2] = -0.125;
-  fheap[3] = 0.0;
-  fheap[4] = 40.26;
-  fheap[5] = -684.72;
-  fheap[6] = -0.15;
-  fheap[7] = 107.86;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
-
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 0.0f,
+                              40.26f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.71f,  -0.917f, 0.0f,    80.72f,
+                              -125.67f, -0.01f,  701.90f, 7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2630,7 +2293,11 @@ TEST_P(InstSve, fmla) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.s, xzr, x2
     ptrue p1.s
 
@@ -2640,36 +2307,21 @@ TEST_P(InstSve, fmla) {
 
     fmla z2.s, p0/m, z1.s, z0.s
   )");
-
-  CHECK_NEON(2, float,
-             {-33.71f, -3.54907989502f, -0.125f, 0.0f, -5019.2142f,
-              -677.872741699f, -105.4350113f, 862.88f, -34.71f, -0.917f, 0.0f,
-              80.72f, -125.67f, -0.01f, 701.90f, 7.0f});
+  std::vector<float> fresults = {
+      -33.71f,     -3.54907989502f, -0.125f,       0.0f,
+      -5019.2142f, -677.872741699f, -105.4350113f, 862.88f};
+  CHECK_NEON(2, float, fillNeonCombined<float>(fresults, fsrcB, VL / 8));
 }
 
 TEST_P(InstSve, fmls) {
-  // VL = 512-bits
   // float
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0f;
-  fheap[1] = -42.76f;
-  fheap[2] = -0.125f;
-  fheap[3] = 0.0f;
-  fheap[4] = 40.26f;
-  fheap[5] = -684.72f;
-  fheap[6] = -0.15f;
-  fheap[7] = 107.86f;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
-
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 0.0f,
+                              40.26f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.71f,  -0.917f, 0.0f,    80.72f,
+                              -125.67f, -0.01f,  701.90f, 7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2677,7 +2329,11 @@ TEST_P(InstSve, fmls) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.s, xzr, x2
     ptrue p1.s
 
@@ -2687,33 +2343,22 @@ TEST_P(InstSve, fmls) {
 
     fmls z2.s, p0/m, z1.s, z0.s
   )");
-
-  CHECK_NEON(2, float,
-             {35.71f, -81.97092f, -0.125f, 0.0f, 5099.7342f,
-              -691.5672000000001f, 105.13499999999999f, -647.16f, -34.71f,
-              -0.917f, 0.0f, 80.72f, -125.67f, -0.01f, 701.90f, 7.0f});
+  std::vector<float> fresults = {35.71f,
+                                 -81.97092f,
+                                 -0.125f,
+                                 0.0f,
+                                 5099.7342f,
+                                 -691.5672000000001f,
+                                 105.13499999999999f,
+                                 -647.16f};
+  CHECK_NEON(2, float, fillNeonCombined<float>(fresults, fsrcB, VL / 8));
 
   // double
-  initialHeapData_.resize(136);
+  initialHeapData_.resize(VL / 8);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 0.0;
-  dheap[4] = 40.26;
-  dheap[5] = -684.72;
-  dheap[6] = -0.15;
-  dheap[7] = 107.86;
-
-  dheap[8] = -34.71;
-  dheap[9] = -0.917;
-  dheap[10] = 0.0;
-  dheap[11] = 80.72;
-  dheap[12] = -125.67;
-  dheap[13] = -0.01;
-  dheap[14] = 701.90;
-  dheap[15] = 7.0;
-
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2721,7 +2366,11 @@ TEST_P(InstSve, fmls) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.d, xzr, x2
     ptrue p1.d
 
@@ -2731,35 +2380,19 @@ TEST_P(InstSve, fmls) {
 
     fmls z2.d, p0/m, z1.d, z0.d
   )");
-
-  CHECK_NEON(2, double,
-             {35.71f, -81.97092f, -0.125f, 0.0f, 5099.7342f,
-              -691.5672000000001f, 105.13499999999999f, -647.16f});
+  std::vector<double> dresults = {35.71, -81.97092, -0.125, 0.0};
+  CHECK_NEON(2, double, fillNeonCombined<double>(dresults, dsrcB, VL / 8));
 }
 
 TEST_P(InstSve, fmsb) {
-  // VL = 512-bits
   // float
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0;
-  fheap[1] = -42.76;
-  fheap[2] = -0.125;
-  fheap[3] = 0.0;
-  fheap[4] = 40.26;
-  fheap[5] = -684.72;
-  fheap[6] = -0.15;
-  fheap[7] = 107.86;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
-
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 0.0f,
+                              40.26f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.71f,  -0.917f, 0.0f,    80.72f,
+                              -125.67f, -0.01f,  701.90f, 7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2767,7 +2400,11 @@ TEST_P(InstSve, fmsb) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.s, xzr, x2
     ptrue p1.s
 
@@ -2777,33 +2414,17 @@ TEST_P(InstSve, fmsb) {
 
     fmsb z2.s, p0/m, z1.s, z0.s
   )");
-
-  CHECK_NEON(2, float,
-             {35.71f, -81.970916748f, -0.125f, 0.0f, 5099.73388672f,
-              -691.567199707f, 105.135009766f, -647.16003418f, -34.71f, -0.917f,
-              0.0f, 80.72f, -125.67f, -0.01f, 701.90f, 7.0f});
+  std::vector<float> fresults = {
+      35.71f,         -81.970916748f,  -0.125f,        0.0f,
+      5099.73388672f, -691.567199707f, 105.135009766f, -647.16003418f};
+  CHECK_NEON(2, float, fillNeonCombined<float>(fresults, fsrcB, VL / 8));
 
   // Double
-  initialHeapData_.resize(136);
+  initialHeapData_.resize(VL / 8);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 0.0;
-  dheap[4] = 40.26;
-  dheap[5] = -684.72;
-  dheap[6] = -0.15;
-  dheap[7] = 107.86;
-
-  dheap[8] = -34.71;
-  dheap[9] = -0.917;
-  dheap[10] = 0.0;
-  dheap[11] = 80.72;
-  dheap[12] = -125.67;
-  dheap[13] = -0.01;
-  dheap[14] = 701.90;
-  dheap[15] = 7.0;
-
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2811,51 +2432,33 @@ TEST_P(InstSve, fmsb) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
-    mov x3, #4
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.d, xzr, x3
     ptrue p1.d
 
     ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
     ld1d {z1.d}, p1/z, [x0, x2, lsl #3]
     ld1d {z2.d}, p1/z, [x0, x1, lsl #3]
-    ld1d {z3.d}, p1/z, [x0, x1, lsl #3]
 
     fmsb z2.d, p0/m, z1.d, z0.d
-    fmsb z3.d, p1/m, z1.d, z0.d
   )");
-
-  CHECK_NEON(
-      2, double,
-      {35.71, -81.970916748, -0.125, 0.0, 40.26, -684.72, -0.15, 107.86});
-  CHECK_NEON(3, double,
-             {35.71, -81.970916748, -0.125, 0.0, 5099.73388672, -691.567199707,
-              105.135009766, -647.16003418});
+  std::vector<double> dresults = {35.71, -81.970916748, -0.125, 0.0};
+  CHECK_NEON(2, double, fillNeonCombined<double>(dresults, dsrcB, VL / 8));
 }
 
 TEST_P(InstSve, fmul) {
-  // VL = 512-bits
   // float
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0f;
-  fheap[1] = -42.76f;
-  fheap[2] = -0.125f;
-  fheap[3] = 0.0f;
-  fheap[4] = 40.26f;
-  fheap[5] = -684.72f;
-  fheap[6] = -0.15f;
-  fheap[7] = 107.86f;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
-
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 0.0f,
+                              40.26f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.71f,  -0.917f, 0.0f,    80.72f,
+                              -125.67f, -0.01f,  701.90f, 7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2863,7 +2466,11 @@ TEST_P(InstSve, fmul) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.s, xzr, x2
     ptrue p1.s
 
@@ -2876,31 +2483,21 @@ TEST_P(InstSve, fmul) {
     fmul z0.s, p0/m, z0.s, #0.5
     fmul z3.s, p0/m, z3.s, z4.s
   )");
-
-  CHECK_NEON(2, float,
-             {-34.71f, 39.2109184265f, 0.0f, 0.0f, -5059.4742f, 6.84719944f,
-              -105.285011292f, 755.02f, 0, 0, 0, 0, 0, 0, 0, 0});
-  CHECK_NEON(0, float,
-             {0.5f, -21.38f, -0.0625f, 0, 20.13f, -342.36f, -0.075f, 53.93f, 0,
-              0, 0, 0, 0, 0, 0, 0});
-  CHECK_NEON(3, float,
-             {-34.71f, 39.21092f, -0.0f, 0.0f, -5059.4742f, 6.847200000000001f,
-              -105.285f, 755.02f, -34.71f, -0.917f, 0.0f, 80.72f, -125.67f,
-              -0.01f, 701.9f, 7.0f});
+  std::vector<float> fresultsA = {0.5f,   -21.38f,  -0.0625f, 0.0f,
+                                  20.13f, -342.36f, -0.075f,  53.93f};
+  std::vector<float> fresultsB = {
+      -34.71f,     39.2109184265f,  0.0f,   0.0f, -5059.4742f,
+      6.84719944f, -105.285011292f, 755.02f};
+  CHECK_NEON(0, float, fillNeon<float>(fresultsA, VL / 16));
+  CHECK_NEON(2, float, fillNeon<float>(fresultsB, VL / 16));
+  CHECK_NEON(3, float, fillNeonCombined<float>(fresultsB, fsrcB, VL / 8));
 
   // double
-  initialHeapData_.resize(64);
+  initialHeapData_.resize(VL / 8);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 0.0;
-
-  dheap[4] = -34.71;
-  dheap[5] = -0.917;
-  dheap[6] = 0.0;
-  dheap[7] = 80.72;
-
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2908,7 +2505,11 @@ TEST_P(InstSve, fmul) {
     svc #0
 
     mov x1, #0
-    mov x2, #4
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.d, xzr, x2
     ptrue p1.d
 
@@ -2921,28 +2522,20 @@ TEST_P(InstSve, fmul) {
     fmul z0.d, p0/m, z0.d, #0.5
     fmul z3.d, p0/m, z3.d, z4.d
   )");
-
-  CHECK_NEON(2, double, {-34.71, 39.21092, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
-  CHECK_NEON(0, double, {0.5, -21.38, -0.0625, 0.0, 0.0, 0.0, 0.0, 0.0});
-  CHECK_NEON(3, double,
-             {-34.71, 39.21092, 0.0, 0.0, -34.71, -0.917, 0.0, 80.72});
+  std::vector<double> dresultsA = {0.5, -21.38, -0.0625, 0.0};
+  std::vector<double> dresultsB = {-34.71, 39.21092, 0.0, 0.0};
+  CHECK_NEON(0, double, fillNeon<double>(dresultsA, VL / 16));
+  CHECK_NEON(2, double, fillNeon<double>(dresultsB, VL / 16));
+  CHECK_NEON(3, double, fillNeonCombined<double>(dresultsB, dsrcB, VL / 8));
 }
 
 TEST_P(InstSve, fneg) {
-  // VL = 512-bits
   // double
-  initialHeapData_.resize(64);
+  initialHeapData_.resize(VL / 8);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 0.0;
-
-  dheap[4] = -34.71;
-  dheap[5] = -0.917;
-  dheap[6] = 0.0;
-  dheap[7] = 80.72;
-
+  std::vector<double> dsrc = {1.0,    -42.76, -0.125, 0.0,
+                              -34.71, -0.917, 0.0,    80.72};
+  fillHeap<double>(dheap, dsrc, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2950,41 +2543,34 @@ TEST_P(InstSve, fneg) {
     svc #0
 
     mov x1, #0
-    mov x2, #4
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.d, xzr, x2
     ptrue p1.d
-    
+
     ld1d {z0.d}, p1/z, [x0, x1, lsl #3]
     ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
 
     fneg z2.d, p1/m, z0.d
     fneg z3.d, p0/m, z1.d
   )");
-
-  CHECK_NEON(2, double, {-1.0, 42.76, 0.125, -0.0, 34.71, 0.917, -0.0, -80.72});
-  CHECK_NEON(3, double, {34.71, 0.917, 0.0, -80.72, 0, 0, 0, 0});
+  std::vector<double> dresults = {-1.0,  42.76, 0.125, -0.0,
+                                  34.71, 0.917, -0.0,  -80.72};
+  CHECK_NEON(2, double, fillNeon<double>(dresults, VL / 8));
+  std::rotate(dresults.begin(), dresults.begin() + ((VL / 128) % 8),
+              dresults.end());
+  CHECK_NEON(3, double, fillNeon<double>(dresults, VL / 16));
 
   // float
-  initialHeapData_.resize(64);
+  initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0;
-  fheap[1] = -42.76;
-  fheap[2] = -0.125;
-  fheap[3] = 0.0;
-  fheap[4] = 40.26;
-  fheap[5] = -684.72;
-  fheap[6] = -0.15;
-  fheap[7] = 107.86;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
-
+  std::vector<float> fsrc = {
+      1.0f,    -42.76f, -0.125f, 0.0f,   40.26f,   -684.72f, -0.15f,  107.86f,
+      -34.71f, -0.917f, 0.0f,    80.72f, -125.67f, -0.01f,   701.90f, 7.0f};
+  fillHeap<float>(fheap, fsrc, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2992,47 +2578,38 @@ TEST_P(InstSve, fneg) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.s, xzr, x2
     ptrue p1.s
-    
+
     ld1w {z0.s}, p1/z, [x0, x1, lsl #2]
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
 
     fneg z2.s, p1/m, z0.s
     fneg z3.s, p0/m, z1.s
   )");
-
-  CHECK_NEON(2, float,
-             {-1.0f, 42.76f, 0.125f, -0.0f, -40.26f, 684.72f, 0.15f, -107.86f,
-              34.71f, 0.917f, -0.0f, -80.72f, 125.67f, 0.01f, -701.90f, -7.0f});
-  CHECK_NEON(3, float,
-             {34.71f, 0.917f, -0.0f, -80.72f, 125.67f, 0.01f, -701.90f, -7.0f,
-              0, 0, 0, 0, 0, 0, 0, 0});
+  std::vector<float> fresults = {
+      -1.0f,  42.76f, 0.125f, -0.0f,   -40.26f, 684.72f, 0.15f,    -107.86f,
+      34.71f, 0.917f, -0.0f,  -80.72f, 125.67f, 0.01f,   -701.90f, -7.0f};
+  CHECK_NEON(2, float, fillNeon<float>(fresults, VL / 8));
+  std::rotate(fresults.begin(), fresults.begin() + ((VL / 64) % 16),
+              fresults.end());
+  CHECK_NEON(3, float, fillNeon<float>(fresults, VL / 16));
 }
 
 TEST_P(InstSve, frintn) {
-  // VL = 512-bits
   // 32-bit
-  initialHeapData_.resize(64);
+  initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0f;
-  fheap[1] = -42.5f;
-  fheap[2] = -0.125f;
-  fheap[3] = 0.0f;
-  fheap[4] = 40.5f;
-  fheap[5] = -684.72f;
-  fheap[6] = -0.15f;
-  fheap[7] = 107.86f;
-
-  fheap[8] = -34.5f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.5f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.5f;
+  std::vector<float> fsrcA = {1.0f,  -42.5f,   -0.125f, 0.0f,
+                              40.5f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.5f,  -0.917f, 0.0f,    80.72f,
+                              -125.5f, -0.01f,  701.90f, 7.5f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -3040,7 +2617,11 @@ TEST_P(InstSve, frintn) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     ptrue p0.s
     whilelo p1.s, xzr, x2
 
@@ -3051,22 +2632,18 @@ TEST_P(InstSve, frintn) {
     frintn z0.s, p0/m, z2.s
     frintn z1.s, p1/m, z2.s
   )");
+  std::vector<int32_t> results32A = {1, -42, 0, 0, 40, -685, 0, 108};
+  std::vector<int32_t> results32B = {-34, -1, 0, 81, -126, 0, 702, 8};
   CHECK_NEON(0, int32_t,
-             {1, -42, 0, 0, 40, -685, 0, 108, -34, -1, 0, 81, -126, 0, 702, 8});
-  CHECK_NEON(1, int32_t,
-             {1, -42, 0, 0, 40, -685, 0, 108, 13, 13, 13, 13, 13, 13, 13, 13});
+             fillNeonCombined<int32_t>(results32A, results32B, VL / 8));
+  CHECK_NEON(1, int32_t, fillNeonCombined<int32_t>(results32A, {13}, VL / 8));
 
   // 64-bit
-  initialHeapData_.resize(64);
+  initialHeapData_.resize(VL / 8);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0f;
-  dheap[1] = -42.5f;
-  dheap[2] = -0.125f;
-  dheap[3] = 0.0f;
-  dheap[4] = 40.5f;
-  dheap[5] = -684.72f;
-  dheap[6] = -3.5f;
-  dheap[7] = 107.5f;
+  std::vector<double> dsrcA = {1.0, -42.5, -0.125, 0.0};
+  std::vector<double> dsrcB = {40.5, -684.72, -3.5, 107.5};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -3074,7 +2651,11 @@ TEST_P(InstSve, frintn) {
     svc #0
 
     mov x1, #0
-    mov x2, #4
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     ptrue p0.d
     whilelo p1.d, xzr, x2
 
@@ -3085,32 +2666,21 @@ TEST_P(InstSve, frintn) {
     frintn z0.d, p0/m, z2.d
     frintn z1.d, p1/m, z2.d
   )");
-  CHECK_NEON(0, int64_t, {1, -42, 0, 0, 40, -685, -4, 108});
-  CHECK_NEON(1, int64_t, {1, -42, 0, 0, 13, 13, 13, 13});
+  std::vector<int64_t> results64A = {1, -42, 0, 0};
+  std::vector<int64_t> results64B = {40, -685, -4, 108};
+  CHECK_NEON(0, int64_t,
+             fillNeonCombined<int64_t>(results64A, results64B, VL / 8));
+  CHECK_NEON(1, int64_t, fillNeonCombined<int64_t>(results64A, {13}, VL / 8));
 }
 
 TEST_P(InstSve, fsqrt) {
-  // VL = 512-bits
-  // Float
-  initialHeapData_.resize(68);
+  // float
+  initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0;
-  fheap[1] = 42.76;
-  fheap[2] = 0.125;
-  fheap[3] = 0.0;
-  fheap[4] = 40.26;
-  fheap[5] = 684.72;
-  fheap[6] = 0.15;
-  fheap[7] = 107.86;
-
-  fheap[8] = 34.71f;
-  fheap[9] = 0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = 125.67f;
-  fheap[13] = 0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
+  std::vector<float> fsrc = {1.0f,    42.76f,  0.125f,  0.0f,   40.26f, 684.72f,
+                             0.15f,   107.86f, 34.71f,  0.917f, 0.0f,   80.72f,
+                             125.67f, 0.01f,   701.90f, 7.0f};
+  fillHeap<float>(fheap, fsrc, VL / 32);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -3119,45 +2689,47 @@ TEST_P(InstSve, fsqrt) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.s, xzr, x2
     ptrue p1.s
 
     ld1w {z0.s}, p1/z, [x0, x1, lsl #2]
     ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
 
-    fdup z2.s, #0.5
-    fdup z3.s, #0.5
-
     fsqrt z2.s, p1/m, z0.s
     fsqrt z3.s, p0/m, z1.s
   )");
-
-  CHECK_NEON(2, float,
-             {1, 6.53911304473876953125f, 0.3535533845424652099609375f, 0,
-              6.34507656097412109375f, 26.1671543121337890625f,
-              0.3872983455657958984375f, 10.38556671142578125f,
-              5.891519069671630859375f, 0.95760118961334228515625f, 0,
-              8.98443126678466796875f, 11.21026325225830078125f, 0.1f,
-              26.493396759033203125f, 2.6457512378692626953125f});
-  CHECK_NEON(3, float,
-             {5.891519069671630859375f, 0.95760118961334228515625f, 0,
-              8.98443126678466796875f, 11.21026325225830078125f, 0.1f,
-              26.493396759033203125f, 2.6457512378692626953125f, 0.5f, 0.5f,
-              0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f});
+  std::vector<float> fresults = {1.f,
+                                 6.53911304473876953125f,
+                                 0.3535533845424652099609375f,
+                                 0.f,
+                                 6.34507656097412109375f,
+                                 26.1671543121337890625f,
+                                 0.3872983455657958984375f,
+                                 10.38556671142578125f,
+                                 5.891519069671630859375f,
+                                 0.95760118961334228515625f,
+                                 0.f,
+                                 8.98443126678466796875f,
+                                 11.21026325225830078125f,
+                                 0.1f,
+                                 26.493396759033203125f,
+                                 2.6457512378692626953125f};
+  CHECK_NEON(2, float, fillNeon<float>(fresults, VL / 8));
+  std::rotate(fresults.begin(), fresults.begin() + ((VL / 64) % 16),
+              fresults.end());
+  CHECK_NEON(3, float, fillNeon<float>(fresults, VL / 16));
 
   // Double
-  initialHeapData_.resize(68);
+  initialHeapData_.resize(VL / 8);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = 42.76;
-  dheap[2] = 0.125;
-  dheap[3] = 0.0;
-  dheap[4] = 40.26;
-  dheap[5] = 684.72;
-  dheap[6] = 0.15;
-  dheap[7] = 107.86;
-
+  std::vector<double> dsrc = {1.0,   42.76,  0.125, 0.0,
+                              40.26, 684.72, 0.15,  107.86};
+  fillHeap<double>(dheap, dsrc, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -3165,7 +2737,11 @@ TEST_P(InstSve, fsqrt) {
     svc #0
 
     mov x1, #0
-    mov x2, #4
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+
     whilelo p0.d, xzr, x2
     ptrue p1.d
 
@@ -3177,39 +2753,27 @@ TEST_P(InstSve, fsqrt) {
     fsqrt z2.d, p1/m, z0.d
     fsqrt z3.d, p0/m, z0.d
   )");
-
-  CHECK_NEON(2, double,
-             {1, 6.53911304473876953125f, 0.3535533845424652099609375f, 0,
-              6.34507656097412109375f, 26.1671543121337890625f,
-              0.3872983455657958984375f, 10.38556671142578125f});
-  CHECK_NEON(3, double,
-             {1, 6.53911304473876953125f, 0.3535533845424652099609375f, 0, 0.5,
-              0.5, 0.5, 0.5});
+  std::vector<double> dresults = {1.0,
+                                  6.53911304473876953125,
+                                  0.3535533845424652099609375,
+                                  0.0,
+                                  6.34507656097412109375,
+                                  26.1671543121337890625,
+                                  0.3872983455657958984375,
+                                  10.38556671142578125};
+  CHECK_NEON(2, double, fillNeon<double>(dresults, VL / 8));
+  CHECK_NEON(3, double, fillNeonCombined<double>(dresults, {0.5}, VL / 8));
 }
 
 TEST_P(InstSve, fsub) {
-  // VL = 512-bits
   // float
-  initialHeapData_.resize(128);
+  initialHeapData_.resize(VL / 8);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-  fheap[0] = 1.0;
-  fheap[1] = -42.76;
-  fheap[2] = -0.125;
-  fheap[3] = 0.0;
-  fheap[4] = 40.26;
-  fheap[5] = -684.72;
-  fheap[6] = -0.15;
-  fheap[7] = 107.86;
-
-  fheap[8] = -34.71f;
-  fheap[9] = -0.917f;
-  fheap[10] = 0.0f;
-  fheap[11] = 80.72f;
-  fheap[12] = -125.67f;
-  fheap[13] = -0.01f;
-  fheap[14] = 701.90f;
-  fheap[15] = 7.0f;
-
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 0.0f,
+                              40.26f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.71f,  -0.917f, 0.0f,    80.72f,
+                              -125.67f, -0.01f,  701.90f, 7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -3217,7 +2781,10 @@ TEST_P(InstSve, fsub) {
     svc #0
 
     mov x1, #0
-    mov x2, #8
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
     whilelo p0.s, xzr, x2
 
     ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
@@ -3231,27 +2798,21 @@ TEST_P(InstSve, fsub) {
     
     fsub z4.s, p0/m, z4.s, z1.s
   )");
-  CHECK_NEON(2, float,
-             {-35.71f, 41.843f, 0.125f, 80.72f, -165.93f, 684.709960938f,
-              702.050048828f, -100.86f, 0, 0, 0, 0, 0, 0, 0, 0});
-  CHECK_NEON(4, float,
-             {35.71f, -41.843f, -0.125f, -80.72f, 165.93f, -684.71f,
-              -702.050048828f, 100.86f, -34.71f, -0.917f, 0.0f, 80.72f,
-              -125.67f, -0.01f, 701.90f, 7.0f});
+  std::vector<float> fresultsA = {-35.71f,        41.843f,  0.125f,
+                                  80.72f,         -165.93f, 684.709960938f,
+                                  702.050048828f, -100.86f};
+  CHECK_NEON(2, float, fillNeon<float>(fresultsA, VL / 16));
+  std::vector<float> fresultsB = {35.71f,          -41.843f, -0.125f,
+                                  -80.72f,         165.93f,  -684.709960938f,
+                                  -702.050048828f, 100.86f};
+  CHECK_NEON(4, float, fillNeonCombined<float>(fresultsB, fsrcB, VL / 8));
 
   // double
-  initialHeapData_.resize(64);
+  initialHeapData_.resize(VL / 8);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
-  dheap[0] = 1.0;
-  dheap[1] = -42.76;
-  dheap[2] = -0.125;
-  dheap[3] = 0.0;
-
-  dheap[4] = -34.71;
-  dheap[5] = -0.917;
-  dheap[6] = 0.0;
-  dheap[7] = 80.72;
-
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -3259,7 +2820,10 @@ TEST_P(InstSve, fsub) {
     svc #0
 
     mov x1, #0
-    mov x2, #4
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
     whilelo p0.d, xzr, x2
 
     ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
@@ -3274,10 +2838,10 @@ TEST_P(InstSve, fsub) {
     fsub z3.d, p0/m, z3.d, z1.d
   )");
 
-  CHECK_NEON(2, double, {-35.71, 41.842999999999996, 0.125, 80.72, 0, 0, 0, 0});
-  CHECK_NEON(
-      3, double,
-      {35.71, -41.842999999999996, -0.125, -80.72, -34.71, -0.917, 0.0, 80.72});
+  std::vector<double> dresultsA = {-35.71, 41.842999999999996, 0.125, 80.72};
+  CHECK_NEON(2, double, fillNeon<double>(dresultsA, VL / 16));
+  std::vector<double> dresultsB = {35.71, -41.842999999999996, -0.125, -80.72};
+  CHECK_NEON(3, double, fillNeonCombined<double>(dresultsB, dsrcB, VL / 8));
 }
 
 TEST_P(InstSve, incp) {
