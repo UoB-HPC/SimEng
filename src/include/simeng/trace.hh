@@ -43,7 +43,7 @@ class Trace {
   /** Write out cycle trace and return success int */
   int writeCycleOut(char (&str)[1000], uint64_t traceId, std::string model);
   /** Write out probe trace and return success int */
-  int writeProbeOut(char (&str)[4], uint64_t index, int newline, int start);
+  int writeProbeOut(char (&str)[5], uint64_t index, int newline, int start);
 
   /** Set cycle trace data */
   void setCycleTraces(cycleTrace cycle);

@@ -49,7 +49,7 @@ int Trace::writeCycleOut(char (&str)[1000], uint64_t traceId,
 }
 
 // Write formatted probe events to output file
-int Trace::writeProbeOut(char (&str)[4], uint64_t index, int newline,
+int Trace::writeProbeOut(char (&str)[5], uint64_t index, int newline,
                          int start) {
   if (!start) {
     if (newline)
