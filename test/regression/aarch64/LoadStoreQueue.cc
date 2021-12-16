@@ -90,7 +90,9 @@ TEST_P(LoadStoreQueue, SpeculativeInvalidLoad) {
   )");
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, LoadStoreQueue, ::testing::Values(OUTOFORDER),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, LoadStoreQueue,
+                         ::testing::Values(std::make_tuple(OUTOFORDER,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

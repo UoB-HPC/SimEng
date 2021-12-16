@@ -17,6 +17,50 @@
    "60, 61]}}, Reservation-Stations: {'0': {Size: 60, Ports: [0]}}, "          \
    "Execution-Units: {'0': {Pipelined: true}}}")
 
+/** A helper function to convert the supplied parameters of
+ * INSTANTIATE_TEST_SUITE_P into test name. */
+inline std::string paramToString(
+    const testing::TestParamInfo<std::tuple<CoreType, YAML::Node>> val) {
+  YAML::Node config = YAML::Load(AARCH64_CONFIG);
+
+  // Get core type as string
+  std::string coreString = "";
+  switch (std::get<0>(val.param)) {
+    case EMULATION:
+      coreString = "emulation";
+      break;
+    case INORDER:
+      coreString = "inorder";
+      break;
+    case OUTOFORDER:
+      coreString = "outoforder";
+      break;
+    default:
+      coreString = "unknown";
+      break;
+  }
+  // Get vector length as string
+  std::string vectorLengthString = "";
+  if (std::get<1>(val.param)["Vector-Length"].IsDefined() &&
+      !(std::get<1>(val.param)["Vector-Length"].IsNull())) {
+    vectorLengthString =
+        "WithVL" + std::get<1>(val.param)["Vector-Length"].as<std::string>();
+  }
+  return coreString + vectorLengthString;
+}
+
+/** A helper function to generate all coreType vector-length pairs. */
+inline std::vector<std::tuple<CoreType, YAML::Node>> genCoreTypeVLPairs(
+    CoreType type) {
+  std::vector<std::tuple<CoreType, YAML::Node>> coreVLPairs;
+  for (uint64_t i = 128; i <= 2048; i += 128) {
+    YAML::Node vlNode;
+    vlNode["Vector-Length"] = i;
+    coreVLPairs.push_back(std::make_tuple(type, vlNode));
+  }
+  return coreVLPairs;
+}
+
 /** A helper macro to run a snippet of Armv8 assembly code, returning from the
  * calling function if a fatal error occurs. Four bytes containing zeros are
  * appended to the source to ensure that the program will terminate with an
@@ -155,4 +199,136 @@ class AArch64RegressionTest : public RegressionTest {
 
   /** Get the overflow flag from the NZCV register. */
   bool getOverflowFlag() const;
+
+  /** Generate an array representing a NEON register from a source vector and a
+   * number of elements defined by a number of bytes used. */
+  template <typename T>
+  std::array<T, (256 / sizeof(T))> fillNeon(std::vector<T> src,
+                                            int num_bytes) const {
+    // Create array to be returned and fill with a default value of 0
+    std::array<T, (256 / sizeof(T))> generatedArray;
+    generatedArray.fill(0);
+    // Fill array by cycling through source elements
+    for (int i = 0; i < (num_bytes / sizeof(T)); i++) {
+      generatedArray[i] = src[i % src.size()];
+    }
+    return generatedArray;
+  }
+
+  /** Generate an array representing a NEON register by combining two source
+   * vectors and a number of elements defined by a number of bytes used. */
+  template <typename T>
+  std::array<T, (256 / sizeof(T))> fillNeonCombined(std::vector<T> srcA,
+                                                    std::vector<T> srcB,
+                                                    int num_bytes) const {
+    // Create array to be returned and fill with a default value of 0
+    std::array<T, (256 / sizeof(T))> generatedArray;
+    generatedArray.fill(0);
+    // Fill array by cycling through source elements
+    int num_elements = (num_bytes / sizeof(T)) / 2;
+    for (int i = 0; i < num_elements; i++) {
+      generatedArray[i] = srcA[i % srcA.size()];
+      generatedArray[i + num_elements] = srcB[i % srcB.size()];
+    }
+    return generatedArray;
+  }
+
+  /** Generate an array representing a NEON register from a base value and an
+   * offset. */
+  template <typename T>
+  std::array<T, (256 / sizeof(T))> fillNeonBaseAndOffset(T base, T offset,
+                                                         int num_bytes) const {
+    // Create array to be returned and fill with a default value of 0
+    std::array<T, (256 / sizeof(T))> generatedArray;
+    generatedArray.fill(0);
+    // Fill array by adding an increasing offset value to the base value
+    for (int i = 0; i < (num_bytes / sizeof(T)); i++) {
+      generatedArray[i] = base + (i * offset);
+    }
+    return generatedArray;
+  }
+
+  /** Fill an array dest of T entries, representing the initialHeapData_, from a
+   * source vector and a number of entries. */
+  template <typename T>
+  void fillHeap(T* dest, std::vector<T> src, int entries) const {
+    // Fill destination by cycling through source elements
+    for (int i = 0; i < entries; i++) {
+      dest[i] = src[i % src.size()];
+    }
+  }
+
+  /** Fill an array dest of T entries, representing the initialHeapData_, by
+   * combining two source vectors and a number of entries. */
+  template <typename T>
+  void fillHeapCombined(T* dest, std::vector<T> srcA, std::vector<T> srcB,
+                        int entries) const {
+    // Fill destination by cycling through source elements
+    for (int i = 0; i < entries / 2; i++) {
+      dest[i] = srcA[i % srcA.size()];
+      dest[i + (entries / 2)] = srcB[i % srcB.size()];
+    }
+  }
+
+  /** Generate an array representing a PREDICATE register from a number of
+   * lanes, a pattern and a vector arrangement used in bytes. */
+  std::array<uint64_t, 4> fillPred(int num_lanes, std::vector<uint8_t> pattern,
+                                   int byte_arrangement) const {
+    // Create array to be returned and fill with a default value of 0
+    std::array<uint64_t, 4> generatedArray;
+    generatedArray.fill(0);
+    // Get number of lanes accounting for byte_arrangement
+    int grouped_lanes = (num_lanes % byte_arrangement != 0)
+                            ? std::ceil((double)num_lanes / byte_arrangement)
+                            : (num_lanes / byte_arrangement);
+    // Activate number of lanes
+    for (int i = 0; i < grouped_lanes; i++) {
+      if (pattern[i % pattern.size()]) {
+        generatedArray[(int)(i * byte_arrangement) / 64] |=
+            1ull << ((i * byte_arrangement) % 64);
+      }
+    }
+    return generatedArray;
+  }
+
+  /** Generate an array representing a PREDICATE register from a source vector
+   * and a number of elements defined by a number of bytes used. */
+  template <typename T>
+  std::array<T, (32 / sizeof(T))> fillPredFromSource(std::vector<T> src,
+                                                     int num_bytes) const {
+    // Create array to be returned and fill with a default value of 0
+    std::array<T, (32 / sizeof(T))> generatedArray;
+    generatedArray.fill(0);
+    // Fill array by cycling through source elements
+    for (int i = 0; i < (num_bytes / sizeof(T)); i++) {
+      generatedArray[i] = src[i % src.size()];
+    }
+    return generatedArray;
+  }
+
+  /** Generate an array representing a PREDICATE register by combining two
+   * source vectors and a number of elements defined by a number of bytes used.
+   */
+  template <typename T>
+  std::array<T, (32 / sizeof(T))> fillPredFromTwoSources(std::vector<T> srcA,
+                                                         std::vector<T> srcB,
+                                                         int num_bytes) const {
+    // Create array to be returned and fill with a default value of 0
+    std::array<T, (32 / sizeof(T))> generatedArray;
+    generatedArray.fill(0);
+    // Fill array by cycling through source elements
+    int num_elements = (num_bytes / sizeof(T)) / 2;
+    for (int i = 0; i < num_elements; i++) {
+      generatedArray[i] = srcA[i % srcA.size()];
+      generatedArray[i + num_elements] = srcB[i % srcB.size()];
+    }
+    return generatedArray;
+  }
+
+  /** The current vector-length being used by the test suite. */
+  const uint64_t VL =
+      (std::get<1>(GetParam())["Vector-Length"].IsDefined() &&
+       !(std::get<1>(GetParam())["Vector-Length"].IsNull()))
+          ? std::get<1>(GetParam())["Vector-Length"].as<uint64_t>()
+          : 0;
 };

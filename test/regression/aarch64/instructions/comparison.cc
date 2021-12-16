@@ -349,7 +349,9 @@ TEST_P(InstComparison, tstx) {
   EXPECT_EQ(getNZCV(), 0b1000);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, InstComparison, ::testing::Values(EMULATION),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, InstComparison,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

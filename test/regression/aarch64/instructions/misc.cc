@@ -45,7 +45,9 @@ TEST_P(InstMisc, ret) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, InstMisc, ::testing::Values(EMULATION),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, InstMisc,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

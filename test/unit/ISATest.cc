@@ -8,11 +8,12 @@ namespace {
 // Test that we can create an AArch64 Architecture object
 TEST(ISATest, CreateAArch64) {
   simeng::kernel::Linux kernel;
+  YAML::Node config =
+      YAML::Load("{Core: {Simulation-Mode: emulation, Vector-Length: 512}}");
   // Pass a config file with only the options required by the aarch64
   // architecture class to function
   std::unique_ptr<simeng::arch::Architecture> isa =
-      std::make_unique<simeng::arch::aarch64::Architecture>(
-          kernel, YAML::Load("{Core: {Simulation-Mode: emulation}}"));
+      std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
 
   EXPECT_GT(isa->getRegisterFileStructures().size(), 0);
 }

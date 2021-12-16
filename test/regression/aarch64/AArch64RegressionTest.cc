@@ -11,7 +11,7 @@ void AArch64RegressionTest::run(const char* source) {
 
 YAML::Node AArch64RegressionTest::generateConfig() const {
   YAML::Node config = YAML::Load(AARCH64_CONFIG);
-  switch (GetParam()) {
+  switch (std::get<0>(GetParam())) {
     case EMULATION:
       config["Core"]["Simulation-Mode"] = "emulation";
       break;
@@ -21,6 +21,16 @@ YAML::Node AArch64RegressionTest::generateConfig() const {
     case OUTOFORDER:
       config["Core"]["Simulation-Mode"] = "outoforder";
       break;
+  }
+
+  YAML::Node additionalConfig = std::get<1>(GetParam());
+  // Merge specific aarch64 config options
+  if (additionalConfig["Vector-Length"].IsDefined() &&
+      !(additionalConfig["Vector-Length"].IsNull())) {
+    config["Core"]["Vector-Length"] =
+        additionalConfig["Vector-Length"].as<uint64_t>();
+  } else {
+    config["Core"]["Vector-Length"] = 512;
   }
   return config;
 }

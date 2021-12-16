@@ -159,10 +159,21 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;
     case Opcode::AArch64_DECD_XPiI:
       [[fallthrough]];
-    case Opcode::AArch64_DECB_XPiI:
+    case Opcode::AArch64_DECB_XPiI: {
       // lacking access specifiers for destination
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      std::string str(operandStr);
+      if (str.length() < 4) {
+        operandCount = 2;
+        operands[1].type = ARM64_OP_IMM;
+        operands[1].imm = 1;
+        operands[1].access = CS_AC_READ;
+        operands[1].shift = {ARM64_SFT_INVALID, 0};
+        operands[1].ext = ARM64_EXT_INVALID;
+        operands[1].vector_index = -1;
+      }
       break;
+    }
     case Opcode::AArch64_EOR_PPzPP: {
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
@@ -224,6 +235,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       operands[3].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_ADDPL_XXI:
+      [[fallthrough]];
     case Opcode::AArch64_ADDVL_XXI:
       [[fallthrough]];
     case Opcode::AArch64_MOVPRFX_ZPzZ_D:
@@ -420,6 +433,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_MUL_ZPmZ_H:
       [[fallthrough]];
     case Opcode::AArch64_MUL_ZPmZ_S:
+      [[fallthrough]];
+    case Opcode::AArch64_ORR_PPzPP:
       [[fallthrough]];
     case Opcode::AArch64_SEL_ZPZZ_D:
       [[fallthrough]];

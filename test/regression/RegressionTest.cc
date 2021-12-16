@@ -95,7 +95,7 @@ void RegressionTest::run(const char* source, const char* triple) {
   // Create a branch predictor for a pipelined core
   simeng::BTBPredictor predictor(8);
   // Create the core model
-  switch (GetParam()) {
+  switch (std::get<0>(GetParam())) {
     case EMULATION:
       core_ = std::make_unique<simeng::models::emulation::Core>(
           instructionMemory, *flatDataMemory, entryPoint, processMemorySize_,

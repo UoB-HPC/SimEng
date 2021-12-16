@@ -14,8 +14,11 @@ TEST_P(Exception, misaligned_pc) {
   EXPECT_EQ(stdout_.substr(0, sizeof(err) - 1), err);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, Exception,
-                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(
+    AArch64, Exception,
+    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
+                      std::make_tuple(INORDER, YAML::Load("{}")),
+                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
+    paramToString);
 
 }  // namespace

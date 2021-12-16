@@ -165,11 +165,11 @@ TEST_P(Syscall, faccessat) {
     mov x20, x0
 
     # Need to open the directory
-    # dfd = openat(AT_FDCWD, dirPath, O_DIRECTORY)
-    # Flags = 0x10000
+    # dfd = openat(AT_FDCWD, dirPath, O_RDONLY)
+    # Flags = 0x0
     mov x0, -100
     add x1, x20, #10
-    mov x2, #65536
+    mov x2, #0
     mov x8, #56
     svc #0
     mov x21, x0
@@ -189,7 +189,7 @@ TEST_P(Syscall, faccessat) {
 
 #ifdef SYS_getdents
 TEST_P(Syscall, getdents64) {
-  const char filepath[] = SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles/";
+  const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/\0";
 
   // Reserve 32768 bytes for buffer
   initialHeapData_.resize(32768 + strlen(filepath) + 1);
@@ -205,8 +205,8 @@ TEST_P(Syscall, getdents64) {
     mov x20, x0
 
     # Need to open the directory
-    # fd = openat(AT_FDCWD, filepath, O_PATH)
-    # Flags = 0x200000
+    # dfd = openat(AT_FDCWD, filepath, O_RDONLY)
+    # Flags = 0x0
     mov x0, -100
     add x1, x20, 32768
     mov x2, #0
@@ -214,7 +214,7 @@ TEST_P(Syscall, getdents64) {
     svc #0
     mov x21, x0
 
-    # getdents64(fd, bufptr, count)
+    # getdents64(dfd, bufptr, count)
     mov x0, x21
     mov x1, x20
     mov x2, #32768
@@ -222,7 +222,7 @@ TEST_P(Syscall, getdents64) {
     svc #0
     mov x22, x0
   )");
-  EXPECT_EQ(getGeneralRegister<int64_t>(22), 80);
+  EXPECT_EQ(getGeneralRegister<int64_t>(22), 120);
 }
 #endif
 
@@ -692,11 +692,11 @@ TEST_P(Syscall, newfstatat) {
     mov x20, x0
 
     # Need to open the directory
-    # dfd = openat(AT_FDCWD, dirPath, O_DIRECTORY)
-    # Flags = 0x10000
+    # dfd = openat(AT_FDCWD, dirPath, O_RDONLY)
+    # Flags = 0x0
     mov x0, -100
     add x1, x20, #138
-    mov x2, #65536
+    mov x2, #0
     mov x8, #56
     svc #0
     mov x21, x0
@@ -809,8 +809,11 @@ TEST_P(Syscall, ftruncate) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(23), 0);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, Syscall,
-                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(
+    AArch64, Syscall,
+    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
+                      std::make_tuple(INORDER, YAML::Load("{}")),
+                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
+    paramToString);
 
 }  // namespace

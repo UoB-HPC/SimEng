@@ -50,6 +50,9 @@ class Architecture : public arch::Architecture {
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
 
+  /** Returns the current vector length set by the provided configuration. */
+  uint64_t getVectorLength() const;
+
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
@@ -82,6 +85,9 @@ class Architecture : public arch::Architecture {
 
   /** A reference to a Linux kernel object to forward syscalls to. */
   kernel::Linux& linux_;
+
+  /** The vector length used by the SVE extension in bits. */
+  uint64_t VL_;
 };
 
 }  // namespace aarch64

@@ -267,7 +267,9 @@ TEST_P(InstBitmanip, ubfm) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x0000000007A00000ull);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, InstBitmanip, ::testing::Values(EMULATION),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, InstBitmanip,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

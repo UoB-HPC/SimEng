@@ -61,7 +61,9 @@ TEST_P(InstDiv, udiv) {
   EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0u);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, InstDiv, ::testing::Values(EMULATION),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, InstDiv,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

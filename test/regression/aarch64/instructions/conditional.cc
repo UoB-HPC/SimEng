@@ -252,7 +252,9 @@ TEST_P(InstConditional, tbz) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 15u);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, InstConditional, ::testing::Values(EMULATION),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, InstConditional,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

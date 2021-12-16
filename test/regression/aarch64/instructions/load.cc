@@ -987,7 +987,9 @@ TEST_P(InstLoad, ldxr) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 512);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, InstLoad, ::testing::Values(EMULATION),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(AArch64, InstLoad,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace
