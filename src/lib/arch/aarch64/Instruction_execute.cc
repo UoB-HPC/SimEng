@@ -5417,7 +5417,7 @@ void Instruction::execute() {
           out[i] = d[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MOVPRFX_ZPzZ_D: {  // movprfx zd.d, pg/z, zn.d
@@ -6257,7 +6257,7 @@ void Instruction::execute() {
         out[i] = std::max(n[i], static_cast<int32_t>(imm));
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SMAX_ZPmZ_S: {  // smax zd.s, pg/m, zn.s, zm.s

@@ -303,10 +303,10 @@ int main(int argc, char** argv) {
             << " MIPS)" << std::endl;
 
   // If Special Files directory was created, now remove it
-  if (config["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
-    // Remove special files dir
-    // SFdir.RemoveExistingSFDir();
-  }
+  // if (config["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
+  // Remove special files dir
+  // SFdir.RemoveExistingSFDir();
+  //}
 
 // Print build metadata and core statistics in YAML format
 // to facilitate parsing. Print "YAML-SEQ" to indicate beginning
