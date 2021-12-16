@@ -1,5 +1,7 @@
 #include "simeng/SpecialFileDirGen.hh"
 
+#include <iostream>
+
 namespace simeng {
 
 SpecialFileDirGen::SpecialFileDirGen(YAML::Node config) {
@@ -18,7 +20,12 @@ SpecialFileDirGen::SpecialFileDirGen(YAML::Node config) {
 }
 
 void SpecialFileDirGen::RemoveExistingSFDir() {
-  std::filesystem::remove_all(specialFilesParentDir_ + "/specialFiles/");
+  const std::string rm_input =
+      "rm -r " + specialFilesParentDir_ + "/specialFiles/";
+  const std::string mk_input =
+      "mkdir " + specialFilesParentDir_ + "/specialFiles/";
+  system(rm_input.c_str());
+  system(mk_input.c_str());
   return;
 }
 
@@ -30,18 +37,14 @@ void SpecialFileDirGen::GenerateSFDir() {
   const std::string cpu_base_dir =
       specialFilesParentDir_ + "/specialFiles/sys/devices/system/cpu/cpu";
 
-  // Create special file directory structure
-  std::filesystem::create_directory(specialFilesParentDir_ + "/specialFiles/");
-  std::filesystem::create_directory(specialFilesParentDir_ +
-                                    "/specialFiles/proc/");
-  std::filesystem::create_directory(specialFilesParentDir_ +
-                                    "/specialFiles/sys/");
-  std::filesystem::create_directory(specialFilesParentDir_ +
-                                    "/specialFiles/sys/devices/");
-  std::filesystem::create_directory(specialFilesParentDir_ +
-                                    "/specialFiles/sys/devices/system/");
-  std::filesystem::create_directory(specialFilesParentDir_ +
-                                    "/specialFiles/sys/devices/system/cpu/");
+  system(("mkdir " + proc_dir).c_str());
+  system(("mkdir " + specialFilesParentDir_ + "/specialFiles/sys/").c_str());
+  system(("mkdir " + specialFilesParentDir_ + "/specialFiles/sys/devices/")
+             .c_str());
+  system(
+      ("mkdir " + specialFilesParentDir_ + "/specialFiles/sys/devices/system/")
+          .c_str());
+  system(("mkdir " + online_dir).c_str());
 
   // Create '/proc/cpuinfo' file.
   std::ofstream cpuinfo_File(proc_dir + "cpuinfo");
@@ -89,9 +92,9 @@ void SpecialFileDirGen::GenerateSFDir() {
 
   // Create sub directory for each CPU core and required files.
   for (int i = 0; i < core_count * socket_count * smt; i++) {
-    std::filesystem::create_directory(cpu_base_dir + std::to_string(i) + "/");
-    std::filesystem::create_directory(cpu_base_dir + std::to_string(i) +
-                                      "/topology/");
+    system(("mkdir " + cpu_base_dir + std::to_string(i) + "/").c_str());
+    system(
+        ("mkdir " + cpu_base_dir + std::to_string(i) + "/topology/").c_str());
   }
 
   // Create '/sys/devices/system/cpu/cpuX/topology/{core_id,
