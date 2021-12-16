@@ -126,7 +126,6 @@ uint64_t Linux::clockGetTime(uint64_t clkId, uint64_t systemTimer,
 int64_t Linux::ftruncate(uint64_t fd, uint64_t length) {
   assert(fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd].first;
-  ;
   if (hfd < 0) {
     return EBADF;
   }
