@@ -16,7 +16,8 @@
 
 #define DEFAULT_CONFIG                                                        \
   ("{Core: {Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5, "        \
-   "Fetch-Block-Size: 32}, Register-Set: {GeneralPurpose-Count: "             \
+   "Fetch-Block-Size: 32}, Process-Image: {Heap-Size: 10485760, "             \
+   "Stack-Size: 1048576}, Register-Set: {GeneralPurpose-Count: "              \
    "154, FloatingPoint/SVE-Count: 90, Predicate-Count: 17, "                  \
    "Conditional-Count: 128}, Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, " \
    "FrontEnd: 4, LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, "      \
@@ -32,9 +33,10 @@
    "60, Ports: [0, 1, 2, 3, 4, 5]}}, Execution-Units: {'0': {Pipelined: "     \
    "true}, '1': {Pipelined: true}, '2': {Pipelined: true}, '3': {Pipelined: " \
    "true}, '4': {Pipelined: true}, '5': {Pipelined: true}}, CPU-Info: "       \
-   "{Generate-Special-Dir: F, Core-Count: 1, BogoMIPS: 0.00, Features: , "    \
-   "CPU-Implementer: 0, CPU-Architecture: 0, CPU-Variant: 0, CPU-Part: 0, "   \
-   "CPU-Revision: 0, Package-Count: 1}}")
+   "{Generate-Special-Dir: F, Core-Count: 1, Socket-Count: 1, SMT: 1, "       \
+   "BogoMIPS: 200.00, Features: fp asimd evtstrm atomics cpuid, "             \
+   "CPU-Implementer: 0x0, CPU-Architecture: 0, CPU-Variant: 0x0, CPU-Part: "  \
+   "0x0, CPU-Revision: 0, Package-Count: 1}}")
 
 namespace simeng {
 
