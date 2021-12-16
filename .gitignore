@@ -20,3 +20,6 @@ CMakeFiles/
 
 **/capstone-config-version.cmake
 **/capstone-config.cmake
+
+probe.*
+trace.*
