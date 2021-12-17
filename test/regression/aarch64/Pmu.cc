@@ -262,8 +262,11 @@ TEST_P(PMU, readInstructionCount) {
   EXPECT_EQ(getMemoryValue<uint64_t>(process_->getHeapStart() + 240), 1);
 }
 
-INSTANTIATE_TEST_SUITE_P(AArch64, PMU,
-                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(
+    AArch64, PMU,
+    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
+                      std::make_tuple(INORDER, YAML::Load("{}")),
+                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
+    paramToString);
 
 }  // namespace
