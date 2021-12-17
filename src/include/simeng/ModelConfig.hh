@@ -16,8 +16,8 @@
 
 #define DEFAULT_CONFIG                                                        \
   ("{Core: {Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5, "        \
-   "Fetch-Block-Size: 32}, Process-Image: {Heap-Size: 10485760, "             \
-   "Stack-Size: 1048576}, Register-Set: {GeneralPurpose-Count: "              \
+   "Fetch-Block-Size: 32, Vector-Length: 512}, Process-Image: {Heap-Size: "   \
+   "10485760, Stack-Size: 1048576}, Register-Set: {GeneralPurpose-Count: "    \
    "154, FloatingPoint/SVE-Count: 90, Predicate-Count: 17, "                  \
    "Conditional-Count: 128}, Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, " \
    "FrontEnd: 4, LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, "      \

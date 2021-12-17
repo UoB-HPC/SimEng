@@ -55,7 +55,7 @@ uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
       assert(dfd < processStates_[0].fileDescriptorTable.size());
       dfd_temp = processStates_[0].fileDescriptorTable[dfd];
       if (dfd_temp < 0) {
-        return EBADF;
+        return -1;
       }
     }
   }
@@ -140,7 +140,7 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
 
   // Get correct dirfd
   int64_t dirfd = Linux::getDirFd(dfd, filename);
-  if (dirfd == EBADF) return dirfd;
+  if (dirfd == -1) return EBADF;
 
   // Pass call through to host
   int64_t retval = ::faccessat(dirfd, new_pathname.c_str(), mode, flag);
@@ -174,7 +174,7 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
 
   // Get correct dirfd
   int64_t dirfd = Linux::getDirFd(dfd, filename);
-  if (dirfd == EBADF) return dirfd;
+  if (dirfd == -1) return EBADF;
 
   // Pass call through to host
   struct ::stat statbuf;
@@ -464,7 +464,7 @@ int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
 
   // Get correct dirfd
   int64_t dirfd = Linux::getDirFd(dfd, filename);
-  if (dirfd == EBADF) return dirfd;
+  if (dirfd == -1) return EBADF;
 
   // Pass call through to host
   int64_t hfd = ::openat(dirfd, new_pathname.c_str(), newFlags, mode);

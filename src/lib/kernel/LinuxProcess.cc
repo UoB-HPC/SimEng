@@ -17,9 +17,9 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 
 LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
                            YAML::Node config)
-    : commandLine_(commandLine),
-      STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
-      HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
+    : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
+      HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()),
+      commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
   Elf elf(commandLine[0]);

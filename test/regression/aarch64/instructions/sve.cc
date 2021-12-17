@@ -4328,7 +4328,7 @@ TEST_P(InstSve, st1d) {
 
     sub sp, sp, #4095
     mov x1, #0
-    mov x4, #512
+    mov x4, #256
     madd x4, x4, x4, x4
     ptrue p0.d
     ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
@@ -4354,7 +4354,7 @@ TEST_P(InstSve, st1d) {
         src[i % 4]);
   }
   for (int i = 0; i < (VL / 64); i++) {
-    EXPECT_EQ(getMemoryValue<uint64_t>(262656 + (i * 8)), src[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint64_t>(65792 + (i * 8)), src[i % 4]);
   }
   std::rotate(src.begin(), src.begin() + 2, src.end());
   for (int i = 0; i < (VL / 128); i++) {

@@ -135,9 +135,9 @@ TEST_P(Syscall, faccessat) {
     svc #0
     mov x20, x0
 
-    # faccessat(-1, fullFilePath, F_OK, 0) = 0
+    # faccessat(-5, fullFilePath, F_OK, 0) = 0
     # If an absolute filepath is referenced, dirfd is ignored
-    mov x0, #-1
+    mov x0, #-5
     mov x1, x20
     mov x2, #0
     mov x3, #0
@@ -691,11 +691,7 @@ TEST_P(Syscall, newfstatat) {
 
     # Need to open the directory
     # dfd = openat(AT_FDCWD, dirPath, O_RDONLY)
-<<<<<<< HEAD
     # Flags = 0x0
-=======
-    # Flags = 0x10000
->>>>>>> 44e829d (Changed getdents64 test to access a static directory (as specialFiles directory subject to change between config files).)
     mov x0, -100
     add x1, x20, #138
     mov x2, #0
