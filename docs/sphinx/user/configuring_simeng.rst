@@ -34,7 +34,19 @@ Clock-Frequency
 Fetch-Block-sizes
     The size, in bytes, of the block fetched from the instruction cache.
 
-.. - Vector-Length
+Vector-Length
+    The vector length used by instructions belonging to ARM's Scalable Vector Extension. Supported vector lengths are those between 128 and 2048 in increments of 128.
+
+Process Image
+-------------
+
+This allows the stack and heap size to be altered as required.
+
+Heap-Size
+    Size of the Heap; defined in bytes.
+
+Stack- Size 
+    Size of the Stack in memory; defined in bytes.
 
 Register-set
 ------------
@@ -227,3 +239,48 @@ The following structure must be adhered to when defining group latencies:
 With N as the number of user-defined latency mappings. The default latencies, both execution and throughput, for those instruction groups not covered are 1.
 
 **Note**, unlike other operations, the execution latency defined for load/store operations are triggered in the LoadStoreQueue as opposed to within the execution unit (more details :ref:`here <lsq-restrict>`).
+
+CPU Info
+--------
+    This section contains information about the physical properties of the CPU.
+    These fields are currently only used to generate a replica of the required Special Files directory structure.
+
+Generate-Special-Dir
+    Values are either "T" or "F", representing True or False.
+    Dictates whether or not SimEng should generate the SpecialFiles directory tree at runtime.
+    The alternative to this would be to copy in the required SpecialFiles by hand.
+
+Core-Count
+    Defines the total number of Physical cores (Not including threads).
+
+.. Note:: Max Core-Count currently supported is 1.
+
+Socket-Count
+    Defines the number of sockets used. Typically set to 1, but can be more for CPU's that support multi-socket implementations (i.e. ThunderX2).
+
+.. Note:: Max Socket-Count currently supported is 1.
+.. Note:: If Socket-Count is more than 1, Core-Count must reflect the number of physical cores per socket.
+
+SMT
+    Defines the number of threads present on each core.
+
+.. Note:: Max SMT currently supported is 1.
+
+The fields listed below are used to generate `/proc/cpuinfo`. Their values can be found there on a Linux system using the CPU being modelled. With each field is a description of the format required and an example value.
+
+    - BogoMIPS : Float in format `x.00`, i.e. `200.00`
+    - Features : String with values seperated with a space, i.e. `"fp asimd sha1 sha2 fphp"`
+    - CPU-Implementer : Hex value represented as a string, i.e. `"0x46"`
+    - CPU-Architecture : Integer, i.e. `8`
+    - CPU-Variant : Hex value represented as a string, i.e. `"0x1"`
+    - CPU-Part : Hex value represented as a string, i.e. `"0x001"`
+    - CPU-Revision : Integer, i.e. `0`
+
+.. Note:: If values are unknown then set equal to 0 in the correct format
+
+Package-Count
+    Used to generate `/sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}` files.
+    On each CPU the cores are split into packages. The number of packages used can be calculated by analysing the `physical_package_id` files on a Linux system using the CPU being modelled.
+
+.. Note:: Core-Count must be wholely divisible by Package-Count.
+.. Note:: Max Package-Count currently supported is 1.
