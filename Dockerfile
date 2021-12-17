@@ -12,11 +12,10 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY . /root/SimEng
-
-RUN cd /root/SimEng && \
+RUN git clone https://github.com/UoB-HPC/SimEng.git /root/SimEng && \
+    cd /root/SimEng && \
     rm -rf build && \
-    CC=gcc CXX=g++ cmake -Bbuild -S. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DSIMENG_USE_EXTERNAL_LLVM=ON -DLLVM_DIR=/usr/lib/llvm-9/cmake && \
+    CC=gcc CXX=g++ cmake -Bbuild -S. -GNinja -DSIMENG_OPTIMIZE=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local -DSIMENG_ENABLE_TESTS=ON -DSIMENG_USE_EXTERNAL_LLVM=ON -DLLVM_DIR=/usr/lib/llvm-9/cmake && \
     cd build && \
     ninja && \
     ninja install
