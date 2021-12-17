@@ -135,9 +135,9 @@ TEST_P(Syscall, faccessat) {
     svc #0
     mov x20, x0
 
-    # faccessat(-1, fullFilePath, F_OK, 0) = 0
+    # faccessat(-5, fullFilePath, F_OK, 0) = 0
     # If an absolute filepath is referenced, dirfd is ignored
-    mov x0, #-1
+    mov x0, #-5
     mov x1, x20
     mov x2, #0
     mov x3, #0
@@ -187,7 +187,6 @@ TEST_P(Syscall, faccessat) {
   EXPECT_EQ(getGeneralRegister<int64_t>(27), 0);
 }
 
-#ifdef SYS_getdents
 TEST_P(Syscall, getdents64) {
   const char filepath[] = SIMENG_AARCH64_TEST_ROOT "/data/\0";
 
@@ -196,7 +195,6 @@ TEST_P(Syscall, getdents64) {
 
   // Copy filepath to heap
   memcpy(initialHeapData_.data() + 32768, filepath, strlen(filepath) + 1);
-
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -222,9 +220,9 @@ TEST_P(Syscall, getdents64) {
     svc #0
     mov x22, x0
   )");
+  // Return value verified on system that utilises the actual getdents64 syscall
   EXPECT_EQ(getGeneralRegister<int64_t>(22), 120);
 }
-#endif
 
 // Test reading from and seeking through a file
 TEST_P(Syscall, file_read) {

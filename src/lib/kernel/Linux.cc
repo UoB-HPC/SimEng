@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/termios.h>
+#include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
 
@@ -33,9 +34,11 @@ void Linux::createProcess(const LinuxProcess& process) {
   processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
   processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
 
-  // Define special file path replacement paths
-  specialPathTranslations_.insert(
-      {"/sys/devices/system/cpu/online", specialFilesDir_ + "online"});
+  // Define vector of all currently supported special file paths & files.
+  supportedSpecialFiles_.insert(
+      supportedSpecialFiles_.end(),
+      {"/proc/cpuinfo", "proc/stat", "/sys/devices/system/cpu",
+       "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
 }
 
 uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
@@ -52,11 +55,30 @@ uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
       assert(dfd < processStates_[0].fileDescriptorTable.size());
       dfd_temp = processStates_[0].fileDescriptorTable[dfd];
       if (dfd_temp < 0) {
-        return EBADF;
+        return -1;
       }
     }
   }
   return dfd_temp;
+}
+
+std::string Linux::getSpecialFile(const std::string filename) {
+  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
+    if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
+      for (int i = 0; i < supportedSpecialFiles_.size(); i++) {
+        if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
+          std::cerr << "-- Using Special File: " << filename.c_str()
+                    << std::endl;
+          return specialFilesDir_ + filename;
+        }
+      }
+      std::cerr << "-- WARNING: unable to open unsupported special file: "
+                << "'" << filename.c_str() << "'" << std::endl
+                << "--          allowing simulation to continue" << std::endl;
+      break;
+    }
+  }
+  return filename;
 }
 
 uint64_t Linux::getInitialStackPointer() const {
@@ -110,28 +132,18 @@ int64_t Linux::ftruncate(uint64_t fd, uint64_t length) {
 int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
                          int64_t flag) {
   // Resolve absolute path to target file
-  char absolutePath[LINUX_PATH_MAX];
-  realpath(filename.c_str(), absolutePath);
+  std::string new_pathname;
 
-  // Setup variable to record if an alternative path is available for use
-  bool altPath = false;
-
-  // Check if path may be a special file, bail out if it is
-  // TODO: Add support for special files
-  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
-    if (strncmp(absolutePath, prefix, strlen(prefix)) == 0) {
-      std::cerr << "ERROR: attempted to return information on a special file: "
-                << "'" << absolutePath << "'" << std::endl;
-      exit(1);
-    }
-  }
+  // Alter special file path to point to SimEng one (if filename points to
+  // special file)
+  new_pathname = Linux::getSpecialFile(filename);
 
   // Get correct dirfd
   int64_t dirfd = Linux::getDirFd(dfd, filename);
-  if (dirfd == EBADF) return dirfd;
+  if (dirfd == -1) return EBADF;
 
   // Pass call through to host
-  int64_t retval = ::faccessat(dirfd, filename.c_str(), mode, flag);
+  int64_t retval = ::faccessat(dirfd, new_pathname.c_str(), mode, flag);
 
   return retval;
 }
@@ -154,26 +166,19 @@ int64_t Linux::close(int64_t fd) {
 int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
                           int64_t flag) {
   // Resolve absolute path to target file
-  char absolutePath[LINUX_PATH_MAX];
-  realpath(filename.c_str(), absolutePath);
+  std::string new_pathname;
 
-  // Check if path may be a special file, bail out if it is
-  // TODO: Add support for special files
-  for (auto prefix : {"/dev/", "/proc/", "/sys/"}) {
-    if (strncmp(absolutePath, prefix, strlen(prefix)) == 0) {
-      std::cerr << "ERROR: attempted to return information on a special file: "
-                << "'" << absolutePath << "'" << std::endl;
-      exit(1);
-    }
-  }
+  // Alter special file path to point to SimEng one (if filename points to
+  // special file)
+  new_pathname = Linux::getSpecialFile(filename);
 
   // Get correct dirfd
   int64_t dirfd = Linux::getDirFd(dfd, filename);
-  if (dirfd == EBADF) return dirfd;
+  if (dirfd == -1) return EBADF;
 
   // Pass call through to host
   struct ::stat statbuf;
-  int64_t retval = ::fstatat(dirfd, filename.c_str(), &statbuf, flag);
+  int64_t retval = ::fstatat(dirfd, new_pathname.c_str(), &statbuf, flag);
 
   // Copy results to output struct
   out.dev = statbuf.st_dev;
@@ -411,30 +416,13 @@ uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
   return newAlloc->vm_start;
 }
 
-int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
+int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
                       uint16_t mode) {
-  // Resolve absolute path to target file
-  char absolutePath[LINUX_PATH_MAX];
-  realpath(pathname.c_str(), absolutePath);
-  // Setup variable to record if an alternative path is available for use
-  bool altPath = false;
+  std::string new_pathname;
 
-  // Check if path may be a special file
-  for (auto prefix : {"/dev", "/proc", "/sys"}) {
-    if (strncmp(absolutePath, prefix, strlen(prefix)) == 0) {
-      // Check if there's an assigned replacement path
-      if (specialPathTranslations_.find(pathname) !=
-          specialPathTranslations_.end()) {
-        altPath = true;
-        break;
-      } else {
-        std::cerr << "-- WARNING: unable to open unsupported special file: "
-                  << "'" << pathname.c_str() << "'" << std::endl
-                  << "--          allowing simulation to continue" << std::endl;
-        break;
-      }
-    }
-  }
+  // Alter special file path to point to SimEng one (if filename points to
+  // special file)
+  new_pathname = Linux::getSpecialFile(filename);
 
   // Need to re-create flag input to correct values for host OS
   int64_t newFlags = 0;
@@ -468,15 +456,18 @@ int64_t Linux::openat(int64_t dfd, const std::string& pathname, int64_t flags,
   if (flags & 0x410000) newFlags |= O_TMPFILE;
 #endif
 
-  // Get correct dirfd
-  int64_t dirfd = Linux::getDirFd(dfd, pathname);
-  if (dirfd == EBADF) return dirfd;
+  // If Special File (or Special File Directory) is being opened then need to
+  // set flags to O_RDONLY and O_CLOEXEC only.
+  if (new_pathname != filename) {
+    newFlags = O_RDONLY | O_CLOEXEC;
+  }
 
-  // Use path replacement for pathname argument of openat, if chosen
-  const char* newPathname =
-      altPath ? specialPathTranslations_[pathname].c_str() : pathname.c_str();
+  // Get correct dirfd
+  int64_t dirfd = Linux::getDirFd(dfd, filename);
+  if (dirfd == -1) return EBADF;
+
   // Pass call through to host
-  int64_t hfd = ::openat(dirfd, newPathname, newFlags, mode);
+  int64_t hfd = ::openat(dirfd, new_pathname.c_str(), newFlags, mode);
   if (hfd < 0) {
     return hfd;
   }
@@ -514,17 +505,67 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
   return -1;
 }
 
-#ifdef SYS_getdents
 int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
   assert(fd < processStates_[0].fileDescriptorTable.size());
   int64_t hfd = processStates_[0].fileDescriptorTable[fd];
   if (hfd < 0) {
     return EBADF;
   }
-
+#ifdef SYS_getdents
   return ::getdents64(hfd, buf, count);
-}
+#else
+  // Need alternative implementation as not all systems support the getdents64
+  // syscall
+  DIR* dir_stream = ::fdopendir(hfd);
+  // Check for error
+  if (dir_stream == NULL) return -1;
+
+  // Keep a running count of the bytes read
+  uint64_t bytesRead = 0;
+  while (true) {
+    // Get next dirent
+    dirent* next_direct = ::readdir(dir_stream);
+    // Check if end of directory
+    if (next_direct == NULL) break;
+
+    // Copy in readdir return and manipulate values for getdents64 usage
+    linux_dirent64 result;
+    result.d_ino = next_direct->d_ino;
+#ifdef __MACH__
+    result.d_off = next_direct->d_seekoff;
+#else
+    result.d_off = next_direct->d_off;
 #endif
+    result.d_type = next_direct->d_type;
+    result.d_namlen = std::string(next_direct->d_name).size();
+    // `+1` for null-terminator in d_name
+    result.d_name = (char*)malloc(result.d_namlen + 1);
+    memcpy(result.d_name, next_direct->d_name, result.d_namlen);
+    // Ensure final char is a null-terminator
+    result.d_name[result.d_namlen] = '\0';
+    // Get size of struct before alignment
+    // 20 = combined size of d_ino, d_off, d_reclen, d_type, and d_name's
+    // null-terminator
+    uint16_t structSize = 20 + result.d_namlen;
+    result.d_reclen = alignToBoundary(structSize, 8);
+    // Copy in all linux_dirent64 members to the buffer at the correct known
+    // offsets from base `buf + bytesRead`
+    std::memcpy((char*)buf + bytesRead, (void*)&result.d_ino, 8);
+    std::memcpy((char*)buf + bytesRead + 8, (void*)&result.d_off, 8);
+    std::memcpy((char*)buf + bytesRead + 16, (void*)&result.d_reclen, 2);
+    std::memcpy((char*)buf + bytesRead + 18, (void*)&result.d_type, 1);
+    std::memcpy((char*)buf + bytesRead + 19, result.d_name,
+                result.d_namlen + 1);
+    // Ensure bytes used to align struct to 8-byte boundary are zeroed out
+    std::memset((char*)buf + bytesRead + structSize, '\0',
+                (result.d_reclen - structSize));
+
+    bytesRead += static_cast<uint64_t>(result.d_reclen);
+  }
+  // If more bytes have been read than the count arg, return count instead
+  return std::min(count, bytesRead);
+#endif
+}
 
 int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
   assert(fd < processStates_[0].fileDescriptorTable.size());

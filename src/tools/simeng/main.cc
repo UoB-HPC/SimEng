@@ -13,6 +13,7 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/ModelConfig.hh"
+#include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
@@ -83,7 +84,8 @@ int main(int argc, char** argv) {
   if (executablePath.length() > 0) {
     // Attempt to create the process image from the specified command-line
     std::vector<std::string> commandLine(argv + 2, argv + argc);
-    process = std::make_unique<simeng::kernel::LinuxProcess>(commandLine);
+    process =
+        std::make_unique<simeng::kernel::LinuxProcess>(commandLine, config);
     if (!process->isValid()) {
       std::cerr << "Could not read/parse " << argv[2] << std::endl;
       exit(1);
@@ -180,7 +182,7 @@ int main(int argc, char** argv) {
     // memcpy(memory, memoryValues.data(), memoryValues.size() * sizeof(int));
 
     process = std::make_unique<simeng::kernel::LinuxProcess>(
-        simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)));
+        simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)), config);
   }
 
   // Read the process image and copy to memory
@@ -264,6 +266,16 @@ int main(int argc, char** argv) {
       break;
     }
   };
+
+  simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen(config);
+  // Create the Special Files directory if indicated to do so in Config
+  if (config["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
+    // Remove any current special files dir
+    SFdir.RemoveExistingSFDir();
+    // Create new special files dir
+    SFdir.GenerateSFDir();
+  }
+
   std::cout << "Running in " << modeString << " mode\n";
   std::cout << "Starting..." << std::endl;
   auto startTime = std::chrono::high_resolution_clock::now();
@@ -289,6 +301,12 @@ int main(int argc, char** argv) {
   std::cout << "\nFinished " << iterations << " ticks in " << duration << "ms ("
             << std::round(khz) << " kHz, " << std::setprecision(2) << mips
             << " MIPS)" << std::endl;
+
+  // If Special Files directory was created, now remove it
+  // if (config["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
+  // Remove special files dir
+  // SFdir.RemoveExistingSFDir();
+  //}
 
 // Print build metadata and core statistics in YAML format
 // to facilitate parsing. Print "YAML-SEQ" to indicate beginning

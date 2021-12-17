@@ -7,6 +7,9 @@ Core:
   Clock-Frequency: 1.8
   Fetch-Block-Size: 32
   Vector-Length: 512
+Process-Image:
+  Heap-Size: 1073741824
+  Stack-Size: 1048576
 Register-Set:
   GeneralPurpose-Count: 96
   FloatingPoint/SVE-Count: 128
@@ -219,3 +222,26 @@ Latencies:
     - STORE_SVE
     Execution-Latency: 6
     Execution-Throughput: 1
+# CPU-Info mainly used to generate a replica of the special (or system) file directory 
+# structure
+CPU-Info:
+  # Set Generate-Special-Dir to 'T' to generate the special files directory, or to 'F' to not.
+  # (Not generating the special files directory may require the user to copy over files manually)
+  Generate-Special-Dir: T
+  # Core-Count MUST be 1 as multi-core is not supported at this time. (A64FX true value is 48)
+  Core-Count: 1
+  # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (A64FX true value is 1)
+  Socket-Count: 1
+  # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (A64FX true value is 1)
+  SMT: 1
+  # Below are the values needed to generate /proc/cpuinfo
+  BogoMIPS: 200.00
+  Features: fp asimd evtstrm sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm fcma dcpop sve
+  CPU-Implementer: "0x46"
+  CPU-Architecture: 8
+  CPU-Variant: "0x1"
+  CPU-Part: "0x001"
+  CPU-Revision: 0
+  # Package-Count is used to generate 
+  # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
+  Package-Count: 1

@@ -287,7 +287,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = n[i] + m[i];
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ADD_ZZZ_D: {  // add zd.d, zn.d, zm.d
@@ -299,7 +299,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = n[i] + m[i];
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ADD_ZZZ_H: {  // add zd.h, zn.h, zm.h
@@ -311,7 +311,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = n[i] + m[i];
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ADD_ZZZ_S: {  // add zd.s, zn.s, zm.s
@@ -323,7 +323,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = n[i] + m[i];
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ADDv8i16: {  // add vd.8h, vn.8h, vm.8h
@@ -1629,7 +1629,7 @@ void Instruction::execute() {
       for (int i = 0; i < (VL_bits / 64); i++) {
         out[i] = imm;
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_DUP_ZI_B: {  // dup zd.b, #imm{, shift}
@@ -1642,7 +1642,7 @@ void Instruction::execute() {
         out[i] = imm;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_DUP_ZI_D: {  // dup zd.d, #imm{, shift}
@@ -1655,7 +1655,7 @@ void Instruction::execute() {
         out[i] = imm;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_DUP_ZI_H: {  // dup zd.h, #imm{, shift}
@@ -1668,7 +1668,7 @@ void Instruction::execute() {
         out[i] = imm;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_DUP_ZI_S: {  // dup zd.s, #imm{, shift}
@@ -1681,7 +1681,7 @@ void Instruction::execute() {
         out[i] = imm;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_DUP_ZR_S: {  // dup zd.s, wn
@@ -1694,7 +1694,7 @@ void Instruction::execute() {
         out[i] = n;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_DUP_ZR_D: {  // dup zd.d, xn
@@ -1707,7 +1707,7 @@ void Instruction::execute() {
         out[i] = n;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_DUP_ZZI_D: {  // dup zd.d, zn.d[#imm]
@@ -1725,7 +1725,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
 
       break;
     }
@@ -1744,7 +1744,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
 
       break;
     }
@@ -2037,7 +2037,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FABS_ZPmZ_S: {  // fabs zd.s, pg/m, zn.s
@@ -2057,7 +2057,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FABSv2f64: {  // fabs vd.2d, vn.2d
@@ -2191,7 +2191,7 @@ void Instruction::execute() {
           out[i] = d[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FADD_ZPmI_S: {  // fadd zdn.s, pg/m, zdn.s, const
@@ -2210,7 +2210,7 @@ void Instruction::execute() {
           out[i] = d[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FADD_ZPmZ_D: {  // fadd zdn.d, pg/m, zdn.d, zm.d
@@ -2230,7 +2230,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FADD_ZPmZ_S: {  // fadd zdn.s, pg/m, zdn.s, zm.s
@@ -2264,7 +2264,7 @@ void Instruction::execute() {
         out[i] = n[i] + m[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FADD_ZZZ_S: {  // fadd zd.s, zn.s, zm.s
@@ -2278,7 +2278,7 @@ void Instruction::execute() {
         out[i] = n[i] + m[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FCCMPDrr:     // fccmp sn, sm, #nzcv, cc
@@ -2934,7 +2934,7 @@ void Instruction::execute() {
         }
         out[(2 * i) + 1] = d[(2 * i) + 1];
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FCVT_ZPmZ_StoD: {  // fcvt zd.d, pg/m, zn.s
@@ -2958,7 +2958,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FDIVDrr: {  // fdiv dd, dn, dm
@@ -2988,7 +2988,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FDIVR_ZPmZ_S: {  // fdivr zdn.s, pg/m, zdn.s, zm.s
@@ -3006,7 +3006,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FDIV_ZPmZ_D: {  // fdiv zd.d, pg/m, zn.d, zm.d
@@ -3027,7 +3027,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FDIVv2f64: {  // fdiv vd.2d, vn.2d, vm.2d
@@ -3046,7 +3046,7 @@ void Instruction::execute() {
         out[i] = imm;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
 
       break;
     }
@@ -3060,7 +3060,7 @@ void Instruction::execute() {
         out[i] = imm;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMADDDrrr: {  // fmadd dn, dm, da
@@ -3095,7 +3095,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMAD_ZPmZZ_S: {  // fmad zd.s, pg/m, zn.s, zm.s
@@ -3116,7 +3116,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMAXNMDrr: {  // fmaxnm dd, dn, dm
@@ -3212,7 +3212,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMLA_ZPmZZ_S: {  // fmla zd.s, pg/m, zn.s, zm.s
@@ -3233,7 +3233,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMLSv2f64: {  // fmls vd.2d, vn.2d, vm.2d
@@ -3281,7 +3281,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMLS_ZPmZZ_S: {  // fmls zd.s, pg/m, zn.s, zm.s
@@ -3302,7 +3302,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMOVDXHighr: {  // fmov xd, vn.d[1]
@@ -3396,7 +3396,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMSB_ZPmZZ_S: {  // fmsb zd.s, pg/m, zn.s, zm.s
@@ -3417,7 +3417,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMULDrr: {  // fmul dd, dn, dm
@@ -3502,7 +3502,7 @@ void Instruction::execute() {
         out[i] = n[i] * m[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMUL_ZZZ_S: {  // fmul zd.s, zn.s, zm.s
@@ -3516,7 +3516,7 @@ void Instruction::execute() {
         out[i] = n[i] * m[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMUL_ZPmI_D: {  // fmul zd.d, pg/m, zn.d, #imm
@@ -3536,7 +3536,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMUL_ZPmI_S: {  // fmul zd.s, pg/m, zn.s, #imm
@@ -3556,7 +3556,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMUL_ZPmZ_D: {  // fmul zdn.d, pg/m, zdn.d, zm.d
@@ -3576,7 +3576,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FMUL_ZPmZ_S: {  // fmul zdn.s, pg/m, zdn.s, zm.s
@@ -3596,7 +3596,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FNEGDr: {  // fneg dd, dn
@@ -3623,7 +3623,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FNEG_ZPmZ_S: {  // fneg zd.s, pg/m, zn.s
@@ -3642,7 +3642,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FNEGv2f64: {  // fneg vd.2d, vn.2d
@@ -3674,7 +3674,7 @@ void Instruction::execute() {
           out[i] = d[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FNMLS_ZPmZZ_S: {  // fnmls zd.s, pg/m, zn.s, zm.s
@@ -3694,7 +3694,7 @@ void Instruction::execute() {
           out[i] = d[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FNMSB_ZPmZZ_D: {  // fnmsb zdn.d, pg/m, zm.d, za.d
@@ -3714,7 +3714,7 @@ void Instruction::execute() {
           out[i] = n[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FNMSB_ZPmZZ_S: {  // fnmsb zdn.s, pg/m, zm.s, za.s
@@ -3734,7 +3734,7 @@ void Instruction::execute() {
           out[i] = n[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FNMSUBDrrr: {  // fnmsub dd, dn, dm, da
@@ -3909,7 +3909,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FSQRT_ZPmZ_S: {  // fsqrt zd.s, pg/m, zn.s
@@ -3927,7 +3927,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FSQRTv2f64: {  // fsqrt vd.2d, vn.2d
@@ -4004,7 +4004,7 @@ void Instruction::execute() {
         out[i] = n[i] - m[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FSUB_ZZZ_S: {  // fsub zd.s, zn.s, zm.s
@@ -4018,7 +4018,7 @@ void Instruction::execute() {
         out[i] = n[i] - m[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_FSUBv2f64: {  // fsub vd.2d, vn.2d, vm.2d
@@ -4072,7 +4072,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = n[i] + ((VL_bits / 32) * imm);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INCD_ZPiI: {  // incd zdn.d{, pattern{, #imm}}
@@ -4084,7 +4084,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = n[i] + ((VL_bits / 64) * imm);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INCH_ZPiI: {  // inch zdn.h{, pattern{, #imm}}
@@ -4096,7 +4096,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = n[i] + ((VL_bits / 16) * imm);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INCP_XP_B: {  // incp xdn, pm.b
@@ -4172,7 +4172,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int8_t>(imm1 + (i * imm2));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_II_H: {  // index zd.h, #imm, #imm
@@ -4184,7 +4184,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int16_t>(imm1 + (i * imm2));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_II_S: {  // index zd.s, #imm, #imm
@@ -4196,7 +4196,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int32_t>(imm1 + (i * imm2));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_II_D: {  // index zd.d, #imm, #imm
@@ -4208,7 +4208,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int64_t>(imm1 + (i * imm2));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_RI_B: {  // index zd.b, wn, #imm
@@ -4220,7 +4220,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int8_t>(n + (i * imm));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_RI_D: {  // index zd.d, xn, #imm
@@ -4232,7 +4232,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int64_t>(n + (i * imm));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_RI_H: {  // index zd.h, wn, #imm
@@ -4244,7 +4244,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int16_t>(n + (i * imm));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_RI_S: {  // index zd.s, wn, #imm
@@ -4256,7 +4256,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int32_t>(n + (i * imm));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_IR_B: {  // index zd.b, #imm, wn
@@ -4268,7 +4268,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int8_t>(imm + (i * n));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_IR_D: {  // index zd.d, #imm, xn
@@ -4280,7 +4280,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int64_t>(imm + (i * n));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_IR_H: {  // index zd.h, #imm, wn
@@ -4292,7 +4292,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int16_t>(imm + (i * n));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_IR_S: {  // index zd.s, #imm, wn
@@ -4304,7 +4304,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int32_t>(imm + (i * n));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_RR_B: {  // index zd.b, wn, wm
@@ -4316,7 +4316,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int8_t>(n + (i * m));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_RR_D: {  // index zd.d, xn, xm
@@ -4328,7 +4328,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int64_t>(n + (i * m));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_RR_H: {  // index zd.h, wn, wm
@@ -4340,7 +4340,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int16_t>(n + (i * m));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INDEX_RR_S: {  // index zd.s, wn, wm
@@ -4352,7 +4352,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<int32_t>(n + (i * m));
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_INSvi32lane: {  // ins vd.s[index1], vn.s[index2]
@@ -4468,7 +4468,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1RW_IMM: {  // ld1rw {zt.s}, pg/z, [xn, #imm]
@@ -4495,7 +4495,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1Rv16b: {  // ld1r {vt.16b}, [xn]
@@ -4623,7 +4623,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1D: {  // ld1d  {zt.d}, pg/z, [xn, xm, lsl #3]
@@ -4643,7 +4643,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1D_IMM_REAL: {  // ld1d  {zt.d}, pg/z, [xn{, #imm,
@@ -4664,7 +4664,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_GLD1D_REAL:  // ld1d {zt.d}, pg/z, [xn, zm.d]
@@ -4685,7 +4685,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_GLD1D_IMM_REAL: {  // ld1d {zd.d}, pg/z, [zn.d{, #imm}]
@@ -4702,7 +4702,7 @@ void Instruction::execute() {
           index++;
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_GLD1SW_D_IMM_REAL: {  // ld1sw {zd.d}, pg/z, [zn.d{,
@@ -4720,7 +4720,7 @@ void Instruction::execute() {
           index++;
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1H: {  // ld1h  {zt.h}, pg/z, [xn, xm, lsl #1]
@@ -4740,7 +4740,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1W: {  // ld1w  {zt.s}, pg/z, [xn, xm, lsl #2]
@@ -4760,7 +4760,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1W_IMM_REAL: {  // ld1w  {zt.s}, pg/z, [xn{, #imm,
@@ -4781,7 +4781,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1Twov16b: {  // ld1 {vt1.16b, vt2.16b}, [xn]
@@ -5147,7 +5147,7 @@ void Instruction::execute() {
         out[i] = memoryData[i].get<uint8_t>();
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LDTRSBXi: {  // ldtrsb xt, [xn, #imm]
@@ -5214,7 +5214,7 @@ void Instruction::execute() {
         out[i] = (n[i] << imm);
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LSRVWr: {  // lsrv wd, wn, wm
@@ -5260,7 +5260,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MLA_ZPmZZ_D: {  // mla zda.d, pg/m, zn.d, zm.d
@@ -5280,7 +5280,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MLA_ZPmZZ_H: {  // mla zda.h, pg/m, zn.h, zm.h
@@ -5300,7 +5300,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MLA_ZPmZZ_S: {  // mla zda.s, pg/m, zn.s, zm.s
@@ -5320,7 +5320,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MOVID: {  // movi dd, #imm
@@ -5417,7 +5417,7 @@ void Instruction::execute() {
           out[i] = d[i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MOVPRFX_ZPzZ_D: {  // movprfx zd.d, pg/z, zn.d
@@ -5436,7 +5436,7 @@ void Instruction::execute() {
           out[i] = 0;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MOVPRFX_ZPzZ_S: {  // movprfx zd.s, pg/z, zn.s
@@ -5455,7 +5455,7 @@ void Instruction::execute() {
           out[i] = 0;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MOVPRFX_ZZ: {  // movprfx zd, zn
@@ -5512,7 +5512,7 @@ void Instruction::execute() {
           out[i] = n[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MUL_ZPmZ_D: {  // mul zdn.d, pg/m, zdn.d, zm.d
@@ -5530,7 +5530,7 @@ void Instruction::execute() {
           out[i] = n[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MUL_ZPmZ_H: {  // mul zdn.h, pg/m, zdn.h, zm.h
@@ -5548,7 +5548,7 @@ void Instruction::execute() {
           out[i] = n[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MUL_ZPmZ_S: {  // mul zdn.s, pg/m, zdn.s, zm.s
@@ -5566,7 +5566,7 @@ void Instruction::execute() {
           out[i] = n[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_MVNIv2i32: {  // mvni vd.2s, #imm{, lsl #shift}
@@ -5700,7 +5700,7 @@ void Instruction::execute() {
         out[i] = (n[i] | m[i]);
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
 
       break;
     }
@@ -5939,7 +5939,7 @@ void Instruction::execute() {
         out[i] = n[index];
         index--;
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_REV_ZZ_D: {  // rev zd.d, zn.d
@@ -5953,7 +5953,7 @@ void Instruction::execute() {
         out[i] = n[index];
         index--;
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_REV_ZZ_H: {  // rev zd.h, zn.h
@@ -5967,7 +5967,7 @@ void Instruction::execute() {
         out[i] = n[index];
         index--;
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_REV_ZZ_S: {  // rev zd.s, zn.s
@@ -5981,7 +5981,7 @@ void Instruction::execute() {
         out[i] = n[index];
         index--;
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SBCWr: {  // sbc wd, wn, wm
@@ -6037,7 +6037,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SCVTF_ZPmZ_DtoS: {  // scvtf zd.s, pg/m, zn.d
@@ -6062,7 +6062,7 @@ void Instruction::execute() {
         }
         out[(2 * i) + 1] = d[(2 * i) + 1];
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SCVTF_ZPmZ_StoD: {  // scvtf zd.d, pg/m, zn.s
@@ -6086,7 +6086,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SCVTF_ZPmZ_StoS: {  // scvtf zd.s, pg/m, zn.s
@@ -6110,7 +6110,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SCVTFUWDri: {  // scvtf dd, wn
@@ -6200,7 +6200,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SEL_ZPZZ_S: {  // sel zd.s, pg, zn.s, zm.s
@@ -6220,7 +6220,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SHLd: {  // shl dd, dn #imm
@@ -6257,7 +6257,7 @@ void Instruction::execute() {
         out[i] = std::max(n[i], static_cast<int32_t>(imm));
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SMAX_ZPmZ_S: {  // smax zd.s, pg/m, zn.s, zm.s
@@ -6278,7 +6278,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SMAXv4i32: {  // smax vd.4s, vn.4s, vm.4s
@@ -6307,7 +6307,7 @@ void Instruction::execute() {
         }
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SMINV_VPZ_S: {  // sminv sd, pg, zn.s
@@ -7165,7 +7165,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<uint8_t>(n[i] - m[i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SUB_ZZZ_H: {  // sub zd.h, zn.h, zm.h
@@ -7178,7 +7178,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<uint16_t>(n[i] - m[i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SUB_ZZZ_S: {  // sub zd.s, zn.s, zm.s
@@ -7191,7 +7191,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<uint32_t>(n[i] - m[i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SUB_ZZZ_D: {  // sub zd.d, zn.d, zm.d
@@ -7204,7 +7204,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<uint64_t>(n[i] - m[i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SVC: {  // svc #imm
@@ -7230,7 +7230,7 @@ void Instruction::execute() {
           out[i] = d[i];
         }
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SYSxt: {  // sys #<op1>, cn, cm, #<op2>{, xt}
@@ -7498,7 +7498,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<uint64_t>(n[partition_num + i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_UUNPKHI_ZZ_H: {  // uunpkhi zd.h, zn.b
@@ -7510,7 +7510,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<uint16_t>(n[partition_num + i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_UUNPKHI_ZZ_S: {  // uunpkhi zd.s, zn.h
@@ -7522,7 +7522,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<uint32_t>(n[partition_num + i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_UUNPKLO_ZZ_D: {  // uunpklo zd.d, zn.s
@@ -7534,7 +7534,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<uint64_t>(n[i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_UUNPKLO_ZZ_H: {  // uunpklo zd.h, zn.b
@@ -7546,7 +7546,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<uint16_t>(n[i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_UUNPKLO_ZZ_S: {  // uunpklo zd.s, zn.h
@@ -7558,7 +7558,7 @@ void Instruction::execute() {
       for (int i = 0; i < partition_num; i++) {
         out[i] = static_cast<uint32_t>(n[i]);
       }
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_UZP1_ZZZ_S: {  // uzp1 zd.s, zn.s, zm.s
@@ -7575,7 +7575,7 @@ void Instruction::execute() {
         out[partition_num / 2 + i] = m[2 * i];
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_WHILELO_PWW_B: {  // whilelo pd.b, wn, wm
@@ -7895,7 +7895,7 @@ void Instruction::execute() {
         interleave = !interleave;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ZIP1_ZZZ_D: {  // zip1 zd.d, zn.d, zm.d
@@ -7917,7 +7917,7 @@ void Instruction::execute() {
         interleave = !interleave;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ZIP2_PPP_B: {  // zip2 pd.b, pn.b, pm.b
@@ -8046,7 +8046,7 @@ void Instruction::execute() {
         interleave = !interleave;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ZIP2_ZZZ_D: {  // zip2 zd.d, zn.d, zm.d
@@ -8068,7 +8068,7 @@ void Instruction::execute() {
         interleave = !interleave;
       }
 
-      results[0] = out;
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_XPACLRI: {  // xpaclri

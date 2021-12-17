@@ -102,7 +102,6 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.close(fd)}};
         break;
       }
-#ifdef SYS_getdents
       case 61: {  // getdents64
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
@@ -125,7 +124,6 @@ bool ExceptionHandler::init() {
             iLength = bytesRemaining;
           }
           bytesRemaining -= iLength;
-
           // Write data for this buffer in 128-byte chunks
           auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
           while (iLength > 0) {
@@ -139,7 +137,6 @@ bool ExceptionHandler::init() {
           return concludeSyscall(stateChange);
         });
       }
-#endif
       case 62: {  // lseek
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t offset = registerFileSet.get(R1).get<uint64_t>();

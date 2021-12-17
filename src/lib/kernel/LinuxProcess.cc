@@ -15,8 +15,11 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
   return value + (boundary - remainder);
 }
 
-LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine)
-    : commandLine_(commandLine) {
+LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
+                           YAML::Node config)
+    : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
+      HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()),
+      commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
   Elf elf(commandLine[0]);
@@ -47,7 +50,9 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine)
   createStack();
 }
 
-LinuxProcess::LinuxProcess(span<char> instructions) {
+LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
+    : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
+      HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 
