@@ -9,6 +9,9 @@ Original SimEng design and implementation:
 
 Current development team:
     Jack Jones (lead developer)
+    Finn Wilkinson
+
+Prior development members:
     Harry Waugh
 
 Code reviewers:
@@ -19,7 +22,6 @@ Build structure design:
 
 Internship contributions:
     Daniel Weaver
-    Finn Wilkinson
     Mutalib Mohammed
     Seunghun Lee
     
