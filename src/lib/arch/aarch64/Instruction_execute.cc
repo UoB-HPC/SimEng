@@ -2777,6 +2777,12 @@ void Instruction::execute() {
       results[0] = RegisterValue(static_cast<int32_t>(std::trunc(n)), 8);
       break;
     }
+    case Opcode::AArch64_FCVTZSUXDr: {  // fcvtzs xd, dn
+      double n = operands[0].get<double>();
+      // TODO: Handle NaNs, denorms, and saturation
+      results[0] = RegisterValue(static_cast<int64_t>(std::trunc(n)), 8);
+      break;
+    }
     case Opcode::AArch64_FCVTZS_ZPmZ_DtoS: {  // fcvtzs zd.s, pg/m, zn.d
       const int32_t* d = operands[0].getAsVector<int32_t>();
       const uint64_t* p = operands[1].getAsVector<uint64_t>();
