@@ -511,9 +511,7 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
   if (hfd < 0) {
     return EBADF;
   }
-#ifdef SYS_getdents
-  return ::getdents64(hfd, buf, count);
-#else
+
   // Need alternative implementation as not all systems support the getdents64
   // syscall
   DIR* dir_stream = ::fdopendir(hfd);
@@ -564,7 +562,6 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
   }
   // If more bytes have been read than the count arg, return count instead
   return std::min(count, bytesRead);
-#endif
 }
 
 int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
