@@ -467,6 +467,7 @@ TEST_P(InstFloat, fcvt) {
   CHECK_NEON(1, float, {-10.5f, 0.f, 0.f, 0.f});
 
   // Signed, round to zero
+  // 64-bit to 32-bit
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -485,6 +486,25 @@ TEST_P(InstFloat, fcvt) {
   EXPECT_EQ((getGeneralRegister<int32_t>(2)), 0);
   EXPECT_EQ((getGeneralRegister<int32_t>(3)), 321);
 
+  // 64-bit to 64-bit
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    fcvtzs x0, d0
+    fcvtzs x1, d1
+    fcvtzs x2, d2
+    fcvtzs x3, d3
+  )");
+  EXPECT_EQ((getGeneralRegister<int64_t>(0)), 1);
+  EXPECT_EQ((getGeneralRegister<int64_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<int64_t>(2)), 0);
+  EXPECT_EQ((getGeneralRegister<int64_t>(3)), 321);
+
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   fheap[0] = 1.0;
   fheap[1] = -42.76;
@@ -492,6 +512,7 @@ TEST_P(InstFloat, fcvt) {
   fheap[3] = 321.5;
 
   // Signed, round to zero
+  // 32-bit to 32-bit
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0

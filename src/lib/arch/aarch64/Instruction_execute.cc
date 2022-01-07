@@ -4342,7 +4342,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTZSUXDr: {
-      return executionNYI();
+      // TODO: Handle NaNs, denorms, and saturation
+      results[0] = {static_cast<int64_t>(std::trunc(operands[0].get<double>())),
+                    8};
       break;
     }
     case Opcode::AArch64_FCVTZSUXHr: {
