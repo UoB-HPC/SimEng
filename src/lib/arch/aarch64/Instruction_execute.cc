@@ -11543,12 +11543,30 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_RORVWr: {
-      return executionNYI();
+    case Opcode::AArch64_RORVWr: {  // rorv wd, wn, wm
+      const uint32_t n = operands[0].get<uint32_t>();
+      const uint32_t m = operands[1].get<uint32_t>();
+
+      const uint16_t data_size = sizeof(uint32_t) * 8;
+      uint32_t remainder = (m / data_size) % data_size;
+
+      // Check if any rotation done at all
+      if (remainder == 0) results[0] = n;
+
+      results[0] = (n >> remainder) + (n << (data_size - remainder));
       break;
     }
-    case Opcode::AArch64_RORVXr: {
-      return executionNYI();
+    case Opcode::AArch64_RORVXr: {  // rorv xd, xn, xm
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint64_t m = operands[1].get<uint64_t>();
+
+      const uint16_t data_size = sizeof(uint64_t) * 8;
+      uint64_t remainder = (m / data_size) % data_size;
+
+      // Check if any rotation done at all
+      if (remainder == 0) results[0] = n;
+
+      results[0] = (n >> remainder) + (n << (data_size - remainder));
       break;
     }
     case Opcode::AArch64_RSHRNv16i8_shift: {
