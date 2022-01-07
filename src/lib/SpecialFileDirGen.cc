@@ -24,8 +24,8 @@ void SpecialFileDirGen::RemoveExistingSFDir() {
       "mkdir -p " + specialFilesParentDir_ + "/specialFiles/";
   const std::string rm_input =
       "rm -r " + specialFilesParentDir_ + "/specialFiles/*";
-  system(rm_input.c_str());
   system(mk_input.c_str());
+  system(rm_input.c_str());
   return;
 }
 
