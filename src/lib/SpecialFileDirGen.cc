@@ -20,10 +20,10 @@ SpecialFileDirGen::SpecialFileDirGen(YAML::Node config) {
 }
 
 void SpecialFileDirGen::RemoveExistingSFDir() {
-  const std::string rm_input =
-      "rm -r " + specialFilesParentDir_ + "/specialFiles/";
   const std::string mk_input =
-      "mkdir " + specialFilesParentDir_ + "/specialFiles/";
+      "mkdir -p " + specialFilesParentDir_ + "/specialFiles/";
+  const std::string rm_input =
+      "rm -r " + specialFilesParentDir_ + "/specialFiles/*";
   system(rm_input.c_str());
   system(mk_input.c_str());
   return;
