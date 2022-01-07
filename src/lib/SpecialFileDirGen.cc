@@ -20,30 +20,27 @@ SpecialFileDirGen::SpecialFileDirGen(YAML::Node config) {
 }
 
 void SpecialFileDirGen::RemoveExistingSFDir() {
-  const std::string rm_input =
-      "rm -r " + specialFilesParentDir_ + "/specialFiles/";
-  const std::string mk_input =
-      "mkdir " + specialFilesParentDir_ + "/specialFiles/";
-  system(rm_input.c_str());
+  const std::string exist_input = "[ ! -d " + specialFilesDir_ + " ]";
+  if (system(exist_input.c_str())) {
+    const std::string rm_input = "rm -r " + specialFilesDir_;
+    system(rm_input.c_str());
+  }
+  const std::string mk_input = "mkdir " + specialFilesDir_;
   system(mk_input.c_str());
   return;
 }
 
 void SpecialFileDirGen::GenerateSFDir() {
   // Define frequently accessed root directories in special file tree
-  const std::string proc_dir = specialFilesParentDir_ + "/specialFiles/proc/";
-  const std::string online_dir =
-      specialFilesParentDir_ + "/specialFiles/sys/devices/system/cpu/";
+  const std::string proc_dir = specialFilesDir_ + "/proc/";
+  const std::string online_dir = specialFilesDir_ + "/sys/devices/system/cpu/";
   const std::string cpu_base_dir =
-      specialFilesParentDir_ + "/specialFiles/sys/devices/system/cpu/cpu";
+      specialFilesDir_ + "/sys/devices/system/cpu/cpu";
 
   system(("mkdir " + proc_dir).c_str());
-  system(("mkdir " + specialFilesParentDir_ + "/specialFiles/sys/").c_str());
-  system(("mkdir " + specialFilesParentDir_ + "/specialFiles/sys/devices/")
-             .c_str());
-  system(
-      ("mkdir " + specialFilesParentDir_ + "/specialFiles/sys/devices/system/")
-          .c_str());
+  system(("mkdir " + specialFilesDir_ + "/sys/").c_str());
+  system(("mkdir " + specialFilesDir_ + "/sys/devices/").c_str());
+  system(("mkdir " + specialFilesDir_ + "/sys/devices/system/").c_str());
   system(("mkdir " + online_dir).c_str());
 
   // Create '/proc/cpuinfo' file.
