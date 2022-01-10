@@ -216,20 +216,32 @@ class InstrExecFunc {
   // --------------- INSTRUCTION EXECUTE HELPER FUNCTIONS BELOW ---------------
   // --------------------------------------------------------------------------
 
+  /** Helper function for NEON instructions with the format `add vd, vn, vm`. */
   template <typename T, int I>
-  static std::array<T, I> vecAdd_3ops(
+  static std::array<T, (16 / sizeof(T))> vecAdd_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
-    std::array<T, I> out = {0};
+    std::array<T, (16 / sizeof(T))> out = {0};
     for (int i = 0; i < I; i++) {
       out[i] = static_cast<T>(n[i] + m[i]);
     }
     return out;
   }
 
+  /** Helper function for instructions with the format `add rd, rn, rm`. */
   template <typename T>
-  static T mov_imm(struct simeng::arch::aarch64::InstructionMetadata metadata) {
+  static T add_3ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands) {
+    const T n = operands[0].get<T>();
+    const T m = operands[1].get<T>();
+    return (n + m);
+  }
+
+  /** Helper function for instructions with the format `movz {w,x}d, #imm`. */
+  template <typename T>
+  static T movz_imm(
+      struct simeng::arch::aarch64::InstructionMetadata metadata) {
     uint8_t shift = metadata.operands[1].shift.value;
     T value = static_cast<uint64_t>(metadata.operands[1].imm) << shift;
     return value;

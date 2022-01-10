@@ -305,32 +305,32 @@ void Instruction::execute() {
       results[0] = {InstrExecFunc::vecAdd_3ops<uint8_t, 16>(operands), 256};
       break;
     }
-    case Opcode::AArch64_ADDv1i64: {
-      return executionNYI();
+    case Opcode::AArch64_ADDv1i64: {  // add dd, dn, dm
+      results[0] = {InstrExecFunc::add_3ops<uint64_t>(operands), 256};
       break;
     }
-    case Opcode::AArch64_ADDv2i32: {
-      return executionNYI();
+    case Opcode::AArch64_ADDv2i32: {  // add vd.2s, vn.2s, vm.2s
+      results[0] = {InstrExecFunc::vecAdd_3ops<uint32_t, 2>(operands), 256};
       break;
     }
-    case Opcode::AArch64_ADDv2i64: {
-      return executionNYI();
+    case Opcode::AArch64_ADDv2i64: {  // add vd.2d, vn.2d, vm.2d
+      results[0] = {InstrExecFunc::vecAdd_3ops<uint64_t, 2>(operands), 256};
       break;
     }
-    case Opcode::AArch64_ADDv4i16: {
-      return executionNYI();
+    case Opcode::AArch64_ADDv4i16: {  // add vd.4h, vn.4h, vm.4h
+      results[0] = {InstrExecFunc::vecAdd_3ops<uint16_t, 4>(operands), 256};
       break;
     }
-    case Opcode::AArch64_ADDv4i32: {
-      return executionNYI();
+    case Opcode::AArch64_ADDv4i32: {  // add vd.4s, vn.4s, vm.4s
+      results[0] = {InstrExecFunc::vecAdd_3ops<uint32_t, 4>(operands), 256};
       break;
     }
-    case Opcode::AArch64_ADDv8i16: {
-      return executionNYI();
+    case Opcode::AArch64_ADDv8i16: {  // add vd.8h, vn.8h, vm.8h
+      results[0] = {InstrExecFunc::vecAdd_3ops<uint16_t, 8>(operands), 256};
       break;
     }
-    case Opcode::AArch64_ADDv8i8: {
-      return executionNYI();
+    case Opcode::AArch64_ADDv8i8: {  // add vd.8b, vn.8b, vm.8b
+      results[0] = {InstrExecFunc::vecAdd_3ops<uint8_t, 8>(operands), 256};
       break;
     }
     case Opcode::AArch64_ADJCALLSTACKDOWN: {
@@ -8653,8 +8653,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRDui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRDui: {  // ldr dt, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(8, 256);
       break;
     }
     case Opcode::AArch64_LDRHHpost: {
@@ -9281,8 +9281,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDURQi: {
-      return executionNYI();
+    case Opcode::AArch64_LDURQi: {  // ldur qt, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(16, 256);
       break;
     }
     case Opcode::AArch64_LDURSBWi: {
@@ -9766,11 +9766,12 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_MOVZWi: {  // movz wd, #imm
-      results[0] = RegisterValue(InstrExecFunc::mov_imm<uint32_t>(metadata), 8);
+      results[0] =
+          RegisterValue(InstrExecFunc::movz_imm<uint32_t>(metadata), 8);
       break;
     }
     case Opcode::AArch64_MOVZXi: {  // movz xd, #imm
-      results[0] = InstrExecFunc::mov_imm<uint64_t>(metadata);
+      results[0] = InstrExecFunc::movz_imm<uint64_t>(metadata);
       break;
     }
     case Opcode::AArch64_MOVaddr: {
