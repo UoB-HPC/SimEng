@@ -189,8 +189,13 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADDVL_XXI: {
-      return executionNYI();
+    case Opcode::AArch64_ADDVL_XXI: {  // addvl xd, xn, #imm
+      auto x = operands[0].get<uint64_t>();
+      auto y = static_cast<int64_t>(metadata.operands[2].imm);
+
+      // convert VL from LEN (number of 128-bits) to bytes
+      const uint64_t VL = VL_bits / 8;
+      results[0] = x + (VL * y);
       break;
     }
     case Opcode::AArch64_ADDVv16i8v: {
@@ -221,8 +226,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADDWrs: {
-      return executionNYI();
+    case Opcode::AArch64_ADDWrs: {  // add wd, wn, wm{, shift #amount}
+      results[0] = static_cast<uint64_t>(
+          InstrExecFunc::addShift_3ops<uint64_t>(operands, metadata));
       break;
     }
     case Opcode::AArch64_ADDWrx: {
@@ -237,8 +243,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADDXrs: {
-      return executionNYI();
+    case Opcode::AArch64_ADDXrs: {  // add xd, xn, xm, {shift #amount}
+      results[0] = InstrExecFunc::addShift_3ops<uint64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_ADDXrx: {
@@ -281,20 +287,24 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADD_ZZZ_B: {
-      return executionNYI();
+    case Opcode::AArch64_ADD_ZZZ_B: {  // add zd.b, zn.b, zm.b
+      results[0] = {InstrExecFunc::sveAdd_3ops<uint8_t>(operands, VL_bits),
+                    256};
       break;
     }
-    case Opcode::AArch64_ADD_ZZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_ADD_ZZZ_D: {  // add zd.d, zn.d, zm.d
+      results[0] = {InstrExecFunc::sveAdd_3ops<uint64_t>(operands, VL_bits),
+                    256};
       break;
     }
-    case Opcode::AArch64_ADD_ZZZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_ADD_ZZZ_H: {  // add zd.h, zn.h, zm.h
+      results[0] = {InstrExecFunc::sveAdd_3ops<uint16_t>(operands, VL_bits),
+                    256};
       break;
     }
-    case Opcode::AArch64_ADD_ZZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_ADD_ZZZ_S: {  // add zd.s, zn.s, zm.s
+      results[0] = {InstrExecFunc::sveAdd_3ops<uint32_t>(operands, VL_bits),
+                    256};
       break;
     }
     case Opcode::AArch64_ADDlowTLS: {
@@ -2353,20 +2363,23 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_DUP_ZI_B: {
-      return executionNYI();
+    case Opcode::AArch64_DUP_ZI_B: {  // dup zd.b, #imm{, shift}
+      results[0] = {InstrExecFunc::sveDup_imm<uint8_t>(metadata, VL_bits), 256};
       break;
     }
-    case Opcode::AArch64_DUP_ZI_D: {
-      return executionNYI();
+    case Opcode::AArch64_DUP_ZI_D: {  // dup zd.d, #imm{, shift}
+      results[0] = {InstrExecFunc::sveDup_imm<uint64_t>(metadata, VL_bits),
+                    256};
       break;
     }
-    case Opcode::AArch64_DUP_ZI_H: {
-      return executionNYI();
+    case Opcode::AArch64_DUP_ZI_H: {  // dup zd.h, #imm{, shift}
+      results[0] = {InstrExecFunc::sveDup_imm<uint16_t>(metadata, VL_bits),
+                    256};
       break;
     }
-    case Opcode::AArch64_DUP_ZI_S: {
-      return executionNYI();
+    case Opcode::AArch64_DUP_ZI_S: {  // dup zd.s, #imm{, shift}
+      results[0] = {InstrExecFunc::sveDup_imm<uint32_t>(metadata, VL_bits),
+                    256};
       break;
     }
     case Opcode::AArch64_DUP_ZR_B: {
@@ -2865,16 +2878,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADD_ZZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FADD_ZZZ_D: {  // fadd zd.d, zn.d, zm.d
+      results[0] = {InstrExecFunc::sveAdd_3ops<double>(operands, VL_bits), 256};
       break;
     }
     case Opcode::AArch64_FADD_ZZZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADD_ZZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FADD_ZZZ_S: {  // fadd zd.s, zn.s, zm.s
+      results[0] = {InstrExecFunc::sveAdd_3ops<float>(operands, VL_bits), 256};
       break;
     }
     case Opcode::AArch64_FADDv2f32: {
@@ -10078,8 +10091,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ORRWrs: {
-      return executionNYI();
+    case Opcode::AArch64_ORRWrs: {  // orr wd, wn, wm{, shift{ #amount}}
+      results[0] = static_cast<uint64_t>(
+          InstrExecFunc::orrShift_3ops<uint32_t>(operands, metadata));
       break;
     }
     case Opcode::AArch64_ORRXri: {
@@ -10090,8 +10104,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ORRXrs: {
-      return executionNYI();
+    case Opcode::AArch64_ORRXrs: {  // orr xd, xn, xm{, shift{ #amount}}
+      results[0] = InstrExecFunc::orrShift_3ops<uint64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_ORR_PPzPP: {
@@ -11162,12 +11176,24 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SDIVWr: {
-      return executionNYI();
+    case Opcode::AArch64_SDIVWr: {  // sdiv wd, wn, wm
+      auto x = operands[0].get<int32_t>();
+      auto y = operands[1].get<int32_t>();
+      if (y == 0) {
+        results[0] = RegisterValue(0, 8);
+      } else {
+        results[0] = RegisterValue(x / y, 8);
+      }
       break;
     }
-    case Opcode::AArch64_SDIVXr: {
-      return executionNYI();
+    case Opcode::AArch64_SDIVXr: {  // sdiv xd, xn, xm
+      auto x = operands[0].get<int64_t>();
+      auto y = operands[1].get<int64_t>();
+      if (y == 0) {
+        results[0] = RegisterValue(0, 8);
+      } else {
+        results[0] = x / y;
+      }
       break;
     }
     case Opcode::AArch64_SDIV_ZPmZ_D: {
@@ -15719,12 +15745,24 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UDIVWr: {
-      return executionNYI();
+    case Opcode::AArch64_UDIVWr: {  // udiv wd, wn, wm
+      auto x = operands[0].get<uint32_t>();
+      auto y = operands[1].get<uint32_t>();
+      if (y == 0) {
+        results[0] = RegisterValue(0, 8);
+      } else {
+        results[0] = RegisterValue(x / y, 8);
+      }
       break;
     }
-    case Opcode::AArch64_UDIVXr: {
-      return executionNYI();
+    case Opcode::AArch64_UDIVXr: {  // udiv xd, xn, xm
+      auto x = operands[0].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>();
+      if (y == 0) {
+        results[0] = RegisterValue(0, 8);
+      } else {
+        results[0] = x / y;
+      }
       break;
     }
     case Opcode::AArch64_UDIV_ZPmZ_D: {
@@ -17328,35 +17366,59 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_WHILELO_PWW_B: {
-      return executionNYI();
+      auto [output, nzcv] =
+          InstrExecFunc::sveWhilelo<uint32_t, uint8_t>(operands, VL_bits);
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
     case Opcode::AArch64_WHILELO_PWW_D: {
-      return executionNYI();
+      auto [output, nzcv] =
+          InstrExecFunc::sveWhilelo<uint32_t, uint64_t>(operands, VL_bits);
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
     case Opcode::AArch64_WHILELO_PWW_H: {
-      return executionNYI();
+      auto [output, nzcv] =
+          InstrExecFunc::sveWhilelo<uint32_t, uint16_t>(operands, VL_bits);
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
     case Opcode::AArch64_WHILELO_PWW_S: {
-      return executionNYI();
+      auto [output, nzcv] =
+          InstrExecFunc::sveWhilelo<uint32_t, uint32_t>(operands, VL_bits);
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
     case Opcode::AArch64_WHILELO_PXX_B: {
-      return executionNYI();
+      auto [output, nzcv] =
+          InstrExecFunc::sveWhilelo<uint64_t, uint8_t>(operands, VL_bits);
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
     case Opcode::AArch64_WHILELO_PXX_D: {
-      return executionNYI();
+      auto [output, nzcv] =
+          InstrExecFunc::sveWhilelo<uint64_t, uint64_t>(operands, VL_bits);
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
     case Opcode::AArch64_WHILELO_PXX_H: {
-      return executionNYI();
+      auto [output, nzcv] =
+          InstrExecFunc::sveWhilelo<uint64_t, uint16_t>(operands, VL_bits);
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
     case Opcode::AArch64_WHILELO_PXX_S: {
-      return executionNYI();
+      auto [output, nzcv] =
+          InstrExecFunc::sveWhilelo<uint64_t, uint32_t>(operands, VL_bits);
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
     case Opcode::AArch64_WHILELS_PWW_B: {
