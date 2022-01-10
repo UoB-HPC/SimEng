@@ -401,6 +401,10 @@ class Instruction : public simeng::Instruction {
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
 
+  // Execution
+  /** Generate an EncodingUnallocated exception. */
+  void executionINV();
+
   // Instruction Identifiers
   /** Operates on scalar values */
   bool isScalarData_ = false;
