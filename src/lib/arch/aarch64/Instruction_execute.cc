@@ -3,7 +3,7 @@
 #include <iostream>
 #endif
 
-#include "simeng/arch/aarch64/ExecuteHelperFunctions.hh"
+#include "ExecuteHelperFunctions.hh"
 
 namespace simeng {
 namespace arch {
@@ -301,8 +301,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADDv16i8: {
-      return executionNYI();
+    case Opcode::AArch64_ADDv16i8: {  // add vd.16b, vn.16b, vm.16b
+      results[0] = {InstrExecFunc::vecAdd_3ops<uint8_t, 16>(operands), 256};
       break;
     }
     case Opcode::AArch64_ADDv1i64: {
@@ -8717,8 +8717,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRQui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRQui: {  // ldr qt, [xn, #imm]
+      results[0] = memoryData[0].zeroExtend(16, 256);
       break;
     }
     case Opcode::AArch64_LDRSBWpost: {
@@ -9765,12 +9765,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MOVZWi: {
-      return executionNYI();
+    case Opcode::AArch64_MOVZWi: {  // movz wd, #imm
+      results[0] = RegisterValue(InstrExecFunc::mov_imm<uint32_t>(metadata), 8);
       break;
     }
-    case Opcode::AArch64_MOVZXi: {
-      return executionNYI();
+    case Opcode::AArch64_MOVZXi: {  // movz xd, #imm
+      results[0] = InstrExecFunc::mov_imm<uint64_t>(metadata);
       break;
     }
     case Opcode::AArch64_MOVaddr: {
@@ -14981,8 +14981,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SVC: {
-      return executionNYI();
+    case Opcode::AArch64_SVC: {  // svc #imm
+      exceptionEncountered_ = true;
+      exception_ = InstructionException::SupervisorCall;
       break;
     }
     case Opcode::AArch64_SWPAB: {
@@ -17601,7 +17602,7 @@ void Instruction::execute() {
     }
   }
 #endif
-}
+}  // namespace aarch64
 
 }  // namespace aarch64
 }  // namespace arch

@@ -4,7 +4,7 @@
 #include <limits>
 #include <tuple>
 
-#include "arch/aarch64/InstructionMetadata.hh"
+#include "InstructionMetadata.hh"
 
 namespace simeng {
 namespace arch {
@@ -212,14 +212,29 @@ class InstrExecFunc {
     // Otherwise round to nearest
     return static_cast<int32_t>(std::round(input));
   }
-  // ----------------------------------------------------------------------------
-  // ---------------- INSTRUCTION EXECUTE HELPER FUNCTIONS BELOW
-  // ----------------
-  // ----------------------------------------------------------------------------
+  // --------------------------------------------------------------------------
+  // --------------- INSTRUCTION EXECUTE HELPER FUNCTIONS BELOW ---------------
+  // --------------------------------------------------------------------------
 
-  // template <typename T>
+  template <typename T, int I>
+  static std::array<T, I> vecAdd_3ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+    std::array<T, I> out = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = static_cast<T>(n[i] + m[i]);
+    }
+    return out;
+  }
+
+  template <typename T>
+  static T mov_imm(struct simeng::arch::aarch64::InstructionMetadata metadata) {
+    uint8_t shift = metadata.operands[1].shift.value;
+    T value = static_cast<uint64_t>(metadata.operands[1].imm) << shift;
+    return value;
+  }
 };
-
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng
