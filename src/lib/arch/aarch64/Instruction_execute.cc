@@ -660,12 +660,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ASRVWr: {
-      return executionNYI();
+    case Opcode::AArch64_ASRVWr: {  // asrv wd, wn, wm
+      auto n = operands[0].get<int32_t>();
+      auto m = operands[1].get<uint32_t>();
+      results[0] = RegisterValue(n >> (m % 32), 8);
       break;
     }
-    case Opcode::AArch64_ASRVXr: {
-      return executionNYI();
+    case Opcode::AArch64_ASRVXr: {  // asrv xd, xn, xm
+      auto n = operands[0].get<int64_t>();
+      auto m = operands[1].get<uint64_t>();
+      results[0] = n >> (m % 64);
       break;
     }
     case Opcode::AArch64_ASR_WIDE_ZPmZ_B: {
@@ -796,8 +800,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_B: {
-      return executionNYI();
+    case Opcode::AArch64_B: {  // b label
+      branchTaken_ = true;
+      branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
       break;
     }
     case Opcode::AArch64_BCAX: {
