@@ -391,12 +391,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADR: {
-      return executionNYI();
+    case Opcode::AArch64_ADR: {  // adr xd, #imm
+      results[0] = instructionAddress_ + metadata.operands[1].imm;
       break;
     }
-    case Opcode::AArch64_ADRP: {
-      return executionNYI();
+    case Opcode::AArch64_ADRP: {  // adrp xd, #imm
+      // Clear lowest 12 bits of address and add immediate (already shifted by
+      // decoder)
+      results[0] = (instructionAddress_ & ~(0xFFF)) + metadata.operands[1].imm;
       break;
     }
     case Opcode::AArch64_ADR_LSL_ZZZ_D_0: {
@@ -487,28 +489,38 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ANDSWri: {
-      return executionNYI();
+    case Opcode::AArch64_ANDSWri: {  // ands wd, wn, #imm
+      auto [result, nzcv] = logicalHelp::and_imm<uint32_t>(operands, metadata);
+      results[0] = nzcv;
+      results[1] = RegisterValue(result, 8);
       break;
     }
     case Opcode::AArch64_ANDSWrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ANDSWrs: {
-      return executionNYI();
+    case Opcode::AArch64_ANDSWrs: {  // ands wd, wn, wm{, shift #amount}
+      auto [result, nzcv] =
+          logicalHelp::andShift_3ops<uint32_t>(operands, metadata);
+      results[0] = nzcv;
+      results[1] = static_cast<uint64_t>(result);
       break;
     }
-    case Opcode::AArch64_ANDSXri: {
-      return executionNYI();
+    case Opcode::AArch64_ANDSXri: {  // ands xd, xn, #imm
+      auto [result, nzcv] = logicalHelp::and_imm<uint64_t>(operands, metadata);
+      results[0] = nzcv;
+      results[1] = result;
       break;
     }
     case Opcode::AArch64_ANDSXrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ANDSXrs: {
-      return executionNYI();
+    case Opcode::AArch64_ANDSXrs: {  // ands xd, xn, xm{, shift #amount}
+      auto [result, nzcv] =
+          logicalHelp::andShift_3ops<uint64_t>(operands, metadata);
+      results[0] = nzcv;
+      results[1] = result;
       break;
     }
     case Opcode::AArch64_ANDS_PPzPP: {
@@ -531,28 +543,34 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ANDWri: {
-      return executionNYI();
+    case Opcode::AArch64_ANDWri: {  // and wd, wn, #imm
+      auto [result, nzcv] = logicalHelp::and_imm<uint32_t>(operands, metadata);
+      results[0] = RegisterValue(result, 8);
       break;
     }
     case Opcode::AArch64_ANDWrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ANDWrs: {
-      return executionNYI();
+    case Opcode::AArch64_ANDWrs: {  // and wd, wn, wm{, shift #amount}
+      auto [result, nzcv] =
+          logicalHelp::andShift_3ops<uint32_t>(operands, metadata);
+      results[0] = static_cast<uint64_t>(result);
       break;
     }
-    case Opcode::AArch64_ANDXri: {
-      return executionNYI();
+    case Opcode::AArch64_ANDXri: {  // and xd, xn, #imm
+      auto [result, nzcv] = logicalHelp::and_imm<uint64_t>(operands, metadata);
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_ANDXrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ANDXrs: {
-      return executionNYI();
+    case Opcode::AArch64_ANDXrs: {  // and xd, xn, xm{, shift #amount}
+      auto [result, nzcv] =
+          logicalHelp::andShift_3ops<uint64_t>(operands, metadata);
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_AND_PPzPP: {
