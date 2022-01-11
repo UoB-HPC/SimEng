@@ -34,6 +34,16 @@ class arithmeticHelp {
     return (n + m);
   }
 
+  /** Helper function for instructions with the format `adc rd, rn, rm`. */
+  template <typename T>
+  static std::tuple<T, uint8_t> addCarry_3ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands) {
+    const uint8_t carry = operands[0].get<uint8_t>() & 0b0010;
+    const T n = operands[0].get<T>();
+    const T m = operands[1].get<T>();
+    return ExecHelpFunc::addWithCarry(n, m, carry);
+  }
+
   /** Helper function for instructions with the format `madd rd, rn, rm, ra`. */
   template <typename T>
   static T madd_4ops(

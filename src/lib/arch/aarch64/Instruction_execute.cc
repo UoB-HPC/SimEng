@@ -102,8 +102,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADCXr: {
-      return executionNYI();
+    case Opcode::AArch64_ADCXr: {  // adc xd, xn, xm
+      auto [result, nzcv] = arithmeticHelp::addCarry_3ops<uint64_t>(operands);
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_ADDHNv2i64_v2i32: {
