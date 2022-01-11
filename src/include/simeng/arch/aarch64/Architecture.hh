@@ -6,7 +6,7 @@
 
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
-#include "simeng/arch/aarch64/Instruction.hh"
+#include "simeng/arch/aarch64/MicroDecoder.hh"
 #include "simeng/kernel/Linux.hh"
 
 using csh = size_t;
@@ -85,6 +85,9 @@ class Architecture : public arch::Architecture {
 
   /** A reference to a Linux kernel object to forward syscalls to. */
   kernel::Linux& linux_;
+
+  /** A reference to a micro decoder object to split macro operations. */
+  std::unique_ptr<MicroDecoder> microDecoder_;
 
   /** The vector length used by the SVE extension in bits. */
   uint64_t VL_;

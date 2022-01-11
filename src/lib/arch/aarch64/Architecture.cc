@@ -1,5 +1,3 @@
-#include "simeng/arch/aarch64/Architecture.hh"
-
 #include <algorithm>
 #include <cassert>
 
@@ -13,7 +11,9 @@ std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
 Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
-    : linux_(kernel), VL_(config["Core"]["Vector-Length"].as<uint64_t>()) {
+    : linux_(kernel),
+      VL_(config["Core"]["Vector-Length"].as<uint64_t>()),
+      microDecoder_(std::make_unique<MicroDecoder>(config)) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "Could not create capstone handle" << std::endl;
     exit(1);
@@ -185,14 +185,17 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     iter->second.setExecutionInfo(getExecutionInfo(iter->second));
   }
 
-  output.resize(1);
-  auto& uop = output[0];
+  // Split instruction into 1 or more defined micro-ops
+  std::cout << "### 0x" << std::hex << instructionAddress << std::dec << " ###"
+            << std::endl;
+  uint8_t num_ops =
+      microDecoder_->decode(*this, iter->second, output, capstoneHandle);
 
-  // Retrieve the cached instruction and write to output
-  uop = std::make_shared<Instruction>(iter->second);
-
-  uop->setInstructionAddress(instructionAddress);
-  uop->setBranchPrediction(prediction);
+  // Set instruction address and branch prediction for each micro-op generated
+  for (int i = 0; i < num_ops; i++) {
+    output[i]->setInstructionAddress(instructionAddress);
+    output[i]->setBranchPrediction(prediction);
+  }
 
   return 4;
 }

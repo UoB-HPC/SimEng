@@ -17,6 +17,7 @@
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
+#include "simeng/arch/aarch64/MicroDecoder.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
@@ -201,7 +202,8 @@ int main(int argc, char** argv) {
                                                 processMemorySize);
 
   // Create the architecture, with knowledge of the kernel
-  auto arch = simeng::arch::aarch64::Architecture(kernel, config);
+  std::unique_ptr<simeng::arch::Architecture> arch =
+      std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
 
   auto predictor = simeng::BTBPredictor(
       config["Branch-Predictor"]["BTB-bitlength"].as<uint8_t>());
@@ -242,7 +244,7 @@ int main(int argc, char** argv) {
           processMemory, processMemorySize,
           config["L1-Cache"]["Access-Latency"].as<uint16_t>());
       core = std::make_unique<simeng::models::outoforder::Core>(
-          instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
+          instructionMemory, *dataMemory, processMemorySize, entryPoint, *arch,
           predictor, portAllocator, rsArrangement, config);
       break;
     }
@@ -253,7 +255,7 @@ int main(int argc, char** argv) {
                                                         processMemorySize);
       core = std::make_unique<simeng::models::inorder::Core>(
           instructionMemory, *flatDataMemory, processMemorySize, entryPoint,
-          arch, predictor);
+          *arch, predictor);
       dataMemory = std::move(flatDataMemory);
       break;
     }
@@ -262,7 +264,7 @@ int main(int argc, char** argv) {
       dataMemory = std::make_unique<simeng::FlatMemoryInterface>(
           processMemory, processMemorySize);
       core = std::make_unique<simeng::models::emulation::Core>(
-          instructionMemory, *dataMemory, entryPoint, processMemorySize, arch);
+          instructionMemory, *dataMemory, entryPoint, processMemorySize, *arch);
       break;
     }
   };
