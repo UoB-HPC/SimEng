@@ -135,6 +135,12 @@ class Instruction {
   /** Retrieve this instruction's sequence ID. */
   uint64_t getSequenceId() const;
 
+  /** Set this instruction's instruction ID. */
+  void setInstructionId(uint64_t insnId);
+
+  /** Retrieve this instruction's instruction ID. */
+  uint64_t getInstructionId() const;
+
   /** Mark this instruction as flushed. */
   void setFlushed();
 
@@ -157,6 +163,20 @@ class Instruction {
 
   /** Get this instruction's supported set of ports. */
   virtual const std::vector<uint8_t>& getSupportedPorts() = 0;
+
+  bool shouldSplitRequests() const;
+
+  /** Is this a micro-operation? */
+  bool isMicroOp() const;
+
+  /** Is this the last uop in the possible sequence of decoded uops? */
+  bool isLastMicroOp() const;
+
+  /** Set the micro-operation in an awaiting commit signal state. */
+  void setWaitingCommit();
+
+  /** Is the micro-operation in an awaiting commit state? */
+  bool isWaitingCommit() const;
 
  protected:
   /** Whether an exception has been encountered. */
@@ -206,6 +226,26 @@ class Instruction {
 
   /** The execution ports that this instruction can be issued to. */
   std::vector<uint8_t> supportedPorts_ = {};
+
+  /** Whether this instructions' memory accesses should be treated as many
+   * independent requests. **/
+  bool splitMemoryRequests_ = false;
+
+  // Micro operations
+  /** Is a resultant micro-operation from an instruction split? */
+  bool isMicroOp_ = false;
+
+  /** Whether or not this instruction is the last uop in the possible sequence
+   * of decoded uops. Default case is that it is. */
+  bool isLastMicroOp_ = true;
+
+  /** This instruction's instruction ID used to group micro-operations together
+   * by macro-op; a higher ID represents a chronologically newer instruction. */
+  uint64_t instructionId_;
+
+  /** Is the micro-operation in a committable state but must wait for all
+   * associated micro-operations to also be committable? */
+  bool waitingCommit_ = false;
 };
 
 }  // namespace simeng

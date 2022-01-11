@@ -12,8 +12,11 @@ const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
                                              (uint16_t)-1};
 
 Instruction::Instruction(const Architecture& architecture,
-                         const InstructionMetadata& metadata)
+                         const InstructionMetadata& metadata, bool isMicroOp,
+                         bool isLastMicroOp)
     : architecture_(architecture), metadata(metadata) {
+  isMicroOp_ = isMicroOp;
+  isLastMicroOp_ = isLastMicroOp;
   decode();
 }
 
