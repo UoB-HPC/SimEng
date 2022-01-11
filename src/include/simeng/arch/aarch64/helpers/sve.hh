@@ -66,6 +66,21 @@ class sveHelp {
     return out;
   }
 
+  /** Helper function for SVE instructions with the format `ptrue pd{, pattern}.
+   * T represents the predicate type (i.e. pd.b would be uint8_t).
+   */
+  template <typename T>
+  static std::array<uint64_t, 4> svePtrue(const uint16_t VL_bits) {
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    std::array<uint64_t, 4> out = {0, 0, 0, 0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      out[i / (64 / sizeof(T))] |= shifted_active;
+    }
+    return out;
+  }
+
   /** Helper function for SVE instructions with the format `whilelo pd, {w,x}n,
    * {w,x}m`.
    * T represents the type of operands n and m (i.e. uint32_t for wn).
