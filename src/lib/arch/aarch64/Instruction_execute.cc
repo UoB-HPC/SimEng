@@ -135,20 +135,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADDPv16i8: {
-      return executionNYI();
+    case Opcode::AArch64_ADDPv16i8: {  // addp vd.16b, vn.16b, vm.16b
+      results[0] = {neonHelp::vecAddp_3ops<uint8_t, 16>(operands), 256};
       break;
     }
     case Opcode::AArch64_ADDPv2i32: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADDPv2i64: {
-      return executionNYI();
+    case Opcode::AArch64_ADDPv2i64: {  // addp vd.2d, vn.2d, vm.2d
+      results[0] = {neonHelp::vecAddp_3ops<uint64_t, 2>(operands), 256};
       break;
     }
-    case Opcode::AArch64_ADDPv2i64p: {
-      return executionNYI();
+    case Opcode::AArch64_ADDPv2i64p: {  // addp dd, vn.2d
+      results[0] = {neonHelp::vecAddp_2ops<uint64_t>(operands), 256};
       break;
     }
     case Opcode::AArch64_ADDPv4i16: {
@@ -2828,8 +2828,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADDPv2i64p: {
-      return executionNYI();
+    case Opcode::AArch64_FADDPv2i64p: {  // faddp dd, vn.2d
+      results[0] = {neonHelp::vecAddp_2ops<double>(operands), 256};
       break;
     }
     case Opcode::AArch64_FADDPv4f16: {
