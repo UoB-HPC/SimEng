@@ -14828,8 +14828,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SUBWri: {
-      return executionNYI();
+    case Opcode::AArch64_SUBWri: {  // sub wd, wn, #imm{, <shift>}
+      results[0] = RegisterValue(
+          arithmeticHelp::subShift_imm<uint32_t>(operands, metadata), 8);
       break;
     }
     case Opcode::AArch64_SUBWrr: {
@@ -14844,8 +14845,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SUBXri: {
-      return executionNYI();
+    case Opcode::AArch64_SUBXri: {  // sub xd, xn, #imm{, <shift>}
+      results[0] = RegisterValue(
+          arithmeticHelp::subShift_imm<uint64_t>(operands, metadata));
       break;
     }
     case Opcode::AArch64_SUBXrr: {

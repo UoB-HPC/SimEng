@@ -33,6 +33,19 @@ class arithmeticHelp {
                    metadata.operands[2].shift.value);
     return (n + m);
   }
+
+  /** Helper function for instructions with the format `sub rd, rn, #imm{,
+   * shift}`. */
+  template <typename T>
+  static T subShift_imm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
+      struct simeng::arch::aarch64::InstructionMetadata metadata) {
+    const T n = operands[0].get<T>();
+    const T m = shiftValue(static_cast<T>(metadata.operands[2].imm),
+                           metadata.operands[2].shift.type,
+                           metadata.operands[2].shift.value);
+    return (n - m);
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
