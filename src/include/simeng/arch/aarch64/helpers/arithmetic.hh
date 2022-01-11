@@ -34,6 +34,16 @@ class arithmeticHelp {
     return (n + m);
   }
 
+  /** Helper function for instructions with the format `madd rd, rn, rm, ra`. */
+  template <typename T>
+  static T madd_4ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands) {
+    const T n = operands[0].get<T>();
+    const T m = operands[1].get<T>();
+    const T a = operands[2].get<T>();
+    return (a + (n * m));
+  }
+
   /** Helper function for instructions with the format `sub rd, rn, #imm{,
    * shift}`. */
   template <typename T>

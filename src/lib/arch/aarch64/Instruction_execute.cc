@@ -9555,12 +9555,13 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MADDWrrr: {
-      return executionNYI();
+    case Opcode::AArch64_MADDWrrr: {  // madd wd, wn, wm, wa
+      results[0] =
+          static_cast<uint64_t>(arithmeticHelp::madd_4ops<uint32_t>(operands));
       break;
     }
-    case Opcode::AArch64_MADDXrrr: {
-      return executionNYI();
+    case Opcode::AArch64_MADDXrrr: {  // madd xd, xn, xm, xa
+      results[0] = arithmeticHelp::madd_4ops<uint64_t>(operands);
       break;
     }
     case Opcode::AArch64_MAD_ZPmZZ_B: {
@@ -11181,23 +11182,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SDIVWr: {  // sdiv wd, wn, wm
-      auto x = operands[0].get<int32_t>();
-      auto y = operands[1].get<int32_t>();
-      if (y == 0) {
-        results[0] = RegisterValue(0, 8);
-      } else {
-        results[0] = RegisterValue(x / y, 8);
-      }
+      results[0] = RegisterValue(divideHelp::div_3ops<int32_t>(operands), 8);
       break;
     }
     case Opcode::AArch64_SDIVXr: {  // sdiv xd, xn, xm
-      auto x = operands[0].get<int64_t>();
-      auto y = operands[1].get<int64_t>();
-      if (y == 0) {
-        results[0] = RegisterValue(0, 8);
-      } else {
-        results[0] = x / y;
-      }
+      results[0] = RegisterValue(divideHelp::div_3ops<int64_t>(operands), 8);
       break;
     }
     case Opcode::AArch64_SDIV_ZPmZ_D: {
@@ -15752,23 +15741,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_UDIVWr: {  // udiv wd, wn, wm
-      auto x = operands[0].get<uint32_t>();
-      auto y = operands[1].get<uint32_t>();
-      if (y == 0) {
-        results[0] = RegisterValue(0, 8);
-      } else {
-        results[0] = RegisterValue(x / y, 8);
-      }
+      results[0] = RegisterValue(divideHelp::div_3ops<uint32_t>(operands), 8);
       break;
     }
     case Opcode::AArch64_UDIVXr: {  // udiv xd, xn, xm
-      auto x = operands[0].get<uint64_t>();
-      auto y = operands[1].get<uint64_t>();
-      if (y == 0) {
-        results[0] = RegisterValue(0, 8);
-      } else {
-        results[0] = x / y;
-      }
+      results[0] = RegisterValue(divideHelp::div_3ops<uint64_t>(operands), 8);
       break;
     }
     case Opcode::AArch64_UDIV_ZPmZ_D: {
