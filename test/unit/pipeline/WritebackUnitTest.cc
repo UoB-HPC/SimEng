@@ -22,7 +22,7 @@ class PipelineWritebackUnitTest : public testing::Test {
         registerFileSet({{8, 2}}),
         uop(new MockInstruction),
         uopPtr(uop),
-        writebackUnit(input, registerFileSet) {}
+        writebackUnit(input, registerFileSet, [](auto insnId) {}) {}
 
  protected:
   std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> input;

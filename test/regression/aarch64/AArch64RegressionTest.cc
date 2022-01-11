@@ -32,6 +32,13 @@ YAML::Node AArch64RegressionTest::generateConfig() const {
   } else {
     config["Core"]["Vector-Length"] = 512;
   }
+  if (additionalConfig["Micro-Operations"].IsDefined() &&
+      !(additionalConfig["Micro-Operations"].IsNull())) {
+    config["Core"]["Micro-Operations"] =
+        additionalConfig["Micro-Operations"].as<bool>();
+  } else {
+    config["Core"]["Micro-Operations"] = false;
+  }
   return config;
 }
 

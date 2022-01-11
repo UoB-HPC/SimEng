@@ -45,7 +45,7 @@ void ModelConfig::validate() {
   // Core
   root = "Core";
   subFields = {"Simulation-Mode", "Clock-Frequency", "Fetch-Block-Size",
-               "Vector-Length"};
+               "Micro-Operations", "Vector-Length"};
   nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
@@ -64,7 +64,9 @@ void ModelConfig::validate() {
       invalid_ << "\t- Fetch-Block-Size must be a power of 2\n";
     }
   }
-  nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
+  nodeChecker<bool>(configFile_[root][subFields[3]], subFields[3],
+                    std::make_pair(false, true), ExpectedValue::Bool);
+  nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
                         {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
                          1408, 1536, 1664, 1792, 1920, 2048},
                         ExpectedValue::UInteger, 512);
