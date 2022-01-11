@@ -19,7 +19,43 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
          "Attempted to reserve entry in reorder buffer when already full");
   insn->setSequenceId(seqId_);
   seqId_++;
+  insn->setInstructionId(insnId_);
+  if (insn->isLastMicroOp()) insnId_++;
+
   buffer_.push_back(insn);
+}
+
+void ReorderBuffer::commitMicroOps(uint64_t insnId) {
+  size_t index = 0;
+  int firstOp = -1;
+
+  // Find first instance of uop belonging to macro-op instruction
+  auto& uop = buffer_[index];
+  while (uop->getInstructionId() <= insnId) {
+    if (uop->getInstructionId() == insnId) {
+      firstOp = index;
+      break;
+    }
+    index++;
+    uop = buffer_[index];
+  }
+
+  // If found, see if all uops are committable
+  if (firstOp) {
+    while (uop->getInstructionId() == insnId) {
+      if (!uop->isWaitingCommit()) return;
+      index++;
+      uop = buffer_[index];
+    }
+    // No early return thus all uops are committable
+    uop = buffer_[firstOp];
+    while (uop->getInstructionId() == insnId) {
+      uop->setCommitReady();
+      firstOp++;
+      uop = buffer_[firstOp];
+    }
+  }
+  return;
 }
 
 unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
@@ -34,7 +70,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
-    instructionsCommitted_++;
+    if (uop->isLastMicroOp()) instructionsCommitted_++;
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);

@@ -78,7 +78,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           renameToDispatchBuffer_, issuePorts_, registerFileSet_, portAllocator,
           physicalRegisterQuantities_, rsArrangement,
           config["Pipeline-Widths"]["Dispatch-Rate"].as<unsigned int>()),
-      writebackUnit_(completionSlots_, registerFileSet_),
+      writebackUnit_(
+          completionSlots_, registerFileSet_,
+          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
       clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {

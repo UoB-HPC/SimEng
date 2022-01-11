@@ -14,7 +14,8 @@ class WritebackUnit {
    * register file to write to. */
   WritebackUnit(std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>&
                     completionSlots,
-                RegisterFileSet& registerFileSet);
+                RegisterFileSet& registerFileSet,
+                std::function<void(uint64_t insnId)> flagMicroOpCommits);
 
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
@@ -28,6 +29,10 @@ class WritebackUnit {
 
   /** The register file set to write results into. */
   RegisterFileSet& registerFileSet_;
+
+  /** A function handle called to determine if uops associated to an instruction
+   * ID can now be committed. */
+  std::function<void(uint64_t insnId)> flagMicroOpCommits_;
 
   /** The number of instructions processed and retired by this stage. */
   uint64_t instructionsWritten_ = 0;

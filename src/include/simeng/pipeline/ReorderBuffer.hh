@@ -23,6 +23,8 @@ class ReorderBuffer {
   /** Add the provided instruction to the ROB. */
   void reserve(const std::shared_ptr<Instruction>& insn);
 
+  void commitMicroOps(uint64_t insnId);
+
   /** Commit and remove up to `maxCommitSize` instructions. */
   unsigned int commit(unsigned int maxCommitSize);
 
@@ -83,6 +85,10 @@ class ReorderBuffer {
 
   /** The next available sequence ID. */
   uint64_t seqId_ = 0;
+
+  /** The next available instruction ID. Used to identify in-order groups of
+   * micro-operations. */
+  uint64_t insnId_ = 0;
 
   /** The number of instructions committed. */
   uint64_t instructionsCommitted_ = 0;
