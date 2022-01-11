@@ -66,6 +66,25 @@ class sveHelp {
     return out;
   }
 
+  /** Helper function for SVE instructions with the format `index zd, #imm,
+   * #imm`. T represents the vector register type (i.e. zd.b would be
+   * int8_t).*/
+  template <typename T>
+  static std::array<T, (256 / sizeof(T))> sveIndex_2imm(
+      struct simeng::arch::aarch64::InstructionMetadata metadata,
+      const uint16_t VL_bits) {
+    const T imm1 = static_cast<T>(metadata.operands[1].imm);
+    const T imm2 = static_cast<T>(metadata.operands[2].imm);
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    std::array<T, (256 / sizeof(T))> out = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      out[i] = static_cast<T>(imm1 + (i * imm2));
+    }
+    return out;
+  }
+
   /** Helper function for SVE instructions with the format `ptrue pd{, pattern}.
    * T represents the predicate type (i.e. pd.b would be uint8_t).
    */

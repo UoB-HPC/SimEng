@@ -6788,20 +6788,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_INDEX_II_B: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_II_B: {  // index zd.b, #imm, #imm
+      results[0] = {sveHelp::sveIndex_2imm<int8_t>(metadata, VL_bits), 256};
       break;
     }
-    case Opcode::AArch64_INDEX_II_D: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_II_D: {  // index zd.d, #imm, #imm
+      results[0] = {sveHelp::sveIndex_2imm<int64_t>(metadata, VL_bits), 256};
       break;
     }
-    case Opcode::AArch64_INDEX_II_H: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_II_H: {  // index zd.h, #imm, #imm
+      results[0] = {sveHelp::sveIndex_2imm<int16_t>(metadata, VL_bits), 256};
       break;
     }
-    case Opcode::AArch64_INDEX_II_S: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_II_S: {  // index zd.s, #imm, #imm
+      results[0] = {sveHelp::sveIndex_2imm<int32_t>(metadata, VL_bits), 256};
       break;
     }
     case Opcode::AArch64_INDEX_IR_B: {
