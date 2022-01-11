@@ -28,6 +28,28 @@ class sveHelp {
     return out;
   }
 
+  /** Helper function for SVE instructions with the format `and zdn, pg/z, zdn,
+   * zm`. */
+  template <typename T>
+  static std::array<T, (256 / sizeof(T))> sveAndPredicated_4ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
+      const uint16_t VL_bits) {
+    const uint64_t* g = operands[0].getAsVector<uint64_t>();
+    const T* dn = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    std::array<T, (256 / sizeof(T))> out = {0};
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (g[i / (64 / sizeof(T))] & shifted_active)
+        out[i] = dn[i] & m[i];
+      else
+        out[i] = dn[i];
+    }
+    return out;
+  }
+
   /** Helper function for SVE instructions with the format `dup zd, #imm{,
    * shift}`. */
   template <typename T>

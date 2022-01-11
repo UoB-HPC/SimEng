@@ -573,40 +573,59 @@ void Instruction::execute() {
       results[0] = result;
       break;
     }
-    case Opcode::AArch64_AND_PPzPP: {
-      return executionNYI();
+    case Opcode::AArch64_AND_PPzPP: {  // and pd.b, pg/z, pn.b, pm.b
+      const uint64_t* g = operands[0].getAsVector<uint64_t>();
+      const uint64_t* n = operands[1].getAsVector<uint64_t>();
+      const uint64_t* m = operands[2].getAsVector<uint64_t>();
+      // Divide by 512 as we're operating in blocks of 64-bits
+      // and each predicate bit represents 8 bits in Z registers or
+      // more generally the VL notion.
+      const uint16_t partition_num = (int)((VL_bits - 1) / 512);
+      uint64_t out[4] = {0, 0, 0, 0};
+      for (int i = 0; i < partition_num + 1; i++) {
+        // AND the two source registers in blocks of 64-bits with
+        // the governing predicate as a mask.
+        out[i] = g[i] & (n[i] & m[i]);
+      }
+      results[0] = out;
       break;
     }
     case Opcode::AArch64_AND_ZI: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_AND_ZPmZ_B: {
-      return executionNYI();
+    case Opcode::AArch64_AND_ZPmZ_B: {  // and zdn.b, pg/m, zdn.b, zm.b
+      results[0] = sveHelp::sveAndPredicated_4ops<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_AND_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_AND_ZPmZ_D: {  // and zdn.d, pg/m, zdn.d, zm.d
+      results[0] = sveHelp::sveAndPredicated_4ops<uint64_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_AND_ZPmZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_AND_ZPmZ_H: {  // and zdn.h, pg/m, zdn.h, zm.h
+      results[0] = sveHelp::sveAndPredicated_4ops<uint16_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_AND_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_AND_ZPmZ_S: {  // and zdn.s, pg/m, zdn.s, zm.s
+      results[0] = sveHelp::sveAndPredicated_4ops<uint32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_AND_ZZZ: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ANDv16i8: {
-      return executionNYI();
+    case Opcode::AArch64_ANDv16i8: {  // and vd.16b, vn.16b, vm.16b
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+      const uint64_t* m = operands[1].getAsVector<uint64_t>();
+      uint64_t out[2] = {n[0] & m[0], n[1] & m[1]};
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_ANDv8i8: {
-      return executionNYI();
+    case Opcode::AArch64_ANDv8i8: {  // and vd.8b, vn.8b, vm.8b
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      const uint32_t* m = operands[1].getAsVector<uint32_t>();
+      uint32_t out[4] = {n[0] & m[0], n[1] & m[1], 0, 0};
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_ASRD_ZPmI_B: {
