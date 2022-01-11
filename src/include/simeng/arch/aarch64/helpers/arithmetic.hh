@@ -67,8 +67,8 @@ class arithmeticHelp {
   static std::tuple<T, uint8_t> addCarry_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands) {
     const uint8_t carry = operands[0].get<uint8_t>() & 0b0010;
-    const T n = operands[0].get<T>();
-    const T m = operands[1].get<T>();
+    const T n = operands[1].get<T>();
+    const T m = operands[2].get<T>();
     return ExecHelpFunc::addWithCarry(n, m, carry);
   }
 

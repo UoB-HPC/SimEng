@@ -131,8 +131,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADDPL_XXI: {
-      return executionNYI();
+    case Opcode::AArch64_ADDPL_XXI: {  // addpl xd, xn, #imm
+      auto x = operands[0].get<uint64_t>();
+      auto y = static_cast<int64_t>(metadata.operands[2].imm);
+      // convert PL from VL_bits
+      const uint64_t PL = VL_bits / 64;
+      results[0] = x + (PL * y);
       break;
     }
     case Opcode::AArch64_ADDPv16i8: {  // addp vd.16b, vn.16b, vm.16b
@@ -148,7 +152,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_ADDPv2i64p: {  // addp dd, vn.2d
-      results[0] = {neonHelp::vecAddp_2ops<uint64_t>(operands), 256};
+      results[0] = {neonHelp::vecSumElems_2ops<uint64_t, 2>(operands), 256};
       break;
     }
     case Opcode::AArch64_ADDPv4i16: {
@@ -244,12 +248,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADDVv8i8v: {
-      return executionNYI();
+    case Opcode::AArch64_ADDVv8i8v: {  // addv bd, vn.8b
+      results[0] = {neonHelp::vecSumElems_2ops<uint8_t, 8>(operands), 256};
       break;
     }
-    case Opcode::AArch64_ADDWri: {
-      return executionNYI();
+    case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm{, shift}
+      auto [result, nzcv] =
+          arithmeticHelp::addShift_imm<uint32_t>(operands, metadata);
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_ADDWrr: {
@@ -262,12 +268,16 @@ void Instruction::execute() {
       results[0] = static_cast<uint64_t>(result);
       break;
     }
-    case Opcode::AArch64_ADDWrx: {
-      return executionNYI();
+    case Opcode::AArch64_ADDWrx: {  // add wd, wn, wm{, extend #amount}
+      auto [result, nzcv] =
+          arithmeticHelp::addExtend_3ops<uint32_t>(operands, metadata);
+      results[0] = result;
       break;
     }
-    case Opcode::AArch64_ADDXri: {
-      return executionNYI();
+    case Opcode::AArch64_ADDXri: {  // add xd, xn, #imm{, shift}
+      auto [result, nzcv] =
+          arithmeticHelp::addShift_imm<uint64_t>(operands, metadata);
+      results[0] = RegisterValue(result);
       break;
     }
     case Opcode::AArch64_ADDXrr: {
@@ -280,12 +290,13 @@ void Instruction::execute() {
       results[0] = result;
       break;
     }
-    case Opcode::AArch64_ADDXrx: {
-      return executionNYI();
-      break;
+    case Opcode::AArch64_ADDXrx: {  // add xd, xn, wm{, extend {#amount}}
+      [[fallthrough]];
     }
-    case Opcode::AArch64_ADDXrx64: {
-      return executionNYI();
+    case Opcode::AArch64_ADDXrx64: {  // add xd, xn, xm{, extend {#amount}}
+      auto [result, nzcv] =
+          arithmeticHelp::addExtend_3ops<uint64_t>(operands, metadata);
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_ADD_ZI_B: {
@@ -2849,7 +2860,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FADDPv2i64p: {  // faddp dd, vn.2d
-      results[0] = {neonHelp::vecAddp_2ops<double>(operands), 256};
+      results[0] = {neonHelp::vecSumElems_2ops<double, 2>(operands), 256};
       break;
     }
     case Opcode::AArch64_FADDPv4f16: {

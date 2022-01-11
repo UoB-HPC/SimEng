@@ -29,14 +29,17 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `addp rd, vn`.
-   * I represents the number of elements in the output array to be updated (i.e.
-   * for vd.8b the final 8 elements in the output array will be 0).
+   * I represents the number of elements in the input array to be summed.
    */
-  template <typename T>
-  static T vecAddp_2ops(
+  template <typename T, int I>
+  static T vecSumElems_2ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands) {
     const T* n = operands[0].getAsVector<T>();
-    return (n[0] + n[1]);
+    T result = 0;
+    for (int i = 0; i < I; i++) {
+      result += n[i];
+    }
+    return result;
   }
 
   /** Helper function for NEON instructions with the format `addp vd, vn, vm`.
