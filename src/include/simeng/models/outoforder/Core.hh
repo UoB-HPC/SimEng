@@ -141,7 +141,7 @@ class Core : public simeng::Core {
   /** Clock frequency of core */
   unsigned int clockFrequency_ = 2.5 * 1e9;
 
-  /** Core commit width; maximum number of instruction that can be commited per
+  /** Core commit width; maximum number of instruction that can be committed per
    * cycle. */
   unsigned int commitWidth_ = 6;
 
