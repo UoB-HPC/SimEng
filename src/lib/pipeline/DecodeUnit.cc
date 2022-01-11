@@ -11,7 +11,8 @@ DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& input,
     : input_(input), output_(output), predictor_(predictor){};
 
 void DecodeUnit::tick() {
-  if (output_.isStalled()) {
+  // Stall if output buffer is stalled or internal uop buffer is overpopulated
+  if (output_.isStalled() || (microOps_.size() >= output_.getWidth())) {
     input_.stall(true);
     return;
   }
@@ -19,22 +20,29 @@ void DecodeUnit::tick() {
   shouldFlush_ = false;
   input_.stall(false);
 
+  // Populate uop buffer with newly fetched macro-ops
   for (size_t slot = 0; slot < input_.getWidth(); slot++) {
     auto& macroOp = input_.getHeadSlots()[slot];
-
-    // Assume single uop per macro op for this version
-    // TODO: Stall on multiple uops and siphon one per cycle, recording progress
-    assert(macroOp.size() <= 1 &&
-           "Multiple uops per macro-op not yet supported");
 
     if (macroOp.size() == 0) {
       // Nothing to process for this macro-op
       continue;
     }
 
-    auto& uop = (output_.getTailSlots()[slot] = std::move(macroOp[0]));
+    for (uint8_t index = 0; index < macroOp.size(); index++) {
+      microOps_.push(std::move(macroOp[index]));
+    }
 
     input_.getHeadSlots()[slot].clear();
+  }
+
+  for (size_t slot = 0; slot < output_.getWidth(); slot++) {
+    // If there's no more uops to decode, exit loop early
+    if (!microOps_.size()) break;
+
+    // Move uop to output buffer and remove from internal buffer
+    auto& uop = (output_.getTailSlots()[slot] = std::move(microOps_.front()));
+    microOps_.pop();
 
     // Check preliminary branch prediction results now that the instruction is
     // decoded. Identifies:
@@ -51,7 +59,7 @@ void DecodeUnit::tick() {
         predictor_.update(uop, false, pc_);
       }
 
-      // Skip processing remaining macro-ops, as they need to be flushed
+      // Skip processing remaining uops, as they need to be flushed
       break;
     }
   }
