@@ -100,8 +100,8 @@ class sveHelp {
     return out;
   }
 
-  /** Helper function for SVE instructions with the format `whilelo pd, {w,x}n,
-   * {w,x}m`.
+  /** Helper function for SVE instructions with the format `whilelo pd, <w,x>n,
+   * <w,x>m`.
    * T represents the type of operands n and m (i.e. uint32_t for wn).
    * P represents the type of operand p (i.e. uint8_t for pd.b).
    */

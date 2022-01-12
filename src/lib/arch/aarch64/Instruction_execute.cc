@@ -215,7 +215,16 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_ADDSXrx: {  // adds xd, xn, xm{, extend {#amount}}
-      [[fallthrough]];
+      // Cant use helper function as operands[1] is different type to register
+      // it is fetched from
+      auto x = operands[0].get<uint64_t>();
+      auto y =
+          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.value);
+      auto [result, nzcv] = ExecHelpFunc::addWithCarry(x, y, 0);
+      results[0] = nzcv;
+      results[1] = result;
+      break;
     }
     case Opcode::AArch64_ADDSXrx64: {  // adds xd, xn, xm{, extend {#amount}}
       auto [result, nzcv] =
@@ -291,7 +300,14 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_ADDXrx: {  // add xd, xn, wm{, extend {#amount}}
-      [[fallthrough]];
+      // Cant use helper function as operands[1] is different type to register
+      // it is fetched from
+      auto x = operands[0].get<uint64_t>();
+      auto y =
+          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
+                      metadata.operands[2].shift.value);
+      results[0] = x + y;
+      break;
     }
     case Opcode::AArch64_ADDXrx64: {  // add xd, xn, xm{, extend {#amount}}
       auto [result, nzcv] =
@@ -1200,16 +1216,16 @@ void Instruction::execute() {
       branchAddress_ = addr;
       break;
     }
-    case Opcode::AArch64_CCMNWi: {
-      return executionNYI();
+    case Opcode::AArch64_CCMNWi: {  // ccmn wn, #imm, #nzcv, cc
+      results[0] = conditionalHelp::ccmn_imm<uint32_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_CCMNWr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CCMNXi: {
-      return executionNYI();
+    case Opcode::AArch64_CCMNXi: {  // ccmn xn, #imm, #nzcv, cc
+      results[0] = conditionalHelp::ccmn_imm<uint64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_CCMNXr: {
@@ -9879,12 +9895,12 @@ void Instruction::execute() {
       results[0] = moveHelp::movk_imm<uint64_t>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_MOVNWi: {
-      return executionNYI();
+    case Opcode::AArch64_MOVNWi: {  // movn wd, #imm{, LSL #shift}
+      results[0] = moveHelp::moviShift_imm<uint32_t>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_MOVNXi: {
-      return executionNYI();
+    case Opcode::AArch64_MOVNXi: {  // movn xd, #imm{, LSL #shift}
+      results[0] = moveHelp::moviShift_imm<uint64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_MOVPRFX_ZPmZ_B: {
@@ -14922,53 +14938,84 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SUBSWri: {
-      return executionNYI();
+    case Opcode::AArch64_SUBSWri: {  // subs wd, wn, #imm
+      auto [result, nzcv] =
+          arithmeticHelp::subShift_imm<uint32_t>(operands, metadata);
+      results[0] = RegisterValue(nzcv);
+      results[1] = RegisterValue(result, 8);
       break;
     }
     case Opcode::AArch64_SUBSWrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SUBSWrs: {
-      return executionNYI();
+    case Opcode::AArch64_SUBSWrs: {  // subs wd, wn, wm{, shift #amount}
+      auto [result, nzcv] =
+          arithmeticHelp::subShift_3ops<uint32_t>(operands, metadata);
+      results[0] = RegisterValue(nzcv);
+      results[1] = RegisterValue(result, 8);
       break;
     }
-    case Opcode::AArch64_SUBSWrx: {
-      return executionNYI();
+    case Opcode::AArch64_SUBSWrx: {  // subs wd, wn, wm{, extend #amount}
+      auto [result, nzcv] =
+          arithmeticHelp::subExtend_3ops<uint32_t>(operands, metadata);
+      results[0] = RegisterValue(nzcv);
+      results[1] = RegisterValue(result, 8);
       break;
     }
-    case Opcode::AArch64_SUBSXri: {
-      return executionNYI();
+    case Opcode::AArch64_SUBSXri: {  // subs xd, xn, #imm
+      auto [result, nzcv] =
+          arithmeticHelp::subShift_imm<uint64_t>(operands, metadata);
+      results[0] = RegisterValue(nzcv);
+      results[1] = RegisterValue(result);
       break;
     }
     case Opcode::AArch64_SUBSXrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SUBSXrs: {
-      return executionNYI();
+    case Opcode::AArch64_SUBSXrs: {  // subs xd, xn, xm{, shift #amount}
+      auto [result, nzcv] =
+          arithmeticHelp::subShift_3ops<uint64_t>(operands, metadata);
+      results[0] = RegisterValue(nzcv);
+      results[1] = RegisterValue(result);
       break;
     }
-    case Opcode::AArch64_SUBSXrx: {
-      return executionNYI();
+    case Opcode::AArch64_SUBSXrx: {  // subs xd, xn, wm{, extend #amount}
+      // Cant use helper function as operands[1] is different type to register
+      // it is fetched from
+      auto x = operands[0].get<uint64_t>();
+      auto y = ~ExecHelpFunc::extendValue(operands[1].get<uint32_t>(),
+                                          metadata.operands[2].ext,
+                                          metadata.operands[2].shift.value);
+      auto [result, nzcv] = ExecHelpFunc::addWithCarry(x, y, true);
+      results[0] = RegisterValue(nzcv);
+      if (destinationRegisterCount > 1) {
+        results[1] = result;
+      }
       break;
     }
-    case Opcode::AArch64_SUBSXrx64: {
-      return executionNYI();
+    case Opcode::AArch64_SUBSXrx64: {  // subs xd, xn, xm{, extend #amount}
+      auto [result, nzcv] =
+          arithmeticHelp::subExtend_3ops<uint64_t>(operands, metadata);
+      results[0] = RegisterValue(nzcv);
+      results[1] = RegisterValue(result);
       break;
     }
     case Opcode::AArch64_SUBWri: {  // sub wd, wn, #imm{, <shift>}
-      results[0] = RegisterValue(
-          arithmeticHelp::subShift_imm<uint32_t>(operands, metadata), 8);
+      auto [result, nzcv] =
+          arithmeticHelp::subShift_imm<uint32_t>(operands, metadata);
+      results[0] = RegisterValue(result, 8);
       break;
     }
     case Opcode::AArch64_SUBWrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SUBWrs: {
-      return executionNYI();
+    case Opcode::AArch64_SUBWrs: {  // sub wd, wn, wm{, shift #amount}
+      auto [result, nzcv] =
+          arithmeticHelp::subShift_3ops<uint32_t>(operands, metadata);
+      results[0] = RegisterValue(result, 8);
       break;
     }
     case Opcode::AArch64_SUBWrx: {
@@ -14976,24 +15023,35 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SUBXri: {  // sub xd, xn, #imm{, <shift>}
-      results[0] = RegisterValue(
-          arithmeticHelp::subShift_imm<uint64_t>(operands, metadata));
+      auto [result, nzcv] =
+          arithmeticHelp::subShift_imm<uint64_t>(operands, metadata);
+      results[0] = RegisterValue(result);
       break;
     }
     case Opcode::AArch64_SUBXrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SUBXrs: {
-      return executionNYI();
+    case Opcode::AArch64_SUBXrs: {  // sub xd, xn, xm{, shift #amount}
+      auto [result, nzcv] =
+          arithmeticHelp::subShift_3ops<uint64_t>(operands, metadata);
+      results[0] = RegisterValue(result);
       break;
     }
-    case Opcode::AArch64_SUBXrx: {
-      return executionNYI();
+    case Opcode::AArch64_SUBXrx: {  // sub xd, xn, wm{, extend #amount}
+      // Cant use helper function as operands[1] is different type to register
+      // it is fetched from
+      auto x = operands[0].get<uint64_t>();
+      auto y = ExecHelpFunc::extendValue(operands[1].get<uint32_t>(),
+                                         metadata.operands[2].ext,
+                                         metadata.operands[2].shift.value);
+      results[0] = x - y;
       break;
     }
-    case Opcode::AArch64_SUBXrx64: {
-      return executionNYI();
+    case Opcode::AArch64_SUBXrx64: {  // sub xd, xn, xm{, extend #amount}
+      auto [result, nzcv] =
+          arithmeticHelp::subExtend_3ops<uint64_t>(operands, metadata);
+      results[0] = RegisterValue(result);
       break;
     }
     case Opcode::AArch64_SUB_ZI_B: {

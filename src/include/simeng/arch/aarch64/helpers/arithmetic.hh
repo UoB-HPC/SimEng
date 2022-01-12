@@ -83,17 +83,42 @@ class arithmeticHelp {
     return (a + (n * m));
   }
 
-  /** Helper function for instructions with the format `sub rd, rn, #imm{,
-   * shift}`. Returns single value. */
+  /** Helper function for instructions with the format `sub{s} rd, rn, #imm`. */
   template <typename T>
-  static T subShift_imm(
+  static std::tuple<T, uint8_t> subShift_imm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
       struct simeng::arch::aarch64::InstructionMetadata metadata) {
     const T n = operands[0].get<T>();
-    const T m = shiftValue(static_cast<T>(metadata.operands[2].imm),
-                           metadata.operands[2].shift.type,
-                           metadata.operands[2].shift.value);
-    return (n - m);
+    const T m = ~shiftValue(static_cast<T>(metadata.operands[2].imm),
+                            metadata.operands[2].shift.type,
+                            metadata.operands[2].shift.value);
+    return ExecHelpFunc::addWithCarry(n, m, true);
+  }
+
+  /** Helper function for instructions with the format `sub{s} rd, rn, rm{,
+   * shift #amount}`. */
+  template <typename T>
+  static std::tuple<T, uint8_t> subShift_3ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
+      struct simeng::arch::aarch64::InstructionMetadata metadata) {
+    const T n = operands[0].get<T>();
+    const T m =
+        ~shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,
+                    metadata.operands[2].shift.value);
+    return ExecHelpFunc::addWithCarry(n, m, true);
+  }
+
+  /** Helper function for instructions with the format `sub{s} rd, rn, rm{,
+   * extend #amount}`. */
+  template <typename T>
+  static std::tuple<T, uint8_t> subExtend_3ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
+      struct simeng::arch::aarch64::InstructionMetadata metadata) {
+    const T n = operands[0].get<T>();
+    const T m = static_cast<T>(~ExecHelpFunc::extendValue(
+        operands[1].get<T>(), metadata.operands[2].ext,
+        metadata.operands[2].shift.value));
+    return ExecHelpFunc::addWithCarry(n, m, true);
   }
 };
 }  // namespace aarch64

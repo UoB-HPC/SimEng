@@ -31,6 +31,22 @@ class conditionalHelp {
     }
     return {branchTaken, branchAddress};
   }
+
+  /** Helper function for instructions with the format `ccmn rn, #imm #nzcv,
+   * cc`.
+   */
+  template <typename T>
+  static uint8_t ccmn_imm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
+      struct simeng::arch::aarch64::InstructionMetadata metadata) {
+    if (ExecHelpFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+      uint8_t nzcv;
+      std::tie(std::ignore, nzcv) = ExecHelpFunc::addWithCarry(
+          operands[1].get<T>(), static_cast<T>(metadata.operands[1].imm), 0);
+      return nzcv;
+    }
+    return static_cast<uint8_t>(metadata.operands[2].imm);
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
