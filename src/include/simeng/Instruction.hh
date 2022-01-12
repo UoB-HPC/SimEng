@@ -178,6 +178,9 @@ class Instruction {
   /** Is the micro-operation in an awaiting commit state? */
   bool isWaitingCommit() const;
 
+  /** Get arbitrary micro-operation index. */
+  int getMicroOpIndex() const;
+
  protected:
   /** Whether an exception has been encountered. */
   bool exceptionEncountered_ = false;
@@ -246,6 +249,10 @@ class Instruction {
   /** Is the micro-operation in a committable state but must wait for all
    * associated micro-operations to also be committable? */
   bool waitingCommit_ = false;
+
+  /** An arbitrary index value for the micro-operation. Its use is based on the
+   * implementation of specific micro-operations. */
+  int microOpIndex_;
 };
 
 }  // namespace simeng

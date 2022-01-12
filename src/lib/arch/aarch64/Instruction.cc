@@ -12,11 +12,12 @@ const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
                                              (uint16_t)-1};
 
 Instruction::Instruction(const Architecture& architecture,
-                         const InstructionMetadata& metadata, bool isMicroOp,
-                         bool isLastMicroOp)
+                         const InstructionMetadata& metadata,
+                         MicroOpInfo microOpInfo)
     : architecture_(architecture), metadata(metadata) {
-  isMicroOp_ = isMicroOp;
-  isLastMicroOp_ = isLastMicroOp;
+  isMicroOp_ = microOpInfo.isMicroOp;
+  isLastMicroOp_ = microOpInfo.isLastMicroOp;
+  microOpIndex_ = microOpInfo.microOpIndex;
   decode();
 }
 
@@ -179,7 +180,7 @@ uint16_t Instruction::getGroup() const {
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
-void Instruction::setExecutionInfo(const executionInfo& info) {
+void Instruction::setExecutionInfo(const ExecutionInfo& info) {
   if (isLoad_ || isStore_) {
     lsqExecutionLatency_ = info.latency;
   } else {

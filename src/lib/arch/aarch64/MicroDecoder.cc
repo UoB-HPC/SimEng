@@ -154,41 +154,44 @@ uint8_t MicroDecoder::decode(const Architecture& architecture,
         num_ops = 2;
         output.resize(num_ops);
         // address generation uop
-        cs_arm64 addr_gen_info = {ARM64_CC_INVALID, false, false, 3, {}};
-        cs_arm64_op addr_gen_dest = {0,
-                                     ARM64_VAS_INVALID,
-                                     {ARM64_SFT_INVALID, 0},
-                                     ARM64_EXT_INVALID,
-                                     ARM64_OP_REG,
-                                     {metadata.operands[1].mem.base},
-                                     CS_AC_WRITE};
-        cs_arm64_op addr_gen_src = addr_gen_dest;
-        addr_gen_src.access = CS_AC_READ;
-        cs_arm64_op addr_gen_imm = {0,
-                                    ARM64_VAS_INVALID,
-                                    {ARM64_SFT_INVALID, 0},
-                                    ARM64_EXT_INVALID,
-                                    ARM64_OP_IMM,
-                                    {},
-                                    CS_AC_READ};
-        addr_gen_imm.imm = static_cast<int64_t>(metadata.operands[1].mem.disp);
-        addr_gen_info.operands[0] = addr_gen_dest;
-        addr_gen_info.operands[1] = addr_gen_src;
-        addr_gen_info.operands[2] = addr_gen_imm;
-        cs_detail addr_gen_detail = {{}, 0, {}, 0, {}, 0, {}};
-        addr_gen_detail.arm64 = addr_gen_info;
-        cs_insn addr_gen_insn = {ARM64_INS_ENDING,
-                                 0x0,
-                                 4,
-                                 "",
-                                 "micro_addr_gen",
-                                 "",
-                                 &addr_gen_detail,
-                                 Opcode::AArch64_INSTRUCTION_LIST_END};
+        cs_arm64 offset_gen_info = {ARM64_CC_INVALID, false, false, 3, {}};
+        cs_arm64_op offset_gen_dest = {0,
+                                       ARM64_VAS_INVALID,
+                                       {ARM64_SFT_INVALID, 0},
+                                       ARM64_EXT_INVALID,
+                                       ARM64_OP_REG,
+                                       {metadata.operands[1].mem.base},
+                                       CS_AC_WRITE};
+        cs_arm64_op offset_gen_src = offset_gen_dest;
+        offset_gen_src.access = CS_AC_READ;
+        cs_arm64_op offset_gen_imm = {0,
+                                      ARM64_VAS_INVALID,
+                                      {ARM64_SFT_INVALID, 0},
+                                      ARM64_EXT_INVALID,
+                                      ARM64_OP_IMM,
+                                      {},
+                                      CS_AC_READ};
+        offset_gen_imm.imm =
+            static_cast<int64_t>(metadata.operands[1].mem.disp);
+        offset_gen_info.operands[0] = offset_gen_dest;
+        offset_gen_info.operands[1] = offset_gen_src;
+        offset_gen_info.operands[2] = offset_gen_imm;
+        cs_detail offset_gen_detail = {{}, 0, {}, 0, {}, 0, {}};
+        offset_gen_detail.arm64 = offset_gen_info;
+        cs_insn offset_gen_insn = {ARM64_INS_ENDING,
+                                   0x0,
+                                   4,
+                                   "",
+                                   "micro_offset_gen",
+                                   "",
+                                   &offset_gen_detail,
+                                   MicroOpcode::OFFSET_GEN};
         output[0] = std::make_shared<Instruction>(
-            architecture, InstructionMetadata(addr_gen_insn), true);
+            architecture, InstructionMetadata(offset_gen_insn),
+            MicroOpInfo({true, false, 0}));
         printInfo(
-            Instruction(architecture, InstructionMetadata(addr_gen_insn), true),
+            Instruction(architecture, InstructionMetadata(offset_gen_insn),
+                        MicroOpInfo({true, false, 0})),
             capstoneHandle);
         // ldr uop
         cs_arm64 ldr_info = {ARM64_CC_INVALID, false, false, 2, {}};
@@ -211,19 +214,15 @@ uint8_t MicroDecoder::decode(const Architecture& architecture,
         ldr_info.operands[1] = ldr_addr;
         cs_detail ldr_detail = {{}, 0, {}, 0, {}, 0, {}};
         ldr_detail.arm64 = ldr_info;
-        cs_insn ldr_insn = {ARM64_INS_ENDING,
-                            0x0,
-                            4,
-                            "",
-                            "micro_ldr",
-                            "",
-                            &ldr_detail,
-                            Opcode::AArch64_INSTRUCTION_LIST_END};
-        output[1] = std::make_shared<Instruction>(
-            architecture, InstructionMetadata(ldr_insn), true);
-        printInfo(
-            Instruction(architecture, InstructionMetadata(ldr_insn), true),
-            capstoneHandle);
+        cs_insn ldr_insn = {
+            ARM64_INS_ENDING, 0x0, 4,           "",
+            "micro_ldr",      "",  &ldr_detail, MicroOpcode::LDR};
+        output[1] = std::make_shared<Instruction>(architecture,
+                                                  InstructionMetadata(ldr_insn),
+                                                  MicroOpInfo({true, true, 1}));
+        printInfo(Instruction(architecture, InstructionMetadata(ldr_insn),
+                              MicroOpInfo({true, true, 1})),
+                  capstoneHandle);
         break;
       }
       default: {

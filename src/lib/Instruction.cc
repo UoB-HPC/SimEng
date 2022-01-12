@@ -54,5 +54,6 @@ bool Instruction::isMicroOp() const { return isMicroOp_; }
 bool Instruction::isLastMicroOp() const { return isLastMicroOp_; }
 void Instruction::setWaitingCommit() { waitingCommit_ = true; }
 bool Instruction::isWaitingCommit() const { return waitingCommit_; }
+int Instruction::getMicroOpIndex() const { return microOpIndex_; }
 
 }  // namespace simeng

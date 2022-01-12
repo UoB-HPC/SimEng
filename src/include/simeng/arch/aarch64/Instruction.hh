@@ -58,7 +58,7 @@ const uint8_t SYSTEM = 4;
 
 /** A struct holding user-defined execution information for a aarch64
  * instruction. */
-struct executionInfo {
+struct ExecutionInfo {
   /** The latency for the instruction. */
   uint16_t latency = 1;
 
@@ -83,12 +83,19 @@ enum class InstructionException {
 };
 
 /** The opcodes of simeng aarch64 micro-operations. */
-namespace microOpcode {
+namespace MicroOpcode {
 const uint8_t LDR = 0;
 const uint8_t STR = 1;
-const uint8_t ADDR_GEN = 2;
+const uint8_t OFFSET_GEN = 2;
 const uint8_t STORE_DATA = 3;
-}  // namespace microOpcode
+}  // namespace MicroOpcode
+
+/** A struct to group micro-operation information together. */
+struct MicroOpInfo {
+  bool isMicroOp = false;
+  bool isLastMicroOp = true;
+  int microOpIndex = 0;
+};
 
 /** A basic ARMv8-a implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
@@ -96,8 +103,8 @@ class Instruction : public simeng::Instruction {
   /** Construct an instruction instance by decoding a provided instruction word.
    */
   Instruction(const Architecture& architecture,
-              const InstructionMetadata& metadata, bool isMicroOp = false,
-              bool isLastMicroOp = true);
+              const InstructionMetadata& metadata,
+              MicroOpInfo microOpInfo = MicroOpInfo());
 
   /** Construct an instruction instance that raises an exception. */
   Instruction(const Architecture& architecture,
@@ -177,7 +184,7 @@ class Instruction : public simeng::Instruction {
 
   /** Set this instruction's execution information including it's execution
    * latency and throughput, and the set of ports which support it. */
-  void setExecutionInfo(const executionInfo& info);
+  void setExecutionInfo(const ExecutionInfo& info);
 
   /** Get this instruction's supported set of ports. */
   const std::vector<uint8_t>& getSupportedPorts() override;
