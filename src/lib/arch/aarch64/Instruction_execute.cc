@@ -2388,36 +2388,44 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CSELWr: {
-      return executionNYI();
+    case Opcode::AArch64_CSELWr: {  // csel wd, wn, wm, cc
+      results[0] = static_cast<uint64_t>(conditionalHelp::cs_4ops<uint32_t>(
+          operands, metadata, [](uint32_t x) -> uint32_t { return x; }));
       break;
     }
-    case Opcode::AArch64_CSELXr: {
-      return executionNYI();
+    case Opcode::AArch64_CSELXr: {  // csel xd, xn, xm, cc
+      results[0] = conditionalHelp::cs_4ops<uint64_t>(
+          operands, metadata, [](uint64_t x) -> uint64_t { return x; });
       break;
     }
-    case Opcode::AArch64_CSINCWr: {
-      return executionNYI();
+    case Opcode::AArch64_CSINCWr: {  // csinc wd, wn, wm, cc
+      results[0] = static_cast<uint64_t>(conditionalHelp::cs_4ops<uint32_t>(
+          operands, metadata, [](uint32_t x) -> uint32_t { return x + 1; }));
       break;
     }
-    case Opcode::AArch64_CSINCXr: {
-      return executionNYI();
+    case Opcode::AArch64_CSINCXr: {  // csinc xd, xn, xm, cc
+      results[0] = conditionalHelp::cs_4ops<uint64_t>(
+          operands, metadata, [](uint64_t x) -> uint64_t { return x + 1; });
       break;
     }
-    case Opcode::AArch64_CSINVWr: {
-      return executionNYI();
+    case Opcode::AArch64_CSINVWr: {  // csinv wd, wn, wm, cc
+      results[0] = static_cast<uint64_t>(conditionalHelp::cs_4ops<uint32_t>(
+          operands, metadata, [](uint32_t x) -> uint32_t { return ~x; }));
       break;
     }
-    case Opcode::AArch64_CSINVXr: {
-      return executionNYI();
+    case Opcode::AArch64_CSINVXr: {  // csinv xd, xn, xm, cc
+      results[0] = conditionalHelp::cs_4ops<uint64_t>(
+          operands, metadata, [](uint64_t x) -> uint64_t { return ~x; });
       break;
     }
-    case Opcode::AArch64_CSNEGWr: {
-      return executionNYI();
+    case Opcode::AArch64_CSNEGWr: {  // csneg wd, wn, wm, cc
+      results[0] = static_cast<int64_t>(conditionalHelp::cs_4ops<int32_t>(
+          operands, metadata, [](int32_t x) -> int32_t { return -x; }));
       break;
     }
-    case Opcode::AArch64_CSNEGXr: {
-      return executionNYI();
+    case Opcode::AArch64_CSNEGXr: {  // csneg xd, xn, xm, cc
+      results[0] = conditionalHelp::cs_4ops<uint64_t>(
+          operands, metadata, [](uint64_t x) -> uint64_t { return -x; });
       break;
     }
     case Opcode::AArch64_CTERMEQ_WW: {

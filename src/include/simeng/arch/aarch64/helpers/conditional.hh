@@ -47,6 +47,20 @@ class conditionalHelp {
     }
     return static_cast<uint8_t>(metadata.operands[2].imm);
   }
+
+  /** Helper function for instructions with the format `cs<el, neg, inc, inv>
+   * rd, rn, rm, cc`.
+   */
+  template <typename T>
+  static T cs_4ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
+      struct simeng::arch::aarch64::InstructionMetadata metadata,
+      std::function<T(T)> func) {
+    if (ExecHelpFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+      return operands[1].get<T>();
+    }
+    return func(operands[2].get<T>());
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
