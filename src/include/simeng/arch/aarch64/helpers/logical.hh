@@ -40,7 +40,7 @@ class logicalHelp {
                                        result == 0, false, false)};
   }
 
-  /** Helper function for instructions with the format `and rd, rn, rm{, shift
+  /** Helper function for instructions with the format `bic rd, rn, rm{, shift
    * #amount}`. Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> bicShift_3ops(

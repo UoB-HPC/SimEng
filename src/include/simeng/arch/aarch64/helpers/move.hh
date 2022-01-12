@@ -12,20 +12,10 @@ namespace arch {
 namespace aarch64 {
 class moveHelp {
  public:
-  /** Helper function for instructions with the format `movz <w,x>d, #imm`.
-   */
-  template <typename T>
-  static T movz_imm(
-      struct simeng::arch::aarch64::InstructionMetadata metadata) {
-    uint8_t shift = metadata.operands[1].shift.value;
-    T value = static_cast<uint64_t>(metadata.operands[1].imm) << shift;
-    return value;
-  }
-
   /** Helper function for instructions with the format `movk <w,x>d, #imm`.
    */
   template <typename T>
-  static T movk_imm(
+  static T movkShift_imm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
       struct simeng::arch::aarch64::InstructionMetadata metadata) {
     // Clear 16-bit region offset by `shift` and replace with immediate
@@ -36,15 +26,15 @@ class moveHelp {
     return value;
   }
 
-  /** Helper function for instructions with the format `movi <w,x>d, #imm{, lsl
+  /** Helper function for instructions with the format `movn <w,x>d, #imm{, lsl
    * #shift}`.
    */
   template <typename T>
-  static uint64_t moviShift_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
-      struct simeng::arch::aarch64::InstructionMetadata metadata) {
+  static uint64_t movnShift_imm(
+      struct simeng::arch::aarch64::InstructionMetadata metadata,
+      std::function<T(uint64_t)> func) {
     uint8_t shift = metadata.operands[1].shift.value;
-    T value = ~(static_cast<uint64_t>(metadata.operands[1].imm) << shift);
+    T value = func(static_cast<uint64_t>(metadata.operands[1].imm) << shift);
     return static_cast<uint64_t>(value);
   }
 };

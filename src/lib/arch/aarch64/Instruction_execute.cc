@@ -1187,7 +1187,7 @@ void Instruction::execute() {
     case Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
       auto [taken, addr] = conditionalHelp::condBranch_cmpToZero<uint32_t>(
           operands, metadata, instructionAddress_,
-          [](uint32_t x, uint32_t y) -> bool { return x != y; });
+          [](uint32_t x) -> bool { return x != 0; });
       branchTaken_ = taken;
       branchAddress_ = addr;
       break;
@@ -1195,7 +1195,7 @@ void Instruction::execute() {
     case Opcode::AArch64_CBNZX: {  // cbnz xn, #imm
       auto [taken, addr] = conditionalHelp::condBranch_cmpToZero<uint64_t>(
           operands, metadata, instructionAddress_,
-          [](uint64_t x, uint64_t y) -> bool { return x != y; });
+          [](uint64_t x) -> bool { return x != 0; });
       branchTaken_ = taken;
       branchAddress_ = addr;
       break;
@@ -1203,7 +1203,7 @@ void Instruction::execute() {
     case Opcode::AArch64_CBZW: {  // cbz wn, #imm
       auto [taken, addr] = conditionalHelp::condBranch_cmpToZero<uint32_t>(
           operands, metadata, instructionAddress_,
-          [](uint32_t x, uint32_t y) -> bool { return x == y; });
+          [](uint32_t x) -> bool { return x == 0; });
       branchTaken_ = taken;
       branchAddress_ = addr;
       break;
@@ -1211,7 +1211,7 @@ void Instruction::execute() {
     case Opcode::AArch64_CBZX: {  // cbz xn, #imm
       auto [taken, addr] = conditionalHelp::condBranch_cmpToZero<uint64_t>(
           operands, metadata, instructionAddress_,
-          [](uint64_t x, uint64_t y) -> bool { return x == y; });
+          [](uint64_t x) -> bool { return x == 0; });
       branchTaken_ = taken;
       branchAddress_ = addr;
       break;
@@ -9895,20 +9895,22 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_MOVKWi: {  // movk wd, #imm
-      results[0] =
-          RegisterValue(moveHelp::movk_imm<uint32_t>(operands, metadata), 8);
+      results[0] = RegisterValue(
+          moveHelp::movkShift_imm<uint32_t>(operands, metadata), 8);
       break;
     }
     case Opcode::AArch64_MOVKXi: {  // movk xd, #imm
-      results[0] = moveHelp::movk_imm<uint64_t>(operands, metadata);
+      results[0] = moveHelp::movkShift_imm<uint64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_MOVNWi: {  // movn wd, #imm{, LSL #shift}
-      results[0] = moveHelp::moviShift_imm<uint32_t>(operands, metadata);
+      results[0] = moveHelp::movnShift_imm<uint32_t>(
+          metadata, [](uint64_t x) -> uint32_t { return ~x; });
       break;
     }
     case Opcode::AArch64_MOVNXi: {  // movn xd, #imm{, LSL #shift}
-      results[0] = moveHelp::moviShift_imm<uint64_t>(operands, metadata);
+      results[0] = moveHelp::movnShift_imm<uint64_t>(
+          metadata, [](uint64_t x) -> uint64_t { return ~x; });
       break;
     }
     case Opcode::AArch64_MOVPRFX_ZPmZ_B: {
@@ -9948,11 +9950,13 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_MOVZWi: {  // movz wd, #imm
-      results[0] = RegisterValue(moveHelp::movz_imm<uint32_t>(metadata), 8);
+      results[0] = moveHelp::movnShift_imm<uint32_t>(
+          metadata, [](uint64_t x) -> uint32_t { return x; });
       break;
     }
     case Opcode::AArch64_MOVZXi: {  // movz xd, #imm
-      results[0] = moveHelp::movz_imm<uint64_t>(metadata);
+      results[0] = moveHelp::movnShift_imm<uint64_t>(
+          metadata, [](uint64_t x) -> uint64_t { return x; });
       break;
     }
     case Opcode::AArch64_MOVaddr: {
