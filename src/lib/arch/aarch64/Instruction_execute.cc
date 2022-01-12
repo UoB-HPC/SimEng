@@ -1169,29 +1169,33 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
-      auto [taken, addr] = conditionalHelp::condBranch_zORnz<uint32_t>(
-          operands, metadata, instructionAddress_, true);
+      auto [taken, addr] = conditionalHelp::condBranch_cmpToZero<uint32_t>(
+          operands, metadata, instructionAddress_,
+          [](uint32_t x, uint32_t y) -> bool { return x != y; });
       branchTaken_ = taken;
       branchAddress_ = addr;
       break;
     }
     case Opcode::AArch64_CBNZX: {  // cbnz xn, #imm
-      auto [taken, addr] = conditionalHelp::condBranch_zORnz<uint64_t>(
-          operands, metadata, instructionAddress_, true);
+      auto [taken, addr] = conditionalHelp::condBranch_cmpToZero<uint64_t>(
+          operands, metadata, instructionAddress_,
+          [](uint64_t x, uint64_t y) -> bool { return x != y; });
       branchTaken_ = taken;
       branchAddress_ = addr;
       break;
     }
     case Opcode::AArch64_CBZW: {  // cbz wn, #imm
-      auto [taken, addr] = conditionalHelp::condBranch_zORnz<uint32_t>(
-          operands, metadata, instructionAddress_, false);
+      auto [taken, addr] = conditionalHelp::condBranch_cmpToZero<uint32_t>(
+          operands, metadata, instructionAddress_,
+          [](uint32_t x, uint32_t y) -> bool { return x == y; });
       branchTaken_ = taken;
       branchAddress_ = addr;
       break;
     }
     case Opcode::AArch64_CBZX: {  // cbz xn, #imm
-      auto [taken, addr] = conditionalHelp::condBranch_zORnz<uint64_t>(
-          operands, metadata, instructionAddress_, false);
+      auto [taken, addr] = conditionalHelp::condBranch_cmpToZero<uint64_t>(
+          operands, metadata, instructionAddress_,
+          [](uint64_t x, uint64_t y) -> bool { return x == y; });
       branchTaken_ = taken;
       branchAddress_ = addr;
       break;
