@@ -915,28 +915,42 @@ void Instruction::execute() {
       results[0] = {neonHelp::vecBic_3ops<uint8_t, 8>(operands), 256};
       break;
     }
-    case Opcode::AArch64_BIFv16i8: {
-      return executionNYI();
+    case Opcode::AArch64_BIFv16i8: {  // bif vd.16b, vn.16b, vm.16b
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* n = operands[1].getAsVector<uint64_t>();
+      const uint64_t* m = operands[2].getAsVector<uint64_t>();
+      uint64_t out[2] = {(d[0] & m[0]) | (n[0] & ~m[0]),
+                         (d[1] & m[1]) | (n[1] & ~m[1])};
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_BIFv8i8: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BITv16i8: {
-      return executionNYI();
+    case Opcode::AArch64_BITv16i8: {  // bit vd.16b, vn.16b, vm.16b
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* n = operands[1].getAsVector<uint64_t>();
+      const uint64_t* m = operands[2].getAsVector<uint64_t>();
+      uint64_t out[2] = {(d[0] & ~m[0]) | (n[0] & m[0]),
+                         (d[1] & ~m[1]) | (n[1] & m[1])};
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_BITv8i8: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BL: {
-      return executionNYI();
+    case Opcode::AArch64_BL: {  // bl #imm
+      branchTaken_ = true;
+      branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
+      results[0] = static_cast<uint64_t>(instructionAddress_ + 4);
       break;
     }
-    case Opcode::AArch64_BLR: {
-      return executionNYI();
+    case Opcode::AArch64_BLR: {  // blr xn
+      branchTaken_ = true;
+      branchAddress_ = operands[0].get<uint64_t>();
+      results[0] = static_cast<uint64_t>(instructionAddress_ + 4);
       break;
     }
     case Opcode::AArch64_BLRAA: {
@@ -955,8 +969,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BR: {
-      return executionNYI();
+    case Opcode::AArch64_BR: {  // br xn
+      branchTaken_ = true;
+      branchAddress_ = operands[0].get<uint64_t>();
       break;
     }
     case Opcode::AArch64_BRAA: {
@@ -1027,16 +1042,28 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BSLv16i8: {
-      return executionNYI();
+    case Opcode::AArch64_BSLv16i8: {  // bsl vd.16b, vn.16b, vm.16b
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* n = operands[1].getAsVector<uint64_t>();
+      const uint64_t* m = operands[2].getAsVector<uint64_t>();
+      uint64_t out[2] = {(d[0] & n[0]) | ((~d[0]) & m[0]),
+                         (d[1] & n[1]) | ((~d[1]) & m[1])};
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_BSLv8i8: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_Bcc: {
-      return executionNYI();
+    case Opcode::AArch64_Bcc: {  // b.cond label
+      if (ExecHelpFunc::conditionHolds(metadata.cc,
+                                       operands[0].get<uint8_t>())) {
+        branchTaken_ = true;
+        branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
+      } else {
+        branchTaken_ = false;
+        branchAddress_ = instructionAddress_ + 4;
+      }
       break;
     }
     case Opcode::AArch64_CASAB: {
@@ -1055,12 +1082,18 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CASALW: {
-      return executionNYI();
+    case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
+      const uint32_t s = operands[0].get<uint32_t>();
+      const uint32_t t = operands[1].get<uint32_t>();
+      const uint32_t n = memoryData[0].get<uint32_t>();
+      if (n == s) memoryData[0] = t;
       break;
     }
-    case Opcode::AArch64_CASALX: {
-      return executionNYI();
+    case Opcode::AArch64_CASALX: {  // casal xs, xt, [xn|sp]
+      const uint64_t s = operands[0].get<uint64_t>();
+      const uint64_t t = operands[1].get<uint64_t>();
+      const uint64_t n = memoryData[0].get<uint64_t>();
+      if (n == s) memoryData[0] = t;
       break;
     }
     case Opcode::AArch64_CASAW: {
@@ -1135,20 +1168,32 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CBNZW: {
-      return executionNYI();
+    case Opcode::AArch64_CBNZW: {  // cbnz wn, #imm
+      auto [taken, addr] = conditionalHelp::condBranch_zORnz<uint32_t>(
+          operands, metadata, instructionAddress_, true);
+      branchTaken_ = taken;
+      branchAddress_ = addr;
       break;
     }
-    case Opcode::AArch64_CBNZX: {
-      return executionNYI();
+    case Opcode::AArch64_CBNZX: {  // cbnz xn, #imm
+      auto [taken, addr] = conditionalHelp::condBranch_zORnz<uint64_t>(
+          operands, metadata, instructionAddress_, true);
+      branchTaken_ = taken;
+      branchAddress_ = addr;
       break;
     }
-    case Opcode::AArch64_CBZW: {
-      return executionNYI();
+    case Opcode::AArch64_CBZW: {  // cbz wn, #imm
+      auto [taken, addr] = conditionalHelp::condBranch_zORnz<uint32_t>(
+          operands, metadata, instructionAddress_, false);
+      branchTaken_ = taken;
+      branchAddress_ = addr;
       break;
     }
-    case Opcode::AArch64_CBZX: {
-      return executionNYI();
+    case Opcode::AArch64_CBZX: {  // cbz xn, #imm
+      auto [taken, addr] = conditionalHelp::condBranch_zORnz<uint64_t>(
+          operands, metadata, instructionAddress_, false);
+      branchTaken_ = taken;
+      branchAddress_ = addr;
       break;
     }
     case Opcode::AArch64_CCMNWi: {
