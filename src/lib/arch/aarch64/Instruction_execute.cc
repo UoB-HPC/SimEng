@@ -824,16 +824,22 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BICSWrs: {
-      return executionNYI();
+    case Opcode::AArch64_BICSWrs: {  // bics wd, wn, wm{, shift #amount}
+      auto [result, nzcv] =
+          logicalHelp::bicShift_3ops<uint32_t>(operands, metadata);
+      results[0] = nzcv;
+      results[1] = RegisterValue(result, 8);
       break;
     }
     case Opcode::AArch64_BICSXrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BICSXrs: {
-      return executionNYI();
+    case Opcode::AArch64_BICSXrs: {  // bics xd, xn, xm{, shift #amount}
+      auto [result, nzcv] =
+          logicalHelp::bicShift_3ops<uint64_t>(operands, metadata);
+      results[0] = nzcv;
+      results[1] = result;
       break;
     }
     case Opcode::AArch64_BICS_PPzPP: {
@@ -844,16 +850,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BICWrs: {
-      return executionNYI();
+    case Opcode::AArch64_BICWrs: {  // bic wd, wn, wm{, shift #amount}
+      auto [result, nzcv] =
+          logicalHelp::bicShift_3ops<uint32_t>(operands, metadata);
+      results[0] = RegisterValue(result, 8);
       break;
     }
     case Opcode::AArch64_BICXrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BICXrs: {
-      return executionNYI();
+    case Opcode::AArch64_BICXrs: {  // bic xd, xn, xm{, shift #amount}
+      auto [result, nzcv] =
+          logicalHelp::bicShift_3ops<uint64_t>(operands, metadata);
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_BIC_PPzPP: {
@@ -880,8 +890,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BICv16i8: {
-      return executionNYI();
+    case Opcode::AArch64_BICv16i8: {  // bic vd.16b, vn.16b, vm.16b
+      results[0] = {neonHelp::vecBic_3ops<uint8_t, 16>(operands), 256};
       break;
     }
     case Opcode::AArch64_BICv2i32: {
@@ -892,16 +902,17 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BICv4i32: {
-      return executionNYI();
+    case Opcode::AArch64_BICv4i32: {  // bic vd.4s, #imm{, lsl #shift}
+      results[0] = {neonHelp::vecBicShift_imm<uint32_t, 4>(operands, metadata),
+                    256};
       break;
     }
     case Opcode::AArch64_BICv8i16: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BICv8i8: {
-      return executionNYI();
+    case Opcode::AArch64_BICv8i8: {  // bic vd.8b, vn.8b, vm.8b
+      results[0] = {neonHelp::vecBic_3ops<uint8_t, 8>(operands), 256};
       break;
     }
     case Opcode::AArch64_BIFv16i8: {
@@ -9769,8 +9780,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MOVID: {
-      return executionNYI();
+    case Opcode::AArch64_MOVID: {  // movi dd, #imm
+      uint64_t bits = static_cast<uint64_t>(metadata.operands[1].imm);
+      results[0] = {bits, 256};
       break;
     }
     case Opcode::AArch64_MOVIv16b_ns: {
