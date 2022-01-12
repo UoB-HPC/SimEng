@@ -809,12 +809,15 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_BFMWri: {
-      return executionNYI();
+    case Opcode::AArch64_BFMWri: {  // bfm wd, wn, #immr, #imms
+      results[0] = RegisterValue(
+          bitmanipHelp::bfm_2imms<uint32_t>(operands, metadata, false, false),
+          8);
       break;
     }
-    case Opcode::AArch64_BFMXri: {
-      return executionNYI();
+    case Opcode::AArch64_BFMXri: {  // bfm xd, xn, #immr, #imms
+      results[0] =
+          bitmanipHelp::bfm_2imms<uint64_t>(operands, metadata, false, false);
       break;
     }
     case Opcode::AArch64_BICSWrr: {
@@ -9806,12 +9809,13 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MOVKWi: {
-      return executionNYI();
+    case Opcode::AArch64_MOVKWi: {  // movk wd, #imm
+      results[0] =
+          RegisterValue(moveHelp::movk_imm<uint32_t>(operands, metadata), 8);
       break;
     }
-    case Opcode::AArch64_MOVKXi: {
-      return executionNYI();
+    case Opcode::AArch64_MOVKXi: {  // movk xd, #imm
+      results[0] = moveHelp::movk_imm<uint64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_MOVNWi: {
@@ -11099,12 +11103,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SBFMWri: {
-      return executionNYI();
+    case Opcode::AArch64_SBFMWri: {  // sbfm wd, wn, #immr, #imms
+      results[0] = RegisterValue(
+          bitmanipHelp::bfm_2imms<uint32_t>(operands, metadata, true, true), 8);
       break;
     }
-    case Opcode::AArch64_SBFMXri: {
-      return executionNYI();
+    case Opcode::AArch64_SBFMXri: {  // sbfm xd, xn, #immr, #imms
+      results[0] =
+          bitmanipHelp::bfm_2imms<uint64_t>(operands, metadata, true, true);
       break;
     }
     case Opcode::AArch64_SCVTFSWDri: {
@@ -15658,12 +15664,15 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UBFMWri: {
-      return executionNYI();
+    case Opcode::AArch64_UBFMWri: {  // ubfm wd, wn, #immr, #imms
+      results[0] = RegisterValue(
+          bitmanipHelp::bfm_2imms<uint32_t>(operands, metadata, false, true),
+          8);
       break;
     }
-    case Opcode::AArch64_UBFMXri: {
-      return executionNYI();
+    case Opcode::AArch64_UBFMXri: {  // ubfm xd, xn, #immr, #imms
+      results[0] =
+          bitmanipHelp::bfm_2imms<uint64_t>(operands, metadata, false, true);
       break;
     }
     case Opcode::AArch64_UCVTFSWDri: {
