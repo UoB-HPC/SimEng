@@ -9785,16 +9785,16 @@ void Instruction::execute() {
       results[0] = {bits, 256};
       break;
     }
-    case Opcode::AArch64_MOVIv16b_ns: {
-      return executionNYI();
+    case Opcode::AArch64_MOVIv16b_ns: {  // movi vd.16b, #imm
+      results[0] = {neonHelp::vecMovi_imm<uint8_t, 16>(metadata), 256};
       break;
     }
-    case Opcode::AArch64_MOVIv2d_ns: {
-      return executionNYI();
+    case Opcode::AArch64_MOVIv2d_ns: {  // movi vd.2d, #imm
+      results[0] = {neonHelp::vecMovi_imm<uint64_t, 2>(metadata), 256};
       break;
     }
-    case Opcode::AArch64_MOVIv2i32: {
-      return executionNYI();
+    case Opcode::AArch64_MOVIv2i32: {  // movi vd.2s, #imm{, lsl #shift}
+      results[0] = {neonHelp::vecMoviShift_imm<uint32_t, 2>(metadata), 256};
       break;
     }
     case Opcode::AArch64_MOVIv2s_msl: {
@@ -9805,16 +9805,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MOVIv4i32: {
-      return executionNYI();
+    case Opcode::AArch64_MOVIv4i32: {  // movi vd.4s, #imm{, LSL #shift}
+      results[0] = {neonHelp::vecMoviShift_imm<uint32_t, 4>(metadata), 256};
       break;
     }
     case Opcode::AArch64_MOVIv4s_msl: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MOVIv8b_ns: {
-      return executionNYI();
+    case Opcode::AArch64_MOVIv8b_ns: {  // movi vd.8b, #imm
+      results[0] = {neonHelp::vecMovi_imm<uint8_t, 8>(metadata), 256};
       break;
     }
     case Opcode::AArch64_MOVIv8i16: {
