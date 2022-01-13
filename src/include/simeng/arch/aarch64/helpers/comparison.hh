@@ -16,8 +16,8 @@ class comparisonHelp {
    * #amount}`. */
   template <typename T>
   static T orrShift_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
-      struct simeng::arch::aarch64::InstructionMetadata metadata) {
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T n = operands[0].get<T>();
     const T m =
         shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,

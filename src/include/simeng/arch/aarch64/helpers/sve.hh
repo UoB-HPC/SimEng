@@ -15,7 +15,7 @@ class sveHelp {
   /** Helper function for SVE instructions with the format `add zd, zn, zm`. */
   template <typename T>
   static std::array<T, (256 / sizeof(T))> sveAdd_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
@@ -32,7 +32,7 @@ class sveHelp {
    * zm`. */
   template <typename T>
   static std::array<T, (256 / sizeof(T))> sveAndPredicated_4ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits) {
     const uint64_t* g = operands[0].getAsVector<uint64_t>();
     const T* dn = operands[1].getAsVector<T>();
@@ -54,7 +54,7 @@ class sveHelp {
    * shift}`. */
   template <typename T>
   static std::array<T, (256 / sizeof(T))> sveDup_imm(
-      struct simeng::arch::aarch64::InstructionMetadata metadata,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits) {
     const int8_t imm = static_cast<int8_t>(metadata.operands[1].imm);
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
@@ -71,7 +71,7 @@ class sveHelp {
    * int8_t).*/
   template <typename T>
   static std::array<T, (256 / sizeof(T))> sveIndex_2imm(
-      struct simeng::arch::aarch64::InstructionMetadata metadata,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits) {
     const T imm1 = static_cast<T>(metadata.operands[1].imm);
     const T imm2 = static_cast<T>(metadata.operands[2].imm);
@@ -107,7 +107,7 @@ class sveHelp {
    */
   template <typename T, typename P>
   static std::tuple<std::array<uint64_t, 4>, uint8_t> sveWhilelo(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits) {
     const T n = operands[0].get<T>();
     const T m = operands[1].get<T>();

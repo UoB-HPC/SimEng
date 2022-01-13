@@ -17,8 +17,8 @@ class conditionalHelp {
    */
   template <typename T>
   static std::tuple<bool, uint64_t> condBranch_cmpToZero(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
-      struct simeng::arch::aarch64::InstructionMetadata metadata,
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
       uint64_t instructionAddress, std::function<bool(T)> func) {
     bool branchTaken;
     uint64_t branchAddress;
@@ -37,8 +37,8 @@ class conditionalHelp {
    */
   template <typename T>
   static uint8_t ccmn_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
-      struct simeng::arch::aarch64::InstructionMetadata metadata) {
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
     if (ExecHelpFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
       uint8_t nzcv;
       std::tie(std::ignore, nzcv) = ExecHelpFunc::addWithCarry(
@@ -53,8 +53,8 @@ class conditionalHelp {
    */
   template <typename T>
   static T cs_4ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
-      struct simeng::arch::aarch64::InstructionMetadata metadata,
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
       std::function<T(T)> func) {
     if (ExecHelpFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
       return operands[1].get<T>();

@@ -16,8 +16,8 @@ class logicalHelp {
    * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> and_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
-      struct simeng::arch::aarch64::InstructionMetadata metadata) {
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T n = operands[0].get<T>();
     const T m = static_cast<T>(metadata.operands[2].imm);
     T result = n & m;
@@ -29,8 +29,8 @@ class logicalHelp {
    * #amount}`. Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> andShift_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
-      struct simeng::arch::aarch64::InstructionMetadata metadata) {
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T n = operands[0].get<T>();
     const T m =
         shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,
@@ -44,8 +44,8 @@ class logicalHelp {
    * #amount}`. Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> bicShift_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
-      struct simeng::arch::aarch64::InstructionMetadata metadata) {
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T x = operands[0].get<T>();
     const T y =
         ~shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,

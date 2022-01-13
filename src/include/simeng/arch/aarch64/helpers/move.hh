@@ -16,8 +16,8 @@ class moveHelp {
    */
   template <typename T>
   static T movkShift_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
-      struct simeng::arch::aarch64::InstructionMetadata metadata) {
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
     // Clear 16-bit region offset by `shift` and replace with immediate
     uint8_t shift = metadata.operands[1].shift.value;
     T mask = ~(static_cast<T>(0xFFFF) << shift);
@@ -31,7 +31,7 @@ class moveHelp {
    */
   template <typename T>
   static uint64_t movnShift_imm(
-      struct simeng::arch::aarch64::InstructionMetadata metadata,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
       std::function<T(uint64_t)> func) {
     uint8_t shift = metadata.operands[1].shift.value;
     T value = func(static_cast<uint64_t>(metadata.operands[1].imm) << shift);

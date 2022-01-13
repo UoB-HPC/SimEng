@@ -16,8 +16,8 @@ class bitmanipHelp {
    * #imms`. Returns Single value. */
   template <typename T>
   static T bfm_2imms(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS> operands,
-      struct simeng::arch::aarch64::InstructionMetadata metadata,
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
       bool signExtend, bool zeroDestReg) {
     uint8_t r = metadata.operands[2].imm;
     uint8_t s = metadata.operands[3].imm;
