@@ -12,7 +12,6 @@
 #include "simeng/arch/aarch64/helpers/float.hh"
 #include "simeng/arch/aarch64/helpers/load.hh"
 #include "simeng/arch/aarch64/helpers/logical.hh"
-#include "simeng/arch/aarch64/helpers/move.hh"
 #include "simeng/arch/aarch64/helpers/multiply.hh"
 #include "simeng/arch/aarch64/helpers/neon.hh"
 #include "simeng/arch/aarch64/helpers/store.hh"
@@ -9882,20 +9881,20 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_MOVKWi: {  // movk wd, #imm
       results[0] = RegisterValue(
-          moveHelp::movkShift_imm<uint32_t>(operands, metadata), 8);
+          arithmeticHelp::movkShift_imm<uint32_t>(operands, metadata), 8);
       break;
     }
     case Opcode::AArch64_MOVKXi: {  // movk xd, #imm
-      results[0] = moveHelp::movkShift_imm<uint64_t>(operands, metadata);
+      results[0] = arithmeticHelp::movkShift_imm<uint64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_MOVNWi: {  // movn wd, #imm{, LSL #shift}
-      results[0] = moveHelp::movnShift_imm<uint32_t>(
+      results[0] = arithmeticHelp::movnShift_imm<uint32_t>(
           metadata, [](uint64_t x) -> uint32_t { return ~x; });
       break;
     }
     case Opcode::AArch64_MOVNXi: {  // movn xd, #imm{, LSL #shift}
-      results[0] = moveHelp::movnShift_imm<uint64_t>(
+      results[0] = arithmeticHelp::movnShift_imm<uint64_t>(
           metadata, [](uint64_t x) -> uint64_t { return ~x; });
       break;
     }
@@ -9936,12 +9935,12 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_MOVZWi: {  // movz wd, #imm
-      results[0] = moveHelp::movnShift_imm<uint32_t>(
+      results[0] = arithmeticHelp::movnShift_imm<uint32_t>(
           metadata, [](uint64_t x) -> uint32_t { return x; });
       break;
     }
     case Opcode::AArch64_MOVZXi: {  // movz xd, #imm
-      results[0] = moveHelp::movnShift_imm<uint64_t>(
+      results[0] = arithmeticHelp::movnShift_imm<uint64_t>(
           metadata, [](uint64_t x) -> uint64_t { return x; });
       break;
     }
