@@ -17,11 +17,11 @@ class neonHelp {
    * for vd.8b the final 8 elements in the output array will be 0).
    */
   template <typename T, int I>
-  static std::array<T, (16 / sizeof(T))> vecAdd_3ops(
+  static std::array<T, 256> vecAdd_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
-    std::array<T, (16 / sizeof(T))> out = {0};
+    std::array<T, 256> out = {0};
     for (int i = 0; i < I; i++) {
       out[i] = static_cast<T>(n[i] + m[i]);
     }
@@ -47,11 +47,11 @@ class neonHelp {
    * for vd.8b the final 8 elements in the output array will be 0).
    */
   template <typename T, int I>
-  static std::array<T, (16 / sizeof(T))> vecAddp_3ops(
+  static std::array<T, 256> vecAddp_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
-    std::array<T, (16 / sizeof(T))> out = {0};
+    std::array<T, 256> out = {0};
     uint8_t offset = I / 2;
     for (int i = 0; i < I; i++) {
       if (i < offset) {
@@ -69,11 +69,11 @@ class neonHelp {
    * for vd.8b the final 8 elements in the output array will be 0).
    */
   template <typename T, int I>
-  static std::array<T, (16 / sizeof(T))> vecBic_3ops(
+  static std::array<T, 256> vecBic_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
-    std::array<T, (16 / sizeof(T))> out = {0};
+    std::array<T, 256> out = {0};
     for (int i = 0; i < I; i++) {
       out[i] = n[i] & ~m[i];
     }
@@ -87,14 +87,14 @@ class neonHelp {
    * 0).
    */
   template <typename T, int I>
-  static std::array<T, (16 / sizeof(T))> vecBicShift_imm(
+  static std::array<T, 256> vecBicShift_imm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T* d = operands[0].getAsVector<T>();
     T imm = ~shiftValue(static_cast<T>(metadata.operands[1].imm),
                         metadata.operands[1].shift.type,
                         metadata.operands[1].shift.value);
-    std::array<T, (16 / sizeof(T))> out = {0};
+    std::array<T, 256> out = {0};
     for (int i = 0; i < I; i++) {
       out[i] = d[i] & imm;
     }
@@ -107,10 +107,10 @@ class neonHelp {
    * 0).
    */
   template <typename T, int I>
-  static std::array<T, (16 / sizeof(T))> vecMovi_imm(
+  static std::array<T, 256> vecMovi_imm(
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T bits = static_cast<T>(metadata.operands[1].imm);
-    std::array<T, (16 / sizeof(T))> out = {0};
+    std::array<T, 256> out = {0};
     for (int i = 0; i < I; i++) {
       out[i] = bits;
     }
@@ -124,12 +124,12 @@ class neonHelp {
    * 0).
    */
   template <typename T, int I>
-  static std::array<T, (16 / sizeof(T))> vecMoviShift_imm(
+  static std::array<T, 256> vecMoviShift_imm(
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T bits = shiftValue(static_cast<T>(metadata.operands[1].imm),
                               metadata.operands[1].shift.type,
                               metadata.operands[1].shift.value);
-    std::array<T, (16 / sizeof(T))> out = {0};
+    std::array<T, 256> out = {0};
     for (int i = 0; i < I; i++) {
       out[i] = bits;
     }

@@ -14,14 +14,14 @@ class sveHelp {
  public:
   /** Helper function for SVE instructions with the format `add zd, zn, zm`. */
   template <typename T>
-  static std::array<T, (256 / sizeof(T))> sveAdd_3ops(
+  static std::array<T, 256> sveAdd_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    std::array<T, (256 / sizeof(T))> out = {0};
+    std::array<T, 256> out = {0};
     for (int i = 0; i < partition_num; i++) {
       out[i] = n[i] + m[i];
     }
@@ -31,7 +31,7 @@ class sveHelp {
   /** Helper function for SVE instructions with the format `and zdn, pg/z, zdn,
    * zm`. */
   template <typename T>
-  static std::array<T, (256 / sizeof(T))> sveAndPredicated_4ops(
+  static std::array<T, 256> sveAndPredicated_4ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits) {
     const uint64_t* g = operands[0].getAsVector<uint64_t>();
@@ -39,7 +39,7 @@ class sveHelp {
     const T* m = operands[2].getAsVector<T>();
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    std::array<T, (256 / sizeof(T))> out = {0};
+    std::array<T, 256> out = {0};
     for (int i = 0; i < partition_num; i++) {
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
       if (g[i / (64 / sizeof(T))] & shifted_active)
@@ -53,12 +53,12 @@ class sveHelp {
   /** Helper function for SVE instructions with the format `dup zd, #imm{,
    * shift}`. */
   template <typename T>
-  static std::array<T, (256 / sizeof(T))> sveDup_imm(
+  static std::array<T, 256> sveDup_imm(
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits) {
     const int8_t imm = static_cast<int8_t>(metadata.operands[1].imm);
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    std::array<T, (256 / sizeof(T))> out = {0};
+    std::array<T, 256> out = {0};
 
     for (int i = 0; i < partition_num; i++) {
       out[i] = imm;
@@ -70,14 +70,14 @@ class sveHelp {
    * #imm`. T represents the vector register type (i.e. zd.b would be
    * int8_t).*/
   template <typename T>
-  static std::array<T, (256 / sizeof(T))> sveIndex_2imm(
+  static std::array<T, 256> sveIndex_2imm(
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits) {
     const T imm1 = static_cast<T>(metadata.operands[1].imm);
     const T imm2 = static_cast<T>(metadata.operands[2].imm);
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    std::array<T, (256 / sizeof(T))> out = {0};
+    std::array<T, 256> out = {0};
 
     for (int i = 0; i < partition_num; i++) {
       out[i] = static_cast<T>(imm1 + (i * imm2));
