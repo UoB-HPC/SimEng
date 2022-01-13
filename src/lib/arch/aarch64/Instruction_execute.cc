@@ -3,8 +3,8 @@
 #include <iostream>
 #endif
 
-#include "simeng/arch/aarch64/helpers/ExecuteHelperFunctions.hh"
 #include "simeng/arch/aarch64/helpers/arithmetic.hh"
+#include "simeng/arch/aarch64/helpers/auxiliaryFunctions.hh"
 #include "simeng/arch/aarch64/helpers/bitmanip.hh"
 #include "simeng/arch/aarch64/helpers/comparison.hh"
 #include "simeng/arch/aarch64/helpers/conditional.hh"
@@ -1054,8 +1054,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_Bcc: {  // b.cond label
-      if (ExecHelpFunc::conditionHolds(metadata.cc,
-                                       operands[0].get<uint8_t>())) {
+      if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
         branchTaken_ = true;
         branchAddress_ = instructionAddress_ + metadata.operands[0].imm;
       } else {

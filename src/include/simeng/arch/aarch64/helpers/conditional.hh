@@ -1,12 +1,6 @@
 #pragma once
 
-#include <cmath>
-#include <functional>
-#include <limits>
-#include <tuple>
-
-#include "ExecuteHelperFunctions.hh"
-#include "arch/aarch64/InstructionMetadata.hh"
+#include "auxiliaryFunctions.hh"
 
 namespace simeng {
 namespace arch {
@@ -39,9 +33,9 @@ class conditionalHelp {
   static uint8_t ccmn_imm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
-    if (ExecHelpFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+    if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
       uint8_t nzcv;
-      std::tie(std::ignore, nzcv) = ExecHelpFunc::addWithCarry(
+      std::tie(std::ignore, nzcv) = AuxFunc::addWithCarry(
           operands[1].get<T>(), static_cast<T>(metadata.operands[1].imm), 0);
       return nzcv;
     }
@@ -56,7 +50,7 @@ class conditionalHelp {
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       std::function<T(T)> func) {
-    if (ExecHelpFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+    if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
       return operands[1].get<T>();
     }
     return func(operands[2].get<T>());

@@ -1,11 +1,6 @@
 #pragma once
 
-#include <cmath>
-#include <limits>
-#include <tuple>
-
-#include "ExecuteHelperFunctions.hh"
-#include "arch/aarch64/InstructionMetadata.hh"
+#include "auxiliaryFunctions.hh"
 
 namespace simeng {
 namespace arch {
@@ -127,7 +122,7 @@ class sveHelp {
     }
     // Byte count = sizeof(P) as destination predicate is predicate of P bytes.
     uint8_t nzcv =
-        calcNZCV ? ExecHelpFunc::getNZCVfromPred(out, VL_bits, sizeof(P)) : 0;
+        calcNZCV ? AuxFunc::getNZCVfromPred(out, VL_bits, sizeof(P)) : 0;
     return {out, nzcv};
   }
 };

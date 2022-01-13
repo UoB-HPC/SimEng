@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <functional>
 #include <limits>
 #include <tuple>
 
@@ -9,7 +10,7 @@
 namespace simeng {
 namespace arch {
 namespace aarch64 {
-class ExecHelpFunc {
+class AuxFunc {
  public:
   /** Returns a correctly formatted nzcv value. */
   static uint8_t nzcv(bool n, bool z, bool c, bool v) {

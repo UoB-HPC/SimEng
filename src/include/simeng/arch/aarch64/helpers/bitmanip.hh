@@ -1,11 +1,6 @@
 #pragma once
 
-#include <cmath>
-#include <limits>
-#include <tuple>
-
-#include "ExecuteHelperFunctions.hh"
-#include "arch/aarch64/InstructionMetadata.hh"
+#include "auxiliaryFunctions.hh"
 
 namespace simeng {
 namespace arch {
@@ -29,7 +24,7 @@ class bitmanipHelp {
       dest = 0;
       source = operands[0].get<T>();
     }
-    return ExecHelpFunc::bitfieldManipulate(source, dest, r, s, signExtend);
+    return AuxFunc::bitfieldManipulate(source, dest, r, s, signExtend);
   }
 };
 }  // namespace aarch64

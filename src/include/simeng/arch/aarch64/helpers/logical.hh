@@ -1,11 +1,6 @@
 #pragma once
 
-#include <cmath>
-#include <limits>
-#include <tuple>
-
-#include "ExecuteHelperFunctions.hh"
-#include "arch/aarch64/InstructionMetadata.hh"
+#include "auxiliaryFunctions.hh"
 
 namespace simeng {
 namespace arch {
@@ -22,10 +17,9 @@ class logicalHelp {
     const T n = operands[0].get<T>();
     const T m = static_cast<T>(metadata.operands[2].imm);
     T result = n & m;
-    uint8_t nzcv = calcNZCV
-                       ? ExecHelpFunc::nzcv(result >> ((sizeof(T) * 8) - 1),
+    uint8_t nzcv = calcNZCV ? AuxFunc::nzcv(result >> ((sizeof(T) * 8) - 1),
                                             result == 0, false, false)
-                       : 0;
+                            : 0;
     return {result, nzcv};
   }
 
@@ -41,10 +35,9 @@ class logicalHelp {
         shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,
                    metadata.operands[2].shift.value);
     T result = n & m;
-    uint8_t nzcv = calcNZCV
-                       ? ExecHelpFunc::nzcv(result >> ((sizeof(T) * 8) - 1),
+    uint8_t nzcv = calcNZCV ? AuxFunc::nzcv(result >> ((sizeof(T) * 8) - 1),
                                             result == 0, false, false)
-                       : 0;
+                            : 0;
     return {result, nzcv};
   }
 
@@ -63,7 +56,7 @@ class logicalHelp {
     bool n = sizeof(T) == 8 ? (static_cast<int64_t>(result) < 0)
                             : (static_cast<int32_t>(result) < 0);
     bool z = (result == 0);
-    uint8_t nzcv = calcNZCV ? ExecHelpFunc::nzcv(n, z, false, false) : 0;
+    uint8_t nzcv = calcNZCV ? AuxFunc::nzcv(n, z, false, false) : 0;
     return {result, nzcv};
   }
 };
