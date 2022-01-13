@@ -84,10 +84,10 @@ enum class InstructionException {
 
 /** The opcodes of simeng aarch64 micro-operations. */
 namespace MicroOpcode {
-const uint8_t LDR = 0;
-const uint8_t STR = 1;
-const uint8_t OFFSET_GEN = 2;
-const uint8_t STORE_DATA = 3;
+const uint8_t OFFSET_GEN = 0;
+const uint8_t LDR = 1;
+const uint8_t STR = 2;
+const uint8_t STR_DATA = 3;
 }  // namespace MicroOpcode
 
 /** A struct to group micro-operation information together. */
@@ -164,8 +164,13 @@ class Instruction : public simeng::Instruction {
    * instruction. */
   std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
 
-  /** Is this a store operation? */
-  bool isStore() const override;
+  /** Is this a store address operation (a subcategory of store operations which
+   * deal with the generation of store addresses to store data at)? */
+  bool isStoreAddress() const override;
+
+  /** Is this a store data operation (a subcategory of store operations which
+   * deal with the supply of data to be stored)? */
+  bool isStoreData() const override;
 
   /** Is this a load operation? */
   bool isLoad() const override;
@@ -295,8 +300,10 @@ class Instruction : public simeng::Instruction {
   bool isPredicate_ = false;
   /** Is a load operation. */
   bool isLoad_ = false;
-  /** Is a store operation. */
-  bool isStore_ = false;
+  /** Is a store address operation. */
+  bool isStoreAddress_ = false;
+  /** Is a store data operation. */
+  bool isStoreData_ = false;
   /** Is a branch operation. */
   bool isBranch_ = false;
   /** Is a return instruction. */

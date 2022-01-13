@@ -105,8 +105,13 @@ class Instruction {
   /** Was the branch taken? */
   bool wasBranchTaken() const;
 
-  /** Is this a store operation? */
-  virtual bool isStore() const = 0;
+  /** Is this a store address operation (a subcategory of store operations which
+   * deal with the generation of store addresses to store data at)? */
+  virtual bool isStoreAddress() const = 0;
+
+  /** Is this a store data operation (a subcategory of store operations which
+   * deal with the supply of data to be stored)? */
+  virtual bool isStoreData() const = 0;
 
   /** Is this a load operation? */
   virtual bool isLoad() const = 0;

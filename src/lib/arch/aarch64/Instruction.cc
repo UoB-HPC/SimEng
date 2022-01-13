@@ -114,7 +114,8 @@ const span<RegisterValue> Instruction::getResults() const {
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
-bool Instruction::isStore() const { return isStore_; }
+bool Instruction::isStoreAddress() const { return isStoreAddress_; }
+bool Instruction::isStoreData() const { return isStoreData_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
 bool Instruction::isRET() const { return isRET_; }
@@ -165,7 +166,7 @@ uint16_t Instruction::getGroup() const {
     base = InstructionGroups::SVE;
 
   if (isLoad_) return base + 10;
-  if (isStore_) return base + 11;
+  if (isStoreAddress_ || isStoreData_) return base + 11;
   if (isBranch_) return InstructionGroups::BRANCH;
   if (isPredicate_) return InstructionGroups::PREDICATE;
   if (isDivideOrSqrt_) return base + 9;
@@ -181,7 +182,7 @@ uint16_t Instruction::getGroup() const {
 }
 
 void Instruction::setExecutionInfo(const ExecutionInfo& info) {
-  if (isLoad_ || isStore_) {
+  if (isLoad_ || isStoreAddress_) {
     lsqExecutionLatency_ = info.latency;
   } else {
     latency_ = info.latency;

@@ -87,7 +87,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     if (uop->isLoad()) {
       lsq_.commitLoad(uop);
     }
-    if (uop->isStore()) {
+    if (uop->isStoreAddress()) {
       bool violationFound = lsq_.commitStore(uop);
       if (violationFound) {
         loadViolations_++;

@@ -46,7 +46,8 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
         .WillByDefault(Return(addressesSpan));
 
     // Set up sensible return values for the store uop
-    ON_CALL(*storeUop, isStore()).WillByDefault(Return(true));
+    ON_CALL(*storeUop, isStoreAddress()).WillByDefault(Return(true));
+    ON_CALL(*storeUop, isStoreData()).WillByDefault(Return(true));
     ON_CALL(*storeUop, getGeneratedAddresses())
         .WillByDefault(Return(addressesSpan));
     ON_CALL(*storeUop, getData()).WillByDefault(Return(dataSpan));

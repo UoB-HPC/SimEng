@@ -7,7 +7,7 @@ namespace arch {
 namespace aarch64 {
 
 span<const MemoryAccessTarget> Instruction::generateAddresses() {
-  assert((isLoad() || isStore()) &&
+  assert((isLoad() || isStoreAddress()) &&
          "generateAddresses called on non-load-or-store instruction");
 
   const uint16_t VL_bits = architecture_.getVectorLength();

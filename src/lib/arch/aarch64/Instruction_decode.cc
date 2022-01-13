@@ -253,12 +253,14 @@ void Instruction::decode() {
       if (metadata.id == ARM64_INS_STXR || metadata.id == ARM64_INS_STLXR) {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
-        isStore_ = true;
+        isStoreAddress_ = true;
+        isStoreData_ = true;
       } else {
         isLoad_ = true;
       }
     } else {
-      isStore_ = true;
+      isStoreAddress_ = true;
+      isStoreData_ = true;
     }
 
     // LDADD* are considered to be both a load and a store
@@ -272,7 +274,7 @@ void Instruction::decode() {
       isLoad_ = true;
     }
 
-    if (isStore_) {
+    if (isStoreData_) {
       // Identify whether a store operation uses Z source registers
       if (ARM64_REG_Z0 <= metadata.operands[0].reg &&
           metadata.operands[0].reg <= ARM64_REG_Z31) {

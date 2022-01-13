@@ -50,7 +50,7 @@ void RenameUnit::tick() {
 
     // If it's a memory op, make sure there's space in the respective queue
     bool isLoad = uop->isLoad();
-    bool isStore = uop->isStore();
+    bool isStore = uop->isStoreAddress();
     if (isLoad) {
       if (lsq_.getLoadQueueSpace() == 0) {
         lqStalls_++;
