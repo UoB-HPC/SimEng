@@ -214,18 +214,7 @@ void Instruction::execute() {
       results[1] = result;
       break;
     }
-    case Opcode::AArch64_ADDSXrx: {  // adds xd, xn, xm{, extend {#amount}}
-      // Cant use helper function as operands[1] is different type to register
-      // it is fetched from
-      auto x = operands[0].get<uint64_t>();
-      auto y =
-          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
-                      metadata.operands[2].shift.value);
-      auto [result, nzcv] = ExecHelpFunc::addWithCarry(x, y, 0);
-      results[0] = nzcv;
-      results[1] = result;
-      break;
-    }
+    case Opcode::AArch64_ADDSXrx:      // adds xd, xn, wm{, extend {#amount}}
     case Opcode::AArch64_ADDSXrx64: {  // adds xd, xn, xm{, extend {#amount}}
       auto [result, nzcv] =
           arithmeticHelp::addExtend_3ops<uint64_t>(operands, metadata);
@@ -299,16 +288,7 @@ void Instruction::execute() {
       results[0] = result;
       break;
     }
-    case Opcode::AArch64_ADDXrx: {  // add xd, xn, wm{, extend {#amount}}
-      // Cant use helper function as operands[1] is different type to register
-      // it is fetched from
-      auto x = operands[0].get<uint64_t>();
-      auto y =
-          extendValue(operands[1].get<uint32_t>(), metadata.operands[2].ext,
-                      metadata.operands[2].shift.value);
-      results[0] = x + y;
-      break;
-    }
+    case Opcode::AArch64_ADDXrx:      // add xd, xn, wm{, extend {#amount}}
     case Opcode::AArch64_ADDXrx64: {  // add xd, xn, xm{, extend {#amount}}
       auto [result, nzcv] =
           arithmeticHelp::addExtend_3ops<uint64_t>(operands, metadata);
@@ -14993,20 +14973,7 @@ void Instruction::execute() {
       results[1] = RegisterValue(result);
       break;
     }
-    case Opcode::AArch64_SUBSXrx: {  // subs xd, xn, wm{, extend #amount}
-      // Cant use helper function as operands[1] is different type to register
-      // it is fetched from
-      auto x = operands[0].get<uint64_t>();
-      auto y = ~ExecHelpFunc::extendValue(operands[1].get<uint32_t>(),
-                                          metadata.operands[2].ext,
-                                          metadata.operands[2].shift.value);
-      auto [result, nzcv] = ExecHelpFunc::addWithCarry(x, y, true);
-      results[0] = RegisterValue(nzcv);
-      if (destinationRegisterCount > 1) {
-        results[1] = result;
-      }
-      break;
-    }
+    case Opcode::AArch64_SUBSXrx:      // subs xd, xn, wm{, extend #amount}
     case Opcode::AArch64_SUBSXrx64: {  // subs xd, xn, xm{, extend #amount}
       auto [result, nzcv] =
           arithmeticHelp::subExtend_3ops<uint64_t>(operands, metadata);
@@ -15050,16 +15017,7 @@ void Instruction::execute() {
       results[0] = RegisterValue(result);
       break;
     }
-    case Opcode::AArch64_SUBXrx: {  // sub xd, xn, wm{, extend #amount}
-      // Cant use helper function as operands[1] is different type to register
-      // it is fetched from
-      auto x = operands[0].get<uint64_t>();
-      auto y = ExecHelpFunc::extendValue(operands[1].get<uint32_t>(),
-                                         metadata.operands[2].ext,
-                                         metadata.operands[2].shift.value);
-      results[0] = x - y;
-      break;
-    }
+    case Opcode::AArch64_SUBXrx:      // sub xd, xn, wm{, extend #amount}
     case Opcode::AArch64_SUBXrx64: {  // sub xd, xn, xm{, extend #amount}
       auto [result, nzcv] =
           arithmeticHelp::subExtend_3ops<uint64_t>(operands, metadata);

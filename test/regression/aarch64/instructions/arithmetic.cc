@@ -255,6 +255,15 @@ TEST_P(InstArithmetic, addsx) {
   EXPECT_EQ(getNZCV(), 0b0010);
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), (7ul << 48) - 1);
 
+  // (7 << 48) + (-4) [32-bit sign-extended]
+  RUN_AARCH64(R"(
+    movz x0, #7, lsl #48
+    mov w2, -4
+    adds x3, x0, w2, sxtw
+  )");
+  EXPECT_EQ(getNZCV(), 0b0010);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), (7ul << 48) - 4);
+
   // (7 << 48) + (255 << 4)
   RUN_AARCH64(R"(
     movz x0, #7, lsl #48
