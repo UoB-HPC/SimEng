@@ -27,12 +27,14 @@ class arithmeticHelp {
   template <typename T>
   static std::tuple<T, uint8_t> addShift_imm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      bool calcNZCV) {
     const T n = operands[0].get<T>();
     const T m = shiftValue(static_cast<T>(metadata.operands[2].imm),
                            metadata.operands[2].shift.type,
                            metadata.operands[2].shift.value);
-    return ExecHelpFunc::addWithCarry(n, m, 0);
+    if (calcNZCV) return ExecHelpFunc::addWithCarry(n, m, 0);
+    return {(n + m), 0};
   }
 
   /** Helper function for instructions with the format `add rd, rn, rm{, shift
@@ -40,12 +42,14 @@ class arithmeticHelp {
   template <typename T>
   static std::tuple<T, uint8_t> addShift_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      bool calcNZCV) {
     const T n = operands[0].get<T>();
     const T m =
         shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,
                    metadata.operands[2].shift.value);
-    return ExecHelpFunc::addWithCarry(n, m, 0);
+    if (calcNZCV) return ExecHelpFunc::addWithCarry(n, m, 0);
+    return {(n + m), 0};
   }
 
   /** Helper function for instructions with the format `add rd, rn, rm{, extend
@@ -53,12 +57,14 @@ class arithmeticHelp {
   template <typename T>
   static std::tuple<T, uint8_t> addExtend_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      bool calcNZCV) {
     const T n = operands[0].get<T>();
     const T m = ExecHelpFunc::extendValue(operands[1].get<T>(),
                                           metadata.operands[2].ext,
                                           metadata.operands[2].shift.value);
-    return ExecHelpFunc::addWithCarry(n, m, 0);
+    if (calcNZCV) return ExecHelpFunc::addWithCarry(n, m, 0);
+    return {(n + m), 0};
   }
 
   /** Helper function for instructions with the format `adc rd, rn, rm`. Returns
@@ -87,12 +93,14 @@ class arithmeticHelp {
   template <typename T>
   static std::tuple<T, uint8_t> subShift_imm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      bool calcNZCV) {
     const T n = operands[0].get<T>();
-    const T m = ~shiftValue(static_cast<T>(metadata.operands[2].imm),
-                            metadata.operands[2].shift.type,
-                            metadata.operands[2].shift.value);
-    return ExecHelpFunc::addWithCarry(n, m, true);
+    const T m = shiftValue(static_cast<T>(metadata.operands[2].imm),
+                           metadata.operands[2].shift.type,
+                           metadata.operands[2].shift.value);
+    if (calcNZCV) return ExecHelpFunc::addWithCarry(n, ~m, true);
+    return {(n - m), 0};
   }
 
   /** Helper function for instructions with the format `sub{s} rd, rn, rm{,
@@ -100,12 +108,14 @@ class arithmeticHelp {
   template <typename T>
   static std::tuple<T, uint8_t> subShift_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      bool calcNZCV) {
     const T n = operands[0].get<T>();
     const T m =
-        ~shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,
-                    metadata.operands[2].shift.value);
-    return ExecHelpFunc::addWithCarry(n, m, true);
+        shiftValue(operands[1].get<T>(), metadata.operands[2].shift.type,
+                   metadata.operands[2].shift.value);
+    if (calcNZCV) return ExecHelpFunc::addWithCarry(n, ~m, true);
+    return {(n - m), 0};
   }
 
   /** Helper function for instructions with the format `sub{s} rd, rn, rm{,
@@ -113,12 +123,14 @@ class arithmeticHelp {
   template <typename T>
   static std::tuple<T, uint8_t> subExtend_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      bool calcNZCV) {
     const T n = operands[0].get<T>();
-    const T m = static_cast<T>(~ExecHelpFunc::extendValue(
+    const T m = static_cast<T>(ExecHelpFunc::extendValue(
         operands[1].get<T>(), metadata.operands[2].ext,
         metadata.operands[2].shift.value));
-    return ExecHelpFunc::addWithCarry(n, m, true);
+    if (calcNZCV) return ExecHelpFunc::addWithCarry(n, ~m, true);
+    return {(n - m), 0};
   }
 };
 }  // namespace aarch64

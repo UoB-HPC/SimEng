@@ -108,7 +108,7 @@ class sveHelp {
   template <typename T, typename P>
   static std::tuple<std::array<uint64_t, 4>, uint8_t> sveWhilelo(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const uint16_t VL_bits) {
+      const uint16_t VL_bits, bool calcNZCV) {
     const T n = operands[0].get<T>();
     const T m = operands[1].get<T>();
 
@@ -126,7 +126,9 @@ class sveHelp {
       index++;
     }
     // Byte count = sizeof(P) as destination predicate is predicate of P bytes.
-    return {out, ExecHelpFunc::getNZCVfromPred(out, VL_bits, sizeof(P))};
+    uint8_t nzcv =
+        calcNZCV ? ExecHelpFunc::getNZCVfromPred(out, VL_bits, sizeof(P)) : 0;
+    return {out, nzcv};
   }
 };
 }  // namespace aarch64
