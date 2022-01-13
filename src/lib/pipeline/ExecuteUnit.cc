@@ -118,19 +118,33 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
       return;
     }
     handleLoad_(uop);
+
+    if (uop->isStoreData()) {
+      handleStore_(uop);
+    }
     return;
-  } else if (uop->isStore()) {
+  } else if (uop->isStoreAddress()) {
     uop->generateAddresses();
+    if (uop->exceptionEncountered()) {
+      // Exception; don't continue with execution and/or passing of uop forward
+      raiseException_(uop);
+      return;
+    }
+
+    if (uop->isStoreData()) {
+      uop->execute();
+    }
+  } else {
+    uop->execute();
   }
 
-  uop->execute();
   if (uop->exceptionEncountered()) {
     // Exception; don't forward results, don't pass uop forward
     raiseException_(uop);
     return;
   }
 
-  if (uop->isStore()) {
+  if (uop->isStoreData()) {
     handleStore_(uop);
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
