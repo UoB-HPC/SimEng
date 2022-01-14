@@ -2325,8 +2325,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CNTv8i8: {
-      return executionNYI();
+    case Opcode::AArch64_CNTv8i8: {  // cnt vd.8b, vn.8b
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      uint8_t out[16] = {0};
+      for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+          // Move queried bit to LSB and extract via an AND operator
+          out[i] += ((n[i] >> j) & 1);
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_COMPACT_ZPZ_D: {
@@ -2406,11 +2414,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_CPYi32: {
-      return executionNYI();
+      results[0] = neonHelp::vecCpy_index<uint32_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_CPYi64: {
-      return executionNYI();
+      results[0] = neonHelp::vecCpy_index<uint64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_CPYi8: {
@@ -9135,8 +9143,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRXui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0];
       break;
     }
     case Opcode::AArch64_LDR_PXI: {

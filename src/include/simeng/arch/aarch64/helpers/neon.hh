@@ -118,6 +118,18 @@ class neonHelp {
     return out;
   }
 
+  /** Helper function for NEON instructions with the format `dup vd,
+   * vn[index]`.*/
+  template <typename T>
+  static std::array<T, 256> vecCpy_index(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    const T* vec = operands[0].getAsVector<T>();
+    std::array<T, 256> out;
+    out[0] = vec[metadata.operands[1].vector_index];
+    return out;
+  }
+
   /** Helper function for NEON instructions with the format `movi vd, #imm`.
    * I represents the number of elements in the output array to be
    * updated (i.e. for vd.8b the final 8 elements in the output array will be
