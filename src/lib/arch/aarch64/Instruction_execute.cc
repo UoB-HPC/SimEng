@@ -1429,12 +1429,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CMEQv16i8: {
-      return executionNYI();
+    case Opcode::AArch64_CMEQv16i8: {  // cmeq vd.16b, vn.16b, vm.16b
+      results[0] = neonHelp::vecCompare<uint8_t, 16>(
+          operands, [](uint8_t x, uint8_t y) -> bool { return (x == y); },
+          false);
       break;
     }
-    case Opcode::AArch64_CMEQv16i8rz: {
-      return executionNYI();
+    case Opcode::AArch64_CMEQv16i8rz: {  // cmeq vd.16b, vn.16b, #0
+      results[0] = neonHelp::vecCompare<uint8_t, 16>(
+          operands, [](uint8_t x, uint8_t y) -> bool { return (x == y); },
+          true);
       break;
     }
     case Opcode::AArch64_CMEQv1i64: {
@@ -1469,8 +1473,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CMEQv4i32: {
-      return executionNYI();
+    case Opcode::AArch64_CMEQv4i32: {  // cmeq vd.4s, vn.4s, vm.4s
+      results[0] = neonHelp::vecCompare<uint32_t, 4>(
+          operands, [](uint32_t x, uint32_t y) -> bool { return (x == y); },
+          false);
       break;
     }
     case Opcode::AArch64_CMEQv4i32rz: {
@@ -1641,8 +1647,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CMHIv4i32: {
-      return executionNYI();
+    case Opcode::AArch64_CMHIv4i32: {  // cmhi vd.4s, vn.4s, vm.4s
+      results[0] = neonHelp::vecCompare<uint32_t, 4>(
+          operands, [](uint32_t x, uint32_t y) -> bool { return (x > y); },
+          false);
       break;
     }
     case Opcode::AArch64_CMHIv8i16: {

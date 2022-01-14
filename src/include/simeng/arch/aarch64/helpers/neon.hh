@@ -96,6 +96,28 @@ class neonHelp {
     return out;
   }
 
+  /** Helper function for instructions with the format `cm<eq, ge, gt, hi, hs,
+   *le, lt> vd, vn, <vm, #0>`.
+   *I represents the number of elements in the output array to be updated (i.e.
+   *for vd.8b the final 8 elements in the output array will be 0).
+   */
+  template <typename T, int I>
+  static std::array<T, 256> vecCompare(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::function<bool(T, T)> func, bool cmpToZero) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m;
+    if (!cmpToZero) m = operands[1].getAsVector<T>();
+    std::array<T, 256> out = {0};
+    for (int i = 0; i < I; i++) {
+      if (!cmpToZero)
+        out[i] = func(n[i], m[i]) ? static_cast<T>(-1) : 0;
+      else
+        out[i] = func(n[i], 0) ? static_cast<T>(-1) : 0;
+    }
+    return out;
+  }
+
   /** Helper function for NEON instructions with the format `movi vd, #imm`.
    * I represents the number of elements in the output array to be
    * updated (i.e. for vd.8b the final 8 elements in the output array will be
