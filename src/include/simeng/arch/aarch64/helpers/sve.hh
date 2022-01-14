@@ -45,6 +45,39 @@ class sveHelp {
     return out;
   }
 
+  /** Helper function for instructions with the format `cmp<eq, ge, gt, hi, hs,
+   *le, lo, ls, lt, ne> pd, pg/z, zn, <zm, #imm>`. */
+  template <typename T>
+  static std::tuple<std::array<uint64_t, 4>, uint8_t> sveCmpPredicated_toPred(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits, bool cmpToImm, std::function<bool(T, T)> func) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* n = operands[1].getAsVector<T>();
+    const T* m;
+    T imm;
+    if (cmpToImm)
+      imm = static_cast<T>(metadata.operands[3].imm);
+    else
+      m = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    std::array<uint64_t, 4> out = {0, 0, 0, 0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        if (cmpToImm)
+          out[i / (64 / sizeof(T))] |= (func(n[i], imm)) ? (shifted_active) : 0;
+        else
+          out[i / (64 / sizeof(T))] |=
+              (func(n[i], m[i])) ? (shifted_active) : 0;
+      }
+    }
+    // Byte count = sizeof(P) as destination predicate is predicate of P bytes.
+    return {out, AuxFunc::getNZCVfromPred(out, VL_bits, sizeof(T))};
+  }
+
   /** Helper function for SVE instructions with the format `dup zd, #imm{,
    * shift}`. */
   template <typename T>
