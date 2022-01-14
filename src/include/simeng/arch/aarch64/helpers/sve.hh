@@ -78,6 +78,26 @@ class sveHelp {
     return {out, AuxFunc::getNZCVfromPred(out, VL_bits, sizeof(T))};
   }
 
+  /** Helper function for SVE instructions with the format `cntp xd, pg, pn`. */
+  template <typename T>
+  static uint64_t sveCntp(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const uint64_t* pg = operands[0].getAsVector<uint64_t>();
+    const uint64_t* pn = operands[1].getAsVector<uint64_t>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    uint64_t count = 0;
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (pg[i / (64 / sizeof(T))] & shifted_active) {
+        count += (pn[i / (64 / sizeof(T))] & shifted_active) ? 1 : 0;
+      }
+    }
+    return count;
+  }
+
   /** Helper function for SVE instructions with the format `dup zd, #imm{,
    * shift}`. */
   template <typename T>

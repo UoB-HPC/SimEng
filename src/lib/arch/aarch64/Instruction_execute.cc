@@ -2269,36 +2269,40 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CNTB_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_CNTB_XPiI: {  // cntb xd{, pattern{, #imm}}
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = (uint64_t)((VL_bits / 8) * imm);
       break;
     }
-    case Opcode::AArch64_CNTD_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_CNTD_XPiI: {  // cntd xd{, pattern{, #imm}}
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = (uint64_t)((VL_bits / 64) * imm);
       break;
     }
-    case Opcode::AArch64_CNTH_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_CNTH_XPiI: {  // cnth xd{, pattern{, #imm}}
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = (uint64_t)((VL_bits / 16) * imm);
       break;
     }
-    case Opcode::AArch64_CNTP_XPP_B: {
-      return executionNYI();
+    case Opcode::AArch64_CNTP_XPP_B: {  // cntp xd, pg, pn.b
+      results[0] = sveHelp::sveCntp<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_CNTP_XPP_D: {
-      return executionNYI();
+    case Opcode::AArch64_CNTP_XPP_D: {  // cntp xd, pg, pn.d
+      results[0] = sveHelp::sveCntp<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_CNTP_XPP_H: {
-      return executionNYI();
+    case Opcode::AArch64_CNTP_XPP_H: {  // cntp xd, pg, pn.h
+      results[0] = sveHelp::sveCntp<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_CNTP_XPP_S: {
-      return executionNYI();
+    case Opcode::AArch64_CNTP_XPP_S: {  // cntp xd, pg, pn.s
+      results[0] = sveHelp::sveCntp<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_CNTW_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_CNTW_XPiI: {  // cntw xd{, pattern{, #imm}}
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = (uint64_t)((VL_bits / 32) * imm);
       break;
     }
     case Opcode::AArch64_CNT_ZPmZ_B: {
