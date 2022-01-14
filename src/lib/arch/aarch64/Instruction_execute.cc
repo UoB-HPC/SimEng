@@ -2529,12 +2529,13 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_DECB_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_DECB_XPiI: {  // decb xdn{, pattern{, MUL #imm}}
+      results[0] = sveHelp::sveDec_scalar<uint8_t>(operands, metadata, VL_bits);
       break;
     }
-    case Opcode::AArch64_DECD_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_DECD_XPiI: {  // decd xdn{, pattern{, MUL #imm}}
+      results[0] =
+          sveHelp::sveDec_scalar<uint64_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_DECD_ZPiI: {

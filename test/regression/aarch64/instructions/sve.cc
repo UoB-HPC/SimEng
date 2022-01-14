@@ -843,11 +843,22 @@ TEST_P(InstSve, dec) {
   RUN_AARCH64(R"(
     mov x0, #512
     mov x1, #512
+    mov x2, #512
+    mov x3, #512
+
+    # 8-bit
     decb x0
     decb x1, all, mul #3
+
+    # 64-bit
+    decd x2
+    decd x3, all, mul #3
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 512 - (VL / 8));
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 512 - (VL / 8) * 3);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 512 - (VL / 64));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 512 - (VL / 64) * 3);
 }
 
 TEST_P(InstSve, dupm) {

@@ -98,6 +98,19 @@ class sveHelp {
     return count;
   }
 
+  /** Helper function for SVE instructions with the format `dec<b,d,h,s> xdn{,
+   * pattern{, MUL #imm}}`. */
+  // TODO : Add support for patterns
+  template <typename T>
+  static uint64_t sveDec_scalar(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const uint64_t n = operands[0].get<uint64_t>();
+    const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+    return (n - ((VL_bits / (sizeof(T) * 8)) * imm));
+  }
+
   /** Helper function for SVE instructions with the format `dup zd, #imm{,
    * shift}`. */
   template <typename T>
