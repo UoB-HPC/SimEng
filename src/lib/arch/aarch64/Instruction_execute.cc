@@ -1213,20 +1213,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CCMPWi: {
-      return executionNYI();
+    case Opcode::AArch64_CCMPWi: {  // ccmp wn, #imm, #nzcv, cc
+      results[0] = conditionalHelp::ccmp_imm<uint32_t>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_CCMPWr: {
-      return executionNYI();
+    case Opcode::AArch64_CCMPWr: {  // ccmp wn, wm, #nzcv, cc
+      results[0] = conditionalHelp::ccmp_reg<uint32_t>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_CCMPXi: {
-      return executionNYI();
+    case Opcode::AArch64_CCMPXi: {  // ccmp xn, #imm, #nzcv, cc
+      results[0] = conditionalHelp::ccmp_imm<uint64_t>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_CCMPXr: {
-      return executionNYI();
+    case Opcode::AArch64_CCMPXr: {  // ccmp xn, xm, #nzcv, cc
+      results[0] = conditionalHelp::ccmp_reg<uint64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_CFINV: {
