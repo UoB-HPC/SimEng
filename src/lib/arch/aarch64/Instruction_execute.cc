@@ -1385,8 +1385,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CLZXr: {
-      return executionNYI();
+    case Opcode::AArch64_CLZXr: {  // clz xd, xn
+      results[0] = arithmeticHelp::clz_reg<int64_t>(operands);
       break;
     }
     case Opcode::AArch64_CLZ_ZPmZ_B: {

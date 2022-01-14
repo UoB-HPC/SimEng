@@ -4,6 +4,7 @@
 #include <functional>
 #include <limits>
 #include <tuple>
+#include <type_traits>
 
 #include "arch/aarch64/InstructionMetadata.hh"
 

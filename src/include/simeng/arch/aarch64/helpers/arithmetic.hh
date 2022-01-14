@@ -73,6 +73,22 @@ class arithmeticHelp {
     return AuxFunc::addWithCarry(n, m, carry);
   }
 
+  /** Helper function for instructions with the format `clz rd, rn`. */
+  template <typename T>
+  static T clz_reg(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    T x = operands[0].get<T>();
+    uint8_t i;
+    for (i = 0; i < (sizeof(T) * 8); i++) {
+      // Left-shift x until it's negative or we run out of bits
+      if (x < 0) {
+        break;
+      }
+      x <<= 1;
+    }
+    return i;
+  }
+
   /** Helper function for instructions with the format `madd rd, rn, rm, ra`.
    * Returns single value. */
   template <typename T>
