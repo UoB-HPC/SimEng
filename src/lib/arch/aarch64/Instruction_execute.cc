@@ -2598,40 +2598,51 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_DUPM_ZI: {
-      return executionNYI();
+    case Opcode::AArch64_DUPM_ZI: {  // dupm zd.t, #imm
+      const uint64_t imm = static_cast<uint64_t>(metadata.operands[1].imm);
+      uint64_t out[32] = {0};
+      for (int i = 0; i < (VL_bits / 64); i++) {
+        out[i] = imm;
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_DUP_ZI_B: {  // dup zd.b, #imm{, shift}
-      results[0] = sveHelp::sveDup_imm<uint8_t>(metadata, VL_bits);
+      results[0] = sveHelp::sveDup_immOrScalar<uint8_t>(operands, metadata,
+                                                        VL_bits, true);
       break;
     }
     case Opcode::AArch64_DUP_ZI_D: {  // dup zd.d, #imm{, shift}
-      results[0] = sveHelp::sveDup_imm<uint64_t>(metadata, VL_bits);
+      results[0] = sveHelp::sveDup_immOrScalar<uint64_t>(operands, metadata,
+                                                         VL_bits, true);
       break;
     }
     case Opcode::AArch64_DUP_ZI_H: {  // dup zd.h, #imm{, shift}
-      results[0] = sveHelp::sveDup_imm<uint16_t>(metadata, VL_bits);
+      results[0] = sveHelp::sveDup_immOrScalar<uint16_t>(operands, metadata,
+                                                         VL_bits, true);
       break;
     }
     case Opcode::AArch64_DUP_ZI_S: {  // dup zd.s, #imm{, shift}
-      results[0] = sveHelp::sveDup_imm<uint32_t>(metadata, VL_bits);
+      results[0] = sveHelp::sveDup_immOrScalar<uint32_t>(operands, metadata,
+                                                         VL_bits, true);
       break;
     }
     case Opcode::AArch64_DUP_ZR_B: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_DUP_ZR_D: {
-      return executionNYI();
+    case Opcode::AArch64_DUP_ZR_D: {  // dup zd.d, xn
+      results[0] = sveHelp::sveDup_immOrScalar<int32_t>(operands, metadata,
+                                                        VL_bits, false);
       break;
     }
     case Opcode::AArch64_DUP_ZR_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_DUP_ZR_S: {
-      return executionNYI();
+    case Opcode::AArch64_DUP_ZR_S: {  // dup zd.s, wn
+      results[0] = sveHelp::sveDup_immOrScalar<int64_t>(operands, metadata,
+                                                        VL_bits, false);
       break;
     }
     case Opcode::AArch64_DUP_ZZI_B: {
@@ -4590,16 +4601,18 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FDUP_ZI_D: {
-      return executionNYI();
+    case Opcode::AArch64_FDUP_ZI_D: {  // fdup zd.d, #imm
+      results[0] =
+          sveHelp::sveDup_immOrScalar<float>(operands, metadata, VL_bits, true);
       break;
     }
     case Opcode::AArch64_FDUP_ZI_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FDUP_ZI_S: {
-      return executionNYI();
+    case Opcode::AArch64_FDUP_ZI_S: {  // fdup zd.s, #imm
+      results[0] =
+          sveHelp::sveDup_immOrScalar<float>(operands, metadata, VL_bits, true);
       break;
     }
     case Opcode::AArch64_FEXPA_ZZ_D: {
@@ -5254,12 +5267,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMOVDi: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVDi: {  // fmov dn, #imm
+      results[0] = RegisterValue(metadata.operands[1].fp, 256);
       break;
     }
-    case Opcode::AArch64_FMOVDr: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVDr: {  // fmov dd, dn
+      results[0] = RegisterValue(operands[0].get<double>(), 256);
       break;
     }
     case Opcode::AArch64_FMOVH0: {

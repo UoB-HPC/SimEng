@@ -111,13 +111,18 @@ class sveHelp {
     return (n - ((VL_bits / (sizeof(T) * 8)) * imm));
   }
 
-  /** Helper function for SVE instructions with the format `dup zd, #imm{,
-   * shift}`. */
+  /** Helper function for SVE instructions with the format `dup zd, <#imm{,
+   * shift}, <w,x>n>`. */
   template <typename T>
-  static std::array<T, 256> sveDup_imm(
+  static std::array<T, 256> sveDup_immOrScalar(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
-      const uint16_t VL_bits) {
-    const int8_t imm = static_cast<int8_t>(metadata.operands[1].imm);
+      const uint16_t VL_bits, bool useImm) {
+    bool isFP = std::is_floating_point<T>::value;
+    const auto imm =
+        useImm ? (isFP ? metadata.operands[1].fp
+                       : static_cast<int8_t>(metadata.operands[1].imm))
+               : operands[0].get<T>();
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
     std::array<T, 256> out = {0};
 
