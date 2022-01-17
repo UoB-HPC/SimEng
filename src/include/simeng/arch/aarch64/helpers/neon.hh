@@ -27,14 +27,14 @@ class neonHelp {
    * I represents the number of elements in the input array to be summed.
    */
   template <typename T, int I>
-  static T vecSumElems_2ops(
+  static std::array<T, 256> vecSumElems_2ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
-    T result = 0;
+    std::array<T, 256> out = {0};
     for (int i = 0; i < I; i++) {
-      result += n[i];
+      out[0] += n[i];
     }
-    return result;
+    return out;
   }
 
   /** Helper function for NEON instructions with the format `addp vd, vn, vm`.
@@ -118,15 +118,20 @@ class neonHelp {
     return out;
   }
 
-  /** Helper function for NEON instructions with the format `dup vd,
-   * vn[index]`.*/
-  template <typename T>
-  static std::array<T, 256> vecCpy_index(
+  /** Helper function for NEON instructions with the format `dup <rd, vd>,
+   * <vn[index], rn>`.
+   *I represents the number of elements in the output array to be updated (i.e.
+   *for vd.8b the final 8 elements in the output array will be 0).
+   */
+  template <typename T, int I>
+  static std::array<T, 256> vecDup_gprOrIndex(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
-    const T* vec = operands[0].getAsVector<T>();
-    std::array<T, 256> out;
-    out[0] = vec[metadata.operands[1].vector_index];
+      const simeng::arch::aarch64::InstructionMetadata& metadata, bool useGpr) {
+    int index = useGpr ? 0 : metadata.operands[1].vector_index;
+    T element =
+        useGpr ? operands[0].get<T>() : operands[0].getAsVector<T>()[index];
+    std::array<T, 256> out = {0};
+    std::fill_n(std::begin(out), I, element);
     return out;
   }
 

@@ -2414,11 +2414,13 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_CPYi32: {
-      results[0] = neonHelp::vecCpy_index<uint32_t>(operands, metadata);
+      results[0] =
+          neonHelp::vecDup_gprOrIndex<uint32_t, 1>(operands, metadata, false);
       break;
     }
     case Opcode::AArch64_CPYi64: {
-      results[0] = neonHelp::vecCpy_index<uint64_t>(operands, metadata);
+      results[0] =
+          neonHelp::vecDup_gprOrIndex<uint64_t, 1>(operands, metadata, false);
       break;
     }
     case Opcode::AArch64_CPYi8: {
@@ -2586,8 +2588,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_DMB: {
-      return executionNYI();
+    case Opcode::AArch64_DMB: {  // dmb option|#imm
+      // TODO: Respect memory barriers
       break;
     }
     case Opcode::AArch64_DRPS: {
@@ -2667,44 +2669,52 @@ void Instruction::execute() {
           sveHelp::sveDup_vecIndexed<uint32_t>(operands, metadata, VL_bits);
       break;
     }
-    case Opcode::AArch64_DUPv16i8gpr: {
-      return executionNYI();
+    case Opcode::AArch64_DUPv16i8gpr: {  // dup vd.16b, wn
+      results[0] =
+          neonHelp::vecDup_gprOrIndex<uint8_t, 16>(operands, metadata, true);
       break;
     }
     case Opcode::AArch64_DUPv16i8lane: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_DUPv2i32gpr: {
-      return executionNYI();
+    case Opcode::AArch64_DUPv2i32gpr: {  // dup vd.2s, wn
+      results[0] =
+          neonHelp::vecDup_gprOrIndex<uint32_t, 2>(operands, metadata, true);
       break;
     }
-    case Opcode::AArch64_DUPv2i32lane: {
-      return executionNYI();
+    case Opcode::AArch64_DUPv2i32lane: {  // dup vd.2s, vn.s[index]
+      results[0] =
+          neonHelp::vecDup_gprOrIndex<uint32_t, 2>(operands, metadata, false);
       break;
     }
-    case Opcode::AArch64_DUPv2i64gpr: {
-      return executionNYI();
+    case Opcode::AArch64_DUPv2i64gpr: {  // dup vd.2d, xn
+      results[0] =
+          neonHelp::vecDup_gprOrIndex<uint64_t, 2>(operands, metadata, true);
       break;
     }
-    case Opcode::AArch64_DUPv2i64lane: {
-      return executionNYI();
+    case Opcode::AArch64_DUPv2i64lane: {  // dup vd.2d, vn.d[index]
+      results[0] =
+          neonHelp::vecDup_gprOrIndex<uint64_t, 2>(operands, metadata, false);
       break;
     }
-    case Opcode::AArch64_DUPv4i16gpr: {
-      return executionNYI();
+    case Opcode::AArch64_DUPv4i16gpr: {  // dup vd.4h, wn
+      results[0] =
+          neonHelp::vecDup_gprOrIndex<uint16_t, 4>(operands, metadata, true);
       break;
     }
     case Opcode::AArch64_DUPv4i16lane: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_DUPv4i32gpr: {
-      return executionNYI();
+    case Opcode::AArch64_DUPv4i32gpr: {  // dup vd.4s, wn
+      results[0] =
+          neonHelp::vecDup_gprOrIndex<uint32_t, 4>(operands, metadata, true);
       break;
     }
-    case Opcode::AArch64_DUPv4i32lane: {
-      return executionNYI();
+    case Opcode::AArch64_DUPv4i32lane: {  // dup vd.4s, vn.s[index]
+      results[0] =
+          neonHelp::vecDup_gprOrIndex<uint32_t, 4>(operands, metadata, false);
       break;
     }
     case Opcode::AArch64_DUPv8i16gpr: {
@@ -9136,8 +9146,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRWui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRWui: {  // ldr wt, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 8);
       break;
     }
     case Opcode::AArch64_LDRXl: {
@@ -9578,8 +9589,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDURWi: {
-      return executionNYI();
+    case Opcode::AArch64_LDURWi: {  // ldur wt, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
       break;
     }
     case Opcode::AArch64_LDURXi: {
