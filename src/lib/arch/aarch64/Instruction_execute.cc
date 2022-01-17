@@ -2870,12 +2870,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_EXTRWrri: {
-      return executionNYI();
+    case Opcode::AArch64_EXTRWrri: {  // extr wd, wn, wm, #lsb
+      results[0] =
+          bitmanipHelp::extrLSB_registers<uint32_t>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_EXTRXrri: {
-      return executionNYI();
+    case Opcode::AArch64_EXTRXrri: {  // extr xd, xn, xm, #lsb
+      results[0] =
+          bitmanipHelp::extrLSB_registers<uint64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_EXT_ZZI: {
