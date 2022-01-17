@@ -174,6 +174,32 @@ class sveHelp {
     return out;
   }
 
+  /** Helper function for SVE instructions with the format `<AND, EOR, ...> pd,
+   * pg/z, pn, pm`. T represents the vector register type (i.e. pd.b would be
+   * uint8_t).*/
+  template <typename T>
+  static std::array<uint64_t, 4> sveLogicOp_preds(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits,
+      std::function<uint64_t(uint64_t, uint64_t)> func) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const uint64_t* n = operands[1].getAsVector<uint64_t>();
+    const uint64_t* m = operands[2].getAsVector<uint64_t>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    std::array<uint64_t, 4> out = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i / (64 / sizeof(T))] |=
+            (func(n[i / (64 / sizeof(T))], m[i / (64 / sizeof(T))]) &
+             shifted_active);
+      }
+    }
+    return out;
+  }
+
   /** Helper function for SVE instructions with the format `ptrue pd{, pattern}.
    * T represents the predicate type (i.e. pd.b would be uint8_t).
    */

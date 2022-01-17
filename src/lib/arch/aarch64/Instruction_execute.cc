@@ -581,20 +581,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_AND_PPzPP: {  // and pd.b, pg/z, pn.b, pm.b
-      const uint64_t* g = operands[0].getAsVector<uint64_t>();
-      const uint64_t* n = operands[1].getAsVector<uint64_t>();
-      const uint64_t* m = operands[2].getAsVector<uint64_t>();
-      // Divide by 512 as we're operating in blocks of 64-bits
-      // and each predicate bit represents 8 bits in Z registers or
-      // more generally the VL notion.
-      const uint16_t partition_num = (int)((VL_bits - 1) / 512);
-      uint64_t out[4] = {0, 0, 0, 0};
-      for (int i = 0; i < partition_num + 1; i++) {
-        // AND the two source registers in blocks of 64-bits with
-        // the governing predicate as a mask.
-        out[i] = g[i] & (n[i] & m[i]);
-      }
-      results[0] = out;
+      results[0] = sveHelp::sveLogicOp_preds<uint8_t>(
+          operands, VL_bits,
+          [](uint64_t x, uint64_t y) -> uint64_t { return x & y; });
       break;
     }
     case Opcode::AArch64_AND_ZI: {
@@ -2814,7 +2803,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_EOR_PPzPP: {
-      return executionNYI();
+      results[0] = sveHelp::sveLogicOp_preds<uint8_t>(
+          operands, VL_bits,
+          [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
       break;
     }
     case Opcode::AArch64_EOR_ZI: {
