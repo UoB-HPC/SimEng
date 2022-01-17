@@ -2884,12 +2884,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_EXTv16i8: {
-      return executionNYI();
+    case Opcode::AArch64_EXTv16i8: {  // ext vd.16b, vn.16b, vm.16b, #index
+      results[0] = neonHelp::vecExtVecs_index<uint8_t, 16>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_EXTv8i8: {
-      return executionNYI();
+    case Opcode::AArch64_EXTv8i8: {  // ext vd.8b, vn.8b, vm.8b, #index
+      results[0] = neonHelp::vecExtVecs_index<uint8_t, 8>(operands, metadata);
       break;
     }
     case Opcode::AArch64_F128CSEL: {

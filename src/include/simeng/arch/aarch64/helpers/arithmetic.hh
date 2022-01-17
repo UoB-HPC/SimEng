@@ -114,8 +114,8 @@ class arithmeticHelp {
     return value;
   }
 
-  /** Helper function for instructions with the format `movn <w,x>d, #imm{, lsl
-   * #shift}`.
+  /** Helper function for instructions with the format `mov<n,z> <w,x>d, #imm{,
+   * lsl #shift}`.
    */
   template <typename T>
   static uint64_t movnShift_imm(

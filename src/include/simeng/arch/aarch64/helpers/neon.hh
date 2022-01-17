@@ -153,6 +153,29 @@ class neonHelp {
     return out;
   }
 
+  /** Helper function for NEON instructions with the format `ext vd,
+   *  vn, vm, #index`. T represents the vector register type (i.e. vd.16b would
+   *be uint8_t). I represents the number of elements in the output array to be
+   *updated (i.e. for vd.8b the final 8 elements in the output array will be
+   *0).*/
+  template <typename T, int I>
+  static std::array<T, 256> vecExtVecs_index(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+    const uint64_t index = static_cast<uint64_t>(metadata.operands[3].imm);
+    std::array<T, 256> out = {0};
+
+    for (int i = index; i < I; i++) {
+      out[i - index] = n[i];
+    }
+    for (int i = 0; i < index; i++) {
+      out[I - index + i] = m[i];
+    }
+    return out;
+  }
+
   /** Helper function for NEON instructions with the format `movi vd, #imm`.
    * I represents the number of elements in the output array to be
    * updated (i.e. for vd.8b the final 8 elements in the output array will be
