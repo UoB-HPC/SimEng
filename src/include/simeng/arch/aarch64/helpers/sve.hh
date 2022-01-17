@@ -132,6 +132,29 @@ class sveHelp {
     return out;
   }
 
+  /** Helper function for SVE instructions with the format `dup zd, zn[#imm]`.
+   */
+  template <typename T>
+  static std::array<T, 256> sveDup_vecIndexed(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const uint16_t index =
+        static_cast<uint16_t>(metadata.operands[1].vector_index);
+    const T* n = operands[0].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    std::array<T, 256> out = {0};
+
+    if (index < (VL_bits / (sizeof(T) * 8))) {
+      const T element = n[index];
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = element;
+      }
+    }
+    return out;
+  }
+
   /** Helper function for SVE instructions with the format `index zd, #imm,
    * #imm`. T represents the vector register type (i.e. zd.b would be
    * int8_t).*/

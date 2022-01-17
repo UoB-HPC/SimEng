@@ -2608,23 +2608,23 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_DUP_ZI_B: {  // dup zd.b, #imm{, shift}
-      results[0] = sveHelp::sveDup_immOrScalar<uint8_t>(operands, metadata,
-                                                        VL_bits, true);
+      results[0] = sveHelp::sveDup_immOrScalar<int8_t>(operands, metadata,
+                                                       VL_bits, true);
       break;
     }
     case Opcode::AArch64_DUP_ZI_D: {  // dup zd.d, #imm{, shift}
-      results[0] = sveHelp::sveDup_immOrScalar<uint64_t>(operands, metadata,
-                                                         VL_bits, true);
+      results[0] = sveHelp::sveDup_immOrScalar<int64_t>(operands, metadata,
+                                                        VL_bits, true);
       break;
     }
     case Opcode::AArch64_DUP_ZI_H: {  // dup zd.h, #imm{, shift}
-      results[0] = sveHelp::sveDup_immOrScalar<uint16_t>(operands, metadata,
-                                                         VL_bits, true);
+      results[0] = sveHelp::sveDup_immOrScalar<int16_t>(operands, metadata,
+                                                        VL_bits, true);
       break;
     }
     case Opcode::AArch64_DUP_ZI_S: {  // dup zd.s, #imm{, shift}
-      results[0] = sveHelp::sveDup_immOrScalar<uint32_t>(operands, metadata,
-                                                         VL_bits, true);
+      results[0] = sveHelp::sveDup_immOrScalar<int32_t>(operands, metadata,
+                                                        VL_bits, true);
       break;
     }
     case Opcode::AArch64_DUP_ZR_B: {
@@ -2632,7 +2632,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_DUP_ZR_D: {  // dup zd.d, xn
-      results[0] = sveHelp::sveDup_immOrScalar<int32_t>(operands, metadata,
+      results[0] = sveHelp::sveDup_immOrScalar<int64_t>(operands, metadata,
                                                         VL_bits, false);
       break;
     }
@@ -2641,7 +2641,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_DUP_ZR_S: {  // dup zd.s, wn
-      results[0] = sveHelp::sveDup_immOrScalar<int64_t>(operands, metadata,
+      results[0] = sveHelp::sveDup_immOrScalar<int32_t>(operands, metadata,
                                                         VL_bits, false);
       break;
     }
@@ -2649,8 +2649,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_DUP_ZZI_D: {
-      return executionNYI();
+    case Opcode::AArch64_DUP_ZZI_D: {  // dup zd.d, zn.d[#imm]
+      results[0] =
+          sveHelp::sveDup_vecIndexed<uint64_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_DUP_ZZI_H: {
@@ -2661,8 +2662,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_DUP_ZZI_S: {
-      return executionNYI();
+    case Opcode::AArch64_DUP_ZZI_S: {  // dup zd.s, zn.s[#imm]
+      results[0] =
+          sveHelp::sveDup_vecIndexed<uint32_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_DUPv16i8gpr: {
@@ -4602,8 +4604,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FDUP_ZI_D: {  // fdup zd.d, #imm
-      results[0] =
-          sveHelp::sveDup_immOrScalar<float>(operands, metadata, VL_bits, true);
+      results[0] = sveHelp::sveDup_immOrScalar<double>(operands, metadata,
+                                                       VL_bits, true);
       break;
     }
     case Opcode::AArch64_FDUP_ZI_H: {
@@ -5299,12 +5301,13 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMOVSWr: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVSWr: {  // fmov wd, sn
+      results[0] = RegisterValue(operands[0].get<float>(), 8);
       break;
     }
-    case Opcode::AArch64_FMOVSi: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVSi: {  // fmov sn, #imm
+      results[0] =
+          RegisterValue(static_cast<float>(metadata.operands[1].fp), 256);
       break;
     }
     case Opcode::AArch64_FMOVSr: {
