@@ -169,8 +169,6 @@ class Instruction {
   /** Get this instruction's supported set of ports. */
   virtual const std::vector<uint8_t>& getSupportedPorts() = 0;
 
-  bool shouldSplitRequests() const;
-
   /** Is this a micro-operation? */
   bool isMicroOp() const;
 
@@ -234,10 +232,6 @@ class Instruction {
 
   /** The execution ports that this instruction can be issued to. */
   std::vector<uint8_t> supportedPorts_ = {};
-
-  /** Whether this instructions' memory accesses should be treated as many
-   * independent requests. **/
-  bool splitMemoryRequests_ = false;
 
   // Micro operations
   /** Is a resultant micro-operation from an instruction split? */

@@ -16,6 +16,7 @@ Instruction::Instruction(const Architecture& architecture,
                          MicroOpInfo microOpInfo)
     : architecture_(architecture), metadata(metadata) {
   isMicroOp_ = microOpInfo.isMicroOp;
+  microOpcode_ = microOpInfo.microOpcode;
   isLastMicroOp_ = microOpInfo.isLastMicroOp;
   microOpIndex_ = microOpInfo.microOpIndex;
   decode();

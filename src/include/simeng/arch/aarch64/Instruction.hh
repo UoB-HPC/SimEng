@@ -85,14 +85,17 @@ enum class InstructionException {
 /** The opcodes of simeng aarch64 micro-operations. */
 namespace MicroOpcode {
 const uint8_t OFFSET_GEN = 0;
-const uint8_t LDR = 1;
-const uint8_t STR = 2;
+const uint8_t LDR_ADDR = 1;
+const uint8_t STR_ADDR = 2;
 const uint8_t STR_DATA = 3;
+// INVALID is the default value reserved for non-micro-operation instructions
+const uint8_t INVALID = 255;
 }  // namespace MicroOpcode
 
 /** A struct to group micro-operation information together. */
 struct MicroOpInfo {
   bool isMicroOp = false;
+  uint8_t microOpcode = MicroOpcode::INVALID;
   bool isLastMicroOp = true;
   int microOpIndex = 0;
 };
@@ -310,6 +313,8 @@ class Instruction : public simeng::Instruction {
   bool isRET_ = false;
   /** Is a branch and link instructions. */
   bool isBL_ = false;
+  /** Is the micro-operation opcode of the instruction, where appropriate. */
+  uint8_t microOpcode_ = MicroOpcode::INVALID;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

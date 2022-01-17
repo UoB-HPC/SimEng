@@ -6,7 +6,7 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-void printInfo(Instruction insn, csh capstoneHandle) {
+void printInfo(Instruction& insn, csh capstoneHandle) {
   int i;
   uint8_t access;
   InstructionMetadata metadata = insn.getMetadata();
@@ -16,7 +16,14 @@ void printInfo(Instruction insn, csh capstoneHandle) {
             << " === " << metadata.mnemonic << " " << metadata.operandStr
             << " === " << metadata.id << " === " << metadata.opcode
             << " ======" << std::endl;
-  std::cout << "Group: " << insn.getGroup() << std::endl;
+  std::cout << "Group Information: " << std::endl;
+  std::cout << "\tGroup Num: " << insn.getGroup() << std::endl;
+  std::cout << "\tisStoreAddress_: " << insn.isStoreAddress() << std::endl;
+  std::cout << "\tisStoreData_: " << insn.isStoreData() << std::endl;
+  std::cout << "\tisLoad_: " << insn.isLoad() << std::endl;
+  std::cout << "\tisBranch_: " << insn.isBranch() << std::endl;
+  std::cout << "\tisRET_: " << insn.isRET() << std::endl;
+  std::cout << "\tisBL_: " << insn.isBL() << std::endl;
   std::cout << "Operands:" << std::endl;
   if (metadata.operandCount) printf("\top_count: %u\n", metadata.operandCount);
 
@@ -178,7 +185,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture,
         offset_gen_info.operands[2] = offset_gen_imm;
         cs_detail offset_gen_detail = {{}, 0, {}, 0, {}, 0, {}};
         offset_gen_detail.arm64 = offset_gen_info;
-        cs_insn offset_gen_insn = {ARM64_INS_ENDING,
+        cs_insn offset_gen_insn = {arm64_insn::ARM64_INS_ADD,
                                    0x0,
                                    4,
                                    "",
@@ -186,13 +193,14 @@ uint8_t MicroDecoder::decode(const Architecture& architecture,
                                    "",
                                    &offset_gen_detail,
                                    MicroOpcode::OFFSET_GEN};
-        output[0] = std::make_shared<Instruction>(
+
+        Instruction offset_gen(
             architecture, InstructionMetadata(offset_gen_insn),
-            MicroOpInfo({true, false, 0}));
-        printInfo(
-            Instruction(architecture, InstructionMetadata(offset_gen_insn),
-                        MicroOpInfo({true, false, 0})),
-            capstoneHandle);
+            MicroOpInfo({true, MicroOpcode::OFFSET_GEN, false, 0}));
+        offset_gen.setExecutionInfo(architecture.getExecutionInfo(offset_gen));
+        // printInfo(offset_gen, capstoneHandle);
+        output[0] = std::make_shared<Instruction>(offset_gen);
+
         // ldr uop
         cs_arm64 ldr_info = {ARM64_CC_INVALID, false, false, 2, {}};
         cs_arm64_op ldr_dest = {0,
@@ -215,14 +223,14 @@ uint8_t MicroDecoder::decode(const Architecture& architecture,
         cs_detail ldr_detail = {{}, 0, {}, 0, {}, 0, {}};
         ldr_detail.arm64 = ldr_info;
         cs_insn ldr_insn = {
-            ARM64_INS_ENDING, 0x0, 4,           "",
-            "micro_ldr",      "",  &ldr_detail, MicroOpcode::LDR};
-        output[1] = std::make_shared<Instruction>(architecture,
-                                                  InstructionMetadata(ldr_insn),
-                                                  MicroOpInfo({true, true, 1}));
-        printInfo(Instruction(architecture, InstructionMetadata(ldr_insn),
-                              MicroOpInfo({true, true, 1})),
-                  capstoneHandle);
+            arm64_insn::ARM64_INS_LDR, 0x0, 4, "", "micro_ldr", "", &ldr_detail,
+            MicroOpcode::LDR_ADDR};
+
+        Instruction ldr(architecture, InstructionMetadata(ldr_insn),
+                        MicroOpInfo({true, MicroOpcode::LDR_ADDR, true, 1}));
+        ldr.setExecutionInfo(architecture.getExecutionInfo(ldr));
+        // printInfo(ldr, capstoneHandle);
+        output[1] = std::make_shared<Instruction>(ldr);
         break;
       }
       default: {

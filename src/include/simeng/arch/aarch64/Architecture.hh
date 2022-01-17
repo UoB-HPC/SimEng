@@ -53,13 +53,13 @@ class Architecture : public arch::Architecture {
   /** Returns the current vector length set by the provided configuration. */
   uint64_t getVectorLength() const;
 
- private:
   /** Retrieve an ExecutionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
    * port information, return that instead of the group-defined execution
    * information. */
   ExecutionInfo getExecutionInfo(Instruction& insn) const;
 
+ private:
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */

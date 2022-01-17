@@ -48,8 +48,6 @@ uint16_t Instruction::getLatency() const { return latency_; }
 uint16_t Instruction::getLSQLatency() const { return lsqExecutionLatency_; }
 uint16_t Instruction::getStallCycles() const { return stallCycles_; }
 
-bool Instruction::shouldSplitRequests() const { return splitMemoryRequests_; }
-
 bool Instruction::isMicroOp() const { return isMicroOp_; }
 bool Instruction::isLastMicroOp() const { return isLastMicroOp_; }
 void Instruction::setWaitingCommit() { waitingCommit_ = true; }
