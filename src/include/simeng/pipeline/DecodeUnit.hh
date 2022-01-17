@@ -33,6 +33,9 @@ class DecodeUnit {
    * discovering a branch misprediction early. */
   uint64_t getEarlyFlushes() const;
 
+  /** Clear the microOps_ queue. */
+  void purgeFlushed();
+
  private:
   /** A buffer of macro-ops to split into uops. */
   PipelineBuffer<MacroOp>& input_;

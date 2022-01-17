@@ -44,7 +44,7 @@ void Core::tick() {
 
   if (pendingReads_ > 0) {
     // Handle pending reads to a uop
-    auto& uop = macroOp_[0];
+    auto& uop = microOps_.front();
 
     const auto& completedReads = dataMemory_.getCompletedReads();
     for (const auto& response : completedReads) {
@@ -65,30 +65,38 @@ void Core::tick() {
 
   // Fetch
 
-  // Find fetched memory that matches the current PC
-  const auto& fetched = instructionMemory_.getCompletedReads();
-  size_t fetchIndex;
-  for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
-    if (fetched[fetchIndex].target.address == pc_) {
-      break;
+  // Determine if new uops are needed to be fetched
+  if (!microOps_.size()) {
+    // Find fetched memory that matches the current PC
+    const auto& fetched = instructionMemory_.getCompletedReads();
+    size_t fetchIndex;
+    for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
+      if (fetched[fetchIndex].target.address == pc_) {
+        break;
+      }
+    }
+    if (fetchIndex == fetched.size()) {
+      // Need to wait for fetched instructions
+      return;
+    }
+
+    const auto& instructionBytes = fetched[fetchIndex].data;
+    auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
+                                    FETCH_SIZE, pc_, {false, 0}, macroOp_);
+
+    // Clear the fetched data
+    instructionMemory_.clearCompletedReads();
+
+    pc_ += bytesRead;
+
+    // Decode
+    for (size_t index = 0; index < macroOp_.size(); index++) {
+      microOps_.push(std::move(macroOp_[index]));
     }
   }
-  if (fetchIndex == fetched.size()) {
-    // Need to wait for fetched instructions
-    return;
-  }
 
-  const auto& instructionBytes = fetched[fetchIndex].data;
-  auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
-                                  FETCH_SIZE, pc_, {false, 0}, macroOp_);
+  auto& uop = microOps_.front();
 
-  // Clear the fetched data
-  instructionMemory_.clearCompletedReads();
-
-  pc_ += bytesRead;
-
-  // Decode
-  auto& uop = macroOp_[0];
   if (uop->exceptionEncountered()) {
     handleException(uop);
     return;
@@ -165,6 +173,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
+  microOps_.pop();
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
@@ -199,6 +208,7 @@ void Core::processExceptionHandler() {
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
+  microOps_.pop();
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {

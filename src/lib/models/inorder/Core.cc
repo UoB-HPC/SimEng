@@ -89,6 +89,7 @@ void Core::tick() {
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     decodeToExecuteBuffer_.fill(nullptr);
+    decodeUnit_.purgeFlushed();
 
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
@@ -98,6 +99,7 @@ void Core::tick() {
 
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
+    decodeUnit_.purgeFlushed();
 
     flushes_++;
   }

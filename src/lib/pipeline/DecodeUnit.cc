@@ -11,8 +11,8 @@ DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& input,
     : input_(input), output_(output), predictor_(predictor){};
 
 void DecodeUnit::tick() {
-  // Stall if output buffer is stalled or internal uop buffer is overpopulated
-  if (output_.isStalled() || (microOps_.size() >= output_.getWidth())) {
+  // Stall if output buffer is stalled
+  if (output_.isStalled()) {
     input_.stall(true);
     return;
   }
@@ -20,28 +20,42 @@ void DecodeUnit::tick() {
   shouldFlush_ = false;
   input_.stall(false);
 
-  // Populate uop buffer with newly fetched macro-ops
-  for (size_t slot = 0; slot < input_.getWidth(); slot++) {
-    auto& macroOp = input_.getHeadSlots()[slot];
+  // Stall if internal uop is overpopulated, otherwise add uops from input to
+  // internal buffer
+  if (microOps_.size() >= output_.getWidth()) {
+    input_.stall(true);
+  } else {
+    // Populate uop buffer with newly fetched macro-ops
+    for (size_t slot = 0; slot < input_.getWidth(); slot++) {
+      auto& macroOp = input_.getHeadSlots()[slot];
 
-    if (macroOp.size() == 0) {
-      // Nothing to process for this macro-op
-      continue;
+      if (macroOp.size() == 0) {
+        // Nothing to process for this macro-op
+        continue;
+      }
+
+      for (uint8_t index = 0; index < macroOp.size(); index++) {
+        // std::cout << "Pushing 0x" << std::hex
+        //           << macroOp[index]->getInstructionAddress() << std::dec <<
+        //           ":"
+        //           << macroOp[index]->getMicroOpIndex() << " to microOps_"
+        //           << std::endl;
+        microOps_.push(std::move(macroOp[index]));
+      }
+
+      input_.getHeadSlots()[slot].clear();
     }
-
-    for (uint8_t index = 0; index < macroOp.size(); index++) {
-      microOps_.push(std::move(macroOp[index]));
-    }
-
-    input_.getHeadSlots()[slot].clear();
   }
 
+  // Process uops in buffer
   for (size_t slot = 0; slot < output_.getWidth(); slot++) {
     // If there's no more uops to decode, exit loop early
     if (!microOps_.size()) break;
 
     // Move uop to output buffer and remove from internal buffer
     auto& uop = (output_.getTailSlots()[slot] = std::move(microOps_.front()));
+    // std::cout << "Decoded: 0x" << std::hex << uop->getInstructionAddress()
+    //           << std::dec << ":" << uop->getMicroOpIndex() << std::endl;
     microOps_.pop();
 
     // Check preliminary branch prediction results now that the instruction is
@@ -68,6 +82,11 @@ void DecodeUnit::tick() {
 bool DecodeUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t DecodeUnit::getFlushAddress() const { return pc_; }
 uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes_; };
+void DecodeUnit::purgeFlushed() {
+  while (!microOps_.empty()) {
+    microOps_.pop();
+  }
+}
 
 }  // namespace pipeline
 }  // namespace simeng
