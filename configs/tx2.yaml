@@ -6,7 +6,7 @@ Core:
   Simulation-Mode: outoforder
   Clock-Frequency: 2.5
   Fetch-Block-Size: 32
-  Micro-Operations: False
+  Micro-Operations: True
 Process-Image:
   Heap-Size: 1073741824
   Stack-Size: 1048576
