@@ -166,6 +166,7 @@ TEST_F(ReorderBufferTest, CommitStore) {
   ON_CALL(*uop, getData()).WillByDefault(Return(dataSpan));
 
   uop->setSequenceId(1);
+  uop->setInstructionId(1);
 
   lsq.addStore(uopPtr);
 

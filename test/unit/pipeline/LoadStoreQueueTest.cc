@@ -81,7 +81,9 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     // Load uop comes sequentially after the store uop, and potentially reads
     // from the same address the store writes to
     storeUop->setSequenceId(0);
+    storeUop->setInstructionId(0);
     loadUop->setSequenceId(1);
+    loadUop->setInstructionId(1);
 
     // Add the memory operations to the queue in program order
     queue.addStore(storeUopPtr);
@@ -97,8 +99,8 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     queue.supplyStoreData(storeUopPtr);
 
     // Trigger the store, and return any violation
-    // TODO: Once a memory interface is in place, ensure the load was resolved
-    // before triggering the store
+    // TODO: Once a memory interface is in place, ensure the load was
+    // resolved before triggering the store
     storeUop->setCommitReady();
     return queue.commitStore(storeUopPtr);
   }
@@ -274,6 +276,7 @@ TEST_P(LoadStoreQueueTest, Store) {
   EXPECT_CALL(*storeUop, getData()).Times(AtLeast(1));
 
   storeUop->setSequenceId(1);
+  storeUop->setInstructionId(1);
 
   queue.addStore(storeUopPtr);
   storeUopPtr->setCommitReady();

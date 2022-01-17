@@ -150,16 +150,18 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
 
 void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
   // Get identifier values
-  const uint64_t seqId = insn->getSequenceId();
+  const uint64_t macroOpNum = insn->getInstructionId();
+  const int microOpNum = insn->getMicroOpIndex();
+
   // Get data
   span<const simeng::RegisterValue> data = insn->getData();
 
-  // Find storeQueue_ entry which is linked to the store data operation
+  // Find storeQueue_ entry which is linked to store data operation
   auto itSt = storeQueue_.begin();
   while (itSt != storeQueue_.end()) {
     auto& entry = itSt->first;
-    // Pair entry and incoming store data operation with sequenceID
-    if (entry->getSequenceId() == seqId) {
+    if (entry->getInstructionId() == macroOpNum &&
+        entry->getMicroOpIndex() == microOpNum) {
       // Supply data to be stored by operations
       itSt->second = data;
       break;
@@ -234,7 +236,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
           if (load->hasAllData()) {
             // This load has completed
             load->execute();
-            if (load->isStore()) {
+            if (load->isStoreData()) {
               supplyStoreData(load);
             }
             completedLoads_.push(load);
@@ -487,7 +489,7 @@ void LoadStoreQueue::tick() {
     if (load->hasAllData()) {
       // This load has completed
       load->execute();
-      if (load->isStore()) {
+      if (load->isStoreData()) {
         supplyStoreData(load);
       }
       completedLoads_.push(load);
