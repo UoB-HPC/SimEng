@@ -26,33 +26,31 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
 }
 
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
-  size_t index = 0;
-  int firstOp = -1;
+  if (buffer_.size()) {
+    size_t index = 0;
+    int firstOp = -1;
 
-  // Find first instance of uop belonging to macro-op instruction
-  auto& uop = buffer_[index];
-  while (uop->getInstructionId() <= insnId) {
-    if (uop->getInstructionId() == insnId) {
-      firstOp = index;
-      break;
+    // Find first instance of uop belonging to macro-op instruction
+    for (; index < buffer_.size(); index++) {
+      if (buffer_[index]->getInstructionId() == insnId) {
+        firstOp = index;
+        break;
+      }
     }
-    index++;
-    uop = buffer_[index];
-  }
 
-  // If found, see if all uops are committable
-  if (firstOp) {
-    while (uop->getInstructionId() == insnId) {
-      if (!uop->isWaitingCommit()) return;
-      index++;
-      uop = buffer_[index];
-    }
-    // No early return thus all uops are committable
-    uop = buffer_[firstOp];
-    while (uop->getInstructionId() == insnId) {
-      uop->setCommitReady();
-      firstOp++;
-      uop = buffer_[firstOp];
+    if (firstOp > -1) {
+      // If found, see if all uops are committable
+      for (; index < buffer_.size(); index++) {
+        if (buffer_[index]->getInstructionId() != insnId) break;
+        if (!buffer_[index]->isWaitingCommit()) {
+          return;
+        }
+      }
+      // No early return thus all uops are committable
+      for (; firstOp < buffer_.size(); firstOp++) {
+        if (buffer_[firstOp]->getInstructionId() != insnId) break;
+        buffer_[firstOp]->setCommitReady();
+      }
     }
   }
   return;
