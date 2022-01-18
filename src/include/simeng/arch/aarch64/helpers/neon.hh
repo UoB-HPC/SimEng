@@ -135,6 +135,21 @@ class neonHelp {
     return out;
   }
 
+  /** Helper function for NEON instructions with the format `fabs vd, vn`.
+   *I represents the number of elements in the output array to be updated (i.e.
+   *for vd.8b the final 8 elements in the output array will be 0).
+   */
+  template <typename T, int I>
+  static std::array<T, 256> vecFabs_2ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    std::array<T, 256> out = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = std::fabs(n[i]);
+    }
+    return out;
+  }
+
   /** Helper function for NEON instructions with the format `<AND, EOR, ...> vd,
    *  vn, vm`. T represents the vector register type (i.e. vd.16b would be
    * uint8_t). I represents the number of elements in the output array to be

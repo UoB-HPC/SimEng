@@ -2968,16 +2968,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FABSv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_FABSv2f64: {  // fabs vd.2d, vn.2d
+      results[0] = neonHelp::vecFabs_2ops<double, 2>(operands);
       break;
     }
     case Opcode::AArch64_FABSv4f16: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FABSv4f32: {
-      return executionNYI();
+    case Opcode::AArch64_FABSv4f32: {  // fabs vd.4s, vn.4s
+      results[0] = neonHelp::vecFabs_2ops<float, 4>(operands);
       break;
     }
     case Opcode::AArch64_FABSv8f16: {
@@ -17836,8 +17836,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_XPACLRI: {
-      return executionNYI();
+    case Opcode::AArch64_XPACLRI: {  // xpaclri
+      // SimEng doesn't support PAC, so do nothing
       break;
     }
     case Opcode::AArch64_XTNv16i8: {
