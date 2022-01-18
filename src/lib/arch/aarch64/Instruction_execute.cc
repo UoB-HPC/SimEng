@@ -3072,8 +3072,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADDA_VPZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FADDA_VPZ_D: {  // fadda dd, pg/m, dn, zm.d
+      results[0] = sveHelp::sveFaddaPredicated<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FADDA_VPZ_H: {
