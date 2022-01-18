@@ -2900,12 +2900,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FABD32: {
-      return executionNYI();
+    case Opcode::AArch64_FABD32: {  // fabd sd, sn, sm
+      results[0] = floatHelp::fabd_3ops<float>(operands);
       break;
     }
-    case Opcode::AArch64_FABD64: {
-      return executionNYI();
+    case Opcode::AArch64_FABD64: {  // fabd dd, dn, dm
+      results[0] = floatHelp::fabd_3ops<double>(operands);
       break;
     }
     case Opcode::AArch64_FABD_ZPmZ_D: {
