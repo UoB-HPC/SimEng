@@ -3084,8 +3084,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADDDrr: {
-      return executionNYI();
+    case Opcode::AArch64_FADDDrr: {  // fadd dd, dn, dm
+      results[0] = {arithmeticHelp::add_3ops<double>(operands), 256};
       break;
     }
     case Opcode::AArch64_FADDHrr: {
@@ -3124,8 +3124,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADDSrr: {
-      return executionNYI();
+    case Opcode::AArch64_FADDSrr: {  // fadd sd, sn, sm
+      results[0] = {arithmeticHelp::add_3ops<float>(operands), 256};
       break;
     }
     case Opcode::AArch64_FADDV_VPZ_D: {
@@ -3180,16 +3180,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADDv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_FADDv2f64: {  // fadd vd.2d, vn.2d, vm.2d
+      results[0] = neonHelp::vecAdd_3ops<double, 2>(operands);
       break;
     }
     case Opcode::AArch64_FADDv4f16: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADDv4f32: {
-      return executionNYI();
+    case Opcode::AArch64_FADDv4f32: {  // fadd vd.4s, vn.4s, vm.4s
+      results[0] = neonHelp::vecAdd_3ops<float, 4>(operands);
       break;
     }
     case Opcode::AArch64_FADDv8f16: {
@@ -6451,16 +6451,44 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_GLD1D_IMM_REAL: {
-      return executionNYI();
+    case Opcode::AArch64_GLD1D_IMM_REAL: {  // ld1d {zd.d}, pg/z, [zn.d{, #imm}]
+      // LOAD
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          out[i] = memoryData[index].get<uint64_t>();
+          index++;
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_GLD1D_REAL: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_GLD1D_SCALED_REAL: {
-      return executionNYI();
+    case Opcode::AArch64_GLD1D_REAL:  // ld1d {zt.d}, pg/z, [xn, zm.d]
+      // LOAD
+      [[fallthrough]];
+    case Opcode::AArch64_GLD1D_SCALED_REAL: {  // ld1d {zt.d}, pg/z, [xn, zm.d,
+                                               // LSL #3]
+      // LOAD
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      uint64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          out[i] = memoryData[index].get<uint64_t>();
+          index++;
+        }
+      }
+
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_GLD1D_SXTW_REAL: {
@@ -6603,8 +6631,22 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_GLD1SW_D_IMM_REAL: {
-      return executionNYI();
+    case Opcode::AArch64_GLD1SW_D_IMM_REAL: {  // ld1sw {zd.d}, pg/z, [zn.d{,
+                                               // #imm}]
+      // LOAD
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      int64_t out[32] = {0};
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          out[i] = static_cast<int64_t>(memoryData[index].get<int32_t>());
+          index++;
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_GLD1SW_D_REAL: {
@@ -7199,8 +7241,23 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD1B: {
-      return executionNYI();
+    case Opcode::AArch64_LD1B: {  // ld1b  {zt.b}, pg/z, [xn, xm]
+      // LOAD
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 8;
+      uint16_t index = 0;
+      uint8_t out[256] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i % 64);
+        if (p[i / 64] & shifted_active) {
+          out[i] = memoryData[index].get<uint8_t>();
+          index++;
+        } else {
+          out[i] = 0;
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1B_D: {
@@ -7250,8 +7307,24 @@ void Instruction::execute() {
       results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_LD1D_IMM_REAL: {
-      return executionNYI();
+    case Opcode::AArch64_LD1D_IMM_REAL: {  // ld1d  {zt.d}, pg/z, [xn{, #imm,
+                                           // mul vl}]
+      // LOAD
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      uint64_t out[32] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          out[i] = memoryData[index].get<uint64_t>();
+          index++;
+        } else {
+          out[i] = 0;
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1Fourv16b: {
@@ -7318,8 +7391,23 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD1H: {
-      return executionNYI();
+    case Opcode::AArch64_LD1H: {  // ld1h  {zt.h}, pg/z, [xn, xm, lsl #1]
+      // LOAD
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 16;
+      uint16_t index = 0;
+      uint16_t out[128] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 32) * 2);
+        if (p[i / 32] & shifted_active) {
+          out[i] = memoryData[index].get<uint16_t>();
+          index++;
+        } else {
+          out[i] = 0;
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1H_D: {
@@ -7422,8 +7510,31 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD1RD_IMM: {
-      return executionNYI();
+    case Opcode::AArch64_LD1RD_IMM: {  // ld1rd {zt.d}, pg/z, [xn, #imm]
+      // LOAD
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+      uint16_t index = 0;
+      // Check if any lanes are active, otherwise set all to 0 and break early
+      bool active = false;
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      for (int i = 0; i < 4; i++) {
+        if (p[i] != 0) {
+          active = true;
+          break;
+        }
+      }
+
+      if (active) {
+        uint64_t data = memoryData[0].get<uint64_t>();
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = p[index / 8] & 1ull << ((index % 8) * 8);
+          out[i] = shifted_active ? data : 0;
+          index++;
+        }
+      }
+
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1RH_D_IMM: {
@@ -7498,72 +7609,153 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD1RW_IMM: {
-      return executionNYI();
+    case Opcode::AArch64_LD1RW_IMM: {  // ld1rw {zt.s}, pg/z, [xn, #imm]
+      // LOAD
+      const uint16_t partition_num = VL_bits / 32;
+      uint32_t out[64] = {0};
+      uint16_t index = 0;
+      // Check if any lanes are active, otherwise set all to 0 and break early
+      bool active = false;
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      for (int i = 0; i < 4; i++) {
+        if (p[i] != 0) {
+          active = true;
+          break;
+        }
+      }
+      if (active) {
+        uint32_t data = memoryData[0].get<uint32_t>();
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = p[index / 16] & 1ull << ((index % 16) * 4);
+          out[i] = shifted_active ? data : 0;
+          index++;
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_LD1Rv16b: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv16b: {  // ld1r {vt.16b}, [xn]
+      // LOAD
+      uint8_t val = memoryData[0].get<uint8_t>();
+      uint8_t out[16] = {val, val, val, val, val, val, val, val,
+                         val, val, val, val, val, val, val, val};
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_LD1Rv16b_POST: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv16b_POST: {  // ld1r {vt.16b}, [xn], #imm
+      // LOAD
+      uint8_t val = memoryData[0].get<uint8_t>();
+      uint8_t out[16] = {val, val, val, val, val, val, val, val,
+                         val, val, val, val, val, val, val, val};
+      results[0] = {out, 256};
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LD1Rv1d: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv1d: {  // ld1r {vt.1d}, [xn]
+      // LOAD
+      uint64_t val = memoryData[0].get<uint64_t>();
+      uint64_t out[2] = {val, 0};
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_LD1Rv1d_POST: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv1d_POST: {  // ld1r {vt.1d}, [xn], #imm
+      // LOAD
+      uint64_t val = memoryData[0].get<uint64_t>();
+      uint64_t out[2] = {val, 0};
+      results[0] = {out, 256};
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LD1Rv2d: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv2d: {  // ld1r {vt.2d}, [xn]
+      // LOAD
+      uint64_t val = memoryData[0].get<uint64_t>();
+      uint64_t out[2] = {val, val};
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_LD1Rv2d_POST: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv2d_POST: {  // ld1r {vt.2d}, [xn], #imm
+      // LOAD
+      uint64_t val = memoryData[0].get<uint64_t>();
+      uint64_t out[2] = {val, val};
+      results[0] = {out, 256};
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LD1Rv2s: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv2s: {  // ld1r {vt.2s}, [xn]
+      // LOAD
+      uint32_t val = memoryData[0].get<uint32_t>();
+      uint32_t out[4] = {val, val, 0, 0};
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_LD1Rv2s_POST: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv2s_POST: {  // ld1r {vt.2s}, [xn], #imm
+      // LOAD
+      uint32_t val = memoryData[0].get<uint32_t>();
+      uint32_t out[4] = {val, val, 0, 0};
+      results[0] = {out, 256};
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LD1Rv4h: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv4h: {  // ld1r {vt.4h}, [xn]
+      // LOAD
+      uint16_t val = memoryData[0].get<uint16_t>();
+      uint16_t out[8] = {val, val, val, val, 0, 0, 0, 0};
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_LD1Rv4h_POST: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv4h_POST: {  // ld1r {vt.4h}, [xn], #imm
+      // LOAD
+      uint16_t val = memoryData[0].get<uint16_t>();
+      uint16_t out[8] = {val, val, val, val, 0, 0, 0, 0};
+      results[0] = {out, 256};
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LD1Rv4s: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv4s: {  // ld1r {vt.4s}, [xn]
+      // LOAD
+      uint32_t val = memoryData[0].get<uint32_t>();
+      uint32_t out[4] = {val, val, val, val};
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_LD1Rv4s_POST: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv4s_POST: {  // ld1r {vt.4s}, [xn], #imm
+      // LOAD
+      uint32_t val = memoryData[0].get<uint32_t>();
+      uint32_t out[4] = {val, val, val, val};
+      results[0] = {out, 256};
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LD1Rv8b: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv8b: {  // ld1r {vt.8b}, [xn]
+      // LOAD
+      uint8_t val = memoryData[0].get<uint8_t>();
+      uint8_t out[16] = {val, val, val, val, val, val, val, val,
+                         0,   0,   0,   0,   0,   0,   0,   0};
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_LD1Rv8b_POST: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv8b_POST: {  // ld1r {vt.8b}, [xn], #imm
+      // LOAD
+      uint8_t val = memoryData[0].get<uint8_t>();
+      uint8_t out[16] = {val, val, val, val, val, val, val, val,
+                         0,   0,   0,   0,   0,   0,   0,   0};
+      results[0] = {out, 256};
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LD1Rv8h: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv8h: {  // ld1r {vt.8h}, [xn]
+      // LOAD
+      uint16_t val = memoryData[0].get<uint16_t>();
+      uint16_t out[8] = {val, val, val, val, val, val, val, val};
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_LD1Rv8h_POST: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Rv8h_POST: {  // ld1r {vt.8h}, [xn], #imm
+      // LOAD
+      uint16_t val = memoryData[0].get<uint16_t>();
+      uint16_t out[8] = {val, val, val, val, val, val, val, val};
+      results[0] = {out, 256};
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
     case Opcode::AArch64_LD1SB_D: {
@@ -7678,12 +7870,18 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD1Twov16b: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Twov16b: {  // ld1 {vt1.16b, vt2.16b}, [xn]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
+      results[1] = memoryData[1].zeroExtend(memoryData[1].size(), 256);
       break;
     }
-    case Opcode::AArch64_LD1Twov16b_POST: {
-      return executionNYI();
+    case Opcode::AArch64_LD1Twov16b_POST: {  // ld1 {vt1.16b, vt2.16b}, [xn],
+                                             //   #imm
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
+      results[1] = memoryData[1].zeroExtend(memoryData[1].size(), 256);
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
       break;
     }
     case Opcode::AArch64_LD1Twov1d: {
@@ -7749,7 +7947,6 @@ void Instruction::execute() {
       const uint16_t partition_num = VL_bits / 32;
       uint16_t index = 0;
       uint32_t out[64] = {0};
-
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = 1ull << ((i % 16) * 4);
         if (p[i / 16] & shifted_active) {
@@ -7770,8 +7967,24 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD1W_IMM_REAL: {
-      return executionNYI();
+    case Opcode::AArch64_LD1W_IMM_REAL: {  // ld1w  {zt.s}, pg/z, [xn{, #imm,
+                                           // mul vl}]
+      // LOAD
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 32;
+      uint16_t index = 0;
+      uint32_t out[64] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
+        if (p[i / 16] & shifted_active) {
+          out[i] = memoryData[index].get<uint32_t>();
+          index++;
+        } else {
+          out[i] = 0;
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1i16: {
@@ -7782,20 +7995,42 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD1i32: {
-      return executionNYI();
+    case Opcode::AArch64_LD1i32: {  // ld1 {vt.s}[index], [xn]
+      // LOAD
+      const int index = metadata.operands[0].vector_index;
+      const uint32_t* vt = operands[0].getAsVector<uint32_t>();
+      uint32_t out[4];
+      for (int i = 0; i < 4; i++) {
+        out[i] = (i == index) ? memoryData[0].get<uint32_t>() : vt[i];
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1i32_POST: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD1i64: {
-      return executionNYI();
+    case Opcode::AArch64_LD1i64: {  // ld1 {vt.d}[index], [xn]
+      // LOAD
+      const int index = metadata.operands[0].vector_index;
+      const uint64_t* vt = operands[0].getAsVector<uint64_t>();
+      uint64_t out[2];
+      for (int i = 0; i < 2; i++) {
+        out[i] = (i == index) ? memoryData[0].get<uint64_t>() : vt[i];
+      }
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_LD1i64_POST: {
-      return executionNYI();
+    case Opcode::AArch64_LD1i64_POST: {  // ld1 {vt.d}[index], [xn], #8
+      // LOAD
+      const int index = metadata.operands[0].vector_index;
+      const uint64_t* vt = operands[0].getAsVector<uint64_t>();
+      uint64_t out[2];
+      for (int i = 0; i < 2; i++) {
+        out[i] = (i == index) ? memoryData[0].get<uint64_t>() : vt[i];
+      }
+      results[0] = {out, 256};
+      results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
     case Opcode::AArch64_LD1i8: {
@@ -8406,15 +8641,17 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDADDLW: {
-      return executionNYI();
+    case Opcode::AArch64_LDADDLW:  // ldaddl ws, wt, [xn]
+      // LOAD
+      [[fallthrough]];
+    case Opcode::AArch64_LDADDW: {  // ldadd ws, wt, [xn]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      memoryData[0] = RegisterValue(
+          memoryData[0].get<uint32_t>() + operands[0].get<uint32_t>(), 4);
       break;
     }
     case Opcode::AArch64_LDADDLX: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_LDADDW: {
       return executionNYI();
       break;
     }
