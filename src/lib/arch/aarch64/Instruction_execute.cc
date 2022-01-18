@@ -2952,16 +2952,16 @@ void Instruction::execute() {
       results[0] = floatHelp::fabs_2ops<float>(operands);
       break;
     }
-    case Opcode::AArch64_FABS_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FABS_ZPmZ_D: {  // fabs zd.d, pg/m, zn.d
+      results[0] = sveHelp::sveFabsPredicated<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FABS_ZPmZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FABS_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FABS_ZPmZ_S: {  // fabs zd.s, pg/m, zn.s
+      results[0] = sveHelp::sveFabsPredicated<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FABSv2f32: {
@@ -7231,8 +7231,23 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD1D: {
-      return executionNYI();
+    case Opcode::AArch64_LD1D: {  // ld1d  {zt.d}, pg/z, [xn, xm, lsl #3]
+      // LOAD
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      uint64_t out[32] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          out[i] = memoryData[index].get<uint64_t>();
+          index++;
+        } else {
+          out[i] = 0;
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1D_IMM_REAL: {
@@ -7727,8 +7742,24 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD1W: {
-      return executionNYI();
+    case Opcode::AArch64_LD1W: {  // ld1w  {zt.s}, pg/z, [xn, xm, lsl #2]
+      // LOAD
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 32;
+      uint16_t index = 0;
+      uint32_t out[64] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
+        if (p[i / 16] & shifted_active) {
+          out[i] = memoryData[index].get<uint32_t>();
+          index++;
+        } else {
+          out[i] = 0;
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1W_D: {

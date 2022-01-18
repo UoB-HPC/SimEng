@@ -133,6 +133,31 @@ class sveHelp {
     return out;
   }
 
+  /** Helper function for SVE instructions with the format `fabs zd,
+   * pg/z, zn`. T represents the vector register type (i.e. zd.b would be
+   * uint8_t).*/
+  template <typename T>
+  static std::array<T, 256> sveFabsPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const T* d = operands[0].getAsVector<T>();
+    const uint64_t* p = operands[1].getAsVector<uint64_t>();
+    const T* n = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    std::array<T, 256> out = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i] = ::fabs(n[i]);
+      } else {
+        out[i] = d[i];
+      }
+    }
+    return out;
+  }
+
   /** Helper function for SVE instructions with the format `index zd, #imm,
    * #imm`. T represents the vector register type (i.e. zd.b would be
    * int8_t).*/
