@@ -186,10 +186,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   }
 
   // Split instruction into 1 or more defined micro-ops
-  // std::cout << "### 0x" << std::hex << instructionAddress << std::dec << "
-  // ###" << std::endl;
-  uint8_t num_ops =
-      microDecoder_->decode(*this, iter->second, output, capstoneHandle);
+  uint8_t num_ops = microDecoder_->decode(*this, iter->first, iter->second,
+                                          output, capstoneHandle);
 
   // Set instruction address and branch prediction for each micro-op generated
   for (int i = 0; i < num_ops; i++) {
