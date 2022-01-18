@@ -2940,16 +2940,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FABSDr: {
-      return executionNYI();
+    case Opcode::AArch64_FABSDr: {  // fabs dd, dn
+      results[0] = floatHelp::fabs_2ops<double>(operands);
       break;
     }
     case Opcode::AArch64_FABSHr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FABSSr: {
-      return executionNYI();
+    case Opcode::AArch64_FABSSr: {  // fabs sd, sn
+      results[0] = floatHelp::fabs_2ops<float>(operands);
       break;
     }
     case Opcode::AArch64_FABS_ZPmZ_D: {
