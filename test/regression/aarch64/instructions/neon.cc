@@ -908,21 +908,21 @@ TEST_P(InstNeon, fabs) {
 }
 
 TEST_P(InstNeon, faddp) {
-  // // 64-bit
-  // initialHeapData_.resize(32);
-  // double* heap64 = reinterpret_cast<double*>(initialHeapData_.data());
-  // heap64[0] = 0xDEADBEEFul;
-  // heap64[1] = 0x01234567ul << 8;
-  // RUN_AARCH64(R"(
-  //   # Get heap address
-  //   mov x0, 0
-  //   mov x8, 214
-  //   svc #0
+  // 64-bit
+  initialHeapData_.resize(32);
+  double* heap64 = reinterpret_cast<double*>(initialHeapData_.data());
+  heap64[0] = 0xDEADBEEFul;
+  heap64[1] = 0x01234567ul << 8;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-  //   ldr q0, [x0]
-  //   faddp d0, v0.2d
-  // )");
-  // CHECK_NEON(0, double, {0xDEADBEEFul + (0x01234567ul << 8), 0.0});
+    ldr q0, [x0]
+    faddp d1, v0.2d
+  )");
+  CHECK_NEON(1, double, {0xDEADBEEFul + (0x01234567ul << 8), 0.0});
 
   // V.4S
   RUN_AARCH64(R"(

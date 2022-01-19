@@ -23,6 +23,52 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `add zdn, pg/m, zdn,
+   * const`. */
+  template <typename T>
+  static RegisterValue sveAddPredicated_const(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    bool isFP = std::is_floating_point<T>::value;
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* d = operands[1].getAsVector<T>();
+    const auto con = isFP ? metadata.operands[3].fp : metadata.operands[3].imm;
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active)
+        out[i] = d[i] + con;
+      else
+        out[i] = d[i];
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `add zdn, pg/m, zdn,
+   * zm`. */
+  template <typename T>
+  static RegisterValue sveAddPredicated_vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* d = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active)
+        out[i] = d[i] + m[i];
+      else
+        out[i] = d[i];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for instructions with the format `cmp<eq, ge, gt, hi, hs,
    *le, lo, ls, lt, ne> pd, pg/z, zn, <zm, #imm>`. */
   template <typename T>

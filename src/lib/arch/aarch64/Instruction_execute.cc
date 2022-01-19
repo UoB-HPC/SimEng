@@ -619,17 +619,13 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_ANDv16i8: {  // and vd.16b, vn.16b, vm.16b
-      const uint64_t* n = operands[0].getAsVector<uint64_t>();
-      const uint64_t* m = operands[1].getAsVector<uint64_t>();
-      uint64_t out[2] = {n[0] & m[0], n[1] & m[1]};
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecLogicOp_3vecs<uint8_t, 16>(
+          operands, [](uint8_t x, uint8_t y) -> uint8_t { return x & y; });
       break;
     }
     case Opcode::AArch64_ANDv8i8: {  // and vd.8b, vn.8b, vm.8b
-      const uint32_t* n = operands[0].getAsVector<uint32_t>();
-      const uint32_t* m = operands[1].getAsVector<uint32_t>();
-      uint32_t out[4] = {n[0] & m[0], n[1] & m[1], 0, 0};
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecLogicOp_3vecs<uint8_t, 8>(
+          operands, [](uint8_t x, uint8_t y) -> uint8_t { return x & y; });
       break;
     }
     case Opcode::AArch64_ASRD_ZPmI_B: {
@@ -3092,12 +3088,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADDPv2f32: {
-      return executionNYI();
+    case Opcode::AArch64_FADDPv2f32: {  // faddp vd.2s, vn.2s, vm.2s
+      results[0] = neonHelp::vecAddp_3ops<float, 2>(operands);
       break;
     }
-    case Opcode::AArch64_FADDPv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_FADDPv2f64: {  // faddp vd.2d, vn.2d, vm.2d
+      results[0] = neonHelp::vecAddp_3ops<double, 2>(operands);
       break;
     }
     case Opcode::AArch64_FADDPv2i16p: {
@@ -3116,8 +3112,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADDPv4f32: {
-      return executionNYI();
+    case Opcode::AArch64_FADDPv4f32: {  // faddp vd.4s, vn.4s, vm.4s
+      results[0] = neonHelp::vecAddp_3ops<float, 4>(operands);
       break;
     }
     case Opcode::AArch64_FADDPv8f16: {
@@ -3140,28 +3136,30 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADD_ZPmI_D: {
-      return executionNYI();
+    case Opcode::AArch64_FADD_ZPmI_D: {  // fadd zdn.d, pg/m, zdn.d, const
+      results[0] =
+          sveHelp::sveAddPredicated_const<double>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_FADD_ZPmI_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADD_ZPmI_S: {
-      return executionNYI();
+    case Opcode::AArch64_FADD_ZPmI_S: {  // fadd zdn.s, pg/m, zdn.s, const
+      results[0] =
+          sveHelp::sveAddPredicated_const<float>(operands, metadata, VL_bits);
       break;
     }
-    case Opcode::AArch64_FADD_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FADD_ZPmZ_D: {  // fadd zdn.d, pg/m, zdn.d, zm.d
+      results[0] = sveHelp::sveAddPredicated_vecs<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FADD_ZPmZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FADD_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FADD_ZPmZ_S: {  // fadd zdn.s, pg/m, zdn.s, zm.s
+      results[0] = sveHelp::sveAddPredicated_vecs<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FADD_ZZZ_D: {  // fadd zd.d, zn.d, zm.d
@@ -5371,8 +5369,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMOVv2f32_ns: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVv2f32_ns: {  // fmov vd.2s, #imm
+      results[0] = neonHelp::vecMovi_imm<float, 2>(metadata);
       break;
     }
     case Opcode::AArch64_FMOVv2f64_ns: {  // fmov vd.2d, #imm
