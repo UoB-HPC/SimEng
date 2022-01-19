@@ -5375,16 +5375,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMOVv2f64_ns: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVv2f64_ns: {  // fmov vd.2d, #imm
+      results[0] = neonHelp::vecMovi_imm<double, 2>(metadata);
       break;
     }
     case Opcode::AArch64_FMOVv4f16_ns: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMOVv4f32_ns: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVv4f32_ns: {  // fmov vd.4s, #imm
+      results[0] = neonHelp::vecMovi_imm<float, 4>(metadata);
       break;
     }
     case Opcode::AArch64_FMOVv8f16_ns: {
@@ -7141,32 +7141,36 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_INSvi16gpr: {
-      return executionNYI();
+    case Opcode::AArch64_INSvi16gpr: {  // ins vd.h[index], wn
+      results[0] =
+          neonHelp::vecInsIndex_gpr<uint16_t, uint32_t, 8>(operands, metadata);
       break;
     }
     case Opcode::AArch64_INSvi16lane: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_INSvi32gpr: {
-      return executionNYI();
+    case Opcode::AArch64_INSvi32gpr: {  // ins vd.s[index], wn
+      results[0] =
+          neonHelp::vecInsIndex_gpr<uint32_t, uint32_t, 4>(operands, metadata);
       break;
     }
     case Opcode::AArch64_INSvi32lane: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_INSvi64gpr: {
-      return executionNYI();
+    case Opcode::AArch64_INSvi64gpr: {  // ins vd.d[index], xn
+      results[0] =
+          neonHelp::vecInsIndex_gpr<uint64_t, uint64_t, 2>(operands, metadata);
       break;
     }
     case Opcode::AArch64_INSvi64lane: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_INSvi8gpr: {
-      return executionNYI();
+    case Opcode::AArch64_INSvi8gpr: {  // ins vd.b[index], wn
+      results[0] =
+          neonHelp::vecInsIndex_gpr<uint8_t, uint32_t, 16>(operands, metadata);
       break;
     }
     case Opcode::AArch64_INSvi8lane: {
@@ -8165,8 +8169,19 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD2Twov4s_POST: {
-      return executionNYI();
+    case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn], #imm
+      // LOAD
+      const float* region1 = memoryData[0].getAsVector<float>();
+      const float* region2 = memoryData[1].getAsVector<float>();
+      float t1[4] = {region1[0], region1[2], region2[0], region2[2]};
+      float t2[4] = {region1[1], region1[3], region2[1], region2[3]};
+      results[0] = {t1, 256};
+      results[1] = {t2, 256};
+      uint64_t offset = 32;
+      if (metadata.operandCount == 4) {
+        offset = operands[3].get<uint64_t>();
+      }
+      results[2] = operands[2].get<uint64_t>() + offset;
       break;
     }
     case Opcode::AArch64_LD2Twov8b: {
@@ -8711,20 +8726,23 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDARB: {
-      return executionNYI();
+    case Opcode::AArch64_LDARB: {  // ldarb wt, [xn]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(1, 8);
       break;
     }
     case Opcode::AArch64_LDARH: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDARW: {
-      return executionNYI();
+    case Opcode::AArch64_LDARW: {  // ldar wt, [xn]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
       break;
     }
-    case Opcode::AArch64_LDARX: {
-      return executionNYI();
+    case Opcode::AArch64_LDARX: {  // ldar xt, [xn]
+      // LOAD
+      results[0] = memoryData[0];
       break;
     }
     case Opcode::AArch64_LDAXPW: {
@@ -8743,12 +8761,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDAXRW: {
-      return executionNYI();
+    case Opcode::AArch64_LDAXRW: {  // ldaxr wd, [xn]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
       break;
     }
-    case Opcode::AArch64_LDAXRX: {
-      return executionNYI();
+    case Opcode::AArch64_LDAXRX: {  // ldaxr xd, [xn]
+      // LOAD
+      results[0] = memoryData[0];
       break;
     }
     case Opcode::AArch64_LDCLRAB: {
@@ -9031,8 +9051,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDNPSi: {
-      return executionNYI();
+    case Opcode::AArch64_LDNPSi: {  // ldnp st1, st2, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 256);
+      results[1] = memoryData[1].zeroExtend(4, 256);
       break;
     }
     case Opcode::AArch64_LDNPWi: {
@@ -9075,32 +9097,50 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDPDi: {
-      return executionNYI();
+    case Opcode::AArch64_LDPDi: {  // ldp dt1, dt2, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(8, 256);
+      results[1] = memoryData[1].zeroExtend(8, 256);
       break;
     }
-    case Opcode::AArch64_LDPDpost: {
-      return executionNYI();
+    case Opcode::AArch64_LDPDpost: {  // ldp dt1, dt2, [xn], #imm
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(8, 256);
+      results[1] = memoryData[1].zeroExtend(8, 256);
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
       break;
     }
-    case Opcode::AArch64_LDPDpre: {
-      return executionNYI();
+    case Opcode::AArch64_LDPDpre: {  // ldp dt1, dt2, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(8, 256);
+      results[1] = memoryData[1].zeroExtend(8, 256);
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
       break;
     }
-    case Opcode::AArch64_LDPQi: {
-      return executionNYI();
+    case Opcode::AArch64_LDPQi: {  // ldp qt1, qt2, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(16, 256);
+      results[1] = memoryData[1].zeroExtend(16, 256);
       break;
     }
-    case Opcode::AArch64_LDPQpost: {
-      return executionNYI();
+    case Opcode::AArch64_LDPQpost: {  // ldp qt1, qt2, [xn], #imm
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(16, 256);
+      results[1] = memoryData[1].zeroExtend(16, 256);
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
       break;
     }
-    case Opcode::AArch64_LDPQpre: {
-      return executionNYI();
+    case Opcode::AArch64_LDPQpre: {  // ldp qt1, qt2, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(16, 256);
+      results[1] = memoryData[1].zeroExtend(16, 256);
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
       break;
     }
-    case Opcode::AArch64_LDPSWi: {
-      return executionNYI();
+    case Opcode::AArch64_LDPSWi: {  // ldpsw xt1, xt2, [xn {, #imm}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      results[1] = memoryData[1].zeroExtend(4, 8);
       break;
     }
     case Opcode::AArch64_LDPSWpost: {
@@ -9111,8 +9151,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDPSi: {
-      return executionNYI();
+    case Opcode::AArch64_LDPSi: {  // ldp st1, st2, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 256);
+      results[1] = memoryData[1].zeroExtend(4, 256);
       break;
     }
     case Opcode::AArch64_LDPSpost: {
@@ -9123,8 +9165,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDPWi: {
-      return executionNYI();
+    case Opcode::AArch64_LDPWi: {  // ldp wt1, wt2, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      results[1] = memoryData[1].zeroExtend(4, 8);
       break;
     }
     case Opcode::AArch64_LDPWpost: {
@@ -9135,16 +9179,24 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDPXi: {
-      return executionNYI();
+    case Opcode::AArch64_LDPXi: {  // ldp xt1, xt2, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
       break;
     }
-    case Opcode::AArch64_LDPXpost: {
-      return executionNYI();
+    case Opcode::AArch64_LDPXpost: {  // ldp xt1, xt2, [xn], #imm
+      // LOAD
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[3].imm;
       break;
     }
-    case Opcode::AArch64_LDPXpre: {
-      return executionNYI();
+    case Opcode::AArch64_LDPXpre: {  // ldp xt1, xt2, [xn, #imm]!
+      // LOAD
+      results[0] = memoryData[0];
+      results[1] = memoryData[1];
+      results[2] = operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
       break;
     }
     case Opcode::AArch64_LDRAAindexed: {
@@ -9163,24 +9215,33 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRBBpost: {
-      return executionNYI();
+    case Opcode::AArch64_LDRBBpost: {  // ldrb wt, [xn], #imm
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(1, 8);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LDRBBpre: {
-      return executionNYI();
+    case Opcode::AArch64_LDRBBpre: {  // ldrb wt, [xn, #imm]!
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(1, 8);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_LDRBBroW: {
-      return executionNYI();
+    case Opcode::AArch64_LDRBBroW: {  // ldrb wt,
+                                      //  [xn, wm{, extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(1, 8);
       break;
     }
-    case Opcode::AArch64_LDRBBroX: {
-      return executionNYI();
+    case Opcode::AArch64_LDRBBroX: {  // ldrb wt,
+                                      //  [xn, xm{, extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(1, 8);
       break;
     }
-    case Opcode::AArch64_LDRBBui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRBBui: {  // ldrb wt, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(1, 8);
       break;
     }
     case Opcode::AArch64_LDRBpost: {
@@ -9207,20 +9268,26 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRDpost: {
-      return executionNYI();
+    case Opcode::AArch64_LDRDpost: {  // ldr dt, [xn], #imm
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 256);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LDRDpre: {
-      return executionNYI();
+    case Opcode::AArch64_LDRDpre: {  // ldr dt, [xn, #imm]!
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 256);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_LDRDroW: {
-      return executionNYI();
+    case Opcode::AArch64_LDRDroW: {  // ldr dt, [xn, wm, {extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 256);
       break;
     }
-    case Opcode::AArch64_LDRDroX: {
-      return executionNYI();
+    case Opcode::AArch64_LDRDroX: {  // ldr dt, [xn, xm, {extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 256);
       break;
     }
     case Opcode::AArch64_LDRDui: {  // ldr dt, [xn, #imm]
@@ -9228,24 +9295,31 @@ void Instruction::execute() {
       results[0] = memoryData[0].zeroExtend(8, 256);
       break;
     }
-    case Opcode::AArch64_LDRHHpost: {
-      return executionNYI();
+    case Opcode::AArch64_LDRHHpost: {  // ldrh wt, [xn], #imm
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(2, 8);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LDRHHpre: {
-      return executionNYI();
+    case Opcode::AArch64_LDRHHpre: {  // ldrh wt, [xn, #imm]!
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(2, 8);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_LDRHHroW: {
-      return executionNYI();
+    case Opcode::AArch64_LDRHHroW: {  // ldrh wt, [xn, wm, {extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(2, 8);
       break;
     }
-    case Opcode::AArch64_LDRHHroX: {
-      return executionNYI();
+    case Opcode::AArch64_LDRHHroX: {  // ldrh wt, [xn, xm, {extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(2, 8);
       break;
     }
-    case Opcode::AArch64_LDRHHui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRHHui: {  // ldrh wt, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(2, 8);
       break;
     }
     case Opcode::AArch64_LDRHpost: {
@@ -9272,8 +9346,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRQpost: {
-      return executionNYI();
+    case Opcode::AArch64_LDRQpost: {  // ldr qt, [xn], #imm
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(16, 256);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
     case Opcode::AArch64_LDRQpre: {
@@ -9284,8 +9360,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRQroX: {
-      return executionNYI();
+    case Opcode::AArch64_LDRQroX: {  // ldr qt, [xn, xm, {extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(16, 256);
       break;
     }
     case Opcode::AArch64_LDRQui: {  // ldr qt, [xn, #imm]
@@ -9305,12 +9382,18 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRSBWroX: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSBWroX: {  // ldrsb wt, [xn, xm{, extend {#amount}}]
+      // LOAD
+      results[0] =
+          RegisterValue(static_cast<int32_t>(memoryData[0].get<int8_t>()), 4)
+              .zeroExtend(4, 8);
       break;
     }
-    case Opcode::AArch64_LDRSBWui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSBWui: {  // ldrsb wt, [xn, #imm]
+      // LOAD
+      results[0] =
+          RegisterValue(static_cast<int32_t>(memoryData[0].get<int8_t>()))
+              .zeroExtend(4, 8);
       break;
     }
     case Opcode::AArch64_LDRSBXpost: {
@@ -9329,8 +9412,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRSBXui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSBXui: {  // ldrsb xt, [xn, #imm]
+      // LOAD
+      results[0] = static_cast<int64_t>(memoryData[0].get<int8_t>());
       break;
     }
     case Opcode::AArch64_LDRSHWpost: {
@@ -9341,16 +9425,25 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRSHWroW: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSHWroW: {  // ldrsh wt, [xn, wm{, extend {#amount}}]
+      // LOAD
+      results[0] =
+          RegisterValue(static_cast<int32_t>(memoryData[0].get<int16_t>()), 4)
+              .zeroExtend(4, 8);
       break;
     }
-    case Opcode::AArch64_LDRSHWroX: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSHWroX: {  // ldrsh wt, [xn, xm{, extend {#amount}}]
+      // LOAD
+      results[0] =
+          RegisterValue(static_cast<int32_t>(memoryData[0].get<int16_t>()), 4)
+              .zeroExtend(4, 8);
       break;
     }
-    case Opcode::AArch64_LDRSHWui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSHWui: {  // ldrsh wt, [xn, #imm]
+      // LOAD
+      results[0] =
+          RegisterValue(static_cast<int32_t>(memoryData[0].get<int16_t>()), 4)
+              .zeroExtend(4, 8);
       break;
     }
     case Opcode::AArch64_LDRSHXpost: {
@@ -9361,24 +9454,30 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRSHXroW: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSHXroW: {  // ldrsh xt, [xn, wm{, extend {#amount}}]
+      // LOAD
+      results[0] = static_cast<int64_t>(memoryData[0].get<int16_t>());
       break;
     }
-    case Opcode::AArch64_LDRSHXroX: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSHXroX: {  // ldrsh xt, [xn, xm{, extend {#amount}}]
+      // LOAD
+      results[0] = static_cast<int64_t>(memoryData[0].get<int16_t>());
       break;
     }
-    case Opcode::AArch64_LDRSHXui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSHXui: {  // ldrsh xt, [xn, #imm]
+      // LOAD
+      results[0] = static_cast<int64_t>(memoryData[0].get<int16_t>());
       break;
     }
-    case Opcode::AArch64_LDRSWl: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSWl: {  // ldrsw xt, #imm
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
       break;
     }
-    case Opcode::AArch64_LDRSWpost: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSWpost: {  // ldrsw xt, [xn], #simm
+      // LOAD
+      results[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
     case Opcode::AArch64_LDRSWpre: {
@@ -9389,56 +9488,71 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRSWroX: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend {#amount}}]
+      // LOAD
+      results[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
       break;
     }
-    case Opcode::AArch64_LDRSWui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSWui: {  // ldrsw xt, [xn{, #pimm}]
+      // LOAD
+      results[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
       break;
     }
     case Opcode::AArch64_LDRSl: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRSpost: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSpost: {  // ldr st, [xn], #imm
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 256);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LDRSpre: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSpre: {  // ldr st, [xn, #imm]!
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 256);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_LDRSroW: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSroW: {  // ldr st, [xn, wm, {extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 256);
       break;
     }
-    case Opcode::AArch64_LDRSroX: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSroX: {  // ldr st, [xn, xm, {extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 256);
       break;
     }
-    case Opcode::AArch64_LDRSui: {
-      return executionNYI();
+    case Opcode::AArch64_LDRSui: {  // ldr st, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 256);
       break;
     }
     case Opcode::AArch64_LDRWl: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRWpost: {
-      return executionNYI();
+    case Opcode::AArch64_LDRWpost: {  // ldr wt, [xn], #imm
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LDRWpre: {
-      return executionNYI();
+    case Opcode::AArch64_LDRWpre: {  // ldr wt, [xn, #imm]!
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_LDRWroW: {
-      return executionNYI();
+    case Opcode::AArch64_LDRWroW: {  // ldr wt, [xn, wm, {extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
       break;
     }
-    case Opcode::AArch64_LDRWroX: {
-      return executionNYI();
+    case Opcode::AArch64_LDRWroX: {  // ldr wt, [xn, xm, {extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
       break;
     }
     case Opcode::AArch64_LDRWui: {  // ldr wt, [xn, #imm]
@@ -9446,24 +9560,31 @@ void Instruction::execute() {
       results[0] = memoryData[0].zeroExtend(memoryAddresses[0].size, 8);
       break;
     }
-    case Opcode::AArch64_LDRXl: {
-      return executionNYI();
+    case Opcode::AArch64_LDRXl: {  // ldr xt, #imm
+      // LOAD
+      results[0] = memoryData[0];
       break;
     }
-    case Opcode::AArch64_LDRXpost: {
-      return executionNYI();
+    case Opcode::AArch64_LDRXpost: {  // ldr xt, [xn], #imm
+      // LOAD
+      results[0] = memoryData[0];
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_LDRXpre: {
-      return executionNYI();
+    case Opcode::AArch64_LDRXpre: {  // ldr xt, [xn, #imm]!
+      // LOAD
+      results[0] = memoryData[0];
+      results[1] = operands[0].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_LDRXroW: {
-      return executionNYI();
+    case Opcode::AArch64_LDRXroW: {  // ldr xt, [xn, wn{, extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0];
       break;
     }
-    case Opcode::AArch64_LDRXroX: {
-      return executionNYI();
+    case Opcode::AArch64_LDRXroX: {  // ldr xt, [xn, xn{, extend {#amount}}]
+      // LOAD
+      results[0] = memoryData[0];
       break;
     }
     case Opcode::AArch64_LDRXui: {  // ldr xt, [xn, #imm]
@@ -9471,12 +9592,30 @@ void Instruction::execute() {
       results[0] = memoryData[0];
       break;
     }
-    case Opcode::AArch64_LDR_PXI: {
-      return executionNYI();
+    case Opcode::AArch64_LDR_PXI: {  // ldr pt, [xn{, #imm, mul vl}]
+      // LOAD
+      const uint64_t PL_bits = VL_bits / 8;
+      const uint16_t partition_num = PL_bits / 8;
+
+      uint64_t out[4] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        uint8_t data = memoryData[i].get<uint8_t>();
+        for (int j = 0; j < 8; j++) {
+          out[i / 8] |= (data & (1 << j)) ? 1ull << ((j + (i * 8)) % 64) : 0;
+        }
+      }
+      results[0] = out;
       break;
     }
-    case Opcode::AArch64_LDR_ZXI: {
-      return executionNYI();
+    case Opcode::AArch64_LDR_ZXI: {  // ldr zt, [xn{, #imm, mul vl}]
+      // LOAD
+      const uint16_t partition_num = VL_bits / 8;
+      uint8_t out[256] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = memoryData[i].get<uint8_t>();
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LDSETAB: {
@@ -9683,8 +9822,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDTRSBXi: {
-      return executionNYI();
+    case Opcode::AArch64_LDTRSBXi: {  // ldtrsb xt, [xn, #imm]
+      // LOAD
+      // TODO: implement
+      results[0] = RegisterValue(0, 8);
       break;
     }
     case Opcode::AArch64_LDTRSHWi: {
@@ -9835,20 +9976,23 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDURBBi: {
-      return executionNYI();
+    case Opcode::AArch64_LDURBBi: {  // ldurb wt, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(1, 8);
       break;
     }
     case Opcode::AArch64_LDURBi: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDURDi: {
-      return executionNYI();
+    case Opcode::AArch64_LDURDi: {  // ldur dt, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(8, 256);
       break;
     }
-    case Opcode::AArch64_LDURHHi: {
-      return executionNYI();
+    case Opcode::AArch64_LDURHHi: {  // ldurh wt, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(2, 8);
       break;
     }
     case Opcode::AArch64_LDURHi: {
@@ -9876,8 +10020,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDURSWi: {
-      return executionNYI();
+    case Opcode::AArch64_LDURSWi: {  // ldursw xt, [xn, #imm]
+      // LOAD
+      results[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
       break;
     }
     case Opcode::AArch64_LDURSi: {
@@ -9889,8 +10034,9 @@ void Instruction::execute() {
       results[0] = memoryData[0].zeroExtend(4, 8);
       break;
     }
-    case Opcode::AArch64_LDURXi: {
-      return executionNYI();
+    case Opcode::AArch64_LDURXi: {  // ldur xt, [xn, #imm]
+      // LOAD
+      results[0] = memoryData[0];
       break;
     }
     case Opcode::AArch64_LDXPW: {
@@ -9909,12 +10055,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDXRW: {
-      return executionNYI();
+    case Opcode::AArch64_LDXRW: {  // ldxr wt, [xn]
+      // LOAD
+      results[0] = memoryData[0].zeroExtend(4, 8);
       break;
     }
-    case Opcode::AArch64_LDXRX: {
-      return executionNYI();
+    case Opcode::AArch64_LDXRX: {  // ldxr xt, [xn]
+      // LOAD
+      results[0] = memoryData[0];
       break;
     }
     case Opcode::AArch64_LOADgot: {
@@ -13915,8 +14063,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SST1B_D: {
-      return executionNYI();
+    case Opcode::AArch64_SST1B_D: {  // st1b {zd.d}, pg, [xn, zm.d]
+      // STORE
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          memoryData[index] = static_cast<uint8_t>(d[i]);
+          index++;
+        }
+      }
       break;
     }
     case Opcode::AArch64_SST1B_D_IMM: {
@@ -13943,16 +14103,53 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SST1D: {
-      return executionNYI();
+    case Opcode::AArch64_SST1D: {  // st1d {zt.d}, pg, [xn, zm.d]
+      // STORE
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          memoryData[index] = d[i];
+          index++;
+        }
+      }
       break;
     }
-    case Opcode::AArch64_SST1D_IMM: {
-      return executionNYI();
+    case Opcode::AArch64_SST1D_IMM: {  // st1d {zd.d}, pg, [zn.d{, #imm}]
+      // STORE
+      const uint64_t* t = operands[0].getAsVector<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          memoryData[index] = t[i];
+          index++;
+        }
+      }
       break;
     }
-    case Opcode::AArch64_SST1D_SCALED: {
-      return executionNYI();
+    case Opcode::AArch64_SST1D_SCALED: {  // st1d {zt.d}, pg, [xn, zm.d, lsl #
+                                          // 3]
+      // STORE
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          memoryData[index] = d[i];
+          index++;
+        }
+      }
       break;
     }
     case Opcode::AArch64_SST1D_SXTW: {
@@ -14023,8 +14220,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SST1W_D_IMM: {
-      return executionNYI();
+    case Opcode::AArch64_SST1W_D_IMM: {  // st1w {zt.d}, pg, [zn.d{, #imm}]
+      // STORE
+      const uint64_t* t = operands[0].getAsVector<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          memoryData[index] = t[i];
+          index++;
+        }
+      }
       break;
     }
     case Opcode::AArch64_SST1W_D_SCALED: {
@@ -14047,8 +14256,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SST1W_IMM: {
-      return executionNYI();
+    case Opcode::AArch64_SST1W_IMM: {  // st1w {zt.s}, pg, [zn.s{, #imm}]
+      // STORE
+      const uint32_t* t = operands[0].getAsVector<uint32_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 32;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
+        if (p[i / 16] & shifted_active) {
+          memoryData[index] = t[i];
+          index++;
+        }
+      }
       break;
     }
     case Opcode::AArch64_SST1W_SXTW: {
@@ -14115,8 +14336,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ST1B: {
-      return executionNYI();
+    case Opcode::AArch64_ST1B: {  // st1b {zt.b}, pg, [xn, xm]
+      // STORE
+      const uint8_t* d = operands[0].getAsVector<uint8_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 8;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << (i % 64);
+        if (p[i / 64] & shifted_active) {
+          memoryData[index] = d[i];
+          index++;
+        }
+      }
       break;
     }
     case Opcode::AArch64_ST1B_D: {
@@ -14147,12 +14380,36 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ST1D: {
-      return executionNYI();
+    case Opcode::AArch64_ST1D: {  // st1d {zt.d}, pg, [xn, xm, lsl #3]
+      // STORE
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          memoryData[index] = d[i];
+          index++;
+        }
+      }
       break;
     }
-    case Opcode::AArch64_ST1D_IMM: {
-      return executionNYI();
+    case Opcode::AArch64_ST1D_IMM: {  // st1d {zt.d}, pg, [xn{, #imm, mul vl}]
+      // STORE
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          memoryData[index] = d[i];
+          index++;
+        }
+      }
       break;
     }
     case Opcode::AArch64_ST1Fourv16b: {
@@ -14371,8 +14628,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ST1Twov16b: {
-      return executionNYI();
+    case Opcode::AArch64_ST1Twov16b: {  // st1v {vt.16b, vt2.16b}, [xn]
+      // STORE
+      const uint8_t* t = operands[0].getAsVector<uint8_t>();
+      const uint8_t* t2 = operands[1].getAsVector<uint8_t>();
+      for (int i = 0; i < 16; i++) {
+        memoryData[i] = t[i];
+      }
+      for (int i = 0; i < 16; i++) {
+        memoryData[i + 16] = t2[i];
+      }
       break;
     }
     case Opcode::AArch64_ST1Twov16b_POST: {
@@ -14435,52 +14700,128 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ST1W: {
-      return executionNYI();
+    case Opcode::AArch64_ST1W: {  // st1w {zt.s}, pg, [xn, xm, lsl #2]
+      // STORE
+      const uint32_t* d = operands[0].getAsVector<uint32_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 32;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
+        if (p[i / 16] & shifted_active) {
+          memoryData[index] = d[i];
+          index++;
+        }
+      }
       break;
     }
-    case Opcode::AArch64_ST1W_D: {
-      return executionNYI();
+    case Opcode::AArch64_ST1W_D: {  // st1w {zt.d}, pg, [xn, xm, lsl #2]
+      // STORE
+      const uint64_t* d = operands[0].getAsVector<uint64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          memoryData[index] = static_cast<uint32_t>(d[i]);
+          index++;
+        }
+      }
       break;
     }
     case Opcode::AArch64_ST1W_D_IMM: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ST1W_IMM: {
-      return executionNYI();
+    case Opcode::AArch64_ST1W_IMM: {  // st1w {zt.s}, pg, [xn{, #imm, mul vl}]
+      // STORE
+      const uint32_t* d = operands[0].getAsVector<uint32_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 32;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 16) * 4);
+        if (p[i / 16] & shifted_active) {
+          memoryData[index] = d[i];
+          index++;
+        }
+      }
       break;
     }
-    case Opcode::AArch64_ST1i16: {
-      return executionNYI();
+    case Opcode::AArch64_ST1i16: {  // st1 {vt.h}[index], [xn]
+      // STORE
+      const uint16_t* t = operands[0].getAsVector<uint16_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
       break;
     }
-    case Opcode::AArch64_ST1i16_POST: {
-      return executionNYI();
+    case Opcode::AArch64_ST1i16_POST: {  // st1 {vt.h}[index], [xn], xm
+                                         // st1 {vt.h}[index], [xn], #2
+      // STORE
+      const uint16_t* t = operands[0].getAsVector<uint16_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
+      uint64_t offset = 2;
+      if (metadata.operandCount == 3) {
+        offset = operands[2].get<uint64_t>();
+      }
+      results[0] = operands[1].get<uint64_t>() + offset;
       break;
     }
-    case Opcode::AArch64_ST1i32: {
-      return executionNYI();
+    case Opcode::AArch64_ST1i32: {  // st1 {vt.s}[index], [xn]
+      // STORE
+      const uint32_t* t = operands[0].getAsVector<uint32_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
       break;
     }
-    case Opcode::AArch64_ST1i32_POST: {
-      return executionNYI();
+    case Opcode::AArch64_ST1i32_POST: {  // st1 {vt.s}[index], [xn], xm
+                                         // st1 {vt.s}[index], [xn], #4
+      // STORE
+      const uint32_t* t = operands[0].getAsVector<uint32_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
+      uint64_t offset = 4;
+      if (metadata.operandCount == 3) {
+        offset = operands[2].get<uint64_t>();
+      }
+      results[0] = operands[1].get<uint64_t>() + offset;
       break;
     }
-    case Opcode::AArch64_ST1i64: {
-      return executionNYI();
+    case Opcode::AArch64_ST1i64: {  // st1 {vt.d}[index], [xn]
+      // STORE
+      const uint64_t* t = operands[0].getAsVector<uint64_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
       break;
     }
-    case Opcode::AArch64_ST1i64_POST: {
-      return executionNYI();
+    case Opcode::AArch64_ST1i64_POST: {  // st1 {vt.d}[index], [xn], xm
+                                         // st1 {vt.d}[index], [xn], #8
+      // STORE
+      const uint64_t* t = operands[0].getAsVector<uint64_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
+      uint64_t offset = 8;
+      if (metadata.operandCount == 3) {
+        offset = operands[2].get<uint64_t>();
+      }
+      results[0] = operands[1].get<uint64_t>() + offset;
       break;
     }
-    case Opcode::AArch64_ST1i8: {
-      return executionNYI();
+    case Opcode::AArch64_ST1i8: {  // st1 {vt.b}[index], [xn]
+      // STORE
+      const uint8_t* t = operands[0].getAsVector<uint8_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
       break;
     }
-    case Opcode::AArch64_ST1i8_POST: {
-      return executionNYI();
+    case Opcode::AArch64_ST1i8_POST: {  // st1 {vt.b}[index], [xn], xm
+                                        // st1 {vt.b}[index], [xn], #1
+      // STORE
+      const uint8_t* t = operands[0].getAsVector<uint8_t>();
+      memoryData[0] = t[metadata.operands[0].vector_index];
+      uint64_t offset = 1;
+      if (metadata.operandCount == 3) {
+        offset = operands[2].get<uint64_t>();
+      }
+      results[0] = RegisterValue(operands[1].get<uint64_t>() + offset, 8);
       break;
     }
     case Opcode::AArch64_ST2B: {
@@ -14543,8 +14884,19 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ST2Twov4s_POST: {
-      return executionNYI();
+    case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn], #imm
+      // STORE
+      const float* t1 = operands[0].getAsVector<float>();
+      const float* t2 = operands[1].getAsVector<float>();
+      for (int i = 0; i < 4; i++) {
+        memoryData[2 * i] = t1[i];
+        memoryData[2 * i + 1] = t2[i];
+      }
+      uint64_t offset = 32;
+      if (metadata.operandCount == 4) {
+        offset = operands[3].get<uint64_t>();
+      }
+      results[0] = operands[2].get<uint64_t>() + offset;
       break;
     }
     case Opcode::AArch64_ST2Twov8b: {
@@ -14859,20 +15211,19 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STLRB: {
-      return executionNYI();
+    case Opcode::AArch64_STLRB: {  // stlrb wt, [xn]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
     case Opcode::AArch64_STLRH: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STLRW: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_STLRX: {
-      return executionNYI();
+    case Opcode::AArch64_STLRW:    // stlr wt, [xn]
+    case Opcode::AArch64_STLRX: {  // stlr xt, [xn]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
     case Opcode::AArch64_STLURBi: {
@@ -14907,12 +15258,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STLXRW: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_STLXRX: {
-      return executionNYI();
+    case Opcode::AArch64_STLXRW:    // stlxr ws, wt, [xn]
+    case Opcode::AArch64_STLXRX: {  // stlxr ws, xt, [xn]
+      // STORE
+      memoryData[0] = operands[0];
+      // TODO: Implement atomic memory access
+      results[0] = static_cast<uint64_t>(0);
       break;
     }
     case Opcode::AArch64_STNPDi: {
@@ -14967,44 +15318,69 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STPDi: {
-      return executionNYI();
+    case Opcode::AArch64_STPDi: {  // stp dt1, dt2, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
       break;
     }
-    case Opcode::AArch64_STPDpost: {
-      return executionNYI();
+    case Opcode::AArch64_STPDpost: {  // stp dt1, dt2, [xn], #imm
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[3].imm;
       break;
     }
-    case Opcode::AArch64_STPDpre: {
-      return executionNYI();
+    case Opcode::AArch64_STPDpre: {  // stp dt1, dt2, [xn, #imm]!
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
       break;
     }
-    case Opcode::AArch64_STPQi: {
-      return executionNYI();
+    case Opcode::AArch64_STPQi: {  // stp qt1, qt2, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
       break;
     }
-    case Opcode::AArch64_STPQpost: {
-      return executionNYI();
+    case Opcode::AArch64_STPQpost: {  // stp qt1, qt2, [xn], #imm
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[3].imm;
       break;
     }
-    case Opcode::AArch64_STPQpre: {
-      return executionNYI();
+    case Opcode::AArch64_STPQpre: {  // stp qt1, qt2, [xn, #imm]!
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
       break;
     }
-    case Opcode::AArch64_STPSi: {
-      return executionNYI();
+    case Opcode::AArch64_STPSi: {  // stp st1, st2, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
       break;
     }
-    case Opcode::AArch64_STPSpost: {
-      return executionNYI();
+    case Opcode::AArch64_STPSpost: {  // stp st1, st2, [xn], #imm
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[3].imm;
       break;
     }
-    case Opcode::AArch64_STPSpre: {
-      return executionNYI();
+    case Opcode::AArch64_STPSpre: {  // stp st1, st2, [xn, #imm]!
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
       break;
     }
-    case Opcode::AArch64_STPWi: {
-      return executionNYI();
+    case Opcode::AArch64_STPWi: {  // stp wt1, wt2, [xn, #imm]
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
       break;
     }
     case Opcode::AArch64_STPWpost: {
@@ -15015,36 +15391,53 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STPXi: {
-      return executionNYI();
+    case Opcode::AArch64_STPXi: {  // stp xt1, xt2, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
       break;
     }
-    case Opcode::AArch64_STPXpost: {
-      return executionNYI();
+    case Opcode::AArch64_STPXpost: {  // stp xt1, xt2, [xn], #imm
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[3].imm;
       break;
     }
-    case Opcode::AArch64_STPXpre: {
-      return executionNYI();
+    case Opcode::AArch64_STPXpre: {  // stp xt1, xt2, [xn, #imm]!
+      // STORE
+      memoryData[0] = operands[0];
+      memoryData[1] = operands[1];
+      results[0] = operands[2].get<uint64_t>() + metadata.operands[2].mem.disp;
       break;
     }
-    case Opcode::AArch64_STRBBpost: {
-      return executionNYI();
+    case Opcode::AArch64_STRBBpost: {  // strb wd, [xn], #imm
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_STRBBpre: {
-      return executionNYI();
+    case Opcode::AArch64_STRBBpre: {  // strb wd, [xn, #imm]!
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_STRBBroW: {
-      return executionNYI();
+    case Opcode::AArch64_STRBBroW: {  // strb wd,
+                                      //  [xn, wm{, extend {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRBBroX: {
-      return executionNYI();
+    case Opcode::AArch64_STRBBroX: {  // strb wd,
+                                      //  [xn, xm{, extend {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRBBui: {
-      return executionNYI();
+    case Opcode::AArch64_STRBBui: {  // strb wd, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
     case Opcode::AArch64_STRBpost: {
@@ -15067,44 +15460,60 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STRDpost: {
-      return executionNYI();
+    case Opcode::AArch64_STRDpost: {  // str dt, [xn], #imm
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_STRDpre: {
-      return executionNYI();
+    case Opcode::AArch64_STRDpre: {  // str dd, [xn, #imm]!
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_STRDroW: {
-      return executionNYI();
+    case Opcode::AArch64_STRDroW: {  // str dt, [xn, wm{, #extend {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRDroX: {
-      return executionNYI();
+    case Opcode::AArch64_STRDroX: {  // str dt, [xn, xm{, #extend {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRDui: {
-      return executionNYI();
+    case Opcode::AArch64_STRDui: {  // str dt, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRHHpost: {
-      return executionNYI();
+    case Opcode::AArch64_STRHHpost: {  // strh wt, [xn], #imm
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_STRHHpre: {
-      return executionNYI();
+    case Opcode::AArch64_STRHHpre: {  // strh wd, [xn, #imm]!
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_STRHHroW: {
-      return executionNYI();
+    case Opcode::AArch64_STRHHroW: {  // strh wd,
+                                      //  [xn, wm{, extend {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRHHroX: {
-      return executionNYI();
+    case Opcode::AArch64_STRHHroX: {  // strh wd,
+                                      //  [xn, xm{, extend {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRHHui: {
-      return executionNYI();
+    case Opcode::AArch64_STRHHui: {  // strh wt, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
     case Opcode::AArch64_STRHpost: {
@@ -15127,92 +15536,130 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STRQpost: {
-      return executionNYI();
+    case Opcode::AArch64_STRQpost: {  // str qt, [xn], #imm
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_STRQpre: {
-      return executionNYI();
+    case Opcode::AArch64_STRQpre: {  // str qt, [xn, #imm]!
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
     case Opcode::AArch64_STRQroW: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STRQroX: {
-      return executionNYI();
+    case Opcode::AArch64_STRQroX: {  // str qt, [xn, xm{, extend, {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRQui: {
-      return executionNYI();
+    case Opcode::AArch64_STRQui: {  // str qt, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRSpost: {
-      return executionNYI();
+    case Opcode::AArch64_STRSpost: {  // str st, [xn], #imm
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_STRSpre: {
-      return executionNYI();
+    case Opcode::AArch64_STRSpre: {  // str sd, [xn, #imm]!
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_STRSroW: {
-      return executionNYI();
+    case Opcode::AArch64_STRSroW: {  // str st, [xn, wm{, #extend {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRSroX: {
-      return executionNYI();
+    case Opcode::AArch64_STRSroX: {  // str st, [xn, xm{, #extend {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRSui: {
-      return executionNYI();
+    case Opcode::AArch64_STRSui: {  // str st, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRWpost: {
-      return executionNYI();
+    case Opcode::AArch64_STRWpost: {  // str wt, [xn], #imm
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_STRWpre: {
-      return executionNYI();
+    case Opcode::AArch64_STRWpre: {  // str wd, [xn, #imm]!
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_STRWroW: {
-      return executionNYI();
+    case Opcode::AArch64_STRWroW: {  // str wd, [xn, wm{, extend {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRWroX: {
-      return executionNYI();
+    case Opcode::AArch64_STRWroX: {  // str wt, [xn, xm{, extend, {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRWui: {
-      return executionNYI();
+    case Opcode::AArch64_STRWui: {  // str wt, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRXpost: {
-      return executionNYI();
+    case Opcode::AArch64_STRXpost: {  // str xt, [xn], #imm
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
       break;
     }
-    case Opcode::AArch64_STRXpre: {
-      return executionNYI();
+    case Opcode::AArch64_STRXpre: {  // str xd, [xn, #imm]!
+      // STORE
+      memoryData[0] = operands[0];
+      results[0] = operands[1].get<uint64_t>() + metadata.operands[1].mem.disp;
       break;
     }
-    case Opcode::AArch64_STRXroW: {
-      return executionNYI();
+    case Opcode::AArch64_STRXroW: {  // str xd, [xn, wm{, extend {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRXroX: {
-      return executionNYI();
+    case Opcode::AArch64_STRXroX: {  // str xt, [xn, xm{, extend, {#amount}}]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STRXui: {
-      return executionNYI();
+    case Opcode::AArch64_STRXui: {  // str xt, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
-    case Opcode::AArch64_STR_PXI: {
-      return executionNYI();
+    case Opcode::AArch64_STR_PXI: {  // str pt, [xn{, #imm, mul vl}]
+      // STORE
+      const uint64_t PL_bits = VL_bits / 8;
+      const uint16_t partition_num = PL_bits / 8;
+      const uint8_t* p = operands[0].getAsVector<uint8_t>();
+      for (int i = 0; i < partition_num; i++) {
+        memoryData[i] = p[i];
+      }
       break;
     }
-    case Opcode::AArch64_STR_ZXI: {
-      return executionNYI();
+    case Opcode::AArch64_STR_ZXI: {  // str zt, [xn{, #imm, mul vl}]
+      // STORE
+      const uint16_t partition_num = VL_bits / 8;
+      const uint8_t* z = operands[0].getAsVector<uint8_t>();
+      for (int i = 0; i < partition_num; i++) {
+        memoryData[i] = z[i];
+      }
       break;
     }
     case Opcode::AArch64_STTRBi: {
@@ -15231,40 +15678,31 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STURBBi: {
-      return executionNYI();
+    case Opcode::AArch64_STURBBi: {  // sturb wd, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
     case Opcode::AArch64_STURBi: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STURDi: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_STURHHi: {
-      return executionNYI();
+    case Opcode::AArch64_STURDi:     // stur dt, [xn, #imm]
+    case Opcode::AArch64_STURHHi: {  // sturh wt, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
     case Opcode::AArch64_STURHi: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STURQi: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_STURSi: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_STURWi: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_STURXi: {
-      return executionNYI();
+    case Opcode::AArch64_STURQi:    // stur qt, [xn, #imm]
+    case Opcode::AArch64_STURSi:    // stur st, [xn, #imm]
+    case Opcode::AArch64_STURWi:    // stur wt, [xn, #imm]
+    case Opcode::AArch64_STURXi: {  // stur xt, [xn, #imm]
+      // STORE
+      memoryData[0] = operands[0];
       break;
     }
     case Opcode::AArch64_STXPW: {
@@ -15283,12 +15721,18 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_STXRW: {
-      return executionNYI();
+    case Opcode::AArch64_STXRW: {  // stxr ws, wt, [xn]
+      // STORE
+      memoryData[0] = operands[0];
+      // TODO: Implement atomic memory access
+      results[0] = static_cast<uint64_t>(0);
       break;
     }
-    case Opcode::AArch64_STXRX: {
-      return executionNYI();
+    case Opcode::AArch64_STXRX: {  // stxr ws, xt, [xn]
+      // STORE
+      memoryData[0] = operands[0];
+      // TODO: Implement atomic memory access
+      results[0] = static_cast<uint64_t>(0);
       break;
     }
     case Opcode::AArch64_SUBHNv2i64_v2i32: {

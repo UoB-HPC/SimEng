@@ -191,6 +191,29 @@ class neonHelp {
     return out;
   }
 
+  /** Helper function for NEON instructions with the format `ins vd[index],
+   *  rn`.
+   * T represents the vector register type (i.e. vd.16b would
+   *be uint8_t).
+   * R represents the type of the GPR (i.e. wn would be uint32_t).
+   * I represents the number of elements in the output array to be
+   *updated (i.e. for vd.8b the final 8 elements in the output array will be
+   *0).*/
+  template <typename T, typename R, int I>
+  static std::array<T, 256> vecInsIndex_gpr(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    const T* d = operands[0].getAsVector<T>();
+    const T n = operands[1].get<R>();
+    std::array<T, 256> out = {0};
+
+    for (int i = 0; i < I; i++) {
+      out[i] = d[i];
+    }
+    out[metadata.operands[0].vector_index] = n;
+    return out;
+  }
+
   /** Helper function for NEON instructions with the format `movi vd, #imm`.
    * I represents the number of elements in the output array to be
    * updated (i.e. for vd.8b the final 8 elements in the output array will be
@@ -199,10 +222,12 @@ class neonHelp {
   template <typename T, int I>
   static std::array<T, 256> vecMovi_imm(
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
-    const T bits = static_cast<T>(metadata.operands[1].imm);
+    bool isFP = std::is_floating_point<T>::value;
+    const T imm = isFP ? metadata.operands[1].fp
+                       : static_cast<T>(metadata.operands[1].imm);
     std::array<T, 256> out = {0};
     for (int i = 0; i < I; i++) {
-      out[i] = bits;
+      out[i] = imm;
     }
     return out;
   }
