@@ -9,18 +9,18 @@ class sveHelp {
  public:
   /** Helper function for SVE instructions with the format `add zd, zn, zm`. */
   template <typename T>
-  static std::array<T, 256> sveAdd_3ops(
+  static RegisterValue sveAdd_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    std::array<T, 256> out = {0};
+    T out[256 / sizeof(T)] = {0};
     for (int i = 0; i < partition_num; i++) {
       out[i] = n[i] + m[i];
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for instructions with the format `cmp<eq, ge, gt, hi, hs,
@@ -92,7 +92,7 @@ class sveHelp {
   /** Helper function for SVE instructions with the format `dup zd, <#imm{,
    * shift}, <w,x>n>`. */
   template <typename T>
-  static std::array<T, 256> sveDup_immOrScalar(
+  static RegisterValue sveDup_immOrScalar(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits, bool useImm) {
@@ -102,18 +102,18 @@ class sveHelp {
                        : static_cast<int8_t>(metadata.operands[1].imm))
                : operands[0].get<T>();
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    std::array<T, 256> out = {0};
+    T out[256 / sizeof(T)] = {0};
 
     for (int i = 0; i < partition_num; i++) {
       out[i] = imm;
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for SVE instructions with the format `dup zd, zn[#imm]`.
    */
   template <typename T>
-  static std::array<T, 256> sveDup_vecIndexed(
+  static RegisterValue sveDup_vecIndexed(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits) {
@@ -122,7 +122,7 @@ class sveHelp {
     const T* n = operands[0].getAsVector<T>();
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    std::array<T, 256> out = {0};
+    T out[256 / sizeof(T)] = {0};
 
     if (index < (VL_bits / (sizeof(T) * 8))) {
       const T element = n[index];
@@ -130,14 +130,14 @@ class sveHelp {
         out[i] = element;
       }
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for SVE instructions with the format `fabs zd,
    * pg/z, zn`. T represents the vector register type (i.e. zd.b would be
    * uint8_t).*/
   template <typename T>
-  static std::array<T, 256> sveFabsPredicated(
+  static RegisterValue sveFabsPredicated(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits) {
     const T* d = operands[0].getAsVector<T>();
@@ -145,7 +145,7 @@ class sveHelp {
     const T* n = operands[2].getAsVector<T>();
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    std::array<T, 256> out = {0};
+    T out[256 / sizeof(T)] = {0};
 
     for (int i = 0; i < partition_num; i++) {
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
@@ -155,14 +155,14 @@ class sveHelp {
         out[i] = d[i];
       }
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for SVE instructions with the format `fadda rd,
    * pg/m, rn, zm`. T represents the vector register type (i.e. zd.b would be
    * uint8_t).*/
   template <typename T>
-  static std::array<T, 256> sveFaddaPredicated(
+  static RegisterValue sveFaddaPredicated(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits) {
     const uint64_t* p = operands[1].getAsVector<uint64_t>();
@@ -170,7 +170,7 @@ class sveHelp {
     const T* m = operands[3].getAsVector<T>();
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    std::array<T, 256> out = {0};
+    T out[256 / sizeof(T)] = {0};
     out[0] = n;
 
     for (int i = 0; i < partition_num; i++) {
@@ -179,26 +179,26 @@ class sveHelp {
         out[0] += m[i];
       }
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for SVE instructions with the format `index zd, #imm,
    * #imm`. T represents the vector register type (i.e. zd.b would be
    * int8_t).*/
   template <typename T>
-  static std::array<T, 256> sveIndex_2imm(
+  static RegisterValue sveIndex_2imm(
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits) {
     const T imm1 = static_cast<T>(metadata.operands[1].imm);
     const T imm2 = static_cast<T>(metadata.operands[2].imm);
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    std::array<T, 256> out = {0};
+    T out[256 / sizeof(T)] = {0};
 
     for (int i = 0; i < partition_num; i++) {
       out[i] = static_cast<T>(imm1 + (i * imm2));
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for SVE instructions with the format `<AND, EOR, ...> pd,
@@ -231,7 +231,7 @@ class sveHelp {
    * pg/z, zn, zm`. T represents the vector register type (i.e. zd.b would be
    * uint8_t).*/
   template <typename T>
-  static std::array<T, 256> sveLogicOpPredicated_vecs(
+  static RegisterValue sveLogicOpPredicated_vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits,
       std::function<uint64_t(uint64_t, uint64_t)> func) {
@@ -240,7 +240,7 @@ class sveHelp {
     const T* m = operands[2].getAsVector<T>();
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    std::array<T, 256> out = {0};
+    T out[256 / sizeof(T)] = {0};
     for (int i = 0; i < partition_num; i++) {
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
       if (p[i / (64 / sizeof(T))] & shifted_active)
@@ -248,7 +248,7 @@ class sveHelp {
       else
         out[i] = dn[i];
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for SVE instructions with the format `ptrue pd{, pattern}.

@@ -12,29 +12,29 @@ class neonHelp {
    * for vd.8b the final 8 elements in the output array will be 0).
    */
   template <typename T, int I>
-  static std::array<T, 256> vecAdd_3ops(
+  static RegisterValue vecAdd_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       out[i] = static_cast<T>(n[i] + m[i]);
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `addp rd, vn`.
    * I represents the number of elements in the input array to be summed.
    */
   template <typename T, int I>
-  static std::array<T, 256> vecSumElems_2ops(
+  static RegisterValue vecSumElems_2ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
-    std::array<T, 256> out = {0};
+    T out = 0;
     for (int i = 0; i < I; i++) {
-      out[0] += n[i];
+      out += n[i];
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `addp vd, vn, vm`.
@@ -42,11 +42,11 @@ class neonHelp {
    * for vd.8b the final 8 elements in the output array will be 0).
    */
   template <typename T, int I>
-  static std::array<T, 256> vecAddp_3ops(
+  static RegisterValue vecAddp_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
     uint8_t offset = I / 2;
     for (int i = 0; i < I; i++) {
       if (i < offset) {
@@ -56,7 +56,7 @@ class neonHelp {
             static_cast<T>(m[(i - offset) * 2] + m[((i - offset) * 2) + 1]);
       }
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `bic vd, vn, vm`.
@@ -64,15 +64,15 @@ class neonHelp {
    * for vd.8b the final 8 elements in the output array will be 0).
    */
   template <typename T, int I>
-  static std::array<T, 256> vecBic_3ops(
+  static RegisterValue vecBic_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       out[i] = n[i] & ~m[i];
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `bic vd, #imm{, lsl
@@ -82,18 +82,18 @@ class neonHelp {
    * 0).
    */
   template <typename T, int I>
-  static std::array<T, 256> vecBicShift_imm(
+  static RegisterValue vecBicShift_imm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T* d = operands[0].getAsVector<T>();
     T imm = ~shiftValue(static_cast<T>(metadata.operands[1].imm),
                         metadata.operands[1].shift.type,
                         metadata.operands[1].shift.value);
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       out[i] = d[i] & imm;
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for instructions with the format `cm<eq, ge, gt, hi, hs,
@@ -102,20 +102,20 @@ class neonHelp {
    *for vd.8b the final 8 elements in the output array will be 0).
    */
   template <typename T, int I>
-  static std::array<T, 256> vecCompare(
+  static RegisterValue vecCompare(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       std::function<bool(T, T)> func, bool cmpToZero) {
     const T* n = operands[0].getAsVector<T>();
     const T* m;
     if (!cmpToZero) m = operands[1].getAsVector<T>();
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       if (!cmpToZero)
         out[i] = func(n[i], m[i]) ? static_cast<T>(-1) : 0;
       else
         out[i] = func(n[i], 0) ? static_cast<T>(-1) : 0;
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `dup <rd, vd>,
@@ -124,15 +124,15 @@ class neonHelp {
    *for vd.8b the final 8 elements in the output array will be 0).
    */
   template <typename T, int I>
-  static std::array<T, 256> vecDup_gprOrIndex(
+  static RegisterValue vecDup_gprOrIndex(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata, bool useGpr) {
     int index = useGpr ? 0 : metadata.operands[1].vector_index;
     T element =
         useGpr ? operands[0].get<T>() : operands[0].getAsVector<T>()[index];
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
     std::fill_n(std::begin(out), I, element);
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `fabs vd, vn`.
@@ -140,14 +140,14 @@ class neonHelp {
    *for vd.8b the final 8 elements in the output array will be 0).
    */
   template <typename T, int I>
-  static std::array<T, 256> vecFabs_2ops(
+  static RegisterValue vecFabs_2ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       out[i] = std::fabs(n[i]);
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `<AND, EOR, ...> vd,
@@ -156,16 +156,16 @@ class neonHelp {
    *updated (i.e. for vd.8b the final 8 elements in the output array will be
    *0).*/
   template <typename T, int I>
-  static std::array<T, 256> vecLogicOp_3vecs(
+  static RegisterValue vecLogicOp_3vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       std::function<T(T, T)> func) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       out[i] = func(n[i], m[i]);
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `ext vd,
@@ -174,13 +174,13 @@ class neonHelp {
    *updated (i.e. for vd.8b the final 8 elements in the output array will be
    *0).*/
   template <typename T, int I>
-  static std::array<T, 256> vecExtVecs_index(
+  static RegisterValue vecExtVecs_index(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
     const uint64_t index = static_cast<uint64_t>(metadata.operands[3].imm);
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
 
     for (int i = index; i < I; i++) {
       out[i - index] = n[i];
@@ -188,7 +188,7 @@ class neonHelp {
     for (int i = 0; i < index; i++) {
       out[I - index + i] = m[i];
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `ins vd[index],
@@ -200,18 +200,18 @@ class neonHelp {
    *updated (i.e. for vd.8b the final 8 elements in the output array will be
    *0).*/
   template <typename T, typename R, int I>
-  static std::array<T, 256> vecInsIndex_gpr(
+  static RegisterValue vecInsIndex_gpr(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T* d = operands[0].getAsVector<T>();
     const T n = operands[1].get<R>();
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
 
     for (int i = 0; i < I; i++) {
       out[i] = d[i];
     }
     out[metadata.operands[0].vector_index] = n;
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `movi vd, #imm`.
@@ -220,16 +220,16 @@ class neonHelp {
    * 0).
    */
   template <typename T, int I>
-  static std::array<T, 256> vecMovi_imm(
+  static RegisterValue vecMovi_imm(
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     bool isFP = std::is_floating_point<T>::value;
     const T imm = isFP ? metadata.operands[1].fp
                        : static_cast<T>(metadata.operands[1].imm);
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       out[i] = imm;
     }
-    return out;
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `movi vd, #imm{, lsl
@@ -239,16 +239,16 @@ class neonHelp {
    * 0).
    */
   template <typename T, int I>
-  static std::array<T, 256> vecMoviShift_imm(
+  static RegisterValue vecMoviShift_imm(
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T bits = shiftValue(static_cast<T>(metadata.operands[1].imm),
                               metadata.operands[1].shift.type,
                               metadata.operands[1].shift.value);
-    std::array<T, 256> out = {0};
+    T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       out[i] = bits;
     }
-    return out;
+    return {out, 256};
   }
 };
 }  // namespace aarch64

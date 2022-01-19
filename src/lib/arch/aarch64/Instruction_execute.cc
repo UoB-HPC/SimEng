@@ -252,7 +252,7 @@ void Instruction::execute() {
     case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm{, shift}
       auto [result, nzcv] =
           arithmeticHelp::addShift_imm<uint32_t>(operands, metadata, false);
-      results[0] = result;
+      results[0] = RegisterValue(result, 8);
       break;
     }
     case Opcode::AArch64_ADDWrr: {
@@ -351,7 +351,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_ADDv1i64: {  // add dd, dn, dm
-      results[0] = arithmeticHelp::add_3ops<uint64_t>(operands);
+      results[0] = neonHelp::vecAdd_3ops<uint64_t, 1>(operands);
       break;
     }
     case Opcode::AArch64_ADDv2i32: {  // add vd.2s, vn.2s, vm.2s
@@ -3085,7 +3085,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FADDDrr: {  // fadd dd, dn, dm
-      results[0] = {arithmeticHelp::add_3ops<double>(operands), 256};
+      results[0] = neonHelp::vecAdd_3ops<double, 1>(operands);
       break;
     }
     case Opcode::AArch64_FADDHrr: {
@@ -3125,7 +3125,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FADDSrr: {  // fadd sd, sn, sm
-      results[0] = {arithmeticHelp::add_3ops<float>(operands), 256};
+      results[0] = neonHelp::vecAdd_3ops<float, 1>(operands);
       break;
     }
     case Opcode::AArch64_FADDV_VPZ_D: {

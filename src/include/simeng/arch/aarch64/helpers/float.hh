@@ -7,27 +7,23 @@ namespace arch {
 namespace aarch64 {
 class floatHelp {
  public:
-  /** Helper function for instructions with the format `fabd vd, vn, vm`.
+  /** Helper function for instructions with the format `fabd rd, rn, rm`.
    */
   template <typename T>
-  static std::array<T, 256> fabd_3ops(
+  static RegisterValue fabd_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T n = operands[0].get<T>();
     const T m = operands[1].get<T>();
-    std::array<T, 256> out = {0};
-    out[0] = std::fabs(n - m);
-    return out;
+    return {std::fabs(n - m), 256};
   }
 
   /** Helper function for instructions with the format `fabs vd, vn`.
    */
   template <typename T>
-  static std::array<T, 256> fabs_2ops(
+  static RegisterValue fabs_2ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T n = operands[0].get<T>();
-    std::array<T, 256> out = {0};
-    out[0] = std::fabs(n);
-    return out;
+    return {std::fabs(n), 256};
   }
 };
 }  // namespace aarch64
