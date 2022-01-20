@@ -999,6 +999,43 @@ TEST_P(InstNeon, fadd) {
   )");
   CHECK_NEON(2, float, {87.72f, -160.38, -0.927f, 701.90f});
 }
+
+TEST_P(InstNeon, fcmeq) {
+  // Vector single-precision
+  RUN_AARCH64(R"(
+    # v0 = {0.5f, 0.5f, 0.5f, 0.5f}
+    fmov v0.4s, #0.5
+
+    # v1 = {0.f, 1.5f, 0.f, 1.5f}
+    fmov v1.4s, #1.5
+    mov v1.s[0], wzr
+    mov v1.s[2], wzr
+
+    # v2 = {2.5f, 0.f, 2.5f, 0.f}
+    fmov v2.4s, #2.5
+    mov v2.s[1], wzr
+    mov v2.s[3], wzr
+
+    fcmeq v4.4s, v0.4s, #0.0
+    fcmeq v5.4s, v1.4s, #0.0
+    fcmeq v6.4s, v2.4s, #0.0
+    fcmeq v7.4s, v3.4s, #0.0
+    fcmeq v8.2s, v0.2s, #0.0
+    fcmeq v9.2s, v1.2s, #0.0
+    fcmeq v10.2s, v2.2s, #0.0
+    fcmeq v11.2s, v3.2s, #0.0
+  )");
+  CHECK_NEON(4, uint32_t, {0x00000000, 0x00000000, 0x00000000, 0x00000000});
+  CHECK_NEON(5, uint32_t, {0xffffffff, 0x00000000, 0xffffffff, 0x00000000});
+  CHECK_NEON(6, uint32_t, {0x00000000, 0xffffffff, 0x00000000, 0xffffffff});
+  CHECK_NEON(7, uint32_t, {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff});
+
+  CHECK_NEON(8, uint32_t, {0x00000000, 0x00000000, 0x00000000, 0x00000000});
+  CHECK_NEON(9, uint32_t, {0xffffffff, 0x00000000, 0x00000000, 0x00000000});
+  CHECK_NEON(10, uint32_t, {0x00000000, 0xffffffff, 0x00000000, 0x00000000});
+  CHECK_NEON(11, uint32_t, {0xffffffff, 0xffffffff, 0x00000000, 0x00000000});
+}
+
 TEST_P(InstNeon, fcmge) {
   initialHeapData_.resize(32);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
@@ -1175,6 +1212,22 @@ TEST_P(InstNeon, fcvt) {
   )");
   CHECK_NEON(2, int64_t, {1, -42});
   CHECK_NEON(3, int64_t, {0, 321});
+}
+
+TEST_P(InstNeon, fcvtn) {
+  // 2 doubles to 2 floats
+  RUN_AARCH64(R"(
+    fmov v0.2d, #0.125
+    fcvtn v1.2s, v0.2d
+  )");
+  CHECK_NEON(1, float, {0.125f, 0.125f, 0.f, 0.f});
+
+  // 2 doubles to 4 floats
+  RUN_AARCH64(R"(
+    fmov v0.2d, #0.125
+    fcvtn2 v1.4s, v0.2d
+  )");
+  CHECK_NEON(1, float, {0.f, 0.f, 0.125f, 0.125f});
 }
 
 TEST_P(InstNeon, fcvtl) {

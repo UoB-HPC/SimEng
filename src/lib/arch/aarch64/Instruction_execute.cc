@@ -3303,8 +3303,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMEQv2i32rz: {
-      return executionNYI();
+    case Opcode::AArch64_FCMEQv2i32rz: {  // fcmeq vd.2s, vd.2s, #0.0
+      results[0] = neonHelp::vecFCompare<float, uint32_t, 2>(
+          operands, true, [](float x, float y) -> bool { return x == y; });
       break;
     }
     case Opcode::AArch64_FCMEQv2i64rz: {
@@ -3323,8 +3324,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMEQv4i32rz: {
-      return executionNYI();
+    case Opcode::AArch64_FCMEQv4i32rz: {  // fcmeq vd.4s vn.4s, #0.0
+      results[0] = neonHelp::vecFCompare<float, uint32_t, 4>(
+          operands, true, [](float x, float y) -> bool { return x == y; });
       break;
     }
     case Opcode::AArch64_FCMEQv8f16: {
@@ -3588,16 +3590,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMLE_PPzZ0_D: {
-      return executionNYI();
+    case Opcode::AArch64_FCMLE_PPzZ0_D: {  // fcmle pd.d, pg/z, zn.d, #0.0
+      results[0] = sveHelp::sveComparePredicated_vecsToPred<double>(
+          operands, metadata, VL_bits, true,
+          [](double x, double y) -> bool { return x <= y; });
       break;
     }
     case Opcode::AArch64_FCMLE_PPzZ0_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMLE_PPzZ0_S: {
-      return executionNYI();
+    case Opcode::AArch64_FCMLE_PPzZ0_S: {  // fcmle pd.s, pg/z, zn.s, #0.0
+      results[0] = sveHelp::sveComparePredicated_vecsToPred<float>(
+          operands, metadata, VL_bits, true,
+          [](float x, float y) -> bool { return x <= y; });
       break;
     }
     case Opcode::AArch64_FCMLEv1i16rz: {
@@ -3640,8 +3646,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMLT_PPzZ0_S: {
-      return executionNYI();
+    case Opcode::AArch64_FCMLT_PPzZ0_S: {  // fcmlt pd.s, pg/z, zn.s, #0.0
+      results[0] = sveHelp::sveComparePredicated_vecsToPred<float>(
+          operands, metadata, VL_bits, true,
+          [](float x, float y) -> bool { return x < y; });
       break;
     }
     case Opcode::AArch64_FCMLTv1i16rz: {
@@ -3656,20 +3664,23 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMLTv2i32rz: {
-      return executionNYI();
+    case Opcode::AArch64_FCMLTv2i32rz: {  // fcmlt vd.2s, vn.2s, #0.0
+      results[0] = neonHelp::vecFCompare<float, uint32_t, 2>(
+          operands, true, [](float x, float y) -> bool { return x < y; });
       break;
     }
-    case Opcode::AArch64_FCMLTv2i64rz: {
-      return executionNYI();
+    case Opcode::AArch64_FCMLTv2i64rz: {  // fcmlt vd.2d, vn.2d, #0.0
+      results[0] = neonHelp::vecFCompare<double, uint64_t, 2>(
+          operands, true, [](double x, double y) -> bool { return x < y; });
       break;
     }
     case Opcode::AArch64_FCMLTv4i16rz: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMLTv4i32rz: {
-      return executionNYI();
+    case Opcode::AArch64_FCMLTv4i32rz: {  // fcmlt vd.4s, vn.4s, #0.0
+      results[0] = neonHelp::vecFCompare<float, uint32_t, 4>(
+          operands, true, [](float x, float y) -> bool { return x < y; });
       break;
     }
     case Opcode::AArch64_FCMLTv8i16rz: {

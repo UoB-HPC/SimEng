@@ -372,42 +372,6 @@ TEST_P(InstFloat, fcsel64) {
   CHECK_NEON(5, double, {1.0, 0.0});
 }
 
-TEST_P(InstFloat, fcmeq_zero) {
-  // Vector single-precision
-  RUN_AARCH64(R"(
-    # v0 = {0.5f, 0.5f, 0.5f, 0.5f}
-    fmov v0.4s, #0.5
-
-    # v1 = {0.f, 1.5f, 0.f, 1.5f}
-    fmov v1.4s, #1.5
-    mov v1.s[0], wzr
-    mov v1.s[2], wzr
-
-    # v2 = {2.5f, 0.f, 2.5f, 0.f}
-    fmov v2.4s, #2.5
-    mov v2.s[1], wzr
-    mov v2.s[3], wzr
-
-    fcmeq v4.4s, v0.4s, #0.0
-    fcmeq v5.4s, v1.4s, #0.0
-    fcmeq v6.4s, v2.4s, #0.0
-    fcmeq v7.4s, v3.4s, #0.0
-    fcmeq v8.2s, v0.2s, #0.0
-    fcmeq v9.2s, v1.2s, #0.0
-    fcmeq v10.2s, v2.2s, #0.0
-    fcmeq v11.2s, v3.2s, #0.0
-  )");
-  CHECK_NEON(4, uint32_t, {0x00000000, 0x00000000, 0x00000000, 0x00000000});
-  CHECK_NEON(5, uint32_t, {0xffffffff, 0x00000000, 0xffffffff, 0x00000000});
-  CHECK_NEON(6, uint32_t, {0x00000000, 0xffffffff, 0x00000000, 0xffffffff});
-  CHECK_NEON(7, uint32_t, {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff});
-
-  CHECK_NEON(8, uint32_t, {0x00000000, 0x00000000, 0x00000000, 0x00000000});
-  CHECK_NEON(9, uint32_t, {0xffffffff, 0x00000000, 0x00000000, 0x00000000});
-  CHECK_NEON(10, uint32_t, {0x00000000, 0xffffffff, 0x00000000, 0x00000000});
-  CHECK_NEON(11, uint32_t, {0xffffffff, 0xffffffff, 0x00000000, 0x00000000});
-}
-
 TEST_P(InstFloat, fcvta) {
   // 64-bit
   initialHeapData_.resize(48);
@@ -635,49 +599,6 @@ TEST_P(InstFloat, fcvtzu) {
   EXPECT_EQ((getGeneralRegister<uint64_t>(1)), -42);
   EXPECT_EQ((getGeneralRegister<uint64_t>(2)), 0);
   EXPECT_EQ((getGeneralRegister<uint64_t>(3)), 321);
-}
-
-TEST_P(InstFloat, fcvtl) {
-  // 2 floats to 2 doubles
-  RUN_AARCH64(R"(
-    fmov v0.2s, 2.25
-    fcvtl v1.2d, v0.2s
-  )");
-  CHECK_NEON(1, double, {static_cast<double>(2.25), static_cast<double>(2.25)});
-
-  // 4 floats to 2 doubles
-  RUN_AARCH64(R"(
-    # Preparing {1.0, 2.0, 3.0, 4.0} for v0.4s
-    mov w0, #0x3f800000
-    mov w1, #0x40000000
-    mov w2, #0x40400000
-    mov w3, #0x40800000
-
-    # inserting elements
-    mov v0.s[0], w0
-    mov v0.s[1], w1
-    mov v0.s[2], w2
-    mov v0.s[3], w3
-
-    fcvtl2 v1.2d, v0.4s
-  )");
-  CHECK_NEON(1, double, {static_cast<double>(3.0), static_cast<double>(4.0)});
-}
-
-TEST_P(InstFloat, fcvtn) {
-  // 2 doubles to 2 floats
-  RUN_AARCH64(R"(
-    fmov v0.2d, #0.125
-    fcvtn v1.2s, v0.2d
-  )");
-  CHECK_NEON(1, float, {0.125f, 0.125f, 0.f, 0.f});
-
-  // 2 doubles to 4 floats
-  RUN_AARCH64(R"(
-    fmov v0.2d, #0.125
-    fcvtn2 v1.4s, v0.2d
-  )");
-  CHECK_NEON(1, float, {0.f, 0.f, 0.125f, 0.125f});
 }
 
 TEST_P(InstFloat, fdiv) {
