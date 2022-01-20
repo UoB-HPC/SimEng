@@ -3226,28 +3226,25 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCCMPDrr: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_FCCMPEDrr: {
-      return executionNYI();
+    case Opcode::AArch64_FCCMPDrr:     // fccmp sn, sm, #nzcv, cc
+    case Opcode::AArch64_FCCMPEDrr: {  // fccmpe sn, sm, #nzcv, cc
+      results[0] = floatHelp::fccmp<double>(operands, metadata);
       break;
     }
     case Opcode::AArch64_FCCMPEHrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCCMPESrr: {
-      return executionNYI();
+    case Opcode::AArch64_FCCMPESrr: {  // fccmpe sn, sm, #nzcv, cc
+      results[0] = floatHelp::fccmp<float>(operands, metadata);
       break;
     }
     case Opcode::AArch64_FCCMPHrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCCMPSrr: {
-      return executionNYI();
+    case Opcode::AArch64_FCCMPSrr: {  // fccmp sn, sm, #nzcv, cc
+      results[0] = floatHelp::fccmp<float>(operands, metadata);
       break;
     }
     case Opcode::AArch64_FCMEQ16: {
@@ -3678,20 +3675,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMPDri: {
-      return executionNYI();
+    case Opcode::AArch64_FCMPDri: {  // fcmp dn, #imm
+      results[0] = floatHelp::fcmp<double>(operands, metadata, true);
       break;
     }
-    case Opcode::AArch64_FCMPDrr: {
-      return executionNYI();
+    case Opcode::AArch64_FCMPDrr: {  // fcmp dn, dm
+      results[0] = floatHelp::fcmp<double>(operands, metadata, false);
       break;
     }
-    case Opcode::AArch64_FCMPEDri: {
-      return executionNYI();
+    case Opcode::AArch64_FCMPEDri: {  // fcmpe dn, #imm
+      results[0] = floatHelp::fcmp<double>(operands, metadata, true);
       break;
     }
-    case Opcode::AArch64_FCMPEDrr: {
-      return executionNYI();
+    case Opcode::AArch64_FCMPEDrr: {  // fcmpe dn, dm
+      results[0] = floatHelp::fcmp<double>(operands, metadata, false);
       break;
     }
     case Opcode::AArch64_FCMPEHri: {
@@ -3702,12 +3699,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMPESri: {
-      return executionNYI();
+    case Opcode::AArch64_FCMPESri: {  // fcmpe sn, #imm
+      results[0] = floatHelp::fcmp<float>(operands, metadata, true);
       break;
     }
-    case Opcode::AArch64_FCMPESrr: {
-      return executionNYI();
+    case Opcode::AArch64_FCMPESrr: {  // fcmpe sn, sm
+      results[0] = floatHelp::fcmp<float>(operands, metadata, false);
       break;
     }
     case Opcode::AArch64_FCMPHri: {
@@ -3718,12 +3715,11 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMPSri: {
-      return executionNYI();
-      break;
+    case Opcode::AArch64_FCMPSri: {  // fcmp sn, #imm
+      results[0] = floatHelp::fcmp<float>(operands, metadata, true);
     }
-    case Opcode::AArch64_FCMPSrr: {
-      return executionNYI();
+    case Opcode::AArch64_FCMPSrr: {  // fcmp sn, sm
+      results[0] = floatHelp::fcmp<float>(operands, metadata, false);
       break;
     }
     case Opcode::AArch64_FCMUO_PPzZZ_D: {
@@ -5345,24 +5341,25 @@ void Instruction::execute() {
           RegisterValue(static_cast<float>(metadata.operands[1].fp), 256);
       break;
     }
-    case Opcode::AArch64_FMOVSr: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVSr: {  // fmov sd, sn
+      results[0] = RegisterValue(operands[0].get<float>(), 256);
       break;
     }
     case Opcode::AArch64_FMOVWHr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMOVWSr: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVWSr: {  // fmov sd, wn
+      results[0] = RegisterValue(operands[0].get<float>(), 256);
       break;
     }
-    case Opcode::AArch64_FMOVXDHighr: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVXDHighr: {  // fmov vd.d[1], xn
+      double out[2] = {operands[0].get<double>(), operands[1].get<double>()};
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_FMOVXDr: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVXDr: {  // fmov dd, xn
+      results[0] = RegisterValue(operands[0].get<double>(), 256);
       break;
     }
     case Opcode::AArch64_FMOVXHr: {
