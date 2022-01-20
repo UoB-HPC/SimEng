@@ -104,16 +104,40 @@ class neonHelp {
   template <typename T, int I>
   static RegisterValue vecCompare(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      std::function<bool(T, T)> func, bool cmpToZero) {
+      bool cmpToZero, std::function<bool(T, T)> func) {
     const T* n = operands[0].getAsVector<T>();
     const T* m;
     if (!cmpToZero) m = operands[1].getAsVector<T>();
     T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
-      if (!cmpToZero)
-        out[i] = func(n[i], m[i]) ? static_cast<T>(-1) : 0;
-      else
-        out[i] = func(n[i], 0) ? static_cast<T>(-1) : 0;
+      out[i] = func(n[i], cmpToZero ? static_cast<T>(0) : m[i])
+                   ? static_cast<T>(-1)
+                   : 0;
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for instructions with the format `fcm<eq, ge, gt, hi, hs,
+   *le, lt> vd, vn, <vm, #0>`.
+   * T represents operand type (i.e. vd.2d is double).
+   * C represents comparison type (i.e. for T=float, comparison type is
+   * uint32_t).
+   * I represents the number of elements in the output array to be
+   * updated (i.e. for vd.8b the final 8 elements in the output array will be
+   *0).
+   */
+  template <typename T, typename C, int I>
+  static RegisterValue vecFCompare(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      bool cmpToZero, std::function<bool(T, T)> func) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m;
+    if (!cmpToZero) m = operands[1].getAsVector<T>();
+    C out[16 / sizeof(C)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = func(n[i], cmpToZero ? static_cast<T>(0) : m[i])
+                   ? static_cast<C>(-1)
+                   : 0;
     }
     return {out, 256};
   }

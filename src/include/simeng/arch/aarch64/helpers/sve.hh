@@ -232,7 +232,7 @@ class sveHelp {
    * pg/z, zn, zm`. T represents the vector register type (i.e. pd.b would be
    * uint8_t).*/
   template <typename T>
-  static std::array<uint64_t, 4> sveFcmPredicated_vecsToPred(
+  static std::array<uint64_t, 4> sveComparePredicated_vecsToPred(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits, bool cmpToZero, std::function<bool(T, T)> func) {
