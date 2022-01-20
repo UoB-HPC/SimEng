@@ -228,6 +228,32 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `fcm<ge, lt,...> pd,
+   * pg/z, zn, zm`. T represents the vector register type (i.e. pd.b would be
+   * uint8_t).*/
+  template <typename T>
+  static std::array<uint64_t, 4> sveFcmPredicated_vecsToPred(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits, bool cmpToZero, std::function<bool(T, T)> func) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* n = operands[1].getAsVector<T>();
+    const T* m;
+    if (!cmpToZero) m = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    std::array<uint64_t, 4> out = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i / (64 / sizeof(T))] |=
+            (func(n[i], cmpToZero ? 0.0 : m[i])) ? shifted_active : 0;
+      }
+    }
+    return out;
+  }
+
   /** Helper function for SVE instructions with the format `index zd, #imm,
    * #imm`. T represents the vector register type (i.e. zd.b would be
    * int8_t).*/

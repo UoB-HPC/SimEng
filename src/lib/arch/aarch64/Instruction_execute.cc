@@ -3347,28 +3347,36 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMGE_PPzZ0_D: {
-      return executionNYI();
+    case Opcode::AArch64_FCMGE_PPzZ0_D: {  // fcmge pd.d, pg/z, zn.d, #0.0
+      results[0] = sveHelp::sveFcmPredicated_vecsToPred<double>(
+          operands, metadata, VL_bits, true,
+          [](double x, double y) -> bool { return x >= y; });
       break;
     }
     case Opcode::AArch64_FCMGE_PPzZ0_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMGE_PPzZ0_S: {
-      return executionNYI();
+    case Opcode::AArch64_FCMGE_PPzZ0_S: {  // fcmge pd.s, pg/z, zn.s, #0.0
+      results[0] = sveHelp::sveFcmPredicated_vecsToPred<float>(
+          operands, metadata, VL_bits, true,
+          [](float x, float y) -> bool { return x >= y; });
       break;
     }
-    case Opcode::AArch64_FCMGE_PPzZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FCMGE_PPzZZ_D: {  // fcmge pd.d, pg/z, zn.d, zm.d
+      results[0] = sveHelp::sveFcmPredicated_vecsToPred<double>(
+          operands, metadata, VL_bits, false,
+          [](double x, double y) -> bool { return x >= y; });
       break;
     }
     case Opcode::AArch64_FCMGE_PPzZZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMGE_PPzZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FCMGE_PPzZZ_S: {  // fcmge pd.s, pg/z, zn.s, zm.s
+      results[0] = sveHelp::sveFcmPredicated_vecsToPred<float>(
+          operands, metadata, VL_bits, false,
+          [](float x, float y) -> bool { return x >= y; });
       break;
     }
     case Opcode::AArch64_FCMGEv1i16rz: {
