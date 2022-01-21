@@ -63,6 +63,9 @@ class Core : public simeng::Core {
   /** A memory interface to access data. */
   MemoryInterface& dataMemory_;
 
+  /** The previously generated addresses. */
+  std::vector<simeng::MemoryAccessTarget> previousAddresses_;
+
   /** The length of the available instruction memory. */
   uint64_t programByteLength_;
 

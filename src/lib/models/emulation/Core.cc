@@ -114,6 +114,7 @@ void Core::tick() {
   // Execute
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
+    previousAddresses_.clear();
     if (uop->exceptionEncountered()) {
       handleException(uop);
       return;
@@ -123,6 +124,8 @@ void Core::tick() {
       // accordingly, and end the cycle early
       for (auto const& target : addresses) {
         dataMemory_.requestRead(target);
+        // Store addresses for use by next store data operation
+        previousAddresses_.push_back(target);
       }
       pendingReads_ = addresses.size();
       return;
@@ -132,11 +135,25 @@ void Core::tick() {
       return;
     }
   } else if (uop->isStoreAddress()) {
-    uop->generateAddresses();
+    auto addresses = uop->generateAddresses();
+    previousAddresses_.clear();
     if (uop->exceptionEncountered()) {
       handleException(uop);
       return;
     }
+    // Store addresses for use by next store data operation
+    for (auto const& target : addresses) {
+      previousAddresses_.push_back(target);
+    }
+    if (uop->isStoreData()) {
+      execute(uop);
+    } else {
+      // Fetch memory for next cycle
+      instructionMemory_.requestRead({pc_, FETCH_SIZE});
+      microOps_.pop();
+    }
+
+    return;
   }
 
   execute(uop);
@@ -151,10 +168,9 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isStoreData()) {
-    auto addresses = uop->getGeneratedAddresses();
     auto data = uop->getData();
-    for (size_t i = 0; i < addresses.size(); i++) {
-      dataMemory_.requestWrite(addresses[i], data[i]);
+    for (size_t i = 0; i < previousAddresses_.size(); i++) {
+      dataMemory_.requestWrite(previousAddresses_[i], data[i]);
     }
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
@@ -169,7 +185,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     registerFileSet_.set(reg, results[i]);
   }
 
-  instructionsExecuted_++;
+  if (uop->isLastMicroOp()) instructionsExecuted_++;
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});

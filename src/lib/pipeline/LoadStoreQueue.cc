@@ -3,6 +3,7 @@
 #include <array>
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -149,6 +150,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
 }
 
 void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
+  if (!insn->isStoreData()) return;
   // Get identifier values
   const uint64_t macroOpNum = insn->getInstructionId();
   const int microOpNum = insn->getMicroOpIndex();
@@ -156,14 +158,26 @@ void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
   // Get data
   span<const simeng::RegisterValue> data = insn->getData();
 
-  // Find storeQueue_ entry which is linked to store data operation
+  // Find storeQueue_ entry which is linked to the store data operation
   auto itSt = storeQueue_.begin();
   while (itSt != storeQueue_.end()) {
     auto& entry = itSt->first;
+    // Pair entry and incoming store data operation with macroOp identifier and
+    // microOp index value pre-detemined in microDecoder
     if (entry->getInstructionId() == macroOpNum &&
         entry->getMicroOpIndex() == microOpNum) {
       // Supply data to be stored by operations
       itSt->second = data;
+      std::cout << "\tsupplyStoreData: " << itSt->first->getSequenceId() << ":"
+                << itSt->first->getInstructionId() << ":0x" << std::hex
+                << itSt->first->getInstructionAddress() << std::dec << ":"
+                << itSt->first->getMicroOpIndex() << ":" << std::endl;
+      for (auto d : data) {
+        if (d.size() == 4)
+          std::cout << "\t\t" << d.get<uint32_t>() << std::endl;
+        else if (d.size() == 8)
+          std::cout << "\t\t" << d.get<uint64_t>() << std::endl;
+      }
       break;
     } else {
       itSt++;
@@ -191,6 +205,15 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   // Submit request write to memory interface early as the architectural state
   // considers the store to be retired and thus its operation complete
   for (size_t i = 0; i < addresses.size(); i++) {
+    std::cout << "commitStore: " << itSt->first->getSequenceId() << ":"
+              << itSt->first->getInstructionId() << ":0x" << std::hex
+              << itSt->first->getInstructionAddress() << std::dec << ":"
+              << itSt->first->getMicroOpIndex() << ":0x" << std::hex
+              << addresses[i].address << std::dec << " <- ";
+    if (data[i].size() == 4)
+      std::cout << data[i].get<uint32_t>() << std::endl;
+    else if (data[i].size() == 8)
+      std::cout << data[i].get<uint64_t>() << std::endl;
     memory_.requestWrite(addresses[i], data[i]);
     // Still add addresses to requestQueue_ to ensure contention of resources is
     // correctly simulated
@@ -490,6 +513,7 @@ void LoadStoreQueue::tick() {
       // This load has completed
       load->execute();
       if (load->isStoreData()) {
+        std::cout << "\tinto str data handle" << std::endl;
         supplyStoreData(load);
       }
       completedLoads_.push(load);

@@ -42,6 +42,7 @@ Core::Core(FlatMemoryInterface& instructionMemory,
 };
 
 void Core::tick() {
+  std::cout << "-----------------------" << std::endl;
   ticks_++;
 
   if (exceptionHandler_ != nullptr) {
@@ -177,6 +178,7 @@ void Core::handleException() {
   // Flush pipeline
   fetchToDecodeBuffer_.fill({});
   decodeToExecuteBuffer_.fill(nullptr);
+  decodeUnit_.purgeFlushed();
   completionSlots_[0].fill(nullptr);
 }
 
@@ -220,16 +222,24 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
 
   instruction->execute();
 
-  if (instruction->isStore()) {
+  if (instruction->isStoreData()) {
     storeData(instruction);
   }
 }
 
 void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
-  const auto& addresses = instruction->getGeneratedAddresses();
-  const auto& data = instruction->getData();
-  for (size_t i = 0; i < addresses.size(); i++) {
-    dataMemory_.requestWrite(addresses[i], data[i]);
+  if (instruction->isStoreAddress()) {
+    auto addresses = instruction->getGeneratedAddresses();
+    for (auto const& target : addresses) {
+      previousAddresses_.push(target);
+    }
+  }
+  if (instruction->isStoreData()) {
+    const auto data = instruction->getData();
+    for (size_t i = 0; i < data.size(); i++) {
+      dataMemory_.requestWrite(previousAddresses_.front(), data[i]);
+      previousAddresses_.pop();
+    }
   }
 }
 

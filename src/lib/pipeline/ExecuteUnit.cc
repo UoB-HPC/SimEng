@@ -1,7 +1,7 @@
 #include "simeng/pipeline/ExecuteUnit.hh"
 
 #include <cstring>
-
+#include <iostream>
 namespace simeng {
 namespace pipeline {
 
@@ -101,6 +101,10 @@ void ExecuteUnit::tick() {
 void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   assert(uop->canExecute() &&
          "Attempted to execute an instruction before it was ready");
+  std::cout << "Execute: " << uop->getSequenceId() << ":"
+            << uop->getInstructionId() << ":0x" << std::hex
+            << uop->getInstructionAddress() << std::dec << ":"
+            << uop->getMicroOpIndex() << std::endl;
 
   if (uop->exceptionEncountered()) {
     // Exception encountered prior to execution
@@ -111,6 +115,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isLoad()) {
+    std::cout << "\tinto load" << std::endl;
     uop->generateAddresses();
     if (uop->exceptionEncountered()) {
       // Exception; don't pass handle load function
@@ -118,22 +123,17 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
       return;
     }
     handleLoad_(uop);
-
-    if (uop->isStoreData()) {
-      handleStore_(uop);
-    }
     return;
-  } else if (uop->isStoreAddress()) {
-    uop->generateAddresses();
-    if (uop->exceptionEncountered()) {
-      // Exception; don't continue with execution and/or passing of uop forward
-      raiseException_(uop);
-      return;
+  } else if (uop->isStoreAddress() || uop->isStoreData()) {
+    if (uop->isStoreAddress()) {
+      std::cout << "\tinto str addr" << std::endl;
+      uop->generateAddresses();
     }
-
     if (uop->isStoreData()) {
+      std::cout << "\tinto str data" << std::endl;
       uop->execute();
     }
+    handleStore_(uop);
   } else {
     uop->execute();
   }
@@ -144,9 +144,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     return;
   }
 
-  if (uop->isStoreData()) {
-    handleStore_(uop);
-  } else if (uop->isBranch()) {
+  if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
 
     // Update branch predictor with branch results

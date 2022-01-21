@@ -99,6 +99,9 @@ class Core : public simeng::Core {
   std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
       completionSlots_;
 
+  /** The previously generated addresses. */
+  std::queue<simeng::MemoryAccessTarget> previousAddresses_;
+
   /** The fetch unit; fetches instructions from memory. */
   pipeline::FetchUnit fetchUnit_;
 
