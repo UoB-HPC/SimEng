@@ -171,11 +171,11 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
       std::vector<Instruction> cacheVector;
       switch (metadata.opcode) {
         case Opcode::AArch64_LDRXpost: {
-          // ldr with post-index splits into a load and an address-generation
-          // micro-op
+          // ldr with post-index splits into a load and an address offset
+          // generation micro-op
           // ldr uop
           cs_insn ldr_cs = createLdrUop(
-              architecture, metadata.operands[0].reg,
+              metadata.operands[0].reg,
               {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0});
           InstructionMetadata ldr_metadata(ldr_cs);
           microMetadataCache.emplace_front(ldr_metadata);
@@ -185,41 +185,37 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           cacheVector.push_back(ldr);
           printInfo(ldr, capstoneHandle);
           // offset generation uop
-          cs_insn off_gen_cs =
-              createImmOffsetUop(architecture, metadata.operands[1].mem.base,
-                                 metadata.operands[2].imm);
-          InstructionMetadata offset_gen_metadata(off_gen_cs);
-          microMetadataCache.emplace_front(offset_gen_metadata);
-          Instruction offset_gen(
+          cs_insn off_imm_cs = createImmOffsetUop(metadata.operands[1].mem.base,
+                                                  metadata.operands[2].imm);
+          InstructionMetadata off_imm_metadata(off_imm_cs);
+          microMetadataCache.emplace_front(off_imm_metadata);
+          Instruction off_imm(
               architecture, microMetadataCache.front(),
-              MicroOpInfo({true, MicroOpcode::OFFSET_GEN, true, 0}));
-          offset_gen.setExecutionInfo(
-              architecture.getExecutionInfo(offset_gen));
-          cacheVector.push_back(offset_gen);
-          printInfo(offset_gen, capstoneHandle);
+              MicroOpInfo({true, MicroOpcode::OFFSET_IMM, true, 0}));
+          off_imm.setExecutionInfo(architecture.getExecutionInfo(off_imm));
+          cacheVector.push_back(off_imm);
+          printInfo(off_imm, capstoneHandle);
 
           iter = microDecodeCache.try_emplace(word, cacheVector).first;
           break;
         }
         case Opcode::AArch64_LDRXpre: {
-          // ldr with pre-index splits into an address-generation and load
-          // micro-op
+          // ldr with pre-index splits into an address offset generation and
+          // load micro-op
           // offset generation uop
-          cs_insn off_gen_cs =
-              createImmOffsetUop(architecture, metadata.operands[1].mem.base,
-                                 metadata.operands[1].mem.disp);
-          InstructionMetadata offset_gen_metadata(off_gen_cs);
-          microMetadataCache.emplace_front(offset_gen_metadata);
-          Instruction offset_gen(
+          cs_insn off_imm_cs = createImmOffsetUop(
+              metadata.operands[1].mem.base, metadata.operands[1].mem.disp);
+          InstructionMetadata off_imm_metadata(off_imm_cs);
+          microMetadataCache.emplace_front(off_imm_metadata);
+          Instruction off_imm(
               architecture, microMetadataCache.front(),
-              MicroOpInfo({true, MicroOpcode::OFFSET_GEN, false, 0}));
-          offset_gen.setExecutionInfo(
-              architecture.getExecutionInfo(offset_gen));
-          cacheVector.push_back(offset_gen);
-          printInfo(offset_gen, capstoneHandle);
+              MicroOpInfo({true, MicroOpcode::OFFSET_IMM, false, 0}));
+          off_imm.setExecutionInfo(architecture.getExecutionInfo(off_imm));
+          cacheVector.push_back(off_imm);
+          printInfo(off_imm, capstoneHandle);
           // ldr uop
           cs_insn ldr_cs = createLdrUop(
-              architecture, metadata.operands[0].reg,
+              metadata.operands[0].reg,
               {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0});
           InstructionMetadata ldr_metadata(ldr_cs);
           microMetadataCache.emplace_front(ldr_metadata);
@@ -228,6 +224,46 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           ldr.setExecutionInfo(architecture.getExecutionInfo(ldr));
           cacheVector.push_back(ldr);
           printInfo(ldr, capstoneHandle);
+
+          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_STRXpost: {
+          // str with post-index splits into a store address, address offset
+          // generation, and store data uops
+          // NOTE: store data and store address uop are paired through their uop
+          // index value of 1 store data uop
+
+          // store address uop
+          cs_insn str_cs = createStrUop(
+              {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0});
+          InstructionMetadata str_metadata(str_cs);
+          microMetadataCache.emplace_front(str_metadata);
+          Instruction str(architecture, microMetadataCache.front(),
+                          MicroOpInfo({true, MicroOpcode::STR_ADDR, false, 1}));
+          str.setExecutionInfo(architecture.getExecutionInfo(str));
+          cacheVector.push_back(str);
+          printInfo(str, capstoneHandle);
+          // offset generation uop
+          cs_insn off_imm_cs = createImmOffsetUop(metadata.operands[1].mem.base,
+                                                  metadata.operands[2].imm);
+          InstructionMetadata off_imm_metadata(off_imm_cs);
+          microMetadataCache.emplace_front(off_imm_metadata);
+          Instruction off_imm(
+              architecture, microMetadataCache.front(),
+              MicroOpInfo({true, MicroOpcode::OFFSET_IMM, false, 0}));
+          off_imm.setExecutionInfo(architecture.getExecutionInfo(off_imm));
+          cacheVector.push_back(off_imm);
+          printInfo(off_imm, capstoneHandle);
+          // store data uop
+          cs_insn sd_cs = createSDUop(metadata.operands[0].reg);
+          InstructionMetadata sd_metadata(sd_cs);
+          microMetadataCache.emplace_front(sd_metadata);
+          Instruction sd(architecture, microMetadataCache.front(),
+                         MicroOpInfo({true, MicroOpcode::STR_DATA, true, 1}));
+          sd.setExecutionInfo(architecture.getExecutionInfo(sd));
+          cacheVector.push_back(sd);
+          printInfo(sd, capstoneHandle);
 
           iter = microDecodeCache.try_emplace(word, cacheVector).first;
           break;
@@ -294,27 +330,25 @@ cs_detail MicroDecoder::createDefaultDetail(std::vector<OpType> opTypes) {
   return detail;
 }
 
-cs_insn MicroDecoder::createImmOffsetUop(const Architecture& architecture,
-                                         arm64_reg base, int64_t offset) {
-  cs_detail off_gen_detail =
+cs_insn MicroDecoder::createImmOffsetUop(arm64_reg base, int64_t offset) {
+  cs_detail off_imm_detail =
       createDefaultDetail({{ARM64_OP_REG, 1}, {ARM64_OP_REG}, {ARM64_OP_IMM}});
-  off_gen_detail.arm64.operands[0].reg = base;
-  off_gen_detail.arm64.operands[1].reg = base;
-  off_gen_detail.arm64.operands[2].imm = offset;
+  off_imm_detail.arm64.operands[0].reg = base;
+  off_imm_detail.arm64.operands[1].reg = base;
+  off_imm_detail.arm64.operands[2].imm = offset;
 
-  cs_insn off_gen_insn = {arm64_insn::ARM64_INS_ADD,
+  cs_insn off_imm_insn = {arm64_insn::ARM64_INS_ADD,
                           0x0,
                           4,
                           "",
-                          "micro_offset_gen",
+                          "micro_offset_imm",
                           "",
-                          &off_gen_detail,
-                          MicroOpcode::OFFSET_GEN};
-  return off_gen_insn;
+                          &off_imm_detail,
+                          MicroOpcode::OFFSET_IMM};
+  return off_imm_insn;
 }
 
-cs_insn MicroDecoder::createLdrUop(const Architecture& architecture,
-                                   arm64_reg dest, arm64_op_mem mem) {
+cs_insn MicroDecoder::createLdrUop(arm64_reg dest, arm64_op_mem mem) {
   cs_detail ldr_detail =
       createDefaultDetail({{ARM64_OP_REG, 1}, {ARM64_OP_MEM}});
   ldr_detail.arm64.operands[0].reg = dest;
@@ -323,6 +357,24 @@ cs_insn MicroDecoder::createLdrUop(const Architecture& architecture,
       arm64_insn::ARM64_INS_LDR, 0x0, 4, "", "micro_ldr", "", &ldr_detail,
       MicroOpcode::LDR_ADDR};
   return ldr_insn;
+}
+
+cs_insn MicroDecoder::createSDUop(arm64_reg src) {
+  cs_detail sd_detail = createDefaultDetail({{ARM64_OP_REG}});
+  sd_detail.arm64.operands[0].reg = src;
+  cs_insn sd_insn = {
+      arm64_insn::ARM64_INS_STR, 0x0, 4, "", "micro_sd", "", &sd_detail,
+      MicroOpcode::STR_DATA};
+  return sd_insn;
+}
+
+cs_insn MicroDecoder::createStrUop(arm64_op_mem mem) {
+  cs_detail str_detail = createDefaultDetail({{ARM64_OP_MEM}});
+  str_detail.arm64.operands[0].mem = mem;
+  cs_insn str_insn = {
+      arm64_insn::ARM64_INS_STR, 0x0, 4, "", "micro_str", "", &str_detail,
+      MicroOpcode::STR_DATA};
+  return str_insn;
 }
 
 }  // namespace aarch64

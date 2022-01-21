@@ -1,4 +1,5 @@
 #include <cmath>
+#include <iostream>
 
 #include "InstructionMetadata.hh"
 
@@ -22,6 +23,27 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
     generateContiguousAddresses(
         operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1, 8,
         addresses);
+    std::cout << "### LDR_ADDR: " << getSequenceId() << ":"
+              << getInstructionId() << ":0x" << std::hex
+              << getInstructionAddress() << std::dec << ":" << getMicroOpIndex()
+              << " -> 0x" << std::hex << operands[0].get<uint64_t>() << std::dec
+              << " + " << metadata.operands[1].mem.disp << " = 0x" << std::hex
+              << (operands[0].get<uint64_t>() + metadata.operands[1].mem.disp)
+              << std::dec << std::endl;
+
+    setMemoryAddresses(addresses);
+  } else if (microOpcode_ == MicroOpcode::STR_ADDR) {
+    std::vector<simeng::MemoryAccessTarget> addresses;
+    generateContiguousAddresses(
+        operands[0].get<uint64_t>() + metadata.operands[0].mem.disp, 1, 8,
+        addresses);
+    std::cout << "### STR_ADDR: " << getSequenceId() << ":"
+              << getInstructionId() << ":0x" << std::hex
+              << getInstructionAddress() << std::dec << ":" << getMicroOpIndex()
+              << " -> 0x" << std::hex << operands[0].get<uint64_t>() << std::dec
+              << " + " << metadata.operands[0].mem.disp << " = 0x" << std::hex
+              << (operands[0].get<uint64_t>() + metadata.operands[0].mem.disp)
+              << std::dec << std::endl;
 
     setMemoryAddresses(addresses);
   } else {

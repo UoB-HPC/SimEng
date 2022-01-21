@@ -23,11 +23,30 @@ TEST_P(MicroOp, ldr) {
     mov x8, 214
     svc #0
 
-    ldr x1, [x0, #0]
-    ldr x2, [x0, #8]!
+    ldr x1, [x0], #8
+    ldr x2, [x0, #0]
+    ldr x3, [x0, #-8]!
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0xABBACAFEABBACAFE);
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0x1234567898765432);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0xABBACAFEABBACAFE);
+}
+
+TEST_P(MicroOp, str) {
+  RUN_AARCH64(R"(
+    mov x0, #12
+    mov x1, #24
+    mov x2, #36
+
+    sub sp, sp, #1024
+
+    str x0, [sp], #16
+    str x1, [sp, #0]
+    str x2, [sp, #-8]!
+  )");
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1024), 12);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1008), 24);
+  EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 1016), 36);
 }
 
 INSTANTIATE_TEST_SUITE_P(

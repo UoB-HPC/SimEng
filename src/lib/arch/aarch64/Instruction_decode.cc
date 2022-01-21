@@ -289,6 +289,9 @@ void Instruction::decode() {
         isSVEData_ = true;
       }
     }
+  } else if (microOpcode_ == MicroOpcode::STR_DATA) {
+    // Edge case for identifying store data micro-operation
+    isStoreData_ = true;
   }
   if (metadata.opcode == Opcode::AArch64_LDRXl ||
       metadata.opcode == Opcode::AArch64_LDRSWl) {
