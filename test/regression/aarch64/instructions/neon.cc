@@ -1481,41 +1481,41 @@ TEST_P(InstNeon, fmls) {
 //   CHECK_NEON(2, double, {5.0, 10.0});
 // }
 
-// TEST_P(InstNeon, fmaxnmp){
-//   // numeric
-//   initialHeapData_.resize(32);
-//   double* heapA = reinterpret_cast<double*>(initialHeapData_.data());
-//   heapA[0] = 6.0;
-//   heapA[1] = 17.0;
+TEST_P(InstNeon, fmaxnmp) {
+  // numeric
+  initialHeapData_.resize(32);
+  double* heapA = reinterpret_cast<double*>(initialHeapData_.data());
+  heapA[0] = 6.0;
+  heapA[1] = 17.0;
 
-//   RUN_AARCH64(R"(
-//     # Get heap address
-//     mov x0, 0
-//     mov x8, 214
-//     svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-//     ldr q0, [x0]
-//     fmaxnmp d0, v0.2d
-//   )");
-//   CHECK_NEON(0, double, {17.0, 0.0});
+    ldr q0, [x0]
+    fmaxnmp d0, v0.2d
+  )");
+  CHECK_NEON(0, double, {17.0, 0.0});
 
-//   // with NAN
-//   initialHeapData_.resize(32);
-//   double* heapB = reinterpret_cast<double*>(initialHeapData_.data());
-//   heapB[0] = 6.0;
-//   heapB[1] = std::nan("");
+  // with NAN
+  initialHeapData_.resize(32);
+  double* heapB = reinterpret_cast<double*>(initialHeapData_.data());
+  heapB[0] = 6.0;
+  heapB[1] = std::nan("");
 
-//   RUN_AARCH64(R"(
-//     # Get heap address
-//     mov x0, 0
-//     mov x8, 214
-//     svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-//     ldr q0, [x0]
-//     fmaxnmp d0, v0.2d
-//   )");
-//   CHECK_NEON(0, double, {6.0, 0.0});
-// }
+    ldr q0, [x0]
+    fmaxnmp d0, v0.2d
+  )");
+  CHECK_NEON(0, double, {6.0, 0.0});
+}
 
 // TEST_P(InstNeon, fminnmp){
 //   // numeric

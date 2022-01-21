@@ -4777,8 +4777,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMAXNMDrr: {
-      return executionNYI();
+    case Opcode::AArch64_FMAXNMDrr: {  // fmaxnm dd, dn, dm
+      results[0] = floatHelp::fmaxnm_3ops<double>(operands);
       break;
     }
     case Opcode::AArch64_FMAXNMHrr: {
@@ -4801,8 +4801,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMAXNMPv2i64p: {
-      return executionNYI();
+    case Opcode::AArch64_FMAXNMPv2i64p: {  // fmaxnmp dd, vd.2d
+      const double* n = operands[0].getAsVector<double>();
+      results[0] = {std::fmax(n[0], n[1]), 256};
       break;
     }
     case Opcode::AArch64_FMAXNMPv4f16: {
@@ -4817,8 +4818,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMAXNMSrr: {
-      return executionNYI();
+    case Opcode::AArch64_FMAXNMSrr: {  // fmaxnm sd, sn, sm
+      results[0] = floatHelp::fmaxnm_3ops<float>(operands);
       break;
     }
     case Opcode::AArch64_FMAXNMV_VPZ_D: {
@@ -6327,16 +6328,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSQRTDr: {
-      return executionNYI();
+    case Opcode::AArch64_FSQRTDr: {  // fsqrt dd, dn
+      results[0] = {::sqrt(operands[0].get<double>()), 256};
       break;
     }
     case Opcode::AArch64_FSQRTHr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSQRTSr: {
-      return executionNYI();
+    case Opcode::AArch64_FSQRTSr: {  // fsqrt sd, sn
+      results[0] = {::sqrtf(operands[0].get<float>()), 256};
       break;
     }
     case Opcode::AArch64_FSQRT_ZPmZ_D: {

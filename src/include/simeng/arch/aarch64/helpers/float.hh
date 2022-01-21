@@ -66,6 +66,16 @@ class floatHelp {
     }
     return static_cast<uint8_t>(metadata.operands[2].imm);
   }
+
+  /** Helper function for instructions with the format `fmaxnm rd, rn, rm`.
+   */
+  template <typename T>
+  static RegisterValue fmaxnm_3ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T n = operands[0].get<T>();
+    const T m = operands[1].get<T>();
+    return {std::fmax(n, m), 256};
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
