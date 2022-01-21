@@ -35,11 +35,10 @@ void DecodeUnit::tick() {
       }
 
       for (uint8_t index = 0; index < macroOp.size(); index++) {
-        // std::cout << "Pushing 0x" << std::hex
-        //           << macroOp[index]->getInstructionAddress() << std::dec <<
-        //           ":"
-        //           << macroOp[index]->getMicroOpIndex() << " to microOps_"
-        //           << std::endl;
+        std::cout << "Pushing 0x" << std::hex
+                  << macroOp[index]->getInstructionAddress() << std::dec << ":"
+                  << macroOp[index]->getMicroOpIndex() << " to microOps_"
+                  << std::endl;
         microOps_.push(std::move(macroOp[index]));
       }
 
@@ -54,8 +53,8 @@ void DecodeUnit::tick() {
 
     // Move uop to output buffer and remove from internal buffer
     auto& uop = (output_.getTailSlots()[slot] = std::move(microOps_.front()));
-    // std::cout << "Decoded: 0x" << std::hex << uop->getInstructionAddress()
-    //           << std::dec << ":" << uop->getMicroOpIndex() << std::endl;
+    std::cout << "Decoded: 0x" << std::hex << uop->getInstructionAddress()
+              << std::dec << ":" << uop->getMicroOpIndex() << std::endl;
     microOps_.pop();
 
     // Check preliminary branch prediction results now that the instruction is
@@ -84,6 +83,10 @@ uint64_t DecodeUnit::getFlushAddress() const { return pc_; }
 uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes_; };
 void DecodeUnit::purgeFlushed() {
   while (!microOps_.empty()) {
+    std::cout << "Removing 0x" << std::hex
+              << microOps_.front()->getInstructionAddress() << std::dec << ":"
+              << microOps_.front()->getMicroOpIndex() << " from microOps_"
+              << std::endl;
     microOps_.pop();
   }
 }

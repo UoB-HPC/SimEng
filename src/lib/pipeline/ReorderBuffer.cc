@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -65,10 +66,18 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
   for (n = 0; n < maxCommits; n++) {
     auto& uop = buffer_[0];
     if (!uop->canCommit()) {
+      std::cout << "ROB stalled on: " << uop->getSequenceId() << ":"
+                << uop->getInstructionId() << ":0x" << std::hex
+                << uop->getInstructionAddress() << std::dec << ":"
+                << uop->getMicroOpIndex() << std::endl;
       break;
     }
 
     if (uop->isLastMicroOp()) instructionsCommitted_++;
+    std::cout << "ROB: " << uop->getSequenceId() << ":"
+              << uop->getInstructionId() << ":0x" << std::hex
+              << uop->getInstructionAddress() << std::dec << ":"
+              << uop->getMicroOpIndex() << std::endl;
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);

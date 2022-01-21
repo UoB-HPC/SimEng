@@ -1,5 +1,7 @@
 #include "simeng/pipeline/WritebackUnit.hh"
 
+#include <iostream>
+
 namespace simeng {
 namespace pipeline {
 
@@ -33,6 +35,10 @@ void WritebackUnit::tick() {
     }
 
     instructionsWritten_++;
+    std::cout << "WB: " << uop->getSequenceId() << ":"
+              << uop->getInstructionId() << ":0x" << std::hex
+              << uop->getInstructionAddress() << std::dec << ":"
+              << uop->getMicroOpIndex() << std::endl;
 
     completionSlots_[slot].getHeadSlots()[0] = nullptr;
   }

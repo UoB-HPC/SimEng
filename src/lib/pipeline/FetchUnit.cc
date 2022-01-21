@@ -94,6 +94,7 @@ void FetchUnit::tick() {
     BranchPrediction prediction = {false, 0};
     auto bytesRead = isa_.predecode(buffer + bufferOffset, bufferedBytes_, pc_,
                                     prediction, macroOp);
+    // std::cout << "Fetched: " << pc_ << ":" << std::endl;
 
     // If predecode fails, bail and wait for more data
     if (bytesRead == 0) {
