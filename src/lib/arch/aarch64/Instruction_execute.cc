@@ -5720,16 +5720,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNEGv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_FNEGv2f64: {  // fneg vd.2d, vn.2d
+      results[0] = neonHelp::vecFneg_2ops<double, 2>(operands);
       break;
     }
     case Opcode::AArch64_FNEGv4f16: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNEGv4f32: {
-      return executionNYI();
+    case Opcode::AArch64_FNEGv4f32: {  // fneg vd.4s, vn.4s
+      results[0] = neonHelp::vecFneg_2ops<float, 4>(operands);
       break;
     }
     case Opcode::AArch64_FNEGv8f16: {
