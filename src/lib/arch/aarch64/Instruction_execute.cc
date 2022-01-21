@@ -5704,16 +5704,16 @@ void Instruction::execute() {
       results[0] = RegisterValue(-operands[0].get<float>(), 256);
       break;
     }
-    case Opcode::AArch64_FNEG_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FNEG_ZPmZ_D: {  // fneg zd.d, pg/m, zn.d
+      results[0] = sveHelp::sveFnegPredicated<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FNEG_ZPmZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNEG_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FNEG_ZPmZ_S: {  // fneg zd.s, pg/m, zn.s
+      results[0] = sveHelp::sveFnegPredicated<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FNEGv2f32: {
