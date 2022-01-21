@@ -234,8 +234,8 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `fmla vd,
-   *  vn, vm`. T represents the vector register type (i.e. vd.16b would be
-   * uint8_t). I represents the number of elements in the output array to be
+   *  vn, vm[index]`. T represents the vector register type (i.e. vd.16b would
+   *be uint8_t). I represents the number of elements in the output array to be
    *updated (i.e. for vd.8b the final 8 elements in the output array will be
    *0).*/
   template <typename T, int I>
@@ -249,6 +249,44 @@ class neonHelp {
     T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       out[i] = d[i] + n[i] * m;
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for NEON instructions with the format `fmls vd,
+   *  vn, vm`. T represents the vector register type (i.e. vd.16b would be
+   * uint8_t). I represents the number of elements in the output array to be
+   *updated (i.e. for vd.8b the final 8 elements in the output array will be
+   *0).*/
+  template <typename T, int I>
+  static RegisterValue vecFmls_3vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* d = operands[0].getAsVector<T>();
+    const T* n = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = d[i] - (n[i] * m[i]);
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for NEON instructions with the format `fmls vd,
+   *  vn, vm[index]`. T represents the vector register type (i.e. vd.16b would
+   *be uint8_t). I represents the number of elements in the output array to be
+   *updated (i.e. for vd.8b the final 8 elements in the output array will be
+   *0).*/
+  template <typename T, int I>
+  static RegisterValue vecFmlsIndexed_3vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    const T* d = operands[0].getAsVector<T>();
+    const T* n = operands[1].getAsVector<T>();
+    int index = metadata.operands[2].vector_index;
+    const T m = operands[2].getAsVector<T>()[index];
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = d[i] - n[i] * m;
     }
     return {out, 256};
   }

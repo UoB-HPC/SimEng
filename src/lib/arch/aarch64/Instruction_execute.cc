@@ -5339,8 +5339,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMLSv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_FMLSv2f64: {  // fmls vd.2d, vn.2d, vm.2d
+      results[0] = neonHelp::vecFmls_3vecs<double, 2>(operands);
       break;
     }
     case Opcode::AArch64_FMLSv2i32_indexed: {
@@ -5355,16 +5355,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMLSv4f32: {
-      return executionNYI();
+    case Opcode::AArch64_FMLSv4f32: {  // fmls vd.4s, vn.4s, vm.4s
+      results[0] = neonHelp::vecFmls_3vecs<float, 4>(operands);
       break;
     }
     case Opcode::AArch64_FMLSv4i16_indexed: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMLSv4i32_indexed: {
-      return executionNYI();
+    case Opcode::AArch64_FMLSv4i32_indexed: {  // fmls vd.4s, vn.4s, vm.s[index]
+      results[0] = neonHelp::vecFmlsIndexed_3vecs<float, 4>(operands, metadata);
       break;
     }
     case Opcode::AArch64_FMLSv8f16: {
