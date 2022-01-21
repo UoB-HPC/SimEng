@@ -17,61 +17,66 @@ const uint16_t INT_SIMPLE_CVT = 7;
 const uint16_t INT_MUL = 8;
 const uint16_t INT_DIV_OR_SQRT = 9;
 const uint16_t LOAD_INT = 10;
-const uint16_t STORE_INT = 11;
-const uint16_t FP = 12;
-const uint16_t FP_SIMPLE = 13;
-const uint16_t FP_SIMPLE_ARTH = 14;
-const uint16_t FP_SIMPLE_ARTH_NOSHIFT = 15;
-const uint16_t FP_SIMPLE_LOGICAL = 16;
-const uint16_t FP_SIMPLE_LOGICAL_NOSHIFT = 17;
-const uint16_t FP_SIMPLE_CMP = 18;
-const uint16_t FP_SIMPLE_CVT = 19;
-const uint16_t FP_MUL = 20;
-const uint16_t FP_DIV_OR_SQRT = 21;
-const uint16_t SCALAR = 22;
-const uint16_t SCALAR_SIMPLE = 23;
-const uint16_t SCALAR_SIMPLE_ARTH = 24;
-const uint16_t SCALAR_SIMPLE_ARTH_NOSHIFT = 25;
-const uint16_t SCALAR_SIMPLE_LOGICAL = 26;
-const uint16_t SCALAR_SIMPLE_LOGICAL_NOSHIFT = 27;
-const uint16_t SCALAR_SIMPLE_CMP = 28;
-const uint16_t SCALAR_SIMPLE_CVT = 29;
-const uint16_t SCALAR_MUL = 30;
-const uint16_t SCALAR_DIV_OR_SQRT = 31;
-const uint16_t LOAD_SCALAR = 32;
-const uint16_t STORE_SCALAR = 33;
-const uint16_t VECTOR = 34;
-const uint16_t VECTOR_SIMPLE = 35;
-const uint16_t VECTOR_SIMPLE_ARTH = 36;
-const uint16_t VECTOR_SIMPLE_ARTH_NOSHIFT = 37;
-const uint16_t VECTOR_SIMPLE_LOGICAL = 38;
-const uint16_t VECTOR_SIMPLE_LOGICAL_NOSHIFT = 39;
-const uint16_t VECTOR_SIMPLE_CMP = 40;
-const uint16_t VECTOR_SIMPLE_CVT = 41;
-const uint16_t VECTOR_MUL = 42;
-const uint16_t VECTOR_DIV_OR_SQRT = 43;
-const uint16_t LOAD_VECTOR = 44;
-const uint16_t STORE_VECTOR = 45;
-const uint16_t SVE = 46;
-const uint16_t SVE_SIMPLE = 47;
-const uint16_t SVE_SIMPLE_ARTH = 48;
-const uint16_t SVE_SIMPLE_ARTH_NOSHIFT = 49;
-const uint16_t SVE_SIMPLE_LOGICAL = 50;
-const uint16_t SVE_SIMPLE_LOGICAL_NOSHIFT = 51;
-const uint16_t SVE_SIMPLE_CMP = 52;
-const uint16_t SVE_SIMPLE_CVT = 53;
-const uint16_t SVE_MUL = 54;
-const uint16_t SVE_DIV_OR_SQRT = 55;
-const uint16_t LOAD_SVE = 56;
-const uint16_t STORE_SVE = 57;
-const uint16_t PREDICATE = 58;
-const uint16_t LOAD = 59;
-const uint16_t STORE = 60;
-const uint16_t BRANCH = 61;
+const uint16_t STORE_ADDRESS_INT = 11;
+const uint16_t STORE_DATA_INT = 12;
+const uint16_t FP = 13;
+const uint16_t FP_SIMPLE = 14;
+const uint16_t FP_SIMPLE_ARTH = 15;
+const uint16_t FP_SIMPLE_ARTH_NOSHIFT = 16;
+const uint16_t FP_SIMPLE_LOGICAL = 17;
+const uint16_t FP_SIMPLE_LOGICAL_NOSHIFT = 18;
+const uint16_t FP_SIMPLE_CMP = 19;
+const uint16_t FP_SIMPLE_CVT = 20;
+const uint16_t FP_MUL = 21;
+const uint16_t FP_DIV_OR_SQRT = 22;
+const uint16_t SCALAR = 23;
+const uint16_t SCALAR_SIMPLE = 24;
+const uint16_t SCALAR_SIMPLE_ARTH = 25;
+const uint16_t SCALAR_SIMPLE_ARTH_NOSHIFT = 26;
+const uint16_t SCALAR_SIMPLE_LOGICAL = 27;
+const uint16_t SCALAR_SIMPLE_LOGICAL_NOSHIFT = 28;
+const uint16_t SCALAR_SIMPLE_CMP = 29;
+const uint16_t SCALAR_SIMPLE_CVT = 30;
+const uint16_t SCALAR_MUL = 31;
+const uint16_t SCALAR_DIV_OR_SQRT = 32;
+const uint16_t LOAD_SCALAR = 33;
+const uint16_t STORE_ADDRESS_SCALAR = 34;
+const uint16_t STORE_DATA_SCALAR = 35;
+const uint16_t VECTOR = 36;
+const uint16_t VECTOR_SIMPLE = 37;
+const uint16_t VECTOR_SIMPLE_ARTH = 38;
+const uint16_t VECTOR_SIMPLE_ARTH_NOSHIFT = 39;
+const uint16_t VECTOR_SIMPLE_LOGICAL = 40;
+const uint16_t VECTOR_SIMPLE_LOGICAL_NOSHIFT = 41;
+const uint16_t VECTOR_SIMPLE_CMP = 42;
+const uint16_t VECTOR_SIMPLE_CVT = 43;
+const uint16_t VECTOR_MUL = 44;
+const uint16_t VECTOR_DIV_OR_SQRT = 45;
+const uint16_t LOAD_VECTOR = 46;
+const uint16_t STORE_ADDRESS_VECTOR = 47;
+const uint16_t STORE_DATA_VECTOR = 48;
+const uint16_t SVE = 49;
+const uint16_t SVE_SIMPLE = 50;
+const uint16_t SVE_SIMPLE_ARTH = 51;
+const uint16_t SVE_SIMPLE_ARTH_NOSHIFT = 52;
+const uint16_t SVE_SIMPLE_LOGICAL = 53;
+const uint16_t SVE_SIMPLE_LOGICAL_NOSHIFT = 54;
+const uint16_t SVE_SIMPLE_CMP = 55;
+const uint16_t SVE_SIMPLE_CVT = 56;
+const uint16_t SVE_MUL = 57;
+const uint16_t SVE_DIV_OR_SQRT = 58;
+const uint16_t LOAD_SVE = 59;
+const uint16_t STORE_ADDRESS_SVE = 60;
+const uint16_t STORE_DATA_SVE = 61;
+const uint16_t PREDICATE = 62;
+const uint16_t LOAD = 63;
+const uint16_t STORE_ADDRESS = 64;
+const uint16_t STORE_DATA = 65;
+const uint16_t BRANCH = 66;
 }  // namespace InstructionGroups
 
 /** The number of aarch64 instruction groups. */
-#define NUM_GROUPS 62
+#define NUM_GROUPS 67
 const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
     {InstructionGroups::INT,
      {InstructionGroups::INT_SIMPLE, InstructionGroups::INT_DIV_OR_SQRT,
@@ -147,9 +152,15 @@ const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
     {InstructionGroups::LOAD,
      {InstructionGroups::LOAD_INT, InstructionGroups::LOAD_SCALAR,
       InstructionGroups::LOAD_VECTOR, InstructionGroups::LOAD_SVE}},
-    {InstructionGroups::STORE,
-     {InstructionGroups::STORE_INT, InstructionGroups::STORE_SCALAR,
-      InstructionGroups::STORE_VECTOR, InstructionGroups::STORE_SVE}}};
+    {InstructionGroups::STORE_ADDRESS,
+     {InstructionGroups::STORE_ADDRESS_INT,
+      InstructionGroups::STORE_ADDRESS_SCALAR,
+      InstructionGroups::STORE_ADDRESS_VECTOR,
+      InstructionGroups::STORE_ADDRESS_SVE}},
+    {InstructionGroups::STORE_DATA,
+     {InstructionGroups::STORE_DATA_INT, InstructionGroups::STORE_DATA_SCALAR,
+      InstructionGroups::STORE_DATA_VECTOR,
+      InstructionGroups::STORE_DATA_SVE}}};
 
 }  // namespace aarch64
 }  // namespace arch

@@ -167,7 +167,8 @@ uint16_t Instruction::getGroup() const {
     base = InstructionGroups::SVE;
 
   if (isLoad_) return base + 10;
-  if (isStoreAddress_ || isStoreData_) return base + 11;
+  if (isStoreAddress_) return base + 11;
+  if (isStoreData_) return base + 12;
   if (isBranch_) return InstructionGroups::BRANCH;
   if (isPredicate_) return InstructionGroups::PREDICATE;
   if (isDivideOrSqrt_) return base + 9;

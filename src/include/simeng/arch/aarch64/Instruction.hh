@@ -84,10 +84,11 @@ enum class InstructionException {
 
 /** The opcodes of simeng aarch64 micro-operations. */
 namespace MicroOpcode {
-const uint8_t OFFSET_GEN = 0;
-const uint8_t LDR_ADDR = 1;
-const uint8_t STR_ADDR = 2;
-const uint8_t STR_DATA = 3;
+const uint8_t OFFSET_IMM = 0;
+const uint8_t OFFSET_REG = 1;
+const uint8_t LDR_ADDR = 2;
+const uint8_t STR_ADDR = 3;
+const uint8_t STR_DATA = 4;
 // INVALID is the default value reserved for non-micro-operation instructions
 const uint8_t INVALID = 255;
 }  // namespace MicroOpcode

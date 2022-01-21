@@ -3,7 +3,7 @@
 # https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan
 
 Core:
-  Simulation-Mode: outoforder
+  Simulation-Mode: emulation
   Clock-Frequency: 2.5
   Fetch-Block-Size: 32
   Micro-Operations: True
@@ -55,14 +55,16 @@ Ports:
     Portname: Port 4
     Instruction-Support:
     - LOAD
+    - STORE_ADDRESS
   4:
     Portname: Port 5
     Instruction-Support:
     - LOAD
+    - STORE_ADDRESS
   5:
     Portname: Port 3
     Instruction-Support:
-    - STORE
+    - STORE_DATA
 Reservation-Stations:
   0:
     Size: 60
