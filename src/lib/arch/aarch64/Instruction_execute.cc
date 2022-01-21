@@ -5932,8 +5932,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FRINTADr: {
-      return executionNYI();
+    case Opcode::AArch64_FRINTADr: {  // frinta dd, dn
+      results[0] = RegisterValue(round(operands[0].get<double>()), 256);
       break;
     }
     case Opcode::AArch64_FRINTAHr: {
