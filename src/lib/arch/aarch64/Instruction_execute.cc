@@ -5637,44 +5637,47 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMULv1i32_indexed: {
-      return executionNYI();
+    case Opcode::AArch64_FMULv1i32_indexed: {  // fmul sd, sn, vm.s[index]
+      results[0] = neonHelp::vecFmulIndexed_vecs<float, 1>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_FMULv1i64_indexed: {
-      return executionNYI();
+    case Opcode::AArch64_FMULv1i64_indexed: {  // fmul dd, dn, vm.d[index]
+      results[0] = neonHelp::vecFmulIndexed_vecs<double, 1>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_FMULv2f32: {
-      return executionNYI();
+    case Opcode::AArch64_FMULv2f32: {  // fmul vd.2s, vn.2s, vm.2s
+      results[0] = neonHelp::vecLogicOp_3vecs<float, 2>(
+          operands, [](float x, float y) -> float { return x * y; });
       break;
     }
-    case Opcode::AArch64_FMULv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_FMULv2f64: {  // fmul vd.2d, vn.2d, vm.2d
+      results[0] = neonHelp::vecLogicOp_3vecs<double, 2>(
+          operands, [](double x, double y) -> double { return x * y; });
       break;
     }
-    case Opcode::AArch64_FMULv2i32_indexed: {
-      return executionNYI();
+    case Opcode::AArch64_FMULv2i32_indexed: {  // fmul vd.2s, vn.2s, vm.s[index]
+      results[0] = neonHelp::vecFmulIndexed_vecs<float, 2>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_FMULv2i64_indexed: {
-      return executionNYI();
+    case Opcode::AArch64_FMULv2i64_indexed: {  // fmul vd.2d, vn.2d, vm.d[index]
+      results[0] = neonHelp::vecFmulIndexed_vecs<double, 2>(operands, metadata);
       break;
     }
     case Opcode::AArch64_FMULv4f16: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMULv4f32: {
-      return executionNYI();
+    case Opcode::AArch64_FMULv4f32: {  // fmul vd.4s, vn.4s, vm.4s
+      results[0] = neonHelp::vecLogicOp_3vecs<float, 4>(
+          operands, [](float x, float y) -> float { return x * y; });
       break;
     }
     case Opcode::AArch64_FMULv4i16_indexed: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMULv4i32_indexed: {
-      return executionNYI();
+    case Opcode::AArch64_FMULv4i32_indexed: {  // fmul vd.4s, vn.4s, vm.s[index]
+      results[0] = neonHelp::vecFmulIndexed_vecs<float, 4>(operands, metadata);
       break;
     }
     case Opcode::AArch64_FMULv8f16: {
