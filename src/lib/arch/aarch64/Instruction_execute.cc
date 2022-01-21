@@ -5299,16 +5299,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMLS_ZPmZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FMLS_ZPmZZ_D: {  // fmls zd.d, pg/m, zn.d, zm.d
+      results[0] = sveHelp::sveFmlsPredicated_vecs<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMLS_ZPmZZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMLS_ZPmZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FMLS_ZPmZZ_S: {  // fmls zd.s, pg/m, zn.s, zm.s
+      results[0] = sveHelp::sveFmlsPredicated_vecs<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMLS_ZZZI_D: {
