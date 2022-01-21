@@ -5473,16 +5473,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMSB_ZPmZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FMSB_ZPmZZ_D: {  // fmsb zd.d, pg/m, zn.d, zm.d
+      results[0] = sveHelp::sveFmsbPredicated_vecs<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMSB_ZPmZZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMSB_ZPmZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FMSB_ZPmZZ_S: {  // fmsb zd.s, pg/m, zn.s, zm.s
+      results[0] = sveHelp::sveFmsbPredicated_vecs<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMSUBDrrr: {  // fmsub dn, dm, da
