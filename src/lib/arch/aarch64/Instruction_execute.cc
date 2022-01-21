@@ -3081,7 +3081,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FADDDrr: {  // fadd dd, dn, dm
-      results[0] = neonHelp::vecAdd_3ops<double, 1>(operands);
+      results[0] = {arithmeticHelp::add_3ops<double>(operands), 256};
       break;
     }
     case Opcode::AArch64_FADDHrr: {
@@ -3121,7 +3121,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FADDSrr: {  // fadd sd, sn, sm
-      results[0] = neonHelp::vecAdd_3ops<float, 1>(operands);
+      results[0] = {arithmeticHelp::add_3ops<float>(operands), 256};
       break;
     }
     case Opcode::AArch64_FADDV_VPZ_D: {
@@ -4653,8 +4653,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FDIVDrr: {
-      return executionNYI();
+    case Opcode::AArch64_FDIVDrr: {  // fdiv dd, dn, dm
+      results[0] = {arithmeticHelp::div_3ops<double>(operands), 256};
       break;
     }
     case Opcode::AArch64_FDIVHrr: {
@@ -4673,8 +4673,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FDIVSrr: {
-      return executionNYI();
+    case Opcode::AArch64_FDIVSrr: {  // fdiv sd, sn, sm
+      results[0] = {arithmeticHelp::div_3ops<float>(operands), 256};
       break;
     }
     case Opcode::AArch64_FDIV_ZPmZ_D: {
