@@ -4381,12 +4381,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCVTZS_ZPmZ_DtoD: {
-      return executionNYI();
+    case Opcode::AArch64_FCVTZS_ZPmZ_DtoD: {  // fcvtzs zd.d, pg/m, zn.d
+      results[0] =
+          sveHelp::sveFcvtzsPredicated<int64_t, double>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_FCVTZS_ZPmZ_DtoS: {
-      return executionNYI();
+    case Opcode::AArch64_FCVTZS_ZPmZ_DtoS: {  // fcvtzs zd.s, pg/m, zn.d
+      results[0] =
+          sveHelp::sveFcvtzsPredicated<int32_t, double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FCVTZS_ZPmZ_HtoD: {
@@ -4401,12 +4403,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCVTZS_ZPmZ_StoD: {
-      return executionNYI();
+    case Opcode::AArch64_FCVTZS_ZPmZ_StoD: {  // fcvtzs zd.d, pg/m, zn.s
+      results[0] =
+          sveHelp::sveFcvtzsPredicated<int64_t, float>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_FCVTZS_ZPmZ_StoS: {
-      return executionNYI();
+    case Opcode::AArch64_FCVTZS_ZPmZ_StoS: {  // fcvtzs zd.s, pg/m, zn.s
+      results[0] =
+          sveHelp::sveFcvtzsPredicated<int32_t, float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FCVTZSd: {
