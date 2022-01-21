@@ -232,7 +232,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // str with post-index splits into a store address, address offset
           // generation, and store data uops
           // NOTE: store data and store address uop are paired through their uop
-          // index value of 1 store data uop
+          // index value of 1
 
           // store address uop
           cs_insn str_cs = createStrUop(
@@ -255,6 +255,46 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           off_imm.setExecutionInfo(architecture.getExecutionInfo(off_imm));
           cacheVector.push_back(off_imm);
           printInfo(off_imm, capstoneHandle);
+          // store data uop
+          cs_insn sd_cs = createSDUop(metadata.operands[0].reg);
+          InstructionMetadata sd_metadata(sd_cs);
+          microMetadataCache.emplace_front(sd_metadata);
+          Instruction sd(architecture, microMetadataCache.front(),
+                         MicroOpInfo({true, MicroOpcode::STR_DATA, true, 1}));
+          sd.setExecutionInfo(architecture.getExecutionInfo(sd));
+          cacheVector.push_back(sd);
+          printInfo(sd, capstoneHandle);
+
+          iter = microDecodeCache.try_emplace(word, cacheVector).first;
+          break;
+        }
+        case Opcode::AArch64_STRXpre: {
+          // str with pre-index splits into an address offset, store address,
+          // generation, and store data uops
+          // NOTE: store data and store address uop are paired through their uop
+          // index value of 1
+
+          // offset generation uop
+          cs_insn off_imm_cs = createImmOffsetUop(
+              metadata.operands[1].mem.base, metadata.operands[1].mem.disp);
+          InstructionMetadata off_imm_metadata(off_imm_cs);
+          microMetadataCache.emplace_front(off_imm_metadata);
+          Instruction off_imm(
+              architecture, microMetadataCache.front(),
+              MicroOpInfo({true, MicroOpcode::OFFSET_IMM, false, 0}));
+          off_imm.setExecutionInfo(architecture.getExecutionInfo(off_imm));
+          cacheVector.push_back(off_imm);
+          printInfo(off_imm, capstoneHandle);
+          // store address uop
+          cs_insn str_cs = createStrUop(
+              {metadata.operands[1].mem.base, ARM64_REG_INVALID, 0});
+          InstructionMetadata str_metadata(str_cs);
+          microMetadataCache.emplace_front(str_metadata);
+          Instruction str(architecture, microMetadataCache.front(),
+                          MicroOpInfo({true, MicroOpcode::STR_ADDR, false, 1}));
+          str.setExecutionInfo(architecture.getExecutionInfo(str));
+          cacheVector.push_back(str);
+          printInfo(str, capstoneHandle);
           // store data uop
           cs_insn sd_cs = createSDUop(metadata.operands[0].reg);
           InstructionMetadata sd_metadata(sd_cs);
