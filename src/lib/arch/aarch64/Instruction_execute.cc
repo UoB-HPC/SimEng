@@ -4654,7 +4654,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FDIVDrr: {  // fdiv dd, dn, dm
-      results[0] = {arithmeticHelp::div_3ops<double>(operands), 256};
+      results[0] = {divideHelp::div_3ops<double>(operands), 256};
       break;
     }
     case Opcode::AArch64_FDIVHrr: {
@@ -4677,7 +4677,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FDIVSrr: {  // fdiv sd, sn, sm
-      results[0] = {arithmeticHelp::div_3ops<float>(operands), 256};
+      results[0] = {divideHelp::div_3ops<float>(operands), 256};
       break;
     }
     case Opcode::AArch64_FDIV_ZPmZ_D: {  // fdiv zdn.d, pg/m, zdn.d, zm.d
@@ -4746,7 +4746,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FMADDDrrr: {  // fmadd dn, dm, da
-      results[0] = {arithmeticHelp::madd_4ops<double>(operands), 256};
+      results[0] = {multiplyHelp::madd_4ops<double>(operands), 256};
       break;
     }
     case Opcode::AArch64_FMADDHrrr: {
@@ -4754,7 +4754,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FMADDSrrr: {  // fmadd sn, sm, sa
-      results[0] = {arithmeticHelp::madd_4ops<float>(operands), 256};
+      results[0] = {multiplyHelp::madd_4ops<float>(operands), 256};
       break;
     }
     case Opcode::AArch64_FMAD_ZPmZZ_D: {  // fmad zd.d, pg/m, zn.d, zm.d
@@ -5485,16 +5485,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMSUBDrrr: {
-      return executionNYI();
+    case Opcode::AArch64_FMSUBDrrr: {  // fmsub dn, dm, da
+      results[0] = {multiplyHelp::msub_4ops<double>(operands), 256};
       break;
     }
     case Opcode::AArch64_FMSUBHrrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMSUBSrrr: {
-      return executionNYI();
+    case Opcode::AArch64_FMSUBSrrr: {  // fmsub sn, sm, sa
+      results[0] = {multiplyHelp::msub_4ops<float>(operands), 256};
       break;
     }
     case Opcode::AArch64_FMULDrr: {
@@ -10347,11 +10347,11 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_MADDWrrr: {  // madd wd, wn, wm, wa
       results[0] =
-          static_cast<uint64_t>(arithmeticHelp::madd_4ops<uint32_t>(operands));
+          static_cast<uint64_t>(multiplyHelp::madd_4ops<uint32_t>(operands));
       break;
     }
     case Opcode::AArch64_MADDXrrr: {  // madd xd, xn, xm, xa
-      results[0] = arithmeticHelp::madd_4ops<uint64_t>(operands);
+      results[0] = multiplyHelp::madd_4ops<uint64_t>(operands);
       break;
     }
     case Opcode::AArch64_MAD_ZPmZZ_B: {
@@ -10656,12 +10656,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MSUBWrrr: {
-      return executionNYI();
+    case Opcode::AArch64_MSUBWrrr: {  // msub wd, wn, wm, wa
+      results[0] = {multiplyHelp::msub_4ops<uint32_t>(operands), 8};
       break;
     }
-    case Opcode::AArch64_MSUBXrrr: {
-      return executionNYI();
+    case Opcode::AArch64_MSUBXrrr: {  // msub xd, xn, xm, xa
+      results[0] = multiplyHelp::msub_4ops<uint64_t>(operands);
       break;
     }
     case Opcode::AArch64_MUL_ZI_B: {
