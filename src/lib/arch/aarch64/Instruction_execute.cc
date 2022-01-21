@@ -4874,8 +4874,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMAXNMv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_FMAXNMv2f64: {  // fmaxnm vd.2d, vn.2d, vm.2d
+      results[0] = neonHelp::vecLogicOp_3vecs<double, 2>(
+          operands,
+          [](double x, double y) -> double { return std::fmax(x, y); });
       break;
     }
     case Opcode::AArch64_FMAXNMv4f16: {
@@ -5002,8 +5004,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMINNMDrr: {
-      return executionNYI();
+    case Opcode::AArch64_FMINNMDrr: {  // fminnm dd, dn, dm
+      results[0] = floatHelp::fminnm_3ops<double>(operands);
       break;
     }
     case Opcode::AArch64_FMINNMHrr: {
@@ -5026,8 +5028,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMINNMPv2i64p: {
-      return executionNYI();
+    case Opcode::AArch64_FMINNMPv2i64p: {  // fminnmp dd, vd.2d
+      const double* n = operands[0].getAsVector<double>();
+      results[0] = {std::fmin(n[0], n[1]), 256};
       break;
     }
     case Opcode::AArch64_FMINNMPv4f16: {
@@ -5042,8 +5045,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMINNMSrr: {
-      return executionNYI();
+    case Opcode::AArch64_FMINNMSrr: {  // fminnm sd, sn, sm
+      results[0] = floatHelp::fminnm_3ops<float>(operands);
       break;
     }
     case Opcode::AArch64_FMINNMV_VPZ_D: {
@@ -5098,8 +5101,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMINNMv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_FMINNMv2f64: {  // fminnm vd.2d, vn.2d, vm.2d
+      results[0] = neonHelp::vecLogicOp_3vecs<double, 2>(
+          operands,
+          [](double x, double y) -> double { return std::fmin(x, y); });
       break;
     }
     case Opcode::AArch64_FMINNMv4f16: {
