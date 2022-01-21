@@ -5497,16 +5497,16 @@ void Instruction::execute() {
       results[0] = {multiplyHelp::msub_4ops<float>(operands), 256};
       break;
     }
-    case Opcode::AArch64_FMULDrr: {
-      return executionNYI();
+    case Opcode::AArch64_FMULDrr: {  // fmul dd, dn, dm
+      results[0] = {multiplyHelp::mul_3ops<double>(operands), 256};
       break;
     }
     case Opcode::AArch64_FMULHrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMULSrr: {
-      return executionNYI();
+    case Opcode::AArch64_FMULSrr: {  // fmul sd, sn, sm
+      results[0] = {multiplyHelp::mul_3ops<float>(operands), 256};
       break;
     }
     case Opcode::AArch64_FMULX16: {
