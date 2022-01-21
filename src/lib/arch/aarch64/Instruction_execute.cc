@@ -5223,16 +5223,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMLA_ZPmZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FMLA_ZPmZZ_D: {  // fmla zd.d, pg/m, zn.d, zm.d
+      results[0] = sveHelp::sveFmlaPredicated_vecs<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMLA_ZPmZZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMLA_ZPmZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FMLA_ZPmZZ_S: {  // fmla zd.s, pg/m, zn.s, zm.s
+      results[0] = sveHelp::sveFmlaPredicated_vecs<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMLA_ZZZI_D: {
@@ -6453,16 +6453,18 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSUBv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_FSUBv2f64: {  // fsub vd.2d, vn.2d, vm.2d
+      results[0] = neonHelp::vecLogicOp_3vecs<double, 2>(
+          operands, [](double x, double y) -> double { return x - y; });
       break;
     }
     case Opcode::AArch64_FSUBv4f16: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSUBv4f32: {
-      return executionNYI();
+    case Opcode::AArch64_FSUBv4f32: {  // fsub vd.4s, vn.4s, vm.4s
+      results[0] = neonHelp::vecLogicOp_3vecs<float, 4>(
+          operands, [](float x, float y) -> float { return x - y; });
       break;
     }
     case Opcode::AArch64_FSUBv8f16: {
