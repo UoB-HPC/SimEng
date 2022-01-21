@@ -431,6 +431,22 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `fmul zd, zn, zm`. */
+  template <typename T>
+  static RegisterValue sveFmul_3ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+    for (int i = 0; i < partition_num; i++) {
+      out[i] = n[i] * m[i];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `index zd, #imm,
    * #imm`. T represents the vector register type (i.e. zd.b would be
    * int8_t).*/
@@ -495,6 +511,36 @@ class sveHelp {
         out[i] = func(dn[i], m[i]);
       else
         out[i] = dn[i];
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `mul zd, pg/m, zn,
+   * <zm, #imm>`. */
+  template <typename T>
+  static RegisterValue sveMulPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits, bool useImm) {
+    bool isFP = std::is_floating_point<T>::value;
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* n = operands[1].getAsVector<T>();
+    const T* m;
+    T imm;
+    if (useImm)
+      imm = isFP ? metadata.operands[3].fp : metadata.operands[3].imm;
+    else
+      m = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i] = n[i] * (useImm ? imm : m[i]);
+      } else
+        out[i] = n[i];
     }
     return {out, 256};
   }

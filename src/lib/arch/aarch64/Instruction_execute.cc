@@ -5585,28 +5585,32 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMUL_ZPmI_D: {
-      return executionNYI();
+    case Opcode::AArch64_FMUL_ZPmI_D: {  // fmul zd.d, pg/m, zn.d, #imm
+      results[0] =
+          sveHelp::sveMulPredicated<double>(operands, metadata, VL_bits, true);
       break;
     }
     case Opcode::AArch64_FMUL_ZPmI_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMUL_ZPmI_S: {
-      return executionNYI();
+    case Opcode::AArch64_FMUL_ZPmI_S: {  // fmul zd.s, pg/m, zn.s, #imm
+      results[0] =
+          sveHelp::sveMulPredicated<float>(operands, metadata, VL_bits, true);
       break;
     }
-    case Opcode::AArch64_FMUL_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FMUL_ZPmZ_D: {  // fmul zdn.d, pg/m, zdn.d, zm.d
+      results[0] =
+          sveHelp::sveMulPredicated<double>(operands, metadata, VL_bits, false);
       break;
     }
     case Opcode::AArch64_FMUL_ZPmZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMUL_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FMUL_ZPmZ_S: {  // fmul zdn.s, pg/m, zdn.s, zm.s
+      results[0] =
+          sveHelp::sveMulPredicated<float>(operands, metadata, VL_bits, false);
       break;
     }
     case Opcode::AArch64_FMUL_ZZZI_D: {
@@ -5621,16 +5625,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMUL_ZZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FMUL_ZZZ_D: {  // fmul zd.d, zn.d, zm.d
+      results[0] = sveHelp::sveFmul_3ops<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMUL_ZZZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMUL_ZZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FMUL_ZZZ_S: {  // fmul zd.s, zn.s, zm.s
+      results[0] = sveHelp::sveFmul_3ops<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMULv1i16_indexed: {
