@@ -250,9 +250,7 @@ class neonHelp {
     const T imm = isFP ? metadata.operands[1].fp
                        : static_cast<T>(metadata.operands[1].imm);
     T out[16 / sizeof(T)] = {0};
-    for (int i = 0; i < I; i++) {
-      out[i] = imm;
-    }
+    std::fill_n(std::begin(out), I, imm);
     return {out, 256};
   }
 
@@ -269,9 +267,7 @@ class neonHelp {
                               metadata.operands[1].shift.type,
                               metadata.operands[1].shift.value);
     T out[16 / sizeof(T)] = {0};
-    for (int i = 0; i < I; i++) {
-      out[i] = bits;
-    }
+    std::fill_n(std::begin(out), I, bits);
     return {out, 256};
   }
 };

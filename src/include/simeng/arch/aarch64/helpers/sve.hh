@@ -390,8 +390,7 @@ class sveHelp {
   template <typename T>
   static RegisterValue sveLogicOpPredicated_vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const uint16_t VL_bits,
-      std::function<uint64_t(uint64_t, uint64_t)> func) {
+      const uint16_t VL_bits, std::function<T(T, T)> func) {
     const uint64_t* p = operands[0].getAsVector<uint64_t>();
     const T* dn = operands[1].getAsVector<T>();
     const T* m = operands[2].getAsVector<T>();

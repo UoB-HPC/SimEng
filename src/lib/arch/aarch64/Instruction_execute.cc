@@ -4661,24 +4661,29 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FDIVR_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FDIVR_ZPmZ_D: {  // fdivr zdn.d, pg/m, zdn.d, zm.d
+      results[0] = sveHelp::sveLogicOpPredicated_vecs<double>(
+          operands, VL_bits,
+          [](double x, double y) -> double { return (y / x); });
       break;
     }
     case Opcode::AArch64_FDIVR_ZPmZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FDIVR_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FDIVR_ZPmZ_S: {  // fdivr zdn.s, pg/m, zdn.s, zm.s
+      results[0] = sveHelp::sveLogicOpPredicated_vecs<float>(
+          operands, VL_bits, [](float x, float y) -> float { return (y / x); });
       break;
     }
     case Opcode::AArch64_FDIVSrr: {  // fdiv sd, sn, sm
       results[0] = {arithmeticHelp::div_3ops<float>(operands), 256};
       break;
     }
-    case Opcode::AArch64_FDIV_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FDIV_ZPmZ_D: {  // fdiv zdn.d, pg/m, zdn.d, zm.d
+      results[0] = sveHelp::sveLogicOpPredicated_vecs<double>(
+          operands, VL_bits,
+          [](double x, double y) -> double { return (x / y); });
       break;
     }
     case Opcode::AArch64_FDIV_ZPmZ_H: {
@@ -4693,8 +4698,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FDIVv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_FDIVv2f64: {  // fdiv vd.2d, vn.2d, vm.2d
+      results[0] = neonHelp::vecLogicOp_3vecs<double, 2>(
+          operands, [](double x, double y) -> double { return x / y; });
       break;
     }
     case Opcode::AArch64_FDIVv4f16: {
@@ -5367,12 +5373,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMOVDXHighr: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVDXHighr: {  // fmov xd, vn.d[1]
+      results[0] = operands[0].getAsVector<double>()[1];
       break;
     }
-    case Opcode::AArch64_FMOVDXr: {
-      return executionNYI();
+    case Opcode::AArch64_FMOVDXr: {  // fmov xd, dn
+      results[0] = operands[0].get<double>();
       break;
     }
     case Opcode::AArch64_FMOVDi: {  // fmov dn, #imm
@@ -5673,16 +5679,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNEGDr: {
-      return executionNYI();
+    case Opcode::AArch64_FNEGDr: {  // fneg dd, dn
+      results[0] = RegisterValue(-operands[0].get<double>(), 256);
       break;
     }
     case Opcode::AArch64_FNEGHr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNEGSr: {
-      return executionNYI();
+    case Opcode::AArch64_FNEGSr: {  // fneg sd, sn
+      results[0] = RegisterValue(-operands[0].get<float>(), 256);
       break;
     }
     case Opcode::AArch64_FNEG_ZPmZ_D: {
