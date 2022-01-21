@@ -4745,28 +4745,28 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMADDDrrr: {
-      return executionNYI();
+    case Opcode::AArch64_FMADDDrrr: {  // fmadd dn, dm, da
+      results[0] = {arithmeticHelp::madd_4ops<double>(operands), 256};
       break;
     }
     case Opcode::AArch64_FMADDHrrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMADDSrrr: {
-      return executionNYI();
+    case Opcode::AArch64_FMADDSrrr: {  // fmadd sn, sm, sa
+      results[0] = {arithmeticHelp::madd_4ops<float>(operands), 256};
       break;
     }
-    case Opcode::AArch64_FMAD_ZPmZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FMAD_ZPmZZ_D: {  // fmad zd.d, pg/m, zn.d, zm.d
+      results[0] = sveHelp::sveFmadPredicated_vecs<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMAD_ZPmZZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FMAD_ZPmZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FMAD_ZPmZZ_S: {  // fmad zd.s, pg/m, zn.s, zm.s
+      results[0] = sveHelp::sveFmadPredicated_vecs<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMAXDrr: {
