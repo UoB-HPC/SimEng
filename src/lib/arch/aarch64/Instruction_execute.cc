@@ -4633,8 +4633,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCVT_ZPmZ_DtoS: {
-      return executionNYI();
+    case Opcode::AArch64_FCVT_ZPmZ_DtoS: {  // fcvt zd.s, pg/m, zn.d
+      results[0] = sveHelp::sveFcvtPredicated<float, double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FCVT_ZPmZ_HtoD: {
@@ -4645,8 +4645,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCVT_ZPmZ_StoD: {
-      return executionNYI();
+    case Opcode::AArch64_FCVT_ZPmZ_StoD: {  // fcvt zd.d, pg/m, zn.s
+      results[0] = sveHelp::sveFcvtPredicated<double, float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FCVT_ZPmZ_StoH: {

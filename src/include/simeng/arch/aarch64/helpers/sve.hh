@@ -228,6 +228,47 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `fcvt zd,
+   * pg/m, zn`.
+   * D represents the destination vector register type (i.e. zd.s would be
+   * int32_t).
+   * N represents the source vector register type (i.e. zn.d would be double).
+   */
+  template <typename D, typename N>
+  static RegisterValue sveFcvtPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const D* d = operands[0].getAsVector<D>();
+    const uint64_t* p = operands[1].getAsVector<uint64_t>();
+    const N* n = operands[2].getAsVector<N>();
+
+    // Stores size of largest type out of D and N
+    int lts = std::max(sizeof(D), sizeof(N));
+    bool sourceLarger = (sizeof(D) < sizeof(N)) ? true : false;
+
+    const uint16_t partition_num = VL_bits / (lts * 8);
+    D out[256 / sizeof(D)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / lts)) * lts);
+      int indexOut = (sourceLarger) ? (2 * i) : i;
+      int indexN = (!sourceLarger) ? (2 * i) : i;
+
+      if (p[i / (64 / lts)] & shifted_active) {
+        if (n[indexN] > std::numeric_limits<D>::max())
+          out[indexOut] = std::numeric_limits<D>::max();
+        else if (n[indexN] < std::numeric_limits<D>::lowest())
+          out[indexOut] = std::numeric_limits<D>::lowest();
+        else
+          out[indexOut] = static_cast<D>(n[indexN]);
+      } else {
+        out[indexOut] = d[indexOut];
+      }
+      if (sourceLarger) out[indexOut + 1] = d[indexOut + 1];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `fcvtzs zd,
    * pg/m, zn`.
    * D represents the destination vector register type (i.e. zd.s would be
@@ -258,8 +299,8 @@ class sveHelp {
       if (p[i / (64 / lts)] & shifted_active) {
         if (n[indexN] > std::numeric_limits<D>::max())
           out[indexOut] = std::numeric_limits<D>::max();
-        else if (n[indexN] < std::numeric_limits<D>::min())
-          out[indexOut] = std::numeric_limits<D>::min();
+        else if (n[indexN] < std::numeric_limits<D>::lowest())
+          out[indexOut] = std::numeric_limits<D>::lowest();
         else
           out[indexOut] = static_cast<D>(std::trunc(n[indexN]));
         // Can be set to 0xFFFFFFFF as will only occur when D=int32_t.
