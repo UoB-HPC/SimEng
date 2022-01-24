@@ -5224,7 +5224,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FMLA_ZPmZZ_D: {  // fmla zd.d, pg/m, zn.d, zm.d
-      results[0] = sveHelp::sveFmlaPredicated_vecs<double>(operands, VL_bits);
+      results[0] = sveHelp::sveMlaPredicated_vecs<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMLA_ZPmZZ_H: {
@@ -5232,7 +5232,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FMLA_ZPmZZ_S: {  // fmla zd.s, pg/m, zn.s, zm.s
-      results[0] = sveHelp::sveFmlaPredicated_vecs<float>(operands, VL_bits);
+      results[0] = sveHelp::sveMlaPredicated_vecs<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FMLA_ZZZI_D: {
@@ -10426,20 +10426,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MLA_ZPmZZ_B: {
-      return executionNYI();
+    case Opcode::AArch64_MLA_ZPmZZ_B: {  // mla zda.b, pg/m, zn.b, zm.b
+      results[0] = sveHelp::sveMlaPredicated_vecs<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_MLA_ZPmZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_MLA_ZPmZZ_D: {  // mla zda.d, pg/m, zn.d, zm.d
+      results[0] = sveHelp::sveMlaPredicated_vecs<uint64_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_MLA_ZPmZZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_MLA_ZPmZZ_H: {  // mla zda.h, pg/m, zn.h, zm.h
+      results[0] = sveHelp::sveMlaPredicated_vecs<uint16_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_MLA_ZPmZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_MLA_ZPmZZ_S: {  // mla zda.s, pg/m, zn.s, zm.s
+      results[0] = sveHelp::sveMlaPredicated_vecs<uint32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_MLAv16i8: {

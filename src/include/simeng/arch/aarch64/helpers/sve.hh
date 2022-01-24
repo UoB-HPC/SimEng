@@ -365,7 +365,7 @@ class sveHelp {
   /** Helper function for SVE instructions with the format `fmla zd, pg/m, zn,
    * zm`.*/
   template <typename T>
-  static RegisterValue sveFmlaPredicated_vecs(
+  static RegisterValue sveMlaPredicated_vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits) {
     const T* d = operands[0].getAsVector<T>();
