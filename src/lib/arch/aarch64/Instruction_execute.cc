@@ -10630,8 +10630,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MOVPRFX_ZZ: {
-      return executionNYI();
+    case Opcode::AArch64_MOVPRFX_ZZ: {  // movprfx zd, zn
+      // TODO: Adopt hint logic of the MOVPRFX instruction
+      results[0] = operands[0];
       break;
     }
     case Opcode::AArch64_MOVZWi: {  // movz wd, #imm
@@ -10680,8 +10681,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MRS: {
-      return executionNYI();
+    case Opcode::AArch64_MRS: {  // mrs xt, (systemreg|Sop0_op1_Cn_Cm_op2)
+      results[0] = operands[0];
       break;
     }
     case Opcode::AArch64_MSB_ZPmZZ_B: {
@@ -10700,8 +10701,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MSR: {
-      return executionNYI();
+    case Opcode::AArch64_MSR: {  // mrs (systemreg|Sop0_op1_Cn_Cm_op2), xt
+      results[0] = operands[0];
       break;
     }
     case Opcode::AArch64_MSRpstateImm1: {
@@ -16789,28 +16790,32 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UCVTFUWDri: {
-      return executionNYI();
+    case Opcode::AArch64_UCVTFUWDri: {  // ucvtf dd, wn
+      results[0] =
+          RegisterValue(static_cast<double>(operands[0].get<uint32_t>()), 256);
       break;
     }
     case Opcode::AArch64_UCVTFUWHri: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UCVTFUWSri: {
-      return executionNYI();
+    case Opcode::AArch64_UCVTFUWSri: {  // ucvtf sd, wn
+      results[0] =
+          RegisterValue(static_cast<float>(operands[0].get<uint32_t>()), 256);
       break;
     }
-    case Opcode::AArch64_UCVTFUXDri: {
-      return executionNYI();
+    case Opcode::AArch64_UCVTFUXDri: {  // ucvtf dd, xn
+      results[0] =
+          RegisterValue(static_cast<double>(operands[0].get<uint64_t>()), 256);
       break;
     }
     case Opcode::AArch64_UCVTFUXHri: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UCVTFUXSri: {
-      return executionNYI();
+    case Opcode::AArch64_UCVTFUXSri: {  // ucvtf sd, xn
+      results[0] =
+          RegisterValue(static_cast<float>(operands[0].get<uint64_t>()), 256);
       break;
     }
     case Opcode::AArch64_UCVTF_ZPmZ_DtoD: {
@@ -16857,12 +16862,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UCVTFv1i32: {
-      return executionNYI();
+    case Opcode::AArch64_UCVTFv1i32: {  // ucvtf sd, sn
+      results[0] =
+          RegisterValue(static_cast<float>(operands[0].get<uint32_t>()), 256);
       break;
     }
-    case Opcode::AArch64_UCVTFv1i64: {
-      return executionNYI();
+    case Opcode::AArch64_UCVTFv1i64: {  // ucvtf dd, dn
+      results[0] =
+          RegisterValue(static_cast<double>(operands[0].get<uint64_t>()), 256);
       break;
     }
     case Opcode::AArch64_UCVTFv2f32: {
