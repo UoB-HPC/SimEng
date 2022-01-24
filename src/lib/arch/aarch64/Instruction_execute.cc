@@ -10552,7 +10552,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_MOVIv2i32: {  // movi vd.2s, #imm{, lsl #shift}
-      results[0] = neonHelp::vecMoviShift_imm<uint32_t, 2>(metadata);
+      results[0] = neonHelp::vecMoviShift_imm<uint32_t, 2>(metadata, false);
       break;
     }
     case Opcode::AArch64_MOVIv2s_msl: {
@@ -10564,7 +10564,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_MOVIv4i32: {  // movi vd.4s, #imm{, LSL #shift}
-      results[0] = neonHelp::vecMoviShift_imm<uint32_t, 4>(metadata);
+      results[0] = neonHelp::vecMoviShift_imm<uint32_t, 4>(metadata, false);
       break;
     }
     case Opcode::AArch64_MOVIv4s_msl: {
@@ -10740,20 +10740,24 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MUL_ZPmZ_B: {
-      return executionNYI();
+    case Opcode::AArch64_MUL_ZPmZ_B: {  // mul zdn.b, pg/m, zdn.b, zm.b
+      results[0] = sveHelp::sveMulPredicated<uint8_t>(operands, metadata,
+                                                      VL_bits, false);
       break;
     }
-    case Opcode::AArch64_MUL_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_MUL_ZPmZ_D: {  // mul zdn.d, pg/m, zdn.d, zm.d
+      results[0] = sveHelp::sveMulPredicated<uint64_t>(operands, metadata,
+                                                       VL_bits, false);
       break;
     }
-    case Opcode::AArch64_MUL_ZPmZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_MUL_ZPmZ_H: {  // mul zdn.h, pg/m, zdn.h, zm.h
+      results[0] = sveHelp::sveMulPredicated<uint16_t>(operands, metadata,
+                                                       VL_bits, false);
       break;
     }
-    case Opcode::AArch64_MUL_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_MUL_ZPmZ_S: {  // mul zdn.s, pg/m, zdn.s, zm.s
+      results[0] = sveHelp::sveMulPredicated<uint32_t>(operands, metadata,
+                                                       VL_bits, false);
       break;
     }
     case Opcode::AArch64_MULv16i8: {
@@ -10796,28 +10800,28 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MVNIv2i32: {
-      return executionNYI();
+    case Opcode::AArch64_MVNIv2i32: {  // mvni vd.2s, #imm{, lsl #shift}
+      results[0] = neonHelp::vecMoviShift_imm<uint32_t, 2>(metadata, true);
       break;
     }
     case Opcode::AArch64_MVNIv2s_msl: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MVNIv4i16: {
-      return executionNYI();
+    case Opcode::AArch64_MVNIv4i16: {  // mvni vd.4h, #imm{, lsl #shift}
+      results[0] = neonHelp::vecMoviShift_imm<uint16_t, 4>(metadata, true);
       break;
     }
-    case Opcode::AArch64_MVNIv4i32: {
-      return executionNYI();
+    case Opcode::AArch64_MVNIv4i32: {  // mvni vd.4s, #imm{, lsl #shift}
+      results[0] = neonHelp::vecMoviShift_imm<uint32_t, 4>(metadata, true);
       break;
     }
     case Opcode::AArch64_MVNIv4s_msl: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MVNIv8i16: {
-      return executionNYI();
+    case Opcode::AArch64_MVNIv8i16: {  // mvni vd.8h, #imm{, lsl #shift}
+      results[0] = neonHelp::vecMoviShift_imm<uint16_t, 8>(metadata, true);
       break;
     }
     case Opcode::AArch64_NANDS_PPzPP: {

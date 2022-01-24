@@ -442,12 +442,12 @@ class neonHelp {
    */
   template <typename T, int I>
   static RegisterValue vecMoviShift_imm(
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+      const simeng::arch::aarch64::InstructionMetadata& metadata, bool negate) {
     const T bits = shiftValue(static_cast<T>(metadata.operands[1].imm),
                               metadata.operands[1].shift.type,
                               metadata.operands[1].shift.value);
     T out[16 / sizeof(T)] = {0};
-    std::fill_n(std::begin(out), I, bits);
+    std::fill_n(std::begin(out), I, negate ? ~bits : bits);
     return {out, 256};
   }
 };
