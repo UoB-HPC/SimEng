@@ -5784,16 +5784,16 @@ void Instruction::execute() {
       results[0] = sveHelp::sveFnmlsPredicated<float>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_FNMSB_ZPmZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FNMSB_ZPmZZ_D: {  // fnmsb zdn.d, pg/m, zm.d, za.d
+      results[0] = sveHelp::sveFnmsbPredicated<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FNMSB_ZPmZZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNMSB_ZPmZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FNMSB_ZPmZZ_S: {  // fnmsb zdn.s, pg/m, zm.s, za.s
+      results[0] = sveHelp::sveFnmsbPredicated<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FNMSUBDrrr: {
