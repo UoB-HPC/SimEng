@@ -21,8 +21,8 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
   if (microOpcode_ == MicroOpcode::LDR_ADDR) {
     std::vector<simeng::MemoryAccessTarget> addresses;
     generateContiguousAddresses(
-        operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1, 8,
-        addresses);
+        operands[0].get<uint64_t>() + metadata.operands[1].mem.disp, 1,
+        dataSize_, addresses);
     std::cout << "### LDR_ADDR: " << getSequenceId() << ":"
               << getInstructionId() << ":0x" << std::hex
               << getInstructionAddress() << std::dec << ":" << getMicroOpIndex()
@@ -35,8 +35,8 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
   } else if (microOpcode_ == MicroOpcode::STR_ADDR) {
     std::vector<simeng::MemoryAccessTarget> addresses;
     generateContiguousAddresses(
-        operands[0].get<uint64_t>() + metadata.operands[0].mem.disp, 1, 8,
-        addresses);
+        operands[0].get<uint64_t>() + metadata.operands[0].mem.disp, 1,
+        dataSize_, addresses);
     std::cout << "### STR_ADDR: " << getSequenceId() << ":"
               << getInstructionId() << ":0x" << std::hex
               << getInstructionAddress() << std::dec << ":" << getMicroOpIndex()
