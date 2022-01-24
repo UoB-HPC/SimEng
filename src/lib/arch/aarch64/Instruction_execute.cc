@@ -7123,20 +7123,20 @@ void Instruction::execute() {
       results[0] = sveHelp::sveInc_imm<uint16_t>(operands, metadata, VL_bits);
       break;
     }
-    case Opcode::AArch64_INCP_XP_B: {
-      return executionNYI();
+    case Opcode::AArch64_INCP_XP_B: {  // incp xdn, pm.b
+      results[0] = sveHelp::sveIncp_gpr<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_INCP_XP_D: {
-      return executionNYI();
+    case Opcode::AArch64_INCP_XP_D: {  // incp xdn, pm.d
+      results[0] = sveHelp::sveIncp_gpr<uint64_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_INCP_XP_H: {
-      return executionNYI();
+    case Opcode::AArch64_INCP_XP_H: {  // incp xdn, pm.h
+      results[0] = sveHelp::sveIncp_gpr<uint16_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_INCP_XP_S: {
-      return executionNYI();
+    case Opcode::AArch64_INCP_XP_S: {  // incp xdn, pm.s
+      results[0] = sveHelp::sveIncp_gpr<uint32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_INCP_ZP_D: {

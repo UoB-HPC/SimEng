@@ -626,9 +626,30 @@ class sveHelp {
     return {out, 256};
   }
 
-  /** Helper function for SVE instructions with the format `<AND, EOR, ...> pd,
-   * pg/z, pn, pm`. T represents the vector register type (i.e. pd.b would be
-   * uint8_t).*/
+  /** Helper function for SVE instructions with the format `incp xdn, pm`.
+   * T represents the predicate register type (i.e. pm.b would be int8_t).*/
+  template <typename T>
+  static uint64_t sveIncp_gpr(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const uint64_t dn = operands[0].get<uint64_t>();
+    const uint64_t* p = operands[1].getAsVector<uint64_t>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    uint64_t count = 0;
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        count++;
+      }
+    }
+    return dn + count;
+  }
+
+  /** Helper function for SVE instructions with the format `<AND, EOR, ...>
+   * pd, pg/z, pn, pm`. T represents the vector register type (i.e. pd.b would
+   * be uint8_t).*/
   template <typename T>
   static std::array<uint64_t, 4> sveLogicOp_preds(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -652,9 +673,9 @@ class sveHelp {
     return out;
   }
 
-  /** Helper function for SVE instructions with the format `<AND, EOR, ...> zd,
-   * pg/z, zn, zm`. T represents the vector register type (i.e. zd.b would be
-   * uint8_t).*/
+  /** Helper function for SVE instructions with the format `<AND, EOR, ...>
+   * zd, pg/z, zn, zm`. T represents the vector register type (i.e. zd.b would
+   * be uint8_t).*/
   template <typename T>
   static RegisterValue sveLogicOpPredicated_3vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -705,8 +726,8 @@ class sveHelp {
     return {out, 256};
   }
 
-  /** Helper function for SVE instructions with the format `ptrue pd{, pattern}.
-   * T represents the predicate type (i.e. pd.b would be uint8_t).
+  /** Helper function for SVE instructions with the format `ptrue pd{,
+   * pattern}. T represents the predicate type (i.e. pd.b would be uint8_t).
    */
   template <typename T>
   static std::array<uint64_t, 4> svePtrue(const uint16_t VL_bits) {
@@ -720,10 +741,9 @@ class sveHelp {
     return out;
   }
 
-  /** Helper function for SVE instructions with the format `whilelo pd, <w,x>n,
-   * <w,x>m`.
-   * T represents the type of operands n and m (i.e. uint32_t for wn).
-   * P represents the type of operand p (i.e. uint8_t for pd.b).
+  /** Helper function for SVE instructions with the format `whilelo pd,
+   * <w,x>n, <w,x>m`. T represents the type of operands n and m (i.e. uint32_t
+   * for wn). P represents the type of operand p (i.e. uint8_t for pd.b).
    */
   template <typename T, typename P>
   static std::tuple<std::array<uint64_t, 4>, uint8_t> sveWhilelo(
@@ -745,7 +765,8 @@ class sveHelp {
           out[index / (64 / (sizeof(P)))] | shifted_active;
       index++;
     }
-    // Byte count = sizeof(P) as destination predicate is predicate of P bytes.
+    // Byte count = sizeof(P) as destination predicate is predicate of P
+    // bytes.
     uint8_t nzcv =
         calcNZCV ? AuxFunc::getNZCVfromPred(out, VL_bits, sizeof(P)) : 0;
     return {out, nzcv};
