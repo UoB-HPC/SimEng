@@ -606,6 +606,26 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `inc<b, d, h, w>
+   * zdn{, pattern{, #imm}}`. T represents the vector register type (i.e. zd.b
+   * would be int8_t).*/
+  template <typename T>
+  static RegisterValue sveInc_imm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const T* n = operands[0].getAsVector<T>();
+    const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    typename std::make_signed<T>::type out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      out[i] = n[i] + ((VL_bits / (sizeof(T) * 8)) * imm);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `<AND, EOR, ...> pd,
    * pg/z, pn, pm`. T represents the vector register type (i.e. pd.b would be
    * uint8_t).*/

@@ -7097,24 +7097,30 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_INCB_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_INCB_XPiI: {  // incb xdn{, pattern{, #imm}}
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = n + ((VL_bits / 8) * imm);
       break;
     }
-    case Opcode::AArch64_INCD_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_INCD_XPiI: {  // incd xdn{, pattern{, #imm}}
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = n + ((VL_bits / 64) * imm);
       break;
     }
-    case Opcode::AArch64_INCD_ZPiI: {
-      return executionNYI();
+    case Opcode::AArch64_INCD_ZPiI: {  // incd zdn.d{, pattern{, #imm}}
+      results[0] = sveHelp::sveInc_imm<uint64_t>(operands, metadata, VL_bits);
       break;
     }
-    case Opcode::AArch64_INCH_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_INCH_XPiI: {  // inch xdn{, pattern{, #imm}}
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = n + ((VL_bits / 16) * imm);
       break;
     }
-    case Opcode::AArch64_INCH_ZPiI: {
-      return executionNYI();
+    case Opcode::AArch64_INCH_ZPiI: {  // inch zdn.h{, pattern{, #imm}}
+      results[0] = sveHelp::sveInc_imm<uint16_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_INCP_XP_B: {
@@ -7145,12 +7151,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_INCW_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_INCW_XPiI: {  // incw xdn{, pattern{, #imm}}
+      const uint64_t n = operands[0].get<uint64_t>();
+      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+      results[0] = n + ((VL_bits / 32) * imm);
       break;
     }
-    case Opcode::AArch64_INCW_ZPiI: {
-      return executionNYI();
+    case Opcode::AArch64_INCW_ZPiI: {  // incw zdn.s{, pattern{, #imm}}
+      results[0] = sveHelp::sveInc_imm<uint32_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_INDEX_II_B: {  // index zd.b, #imm, #imm
