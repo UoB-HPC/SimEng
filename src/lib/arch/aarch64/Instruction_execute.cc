@@ -591,25 +591,25 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_AND_ZPmZ_B: {  // and zdn.b, pg/m, zdn.b, zm.b
-      results[0] = sveHelp::sveLogicOpPredicated_vecs<uint8_t>(
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<uint8_t>(
           operands, VL_bits,
           [](uint8_t x, uint8_t y) -> uint8_t { return x & y; });
       break;
     }
     case Opcode::AArch64_AND_ZPmZ_D: {  // and zdn.d, pg/m, zdn.d, zm.d
-      results[0] = sveHelp::sveLogicOpPredicated_vecs<uint64_t>(
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<uint64_t>(
           operands, VL_bits,
           [](uint64_t x, uint64_t y) -> uint64_t { return x & y; });
       break;
     }
     case Opcode::AArch64_AND_ZPmZ_H: {  // and zdn.h, pg/m, zdn.h, zm.h
-      results[0] = sveHelp::sveLogicOpPredicated_vecs<uint16_t>(
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<uint16_t>(
           operands, VL_bits,
           [](uint16_t x, uint16_t y) -> uint16_t { return x & y; });
       break;
     }
     case Opcode::AArch64_AND_ZPmZ_S: {  // and zdn.s, pg/m, zdn.s, zm.s
-      results[0] = sveHelp::sveLogicOpPredicated_vecs<uint32_t>(
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<uint32_t>(
           operands, VL_bits,
           [](uint32_t x, uint32_t y) -> uint32_t { return x & y; });
       break;
@@ -2817,25 +2817,25 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_EOR_ZPmZ_B: {  // eor zdn.b, pg/m, zdn.b, zm.b
-      results[0] = sveHelp::sveLogicOpPredicated_vecs<uint8_t>(
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<uint8_t>(
           operands, VL_bits,
           [](uint8_t x, uint8_t y) -> uint8_t { return x ^ y; });
       break;
     }
     case Opcode::AArch64_EOR_ZPmZ_D: {  // eor zdn.d, pg/m, zdn.d, zm.d
-      results[0] = sveHelp::sveLogicOpPredicated_vecs<uint64_t>(
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<uint64_t>(
           operands, VL_bits,
           [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
       break;
     }
     case Opcode::AArch64_EOR_ZPmZ_H: {  // eor zdn.h, pg/m, zdn.h, zm.h
-      results[0] = sveHelp::sveLogicOpPredicated_vecs<uint16_t>(
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<uint16_t>(
           operands, VL_bits,
           [](uint16_t x, uint16_t y) -> uint16_t { return x ^ y; });
       break;
     }
     case Opcode::AArch64_EOR_ZPmZ_S: {  // eor zdn.s, pg/m, zdn.s, zm.s
-      results[0] = sveHelp::sveLogicOpPredicated_vecs<uint32_t>(
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<uint32_t>(
           operands, VL_bits,
           [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
       break;
@@ -4662,7 +4662,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FDIVR_ZPmZ_D: {  // fdivr zdn.d, pg/m, zdn.d, zm.d
-      results[0] = sveHelp::sveLogicOpPredicated_vecs<double>(
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<double>(
           operands, VL_bits,
           [](double x, double y) -> double { return (y / x); });
       break;
@@ -4672,7 +4672,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FDIVR_ZPmZ_S: {  // fdivr zdn.s, pg/m, zdn.s, zm.s
-      results[0] = sveHelp::sveLogicOpPredicated_vecs<float>(
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<float>(
           operands, VL_bits, [](float x, float y) -> float { return (y / x); });
       break;
     }
@@ -4681,7 +4681,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FDIV_ZPmZ_D: {  // fdiv zdn.d, pg/m, zdn.d, zm.d
-      results[0] = sveHelp::sveLogicOpPredicated_vecs<double>(
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<double>(
           operands, VL_bits,
           [](double x, double y) -> double { return (x / y); });
       break;
@@ -6364,16 +6364,16 @@ void Instruction::execute() {
       results[0] = {::sqrtf(operands[0].get<float>()), 256};
       break;
     }
-    case Opcode::AArch64_FSQRT_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FSQRT_ZPmZ_D: {  // fsqrt zd.d, pg/m, zn.d
+      results[0] = sveHelp::sveFsqrtPredicated_2vecs<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FSQRT_ZPmZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSQRT_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FSQRT_ZPmZ_S: {  // fsqrt zd.s, pg/m, zn.s
+      results[0] = sveHelp::sveFsqrtPredicated_2vecs<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FSQRTv2f32: {

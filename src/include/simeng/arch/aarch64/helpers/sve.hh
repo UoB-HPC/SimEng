@@ -545,6 +545,29 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `fsqrt zd,
+   * pg/m, zn`. T represents the vector register type (i.e. zd.d would be
+   * double).*/
+  template <typename T>
+  static RegisterValue sveFsqrtPredicated_2vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const T* d = operands[0].getAsVector<T>();
+    const uint64_t* p = operands[1].getAsVector<uint64_t>();
+    const T* n = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active)
+        out[i] = ::sqrt(n[i]);
+      else
+        out[i] = d[i];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `index zd, #imm,
    * #imm`. T represents the vector register type (i.e. zd.b would be
    * int8_t).*/
@@ -594,7 +617,7 @@ class sveHelp {
    * pg/z, zn, zm`. T represents the vector register type (i.e. zd.b would be
    * uint8_t).*/
   template <typename T>
-  static RegisterValue sveLogicOpPredicated_vecs(
+  static RegisterValue sveLogicOpPredicated_3vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits, std::function<T(T, T)> func) {
     const uint64_t* p = operands[0].getAsVector<uint64_t>();
