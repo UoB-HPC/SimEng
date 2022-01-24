@@ -10217,12 +10217,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LSLVWr: {
-      return executionNYI();
+    case Opcode::AArch64_LSLVWr: {  // lslv wd, wn, wm
+      auto x = operands[0].get<uint32_t>();
+      auto y = operands[1].get<uint32_t>() & 0b11111;
+      results[0] = static_cast<uint64_t>(x << y);
       break;
     }
-    case Opcode::AArch64_LSLVXr: {
-      return executionNYI();
+    case Opcode::AArch64_LSLVXr: {  // lslv xd, xn, xm
+      auto x = operands[0].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>() & 0b111111;
+      results[0] = x << y;
       break;
     }
     case Opcode::AArch64_LSL_WIDE_ZPmZ_B: {
@@ -10293,8 +10297,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LSL_ZZI_S: {
-      return executionNYI();
+    case Opcode::AArch64_LSL_ZZI_S: {  // lsl zd.s, zn.s, #imm
+      results[0] = sveHelp::sveLsl_imm<uint32_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_LSRR_ZPmZ_B: {
@@ -10313,12 +10317,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LSRVWr: {
-      return executionNYI();
+    case Opcode::AArch64_LSRVWr: {  // lsrv wd, wn, wm
+      auto x = operands[0].get<uint32_t>();
+      auto y = operands[1].get<uint32_t>() & 0b11111;
+      results[0] = static_cast<uint64_t>(x >> y);
       break;
     }
-    case Opcode::AArch64_LSRVXr: {
-      return executionNYI();
+    case Opcode::AArch64_LSRVXr: {  // lsrv xd, xn, xm
+      auto x = operands[0].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>() & 0b111111;
+      results[0] = x >> y;
       break;
     }
     case Opcode::AArch64_LSR_WIDE_ZPmZ_B: {

@@ -701,6 +701,25 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `lsl sz, zn, #imm`.
+   * T represents the vector register type (i.e. zd.b would be int8_t).*/
+  template <typename T>
+  static RegisterValue sveLsl_imm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const T* n = operands[0].getAsVector<T>();
+    const T imm = static_cast<T>(metadata.operands[2].imm);
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    typename std::make_signed<T>::type out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      out[i] = (n[i] << imm);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `mul zd, pg/m, zn,
    * <zm, #imm>`. */
   template <typename T>
