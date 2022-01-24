@@ -197,6 +197,23 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `<NOT, ...> vd,
+   *  vn`. T represents the vector register type (i.e. vd.16b would be
+   * uint8_t). I represents the number of elements in the output array to be
+   *updated (i.e. for vd.8b the final 8 elements in the output array will be
+   *0).*/
+  template <typename T, int I>
+  static RegisterValue vecLogicOp_2vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::function<T(T)> func) {
+    const T* n = operands[0].getAsVector<T>();
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = func(n[i]);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `<AND, EOR, ...> vd,
    *  vn, vm`. T represents the vector register type (i.e. vd.16b would be
    * uint8_t). I represents the number of elements in the output array to be
