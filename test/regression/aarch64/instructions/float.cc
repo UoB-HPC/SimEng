@@ -1057,53 +1057,6 @@ TEST_P(InstFloat, fsqrt) {
   EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
 }
 
-TEST_P(InstFloat, frsqrts) {
-  // Single precision
-  RUN_AARCH64(R"(
-    fmov s0, 1.25
-    fmov s1, 2.0
-    frsqrts s2, s1, s0
-  )");
-  CHECK_NEON(2, float, {(3.f - 1.25f * 2.f) / 2.f, 0.f, 0.f, 0.f});
-
-  // Double precision
-  RUN_AARCH64(R"(
-    fmov d0, 1.25
-    fmov d1, 2.0
-    frsqrts d2, d1, d0 
-  )");
-  CHECK_NEON(2, double, {(3.0L - (1.25L * 2.0L)) / 2.0, 0.0});
-
-  // Vector single precision
-  RUN_AARCH64(R"(
-    fmov v0.4s, 1.25
-    fmov v1.4s, 2.0
-    frsqrts v2.4s, v1.4s, v0.4s
-  )");
-  CHECK_NEON(2, float,
-             {((3.f - (1.25f * 2.f)) / 2.f), ((3.f - (1.25f * 2.f)) / 2.f),
-              ((3.f - (1.25f * 2.f)) / 2.f), ((3.f - (1.25f * 2.f)) / 2.f)});
-
-  // Vector single precision (2S)
-  RUN_AARCH64(R"(
-    fmov v0.4s, 1.25
-    fmov v1.4s, 2.0
-    frsqrts v2.2s, v1.2s, v0.2s
-  )");
-  CHECK_NEON(
-      2, float,
-      {((3.f - (1.25f * 2.f)) / 2.f), ((3.f - (1.25f * 2.f)) / 2.f), 0.f, 0.f});
-
-  // Vector double precision
-  RUN_AARCH64(R"(
-    fmov v0.2d, 1.25
-    fmov v1.2d, 2.0
-    frsqrts v2.2d, v1.2d, v0.2d
-  )");
-  CHECK_NEON(2, double,
-             {(3.0L - (1.25L * 2.0L)) / 2.0, (3.0L - (1.25L * 2.0L)) / 2.0})
-}
-
 TEST_P(InstFloat, fsub) {
   // FP32
   RUN_AARCH64(R"(

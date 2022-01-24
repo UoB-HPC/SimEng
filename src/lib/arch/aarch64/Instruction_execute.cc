@@ -6300,12 +6300,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FRSQRTS32: {
-      return executionNYI();
+    case Opcode::AArch64_FRSQRTS32: {  // frsqrts sd, sn, sm
+      results[0] = neonHelp::vecFrsqrts_3ops<float, 1>(operands);
       break;
     }
-    case Opcode::AArch64_FRSQRTS64: {
-      return executionNYI();
+    case Opcode::AArch64_FRSQRTS64: {  // frsqrts dd, dn, dm
+      results[0] = neonHelp::vecFrsqrts_3ops<double, 1>(operands);
       break;
     }
     case Opcode::AArch64_FRSQRTS_ZZZ_D: {
@@ -6320,20 +6320,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FRSQRTSv2f32: {
-      return executionNYI();
+    case Opcode::AArch64_FRSQRTSv2f32: {  // frsqrts vd.2s, vn.2s, vn.2s
+      results[0] = neonHelp::vecFrsqrts_3ops<float, 2>(operands);
       break;
     }
-    case Opcode::AArch64_FRSQRTSv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_FRSQRTSv2f64: {  // frsqrts vd.2d, vn.2d, vm.2d
+      results[0] = neonHelp::vecFrsqrts_3ops<double, 2>(operands);
       break;
     }
     case Opcode::AArch64_FRSQRTSv4f16: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FRSQRTSv4f32: {
-      return executionNYI();
+    case Opcode::AArch64_FRSQRTSv4f32: {  // frsqrts vd.4s, vn.4s, vm.4s
+      results[0] = neonHelp::vecFrsqrts_3ops<float, 4>(operands);
       break;
     }
     case Opcode::AArch64_FRSQRTSv8f16: {

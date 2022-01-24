@@ -329,7 +329,7 @@ class neonHelp {
 
   /** Helper function for NEON instructions with the format `frsqrte vd, vn`.
    *I represents the number of elements in the output array to be updated (i.e.
-   *for vd.8b the final 8 elements in the output array will be 0).
+   *for vd.2s the final 8 elements in the output array will be 0).
    */
   template <typename T, int I>
   static RegisterValue vecFrsqrte_2ops(
@@ -338,6 +338,22 @@ class neonHelp {
     T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       out[i] = 1.0f / sqrtf(n[i]);
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for NEON instructions with the format `frsqrts vd, vn,
+   * vm`. I represents the number of elements in the output array to be updated
+   * (i.e. for vd.8b the final 8 elements in the output array will be 0).
+   */
+  template <typename T, int I>
+  static RegisterValue vecFrsqrts_3ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = (3.0f - n[i] * m[i]) / 2.0f;
     }
     return {out, 256};
   }
