@@ -587,21 +587,26 @@ class sveHelp {
     return {out, 256};
   }
 
-  /** Helper function for SVE instructions with the format `index zd, #imm,
-   * #imm`. T represents the vector register type (i.e. zd.b would be
-   * int8_t).*/
-  template <typename T>
-  static RegisterValue sveIndex_2imm(
+  /** Helper function for SVE instructions with the format `index zd, <#imm,
+   * rn>, <#imm, rm>`.
+   * D represents the vector register type (i.e. zd.b would be int8_t).
+   * N represents the GPR type (i.e. for xn, xm, D would be int64). */
+  template <typename D, typename N = int8_t>
+  static RegisterValue sveIndex(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
-      const uint16_t VL_bits) {
-    const T imm1 = static_cast<T>(metadata.operands[1].imm);
-    const T imm2 = static_cast<T>(metadata.operands[2].imm);
+      const uint16_t VL_bits, bool op1isImm, bool op2isImm) {
+    const int op2Index = op1isImm ? 0 : 1;
+    const auto n = op1isImm ? static_cast<int8_t>(metadata.operands[1].imm)
+                            : static_cast<D>(operands[0].get<D>());
+    const auto m = op2isImm ? static_cast<int8_t>(metadata.operands[2].imm)
+                            : static_cast<D>(operands[op2Index].get<D>());
 
-    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    T out[256 / sizeof(T)] = {0};
+    const uint16_t partition_num = VL_bits / (sizeof(D) * 8);
+    D out[256 / sizeof(D)] = {0};
 
     for (int i = 0; i < partition_num; i++) {
-      out[i] = static_cast<T>(imm1 + (i * imm2));
+      out[i] = static_cast<D>(n + (i * m));
     }
     return {out, 256};
   }

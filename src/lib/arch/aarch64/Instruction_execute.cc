@@ -7162,67 +7162,83 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_INDEX_II_B: {  // index zd.b, #imm, #imm
-      results[0] = sveHelp::sveIndex_2imm<int8_t>(metadata, VL_bits);
+      results[0] =
+          sveHelp::sveIndex<int8_t>(operands, metadata, VL_bits, true, true);
       break;
     }
     case Opcode::AArch64_INDEX_II_D: {  // index zd.d, #imm, #imm
-      results[0] = sveHelp::sveIndex_2imm<int64_t>(metadata, VL_bits);
+      results[0] =
+          sveHelp::sveIndex<int64_t>(operands, metadata, VL_bits, true, true);
       break;
     }
     case Opcode::AArch64_INDEX_II_H: {  // index zd.h, #imm, #imm
-      results[0] = sveHelp::sveIndex_2imm<int16_t>(metadata, VL_bits);
+      results[0] =
+          sveHelp::sveIndex<int16_t>(operands, metadata, VL_bits, true, true);
       break;
     }
     case Opcode::AArch64_INDEX_II_S: {  // index zd.s, #imm, #imm
-      results[0] = sveHelp::sveIndex_2imm<int32_t>(metadata, VL_bits);
+      results[0] =
+          sveHelp::sveIndex<int32_t>(operands, metadata, VL_bits, true, true);
       break;
     }
-    case Opcode::AArch64_INDEX_IR_B: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_IR_B: {  // index zd.b, #imm, wn
+      results[0] = sveHelp::sveIndex<int8_t, int32_t>(operands, metadata,
+                                                      VL_bits, true, false);
       break;
     }
-    case Opcode::AArch64_INDEX_IR_D: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_IR_D: {  // index zd.d, #imm, xn
+      results[0] = sveHelp::sveIndex<int64_t, int64_t>(operands, metadata,
+                                                       VL_bits, true, false);
       break;
     }
-    case Opcode::AArch64_INDEX_IR_H: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_IR_H: {  // index zd.h, #imm, wn
+      results[0] = sveHelp::sveIndex<int16_t, int32_t>(operands, metadata,
+                                                       VL_bits, true, false);
       break;
     }
-    case Opcode::AArch64_INDEX_IR_S: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_IR_S: {  // index zd.s, #imm, wn
+      results[0] = sveHelp::sveIndex<int32_t, int32_t>(operands, metadata,
+                                                       VL_bits, true, false);
       break;
     }
-    case Opcode::AArch64_INDEX_RI_B: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_RI_B: {  // index zd.b, wn, #imm
+      results[0] = sveHelp::sveIndex<int8_t, int32_t>(operands, metadata,
+                                                      VL_bits, false, true);
       break;
     }
-    case Opcode::AArch64_INDEX_RI_D: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_RI_D: {  // index zd.d, xn, #imm
+      results[0] = sveHelp::sveIndex<int64_t, int64_t>(operands, metadata,
+                                                       VL_bits, false, true);
       break;
     }
-    case Opcode::AArch64_INDEX_RI_H: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_RI_H: {  // index zd.h, wn, #imm
+      results[0] = sveHelp::sveIndex<int16_t, int32_t>(operands, metadata,
+                                                       VL_bits, false, true);
       break;
     }
-    case Opcode::AArch64_INDEX_RI_S: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_RI_S: {  // index zd.s, wn, #imm
+      results[0] = sveHelp::sveIndex<int32_t, int32_t>(operands, metadata,
+                                                       VL_bits, false, true);
       break;
     }
-    case Opcode::AArch64_INDEX_RR_B: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_RR_B: {  // index zd.b, wn, wm
+      results[0] = sveHelp::sveIndex<int8_t, int32_t>(operands, metadata,
+                                                      VL_bits, false, false);
       break;
     }
-    case Opcode::AArch64_INDEX_RR_D: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_RR_D: {  // index zd.d, xn, xm
+      results[0] = sveHelp::sveIndex<int64_t, int64_t>(operands, metadata,
+                                                       VL_bits, false, false);
       break;
     }
-    case Opcode::AArch64_INDEX_RR_H: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_RR_H: {  // index zd.h, wn, wm
+      results[0] = sveHelp::sveIndex<int16_t, int32_t>(operands, metadata,
+                                                       VL_bits, false, false);
       break;
     }
-    case Opcode::AArch64_INDEX_RR_S: {
-      return executionNYI();
+    case Opcode::AArch64_INDEX_RR_S: {  // index zd.s, wn, wm
+      results[0] = sveHelp::sveIndex<int32_t, int32_t>(operands, metadata,
+                                                       VL_bits, false, false);
       break;
     }
     case Opcode::AArch64_INSR_ZR_B: {
