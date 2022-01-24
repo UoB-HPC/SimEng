@@ -750,6 +750,57 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `movprfx zd,
+   * pg/m, zn`. T represents the vector register type (i.e. zd.d would be
+   * uint64_t).*/
+  template <typename T>
+  static RegisterValue sveMovprfxPredicated_destUnchanged(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    // TODO: Adopt hint logic of the MOVPRFX instruction
+    const T* d = operands[0].getAsVector<T>();
+    const uint64_t* p = operands[1].getAsVector<uint64_t>();
+    const T* n = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i] = n[i];
+      } else {
+        out[i] = d[i];
+      }
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `movprfx zd,
+   * pg/z, zn`. T represents the vector register type (i.e. zd.d would be
+   * uint64_t).*/
+  template <typename T>
+  static RegisterValue sveMovprfxPredicated_destToZero(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    // TODO: Adopt hint logic of the MOVPRFX instruction
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* n = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i] = n[i];
+      } else {
+        out[i] = 0;
+      }
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `ptrue pd{,
    * pattern}. T represents the predicate type (i.e. pd.b would be uint8_t).
    */

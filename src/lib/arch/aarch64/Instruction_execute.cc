@@ -10602,8 +10602,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MOVPRFX_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_MOVPRFX_ZPmZ_D: {  // movprfx zd.d, pg/m, zn.d
+      results[0] = sveHelp::sveMovprfxPredicated_destUnchanged<uint64_t>(
+          operands, VL_bits);
       break;
     }
     case Opcode::AArch64_MOVPRFX_ZPmZ_H: {
@@ -10618,16 +10619,18 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MOVPRFX_ZPzZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_MOVPRFX_ZPzZ_D: {  // movprfx zd.d, pg/z, zn.d
+      results[0] =
+          sveHelp::sveMovprfxPredicated_destToZero<uint64_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_MOVPRFX_ZPzZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_MOVPRFX_ZPzZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_MOVPRFX_ZPzZ_S: {  // movprfx zd.s, pg/z, zn.s
+      results[0] =
+          sveHelp::sveMovprfxPredicated_destToZero<uint32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_MOVPRFX_ZZ: {  // movprfx zd, zn
