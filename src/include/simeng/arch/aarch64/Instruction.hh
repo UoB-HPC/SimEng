@@ -97,6 +97,7 @@ const uint8_t INVALID = 255;
 struct MicroOpInfo {
   bool isMicroOp = false;
   uint8_t microOpcode = MicroOpcode::INVALID;
+  uint8_t dataSize = 0;
   bool isLastMicroOp = true;
   int microOpIndex = 0;
 };
@@ -316,6 +317,8 @@ class Instruction : public simeng::Instruction {
   bool isBL_ = false;
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t microOpcode_ = MicroOpcode::INVALID;
+  /** Is the micro-operation opcode of the instruction, where appropriate. */
+  uint8_t dataSize_ = 0;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

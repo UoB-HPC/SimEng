@@ -33,18 +33,28 @@ class MicroDecoder {
   cs_detail createDefaultDetail(std::vector<OpType> opTypes);
 
   /** Create an address offset uop from a base register and an immediate. */
-  cs_insn createImmOffsetUop(arm64_reg base, int64_t offset);
+  Instruction createImmOffsetUop(const Architecture& architecture,
+                                 arm64_reg base, int64_t offset,
+                                 csh capstoneHandle, bool lastMicroOp = false,
+                                 int microOpIndex = 0);
 
   /** Create a load uop from a destination register and a capstone memory
    * operand. */
-  cs_insn createLdrUop(arm64_reg dest, arm64_op_mem mem);
+  Instruction createLdrUop(const Architecture& architecture, arm64_reg dest,
+                           arm64_op_mem mem, csh capstoneHandle,
+                           bool lastMicroOp = false, int microOpIndex = 0,
+                           uint8_t dataSize = 0);
 
   /** Create a store data uop from a source register. */
-  cs_insn createSDUop(arm64_reg src);
+  Instruction createSDUop(const Architecture& architecture, arm64_reg src,
+                          csh capstoneHandle, bool lastMicroOp = false,
+                          int microOpIndex = 0);
 
   /** Create a store address uop from a capstone memory
    * operand. */
-  cs_insn createStrUop(arm64_op_mem mem);
+  Instruction createStrUop(const Architecture& architecture, arm64_op_mem mem,
+                           csh capstoneHandle, bool lastMicroOp = false,
+                           int microOpIndex = 0, uint8_t dataSize = 0);
 
  private:
   /** Flag to determine whether instruction splitting is enabled. */
