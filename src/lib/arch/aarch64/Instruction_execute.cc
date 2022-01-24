@@ -11450,8 +11450,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_RET: {
-      return executionNYI();
+    case Opcode::AArch64_RET: {  // ret {xr}
+      branchTaken_ = true;
+      branchAddress_ = operands[0].get<uint64_t>();
       break;
     }
     case Opcode::AArch64_RETAA: {
