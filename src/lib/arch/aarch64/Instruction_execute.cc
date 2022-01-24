@@ -5772,16 +5772,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNMLS_ZPmZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FNMLS_ZPmZZ_D: {  // fnmls zd.d, pg/m, zn.d, zm.d
+      results[0] = sveHelp::sveFnmlsPredicated<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FNMLS_ZPmZZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNMLS_ZPmZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FNMLS_ZPmZZ_S: {  // fnmls zd.s, pg/m, zn.s, zm.s
+      results[0] = sveHelp::sveFnmlsPredicated<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FNMSB_ZPmZZ_D: {
