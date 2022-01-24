@@ -801,6 +801,25 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `orr zd, zn,
+   * zm`. T represents the vector register type (i.e. zd.d would be
+   * double).*/
+  template <typename T>
+  static RegisterValue sveOrr_3vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      out[i] = n[i] | m[i];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `ptrue pd{,
    * pattern}. T represents the predicate type (i.e. pd.b would be uint8_t).
    */

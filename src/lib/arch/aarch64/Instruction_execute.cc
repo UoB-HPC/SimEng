@@ -7085,8 +7085,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_HINT: {
-      return executionNYI();
+    case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
+      // TODO: Observe hints
       break;
     }
     case Opcode::AArch64_HLT: {
@@ -10922,16 +10922,22 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ORNWrs: {
-      return executionNYI();
+    case Opcode::AArch64_ORNWrs: {  // orn wd, wn, wm{, shift{ #amount}}
+      auto [result, nzcv] = logicalHelp::logicOpShift_3ops<uint32_t>(
+          operands, metadata, false,
+          [](uint32_t x, uint32_t y) -> uint32_t { return x | (~y); });
+      results[0] = RegisterValue(result, 8);
       break;
     }
     case Opcode::AArch64_ORNXrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ORNXrs: {
-      return executionNYI();
+    case Opcode::AArch64_ORNXrs: {  // orn xd, xn, xm{, shift{ #amount}}
+      auto [result, nzcv] = logicalHelp::logicOpShift_3ops<uint64_t>(
+          operands, metadata, false,
+          [](uint64_t x, uint64_t y) -> uint64_t { return x | (~y); });
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_ORN_PPzPP: {
@@ -10950,8 +10956,11 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ORRWri: {
-      return executionNYI();
+    case Opcode::AArch64_ORRWri: {  // orr wd, wn, #imm
+      auto [result, nzcv] = logicalHelp::logicOp_imm<uint32_t>(
+          operands, metadata, false,
+          [](uint32_t x, uint32_t y) -> uint32_t { return x | y; });
+      results[0] = RegisterValue(result, 8);
       break;
     }
     case Opcode::AArch64_ORRWrr: {
@@ -10963,8 +10972,11 @@ void Instruction::execute() {
           comparisonHelp::orrShift_3ops<uint32_t>(operands, metadata));
       break;
     }
-    case Opcode::AArch64_ORRXri: {
-      return executionNYI();
+    case Opcode::AArch64_ORRXri: {  // orr xd, xn, #imm
+      auto [result, nzcv] = logicalHelp::logicOp_imm<uint64_t>(
+          operands, metadata, false,
+          [](uint64_t x, uint64_t y) -> uint64_t { return x | y; });
+      results[0] = RegisterValue(result, 8);
       break;
     }
     case Opcode::AArch64_ORRXrr: {
@@ -10975,8 +10987,10 @@ void Instruction::execute() {
       results[0] = comparisonHelp::orrShift_3ops<uint64_t>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_ORR_PPzPP: {
-      return executionNYI();
+    case Opcode::AArch64_ORR_PPzPP: {  // orr pd.b, pg/z, pn.b, pm.b
+      results[0] = sveHelp::sveLogicOp_preds<uint8_t>(
+          operands, VL_bits,
+          [](uint64_t x, uint64_t y) -> uint64_t { return x | y; });
       break;
     }
     case Opcode::AArch64_ORR_ZI: {
@@ -10999,8 +11013,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ORR_ZZZ: {
-      return executionNYI();
+    case Opcode::AArch64_ORR_ZZZ: {  // orr zd.d, zn.d, zm.d
+      results[0] = sveHelp::sveOrr_3vecs<uint64_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_ORRv16i8: {
