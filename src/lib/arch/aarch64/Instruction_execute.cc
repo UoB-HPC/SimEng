@@ -6396,8 +6396,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSUBDrr: {
-      return executionNYI();
+    case Opcode::AArch64_FSUBDrr: {  // fsub dd, dn, dm
+      results[0] = neonHelp::vecLogicOp_3vecs<double, 1>(
+          operands, [](double x, double y) -> double { return x - y; });
       break;
     }
     case Opcode::AArch64_FSUBHrr: {
@@ -6428,8 +6429,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSUBSrr: {
-      return executionNYI();
+    case Opcode::AArch64_FSUBSrr: {  // fsub ss, sn, sm
+      results[0] = neonHelp::vecLogicOp_3vecs<float, 1>(
+          operands, [](double x, double y) -> double { return x - y; });
       break;
     }
     case Opcode::AArch64_FSUB_ZPmI_D: {
@@ -6444,28 +6446,31 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSUB_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FSUB_ZPmZ_D: {  // fsub zdn.d, pg/m, zdn.d, zm.d
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<double>(
+          operands, VL_bits,
+          [](double x, double y) -> double { return x - y; });
       break;
     }
     case Opcode::AArch64_FSUB_ZPmZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSUB_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FSUB_ZPmZ_S: {  // fsub zdn.s, pg/m, zdn.s, zm.s
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<float>(
+          operands, VL_bits, [](float x, float y) -> float { return x - y; });
       break;
     }
-    case Opcode::AArch64_FSUB_ZZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FSUB_ZZZ_D: {  // fsub zd.d, zn.d, zm.d
+      results[0] = sveHelp::sveFsub_3vecs<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FSUB_ZZZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSUB_ZZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FSUB_ZZZ_S: {  // fsub zd.s, zn.s, zm.s
+      results[0] = sveHelp::sveFsub_3vecs<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FSUBv2f32: {
