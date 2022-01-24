@@ -11017,8 +11017,9 @@ void Instruction::execute() {
       results[0] = sveHelp::sveOrr_3vecs<uint64_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_ORRv16i8: {
-      return executionNYI();
+    case Opcode::AArch64_ORRv16i8: {  // orr vd.16b, Vn.16b, Vm.16b
+      results[0] = neonHelp::vecLogicOp_3vecs<uint8_t, 16>(
+          operands, [](uint8_t x, uint8_t y) -> uint8_t { return x | y; });
       break;
     }
     case Opcode::AArch64_ORRv2i32: {
@@ -11117,9 +11118,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_PFALSE: {
-      return executionNYI();
-      break;
+    case Opcode::AArch64_PFALSE: {  // pfalse pd.b
+      uint64_t out[4] = {0, 0, 0, 0};
+      results[0] = out;
     }
     case Opcode::AArch64_PMULLv16i8: {
       return executionNYI();
@@ -11281,8 +11282,7 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_PRFMui: {
-      return executionNYI();
+    case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
       break;
     }
     case Opcode::AArch64_PRFS_PRR: {
@@ -11325,8 +11325,13 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_PTEST_PP: {
-      return executionNYI();
+    case Opcode::AArch64_PTEST_PP: {  // ptest pg, pn.b
+      const uint64_t* g = operands[0].getAsVector<uint64_t>();
+      const uint64_t* s = operands[1].getAsVector<uint64_t>();
+      std::array<uint64_t, 4> masked_n = {(g[0] & s[0]), (g[1] & s[1]),
+                                          (g[2] & s[2]), (g[3] & s[3])};
+      // Byte count = 1 as destination predicate is regarding single bytes.
+      results[0] = AuxFunc::getNZCVfromPred(masked_n, VL_bits, 1);
       break;
     }
     case Opcode::AArch64_PTRUES_B: {
