@@ -517,6 +517,34 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `frintn zd, pg/m,
+   * zn`.
+   * D represents the destination vector register type (i.e. zd.s would be
+   * int32_t).
+   * N represents the source vector register type (i.e. zd.d would be
+   * double).
+   */
+  template <typename D, typename N>
+  static RegisterValue sveFrintnPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const D* d = operands[0].getAsVector<D>();
+    const uint64_t* p = operands[1].getAsVector<uint64_t>();
+    const N* n = operands[2].getAsVector<N>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(N) * 8);
+    D out[256 / sizeof(D)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(N))) * sizeof(N));
+      if (p[i / (64 / sizeof(N))] & shifted_active)
+        out[i] = AuxFunc::doubleRoundToNearestTiesToEven(n[i]);
+      else
+        out[i] = d[i];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `index zd, #imm,
    * #imm`. T represents the vector register type (i.e. zd.b would be
    * int8_t).*/

@@ -5796,28 +5796,38 @@ void Instruction::execute() {
       results[0] = sveHelp::sveFnmsbPredicated<float>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_FNMSUBDrrr: {
-      return executionNYI();
+    case Opcode::AArch64_FNMSUBDrrr: {  // fnmsub dd, dn, dm, da
+      double n = operands[0].get<double>();
+      double m = operands[1].get<double>();
+      double a = operands[2].get<double>();
+      results[0] = {std::fma(n, m, -a), 256};
       break;
     }
     case Opcode::AArch64_FNMSUBHrrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNMSUBSrrr: {
-      return executionNYI();
+    case Opcode::AArch64_FNMSUBSrrr: {  // fnmsub sd, sn, sm, sa
+      float n = operands[0].get<float>();
+      float m = operands[1].get<float>();
+      float a = operands[2].get<float>();
+      results[0] = {std::fma(n, m, -a), 256};
       break;
     }
-    case Opcode::AArch64_FNMULDrr: {
-      return executionNYI();
+    case Opcode::AArch64_FNMULDrr: {  // fnmul dd, dn, dm
+      double n = operands[0].get<double>();
+      double m = operands[1].get<double>();
+      results[0] = {-(n * m), 256};
       break;
     }
     case Opcode::AArch64_FNMULHrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNMULSrr: {
-      return executionNYI();
+    case Opcode::AArch64_FNMULSrr: {  // fnmul sd, sn, sm
+      float n = operands[0].get<float>();
+      float m = operands[1].get<float>();
+      results[0] = {-(n * m), 256};
       break;
     }
     case Opcode::AArch64_FRECPE_ZZ_D: {
@@ -6076,16 +6086,18 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FRINTN_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FRINTN_ZPmZ_D: {  // frintn zd.d, pg/m, zn.d
+      results[0] =
+          sveHelp::sveFrintnPredicated<int64_t, double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FRINTN_ZPmZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FRINTN_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FRINTN_ZPmZ_S: {  // frintn zd.s, pg/m, zn.s
+      results[0] =
+          sveHelp::sveFrintnPredicated<int32_t, float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FRINTNv2f32: {
