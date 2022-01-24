@@ -7287,8 +7287,8 @@ void Instruction::execute() {
           neonHelp::vecInsIndex_gpr<uint32_t, uint32_t, 4>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_INSvi32lane: {
-      return executionNYI();
+    case Opcode::AArch64_INSvi32lane: {  // ins vd.s[index1], vn.s[index2]
+      results[0] = neonHelp::vecIns_2Index<uint32_t, 4>(operands, metadata);
       break;
     }
     case Opcode::AArch64_INSvi64gpr: {  // ins vd.d[index], xn
@@ -7296,8 +7296,8 @@ void Instruction::execute() {
           neonHelp::vecInsIndex_gpr<uint64_t, uint64_t, 2>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_INSvi64lane: {
-      return executionNYI();
+    case Opcode::AArch64_INSvi64lane: {  // ins vd.d[index1], vn.d[index2]
+      results[0] = neonHelp::vecIns_2Index<uint64_t, 2>(operands, metadata);
       break;
     }
     case Opcode::AArch64_INSvi8gpr: {  // ins vd.b[index], wn
