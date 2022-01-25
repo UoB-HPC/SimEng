@@ -12408,8 +12408,11 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SMADDLrrr: {
-      return executionNYI();
+    case Opcode::AArch64_SMADDLrrr: {  // smaddl xd, wn, wm, xa
+      auto n = static_cast<int64_t>(operands[0].get<int32_t>());
+      auto m = static_cast<int64_t>(operands[1].get<int32_t>());
+      auto a = operands[2].get<int64_t>();
+      results[0] = a + (n * m);
       break;
     }
     case Opcode::AArch64_SMAXPv16i8: {
@@ -12484,8 +12487,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SMAX_ZI_S: {
-      return executionNYI();
+    case Opcode::AArch64_SMAX_ZI_S: {  // smax zdn.s, zdn.s, #imm
+      results[0] = sveHelp::sveMax_vecImm<int32_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_SMAX_ZPmZ_B: {
@@ -12500,8 +12503,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SMAX_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_SMAX_ZPmZ_S: {  // smax zd.s, pg/m, zn.s, zm.s
+      results[0] = sveHelp::sveMaxPredicated_vecs<int32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SMAXv16i8: {
