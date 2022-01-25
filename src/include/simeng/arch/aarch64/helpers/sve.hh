@@ -985,7 +985,7 @@ class sveHelp {
     const T* n = operands[1].getAsVector<T>();
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
-    T out = INT32_MAX;
+    T out = std::numeric_limits<T>::max();
 
     for (int i = 0; i < partition_num; i++) {
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));

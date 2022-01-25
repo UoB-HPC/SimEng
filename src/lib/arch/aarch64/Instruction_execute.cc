@@ -12585,8 +12585,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SMINVv4i32v: {
-      return executionNYI();
+    case Opcode::AArch64_SMINVv4i32v: {  // sminv sd, vn.4s
+      results[0] = neonHelp::vecSminv_2ops<int32_t, 4>(operands);
       break;
     }
     case Opcode::AArch64_SMINVv8i16v: {
@@ -12643,8 +12643,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SMINv4i32: {
-      return executionNYI();
+    case Opcode::AArch64_SMINv4i32: {  // smin vd.4s, vn.4s, vm.4s
+      results[0] = neonHelp::vecLogicOp_3vecs<int32_t, 4>(
+          operands,
+          [](int32_t x, int32_t y) -> int32_t { return std::min(x, y); });
       break;
     }
     case Opcode::AArch64_SMINv8i16: {

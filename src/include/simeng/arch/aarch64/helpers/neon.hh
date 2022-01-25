@@ -504,6 +504,21 @@ class neonHelp {
     }
     return {out, 256};
   }
+
+  /** Helper function for NEON instructions with the format `sminv sd, vn`.
+   * I represents the number of elements in the inout vector to be
+   * updated (i.e. for vn.4s I = 4).
+   */
+  template <typename T, int I>
+  static RegisterValue vecSminv_2ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    T out = std::numeric_limits<T>::max();
+    for (int i = 0; i < I; i++) {
+      out = std::min(n[i], out);
+    }
+    return {out, 256};
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
