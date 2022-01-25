@@ -6462,7 +6462,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FSUB_ZZZ_D: {  // fsub zd.d, zn.d, zm.d
-      results[0] = sveHelp::sveFsub_3vecs<double>(operands, VL_bits);
+      results[0] = sveHelp::sveSub_3vecs<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FSUB_ZZZ_H: {
@@ -6470,7 +6470,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FSUB_ZZZ_S: {  // fsub zd.s, zn.s, zm.s
-      results[0] = sveHelp::sveFsub_3vecs<float>(operands, VL_bits);
+      results[0] = sveHelp::sveSub_3vecs<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FSUBv2f32: {
@@ -16123,20 +16123,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SUB_ZZZ_B: {
-      return executionNYI();
+    case Opcode::AArch64_SUB_ZZZ_B: {  // sub zd.b, zn.b, zm.b
+      results[0] = sveHelp::sveSub_3vecs<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_SUB_ZZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_SUB_ZZZ_D: {  // sub zd.d, zn.d, zm.d
+      results[0] = sveHelp::sveSub_3vecs<uint64_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_SUB_ZZZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_SUB_ZZZ_H: {  // sub zd.h, zn.h, zm.h
+      results[0] = sveHelp::sveSub_3vecs<uint16_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_SUB_ZZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_SUB_ZZZ_S: {  // sub zd.s, zn.s, zm.s
+      results[0] = sveHelp::sveSub_3vecs<uint32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SUBv16i8: {  // sub vd.16b, vn.16b, vm.16b
@@ -16336,8 +16336,25 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SXTW_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_SXTW_ZPmZ_D: {  // sxtw zd.d, pg/m, zn.d
+      const int64_t* d = operands[0].getAsVector<int64_t>();
+      const uint64_t* p = operands[1].getAsVector<uint64_t>();
+      const int64_t* n = operands[2].getAsVector<int64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      int64_t out[32] = {0};
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          // Cast to 32-bit to get 'least significant sub-element'
+          // Then cast back to 64-bit to sign-extend this 'sub-element'
+          out[i] = static_cast<int64_t>(static_cast<int32_t>(n[i]));
+        } else {
+          out[i] = d[i];
+        }
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SYSLxt: {
@@ -16405,12 +16422,18 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_TBNZW: {
-      return executionNYI();
+    case Opcode::AArch64_TBNZW: {  // tbnz wn, #imm, label
+      auto [taken, addr] = conditionalHelp::tbnz_tbz<uint32_t>(
+          operands, metadata, instructionAddress_, true);
+      branchTaken_ = taken;
+      branchAddress_ = addr;
       break;
     }
-    case Opcode::AArch64_TBNZX: {
-      return executionNYI();
+    case Opcode::AArch64_TBNZX: {  // tbnz xn, #imm, label
+      auto [taken, addr] = conditionalHelp::tbnz_tbz<uint64_t>(
+          operands, metadata, instructionAddress_, true);
+      branchTaken_ = taken;
+      branchAddress_ = addr;
       break;
     }
     case Opcode::AArch64_TBXv16i8Four: {
@@ -16445,12 +16468,18 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_TBZW: {
-      return executionNYI();
+    case Opcode::AArch64_TBZW: {  // tbz wn, #imm, label
+      auto [taken, addr] = conditionalHelp::tbnz_tbz<uint32_t>(
+          operands, metadata, instructionAddress_, false);
+      branchTaken_ = taken;
+      branchAddress_ = addr;
       break;
     }
-    case Opcode::AArch64_TBZX: {
-      return executionNYI();
+    case Opcode::AArch64_TBZX: {  // tbz xn, #imm, label
+      auto [taken, addr] = conditionalHelp::tbnz_tbz<uint64_t>(
+          operands, metadata, instructionAddress_, false);
+      branchTaken_ = taken;
+      branchAddress_ = addr;
       break;
     }
     case Opcode::AArch64_TCRETURNdi: {
@@ -17098,8 +17127,11 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UMADDLrrr: {
-      return executionNYI();
+    case Opcode::AArch64_UMADDLrrr: {  // umaddl xd, wn, wm, xa
+      auto n = static_cast<uint64_t>(operands[0].get<uint32_t>());
+      auto m = static_cast<uint64_t>(operands[1].get<uint32_t>());
+      auto a = operands[2].get<uint64_t>();
+      results[0] = a + (n * m);
       break;
     }
     case Opcode::AArch64_UMAXPv16i8: {

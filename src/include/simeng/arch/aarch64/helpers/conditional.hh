@@ -87,6 +87,25 @@ class conditionalHelp {
     }
     return func(operands[2].get<T>());
   }
+
+  /** Helper function for instructions with the format `tb<z,nz> rn, #imm,
+   * label`. */
+  template <typename T>
+  static std::tuple<bool, uint64_t> tbnz_tbz(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      uint64_t instructionAddress, bool isNZ) {
+    bool branchTaken;
+    uint64_t branchAddress = instructionAddress;
+    if (operands[0].get<T>() &
+        (static_cast<T>(1) << metadata.operands[1].imm)) {
+      branchTaken = isNZ;
+    } else {
+      branchTaken = !isNZ;
+    }
+    branchAddress += branchTaken ? metadata.operands[2].imm : 4;
+    return {branchTaken, branchAddress};
+  }
 };
 }  // namespace aarch64
 }  // namespace arch

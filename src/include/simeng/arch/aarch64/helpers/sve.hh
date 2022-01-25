@@ -569,11 +569,11 @@ class sveHelp {
     return {out, 256};
   }
 
-  /** Helper function for SVE instructions with the format `fsub zd, zn,
+  /** Helper function for SVE instructions with the format `Sub zd, zn,
    * zm`. T represents the vector register type (i.e. zd.d would be
    * double).*/
   template <typename T>
-  static RegisterValue sveFsub_3vecs(
+  static RegisterValue sveSub_3vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits) {
     const T* n = operands[0].getAsVector<T>();
