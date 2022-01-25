@@ -11942,28 +11942,28 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SCVTFUWDri: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTFUWDri: {  // scvtf dd, wn
+      results[0] = {static_cast<double>(operands[0].get<int32_t>()), 256};
       break;
     }
     case Opcode::AArch64_SCVTFUWHri: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SCVTFUWSri: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTFUWSri: {  // scvtf sd, wn
+      results[0] = {static_cast<float>(operands[0].get<int32_t>()), 256};
       break;
     }
-    case Opcode::AArch64_SCVTFUXDri: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTFUXDri: {  // scvtf dd, xn
+      results[0] = {static_cast<double>(operands[0].get<int64_t>()), 256};
       break;
     }
     case Opcode::AArch64_SCVTFUXHri: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SCVTFUXSri: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTFUXSri: {  // scvtf sd, xn
+      results[0] = {static_cast<float>(operands[0].get<int64_t>()), 256};
       break;
     }
     case Opcode::AArch64_SCVTF_ZPmZ_DtoD: {  // scvtf zd.d, pg/m, zn.d
@@ -12014,20 +12014,22 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SCVTFv1i32: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTFv1i32: {  // scvtf sd, sn
+      results[0] = {static_cast<float>(operands[0].get<int32_t>()), 256};
       break;
     }
-    case Opcode::AArch64_SCVTFv1i64: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTFv1i64: {  // scvtf dd, dn
+      results[0] = {static_cast<double>(operands[0].get<int64_t>()), 256};
       break;
     }
-    case Opcode::AArch64_SCVTFv2f32: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTFv2f32: {  // scvtf vd.2s, vn.2s
+      results[0] = neonHelp::vecScvtf_2vecs<float, int32_t, 2>(
+          operands, [](int32_t x) -> float { return static_cast<float>(x); });
       break;
     }
-    case Opcode::AArch64_SCVTFv2f64: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTFv2f64: {  // scvtf vd.2d, vn.2d
+      results[0] = neonHelp::vecScvtf_2vecs<double, int64_t, 2>(
+          operands, [](int64_t x) -> double { return static_cast<double>(x); });
       break;
     }
     case Opcode::AArch64_SCVTFv2i32_shift: {
@@ -12042,8 +12044,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SCVTFv4f32: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTFv4f32: {  // scvtf vd.4s, vn.4s
+      results[0] = neonHelp::vecScvtf_2vecs<float, int32_t, 4>(
+          operands, [](int32_t x) -> float { return static_cast<float>(x); });
       break;
     }
     case Opcode::AArch64_SCVTFv4i16_shift: {

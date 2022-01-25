@@ -467,6 +467,25 @@ class neonHelp {
     std::fill_n(std::begin(out), I, negate ? ~bits : bits);
     return {out, 256};
   }
+
+  /** Helper function for NEON instructions with the format `scvtf vd,
+   *  vn`.
+   * D represents the destination vector register type (i.e. vd.2d would be
+   * double).
+   * N represents the source vector register type (i.e. vd.2s would be int32_t).
+   * I represents the number of elements in the output array to be updated (i.e.
+   * for vd.8b the final 8 elements in the output array will be 0). */
+  template <typename D, typename N, int I>
+  static RegisterValue vecScvtf_2vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::function<D(N)> func) {
+    const N* n = operands[0].getAsVector<N>();
+    D out[16 / sizeof(D)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = static_cast<D>(n[i]);
+    }
+    return {out, 256};
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
