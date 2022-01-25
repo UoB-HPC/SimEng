@@ -61,6 +61,18 @@ class bitmanipHelp {
     }
     return result;
   }
+
+  /** Helper function for instructions with the format `rev rd, rn`.
+   * Returns Single value. */
+  template <typename T>
+  static std::array<uint8_t, sizeof(T)> rev(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    auto bytes = operands[0].getAsVector<uint8_t>();
+    std::array<uint8_t, sizeof(T)> reversed;
+    // Copy `bytes` backwards onto `reversed`
+    std::copy(bytes, bytes + sizeof(T), std::rbegin(reversed));
+    return reversed;
+  }
 };
 }  // namespace aarch64
 }  // namespace arch

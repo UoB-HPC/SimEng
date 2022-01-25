@@ -11446,8 +11446,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_RDVLI_XI: {
-      return executionNYI();
+    case Opcode::AArch64_RDVLI_XI: {  // rdvl xd, #imm
+      int8_t imm = static_cast<int8_t>(metadata.operands[1].imm);
+      results[0] = (uint64_t)(imm * (VL_bits / 8));
       break;
     }
     case Opcode::AArch64_RET: {  // ret {xr}
@@ -11555,8 +11556,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_REVXr: {
-      return executionNYI();
+    case Opcode::AArch64_REVXr: {  // rev xd, xn
+      results[0] = bitmanipHelp::rev<uint64_t>(operands);
       break;
     }
     case Opcode::AArch64_REV_PP_B: {
