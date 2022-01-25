@@ -11966,32 +11966,36 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SCVTF_ZPmZ_DtoD: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTF_ZPmZ_DtoD: {  // scvtf zd.d, pg/m, zn.d
+      results[0] =
+          sveHelp::sveFcvtPredicated<double, int64_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SCVTF_ZPmZ_DtoH: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SCVTF_ZPmZ_DtoS: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTF_ZPmZ_DtoS: {  // scvtf zd.s, pg/m, zn.d
+      results[0] =
+          sveHelp::sveFcvtPredicated<float, int64_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SCVTF_ZPmZ_HtoH: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SCVTF_ZPmZ_StoD: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTF_ZPmZ_StoD: {  // scvtf zd.d, pg/m, zn.s
+      results[0] =
+          sveHelp::sveFcvtPredicated<double, int32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SCVTF_ZPmZ_StoH: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SCVTF_ZPmZ_StoS: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTF_ZPmZ_StoS: {  // scvtf zd.s, pg/m, zn.s
+      results[0] =
+          sveHelp::sveFcvtPredicated<float, int32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SCVTFd: {

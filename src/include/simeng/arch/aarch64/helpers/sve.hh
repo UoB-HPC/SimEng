@@ -245,6 +245,7 @@ class sveHelp {
     // Stores size of largest type out of D and N
     int lts = std::max(sizeof(D), sizeof(N));
     bool sourceLarger = (sizeof(D) < sizeof(N)) ? true : false;
+    bool sameDandN = (sizeof(D) == sizeof(N)) ? true : false;
 
     const uint16_t partition_num = VL_bits / (lts * 8);
     D out[256 / sizeof(D)] = {0};
@@ -252,7 +253,7 @@ class sveHelp {
     for (int i = 0; i < partition_num; i++) {
       uint64_t shifted_active = 1ull << ((i % (64 / lts)) * lts);
       int indexOut = (sourceLarger) ? (2 * i) : i;
-      int indexN = (!sourceLarger) ? (2 * i) : i;
+      int indexN = (!sameDandN) && (!sourceLarger) ? (2 * i) : i;
 
       if (p[i / (64 / lts)] & shifted_active) {
         if (n[indexN] > std::numeric_limits<D>::max())
