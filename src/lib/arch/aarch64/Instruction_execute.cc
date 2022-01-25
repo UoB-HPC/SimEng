@@ -17610,12 +17610,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UQDECD_WPiI: {
-      return executionNYI();
+    case Opcode::AArch64_UQDECD_WPiI: {  // uqdecd wd{, pattern{, MUL #imm}}
+      results[0] =
+          sveHelp::sveUqdec<uint32_t, 64u>(operands, metadata, VL_bits);
       break;
     }
-    case Opcode::AArch64_UQDECD_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_UQDECD_XPiI: {  // uqdecd xd{, pattern{, MUL #imm}}
+      results[0] =
+          sveHelp::sveUqdec<uint64_t, 64u>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_UQDECD_ZPiI: {
@@ -17626,8 +17628,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UQDECH_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_UQDECH_XPiI: {  // uqdech xd{, pattern{, MUL #imm}}
+      results[0] =
+          sveHelp::sveUqdec<uint64_t, 16u>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_UQDECH_ZPiI: {
@@ -17682,8 +17685,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UQDECW_XPiI: {
-      return executionNYI();
+    case Opcode::AArch64_UQDECW_XPiI: {  // uqdecw xd{, pattern{, MUL #imm}}
+      results[0] =
+          sveHelp::sveUqdec<uint64_t, 32u>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_UQDECW_ZPiI: {

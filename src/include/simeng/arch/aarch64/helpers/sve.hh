@@ -1024,6 +1024,29 @@ class sveHelp {
         calcNZCV ? AuxFunc::getNZCVfromPred(out, VL_bits, sizeof(P)) : 0;
     return {out, nzcv};
   }
+
+  /** Helper function for SVE instructions with the format `uqdec<b, d, h, w>
+   * <x,w>d{, pattern{, MUL #imm}}`.
+   * D represents the type of dest. register(i.e. uint32_t for wd).
+   * N represents the type of the operation (i.e. D = 16u for uqdech).
+   */
+  template <typename D, uint64_t N>
+  static uint64_t sveUqdec(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const D d = operands[0].get<D>();
+    const uint8_t imm = metadata.operands[1].imm;
+
+    // The range of possible values does not fit in the range of any integral
+    // type, so a double is used as an intermediate value. The end result must
+    // be saturated to fit in uint64_t.
+    auto intermediate = double(d) - (imm * (VL_bits / N));
+    if (intermediate < 0) {
+      return (uint64_t)0;
+    }
+    return (uint64_t)(d - (imm * (VL_bits / N)));
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
