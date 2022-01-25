@@ -12757,8 +12757,11 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SMSUBLrrr: {
-      return executionNYI();
+    case Opcode::AArch64_SMSUBLrrr: {  // smsubl xd, wn, wm, xa
+      const int32_t n = operands[0].get<int32_t>();
+      const int32_t m = operands[1].get<int32_t>();
+      const int64_t a = operands[2].get<int64_t>();
+      results[0] = a - (n * m);
       break;
     }
     case Opcode::AArch64_SMULH_ZPmZ_B: {
@@ -12777,8 +12780,11 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SMULHrr: {
-      return executionNYI();
+    case Opcode::AArch64_SMULHrr: {  // smulh xd, xn, xm
+      auto x = operands[0].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>();
+      // TODO: signed
+      results[0] = AuxFunc::mulhi(x, y);
       break;
     }
     case Opcode::AArch64_SMULLv16i8_v8i16: {
@@ -14137,16 +14143,26 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SSHLLv2i32_shift: {
-      return executionNYI();
+    case Opcode::AArch64_SSHLLv2i32_shift: {  // sshll vd.2d, vn.2s, #imm
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      uint64_t shift = metadata.operands[2].imm;
+      int64_t out[2] = {
+          static_cast<int64_t>(static_cast<int32_t>(n[0] << shift)),
+          static_cast<int64_t>(static_cast<int32_t>(n[1] << shift))};
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SSHLLv4i16_shift: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SSHLLv4i32_shift: {
-      return executionNYI();
+    case Opcode::AArch64_SSHLLv4i32_shift: {  // sshll2 vd.2d, vn.4s, #imm
+      const uint32_t* n = operands[0].getAsVector<uint32_t>();
+      uint64_t shift = metadata.operands[2].imm;
+      int64_t out[2] = {
+          static_cast<int64_t>(static_cast<int32_t>(n[2] << shift)),
+          static_cast<int64_t>(static_cast<int32_t>(n[3] << shift))};
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_SSHLLv8i16_shift: {
@@ -14209,8 +14225,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SSHRv4i32_shift: {
-      return executionNYI();
+    case Opcode::AArch64_SSHRv4i32_shift: {  // sshr vd.4s, vn.4s, #imm
+      results[0] = neonHelp::vecSshrShift_imm<int32_t, 4>(operands, metadata);
       break;
     }
     case Opcode::AArch64_SSHRv8i16_shift: {
