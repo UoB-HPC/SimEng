@@ -910,6 +910,28 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `sel zd, pg/z, zn,
+   * zm`. T represents the vector register type (i.e. zd.b would be uint8_t). */
+  template <typename T>
+  static RegisterValue sveSel_zpzz(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* n = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active)
+        out[i] = n[i];
+      else
+        out[i] = m[i];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `whilelo pd,
    * <w,x>n, <w,x>m`. T represents the type of operands n and m (i.e. uint32_t
    * for wn). P represents the type of operand p (i.e. uint8_t for pd.b).

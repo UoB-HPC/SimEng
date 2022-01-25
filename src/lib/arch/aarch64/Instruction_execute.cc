@@ -12129,16 +12129,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SEL_ZPZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_SEL_ZPZZ_D: {  // sel zd.d, pg, zn.d, zm.d
+      results[0] = sveHelp::sveSel_zpzz<uint64_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SEL_ZPZZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SEL_ZPZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_SEL_ZPZZ_S: {  // sel zd.s, pg, zn.s, zm.s
+      results[0] = sveHelp::sveSel_zpzz<uint32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SETF16: {
@@ -12257,8 +12257,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SHLd: {
-      return executionNYI();
+    case Opcode::AArch64_SHLd: {  // shl dd, dn #imm
+      const uint64_t n = operands[0].get<uint64_t>();
+      int64_t shift = metadata.operands[2].imm;
+      results[0] = RegisterValue(static_cast<uint64_t>(n << shift), 256);
       break;
     }
     case Opcode::AArch64_SHLv16i8_shift: {
