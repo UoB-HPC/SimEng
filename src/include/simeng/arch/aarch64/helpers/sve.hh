@@ -835,6 +835,36 @@ class sveHelp {
     return out;
   }
 
+  /** Helper function for SVE instructions with the format `punpk<hi,lo> pd.h,
+   * pn.b`.
+   * If `isHI` = false, then PUNPKLO is performed.
+   */
+  static std::array<uint64_t, 4> svePunpk(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits, bool isHI) {
+    const uint64_t* n = operands[0].getAsVector<uint64_t>();
+
+    const uint16_t partition_num = VL_bits / 8;
+    std::array<uint64_t, 4> out = {0, 0, 0, 0};
+    uint16_t index = 0;
+
+    if (isHI) {
+      for (int i = partition_num / 2; i < partition_num; i++) {
+        if (n[i / 64] & 1ull << i % 64) {
+          out[index / 32] |= 1ull << ((index * 2) % 64);
+        }
+        index++;
+      }
+    } else {
+      for (int i = 0; i < partition_num / 2; i++) {
+        if (n[i / 64] & 1ull << i % 64) {
+          out[i / 32] |= 1ull << ((i * 2) % 64);
+        }
+      }
+    }
+    return out;
+  }
+
   /** Helper function for SVE instructions with the format `whilelo pd,
    * <w,x>n, <w,x>m`. T represents the type of operands n and m (i.e. uint32_t
    * for wn). P represents the type of operand p (i.e. uint8_t for pd.b).

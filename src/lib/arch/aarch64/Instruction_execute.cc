@@ -11366,12 +11366,12 @@ void Instruction::execute() {
       results[0] = sveHelp::svePtrue<uint32_t>(VL_bits);
       break;
     }
-    case Opcode::AArch64_PUNPKHI_PP: {
-      return executionNYI();
+    case Opcode::AArch64_PUNPKHI_PP: {  // punpkhi pd.h, pn.b
+      results[0] = sveHelp::svePunpk(operands, VL_bits, true);
       break;
     }
-    case Opcode::AArch64_PUNPKLO_PP: {
-      return executionNYI();
+    case Opcode::AArch64_PUNPKLO_PP: {  // punpklo pd.h, pn.b
+      results[0] = sveHelp::svePunpk(operands, VL_bits, false);
       break;
     }
     case Opcode::AArch64_RADDHNv2i64_v2i32: {
