@@ -17450,20 +17450,26 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UMOVvi32: {
-      return executionNYI();
+    case Opcode::AArch64_UMOVvi32: {  // umov wd, vn.s[index]
+      const uint32_t* vec = operands[0].getAsVector<uint32_t>();
+      results[0] = RegisterValue(vec[metadata.operands[1].vector_index], 8);
       break;
     }
-    case Opcode::AArch64_UMOVvi64: {
-      return executionNYI();
+    case Opcode::AArch64_UMOVvi64: {  // umov xd, vn.d[index]
+      const uint64_t* vec = operands[0].getAsVector<uint64_t>();
+      results[0] = vec[metadata.operands[1].vector_index];
       break;
     }
-    case Opcode::AArch64_UMOVvi8: {
-      return executionNYI();
+    case Opcode::AArch64_UMOVvi8: {  // umov wd, vn.b[index]
+      const uint8_t* vec = operands[0].getAsVector<uint8_t>();
+      results[0] = RegisterValue(vec[metadata.operands[1].vector_index], 8);
       break;
     }
-    case Opcode::AArch64_UMSUBLrrr: {
-      return executionNYI();
+    case Opcode::AArch64_UMSUBLrrr: {  // umsubl xd, wn, wm, xa
+      uint64_t n = static_cast<uint64_t>(operands[0].get<uint32_t>());
+      uint64_t m = static_cast<uint64_t>(operands[1].get<uint32_t>());
+      uint64_t a = operands[2].get<uint64_t>();
+      results[0] = a - (n * m);
       break;
     }
     case Opcode::AArch64_UMULH_ZPmZ_B: {
@@ -17482,8 +17488,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UMULHrr: {
-      return executionNYI();
+    case Opcode::AArch64_UMULHrr: {  // umulh xd, xn, xm
+      auto x = operands[0].get<uint64_t>();
+      auto y = operands[1].get<uint64_t>();
+      results[0] = AuxFunc::mulhi(x, y);
       break;
     }
     case Opcode::AArch64_UMULLv16i8_v8i16: {
@@ -18234,28 +18242,52 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_USHLLv16i8_shift: {
-      return executionNYI();
+    case Opcode::AArch64_USHLLv16i8_shift: {  // ushll2 vd.8h, vn.16b, #imm
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint64_t shift = metadata.operands[2].imm;
+      uint16_t out[8] = {0};
+      for (int i = 0; i < 8; i++) {
+        out[i] = n[i + 8] << shift;
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_USHLLv2i32_shift: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_USHLLv4i16_shift: {
-      return executionNYI();
+    case Opcode::AArch64_USHLLv4i16_shift: {  // ushll vd.4s, vn.4h, #imm
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      const uint64_t shift = metadata.operands[2].imm;
+      uint32_t out[4] = {0};
+      for (int i = 0; i < 4; i++) {
+        out[i] = n[i] << shift;
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_USHLLv4i32_shift: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_USHLLv8i16_shift: {
-      return executionNYI();
+    case Opcode::AArch64_USHLLv8i16_shift: {  // ushll2 vd.4s, vn.8h, #imm
+      const uint16_t* n = operands[0].getAsVector<uint16_t>();
+      const uint64_t shift = metadata.operands[2].imm;
+      uint32_t out[4] = {0};
+      for (int i = 0; i < 4; i++) {
+        out[i] = n[i + 4] << shift;
+      }
+      results[0] = {out, 256};
       break;
     }
-    case Opcode::AArch64_USHLLv8i8_shift: {
-      return executionNYI();
+    case Opcode::AArch64_USHLLv8i8_shift: {  // ushll vd.8h, vn.8b, #imm
+      const uint8_t* n = operands[0].getAsVector<uint8_t>();
+      const uint64_t shift = metadata.operands[2].imm;
+      uint16_t out[8] = {0};
+      for (int i = 0; i < 8; i++) {
+        out[i] = n[i] << shift;
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_USHLv16i8: {
