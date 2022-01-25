@@ -11560,36 +11560,36 @@ void Instruction::execute() {
       results[0] = bitmanipHelp::rev<uint64_t>(operands);
       break;
     }
-    case Opcode::AArch64_REV_PP_B: {
-      return executionNYI();
+    case Opcode::AArch64_REV_PP_B: {  // rev pd.b, pn.b
+      results[0] = sveHelp::sveRev_predicates<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_REV_PP_D: {
-      return executionNYI();
+    case Opcode::AArch64_REV_PP_D: {  // rev pd.d, pn.d
+      results[0] = sveHelp::sveRev_predicates<uint64_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_REV_PP_H: {
-      return executionNYI();
+    case Opcode::AArch64_REV_PP_H: {  // rev pd.h, pn.h
+      results[0] = sveHelp::sveRev_predicates<uint16_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_REV_PP_S: {
-      return executionNYI();
+    case Opcode::AArch64_REV_PP_S: {  // rev pd.s, pn.s
+      results[0] = sveHelp::sveRev_predicates<uint32_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_REV_ZZ_B: {
-      return executionNYI();
+    case Opcode::AArch64_REV_ZZ_B: {  // rev zd.b, zn.b
+      results[0] = sveHelp::sveRev_vecs<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_REV_ZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_REV_ZZ_D: {  // rev zd.d, zn.d
+      results[0] = sveHelp::sveRev_vecs<uint64_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_REV_ZZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_REV_ZZ_H: {  // rev zd.h, zn.h
+      results[0] = sveHelp::sveRev_vecs<uint16_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_REV_ZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_REV_ZZ_S: {  // rev zd.s, zn.s
+      results[0] = sveHelp::sveRev_vecs<uint32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_RMIF: {
