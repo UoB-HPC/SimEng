@@ -486,6 +486,24 @@ class neonHelp {
     }
     return {out, 256};
   }
+
+  /** Helper function for NEON instructions with the format `shl vd, vn, #imm`.
+   * I represents the number of elements in the output array to be
+   * updated (i.e. for vd.8b the final 8 elements in the output array will be
+   * 0).
+   */
+  template <typename T, int I>
+  static RegisterValue vecShlShift_vecImm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    const T* n = operands[0].getAsVector<T>();
+    int64_t shift = metadata.operands[2].imm;
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = static_cast<T>(n[i] << shift);
+    }
+    return {out, 256};
+  }
 };
 }  // namespace aarch64
 }  // namespace arch

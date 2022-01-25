@@ -12279,8 +12279,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SHLv4i32_shift: {
-      return executionNYI();
+    case Opcode::AArch64_SHLv4i32_shift: {  // shl vd.4s, vn.4s, #imm
+      results[0] =
+          neonHelp::vecShlShift_vecImm<uint32_t, 4>(operands, metadata);
       break;
     }
     case Opcode::AArch64_SHLv8i16_shift: {
