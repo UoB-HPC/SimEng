@@ -39,6 +39,28 @@ class bitmanipHelp {
     if (lsb == 0) return m;
     return (m >> lsb) | (n << ((sizeof(T) * 8) - lsb));
   }
+
+  /** Helper function for instructions with the format `rbit rd, rn`.
+   * Returns Single value. */
+  template <typename T>
+  static uint64_t rbit(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    int width = sizeof(T) * 8;
+
+    static uint8_t reversedNibble[16] = {
+        0b0000, 0b1000, 0b0100, 0b1100, 0b0010, 0b1010, 0b0110, 0b1110,
+        0b0001, 0b1001, 0b0101, 0b1101, 0b0011, 0b1011, 0b0111, 0b1111};
+
+    uint64_t n = operands[0].get<uint64_t>();
+    uint64_t result = 0;
+    for (int i = 0; i < width; i += 4) {
+      result <<= 4;
+      result |= reversedNibble[n & 0b1111];
+      n >>= 4;
+    }
+    return result;
+  }
 };
 }  // namespace aarch64
 }  // namespace arch

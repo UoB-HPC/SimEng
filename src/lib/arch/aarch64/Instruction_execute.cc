@@ -11402,12 +11402,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_RBITWr: {
-      return executionNYI();
+    case Opcode::AArch64_RBITWr: {  // rbit wd, wn
+      results[0] = bitmanipHelp::rbit<uint32_t>(operands, metadata);
       break;
     }
-    case Opcode::AArch64_RBITXr: {
-      return executionNYI();
+    case Opcode::AArch64_RBITXr: {  // rbit xd, xn
+      results[0] = bitmanipHelp::rbit<uint64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_RBIT_ZPmZ_B: {
