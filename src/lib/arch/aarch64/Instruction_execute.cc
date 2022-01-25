@@ -12519,8 +12519,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SMAXv4i32: {
-      return executionNYI();
+    case Opcode::AArch64_SMAXv4i32: {  // smax vd.4s, vn.4s, vm.4s
+      results[0] = neonHelp::vecLogicOp_3vecs<int32_t, 4>(
+          operands,
+          [](int32_t x, int32_t y) -> int32_t { return std::max(x, y); });
       break;
     }
     case Opcode::AArch64_SMAXv8i16: {
@@ -12571,8 +12573,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SMINV_VPZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_SMINV_VPZ_S: {  // sminv sd, pg, zn.s
+      results[0] = sveHelp::sveSminv<int32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SMINVv16i8v: {
@@ -12623,8 +12625,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SMIN_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_SMIN_ZPmZ_S: {  // smin zd.s, pg/m, zn.s, zm.s
+      results[0] = sveHelp::sveLogicOpPredicated_3vecs<int32_t>(
+          operands, VL_bits,
+          [](int32_t x, int32_t y) -> int32_t { return std::min(x, y); });
       break;
     }
     case Opcode::AArch64_SMINv16i8: {

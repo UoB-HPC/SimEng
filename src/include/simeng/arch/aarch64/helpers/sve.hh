@@ -975,6 +975,25 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `sminv rd, pg, zn`.
+   * T represents the type of pred registers (i.e. int32_t for sd). */
+  template <typename T>
+  static RegisterValue sveSminv(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* n = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out = INT32_MAX;
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) out = std::min(out, n[i]);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `whilelo pd,
    * <w,x>n, <w,x>m`. T represents the type of operands n and m (i.e. uint32_t
    * for wn). P represents the type of operand p (i.e. uint8_t for pd.b).
