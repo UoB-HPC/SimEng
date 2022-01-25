@@ -16139,36 +16139,44 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SUBv16i8: {
-      return executionNYI();
+    case Opcode::AArch64_SUBv16i8: {  // sub vd.16b, vn.16b, vm.16b
+      results[0] = neonHelp::vecLogicOp_3vecs<uint8_t, 16>(
+          operands, [](uint8_t x, uint8_t y) -> uint8_t { return x - y; });
       break;
     }
-    case Opcode::AArch64_SUBv1i64: {
-      return executionNYI();
+    case Opcode::AArch64_SUBv1i64: {  // sub dd, dn, dm
+      results[0] = neonHelp::vecLogicOp_3vecs<uint64_t, 1>(
+          operands, [](uint64_t x, uint64_t y) -> uint64_t { return x - y; });
       break;
     }
-    case Opcode::AArch64_SUBv2i32: {
-      return executionNYI();
+    case Opcode::AArch64_SUBv2i32: {  // sub vd.2s, vn.2s, vm.2s
+      results[0] = neonHelp::vecLogicOp_3vecs<uint32_t, 2>(
+          operands, [](uint32_t x, uint32_t y) -> uint32_t { return x - y; });
       break;
     }
-    case Opcode::AArch64_SUBv2i64: {
-      return executionNYI();
+    case Opcode::AArch64_SUBv2i64: {  // sub vd.2d, vn.2d, vm.2d
+      results[0] = neonHelp::vecLogicOp_3vecs<uint64_t, 2>(
+          operands, [](uint64_t x, uint64_t y) -> uint64_t { return x - y; });
       break;
     }
-    case Opcode::AArch64_SUBv4i16: {
-      return executionNYI();
+    case Opcode::AArch64_SUBv4i16: {  // sub vd.4h, vn.4h, vm.4h
+      results[0] = neonHelp::vecLogicOp_3vecs<uint16_t, 4>(
+          operands, [](uint64_t x, uint16_t y) -> uint16_t { return x - y; });
       break;
     }
-    case Opcode::AArch64_SUBv4i32: {
-      return executionNYI();
+    case Opcode::AArch64_SUBv4i32: {  // sub vd.4s, vn.4s, vm.4s
+      results[0] = neonHelp::vecLogicOp_3vecs<uint32_t, 4>(
+          operands, [](uint32_t x, uint32_t y) -> uint32_t { return x - y; });
       break;
     }
-    case Opcode::AArch64_SUBv8i16: {
-      return executionNYI();
+    case Opcode::AArch64_SUBv8i16: {  // sub vd.8h, vn.8h, vm.8h
+      results[0] = neonHelp::vecLogicOp_3vecs<uint16_t, 8>(
+          operands, [](uint16_t x, uint16_t y) -> uint16_t { return x - y; });
       break;
     }
-    case Opcode::AArch64_SUBv8i8: {
-      return executionNYI();
+    case Opcode::AArch64_SUBv8i8: {  // sub vd.8b, vn.8b, vm.8b
+      results[0] = neonHelp::vecLogicOp_3vecs<uint8_t, 8>(
+          operands, [](uint8_t x, uint8_t y) -> uint8_t { return x - y; });
       break;
     }
     case Opcode::AArch64_SUNPKHI_ZZ_D: {
