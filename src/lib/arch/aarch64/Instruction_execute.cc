@@ -11900,12 +11900,12 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SBCWr: {
-      return executionNYI();
+    case Opcode::AArch64_SBCWr: {  // sbc wd, wn, wm
+      results[0] = {arithmeticHelp::sbc<uint32_t>(operands), 8};
       break;
     }
-    case Opcode::AArch64_SBCXr: {
-      return executionNYI();
+    case Opcode::AArch64_SBCXr: {  // sbc xd, xn, xm
+      results[0] = arithmeticHelp::sbc<uint64_t>(operands);
       break;
     }
     case Opcode::AArch64_SBFMWri: {  // sbfm wd, wn, #immr, #imms
@@ -16301,8 +16301,17 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SYSxt: {
-      return executionNYI();
+    case Opcode::AArch64_SYSxt: {  // sys #<op1>, cn, cm, #<op2>{, xt}
+      if (metadata.id == ARM64_INS_DC) {
+        uint64_t address = operands[0].get<uint64_t>();
+        uint8_t dzp = operands[1].get<uint64_t>() & 8;
+        uint8_t N = std::pow(2, operands[1].get<uint64_t>() & 7);
+        if (metadata.operands[0].sys == ARM64_DC_ZVA) {
+          if (dzp) {
+            // TODO
+          }
+        }
+      }
       break;
     }
     case Opcode::AArch64_TBL_ZZZ_B: {

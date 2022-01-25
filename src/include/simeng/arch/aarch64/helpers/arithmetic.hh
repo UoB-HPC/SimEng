@@ -115,6 +115,19 @@ class arithmeticHelp {
     return static_cast<uint64_t>(value);
   }
 
+  /** Helper function for instructions with the format `sbc rd, rn, rm`. */
+  template <typename T>
+  static T sbc(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    auto nzcv = operands[0].get<uint8_t>();
+    const T x = operands[1].get<T>();
+    const T y = operands[2].get<T>();
+    T result;
+    std::tie(result, std::ignore) =
+        AuxFunc::addWithCarry(x, ~y, (nzcv >> 1) & 1);
+    return result;
+  }
+
   /** Helper function for instructions with the format `sub{s} rd, rn, #imm`. */
   template <typename T>
   static std::tuple<T, uint8_t> subShift_imm(
