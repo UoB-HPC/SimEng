@@ -11088,6 +11088,7 @@ void Instruction::execute() {
     case Opcode::AArch64_PFALSE: {  // pfalse pd.b
       uint64_t out[4] = {0, 0, 0, 0};
       results[0] = out;
+      break;
     }
     case Opcode::AArch64_PMULLv16i8: {
       return executionNYI();
