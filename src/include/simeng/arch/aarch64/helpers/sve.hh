@@ -105,7 +105,7 @@ class sveHelp {
   /** Helper function for SVE instructions with the format `cnt<b,d,h,s> rd{,
    * pattern{, #imm}}`. */
   template <typename T>
-  static uint64_t sveCnt(
+  static uint64_t sveCnt_gpr(
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits) {
     const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);

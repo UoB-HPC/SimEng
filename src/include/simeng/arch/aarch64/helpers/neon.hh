@@ -132,6 +132,23 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for instructions with the format `cnt vd, vn`.
+   * I represents the number of elements in the output array to be updated (i.e.
+   * for vd.8b I = 8). */
+  template <typename T, int I>
+  static RegisterValue vecCountPerByte(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const uint8_t* n = operands[0].getAsVector<uint8_t>();
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I; i++) {
+      for (int j = 0; j < (sizeof(T) * 8); j++) {
+        // Move queried bit to LSB and extract via an AND operator
+        out[i] += ((n[i] >> j) & 1);
+      }
+    }
+    return {out, 256};
+  }
+
   /** Helper function for instructions with the format `cm<eq, ge, gt, hi, hs,
    *le, lt> vd, vn, <vm, #0>`.
    *I represents the number of elements in the output array to be updated (i.e.
