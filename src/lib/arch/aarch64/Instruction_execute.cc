@@ -3712,19 +3712,19 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCMPDri: {  // fcmp dn, #imm
-      results[0] = floatHelp::fcmp<double>(operands, metadata, true);
+      results[0] = floatHelp::fcmp<double>(operands, true);
       break;
     }
     case Opcode::AArch64_FCMPDrr: {  // fcmp dn, dm
-      results[0] = floatHelp::fcmp<double>(operands, metadata, false);
+      results[0] = floatHelp::fcmp<double>(operands, false);
       break;
     }
     case Opcode::AArch64_FCMPEDri: {  // fcmpe dn, #imm
-      results[0] = floatHelp::fcmp<double>(operands, metadata, true);
+      results[0] = floatHelp::fcmp<double>(operands, true);
       break;
     }
     case Opcode::AArch64_FCMPEDrr: {  // fcmpe dn, dm
-      results[0] = floatHelp::fcmp<double>(operands, metadata, false);
+      results[0] = floatHelp::fcmp<double>(operands, false);
       break;
     }
     case Opcode::AArch64_FCMPEHri: {
@@ -3736,11 +3736,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCMPESri: {  // fcmpe sn, #imm
-      results[0] = floatHelp::fcmp<float>(operands, metadata, true);
+      results[0] = floatHelp::fcmp<float>(operands, true);
       break;
     }
     case Opcode::AArch64_FCMPESrr: {  // fcmpe sn, sm
-      results[0] = floatHelp::fcmp<float>(operands, metadata, false);
+      results[0] = floatHelp::fcmp<float>(operands, false);
       break;
     }
     case Opcode::AArch64_FCMPHri: {
@@ -3752,10 +3752,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCMPSri: {  // fcmp sn, #imm
-      results[0] = floatHelp::fcmp<float>(operands, metadata, true);
+      results[0] = floatHelp::fcmp<float>(operands, true);
+      break;
     }
     case Opcode::AArch64_FCMPSrr: {  // fcmp sn, sm
-      results[0] = floatHelp::fcmp<float>(operands, metadata, false);
+      results[0] = floatHelp::fcmp<float>(operands, false);
       break;
     }
     case Opcode::AArch64_FCMUO_PPzZZ_D: {

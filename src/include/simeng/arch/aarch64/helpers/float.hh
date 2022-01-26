@@ -30,9 +30,10 @@ class floatHelp {
   template <typename T>
   static uint8_t fcmp(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata, bool useImm) {
+      bool useImm) {
     T a = operands[0].get<T>();
-    T b = useImm ? metadata.operands[1].fp : operands[1].get<T>();
+    // Dont need to fetch imm as will always be 0.0
+    T b = useImm ? 0 : operands[1].get<T>();
     if (std::isnan(a) || std::isnan(b)) {
       // TODO: Raise exception if NaNs are signalling or fcmpe
       return AuxFunc::nzcv(false, false, true, true);
