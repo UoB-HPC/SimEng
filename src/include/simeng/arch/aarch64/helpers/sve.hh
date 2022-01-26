@@ -1031,6 +1031,31 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `uzp<1,2> zd, zn,
+   * zm`. T represents the type of the vector registers (i.e. uint32_t for
+   * zd.s). */
+  template <typename T>
+  static RegisterValue sveUzp_vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits, bool isUzp1) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num / 2; i++) {
+      // UZP1 concatenates even elements. UZP2 concatenates odd.
+      int index = isUzp1 ? (2 * i) : (2 * i) + 1;
+      out[i] = n[index];
+    }
+    for (int i = 0; i < partition_num / 2; i++) {
+      int index = isUzp1 ? (2 * i) : (2 * i) + 1;
+      out[partition_num / 2 + i] = m[index];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `whilelo pd,
    * <w,x>n, <w,x>m`. T represents the type of operands n and m (i.e. uint32_t
    * for wn). P represents the type of operand p (i.e. uint8_t for pd.b).

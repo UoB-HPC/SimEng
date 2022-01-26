@@ -18560,8 +18560,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UZP1_ZZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_UZP1_ZZZ_S: {  // uzp1 zd.s, zn.s, zm.s
+      results[0] = sveHelp::sveUzp_vecs<uint32_t>(operands, VL_bits, true);
       break;
     }
     case Opcode::AArch64_UZP1v16i8: {
