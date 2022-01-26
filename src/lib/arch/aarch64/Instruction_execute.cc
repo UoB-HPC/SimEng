@@ -4492,7 +4492,7 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_FCVTZUUXDr: {  // fcvtzu xd, dn
       // TODO: Handle NaNs, denorms, and saturation
-      results[0] = static_cast<int64_t>(std::trunc(operands[0].get<double>();));
+      results[0] = static_cast<int64_t>(std::trunc(operands[0].get<double>()));
       break;
     }
     case Opcode::AArch64_FCVTZUUXHr: {
