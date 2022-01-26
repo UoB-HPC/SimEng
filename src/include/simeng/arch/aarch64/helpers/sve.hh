@@ -102,6 +102,16 @@ class sveHelp {
     return {out, AuxFunc::getNZCVfromPred(out, VL_bits, sizeof(T))};
   }
 
+  /** Helper function for SVE instructions with the format `cnt<b,d,h,s> rd{,
+   * pattern{, #imm}}`. */
+  template <typename T>
+  static uint64_t sveCnt(
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+    return (uint64_t)((VL_bits / (sizeof(T) * 8)) * imm);
+  }
+
   /** Helper function for SVE instructions with the format `cntp xd, pg, pn`. */
   template <typename T>
   static uint64_t sveCntp(
