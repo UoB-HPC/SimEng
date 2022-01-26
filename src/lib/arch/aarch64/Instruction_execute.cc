@@ -1028,12 +1028,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_BSLv16i8: {  // bsl vd.16b, vn.16b, vm.16b
-      const uint64_t* d = operands[0].getAsVector<uint64_t>();
-      const uint64_t* n = operands[1].getAsVector<uint64_t>();
-      const uint64_t* m = operands[2].getAsVector<uint64_t>();
-      uint64_t out[2] = {(d[0] & n[0]) | ((~d[0]) & m[0]),
-                         (d[1] & n[1]) | ((~d[1]) & m[1])};
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecBsl<16>(operands);
       break;
     }
     case Opcode::AArch64_BSLv8i8: {

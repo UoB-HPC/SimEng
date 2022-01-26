@@ -115,6 +115,23 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `bsl vd, vn,
+   * vm`.
+   * I represents the number of elements in the output array to be updated
+   * (i.e. for vd.8b I = 8). */
+  template <int I>
+  static RegisterValue vecBsl(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const uint64_t* d = operands[0].getAsVector<uint64_t>();
+    const uint64_t* n = operands[1].getAsVector<uint64_t>();
+    const uint64_t* m = operands[2].getAsVector<uint64_t>();
+    uint64_t out[2] = {0};
+    for (int i = 0; i < (I / 8); i++) {
+      out[i] = (d[i] & n[i]) | (~d[i] & m[i]);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for instructions with the format `cm<eq, ge, gt, hi, hs,
    *le, lt> vd, vn, <vm, #0>`.
    *I represents the number of elements in the output array to be updated (i.e.
