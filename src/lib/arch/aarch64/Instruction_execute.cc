@@ -3772,8 +3772,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTASUWDr: {  // fcvtas wd, dn
-      results[0] = RegisterValue(
-          static_cast<int32_t>(round(operands[0].get<double>())), 8);
+      results[0] = {static_cast<int32_t>(round(operands[0].get<double>())), 8};
       break;
     }
     case Opcode::AArch64_FCVTASUWHr: {
@@ -3890,8 +3889,7 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_FCVTDSr: {  // fcvt dd, sn
       // TODO: Handle NaNs, denorms, and saturation?
-      results[0] =
-          RegisterValue(static_cast<double>(operands[0].get<float>()), 256);
+      results[0] = {static_cast<double>(operands[0].get<float>()), 256};
       break;
     }
     case Opcode::AArch64_FCVTHDr: {
@@ -4281,8 +4279,7 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_FCVTSDr: {  // fcvt sd, dn
       // TODO: Handle NaNs, denorms, and saturation?
-      results[0] =
-          RegisterValue(static_cast<float>(operands[0].get<double>()), 256);
+      results[0] = {static_cast<float>(operands[0].get<double>()), 256};
       break;
     }
     case Opcode::AArch64_FCVTSHr: {
@@ -4326,9 +4323,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTZSUWDr: {  // fcvtzs wd, dn
-      double n = operands[0].get<double>();
       // TODO: Handle NaNs, denorms, and saturation
-      results[0] = RegisterValue(static_cast<int32_t>(std::trunc(n)), 8);
+      results[0] = {static_cast<int32_t>(std::trunc(operands[0].get<double>())),
+                    8};
       break;
     }
     case Opcode::AArch64_FCVTZSUWHr: {
@@ -4336,9 +4333,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTZSUWSr: {  // fcvtzs wd, sn
-      float n = operands[0].get<float>();
       // TODO: Handle NaNs, denorms, and saturation
-      results[0] = RegisterValue(static_cast<int32_t>(std::trunc(n)), 8);
+      results[0] = {static_cast<int32_t>(std::trunc(operands[0].get<float>())),
+                    8};
       break;
     }
     case Opcode::AArch64_FCVTZSUXDr: {
@@ -4478,9 +4475,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTZUUWDr: {  // fcvtzu wd, dn
-      const double n = operands[0].get<double>();
       // TODO: Handle NaNs, denorms, and saturation
-      results[0] = RegisterValue(static_cast<int32_t>(std::trunc(n)), 8);
+      results[0] = {static_cast<int32_t>(std::trunc(operands[0].get<double>())),
+                    8};
       break;
     }
     case Opcode::AArch64_FCVTZUUWHr: {
@@ -4488,15 +4485,14 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTZUUWSr: {  // fcvtzu wd, sn
-      const float n = operands[0].get<float>();
       // TODO: Handle NaNs, denorms, and saturation
-      results[0] = RegisterValue(static_cast<int32_t>(std::trunc(n)), 8);
+      results[0] = {static_cast<int32_t>(std::trunc(operands[0].get<float>())),
+                    8};
       break;
     }
     case Opcode::AArch64_FCVTZUUXDr: {  // fcvtzu xd, dn
-      const double n = operands[0].get<double>();
       // TODO: Handle NaNs, denorms, and saturation
-      results[0] = static_cast<int64_t>(std::trunc(n));
+      results[0] = static_cast<int64_t>(std::trunc(operands[0].get<double>();));
       break;
     }
     case Opcode::AArch64_FCVTZUUXHr: {
@@ -4504,9 +4500,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTZUUXSr: {  // fcvtzu xd, sn
-      const float n = operands[0].get<float>();
       // TODO: Handle NaNs, denorms, and saturation
-      results[0] = static_cast<int64_t>(std::trunc(n));
+      results[0] = static_cast<int64_t>(std::trunc(operands[0].get<float>()));
       break;
     }
     case Opcode::AArch64_FCVTZU_ZPmZ_DtoD: {
