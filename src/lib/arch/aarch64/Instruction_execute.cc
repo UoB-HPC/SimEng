@@ -18848,20 +18848,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ZIP1_PPP_B: {
-      return executionNYI();
+    case Opcode::AArch64_ZIP1_PPP_B: {  // zip1 pd.b, pn.b, pm.b
+      results[0] = sveHelp::sveZip_preds<uint8_t>(operands, VL_bits, false);
       break;
     }
-    case Opcode::AArch64_ZIP1_PPP_D: {
-      return executionNYI();
+    case Opcode::AArch64_ZIP1_PPP_D: {  // zip1 pd.d, pn.d, pm.d
+      results[0] = sveHelp::sveZip_preds<uint64_t>(operands, VL_bits, false);
       break;
     }
-    case Opcode::AArch64_ZIP1_PPP_H: {
-      return executionNYI();
+    case Opcode::AArch64_ZIP1_PPP_H: {  // zip1 pd.h, pn.h, pm.h
+      results[0] = sveHelp::sveZip_preds<uint16_t>(operands, VL_bits, false);
       break;
     }
-    case Opcode::AArch64_ZIP1_PPP_S: {
-      return executionNYI();
+    case Opcode::AArch64_ZIP1_PPP_S: {  // zip1 pd.s, pn.s, pm.s
+      results[0] = sveHelp::sveZip_preds<uint32_t>(operands, VL_bits, false);
       break;
     }
     case Opcode::AArch64_ZIP1_ZZZ_B: {
@@ -18908,20 +18908,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ZIP2_PPP_B: {
-      return executionNYI();
+    case Opcode::AArch64_ZIP2_PPP_B: {  // zip2 pd.b, pn.b, pm.b
+      results[0] = sveHelp::sveZip_preds<uint8_t>(operands, VL_bits, true);
       break;
     }
-    case Opcode::AArch64_ZIP2_PPP_D: {
-      return executionNYI();
+    case Opcode::AArch64_ZIP2_PPP_D: {  // zip2 pd.d, pn.d, pm.d
+      results[0] = sveHelp::sveZip_preds<uint64_t>(operands, VL_bits, true);
       break;
     }
-    case Opcode::AArch64_ZIP2_PPP_H: {
-      return executionNYI();
+    case Opcode::AArch64_ZIP2_PPP_H: {  // zip2 pd.h, pn.h, pm.h
+      results[0] = sveHelp::sveZip_preds<uint16_t>(operands, VL_bits, true);
       break;
     }
-    case Opcode::AArch64_ZIP2_PPP_S: {
-      return executionNYI();
+    case Opcode::AArch64_ZIP2_PPP_S: {  // zip2 pd.s, pn.s, pm.s
+      results[0] = sveHelp::sveZip_preds<uint32_t>(operands, VL_bits, true);
       break;
     }
     case Opcode::AArch64_ZIP2_ZZZ_B: {

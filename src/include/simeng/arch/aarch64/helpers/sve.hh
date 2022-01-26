@@ -1086,6 +1086,43 @@ class sveHelp {
         calcNZCV ? AuxFunc::getNZCVfromPred(out, VL_bits, sizeof(P)) : 0;
     return {out, nzcv};
   }
+
+  /** Helper function for SVE instructions with the format `zip<1,2> pd, pn,
+   * pm`. T represents the type of the pred. registers (i.e. uint32_t for
+   * pd.s). */
+  template <typename T>
+  static std::array<uint64_t, 4> sveZip_preds(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits, bool isZip2) {
+    const uint64_t* n = operands[0].getAsVector<uint64_t>();
+    const uint64_t* m = operands[1].getAsVector<uint64_t>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    std::array<uint64_t, 4> out = {0, 0, 0, 0};
+
+    bool interleave = false;
+    int index = isZip2 ? (partition_num / 2) : 0;
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull
+                                << ((index % (64 / sizeof(T))) * sizeof(T));
+      if (interleave) {
+        out[i / (64 / sizeof(T))] |=
+            ((m[index / (64 / sizeof(T))] & shifted_active) == shifted_active)
+                ? static_cast<uint64_t>(1ull
+                                        << ((i % (64 / sizeof(T))) * sizeof(T)))
+                : 0;
+        index++;
+      } else {
+        out[i / (64 / sizeof(T))] |=
+            ((n[index / (64 / sizeof(T))] & shifted_active) == shifted_active)
+                ? static_cast<uint64_t>(1ull
+                                        << ((i % (64 / sizeof(T))) * sizeof(T)))
+                : 0;
+      }
+      interleave = !interleave;
+    }
+    return out;
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
