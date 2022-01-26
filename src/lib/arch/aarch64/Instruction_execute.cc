@@ -661,15 +661,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_ASRVWr: {  // asrv wd, wn, wm
-      auto n = operands[0].get<int32_t>();
-      auto m = operands[1].get<uint32_t>();
-      results[0] = RegisterValue(n >> (m % 32), 8);
+      results[0] = {logicalHelp::asrv_3gpr<int32_t>(operands), 8};
       break;
     }
     case Opcode::AArch64_ASRVXr: {  // asrv xd, xn, xm
-      auto n = operands[0].get<int64_t>();
-      auto m = operands[1].get<uint64_t>();
-      results[0] = n >> (m % 64);
+      results[0] = logicalHelp::asrv_3gpr<int64_t>(operands);
       break;
     }
     case Opcode::AArch64_ASR_WIDE_ZPmZ_B: {
