@@ -18478,28 +18478,34 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UUNPKHI_ZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_UUNPKHI_ZZ_D: {  // uunpkhi zd.d, zn.s
+      results[0] =
+          sveHelp::sveUnpk_vecs<uint64_t, uint32_t>(operands, VL_bits, true);
       break;
     }
-    case Opcode::AArch64_UUNPKHI_ZZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_UUNPKHI_ZZ_H: {  // uunpkhi zd.h, zn.b
+      results[0] =
+          sveHelp::sveUnpk_vecs<uint16_t, uint8_t>(operands, VL_bits, true);
       break;
     }
-    case Opcode::AArch64_UUNPKHI_ZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_UUNPKHI_ZZ_S: {  // uunpkhi zd.s, zn.h
+      results[0] =
+          sveHelp::sveUnpk_vecs<uint32_t, uint16_t>(operands, VL_bits, true);
       break;
     }
-    case Opcode::AArch64_UUNPKLO_ZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_UUNPKLO_ZZ_D: {  // uunpklo zd.d, zn.s
+      results[0] =
+          sveHelp::sveUnpk_vecs<uint64_t, uint32_t>(operands, VL_bits, false);
       break;
     }
-    case Opcode::AArch64_UUNPKLO_ZZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_UUNPKLO_ZZ_H: {  // uunpklo zd.h, zn.b
+      results[0] =
+          sveHelp::sveUnpk_vecs<uint16_t, uint8_t>(operands, VL_bits, false);
       break;
     }
-    case Opcode::AArch64_UUNPKLO_ZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_UUNPKLO_ZZ_S: {  // uunpklo zd.s, zn.h
+      results[0] =
+          sveHelp::sveUnpk_vecs<uint32_t, uint16_t>(operands, VL_bits, false);
       break;
     }
     case Opcode::AArch64_UXTB_ZPmZ_D: {

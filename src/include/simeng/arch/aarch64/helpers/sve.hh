@@ -885,26 +885,18 @@ class sveHelp {
    */
   static std::array<uint64_t, 4> svePunpk(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const uint16_t VL_bits, bool isHI) {
+      const uint16_t VL_bits, bool isHi) {
     const uint64_t* n = operands[0].getAsVector<uint64_t>();
 
     const uint16_t partition_num = VL_bits / 8;
     std::array<uint64_t, 4> out = {0, 0, 0, 0};
-    uint16_t index = 0;
+    uint16_t index = isHi ? (partition_num / 2) : 0;
 
-    if (isHI) {
-      for (int i = partition_num / 2; i < partition_num; i++) {
-        if (n[i / 64] & 1ull << i % 64) {
-          out[index / 32] |= 1ull << ((index * 2) % 64);
-        }
-        index++;
+    for (int i = 0; i < partition_num / 2; i++) {
+      if (n[index / 64] & 1ull << index % 64) {
+        out[i / 32] |= 1ull << ((i * 2) % 64);
       }
-    } else {
-      for (int i = 0; i < partition_num / 2; i++) {
-        if (n[i / 64] & 1ull << i % 64) {
-          out[i / 32] |= 1ull << ((i * 2) % 64);
-        }
-      }
+      index++;
     }
     return out;
   }
@@ -935,7 +927,7 @@ class sveHelp {
   }
 
   /** Helper function for SVE instructions with the format `rev zd, zn`.
-   * T represents the type of pred registers (i.e. uint32_t for zd.s). */
+   * T represents the type of registers (i.e. uint32_t for zd.s). */
   template <typename T>
   static RegisterValue sveRev_vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -994,6 +986,51 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `uqdec<b, d, h, w>
+   * <x,w>d{, pattern{, MUL #imm}}`.
+   * D represents the type of dest. register(i.e. uint32_t for wd).
+   * N represents the type of the operation (i.e. D = 16u for uqdech).
+   */
+  template <typename D, uint64_t N>
+  static uint64_t sveUqdec(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const D d = operands[0].get<D>();
+    const uint8_t imm = metadata.operands[1].imm;
+
+    // The range of possible values does not fit in the range of any integral
+    // type, so a double is used as an intermediate value. The end result must
+    // be saturated to fit in uint64_t.
+    auto intermediate = double(d) - (imm * (VL_bits / N));
+    if (intermediate < 0) {
+      return (uint64_t)0;
+    }
+    return (uint64_t)(d - (imm * (VL_bits / N)));
+  }
+
+  /** Helper function for SVE instructions with the format `<s,u>unpk>hi,lo> zd,
+   * zn`.
+   * D represents the type of the destination register (i.e. <u>int32_t for
+   * zd.s).
+   * N represents the type of the source register (i.e. <u>int8_t for zd.b).
+   */
+  template <typename D, typename N>
+  static RegisterValue sveUnpk_vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits, bool isHi) {
+    const N* n = operands[0].getAsVector<N>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(D) * 8);
+    D out[256 / sizeof(D)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      int index = isHi ? (partition_num + i) : i;
+      out[i] = static_cast<D>(n[index]);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `whilelo pd,
    * <w,x>n, <w,x>m`. T represents the type of operands n and m (i.e. uint32_t
    * for wn). P represents the type of operand p (i.e. uint8_t for pd.b).
@@ -1023,29 +1060,6 @@ class sveHelp {
     uint8_t nzcv =
         calcNZCV ? AuxFunc::getNZCVfromPred(out, VL_bits, sizeof(P)) : 0;
     return {out, nzcv};
-  }
-
-  /** Helper function for SVE instructions with the format `uqdec<b, d, h, w>
-   * <x,w>d{, pattern{, MUL #imm}}`.
-   * D represents the type of dest. register(i.e. uint32_t for wd).
-   * N represents the type of the operation (i.e. D = 16u for uqdech).
-   */
-  template <typename D, uint64_t N>
-  static uint64_t sveUqdec(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata,
-      const uint16_t VL_bits) {
-    const D d = operands[0].get<D>();
-    const uint8_t imm = metadata.operands[1].imm;
-
-    // The range of possible values does not fit in the range of any integral
-    // type, so a double is used as an intermediate value. The end result must
-    // be saturated to fit in uint64_t.
-    auto intermediate = double(d) - (imm * (VL_bits / N));
-    if (intermediate < 0) {
-      return (uint64_t)0;
-    }
-    return (uint64_t)(d - (imm * (VL_bits / N)));
   }
 };
 }  // namespace aarch64
