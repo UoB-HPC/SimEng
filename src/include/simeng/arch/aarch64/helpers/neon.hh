@@ -506,8 +506,8 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `sminv sd, vn`.
-   * I represents the number of elements in the inout vector to be
-   * updated (i.e. for vn.4s I = 4).
+   * I represents the number of elements in the source vector to be
+   * accessed (i.e. for vn.4s I = 4).
    */
   template <typename T, int I>
   static RegisterValue vecSminv_2ops(
@@ -521,8 +521,8 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `sshr vd, vn, #imm`.
-   * I represents the number of elements in the inout vector to be
-   * updated (i.e. for vn.4s I = 4).
+   * I represents the number of elements in the output vector to be
+   * updated (i.e. for vd.4s I = 4).
    */
   template <typename T, int I>
   static RegisterValue vecSshrShift_imm(
@@ -533,6 +533,34 @@ class neonHelp {
     T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
       out[i] = static_cast<T>(std::trunc(n[i] >> shift));
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for NEON instructions with the format `xtn{2} vd, vn`.
+   * D represents the type of the dest. register (i.e. vd.s is uint32_t).
+   * N represents the type of the source register (i.e. vn.d is uint64_t).
+   * I represents the number of elements in the output vector to be
+   * updated (i.e. for vd.4s I = 4).
+   */
+  template <typename D, typename N, int I>
+  static RegisterValue vecXtn(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      bool isXtn2) {
+    const D* d;
+    if (isXtn2) d = operands[0].getAsVector<D>();
+    const N* n = operands[isXtn2 ? 1 : 0].getAsVector<N>();
+
+    D out[16 / sizeof(D)] = {0};
+    int index = 0;
+
+    for (int i = 0; i < I; i++) {
+      if (isXtn2 & (i < (I / 2))) {
+        out[i] = d[i];
+      } else {
+        out[i] = static_cast<D>(n[index]);
+        index++;
+      }
     }
     return {out, 256};
   }

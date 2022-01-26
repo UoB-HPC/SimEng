@@ -18828,16 +18828,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_XTNv2i32: {
-      return executionNYI();
+    case Opcode::AArch64_XTNv2i32: {  // xtn vd.2s, vn.2d
+      results[0] = neonHelp::vecXtn<uint32_t, uint64_t, 2>(operands, false);
       break;
     }
-    case Opcode::AArch64_XTNv4i16: {
-      return executionNYI();
+    case Opcode::AArch64_XTNv4i16: {  // xtn vd.4h, vn.4s
+      results[0] = neonHelp::vecXtn<uint16_t, uint32_t, 4>(operands, false);
       break;
     }
-    case Opcode::AArch64_XTNv4i32: {
-      return executionNYI();
+    case Opcode::AArch64_XTNv4i32: {  // xtn2 vd.4s, vn.2d
+      results[0] = neonHelp::vecXtn<uint32_t, uint64_t, 4>(operands, true);
       break;
     }
     case Opcode::AArch64_XTNv8i16: {
