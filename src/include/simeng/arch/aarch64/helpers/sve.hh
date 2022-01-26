@@ -1123,6 +1123,33 @@ class sveHelp {
     }
     return out;
   }
+
+  /** Helper function for SVE instructions with the format `zip<1,2> zd, zn,
+   * zm`. T represents the type of the vector registers (i.e. uint32 for
+   * zd.s). */
+  template <typename T>
+  static RegisterValue sveZip_vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits, bool isZip2) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    bool interleave = false;
+    int index = isZip2 ? (partition_num / 2) : 0;
+    for (int i = 0; i < partition_num; i++) {
+      if (interleave) {
+        out[i] = m[index];
+        index++;
+      } else {
+        out[i] = n[index];
+      }
+      interleave = !interleave;
+    }
+    return {out, 256};
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
