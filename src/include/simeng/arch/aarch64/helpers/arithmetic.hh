@@ -171,6 +171,20 @@ class arithmeticHelp {
     if (calcNZCV) return AuxFunc::addWithCarry(n, ~m, true);
     return {(n - m), 0};
   }
+
+  /** Helper function for instructions with the format `msubl xd, wn, wm, xa`.
+   * D represents the type of the destination register (either int64_t or
+   * uint64_t).
+   * N represents the type of the first source register (either
+   * int32_t or uint32_t). Returns single value. */
+  template <typename D, typename N>
+  static D msubl_4ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const N n = operands[0].get<N>();
+    const N m = operands[1].get<N>();
+    const D a = operands[2].get<D>();
+    return (a - (n * m));
+  }
 };
 }  // namespace aarch64
 }  // namespace arch

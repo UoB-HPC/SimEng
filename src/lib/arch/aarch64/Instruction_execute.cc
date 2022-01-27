@@ -12684,10 +12684,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SMSUBLrrr: {  // smsubl xd, wn, wm, xa
-      const int32_t n = operands[0].get<int32_t>();
-      const int32_t m = operands[1].get<int32_t>();
-      const int64_t a = operands[2].get<int64_t>();
-      results[0] = a - (n * m);
+      results[0] = arithmeticHelp::msubl_4ops<int64_t, int32_t>(operands);
       break;
     }
     case Opcode::AArch64_SMULH_ZPmZ_B: {
@@ -17389,10 +17386,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_UMSUBLrrr: {  // umsubl xd, wn, wm, xa
-      uint64_t n = static_cast<uint64_t>(operands[0].get<uint32_t>());
-      uint64_t m = static_cast<uint64_t>(operands[1].get<uint32_t>());
-      uint64_t a = operands[2].get<uint64_t>();
-      results[0] = a - (n * m);
+      results[0] = arithmeticHelp::msubl_4ops<uint64_t, uint32_t>(operands);
       break;
     }
     case Opcode::AArch64_UMULH_ZPmZ_B: {
