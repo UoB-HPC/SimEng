@@ -539,6 +539,23 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `maxnmp rd, vn`.
+   * I represents the number of elements in the source vector to be
+   * accessed (i.e. for vn.2s I = 2).
+   */
+  template <typename T, int I>
+  static RegisterValue vecMaxnmp_2ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    bool isFP = std::is_floating_point<T>::value;
+
+    T out = n[0];
+    for (int i = 1; i < I; i++) {
+      out = isFP ? std::fmax(n[i], out) : std::max(n[i], out);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `movi vd, #imm`.
    * I represents the number of elements in the output array to be
    * updated (i.e. for vd.8b the final 8 elements in the output array will be

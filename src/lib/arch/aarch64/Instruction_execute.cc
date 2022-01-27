@@ -4756,8 +4756,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FMAXNMPv2i64p: {  // fmaxnmp dd, vd.2d
-      const double* n = operands[0].getAsVector<double>();
-      results[0] = {std::fmax(n[0], n[1]), 256};
+      results[0] = neonHelp::vecMaxnmp_2ops<double, 2>(operands);
       break;
     }
     case Opcode::AArch64_FMAXNMPv4f16: {
