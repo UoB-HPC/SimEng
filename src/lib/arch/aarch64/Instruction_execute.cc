@@ -3901,9 +3901,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTLv2i32: {  // fcvtl vd.2d, vn.2s
-      const float* n = operands[0].getAsVector<float>();
-      double out[2] = {static_cast<double>(n[0]), static_cast<double>(n[1])};
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecFcvtl<double, float, 2>(operands, false);
       break;
     }
     case Opcode::AArch64_FCVTLv4i16: {
@@ -3911,9 +3909,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTLv4i32: {  // fcvtl2 vd.2d, vn.4s
-      const float* n = operands[0].getAsVector<float>();
-      double out[2] = {static_cast<double>(n[2]), static_cast<double>(n[3])};
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecFcvtl<double, float, 2>(operands, true);
       break;
     }
     case Opcode::AArch64_FCVTLv8i16: {
