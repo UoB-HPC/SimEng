@@ -105,16 +105,17 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
         }
       }
       // Store any opcode-based port support override
-      YAML::Node opcode_node = config["Ports"][i]["Instruction-Opcode-Support"];
-      for (size_t j = 0; j < opcode_node.size(); j++) {
-        // If latency information hasn't been defined, set to zero as to inform
-        // later access to use group defined latencies instead
-        uint16_t opcode = opcode_node[j].as<uint16_t>();
-        if (opcodeExecutionInfo_.find(opcode) == opcodeExecutionInfo_.end()) {
-          opcodeExecutionInfo_[opcode] = {0, 0, {}};
-        }
-        opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
-      }
+      // YAML::Node opcode_node =
+      // config["Ports"][i]["Instruction-Opcode-Support"]; for (size_t j = 0; j
+      // < opcode_node.size(); j++) {
+      //   // If latency information hasn't been defined, set to zero as to
+      //   inform
+      //   // later access to use group defined latencies instead
+      //   uint16_t opcode = opcode_node[j].as<uint16_t>();
+      //   opcodeExecutionInfo_.try_emplace(
+      //       opcode, simeng::arch::aarch64::executionInfo{0, 0, {}});
+      //   opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
+      // }
     }
   }
 }
@@ -218,7 +219,8 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
       {8, 32},  // General purpose
       {8, 32},  // Floating Point
 
-    // TODO remove. Needed to allow OoO core to work. Otherwise RegisterAliasTable.cc:15 triggers
+      // TODO remove. Needed to allow OoO core to work. Otherwise
+      // RegisterAliasTable.cc:15 triggers
       {32, 17},         // Predicate
       {1, 1},           // NZCV
       {8, numSysRegs},  // System

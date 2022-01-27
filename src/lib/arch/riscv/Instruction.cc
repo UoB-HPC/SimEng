@@ -157,14 +157,14 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 
 uint16_t Instruction::getGroup() const {
   uint16_t group = 0;
-  if (isBranch()) group |= (1 << InstructionGroups::BRANCH);
-  if (isLoad()) group |= (1 << InstructionGroups::LOAD);
-  if (isStore()) group |= (1 << InstructionGroups::STORE);
-//  if (isASIMD_) group |= (1 << InstructionGroups::ASIMD);
-  if (group == 0) group |= (1 << InstructionGroups::ARITHMETIC);
-  if (isShift_) group |= (1 << InstructionGroups::SHIFT);
-  if (isDivide_) group |= (1 << InstructionGroups::DIVIDE);
-  if (isMultiply_) group |= (1 << InstructionGroups::MULTIPLY);
+  // if (isBranch()) group |= (1 << InstructionGroups::BRANCH);
+  // if (isLoad()) group |= (1 << InstructionGroups::LOAD);
+  // if (isStore()) group |= (1 << InstructionGroups::STORE);
+  // //  if (isASIMD_) group |= (1 << InstructionGroups::ASIMD);
+  // if (group == 0) group |= (1 << InstructionGroups::ARITHMETIC);
+  // if (isShift_) group |= (1 << InstructionGroups::SHIFT);
+  // if (isDivide_) group |= (1 << InstructionGroups::DIVIDE);
+  // if (isMultiply_) group |= (1 << InstructionGroups::MULTIPLY);
 
   return group;
 }
@@ -179,7 +179,7 @@ void Instruction::setExecutionInfo(const executionInfo& info) {
   supportedPorts_ = info.ports;
 }
 
-std::vector<uint8_t> Instruction::getSupportedPorts() { return {0}; }
+const std::vector<uint8_t>& Instruction::getSupportedPorts() { return {0}; }
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
 

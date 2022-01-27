@@ -1,7 +1,14 @@
+---
+# The following resources where utilised to create the config file and naming schemes:
+# https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan
+
 Core:
   Simulation-Mode: emulation
   Clock-Frequency: 2.5
   Fetch-Block-Size: 32
+Process-Image:
+  Heap-Size: 1073741824
+  Stack-Size: 1048576
 Register-Set:
   GeneralPurpose-Count: 128
   FloatingPoint/SVE-Count: 120
@@ -27,36 +34,44 @@ Ports:
   0:
     Portname: Port 0
     Instruction-Support:
-      - INT_SIMPLE
-      - INT_MUL
-      - INT_DIV_OR_SQRT
-      #- FP
+    - INT_SIMPLE
+    - INT_MUL
+    # - FP
   1:
     Portname: Port 1
     Instruction-Support:
-      - INT_SIMPLE
+    - INT_SIMPLE
+    - INT_MUL
+    - INT_DIV_OR_SQRT
+    # - FP
   2:
     Portname: Port 2
     Instruction-Support:
-      - INT_SIMPLE
-      - BRANCH
+    - INT_SIMPLE
+    - INT_MUL
+    - BRANCH
   3:
-    Portname: Port 3
+    Portname: Port 4
     Instruction-Support:
       - LOAD
   4:
-    Portname: Port 4
+    Portname: Port 5
     Instruction-Support:
-      - STORE
+    - LOAD
+  5:
+    Portname: Port 3
+    Instruction-Support:
+    - STORE
 Reservation-Stations:
   0:
     Size: 60
     Ports:
-      - Port 0
-      - Port 1
-      - Port 2
-      - Port 3
-      - Port 4
+    - Port 0
+    - Port 1
+    - Port 2
+    - Port 4
+    - Port 5
+    - Port 3
 Execution-Units:
   0:
     Pipelined: True
@@ -67,6 +82,8 @@ Execution-Units:
   3:
     Pipelined: True
   4:
+    Pipelined: True
+  5:
     Pipelined: True
 Latencies:
   0:
@@ -126,3 +143,26 @@ Latencies:
       - VECTOR_SIMPLE_LOGICAL_NOSHIFT
     Execution-Latency: 1
     Execution-Throughput: 1
+# CPU-Info mainly used to generate a replica of the special (or system) file directory 
+# structure
+CPU-Info:
+  # Set Generate-Special-Dir to 'T' to generate the special files directory, or to 'F' to not.
+  # (Not generating the special files directory may require the user to copy over files manually)
+  Generate-Special-Dir: T
+  # Core-Count MUST be 1 as multi-core is not supported at this time. (TX2 true value is 32)
+  Core-Count: 1
+  # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (TX2 true value is 2)
+  Socket-Count: 1
+  # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (TX2 true value is 4)
+  SMT: 1
+  # Below are the values needed to generate /proc/cpuinfo
+  BogoMIPS: 400.00
+  Features: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics cpuid asimdrdm
+  CPU-Implementer: "0x43"
+  CPU-Architecture: 8
+  CPU-Variant: "0x1"
+  CPU-Part: "0x0af"
+  CPU-Revision: 2
+  # Package-Count is used to generate 
+  # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
+  Package-Count: 1

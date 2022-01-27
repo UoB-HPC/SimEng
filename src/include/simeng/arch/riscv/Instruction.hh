@@ -1,10 +1,10 @@
 #pragma once
 
-#include "simeng/Instruction.hh"
-
 #include <array>
+#include <unordered_map>
 
 #include "simeng/BranchPredictor.hh"
+#include "simeng/Instruction.hh"
 
 struct cs_arm64_op;
 
@@ -24,15 +24,13 @@ const uint8_t FLOAT = 1;
 
 /** The IDs of the instruction groups for RISCV instructions. */
 namespace InstructionGroups {
-const uint8_t ARITHMETIC = 0;
-const uint8_t SHIFT = 1;
-const uint8_t MULTIPLY = 2;
-const uint8_t DIVIDE = 3;
-const uint8_t ASIMD = 4;
-const uint8_t LOAD = 5;
-const uint8_t STORE = 6;
-const uint8_t BRANCH = 7;
-//const uint8_t FP = 8;
+const uint8_t INT_SIMPLE = 0;
+const uint8_t INT_MUL = 1;
+const uint8_t INT_DIV_OR_SQRT = 2;
+const uint8_t LOAD = 3;
+const uint8_t STORE = 4;
+const uint8_t BRANCH = 5;
+// const uint8_t FP = 8;
 }  // namespace InstructionGroups
 
 #define NUM_GROUPS 8
@@ -67,7 +65,7 @@ enum class InstructionException {
 /** A basic RISCV implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
- /** Construct an instruction instance by decoding a provided instruction word.
+  /** Construct an instruction instance by decoding a provided instruction word.
    */
   Instruction(const Architecture& architecture,
               const InstructionMetadata& metadata);
@@ -161,11 +159,11 @@ class Instruction : public simeng::Instruction {
   uint16_t getGroup() const override;
 
   /** Set this instruction's execution information including it's execution
- * latency and throughput, and the set of ports which support it. */
+   * latency and throughput, and the set of ports which support it. */
   void setExecutionInfo(const executionInfo& info);
 
   /** Get this instruction's supported set of ports. */
-  std::vector<uint8_t> getSupportedPorts() override;
+  const std::vector<uint8_t>& getSupportedPorts() override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
@@ -279,7 +277,6 @@ class Instruction : public simeng::Instruction {
    * for sending to memory (according to instruction type). Each entry
    * corresponds to a `memoryAddresses` entry. */
   std::vector<RegisterValue> memoryData;
-  
 };
 
 }  // namespace riscv

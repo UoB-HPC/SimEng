@@ -12,8 +12,11 @@ TEST_P(SmokeTest, instruction) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(15), 32u);
 }
 
-INSTANTIATE_TEST_SUITE_P(RISCV, SmokeTest,
-                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(
+    RISCV, SmokeTest,
+    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
+                      std::make_tuple(INORDER, YAML::Load("{}")),
+                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
+    paramToString);
 
 }  // namespace

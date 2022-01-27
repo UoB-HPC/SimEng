@@ -111,8 +111,11 @@ TEST_P(InstStore, sd) {
             0x000154000000AA01);
 }
 
-INSTANTIATE_TEST_SUITE_P(RISCV, InstStore,
-                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(
+    RISCV, InstStore,
+    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
+                      std::make_tuple(INORDER, YAML::Load("{}")),
+                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
+    paramToString);
 
 }  // namespace

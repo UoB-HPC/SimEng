@@ -133,7 +133,11 @@ TEST_P(InstLoad, ld) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xDAED12345678DEAD);
 }
 
-INSTANTIATE_TEST_SUITE_P(RISCV, InstLoad, ::testing::Values(EMULATION, INORDER, OUTOFORDER),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(
+    RISCV, InstLoad,
+    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
+                      std::make_tuple(INORDER, YAML::Load("{}")),
+                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
+    paramToString);
 
 }  // namespace

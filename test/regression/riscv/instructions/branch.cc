@@ -215,8 +215,11 @@ TEST_P(InstBranch, BGEU) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 12);
 }
 
-INSTANTIATE_TEST_SUITE_P(RISCV, InstBranch,
-                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(
+    RISCV, InstBranch,
+    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
+                      std::make_tuple(INORDER, YAML::Load("{}")),
+                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
+    paramToString);
 
 }  // namespace

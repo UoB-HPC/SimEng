@@ -1539,8 +1539,11 @@ TEST_P(InstAtomic, amomaxu_d) {
   EXPECT_EQ(getMemoryValue<uint64_t>(heapStart + 8), 0x12345678FEEBDAED);
 }
 
-INSTANTIATE_TEST_SUITE_P(RISCV, InstAtomic,
-                         ::testing::Values(EMULATION, INORDER, OUTOFORDER),
-                         coreTypeToString);
+INSTANTIATE_TEST_SUITE_P(
+    RISCV, InstAtomic,
+    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
+                      std::make_tuple(INORDER, YAML::Load("{}")),
+                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
+    paramToString);
 
 }  // namespace
