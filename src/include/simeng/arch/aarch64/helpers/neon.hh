@@ -319,6 +319,23 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `fcvtzs vd, vn`.
+   * D represents the dest. vector register type (i.e. vd.2s would be float).
+   * N represents the source vector register type (i.e. vd.2d would be double).
+   * I represents the number of elements in the output array to be updated (i.e.
+   * for vd.8b I = 8). */
+  template <typename D, typename N, int I>
+  static RegisterValue vecFcvtzs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const N* n = operands[0].getAsVector<N>();
+    D out[16 / sizeof(D)] = {0};
+    // TODO: Handle NaNs, denorms, and saturation
+    for (int i = 0; i < I; i++) {
+      out[i] = static_cast<D>(std::trunc(n[i]));
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `fmla vd,
    *  vn, vm`. T represents the vector register type (i.e. vd.16b would be
    * uint8_t). I represents the number of elements in the output array to be

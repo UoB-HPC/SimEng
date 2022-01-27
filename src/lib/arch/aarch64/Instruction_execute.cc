@@ -4402,11 +4402,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FCVTZSv2f64: {  // fcvtzs vd.2d, vn.2d
-      const double* n = operands[0].getAsVector<double>();
-      // TODO: Handle NaNs, denorms, and saturation
-      int64_t out[2] = {static_cast<int64_t>(std::trunc(n[0])),
-                        static_cast<int64_t>(std::trunc(n[1]))};
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecFcvtzs<int64_t, double, 2>(operands);
       break;
     }
     case Opcode::AArch64_FCVTZSv2i32_shift: {
