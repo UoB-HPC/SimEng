@@ -12704,10 +12704,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SMULHrr: {  // smulh xd, xn, xm
-      auto x = operands[0].get<uint64_t>();
-      auto y = operands[1].get<uint64_t>();
       // TODO: signed
-      results[0] = AuxFunc::mulhi(x, y);
+      results[0] = AuxFunc::mulhi(operands[0].get<uint64_t>(),
+                                  operands[1].get<uint64_t>());
       break;
     }
     case Opcode::AArch64_SMULLv16i8_v8i16: {
