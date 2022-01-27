@@ -642,6 +642,20 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `inc<b, d, h, w>
+   * xdn{, pattern{, #imm}}`. T represents the vector register type (i.e. zd.b
+   * would be int8_t).*/
+  template <typename T>
+  static RegisterValue sveInc_gprImm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const uint64_t n = operands[0].get<uint64_t>();
+    const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
+    uint64_t out = n + ((VL_bits / (sizeof(T) * 8)) * imm);
+    return out;
+  }
+
   /** Helper function for SVE instructions with the format `incp xdn, pm`.
    * T represents the predicate register type (i.e. pm.b would be int8_t).*/
   template <typename T>

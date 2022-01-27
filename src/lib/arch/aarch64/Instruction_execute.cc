@@ -5886,7 +5886,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FRINTADr: {  // frinta dd, dn
-      results[0] = RegisterValue(round(operands[0].get<double>()), 256);
+      results[0] = {round(operands[0].get<double>()), 256};
       break;
     }
     case Opcode::AArch64_FRINTAHr: {
@@ -7041,15 +7041,12 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_INCB_XPiI: {  // incb xdn{, pattern{, #imm}}
-      const uint64_t n = operands[0].get<uint64_t>();
-      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
-      results[0] = n + ((VL_bits / 8) * imm);
+      results[0] = sveHelp::sveInc_gprImm<uint8_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_INCD_XPiI: {  // incd xdn{, pattern{, #imm}}
-      const uint64_t n = operands[0].get<uint64_t>();
-      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
-      results[0] = n + ((VL_bits / 64) * imm);
+      results[0] =
+          sveHelp::sveInc_gprImm<uint64_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_INCD_ZPiI: {  // incd zdn.d{, pattern{, #imm}}
@@ -7057,9 +7054,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_INCH_XPiI: {  // inch xdn{, pattern{, #imm}}
-      const uint64_t n = operands[0].get<uint64_t>();
-      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
-      results[0] = n + ((VL_bits / 16) * imm);
+      results[0] =
+          sveHelp::sveInc_gprImm<uint16_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_INCH_ZPiI: {  // inch zdn.h{, pattern{, #imm}}
@@ -7095,9 +7091,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_INCW_XPiI: {  // incw xdn{, pattern{, #imm}}
-      const uint64_t n = operands[0].get<uint64_t>();
-      const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
-      results[0] = n + ((VL_bits / 32) * imm);
+      results[0] =
+          sveHelp::sveInc_gprImm<uint32_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_INCW_ZPiI: {  // incw zdn.s{, pattern{, #imm}}
