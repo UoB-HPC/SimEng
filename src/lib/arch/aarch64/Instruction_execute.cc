@@ -3889,7 +3889,7 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_FCVTDSr: {  // fcvt dd, sn
       // TODO: Handle NaNs, denorms, and saturation?
-      results[0] = {static_cast<double>(operands[0].get<float>()), 256};
+      results[0] = neonHelp::vecFcvtl<double, float, 1>(operands, false);
       break;
     }
     case Opcode::AArch64_FCVTHDr: {
@@ -4270,7 +4270,7 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_FCVTSDr: {  // fcvt sd, dn
       // TODO: Handle NaNs, denorms, and saturation?
-      results[0] = {static_cast<float>(operands[0].get<double>()), 256};
+      results[0] = neonHelp::vecFcvtl<float, double, 1>(operands, false);
       break;
     }
     case Opcode::AArch64_FCVTSHr: {
@@ -4982,8 +4982,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FMINNMPv2i64p: {  // fminnmp dd, vd.2d
-      const double* n = operands[0].getAsVector<double>();
-      results[0] = {std::fmin(n[0], n[1]), 256};
+      results[0] = neonHelp::vecMinv_2ops<double, 2>(operands);
       break;
     }
     case Opcode::AArch64_FMINNMPv4f16: {
@@ -5341,11 +5340,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FMOVDi: {  // fmov dn, #imm
-      results[0] = RegisterValue(metadata.operands[1].fp, 256);
+      results[0] = {metadata.operands[1].fp, 256};
       break;
     }
     case Opcode::AArch64_FMOVDr: {  // fmov dd, dn
-      results[0] = RegisterValue(operands[0].get<double>(), 256);
+      results[0] = {operands[0].get<double>(), 256};
       break;
     }
     case Opcode::AArch64_FMOVH0: {
@@ -5373,16 +5372,15 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FMOVSWr: {  // fmov wd, sn
-      results[0] = RegisterValue(operands[0].get<float>(), 8);
+      results[0] = {operands[0].get<float>(), 8};
       break;
     }
     case Opcode::AArch64_FMOVSi: {  // fmov sn, #imm
-      results[0] =
-          RegisterValue(static_cast<float>(metadata.operands[1].fp), 256);
+      results[0] = {static_cast<float>(metadata.operands[1].fp), 256};
       break;
     }
     case Opcode::AArch64_FMOVSr: {  // fmov sd, sn
-      results[0] = RegisterValue(operands[0].get<float>(), 256);
+      results[0] = {operands[0].get<float>(), 256};
       break;
     }
     case Opcode::AArch64_FMOVWHr: {
@@ -5390,7 +5388,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FMOVWSr: {  // fmov sd, wn
-      results[0] = RegisterValue(operands[0].get<float>(), 256);
+      results[0] = {operands[0].get<float>(), 256};
       break;
     }
     case Opcode::AArch64_FMOVXDHighr: {  // fmov vd.d[1], xn
@@ -5399,7 +5397,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FMOVXDr: {  // fmov dd, xn
-      results[0] = RegisterValue(operands[0].get<double>(), 256);
+      results[0] = {operands[0].get<double>(), 256};
       break;
     }
     case Opcode::AArch64_FMOVXHr: {
@@ -5646,7 +5644,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FNEGDr: {  // fneg dd, dn
-      results[0] = RegisterValue(-operands[0].get<double>(), 256);
+      results[0] = {-operands[0].get<double>(), 256};
       break;
     }
     case Opcode::AArch64_FNEGHr: {
@@ -5654,7 +5652,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FNEGSr: {  // fneg sd, sn
-      results[0] = RegisterValue(-operands[0].get<float>(), 256);
+      results[0] = {-operands[0].get<float>(), 256};
       break;
     }
     case Opcode::AArch64_FNEG_ZPmZ_D: {  // fneg zd.d, pg/m, zn.d
@@ -5750,10 +5748,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FNMSUBDrrr: {  // fnmsub dd, dn, dm, da
-      double n = operands[0].get<double>();
-      double m = operands[1].get<double>();
-      double a = operands[2].get<double>();
-      results[0] = {std::fma(n, m, -a), 256};
+      results[0] = floatHelp::fnmsub_4ops<double>(operands);
       break;
     }
     case Opcode::AArch64_FNMSUBHrrr: {
@@ -5761,10 +5756,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FNMSUBSrrr: {  // fnmsub sd, sn, sm, sa
-      float n = operands[0].get<float>();
-      float m = operands[1].get<float>();
-      float a = operands[2].get<float>();
-      results[0] = {std::fma(n, m, -a), 256};
+      results[0] = floatHelp::fnmsub_4ops<float>(operands);
       break;
     }
     case Opcode::AArch64_FNMULDrr: {  // fnmul dd, dn, dm
@@ -12540,7 +12532,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SMINVv4i32v: {  // sminv sd, vn.4s
-      results[0] = neonHelp::vecSminv_2ops<int32_t, 4>(operands);
+      results[0] = neonHelp::vecMinv_2ops<int32_t, 4>(operands);
       break;
     }
     case Opcode::AArch64_SMINVv8i16v: {

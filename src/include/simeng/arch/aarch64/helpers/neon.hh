@@ -631,12 +631,14 @@ class neonHelp {
    * accessed (i.e. for vn.4s I = 4).
    */
   template <typename T, int I>
-  static RegisterValue vecSminv_2ops(
+  static RegisterValue vecMinv_2ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
-    T out = std::numeric_limits<T>::max();
-    for (int i = 0; i < I; i++) {
-      out = std::min(n[i], out);
+    bool isFP = std::is_floating_point<T>::value;
+
+    T out = n[0];
+    for (int i = 1; i < I; i++) {
+      out = isFP ? std::fmin(n[i], out) : std::min(n[i], out);
     }
     return {out, 256};
   }

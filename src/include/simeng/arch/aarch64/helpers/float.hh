@@ -87,6 +87,17 @@ class floatHelp {
     const T m = operands[1].get<T>();
     return {std::fmin(n, m), 256};
   }
+
+  /** Helper function for NEON instructions with the format `fnmsub rd, rn, rm,
+   * ra`. */
+  template <typename T>
+  static RegisterValue fnmsub_4ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    T n = operands[0].get<T>();
+    T m = operands[1].get<T>();
+    T a = operands[2].get<T>();
+    return {std::fma(n, m, -a), 256};
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
