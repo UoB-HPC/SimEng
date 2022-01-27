@@ -5760,9 +5760,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FNMULDrr: {  // fnmul dd, dn, dm
-      double n = operands[0].get<double>();
-      double m = operands[1].get<double>();
-      results[0] = {-(n * m), 256};
+      results[0] = neonHelp::vecLogicOp_3vecs<double, 1>(
+          operands, [](double x, double y) -> double { return -(x * y); });
       break;
     }
     case Opcode::AArch64_FNMULHrr: {
@@ -5770,9 +5769,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FNMULSrr: {  // fnmul sd, sn, sm
-      float n = operands[0].get<float>();
-      float m = operands[1].get<float>();
-      results[0] = {-(n * m), 256};
+      results[0] = neonHelp::vecLogicOp_3vecs<float, 1>(
+          operands, [](float x, float y) -> float { return -(x * y); });
       break;
     }
     case Opcode::AArch64_FRECPE_ZZ_D: {
