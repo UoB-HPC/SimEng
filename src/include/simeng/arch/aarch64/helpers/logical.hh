@@ -70,6 +70,17 @@ class logicalHelp {
                             : 0;
     return {result, nzcv};
   }
+
+  /** Helper function for instructions with the format `ls<l,r>v rd, rn, rm`. */
+  template <typename T>
+  static uint64_t logicalShiftLR_3ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      bool isLSL) {
+    const T n = operands[0].get<T>();
+    const T m = operands[1].get<T>() & ((sizeof(T) * 8) - 1);
+    uint64_t result = static_cast<uint64_t>(isLSL ? n << m : n >> m);
+    return result;
+  }
 };
 }  // namespace aarch64
 }  // namespace arch

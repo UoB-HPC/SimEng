@@ -10156,15 +10156,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_LSLVWr: {  // lslv wd, wn, wm
-      auto x = operands[0].get<uint32_t>();
-      auto y = operands[1].get<uint32_t>() & 0b11111;
-      results[0] = static_cast<uint64_t>(x << y);
+      results[0] = logicalHelp::logicalShiftLR_3ops<uint32_t>(operands, true);
       break;
     }
     case Opcode::AArch64_LSLVXr: {  // lslv xd, xn, xm
-      auto x = operands[0].get<uint64_t>();
-      auto y = operands[1].get<uint64_t>() & 0b111111;
-      results[0] = x << y;
+      results[0] = logicalHelp::logicalShiftLR_3ops<uint64_t>(operands, true);
       break;
     }
     case Opcode::AArch64_LSL_WIDE_ZPmZ_B: {
@@ -10256,15 +10252,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_LSRVWr: {  // lsrv wd, wn, wm
-      auto x = operands[0].get<uint32_t>();
-      auto y = operands[1].get<uint32_t>() & 0b11111;
-      results[0] = static_cast<uint64_t>(x >> y);
+      results[0] = logicalHelp::logicalShiftLR_3ops<uint32_t>(operands, false);
       break;
     }
     case Opcode::AArch64_LSRVXr: {  // lsrv xd, xn, xm
-      auto x = operands[0].get<uint64_t>();
-      auto y = operands[1].get<uint64_t>() & 0b111111;
-      results[0] = x >> y;
+      results[0] = logicalHelp::logicalShiftLR_3ops<uint64_t>(operands, false);
       break;
     }
     case Opcode::AArch64_LSR_WIDE_ZPmZ_B: {
