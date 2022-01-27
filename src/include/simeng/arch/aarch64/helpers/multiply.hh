@@ -18,6 +18,20 @@ class multiplyHelp {
     return (a + (n * m));
   }
 
+  /** Helper function for instructions with the format `maddl xd, wn, wm, xa`.
+   * D represents the type of the destination register (either int64_t or
+   * uint64_t).
+   * N represents the type of the first source register (either
+   * int32_t or uint32_t). Returns single value. */
+  template <typename D, typename N>
+  static D maddl_4ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const D n = static_cast<D>(operands[0].get<N>());
+    const D m = static_cast<D>(operands[1].get<N>());
+    const D a = operands[2].get<D>();
+    return (a + (n * m));
+  }
+
   /** Helper function for instructions with the format `mul rd, rn, rm`.
    * Returns single value. */
   template <typename T>

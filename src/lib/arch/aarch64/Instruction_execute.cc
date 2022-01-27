@@ -10469,8 +10469,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_MOVID: {  // movi dd, #imm
-      uint64_t bits = static_cast<uint64_t>(metadata.operands[1].imm);
-      results[0] = {bits, 256};
+      results[0] = {static_cast<uint64_t>(metadata.operands[1].imm), 256};
       break;
     }
     case Opcode::AArch64_MOVIv16b_ns: {  // movi vd.16b, #imm
@@ -10510,8 +10509,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_MOVKWi: {  // movk wd, #imm
-      results[0] = RegisterValue(
-          arithmeticHelp::movkShift_imm<uint32_t>(operands, metadata), 8);
+      results[0] = {arithmeticHelp::movkShift_imm<uint32_t>(operands, metadata),
+                    8};
       break;
     }
     case Opcode::AArch64_MOVKXi: {  // movk xd, #imm
@@ -10856,7 +10855,7 @@ void Instruction::execute() {
       auto [result, nzcv] = logicalHelp::logicOpShift_3ops<uint32_t>(
           operands, metadata, false,
           [](uint32_t x, uint32_t y) -> uint32_t { return x | (~y); });
-      results[0] = RegisterValue(result, 8);
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_ORNXrr: {
@@ -10890,7 +10889,7 @@ void Instruction::execute() {
       auto [result, nzcv] = logicalHelp::logicOp_imm<uint32_t>(
           operands, metadata, false,
           [](uint32_t x, uint32_t y) -> uint32_t { return x | y; });
-      results[0] = RegisterValue(result, 8);
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_ORRWrr: {
@@ -10906,7 +10905,7 @@ void Instruction::execute() {
       auto [result, nzcv] = logicalHelp::logicOp_imm<uint64_t>(
           operands, metadata, false,
           [](uint64_t x, uint64_t y) -> uint64_t { return x | y; });
-      results[0] = RegisterValue(result, 8);
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_ORRXrr: {
@@ -11840,8 +11839,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SBFMWri: {  // sbfm wd, wn, #immr, #imms
-      results[0] = RegisterValue(
-          bitmanipHelp::bfm_2imms<uint32_t>(operands, metadata, true, true), 8);
+      results[0] = {
+          bitmanipHelp::bfm_2imms<uint32_t>(operands, metadata, true, true), 8};
       break;
     }
     case Opcode::AArch64_SBFMXri: {  // sbfm xd, xn, #immr, #imms
@@ -12005,11 +12004,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SDIVWr: {  // sdiv wd, wn, wm
-      results[0] = RegisterValue(divideHelp::div_3ops<int32_t>(operands), 8);
+      results[0] = {divideHelp::div_3ops<int32_t>(operands), 8};
       break;
     }
     case Opcode::AArch64_SDIVXr: {  // sdiv xd, xn, xm
-      results[0] = RegisterValue(divideHelp::div_3ops<int64_t>(operands), 8);
+      results[0] = {divideHelp::div_3ops<int64_t>(operands), 8};
       break;
     }
     case Opcode::AArch64_SDIV_ZPmZ_D: {
@@ -12189,9 +12188,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SHLd: {  // shl dd, dn #imm
-      const uint64_t n = operands[0].get<uint64_t>();
-      int64_t shift = metadata.operands[2].imm;
-      results[0] = RegisterValue(static_cast<uint64_t>(n << shift), 256);
+      results[0] =
+          neonHelp::vecShlShift_vecImm<uint64_t, 1>(operands, metadata);
       break;
     }
     case Opcode::AArch64_SHLv16i8_shift: {
@@ -12340,10 +12338,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SMADDLrrr: {  // smaddl xd, wn, wm, xa
-      auto n = static_cast<int64_t>(operands[0].get<int32_t>());
-      auto m = static_cast<int64_t>(operands[1].get<int32_t>());
-      auto a = operands[2].get<int64_t>();
-      results[0] = a + (n * m);
+      results[0] = multiplyHelp::maddl_4ops<int64_t, int32_t>(operands);
       break;
     }
     case Opcode::AArch64_SMAXPv16i8: {
@@ -17059,10 +17054,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_UMADDLrrr: {  // umaddl xd, wn, wm, xa
-      auto n = static_cast<uint64_t>(operands[0].get<uint32_t>());
-      auto m = static_cast<uint64_t>(operands[1].get<uint32_t>());
-      auto a = operands[2].get<uint64_t>();
-      results[0] = a + (n * m);
+      results[0] = multiplyHelp::maddl_4ops<uint64_t, uint32_t>(operands);
       break;
     }
     case Opcode::AArch64_UMAXPv16i8: {
