@@ -1,5 +1,4 @@
 #include "InstructionMetadata.hh"
-#include "simeng/arch/aarch64/Architecture.hh"
 
 #define NOT(bits, length) (~bits & (1 << length - 1))
 #define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)
@@ -248,6 +247,9 @@ void Instruction::decode() {
 
   // Identify loads/stores
   if (accessesMemory) {
+    // Set size of data to be stored if it hasn't already been set
+    if (!isMicroOp_) dataSize_ = getDataSize(metadata.operands[0]);
+
     // Check first operand access to determine if it's a load or store
     if (metadata.operands[0].access & CS_AC_WRITE) {
       if (metadata.id == ARM64_INS_STXR || metadata.id == ARM64_INS_STLXR) {

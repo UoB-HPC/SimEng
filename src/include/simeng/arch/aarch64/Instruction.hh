@@ -40,6 +40,96 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
   }
 }
 
+/** Get the size of the data to be accessed from/to memory. */
+inline uint8_t getDataSize(cs_arm64_op op) {
+  // Check from top of the range downwards
+
+  // ARM64_REG_Z0 -> +31 and ARM64_REG_V0 -> {end} are scalable vector registers
+  // (Z) registers and vector registers respectively
+  if (op.reg >= ARM64_REG_Z0) {
+    // Data size for vector registers relies on opcode thus return 0
+    return 0;
+  }
+
+  // ARM64_REG_X0 -> +28 are 64-bit (X) registers
+  if (op.reg >= ARM64_REG_X0) {
+    return 8;
+  }
+
+  // ARM64_REG_W0 -> +30 are 32-bit (W) registers
+  if (op.reg >= ARM64_REG_W0) {
+    return 4;
+  }
+
+  // ARM64_REG_S0 -> +31 are 32-bit arranged (S) neon registers
+  if (op.reg >= ARM64_REG_S0) {
+    return 4;
+  }
+
+  // ARM64_REG_Q0 -> +31 are 128-bit arranged (Q) neon registers
+  if (op.reg >= ARM64_REG_Q0) {
+    return 16;
+  }
+
+  // ARM64_REG_P0 -> +15 are 256-bit (P) registers
+  if (op.reg >= ARM64_REG_P0) {
+    return 1;
+  }
+
+  // ARM64_REG_H0 -> +31 are 16-bit arranged (H) neon registers
+  if (op.reg >= ARM64_REG_H0) {
+    return 2;
+  }
+
+  // ARM64_REG_D0 -> +31 are 64-bit arranged (D) neon registers
+  if (op.reg >= ARM64_REG_D0) {
+    return 8;
+  }
+
+  // ARM64_REG_B0 -> +31 are 8-bit arranged (B) neon registers
+  if (op.reg >= ARM64_REG_B0) {
+    return 1;
+  }
+
+  // ARM64_REG_XZR is the 64-bit zero register
+  if (op.reg == ARM64_REG_XZR) {
+    return 8;
+  }
+
+  // ARM64_REG_WZR is the 32-bit zero register
+  if (op.reg == ARM64_REG_WZR) {
+    return 4;
+  }
+
+  // ARM64_REG_WSP (w31) is the 32-bit stack pointer register
+  if (op.reg == ARM64_REG_WSP) {
+    return 4;
+  }
+
+  // ARM64_REG_SP (x31) is the 64-bit stack pointer register
+  if (op.reg == ARM64_REG_SP) {
+    return 8;
+  }
+
+  // ARM64_REG_X30 is the 64-bit link register
+  if (op.reg == ARM64_REG_X30) {
+    return 8;
+  }
+
+  // ARM64_REG_X29 is the 64-bit frame pointer
+  if (op.reg == ARM64_REG_X29) {
+    return 8;
+  }
+
+  // ARM64_REG_FFR (p15) is a special purpose predicate register
+  if (op.reg == ARM64_REG_FFR) {
+    return 1;
+  }
+
+  assert(false && "Failed to find register in macroOp metadata");
+  return 0;
+}
+
 class Architecture;
 struct InstructionMetadata;
 

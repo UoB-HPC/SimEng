@@ -142,66 +142,6 @@ void printInfo(Instruction& insn, csh capstoneHandle) {
   printf("\n");
 }
 
-uint8_t getDataSize(arm64_reg reg) {
-  // Check from top of the range downwards
-
-  // ARM64_REG_V0 -> {end} are vector registers
-  if (reg >= ARM64_REG_V0) {
-    assert(false && "Vector registers unsupported in macroOp splitting");
-    return 0;
-  }
-
-  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z) registers
-  if (reg >= ARM64_REG_Z0) {
-    assert(false && "SVE Z registers unsupported in macroOp splitting");
-    return 0;
-  }
-
-  // ARM64_REG_X0 -> +28 are 64-bit (X) registers
-  if (reg >= ARM64_REG_X0) {
-    return 8;
-  }
-
-  // ARM64_REG_W0 -> +30 are 32-bit (W) registers
-  if (reg >= ARM64_REG_W0) {
-    return 4;
-  }
-
-  // ARM64_REG_S0 -> +31 are 32-bit arranged (S) neon registers
-  if (reg >= ARM64_REG_S0) {
-    return 4;
-  }
-
-  // ARM64_REG_Q0 -> +31 are 128-bit arranged (Q) neon registers
-  if (reg >= ARM64_REG_Q0) {
-    return 16;
-  }
-
-  // ARM64_REG_P0 -> +15 are 256-bit (P) registers
-  if (reg >= ARM64_REG_P0) {
-    assert(false && "Predicate registers unsupported in macroOp splitting");
-    return 0;
-  }
-
-  // ARM64_REG_H0 -> +31 are 16-bit arranged (H) neon registers
-  if (reg >= ARM64_REG_H0) {
-    return 2;
-  }
-
-  // ARM64_REG_D0 -> +31 are 64-bit arranged (D) neon registers
-  if (reg >= ARM64_REG_D0) {
-    return 8;
-  }
-
-  // ARM64_REG_B0 -> +31 are 8-bit arranged (B) neon registers
-  if (reg >= ARM64_REG_B0) {
-    return 1;
-  }
-
-  assert(false && "Failed to find register in macroOp metadata");
-  return 0;
-}
-
 std::unordered_map<uint32_t, std::vector<Instruction>>
     MicroDecoder::microDecodeCache;
 std::forward_list<InstructionMetadata> MicroDecoder::microMetadataCache;
@@ -236,19 +176,28 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
         case Opcode::AArch64_LDPWi:
         case Opcode::AArch64_LDPXi: {
           // ldp with immediate offset splits into two load uops
-          uint8_t dataSize = getDataSize(metadata.operands[0].reg);
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
+          // Reverse the order of the uops if the base memory register is the
+          // same as the first destination register (avoids invalid RAW
+          // dependency between uops).=
+          uint8_t orderA = 0;
+          uint8_t orderB = 1;
+          if (metadata.operands[0].reg == metadata.operands[2].mem.base) {
+            orderA = 1;
+            orderB = 0;
+          }
           // ldr uop 0
-          cacheVector.push_back(
-              createLdrUop(architecture, metadata.operands[0].reg,
-                           {metadata.operands[2].mem.base, ARM64_REG_INVALID,
-                            metadata.operands[2].mem.disp},
-                           capstoneHandle, false, 1, dataSize));
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[orderA].reg,
+              {metadata.operands[2].mem.base, ARM64_REG_INVALID,
+               metadata.operands[2].mem.disp + (orderA * dataSize)},
+              capstoneHandle, false, 1, dataSize));
           // ldr uop 1
-          cacheVector.push_back(
-              createLdrUop(architecture, metadata.operands[1].reg,
-                           {metadata.operands[2].mem.base, ARM64_REG_INVALID,
-                            metadata.operands[2].mem.disp + dataSize},
-                           capstoneHandle, true, 2, dataSize));
+          cacheVector.push_back(createLdrUop(
+              architecture, metadata.operands[orderB].reg,
+              {metadata.operands[2].mem.base, ARM64_REG_INVALID,
+               metadata.operands[2].mem.disp + (orderB * dataSize)},
+              capstoneHandle, true, 2, dataSize));
 
           iter = microDecodeCache.try_emplace(word, cacheVector).first;
           break;
@@ -260,7 +209,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
         case Opcode::AArch64_LDPXpost: {
           // ldp with post offset splits into two loads and an address offset
           // uop
-          uint8_t dataSize = getDataSize(metadata.operands[0].reg);
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
           // ldr uop 0
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[0].reg,
@@ -285,7 +234,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
         case Opcode::AArch64_LDPWpre:
         case Opcode::AArch64_LDPXpre: {
           // ldp with pre offset splits into an address offset and two load uops
-          uint8_t dataSize = getDataSize(metadata.operands[0].reg);
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
           // offset generation uop
           cacheVector.push_back(createImmOffsetUop(
               architecture, metadata.operands[2].mem.base,
@@ -313,7 +262,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
         case Opcode::AArch64_LDRXpost: {
           // ldr with post-index splits into a load and an address offset
           // generation micro-op
-          uint8_t dataSize = getDataSize(metadata.operands[0].reg);
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
           // ldr uop
           cacheVector.push_back(createLdrUop(
               architecture, metadata.operands[0].reg,
@@ -336,7 +285,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
         case Opcode::AArch64_LDRXpre: {
           // ldr with pre-index splits into an address offset generation and
           // load micro-op
-          uint8_t dataSize = getDataSize(metadata.operands[0].reg);
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
           // offset generation uop
           cacheVector.push_back(createImmOffsetUop(
               architecture, metadata.operands[1].mem.base,
@@ -359,7 +308,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store data uops
           // NOTE: store data and store address uop are paired through their uop
           // index value of 1 and 2
-          uint8_t dataSize = getDataSize(metadata.operands[0].reg);
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
           // store0 address uop
           cacheVector.push_back(
               createStrUop(architecture,
@@ -392,7 +341,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // store data, and an address offset uop
           // NOTE: store data and store address uop are paired through their uop
           // index value of 1 and 2
-          uint8_t dataSize = getDataSize(metadata.operands[0].reg);
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
           // store0 address uop
           cacheVector.push_back(createStrUop(
               architecture,
@@ -428,7 +377,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // address, and two store data uops
           // NOTE: store data and store address uop are paired through their uop
           // index value of 1 and 2
-          uint8_t dataSize = getDataSize(metadata.operands[0].reg);
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
           // offset generation uop
           cacheVector.push_back(createImmOffsetUop(
               architecture, metadata.operands[2].mem.base,
@@ -465,7 +414,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // and address offset generation uop
           // NOTE: store data and store address uop are paired through their uop
           // index value of 1
-          uint8_t dataSize = getDataSize(metadata.operands[0].reg);
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
           // store address uop
           cacheVector.push_back(createStrUop(
               architecture,
@@ -494,7 +443,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // generation, and store data uop
           // NOTE: store data and store address uop are paired through their uop
           // index value of 1
-          uint8_t dataSize = getDataSize(metadata.operands[0].reg);
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
           // offset generation uop
           cacheVector.push_back(createImmOffsetUop(
               architecture, metadata.operands[1].mem.base,
@@ -522,7 +471,7 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           // data uop
           // NOTE: store data and store address uop are paired through their uop
           // index value of 1
-          uint8_t dataSize = getDataSize(metadata.operands[0].reg);
+          uint8_t dataSize = getDataSize(metadata.operands[0]);
           // store address uop
           cacheVector.push_back(
               createStrUop(architecture,
@@ -624,7 +573,7 @@ Instruction MicroDecoder::createImmOffsetUop(const Architecture& architecture,
                       MicroOpInfo({true, MicroOpcode::OFFSET_IMM, 0,
                                    lastMicroOp, microOpIndex}));
   off_imm.setExecutionInfo(architecture.getExecutionInfo(off_imm));
-  printInfo(off_imm, capstoneHandle);
+  // printInfo(off_imm, capstoneHandle);
   return off_imm;
 }
 
@@ -645,7 +594,7 @@ Instruction MicroDecoder::createLdrUop(const Architecture& architecture,
                   MicroOpInfo({true, MicroOpcode::LDR_ADDR, dataSize,
                                lastMicroOp, microOpIndex}));
   ldr.setExecutionInfo(architecture.getExecutionInfo(ldr));
-  printInfo(ldr, capstoneHandle);
+  // printInfo(ldr, capstoneHandle);
   return ldr;
 }
 
@@ -663,7 +612,7 @@ Instruction MicroDecoder::createSDUop(const Architecture& architecture,
       architecture, microMetadataCache.front(),
       MicroOpInfo({true, MicroOpcode::STR_DATA, 0, lastMicroOp, microOpIndex}));
   sd.setExecutionInfo(architecture.getExecutionInfo(sd));
-  printInfo(sd, capstoneHandle);
+  // printInfo(sd, capstoneHandle);
   return sd;
 }
 
@@ -682,7 +631,7 @@ Instruction MicroDecoder::createStrUop(const Architecture& architecture,
                   MicroOpInfo({true, MicroOpcode::STR_ADDR, dataSize,
                                lastMicroOp, microOpIndex}));
   str.setExecutionInfo(architecture.getExecutionInfo(str));
-  printInfo(str, capstoneHandle);
+  // printInfo(str, capstoneHandle);
   return str;
 }
 
