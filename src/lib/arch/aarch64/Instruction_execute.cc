@@ -15499,6 +15499,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_STPWi: {  // stp wt1, wt2, [xn, #imm]
+      // STORE
       memoryData[0] = operands[0];
       memoryData[1] = operands[1];
       break;
@@ -16251,24 +16252,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SXTW_ZPmZ_D: {  // sxtw zd.d, pg/m, zn.d
-      const int64_t* d = operands[0].getAsVector<int64_t>();
-      const uint64_t* p = operands[1].getAsVector<uint64_t>();
-      const int64_t* n = operands[2].getAsVector<int64_t>();
-
-      const uint16_t partition_num = VL_bits / 64;
-      int64_t out[32] = {0};
-
-      for (int i = 0; i < partition_num; i++) {
-        uint64_t shifted_active = 1ull << ((i % 8) * 8);
-        if (p[i / 8] & shifted_active) {
-          // Cast to 32-bit to get 'least significant sub-element'
-          // Then cast back to 64-bit to sign-extend this 'sub-element'
-          out[i] = static_cast<int64_t>(static_cast<int32_t>(n[i]));
-        } else {
-          out[i] = d[i];
-        }
-      }
-      results[0] = {out, 256};
+      results[0] =
+          sveHelp::sveSxtPredicated<int64_t, int32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SYSLxt: {
