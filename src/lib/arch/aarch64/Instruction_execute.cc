@@ -14066,12 +14066,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SSHLLv2i32_shift: {  // sshll vd.2d, vn.2s, #imm
-      const uint32_t* n = operands[0].getAsVector<uint32_t>();
-      uint64_t shift = metadata.operands[2].imm;
-      int64_t out[2] = {
-          static_cast<int64_t>(static_cast<int32_t>(n[0] << shift)),
-          static_cast<int64_t>(static_cast<int32_t>(n[1] << shift))};
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecShllShift_vecImm<int64_t, int32_t, 2>(
+          operands, metadata, false);
       break;
     }
     case Opcode::AArch64_SSHLLv4i16_shift: {
@@ -14079,12 +14075,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SSHLLv4i32_shift: {  // sshll2 vd.2d, vn.4s, #imm
-      const uint32_t* n = operands[0].getAsVector<uint32_t>();
-      uint64_t shift = metadata.operands[2].imm;
-      int64_t out[2] = {
-          static_cast<int64_t>(static_cast<int32_t>(n[2] << shift)),
-          static_cast<int64_t>(static_cast<int32_t>(n[3] << shift))};
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecShllShift_vecImm<int64_t, int32_t, 2>(
+          operands, metadata, true);
       break;
     }
     case Opcode::AArch64_SSHLLv8i16_shift: {

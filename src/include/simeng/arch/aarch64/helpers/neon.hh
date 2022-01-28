@@ -626,6 +626,29 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `shll{2} vd, vn,
+   * #imm`.
+   * D represents the destination register type (i.e. vd.2d D = int64_t).
+   * N represents the source register type (i.e. vd.4s D = int32_t).
+   * I represents the number of elements in the output array to be
+   * updated (i.e. for vd.8b the I = 8).
+   */
+  template <typename D, typename N, int I>
+  static RegisterValue vecShllShift_vecImm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      bool isShll2) {
+    const N* n = operands[0].getAsVector<N>();
+    uint64_t shift = metadata.operands[2].imm;
+    D out[16 / sizeof(D)] = {0};
+    int index = isShll2 ? I : 0;
+    for (int i = 0; i < I; i++) {
+      out[i] = static_cast<D>(static_cast<N>(n[index] << shift));
+      index++;
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `sminv sd, vn`.
    * I represents the number of elements in the source vector to be
    * accessed (i.e. for vn.4s I = 4).
