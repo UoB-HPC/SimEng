@@ -8,9 +8,10 @@ namespace aarch64 {
 class neonHelp {
  public:
   /** Helper function for NEON instructions with the format `add vd, vn, vm`.
-   * I represents the number of elements in the output array to be updated (i.e.
-   * for vd.8b the final 8 elements in the output array will be 0).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted Register Value. */
   template <typename T, int I>
   static RegisterValue vecAdd_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -23,24 +24,11 @@ class neonHelp {
     return {out, 256};
   }
 
-  /** Helper function for NEON instructions with the format `addp rd, vn`.
-   * I represents the number of elements in the input array to be summed.
-   */
-  template <typename T, int I>
-  static RegisterValue vecSumElems_2ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
-    const T* n = operands[0].getAsVector<T>();
-    T out = 0;
-    for (int i = 0; i < I; i++) {
-      out += n[i];
-    }
-    return {out, 256};
-  }
-
   /** Helper function for NEON instructions with the format `addp vd, vn, vm`.
-   * I represents the number of elements in the output array to be updated (i.e.
-   * for vd.8b the final 8 elements in the output array will be 0).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted Register Value. */
   template <typename T, int I>
   static RegisterValue vecAddp_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -60,9 +48,10 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `bic vd, vn, vm`.
-   * I represents the number of elements in the output array to be updated (i.e.
-   * for vd.8b the final 8 elements in the output array will be 0).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted Register Value. */
   template <typename T, int I>
   static RegisterValue vecBic_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -77,10 +66,10 @@ class neonHelp {
 
   /** Helper function for NEON instructions with the format `bic vd, #imm{, lsl
    * #shift}`.
-   * I represents the number of elements in the output array to be
-   * updated (i.e. for vd.8b the final 8 elements in the output array will be
-   * 0).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted Register Value. */
   template <typename T, int I>
   static RegisterValue vecBicShift_imm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -99,7 +88,8 @@ class neonHelp {
   /** Helper function for NEON instructions with the format `bi<f,t> vd, vn,
    * vm`.
    * I represents the number of elements in the output array to be updated
-   * (i.e. for vd.8b I = 8). */
+   * (e.g. for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <int I>
   static RegisterValue vecBitwiseInsert(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -118,7 +108,8 @@ class neonHelp {
   /** Helper function for NEON instructions with the format `bsl vd, vn,
    * vm`.
    * I represents the number of elements in the output array to be updated
-   * (i.e. for vd.8b I = 8). */
+   * (e.g. for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <int I>
   static RegisterValue vecBsl(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -132,28 +123,12 @@ class neonHelp {
     return {out, 256};
   }
 
-  /** Helper function for instructions with the format `cnt vd, vn`.
-   * I represents the number of elements in the output array to be updated (i.e.
-   * for vd.8b I = 8). */
-  template <typename T, int I>
-  static RegisterValue vecCountPerByte(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
-    const uint8_t* n = operands[0].getAsVector<uint8_t>();
-    T out[16 / sizeof(T)] = {0};
-    for (int i = 0; i < I; i++) {
-      for (int j = 0; j < (sizeof(T) * 8); j++) {
-        // Move queried bit to LSB and extract via an AND operator
-        out[i] += ((n[i] >> j) & 1);
-      }
-    }
-    return {out, 256};
-  }
-
   /** Helper function for instructions with the format `cm<eq, ge, gt, hi, hs,
    *le, lt> vd, vn, <vm, #0>`.
-   *I represents the number of elements in the output array to be updated (i.e.
-   *for vd.8b the final 8 elements in the output array will be 0).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecCompare(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -170,36 +145,31 @@ class neonHelp {
     return {out, 256};
   }
 
-  /** Helper function for instructions with the format `fcm<eq, ge, gt, hi, hs,
-   *le, lt> vd, vn, <vm, #0>`.
-   * T represents operand type (i.e. vd.2d is double).
-   * C represents comparison type (i.e. for T=float, comparison type is
-   * uint32_t).
-   * I represents the number of elements in the output array to be
-   * updated (i.e. for vd.8b the final 8 elements in the output array will be
-   *0).
-   */
-  template <typename T, typename C, int I>
-  static RegisterValue vecFCompare(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      bool cmpToZero, std::function<bool(T, T)> func) {
-    const T* n = operands[0].getAsVector<T>();
-    const T* m;
-    if (!cmpToZero) m = operands[1].getAsVector<T>();
-    C out[16 / sizeof(C)] = {0};
+  /** Helper function for instructions with the format `cnt vd, vn`.
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T, int I>
+  static RegisterValue vecCountPerByte(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const uint8_t* n = operands[0].getAsVector<uint8_t>();
+    T out[16 / sizeof(T)] = {0};
     for (int i = 0; i < I; i++) {
-      out[i] = func(n[i], cmpToZero ? static_cast<T>(0) : m[i])
-                   ? static_cast<C>(-1)
-                   : 0;
+      for (int j = 0; j < (sizeof(T) * 8); j++) {
+        // Move queried bit to LSB and extract via an AND operator
+        out[i] += ((n[i] >> j) & 1);
+      }
     }
     return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `dup <rd, vd>,
    * <vn[index], rn>`.
-   *I represents the number of elements in the output array to be updated (i.e.
-   *for vd.8b the final 8 elements in the output array will be 0).
-   */
+   * T represents the type of operands (e.g. for vd.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecDup_gprOrIndex(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -213,10 +183,11 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `ext vd,
-   *  vn, vm, #index`. T represents the vector register type (i.e. vd.16b would
-   *be uint8_t). I represents the number of elements in the output array to be
-   *updated (i.e. for vd.8b the final 8 elements in the output array will be
-   *0).*/
+   *  vn, vm, #index`.
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecExtVecs_index(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -236,9 +207,10 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `fabs vd, vn`.
-   *I represents the number of elements in the output array to be updated (i.e.
-   *for vd.8b the final 8 elements in the output array will be 0).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecFabs_2ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -250,46 +222,36 @@ class neonHelp {
     return {out, 256};
   }
 
-  /** Helper function for NEON instructions with the format `<NOT, ...> vd,
-   *  vn`. T represents the vector register type (i.e. vd.16b would be
-   * uint8_t). I represents the number of elements in the output array to be
-   *updated (i.e. for vd.8b the final 8 elements in the output array will be
-   *0).*/
-  template <typename T, int I>
-  static RegisterValue vecLogicOp_2vecs(
+  /** Helper function for instructions with the format `fcm<eq, ge, gt, hi, hs,
+   *le, lt> vd, vn, <vm, #0>`.
+   * T represents operand type (e.g. vd.2d is double).
+   * C represents comparison type (e.g. for T=float, comparison type is
+   * uint32_t).
+   * I represents the number of elements in the output array to be
+   * updated (e.g. for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T, typename C, int I>
+  static RegisterValue vecFCompare(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      std::function<T(T)> func) {
+      bool cmpToZero, std::function<bool(T, T)> func) {
     const T* n = operands[0].getAsVector<T>();
-    T out[16 / sizeof(T)] = {0};
+    const T* m;
+    if (!cmpToZero) m = operands[1].getAsVector<T>();
+    C out[16 / sizeof(C)] = {0};
     for (int i = 0; i < I; i++) {
-      out[i] = func(n[i]);
-    }
-    return {out, 256};
-  }
-
-  /** Helper function for NEON instructions with the format `<AND, EOR, ...> vd,
-   *  vn, vm`. T represents the vector register type (i.e. vd.16b would be
-   * uint8_t). I represents the number of elements in the output array to be
-   *updated (i.e. for vd.8b the final 8 elements in the output array will be
-   *0).*/
-  template <typename T, int I>
-  static RegisterValue vecLogicOp_3vecs(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      std::function<T(T, T)> func) {
-    const T* n = operands[0].getAsVector<T>();
-    const T* m = operands[1].getAsVector<T>();
-    T out[16 / sizeof(T)] = {0};
-    for (int i = 0; i < I; i++) {
-      out[i] = func(n[i], m[i]);
+      out[i] = func(n[i], cmpToZero ? static_cast<T>(0) : m[i])
+                   ? static_cast<C>(-1)
+                   : 0;
     }
     return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `fcvtl{2} vd, vn`.
-   * D represents the dest. vector register type (i.e. vd.2d would be double).
-   * N represents the source vector register type (i.e. vd.4s would be float).
-   * I represents the number of elements in the output array to be updated (i.e.
-   * for vd.8b I = 8). */
+   * D represents the dest. vector register type (e.g. vd.2d would be double).
+   * N represents the source vector register type (e.g. vd.4s would be float).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename D, typename N, int I>
   static RegisterValue vecFcvtl(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -303,10 +265,11 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `fcvtn{2} vd, vn`.
-   * D represents the dest. vector register type (i.e. vd.2s would be float).
-   * N represents the source vector register type (i.e. vd.2d would be double).
-   * I represents the number of elements in the output array to be updated (i.e.
-   * for vd.8b I = 8). */
+   * D represents the dest. vector register type (e.g. vd.2s would be float).
+   * N represents the source vector register type (e.g. vd.2d would be double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename D, typename N, int I>
   static RegisterValue vecFcvtn(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -320,10 +283,11 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `fcvtzs vd, vn`.
-   * D represents the dest. vector register type (i.e. vd.2s would be float).
-   * N represents the source vector register type (i.e. vd.2d would be double).
-   * I represents the number of elements in the output array to be updated (i.e.
-   * for vd.8b I = 8). */
+   * D represents the dest. vector register type (e.g. vd.2s would be float).
+   * N represents the source vector register type (e.g. vd.2d would be double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename D, typename N, int I>
   static RegisterValue vecFcvtzs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -337,10 +301,11 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `fmla vd,
-   *  vn, vm`. T represents the vector register type (i.e. vd.16b would be
-   * uint8_t). I represents the number of elements in the output array to be
-   *updated (i.e. for vd.8b the final 8 elements in the output array will be
-   *0).*/
+   *  vn, vm`.
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecFmla_3vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -355,10 +320,11 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `fmla vd,
-   *  vn, vm[index]`. T represents the vector register type (i.e. vd.16b would
-   *be uint8_t). I represents the number of elements in the output array to be
-   *updated (i.e. for vd.8b the final 8 elements in the output array will be
-   *0).*/
+   *  vn, vm[index]`.
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecFmlaIndexed_3vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -375,10 +341,11 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `fmls vd,
-   *  vn, vm`. T represents the vector register type (i.e. vd.16b would be
-   * uint8_t). I represents the number of elements in the output array to be
-   *updated (i.e. for vd.8b the final 8 elements in the output array will be
-   *0).*/
+   *  vn, vm`.
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecFmls_3vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -393,10 +360,11 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `fmls vd,
-   *  vn, vm[index]`. T represents the vector register type (i.e. vd.16b would
-   *be uint8_t). I represents the number of elements in the output array to be
-   *updated (i.e. for vd.8b the final 8 elements in the output array will be
-   *0).*/
+   *  vn, vm[index]`.
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecFmlsIndexed_3vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -413,12 +381,11 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `fmul rd,
-   *  rn, vm[index]`. T represents the vector register type (i.e. sd would
-   *be float).
-   * I represents the number of elements in the output array to be
-   *updated (i.e. for vd.8b the final 8 elements in the output array will be
-   *0).
-   */
+   *  rn, vm[index]`.
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecFmulIndexed_vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -434,9 +401,10 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `fneg vd, vn`.
-   *I represents the number of elements in the output array to be updated (i.e.
-   *for vd.8b the final 8 elements in the output array will be 0).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecFneg_2ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -448,10 +416,27 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `fsqrt vd, vn`.
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T, int I>
+  static RegisterValue vecFsqrt_2ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = ::sqrt(n[i]);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `frsqrte vd, vn`.
-   *I represents the number of elements in the output array to be updated (i.e.
-   *for vd.2s the final 8 elements in the output array will be 0).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecFrsqrte_2ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -464,9 +449,11 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `frsqrts vd, vn,
-   * vm`. I represents the number of elements in the output array to be updated
-   * (i.e. for vd.8b the final 8 elements in the output array will be 0).
-   */
+   * vm`.
+   * T represents the type of operands (e.g. for vn.2d, T = double).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecFrsqrts_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -479,50 +466,12 @@ class neonHelp {
     return {out, 256};
   }
 
-  /** Helper function for NEON instructions with the format `fsqrt vd, vn`.
-   *I represents the number of elements in the output array to be updated (i.e.
-   *for vd.2s the final 8 elements in the output array will be 0).
-   */
-  template <typename T, int I>
-  static RegisterValue vecFsqrt_2ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
-    const T* n = operands[0].getAsVector<T>();
-    T out[16 / sizeof(T)] = {0};
-    for (int i = 0; i < I; i++) {
-      out[i] = ::sqrt(n[i]);
-    }
-    return {out, 256};
-  }
-
-  /** Helper function for NEON instructions with the format `ins vd[index],
-   *  rn`.
-   * T represents the vector register type (i.e. vd.16b would
-   *be uint8_t).
-   * R represents the type of the GPR (i.e. wn would be uint32_t).
-   * I represents the number of elements in the output array to be
-   *updated (i.e. for vd.8b the final 8 elements in the output array will be
-   *0).*/
-  template <typename T, typename R, int I>
-  static RegisterValue vecInsIndex_gpr(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
-    const T* d = operands[0].getAsVector<T>();
-    const T n = operands[1].get<R>();
-    T out[16 / sizeof(T)] = {0};
-
-    for (int i = 0; i < I; i++) {
-      out[i] = d[i];
-    }
-    out[metadata.operands[0].vector_index] = n;
-    return {out, 256};
-  }
-
   /** Helper function for NEON instructions with the format `ins vd[index],
    *  vn[index]`.
-   * T represents the vector register type (i.e. vd.16b would be uint8_t).
-   * I represents the number of elements in the output array to be
-   * updated (i.e. for vd.8b the final 8 elements in the output array will be
-   *0).*/
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecIns_2Index(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -539,10 +488,70 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `ins vd[index],
+   *  rn`.
+   * T represents the vector register type (e.g. vd.16b would be uint8_t).
+   * R represents the type of the GPR (e.g. wn would be uint32_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T, typename R, int I>
+  static RegisterValue vecInsIndex_gpr(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    const T* d = operands[0].getAsVector<T>();
+    const T n = operands[1].get<R>();
+    T out[16 / sizeof(T)] = {0};
+
+    for (int i = 0; i < I; i++) {
+      out[i] = d[i];
+    }
+    out[metadata.operands[0].vector_index] = n;
+    return {out, 256};
+  }
+
+  /** Helper function for NEON instructions with the format `<NOT, ...> vd,
+   *  vn`.
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T, int I>
+  static RegisterValue vecLogicOp_2vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::function<T(T)> func) {
+    const T* n = operands[0].getAsVector<T>();
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = func(n[i]);
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for NEON instructions with the format `<AND, EOR, ...> vd,
+   *  vn, vm`.
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T, int I>
+  static RegisterValue vecLogicOp_3vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::function<T(T, T)> func) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I; i++) {
+      out[i] = func(n[i], m[i]);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `maxnmp rd, vn`.
-   * I represents the number of elements in the source vector to be
-   * accessed (i.e. for vn.2s I = 2).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecMaxnmp_2ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -556,11 +565,29 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `sminv sd, vn`.
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T, int I>
+  static RegisterValue vecMinv_2ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    bool isFP = std::is_floating_point<T>::value;
+
+    T out = n[0];
+    for (int i = 1; i < I; i++) {
+      out = isFP ? std::fmin(n[i], out) : std::min(n[i], out);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `movi vd, #imm`.
-   * I represents the number of elements in the output array to be
-   * updated (i.e. for vd.8b the final 8 elements in the output array will be
-   * 0).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecMovi_imm(
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
@@ -574,10 +601,10 @@ class neonHelp {
 
   /** Helper function for NEON instructions with the format `movi vd, #imm{, lsl
    * #shift}`.
-   * I represents the number of elements in the output array to be
-   * updated (i.e. for vd.8b the final 8 elements in the output array will be
-   * 0).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecMoviShift_imm(
       const simeng::arch::aarch64::InstructionMetadata& metadata, bool negate) {
@@ -591,11 +618,12 @@ class neonHelp {
 
   /** Helper function for NEON instructions with the format `scvtf vd,
    *  vn`.
-   * D represents the destination vector register type (i.e. vd.2d would be
+   * D represents the destination vector register type (e.g. for vd.2d, D =
    * double).
-   * N represents the source vector register type (i.e. vd.2s would be int32_t).
-   * I represents the number of elements in the output array to be updated (i.e.
-   * for vd.8b the final 8 elements in the output array will be 0). */
+   * N represents the source vector register type (e.g. for vn.2s N = int32_t).
+   * I represents the number of elements in the output array to be
+   * updated (e.g. for vd.8b I = 8).
+   * Returns correctly formated RegisterValue. */
   template <typename D, typename N, int I>
   static RegisterValue vecScvtf_2vecs(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -609,10 +637,10 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `shl vd, vn, #imm`.
-   * I represents the number of elements in the output array to be
-   * updated (i.e. for vd.8b the final 8 elements in the output array will be
-   * 0).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecShlShift_vecImm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -628,11 +656,11 @@ class neonHelp {
 
   /** Helper function for NEON instructions with the format `shll{2} vd, vn,
    * #imm`.
-   * D represents the destination register type (i.e. vd.2d D = int64_t).
-   * N represents the source register type (i.e. vd.4s D = int32_t).
+   * D represents the destination register type (e.g. for vd.2d D = int64_t).
+   * N represents the source register type (e.g. for vd.4s D = int32_t).
    * I represents the number of elements in the output array to be
-   * updated (i.e. for vd.8h the I = 8).
-   */
+   * updated (e.g. for vd.8h the I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename D, typename N, int I>
   static RegisterValue vecShllShift_vecImm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -649,27 +677,11 @@ class neonHelp {
     return {out, 256};
   }
 
-  /** Helper function for NEON instructions with the format `sminv sd, vn`.
-   * I represents the number of elements in the source vector to be
-   * accessed (i.e. for vn.4s I = 4).
-   */
-  template <typename T, int I>
-  static RegisterValue vecMinv_2ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
-    const T* n = operands[0].getAsVector<T>();
-    bool isFP = std::is_floating_point<T>::value;
-
-    T out = n[0];
-    for (int i = 1; i < I; i++) {
-      out = isFP ? std::fmin(n[i], out) : std::min(n[i], out);
-    }
-    return {out, 256};
-  }
-
   /** Helper function for NEON instructions with the format `sshr vd, vn, #imm`.
-   * I represents the number of elements in the output vector to be
-   * updated (i.e. for vd.4s I = 4).
-   */
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
   static RegisterValue vecSshrShift_imm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -683,12 +695,28 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `addp rd, vn`.
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T, int I>
+  static RegisterValue vecSumElems_2ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    T out = 0;
+    for (int i = 0; i < I; i++) {
+      out += n[i];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `xtn{2} vd, vn`.
-   * D represents the type of the dest. register (i.e. vd.s is uint32_t).
-   * N represents the type of the source register (i.e. vn.d is uint64_t).
+   * D represents the type of the dest. register (e.g. for vd.s, D = uint32_t).
+   * N represents the type of the source register (e.g. for vn.d, N = uint64_t).
    * I represents the number of elements in the output vector to be
    * updated (i.e. for vd.4s I = 4).
-   */
+   * Returns correctly formatted RegisterValue. */
   template <typename D, typename N, int I>
   static RegisterValue vecXtn(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
