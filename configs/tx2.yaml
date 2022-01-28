@@ -3,7 +3,7 @@
 # https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan
 
 Core:
-  Simulation-Mode: emulation
+  Simulation-Mode: outoforder
   Clock-Frequency: 2.5
   Fetch-Block-Size: 32
   Micro-Operations: True

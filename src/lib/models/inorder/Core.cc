@@ -42,7 +42,7 @@ Core::Core(FlatMemoryInterface& instructionMemory,
 };
 
 void Core::tick() {
-  std::cout << "-----------------------" << std::endl;
+  // std::cout << "-----------------------" << std::endl;
   ticks_++;
 
   if (exceptionHandler_ != nullptr) {
@@ -100,7 +100,6 @@ void Core::tick() {
 
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
-    decodeUnit_.purgeFlushed();
 
     flushes_++;
   }

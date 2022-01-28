@@ -10,7 +10,7 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-/** A struct to hold an information to constract a default cs_arm64_op from . */
+/** A struct to hold information to construct a default cs_arm64_op from. */
 struct OpType {
   arm64_op_type type;
   bool isDestination = false;

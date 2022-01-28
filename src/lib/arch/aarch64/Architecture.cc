@@ -319,9 +319,9 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 
     // Set execution information for this instruction
     iter->second.setExecutionInfo(getExecutionInfo(iter->second));
-    std::cout << "### 0x" << std::hex << instructionAddress << std::dec
-              << std::endl;
-    printMetadata(iter->second, capstoneHandle);
+    // std::cout << "### 0x" << std::hex << instructionAddress << std::dec
+    //           << std::endl;
+    // printMetadata(iter->second, capstoneHandle);
   }
 
   // Split instruction into 1 or more defined micro-ops
