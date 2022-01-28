@@ -168,16 +168,21 @@ void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
         entry->getMicroOpIndex() == microOpNum) {
       // Supply data to be stored by operations
       itSt->second = data;
-      std::cout << "\tsupplyStoreData: " << itSt->first->getSequenceId() << ":"
-                << itSt->first->getInstructionId() << ":0x" << std::hex
-                << itSt->first->getInstructionAddress() << std::dec << ":"
-                << itSt->first->getMicroOpIndex() << ":" << std::endl;
-      for (auto d : data) {
-        if (d.size() == 4)
-          std::cout << "\t\t" << d.get<uint32_t>() << std::endl;
-        else if (d.size() == 8)
-          std::cout << "\t\t" << d.get<uint64_t>() << std::endl;
-      }
+      // std::cout << "\tsupplyStoreData: " << itSt->first->getSequenceId() <<
+      // ":"
+      //           << itSt->first->getInstructionId() << ":0x" << std::hex
+      //           << itSt->first->getInstructionAddress() << std::dec << ":"
+      //           << itSt->first->getMicroOpIndex() << " -> "
+      //           << insn->getSequenceId() << ":" << insn->getInstructionId()
+      //           << ":0x" << std::hex << insn->getInstructionAddress()
+      //           << std::dec << ":" << insn->getMicroOpIndex() << ":"
+      //           << std::endl;
+      // for (auto d : itSt->second) {
+      //   if (d.size() == 4)
+      //     std::cout << "\t\t" << d.get<uint32_t>() << std::endl;
+      //   else if (d.size() == 8)
+      //     std::cout << "\t\t" << d.get<uint64_t>() << std::endl;
+      // }
       break;
     } else {
       itSt++;
@@ -205,15 +210,26 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   // Submit request write to memory interface early as the architectural state
   // considers the store to be retired and thus its operation complete
   for (size_t i = 0; i < addresses.size(); i++) {
-    std::cout << "commitStore: " << itSt->first->getSequenceId() << ":"
-              << itSt->first->getInstructionId() << ":0x" << std::hex
-              << itSt->first->getInstructionAddress() << std::dec << ":"
-              << itSt->first->getMicroOpIndex() << ":0x" << std::hex
-              << addresses[i].address << std::dec << " <- ";
-    if (data[i].size() == 4)
-      std::cout << data[i].get<uint32_t>() << std::endl;
-    else if (data[i].size() == 8)
-      std::cout << data[i].get<uint64_t>() << std::endl;
+    // std::cout << "\tStore: " << uop->getSequenceId() << ":"
+    //           << uop->getInstructionId() << ":0x" << std::hex
+    //           << uop->getInstructionAddress() << std::dec << ":0x" <<
+    //           std::hex
+    //           << addresses[i].address << std::dec << ":"
+    //           << uop->getMicroOpIndex() << " <- ";
+    // if (data[i].size() == 1)
+    //   std::cout << unsigned(data[i].get<uint8_t>());
+    // else if (data[i].size() == 2)
+    //   std::cout << data[i].get<uint16_t>();
+    // else if (data[i].size() == 4)
+    //   std::cout << data[i].get<uint32_t>();
+    // else if (data[i].size() == 8)
+    //   std::cout << data[i].get<uint64_t>();
+    // else if (data[i].size() == 256)
+    //   std::cout << data[i].getAsVector<uint64_t>()[0] << ":"
+    //             << data[i].getAsVector<uint64_t>()[1];
+    // else
+    //   std::cout << "N/A";
+    // std::cout << std::endl;
     memory_.requestWrite(addresses[i], data[i]);
     // Still add addresses to requestQueue_ to ensure contention of resources is
     // correctly simulated
@@ -513,7 +529,7 @@ void LoadStoreQueue::tick() {
       // This load has completed
       load->execute();
       if (load->isStoreData()) {
-        std::cout << "\tinto str data handle" << std::endl;
+        // std::cout << "\tinto str data handle" << std::endl;
         supplyStoreData(load);
       }
       completedLoads_.push(load);
