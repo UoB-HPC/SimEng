@@ -8,7 +8,9 @@ namespace aarch64 {
 class comparisonHelp {
  public:
   /** Helper function for instructions with the format `orr rd, rn, rm {shift
-   * #amount}`. */
+   * #amount}`.
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns single value of type T. */
   template <typename T>
   static T orrShift_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
