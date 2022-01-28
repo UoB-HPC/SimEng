@@ -7,7 +7,9 @@ namespace arch {
 namespace aarch64 {
 class divideHelp {
  public:
-  /** Helper function for instructions with the format `div rd, rn, rm`. */
+  /** Helper function for instructions with the format `div rd, rn, rm`.
+   * T represents the type of operands (e.g. for xd, T = uint64_t).
+   * Returns single value of type T. */
   template <typename T>
   static T div_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
