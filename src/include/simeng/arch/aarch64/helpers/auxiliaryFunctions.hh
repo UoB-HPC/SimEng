@@ -13,31 +13,41 @@ namespace arch {
 namespace aarch64 {
 class AuxFunc {
  public:
-  /** Returns a correctly formatted nzcv value. */
-  static uint8_t nzcv(bool n, bool z, bool c, bool v) {
-    return (n << 3) | (z << 2) | (c << 1) | v;
-  }
+  /** Performs a type agnostic add with carry. */
+  template <typename T>
+  static std::tuple<T, uint8_t> addWithCarry(T x, T y, bool carryIn) {
+    T result = x + y + carryIn;
 
-  /** Calculate the corresponding NZCV values from select SVE instructions that
-   * set the First(N), None(Z), !Last(C) condition flags based on the predicate
-   * result, and the V flag to 0. */
-  static uint8_t getNZCVfromPred(std::array<uint64_t, 4> predResult,
-                                 uint64_t VL_bits, int byteCount) {
-    uint8_t N = (predResult[0] & 1);
-    uint8_t Z = 1;
-    // (int)(VL_bits - 1)/512 derives which block of 64-bits within the
-    // predicate register we're working in. 1ull << (VL_bits / 8) - byteCount)
-    // derives a 1 in the last position of the current predicate. Both
-    // dictated by vector length.
-    uint8_t C = !(predResult[(int)((VL_bits - 1) / 512)] &
-                  1ull << (((VL_bits / 8) - byteCount) % 64));
-    for (int i = 0; i < (int)((VL_bits - 1) / 512) + 1; i++) {
-      if (predResult[i]) {
-        Z = 0;
-        break;
-      }
+    bool n = (result >> (sizeof(T) * 8 - 1));
+    bool z = (result == 0);
+
+    // Trying to calculate whether `result` overflows (`x + y + carryIn > max`).
+    bool c;
+    if (carryIn && x + 1 == 0) {
+      // Implies `x` is max; with a carry set, it will definitely overflow
+      c = true;
+    } else {
+      // We know x + carryIn <= max, so can safely subtract and compare against
+      // y max > x + y + c == max - x > y + c
+      c = ((std::numeric_limits<T>::max() - x - carryIn) < y);
     }
-    return nzcv(N, Z, C, 0);
+
+    // Calculate whether signed result overflows
+    bool v = false;
+    typedef std::make_signed_t<T> ST;
+    auto sx = static_cast<ST>(x);
+    auto sy = static_cast<ST>(y);
+    if (sx >= 0) {
+      // Check if (x + y + c) > MAX
+      // y > (MAX - x - c)
+      v = sy > (std::numeric_limits<ST>::max() - sx - carryIn);
+    } else {
+      // Check if (x + y + c) < MIN
+      // y < (MIN - x - c)
+      v = sy < (std::numeric_limits<ST>::min() - sx - carryIn);
+    }
+
+    return {result, nzcv(n, z, c, v)};
   }
 
   /** Manipulate the bitfield `value` according to the logic of the (U|S)BFM
@@ -83,66 +93,6 @@ class AuxFunc {
     // Shift the bitfield back to where it was; as it's a signed type, the
     // compiler will sign-extend the highest bit
     return shifted >> shiftAmount;
-  }
-
-  /** Performs a type agnostic add with carry. */
-  template <typename T>
-  static std::tuple<T, uint8_t> addWithCarry(T x, T y, bool carryIn) {
-    T result = x + y + carryIn;
-
-    bool n = (result >> (sizeof(T) * 8 - 1));
-    bool z = (result == 0);
-
-    // Trying to calculate whether `result` overflows (`x + y + carryIn > max`).
-    bool c;
-    if (carryIn && x + 1 == 0) {
-      // Implies `x` is max; with a carry set, it will definitely overflow
-      c = true;
-    } else {
-      // We know x + carryIn <= max, so can safely subtract and compare against
-      // y max > x + y + c == max - x > y + c
-      c = ((std::numeric_limits<T>::max() - x - carryIn) < y);
-    }
-
-    // Calculate whether signed result overflows
-    bool v = false;
-    typedef std::make_signed_t<T> ST;
-    auto sx = static_cast<ST>(x);
-    auto sy = static_cast<ST>(y);
-    if (sx >= 0) {
-      // Check if (x + y + c) > MAX
-      // y > (MAX - x - c)
-      v = sy > (std::numeric_limits<ST>::max() - sx - carryIn);
-    } else {
-      // Check if (x + y + c) < MIN
-      // y < (MIN - x - c)
-      v = sy < (std::numeric_limits<ST>::min() - sx - carryIn);
-    }
-
-    return {result, nzcv(n, z, c, v)};
-  }
-
-  /** Multiply `a` and `b`, and return the high 64 bits of the result.
-   * https://stackoverflow.com/a/28904636 */
-  static uint64_t mulhi(uint64_t a, uint64_t b) {
-    uint64_t a_lo = (uint32_t)a;
-    uint64_t a_hi = a >> 32;
-    uint64_t b_lo = (uint32_t)b;
-    uint64_t b_hi = b >> 32;
-
-    uint64_t a_x_b_hi = a_hi * b_hi;
-    uint64_t a_x_b_mid = a_hi * b_lo;
-    uint64_t b_x_a_mid = b_hi * a_lo;
-    uint64_t a_x_b_lo = a_lo * b_lo;
-
-    uint64_t carry_bit = ((uint64_t)(uint32_t)a_x_b_mid +
-                          (uint64_t)(uint32_t)b_x_a_mid + (a_x_b_lo >> 32)) >>
-                         32;
-
-    uint64_t multhi =
-        a_x_b_hi + (a_x_b_mid >> 32) + (b_x_a_mid >> 32) + carry_bit;
-
-    return multhi;
   }
 
   /** Function to check if NZCV conditions hold. */
@@ -201,20 +151,6 @@ class AuxFunc {
     return static_cast<int64_t>(std::round(input));
   }
 
-  // Rounding function that rounds a float to nearest integer (32-bit). In event
-  // of a tie (i.e. 7.5) it will be rounded to the nearest even number.
-  static int32_t floatRoundToNearestTiesToEven(float input) {
-    if (std::fabs(input - std::trunc(input)) == 0.5f) {
-      if (static_cast<int32_t>(input - 0.5f) % 2 == 0) {
-        return static_cast<int32_t>(input - 0.5f);
-      } else {
-        return static_cast<int32_t>(input + 0.5f);
-      }
-    }
-    // Otherwise round to nearest
-    return static_cast<int32_t>(std::round(input));
-  }
-
   /** Extend `value` according to `extendType`, and left-shift the result by
    * `shift`. Replicated from Instruction.cc */
   static uint64_t extendValue(uint64_t value, uint8_t extendType,
@@ -257,6 +193,70 @@ class AuxFunc {
     }
 
     return extended << shift;
+  }
+
+  // Rounding function that rounds a float to nearest integer (32-bit). In event
+  // of a tie (i.e. 7.5) it will be rounded to the nearest even number.
+  static int32_t floatRoundToNearestTiesToEven(float input) {
+    if (std::fabs(input - std::trunc(input)) == 0.5f) {
+      if (static_cast<int32_t>(input - 0.5f) % 2 == 0) {
+        return static_cast<int32_t>(input - 0.5f);
+      } else {
+        return static_cast<int32_t>(input + 0.5f);
+      }
+    }
+    // Otherwise round to nearest
+    return static_cast<int32_t>(std::round(input));
+  }
+
+  /** Calculate the corresponding NZCV values from select SVE instructions that
+   * set the First(N), None(Z), !Last(C) condition flags based on the predicate
+   * result, and the V flag to 0. */
+  static uint8_t getNZCVfromPred(std::array<uint64_t, 4> predResult,
+                                 uint64_t VL_bits, int byteCount) {
+    uint8_t N = (predResult[0] & 1);
+    uint8_t Z = 1;
+    // (int)(VL_bits - 1)/512 derives which block of 64-bits within the
+    // predicate register we're working in. 1ull << (VL_bits / 8) - byteCount)
+    // derives a 1 in the last position of the current predicate. Both
+    // dictated by vector length.
+    uint8_t C = !(predResult[(int)((VL_bits - 1) / 512)] &
+                  1ull << (((VL_bits / 8) - byteCount) % 64));
+    for (int i = 0; i < (int)((VL_bits - 1) / 512) + 1; i++) {
+      if (predResult[i]) {
+        Z = 0;
+        break;
+      }
+    }
+    return nzcv(N, Z, C, 0);
+  }
+
+  /** Multiply `a` and `b`, and return the high 64 bits of the result.
+   * https://stackoverflow.com/a/28904636 */
+  static uint64_t mulhi(uint64_t a, uint64_t b) {
+    uint64_t a_lo = (uint32_t)a;
+    uint64_t a_hi = a >> 32;
+    uint64_t b_lo = (uint32_t)b;
+    uint64_t b_hi = b >> 32;
+
+    uint64_t a_x_b_hi = a_hi * b_hi;
+    uint64_t a_x_b_mid = a_hi * b_lo;
+    uint64_t b_x_a_mid = b_hi * a_lo;
+    uint64_t a_x_b_lo = a_lo * b_lo;
+
+    uint64_t carry_bit = ((uint64_t)(uint32_t)a_x_b_mid +
+                          (uint64_t)(uint32_t)b_x_a_mid + (a_x_b_lo >> 32)) >>
+                         32;
+
+    uint64_t multhi =
+        a_x_b_hi + (a_x_b_mid >> 32) + (b_x_a_mid >> 32) + carry_bit;
+
+    return multhi;
+  }
+
+  /** Returns a correctly formatted nzcv value. */
+  static uint8_t nzcv(bool n, bool z, bool c, bool v) {
+    return (n << 3) | (z << 2) | (c << 1) | v;
   }
 };
 }  // namespace aarch64
