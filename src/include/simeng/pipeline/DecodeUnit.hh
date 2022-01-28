@@ -40,7 +40,7 @@ class DecodeUnit {
   /** A buffer of macro-ops to split into uops. */
   PipelineBuffer<MacroOp>& input_;
   /** An internal buffer for storing one or more uops. */
-  std::queue<std::shared_ptr<Instruction>> microOps_;
+  std::deque<std::shared_ptr<Instruction>> microOps_;
   /** A buffer for writing decoded uops into. */
   PipelineBuffer<std::shared_ptr<Instruction>>& output_;
 
