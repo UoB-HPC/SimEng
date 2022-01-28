@@ -7,8 +7,10 @@ namespace arch {
 namespace aarch64 {
 class bitmanipHelp {
  public:
-  /** Helper function for instructions with the format `bfm rd, rn, #imr,
-   * #imms`. Returns Single value. */
+  /** Helper function for instructions with the format `bfm rd, rn, #immr,
+   * #imms`.
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns single value of type T. */
   template <typename T>
   static T bfm_2imms(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -28,7 +30,8 @@ class bitmanipHelp {
   }
 
   /** Helper function for instructions with the format `extr rd, rn, rm, #lsb`.
-   * Returns Single value. */
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns single value of type T. */
   template <typename T>
   static T extrLSB_registers(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -41,7 +44,8 @@ class bitmanipHelp {
   }
 
   /** Helper function for instructions with the format `rbit rd, rn`.
-   * Returns Single value. */
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns single value of type uint64_t. */
   template <typename T>
   static uint64_t rbit(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -63,7 +67,8 @@ class bitmanipHelp {
   }
 
   /** Helper function for instructions with the format `rev rd, rn`.
-   * Returns Single value. */
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns array of uint8_t with number of elements = bytes in T. */
   template <typename T>
   static std::array<uint8_t, sizeof(T)> rev(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
