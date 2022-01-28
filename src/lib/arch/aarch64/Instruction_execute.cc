@@ -16766,9 +16766,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_UBFMWri: {  // ubfm wd, wn, #immr, #imms
-      results[0] = RegisterValue(
+      results[0] = {
           bitmanipHelp::bfm_2imms<uint32_t>(operands, metadata, false, true),
-          8);
+          8};
       break;
     }
     case Opcode::AArch64_UBFMXri: {  // ubfm xd, xn, #immr, #imms
@@ -16801,8 +16801,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_UCVTFUWDri: {  // ucvtf dd, wn
-      results[0] =
-          RegisterValue(static_cast<double>(operands[0].get<uint32_t>()), 256);
+      results[0] = {static_cast<double>(operands[0].get<uint32_t>()), 256};
       break;
     }
     case Opcode::AArch64_UCVTFUWHri: {
@@ -16810,13 +16809,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_UCVTFUWSri: {  // ucvtf sd, wn
-      results[0] =
-          RegisterValue(static_cast<float>(operands[0].get<uint32_t>()), 256);
+      results[0] = {static_cast<float>(operands[0].get<uint32_t>()), 256};
       break;
     }
     case Opcode::AArch64_UCVTFUXDri: {  // ucvtf dd, xn
-      results[0] =
-          RegisterValue(static_cast<double>(operands[0].get<uint64_t>()), 256);
+      results[0] = {static_cast<double>(operands[0].get<uint64_t>()), 256};
       break;
     }
     case Opcode::AArch64_UCVTFUXHri: {
@@ -16824,8 +16821,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_UCVTFUXSri: {  // ucvtf sd, xn
-      results[0] =
-          RegisterValue(static_cast<float>(operands[0].get<uint64_t>()), 256);
+      results[0] = {static_cast<float>(operands[0].get<uint64_t>()), 256};
       break;
     }
     case Opcode::AArch64_UCVTF_ZPmZ_DtoD: {
@@ -16873,13 +16869,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_UCVTFv1i32: {  // ucvtf sd, sn
-      results[0] =
-          RegisterValue(static_cast<float>(operands[0].get<uint32_t>()), 256);
+      results[0] = {static_cast<float>(operands[0].get<uint32_t>()), 256};
       break;
     }
     case Opcode::AArch64_UCVTFv1i64: {  // ucvtf dd, dn
-      results[0] =
-          RegisterValue(static_cast<double>(operands[0].get<uint64_t>()), 256);
+      results[0] = {static_cast<double>(operands[0].get<uint64_t>()), 256};
       break;
     }
     case Opcode::AArch64_UCVTFv2f32: {
@@ -16931,11 +16925,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_UDIVWr: {  // udiv wd, wn, wm
-      results[0] = RegisterValue(divideHelp::div_3ops<uint32_t>(operands), 8);
+      results[0] = {divideHelp::div_3ops<uint32_t>(operands), 8};
       break;
     }
     case Opcode::AArch64_UDIVXr: {  // udiv xd, xn, xm
-      results[0] = RegisterValue(divideHelp::div_3ops<uint64_t>(operands), 8);
+      results[0] = {divideHelp::div_3ops<uint64_t>(operands), 8};
       break;
     }
     case Opcode::AArch64_UDIV_ZPmZ_D: {
@@ -17348,7 +17342,7 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_UMOVvi32: {  // umov wd, vn.s[index]
       const uint32_t* vec = operands[0].getAsVector<uint32_t>();
-      results[0] = RegisterValue(vec[metadata.operands[1].vector_index], 8);
+      results[0] = {vec[metadata.operands[1].vector_index], 8};
       break;
     }
     case Opcode::AArch64_UMOVvi64: {  // umov xd, vn.d[index]
@@ -17358,7 +17352,7 @@ void Instruction::execute() {
     }
     case Opcode::AArch64_UMOVvi8: {  // umov wd, vn.b[index]
       const uint8_t* vec = operands[0].getAsVector<uint8_t>();
-      results[0] = RegisterValue(vec[metadata.operands[1].vector_index], 8);
+      results[0] = {vec[metadata.operands[1].vector_index], 8};
       break;
     }
     case Opcode::AArch64_UMSUBLrrr: {  // umsubl xd, wn, wm, xa
@@ -17382,9 +17376,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_UMULHrr: {  // umulh xd, xn, xm
-      auto x = operands[0].get<uint64_t>();
-      auto y = operands[1].get<uint64_t>();
-      results[0] = AuxFunc::mulhi(x, y);
+      results[0] = AuxFunc::mulhi(operands[0].get<uint64_t>(),
+                                  operands[1].get<uint64_t>());
       break;
     }
     case Opcode::AArch64_UMULLv16i8_v8i16: {
@@ -18136,13 +18129,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_USHLLv16i8_shift: {  // ushll2 vd.8h, vn.16b, #imm
-      const uint8_t* n = operands[0].getAsVector<uint8_t>();
-      const uint64_t shift = metadata.operands[2].imm;
-      uint16_t out[8] = {0};
-      for (int i = 0; i < 8; i++) {
-        out[i] = n[i + 8] << shift;
-      }
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecShllShift_vecImm<uint16_t, uint8_t, 8>(
+          operands, metadata, true);
       break;
     }
     case Opcode::AArch64_USHLLv2i32_shift: {
@@ -18150,13 +18138,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_USHLLv4i16_shift: {  // ushll vd.4s, vn.4h, #imm
-      const uint16_t* n = operands[0].getAsVector<uint16_t>();
-      const uint64_t shift = metadata.operands[2].imm;
-      uint32_t out[4] = {0};
-      for (int i = 0; i < 4; i++) {
-        out[i] = n[i] << shift;
-      }
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecShllShift_vecImm<uint32_t, uint16_t, 4>(
+          operands, metadata, false);
       break;
     }
     case Opcode::AArch64_USHLLv4i32_shift: {
@@ -18164,23 +18147,13 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_USHLLv8i16_shift: {  // ushll2 vd.4s, vn.8h, #imm
-      const uint16_t* n = operands[0].getAsVector<uint16_t>();
-      const uint64_t shift = metadata.operands[2].imm;
-      uint32_t out[4] = {0};
-      for (int i = 0; i < 4; i++) {
-        out[i] = n[i + 4] << shift;
-      }
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecShllShift_vecImm<uint32_t, uint16_t, 4>(
+          operands, metadata, true);
       break;
     }
     case Opcode::AArch64_USHLLv8i8_shift: {  // ushll vd.8h, vn.8b, #imm
-      const uint8_t* n = operands[0].getAsVector<uint8_t>();
-      const uint64_t shift = metadata.operands[2].imm;
-      uint16_t out[8] = {0};
-      for (int i = 0; i < 8; i++) {
-        out[i] = n[i] << shift;
-      }
-      results[0] = {out, 256};
+      results[0] = neonHelp::vecShllShift_vecImm<uint16_t, uint8_t, 8>(
+          operands, metadata, false);
       break;
     }
     case Opcode::AArch64_USHLv16i8: {

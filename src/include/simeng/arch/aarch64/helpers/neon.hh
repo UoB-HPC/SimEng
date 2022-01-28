@@ -631,7 +631,7 @@ class neonHelp {
    * D represents the destination register type (i.e. vd.2d D = int64_t).
    * N represents the source register type (i.e. vd.4s D = int32_t).
    * I represents the number of elements in the output array to be
-   * updated (i.e. for vd.8b the I = 8).
+   * updated (i.e. for vd.8h the I = 8).
    */
   template <typename D, typename N, int I>
   static RegisterValue vecShllShift_vecImm(
@@ -643,7 +643,7 @@ class neonHelp {
     D out[16 / sizeof(D)] = {0};
     int index = isShll2 ? I : 0;
     for (int i = 0; i < I; i++) {
-      out[i] = static_cast<D>(static_cast<N>(n[index] << shift));
+      out[i] = n[index] << shift;
       index++;
     }
     return {out, 256};
