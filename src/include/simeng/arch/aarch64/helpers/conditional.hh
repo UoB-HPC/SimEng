@@ -7,8 +7,60 @@ namespace arch {
 namespace aarch64 {
 class conditionalHelp {
  public:
+  /** Helper function for instructions with the format `ccmn rn, #imm #nzcv,
+   * cc`.
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns single value of type uint8_t. */
+  template <typename T>
+  static uint8_t ccmn_imm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+      uint8_t nzcv;
+      std::tie(std::ignore, nzcv) = AuxFunc::addWithCarry(
+          operands[1].get<T>(), static_cast<T>(metadata.operands[1].imm), 0);
+      return nzcv;
+    }
+    return static_cast<uint8_t>(metadata.operands[2].imm);
+  }
+
+  /** Helper function for instructions with the format `ccmp rn, #imm #nzcv,
+   * cc`.
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns single value of type uint8_t. */
+  template <typename T>
+  static uint8_t ccmp_imm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+      uint8_t nzcv;
+      std::tie(std::ignore, nzcv) = AuxFunc::addWithCarry(
+          operands[1].get<T>(), ~static_cast<T>(metadata.operands[1].imm), 1);
+      return nzcv;
+    }
+    return static_cast<uint8_t>(metadata.operands[2].imm);
+  }
+
+  /** Helper function for instructions with the format `ccmp rn, rm, #nzcv,
+   * cc`.
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns single value of type uint8_t. */
+  template <typename T>
+  static uint8_t ccmp_reg(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
+      uint8_t nzcv;
+      std::tie(std::ignore, nzcv) =
+          AuxFunc::addWithCarry(operands[1].get<T>(), ~operands[2].get<T>(), 1);
+      return nzcv;
+    }
+    return static_cast<uint8_t>(metadata.operands[2].imm);
+  }
+
   /** Helper function for instructions with the format `cb<z,nz> rn, #imm`.
-   */
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns tuple of type [bool branch taken, uint64_t address]. */
   template <typename T>
   static std::tuple<bool, uint64_t> condBranch_cmpToZero(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -26,57 +78,10 @@ class conditionalHelp {
     return {branchTaken, branchAddress};
   }
 
-  /** Helper function for instructions with the format `ccmn rn, #imm #nzcv,
-   * cc`.
-   */
-  template <typename T>
-  static uint8_t ccmn_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
-    if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
-      uint8_t nzcv;
-      std::tie(std::ignore, nzcv) = AuxFunc::addWithCarry(
-          operands[1].get<T>(), static_cast<T>(metadata.operands[1].imm), 0);
-      return nzcv;
-    }
-    return static_cast<uint8_t>(metadata.operands[2].imm);
-  }
-
-  /** Helper function for instructions with the format `ccmp rn, #imm #nzcv,
-   * cc`.
-   */
-  template <typename T>
-  static uint8_t ccmp_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
-    if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
-      uint8_t nzcv;
-      std::tie(std::ignore, nzcv) = AuxFunc::addWithCarry(
-          operands[1].get<T>(), ~static_cast<T>(metadata.operands[1].imm), 1);
-      return nzcv;
-    }
-    return static_cast<uint8_t>(metadata.operands[2].imm);
-  }
-
-  /** Helper function for instructions with the format `ccmp rn, rm, #nzcv,
-   * cc`.
-   */
-  template <typename T>
-  static uint8_t ccmp_reg(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata) {
-    if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
-      uint8_t nzcv;
-      std::tie(std::ignore, nzcv) =
-          AuxFunc::addWithCarry(operands[1].get<T>(), ~operands[2].get<T>(), 1);
-      return nzcv;
-    }
-    return static_cast<uint8_t>(metadata.operands[2].imm);
-  }
-
   /** Helper function for instructions with the format `cs<el, neg, inc, inv>
    * rd, rn, rm, cc`.
-   */
+   * T represents the type of operands (e.g. for xd, T = uint64_t).
+   * Returns single value of type T. */
   template <typename T>
   static T cs_4ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -89,7 +94,9 @@ class conditionalHelp {
   }
 
   /** Helper function for instructions with the format `tb<z,nz> rn, #imm,
-   * label`. */
+   * label`.
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns tuple of type [bool branch taken, uint64_t address]. */
   template <typename T>
   static std::tuple<bool, uint64_t> tbnz_tbz(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
