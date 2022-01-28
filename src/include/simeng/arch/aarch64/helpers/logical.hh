@@ -8,7 +8,7 @@ namespace aarch64 {
 class logicalHelp {
  public:
   /** Helper function for instructions with the format `asrv rd, rn, rm`.
-   * T represents the output type (i.e. for wd, T = int32_t).
+   * T represents the type of operands (e.g. for xn, T = int64_t).
    * Returns single value of type T. */
   template <typename T>
   static T asrv_3gpr(
@@ -19,7 +19,9 @@ class logicalHelp {
   }
 
   /** Helper function for instructions with the format `bic rd, rn, rm{, shift
-   * #amount}`. Returns tuple of [resulting value, nzcv]. */
+   * #amount}`.
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> bicShift_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -38,7 +40,9 @@ class logicalHelp {
   }
 
   /** Helper function for instructions with the format `<and, eor, ...> rd, rn,
-   * #imm`. Returns tuple of [resulting value, nzcv]. */
+   * #imm`.
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> logicOp_imm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -54,7 +58,9 @@ class logicalHelp {
   }
 
   /** Helper function for instructions with the format `<and, eor, ...> rd, rn,
-   * rm{, shift #amount}`. Returns tuple of [resulting value, nzcv]. */
+   * rm{, shift #amount}`.
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> logicOpShift_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -71,7 +77,9 @@ class logicalHelp {
     return {result, nzcv};
   }
 
-  /** Helper function for instructions with the format `ls<l,r>v rd, rn, rm`. */
+  /** Helper function for instructions with the format `ls<l,r>v rd, rn, rm`.
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns single value of type uint64_t. */
   template <typename T>
   static uint64_t logicalShiftLR_3ops(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
