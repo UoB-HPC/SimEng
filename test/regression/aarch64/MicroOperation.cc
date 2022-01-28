@@ -167,6 +167,43 @@ TEST_P(MicroOp, loadPairX) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0x1234567898765432);
 }
 
+TEST_P(MicroOp, loadPairReorder) {
+  initialHeapData_.resize(64);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0xABBACAFEABBACAFE;
+  heap64[1] = 0x1234567898765432;
+  heap64[2] = 0xABCDEFABCDEFABCD;
+  heap64[3] = 0xCAFEABBACAFEABBA;
+  heap64[4] = 0x9876543212345678;
+  heap64[5] = 0xFEDCBAFEDCBAFEDC;
+  heap64[6] = 0x1234567898765432;
+  heap64[7] = 0xCAFEABBACAFEABBA;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, x0
+    mov x4, x0
+    mov x6, x0
+    mov x7, x0
+
+    ldp x1, x2, [x1, #0]
+    ldp x3, x4, [x4, #16]
+    ldp x5, x6, [x6, #32]
+    ldp x7, x8, [x7, #48]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0xABBACAFEABBACAFE);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0x1234567898765432);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0xABCDEFABCDEFABCD);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0xCAFEABBACAFEABBA);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x9876543212345678);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFEDCBAFEDCBAFEDC);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x1234567898765432);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(8), 0xCAFEABBACAFEABBA);
+}
+
 TEST_P(MicroOp, loadB) {
   initialHeapData_.resize(4);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
@@ -181,13 +218,13 @@ TEST_P(MicroOp, loadB) {
     svc #0
 
     ldr b1, [x0], #1
-    // ldr b2, [x0, #0]
-    // ldr b3, [x0, #1]
+    ldr b2, [x0, #0]
+    ldr b3, [x0, #1]
     ldr b4, [x0, #-1]!
   )");
   CHECK_NEON(1, uint8_t, {0xAB});
-  // CHECK_NEON(2, uint8_t, {0xBA});
-  // CHECK_NEON(3, uint8_t, {0xCA});
+  CHECK_NEON(2, uint8_t, {0xBA});
+  CHECK_NEON(3, uint8_t, {0xCA});
   CHECK_NEON(4, uint8_t, {0xAB});
 }
 
@@ -228,14 +265,14 @@ TEST_P(MicroOp, loadH) {
     mov x8, 214
     svc #0
 
-    ldr h1, [x0], #1
-    // ldr h2, [x0, #0]
-    // ldr h3, [x0, #1]
-    ldr h4, [x0, #-1]!
+    ldr h1, [x0], #2
+    ldr h2, [x0, #0]
+    ldr h3, [x0, #2]
+    ldr h4, [x0, #-2]!
   )");
   CHECK_NEON(1, uint16_t, {0xABBA});
-  // CHECK_NEON(2, uint16_t, {0xCAFE});
-  // CHECK_NEON(3, uint16_t, {0x1234});
+  CHECK_NEON(2, uint16_t, {0xCAFE});
+  CHECK_NEON(3, uint16_t, {0x1234});
   CHECK_NEON(4, uint16_t, {0xABBA});
 }
 
