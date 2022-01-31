@@ -3,6 +3,7 @@
 .DS_Store
 obj
 build
+xcode-build
 binaries
 install
 install-debug
