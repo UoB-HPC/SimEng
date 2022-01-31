@@ -174,7 +174,7 @@ void Instruction::execute() {
       auto [result, nzcv] =
           arithmeticHelp::addShift_imm<uint32_t>(operands, metadata, true);
       results[0] = nzcv;
-      results[1] = RegisterValue(result, 8);
+      results[1] = {result, 8};
       break;
     }
     case Opcode::AArch64_ADDSWrr: {
@@ -185,14 +185,14 @@ void Instruction::execute() {
       auto [result, nzcv] =
           arithmeticHelp::addShift_3ops<uint32_t>(operands, metadata, true);
       results[0] = nzcv;
-      results[1] = RegisterValue(result, 8);
+      results[1] = {result, 8};
       break;
     }
     case Opcode::AArch64_ADDSWrx: {  // adds wd, wn, wm{, extend {#amount}}
       auto [result, nzcv] =
           arithmeticHelp::addExtend_3ops<uint32_t>(operands, metadata, true);
       results[0] = nzcv;
-      results[1] = RegisterValue(result, 8);
+      results[1] = {result, 8};
       break;
     }
     case Opcode::AArch64_ADDSXri: {  // adds xd, xn, #imm{, shift}
@@ -252,7 +252,7 @@ void Instruction::execute() {
     case Opcode::AArch64_ADDWri: {  // add wd, wn, #imm{, shift}
       auto [result, nzcv] =
           arithmeticHelp::addShift_imm<uint32_t>(operands, metadata, false);
-      results[0] = RegisterValue(result, 8);
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_ADDWrr: {
@@ -262,19 +262,19 @@ void Instruction::execute() {
     case Opcode::AArch64_ADDWrs: {  // add wd, wn, wm{, shift #amount}
       auto [result, nzcv] =
           arithmeticHelp::addShift_3ops<uint32_t>(operands, metadata, false);
-      results[0] = static_cast<uint64_t>(result);
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_ADDWrx: {  // add wd, wn, wm{, extend #amount}
       auto [result, nzcv] =
           arithmeticHelp::addExtend_3ops<uint32_t>(operands, metadata, false);
-      results[0] = result;
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_ADDXri: {  // add xd, xn, #imm{, shift}
       auto [result, nzcv] =
           arithmeticHelp::addShift_imm<uint64_t>(operands, metadata, false);
-      results[0] = RegisterValue(result);
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_ADDXrr: {
@@ -489,7 +489,7 @@ void Instruction::execute() {
           operands, metadata, true,
           [](uint32_t x, uint32_t y) -> uint32_t { return x & y; });
       results[0] = nzcv;
-      results[1] = RegisterValue(result, 8);
+      results[1] = {result, 8};
       break;
     }
     case Opcode::AArch64_ANDSWrr: {
@@ -501,7 +501,7 @@ void Instruction::execute() {
           operands, metadata, true,
           [](uint32_t x, uint32_t y) -> uint32_t { return x & y; });
       results[0] = nzcv;
-      results[1] = static_cast<uint64_t>(result);
+      results[1] = {result, 8};
       break;
     }
     case Opcode::AArch64_ANDSXri: {  // ands xd, xn, #imm
@@ -548,7 +548,7 @@ void Instruction::execute() {
       auto [result, nzcv] = logicalHelp::logicOp_imm<uint32_t>(
           operands, metadata, false,
           [](uint32_t x, uint32_t y) -> uint32_t { return x & y; });
-      results[0] = RegisterValue(result, 8);
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_ANDWrr: {
@@ -559,7 +559,7 @@ void Instruction::execute() {
       auto [result, nzcv] = logicalHelp::logicOpShift_3ops<uint32_t>(
           operands, metadata, false,
           [](uint32_t x, uint32_t y) -> uint32_t { return x & y; });
-      results[0] = static_cast<uint64_t>(result);
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_ANDXri: {  // and xd, xn, #imm
@@ -806,9 +806,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_BFMWri: {  // bfm wd, wn, #immr, #imms
-      results[0] = RegisterValue(
+      results[0] = {
           bitmanipHelp::bfm_2imms<uint32_t>(operands, metadata, false, false),
-          8);
+          8};
       break;
     }
     case Opcode::AArch64_BFMXri: {  // bfm xd, xn, #immr, #imms
@@ -824,7 +824,7 @@ void Instruction::execute() {
       auto [result, nzcv] =
           logicalHelp::bicShift_3ops<uint32_t>(operands, metadata, true);
       results[0] = nzcv;
-      results[1] = RegisterValue(result, 8);
+      results[1] = {result, 8};
       break;
     }
     case Opcode::AArch64_BICSXrr: {
@@ -849,7 +849,7 @@ void Instruction::execute() {
     case Opcode::AArch64_BICWrs: {  // bic wd, wn, wm{, shift #amount}
       auto [result, nzcv] =
           logicalHelp::bicShift_3ops<uint32_t>(operands, metadata, false);
-      results[0] = RegisterValue(result, 8);
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_BICXrr: {
@@ -2432,8 +2432,10 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_CSELWr: {  // csel wd, wn, wm, cc
-      results[0] = static_cast<uint64_t>(conditionalHelp::cs_4ops<uint32_t>(
-          operands, metadata, [](uint32_t x) -> uint32_t { return x; }));
+      results[0] = {
+          conditionalHelp::cs_4ops<uint32_t>(
+              operands, metadata, [](uint32_t x) -> uint32_t { return x; }),
+          8};
       break;
     }
     case Opcode::AArch64_CSELXr: {  // csel xd, xn, xm, cc
@@ -2442,8 +2444,10 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_CSINCWr: {  // csinc wd, wn, wm, cc
-      results[0] = static_cast<uint64_t>(conditionalHelp::cs_4ops<uint32_t>(
-          operands, metadata, [](uint32_t x) -> uint32_t { return x + 1; }));
+      results[0] = {
+          conditionalHelp::cs_4ops<uint32_t>(
+              operands, metadata, [](uint32_t x) -> uint32_t { return x + 1; }),
+          8};
       break;
     }
     case Opcode::AArch64_CSINCXr: {  // csinc xd, xn, xm, cc
@@ -2452,8 +2456,10 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_CSINVWr: {  // csinv wd, wn, wm, cc
-      results[0] = static_cast<uint64_t>(conditionalHelp::cs_4ops<uint32_t>(
-          operands, metadata, [](uint32_t x) -> uint32_t { return ~x; }));
+      results[0] = {
+          conditionalHelp::cs_4ops<uint32_t>(
+              operands, metadata, [](uint32_t x) -> uint32_t { return ~x; }),
+          8};
       break;
     }
     case Opcode::AArch64_CSINVXr: {  // csinv xd, xn, xm, cc
@@ -2462,8 +2468,10 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_CSNEGWr: {  // csneg wd, wn, wm, cc
-      results[0] = static_cast<int64_t>(conditionalHelp::cs_4ops<int32_t>(
-          operands, metadata, [](int32_t x) -> int32_t { return -x; }));
+      results[0] = {
+          conditionalHelp::cs_4ops<int32_t>(
+              operands, metadata, [](int32_t x) -> int32_t { return -x; }),
+          8};
       break;
     }
     case Opcode::AArch64_CSNEGXr: {  // csneg xd, xn, xm, cc
@@ -2746,9 +2754,11 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_EORWri: {  // eor wd, wn, #imm
-      results[0] = logicalHelp::logicOp_imm<uint32_t>(
-          operands, metadata, false,
-          [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
+      results[0] = {
+          logicalHelp::logicOp_imm<uint32_t>(
+              operands, metadata, false,
+              [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; }),
+          8};
       break;
     }
     case Opcode::AArch64_EORWrr: {
@@ -2756,15 +2766,18 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_EORWrs: {  // eor wd, wn, wm{, shift #imm}
-      results[0] = logicalHelp::logicOpShift_3ops<uint32_t>(
-          operands, metadata, false,
-          [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
+      results[0] = {
+          logicalHelp::logicOpShift_3ops<uint32_t>(
+              operands, metadata, false,
+              [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; }),
+          8};
       break;
     }
     case Opcode::AArch64_EORXri: {  // eor xd, xn, #imm
-      results[0] = logicalHelp::logicOp_imm<uint64_t>(
+      auto [result, nzcv] = logicalHelp::logicOp_imm<uint64_t>(
           operands, metadata, false,
           [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_EORXrr: {
@@ -2772,9 +2785,10 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_EORXrs: {  // eor xd, xn, xm{, shift #amount}
-      results[0] = logicalHelp::logicOpShift_3ops<uint64_t>(
+      auto [result, nzcv] = logicalHelp::logicOpShift_3ops<uint64_t>(
           operands, metadata, false,
           [](uint64_t x, uint64_t y) -> uint64_t { return x ^ y; });
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_EOR_PPzPP: {
@@ -2838,8 +2852,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_EXTRWrri: {  // extr wd, wn, wm, #lsb
-      results[0] =
-          bitmanipHelp::extrLSB_registers<uint32_t>(operands, metadata);
+      results[0] = {
+          bitmanipHelp::extrLSB_registers<uint32_t>(operands, metadata), 8};
       break;
     }
     case Opcode::AArch64_EXTRXrri: {  // extr xd, xn, xm, #lsb
@@ -10156,7 +10170,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_LSLVWr: {  // lslv wd, wn, wm
-      results[0] = logicalHelp::logicalShiftLR_3ops<uint32_t>(operands, true);
+      results[0] = {logicalHelp::logicalShiftLR_3ops<uint32_t>(operands, true),
+                    8};
       break;
     }
     case Opcode::AArch64_LSLVXr: {  // lslv xd, xn, xm
@@ -10252,7 +10267,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_LSRVWr: {  // lsrv wd, wn, wm
-      results[0] = logicalHelp::logicalShiftLR_3ops<uint32_t>(operands, false);
+      results[0] = {logicalHelp::logicalShiftLR_3ops<uint32_t>(operands, false),
+                    8};
       break;
     }
     case Opcode::AArch64_LSRVXr: {  // lsrv xd, xn, xm
@@ -10332,8 +10348,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_MADDWrrr: {  // madd wd, wn, wm, wa
-      results[0] =
-          static_cast<uint64_t>(multiplyHelp::madd_4ops<uint32_t>(operands));
+      results[0] = {multiplyHelp::madd_4ops<uint32_t>(operands), 8};
       break;
     }
     case Opcode::AArch64_MADDXrrr: {  // madd xd, xn, xm, xa
@@ -10518,8 +10533,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_MOVNWi: {  // movn wd, #imm{, LSL #shift}
-      results[0] = arithmeticHelp::movnShift_imm<uint32_t>(
-          metadata, [](uint64_t x) -> uint32_t { return ~x; });
+      results[0] = {arithmeticHelp::movnShift_imm<uint32_t>(
+                        metadata, [](uint64_t x) -> uint32_t { return ~x; }),
+                    8};
       break;
     }
     case Opcode::AArch64_MOVNXi: {  // movn xd, #imm{, LSL #shift}
@@ -10568,8 +10584,9 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_MOVZWi: {  // movz wd, #imm
-      results[0] = arithmeticHelp::movnShift_imm<uint32_t>(
-          metadata, [](uint64_t x) -> uint32_t { return x; });
+      results[0] = {arithmeticHelp::movnShift_imm<uint32_t>(
+                        metadata, [](uint64_t x) -> uint32_t { return x; }),
+                    8};
       break;
     }
     case Opcode::AArch64_MOVZXi: {  // movz xd, #imm
@@ -10897,8 +10914,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_ORRWrs: {  // orr wd, wn, wm{, shift{ #amount}}
-      results[0] = static_cast<uint64_t>(
-          comparisonHelp::orrShift_3ops<uint32_t>(operands, metadata));
+      results[0] = {comparisonHelp::orrShift_3ops<uint32_t>(operands, metadata),
+                    8};
       break;
     }
     case Opcode::AArch64_ORRXri: {  // orr xd, xn, #imm
@@ -11333,7 +11350,7 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_RBITWr: {  // rbit wd, wn
-      results[0] = bitmanipHelp::rbit<uint32_t>(operands, metadata);
+      results[0] = {bitmanipHelp::rbit<uint32_t>(operands, metadata), 8};
       break;
     }
     case Opcode::AArch64_RBITXr: {  // rbit xd, xn
@@ -15915,8 +15932,8 @@ void Instruction::execute() {
     case Opcode::AArch64_SUBSWri: {  // subs wd, wn, #imm
       auto [result, nzcv] =
           arithmeticHelp::subShift_imm<uint32_t>(operands, metadata, true);
-      results[0] = RegisterValue(nzcv);
-      results[1] = RegisterValue(result, 8);
+      results[0] = nzcv;
+      results[1] = {result, 8};
       break;
     }
     case Opcode::AArch64_SUBSWrr: {
@@ -15926,22 +15943,22 @@ void Instruction::execute() {
     case Opcode::AArch64_SUBSWrs: {  // subs wd, wn, wm{, shift #amount}
       auto [result, nzcv] =
           arithmeticHelp::subShift_3ops<uint32_t>(operands, metadata, true);
-      results[0] = RegisterValue(nzcv);
-      results[1] = RegisterValue(result, 8);
+      results[0] = nzcv;
+      results[1] = {result, 8};
       break;
     }
     case Opcode::AArch64_SUBSWrx: {  // subs wd, wn, wm{, extend #amount}
       auto [result, nzcv] =
           arithmeticHelp::subExtend_3ops<uint32_t>(operands, metadata, true);
-      results[0] = RegisterValue(nzcv);
-      results[1] = RegisterValue(result, 8);
+      results[0] = nzcv;
+      results[1] = {result, 8};
       break;
     }
     case Opcode::AArch64_SUBSXri: {  // subs xd, xn, #imm
       auto [result, nzcv] =
           arithmeticHelp::subShift_imm<uint64_t>(operands, metadata, true);
-      results[0] = RegisterValue(nzcv);
-      results[1] = RegisterValue(result);
+      results[0] = nzcv;
+      results[1] = result;
       break;
     }
     case Opcode::AArch64_SUBSXrr: {
@@ -15951,22 +15968,22 @@ void Instruction::execute() {
     case Opcode::AArch64_SUBSXrs: {  // subs xd, xn, xm{, shift #amount}
       auto [result, nzcv] =
           arithmeticHelp::subShift_3ops<uint64_t>(operands, metadata, true);
-      results[0] = RegisterValue(nzcv);
-      results[1] = RegisterValue(result);
+      results[0] = nzcv;
+      results[1] = result;
       break;
     }
     case Opcode::AArch64_SUBSXrx:      // subs xd, xn, wm{, extend #amount}
     case Opcode::AArch64_SUBSXrx64: {  // subs xd, xn, xm{, extend #amount}
       auto [result, nzcv] =
           arithmeticHelp::subExtend_3ops<uint64_t>(operands, metadata, true);
-      results[0] = RegisterValue(nzcv);
-      results[1] = RegisterValue(result);
+      results[0] = nzcv;
+      results[1] = result;
       break;
     }
     case Opcode::AArch64_SUBWri: {  // sub wd, wn, #imm{, <shift>}
       auto [result, nzcv] =
           arithmeticHelp::subShift_imm<uint32_t>(operands, metadata, false);
-      results[0] = RegisterValue(result, 8);
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_SUBWrr: {
@@ -15976,7 +15993,7 @@ void Instruction::execute() {
     case Opcode::AArch64_SUBWrs: {  // sub wd, wn, wm{, shift #amount}
       auto [result, nzcv] =
           arithmeticHelp::subShift_3ops<uint32_t>(operands, metadata, false);
-      results[0] = RegisterValue(result, 8);
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_SUBWrx: {
@@ -15986,7 +16003,7 @@ void Instruction::execute() {
     case Opcode::AArch64_SUBXri: {  // sub xd, xn, #imm{, <shift>}
       auto [result, nzcv] =
           arithmeticHelp::subShift_imm<uint64_t>(operands, metadata, false);
-      results[0] = RegisterValue(result);
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_SUBXrr: {
@@ -15996,14 +16013,14 @@ void Instruction::execute() {
     case Opcode::AArch64_SUBXrs: {  // sub xd, xn, xm{, shift #amount}
       auto [result, nzcv] =
           arithmeticHelp::subShift_3ops<uint64_t>(operands, metadata, false);
-      results[0] = RegisterValue(result);
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_SUBXrx:      // sub xd, xn, wm{, extend #amount}
     case Opcode::AArch64_SUBXrx64: {  // sub xd, xn, xm{, extend #amount}
       auto [result, nzcv] =
           arithmeticHelp::subExtend_3ops<uint64_t>(operands, metadata, false);
-      results[0] = RegisterValue(result);
+      results[0] = result;
       break;
     }
     case Opcode::AArch64_SUB_ZI_B: {
@@ -16261,16 +16278,16 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_SYSxt: {  // sys #<op1>, cn, cm, #<op2>{, xt}
-      if (metadata.id == ARM64_INS_DC) {
-        uint64_t address = operands[0].get<uint64_t>();
-        uint8_t dzp = operands[1].get<uint64_t>() & 8;
-        uint8_t N = std::pow(2, operands[1].get<uint64_t>() & 7);
-        if (metadata.operands[0].sys == ARM64_DC_ZVA) {
-          if (dzp) {
-            // TODO
-          }
-        }
-      }
+      // if (metadata.id == ARM64_INS_DC) {
+      //   uint64_t address = operands[0].get<uint64_t>();
+      //   uint8_t dzp = operands[1].get<uint64_t>() & 8;
+      //   uint8_t N = std::pow(2, operands[1].get<uint64_t>() & 7);
+      //   if (metadata.operands[0].sys == ARM64_DC_ZVA) {
+      //     if (dzp) {
+      //       // TODO
+      //     }
+      //   }
+      // }
       break;
     }
     case Opcode::AArch64_TBL_ZZZ_B: {
