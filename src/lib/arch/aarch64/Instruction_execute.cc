@@ -2754,11 +2754,10 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_EORWri: {  // eor wd, wn, #imm
-      results[0] = {
-          logicalHelp::logicOp_imm<uint32_t>(
-              operands, metadata, false,
-              [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; }),
-          8};
+      auto [result, nzcv] = logicalHelp::logicOp_imm<uint32_t>(
+          operands, metadata, false,
+          [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_EORWrr: {
@@ -2766,11 +2765,10 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_EORWrs: {  // eor wd, wn, wm{, shift #imm}
-      results[0] = {
-          logicalHelp::logicOpShift_3ops<uint32_t>(
-              operands, metadata, false,
-              [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; }),
-          8};
+      auto [result, nzcv] = logicalHelp::logicOpShift_3ops<uint32_t>(
+          operands, metadata, false,
+          [](uint32_t x, uint32_t y) -> uint32_t { return x ^ y; });
+      results[0] = {result, 8};
       break;
     }
     case Opcode::AArch64_EORXri: {  // eor xd, xn, #imm
