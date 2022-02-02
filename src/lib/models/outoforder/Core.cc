@@ -113,7 +113,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 };
 
 void Core::tick() {
-  // std::cout << "-----------------------" << std::endl;
+  // std::cout << "--------------------------" << std::endl;
   ticks_++;
 
   applyStateChange(isa_.getUpdateState());

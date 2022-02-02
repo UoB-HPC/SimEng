@@ -543,6 +543,8 @@ void LoadStoreQueue::tick() {
     const auto& insn = completedLoads_.front();
 
     // Forward the results
+    // std::cout << "Forwarding operands from load 0x" << std::hex
+    //           << insn->getInstructionAddress() << std::dec << std::endl;
     forwardOperands_(insn->getDestinationRegisters(), insn->getResults());
 
     completionSlots_[count].getTailSlots()[0] = std::move(insn);

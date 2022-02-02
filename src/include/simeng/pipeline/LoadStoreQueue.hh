@@ -95,6 +95,8 @@ class LoadStoreQueue {
    * memory order violation. */
   std::shared_ptr<Instruction> getViolatingLoad() const;
 
+  uint64_t getReorderingFlushes() const;
+
  private:
   /** The load queue: holds in-flight load instructions. */
   std::deque<std::shared_ptr<Instruction>> loadQueue_;
