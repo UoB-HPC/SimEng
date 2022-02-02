@@ -57,6 +57,9 @@ void WritebackUnit::tick() {
       uop->setCommitReady();
       instructionsWritten_++;
     }
+    // std::cout << "WB 0x" << std::hex << uop->getInstructionAddress() <<
+    // std::dec
+    //           << std::endl;
 
     completionSlots_[slot].getHeadSlots()[0] = nullptr;
   }

@@ -74,6 +74,8 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     if (uop->isLastMicroOp()) instructionsCommitted_++;
+    // std::cout << "Commit 0x" << std::hex << uop->getInstructionAddress()
+    //           << std::dec << std::endl;
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);

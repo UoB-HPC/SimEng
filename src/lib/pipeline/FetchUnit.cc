@@ -109,6 +109,8 @@ void FetchUnit::tick() {
     bufferOffset += bytesRead;
     bufferedBytes_ -= bytesRead;
 
+    // std::cout << "Fetch 0x" << std::hex << pc_ << std::dec << std::endl;
+
     // Create branch prediction after identifing instruction type
     // (e.g. RET, BL, etc).
     prediction = branchPredictor_.predict(macroOp[0]);

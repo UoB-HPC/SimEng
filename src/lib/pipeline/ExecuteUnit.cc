@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <iostream>
+
 namespace simeng {
 namespace pipeline {
 
@@ -114,6 +115,8 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     raiseException_(uop);
     return;
   }
+  // std::cout << "Execute 0x" << std::hex << uop->getInstructionAddress()
+  //           << std::dec << std::endl;
 
   if (uop->isLoad()) {
     // std::cout << "\tinto load" << std::endl;

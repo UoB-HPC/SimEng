@@ -94,6 +94,8 @@ void RenameUnit::tick() {
         return;
       }
     }
+    // std::cout << "Rename 0x" << std::hex << uop->getInstructionAddress()
+    //           << std::dec << std::endl;
 
     // Allocate source registers
     auto& sourceRegisters = uop->getOperandRegisters();

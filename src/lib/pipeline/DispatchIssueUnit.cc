@@ -121,13 +121,13 @@ void DispatchIssueUnit::tick() {
     dispatches[RS_Index]++;
     rs.currentSize++;
 
-    // std::cout << "Dispatch: " << uop->getSequenceId() << ":"
-    //           << uop->getInstructionId() << ":0x" << std::hex
-    //           << uop->getInstructionAddress() << std::dec << ":"
-    //           << uop->getMicroOpIndex() << std::endl;
-
     if (ready) {
+      // std::cout << "Dispatch ready 0x" << std::hex
+      //           << uop->getInstructionAddress() << std::dec << std::endl;
       rs.ports[RS_Port].ready.push_back(std::move(uop));
+    } else {
+      // std::cout << "Dispatch waiting 0x" << std::hex
+      //           << uop->getInstructionAddress() << std::dec << std::endl;
     }
 
     input_.getHeadSlots()[slot] = nullptr;
@@ -142,6 +142,8 @@ void DispatchIssueUnit::issue() {
     ReservationStation& rs = reservationStations_[portMapping_[i].first];
     auto& queue = rs.ports[portMapping_[i].second].ready;
     if (issuePorts_[i].isStalled()) {
+      // std::cout << "Issue port " << i << "(" << queue.size() << ")"
+      //           << std::endl;
       if (queue.size() > 0) {
         portBusyStalls_++;
       }
@@ -150,10 +152,8 @@ void DispatchIssueUnit::issue() {
 
     if (queue.size() > 0) {
       auto& uop = queue.front();
-      // std::cout << "Issue: " << uop->getSequenceId() << ":"
-      //           << uop->getInstructionId() << ":0x" << std::hex
-      //           << uop->getInstructionAddress() << std::dec << ":"
-      //           << uop->getMicroOpIndex() << std::endl;
+      // std::cout << "Issue 0x" << std::hex << uop->getInstructionAddress()
+      //           << std::dec << ": port " << i << std::endl;
       issuePorts_[i].getTailSlots()[0] = std::move(uop);
       queue.pop_front();
 
