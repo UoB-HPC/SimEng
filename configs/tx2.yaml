@@ -2,6 +2,8 @@
 # The following resources where utilised to create the config file and naming schemes:
 # https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan
 
+ISA:
+  Type: AArch64
 Core:
   Simulation-Mode: outoforder
   # Clock Frequency is in GHz.

@@ -140,19 +140,19 @@ int main(int argc, char** argv) {
     // at the start of each branch. With an instruction latency of 2 or greater,
     // the `orr` at the start of the next loop should issue/execute while the
     // preceding branch is waiting on the result from the `subs`.
-//    uint32_t hex[] = {
-//        // 0x321E03E0,  // orr w0, wzr, #4
-//        // 0x321603E0,  // orr w0, wzr, #1024
-//        0x320C03E0,  // orr w0, wzr, #1048576
-//        0x320003E1,  // orr w0, wzr, #1
-//        0x71000400,  // subs w0, w0, #1
-//        // 0x00000000,  // invalid
-//        0x54FFFFC1,  // b.ne -8
-//                     // .exit:
-//        0xD2800000,  // mov x0, #0
-//        0xD2800BC8,  // mov x8, #94
-//        0xD4000001,  // svc #0
-//    };
+    //    uint32_t hex[] = {
+    //        // 0x321E03E0,  // orr w0, wzr, #4
+    //        // 0x321603E0,  // orr w0, wzr, #1024
+    //        0x320C03E0,  // orr w0, wzr, #1048576
+    //        0x320003E1,  // orr w0, wzr, #1
+    //        0x71000400,  // subs w0, w0, #1
+    //        // 0x00000000,  // invalid
+    //        0x54FFFFC1,  // b.ne -8
+    //                     // .exit:
+    //        0xD2800000,  // mov x0, #0
+    //        0xD2800BC8,  // mov x8, #94
+    //        0xD4000001,  // svc #0
+    //    };
 
     // Load/store consistency test; a simple bubble sort algorithm
     // uint32_t hex[] = {
@@ -198,83 +198,83 @@ int main(int argc, char** argv) {
     //                                  17, 4, 3, 22, 117, 11, 4,  12, 10, 18};
     // memcpy(memory, memoryValues.data(), memoryValues.size() * sizeof(int));
 
-//    // RISCV instructions
+    //    // RISCV instructions
     uint32_t hex[] = {
-////        0x04c78793, // addi a5, a5, 76
-////        0x00f707bb,
-////        0x02b50533,
-//        0x00200793,  //        	li	a5,2
-//        0xffffceb7,  //         lui t4, 0xffffc
-//        0x00004e17,  //         auipc t3, 4
-//        0x01f024b3,  //         sgtz s1, $ $t6
-//        0x000faeb3,  //         sltz t4, $ $t6
-//        0x00603f33,  //         snez t5, $ $t1
-//        0x00133e13,  //         seqz t3, $ $t1
-//        0x41e00fbb,  //         negw t6, $ $t5
-//        0x41c00eb3,  //         neg t4, $ $t3
-//        0x000e0e9b,  //         sext.w t4, $ $t3
-//        0x00000013,  //         nop
-//        0x00030393,  //         mv t2, $ $t1
-//        0x02010413,  //        	addi	s0,sp,32
-//        0x00f707bb,  //        	addw	a5,a4,a5
-//        0x40f707bb,  //        	subw	a5,a4,a5
-//        0xff017113,  //       	andi	sp,sp,-16
-//        0x40f585b3,  //        	sub	a1,a1,a5
-//        0x00f747b3,  //        	xor	a5,a4,a5
-//        0x03f8c793,  //        	xori	a5,a7,63
-//        0x03f7e793,  //        	ori	a5,a5,63
-//        0xfc178793,  //         addi    a5,a5,-63
-//        0x00f767b3,  //        	or	a5,a4,a5
-//        0x00178793,  //         addi    a5,a5,1
-//        0x00f777b3,  //        	and	a5,a4,a5
-//        0x00f717bb,  //        	sllw	a5,a4,a5
-//        0x0067979b,  //        	slliw	a5,a5,0x6
-//        0x40f757bb,  //        	sraw	a5,a4,a5
-//        0x4067d79b,  //        	sraiw	a5,a5,0x6
-//        0x00f727b3,  //        	slt	a5,a4,a5
-//        0x000F3783,  //        	ld	a5,0(t5)
-////        0x000FA783,  //        	lw	a5,0(t6)
-//        0x02113c23,  //        	sd	ra,56(sp)
-////        0x00813083,  //        	ld	ra,8(sp)
-//        0xfff7c793,  //         not	a5,a5
-//        0x0007879b,  //        	sext.w	a5,a5
-//        0x00050793,  //        	mv	a5,a0
-////        0x000780e7,  //        	jalr	ra,a5,4
-////        0x000e0367,  //        	jalr	t1,t3
-////        0xf89ff0ef,  //        	jal	ra,103f4
-//        0x00050793,  //        	mv	a5,a0
-//        0x00050713,  //        	mv	a4,a0
-//
-//        0x00f70a63,  //        	beq	a4,a5,10418
-//        0x02010413,  //        	addi	s0,sp,32
-//        0x00f707bb,  //        	addw	a5,a4,a5
-//        0x40f707bb,  //        	subw	a5,a4,a5
-//        0xff017113,  //       	andi	sp,sp,-16
-//        0x40f585b3,  //        	sub	a1,a1,a5
-//        0x00f747b3,  //        	xor	a5,a4,a5
-//        0x03f8c793,  //        	xori	a5,a7,63
-////        0x00028067,  //         jr t0
-////        0x00008067,  //         ret
-////        0x00504463,  //         bgtz t0, $ $8
-////        0x00505463,   //        blez t1, $ $8
-////        0x00079863,  //        	bnez	a5,10478
-////        0x00078663,  //        	beqz	a5,10418
-////        0xfe9912e3,  //        	bne	s2,s1,1055c
-//        0x1ce426af,  //          sc.w.aq a3, a4, (s0)
-//        0x100427af,  //          lr.w a5, (s0)
+        ////        0x04c78793, // addi a5, a5, 76
+        ////        0x00f707bb,
+        ////        0x02b50533,
+        //        0x00200793,  //        	li	a5,2
+        //        0xffffceb7,  //         lui t4, 0xffffc
+        //        0x00004e17,  //         auipc t3, 4
+        //        0x01f024b3,  //         sgtz s1, $ $t6
+        //        0x000faeb3,  //         sltz t4, $ $t6
+        //        0x00603f33,  //         snez t5, $ $t1
+        //        0x00133e13,  //         seqz t3, $ $t1
+        //        0x41e00fbb,  //         negw t6, $ $t5
+        //        0x41c00eb3,  //         neg t4, $ $t3
+        //        0x000e0e9b,  //         sext.w t4, $ $t3
+        //        0x00000013,  //         nop
+        //        0x00030393,  //         mv t2, $ $t1
+        //        0x02010413,  //        	addi	s0,sp,32
+        //        0x00f707bb,  //        	addw	a5,a4,a5
+        //        0x40f707bb,  //        	subw	a5,a4,a5
+        //        0xff017113,  //       	andi	sp,sp,-16
+        //        0x40f585b3,  //        	sub	a1,a1,a5
+        //        0x00f747b3,  //        	xor	a5,a4,a5
+        //        0x03f8c793,  //        	xori	a5,a7,63
+        //        0x03f7e793,  //        	ori	a5,a5,63
+        //        0xfc178793,  //         addi    a5,a5,-63
+        //        0x00f767b3,  //        	or	a5,a4,a5
+        //        0x00178793,  //         addi    a5,a5,1
+        //        0x00f777b3,  //        	and	a5,a4,a5
+        //        0x00f717bb,  //        	sllw	a5,a4,a5
+        //        0x0067979b,  //        	slliw	a5,a5,0x6
+        //        0x40f757bb,  //        	sraw	a5,a4,a5
+        //        0x4067d79b,  //        	sraiw	a5,a5,0x6
+        //        0x00f727b3,  //        	slt	a5,a4,a5
+        //        0x000F3783,  //        	ld	a5,0(t5)
+        ////        0x000FA783,  //        	lw	a5,0(t6)
+        //        0x02113c23,  //        	sd	ra,56(sp)
+        ////        0x00813083,  //        	ld	ra,8(sp)
+        //        0xfff7c793,  //         not	a5,a5
+        //        0x0007879b,  //        	sext.w	a5,a5
+        //        0x00050793,  //        	mv	a5,a0
+        ////        0x000780e7,  //        	jalr	ra,a5,4
+        ////        0x000e0367,  //        	jalr	t1,t3
+        ////        0xf89ff0ef,  //        	jal	ra,103f4
+        //        0x00050793,  //        	mv	a5,a0
+        //        0x00050713,  //        	mv	a4,a0
+        //
+        //        0x00f70a63,  //        	beq	a4,a5,10418
+        //        0x02010413,  //        	addi	s0,sp,32
+        //        0x00f707bb,  //        	addw	a5,a4,a5
+        //        0x40f707bb,  //        	subw	a5,a4,a5
+        //        0xff017113,  //       	andi	sp,sp,-16
+        //        0x40f585b3,  //        	sub	a1,a1,a5
+        //        0x00f747b3,  //        	xor	a5,a4,a5
+        //        0x03f8c793,  //        	xori	a5,a7,63
+        ////        0x00028067,  //         jr t0
+        ////        0x00008067,  //         ret
+        ////        0x00504463,  //         bgtz t0, $ $8
+        ////        0x00505463,   //        blez t1, $ $8
+        ////        0x00079863,  //        	bnez	a5,10478
+        ////        0x00078663,  //        	beqz	a5,10418
+        ////        0xfe9912e3,  //        	bne	s2,s1,1055c
+        //        0x1ce426af,  //          sc.w.aq a3, a4, (s0)
+        //        0x100427af,  //          lr.w a5, (s0)
         0x0055232f,  //        	amoadd.w	t1,t0,(a0)
         0x0807a02f,  //          amoswap.w zero, zero, (a5)
         0x00000073,  //          ecall
-        0x000f0f83,      //           lb t6, 0(t5)
-//
+        0x000f0f83,  //           lb t6, 0(t5)
+                     //
     };
 
-//     Simple loop; counts down from 1024*1024
-//     uint32_t hex[] = {
-//         0x001002b7,  //        lui t0, 0x100        li t0, 1048576
-//         0xfff28293,  //        addi t0, t0, -1
-//         0xfe029ee3,  //        bnez t0, $ $-4
-//     };
+    //     Simple loop; counts down from 1024*1024
+    //     uint32_t hex[] = {
+    //         0x001002b7,  //        lui t0, 0x100        li t0, 1048576
+    //         0xfff28293,  //        addi t0, t0, -1
+    //         0xfe029ee3,  //        bnez t0, $ $-4
+    //     };
 
     process = std::make_unique<simeng::kernel::LinuxProcess>(
         simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)), config);
@@ -296,8 +296,13 @@ int main(int argc, char** argv) {
                                                 processMemorySize);
 
   // Create the architecture, with knowledge of the kernel
-  std::unique_ptr<simeng::arch::Architecture> arch =
-      std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
+  std::unique_ptr<simeng::arch::Architecture> arch;
+  if (config["ISA"]["Type"].as<std::string>() == "RISCV") {
+    arch = std::make_unique<simeng::arch::riscv::Architecture>(kernel, config);
+  } else if (config["ISA"]["Type"].as<std::string>() == "AArch64") {
+    arch =
+        std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
+  }
 
   auto predictor = simeng::GenericPredictor(config);
   auto config_ports = config["Ports"];

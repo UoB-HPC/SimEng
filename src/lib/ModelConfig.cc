@@ -44,6 +44,12 @@ void ModelConfig::validate() {
   // Loop through expected fields and ensure a valid value exists
   std::vector<std::string> subFields;
   std::string root = "";
+
+  //ISA
+  root = "ISA";
+  nodeChecker<std::string>(configFile_[root]["Type"], "Type",
+                           std::vector<std::string>({"AArch64", "RISCV"}), ExpectedValue::String);
+
   // Core
   root = "Core";
   subFields = {"Simulation-Mode", "Clock-Frequency", "Timer-Frequency",
