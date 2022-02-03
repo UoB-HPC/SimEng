@@ -36,113 +36,21 @@ Ports:
     Instruction-Support:
     - INT_SIMPLE
     - INT_MUL
-    # - FP
-  1:
-    Portname: Port 1
-    Instruction-Support:
-    - INT_SIMPLE
-    - INT_MUL
     - INT_DIV_OR_SQRT
-    # - FP
-  2:
-    Portname: Port 2
-    Instruction-Support:
-    - INT_SIMPLE
-    - INT_MUL
-    - BRANCH
-  3:
-    Portname: Port 4
-    Instruction-Support:
-      - LOAD
-  4:
-    Portname: Port 5
-    Instruction-Support:
     - LOAD
-  5:
-    Portname: Port 3
-    Instruction-Support:
     - STORE
+    - BRANCH
+    # - FP
+  #TODO all groups in one port, central RS
 Reservation-Stations:
   0:
     Size: 60
     Ports:
     - Port 0
-    - Port 1
-    - Port 2
-    - Port 4
-    - Port 5
-    - Port 3
 Execution-Units:
   0:
     Pipelined: True
-  1:
-    Pipelined: True
-  2:
-    Pipelined: True
-  3:
-    Pipelined: True
-  4:
-    Pipelined: True
-  5:
-    Pipelined: True
 Latencies:
-  0:
-    Instruction-Groups:
-      - INT_SIMPLE_ARTH
-      - INT_SIMPLE_LOGICAL
-    Execution-Latency: 2
-    Execution-Throughput: 2
-  1:
-    Instruction-Groups:
-      - INT_SIMPLE_ARTH_NOSHIFT
-      - INT_SIMPLE_LOGICAL_NOSHIFT
-    Execution-Latency: 1
-    Execution-Throughput: 1
-  2:
-    Instruction-Groups:
-      - INT_MUL
-    Execution-Latency: 5
-    Execution-Throughput: 1
-  3:
-    Instruction-Groups:
-      - INT_DIV_OR_SQRT
-    Execution-Latency: 39
-    Execution-Throughput: 39
-  4:
-    Instruction-Groups:
-      - SCALAR_SIMPLE
-      - SCALAR_MUL
-    Execution-Latency: 6
-    Execution-Throughput: 1
-  5:
-    Instruction-Groups:
-      - SCALAR_SIMPLE_CMP
-    Execution-Latency: 5
-    Execution-Throughput: 1
-  6:
-    Instruction-Groups:
-      - FP_SIMPLE_CVT
-    Execution-Latency: 7
-    Execution-Throughput: 1
-  7:
-    Instruction-Groups:
-      - FP_DIV_OR_SQRT
-    Execution-Latency: 16
-    Execution-Throughput: 16
-  8:
-    Instruction-Groups:
-      - VECTOR_SIMPLE
-      - VECTOR_MUL
-    Execution-Latency: 7
-    Execution-Throughput: 1
-  9:
-    Instruction-Groups:
-      - SCALAR_SIMPLE_LOGICAL
-      - SCALAR_SIMPLE_LOGICAL_NOSHIFT
-      - VECTOR_SIMPLE_LOGICAL
-      - VECTOR_SIMPLE_LOGICAL_NOSHIFT
-    Execution-Latency: 1
-    Execution-Throughput: 1
 # CPU-Info mainly used to generate a replica of the special (or system) file directory 
 # structure
 CPU-Info:

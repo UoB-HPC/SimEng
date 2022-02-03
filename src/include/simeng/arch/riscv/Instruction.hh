@@ -33,7 +33,8 @@ const uint8_t BRANCH = 5;
 // const uint8_t FP = 8;
 }  // namespace InstructionGroups
 
-#define NUM_GROUPS 8
+// TODO update to no. insn groups
+#define NUM_GROUPS 12
 
 const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {};
 
