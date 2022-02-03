@@ -361,8 +361,10 @@ TEST_P(InstArithmetic, liPseudoinstruction) {
 INSTANTIATE_TEST_SUITE_P(
     RISCV, InstArithmetic,
     ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
-                      std::make_tuple(INORDER, YAML::Load("{}")),
-                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))),
+                      std::make_tuple(INORDER, YAML::Load("{}"))
+//                          ,
+//                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))
+                      ),
     paramToString);
 
 }  // namespace
