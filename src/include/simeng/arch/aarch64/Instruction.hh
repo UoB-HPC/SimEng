@@ -331,10 +331,11 @@ class Instruction : public simeng::Instruction {
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
 
- private:
   /** The maximum number of source registers any supported AArch64 instruction
    * can have. */
   static const uint8_t MAX_SOURCE_REGISTERS = 6;
+
+ private:
   /** The maximum number of destination registers any supported AArch64
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 3;
@@ -400,6 +401,10 @@ class Instruction : public simeng::Instruction {
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
+
+  // Execution
+  /** Generate an EncodingUnallocated exception. */
+  void executionINV();
 
   // Instruction Identifiers
   /** Operates on scalar values */

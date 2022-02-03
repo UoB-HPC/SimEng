@@ -146,6 +146,29 @@ TEST_P(InstBitmanip, rbit) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x000000001E6A2C48);
 }
 
+TEST_P(InstBitmanip, rev) {
+  // 64-bit
+  initialHeapData_.resize(16);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0x00000000DEADBEEF;
+  heap64[1] = 0x1234567800000000;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ldr x1, [x0, #0]
+    ldr x2, [x0, #8]
+
+    rev x3, x1
+    rev x4, x2
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0xEFBEADDE00000000);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x0000000078563412);
+}
+
 TEST_P(InstBitmanip, sbfm) {
   // 32-bit
   RUN_AARCH64(R"(
