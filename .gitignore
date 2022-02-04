@@ -3,12 +3,13 @@
 .DS_Store
 obj
 build
+xcode-build
 binaries
 install
 install-debug
 capstone.pc
 version.hh
-**/specialFiles/*
+**/specialFiles/
 
 CMakeCache.txt
 CPackConfig.cmake

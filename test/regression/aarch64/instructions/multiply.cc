@@ -50,8 +50,14 @@ TEST_P(InstMul, smaddl) {
     movz w1, 0x100
     movz x2, 0x05, lsl 48
     smaddl x3, w0, w1, x2
+
+    mov w4, #-1
+    movz w5, 0xFF, lsl 16
+    mov x6, 0x100
+    smaddl x7, w4, w5, x6
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0x0005002A00000000);
+  EXPECT_EQ(getGeneralRegister<int64_t>(7), -0xFEFF00);
 }
 
 TEST_P(InstMul, smulh) {

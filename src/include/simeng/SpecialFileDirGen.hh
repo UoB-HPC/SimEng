@@ -22,8 +22,8 @@ class SpecialFileDirGen {
 
  private:
   /** Path to the root of the SimEng special files directory. */
-  const std::string specialFilesParentDir_ =
-      SIMENG_SOURCE_DIR "/src/lib/kernel/";
+  const std::string specialFilesDir_ =
+      SIMENG_SOURCE_DIR "/src/lib/kernel/specialFiles";
 
   /** Values declared in YAML config file needed to create the Special Files
    * Directory tree. */

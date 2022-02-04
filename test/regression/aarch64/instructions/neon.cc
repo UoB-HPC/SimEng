@@ -908,21 +908,21 @@ TEST_P(InstNeon, fabs) {
 }
 
 TEST_P(InstNeon, faddp) {
-  // // 64-bit
-  // initialHeapData_.resize(32);
-  // double* heap64 = reinterpret_cast<double*>(initialHeapData_.data());
-  // heap64[0] = 0xDEADBEEFul;
-  // heap64[1] = 0x01234567ul << 8;
-  // RUN_AARCH64(R"(
-  //   # Get heap address
-  //   mov x0, 0
-  //   mov x8, 214
-  //   svc #0
+  // 64-bit
+  initialHeapData_.resize(32);
+  double* heap64 = reinterpret_cast<double*>(initialHeapData_.data());
+  heap64[0] = 0xDEADBEEFul;
+  heap64[1] = 0x01234567ul << 8;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-  //   ldr q0, [x0]
-  //   faddp d0, v0.2d
-  // )");
-  // CHECK_NEON(0, double, {0xDEADBEEFul + (0x01234567ul << 8), 0.0});
+    ldr q0, [x0]
+    faddp d1, v0.2d
+  )");
+  CHECK_NEON(1, double, {0xDEADBEEFul + (0x01234567ul << 8), 0.0});
 
   // V.4S
   RUN_AARCH64(R"(
@@ -999,6 +999,43 @@ TEST_P(InstNeon, fadd) {
   )");
   CHECK_NEON(2, float, {87.72f, -160.38, -0.927f, 701.90f});
 }
+
+TEST_P(InstNeon, fcmeq) {
+  // Vector single-precision
+  RUN_AARCH64(R"(
+    # v0 = {0.5f, 0.5f, 0.5f, 0.5f}
+    fmov v0.4s, #0.5
+
+    # v1 = {0.f, 1.5f, 0.f, 1.5f}
+    fmov v1.4s, #1.5
+    mov v1.s[0], wzr
+    mov v1.s[2], wzr
+
+    # v2 = {2.5f, 0.f, 2.5f, 0.f}
+    fmov v2.4s, #2.5
+    mov v2.s[1], wzr
+    mov v2.s[3], wzr
+
+    fcmeq v4.4s, v0.4s, #0.0
+    fcmeq v5.4s, v1.4s, #0.0
+    fcmeq v6.4s, v2.4s, #0.0
+    fcmeq v7.4s, v3.4s, #0.0
+    fcmeq v8.2s, v0.2s, #0.0
+    fcmeq v9.2s, v1.2s, #0.0
+    fcmeq v10.2s, v2.2s, #0.0
+    fcmeq v11.2s, v3.2s, #0.0
+  )");
+  CHECK_NEON(4, uint32_t, {0x00000000, 0x00000000, 0x00000000, 0x00000000});
+  CHECK_NEON(5, uint32_t, {0xffffffff, 0x00000000, 0xffffffff, 0x00000000});
+  CHECK_NEON(6, uint32_t, {0x00000000, 0xffffffff, 0x00000000, 0xffffffff});
+  CHECK_NEON(7, uint32_t, {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff});
+
+  CHECK_NEON(8, uint32_t, {0x00000000, 0x00000000, 0x00000000, 0x00000000});
+  CHECK_NEON(9, uint32_t, {0xffffffff, 0x00000000, 0x00000000, 0x00000000});
+  CHECK_NEON(10, uint32_t, {0x00000000, 0xffffffff, 0x00000000, 0x00000000});
+  CHECK_NEON(11, uint32_t, {0xffffffff, 0xffffffff, 0x00000000, 0x00000000});
+}
+
 TEST_P(InstNeon, fcmge) {
   initialHeapData_.resize(32);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
@@ -1177,6 +1214,22 @@ TEST_P(InstNeon, fcvt) {
   CHECK_NEON(3, int64_t, {0, 321});
 }
 
+TEST_P(InstNeon, fcvtn) {
+  // 2 doubles to 2 floats
+  RUN_AARCH64(R"(
+    fmov v0.2d, #0.125
+    fcvtn v1.2s, v0.2d
+  )");
+  CHECK_NEON(1, float, {0.125f, 0.125f, 0.f, 0.f});
+
+  // 2 doubles to 4 floats
+  RUN_AARCH64(R"(
+    fmov v0.2d, #0.125
+    fcvtn2 v1.4s, v0.2d
+  )");
+  CHECK_NEON(1, float, {0.f, 0.f, 0.125f, 0.125f});
+}
+
 TEST_P(InstNeon, fcvtl) {
   initialHeapData_.resize(32);
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
@@ -1248,39 +1301,39 @@ TEST_P(InstNeon, fdiv) {
   CHECK_NEON(2, double, {-8.0, -2.65625});
 }
 
-// TEST_P(InstNeon, fmla){
-//   initialHeapData_.resize(48);
-//   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
-//   fheap[0] = 7.0;
-//   fheap[1] = -3.4;
-//   fheap[2] = -0.16;
-//   fheap[3] = 0.0;
+TEST_P(InstNeon, fmla) {
+  initialHeapData_.resize(48);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  fheap[0] = 7.0;
+  fheap[1] = -3.4;
+  fheap[2] = -0.16;
+  fheap[3] = 0.0;
 
-//   fheap[4] = 8.72;
-//   fheap[5] = -1.67;
-//   fheap[6] = 7.90;
-//   fheap[7] = -0.01;
+  fheap[4] = 8.72;
+  fheap[5] = -1.67;
+  fheap[6] = 7.90;
+  fheap[7] = -0.01;
 
-//   fheap[8] = 1.0;
-//   fheap[9] = -4.3;
-//   fheap[10] = -0.1;
-//   fheap[11] = 0.0;
+  fheap[8] = 1.0;
+  fheap[9] = -4.3;
+  fheap[10] = -0.1;
+  fheap[11] = 0.0;
 
-//   RUN_AARCH64(R"(
-//     # Get heap address
-//     mov x0, 0
-//     mov x8, 214
-//     svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-//     ldr q0, [x0]
-//     ldr q1, [x0, #16]
-//     ldr q2, [x0, #32]
-//     fmla v2.4s, v0.4s, v1.4s
-//     fmla v3.4s, v0.4s, v2.s[0]
-//   )");
-//   CHECK_NEON(2, float, {62.04, 1.378, -1.364, 0.0});
-//   CHECK_NEON(3, float, {434.28, -210.936, -9.9264, 0.0});
-// }
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    ldr q2, [x0, #32]
+    fmla v2.4s, v0.4s, v1.4s
+    fmla v3.4s, v0.4s, v2.s[0]
+  )");
+  CHECK_NEON(2, float, {62.04, 1.378, -1.364, 0.0});
+  CHECK_NEON(3, float, {434.28, -210.936, -9.9264, 0.0});
+}
 
 TEST_P(InstNeon, fmls) {
   // vector, 32-bit
@@ -1344,161 +1397,161 @@ TEST_P(InstNeon, fmls) {
   CHECK_NEON(2, double, {25.348, -0.1});
 }
 
-// TEST_P(InstNeon, fmaxnm){
-//   // numeric
-//   initialHeapData_.resize(32);
-//   double* heapA = reinterpret_cast<double*>(initialHeapData_.data());
-//   heapA[0] = 6.0;
-//   heapA[1] = 17.0;
-//   heapA[2] = 4.0;
-//   heapA[3] = -73.0;
+TEST_P(InstNeon, fmaxnm) {
+  // numeric
+  initialHeapData_.resize(32);
+  double* heapA = reinterpret_cast<double*>(initialHeapData_.data());
+  heapA[0] = 6.0;
+  heapA[1] = 17.0;
+  heapA[2] = 4.0;
+  heapA[3] = -73.0;
 
-//   RUN_AARCH64(R"(
-//     # Get heap address
-//     mov x0, 0
-//     mov x8, 214
-//     svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-//     ldr q0, [x0]
-//     ldr q1, [x0, #16]
-//     fmaxnm v2.2d, v0.2d, v1.2d
-//   )");
-//   CHECK_NEON(2, double, {6.0, 17.0});
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fmaxnm v2.2d, v0.2d, v1.2d
+  )");
+  CHECK_NEON(2, double, {6.0, 17.0});
 
-//   // with NAN
-//   initialHeapData_.resize(32);
-//   double* heapB = reinterpret_cast<double*>(initialHeapData_.data());
-//   heapB[0] = 6.0;
-//   heapB[1] = 17.0;
-//   heapB[2] = std::nan("");
-//   heapB[3] = std::nan("");
+  // with NAN
+  initialHeapData_.resize(32);
+  double* heapB = reinterpret_cast<double*>(initialHeapData_.data());
+  heapB[0] = 6.0;
+  heapB[1] = 17.0;
+  heapB[2] = std::nan("");
+  heapB[3] = std::nan("");
 
-//   RUN_AARCH64(R"(
-//     # Get heap address
-//     mov x0, 0
-//     mov x8, 214
-//     svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-//     ldr q0, [x0]
-//     ldr q1, [x0, #16]
-//     fmaxnm v2.2d, v0.2d, v1.2d
-//   )");
-//   CHECK_NEON(2, double, {6.0, 17.0});
-// }
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fmaxnm v2.2d, v0.2d, v1.2d
+  )");
+  CHECK_NEON(2, double, {6.0, 17.0});
+}
 
-// TEST_P(InstNeon, fminnm){
-//   // numeric
-//   initialHeapData_.resize(32);
-//   double* heapA = reinterpret_cast<double*>(initialHeapData_.data());
-//   heapA[0] = 5.0;
-//   heapA[1] = 10.0;
-//   heapA[2] = 1.0;
-//   heapA[3] = -14.0;
+TEST_P(InstNeon, fminnm) {
+  // numeric
+  initialHeapData_.resize(32);
+  double* heapA = reinterpret_cast<double*>(initialHeapData_.data());
+  heapA[0] = 5.0;
+  heapA[1] = 10.0;
+  heapA[2] = 1.0;
+  heapA[3] = -14.0;
 
-//   RUN_AARCH64(R"(
-//     # Get heap address
-//     mov x0, 0
-//     mov x8, 214
-//     svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-//     ldr q0, [x0]
-//     ldr q1, [x0, #16]
-//     fminnm v2.2d, v0.2d, v1.2d
-//   )");
-//   CHECK_NEON(2, double, {1.0, -14.0});
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fminnm v2.2d, v0.2d, v1.2d
+  )");
+  CHECK_NEON(2, double, {1.0, -14.0});
 
-//   // with NAN
-//   initialHeapData_.resize(32);
-//   double* heapB = reinterpret_cast<double*>(initialHeapData_.data());
-//   heapB[0] = 5.0;
-//   heapB[1] = 10.0;
-//   heapB[2] = std::nan("");
-//   heapB[3] = std::nan("");
+  // with NAN
+  initialHeapData_.resize(32);
+  double* heapB = reinterpret_cast<double*>(initialHeapData_.data());
+  heapB[0] = 5.0;
+  heapB[1] = 10.0;
+  heapB[2] = std::nan("");
+  heapB[3] = std::nan("");
 
-//   RUN_AARCH64(R"(
-//     # Get heap address
-//     mov x0, 0
-//     mov x8, 214
-//     svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-//     ldr q0, [x0]
-//     ldr q1, [x0, #16]
-//     fminnm v2.2d, v0.2d, v1.2d
-//   )");
-//   CHECK_NEON(2, double, {5.0, 10.0});
-// }
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    fminnm v2.2d, v0.2d, v1.2d
+  )");
+  CHECK_NEON(2, double, {5.0, 10.0});
+}
 
-// TEST_P(InstNeon, fmaxnmp){
-//   // numeric
-//   initialHeapData_.resize(32);
-//   double* heapA = reinterpret_cast<double*>(initialHeapData_.data());
-//   heapA[0] = 6.0;
-//   heapA[1] = 17.0;
+TEST_P(InstNeon, fmaxnmp) {
+  // numeric
+  initialHeapData_.resize(32);
+  double* heapA = reinterpret_cast<double*>(initialHeapData_.data());
+  heapA[0] = 6.0;
+  heapA[1] = 17.0;
 
-//   RUN_AARCH64(R"(
-//     # Get heap address
-//     mov x0, 0
-//     mov x8, 214
-//     svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-//     ldr q0, [x0]
-//     fmaxnmp d0, v0.2d
-//   )");
-//   CHECK_NEON(0, double, {17.0, 0.0});
+    ldr q0, [x0]
+    fmaxnmp d0, v0.2d
+  )");
+  CHECK_NEON(0, double, {17.0, 0.0});
 
-//   // with NAN
-//   initialHeapData_.resize(32);
-//   double* heapB = reinterpret_cast<double*>(initialHeapData_.data());
-//   heapB[0] = 6.0;
-//   heapB[1] = std::nan("");
+  // with NAN
+  initialHeapData_.resize(32);
+  double* heapB = reinterpret_cast<double*>(initialHeapData_.data());
+  heapB[0] = 6.0;
+  heapB[1] = std::nan("");
 
-//   RUN_AARCH64(R"(
-//     # Get heap address
-//     mov x0, 0
-//     mov x8, 214
-//     svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-//     ldr q0, [x0]
-//     fmaxnmp d0, v0.2d
-//   )");
-//   CHECK_NEON(0, double, {6.0, 0.0});
-// }
+    ldr q0, [x0]
+    fmaxnmp d0, v0.2d
+  )");
+  CHECK_NEON(0, double, {6.0, 0.0});
+}
 
-// TEST_P(InstNeon, fminnmp){
-//   // numeric
-//   initialHeapData_.resize(32);
-//   double* heapA = reinterpret_cast<double*>(initialHeapData_.data());
-//   heapA[0] = 6.0;
-//   heapA[1] = 17.0;
+TEST_P(InstNeon, fminnmp) {
+  // numeric
+  initialHeapData_.resize(32);
+  double* heapA = reinterpret_cast<double*>(initialHeapData_.data());
+  heapA[0] = 6.0;
+  heapA[1] = 17.0;
 
-//   RUN_AARCH64(R"(
-//     # Get heap address
-//     mov x0, 0
-//     mov x8, 214
-//     svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-//     ldr q0, [x0]
-//     fminnmp d0, v0.2d
-//   )");
-//   CHECK_NEON(0, double, {6.0, 0.0});
+    ldr q0, [x0]
+    fminnmp d0, v0.2d
+  )");
+  CHECK_NEON(0, double, {6.0, 0.0});
 
-//   // with NAN
-//   initialHeapData_.resize(32);
-//   double* heapB = reinterpret_cast<double*>(initialHeapData_.data());
-//   heapB[0] = 6.0;
-//   heapB[1] = std::nan("");
+  // with NAN
+  initialHeapData_.resize(32);
+  double* heapB = reinterpret_cast<double*>(initialHeapData_.data());
+  heapB[0] = 6.0;
+  heapB[1] = std::nan("");
 
-//   RUN_AARCH64(R"(
-//     # Get heap address
-//     mov x0, 0
-//     mov x8, 214
-//     svc #0
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
 
-//     ldr q0, [x0]
-//     fminnmp d0, v0.2d
-//   )");
-//   CHECK_NEON(0, double, {6.0, 0.0});
-// }
+    ldr q0, [x0]
+    fminnmp d0, v0.2d
+  )");
+  CHECK_NEON(0, double, {6.0, 0.0});
+}
 
 TEST_P(InstNeon, fmov) {
   // FP32 vector from immediate
@@ -1711,6 +1764,156 @@ TEST_P(InstNeon, frinta) {
   CHECK_NEON(9, double, {3});
   CHECK_NEON(10, double, {1});
   CHECK_NEON(11, double, {0});
+}
+
+TEST_P(InstNeon, frsqrte) {
+  // single precision
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+
+    frsqrte s3, s0
+    frsqrte s4, s1
+    frsqrte s5, s2
+  )");
+  CHECK_NEON(3, float, {1.f / sqrtf(2.f), 0.f, 0.f, 0.f});
+
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(4)));
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(4)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(4)), 0.f);
+
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(5)));
+  EXPECT_EQ((getVectorRegisterElement<float, 1>(5)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(5)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(5)), 0.f);
+
+  // double precision
+  RUN_AARCH64(R"(
+    fmov d1, 2.0
+    fmov d2, -0.125
+    fmov d4, 0.0
+    frsqrte d0, d1
+    frsqrte d3, d2
+    frsqrte d5, d4
+  )");
+  CHECK_NEON(0, double, {1.0 / sqrt(2.0), 0.0});
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(3)));
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(3)), 0.0);
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 0>(5)));
+  EXPECT_EQ((getVectorRegisterElement<double, 1>(5)), 0.0);
+
+  // Vector single precision
+  RUN_AARCH64(R"(
+    fmov v0.4s, 2.0
+    fmov v1.4s, -0.125
+
+    frsqrte v4.4s, v0.4s
+    frsqrte v5.4s, v1.4s
+    frsqrte v6.4s, v2.4s
+  )");
+  CHECK_NEON(4, float,
+             {
+                 1.f / sqrtf(2.f),
+                 1.f / sqrtf(2.f),
+                 1.f / sqrtf(2.f),
+                 1.f / sqrtf(2.f),
+             });
+
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(5)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 1>(5)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 2>(5)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 3>(5)));
+
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(6)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 1>(6)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 2>(6)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 3>(6)));
+
+  // Vector single precision (2S)
+  RUN_AARCH64(R"(
+    fmov v0.4s, 2.0
+    fmov v1.4s, -0.125
+
+    frsqrte v4.2s, v0.2s
+    frsqrte v5.2s, v1.2s
+    frsqrte v6.2s, v2.2s
+  )");
+  CHECK_NEON(4, float, {1.f / sqrtf(2.f), 1.f / sqrtf(2.f), 0.f, 0.f});
+
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 0>(5)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<float, 1>(5)));
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(5)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(5)), 0.f);
+
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 0>(6)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<float, 1>(6)));
+  EXPECT_EQ((getVectorRegisterElement<float, 2>(6)), 0.f);
+  EXPECT_EQ((getVectorRegisterElement<float, 3>(6)), 0.f);
+
+  // Vector double precison
+  RUN_AARCH64(R"(
+    fmov v0.2d, 2.0
+    fmov v1.2d, -0.125
+
+    frsqrte v3.2d, v0.2d
+    frsqrte v4.2d, v1.2d
+    frsqrte v5.2d, v2.2d
+  )");
+  CHECK_NEON(3, double, {1.0 / sqrt(2.0), 1.0 / sqrt(2.0)});
+
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 0>(4)));
+  EXPECT_TRUE(std::isnan(getVectorRegisterElement<double, 1>(4)));
+
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 0>(5)));
+  EXPECT_TRUE(std::isinf(getVectorRegisterElement<double, 1>(5)));
+}
+
+TEST_P(InstNeon, frsqrts) {
+  // Single precision
+  RUN_AARCH64(R"(
+    fmov s0, 1.25
+    fmov s1, 2.0
+    frsqrts s2, s1, s0
+  )");
+  CHECK_NEON(2, float, {(3.f - 1.25f * 2.f) / 2.f, 0.f, 0.f, 0.f});
+
+  // Double precision
+  RUN_AARCH64(R"(
+    fmov d0, 1.25
+    fmov d1, 2.0
+    frsqrts d2, d1, d0 
+  )");
+  CHECK_NEON(2, double, {(3.0L - (1.25L * 2.0L)) / 2.0, 0.0});
+
+  // Vector single precision
+  RUN_AARCH64(R"(
+    fmov v0.4s, 1.25
+    fmov v1.4s, 2.0
+    frsqrts v2.4s, v1.4s, v0.4s
+  )");
+  CHECK_NEON(2, float,
+             {((3.f - (1.25f * 2.f)) / 2.f), ((3.f - (1.25f * 2.f)) / 2.f),
+              ((3.f - (1.25f * 2.f)) / 2.f), ((3.f - (1.25f * 2.f)) / 2.f)});
+
+  // Vector single precision (2S)
+  RUN_AARCH64(R"(
+    fmov v0.4s, 1.25
+    fmov v1.4s, 2.0
+    frsqrts v2.2s, v1.2s, v0.2s
+  )");
+  CHECK_NEON(
+      2, float,
+      {((3.f - (1.25f * 2.f)) / 2.f), ((3.f - (1.25f * 2.f)) / 2.f), 0.f, 0.f});
+
+  // Vector double precision
+  RUN_AARCH64(R"(
+    fmov v0.2d, 1.25
+    fmov v1.2d, 2.0
+    frsqrts v2.2d, v1.2d, v0.2d
+  )");
+  CHECK_NEON(2, double,
+             {(3.0L - (1.25L * 2.0L)) / 2.0, (3.0L - (1.25L * 2.0L)) / 2.0})
 }
 
 TEST_P(InstNeon, fsqrt) {
