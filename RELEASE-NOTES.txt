@@ -1,4 +1,4 @@
-Welcome to the third open source release of the Simulation Engine! SimEng is a fast, easy to use and modify cycle-level simulator for CPUs. Its initial focus is on simulating single Arm cores in server CPUs, and so the instruction set architecture (ISA) target is initially Armv8.4-a+SVE. Later versions of the Arm ISA, and other ISAs such as RISC-V, will be supported in future releases.
+Welcome to the 0.9.2 open source release of the Simulation Engine! SimEng is a fast, easy to use and modify cycle-level simulator for CPUs. Its initial focus is on simulating single Arm cores in server CPUs, and so the instruction set architecture (ISA) target is initially Armv8.4-a+SVE. Later versions of the Arm ISA, and other ISAs such as RISC-V, will be supported in future releases.
 
 This SimEng release should be considered beta software - you are the first users outside of the core developers, so there *will* be lots of bugs and missing features. The good news is that the code has been designed to be simple to understand and modify, so if you find a bug, such as a missing instruction or missing system call, please submit a PR, or report an issue and we’ll get to it as soon as we can. 
 
@@ -32,7 +32,7 @@ Supported OSs (we’ve tested these, SimEng may also work on other platforms):
 * CentOS 7
 * Ubuntu
 * Cray’s CLE 7, which is based on SLES 15
-* macOS (Big Sur and Catalina)
+* macOS Big Sur
 
 Compilers supported for building SimEng itself:
 * GCC 7 or later
@@ -43,6 +43,7 @@ Some benchmarks we’ve run ourselves and so should work:
 * STREAM - https://www.cs.virginia.edu/stream/ 
 * miniBUDE - https://github.com/UoB-HPC/miniBUDE 
 * CloverLeaf - https://github.com/UK-MAC/CloverLeaf_Serial 
+* Tealeaf - https://github.com/UoB-HPC/TeaLeaf
 
 When you hit issues building or running SimEng, please do let us know, either by submitting a PR, or filing an issue via the SimEng Github repo:
 
@@ -50,4 +51,4 @@ When you hit issues building or running SimEng, please do let us know, either by
 
 Thank you for using SimEng!
 
- - The SimEng developer team.
+ - The SimEng development team.
