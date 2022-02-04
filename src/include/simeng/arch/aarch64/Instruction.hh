@@ -257,6 +257,18 @@ class Instruction : public simeng::Instruction {
   /** Check whether the operand at index `i` has had a value supplied. */
   bool isOperandReady(int index) const override;
 
+  /** Set the number of addresses a load currently conflicts on with an
+   * existing store operation. */
+  void registerAddressConflictions(uint8_t conflictions) override;
+
+  /** Decrement the number of addresses a load currently conflicts on with an
+   * existing store operation. */
+  void removeAddressConflictions(uint8_t conflictions = 1) override;
+
+  /** Check whether a load currently hass addresses which conflicts with an
+   * existing store operation. */
+  bool hasAddressConflictions() const override;
+
   /** Override the specified source register with a renamed physical register.
    */
   void renameSource(uint8_t i, Register renamed) override;
@@ -397,6 +409,10 @@ class Instruction : public simeng::Instruction {
   /** The number of operands that have not yet had values supplied. Used to
    * determine execution readiness. */
   short operandsPending = 0;
+
+  /** The number of addresses a load conflicts on with an existing store
+   * operation. */
+  uint8_t addressConflicts_ = 0;
 
   // Execution
   /** Generate an ExecutionNotYetImplemented exception. */
