@@ -106,6 +106,23 @@ There are several useful variables that execution behaviours have access to:
 
 SimEng supports the ARM SVE extension and thus the use of ``Z`` vector registers. ``Z`` registers are an extension of the ARM NEON ``V`` vector registers whereby the ``V`` register variant occupies the lower 16 bytes of the ``Z`` registers total 256 bytes. Under the ARM SVE extension, the implemented logic for writing to a ``V`` register is to zero-out the upper 240 bytes of the associated ``Z`` register (e.g. ``z1`` and ``v1``) and treat its lower 16 bytes as the ``V`` register. SimEng will automatically apply this logic when the execution of an instruction contains a ``V`` register as a destination location.
 
+Helper Functions
+****************
+
+Found in ``src/include/simeng/arch/aarch64/helpers/`` are helper functions which abstract the logic away from ``Instruction_execute.cc`` into re-usable functions.
+Their use reduces the amount of repeated code within ``Instruction_execute.cc`` and speeds up the process of adding new instructions.
+
+The functions are grouped by instruction type (arithmetic, neon, sve, etc.) and are accompanied by a brief description detailing:
+
+    - What instruction format they support.
+    - The template type required.
+    - What the function returns.
+
+We recommend that when implementing a new instruction you first look through the already implemented helper functions to try and find one which you could use.
+If none of the existing helper functions are of use, then we recommend implementing a new one for your instruction type. This will speed up adding support for other variants of this instruction in the future.
+
+.. Note:: Load and Store instructions do not currently have any helper functions available.
+
 cstool
 ''''''
 
