@@ -89,6 +89,23 @@ class logicalHelp {
     uint64_t result = static_cast<uint64_t>(isLSL ? n << m : n >> m);
     return result;
   }
+
+  /** Helper function for instructions with the format `rorv rd, rn, rm`.
+   * T represents the type of operands (e.g. for xn, T = uint64_t).
+   * Returns single value of type T. */
+  template <typename T>
+  static T rorv_3ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T n = operands[0].get<T>();
+    const T m = operands[1].get<T>();
+
+    const uint16_t data_size = sizeof(T) * 8;
+    T remainder = (m / data_size) % data_size;
+
+    // Check if any rotation done at all
+    if (remainder == 0) return n;
+    return (n >> remainder) + (n << (data_size - remainder));
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
