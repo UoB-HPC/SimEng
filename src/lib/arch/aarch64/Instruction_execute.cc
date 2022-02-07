@@ -310,20 +310,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ADD_ZPmZ_B: {
-      return executionNYI();
+    case Opcode::AArch64_ADD_ZPmZ_B: {  // add zdn.b, pg/m, zdn.b, zm.b
+      results[0] = sveHelp::sveAddPredicated_vecs<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_ADD_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_ADD_ZPmZ_D: {  // add zdn.d, pg/m, zdn.d, zm.d
+      results[0] = sveHelp::sveAddPredicated_vecs<uint64_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_ADD_ZPmZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_ADD_ZPmZ_H: {  // add zdn.h, pg/m, zdn.h, zm.h
+      results[0] = sveHelp::sveAddPredicated_vecs<uint16_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_ADD_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_ADD_ZPmZ_S: {  // add zdn.s, pg/m, zdn.s, zm.s
+      results[0] = sveHelp::sveAddPredicated_vecs<uint32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_ADD_ZZZ_B: {  // add zd.b, zn.b, zm.b
