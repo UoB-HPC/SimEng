@@ -164,9 +164,13 @@ TEST_F(ReorderBufferTest, CommitStore) {
   ON_CALL(*uop, getGeneratedAddresses()).WillByDefault(Return(addressesSpan));
   ON_CALL(*uop, getData()).WillByDefault(Return(dataSpan));
 
+  uop->setSequenceId(1);
+
   lsq.addStore(uopPtr);
 
   reorderBuffer.reserve(uopPtr);
+
+  lsq.supplyStoreData(uopPtr);
 
   uopPtr->setCommitReady();
 
