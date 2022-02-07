@@ -213,13 +213,13 @@ void LoadStoreQueue::purgeFlushed() {
     }
   }
 
-  auto it2 = requestQueue_.begin();
-  while (it2 != requestQueue_.end()) {
-    auto& entry = it2->insn;
+  auto itReq = requestQueue_.begin();
+  while (itReq != requestQueue_.end()) {
+    auto& entry = itReq->insn;
     if (entry->isFlushed()) {
-      it2 = requestQueue_.erase(it2);
+      itReq = requestQueue_.erase(itReq);
     } else {
-      it2++;
+      itReq++;
     }
   }
 }
