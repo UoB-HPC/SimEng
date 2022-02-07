@@ -88,6 +88,9 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     loadUop->setExecuted(true);
     loadUop->setCommitReady();
 
+    // Supply data to storeUop
+    queue.supplyStoreData(storeUopPtr);
+
     // Trigger the store, and return any violation
     // TODO: Once a memory interface is in place, ensure the load was resolved
     // before triggering the store
@@ -261,8 +264,11 @@ TEST_P(LoadStoreQueueTest, Store) {
   EXPECT_CALL(*storeUop, getGeneratedAddresses()).Times(AtLeast(1));
   EXPECT_CALL(*storeUop, getData()).Times(AtLeast(1));
 
+  storeUop->setSequenceId(1);
+
   queue.addStore(storeUopPtr);
   storeUopPtr->setCommitReady();
+  queue.supplyStoreData(storeUopPtr);
 
   // Check that a write request is sent to the memory interface
   EXPECT_CALL(dataMemory,

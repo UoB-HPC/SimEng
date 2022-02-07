@@ -215,6 +215,12 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
 
   assert(instruction->hasAllData() &&
          "Load instruction failed to obtain all data this cycle");
+
+  instruction->execute();
+
+  if (instruction->isStore()) {
+    storeData(instruction);
+  }
 }
 
 void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
@@ -291,7 +297,6 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
 
 void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
   loadData(instruction);
-  instruction->execute();
   if (instruction->exceptionEncountered()) {
     raiseException(instruction);
     return;

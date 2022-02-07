@@ -279,12 +279,6 @@ void Instruction::decode() {
         isSVEData_ = true;
       }
     }
-
-    if (metadata.id == ARM64_INS_LDP || metadata.id == ARM64_INS_STP) {
-      splitMemoryRequests_ = true;
-    } else if (metadata.opcode > 1958 && metadata.opcode < 1975) {
-      splitMemoryRequests_ = true;
-    }
   }
   if (metadata.opcode == Opcode::AArch64_LDRXl ||
       metadata.opcode == Opcode::AArch64_LDRSWl) {
