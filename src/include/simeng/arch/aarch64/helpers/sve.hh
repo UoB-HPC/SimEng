@@ -106,7 +106,7 @@ class sveHelp {
               (func(n[i], m[i])) ? (shifted_active) : 0;
       }
     }
-    // Byte count = sizeof(P) as destination predicate is predicate of P bytes.
+    // Byte count = sizeof(T) as destination predicate is predicate of T bytes.
     return {out, AuxFunc::getNZCVfromPred(out, VL_bits, sizeof(T))};
   }
 
