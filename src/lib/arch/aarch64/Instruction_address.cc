@@ -260,6 +260,30 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       setMemoryAddresses(std::move(addresses));
       break;
     }
+    case Opcode::AArch64_LD3D_IMM: {  // ld3d {zt1.d, zt2.d, zt3.d}, pg/z,
+      // [xn|sp{, #imm, MUL VL}]
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const uint16_t partition_num = VL_bits / 64;
+
+      const uint64_t base = operands[1].get<uint64_t>();
+      const uint64_t offset =
+          static_cast<uint64_t>(metadata.operands[2].mem.disp);
+      std::vector<MemoryAccessTarget> addresses;
+      addresses.reserve(partition_num);
+
+      uint64_t addr = base + (offset * partition_num * 3 * 8);
+
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          addresses.push_back({addr, 8});
+        }
+        addr += 8;
+      }
+
+      setMemoryAddresses(std::move(addresses));
+      break;
+    }
     case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn], #imm
       const uint64_t base = operands[2].get<uint64_t>();
       setMemoryAddresses({{base, 16}, {base + 16, 16}});
