@@ -18,7 +18,7 @@ struct requestEntry {
   uint64_t readyAt;
 
   /** The memory address(es) to be accessed. */
-  span<const simeng::MemoryAccessTarget> reqAddresses;
+  std::queue<const simeng::MemoryAccessTarget> reqAddresses;
 
   /** The instruction sending the request(s). */
   std::shared_ptr<Instruction> insn;
@@ -70,8 +70,8 @@ class LoadStoreQueue {
   /** Add the load instruction's memory requests to the requestQueue_. */
   void startLoad(const std::shared_ptr<Instruction>& insn);
 
-  /** Add the store instruction's memory requests to the requestQueue_. */
-  void startStore(const std::shared_ptr<Instruction>& insn);
+  /** Supply the data to be stored by a store operation. */
+  void supplyStoreData(const std::shared_ptr<Instruction>& insn);
 
   /** Commit and write the oldest store instruction to memory, removing it from
    * the store queue. Returns `true` if memory disambiguation has discovered a
@@ -98,8 +98,11 @@ class LoadStoreQueue {
   /** The load queue: holds in-flight load instructions. */
   std::deque<std::shared_ptr<Instruction>> loadQueue_;
 
-  /** The store queue: holds in-flight store instructions. */
-  std::deque<std::shared_ptr<Instruction>> storeQueue_;
+  /** The store queue: holds in-flight store instructions with its associated
+   * data. */
+  std::deque<std::pair<std::shared_ptr<Instruction>,
+                       span<const simeng::RegisterValue>>>
+      storeQueue_;
 
   /** Slots to write completed load instructions into for writeback. */
   span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots_;

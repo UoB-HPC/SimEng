@@ -84,7 +84,7 @@ void LoadStoreQueue::addLoad(const std::shared_ptr<Instruction>& insn) {
   loadQueue_.push_back(insn);
 }
 void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
-  storeQueue_.push_back(insn);
+  storeQueue_.push_back({insn, {}});
 }
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
@@ -93,42 +93,53 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     insn->execute();
     completedLoads_.push(insn);
   } else {
-    if (insn->shouldSplitRequests()) {
-      for (size_t i = 0; i < addresses.size(); i++) {
-        requestQueue_.push_back({tickCounter_ + insn->getLSQLatency(),
-                                 {addresses.data() + i, 1},
-                                 insn});
-      }
-    } else {
-      requestQueue_.push_back(
-          {tickCounter_ + insn->getLSQLatency(), addresses, insn});
+    requestQueue_.push_back({tickCounter_ + insn->getLSQLatency(), {}, insn});
+    for (size_t i = 0; i < addresses.size(); i++) {
+      requestQueue_.back().reqAddresses.push(addresses[i]);
     }
     requestedLoads_.emplace(insn->getSequenceId(), insn);
+  }
+}
+
+void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
+  // Get identifier values
+  const uint64_t seqId = insn->getSequenceId();
+  // Get data
+  span<const simeng::RegisterValue> data = insn->getData();
+
+  // Find storeQueue_ entry which is linked to the store data operation
+  auto itSt = storeQueue_.begin();
+  while (itSt != storeQueue_.end()) {
+    auto& entry = itSt->first;
+    // Pair entry and incoming store data operation with sequenceID
+    if (entry->getSequenceId() == seqId) {
+      // Supply data to be stored by operations
+      itSt->second = data;
+      break;
+    } else {
+      itSt++;
+    }
   }
 }
 
 bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   assert(storeQueue_.size() > 0 &&
          "Attempted to commit a store from an empty queue");
-  assert(storeQueue_.front()->getSequenceId() == uop->getSequenceId() &&
+  assert(storeQueue_.front().first->getSequenceId() == uop->getSequenceId() &&
          "Attempted to commit a store that wasn't present at the front of the "
          "store queue");
 
   const auto& addresses = uop->getGeneratedAddresses();
-  const auto& data = uop->getData();
-  if (uop->shouldSplitRequests()) {
-    for (size_t i = 0; i < addresses.size(); i++) {
-      memory_.requestWrite(addresses[i], data[i]);
-      requestQueue_.push_back({tickCounter_ + uop->getLSQLatency(),
-                               {addresses.data() + i, 1},
-                               uop});
-    }
-  } else {
-    for (size_t i = 0; i < addresses.size(); i++) {
-      memory_.requestWrite(addresses[i], data[i]);
-    }
-    requestQueue_.push_back(
-        {tickCounter_ + uop->getLSQLatency(), addresses, uop});
+  span<const simeng::RegisterValue> data = storeQueue_.front().second;
+
+  requestQueue_.push_back({tickCounter_ + uop->getLSQLatency(), {}, uop});
+  // Submit request write to memory interface early as the architectural state
+  // considers the store to be retired and thus its operation complete
+  for (size_t i = 0; i < addresses.size(); i++) {
+    memory_.requestWrite(addresses[i], data[i]);
+    // Still add addresses to requestQueue_ to ensure contention of resources is
+    // correctly simulated
+    requestQueue_.back().reqAddresses.push(addresses[i]);
   }
 
   // Check all loads that have requested memory
@@ -181,24 +192,24 @@ void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
 }
 
 void LoadStoreQueue::purgeFlushed() {
-  auto it = loadQueue_.begin();
-  while (it != loadQueue_.end()) {
-    auto& entry = *it;
+  auto itLd = loadQueue_.begin();
+  while (itLd != loadQueue_.end()) {
+    auto& entry = *itLd;
     if (entry->isFlushed()) {
       requestedLoads_.erase(entry->getSequenceId());
-      it = loadQueue_.erase(it);
+      itLd = loadQueue_.erase(itLd);
     } else {
-      it++;
+      itLd++;
     }
   }
 
-  it = storeQueue_.begin();
-  while (it != storeQueue_.end()) {
-    auto& entry = *it;
+  auto itSt = storeQueue_.begin();
+  while (itSt != storeQueue_.end()) {
+    auto& entry = itSt->first;
     if (entry->isFlushed()) {
-      it = storeQueue_.erase(it);
+      itSt = storeQueue_.erase(itSt);
     } else {
-      it++;
+      itSt++;
     }
   }
 
@@ -219,6 +230,7 @@ void LoadStoreQueue::tick() {
   // requests per cycle
   uint64_t dataTransfered = 0;
   std::array<uint8_t, 2> reqCounts = {0, 0};
+  bool remove = true;
   while (requestQueue_.size() > 0) {
     uint8_t isWrite = 0;
     auto& entry = requestQueue_.front();
@@ -226,23 +238,41 @@ void LoadStoreQueue::tick() {
       if (!entry.insn->isLoad()) {
         isWrite = 1;
       }
-      reqCounts[isWrite]++;
+      // Deal with requests from queue of addresses in requestQueue_ entry
+      auto& addressQueue = entry.reqAddresses;
+      while (addressQueue.size()) {
+        const simeng::MemoryAccessTarget req = addressQueue.front();
 
-      if (reqCounts[isWrite] > reqLimits_[isWrite] ||
-          reqCounts[isWrite] + reqCounts[!isWrite] > totalLimit_) {
-        break;
-      }
-      if (dataTransfered >= L1Bandwidth_) {
-        break;
-      }
-      for (size_t i = 0; i < entry.reqAddresses.size(); i++) {
-        const MemoryAccessTarget req = entry.reqAddresses[i];
+        // Ensure the limit on the number of permitted operations is adhered to
+        reqCounts[isWrite]++;
+        if (reqCounts[isWrite] > reqLimits_[isWrite] ||
+            reqCounts[isWrite] + reqCounts[!isWrite] > totalLimit_) {
+          remove = false;
+          break;
+        }
+
+        // Ensure the limit on the data transfered per cycle is adhered to
+        assert(req.size < L1Bandwidth_ &&
+               "Individual memory request from LoadStoreQueue exceeds L1 "
+               "bandwidth set and thus will never be submitted");
         dataTransfered += req.size;
+        if (dataTransfered > L1Bandwidth_) {
+          remove = false;
+          break;
+        }
+        // Request a read from the memory interface if the requestQueue_ entry
+        // represents a read
         if (!isWrite) {
           memory_.requestRead(req, entry.insn->getSequenceId());
         }
+        addressQueue.pop();
       }
-      requestQueue_.pop_front();
+      // Only remove entry from requestQueue_ if all addresses in entry are
+      // processed
+      if (remove)
+        requestQueue_.pop_front();
+      else
+        break;
     } else {
       break;
     }
@@ -267,6 +297,9 @@ void LoadStoreQueue::tick() {
     if (load->hasAllData()) {
       // This load has completed
       load->execute();
+      if (load->isStore()) {
+        supplyStoreData(load);
+      }
       completedLoads_.push(load);
     }
   }

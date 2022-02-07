@@ -45,6 +45,4 @@ uint16_t Instruction::getLatency() const { return latency_; }
 uint16_t Instruction::getLSQLatency() const { return lsqExecutionLatency_; }
 uint16_t Instruction::getStallCycles() const { return stallCycles_; }
 
-bool Instruction::shouldSplitRequests() const { return splitMemoryRequests_; }
-
 }  // namespace simeng
