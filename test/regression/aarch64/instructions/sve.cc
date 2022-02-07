@@ -1641,6 +1641,62 @@ TEST_P(InstSve, add) {
   CHECK_NEON(1, uint16_t, fillNeon<uint16_t>({14}, VL / 8));
   CHECK_NEON(2, uint32_t, fillNeon<uint32_t>({12}, VL / 8));
   CHECK_NEON(3, uint64_t, fillNeon<uint64_t>({10}, VL / 8));
+
+  // Predicated
+  RUN_AARCH64(R"(
+    mov x0, #0
+    mov x1, #0
+    mov x2, #0
+    mov x3, #0
+    mov x4, #2
+    mov x5, #4
+    mov x6, #8
+    mov x7, #16
+
+    addvl x0, x0, #1
+    sdiv x0, x0, x4
+    addvl x1, x1, #1
+    sdiv x1, x1, x5
+    addvl x2, x2, #1
+    sdiv x2, x2, x6
+    addvl x3, x3, #1
+    sdiv x3, x3, x7
+
+    ptrue p0.b
+    ptrue p1.h
+    ptrue p2.s
+    ptrue p3.d
+    whilelo p4.b, xzr, x0
+    whilelo p5.h, xzr, x1
+    whilelo p6.s, xzr, x2
+    whilelo p7.d, xzr, x3
+
+    dup z0.b, #8
+    dup z1.b, #8
+    dup z2.h, #7
+    dup z3.h, #7
+    dup z4.s, #6
+    dup z5.s, #6
+    dup z6.d, #5
+    dup z7.d, #5
+
+    add z0.b, p0/m, z0.b, z0.b
+    add z1.b, p4/m, z1.b, z1.b
+    add z2.h, p1/m, z2.h, z2.h
+    add z3.h, p5/m, z3.h, z3.h
+    add z4.s, p2/m, z4.s, z4.s
+    add z5.s, p6/m, z5.s, z5.s
+    add z6.d, p3/m, z6.d, z6.d
+    add z7.d, p7/m, z7.d, z7.d
+  )");
+  CHECK_NEON(0, uint8_t, fillNeon<uint8_t>({16}, VL / 8));
+  CHECK_NEON(1, uint8_t, fillNeonCombined<uint8_t>({16}, {8}, VL / 8));
+  CHECK_NEON(2, uint16_t, fillNeon<uint16_t>({14}, VL / 8));
+  CHECK_NEON(3, uint16_t, fillNeonCombined<uint16_t>({14}, {7}, VL / 8));
+  CHECK_NEON(4, uint32_t, fillNeon<uint32_t>({12}, VL / 8));
+  CHECK_NEON(5, uint32_t, fillNeonCombined<uint32_t>({12}, {6}, VL / 8));
+  CHECK_NEON(6, uint64_t, fillNeon<uint64_t>({10}, VL / 8));
+  CHECK_NEON(7, uint64_t, fillNeonCombined<uint64_t>({10}, {5}, VL / 8));
 }
 
 TEST_P(InstSve, fadd) {
