@@ -2377,20 +2377,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_CPY_ZPzI_B: {
-      return executionNYI();
+    case Opcode::AArch64_CPY_ZPzI_B: {  // cpy zd.b, pg/z, #imm{, shift}
+      results[0] = sveHelp::sveCpy_imm<int8_t>(operands, metadata, VL_bits);
       break;
     }
-    case Opcode::AArch64_CPY_ZPzI_D: {
-      return executionNYI();
+    case Opcode::AArch64_CPY_ZPzI_D: {  // cpy zd.d, pg/z, #imm{, shift}
+      results[0] = sveHelp::sveCpy_imm<int64_t>(operands, metadata, VL_bits);
       break;
     }
-    case Opcode::AArch64_CPY_ZPzI_H: {
-      return executionNYI();
+    case Opcode::AArch64_CPY_ZPzI_H: {  // cpy zd.h, pg/z, #imm{, shift}
+      results[0] = sveHelp::sveCpy_imm<int16_t>(operands, metadata, VL_bits);
       break;
     }
-    case Opcode::AArch64_CPY_ZPzI_S: {
-      return executionNYI();
+    case Opcode::AArch64_CPY_ZPzI_S: {  // cpy zd.s, pg/z, #imm{, shift}
+      results[0] = sveHelp::sveCpy_imm<int32_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_CPYi16: {
