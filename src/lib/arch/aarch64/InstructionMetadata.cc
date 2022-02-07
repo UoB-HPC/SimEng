@@ -1367,7 +1367,25 @@ void InstructionMetadata::revertAliasing() {
       if (opcode == Opcode::AArch64_CPYi8 || opcode == Opcode::AArch64_CPYi16 ||
           opcode == Opcode::AArch64_CPYi32 ||
           opcode == Opcode::AArch64_CPYi64) {
-        // mov vd, Vn.T[index]; alias for dup vd, Vn.T[index]
+        // mov vd, Vn.T[index]; alias of dup vd, Vn.T[index]
+        return;
+      }
+      if (opcode == Opcode ::AArch64_CPY_ZPzI_B ||
+          opcode == Opcode ::AArch64_CPY_ZPzI_D ||
+          opcode == Opcode ::AArch64_CPY_ZPzI_H ||
+          opcode == Opcode ::AArch64_CPY_ZPzI_S) {
+        // mov zd.T, pg/z, #imm{, shift}; alias of cpy zd.T, pg/z, #imm{, shift}
+        operandCount = 3;
+        operands[0].access = CS_AC_WRITE;
+        operands[1].access = CS_AC_READ;
+        operands[2].type = ARM64_OP_IMM;
+        operands[2].access = CS_AC_READ;
+
+        // get imm value
+        std::string tmpOpStr(operandStr.substr(operandStr.find("#") + 1));
+        auto value = std::stoi(tmpOpStr, 0, 16);
+        operands[2].imm = tmpOpStr.length() == 4 ? static_cast<int8_t>(value)
+                                                 : static_cast<int16_t>(value);
         return;
       }
       if (opcode == Opcode::AArch64_DUPM_ZI ||
