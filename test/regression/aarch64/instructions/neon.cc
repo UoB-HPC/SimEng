@@ -468,12 +468,12 @@ TEST_P(InstNeon, bif) {
 TEST_P(InstNeon, bit) {
   initialHeapData_.resize(48);
   double* heap = reinterpret_cast<double*>(initialHeapData_.data());
-  heap[0] = 1.0;
+  heap[0] = 887.0;
   heap[1] = -42.76;
   heap[2] = 0.0;
   heap[3] = 0.0;
-  heap[4] = 1.0;
-  heap[5] = 1.0;
+  heap[4] = 680.0;
+  heap[5] = 98.7;
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -486,9 +486,13 @@ TEST_P(InstNeon, bit) {
     ldr q2, [x0, #32]
     bit v3.16b, v0.16b, v1.16b
     bit v4.16b, v0.16b, v2.16b
+    bit v5.8b, v0.8b, v1.8b
+    bit v6.8b, v0.8b, v2.8b
   )");
   CHECK_NEON(3, double, {0.0, 0.0});
-  CHECK_NEON(4, double, {1.0, 1.78005908680576110647218617387E-307});
+  CHECK_NEON(4, double, {544.0, 32.252091886608021});
+  CHECK_NEON(5, double, {0.0, 0.0});
+  CHECK_NEON(6, double, {544.0, 0.0});
 }
 
 TEST_P(InstNeon, bsl) {
