@@ -154,6 +154,40 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_AND_ZI: {
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[2].type = ARM64_OP_IMM;
+
+      char specifier = operandStr[operandStr.find(".") + 1];
+      switch (specifier) {
+        case 'b': {
+          uint8_t mask = static_cast<uint8_t>(operands[2].imm);
+          operands[2].imm = static_cast<uint64_t>(0);
+          for (int i = 0; i < 8; i++)
+            operands[2].imm |= (static_cast<uint64_t>(mask) << (i * 8));
+          break;
+        }
+        case 'h': {
+          uint16_t mask = static_cast<uint16_t>(operands[2].imm);
+          operands[2].imm = static_cast<uint64_t>(0);
+          for (int i = 0; i < 4; i++)
+            operands[2].imm |= (static_cast<uint64_t>(mask) << (i * 16));
+          break;
+        }
+        case 's': {
+          uint32_t mask = static_cast<uint32_t>(operands[2].imm);
+          operands[2].imm = static_cast<uint64_t>(0);
+          for (int i = 0; i < 2; i++)
+            operands[2].imm |= (static_cast<uint64_t>(mask) << (i * 32));
+          break;
+        }
+        default:
+          break;
+      }
+      break;
+    }
     case Opcode::AArch64_CNTP_XPP_B:
       [[fallthrough]];
     case Opcode::AArch64_CNTP_XPP_D:
