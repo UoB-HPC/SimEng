@@ -922,8 +922,8 @@ void Instruction::execute() {
       results[0] = neonHelp::vecBitwiseInsert<16>(operands, false);
       break;
     }
-    case Opcode::AArch64_BITv8i8: {
-      return executionNYI();
+    case Opcode::AArch64_BITv8i8: {  // bit vd.8b, vn.8b, vm.8b
+      results[0] = neonHelp::vecBitwiseInsert<8>(operands, false);
       break;
     }
     case Opcode::AArch64_BL: {  // bl #imm
