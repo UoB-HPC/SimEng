@@ -586,8 +586,16 @@ void Instruction::execute() {
           [](uint64_t x, uint64_t y) -> uint64_t { return x & y; });
       break;
     }
-    case Opcode::AArch64_AND_ZI: {
-      return executionNYI();
+    case Opcode::AArch64_AND_ZI: {  // and zdn, zdn, #imm
+      const uint64_t* dn = operands[0].getAsVector<uint64_t>();
+      const uint64_t imm = static_cast<uint64_t>(metadata.operands[2].imm);
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+      for (int i = 0; i < partition_num; i++) {
+        out[i] = dn[i] & imm;
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_AND_ZPmZ_B: {  // and zdn.b, pg/m, zdn.b, zm.b

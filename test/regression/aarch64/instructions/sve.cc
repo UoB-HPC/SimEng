@@ -41,6 +41,27 @@ TEST_P(InstSve, and) {
   CHECK_PREDICATE(3, uint64_t, fillPred(VL / 8, {1}, 4));
   CHECK_PREDICATE(4, uint64_t, fillPred(VL / 16, {1}, 4));
 
+  // Vector, immediate
+  RUN_AARCH64(R"(
+    dup z0.b, #15
+    dup z1.h, #7
+    dup z2.s, #5
+    dup z3.d, #11
+
+    and z0.b, z0.b, #1
+    and z1.h, z1.h, #1
+    and z2.s, z2.s, #1
+    and z3.d, z3.d, #1
+
+    dup z11.b, #15
+    and z11.b, z11.b, #254
+  )");
+  CHECK_NEON(0, uint64_t, fillNeon<uint64_t>({0x0101010101010101}, VL / 8));
+  CHECK_NEON(1, uint64_t, fillNeon<uint64_t>({0x0001000100010001}, VL / 8));
+  CHECK_NEON(2, uint64_t, fillNeon<uint64_t>({0x0000000100000001}, VL / 8));
+  CHECK_NEON(3, uint64_t, fillNeon<uint64_t>({0x0000000000000001}, VL / 8));
+  CHECK_NEON(11, uint64_t, fillNeon<uint64_t>({0x0e0e0e0e0e0e0e0e}, VL / 8));
+
   // Vectors, Predicated
   RUN_AARCH64(R"(
     # 8-bit
