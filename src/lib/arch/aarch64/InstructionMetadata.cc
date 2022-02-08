@@ -243,6 +243,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_ADDVL_XXI:
       [[fallthrough]];
+    case Opcode::AArch64_UADDV_VPZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_UADDV_VPZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_UADDV_VPZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_UADDV_VPZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_MOVPRFX_ZPzZ_D:
       [[fallthrough]];
     case Opcode::AArch64_MOVPRFX_ZPzZ_S:
