@@ -54,18 +54,6 @@ class Instruction {
   /** Check whether the operand at index `i` has had a value supplied. */
   virtual bool isOperandReady(int i) const = 0;
 
-  /** Set the number of addresses a load currently conflicts on with an
-   * existing store operation. */
-  virtual void registerAddressConflictions(uint8_t conflictions) = 0;
-
-  /** Decrement the number of addresses a load currently conflicts on with an
-   * existing store operation. */
-  virtual void removeAddressConflictions(uint8_t conflictions = 1) = 0;
-
-  /** Check whether a load currently hass addresses which conflicts with an
-   * existing store operation. */
-  virtual bool hasAddressConflictions() const = 0;
-
   /** Check whether all operand values have been supplied, and the instruction
    * is ready to execute. */
   virtual bool canExecute() const = 0;
