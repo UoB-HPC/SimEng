@@ -106,8 +106,8 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
       for (auto itSt = storeQueue_.rbegin(); itSt != storeQueue_.rend();
            itSt++) {
         auto& store = itSt->first;
-        // If entry is earlier in the program order than load, detect
-        conflicts if (store->getSequenceId() <= seqId) {
+        // If entry is earlier in the program order than load, detect conflicts
+        if (store->getSequenceId() <= seqId) {
           const auto& str_addresses = store->getGeneratedAddresses();
           // Iterate over possible matches between store and load addresses
           for (const auto& str : str_addresses) {
