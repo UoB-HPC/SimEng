@@ -88,16 +88,56 @@ void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
 }
 
 void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
-  const auto& addresses = insn->getGeneratedAddresses();
-  if (addresses.size() == 0) {
+  const auto& ld_addresses = insn->getGeneratedAddresses();
+  if (ld_addresses.size() == 0) {
+    // Early execution if not addresses need to be accessed
     insn->execute();
     completedLoads_.push(insn);
   } else {
-    requestQueue_.push_back({tickCounter_ + insn->getLSQLatency(), {}, insn});
-    for (size_t i = 0; i < addresses.size(); i++) {
-      requestQueue_.back().reqAddresses.push(addresses[i]);
+    // Store load addresses in vector temporarily so that conflictions are
+    // only regsitered once on oldest (program order) store
+    std::vector<simeng::MemoryAccessTarget> temp_load_addr;
+    for (const auto& ld : ld_addresses) {
+      temp_load_addr.push_back(ld);
     }
-    requestedLoads_.emplace(insn->getSequenceId(), insn);
+    // Detect reordering conflicts
+    if (storeQueue_.size() > 0) {
+      uint64_t seqId = insn->getSequenceId();
+      for (auto itSt = storeQueue_.rbegin(); itSt != storeQueue_.rend();
+           itSt++) {
+        auto& store = itSt->first;
+        // If entry is earlier in the program order than load, detect
+        conflicts if (store->getSequenceId() <= seqId) {
+          const auto& str_addresses = store->getGeneratedAddresses();
+          // Iterate over possible matches between store and load addresses
+          for (const auto& str : str_addresses) {
+            auto itLd = temp_load_addr.begin();
+            while (itLd != temp_load_addr.end()) {
+              // If conflict exists, register in conflictionMap_ and delay
+              // load request(s) until conflicting store retires
+              if (itLd->address == str.address) {
+                conflictionMap_[store->getSequenceId()][str.address].push_back(
+                    insn);
+                // Remove from temporary vector so the confliction can't be
+                // registered again
+                temp_load_addr.erase(itLd);
+              } else {
+                itLd++;
+              }
+            }
+          }
+        }
+      }
+    }
+    // If addresses remain that had no conflictions, generate those load
+    // request(s)
+    if (temp_load_addr.size() > 0) {
+      requestQueue_.push_back({tickCounter_ + insn->getLSQLatency(), {}, insn});
+      for (size_t i = 0; i < temp_load_addr.size(); i++) {
+        requestQueue_.back().reqAddresses.push(temp_load_addr[i]);
+      }
+      requestedLoads_.emplace(insn->getSequenceId(), insn);
+    }
   }
 }
 
@@ -140,6 +180,28 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
     // Still add addresses to requestQueue_ to ensure contention of resources is
     // correctly simulated
     requestQueue_.back().reqAddresses.push(addresses[i]);
+  }
+
+  // Resolve any conflicts caused by this store instruction
+  const auto& itSt = conflictionMap_.find(uop->getSequenceId());
+  if (itSt != conflictionMap_.end()) {
+    for (size_t i = 0; i < addresses.size(); i++) {
+      const auto& itAddr = itSt->second.find(addresses[i].address);
+      if (itAddr != itSt->second.end()) {
+        for (const auto& load : itAddr->second) {
+          load->supplyData(addresses[i].address, data[i]);
+          if (load->hasAllData()) {
+            // This load has completed
+            load->execute();
+            if (load->isStore()) {
+              supplyStoreData(load);
+            }
+            completedLoads_.push(load);
+          }
+        }
+      }
+    }
+    conflictionMap_.erase(itSt);
   }
 
   // Check all loads that have requested memory
@@ -192,6 +254,7 @@ void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
 }
 
 void LoadStoreQueue::purgeFlushed() {
+  // Remove flushed loads from load queue
   auto itLd = loadQueue_.begin();
   while (itLd != loadQueue_.end()) {
     auto& entry = *itLd;
@@ -203,16 +266,41 @@ void LoadStoreQueue::purgeFlushed() {
     }
   }
 
+  // Remove flushed stores from store queue and confliction queue if an entry
+  // exists
   auto itSt = storeQueue_.begin();
   while (itSt != storeQueue_.end()) {
     auto& entry = itSt->first;
     if (entry->isFlushed()) {
+      auto strConflict = conflictionMap_.find(entry->getSequenceId());
+      if (strConflict != conflictionMap_.end()) {
+        conflictionMap_.erase(strConflict);
+      }
       itSt = storeQueue_.erase(itSt);
     } else {
       itSt++;
     }
   }
 
+  // Remove flushed loads from confliction queue
+  for (auto itCnflct = conflictionMap_.begin();
+       itCnflct != conflictionMap_.end(); itCnflct++) {
+    // Iterate over addresses of store
+    for (auto itAddr = itCnflct->second.begin();
+         itAddr != itCnflct->second.end(); itAddr++) {
+      // Iterate over vector of instructions conflicting with store address
+      auto load = itAddr->second.begin();
+      while (load != itAddr->second.end()) {
+        if (load->get()->isFlushed()) {
+          load = itAddr->second.erase(load);
+        } else {
+          load++;
+        }
+      }
+    }
+  }
+
+  // Remove flushed loads and stores from request queue
   auto itReq = requestQueue_.begin();
   while (itReq != requestQueue_.end()) {
     auto& entry = itReq->insn;
