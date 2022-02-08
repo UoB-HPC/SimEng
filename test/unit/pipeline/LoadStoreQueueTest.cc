@@ -33,9 +33,13 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
         dataSpan({data.data(), data.size()}),
         memory{},
         loadUop(new MockInstruction),
+        loadUop2(new MockInstruction),
         storeUop(new MockInstruction),
+        storeUop2(new MockInstruction),
         loadUopPtr(loadUop),
-        storeUopPtr(storeUop) {
+        loadUopPtr2(loadUop2),
+        storeUopPtr(storeUop),
+        storeUopPtr2(storeUop2) {
     // Set up sensible return values for the load uop
     ON_CALL(*loadUop, isLoad()).WillByDefault(Return(true));
     ON_CALL(*loadUop, getGeneratedAddresses())
@@ -110,10 +114,14 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   char memory[1024];
 
   MockInstruction* loadUop;
+  MockInstruction* loadUop2;
   MockInstruction* storeUop;
+  MockInstruction* storeUop2;
 
   std::shared_ptr<Instruction> loadUopPtr;
+  std::shared_ptr<Instruction> loadUopPtr2;
   std::shared_ptr<MockInstruction> storeUopPtr;
+  std::shared_ptr<MockInstruction> storeUopPtr2;
 
   MockForwardOperandsHandler forwardOperandsHandler;
 
@@ -357,6 +365,64 @@ TEST_P(LoadStoreQueueTest, NoViolation) {
 
   // No violation should have occurred, as the addresses are different
   EXPECT_EQ(violation, false);
+}
+
+// Test that a flushed load currently in a state of reordering confliction is
+// correctly removed
+TEST_P(LoadStoreQueueTest, FlushDuringConfliction) {
+  auto queue = getQueue();
+
+  storeUop->setSequenceId(0);
+  loadUop->setSequenceId(1);
+  loadUop->setFlushed();
+  loadUop2->setSequenceId(2);
+  loadUop2->setFlushed();
+
+  // Set store addresses and data
+  std::vector<MemoryAccessTarget> storeAddresses = {{1, 1}, {2, 1}};
+  span<const MemoryAccessTarget> storeAddressesSpan = {storeAddresses.data(),
+                                                       storeAddresses.size()};
+  std::vector<RegisterValue> storeData = {static_cast<uint8_t>(0x01),
+                                          static_cast<uint8_t>(0x10)};
+  span<const RegisterValue> storeDataSpan = {storeData.data(),
+                                             storeData.size()};
+  EXPECT_CALL(*storeUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeAddressesSpan));
+  EXPECT_CALL(*storeUop, getData())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeDataSpan));
+
+  // Set load address which overlaps on first store address
+  std::vector<MemoryAccessTarget> loadAddresses = {{1, 1}};
+  span<const MemoryAccessTarget> loadAddressesSpan = {loadAddresses.data(),
+                                                      loadAddresses.size()};
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(loadAddressesSpan));
+
+  // Set load address which overlaps on second store address
+  std::vector<MemoryAccessTarget> loadAddresses2 = {{2, 1}};
+  span<const MemoryAccessTarget> loadAddressesSpan2 = {loadAddresses2.data(),
+                                                       loadAddresses2.size()};
+  EXPECT_CALL(*loadUop2, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(loadAddressesSpan2));
+
+  queue.addStore(storeUopPtr);
+  queue.addLoad(loadUopPtr);
+  queue.addLoad(loadUopPtr2);
+
+  queue.startLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr2);
+  queue.purgeFlushed();
+
+  queue.supplyStoreData(storeUopPtr);
+  queue.commitStore(storeUopPtr);
+
+  EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
+
+  queue.tick();
 }
 
 INSTANTIATE_TEST_SUITE_P(LoadStoreQueueTests, LoadStoreQueueTest,
