@@ -15,9 +15,6 @@ class MockInstruction : public Instruction {
   MOCK_METHOD2(renameDestination, void(uint8_t i, Register renamed));
   MOCK_METHOD2(supplyOperand, void(uint8_t i, const RegisterValue& value));
   MOCK_CONST_METHOD1(isOperandReady, bool(int i));
-  MOCK_METHOD1(registerAddressConflictions, void(uint8_t conflictions));
-  MOCK_METHOD1(removeAddressConflictions, void(uint8_t conflictions));
-  MOCK_CONST_METHOD0(hasAddressConflictions, bool());
   MOCK_CONST_METHOD0(canExecute, bool());
   MOCK_METHOD0(execute, void());
   MOCK_CONST_METHOD0(getResults, const span<RegisterValue>());
