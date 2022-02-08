@@ -75,6 +75,27 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `addv dd, pg, zn`.
+   * T represents the type of operands (e.g. for zn.s, T = uint32_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveAddvPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* n = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    uint64_t out = 0;
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active)
+        out += static_cast<uint64_t>(n[i]);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for instructions with the format `cmp<eq, ge, gt, hi, hs,
    *le, lo, ls, lt, ne> pd, pg/z, zn, <zm, #imm>`.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).

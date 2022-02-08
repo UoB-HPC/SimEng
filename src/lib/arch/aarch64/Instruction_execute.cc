@@ -16779,20 +16779,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_UADDV_VPZ_B: {
-      return executionNYI();
+    case Opcode::AArch64_UADDV_VPZ_B: {  // uaddv dd, pg, zn.b
+      results[0] = sveHelp::sveAddvPredicated<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_UADDV_VPZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_UADDV_VPZ_D: {  // uaddv dd, pg, zn.d
+      results[0] = sveHelp::sveAddvPredicated<uint64_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_UADDV_VPZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_UADDV_VPZ_H: {  // uaddv dd, pg, zn.h
+      results[0] = sveHelp::sveAddvPredicated<uint16_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_UADDV_VPZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_UADDV_VPZ_S: {  // uaddv dd, pg, zn.s
+      results[0] = sveHelp::sveAddvPredicated<uint32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_UADDWv16i8_v8i16: {
