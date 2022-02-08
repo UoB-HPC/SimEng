@@ -64,27 +64,6 @@ bool Instruction::isOperandReady(int index) const {
   return static_cast<bool>(operands[index]);
 }
 
-void Instruction::registerAddressConflictions(uint8_t conflictions) {
-  assert(
-      isLoad_ &&
-      "Attempted to register address conflictions for a non-load instruction");
-
-  addressConflicts_ = conflictions;
-}
-
-void Instruction::removeAddressConflictions(uint8_t conflictions) {
-  assert(isLoad_ &&
-         "Attempted to remove address conflictions for a non-load instruction");
-  assert((addressConflicts_ > conflictions) &&
-         "Attempted to remove more address conflictions that the load has");
-
-  addressConflicts_ -= conflictions;
-}
-
-bool Instruction::hasAddressConflictions() const {
-  return (addressConflicts_ == 0);
-}
-
 void Instruction::renameSource(uint8_t i, Register renamed) {
   sourceRegisters[i] = renamed;
 }
