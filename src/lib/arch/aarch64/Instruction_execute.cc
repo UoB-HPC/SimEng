@@ -2629,8 +2629,9 @@ void Instruction::execute() {
                                                         VL_bits, true);
       break;
     }
-    case Opcode::AArch64_DUP_ZR_B: {
-      return executionNYI();
+    case Opcode::AArch64_DUP_ZR_B: {  // dup zd.b, wn
+      results[0] = sveHelp::sveDup_immOrScalar<int8_t>(operands, metadata,
+                                                       VL_bits, false);
       break;
     }
     case Opcode::AArch64_DUP_ZR_D: {  // dup zd.d, xn
@@ -2638,8 +2639,9 @@ void Instruction::execute() {
                                                         VL_bits, false);
       break;
     }
-    case Opcode::AArch64_DUP_ZR_H: {
-      return executionNYI();
+    case Opcode::AArch64_DUP_ZR_H: {  // dup zd.h, wn
+      results[0] = sveHelp::sveDup_immOrScalar<int16_t>(operands, metadata,
+                                                        VL_bits, false);
       break;
     }
     case Opcode::AArch64_DUP_ZR_S: {  // dup zd.s, wn
@@ -12749,20 +12751,23 @@ void Instruction::execute() {
       results[0] = arithmeticHelp::msubl_4ops<int64_t, int32_t>(operands);
       break;
     }
-    case Opcode::AArch64_SMULH_ZPmZ_B: {
-      return executionNYI();
+    case Opcode::AArch64_SMULH_ZPmZ_B: {  // smulh zdn.b, pg/m, zdn.b, zm.b
+      results[0] =
+          sveHelp::sveMulhPredicated<int8_t, int16_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SMULH_ZPmZ_D: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SMULH_ZPmZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_SMULH_ZPmZ_H: {  // smulh zdn.h, pg/m, zdn.h, zm.h
+      results[0] =
+          sveHelp::sveMulhPredicated<int16_t, int32_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_SMULH_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_SMULH_ZPmZ_S: {  // smulh zdn.s, pg/m, zdn.s, zm.s
+      results[0] =
+          sveHelp::sveMulhPredicated<int32_t, int64_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_SMULHrr: {  // smulh xd, xn, xm
