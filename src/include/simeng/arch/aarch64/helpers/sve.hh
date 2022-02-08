@@ -950,6 +950,35 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `mulh zdn, pg/m, zdn,
+   * zm`.
+   * T represents the type of operands (e.g. for zn.s, T = int32_t).
+   * TT represents the type twice the length of T (e.g. for T = int8_t, TT =
+   * int16_T).
+   * Returns correctly formatted RegisterValue. */
+  // TODO : Support for int64_t mulh operations.
+  template <typename T, typename TT>
+  static RegisterValue sveMulhPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* n = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i] = static_cast<T>(
+            (static_cast<TT>(n[i]) * static_cast<TT>(m[i])) >> (sizeof(T) * 8));
+      } else
+        out[i] = n[i];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `orr zd, zn,
    * zm`.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).

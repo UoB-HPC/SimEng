@@ -4652,6 +4652,87 @@ TEST_P(InstSve, smin) {
   CHECK_NEON(4, int32_t, {minElemB, 0, 0, 0});
 }
 
+TEST_P(InstSve, smulh) {
+  // Vectors
+  // 8-bit
+  RUN_AARCH64(R"(
+    ptrue p0.b
+    mov x0, #0
+    addvl x1, x0, #1
+    mov x2, #2
+    udiv x3, x1, x2
+    whilelo p1.b, xzr, x3
+
+    dup z0.b, #127
+    dup z1.b, #77
+    dup z2.b, #-16
+    dup z3.b, #45
+
+    smulh z0.b, p0/m, z0.b, z1.b
+    smulh z2.b, p1/m, z2.b, z3.b
+  )");
+  CHECK_NEON(0, int8_t, fillNeon<int8_t>({38}, VL / 8));
+  CHECK_NEON(2, int8_t, fillNeonCombined<int8_t>({-3}, {-16}, VL / 8));
+
+  // 16-bit
+  RUN_AARCH64(R"(
+    ptrue p0.h
+    mov x0, #0
+    addvl x1, x0, #1
+    mov x2, #4
+    udiv x3, x1, x2
+    whilelo p1.h, xzr, x3
+
+    movz w0, #5120
+    movz w1, #63744
+
+    dup z0.h, w0
+    dup z1.h, #77
+    dup z2.h, w1
+    dup z3.h, #45
+
+    smulh z0.h, p0/m, z0.h, z1.h
+    smulh z2.h, p1/m, z2.h, z3.h
+  )");
+  CHECK_NEON(0, int16_t, fillNeon<int16_t>({6}, VL / 8));
+  CHECK_NEON(2, int16_t, fillNeonCombined<int16_t>({-2}, {-1792}, VL / 8));
+
+  // 32-bit
+  initialHeapData_.resize(12);
+  int32_t* heapi32 = reinterpret_cast<int32_t*>(initialHeapData_.data());
+  heapi32[0] = 0x7EADBEEF;
+  heapi32[1] = -1076902265;
+  RUN_AARCH64(R"(
+    ptrue p0.s
+    mov x0, #0
+    addvl x1, x0, #1
+    mov x2, #8
+    udiv x3, x1, x2
+    whilelo p1.s, xzr, x3
+
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    add x1, x0, #4
+
+    ldar w3, [x0]
+    ldar w4, [x1]
+
+    dup z0.s, w3
+    dup z1.s, #122
+    dup z2.s, w4
+    dup z3.s, #45
+
+    smulh z0.s, p0/m, z0.s, z1.s
+    smulh z2.s, p1/m, z2.s, z3.s
+  )");
+  CHECK_NEON(0, int32_t, fillNeon<int32_t>({60}, VL / 8));
+  CHECK_NEON(2, int32_t,
+             fillNeonCombined<int32_t>({-12}, {-1076902265}, VL / 8));
+}
+
 TEST_P(InstSve, st1b) {
   initialHeapData_.resize(VL / 8);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());

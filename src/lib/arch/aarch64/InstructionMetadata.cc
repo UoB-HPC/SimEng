@@ -492,6 +492,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_ORR_PPzPP:
       [[fallthrough]];
+    case Opcode::AArch64_SMULH_ZPmZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_SMULH_ZPmZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_SMULH_ZPmZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_SEL_ZPZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_SEL_ZPZZ_S:
@@ -1498,11 +1504,31 @@ void InstructionMetadata::revertAliasing() {
         return;
       }
       if (opcode == Opcode::AArch64_DUP_ZR_S ||
-          opcode == Opcode::AArch64_DUP_ZR_D) {
+          opcode == Opcode::AArch64_DUP_ZR_D ||
+          opcode == Opcode::AArch64_DUP_ZR_B ||
+          opcode == Opcode::AArch64_DUP_ZR_H) {
         // mov Zd.T, <rn|sp>; alias for dup Zd.T, <rn|sp>
         operands[0].access = CS_AC_WRITE;
-        operands[0].vas = ARM64_VAS_1S;
         operands[1].access = CS_AC_READ;
+
+        char specifier = operandStr[operandStr.find(".") + 1];
+        switch (specifier) {
+          case 'b':
+            operands[0].vas = ARM64_VAS_1B;
+            break;
+          case 'h':
+            operands[0].vas = ARM64_VAS_1H;
+            break;
+          case 's':
+            operands[0].vas = ARM64_VAS_1S;
+            break;
+          case 'd':
+            operands[0].vas = ARM64_VAS_1D;
+            break;
+
+          default:
+            break;
+        }
         return;
       }
       if (opcode == Opcode::AArch64_DUP_ZZI_S ||
