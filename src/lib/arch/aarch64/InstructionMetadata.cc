@@ -432,6 +432,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
       break;
     }
+    case Opcode::AArch64_FSUB_ZPmI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FSUB_ZPmI_S:
+      [[fallthrough]];
     case Opcode::AArch64_FADD_ZPmI_D:
       [[fallthrough]];
     case Opcode::AArch64_FADD_ZPmI_S:
@@ -598,7 +602,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_GLD1D_SCALED_REAL:
       [[fallthrough]];
     case Opcode::AArch64_GLD1D_REAL: {
-      // LD1D gather instruction doesn't correctly identify destination register
+      // LD1D gather instruction doesn't correctly identify destination
+      // register
       uint16_t reg_enum = ARM64_REG_Z0;
       // Single or double digit Z register identifier
       if (operandStr[3] == '.') {
@@ -619,7 +624,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_GLD1SW_D_IMM_REAL:
       [[fallthrough]];
     case Opcode::AArch64_GLD1D_IMM_REAL: {
-      // LD1D gather instruction doesn't correctly identify destination register
+      // LD1D gather instruction doesn't correctly identify destination
+      // register
       uint16_t reg_enum = ARM64_REG_Z0;
       // Single or double digit Z register identifier
       if (operandStr[3] == '.') {
@@ -1459,7 +1465,8 @@ void InstructionMetadata::revertAliasing() {
           opcode == Opcode ::AArch64_CPY_ZPzI_D ||
           opcode == Opcode ::AArch64_CPY_ZPzI_H ||
           opcode == Opcode ::AArch64_CPY_ZPzI_S) {
-        // mov zd.T, pg/z, #imm{, shift}; alias of cpy zd.T, pg/z, #imm{, shift}
+        // mov zd.T, pg/z, #imm{, shift}; alias of cpy zd.T, pg/z, #imm{,
+        // shift}
         operandCount = 3;
         operands[0].access = CS_AC_WRITE;
         operands[1].access = CS_AC_READ;
@@ -1631,8 +1638,8 @@ void InstructionMetadata::revertAliasing() {
           opcode == Opcode::AArch64_SEL_ZPZZ_D) {
         // mov Zd.T, Pg/M, Zn.T; alias for: sel Zd.T, Pg, Zn.T, Zd.T
         if (mnemonic[0] == 'm') {
-          // SEL instructions id sometimes set as ARM64_INS_MOV even if aliasing
-          // hasn't occured so double check mnemoic is MOV alias
+          // SEL instructions id sometimes set as ARM64_INS_MOV even if
+          // aliasing hasn't occured so double check mnemoic is MOV alias
           operandCount = 4;
           operands[3] = operands[0];
           operands[3].access = CS_AC_READ;
