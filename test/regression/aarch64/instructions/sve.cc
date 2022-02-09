@@ -23,6 +23,38 @@ TEST_P(InstSve, addvl) {
   EXPECT_EQ(getGeneralRegister<int64_t>(5), (1024 + ((VL / 8) * -32)));
 }
 
+TEST_P(InstSve, adr) {
+  // Packed Offsets
+  RUN_AARCH64(R"(
+    # 32-bit
+    dup z0.s, #15
+    dup z1.s, #4
+
+    adr z2.s, [z0.s, z1.s]
+    adr z3.s, [z0.s, z1.s, lsl #1]
+    adr z4.s, [z0.s, z1.s, lsl #2]
+    adr z5.s, [z0.s, z1.s, lsl #3]
+
+    # 64-bit
+    dup z6.d, #15
+    dup z7.d, #4
+
+    adr z8.d, [z6.d, z7.d]
+    adr z9.d, [z6.d, z7.d, lsl #1]
+    adr z10.d, [z6.d, z7.d, lsl #2]
+    adr z11.d, [z6.d, z7.d, lsl #3]
+  )");
+  CHECK_NEON(2, uint32_t, fillNeon<uint32_t>({19}, VL / 8));
+  CHECK_NEON(3, uint32_t, fillNeon<uint32_t>({23}, VL / 8));
+  CHECK_NEON(4, uint32_t, fillNeon<uint32_t>({31}, VL / 8));
+  CHECK_NEON(5, uint32_t, fillNeon<uint32_t>({47}, VL / 8));
+
+  CHECK_NEON(8, uint64_t, fillNeon<uint64_t>({19}, VL / 8));
+  CHECK_NEON(9, uint64_t, fillNeon<uint64_t>({23}, VL / 8));
+  CHECK_NEON(10, uint64_t, fillNeon<uint64_t>({31}, VL / 8));
+  CHECK_NEON(11, uint64_t, fillNeon<uint64_t>({47}, VL / 8));
+}
+
 TEST_P(InstSve, and) {
   // Predicates, Predicated
   RUN_AARCH64(R"(
