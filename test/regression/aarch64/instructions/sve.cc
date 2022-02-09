@@ -1706,6 +1706,28 @@ TEST_P(InstSve, dups) {
   CHECK_NEON(7, double, fillNeon<double>({-14.5f}, VL / 8));
   CHECK_NEON(8, int64_t, fillNeon<int64_t>({3}, VL / 8));
   CHECK_NEON(9, int64_t, fillNeon<int64_t>({-3}, VL / 8));
+
+  // Quadword
+  initialHeapData_.resize(48);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap[0] = 0xDEADBEEF01234567u;
+  heap[1] = 0xABCDEF01ABCDEF01u;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+
+    dup z1.q, z0.q[0]
+
+    # Check Alias
+    mov z2.q, q0
+  )");
+  std::vector<uint64_t> dresults = {0xDEADBEEF01234567u, 0xABCDEF01ABCDEF01};
+  CHECK_NEON(1, uint64_t, fillNeon<uint64_t>(dresults, VL / 8));
+  CHECK_NEON(2, uint64_t, fillNeon<uint64_t>(dresults, VL / 8));
 }
 
 TEST_P(InstSve, eor) {

@@ -1641,7 +1641,8 @@ void InstructionMetadata::revertAliasing() {
         return;
       }
       if (opcode == Opcode::AArch64_DUP_ZZI_S ||
-          opcode == Opcode::AArch64_DUP_ZZI_D) {
+          opcode == Opcode::AArch64_DUP_ZZI_D ||
+          opcode == Opcode::AArch64_DUP_ZZI_Q) {
         // mov Zd.T, Vn; alias for dup Zd.T, Zn.T[0]
         operandCount = 2;
         operands[0].access = CS_AC_WRITE;

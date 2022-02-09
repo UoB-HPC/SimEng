@@ -2662,8 +2662,25 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_DUP_ZZI_Q: {
-      return executionNYI();
+    case Opcode::AArch64_DUP_ZZI_Q: {  // dup zd.q, zn.q[#imm]
+      // No data-type for quadwords, but as data is just being moved around we
+      // can use uint64_t.
+      const uint16_t index =
+          static_cast<uint16_t>(metadata.operands[1].vector_index);
+      const uint64_t* n = operands[0].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 128;
+      uint64_t out[32] = {0};
+
+      if (index < partition_num) {
+        const uint64_t elementHi = n[index];
+        const uint64_t elementLo = n[index + 1];
+        for (int i = 0; i < partition_num; i++) {
+          out[2 * i] = elementHi;      // Copy over top half of quadword
+          out[2 * i + 1] = elementLo;  // Copy over lower half of quadword
+        }
+      }
+      results[0] = out;
       break;
     }
     case Opcode::AArch64_DUP_ZZI_S: {  // dup zd.s, zn.s[#imm]
