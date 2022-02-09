@@ -771,6 +771,41 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // No instruction id assigned
       id = ARM64_INS_LSL;
       break;
+    case Opcode::AArch64_LD2D_IMM: {
+      // LD2D doesn't correctly identify destination registers
+      uint16_t reg_enum0 = ARM64_REG_Z0;
+      uint16_t reg_enum1 = ARM64_REG_Z0;
+
+      // tmpOpStr = "zxx.d, zyy.d"
+      std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") - 1));
+      // get dest0, then remove from string
+      // Single or double digit Z register identifier
+      if (tmpOpStr[2] == '.') {
+        reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
+        tmpOpStr.erase(0, operandStr.find(",") + 1);
+      } else {
+        reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
+        tmpOpStr.erase(0, operandStr.find(",") + 2);
+      }
+      // get dest1, then remove from string
+      // Single or double digit Z register identifier
+      if (tmpOpStr[2] == '.') {
+        reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
+        tmpOpStr.erase(0, operandStr.find(",") + 1);
+      } else {
+        reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
+        tmpOpStr.erase(0, operandStr.find(",") + 2);
+      }
+
+      operands[0].reg = static_cast<arm64_reg>(reg_enum0);
+      operands[0].access = CS_AC_WRITE;
+      operands[1].reg = static_cast<arm64_reg>(reg_enum1);
+      operands[1].access = CS_AC_WRITE;
+
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_LD3D_IMM: {
       // LD3D doesn't correctly identify destination registers
       uint16_t reg_enum0 = ARM64_REG_Z0;
