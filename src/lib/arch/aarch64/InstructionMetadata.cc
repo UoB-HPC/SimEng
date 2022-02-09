@@ -1431,6 +1431,12 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_MOV:
+      if (opcode == Opcode::AArch64_AND_PPzPP) {
+        // mov pd.b, pg/z, pn.b; alias for: and pd.b, pg/z, pn.b, pn.b
+        operandCount = 4;
+        operands[3] = operands[2];
+        return;
+      }
       if (opcode == Opcode::AArch64_ADDXri ||
           opcode == Opcode::AArch64_ADDWri) {
         // mov to/from sp; alias for: add <sp|rd>, <rn|sp>, #0
