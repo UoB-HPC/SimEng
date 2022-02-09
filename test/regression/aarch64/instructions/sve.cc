@@ -2050,6 +2050,44 @@ TEST_P(InstSve, add) {
   CHECK_NEON(7, uint64_t, fillNeonCombined<uint64_t>({10}, {5}, VL / 8));
 }
 
+TEST_P(InstSve, fcadd) {
+  // double
+  initialHeapData_.resize(VL / 4);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  std::vector<double> dsrcA = {1.0,     -42.76, -0.125, 0.0,    40.26, -684.72,
+                               -0.15,   107.86, -34.71, -0.917, 0.0,   80.72,
+                               -125.67, -0.01,  701.90, 7.0};
+  fillHeap<double>(dheap, dsrcA, VL / 32);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ptrue p0.d
+
+    mov x1, #0
+    ld1d {z0.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z1.d}, p0/z, [x0, x1, lsl #3]
+    ld1d {z3.d}, p0/z, [x0, x1, lsl #3]
+
+    # Non-full predicates not tested as for VL=128 seg fault will occur.
+    fcadd z0.d, p0/m, z0.d, z1.d, #90
+    fcadd z1.d, p0/m, z1.d, z3.d, #270
+  )");
+
+  std::vector<double> dresults1 = {
+      43.76,   -41.76,  -0.125, -0.125, 724.98,  -644.46, -108.01, 107.71,
+      -33.793, -35.627, -80.72, 80.72,  -125.66, -125.68, 694.90,  708.90};
+  CHECK_NEON(0, double, fillNeon<double>(dresults1, VL / 8));
+
+  std::vector<double> dresults2 = {
+      -41.76,  -43.76, -0.125, 0.125, -644.46, -724.98, 107.71, 108.01,
+      -35.627, 33.793, 80.72,  80.72, -125.68, 125.66,  708.90, -694.90};
+  CHECK_NEON(1, double, fillNeon<double>(dresults2, VL / 8));
+}
+
 TEST_P(InstSve, fadd) {
   // double
   initialHeapData_.resize(VL / 4);

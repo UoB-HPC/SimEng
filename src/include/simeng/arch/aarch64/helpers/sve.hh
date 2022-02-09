@@ -355,6 +355,51 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `fcadd zdn, pg/m,
+   * zdn, zm, #imm`.
+   * T represents the type of operands (e.g. for zm.d, T = double).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveFcaddPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* dn = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+    const uint32_t imm = metadata.operands[4].imm;
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < (partition_num / 2); i++) {
+      T acc_r = dn[2 * i];
+      T acc_i = dn[2 * i + 1];
+      T elt2_r = m[2 * i];
+      T elt2_i = m[2 * i + 1];
+
+      uint64_t shifted_active1 = 1ull
+                                 << (((2 * i) % (64 / sizeof(T))) * sizeof(T));
+      uint64_t shifted_active2 =
+          1ull << (((2 * i + 1) % (64 / sizeof(T))) * sizeof(T));
+      if (p[(2 * i) / (64 / sizeof(T))] & shifted_active1) {
+        if (imm == 90) {
+          elt2_i = 0.0 - elt2_i;
+        }
+        acc_r = acc_r + elt2_i;
+      }
+      if (p[(2 * i + 1) / (64 / sizeof(T))] & shifted_active2) {
+        if (imm == 270) {
+          elt2_r = 0.0 - elt2_r;
+        }
+        acc_i = acc_i + elt2_r;
+      }
+      out[2 * i] = acc_r;
+      out[2 * i + 1] = acc_i;
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `fcvt zd,
    * pg/m, zn`.
    * D represents the destination vector register type (e.g. zd.s would be

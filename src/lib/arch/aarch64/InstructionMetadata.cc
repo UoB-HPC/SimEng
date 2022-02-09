@@ -440,6 +440,16 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
       break;
     }
+    case Opcode::AArch64_FCADD_ZPmZ_D: {
+      // No defined access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[4].access = CS_AC_READ;
+      operands[4].type = ARM64_OP_IMM;
+      break;
+    }
     case Opcode::AArch64_FSUB_ZPmI_D:
       [[fallthrough]];
     case Opcode::AArch64_FSUB_ZPmI_S:
