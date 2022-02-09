@@ -3290,6 +3290,46 @@ TEST_P(InstSve, fsub) {
   CHECK_NEON(3, double, fillNeonCombined<double>(dresultsB, dsrcB, VL / 8));
 }
 
+TEST_P(InstSve, fsub_imm) {
+  // float
+  RUN_AARCH64(R"(
+    mov x1, #0
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+    whilelo p0.s, xzr, x2
+    ptrue p1.s
+
+    fdup z0.s, #1.25
+    fdup z1.s, #-0.75
+
+    fsub z0.s, p1/m, z0.s, #0.5
+    fsub z1.s, p0/m, z1.s, #1.0
+  )");
+  CHECK_NEON(0, float, fillNeon<float>({0.75f}, VL / 8));
+  CHECK_NEON(1, float, fillNeonCombined<float>({-1.75f}, {-0.75f}, VL / 8));
+
+  // double
+  RUN_AARCH64(R"(
+    mov x1, #0
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+    whilelo p0.d, xzr, x2
+    ptrue p1.d
+
+    fdup z0.d, #1.25
+    fdup z1.d, #-0.75
+
+    fsub z0.d, p1/m, z0.d, #0.5
+    fsub z1.d, p0/m, z1.d, #1.0
+  )");
+  CHECK_NEON(0, double, fillNeon<double>({0.75}, VL / 8));
+  CHECK_NEON(1, double, fillNeonCombined<double>({-1.75}, {-0.75}, VL / 8));
+}
+
 TEST_P(InstSve, incp) {
   // Scalar
   RUN_AARCH64(R"(

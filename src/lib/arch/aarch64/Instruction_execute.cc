@@ -6398,16 +6398,18 @@ void Instruction::execute() {
           operands, [](double x, double y) -> double { return x - y; });
       break;
     }
-    case Opcode::AArch64_FSUB_ZPmI_D: {
-      return executionNYI();
+    case Opcode::AArch64_FSUB_ZPmI_D: {  // fsub zdn.d, pg/m, zdn.d, #imm
+      results[0] =
+          sveHelp::sveSubPredicated_imm<double>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_FSUB_ZPmI_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSUB_ZPmI_S: {
-      return executionNYI();
+    case Opcode::AArch64_FSUB_ZPmI_S: {  // fsub zdn.s, pg/m, zdn.s, #imm
+      results[0] =
+          sveHelp::sveSubPredicated_imm<float>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_FSUB_ZPmZ_D: {  // fsub zdn.d, pg/m, zdn.d, zm.d
