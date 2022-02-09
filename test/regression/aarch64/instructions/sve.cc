@@ -5379,6 +5379,44 @@ TEST_P(InstSve, st1d) {
   }
 }
 
+TEST_P(InstSve, st2d) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    ptrue p0.d
+    mov x0, #0
+    addvl x1, x0, #1
+    mov x2, #16
+    udiv x3, x1, x2
+    whilelo p1.d, xzr, x3
+
+    sub sp, sp, #4095
+    mov x6, #300
+
+    dup z0.d, #3
+    dup z1.d, #4
+    dup z2.d, #5
+    dup z3.d, #6
+
+    st2d {z0.d, z1.d}, p0, [sp]
+    st2d {z2.d, z3.d}, p1, [x6, #4, mul vl]
+  )");
+
+  for (int i = 0; i < (VL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 +
+                                       (2 * i * 8)),
+              3);
+    EXPECT_EQ(getMemoryValue<uint64_t>(process_->getStackPointer() - 4095 +
+                                       (2 * i * 8) + 8),
+              4);
+  }
+
+  int index = 4 * (VL / 64) * 2 * 8;
+  for (int i = 0; i < (VL / 128); i++) {
+    EXPECT_EQ(getMemoryValue<uint64_t>(300 + index + (2 * i * 8)), 5);
+    EXPECT_EQ(getMemoryValue<uint64_t>(300 + index + (2 * i * 8) + 8), 6);
+  }
+}
+
 TEST_P(InstSve, st1w_scatter) {
   // 32-bit
   RUN_AARCH64(R"(

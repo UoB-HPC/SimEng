@@ -15048,8 +15048,24 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ST2D_IMM: {
-      return executionNYI();
+    case Opcode::AArch64_ST2D_IMM: {  // st2d {zt1.d, zt2.d}, pg, [<xn|sp>{,
+                                      // #imm, mul vl}]
+      // STORE
+      const uint64_t* d1 = operands[0].getAsVector<uint64_t>();
+      const uint64_t* d2 = operands[1].getAsVector<uint64_t>();
+      const uint64_t* p = operands[2].getAsVector<uint64_t>();
+
+      const uint16_t partition_num = VL_bits / 64;
+      uint16_t index = 0;
+      for (int i = 0; i < partition_num; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active) {
+          memoryData[index] = d1[i];
+          index++;
+          memoryData[index] = d2[i];
+          index++;
+        }
+      }
       break;
     }
     case Opcode::AArch64_ST2H: {
