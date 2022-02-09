@@ -2161,20 +2161,36 @@ void Instruction::execute() {
       results[1] = output;
       break;
     }
-    case Opcode::AArch64_CMPNE_PPzZZ_B: {
-      return executionNYI();
+    case Opcode::AArch64_CMPNE_PPzZZ_B: {  // cmpne pd.b, pg/z, zn.b, zm.b
+      auto [output, nzcv] = sveHelp::sveCmpPredicated_toPred<int8_t>(
+          operands, metadata, VL_bits, false,
+          [](int8_t x, int8_t y) -> bool { return x != y; });
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
-    case Opcode::AArch64_CMPNE_PPzZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_CMPNE_PPzZZ_D: {  // cmpne pd.d, pg/z, zn.d, zm.d
+      auto [output, nzcv] = sveHelp::sveCmpPredicated_toPred<int64_t>(
+          operands, metadata, VL_bits, false,
+          [](int64_t x, int64_t y) -> bool { return x != y; });
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
-    case Opcode::AArch64_CMPNE_PPzZZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_CMPNE_PPzZZ_H: {  // cmpne pd.h, pg/z, zn.h, zm.h
+      auto [output, nzcv] = sveHelp::sveCmpPredicated_toPred<int16_t>(
+          operands, metadata, VL_bits, false,
+          [](int16_t x, int16_t y) -> bool { return x != y; });
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
-    case Opcode::AArch64_CMPNE_PPzZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_CMPNE_PPzZZ_S: {  // cmpne pd.s, pg/z, zn.s, zm.s
+      auto [output, nzcv] = sveHelp::sveCmpPredicated_toPred<int32_t>(
+          operands, metadata, VL_bits, false,
+          [](int32_t x, int32_t y) -> bool { return x != y; });
+      results[0] = nzcv;
+      results[1] = output;
       break;
     }
     case Opcode::AArch64_CMPNE_WIDE_PPzZZ_B: {
