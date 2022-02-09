@@ -8179,6 +8179,7 @@ void Instruction::execute() {
         uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out1[i] = memoryData[index].get<uint64_t>();
+          index++;
           out2[i] = memoryData[index].get<uint64_t>();
           index++;
         } else {
@@ -8395,7 +8396,9 @@ void Instruction::execute() {
         uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           out1[i] = memoryData[index].get<uint64_t>();
+          index++;
           out2[i] = memoryData[index].get<uint64_t>();
+          index++;
           out3[i] = memoryData[index].get<uint64_t>();
           index++;
         } else {

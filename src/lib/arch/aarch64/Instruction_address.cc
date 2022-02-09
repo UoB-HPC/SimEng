@@ -277,8 +277,9 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           addresses.push_back({addr, 8});
+          addresses.push_back({addr + 8, 8});
         }
-        addr += 8;
+        addr += 16;
       }
 
       setMemoryAddresses(std::move(addresses));
@@ -301,8 +302,10 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
           addresses.push_back({addr, 8});
+          addresses.push_back({addr + 8, 8});
+          addresses.push_back({addr + 16, 8});
         }
-        addr += 8;
+        addr += 24;
       }
 
       setMemoryAddresses(std::move(addresses));
