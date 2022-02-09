@@ -33,6 +33,29 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_0:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_1:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_2:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_3:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_0:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_1:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_2:
+      [[fallthrough]];
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_3: {
+      // No defined access types
+      operandCount = 3;
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[2].type = ARM64_OP_REG;
+      break;
+    }
     case Opcode::AArch64_SMIN_ZPmZ_S:
       [[fallthrough]];
     case Opcode::AArch64_EOR_ZPmZ_B:

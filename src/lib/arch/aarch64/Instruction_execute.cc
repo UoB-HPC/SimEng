@@ -396,36 +396,20 @@ void Instruction::execute() {
       results[0] = (instructionAddress_ & ~(0xFFF)) + metadata.operands[1].imm;
       break;
     }
-    case Opcode::AArch64_ADR_LSL_ZZZ_D_0: {
-      return executionNYI();
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_0:    // adr zd.d, [zn.d, zm.d]
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_1:    // adr zd.d, [zn.d, zm.d, lsl #1]
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_2:    // adr zd.d, [zn.d, zm.d, lsl #2]
+    case Opcode::AArch64_ADR_LSL_ZZZ_D_3: {  // adr zd.d, [zn.d, zm.d, lsl #3]
+      results[0] =
+          sveHelp::sveAdr_packedOffsets<uint64_t>(operands, metadata, VL_bits);
       break;
     }
-    case Opcode::AArch64_ADR_LSL_ZZZ_D_1: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_ADR_LSL_ZZZ_D_2: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_ADR_LSL_ZZZ_D_3: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_ADR_LSL_ZZZ_S_0: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_ADR_LSL_ZZZ_S_1: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_ADR_LSL_ZZZ_S_2: {
-      return executionNYI();
-      break;
-    }
-    case Opcode::AArch64_ADR_LSL_ZZZ_S_3: {
-      return executionNYI();
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_0:    // adr zd.s, [zn.s, zm.s]
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_1:    // adr zd.s, [zn.s, zm.s, lsl #1]
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_2:    // adr zd.s, [zn.s, zm.s, lsl #2]
+    case Opcode::AArch64_ADR_LSL_ZZZ_S_3: {  // adr zd.s, [zn.s, zm.s, lsl #3]
+      results[0] =
+          sveHelp::sveAdr_packedOffsets<uint32_t>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_ADR_SXTW_ZZZ_D_0: {
