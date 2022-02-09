@@ -3199,8 +3199,10 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCADD_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FCADD_ZPmZ_D: {  // fcadd zdn.d, pg/m, zdn.d, zm.d,
+                                          // #imm
+      results[0] =
+          sveHelp::sveFcaddPredicated<double>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_FCADD_ZPmZ_H: {
