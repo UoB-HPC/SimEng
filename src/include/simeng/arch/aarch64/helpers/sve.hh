@@ -398,6 +398,56 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `fcmla zda, pg/m,
+   * zn, zm, #imm`.
+   * T represents the type of operands (e.g. for zm.d, T = double).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveFcmlaPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const T* da = operands[0].getAsVector<T>();
+    const uint64_t* p = operands[1].getAsVector<uint64_t>();
+    const T* n = operands[2].getAsVector<T>();
+    const T* m = operands[3].getAsVector<T>();
+    const uint32_t imm = metadata.operands[4].imm;
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    int sel_a = (imm == 0 || imm == 180) ? 0 : 1;
+    int sel_b = (imm == 0 || imm == 180) ? 1 : 0;
+    bool neg_i = (imm == 180 || imm == 270) ? true : false;
+    bool neg_r = (imm == 90 || imm == 180) ? true : false;
+    for (int i = 0; i < (partition_num / 2); i++) {
+      T addend_r = da[2 * i];
+      T addend_i = da[2 * i + 1];
+      T elt1_a = n[2 * i + sel_a];
+      T elt2_a = m[2 * i + sel_a];
+      T elt2_b = m[2 * i + sel_b];
+      uint64_t shifted_active1 = 1ull
+                                 << (((2 * i) % (64 / sizeof(T))) * sizeof(T));
+      uint64_t shifted_active2 =
+          1ull << (((2 * i + 1) % (64 / sizeof(T))) * sizeof(T));
+      if (p[(2 * i) / (64 / sizeof(T))] & shifted_active1) {
+        if (neg_r) {
+          elt2_a = 0.0 - elt2_a;
+        }
+        addend_r = addend_r + (elt1_a * elt2_a);
+      }
+      if (p[(2 * i + 1) / (64 / sizeof(T))] & shifted_active2) {
+        if (neg_i) {
+          elt2_b = 0.0 - elt2_b;
+        }
+        addend_i = addend_i + (elt1_a * elt2_b);
+      }
+      out[2 * i] = addend_r;
+      out[2 * i + 1] = addend_i;
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `fcvt zd,
    * pg/m, zn`.
    * D represents the destination vector register type (e.g. zd.s would be

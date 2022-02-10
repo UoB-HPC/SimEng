@@ -3562,8 +3562,9 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCMLA_ZPmZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FCMLA_ZPmZZ_D: {  // fcmla zda, pg/m, zn, zm, #imm
+      results[0] =
+          sveHelp::sveFcmlaPredicated<double>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_FCMLA_ZPmZZ_H: {
