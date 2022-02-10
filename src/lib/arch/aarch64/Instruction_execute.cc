@@ -2666,7 +2666,7 @@ void Instruction::execute() {
       // No data-type for quadwords, but as data is just being moved around we
       // can use uint64_t.
       const uint16_t index =
-          static_cast<uint16_t>(metadata.operands[1].vector_index);
+          2 * static_cast<uint16_t>(metadata.operands[1].vector_index);
       const uint64_t* n = operands[0].getAsVector<uint64_t>();
 
       const uint16_t partition_num = VL_bits / 128;
