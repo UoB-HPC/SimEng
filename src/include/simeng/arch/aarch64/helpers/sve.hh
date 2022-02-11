@@ -1088,8 +1088,21 @@ class sveHelp {
     for (int i = 0; i < partition_num; i++) {
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
       if (p[i / (64 / sizeof(T))] & shifted_active) {
-        out[i] = static_cast<T>(
-            (static_cast<TT>(n[i]) * static_cast<TT>(m[i])) >> (sizeof(T) * 8));
+        bool isNeg = false;
+        T a = n[i];
+        T b = m[i];
+        if (a < 0) {
+          isNeg = !isNeg;
+          a = 0 - a;
+        }
+        if (b < 0) {
+          isNeg = !isNeg;
+          b = 0 - b;
+        }
+        TT tmp = (static_cast<TT>(a) * static_cast<TT>(b));
+        if (isNeg) tmp = 0 - tmp;
+
+        out[i] = static_cast<T>(tmp >> (sizeof(T) * 8));
       } else
         out[i] = n[i];
     }
