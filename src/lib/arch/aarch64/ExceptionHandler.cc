@@ -510,6 +510,10 @@ bool ExceptionHandler::init() {
         }
         break;
       }
+      // TODO : as SimEng is single threaded, TID is same as PID.
+      // When SimEng becomes multi-threaded this syscall needs
+      // updating.
+      case 178:  // gettid
       case 172:  // getpid
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getpid()}};
         break;
