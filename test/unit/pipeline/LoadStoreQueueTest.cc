@@ -430,12 +430,20 @@ TEST_P(LoadStoreQueueTest, FlushDuringConfliction) {
   queue.addLoad(loadUopPtr2);
 
   queue.startLoad(loadUopPtr);
+  loadUop->setExecuted(true);
+  loadUop->setCommitReady();
   queue.startLoad(loadUopPtr2);
+  loadUop2->setExecuted(true);
+  loadUop2->setCommitReady();
   queue.purgeFlushed();
 
   queue.supplyStoreData(storeUopPtr);
-  queue.commitStore(storeUopPtr);
+  bool violation = queue.commitStore(storeUopPtr);
 
+  // No violation should have occurred, as the loads have been flushed
+  EXPECT_EQ(violation, false);
+
+  // No read requests as loads have been flushed
   EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
 
   queue.tick();
