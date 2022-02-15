@@ -302,8 +302,24 @@ TEST_P(LoadStoreQueueTest, Violation) {
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses()).Times(AtLeast(1));
 
-  // Execute a load-after-store sequence
-  bool violation = executeRAWSequence(queue);
+  // Set the store operation to come before the load in the program order
+  storeUop->setSequenceId(0);
+  loadUop->setSequenceId(1);
+
+  // First start the load operation before the store to avoid any reordering
+  // confliction detection
+  queue.addLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr);
+  loadUop->setExecuted(true);
+  loadUop->setCommitReady();
+
+  // Complete a store operation that conflicts with the active load
+  queue.addStore(storeUopPtr);
+  queue.supplyStoreData(storeUopPtr);
+  storeUop->setCommitReady();
+
+  // Expect a violation to be detected
+  bool violation = queue.commitStore(storeUopPtr);
 
   EXPECT_EQ(violation, true);
   EXPECT_EQ(queue.getViolatingLoad(), loadUopPtr);
