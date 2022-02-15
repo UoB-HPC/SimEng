@@ -196,10 +196,12 @@ class sveHelp {
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits, bool useImm) {
     bool isFP = std::is_floating_point<T>::value;
-    const auto imm =
-        useImm ? (isFP ? metadata.operands[1].fp
-                       : static_cast<int8_t>(metadata.operands[1].imm))
-               : operands[0].get<T>();
+    T imm;
+    if (useImm)
+      imm = isFP ? metadata.operands[1].fp
+                 : static_cast<int8_t>(metadata.operands[1].imm);
+    else
+      imm = operands[0].get<T>();
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
     T out[256 / sizeof(T)] = {0};
 
