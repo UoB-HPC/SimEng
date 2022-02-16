@@ -267,9 +267,9 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       const uint64_t base = operands[1].get<uint64_t>();
       const uint64_t offset =
-          static_cast<uint64_t>(metadata.operands[2].mem.disp);
+          static_cast<uint64_t>(metadata.operands[3].mem.disp);
       std::vector<MemoryAccessTarget> addresses;
-      addresses.reserve(partition_num);
+      addresses.reserve(partition_num * 2);
 
       uint64_t addr = base + (offset * partition_num * 2 * 8);
 
@@ -292,9 +292,9 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
 
       const uint64_t base = operands[1].get<uint64_t>();
       const uint64_t offset =
-          static_cast<uint64_t>(metadata.operands[2].mem.disp);
+          static_cast<uint64_t>(metadata.operands[4].mem.disp);
       std::vector<MemoryAccessTarget> addresses;
-      addresses.reserve(partition_num);
+      addresses.reserve(partition_num * 3);
 
       uint64_t addr = base + (offset * partition_num * 3 * 8);
 
