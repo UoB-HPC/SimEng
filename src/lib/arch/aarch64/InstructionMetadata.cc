@@ -811,10 +811,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // Single or double digit Z register identifier
       if (tmpOpStr[2] == '.') {
         reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
-        tmpOpStr.erase(0, operandStr.find(",") + 1);
       } else {
         reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
-        tmpOpStr.erase(0, operandStr.find(",") + 2);
       }
 
       operands[0].reg = static_cast<arm64_reg>(reg_enum0);
