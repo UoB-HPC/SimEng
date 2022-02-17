@@ -4489,10 +4489,10 @@ TEST_P(InstSve, ld1w) {
 }
 
 TEST_P(InstSve, ld2d) {
-  initialHeapData_.resize(VL / 2);
+  initialHeapData_.resize(VL);
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
   std::vector<uint64_t> src = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
-  fillHeap<uint64_t>(heap64, src, VL / 16);
+  fillHeap<uint64_t>(heap64, src, VL / 8);
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -4517,10 +4517,8 @@ TEST_P(InstSve, ld2d) {
     ld2d {z6.d, z7.d}, p1/z, [x0, #4, mul vl]
   )");
   int elements = VL / 64;  // DIV 64 as loading double words.
-  int nreg = 2;            // 2 destination registers for ld2d.
-  int mbytes = 64 / 8;     // 64 as loading double words.
 
-  int index = 2 * elements * nreg * mbytes;
+  int index = 2 * elements;
   CHECK_NEON(0, uint64_t,
              fillNeon<uint64_t>({src[index % 4], src[(index + 2) % 4],
                                  src[(index + 4) % 4], src[(index + 6) % 4]},
@@ -4544,7 +4542,7 @@ TEST_P(InstSve, ld2d) {
              fillNeon<uint64_t>(
                  {0x12345678, 0xABCDEF01, 0x12345678, 0xABCDEF01}, VL / 16));
 
-  index = 4 * elements * nreg * mbytes;
+  index = 4 * elements;
   CHECK_NEON(6, uint64_t,
              fillNeon<uint64_t>({src[index % 4], src[(index + 2) % 4],
                                  src[(index + 4) % 4], src[(index + 6) % 4]},
@@ -4556,10 +4554,10 @@ TEST_P(InstSve, ld2d) {
 }
 
 TEST_P(InstSve, ld3d) {
-  initialHeapData_.resize(3 * (VL / 4));
+  initialHeapData_.resize(3 * (VL / 2));
   uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
   std::vector<uint64_t> src = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
-  fillHeap<uint64_t>(heap64, src, 3 * (VL / 32));
+  fillHeap<uint64_t>(heap64, src, 3 * (VL / 16));
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -4567,7 +4565,6 @@ TEST_P(InstSve, ld3d) {
     mov x8, 214
     svc #0
 
-    mov x1, #1
     ptrue p0.d
     # Load and broadcast values from heap
     ld3d {z0.d, z1.d, z2.d}, p0/z, [x0, #3, mul vl]
@@ -4578,16 +4575,13 @@ TEST_P(InstSve, ld3d) {
     mov x3, #16
     addvl x1, x1, #1
     udiv x1, x1, x3
-    mov x2, #0
     whilelo p1.d, xzr, x1
     ld3d {z6.d, z7.d, z8.d}, p1/z, [x0]
     ld3d {z9.d, z10.d, z11.d}, p1/z, [x0, #6, mul vl]
   )");
   int elements = VL / 64;  // DIV 64 as loading double words.
-  int nreg = 3;            // 3 destination registers for ld3d.
-  int mbytes = 64 / 8;     // 64 as loading double words.
 
-  int index = 3 * elements * nreg * mbytes;
+  int index = 3 * elements;
   CHECK_NEON(0, uint64_t,
              fillNeon<uint64_t>({src[index % 4], src[(index + 3) % 4],
                                  src[(index + 6) % 4], src[(index + 9) % 4]},
@@ -4621,7 +4615,7 @@ TEST_P(InstSve, ld3d) {
              fillNeon<uint64_t>(
                  {0x98765432, 0x12345678, 0xDEADBEEF, 0xABCDEF01}, VL / 16));
 
-  index = 6 * elements * nreg * mbytes;
+  index = 6 * elements;
   CHECK_NEON(9, uint64_t,
              fillNeon<uint64_t>({src[index % 4], src[(index + 3) % 4],
                                  src[(index + 6) % 4], src[(index + 9) % 4]},
@@ -5769,7 +5763,7 @@ TEST_P(InstSve, st2d) {
               4);
   }
 
-  int index = 4 * (VL / 64) * 2 * 8;
+  int index = 4 * (VL / 64) * 8;
   for (int i = 0; i < (VL / 128); i++) {
     EXPECT_EQ(getMemoryValue<uint64_t>(300 + index + (2 * i * 8)), 5);
     EXPECT_EQ(getMemoryValue<uint64_t>(300 + index + (2 * i * 8) + 8), 6);
