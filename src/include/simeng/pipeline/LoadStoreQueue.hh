@@ -156,7 +156,7 @@ class LoadStoreQueue {
       uint64_t,
       std::unordered_map<
           uint64_t,
-          std::vector<std::pair<std::shared_ptr<Instruction>, const uint16_t>>>>
+          std::vector<std::pair<std::shared_ptr<Instruction>, uint16_t>>>>
       conflictionMap_;
 
   /** A ready to hold memory requests. */
