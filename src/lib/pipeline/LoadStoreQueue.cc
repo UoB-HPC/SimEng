@@ -105,7 +105,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
       uint64_t seqId = insn->getSequenceId();
       for (auto itSt = storeQueue_.rbegin(); itSt != storeQueue_.rend();
            itSt++) {
-        auto& store = itSt->first;
+        const auto& store = itSt->first;
         // If entry is earlier in the program order than load, detect conflicts
         if (store->getSequenceId() < seqId) {
           const auto& str_addresses = store->getGeneratedAddresses();
@@ -117,7 +117,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
               // load request(s) until conflicting store retires
               if (itLd->address == str.address) {
                 conflictionMap_[store->getSequenceId()][str.address].push_back(
-                    insn);
+                    {insn, itLd->size});
                 // Remove from temporary vector so the confliction can't be
                 // registered again
                 temp_load_addr.erase(itLd);
@@ -136,8 +136,8 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
       for (size_t i = 0; i < temp_load_addr.size(); i++) {
         requestQueue_.back().reqAddresses.push(temp_load_addr[i]);
       }
-      requestedLoads_.emplace(insn->getSequenceId(), insn);
     }
+    requestedLoads_.emplace(insn->getSequenceId(), insn);
   }
 }
 
@@ -188,8 +188,10 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
     for (size_t i = 0; i < addresses.size(); i++) {
       const auto& itAddr = itSt->second.find(addresses[i].address);
       if (itAddr != itSt->second.end()) {
-        for (const auto& load : itAddr->second) {
-          load->supplyData(addresses[i].address, data[i]);
+        for (const auto& pair : itAddr->second) {
+          const auto& load = pair.first;
+          load->supplyData(addresses[i].address,
+                           data[i].zeroExtend(pair.second, pair.second));
           if (load->hasAllData()) {
             // This load has completed
             load->execute();
@@ -242,7 +244,7 @@ void LoadStoreQueue::commitLoad(const std::shared_ptr<Instruction>& uop) {
 
   auto it = loadQueue_.begin();
   while (it != loadQueue_.end()) {
-    auto& entry = *it;
+    const auto& entry = *it;
     if (entry->isLoad()) {
       requestedLoads_.erase(entry->getSequenceId());
       it = loadQueue_.erase(it);
@@ -257,7 +259,7 @@ void LoadStoreQueue::purgeFlushed() {
   // Remove flushed loads from load queue
   auto itLd = loadQueue_.begin();
   while (itLd != loadQueue_.end()) {
-    auto& entry = *itLd;
+    const auto& entry = *itLd;
     if (entry->isFlushed()) {
       requestedLoads_.erase(entry->getSequenceId());
       itLd = loadQueue_.erase(itLd);
@@ -270,7 +272,7 @@ void LoadStoreQueue::purgeFlushed() {
   // exists
   auto itSt = storeQueue_.begin();
   while (itSt != storeQueue_.end()) {
-    auto& entry = itSt->first;
+    const auto& entry = itSt->first;
     if (entry->isFlushed()) {
       conflictionMap_.erase(entry->getSequenceId());
       itSt = storeQueue_.erase(itSt);
@@ -286,12 +288,12 @@ void LoadStoreQueue::purgeFlushed() {
     for (auto itAddr = itCnflct->second.begin();
          itAddr != itCnflct->second.end(); itAddr++) {
       // Iterate over vector of instructions conflicting with store address
-      auto load = itAddr->second.begin();
-      while (load != itAddr->second.end()) {
-        if (load->get()->isFlushed()) {
-          load = itAddr->second.erase(load);
+      auto pair = itAddr->second.begin();
+      while (pair != itAddr->second.end()) {
+        if (pair->first->isFlushed()) {
+          pair = itAddr->second.erase(pair);
         } else {
-          load++;
+          pair++;
         }
       }
     }
@@ -365,19 +367,19 @@ void LoadStoreQueue::tick() {
 
   // Process completed read requests
   for (const auto& response : memory_.getCompletedReads()) {
-    auto address = response.target.address;
+    const auto& address = response.target.address;
     const auto& data = response.data;
 
     // TODO: Detect and handle non-fatal faults (e.g. page fault)
 
     // Find instruction that requested the memory read
-    auto itr = requestedLoads_.find(response.requestId);
+    const auto& itr = requestedLoads_.find(response.requestId);
     if (itr == requestedLoads_.end()) {
       continue;
     }
 
     // Supply data to the instruction and execute if it is ready
-    auto load = itr->second;
+    const auto& load = itr->second;
     load->supplyData(address, data);
     if (load->hasAllData()) {
       // This load has completed
