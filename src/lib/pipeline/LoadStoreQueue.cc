@@ -95,7 +95,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     completedLoads_.push(insn);
   } else {
     // Store load addresses in vector temporarily so that conflictions are
-    // only regsitered once on oldest (program order) store
+    // only regsitered once on most recent (program order) store
     std::vector<simeng::MemoryAccessTarget> temp_load_addr;
     for (const auto& ld : ld_addresses) {
       temp_load_addr.push_back(ld);
