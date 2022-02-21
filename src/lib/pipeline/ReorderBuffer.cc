@@ -54,6 +54,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     if (uop->isStore()) {
       bool violationFound = lsq_.commitStore(uop);
       if (violationFound) {
+        loadViolations_++;
         // Memory order violation found; aborting commits and flushing
         auto load = lsq_.getViolatingLoad();
         shouldFlush_ = true;
@@ -103,6 +104,10 @@ uint64_t ReorderBuffer::getFlushSeqId() const { return flushAfter_; }
 
 uint64_t ReorderBuffer::getInstructionsCommittedCount() const {
   return instructionsCommitted_;
+}
+
+uint64_t ReorderBuffer::getViolatingLoadsCount() const {
+  return loadViolations_;
 }
 
 }  // namespace pipeline
