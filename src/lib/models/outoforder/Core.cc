@@ -408,7 +408,9 @@ std::map<std::string, std::string> Core::getStats() const {
           {"issue.portBusyStalls", std::to_string(portBusyStalls)},
           {"branch.executed", std::to_string(totalBranchesExecuted)},
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()}};
+          {"branch.missrate", branchMissRateStr.str()},
+          {"lsq.loadViolations",
+           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
 }
 
 }  // namespace outoforder
