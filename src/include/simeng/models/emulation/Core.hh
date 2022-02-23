@@ -44,6 +44,10 @@ class Core : public simeng::Core {
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
+  /** Change the value of the ARM64_SYSREG_CNTVCT_EL0 system register to number
+   * of cycles completed.*/
+  void incCNTVCT(int iterations) override;
+
  private:
   /** Execute an instruction. */
   void execute(std::shared_ptr<Instruction>& uop);
@@ -105,6 +109,9 @@ class Core : public simeng::Core {
 
   /** The number of branches executed. */
   uint64_t branchesExecuted_ = 0;
+
+  // system register tag.
+  uint16_t CNTVCTreg_ = 0;
 };
 
 }  // namespace emulation

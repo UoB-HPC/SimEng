@@ -27,6 +27,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
+
+  // Get CNTVCT system register tag
+  CNTVCTreg_ = isa_.getSystemRegisterTag((uint16_t)ARM64_SYSREG_CNTVCT_EL0);
 }
 
 void Core::tick() {
@@ -274,6 +277,13 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
     dataMemory_.requestWrite(change.memoryAddresses[i],
                              change.memoryAddressValues[i]);
   }
+}
+
+void Core::incCNTVCT(int iterations) {
+  /* TODO: CNTVCT value should be equal to the physical count value minus
+   * the virtual offset visible in CNTVOFF. */
+  registerFileSet_.set({4, CNTVCTreg_}, iterations);
+  return;
 }
 
 bool Core::hasHalted() const { return hasHalted_; }

@@ -37,6 +37,7 @@ int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
     // Tick the core
     core.tick();
+    core.incCNTVCT(iterations);
 
     // Tick memory
     instructionMemory.tick();

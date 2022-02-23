@@ -33,6 +33,10 @@ class Core {
 
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;
+
+  /** Change the value of the ARM64_SYSREG_CNTVCT_EL0 system register to number
+   * of cycles completed.*/
+  virtual void incCNTVCT(int iterations) = 0;
 };
 
 }  // namespace simeng
