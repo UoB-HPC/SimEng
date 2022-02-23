@@ -10201,8 +10201,9 @@ void Instruction::execute() {
       results[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
       break;
     }
-    case Opcode::AArch64_LDURSi: {
-      return executionNYI();
+    case Opcode::AArch64_LDURSi: {  // ldur sd, [<xn|sp>{, #imm}]
+      // LOAD
+      results[0] = {memoryData[0].get<float>(), 256};
       break;
     }
     case Opcode::AArch64_LDURWi: {  // ldur wt, [xn, #imm]
