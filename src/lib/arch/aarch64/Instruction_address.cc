@@ -824,7 +824,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       for (int i = 0; i < partition_num; i++) {
         uint64_t shifted_active = 1ull << ((i % 8) * 8);
         if (p[i / 8] & shifted_active) {
-          uint64_t addr = base + (offset[i] << 3);
+          uint64_t addr = base + (offset[i] * partition_num * 8);
           addresses.push_back({addr, 8});
         }
       }
