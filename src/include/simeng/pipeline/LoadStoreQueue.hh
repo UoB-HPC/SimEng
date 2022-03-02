@@ -2,6 +2,7 @@
 
 #include <deque>
 #include <functional>
+#include <map>
 #include <queue>
 #include <unordered_map>
 
@@ -15,7 +16,6 @@ namespace pipeline {
 /** A requestQueue_ entry. */
 struct requestEntry {
   /** When the memory to be accessed by this entry is ready to be requested. */
-  uint64_t readyAt;
 
   /** The memory address(es) to be accessed. */
   std::queue<const simeng::MemoryAccessTarget> reqAddresses;
@@ -159,8 +159,11 @@ class LoadStoreQueue {
           std::vector<std::pair<std::shared_ptr<Instruction>, uint16_t>>>>
       conflictionMap_;
 
-  /** A ready to hold memory requests. */
-  std::deque<requestEntry> requestQueue_;
+  /** A map between LSQ cycles and load requests ready on that cycle. */
+  std::map<uint64_t, std::deque<requestEntry>> requestLoadQueue_;
+
+  /** A map between LSQ cycles and store requests ready on that cycle. */
+  std::map<uint64_t, std::deque<requestEntry>> requestStoreQueue_;
 
   /** A queue of completed loads ready for writeback. */
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
@@ -172,7 +175,11 @@ class LoadStoreQueue {
   uint8_t totalLimit_;
 
   /** The number of loads and stores permitted per cycle. */
-  std::vector<uint8_t> reqLimits_;
+  std::array<uint8_t, 2> reqLimits_;
+
+  /** Mapping between indexes of reqLimits_ and request type. */
+  uint8_t LOAD_INDEX = 0;
+  uint8_t STORE_INDEX = 1;
 };
 
 }  // namespace pipeline
