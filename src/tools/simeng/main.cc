@@ -33,11 +33,17 @@ enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
              simeng::MemoryInterface& dataMemory) {
   int iterations = 0;
+  int timerCount = 0;
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
     // Tick the core
     core.tick();
-    core.incCNTVCT(iterations);
+    // Assume timer frequency of 100Mhz (Core freq. = 2.5Ghz)
+    // (2.5 x 1e9) / (100 x 1e6) = Once per 25 ticks
+    if (iterations % 25 == 0) {
+      timerCount += 1;
+      core.incCNTVCT(timerCount);
+    }
 
     // Tick memory
     instructionMemory.tick();
