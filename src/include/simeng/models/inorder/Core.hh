@@ -47,7 +47,7 @@ class Core : public simeng::Core {
 
   /** Change the value of the ARM64_SYSREG_CNTVCT_EL0 system register to number
    * of cycles completed.*/
-  void incCNTVCT(int iterations) override;
+  void incCNTVCT(uint64_t iterations) override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
