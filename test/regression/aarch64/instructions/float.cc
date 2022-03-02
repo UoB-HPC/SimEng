@@ -1028,6 +1028,30 @@ TEST_P(InstFloat, fnmsub) {
   CHECK_NEON(4, double, {-2.9375, 0.0});
 }
 
+TEST_P(InstFloat, fnmadd) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fmov s2, 7.5
+    fnmadd s3, s0, s1, s2
+    fnmadd s4, s1, s2, s0
+  )");
+  CHECK_NEON(3, float, {-7.25f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {-1.0625f, 0.f, 0.f, 0.f});
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 7.5
+    fnmadd d3, d0, d1, d2
+    fnmadd d4, d1, d2, d0
+  )");
+  CHECK_NEON(3, double, {-7.25, 0.0});
+  CHECK_NEON(4, double, {-1.0625, 0.0});
+}
+
 TEST_P(InstFloat, fnmul) {
   // 64-bit
   RUN_AARCH64(R"(

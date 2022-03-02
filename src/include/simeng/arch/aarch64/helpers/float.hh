@@ -108,6 +108,19 @@ class floatHelp {
     T a = operands[2].get<T>();
     return {std::fma(n, m, -a), 256};
   }
+
+  /** Helper function for NEON instructions with the format `fnmadd rd, rn, rm,
+   * ra`.
+   * T represents the type of operands (e.g. for sd T = float).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue fnmadd_4ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    T n = operands[0].get<T>();
+    T m = operands[1].get<T>();
+    T a = operands[2].get<T>();
+    return {std::fma(-n, m, -a), 256};
+  }
 };
 }  // namespace aarch64
 }  // namespace arch

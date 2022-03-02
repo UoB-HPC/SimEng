@@ -5744,16 +5744,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNMADDDrrr: {
-      return executionNYI();
+    case Opcode::AArch64_FNMADDDrrr: {  // fnmadd dd, dn, dm, da
+      results[0] = floatHelp::fnmadd_4ops<double>(operands);
       break;
     }
     case Opcode::AArch64_FNMADDHrrr: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FNMADDSrrr: {
-      return executionNYI();
+    case Opcode::AArch64_FNMADDSrrr: {  // fnmadd sd, sn, sm, sa
+      results[0] = floatHelp::fnmadd_4ops<float>(operands);
       break;
     }
     case Opcode::AArch64_FNMAD_ZPmZZ_D: {
