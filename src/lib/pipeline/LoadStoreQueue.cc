@@ -139,8 +139,8 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
             .back()
             .reqAddresses.push(temp_load_addr[i]);
       }
+      requestedLoads_.emplace(insn->getSequenceId(), insn);
     }
-    requestedLoads_.emplace(insn->getSequenceId(), insn);
   }
 }
 
@@ -187,30 +187,6 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
         .reqAddresses.push(addresses[i]);
   }
 
-  // Resolve any conflicts caused by this store instruction
-  const auto& itSt = conflictionMap_.find(uop->getSequenceId());
-  if (itSt != conflictionMap_.end()) {
-    for (size_t i = 0; i < addresses.size(); i++) {
-      const auto& itAddr = itSt->second.find(addresses[i].address);
-      if (itAddr != itSt->second.end()) {
-        for (const auto& pair : itAddr->second) {
-          const auto& load = pair.first;
-          load->supplyData(addresses[i].address,
-                           data[i].zeroExtend(pair.second, pair.second));
-          if (load->hasAllData()) {
-            // This load has completed
-            load->execute();
-            if (load->isStore()) {
-              supplyStoreData(load);
-            }
-            completedLoads_.push(load);
-          }
-        }
-      }
-    }
-    conflictionMap_.erase(itSt);
-  }
-
   // Check all loads that have requested memory
   violatingLoad_ = nullptr;
   for (const auto& load : requestedLoads_) {
@@ -233,6 +209,33 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
         }
       }
     }
+  }
+
+  // Resolve any conflicts caused by this store instruction
+  const auto& itSt = conflictionMap_.find(uop->getSequenceId());
+  if (itSt != conflictionMap_.end()) {
+    for (size_t i = 0; i < addresses.size(); i++) {
+      const auto& itAddr = itSt->second.find(addresses[i].address);
+      if (itAddr != itSt->second.end()) {
+        for (const auto& pair : itAddr->second) {
+          const auto& load = pair.first;
+          load->supplyData(addresses[i].address,
+                           data[i].zeroExtend(pair.second, pair.second));
+          if (load->hasAllData()) {
+            // This load has completed
+            load->execute();
+            if (load->isStore()) {
+              supplyStoreData(load);
+            }
+            completedLoads_.push(load);
+            // Place completed load entry in requestedLoads_ so that it can
+            // still be flushed if incorrectly speculated
+            requestedLoads_.emplace(load->getSequenceId(), load);
+          }
+        }
+      }
+    }
+    conflictionMap_.erase(itSt);
   }
 
   storeQueue_.pop_front();
