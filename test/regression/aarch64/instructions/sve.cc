@@ -6215,6 +6215,80 @@ TEST_P(InstSve, sxtw) {
                                        {0xF}, VL / 8));
 }
 
+TEST_P(InstSve, trn2) {
+  // 8-bit
+  RUN_AARCH64(R"(
+    index z0.b, #0, #1
+    index z1.b, #10, #1
+
+    trn2 z2.b, z0.b, z1.b
+  )");
+  std::vector<uint8_t> result8;
+  int i1 = 1;
+  int i2 = 11;
+  for (int i = 0; i < VL / 16; i++) {
+    result8.push_back(i1);
+    result8.push_back(i2);
+    i1 += 2;
+    i2 += 2;
+  }
+  CHECK_NEON(2, uint8_t, fillNeon<uint8_t>(result8, VL / 8));
+
+  // 16-bit
+  RUN_AARCH64(R"(
+    index z0.h, #0, #1
+    index z1.h, #10, #1
+
+    trn2 z2.h, z0.h, z1.h
+  )");
+  std::vector<uint16_t> result16;
+  i1 = 1;
+  i2 = 11;
+  for (int i = 0; i < VL / 32; i++) {
+    result16.push_back(i1);
+    result16.push_back(i2);
+    i1 += 2;
+    i2 += 2;
+  }
+  CHECK_NEON(2, uint16_t, fillNeon<uint16_t>(result16, VL / 8));
+
+  // 32-bit
+  RUN_AARCH64(R"(
+    index z0.s, #0, #1
+    index z1.s, #10, #1
+
+    trn2 z2.s, z0.s, z1.s
+  )");
+  std::vector<uint32_t> result32;
+  i1 = 1;
+  i2 = 11;
+  for (int i = 0; i < VL / 64; i++) {
+    result32.push_back(i1);
+    result32.push_back(i2);
+    i1 += 2;
+    i2 += 2;
+  }
+  CHECK_NEON(2, uint32_t, fillNeon<uint32_t>(result32, VL / 8));
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    index z0.d, #0, #1
+    index z1.d, #10, #1
+
+    trn2 z2.d, z0.d, z1.d
+  )");
+  std::vector<uint64_t> result64;
+  i1 = 1;
+  i2 = 11;
+  for (int i = 0; i < VL / 128; i++) {
+    result64.push_back(i1);
+    result64.push_back(i2);
+    i1 += 2;
+    i2 += 2;
+  }
+  CHECK_NEON(2, uint64_t, fillNeon<uint64_t>(result64, VL / 8));
+}
+
 TEST_P(InstSve, uaddv) {
   // 8-bit
   RUN_AARCH64(R"(

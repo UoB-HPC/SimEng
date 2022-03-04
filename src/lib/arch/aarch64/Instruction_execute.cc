@@ -16602,20 +16602,20 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_TRN2_ZZZ_B: {
-      return executionNYI();
+    case Opcode::AArch64_TRN2_ZZZ_B: {  // trn2 zd.b, zn.b, zm.b
+      results[0] = sveHelp::sveTrn2_3vecs<uint8_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_TRN2_ZZZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_TRN2_ZZZ_D: {  // trn2 zd.d, zn.d, zm.d
+      results[0] = sveHelp::sveTrn2_3vecs<uint64_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_TRN2_ZZZ_H: {
-      return executionNYI();
+    case Opcode::AArch64_TRN2_ZZZ_H: {  // trn2 zd.h, zn.h, zm.h
+      results[0] = sveHelp::sveTrn2_3vecs<uint16_t>(operands, VL_bits);
       break;
     }
-    case Opcode::AArch64_TRN2_ZZZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_TRN2_ZZZ_S: {  // trn2 zd.s, zn.s, zm.s
+      results[0] = sveHelp::sveTrn2_3vecs<uint32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_TRN2v16i8: {
