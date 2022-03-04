@@ -279,7 +279,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
   }
 }
 
-void Core::incCNTVCT(int iterations) {
+void Core::incCNTVCT(uint64_t iterations) {
   /* TODO: CNTVCT value should be equal to the physical count value minus
    * the virtual offset visible in CNTVOFF. */
   registerFileSet_.set({4, CNTVCTreg_}, iterations);
