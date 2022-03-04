@@ -258,6 +258,55 @@ class AuxFunc {
   static uint8_t nzcv(bool n, bool z, bool c, bool v) {
     return (n << 3) | (z << 2) | (c << 1) | v;
   }
+
+  /** Decode the instruction pattern from OperandStr. */
+  static uint16_t sveGetPattern(const std::string operandStr,
+                                const uint8_t esize, const uint16_t VL_) {
+    const uint16_t elements = VL_ / esize;
+    // If not pattern then same as ALL
+    if (operandStr.find(",") == std::string::npos) return elements;
+
+    // Get pattern string
+    std::string pattern(operandStr.substr(operandStr.find(",") + 2));
+    if (pattern == "pow2") {
+      int n = 1;
+      while (elements >= std::pow(2, n)) {
+        n = n + 1;
+      }
+      return std::pow(2, n - 1);
+    } else if (pattern == "vl1")
+      return (elements >= 1) ? 1 : 0;
+    else if (pattern == "vl2")
+      return (elements >= 2) ? 2 : 0;
+    else if (pattern == "vl3")
+      return (elements >= 3) ? 3 : 0;
+    else if (pattern == "vl4")
+      return (elements >= 4) ? 4 : 0;
+    else if (pattern == "vl5")
+      return (elements >= 5) ? 5 : 0;
+    else if (pattern == "vl6")
+      return (elements >= 6) ? 6 : 0;
+    else if (pattern == "vl7")
+      return (elements >= 7) ? 7 : 0;
+    else if (pattern == "vl8")
+      return (elements >= 8) ? 8 : 0;
+    else if (pattern == "vl16")
+      return (elements >= 16) ? 16 : 0;
+    else if (pattern == "vl32")
+      return (elements >= 32) ? 32 : 0;
+    else if (pattern == "vl64")
+      return (elements >= 64) ? 64 : 0;
+    else if (pattern == "vl128")
+      return (elements >= 128) ? 128 : 0;
+    else if (pattern == "vl256")
+      return (elements >= 256) ? 256 : 0;
+    else if (pattern == "mul4")
+      return elements - (elements % 4);
+    else if (pattern == "mul3")
+      return elements - (elements % 3);
+
+    return 0;
+  }
 };
 }  // namespace aarch64
 }  // namespace arch

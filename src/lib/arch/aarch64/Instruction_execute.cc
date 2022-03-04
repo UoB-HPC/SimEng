@@ -11391,19 +11391,19 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_PTRUE_B: {  // ptrue pd.b{, pattern}
-      results[0] = sveHelp::svePtrue<uint8_t>(VL_bits);
+      results[0] = sveHelp::svePtrue<uint8_t>(metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_PTRUE_D: {  // ptrue pd.d{, pattern}
-      results[0] = sveHelp::svePtrue<uint64_t>(VL_bits);
+      results[0] = sveHelp::svePtrue<uint64_t>(metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_PTRUE_H: {  // ptrue pd.h{, pattern}
-      results[0] = sveHelp::svePtrue<uint16_t>(VL_bits);
+      results[0] = sveHelp::svePtrue<uint16_t>(metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_PTRUE_S: {  // ptrue pd.s{, pattern}
-      results[0] = sveHelp::svePtrue<uint32_t>(VL_bits);
+      results[0] = sveHelp::svePtrue<uint32_t>(metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_PUNPKHI_PP: {  // punpkhi pd.h, pn.b
