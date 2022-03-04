@@ -4046,6 +4046,68 @@ TEST_P(InstSve, incp) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(12), 375 + (VL / 128));
 }
 
+TEST_P(InstSve, fsubr) {
+  // float
+  initialHeapData_.resize(VL / 8);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  std::vector<float> fsrcA = {1.0f,   -42.76f,  -0.125f, 0.0f,
+                              40.26f, -684.72f, -0.15f,  107.86f};
+  std::vector<float> fsrcB = {-34.71f,  -0.917f, 0.0f,    80.72f,
+                              -125.67f, -0.01f,  701.90f, 7.0f};
+  fillHeapCombined<float>(fheap, fsrcA, fsrcB, VL / 32);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+    whilelo p0.s, xzr, x2
+    ptrue p1.s
+
+    ld1w {z1.s}, p0/z, [x0, x2, lsl #2]
+    ld1w {z4.s}, p1/z, [x0, x1, lsl #2]
+    
+    fsubr z4.s, p0/m, z4.s, z1.s
+  )");
+  std::vector<float> fresultsB = {-35.71f,        41.843f,  0.125f,
+                                  80.72f,         -165.93f, 684.709960938f,
+                                  702.050048828f, -100.86f};
+  CHECK_NEON(4, float, fillNeonCombined<float>(fresultsB, fsrcB, VL / 8));
+
+  // double
+  initialHeapData_.resize(VL / 8);
+  double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
+  std::vector<double> dsrcA = {1.0, -42.76, -0.125, 0.0};
+  std::vector<double> dsrcB = {-34.71, -0.917, 0.0, 80.72};
+  fillHeapCombined<double>(dheap, dsrcA, dsrcB, VL / 64);
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #16
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+    whilelo p0.d, xzr, x2
+    ptrue p1.d
+
+    ld1d {z1.d}, p0/z, [x0, x2, lsl #3]
+    ld1d {z3.d}, p1/z, [x0, x1, lsl #3]
+    
+    fsubr z3.d, p0/m, z3.d, z1.d
+  )");
+  std::vector<double> dresultsB = {-35.71, 41.842999999999996, 0.125, 80.72};
+  CHECK_NEON(3, double, fillNeonCombined<double>(dresultsB, dsrcB, VL / 8));
+}
+
 TEST_P(InstSve, index) {
   // Immediate, Immediate
   RUN_AARCH64(R"(

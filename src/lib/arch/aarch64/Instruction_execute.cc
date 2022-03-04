@@ -6417,16 +6417,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSUBR_ZPmZ_D: {
-      return executionNYI();
+    case Opcode::AArch64_FSUBR_ZPmZ_D: {  // fsubr zdn.d, pg/m, zdn.d, zm.d
+      results[0] = sveHelp::sveSubrPredicated_3vecs<double>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FSUBR_ZPmZ_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FSUBR_ZPmZ_S: {
-      return executionNYI();
+    case Opcode::AArch64_FSUBR_ZPmZ_S: {  // fsubr zdn.s, pg/m, zdn.s, zm.s
+      results[0] = sveHelp::sveSubrPredicated_3vecs<float>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_FSUBSrr: {  // fsub ss, sn, sm
