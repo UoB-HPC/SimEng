@@ -388,6 +388,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_SMINV_VPZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_TRN2_ZZZ_B:
+      [[fallthrough]];
+    case Opcode::AArch64_TRN2_ZZZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_TRN2_ZZZ_H:
+      [[fallthrough]];
+    case Opcode::AArch64_TRN2_ZZZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_UZP1_ZZZ_S:
       // No defined access types
       operands[0].access = CS_AC_WRITE;
