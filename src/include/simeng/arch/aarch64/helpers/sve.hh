@@ -1286,6 +1286,32 @@ class sveHelp {
   }
 
   /** Helper function for SVE instructions with the format `Sub zdn, pg/m, zdn,
+   * zm`.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveSubrPredicated_3vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* dn = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i] = m[i] - dn[i];
+      } else {
+        out[i] = dn[i];
+      }
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `Sub zdn, pg/m, zdn,
    * #imm`.
    * T represents the type of operands (e.g. for zdn.d, T = uint64_t).
    * Returns correctly formatted RegisterValue. */
