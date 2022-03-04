@@ -16543,19 +16543,19 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_TRN1_ZZZ_B: {
-      return executionNYI();
+      results[0] = sveHelp::sveTrn1_3vecs<uint8_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_TRN1_ZZZ_D: {
-      return executionNYI();
+      results[0] = sveHelp::sveTrn1_3vecs<uint64_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_TRN1_ZZZ_H: {
-      return executionNYI();
+      results[0] = sveHelp::sveTrn1_3vecs<uint16_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_TRN1_ZZZ_S: {
-      return executionNYI();
+      results[0] = sveHelp::sveTrn1_3vecs<uint32_t>(operands, VL_bits);
       break;
     }
     case Opcode::AArch64_TRN1v16i8: {
