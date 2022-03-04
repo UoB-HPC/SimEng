@@ -15,8 +15,6 @@ namespace pipeline {
 
 /** A requestQueue_ entry. */
 struct requestEntry {
-  /** When the memory to be accessed by this entry is ready to be requested. */
-
   /** The memory address(es) to be accessed. */
   std::queue<const simeng::MemoryAccessTarget> reqAddresses;
 
