@@ -5357,7 +5357,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::AArch64_FMLSv2i64_indexed: {
-      return executionNYI();
+      results[0] =
+          neonHelp::vecFmlsIndexed_3vecs<double, 2>(operands, metadata);
       break;
     }
     case Opcode::AArch64_FMLSv4f16: {
