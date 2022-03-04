@@ -1420,9 +1420,13 @@ TEST_P(InstNeon, fmls) {
     ldr q0, [x0]
     ldr q1, [x0, #16]
     ldr q2, [x0, #32]
+    mov x1, #0
+    dup v3.2d, x1
     fmls v2.2d, v0.2d, v1.2d
+    fmls v3.2d, v0.2d, v2.d[0]
   )");
   CHECK_NEON(2, double, {25.348, -0.1});
+  CHECK_NEON(3, double, {86.1832, 0.0});
 }
 
 TEST_P(InstNeon, fmaxnm) {
