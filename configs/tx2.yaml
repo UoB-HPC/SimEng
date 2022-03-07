@@ -4,7 +4,10 @@
 
 Core:
   Simulation-Mode: outoforder
+  # Clock Frequency is in GHz.
   Clock-Frequency: 2.5
+  # Timer-Frequency is in MHz.
+  Timer-Frequency: 200
   Fetch-Block-Size: 32
 Process-Image:
   Heap-Size: 1073741824
