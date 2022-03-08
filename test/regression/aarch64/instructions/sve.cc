@@ -5229,8 +5229,8 @@ TEST_P(InstSve, scvtf) {
   // Double
   initialHeapData_.resize(16);
   int64_t* dheap = reinterpret_cast<int64_t*>(initialHeapData_.data());
-  dheap[0] = INT64_MAX;
-  dheap[1] = INT64_MIN;
+  dheap[0] = std::numeric_limits<int64_t>::max();
+  dheap[1] = std::numeric_limits<int64_t>::lowest();
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -5259,16 +5259,23 @@ TEST_P(InstSve, scvtf) {
     scvtf z4.s, p0/m, z0.d
     scvtf z5.s, p1/m, z1.d
   )");
-  CHECK_NEON(2, double,
-             fillNeon<double>({static_cast<double>(INT64_MAX)}, VL / 8));
+  CHECK_NEON(
+      2, double,
+      fillNeon<double>(
+          {static_cast<double>(std::numeric_limits<int64_t>::max())}, VL / 8));
   CHECK_NEON(3, double,
-             fillNeonCombined<double>({static_cast<double>(INT64_MIN)},
-                                      {static_cast<double>(0)}, VL / 8));
+             fillNeonCombined<double>(
+                 {static_cast<double>(std::numeric_limits<int64_t>::lowest())},
+                 {static_cast<double>(0)}, VL / 8));
   CHECK_NEON(4, float,
-             fillNeon<float>({static_cast<float>(INT64_MAX), 0}, VL / 8));
-  CHECK_NEON(5, float,
-             fillNeonCombined<float>({static_cast<float>(INT64_MIN), 0},
-                                     {static_cast<float>(0)}, VL / 8));
+             fillNeon<float>(
+                 {static_cast<float>(std::numeric_limits<int64_t>::max()), 0},
+                 VL / 8));
+  CHECK_NEON(
+      5, float,
+      fillNeonCombined<float>(
+          {static_cast<float>(std::numeric_limits<int64_t>::lowest()), 0},
+          {static_cast<float>(0)}, VL / 8));
 
   // Single
   initialHeapData_.resize(8);
