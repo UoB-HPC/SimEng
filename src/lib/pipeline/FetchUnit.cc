@@ -180,25 +180,17 @@ void FetchUnit::tick() {
            "Predecode consumed more bytes than were available");
 
     // Create map element for new fetch
-    if (disasm != "") {
-      for (int uop = 0; uop < macroOp.size(); uop++) {
-        macroOp[uop]->setTraceId(traceId);
-        const uint32_t insn =
-            *static_cast<const uint32_t*>((void*)(buffer + bufferOffset));
-        fetchTrace newFetch = {trace_cycle, insn, pc_, uop, disasm};
-        cycleTrace newCycleTrace = {newFetch, 0, 0, 0, 0, 0, 0};
-        Trace* newTrace = new Trace;
-        newTrace->setCycleTraces(newCycleTrace);
-        traceMap.insert({macroOp[uop]->getTraceId(), newTrace});
-        // Denote id has been assigned/used
-        traceId++;
-      }
-    } else {
-      for (size_t uop = 0; uop < macroOp.size(); uop++) {
-        // Denote id has been assigned/used
-        macroOp[uop]->setTraceId(traceId);
-        // traceId++;
-      }
+    for (int uop = 0; uop < macroOp.size(); uop++) {
+      macroOp[uop]->setTraceId(traceId);
+      const uint32_t insn =
+          *static_cast<const uint32_t*>((void*)(buffer + bufferOffset));
+      fetchTrace newFetch = {trace_cycle, insn, pc_, uop, disasm};
+      cycleTrace newCycleTrace = {newFetch, 0, 0, 0, 0, 0, 0};
+      Trace* newTrace = new Trace;
+      newTrace->setCycleTraces(newCycleTrace);
+      traceMap.insert({macroOp[uop]->getTraceId(), newTrace});
+      // Denote id has been assigned/used
+      traceId++;
     }
 
     // Increment the offset, decrement available bytes
