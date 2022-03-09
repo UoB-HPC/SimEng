@@ -650,7 +650,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_GLD1D_SCALED_REAL:
       [[fallthrough]];
     case Opcode::AArch64_GLD1D_REAL: {
-      operandCount = 4;
       // LD1D gather instruction doesn't correctly identify destination
       // register
       uint16_t reg_enum = ARM64_REG_Z0;
@@ -668,8 +667,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // LD1D gather instruction doesn't correctly identify memory operands
       operands[2].type = ARM64_OP_MEM;
       operands[2].access = CS_AC_READ;
-      operands[3].type = ARM64_OP_MEM;
-      operands[3].access = CS_AC_READ;
 
       // LD1D doesn't correctly identify vector memory register correctly
       uint16_t vec_enum = ARM64_REG_Z0;
@@ -680,7 +677,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       } else {
         vec_enum += std::stoi(tmp_str.substr(tmp_str.find("z") + 1, 2));
       }
-      operands[3].reg = static_cast<arm64_reg>(vec_enum);
+      operands[2].mem.index = static_cast<arm64_reg>(vec_enum);
       break;
     }
     case Opcode::AArch64_GLD1SW_D_IMM_REAL:
@@ -986,7 +983,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_SST1D:
       [[fallthrough]];
     case Opcode::AArch64_SST1D_SCALED: {
-      operandCount = 4;
       // ST1W doesn't correctly identify first source register
       uint16_t reg_enum = ARM64_REG_Z0;
       // Single or double digit Z register identifier
@@ -1004,8 +1000,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // operands
       operands[2].type = ARM64_OP_MEM;
       operands[2].access = CS_AC_READ;
-      operands[3].type = ARM64_OP_MEM;
-      operands[3].access = CS_AC_READ;
 
       // ST1D doesn't correctly identify vector memory register correctly
       uint16_t vec_enum = ARM64_REG_Z0;
@@ -1016,7 +1010,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       } else {
         vec_enum += std::stoi(tmp_str.substr(tmp_str.find("z") + 1, 2));
       }
-      operands[3].reg = static_cast<arm64_reg>(vec_enum);
+      operands[2].mem.index = static_cast<arm64_reg>(vec_enum);
       break;
     }
     case Opcode::AArch64_ST2D_IMM: {
