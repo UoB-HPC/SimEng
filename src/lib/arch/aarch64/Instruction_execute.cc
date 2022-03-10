@@ -3796,16 +3796,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCPY_ZPmI_D: {
-      return executionNYI();
+    case Opcode::AArch64_FCPY_ZPmI_D: {  // fcpy zd.d, pg/m, #const
+      results[0] = sveHelp::sveFcpy_imm<double>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_FCPY_ZPmI_H: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_FCPY_ZPmI_S: {
-      return executionNYI();
+    case Opcode::AArch64_FCPY_ZPmI_S: {  // fcpy zd.s, pg/m, #const
+      results[0] = sveHelp::sveFcpy_imm<float>(operands, metadata, VL_bits);
       break;
     }
     case Opcode::AArch64_FCSELDrrr: {  // fcsel dd, dn, dm, cond
