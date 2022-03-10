@@ -8183,10 +8183,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD2D: {
-      return executionNYI();
-      break;
-    }
+    case Opcode::AArch64_LD2D:  // ld2d {zt1.d, zt2.d}, pg/z, [<xn|sp>, xm,
+                                // lsl #3]
     case Opcode::AArch64_LD2D_IMM: {  // ld2d {zt1.d, zt2.d}, pg/z, [<xn|sp>{,
                                       // #imm, mul vl}]
       // LOAD
