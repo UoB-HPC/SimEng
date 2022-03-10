@@ -826,6 +826,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // No instruction id assigned
       id = ARM64_INS_LSL;
       break;
+    case Opcode::AArch64_LD2D:
     case Opcode::AArch64_LD2D_IMM: {
       // LD2D doesn't correctly identify destination registers
       uint16_t reg_enum0 = ARM64_REG_Z0;
@@ -840,7 +841,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         tmpOpStr.erase(0, operandStr.find(",") + 1);
       } else {
         reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
-        tmpOpStr.erase(0, operandStr.find(",") + 2);
+        tmpOpStr.erase(0, operandStr.find(",") + 1);
       }
       // get dest1, then remove from string
       // Single or double digit Z register identifier

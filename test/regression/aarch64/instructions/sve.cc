@@ -4631,7 +4631,6 @@ TEST_P(InstSve, ld2d) {
     mov x8, 214
     svc #0
 
-    mov x1, #1
     ptrue p0.d
     # Load and broadcast values from heap
     ld2d {z0.d, z1.d}, p0/z, [x0, #2, mul vl]
@@ -4646,6 +4645,12 @@ TEST_P(InstSve, ld2d) {
     whilelo p1.d, xzr, x1
     ld2d {z4.d, z5.d}, p1/z, [x0]
     ld2d {z6.d, z7.d}, p1/z, [x0, #4, mul vl]
+
+    # Scalar plus Scalar
+    mov x10, #2
+    mov x11, #4
+    ld2d {z8.d, z9.d}, p0/z, [x0, x10, lsl #3]
+    ld2d {z10.d, z11.d}, p1/z, [x0, x11, lsl #3]
   )");
   int elements = VL / 64;  // DIV 64 as loading double words.
 
@@ -4679,6 +4684,25 @@ TEST_P(InstSve, ld2d) {
                                  src[(index + 4) % 4], src[(index + 6) % 4]},
                                 VL / 16));
   CHECK_NEON(7, uint64_t,
+             fillNeon<uint64_t>({src[(index + 1) % 4], src[(index + 3) % 4],
+                                 src[(index + 5) % 4], src[(index + 7) % 4]},
+                                VL / 16));
+
+  index = 2;
+  CHECK_NEON(8, uint64_t,
+             fillNeon<uint64_t>({src[index % 4], src[(index + 2) % 4],
+                                 src[(index + 4) % 4], src[(index + 6) % 4]},
+                                VL / 8));
+  CHECK_NEON(9, uint64_t,
+             fillNeon<uint64_t>({src[(index + 1) % 4], src[(index + 3) % 4],
+                                 src[(index + 5) % 4], src[(index + 7) % 4]},
+                                VL / 8));
+  index = 4;
+  CHECK_NEON(10, uint64_t,
+             fillNeon<uint64_t>({src[index % 4], src[(index + 2) % 4],
+                                 src[(index + 4) % 4], src[(index + 6) % 4]},
+                                VL / 16));
+  CHECK_NEON(11, uint64_t,
              fillNeon<uint64_t>({src[(index + 1) % 4], src[(index + 3) % 4],
                                  src[(index + 5) % 4], src[(index + 7) % 4]},
                                 VL / 16));
