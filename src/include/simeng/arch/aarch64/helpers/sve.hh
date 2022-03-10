@@ -450,6 +450,33 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `fcpy zd, pg/m,
+   * #const`.
+   * T represents the type of operands (e.g. for zd.d, T = double).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveFcpy_imm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const T* dn = operands[0].getAsVector<T>();
+    const uint64_t* p = operands[1].getAsVector<uint64_t>();
+    const T imm = metadata.operands[2].fp;
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i] = imm;
+      } else {
+        out[i] = dn[i];
+      }
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `fcvt zd,
    * pg/m, zn`.
    * D represents the destination vector register type (e.g. zd.s would be

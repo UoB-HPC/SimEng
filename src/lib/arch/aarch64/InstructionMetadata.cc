@@ -412,6 +412,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;
     case Opcode::AArch64_MOVPRFX_ZPmZ_D:
       [[fallthrough]];
+    case Opcode::AArch64_FCPY_ZPmI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FCPY_ZPmI_S:
+      [[fallthrough]];
     case Opcode::AArch64_FRINTN_ZPmZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FRINTN_ZPmZ_S:
