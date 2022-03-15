@@ -1213,6 +1213,13 @@ TEST_P(InstFloat, scvtf) {
     ldp x3, x4, [x0, #16]
     scvtf s10, x3
     scvtf s11, x4
+
+
+    # With Fixed Point
+    mov x5, #5
+    mov x6, #-73
+    scvtf d12, x5, #1
+    scvtf s13, x6, #5
   )");
   CHECK_NEON(0, double, {1.0, 0.0});
   CHECK_NEON(1, double, {-1.0, 0.0});
@@ -1226,6 +1233,8 @@ TEST_P(InstFloat, scvtf) {
   CHECK_NEON(9, float, {-1.f, 0.f, 0.f, 0.f});
   CHECK_NEON(10, float, {static_cast<float>(INT64_MAX), 0.f, 0.f, 0.f});
   CHECK_NEON(11, float, {static_cast<float>(INT64_MIN), 0.f, 0.f, 0.f});
+  CHECK_NEON(12, double, {2.5, 0.0});
+  CHECK_NEON(13, float, {-2.28125f, 0.f, 0.f, 0.f});
 }
 
 TEST_P(InstFloat, ucvtf) {

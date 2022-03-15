@@ -11969,16 +11969,18 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SCVTFSXDri: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTFSXDri: {  // scvtf dd, xn, #fbits
+      results[0] =
+          floatHelp::scvtf_FixedPoint<double, int64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_SCVTFSXHri: {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_SCVTFSXSri: {
-      return executionNYI();
+    case Opcode::AArch64_SCVTFSXSri: {  // scvtf sd, xn, #fbits
+      results[0] =
+          floatHelp::scvtf_FixedPoint<float, int64_t>(operands, metadata);
       break;
     }
     case Opcode::AArch64_SCVTFUWDri: {  // scvtf dd, wn
