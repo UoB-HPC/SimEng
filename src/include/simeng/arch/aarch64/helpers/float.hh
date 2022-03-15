@@ -121,6 +121,24 @@ class floatHelp {
     T a = operands[2].get<T>();
     return {std::fma(-n, m, -a), 256};
   }
+
+  /** Helper function for NEON instructions with the format `scvtf rd,
+   *  <w,x>n`, #fbits.
+   * D represents the destination vector register type (e.g. for dd, D =
+   * double).
+   * N represents the source vector register type (e.g. for wn, N = int32_t).
+   * Returns correctly formated RegisterValue. */
+  template <typename D, typename N>
+  static RegisterValue scvtf_FixedPoint(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    N n = operands[0].get<N>();
+    const uint8_t fbits = metadata.operands[2].imm;
+
+    D out = static_cast<D>(n) / std::pow(2, fbits);
+
+    return {out, 256};
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
