@@ -22,7 +22,8 @@
    "Conditional-Count: 128}, Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, " \
    "FrontEnd: 4, LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, "      \
    "Store: 36}, Branch-Predictor: {BTB-bitlength: 16}, L1-Cache: "            \
-   "{Access-Latency: 4, Bandwidth: 32, Permitted-Requests-Per-Cycle: 2, "     \
+   "{Access-Latency: 4, Exclusive: False, Load-Bandwidth: 32, "               \
+   "Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "                   \
    "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "    \
    "{'0': {Portname: Port 0, Instruction-Group-Support: [1, 8, 12]}, '1': "   \
    "{Portname: Port 1, Instruction-Group-Support: [0, 12]}, '2': {Portname: " \

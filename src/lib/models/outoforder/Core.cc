@@ -58,7 +58,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          config["L1-Cache"]["Bandwidth"].as<uint8_t>(),
+          config["L1-Cache"]["Exclusive"].as<bool>(),
+          config["L1-Cache"]["Load-Bandwidth"].as<uint8_t>(),
+          config["L1-Cache"]["Store-Bandwidth"].as<uint8_t>(),
           config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint8_t>(),
           config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint8_t>(),
           config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint8_t>()),
