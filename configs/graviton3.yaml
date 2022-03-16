@@ -24,7 +24,7 @@ Pipeline-Widths:
   FrontEnd: 4
   LSQ-Completion: 2
 Queue-Sizes:
-  ROB: 128
+  ROB: 256
   Load: 40
   Store: 24
 Branch-Predictor:
