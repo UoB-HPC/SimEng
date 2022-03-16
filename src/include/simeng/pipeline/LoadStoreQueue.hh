@@ -13,11 +13,12 @@
 namespace simeng {
 namespace pipeline {
 
+enum accessType { LOAD = 0, STORE };
+
 /** A requestQueue_ entry. */
 struct requestEntry {
   /** The memory address(es) to be accessed. */
   std::queue<const simeng::MemoryAccessTarget> reqAddresses;
-
   /** The instruction sending the request(s). */
   std::shared_ptr<Instruction> insn;
 };
@@ -33,7 +34,8 @@ class LoadStoreQueue {
       unsigned int maxCombinedSpace, MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      uint8_t L1Bandwidth = UINT8_MAX, uint8_t permittedRequests = UINT8_MAX,
+      bool exclusive = false, uint8_t loadBandwidth = UINT8_MAX,
+      uint8_t storeBandwidth = UINT8_MAX, uint8_t permittedRequests = UINT8_MAX,
       uint8_t permittedLoads = UINT8_MAX, uint8_t permittedStores = UINT8_MAX);
 
   /** Constructs a split load/store queue model, simulating discrete queues for
@@ -44,7 +46,8 @@ class LoadStoreQueue {
       MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      uint8_t L1Bandwidth = UINT8_MAX, uint8_t permittedRequests = UINT8_MAX,
+      bool exclusive = false, uint8_t loadBandwidth = UINT8_MAX,
+      uint8_t storeBandwidth = UINT8_MAX, uint8_t permittedRequests = UINT8_MAX,
       uint8_t permittedLoads = UINT8_MAX, uint8_t permittedStores = UINT8_MAX);
 
   /** Retrieve the available space for load uops. For combined queue this is the
@@ -166,18 +169,20 @@ class LoadStoreQueue {
   /** A queue of completed loads ready for writeback. */
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
 
-  /** The amount of data transferable to the L1 cache per cycle. */
-  uint64_t L1Bandwidth_;
+  /** Whether the LSQ can only process loads xor stores within a cycle. */
+  bool exclusive_;
+
+  /** The amount of data readable from the L1D cache per cycle. */
+  uint64_t loadBandwidth_;
+
+  /** The amount of data writable to the L1D cache per cycle. */
+  uint64_t storeBandwidth_;
 
   /** The combined limit of loads and store requests permitted per cycle. */
   uint8_t totalLimit_;
 
   /** The number of loads and stores permitted per cycle. */
   std::array<uint8_t, 2> reqLimits_;
-
-  /** Mapping between indexes of reqLimits_ and request type. */
-  uint8_t LOAD_INDEX = 0;
-  uint8_t STORE_INDEX = 1;
 };
 
 }  // namespace pipeline
