@@ -398,20 +398,22 @@ void LoadStoreQueue::tick() {
       // type from being scheduled
       if (exclusive_) exceededLimits[!isStore] = true;
 
-      // Increment count of this request type
-      reqCounts[isStore]++;
+      // Iterate over requests ready this cycle
+      while (itInsn != itReq->second.end()) {
+        // Increment count of this request type
+        reqCounts[isStore]++;
 
-      // Ensure the limit on the number of permitted operations is adhered
-      // to
-      if (reqCounts[isStore] + reqCounts[!isStore] > totalLimit_) {
-        // No more requests can be scheduled this cycle
-        exceededLimits = {true, true};
-      } else if (reqCounts[isStore] > reqLimits_[isStore]) {
-        // No more requests of this type can be scheduled this cycle
-        exceededLimits[isStore] = true;
-      } else {
-        // Iterate over requests ready this cycle
-        while (itInsn != itReq->second.end()) {
+        // Ensure the limit on the number of permitted operations is adhered
+        // to
+        if (reqCounts[isStore] + reqCounts[!isStore] > totalLimit_) {
+          // No more requests can be scheduled this cycle
+          exceededLimits = {true, true};
+          break;
+        } else if (reqCounts[isStore] > reqLimits_[isStore]) {
+          // No more requests of this type can be scheduled this cycle
+          exceededLimits[isStore] = true;
+          break;
+        } else {
           // Schedule requests from the queue of addresses in
           // request[Load|Store]Queue_ entry
           auto& addressQueue = itInsn->reqAddresses;
@@ -444,15 +446,15 @@ void LoadStoreQueue::tick() {
             }
           }
         }
+      }
 
-        // If all uops for currently selected cycle in request[Load|Store]Queue_
-        // have been scheduled, erase entry
-        if (itReq->second.size() == 0) {
-          if (chooseLoad) {
-            itReq = requestLoadQueue_.erase(itReq);
-          } else {
-            itReq = requestStoreQueue_.erase(itReq);
-          }
+      // If all uops for currently selected cycle in request[Load|Store]Queue_
+      // have been scheduled, erase entry
+      if (itReq->second.size() == 0) {
+        if (chooseLoad) {
+          itReq = requestLoadQueue_.erase(itReq);
+        } else {
+          itReq = requestStoreQueue_.erase(itReq);
         }
       }
     } else {
