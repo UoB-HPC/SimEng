@@ -18,14 +18,16 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    uint8_t L1Bandwidth, uint8_t permittedRequests, uint8_t permittedLoads,
-    uint8_t permittedStores)
+    bool exclusive, uint8_t loadBandwidth, uint8_t storeBandwidth,
+    uint8_t permittedRequests, uint8_t permittedLoads, uint8_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxCombinedSpace_(maxCombinedSpace),
       combined_(true),
       memory_(memory),
-      L1Bandwidth_(L1Bandwidth),
+      exclusive_(exclusive),
+      loadBandwidth_(loadBandwidth),
+      storeBandwidth_(storeBandwidth),
       totalLimit_(permittedRequests),
       // Set per-cycle limits for each request type
       reqLimits_{permittedLoads, permittedStores} {};
@@ -35,15 +37,17 @@ LoadStoreQueue::LoadStoreQueue(
     MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    uint8_t L1Bandwidth, uint8_t permittedRequests, uint8_t permittedLoads,
-    uint8_t permittedStores)
+    bool exclusive, uint8_t loadBandwidth, uint8_t storeBandwidth,
+    uint8_t permittedRequests, uint8_t permittedLoads, uint8_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxLoadQueueSpace_(maxLoadQueueSpace),
       maxStoreQueueSpace_(maxStoreQueueSpace),
       combined_(false),
       memory_(memory),
-      L1Bandwidth_(L1Bandwidth),
+      exclusive_(exclusive),
+      loadBandwidth_(loadBandwidth),
+      storeBandwidth_(storeBandwidth),
       totalLimit_(permittedRequests),
       // Set per-cycle limits for each request type
       reqLimits_{permittedLoads, permittedStores} {};
@@ -346,28 +350,25 @@ void LoadStoreQueue::tick() {
   tickCounter_++;
   // Send memory requests adhering to set bandwidth and number of permitted
   // requests per cycle
-  uint64_t dataTransfered = 0;
   // Index 0: loads, index 1: stores
   std::array<uint8_t, 2> reqCounts = {0, 0};
-  bool exceededLimits = false;
+  std::array<uint64_t, 2> dataTransfered = {0, 0};
+  std::array<bool, 2> exceededLimits = {false, false};
   auto itLoad = requestLoadQueue_.begin();
   auto itStore = requestStoreQueue_.begin();
-  while ((requestLoadQueue_.size() + requestStoreQueue_.size() > 0) &&
-         (reqCounts[LOAD_INDEX] + reqCounts[STORE_INDEX] < totalLimit_)) {
+  while (requestLoadQueue_.size() + requestStoreQueue_.size() > 0) {
     // Choose which request type to schedule next
     bool chooseLoad = false;
     std::pair<bool, uint64_t> earliestLoad;
     std::pair<bool, uint64_t> earliestStore;
     // Determine if a load request can be scheduled
-    if (requestLoadQueue_.size() == 0 ||
-        (reqCounts[LOAD_INDEX] >= reqLimits_[LOAD_INDEX])) {
+    if (requestLoadQueue_.size() == 0 || exceededLimits[accessType::LOAD]) {
       earliestLoad = {false, 0};
     } else {
       earliestLoad = {true, itLoad->first};
     }
     // Determine if a store request can be scheduled
-    if (requestStoreQueue_.size() == 0 ||
-        (reqCounts[STORE_INDEX] >= reqLimits_[STORE_INDEX])) {
+    if (requestStoreQueue_.size() == 0 || exceededLimits[accessType::STORE]) {
       earliestStore = {false, 0};
     } else {
       earliestStore = {true, itStore->first};
@@ -384,6 +385,7 @@ void LoadStoreQueue::tick() {
     // Get next request to schedule
     auto& itReq = chooseLoad ? itLoad : itStore;
     auto itInsn = itReq->second.begin();
+    auto bandwidth = chooseLoad ? loadBandwidth_ : storeBandwidth_;
 
     // Check if earliest request is ready
     if (itReq->first <= tickCounter_) {
@@ -392,66 +394,65 @@ void LoadStoreQueue::tick() {
       if (!chooseLoad) {
         isStore = 1;
       }
-      // Iterate over requests ready this cycle
-      while (itInsn != itReq->second.end()) {
-        // Schedule requests from the queue of addresses in
-        // request[Load|Store]Queue_ entry
-        auto& addressQueue = itInsn->reqAddresses;
-        while (addressQueue.size()) {
-          const simeng::MemoryAccessTarget req = addressQueue.front();
-          // Ensure the limit on the number of permitted operations is adhered
-          // to
-          if (reqCounts[isStore] + reqCounts[!isStore] >= totalLimit_) {
-            // No more requests can be scheduled this cycle
-            exceededLimits = true;
-            itInsn = itReq->second.end();
-            break;
-          }
-          if (reqCounts[isStore] >= reqLimits_[isStore]) {
-            // No more requests of this type can be scheduled this cycle
-            itInsn = itReq->second.end();
-            break;
-          }
+      // If LSQ only allows one type of request within a cycle, prevent other
+      // type from being scheduled
+      if (exclusive_) exceededLimits[!isStore] = true;
 
-          // Ensure the limit on the data transfered per cycle is adhered to
-          assert(req.size < L1Bandwidth_ &&
-                 "Individual memory request from LoadStoreQueue exceeds L1 "
-                 "bandwidth set and thus will never be submitted");
-          dataTransfered += req.size;
-          if (dataTransfered > L1Bandwidth_) {
-            // No more requests can be scheduled this cycle
-            itInsn = itReq->second.end();
-            exceededLimits = true;
-            break;
-          }
+      // Increment count of this request type
+      reqCounts[isStore]++;
 
-          // Request a read from the memory interface if the requestQueue_
-          // entry represents a read
-          if (!isStore) {
-            memory_.requestRead(req, itInsn->insn->getSequenceId());
-          }
-          // Increment count of this request type
-          reqCounts[isStore]++;
+      // Ensure the limit on the number of permitted operations is adhered
+      // to
+      if (reqCounts[isStore] + reqCounts[!isStore] > totalLimit_) {
+        // No more requests can be scheduled this cycle
+        exceededLimits = {true, true};
+      } else if (reqCounts[isStore] > reqLimits_[isStore]) {
+        // No more requests of this type can be scheduled this cycle
+        exceededLimits[isStore] = true;
+      } else {
+        // Iterate over requests ready this cycle
+        while (itInsn != itReq->second.end()) {
+          // Schedule requests from the queue of addresses in
+          // request[Load|Store]Queue_ entry
+          auto& addressQueue = itInsn->reqAddresses;
+          while (addressQueue.size()) {
+            const simeng::MemoryAccessTarget req = addressQueue.front();
 
-          // Remove entry from vector iff all of its requests have been
-          // scheduled
-          addressQueue.pop();
-          if (addressQueue.size() == 0) {
-            itInsn = itReq->second.erase(itInsn);
+            // Ensure the limit on the data transfered per cycle is adhered to
+            assert(req.size < bandwidth &&
+                   "Individual memory request from LoadStoreQueue exceeds L1 "
+                   "bandwidth set and thus will never be submitted");
+            dataTransfered[isStore] += req.size;
+            if (dataTransfered[isStore] > bandwidth) {
+              // No more requests can be scheduled this cycle
+              exceededLimits[isStore] = true;
+              itInsn = itReq->second.end();
+              break;
+            }
+
+            // Request a read from the memory interface if the requestQueue_
+            // entry represents a read
+            if (!isStore) {
+              memory_.requestRead(req, itInsn->insn->getSequenceId());
+            }
+
+            // Remove entry from vector iff all of its requests have been
+            // scheduled
+            addressQueue.pop();
+            if (addressQueue.size() == 0) {
+              itInsn = itReq->second.erase(itInsn);
+            }
           }
         }
-      }
-      // If limits were reached whilst processing requests, discontinue
-      // scheduling
-      if (exceededLimits) break;
 
-      // If all uops for currently selected cycle in request[Load|Store]Queue_
-      // have been scheduled, erase entry
-      if (itReq->second.size() == 0) {
-        if (chooseLoad) {
-          itReq = requestLoadQueue_.erase(itReq);
-        } else {
-          itReq = requestStoreQueue_.erase(itReq);
+        // If all uops for currently selected cycle in request[Load|Store]Queue_
+        // have been scheduled, erase entry
+        if (itReq->second.size() == 0) {
+          if (chooseLoad) {
+            itReq = requestLoadQueue_.erase(itReq);
+          } else {
+            itReq = requestStoreQueue_.erase(itReq);
+          }
         }
       }
     } else {
