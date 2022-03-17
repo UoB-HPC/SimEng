@@ -156,17 +156,17 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 }
 
 uint16_t Instruction::getGroup() const {
-  uint16_t group = 0;
-  // if (isBranch()) group |= (1 << InstructionGroups::BRANCH);
-  // if (isLoad()) group |= (1 << InstructionGroups::LOAD);
-  // if (isStore()) group |= (1 << InstructionGroups::STORE);
-  // //  if (isASIMD_) group |= (1 << InstructionGroups::ASIMD);
-  // if (group == 0) group |= (1 << InstructionGroups::ARITHMETIC);
-  // if (isShift_) group |= (1 << InstructionGroups::SHIFT);
-  // if (isDivide_) group |= (1 << InstructionGroups::DIVIDE);
-  // if (isMultiply_) group |= (1 << InstructionGroups::MULTIPLY);
+  uint16_t base = InstructionGroups::INT;
 
-  return group;
+  if (isBranch()) return InstructionGroups::BRANCH;
+  if (isLoad()) return base + 8;
+  if (isStore()) return base + 9;
+  if (isDivide_) return base + 7;
+  if (isMultiply_) return base + 6;
+  if (isShift_) return base + 5;
+  if (isLogical_) return base + 4;
+  if (isCompare_) return base + 3;
+  return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
 void Instruction::setExecutionInfo(const executionInfo& info) {
@@ -179,7 +179,13 @@ void Instruction::setExecutionInfo(const executionInfo& info) {
   supportedPorts_ = info.ports;
 }
 
-const std::vector<uint8_t>& Instruction::getSupportedPorts() { return {0}; }
+const std::vector<uint8_t>& Instruction::getSupportedPorts() {
+  if (supportedPorts_.size() == 0) {
+    exception_ = InstructionException::NoAvailablePort;
+    exceptionEncountered_ = true;
+  }
+  return supportedPorts_;
+}
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
 

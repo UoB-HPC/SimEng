@@ -180,6 +180,34 @@ void Instruction::decode() {
       operandsPending++;
     }
   }
+
+  if ((Opcode::RISCV_C_SLLI <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_C_SRLI) ||
+      (Opcode::RISCV_SLL <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_SLLW) ||
+      (Opcode::RISCV_SRA <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_SRAW) ||
+      (Opcode::RISCV_SRL <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_SRLW)) {
+    // Shift instructions
+    isShift_ = true;
+  }
+
+  if ((Opcode::RISCV_XOR <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_XORI) ||
+      (Opcode::RISCV_OR <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_ORI) ||
+      (Opcode::RISCV_AND <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_ANDI)) {
+    // Logical instructions
+    isLogical_ = true;
+  }
+
+  if ((Opcode::RISCV_SLT <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_SLTU)) {
+    // Compare instructions
+    isCompare_ = true;
+  }
 }
 
 void Instruction::nyi() {

@@ -24,19 +24,33 @@ const uint8_t FLOAT = 1;
 
 /** The IDs of the instruction groups for RISCV instructions. */
 namespace InstructionGroups {
-const uint8_t INT_SIMPLE = 0;
-const uint8_t INT_MUL = 1;
-const uint8_t INT_DIV_OR_SQRT = 2;
-const uint8_t LOAD = 3;
-const uint8_t STORE = 4;
-const uint8_t BRANCH = 5;
-// const uint8_t FP = 8;
+const uint16_t INT = 0;
+const uint16_t INT_SIMPLE = 1;
+const uint16_t INT_SIMPLE_ARTH = 2;
+const uint16_t INT_SIMPLE_CMP = 3;
+const uint16_t INT_SIMPLE_LOGICAL = 4;
+const uint16_t INT_SIMPLE_SHIFT = 5;
+const uint16_t INT_MUL = 6;
+const uint16_t INT_DIV = 7;
+const uint16_t LOAD_INT = 8;
+const uint16_t STORE_INT = 9;
+const uint16_t LOAD = 10;
+const uint16_t STORE = 11;
+const uint16_t BRANCH = 12;
 }  // namespace InstructionGroups
 
-// TODO update to no. insn groups
-#define NUM_GROUPS 12
+#define NUM_GROUPS 13
 
-const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {};
+const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
+    {InstructionGroups::INT,
+     {InstructionGroups::INT_SIMPLE, InstructionGroups::INT_MUL,
+      InstructionGroups::INT_DIV}},
+    {InstructionGroups::INT_SIMPLE,
+     {InstructionGroups::INT_SIMPLE_ARTH, InstructionGroups::INT_SIMPLE_CMP,
+      InstructionGroups::INT_SIMPLE_LOGICAL,
+      InstructionGroups::INT_SIMPLE_SHIFT}},
+    {InstructionGroups::LOAD, {InstructionGroups::LOAD_INT}},
+    {InstructionGroups::STORE, {InstructionGroups::STORE_INT}}};
 
 /** A struct holding user-defined execution information for a aarch64
  * instruction. */
@@ -60,7 +74,8 @@ enum class InstructionException {
   DataAbort,
   SupervisorCall,
   HypervisorCall,
-  SecureMonitorCall
+  SecureMonitorCall,
+  NoAvailablePort
 };
 
 /** A basic RISCV implementation of the `Instruction` interface. */
@@ -260,10 +275,12 @@ class Instruction : public simeng::Instruction {
   bool isBL_ = false;
   /** Is this a SVE instruction? */
   bool isSVE_ = false;
-  /** Is this a Predicate instruction? */
-  bool isPredicate_ = false;
   /** Is this an atomic instruction? */
   bool isAtomic_ = false;
+  /** Is this a logical instruction? */
+  bool isLogical_ = false;
+  /** Is this a compare instruction? */
+  bool isCompare_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data
