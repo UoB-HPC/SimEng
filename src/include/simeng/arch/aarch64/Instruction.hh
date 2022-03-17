@@ -111,6 +111,11 @@ inline uint8_t getDataSize(cs_arm64_op op) {
     return 8;
   }
 
+  // ARM64_REG_NZCV is the NZCV flag register
+  if (op.reg == ARM64_REG_NZCV) {
+    return 1;
+  }
+
   // ARM64_REG_X30 is the 64-bit link register
   if (op.reg == ARM64_REG_X30) {
     return 8;
@@ -126,6 +131,12 @@ inline uint8_t getDataSize(cs_arm64_op op) {
     return 1;
   }
 
+  // ARM64_REG_INVALID is an invalid capstone register so return 0 bytes as size
+  if (op.reg == ARM64_REG_INVALID) {
+    return 0;
+  }
+
+  std::cout << op.reg << std::endl;
   assert(false && "Failed to find register in macroOp metadata");
   return 0;
 }
