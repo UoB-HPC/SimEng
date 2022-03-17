@@ -73,12 +73,14 @@ Ports:
   6:
     Portname: FP_ASIMD_0
     Instruction-Support:
+    - SVE
     - FP
     - STORE_DATA_FP
     - STORE_DATA_SVE
   7:
     Portname: FP_ASIMD_1
     Instruction-Support:
+    - SVE_SIMPLE
     - FP_SIMPLE_ARTH
     - FP_SIMPLE_LOGICAL
     - SCALAR_MUL
