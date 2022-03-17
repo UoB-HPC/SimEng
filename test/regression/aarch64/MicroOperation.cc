@@ -189,15 +189,15 @@ TEST_P(MicroOp, loadPairReorder) {
     mov x6, x0
     mov x7, x0
 
-    ldp x1, x2, [x1, #0]
-    ldp x3, x4, [x4, #16]
+    ldp w1, w2, [x1, #0]
+    ldp w3, w4, [x4, #16]
     ldp x5, x6, [x6, #32]
     ldp x7, x8, [x7, #48]
   )");
-  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 0xABBACAFEABBACAFE);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0x1234567898765432);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0xABCDEFABCDEFABCD);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0xCAFEABBACAFEABBA);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(1), 0xABBACAFE);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(2), 0xABBACAFE);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(3), 0xCDEFABCD);
+  EXPECT_EQ(getGeneralRegister<uint32_t>(4), 0xABCDEFAB);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x9876543212345678);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFEDCBAFEDCBAFEDC);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x1234567898765432);

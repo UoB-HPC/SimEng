@@ -246,7 +246,9 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
         for (const auto& pair : itAddr->second) {
           const auto& load = pair.first;
           load->supplyData(addresses[i].address,
-                           data[i].zeroExtend(pair.second, pair.second));
+                           data[i].zeroExtend(
+                               std::min(pair.second, (uint16_t)data[i].size()),
+                               pair.second));
           if (load->hasAllData()) {
             // This load has completed
             load->execute();

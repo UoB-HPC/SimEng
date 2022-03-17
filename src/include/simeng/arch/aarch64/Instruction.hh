@@ -136,7 +136,6 @@ inline uint8_t getDataSize(cs_arm64_op op) {
     return 0;
   }
 
-  std::cout << op.reg << std::endl;
   assert(false && "Failed to find register in macroOp metadata");
   return 0;
 }
