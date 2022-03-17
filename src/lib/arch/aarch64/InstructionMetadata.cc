@@ -838,10 +838,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // Single or double digit Z register identifier
       if (tmpOpStr[2] == '.') {
         reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
-        tmpOpStr.erase(0, operandStr.find(",") + 1);
+        tmpOpStr.erase(0, 6);
       } else {
         reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
-        tmpOpStr.erase(0, operandStr.find(",") + 1);
+        tmpOpStr.erase(0, 7);
       }
       // get dest1, then remove from string
       // Single or double digit Z register identifier
@@ -870,24 +870,27 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") - 1));
       // get dest0, then remove from string
       // Single or double digit Z register identifier
+      std::cerr << tmpOpStr << std::endl;
       if (tmpOpStr[2] == '.') {
         reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
-        tmpOpStr.erase(0, operandStr.find(",") + 1);
+        tmpOpStr.erase(0, 6);
       } else {
         reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
-        tmpOpStr.erase(0, operandStr.find(",") + 2);
+        tmpOpStr.erase(0, 7);
       }
       // get dest1, then remove from string
       // Single or double digit Z register identifier
+      std::cerr << tmpOpStr << std::endl;
       if (tmpOpStr[2] == '.') {
         reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
-        tmpOpStr.erase(0, operandStr.find(",") + 1);
+        tmpOpStr.erase(0, 6);
       } else {
         reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
-        tmpOpStr.erase(0, operandStr.find(",") + 2);
+        tmpOpStr.erase(0, 7);
       }
       // get dest2
       // Single or double digit Z register identifier
+      std::cerr << tmpOpStr << std::endl;
       if (tmpOpStr[2] == '.') {
         reg_enum2 += std::stoi(tmpOpStr.substr(1, 1));
       } else {
@@ -903,6 +906,63 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
 
       operands[3].access = CS_AC_READ;
       operands[4].access = CS_AC_READ;
+      break;
+    }
+    case Opcode::AArch64_LD4D_IMM: {
+      // LD4D doesn't correctly identify destination registers
+      uint16_t reg_enum0 = ARM64_REG_Z0;
+      uint16_t reg_enum1 = ARM64_REG_Z0;
+      uint16_t reg_enum2 = ARM64_REG_Z0;
+      uint16_t reg_enum3 = ARM64_REG_Z0;
+
+      // tmpOpStr = "zxx.d, zyy.d, znn.d, zmm.d"
+      std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") - 1));
+      // get dest0, then remove from string
+      // Single or double digit Z register identifier
+      if (tmpOpStr[2] == '.') {
+        reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
+        tmpOpStr.erase(0, 6);
+      } else {
+        reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
+        tmpOpStr.erase(0, 7);
+      }
+      // get dest1, then remove from string
+      // Single or double digit Z register identifier
+      if (tmpOpStr[2] == '.') {
+        reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
+        tmpOpStr.erase(0, 6);
+      } else {
+        reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
+        tmpOpStr.erase(0, 7);
+      }
+      // get dest2
+      // Single or double digit Z register identifier
+      if (tmpOpStr[2] == '.') {
+        reg_enum2 += std::stoi(tmpOpStr.substr(1, 1));
+        tmpOpStr.erase(0, 6);
+      } else {
+        reg_enum2 += std::stoi(tmpOpStr.substr(1, 2));
+        tmpOpStr.erase(0, 7);
+      }
+      // get dest3
+      // Single or double digit Z register identifier
+      if (tmpOpStr[2] == '.') {
+        reg_enum3 += std::stoi(tmpOpStr.substr(1, 1));
+      } else {
+        reg_enum3 += std::stoi(tmpOpStr.substr(1, 2));
+      }
+
+      operands[0].reg = static_cast<arm64_reg>(reg_enum0);
+      operands[0].access = CS_AC_WRITE;
+      operands[1].reg = static_cast<arm64_reg>(reg_enum1);
+      operands[1].access = CS_AC_WRITE;
+      operands[2].reg = static_cast<arm64_reg>(reg_enum2);
+      operands[2].access = CS_AC_WRITE;
+      operands[3].reg = static_cast<arm64_reg>(reg_enum3);
+      operands[3].access = CS_AC_WRITE;
+
+      operands[4].access = CS_AC_READ;
+      operands[5].access = CS_AC_READ;
       break;
     }
     case Opcode::AArch64_MOVNWi:
@@ -1029,19 +1089,19 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // Single or double digit Z register identifier
       if (tmpOpStr[2] == '.') {
         reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
-        tmpOpStr.erase(0, operandStr.find(",") + 1);
+        tmpOpStr.erase(0, 6);
       } else {
         reg_enum0 += std::stoi(tmpOpStr.substr(1, 2));
-        tmpOpStr.erase(0, operandStr.find(",") + 2);
+        tmpOpStr.erase(0, 7);
       }
       // get dest1, then remove from string
       // Single or double digit Z register identifier
       if (tmpOpStr[2] == '.') {
         reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
-        tmpOpStr.erase(0, operandStr.find(",") + 1);
+        tmpOpStr.erase(0, 6);
       } else {
         reg_enum1 += std::stoi(tmpOpStr.substr(1, 2));
-        tmpOpStr.erase(0, operandStr.find(",") + 2);
+        tmpOpStr.erase(0, 7);
       }
 
       operands[0].reg = static_cast<arm64_reg>(reg_enum0);

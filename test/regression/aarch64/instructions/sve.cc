@@ -4785,6 +4785,81 @@ TEST_P(InstSve, ld3d) {
                                 VL / 16));
 }
 
+TEST_P(InstSve, ld4d) {
+  initialHeapData_.resize(128 * (VL / 2));
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  std::vector<uint64_t> src = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
+  fillHeap<uint64_t>(heap64, src, 128 * (VL / 16));
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ptrue p0.d
+    # Load and broadcast values from heap
+    ld4d {z0.d, z1.d, z2.d, z3.d}, p0/z, [x0, #4, mul vl]
+    ld4d {z4.d, z5.d, z6.d, z7.d}, p0/z, [x0]
+
+    # Test for inactive lanes
+    mov x1, #0
+    mov x3, #16
+    addvl x1, x1, #1
+    udiv x1, x1, x3
+    whilelo p1.d, xzr, x1
+    ld4d {z8.d, z9.d, z10.d, z11.d}, p1/z, [x0]
+    ld4d {z12.d, z13.d, z14.d, z15.d}, p1/z, [x0, #8, mul vl]
+  )");
+  int elements = VL / 64;  // DIV 64 as loading double words.
+
+  int index = 4 * elements;
+  CHECK_NEON(0, uint64_t,
+             fillNeon<uint64_t>({src[index % 4], src[(index + 4) % 4],
+                                 src[(index + 8) % 4], src[(index + 12) % 4]},
+                                VL / 8));
+  CHECK_NEON(1, uint64_t,
+             fillNeon<uint64_t>({src[(index + 1) % 4], src[(index + 5) % 4],
+                                 src[(index + 9) % 4], src[(index + 13) % 4]},
+                                VL / 8));
+  CHECK_NEON(2, uint64_t,
+             fillNeon<uint64_t>({src[(index + 2) % 4], src[(index + 6) % 4],
+                                 src[(index + 10) % 4], src[(index + 14) % 4]},
+                                VL / 8));
+  CHECK_NEON(3, uint64_t,
+             fillNeon<uint64_t>({src[(index + 3) % 4], src[(index + 7) % 4],
+                                 src[(index + 11) % 4], src[(index + 15) % 4]},
+                                VL / 8));  //
+
+  CHECK_NEON(4, uint64_t, fillNeon<uint64_t>({0xDEADBEEF}, VL / 8));  //
+  CHECK_NEON(5, uint64_t, fillNeon<uint64_t>({0x12345678}, VL / 8));  //
+  CHECK_NEON(6, uint64_t, fillNeon<uint64_t>({0x98765432}, VL / 8));
+  CHECK_NEON(7, uint64_t, fillNeon<uint64_t>({0xABCDEF01}, VL / 8));
+
+  CHECK_NEON(8, uint64_t, fillNeon<uint64_t>({0xDEADBEEF}, VL / 16));
+  CHECK_NEON(9, uint64_t, fillNeon<uint64_t>({0x12345678}, VL / 16));
+  CHECK_NEON(10, uint64_t, fillNeon<uint64_t>({0x98765432}, VL / 16));
+  CHECK_NEON(11, uint64_t, fillNeon<uint64_t>({0xABCDEF01}, VL / 16));
+
+  index = 8 * elements;
+  CHECK_NEON(12, uint64_t,
+             fillNeon<uint64_t>({src[index % 4], src[(index + 4) % 4],
+                                 src[(index + 8) % 4], src[(index + 12) % 4]},
+                                VL / 16));
+  CHECK_NEON(13, uint64_t,
+             fillNeon<uint64_t>({src[(index + 1) % 4], src[(index + 5) % 4],
+                                 src[(index + 9) % 4], src[(index + 13) % 4]},
+                                VL / 16));  //
+  CHECK_NEON(14, uint64_t,
+             fillNeon<uint64_t>({src[(index + 2) % 4], src[(index + 6) % 4],
+                                 src[(index + 10) % 4], src[(index + 14) % 4]},
+                                VL / 16));  //
+  CHECK_NEON(15, uint64_t,
+             fillNeon<uint64_t>({src[(index + 3) % 4], src[(index + 7) % 4],
+                                 src[(index + 11) % 4], src[(index + 15) % 4]},
+                                VL / 16));  //
+}
+
 TEST_P(InstSve, ldr_predicate) {
   initialHeapData_.resize(VL / 64);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
