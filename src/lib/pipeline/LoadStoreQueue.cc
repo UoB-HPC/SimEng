@@ -123,6 +123,11 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
               if (itLd->address == str.address) {
                 conflictionMap_[store->getSequenceId()][str.address].push_back(
                     {insn, itLd->size});
+                // std::cout << "Confliction on 0x" << std::hex << str.address
+                //           << std::dec << ": " << insn->getSequenceId() << ":"
+                //           << insn->getInstructionId() << ":0x" << std::hex
+                //           << insn->getInstructionAddress() << std::dec << ":"
+                //           << insn->getMicroOpIndex() << std::endl;
                 // Remove from temporary vector so the confliction can't be
                 // registered again
                 temp_load_addr.erase(itLd);
@@ -143,6 +148,11 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
         requestLoadQueue_[tickCounter_ + insn->getLSQLatency()]
             .back()
             .reqAddresses.push(temp_load_addr[i]);
+        // std::cout << "Request on 0x" << std::hex << temp_load_addr[i].address
+        //           << std::dec << ": " << insn->getSequenceId() << ":"
+        //           << insn->getInstructionId() << ":0x" << std::hex
+        //           << insn->getInstructionAddress() << std::dec << ":"
+        //           << insn->getMicroOpIndex() << std::endl;
       }
       requestedLoads_.emplace(insn->getSequenceId(), insn);
     }

@@ -197,7 +197,7 @@ TEST_F(ReorderBufferTest, Flush) {
   reorderBuffer.reserve(uopPtr);
   reorderBuffer.reserve(uopPtr2);
 
-  reorderBuffer.flush(uop->getSequenceId());
+  reorderBuffer.flush(uop->getInstructionId());
 
   EXPECT_EQ(uop->isFlushed(), false);
   EXPECT_EQ(uop2->isFlushed(), true);

@@ -150,7 +150,9 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     if (uop->wasBranchMispredicted()) {
       // Misprediction; flush the pipeline
       shouldFlush_ = true;
-      flushAfter_ = uop->getSequenceId();
+      // std::cout << "FLUSHED AT EXECUTE: 0x" << std::hex
+      //           << uop->getInstructionAddress() << std::dec << std::endl;
+      flushAfter_ = uop->getInstructionId();
       // Update the branch misprediction counter
       branchMispredicts_++;
     }

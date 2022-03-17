@@ -278,7 +278,7 @@ void Core::handleException() {
   // Flush everything younger than the exception-generating instruction.
   // This must happen prior to handling the exception to ensure the commit state
   // is up-to-date with the register mapping table
-  reorderBuffer_.flush(exceptionGeneratingInstruction_->getSequenceId());
+  reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId());
   decodeUnit_.purgeFlushed();
   dispatchIssueUnit_.purgeFlushed();
   loadStoreQueue_.purgeFlushed();
