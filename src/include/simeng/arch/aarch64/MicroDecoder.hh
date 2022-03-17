@@ -29,6 +29,10 @@ class MicroDecoder {
   uint8_t decode(const Architecture& architecture, uint32_t word,
                  Instruction macroOp, MacroOp& output, csh capstoneHandle);
 
+  /** Detect if there's an overlap between the underlying hardware registers
+   * (e.g. z5, v5, q5, d5, s5, h5, and b5). */
+  bool detectOverlap(arm64_reg registerA, arm64_reg registerB);
+
   /** Create a default cs_detail object from a vector of operand types. */
   cs_detail createDefaultDetail(std::vector<OpType> opTypes);
 

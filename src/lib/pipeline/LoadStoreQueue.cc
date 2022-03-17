@@ -468,7 +468,7 @@ void LoadStoreQueue::tick() {
             const simeng::MemoryAccessTarget req = addressQueue.front();
 
             // Ensure the limit on the data transfered per cycle is adhered to
-            assert(req.size < bandwidth &&
+            assert(req.size <= bandwidth &&
                    "Individual memory request from LoadStoreQueue exceeds L1 "
                    "bandwidth set and thus will never be submitted");
             dataTransfered[isStore] += req.size;

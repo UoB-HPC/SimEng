@@ -154,6 +154,65 @@ MicroDecoder::~MicroDecoder() {
   microMetadataCache.clear();
 }
 
+bool MicroDecoder::detectOverlap(arm64_reg registerA, arm64_reg registerB) {
+  // Early checks on equivalent register ISA names
+  if (registerA == registerB) return true;
+  if ((registerA == ARM64_REG_WZR || registerA == ARM64_REG_XZR) &&
+      (registerB == ARM64_REG_WZR || registerB == ARM64_REG_XZR))
+    return true;
+  if ((registerA == ARM64_REG_WSP || registerA == ARM64_REG_SP) &&
+      (registerB == ARM64_REG_WSP || registerB == ARM64_REG_SP))
+    return true;
+
+  // Arrays to hold register identifiers
+  std::array<arm64_reg, 2> registers = {registerA, registerB};
+  std::array<bool, 2> isGP = {false, false};
+  std::array<uint8_t, 2> indexes = {0, 0};
+  // Get index of each register and whether they are general purpose
+  for (int i = 0; i < 2; i++) {
+    if (registers[i] == ARM64_REG_FP) {
+      isGP[i] = true;
+      indexes[i] = 29;
+    } else if (registers[i] == ARM64_REG_LR) {
+      isGP[i] = true;
+      indexes[i] = 30;
+    } else {
+      arm64_reg base = (arm64_reg)0;
+      if (registers[i] >= ARM64_REG_V0) {
+        base = ARM64_REG_V0;
+      } else if (registers[i] >= ARM64_REG_Z0) {
+        base = ARM64_REG_Z0;
+      } else if (registers[i] >= ARM64_REG_X0) {
+        base = ARM64_REG_X0;
+        isGP[i] = true;
+      } else if (registers[i] >= ARM64_REG_W0) {
+        base = ARM64_REG_W0;
+        isGP[i] = true;
+      } else if (registers[i] >= ARM64_REG_S0) {
+        base = ARM64_REG_S0;
+      } else if (registers[i] >= ARM64_REG_Q0) {
+        base = ARM64_REG_Q0;
+      } else if (registers[i] >= ARM64_REG_P0) {
+        base = ARM64_REG_P0;
+      } else if (registers[i] >= ARM64_REG_H0) {
+        base = ARM64_REG_H0;
+      } else if (registers[i] >= ARM64_REG_D0) {
+        base = ARM64_REG_D0;
+      } else if (registers[i] >= ARM64_REG_B0) {
+        base = ARM64_REG_B0;
+      }
+      indexes[i] = registers[i] - base;
+    }
+  }
+
+  // If index and register type match, report overlap
+  if ((indexes[0] == indexes[1]) && (isGP[0] == isGP[1])) {
+    return true;
+  }
+
+  return false;
+}
+
 uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
                              Instruction macroOp, MacroOp& output,
                              csh capstoneHandle) {
@@ -179,10 +238,11 @@ uint8_t MicroDecoder::decode(const Architecture& architecture, uint32_t word,
           uint8_t dataSize = getDataSize(metadata.operands[0]);
           // Reverse the order of the uops if the base memory register is the
           // same as the first destination register (avoids invalid RAW
-          // dependency between uops).=
+          // dependency between uops).
           uint8_t orderA = 0;
           uint8_t orderB = 1;
-          if (metadata.operands[0].reg == metadata.operands[2].mem.base) {
+          if (detectOverlap(metadata.operands[0].reg,
+                            metadata.operands[2].mem.base)) {
             orderA = 1;
             orderB = 0;
           }
