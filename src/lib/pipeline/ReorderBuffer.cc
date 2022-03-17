@@ -100,7 +100,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
         // Memory order violation found; aborting commits and flushing
         auto load = lsq_.getViolatingLoad();
         shouldFlush_ = true;
-        flushAfter_ = load->getSequenceId() - 1;
+        flushAfter_ = load->getInstructionId() - 1;
         pc_ = load->getInstructionAddress();
 
         buffer_.pop_front();
@@ -116,9 +116,10 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 void ReorderBuffer::flush(uint64_t afterSeqId) {
   // Iterate backwards from the tail of the queue to find and remove ops newer
   // than `afterSeqId`
+  // std::cout << "Flushing after " << afterSeqId << std::endl;
   while (!buffer_.empty()) {
     auto& uop = buffer_.back();
-    if (uop->getSequenceId() <= afterSeqId) {
+    if (uop->getInstructionId() <= afterSeqId) {
       break;
     }
 
