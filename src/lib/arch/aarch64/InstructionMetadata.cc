@@ -870,7 +870,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       std::string tmpOpStr(operandStr.substr(1, operandStr.find("}") - 1));
       // get dest0, then remove from string
       // Single or double digit Z register identifier
-      std::cerr << tmpOpStr << std::endl;
       if (tmpOpStr[2] == '.') {
         reg_enum0 += std::stoi(tmpOpStr.substr(1, 1));
         tmpOpStr.erase(0, 6);
@@ -880,7 +879,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       // get dest1, then remove from string
       // Single or double digit Z register identifier
-      std::cerr << tmpOpStr << std::endl;
       if (tmpOpStr[2] == '.') {
         reg_enum1 += std::stoi(tmpOpStr.substr(1, 1));
         tmpOpStr.erase(0, 6);
@@ -890,7 +888,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       // get dest2
       // Single or double digit Z register identifier
-      std::cerr << tmpOpStr << std::endl;
       if (tmpOpStr[2] == '.') {
         reg_enum2 += std::stoi(tmpOpStr.substr(1, 1));
       } else {
