@@ -102,11 +102,10 @@ void ExecuteUnit::tick() {
 void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   assert(uop->canExecute() &&
          "Attempted to execute an instruction before it was ready");
-  // std::cout << "Execute: " << uop->getSequenceId()
-  //           << ":"
-  // << uop->getInstructionId() << ":0x" << std::hex
-  // << uop->getInstructionAddress() << std::dec << ":"
-  // << uop->getMicroOpIndex() << std::endl;
+  // std::cout << "Execute: " << uop->getSequenceId() << ":"
+  //           << uop->getInstructionId() << ":0x" << std::hex
+  //           << uop->getInstructionAddress() << std::dec << ":"
+  //           << uop->getMicroOpIndex() << std::endl;
 
   if (uop->exceptionEncountered()) {
     // Exception encountered prior to execution

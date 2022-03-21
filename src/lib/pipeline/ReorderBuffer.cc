@@ -30,6 +30,7 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
   if (buffer_.size()) {
     size_t index = 0;
     int firstOp = -1;
+    bool validForCommit = false;
 
     // Find first instance of uop belonging to macro-op instruction
     for (; index < buffer_.size(); index++) {
@@ -45,8 +46,13 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
         if (buffer_[index]->getInstructionId() != insnId) break;
         if (!buffer_[index]->isWaitingCommit()) {
           return;
+        } else if (buffer_[index]->isLastMicroOp()) {
+          // all microOps must be in ROB for the commit to be valid
+          validForCommit = true;
         }
       }
+      if (!validForCommit) return;
+
       // No early return thus all uops are committable
       for (; firstOp < buffer_.size(); firstOp++) {
         if (buffer_[firstOp]->getInstructionId() != insnId) break;
@@ -74,8 +80,10 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     if (uop->isLastMicroOp()) instructionsCommitted_++;
-    // std::cout << "Commit 0x" << std::hex << uop->getInstructionAddress()
-    //           << std::dec << std::endl;
+    // std::cout << "Commit " << uop->getSequenceId() << ":"
+    //           << uop->getInstructionId() << ":0x" << std::hex
+    //           << uop->getInstructionAddress() << std::dec << ":"
+    //           << uop->getMicroOpIndex() << std::endl;
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);
