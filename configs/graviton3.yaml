@@ -75,7 +75,8 @@ Ports:
     Instruction-Support:
     - SVE
     - FP
-    - STORE_DATA_FP
+    - STORE_DATA_SCALAR
+    - STORE_DATA_VECTOR
     - STORE_DATA_SVE
   7:
     Portname: FP_ASIMD_1
@@ -84,7 +85,8 @@ Ports:
     - FP_SIMPLE_ARTH
     - FP_SIMPLE_LOGICAL
     - SCALAR_MUL
-    - STORE_DATA_FP
+    - STORE_DATA_SCALAR
+    - STORE_DATA_VECTOR
     - STORE_DATA_SVE
     - VECTOR_SIMPLE_CMP
   8:
@@ -202,6 +204,48 @@ Execution-Units:
     - INT_DIV_OR_SQRT
     - FP_DIV_OR_SQRT
     - SVE_DIV_OR_SQRT
+  8:
+    Pipelined: True
+    Blocking-Groups: 
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  9:
+    Pipelined: True
+    Blocking-Groups: 
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  10:
+    Pipelined: True
+    Blocking-Groups: 
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  11:
+    Pipelined: True
+    Blocking-Groups: 
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  12:
+    Pipelined: True
+    Blocking-Groups: 
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  13:
+    Pipelined: True
+    Blocking-Groups: 
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
+  14:
+    Pipelined: True
+    Blocking-Groups: 
+    - INT_DIV_OR_SQRT
+    - FP_DIV_OR_SQRT
+    - SVE_DIV_OR_SQRT
 Latencies:
   0:
     Instruction-Groups: 
@@ -234,7 +278,7 @@ Latencies:
     Execution-Throughput: 20
   5:
     Instruction-Groups: 
-    - FP_ARTH
+    - FP_SIMPLE_ARTH
     - FP_SIMPLE_LOGICAL
     - FP_SIMPLE_CMP
     Execution-Latency: 2
@@ -307,10 +351,10 @@ Latencies:
     Execution-Throughput: 15
   16:
     Instruction-Groups: 
-    - LOAD_VECTOR
-    - STORE_VECTOR
-    - LOAD_SVE
-    - STORE_SVE
+    - LOAD_ADDRESS_VECTOR
+    - STORE_ADDRESS_VECTOR
+    - LOAD_ADDRESS_SVE
+    - STORE_ADDRESS_SVE
     Execution-Latency: 2
     Execution-Throughput: 1
   17:
