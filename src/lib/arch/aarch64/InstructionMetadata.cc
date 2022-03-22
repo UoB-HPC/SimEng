@@ -1960,6 +1960,10 @@ void InstructionMetadata::revertAliasing() {
         }
         return;
       }
+      if (opcode == Opcode::AArch64_NEGv2i64) {
+        // No alias present, trying to alias self.
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_NEGS:
       if (opcode == Opcode::AArch64_SUBSWrs ||

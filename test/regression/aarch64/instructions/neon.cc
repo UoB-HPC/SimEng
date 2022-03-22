@@ -1732,6 +1732,29 @@ TEST_P(InstNeon, fneg) {
   CHECK_NEON(3, float, {-2.0, 1.0, 321.0, -123.0});
 }
 
+TEST_P(InstNeon, neg) {
+  initialHeapData_.resize(32);
+  int64_t* heap64 = reinterpret_cast<int64_t*>(initialHeapData_.data());
+  heap64[0] = 1;
+  heap64[1] = -42;
+  heap64[2] = 0;
+  heap64[3] = 321;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    neg v2.2d, v0.2d
+    neg v3.2d, v1.2d
+  )");
+  CHECK_NEON(2, int64_t, {-1, 42});
+  CHECK_NEON(3, int64_t, {0, -321});
+}
+
 TEST_P(InstNeon, frinta) {
   // 64-bit negative
   initialHeapData_.resize(48);
