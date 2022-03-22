@@ -6,7 +6,7 @@
 
 Core:
   Simulation-Mode: outoforder
-  Clock-Frequency: 1.8
+  Clock-Frequency: 2.6
   Fetch-Block-Size: 32
   Micro-Operations: True
   Vector-Length: 256
@@ -66,7 +66,7 @@ Ports:
   5:
     Portname: INT_MULTI_CYCLE_1
     Instruction-Support:
-    - INT_ARTH
+    - INT_SIMPLE_ARTH
     - INT_SIMPLE_CMP
     - INT_SIMPLE_LOGICAL
     - INT_MUL
@@ -86,17 +86,17 @@ Ports:
     - SCALAR_MUL
     - STORE_DATA_FP
     - STORE_DATA_SVE
-    - VECTOR_CMP
+    - VECTOR_SIMPLE_CMP
   8:
     Portname: FP_ASIMD_2
     Instruction-Support:
     - FP_SIMPLE_ARTH
     - FP_SIMPLE_LOGICAL
-    - SCALAR_CVT
+    - SCALAR_SIMPLE_CVT
     - SCALAR_MUL
     - SCALAR_DIV_OR_SQRT
-    - VECTOR_CMP
-    - VECTOR_CVT
+    - VECTOR_SIMPLE_CMP
+    - VECTOR_SIMPLE_CVT
     - VECTOR_MUL
     - VECTOR_DIV_OR_SQRT
   9:
@@ -105,7 +105,7 @@ Ports:
     - FP_SIMPLE_ARTH
     - FP_SIMPLE_LOGICAL
     - SCALAR_MUL
-    - VECTOR_CMP
+    - VECTOR_SIMPLE_CMP
   10:
     Portname: LOAD_STORE_0
     Instruction-Support:
@@ -132,26 +132,27 @@ Reservation-Stations:
   0:
     Size: 20
     Ports:
-    - FLA
-    - PR
-    - EXA
+    - BR_0
+    - BR_1
+    - INT_SINGLE_CYCLE_0
+    - INT_SINGLE_CYCLE_1
+    - INT_MULTI_CYCLE_0
+    - INT_MULTI_CYCLE_1
   1:
     Size: 20
     Ports:
-    - FLB
-    - EXB
+    - FP_ASIMD_0
+    - FP_ASIMD_1
+    - FP_ASIMD_2
+    - FP_ASIMD_3
   2:
-    Size: 10
+    Size: 20
     Ports:
-    - EAGA
-  3:
-    Size: 10
-    Ports:
-    - EAGB
-  4:
-    Size: 19
-    Ports:
-    - BR
+    - LOAD_STORE_0
+    - LOAD_STORE_1
+    - LOAD_2
+    - STORE_DATA_0
+    - STORE_DATA_1
 Execution-Units:
   0:
     Pipelined: True
@@ -234,19 +235,19 @@ Latencies:
   5:
     Instruction-Groups: 
     - FP_ARTH
-    - FP_LOGICAL
-    - FP_CMP
+    - FP_SIMPLE_LOGICAL
+    - FP_SIMPLE_CMP
     Execution-Latency: 2
     Execution-Throughput: 1
   6:
     Instruction-Groups: 
-    - SCALAR_CVT
+    - SCALAR_SIMPLE_CVT
     - SCALAR_MUL
     Execution-Latency: 3
     Execution-Throughput: 1
   7:
     Instruction-Groups: 
-    - SCALAR_DV_OR_SQRT
+    - SCALAR_DIV_OR_SQRT
     Execution-Latency: 7
     Execution-Throughput: 7
   8:
@@ -268,9 +269,9 @@ Latencies:
     Execution-Throughput: 1
   11:
     Instruction-Groups: 
-    - VECTOR_CVT
+    - VECTOR_SIMPLE_CVT
     - VECTOR_MUL
-    - SVE_CVT
+    - SVE_SIMPLE_CVT
     - SVE_MUL
     Execution-Latency: 4
     Execution-Throughput: 1
