@@ -7695,8 +7695,28 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD1RQ_D_IMM: {
-      return executionNYI();
+    case Opcode::AArch64_LD1RQ_D_IMM: {  // ld1rqd {zd.d}, pg/z, [xn{, #imm}]
+      // LOAD
+      const uint64_t* p = operands[0].getAsVector<uint64_t>();
+      const uint16_t partition_num = VL_bits / 64;
+      uint64_t out[32] = {0};
+      uint16_t index = 0;
+
+      // Get mini-vector (quadword)
+      uint64_t mini[2] = {0};
+      for (int i = 0; i < 2; i++) {
+        uint64_t shifted_active = 1ull << ((i % 8) * 8);
+        if (p[i / 8] & shifted_active)
+          mini[i] = memoryData[index].get<uint64_t>();
+        index++;
+      }
+
+      // Duplicate mini-vector into output vector
+      for (int i = 0; i < (partition_num / 2); i++) {
+        out[2 * i] = mini[0];
+        out[(2 * i) + 1] = mini[1];
+      }
+      results[0] = {out, 256};
       break;
     }
     case Opcode::AArch64_LD1RQ_H: {
@@ -8318,7 +8338,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn], #imm
+    case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn],
+                                            // #imm
       // LOAD
       const float* region1 = memoryData[0].getAsVector<float>();
       const float* region2 = memoryData[1].getAsVector<float>();
@@ -9589,7 +9610,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRSBWroX: {  // ldrsb wt, [xn, xm{, extend {#amount}}]
+    case Opcode::AArch64_LDRSBWroX: {  // ldrsb wt, [xn, xm{, extend
+                                       // {#amount}}]
       // LOAD
       results[0] =
           RegisterValue(static_cast<int32_t>(memoryData[0].get<int8_t>()), 4)
@@ -9632,14 +9654,16 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRSHWroW: {  // ldrsh wt, [xn, wm{, extend {#amount}}]
+    case Opcode::AArch64_LDRSHWroW: {  // ldrsh wt, [xn, wm{, extend
+                                       // {#amount}}]
       // LOAD
       results[0] =
           RegisterValue(static_cast<int32_t>(memoryData[0].get<int16_t>()), 4)
               .zeroExtend(4, 8);
       break;
     }
-    case Opcode::AArch64_LDRSHWroX: {  // ldrsh wt, [xn, xm{, extend {#amount}}]
+    case Opcode::AArch64_LDRSHWroX: {  // ldrsh wt, [xn, xm{, extend
+                                       // {#amount}}]
       // LOAD
       results[0] =
           RegisterValue(static_cast<int32_t>(memoryData[0].get<int16_t>()), 4)
@@ -9661,12 +9685,14 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRSHXroW: {  // ldrsh xt, [xn, wm{, extend {#amount}}]
+    case Opcode::AArch64_LDRSHXroW: {  // ldrsh xt, [xn, wm{, extend
+                                       // {#amount}}]
       // LOAD
       results[0] = static_cast<int64_t>(memoryData[0].get<int16_t>());
       break;
     }
-    case Opcode::AArch64_LDRSHXroX: {  // ldrsh xt, [xn, xm{, extend {#amount}}]
+    case Opcode::AArch64_LDRSHXroX: {  // ldrsh xt, [xn, xm{, extend
+                                       // {#amount}}]
       // LOAD
       results[0] = static_cast<int64_t>(memoryData[0].get<int16_t>());
       break;
@@ -9695,7 +9721,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend {#amount}}]
+    case Opcode::AArch64_LDRSWroX: {  // ldrsw xt, [xn, xm{, extend
+                                      // {#amount}}]
       // LOAD
       results[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
       break;
@@ -15166,7 +15193,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn], #imm
+    case Opcode::AArch64_ST2Twov4s_POST: {  // st2 {vt1.4s, vt2.4s}, [xn],
+                                            // #imm
       // STORE
       const float* t1 = operands[0].getAsVector<float>();
       const float* t2 = operands[1].getAsVector<float>();
@@ -19001,9 +19029,9 @@ void Instruction::execute() {
   }
 
 #ifndef NDEBUG
-  // Check if upper bits of vector registers are zeroed because Z configuration
-  // extend to 256 bytes whilst V configurations only extend to 16 bytes.
-  // Thus upper 240 bytes must be ignored by being set to 0.
+  // Check if upper bits of vector registers are zeroed because Z
+  // configuration extend to 256 bytes whilst V configurations only extend
+  // to 16 bytes. Thus upper 240 bytes must be ignored by being set to 0.
   for (int i = 0; i < destinationRegisterCount; i++) {
     if ((destinationRegisters[i].type == RegisterType::VECTOR) && !isSVEData_) {
       if (results[i].size() != 256)
