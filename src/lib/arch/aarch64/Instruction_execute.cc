@@ -10957,8 +10957,8 @@ void Instruction::execute() {
       return executionNYI();
       break;
     }
-    case Opcode::AArch64_NEGv2i64: {
-      return executionNYI();
+    case Opcode::AArch64_NEGv2i64: {  // neg vd.2d, vn.2d
+      results[0] = neonHelp::vecFneg_2ops<int64_t, 2>(operands);
       break;
     }
     case Opcode::AArch64_NEGv4i16: {
