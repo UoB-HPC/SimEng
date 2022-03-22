@@ -351,9 +351,9 @@ Latencies:
     Execution-Throughput: 15
   16:
     Instruction-Groups: 
-    - LOAD_ADDRESS_VECTOR
+    - LOAD_VECTOR
     - STORE_ADDRESS_VECTOR
-    - LOAD_ADDRESS_SVE
+    - LOAD_SVE
     - STORE_ADDRESS_SVE
     Execution-Latency: 2
     Execution-Throughput: 1
