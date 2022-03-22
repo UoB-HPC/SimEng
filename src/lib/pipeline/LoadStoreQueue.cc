@@ -179,6 +179,12 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   const auto& addresses = uop->getGeneratedAddresses();
   span<const simeng::RegisterValue> data = storeQueue_.front().second;
 
+  // Early exit if there's no addresses to process
+  if (addresses.size() == 0) {
+    storeQueue_.pop_front();
+    return false;
+  }
+
   requestStoreQueue_[tickCounter_ + uop->getLSQLatency()].push_back({{}, uop});
   // Submit request write to memory interface early as the architectural state
   // considers the store to be retired and thus its operation complete
