@@ -18,7 +18,7 @@ enum accessType { LOAD = 0, STORE };
 /** A requestQueue_ entry. */
 struct requestEntry {
   /** The memory address(es) to be accessed. */
-  std::queue<const simeng::MemoryAccessTarget> reqAddresses;
+  std::queue<simeng::MemoryAccessTarget> reqAddresses;
   /** The instruction sending the request(s). */
   std::shared_ptr<Instruction> insn;
 };
