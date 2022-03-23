@@ -80,6 +80,41 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.close(fd)}};
         break;
       }
+      case 61: {  // getdents64
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
+
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t totalRead = linux_.getdents64(fd, dataBuffer.data(), count);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {totalRead}};
+          // Check for failure
+          if (totalRead < 0) {
+            return concludeSyscall(stateChange);
+          }
+
+          int64_t bytesRemaining = totalRead;
+          // Get pointer and size of the buffer
+          uint64_t iDst = bufPtr;
+          uint64_t iLength = bytesRemaining;
+          if (iLength > bytesRemaining) {
+            iLength = bytesRemaining;
+          }
+          bytesRemaining -= iLength;
+          // Write data for this buffer in 128-byte chunks
+          auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
+          while (iLength > 0) {
+            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+            stateChange.memoryAddresses.push_back({iDst, len});
+            stateChange.memoryAddressValues.push_back({iSrc, len});
+            iDst += len;
+            iSrc += len;
+            iLength -= len;
+          }
+          return concludeSyscall(stateChange);
+        });
+      }
       case 62: {  // lseek
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t offset = registerFileSet.get(R1).get<uint64_t>();
@@ -120,6 +155,17 @@ bool ExceptionHandler::init() {
             iSrc += len;
             iLength -= len;
           }
+          return concludeSyscall(stateChange);
+        });
+      }
+      case 64: {  // write
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t retval = linux_.write(fd, dataBuffer.data(), count);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {retval}};
           return concludeSyscall(stateChange);
         });
       }
@@ -195,17 +241,6 @@ bool ExceptionHandler::init() {
         // Run the buffer read to load the buffer structures, before invoking
         // the kernel.
         return readBufferThen(iov, iovcnt * 16, invokeKernel);
-      }
-      case 64: {  // write
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
-        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
-        return readBufferThen(bufPtr, count, [=]() {
-          int64_t retval = linux_.write(fd, dataBuffer.data(), count);
-          ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {retval}};
-          return concludeSyscall(stateChange);
-        });
       }
       case 66: {  // writev
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
@@ -338,7 +373,6 @@ bool ExceptionHandler::init() {
       case 113: {  // clock_gettime
         uint64_t clkId = registerFileSet.get(R0).get<uint64_t>();
         uint64_t systemTimer = core.getSystemTimer();
-
         uint64_t seconds;
         uint64_t nanoseconds;
         uint64_t retval =
@@ -384,6 +418,10 @@ bool ExceptionHandler::init() {
           stateChange = {ChangeType::REPLACEMENT, {R0}, {-1ll}};
         }
         break;
+      }
+      case 131: {  // tgkill
+        // TODO currently returns success without action
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0}};
       }
       case 134: {  // rt_sigaction
         // TODO: Implement syscall logic. Ignored for now as it's assumed the
@@ -459,6 +497,9 @@ bool ExceptionHandler::init() {
       case 177:  // getegid
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getegid()}};
         break;
+      case 178:  // gettid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.gettid()}};
+        break;
       case 179:  // sysinfo
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
@@ -474,6 +515,32 @@ bool ExceptionHandler::init() {
 
         int64_t result = linux_.munmap(addr, length);
         stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
+        break;
+      }
+      case 216: {  // mremap
+        uint64_t old_address = registerFileSet.get(R0).get<uint64_t>();
+        size_t old_size = registerFileSet.get(R1).get<size_t>();
+        size_t new_size = registerFileSet.get(R2).get<size_t>();
+        int flags = registerFileSet.get(R3).get<int>();
+        uint64_t new_address = registerFileSet.get(R4).get<uint64_t>();
+
+        // Currently only MAYMOVE supported
+        if (flags == 1) {
+          uint64_t result = linux_.mremap(old_address, old_size, new_size,
+                                          flags, new_address);
+          if (result == -1) {
+            stateChange = {
+                ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-1)}};
+          } else {
+            stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
+          }
+        } else {
+          printException(instruction_);
+          std::cout << "Unsupported arguments for syscall: " << syscallId
+                    << std::endl;
+          return fatal();
+        }
+
         break;
       }
       case 222: {  // mmap
@@ -698,6 +765,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
       break;
     case InstructionException::SecureMonitorCall:
       std::cout << "secure monitor call";
+      break;
+    case InstructionException::NoAvailablePort:
+      std::cout << "unsupported execution port";
       break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)

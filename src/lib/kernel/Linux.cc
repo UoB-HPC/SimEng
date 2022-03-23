@@ -191,9 +191,12 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
   out.size = statbuf.st_size;
   out.blksize = statbuf.st_blksize;
   out.blocks = statbuf.st_blocks;
-  out.atime = statbuf.st_atime;
-  out.mtime = statbuf.st_mtime;
-  out.ctime = statbuf.st_ctime;
+  out.atime = statbuf.st_atim.tv_sec;
+  out.atimensec = statbuf.st_atim.tv_nsec;
+  out.mtime = statbuf.st_mtim.tv_sec;
+  out.mtimensec = statbuf.st_mtim.tv_nsec;
+  out.ctime = statbuf.st_ctim.tv_sec;
+  out.ctimensec = statbuf.st_ctim.tv_nsec;
 
   return retval;
 }
@@ -277,6 +280,8 @@ int64_t Linux::getuid() const { return 0; }
 int64_t Linux::geteuid() const { return 0; }
 int64_t Linux::getgid() const { return 0; }
 int64_t Linux::getegid() const { return 0; }
+// TODO update for multithreaded processes
+int64_t Linux::gettid() const { return 0; }
 
 int64_t Linux::gettimeofday(uint64_t systemTimer, timeval* tv, timeval* tz) {
   // TODO: Ideally this should get the system timer from the core directly
@@ -377,6 +382,51 @@ int64_t Linux::munmap(uint64_t addr, size_t length) {
   return 0;
 }
 
+// TODO needs tests
+uint64_t Linux::mremap(uint64_t old_address, size_t old_size, size_t new_size,
+                       int flags, uint64_t new_address) {
+  LinuxProcessState* lps = &processStates_[0];
+  bool MAYMOVE = flags & 1;
+  bool FIXED = flags & 2;
+  bool DONTUNMAP = flags & 4;
+
+  // Check old address page alignment
+  assert(old_address == alignToBoundary(old_address, lps->pageSize) &&
+         "mremap: old_address does not align to page boundary");
+
+  if (lps->contiguousAllocations.size() > 1) {
+    for (auto& alloc : lps->contiguousAllocations) {
+      // Find allocation with old_address
+      if (alloc.vm_start == old_address) {
+        // TODO If  the  value  of old_size is zero, and old_address refers to a
+        // shareable mapping (see mmap(2) MAP_SHARED), then mremap() will create
+        // a new mapping of the same pages
+
+        // If extended mapping will fit in the current gap
+        if ((alloc.vm_next->vm_start - alloc.vm_start) >= new_size) {
+          alloc.vm_end = alloc.vm_start + new_size;
+          return old_address;
+        } else if (MAYMOVE) {
+          // TODO change links
+          return mmap(0, new_size, -1, 34, -1, 0);
+        }
+      }
+    }
+  } else if (lps->contiguousAllocations.size() > 0) {
+    if (lps->contiguousAllocations[0].vm_start == old_address) {
+      auto& alloc = lps->contiguousAllocations[0];
+      alloc.vm_end = alloc.vm_start + new_size;
+      return alloc.vm_start;
+    } else {
+      // old_address does not point to the one current allocation, MAP_FAILED
+      return -1;
+    }
+  }
+
+  // No allocations, MAP_FAILED
+  return -1;
+}
+
 uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
                      off_t offset) {
   LinuxProcessState* lps = &processStates_[0];
@@ -399,7 +449,8 @@ uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
         lps->contiguousAllocations.back().vm_next = newAlloc;
       }
     } else if (lps->contiguousAllocations.size() > 0) {
-      // Append allocation to end of list and link first entry to new allocation
+      // Append allocation to end of list and link first entry to new
+      // allocation
       newAlloc->vm_start = lps->contiguousAllocations[0].vm_end;
       lps->contiguousAllocations[0].vm_next = newAlloc;
     } else {
