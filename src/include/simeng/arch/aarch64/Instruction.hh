@@ -310,9 +310,6 @@ class Instruction : public simeng::Instruction {
   /** Is this a branch and link instruction? */
   bool isBL() const override;
 
-  /** Is this a SVE instruction? */
-  bool isSVE() const override;
-
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 

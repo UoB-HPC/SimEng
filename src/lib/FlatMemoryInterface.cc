@@ -25,11 +25,6 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
 
 void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
                                        const RegisterValue& data) {
-  uint64_t temp_data;
-  if (data.size() == 1) temp_data = data.get<uint8_t>();
-  if (data.size() == 2) temp_data = data.get<uint16_t>();
-  if (data.size() == 4) temp_data = data.get<uint32_t>();
-  if (data.size() == 8) temp_data = data.get<uint64_t>();
   assert(target.address + target.size <= size_ &&
          "Attempted to write beyond memory limit");
 

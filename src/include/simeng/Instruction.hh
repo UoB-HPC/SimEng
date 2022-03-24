@@ -120,10 +120,6 @@ class Instruction {
   /** Is this a branch and link instruction? */
   virtual bool isBL() const = 0;
 
-  /** Is this a SVE instruction? */
-  /** Maybe remove as aarch64 exclusive? */
-  virtual bool isSVE() const = 0;
-
   /** Set this instruction's instruction memory address. */
   void setInstructionAddress(uint64_t address);
 
@@ -161,8 +157,6 @@ class Instruction {
 
   /** Get this instruction's supported set of ports. */
   virtual const std::vector<uint8_t>& getSupportedPorts() = 0;
-
-  bool shouldSplitRequests() const;
 
  protected:
   /** Whether an exception has been encountered. */
@@ -212,10 +206,6 @@ class Instruction {
 
   /** The execution ports that this instruction can be issued to. */
   std::vector<uint8_t> supportedPorts_ = {};
-
-  /** Whether this instructions' memory accesses should be treated as many
-   * independent requests. **/
-  bool splitMemoryRequests_ = false;
 };
 
 }  // namespace simeng
