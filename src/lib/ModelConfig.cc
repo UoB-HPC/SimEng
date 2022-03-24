@@ -95,17 +95,26 @@ void ModelConfig::validate() {
 
   // L1-Cache
   root = "L1-Cache";
-  subFields = {"Access-Latency", "Bandwidth", "Permitted-Requests-Per-Cycle",
-               "Permitted-Loads-Per-Cycle", "Permitted-Stores-Per-Cycle"};
+  subFields = {"Access-Latency",
+               "Exclusive",
+               "Load-Bandwidth",
+               "Store-Bandwidth",
+               "Permitted-Requests-Per-Cycle",
+               "Permitted-Loads-Per-Cycle",
+               "Permitted-Stores-Per-Cycle"};
   nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
                         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
-  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
+  nodeChecker<bool>(configFile_[root][subFields[1]], subFields[1],
+                    std::vector<bool>{true, false}, ExpectedValue::Bool);
   nodeChecker<uint8_t>(configFile_[root][subFields[2]], subFields[2],
                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
   nodeChecker<uint8_t>(configFile_[root][subFields[3]], subFields[3],
                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
   nodeChecker<uint8_t>(configFile_[root][subFields[4]], subFields[4],
+                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
+  nodeChecker<uint8_t>(configFile_[root][subFields[5]], subFields[5],
+                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
+  nodeChecker<uint8_t>(configFile_[root][subFields[6]], subFields[6],
                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
   subFields.clear();
 
@@ -287,7 +296,7 @@ void ModelConfig::validate() {
     YAML::Node euNode = configFile_[root][i];
     nodeChecker<bool>(configFile_[root][i][subFields[0]],
                       (std::string(euNum) + subFields[0]),
-                      std::make_pair(false, true), ExpectedValue::Bool);
+                      std::vector<bool>{false, true}, ExpectedValue::Bool);
     if (euNode[subFields[1]].IsDefined() && !(euNode[subFields[1]].IsNull())) {
       // Compile set of blocking groups into a queue
       std::queue<uint16_t> blockingGroups;

@@ -109,6 +109,10 @@ void Core::tick() {
   // Execute
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
+    if (uop->exceptionEncountered()) {
+      handleException(uop);
+      return;
+    }
     if (addresses.size() > 0) {
       // Memory reads are required; request them, set `pendingReads_`
       // accordingly, and end the cycle early
@@ -124,6 +128,10 @@ void Core::tick() {
     }
   } else if (uop->isStore()) {
     uop->generateAddresses();
+    if (uop->exceptionEncountered()) {
+      handleException(uop);
+      return;
+    }
   }
 
   execute(uop);
