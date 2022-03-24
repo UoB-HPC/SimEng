@@ -13,7 +13,10 @@ TEST_P(InstLoad, lb) {
   heap[3] = 0x87654321;
 
   RUN_RISCV(R"(
-      addi t5, t5, 32  # Static heap address
+      li a7, 214
+      ecall
+
+      add t5, t5, a0
       lb t6, 0(t5)
       lb t4, 4(t5)
       lb t3, 7(t5)
@@ -27,7 +30,10 @@ TEST_P(InstLoad, lb) {
 
   // Load byte unsigned
   RUN_RISCV(R"(
-      addi t5, t5, 32  # Static heap address
+      li a7, 214
+      ecall
+
+      add t5, t5, a0
       lbu t6, 0(t5)
       lbu t4, 4(t5)
       lbu t3, 7(t5)
@@ -49,7 +55,10 @@ TEST_P(InstLoad, lh) {
   heap[3] = 0x87654321;
 
   RUN_RISCV(R"(
-      addi t5, t5, 32  # Static heap address
+      li a7, 214
+      ecall
+
+      add t5, t5, a0
       lh t6, 0(t5)
       lh t4, 4(t5)
       lh t3, 7(t5)
@@ -63,7 +72,10 @@ TEST_P(InstLoad, lh) {
 
   // Load half word unsigned
   RUN_RISCV(R"(
-      addi t5, t5, 32  # Static heap address
+      li a7, 214
+      ecall
+
+      add t5, t5, a0
       lhu t6, 0(t5)
       lhu t4, 4(t5)
       lhu t3, 7(t5)
@@ -85,7 +97,10 @@ TEST_P(InstLoad, lw) {
   heap[3] = 0x87654321;
 
   RUN_RISCV(R"(
-      addi t5, t5, 32  # Static heap address
+      li a7, 214
+      ecall
+
+      add t5, t5, a0
       lw t6, 0(t5)
       lw t4, 4(t5)
       lw t3, 7(t5)
@@ -98,7 +113,10 @@ TEST_P(InstLoad, lw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x000000005678DEAD);
 
   RUN_RISCV(R"(
-      addi t5, t5, 32  # Static heap address
+      li a7, 214
+      ecall
+
+      add t5, t5, a0
       lwu t6, 0(t5)
       lwu t4, 4(t5)
       lwu t3, 7(t5)
@@ -120,7 +138,10 @@ TEST_P(InstLoad, ld) {
   heap[3] = 0x87654321;
 
   RUN_RISCV(R"(
-      addi t5, t5, 32  # Static heap address
+      li a7, 214
+      ecall
+
+      add t5, t5, a0
       ld t6, 0(t5)
       ld t4, 4(t5)
       ld t3, 7(t5)
@@ -135,11 +156,12 @@ TEST_P(InstLoad, ld) {
 
 INSTANTIATE_TEST_SUITE_P(
     RISCV, InstLoad,
-    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
-                      std::make_tuple(INORDER, YAML::Load("{}"))
-//                          ,
-//                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))
-                      ),
+    ::testing::Values(
+        std::make_tuple(EMULATION, YAML::Load("{}")),
+        std::make_tuple(INORDER, YAML::Load("{}"))
+        //                          ,
+        //                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))
+        ),
     paramToString);
 
 }  // namespace
