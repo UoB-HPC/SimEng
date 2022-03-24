@@ -1,3 +1,4 @@
+
 #include <cmath>
 #include <tuple>
 
@@ -10,7 +11,7 @@ namespace riscv {
 
 /** Multiply `a` and `b`, and return the high 64 bits of the result.
  * https://stackoverflow.com/a/28904636 */
-uint64_t mulhi(uint64_t a, uint64_t b) {
+uint64_t mulhiuu(uint64_t a, uint64_t b) {
   uint64_t a_lo = (uint32_t)a;
   uint64_t a_hi = a >> 32;
   uint64_t b_lo = (uint32_t)b;
@@ -29,6 +30,21 @@ uint64_t mulhi(uint64_t a, uint64_t b) {
       a_x_b_hi + (a_x_b_mid >> 32) + (b_x_a_mid >> 32) + carry_bit;
 
   return multhi;
+}
+
+/** Multiply `a` and `b`, and return the high 64 bits of the result.
+ * https://stackoverflow.com/a/28904636 */
+uint64_t mulhiss(int64_t a, int64_t b) {
+  // TODO NYI
+
+  return a;
+}
+
+/** Multiply `a` and `b`, and return the high 64 bits of the result.
+ * https://stackoverflow.com/a/28904636 */
+uint64_t mulhisu(int64_t a, uint64_t b) {
+  // TODO NYI
+  return a;
 }
 
 /** Extend 'bits' by value in position 'msb' of 'bits' (1 indexed) */
@@ -426,6 +442,7 @@ void Instruction::execute() {
       results[0] = instructionAddress_ + 4;
       break;
     }
+      // TODO EBREAK
     case Opcode::RISCV_ECALL: {
       exceptionEncountered_ = true;
       exception_ = InstructionException::SupervisorCall;
@@ -440,7 +457,7 @@ void Instruction::execute() {
       break;
     }
 
-      // Atomic Extension
+      // Atomic Extension (A)
       // TODO not implemented atomically
     case Opcode::RISCV_LR_W:
     case Opcode::RISCV_LR_W_AQ:
@@ -656,6 +673,145 @@ void Instruction::execute() {
           static_cast<uint64_t>(std::max(rd, operands[0].get<uint64_t>()));
       break;
     }
+
+      // Integer multiplication division extension (M)
+    case Opcode::RISCV_MUL: {
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs2 = operands[1].get<int64_t>();
+      results[0] = static_cast<int64_t>(rs1 * rs2);
+      break;
+    }
+    case Opcode::RISCV_MULH: {
+      return executionNYI();
+
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs2 = operands[1].get<int64_t>();
+      results[0] = mulhiss(rs1, rs2);
+      break;
+    }
+    case Opcode::RISCV_MULHU: {
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = operands[1].get<uint64_t>();
+      results[0] = mulhiuu(rs1, rs2);
+      break;
+    }
+    case Opcode::RISCV_MULHSU: {
+      return executionNYI();
+
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const uint64_t rs2 = operands[1].get<uint64_t>();
+      results[0] = mulhisu(rs1, rs2);
+      break;
+    }
+    case Opcode::RISCV_MULW: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      const uint32_t rs2 = operands[1].get<uint32_t>();
+      results[0] = signExtendW(rs1 * rs2);
+      break;
+    }
+
+    case Opcode::RISCV_DIV: {
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs2 = operands[1].get<int64_t>();
+      if (rs2 == 0) {
+        // divide by zero
+        results[0] = static_cast<uint64_t>(-1);
+      } else if (rs1 == static_cast<int64_t>(0x8000000000000000) && rs2 == -1) {
+        // division overflow
+        results[0] = rs1;
+      } else {
+        results[0] = static_cast<int64_t>(rs1 / rs2);
+      }
+      break;
+    }
+    case Opcode::RISCV_DIVW: {
+      const int32_t rs1 = operands[0].get<int32_t>();
+      const int32_t rs2 = operands[1].get<int32_t>();
+      if (rs2 == 0) {
+        // divide by zero
+        results[0] = static_cast<uint64_t>(-1);
+      } else if (rs1 == static_cast<int32_t>(0x80000000) && rs2 == -1) {
+        // division overflow
+        results[0] = static_cast<int64_t>(signExtendW(rs1));
+      } else {
+        results[0] = static_cast<int64_t>(signExtendW(rs1 / rs2));
+      }
+      break;
+    }
+    case Opcode::RISCV_DIVU: {
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = operands[1].get<uint64_t>();
+      if (rs2 == 0) {
+        // divide by zero
+        results[0] = static_cast<uint64_t>(-1);
+      } else {
+        results[0] = static_cast<uint64_t>(rs1 / rs2);
+      }
+      break;
+    }
+    case Opcode::RISCV_DIVUW: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      const uint32_t rs2 = operands[1].get<uint32_t>();
+      if (rs2 == 0) {
+        // divide by zero
+        results[0] = static_cast<uint64_t>(-1);
+      } else {
+        results[0] = static_cast<uint64_t>(signExtendW(rs1 / rs2));
+      }
+      break;
+    }
+
+    case Opcode::RISCV_REM: {
+      const int64_t rs1 = operands[0].get<int64_t>();
+      const int64_t rs2 = operands[1].get<int64_t>();
+      if (rs2 == 0) {
+        // divide by zero
+        results[0] = static_cast<uint64_t>(rs1);
+      } else if (rs1 == static_cast<int64_t>(0x8000000000000000) && rs2 == -1) {
+        // division overflow
+        results[0] = static_cast<int64_t>(0);
+      } else {
+        results[0] = static_cast<int64_t>(rs1 % rs2);
+      }
+      break;
+    }
+    case Opcode::RISCV_REMW: {
+      const int32_t rs1 = operands[0].get<int32_t>();
+      const int32_t rs2 = operands[1].get<int32_t>();
+      if (rs2 == 0) {
+        // divide by zero
+        results[0] = static_cast<int64_t>(signExtendW(rs1));
+      } else if (rs1 == static_cast<int32_t>(0x80000000) && rs2 == -1) {
+        // division overflow
+        results[0] = static_cast<int64_t>(0);
+      } else {
+        results[0] = static_cast<int64_t>(signExtendW(rs1 % rs2));
+      }
+      break;
+    }
+    case Opcode::RISCV_REMU: {
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+      const uint64_t rs2 = operands[1].get<uint64_t>();
+      if (rs2 == 0) {
+        // divide by zero
+        results[0] = rs1;
+      } else {
+        results[0] = static_cast<uint64_t>(rs1 % rs2);
+      }
+      break;
+    }
+    case Opcode::RISCV_REMUW: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+      const uint32_t rs2 = operands[1].get<uint32_t>();
+      if (rs2 == 0) {
+        // divide by zero
+        results[0] = static_cast<int64_t>(signExtendW(rs1));
+      } else {
+        results[0] = static_cast<uint64_t>(signExtendW(rs1 % rs2));
+      }
+      break;
+    }
+
     default:
       return executionNYI();
   }

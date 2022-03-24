@@ -5,6 +5,7 @@ add_executable(regression-riscv
             LoadStoreQueue.cc
             SmokeTest.cc
             instructions/arithmetic.cc
+            instructions/multiplyDivide.cc
             instructions/load.cc
             instructions/store.cc
             instructions/jump.cc
