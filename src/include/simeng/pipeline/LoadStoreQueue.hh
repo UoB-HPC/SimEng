@@ -2,6 +2,7 @@
 
 #include <deque>
 #include <functional>
+#include <map>
 #include <queue>
 #include <unordered_map>
 
@@ -12,14 +13,12 @@
 namespace simeng {
 namespace pipeline {
 
+enum accessType { LOAD = 0, STORE };
+
 /** A requestQueue_ entry. */
 struct requestEntry {
-  /** When the memory to be accessed by this entry is ready to be requested. */
-  uint64_t readyAt;
-
   /** The memory address(es) to be accessed. */
-  span<const simeng::MemoryAccessTarget> reqAddresses;
-
+  std::queue<simeng::MemoryAccessTarget> reqAddresses;
   /** The instruction sending the request(s). */
   std::shared_ptr<Instruction> insn;
 };
@@ -35,7 +34,8 @@ class LoadStoreQueue {
       unsigned int maxCombinedSpace, MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      uint8_t L1Bandwidth = UINT8_MAX, uint8_t permittedRequests = UINT8_MAX,
+      bool exclusive = false, uint8_t loadBandwidth = UINT8_MAX,
+      uint8_t storeBandwidth = UINT8_MAX, uint8_t permittedRequests = UINT8_MAX,
       uint8_t permittedLoads = UINT8_MAX, uint8_t permittedStores = UINT8_MAX);
 
   /** Constructs a split load/store queue model, simulating discrete queues for
@@ -46,7 +46,8 @@ class LoadStoreQueue {
       MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      uint8_t L1Bandwidth = UINT8_MAX, uint8_t permittedRequests = UINT8_MAX,
+      bool exclusive = false, uint8_t loadBandwidth = UINT8_MAX,
+      uint8_t storeBandwidth = UINT8_MAX, uint8_t permittedRequests = UINT8_MAX,
       uint8_t permittedLoads = UINT8_MAX, uint8_t permittedStores = UINT8_MAX);
 
   /** Retrieve the available space for load uops. For combined queue this is the
@@ -70,8 +71,8 @@ class LoadStoreQueue {
   /** Add the load instruction's memory requests to the requestQueue_. */
   void startLoad(const std::shared_ptr<Instruction>& insn);
 
-  /** Add the store instruction's memory requests to the requestQueue_. */
-  void startStore(const std::shared_ptr<Instruction>& insn);
+  /** Supply the data to be stored by a store operation. */
+  void supplyStoreData(const std::shared_ptr<Instruction>& insn);
 
   /** Commit and write the oldest store instruction to memory, removing it from
    * the store queue. Returns `true` if memory disambiguation has discovered a
@@ -98,8 +99,11 @@ class LoadStoreQueue {
   /** The load queue: holds in-flight load instructions. */
   std::deque<std::shared_ptr<Instruction>> loadQueue_;
 
-  /** The store queue: holds in-flight store instructions. */
-  std::deque<std::shared_ptr<Instruction>> storeQueue_;
+  /** The store queue: holds in-flight store instructions with its associated
+   * data. */
+  std::deque<std::pair<std::shared_ptr<Instruction>,
+                       span<const simeng::RegisterValue>>>
+      storeQueue_;
 
   /** Slots to write completed load instructions into for writeback. */
   span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots_;
@@ -144,20 +148,41 @@ class LoadStoreQueue {
   /** The number of times this unit has been ticked. */
   uint64_t tickCounter_ = 0;
 
-  /** A ready to hold memory requests. */
-  std::deque<requestEntry> requestQueue_;
+  /** A map to hold load instructions that are stalled due to a detected
+   * memory reordering confliction. First key is a store's sequence id and the
+   * second key the conflicting address. The value takes the form of a vector of
+   * pairs containing a pointer to the conflicted load and the size of the data
+   * needed at that address by the load. */
+  std::unordered_map<
+      uint64_t,
+      std::unordered_map<
+          uint64_t,
+          std::vector<std::pair<std::shared_ptr<Instruction>, uint16_t>>>>
+      conflictionMap_;
+
+  /** A map between LSQ cycles and load requests ready on that cycle. */
+  std::map<uint64_t, std::deque<requestEntry>> requestLoadQueue_;
+
+  /** A map between LSQ cycles and store requests ready on that cycle. */
+  std::map<uint64_t, std::deque<requestEntry>> requestStoreQueue_;
 
   /** A queue of completed loads ready for writeback. */
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
 
-  /** The amount of data transferable to the L1 cache per cycle. */
-  uint64_t L1Bandwidth_;
+  /** Whether the LSQ can only process loads xor stores within a cycle. */
+  bool exclusive_;
+
+  /** The amount of data readable from the L1D cache per cycle. */
+  uint64_t loadBandwidth_;
+
+  /** The amount of data writable to the L1D cache per cycle. */
+  uint64_t storeBandwidth_;
 
   /** The combined limit of loads and store requests permitted per cycle. */
   uint8_t totalLimit_;
 
   /** The number of loads and stores permitted per cycle. */
-  std::vector<uint8_t> reqLimits_;
+  std::array<uint8_t, 2> reqLimits_;
 };
 
 }  // namespace pipeline

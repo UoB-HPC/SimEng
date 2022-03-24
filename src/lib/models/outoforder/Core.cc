@@ -58,7 +58,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          config["L1-Cache"]["Bandwidth"].as<uint8_t>(),
+          config["L1-Cache"]["Exclusive"].as<bool>(),
+          config["L1-Cache"]["Load-Bandwidth"].as<uint8_t>(),
+          config["L1-Cache"]["Store-Bandwidth"].as<uint8_t>(),
           config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint8_t>(),
           config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint8_t>(),
           config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint8_t>()),
@@ -93,7 +95,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
         [this](auto regs, auto values) {
           dispatchIssueUnit_.forwardOperands(regs, values);
         },
-        [this](auto uop) { loadStoreQueue_.startLoad(uop); }, [](auto uop) {},
+        [this](auto uop) { loadStoreQueue_.startLoad(uop); },
+        [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
         [](auto uop) { uop->setCommitReady(); }, branchPredictor,
         config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
   }
@@ -416,7 +419,9 @@ std::map<std::string, std::string> Core::getStats() const {
           {"issue.portBusyStalls", std::to_string(portBusyStalls)},
           {"branch.executed", std::to_string(totalBranchesExecuted)},
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()}};
+          {"branch.missrate", branchMissRateStr.str()},
+          {"lsq.loadViolations",
+           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
 }
 
 }  // namespace outoforder

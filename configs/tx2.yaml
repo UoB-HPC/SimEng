@@ -29,7 +29,9 @@ Branch-Predictor:
   BTB-bitlength: 16
 L1-Cache:
   Access-Latency: 4
-  Bandwidth: 32
+  Exclusive: False
+  Load-Bandwidth: 32
+  Store-Bandwidth: 16
   Permitted-Requests-Per-Cycle: 2
   Permitted-Loads-Per-Cycle: 2
   Permitted-Stores-Per-Cycle: 1
