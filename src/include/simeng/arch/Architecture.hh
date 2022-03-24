@@ -89,6 +89,8 @@ class Architecture {
 
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;
+
+  virtual ProcessStateChange updateCounterTimer(uint64_t iterations) const = 0;
 };
 
 }  // namespace arch

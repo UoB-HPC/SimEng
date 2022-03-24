@@ -56,7 +56,7 @@ class Core : public simeng::Core {
 
   /** Change the value of the ARM64_SYSREG_CNTVCT_EL0 system register to number
    * of cycles completed.*/
-  void incCNTVCT(uint64_t iterations) override;
+  void updateCounterTimer(uint64_t iterations) override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
@@ -166,9 +166,6 @@ class Core : public simeng::Core {
 
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
-
-  /** ARM64_SYSREG_CNTVCT_EL0 system register tag. */
-  uint16_t CNTVCTreg_ = 0;
 };
 
 }  // namespace outoforder

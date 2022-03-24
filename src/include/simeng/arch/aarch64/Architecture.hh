@@ -50,6 +50,8 @@ class Architecture : public arch::Architecture {
   /** Returns the current vector length set by the provided configuration. */
   uint64_t getVectorLength() const;
 
+  ProcessStateChange updateCounterTimer(uint64_t iterations) const override;
+
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
@@ -85,6 +87,9 @@ class Architecture : public arch::Architecture {
 
   /** The vector length used by the SVE extension in bits. */
   uint64_t VL_;
+
+  /** ARM64_SYSREG_CNTVCT_EL0 system register tag. */
+  uint16_t CNTVCTreg_ = 0;
 };
 
 }  // namespace aarch64

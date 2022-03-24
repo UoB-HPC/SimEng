@@ -120,6 +120,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
       }
     }
   }
+  CNTVCTreg_ = getSystemRegisterTag((uint16_t)ARM64_SYSREG_CNTVCT_EL0);
 }
 Architecture::~Architecture() {
   cs_close(&capstoneHandle);
@@ -262,6 +263,16 @@ ProcessStateChange Architecture::getInitialState() const {
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 uint64_t Architecture::getVectorLength() const { return VL_; }
+
+ProcessStateChange Architecture::updateCounterTimer(uint64_t iterations) const {
+  /* TODO: CNTVCT value should be equal to the physical count value minus
+   * the virtual offset visible in CNTVOFF. */
+  ProcessStateChange change;
+  change.type = ChangeType::REPLACEMENT;
+  change.modifiedRegisters.push_back({RegisterType::SYSTEM, CNTVCTreg_});
+  change.modifiedRegisterValues.push_back(iterations);
+  return change;
+}
 
 }  // namespace aarch64
 }  // namespace arch

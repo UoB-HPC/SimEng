@@ -36,7 +36,7 @@ class Core {
 
   /** Change the value of the ARM64_SYSREG_CNTVCT_EL0 system register to number
    * of cycles completed.*/
-  virtual void incCNTVCT(uint64_t iterations) = 0;
+  virtual void updateCounterTimer(uint64_t iterations) = 0;
 };
 
 }  // namespace simeng

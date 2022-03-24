@@ -42,7 +42,8 @@ int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
     // Tick the core
     core.tick();
     // Update Virtual Counter Timer at correct frequency.
-    if (iterations % (uint32_t)timerModulo == 0) core.incCNTVCT(iterations);
+    if (iterations % (uint32_t)timerModulo == 0)
+      core.updateCounterTimer(iterations);
 
     // Tick memory
     instructionMemory.tick();

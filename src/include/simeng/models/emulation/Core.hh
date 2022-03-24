@@ -45,7 +45,7 @@ class Core : public simeng::Core {
 
   /** Change the value of the ARM64_SYSREG_CNTVCT_EL0 system register to number
    * of cycles completed.*/
-  void incCNTVCT(uint64_t iterations) override;
+  void updateCounterTimer(uint64_t iterations) override;
 
  private:
   /** Execute an instruction. */
@@ -102,9 +102,6 @@ class Core : public simeng::Core {
 
   /** The number of branches executed. */
   uint64_t branchesExecuted_ = 0;
-
-  // system register tag.
-  uint16_t CNTVCTreg_ = 0;
 };
 
 }  // namespace emulation
