@@ -264,14 +264,10 @@ uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 uint64_t Architecture::getVectorLength() const { return VL_; }
 
-ProcessStateChange Architecture::updateCounterTimer(uint64_t iterations) const {
+simeng::Register Architecture::getVirtualCounterTimerReg() const {
   /* TODO: CNTVCT value should be equal to the physical count value minus
    * the virtual offset visible in CNTVOFF. */
-  ProcessStateChange change;
-  change.type = ChangeType::REPLACEMENT;
-  change.modifiedRegisters.push_back({RegisterType::SYSTEM, CNTVCTreg_});
-  change.modifiedRegisterValues.push_back(iterations);
-  return change;
+  return {RegisterType::SYSTEM, CNTVCTreg_};
 }
 
 }  // namespace aarch64

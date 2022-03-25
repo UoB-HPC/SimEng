@@ -27,6 +27,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
+  vctReg_ = isa_.getVirtualCounterTimerReg();
 }
 
 void Core::tick() {
@@ -241,8 +242,8 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
   }
 }
 
-void Core::updateCounterTimer(uint64_t iterations) {
-  applyStateChange(isa_.updateCounterTimer(iterations));
+void Core::updateVirtualCounterTimer(uint64_t iterations) {
+  registerFileSet_.set(vctReg_, iterations);
   return;
 }
 

@@ -35,15 +35,15 @@ uint32_t timerFreq_;
 int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
              simeng::MemoryInterface& dataMemory) {
   int iterations = 0;
-  double timerModulo = (clockFreq_ * 1e9) / (timerFreq_ * 1e6);
+  float timerModulo = (clockFreq_ * 1e9) / (timerFreq_ * 1e6);
 
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
     // Tick the core
     core.tick();
     // Update Virtual Counter Timer at correct frequency.
-    if (iterations % (uint64_t)timerModulo == 0)
-      core.updateCounterTimer(iterations);
+    if (iterations % (uint32_t)timerModulo == 0)
+      core.updateVirtualCounterTimer(iterations);
 
     // Tick memory
     instructionMemory.tick();
