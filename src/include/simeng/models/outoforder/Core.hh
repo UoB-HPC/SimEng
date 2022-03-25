@@ -54,9 +54,9 @@ class Core : public simeng::Core {
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
-  /** Change the value of the ARM64_SYSREG_CNTVCT_EL0 system register to number
-   * of cycles completed.*/
-  void incCNTVCT(uint64_t iterations) override;
+  /** Change the value of the Virtual Counter Timer system register to number
+   * of cycles completed. */
+  void incVCT(uint64_t iterations) override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
@@ -167,8 +167,8 @@ class Core : public simeng::Core {
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 
-  /** ARM64_SYSREG_CNTVCT_EL0 system register tag. */
-  uint16_t CNTVCTreg_ = 0;
+  /** System Register of Virtual Counter Timer. */
+  simeng::Register VCTreg_;
 };
 
 }  // namespace outoforder

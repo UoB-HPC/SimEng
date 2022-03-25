@@ -50,6 +50,9 @@ class Architecture : public arch::Architecture {
   /** Returns the current vector length set by the provided configuration. */
   uint64_t getVectorLength() const;
 
+  /** Returns the system register for the Virtual Counter Timer. */
+  simeng::Register getVCTreg() const override;
+
   /** Retrieve an ExecutionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
    * port information, return that instead of the group-defined execution

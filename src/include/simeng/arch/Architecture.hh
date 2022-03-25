@@ -89,6 +89,9 @@ class Architecture {
 
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;
+
+  /** Returns the system register for the Virtual Counter Timer. */
+  virtual simeng::Register getVCTreg() const = 0;
 };
 
 }  // namespace arch

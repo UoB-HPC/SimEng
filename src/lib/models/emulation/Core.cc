@@ -28,8 +28,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   auto state = isa.getInitialState();
   applyStateChange(state);
 
-  // Get CNTVCT system register tag
-  CNTVCTreg_ = isa_.getSystemRegisterTag((uint16_t)ARM64_SYSREG_CNTVCT_EL0);
+  // Get Virtual Counter Timer system register
+  VCTreg_ = isa_.getVCTreg();
 }
 
 void Core::tick() {
@@ -279,10 +279,8 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
   }
 }
 
-void Core::incCNTVCT(uint64_t iterations) {
-  /* TODO: CNTVCT value should be equal to the physical count value minus
-   * the virtual offset visible in CNTVOFF. */
-  registerFileSet_.set({4, CNTVCTreg_}, iterations);
+void Core::incVCT(uint64_t iterations) {
+  registerFileSet_.set(VCTreg_, iterations);
   return;
 }
 

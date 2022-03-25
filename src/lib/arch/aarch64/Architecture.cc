@@ -264,6 +264,10 @@ uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 uint64_t Architecture::getVectorLength() const { return VL_; }
 
+simeng::Register Architecture::getVCTreg() const {
+  return {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0)};
+}
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng
