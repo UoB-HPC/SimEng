@@ -42,7 +42,6 @@ Core::Core(FlatMemoryInterface& instructionMemory,
 };
 
 void Core::tick() {
-  // std::cout << "-----------------------" << std::endl;
   ticks_++;
 
   if (exceptionHandler_ != nullptr) {

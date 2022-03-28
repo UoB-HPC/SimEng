@@ -123,10 +123,6 @@ void Core::tick() {
       // Memory reads are required; request them, set `pendingReads_`
       // accordingly, and end the cycle early
       for (auto const& target : addresses) {
-        // std::cout << "\tLoad: 0x" << std::hex << uop->getInstructionAddress()
-        //           << std::dec << ":0x" << std::hex << target.address <<
-        //           std::dec
-        //           << std::endl;
         dataMemory_.requestRead(target);
         // Store addresses for use by next store data operation
         previousAddresses_.push_back(target);
@@ -174,46 +170,8 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   if (uop->isStoreData()) {
     auto results = uop->getResults();
     auto destinations = uop->getDestinationRegisters();
-    // std::cout << "WB: 0x" << std::hex << uop->getInstructionAddress()
-    //           << std::dec << std::endl;
-    // for (size_t i = 0; i < results.size(); i++) {
-    //   // Write results to register file
-    //   std::cout << "\t" << unsigned(destinations[i].type) << ":"
-    //             << unsigned(destinations[i].tag) << " <- ";
-    //   if (results[i].size() == 1)
-    //     std::cout << unsigned(results[i].get<uint8_t>());
-    //   else if (results[i].size() == 2)
-    //     std::cout << results[i].get<uint16_t>();
-    //   else if (results[i].size() == 4)
-    //     std::cout << results[i].get<uint32_t>();
-    //   else if (results[i].size() == 8)
-    //     std::cout << results[i].get<uint64_t>();
-    //   else if (results[i].size() == 256)
-    //     std::cout << results[i].getAsVector<uint64_t>()[0] << ":"
-    //               << results[i].getAsVector<uint64_t>()[1];
-    //   else
-    //     std::cout << "N/A";
-    //   std::cout << std::endl;
-    // }
     auto data = uop->getData();
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
-      // std::cout << "\tStore: 0x" << std::hex << uop->getInstructionAddress()
-      //           << std::dec << ":0x" << std::hex
-      //           << previousAddresses_[i].address << std::dec << " <- ";
-      // if (data[i].size() == 1)
-      //   std::cout << unsigned(data[i].get<uint8_t>());
-      // else if (data[i].size() == 2)
-      //   std::cout << data[i].get<uint16_t>();
-      // else if (data[i].size() == 4)
-      //   std::cout << data[i].get<uint32_t>();
-      // else if (data[i].size() == 8)
-      //   std::cout << data[i].get<uint64_t>();
-      // else if (data[i].size() == 256)
-      //   std::cout << data[i].getAsVector<uint64_t>()[0] << ":"
-      //             << data[i].getAsVector<uint64_t>()[1];
-      // else
-      //   std::cout << "N/A";
-      // std::cout << std::endl;
       dataMemory_.requestWrite(previousAddresses_[i], data[i]);
     }
   } else if (uop->isBranch()) {
@@ -230,34 +188,13 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
       registerFileSet_.set(reg, results[i]);
     }
   } else {
-    // std::cout << "WB: 0x" << std::hex << uop->getInstructionAddress()
-    //           << std::dec << std::endl;
     for (size_t i = 0; i < results.size(); i++) {
       auto reg = destinations[i];
       registerFileSet_.set(reg, results[i]);
-      // Write results to register file
-      // std::cout << "\t" << unsigned(destinations[i].type) << ":"
-      //           << unsigned(destinations[i].tag) << " <- ";
-      // if (results[i].size() == 1)
-      //   std::cout << unsigned(results[i].get<uint8_t>());
-      // else if (results[i].size() == 2)
-      //   std::cout << results[i].get<uint16_t>();
-      // else if (results[i].size() == 4)
-      //   std::cout << results[i].get<uint32_t>();
-      // else if (results[i].size() == 8)
-      //   std::cout << results[i].get<uint64_t>();
-      // else if (results[i].size() == 256)
-      //   std::cout << results[i].getAsVector<uint64_t>()[0] << ":"
-      //             << results[i].getAsVector<uint64_t>()[1];
-      // else
-      //   std::cout << "N/A";
-      // std::cout << std::endl;
     }
   }
 
   if (uop->isLastMicroOp()) instructionsExecuted_++;
-  // std::cout << std::hex << uop->getInstructionAddress() << std::dec
-  //           << std::endl;
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
@@ -290,10 +227,6 @@ void Core::processExceptionHandler() {
     pc_ = result.instructionAddress;
     applyStateChange(result.stateChange);
   }
-
-  // std::cout << "WB: 0x" << std::hex << result.instructionAddress - 4 <<
-  // std::dec
-  //           << std::endl;
 
   // Clear the handler
   exceptionHandler_ = nullptr;

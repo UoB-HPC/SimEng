@@ -46,56 +46,16 @@ void Instruction::execute() {
             (isScalarData_ || isVectorData_ || isSVEData_) ? 256 : 8;
         for (size_t dest = 0; dest < getDestinationRegisters().size(); dest++) {
           results[dest] = memoryData[dest].zeroExtend(dataSize_, regSize);
-          // std::cout << "### LDR_DATA: " << getSequenceId() << ":"
-          //           << getInstructionId() << ":0x" << std::hex
-          //           << getInstructionAddress() << std::dec << ":"
-          //           << getMicroOpIndex() << " -> 0x" << std::hex;
-          // if (results[dest].size() == 1)
-          //   std::cout << results[dest].get<uint8_t>();
-          // else if (results[dest].size() == 2)
-          //   std::cout << results[dest].get<uint16_t>();
-          // else if (results[dest].size() == 4)
-          //   std::cout << results[dest].get<uint32_t>();
-          // else if (results[dest].size() == 8)
-          //   std::cout << results[dest].get<uint64_t>();
-          // else if (results[dest].size() == 256)
-          //   std::cout << results[dest].getAsVector<uint64_t>()[0] << ":"
-          //             << results[dest].getAsVector<uint64_t>()[1];
-          // else
-          //   std::cout << "N/A";
-          // std::cout << std::dec << std::endl;
         }
         break;
       }
       case MicroOpcode::OFFSET_IMM: {
         results[0] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
-        // std::cout << "### OFF_IMM: " << getSequenceId() << ":"
-        //           << getInstructionId() << ":0x" << std::hex
-        //           << getInstructionAddress() << std::dec << ":"
-        //           << getMicroOpIndex() << " -> 0x" << std::hex
-        //           << operands[0].get<uint64_t>() << std::dec << " + "
-        //           << metadata.operands[2].imm << " = 0x" << std::hex
-        //           << results[0].get<uint64_t>() << std::dec << std::endl;
         break;
       }
       case MicroOpcode::STR_DATA: {
         setMemoryAddresses({{0, 0}});
         memoryData[0] = operands[0];
-        // std::cout << "### STR_DATA: " << getSequenceId() << ":"
-        //           << getInstructionId() << ":0x" << std::hex
-        //           << getInstructionAddress() << std::dec << ":"
-        //           << getMicroOpIndex() << " -> " << std::hex;
-        // if (memoryData[0].size() == 1)
-        //   std::cout << memoryData[0].get<uint8_t>();
-        // else if (memoryData[0].size() == 2)
-        //   std::cout << memoryData[0].get<uint16_t>();
-        // else if (memoryData[0].size() == 4)
-        //   std::cout << memoryData[0].get<uint32_t>();
-        // else if (memoryData[0].size() == 8)
-        //   std::cout << memoryData[0].get<uint64_t>();
-        // else
-        //   std::cout << "N/A";
-        // std::cout << std::dec << std::endl;
         break;
       }
       default:

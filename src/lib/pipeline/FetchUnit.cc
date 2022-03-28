@@ -94,7 +94,6 @@ void FetchUnit::tick() {
     BranchPrediction prediction = {false, 0};
     auto bytesRead = isa_.predecode(buffer + bufferOffset, bufferedBytes_, pc_,
                                     prediction, macroOp);
-    // std::cout << "Fetched: " << pc_ << ":" << std::endl;
 
     // If predecode fails, bail and wait for more data
     if (bytesRead == 0) {
@@ -108,8 +107,6 @@ void FetchUnit::tick() {
     // Increment the offset, decrement available bytes
     bufferOffset += bytesRead;
     bufferedBytes_ -= bytesRead;
-
-    // std::cout << "Fetch 0x" << std::hex << pc_ << std::dec << std::endl;
 
     // Create branch prediction after identifing instruction type
     // (e.g. RET, BL, etc).

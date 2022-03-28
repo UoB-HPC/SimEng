@@ -113,7 +113,6 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 };
 
 void Core::tick() {
-  // std::cout << "--------------------------" << std::endl;
   ticks_++;
 
   applyStateChange(isa_.getUpdateState());
@@ -194,11 +193,6 @@ void Core::flushIfNeeded() {
       // that instead
       lowestSeqId = reorderBuffer_.getFlushSeqId();
       targetAddress = reorderBuffer_.getFlushAddress();
-      // std::cout << "### FLUSH AT ROB: 0x" << std::hex << targetAddress
-      //           << std::dec << " ###" << std::endl;
-    } else {
-      // std::cout << "### FLUSH AT EU: 0x" << std::hex << targetAddress
-      //           << std::dec << " ###" << std::endl;
     }
 
     fetchUnit_.updatePC(targetAddress);
@@ -225,8 +219,6 @@ void Core::flushIfNeeded() {
     // Flush was requested at decode stage
     // Update PC and wipe Fetch/Decode buffer.
     targetAddress = decodeUnit_.getFlushAddress();
-    // std::cout << "### FLUSH AT DECODE: 0x" << std::hex << targetAddress
-    //           << std::dec << " ###" << std::endl;
 
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
@@ -293,10 +285,6 @@ void Core::handleException() {
   for (auto& eu : executionUnits_) {
     eu.purgeFlushed();
   }
-
-  // std::cout << "### FLUSH AT EXCEPTION: 0x" << std::hex
-  //           << exceptionGeneratingInstruction_->getInstructionAddress()
-  //           << std::dec << " ###" << std::endl;
 
   exceptionGenerated_ = false;
   exceptionHandler_ =

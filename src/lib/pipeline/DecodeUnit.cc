@@ -35,9 +35,6 @@ void DecodeUnit::tick() {
       }
 
       for (uint8_t index = 0; index < macroOp.size(); index++) {
-        // std::cout << "Pushing 0x" << std::hex
-        //           << macroOp[index]->getInstructionAddress() << std::dec
-        //           << " to microOps_" << std::endl;
         microOps_.push_back(std::move(macroOp[index]));
       }
 
@@ -52,8 +49,6 @@ void DecodeUnit::tick() {
 
     // Move uop to output buffer and remove from internal buffer
     auto& uop = (output_.getTailSlots()[slot] = std::move(microOps_.front()));
-    // std::cout << "Decode 0x" << std::hex << uop->getInstructionAddress()
-    //           << std::dec << std::endl;
     microOps_.pop_front();
 
     // Check preliminary branch prediction results now that the instruction is
@@ -71,10 +66,6 @@ void DecodeUnit::tick() {
         predictor_.update(uop, false, pc_);
         // Remove macro-operations in microOps_ buffer after macro-operation
         // decoded in this cycle
-        // std::cout << "FLUSHED AT DECODE: 0x" << std::hex
-        //           << uop->getInstructionAddress() << std::dec
-        //           << " which microOps_.size() = " << microOps_.size()
-        //           << std::endl;
         auto uopIt = microOps_.begin();
         // Find first microOps_ entry not belonging to same address as flushing
         // instruction
@@ -88,9 +79,6 @@ void DecodeUnit::tick() {
         }
         // Remove all entries after first macro-operation in buffer
         while (uopIt != microOps_.end()) {
-          // std::cout << "\tRemoving 0x" << std::hex
-          //           << (*uopIt)->getInstructionAddress() << std::dec
-          //           << std::endl;
           uopIt = microOps_.erase(uopIt);
         }
       }
@@ -104,20 +92,8 @@ void DecodeUnit::tick() {
 bool DecodeUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t DecodeUnit::getFlushAddress() const { return pc_; }
 uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes_; };
-void DecodeUnit::purgeFlushed() {
-  // std::cout << "Clearing " << microOps_.size() << " from microOps_"
-  //           << std::endl;
-  // std::cout << "Clearing MicroOps_ with microOps_.size() = " <<
-  // microOps_.size()
-  //           << std::endl;
-  // auto uopIt = microOps_.begin();
-  // while (uopIt != microOps_.end()) {
-  //   std::cout << "\tRemoving 0x" << std::hex
-  //             << (*uopIt)->getInstructionAddress() << std::dec << std::endl;
-  //   uopIt++;
-  // }
-  microOps_.clear();
-}
+
+void DecodeUnit::purgeFlushed() { microOps_.clear(); }
 
 }  // namespace pipeline
 }  // namespace simeng

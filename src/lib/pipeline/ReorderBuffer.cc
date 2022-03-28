@@ -72,18 +72,10 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
   for (n = 0; n < maxCommits; n++) {
     auto& uop = buffer_[0];
     if (!uop->canCommit()) {
-      // std::cout << "ROB stalled on: " << uop->getSequenceId() << ":"
-      //           << uop->getInstructionId() << ":0x" << std::hex
-      //           << uop->getInstructionAddress() << std::dec << ":"
-      //           << uop->getMicroOpIndex() << std::endl;
       break;
     }
 
     if (uop->isLastMicroOp()) instructionsCommitted_++;
-    // std::cout << "Commit " << uop->getSequenceId() << ":"
-    //           << uop->getInstructionId() << ":0x" << std::hex
-    //           << uop->getInstructionAddress() << std::dec << ":"
-    //           << uop->getMicroOpIndex() << std::endl;
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);
@@ -93,26 +85,8 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
     const auto& destinations = uop->getDestinationRegisters();
     const auto& results = uop->getResults();
-    // std::cout << "ROB: " << uop->getInstructionId() << ":0x" << std::hex
-    //           << uop->getInstructionAddress() << std::dec << std::endl;
     for (int i = 0; i < destinations.size(); i++) {
       rat_.commit(destinations[i]);
-      // std::cout << "\t" << unsigned(destinations[i].type) << ":"
-      //           << unsigned(destinations[i].tag) << " <- ";
-      // if (results[i].size() == 1)
-      //   std::cout << unsigned(results[i].get<uint8_t>());
-      // else if (results[i].size() == 2)
-      //   std::cout << results[i].get<uint16_t>();
-      // else if (results[i].size() == 4)
-      //   std::cout << results[i].get<uint32_t>();
-      // else if (results[i].size() == 8)
-      //   std::cout << results[i].get<uint64_t>();
-      // else if (results[i].size() == 256)
-      //   std::cout << results[i].getAsVector<uint64_t>()[0] << ":"
-      //             << results[i].getAsVector<uint64_t>()[1];
-      // else
-      //   std::cout << "N/A";
-      // std::cout << std::endl;
     }
 
     // If it's a memory op, commit the entry at the head of the respective queue
@@ -155,10 +129,6 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
       const auto& reg = destinations[i];
       rat_.rewind(reg);
     }
-    // std::cout << "\tFlushing: " << uop->getSequenceId() << ":"
-    //           << uop->getInstructionId() << ":0x" << std::hex
-    //           << uop->getInstructionAddress() << std::dec << ":"
-    //           << uop->getMicroOpIndex() << ":" << std::endl;
     uop->setFlushed();
     buffer_.pop_back();
   }

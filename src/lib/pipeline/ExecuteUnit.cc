@@ -102,10 +102,6 @@ void ExecuteUnit::tick() {
 void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   assert(uop->canExecute() &&
          "Attempted to execute an instruction before it was ready");
-  // std::cout << "Execute: " << uop->getSequenceId() << ":"
-  //           << uop->getInstructionId() << ":0x" << std::hex
-  //           << uop->getInstructionAddress() << std::dec << ":"
-  //           << uop->getMicroOpIndex() << std::endl;
 
   if (uop->exceptionEncountered()) {
     // Exception encountered prior to execution
@@ -114,11 +110,8 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     raiseException_(uop);
     return;
   }
-  // std::cout << "Execute 0x" << std::hex << uop->getInstructionAddress()
-  //           << std::dec << std::endl;
 
   if (uop->isLoad()) {
-    // std::cout << "\tinto load" << std::endl;
     uop->generateAddresses();
     if (uop->exceptionEncountered()) {
       // Exception; don't pass handle load function
@@ -129,11 +122,9 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     return;
   } else if (uop->isStoreAddress() || uop->isStoreData()) {
     if (uop->isStoreAddress()) {
-      // std::cout << "\tinto str addr" << std::endl;
       uop->generateAddresses();
     }
     if (uop->isStoreData()) {
-      // std::cout << "\tinto str data" << std::endl;
       uop->execute();
     }
     handleStore_(uop);
@@ -148,8 +139,6 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isBranch()) {
-    // std::cout << "\tinto branch: 0x" << std::hex << uop->getBranchAddress()
-    //           << std::dec << std::endl;
     pc_ = uop->getBranchAddress();
 
     // Update branch predictor with branch results
@@ -161,8 +150,6 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     if (uop->wasBranchMispredicted()) {
       // Misprediction; flush the pipeline
       shouldFlush_ = true;
-      // std::cout << "FLUSHED AT EXECUTE: 0x" << std::hex
-      //           << uop->getInstructionAddress() << std::dec << std::endl;
       flushAfter_ = uop->getSequenceId();
       // Update the branch misprediction counter
       branchMispredicts_++;

@@ -89,10 +89,6 @@ void LoadStoreQueue::addLoad(const std::shared_ptr<Instruction>& insn) {
   loadQueue_.push_back(insn);
 }
 void LoadStoreQueue::addStore(const std::shared_ptr<Instruction>& insn) {
-  // std::cout << "Started store " << insn->getSequenceId() << ":"
-  //           << insn->getInstructionId() << ":0x" << std::hex
-  //           << insn->getInstructionAddress() << std::dec << ":"
-  //           << insn->getMicroOpIndex() << std::endl;
   storeQueue_.push_back({insn, {}});
 }
 
@@ -172,29 +168,6 @@ void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
         entry->getMicroOpIndex() == microOpNum) {
       // Supply data to be stored by operations
       itSt->second = data;
-      // std::cout << "Supply StoreData: " << itSt->first->getSequenceId() <<
-      // ":"
-      //           << itSt->first->getInstructionId() << ":0x" << std::hex
-      //           << itSt->first->getInstructionAddress() << std::dec << ":"
-      //           << itSt->first->getMicroOpIndex() << " -> "
-      //           << insn->getSequenceId() << ":" << insn->getInstructionId()
-      //           << ":0x" << std::hex << insn->getInstructionAddress()
-      //           << std::dec << ":" << insn->getMicroOpIndex() << ":"
-      //           << std::endl;
-      // for (auto d : itSt->second) {
-      //   if (d.size() == 1) std::cout << "\t" << d.get<uint8_t>();
-      //   if (d.size() == 2) std::cout << "\t" << d.get<uint16_t>();
-      //   if (d.size() == 4)
-      //     std::cout << "\t" << d.get<uint32_t>();
-      //   else if (d.size() == 8)
-      //     std::cout << "\t" << d.get<uint64_t>();
-      //   else if (d.size() == 16)
-      //     std::cout << "\t" << d.getAsVector<uint64_t>()[0] << ", "
-      //               << d.getAsVector<uint64_t>()[1];
-      //   else
-      //     std::cout << "\tN/A";
-      //   std::cout << " (" << unsigned(d.size()) << ")" << std::endl;
-      // }
       break;
     } else {
       itSt++;
@@ -222,26 +195,6 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
   // Submit request write to memory interface early as the architectural state
   // considers the store to be retired and thus its operation complete
   for (size_t i = 0; i < addresses.size(); i++) {
-    // std::cout << "Commit Store: " << uop->getSequenceId() << ":"
-    //           << uop->getInstructionId() << ":0x" << std::hex
-    //           << uop->getInstructionAddress() << std::dec
-    //           << uop->getMicroOpIndex() << ":0x" << std::hex
-    //           << addresses[i].address << std::dec << ":"
-    //           << " <- ";
-    // if (data[i].size() == 1)
-    //   std::cout << unsigned(data[i].get<uint8_t>());
-    // else if (data[i].size() == 2)
-    //   std::cout << data[i].get<uint16_t>();
-    // else if (data[i].size() == 4)
-    //   std::cout << data[i].get<uint32_t>();
-    // else if (data[i].size() == 8)
-    //   std::cout << data[i].get<uint64_t>();
-    // else if (data[i].size() == 256)
-    //   std::cout << data[i].getAsVector<uint64_t>()[0] << ":"
-    //             << data[i].getAsVector<uint64_t>()[1];
-    // else
-    //   std::cout << "N/A";
-    // std::cout << std::endl;
     memory_.requestWrite(addresses[i], data[i]);
     // Still add addresses to requestQueue_ to ensure contention of resources is
     // correctly simulated
@@ -541,7 +494,6 @@ void LoadStoreQueue::tick() {
       // This load has completed
       load->execute();
       if (load->isStoreData()) {
-        // std::cout << "\tinto str data handle" << std::endl;
         supplyStoreData(load);
       }
       completedLoads_.push(load);
@@ -555,8 +507,6 @@ void LoadStoreQueue::tick() {
     const auto& insn = completedLoads_.front();
 
     // Forward the results
-    // std::cout << "Forwarding operands from load 0x" << std::hex
-    //           << insn->getInstructionAddress() << std::dec << std::endl;
     forwardOperands_(insn->getDestinationRegisters(), insn->getResults());
 
     completionSlots_[count].getTailSlots()[0] = std::move(insn);

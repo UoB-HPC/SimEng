@@ -94,8 +94,6 @@ void RenameUnit::tick() {
         return;
       }
     }
-    // std::cout << "Rename 0x" << std::hex << uop->getInstructionAddress()
-    //           << std::dec << std::endl;
 
     // Allocate source registers
     auto& sourceRegisters = uop->getOperandRegisters();
@@ -125,10 +123,6 @@ void RenameUnit::tick() {
       lsq_.addStore(uop);
     }
 
-    // std::cout << "Rename: " << uop->getSequenceId() << ":"
-    //           << uop->getInstructionId() << ":0x" << std::hex
-    //           << uop->getInstructionAddress() << std::dec << ":"
-    //           << uop->getMicroOpIndex() << std::endl;
     output_.getTailSlots()[slot] = std::move(uop);
   }
 }
