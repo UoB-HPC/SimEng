@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
