@@ -27,13 +27,13 @@ Queue-Sizes:
 Branch-Predictor:
   BTB-bitlength: 11
 L1-Cache:
-  # Access-Latency: 5
-  # Exclusive: True
-  # Load-Bandwidth: 128
-  # Store-Bandwidth: 64
-  # Permitted-Requests-Per-Cycle: 2
-  # Permitted-Loads-Per-Cycle: 2
-  # Permitted-Stores-Per-Cycle: 1
+  Access-Latency: 5
+  Exclusive: True
+  Load-Bandwidth: 128
+  Store-Bandwidth: 64
+  Permitted-Requests-Per-Cycle: 2
+  Permitted-Loads-Per-Cycle: 2
+  Permitted-Stores-Per-Cycle: 1
 Ports:
   0:
     Portname: FLA
