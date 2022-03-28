@@ -100,19 +100,25 @@ void ModelConfig::validate() {
                "Permitted-Loads-Per-Cycle",
                "Permitted-Stores-Per-Cycle"};
   nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        1);
   nodeChecker<bool>(configFile_[root][subFields[1]], subFields[1],
-                    std::vector<bool>{true, false}, ExpectedValue::Bool);
+                    std::vector<bool>{true, false}, ExpectedValue::Bool, false);
   nodeChecker<uint8_t>(configFile_[root][subFields[2]], subFields[2],
-                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
+                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
+                       UINT8_MAX);
   nodeChecker<uint8_t>(configFile_[root][subFields[3]], subFields[3],
-                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
+                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
+                       UINT8_MAX);
   nodeChecker<uint8_t>(configFile_[root][subFields[4]], subFields[4],
-                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
+                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
+                       UINT8_MAX);
   nodeChecker<uint8_t>(configFile_[root][subFields[5]], subFields[5],
-                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
+                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
+                       UINT8_MAX);
   nodeChecker<uint8_t>(configFile_[root][subFields[6]], subFields[6],
-                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
+                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
+                       UINT8_MAX);
   subFields.clear();
 
   // Ports
