@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <unordered_set>
 
 namespace simeng {
 namespace pipeline {
@@ -12,15 +11,13 @@ DispatchIssueUnit::DispatchIssueUnit(
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
     const std::vector<uint16_t>& physicalRegisterStructure,
-    std::vector<std::pair<uint8_t, uint64_t>> rsArrangement,
-    uint8_t dispatchRate)
+    std::vector<std::tuple<uint8_t, uint16_t, uint8_t>> rsArrangement)
     : input_(fromRename),
       issuePorts_(issuePorts),
       registerFileSet_(registerFileSet),
       scoreboard_(physicalRegisterStructure.size()),
       dependencyMatrix_(physicalRegisterStructure.size()),
-      portAllocator_(portAllocator),
-      dispatchRate_(dispatchRate) {
+      portAllocator_(portAllocator) {
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
     scoreboard_[type].assign(physicalRegisterStructure[type], true);
@@ -29,22 +26,23 @@ DispatchIssueUnit::DispatchIssueUnit(
   // Create set of reservation station structs with correct issue port mappings
   for (int port = 0; port < rsArrangement.size(); port++) {
     auto RS = rsArrangement[port];
-    if (reservationStations_.size() < RS.first + 1) {
+    if (reservationStations_.size() < std::get<0>(RS) + 1) {
       std::vector<ReservationStationPort> ports;
-      reservationStations_.resize(RS.first + 1, {0, 0, ports});
+      reservationStations_.resize(std::get<0>(RS) + 1, {0, 0, 0, ports});
     }
-    reservationStations_[RS.first].capacity = RS.second;
+    reservationStations_[std::get<0>(RS)].capacity = std::get<1>(RS);
+    reservationStations_[std::get<0>(RS)].dispatchRate = std::get<2>(RS);
     // Find number of ports already mapping to the given RS
     uint8_t port_index = 0;
     for (auto rsPort : portMapping_) {
-      if (rsPort.first == RS.first) {
+      if (rsPort.first == std::get<0>(RS)) {
         port_index++;
       }
     }
     // Add port
-    portMapping_.push_back({RS.first, port_index});
-    reservationStations_[RS.first].ports.resize(port_index + 1);
-    reservationStations_[RS.first].ports[port_index].issuePort = port;
+    portMapping_.push_back({std::get<0>(RS), port_index});
+    reservationStations_[std::get<0>(RS)].ports.resize(port_index + 1);
+    reservationStations_[std::get<0>(RS)].ports[port_index].issuePort = port;
   }
   dispatches.resize(reservationStations_.size());
   for (uint8_t i = 0; i < reservationStations_.size(); i++)
@@ -80,7 +78,7 @@ void DispatchIssueUnit::tick() {
 
     // When appropriate, stall uop or input buffer if stall buffer full
     if (rs.currentSize == rs.capacity ||
-        dispatches[RS_Index] == dispatchRate_) {
+        dispatches[RS_Index] == rs.dispatchRate) {
       // Deallocate port given
       portAllocator_.deallocate(port);
       input_.stall(true);

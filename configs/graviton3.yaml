@@ -20,7 +20,6 @@ Register-Set:
   Conditional-Count: 128
 Pipeline-Widths:
   Commit: 4
-  Dispatch-Rate: 2
   FrontEnd: 4
   LSQ-Completion: 2
 Queue-Sizes:
@@ -133,6 +132,7 @@ Ports:
 Reservation-Stations:
   0:
     Size: 20
+    Dispatch-Rate: 10
     Ports:
     - BR_0
     - BR_1
@@ -142,6 +142,7 @@ Reservation-Stations:
     - INT_MULTI_CYCLE_1
   1:
     Size: 20
+    Dispatch-Rate: 10
     Ports:
     - FP_ASIMD_0
     - FP_ASIMD_1
@@ -149,6 +150,7 @@ Reservation-Stations:
     - FP_ASIMD_3
   2:
     Size: 20
+    Dispatch-Rate: 10
     Ports:
     - LOAD_STORE_0
     - LOAD_STORE_1

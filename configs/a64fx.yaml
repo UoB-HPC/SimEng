@@ -24,7 +24,6 @@ Register-Set:
   Conditional-Count: 128
 Pipeline-Widths:
   Commit: 4
-  Dispatch-Rate: 2
   FrontEnd: 4
   LSQ-Completion: 2
 Queue-Sizes:
@@ -96,25 +95,30 @@ Ports:
 Reservation-Stations:
   0:
     Size: 20
+    Dispatch-Rate: 2
     Ports:
     - FLA
     - PR
     - EXA
   1:
     Size: 20
+    Dispatch-Rate: 2
     Ports:
     - FLB
     - EXB
   2:
     Size: 10
+    Dispatch-Rate: 2
     Ports:
     - EAGA
   3:
     Size: 10
+    Dispatch-Rate: 2
     Ports:
     - EAGB
   4:
     Size: 19
+    Dispatch-Rate: 2
     Ports:
     - BR
 Execution-Units:

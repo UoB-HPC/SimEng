@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <tuple>
 
 #include "simeng/AlwaysNotTakenPredictor.hh"
 #include "simeng/Core.hh"
@@ -234,7 +235,7 @@ int main(int argc, char** argv) {
   auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
   // Configure reservation station arrangment
-  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement;
+  std::vector<std::tuple<uint8_t, uint16_t, uint8_t>> rsArrangement;
   for (size_t i = 0; i < config["Reservation-Stations"].size(); i++) {
     auto reservation_station = config["Reservation-Stations"][i];
     for (size_t j = 0; j < reservation_station["Ports"].size(); j++) {
@@ -242,7 +243,9 @@ int main(int argc, char** argv) {
       if (rsArrangement.size() < port + 1) {
         rsArrangement.resize(port + 1);
       }
-      rsArrangement[port] = {i, reservation_station["Size"].as<uint16_t>()};
+      rsArrangement[port] = {
+          i, reservation_station["Size"].as<uint16_t>(),
+          reservation_station["Dispatch-Rate"].as<uint8_t>()};
     }
   }
 

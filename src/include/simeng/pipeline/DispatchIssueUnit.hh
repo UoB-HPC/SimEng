@@ -3,6 +3,7 @@
 #include <deque>
 #include <initializer_list>
 #include <queue>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -26,6 +27,8 @@ struct ReservationStationPort {
 struct ReservationStation {
   /** Size of reservation station */
   uint16_t capacity;
+  /** Number of instructions that can be dispatched to this unit per cycle. */
+  uint16_t dispatchRate;
   /** Current number of non-stalled instructions
    * in reservation station */
   uint16_t currentSize;
@@ -56,8 +59,7 @@ class DispatchIssueUnit {
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
-      std::vector<std::pair<uint8_t, uint64_t>> rsArrangment,
-      uint8_t dispatchRate = UINT8_MAX);
+      std::vector<std::tuple<uint8_t, uint16_t, uint8_t>> rsArrangement);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -131,10 +133,6 @@ class DispatchIssueUnit {
 
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;
-
-  /** The number of instructions that can be dispatched to a reservation station
-   * per cycle. */
-  uint64_t dispatchRate_;
 
   /** The number of cycles stalled due to a full reservation station. */
   uint64_t rsStalls_ = 0;
