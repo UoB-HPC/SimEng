@@ -25,12 +25,12 @@
    "L1-Cache: {Access-Latency: 4, Exclusive: False, Load-Bandwidth: 32, "      \
    "Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "                    \
    "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "     \
-   "{'0': {Portname: Port 0, Instruction-Group-Support: [1, 8, 12]}, '1': "    \
-   "{Portname: Port 1, Instruction-Group-Support: [0, 12]}, '2': {Portname: "  \
-   "Port 2, Instruction-Group-Support: [1, 8, 61]}, '3': {Portname: Port 4, "  \
-   "Instruction-Group-Support: [59]}, '4': {Portname: Port 5, "                \
-   "Instruction-Group-Support: [59]}, '5': {Portname: Port 3, "                \
-   "Instruction-Group-Support: [60]}}, Reservation-Stations: {'0': {Size: "    \
+   "{'0': {Portname: Port 0, Instruction-Group-Support: [1, 8, 14]}, '1': "    \
+   "{Portname: Port 1, Instruction-Group-Support: [0, 14]}, '2': {Portname: "  \
+   "Port 2, Instruction-Group-Support: [1, 8, 71]}, '3': {Portname: Port 4, "  \
+   "Instruction-Group-Support: [67]}, '4': {Portname: Port 5, "                \
+   "Instruction-Group-Support: [67]}, '5': {Portname: Port 3, "                \
+   "Instruction-Group-Support: [70]}}, Reservation-Stations: {'0': {Size: "    \
    "60, Ports: [0, 1, 2, 3, 4, 5]}}, Execution-Units: {'0': {Pipelined: "      \
    "true}, '1': {Pipelined: true}, '2': {Pipelined: true}, '3': {Pipelined: "  \
    "true}, '4': {Pipelined: true}, '5': {Pipelined: true}}, CPU-Info: "        \

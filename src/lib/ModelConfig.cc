@@ -482,6 +482,7 @@ void ModelConfig::createGroupMapping() {
                    "LOAD_INT",
                    "STORE_ADDRESS_INT",
                    "STORE_DATA_INT",
+                   "STORE_INT",
                    "FP",
                    "FP_SIMPLE",
                    "FP_SIMPLE_ARTH",
@@ -505,6 +506,7 @@ void ModelConfig::createGroupMapping() {
                    "LOAD_SCALAR",
                    "STORE_ADDRESS_SCALAR",
                    "STORE_DATA_SCALAR",
+                   "STORE_SCALAR",
                    "VECTOR",
                    "VECTOR_SIMPLE",
                    "VECTOR_SIMPLE_ARTH",
@@ -518,6 +520,7 @@ void ModelConfig::createGroupMapping() {
                    "LOAD_VECTOR",
                    "STORE_ADDRESS_VECTOR",
                    "STORE_DATA_VECTOR",
+                   "STORE_VECTOR",
                    "SVE",
                    "SVE_SIMPLE",
                    "SVE_SIMPLE_ARTH",
@@ -531,11 +534,12 @@ void ModelConfig::createGroupMapping() {
                    "LOAD_SVE",
                    "STORE_ADDRESS_SVE",
                    "STORE_DATA_SVE",
+                   "STORE_SVE",
                    "PREDICATE",
                    "LOAD",
-                   "STORE",
                    "STORE_ADDRESS",
                    "STORE_DATA",
+                   "STORE",
                    "BRANCH"};
   // AARCH64 instruction group namespace contains a set of contiguous assigned
   // uint16_t start from 0. Therefore the index of each groupOptions_ entry is
