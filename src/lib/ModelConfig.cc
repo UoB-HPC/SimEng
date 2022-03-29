@@ -533,6 +533,7 @@ void ModelConfig::createGroupMapping() {
                    "STORE_DATA_SVE",
                    "PREDICATE",
                    "LOAD",
+                   "STORE",
                    "STORE_ADDRESS",
                    "STORE_DATA",
                    "BRANCH"};

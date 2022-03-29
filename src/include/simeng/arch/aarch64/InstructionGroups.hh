@@ -70,13 +70,14 @@ const uint16_t STORE_ADDRESS_SVE = 60;
 const uint16_t STORE_DATA_SVE = 61;
 const uint16_t PREDICATE = 62;
 const uint16_t LOAD = 63;
-const uint16_t STORE_ADDRESS = 64;
-const uint16_t STORE_DATA = 65;
-const uint16_t BRANCH = 66;
+const uint16_t STORE = 64;
+const uint16_t STORE_ADDRESS = 65;
+const uint16_t STORE_DATA = 66;
+const uint16_t BRANCH = 67;
 }  // namespace InstructionGroups
 
 /** The number of aarch64 instruction groups. */
-#define NUM_GROUPS 67
+#define NUM_GROUPS 68
 const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
     {InstructionGroups::INT,
      {InstructionGroups::INT_SIMPLE, InstructionGroups::INT_DIV_OR_SQRT,
@@ -152,6 +153,8 @@ const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
     {InstructionGroups::LOAD,
      {InstructionGroups::LOAD_INT, InstructionGroups::LOAD_SCALAR,
       InstructionGroups::LOAD_VECTOR, InstructionGroups::LOAD_SVE}},
+    {InstructionGroups::STORE,
+     {InstructionGroups::STORE_ADDRESS, InstructionGroups::STORE_DATA}},
     {InstructionGroups::STORE_ADDRESS,
      {InstructionGroups::STORE_ADDRESS_INT,
       InstructionGroups::STORE_ADDRESS_SCALAR,
