@@ -7,35 +7,35 @@
 Core:
   Simulation-Mode: outoforder
   Clock-Frequency: 2.6
-  Fetch-Block-Size: 32
+  Fetch-Block-Size: 16
   Micro-Operations: True
   Vector-Length: 256
 Process-Image:
   Heap-Size: 1073741824
   Stack-Size: 1048576
 Register-Set:
-  GeneralPurpose-Count: 96
-  FloatingPoint/SVE-Count: 128
+  GeneralPurpose-Count: 154
+  FloatingPoint/SVE-Count: 90
   Predicate-Count: 48
   Conditional-Count: 128
 Pipeline-Widths:
-  Commit: 4
-  FrontEnd: 4
-  LSQ-Completion: 2
+  Commit: 15
+  FrontEnd: 5
+  LSQ-Completion: 5
 Queue-Sizes:
   ROB: 256
-  Load: 40
-  Store: 24
+  Load: 85
+  Store: 90
 Branch-Predictor:
   BTB-bitlength: 11
 L1-Cache:
   Access-Latency: 4
   Exclusive: False
   Load-Bandwidth: 80
-  Store-Bandwidth: 32
-  Permitted-Requests-Per-Cycle: 3
+  Store-Bandwidth: 64
+  Permitted-Requests-Per-Cycle: 5
   Permitted-Loads-Per-Cycle: 3
-  Permitted-Stores-Per-Cycle: 1
+  Permitted-Stores-Per-Cycle: 2
 Ports:
   0:
     Portname: BR_0
@@ -131,7 +131,7 @@ Ports:
     - STORE_DATA_INT
 Reservation-Stations:
   0:
-    Size: 20
+    Size: 48
     Dispatch-Rate: 10
     Ports:
     - BR_0
@@ -141,7 +141,7 @@ Reservation-Stations:
     - INT_MULTI_CYCLE_0
     - INT_MULTI_CYCLE_1
   1:
-    Size: 20
+    Size: 64
     Dispatch-Rate: 10
     Ports:
     - FP_ASIMD_0
@@ -149,7 +149,7 @@ Reservation-Stations:
     - FP_ASIMD_2
     - FP_ASIMD_3
   2:
-    Size: 20
+    Size: 60
     Dispatch-Rate: 10
     Ports:
     - LOAD_STORE_0
