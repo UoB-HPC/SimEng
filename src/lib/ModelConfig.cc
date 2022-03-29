@@ -65,7 +65,7 @@ void ModelConfig::validate() {
     }
   }
   nodeChecker<bool>(configFile_[root][subFields[3]], subFields[3],
-                    std::make_pair(false, true), ExpectedValue::Bool);
+                    std::make_pair(false, true), ExpectedValue::Bool, false);
   nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
                         {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
                          1408, 1536, 1664, 1792, 1920, 2048},
