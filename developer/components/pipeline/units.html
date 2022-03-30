@@ -240,13 +240,9 @@
 <p>The <code class="docutils literal"><span class="pre">DecodeUnit</span></code> class models the decode stage of a processor pipeline, and is responsible for converting a stream of macro-ops into a stream of SimEng instructions.</p>
 <div class="section" id="id1">
 <h3>Behaviour<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
-<p>Each cycle, the decode unit will read macro-ops from the input buffer, and split them into a stream of <code class="docutils literal"><span class="pre">Instruction</span></code> objects.</p>
-<div class="admonition note">
-<p class="first admonition-title">Note</p>
-<p class="last">The DecodeUnit is currently only capable of handling macro-ops that split into a single instruction: <a class="reference external" href="https://github.com/UoB-HPC/SimEng/issues/14">https://github.com/UoB-HPC/SimEng/issues/14</a></p>
-</div>
-<p>The now-decoded instructions are checked for any trivially identifiable branch mispredictions (i.e., a non-branch predicted as a taken branch), and if discovered, the branch predictor is informed and a pipeline flush requested.</p>
-<p>The cycle ends when all macro-ops in the input buffer have been processed, or a misprediction is identified and all remaining macro-ops are flushed.</p>
+<p>Each cycle, the decode unit will read macro-ops from the input buffer, and split them into a stream of <code class="docutils literal"><span class="pre">Instruction</span></code> objects or micro-ops. These <code class="docutils literal"><span class="pre">Instruction</span></code> objects are passed into an internal buffer.</p>
+<p>Once all macro-ops in the input buffer have been passed into the internal <code class="docutils literal"><span class="pre">Instruction</span></code> buffer or the <code class="docutils literal"><span class="pre">Instruction</span></code> buffer size exceeds the size of the output buffer, <code class="docutils literal"><span class="pre">Instruction</span></code> objects are checked for any trivially identifiable branch mispredictions (i.e., a non-branch predicted as a taken branch), and if discovered, the branch predictor is informed and a pipeline flush requested.</p>
+<p>The cycle ends when all <code class="docutils literal"><span class="pre">Instruction</span></code> objects in the internal buffer have been processed, or a misprediction is identified and all remaining <code class="docutils literal"><span class="pre">Instruction</span></code> objects are flushed.</p>
 <p>If the output buffer is stalled when the cycle begins, the decode unit will idle, perform no operation, and will flag its input buffer as having stalled, until the output is no longer stalled.</p>
 </div>
 </div>
@@ -328,7 +324,7 @@
 <dt id="term-loads">Loads</dt>
 <dd>Address generation is performed, before passing the instruction to the unit’s supplied load handling function. Unlike other instructions, load instructions <strong>are not</strong> written to the output buffer, as execution cannot occur until the memory read concludes. It is the responsibility of the load handling function to ensure that the instruction is executed and results broadcast once the loaded data is available.</dd>
 <dt id="term-stores">Stores</dt>
-<dd>Address generation is performed, and the instruction is executed to determine the memory data to be written. The instruction is passed to the unit’s supplied store handler.</dd>
+<dd>Address generation is performed, and the instruction is executed to determine the memory data to be written. The instruction is passed to the unit’s supplied store handler which typically facilitates the passing of to-be stored data once the store operation retires.</dd>
 <dt id="term-branches">Branches</dt>
 <dd>The instruction is executed, and queried to determine whether or not the results match the branch prediction originally associated with the instruction. If a misprediction is encountered, the branch predictor is informed, and a flush is raised to instruct the core to reset the program counter to the correct address and remove all incorrectly speculated instructions from the core.</dd>
 </dl>
@@ -341,6 +337,10 @@
 <div class="section" id="id5">
 <h3>Behaviour<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
 <p>Each cycle, the unit will read instructions from the input buffer, and retrieve any results generated during execution. All results are written to the supplied register file set, and the instructions are flagged as ready to commit. As the unit has no output buffer, instructions are discarded once writeback is complete.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">(Relevant for outoforder models) AT the writeback stage, Instructions created from a macro-op split are placed into a <code class="docutils literal"><span class="pre">waitingCommit</span></code> state and inform the <code class="docutils literal"><span class="pre">ReorderBuffer</span></code> that the instruction is ready to commit once all other associated micro-ops are. More information can be found <a class="reference internal" href="components.html#microopcommit"><span class="std std-ref">here</span></a>.</p>
+</div>
 </div>
 </div>
 </div>

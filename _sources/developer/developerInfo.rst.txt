@@ -48,8 +48,7 @@ Currently, there are CircleCI and Jenkins configurations that will automatically
 test that each pull request builds and passes the test suite for multiple compilers 
 before being merged. Those compilers include:
 
-- GCC 7/8/9
-- CLANG 5/7
+- GCC 7/8/9/10
 - ARMCLANG 20
 
 .. todo::

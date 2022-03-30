@@ -54,13 +54,11 @@ The ``DecodeUnit`` class models the decode stage of a processor pipeline, and is
 Behaviour
 *********
 
-Each cycle, the decode unit will read macro-ops from the input buffer, and split them into a stream of ``Instruction`` objects.
+Each cycle, the decode unit will read macro-ops from the input buffer, and split them into a stream of ``Instruction`` objects or micro-ops. These ``Instruction`` objects are passed into an internal buffer.
 
-.. Note:: The DecodeUnit is currently only capable of handling macro-ops that split into a single instruction: https://github.com/UoB-HPC/SimEng/issues/14
+Once all macro-ops in the input buffer have been passed into the internal ``Instruction`` buffer or the ``Instruction`` buffer size exceeds the size of the output buffer, ``Instruction`` objects are checked for any trivially identifiable branch mispredictions (i.e., a non-branch predicted as a taken branch), and if discovered, the branch predictor is informed and a pipeline flush requested.
 
-The now-decoded instructions are checked for any trivially identifiable branch mispredictions (i.e., a non-branch predicted as a taken branch), and if discovered, the branch predictor is informed and a pipeline flush requested.
-
-The cycle ends when all macro-ops in the input buffer have been processed, or a misprediction is identified and all remaining macro-ops are flushed.
+The cycle ends when all ``Instruction`` objects in the internal buffer have been processed, or a misprediction is identified and all remaining ``Instruction`` objects are flushed.
 
 If the output buffer is stalled when the cycle begins, the decode unit will idle, perform no operation, and will flag its input buffer as having stalled, until the output is no longer stalled.
 
@@ -161,7 +159,7 @@ While normal data processing instructions are simply executed, some instruction 
     Address generation is performed, before passing the instruction to the unit's supplied load handling function. Unlike other instructions, load instructions **are not** written to the output buffer, as execution cannot occur until the memory read concludes. It is the responsibility of the load handling function to ensure that the instruction is executed and results broadcast once the loaded data is available.
 
   Stores
-    Address generation is performed, and the instruction is executed to determine the memory data to be written. The instruction is passed to the unit's supplied store handler.
+    Address generation is performed, and the instruction is executed to determine the memory data to be written. The instruction is passed to the unit's supplied store handler which typically facilitates the passing of to-be stored data once the store operation retires.
 
   Branches
     The instruction is executed, and queried to determine whether or not the results match the branch prediction originally associated with the instruction. If a misprediction is encountered, the branch predictor is informed, and a flush is raised to instruct the core to reset the program counter to the correct address and remove all incorrectly speculated instructions from the core.
@@ -178,3 +176,5 @@ Behaviour
 *********
 
 Each cycle, the unit will read instructions from the input buffer, and retrieve any results generated during execution. All results are written to the supplied register file set, and the instructions are flagged as ready to commit. As the unit has no output buffer, instructions are discarded once writeback is complete.
+
+.. Note:: (Relevant for outoforder models) AT the writeback stage, Instructions created from a macro-op split are placed into a ``waitingCommit`` state and inform the ``ReorderBuffer`` that the instruction is ready to commit once all other associated micro-ops are. More information can be found :ref:`here <microOpCommit>`.

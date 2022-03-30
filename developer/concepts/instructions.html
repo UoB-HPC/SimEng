@@ -104,9 +104,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#post-decode">Post-Decode</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#ready-to-execute">Ready to execute</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#address-generation">Address generation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#store-data">Store data</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#executed">Executed</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#macro-ops">Macro-Ops</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="registers.html">Registers</a></li>
@@ -218,13 +220,22 @@
 </div>
 <div class="section" id="address-generation">
 <h3>Address generation<a class="headerlink" href="#address-generation" title="Permalink to this headline">¶</a></h3>
-<p>(Loads and stores only).
-If an instruction has reported itself as a load or store, once ready to execute it will be instructed to generate the set of addresses it will access. While stores may execute immediately, loads are considered pending until the model supplies a corresponding piece of data for each generated address, and may only execute once all data is available.</p>
+<p>(Loads and stores only).</p>
+<p>If an instruction has reported itself as a load or store, once ready to execute it will be instructed to generate the set of addresses it will access. While stores may execute immediately, loads are considered pending until the model supplies a corresponding piece of data for each generated address, and may only execute once all data is available.</p>
+</div>
+<div class="section" id="store-data">
+<h3>Store data<a class="headerlink" href="#store-data" title="Permalink to this headline">¶</a></h3>
+<p>(Stores only).</p>
+<p>In addition to generating addresses when a store is executed, it will pass the to-be stored data to the <code class="docutils literal"><span class="pre">LoadStoreQueue</span></code> unit for use when the store instruction retires and the memory write request is sent off to the memory interface.</p>
 </div>
 <div class="section" id="executed">
 <h3>Executed<a class="headerlink" href="#executed" title="Permalink to this headline">¶</a></h3>
 <p>Executing an instruction performs the relevant operation using the input values, and makes the results available to the model, along with the registers these results should be written to. As instructions have no access to memory, the execution step for stores is expected to produce a corresponding piece of data to write to each address generated, using the input values supplied; these address/data pairs are presented to the model for writing to memory. For branches, the calculated address will also be available.</p>
-<span class="target" id="macroops"></span></div>
+</div>
+</div>
+<div class="section" id="macro-ops">
+<span id="macroops"></span><h2>Macro-Ops<a class="headerlink" href="#macro-ops" title="Permalink to this headline">¶</a></h2>
+<p>A SimEng instruction represents what are typically referred to as “micro-ops” (also known as µops or uops): a single conceptual hardware operation. To support more complex instruction sets where individual instructions perform multiple operations, some SimEng components deal with “macro-ops”, which are conceptual objects that may be split into a stream of SimEng <code class="docutils literal"><span class="pre">Instruction</span></code> objects. As a result, individual machine-code instructions may become multiple SimEng <code class="docutils literal"><span class="pre">Instruction</span></code> objects when processed.</p>
 </div>
 </div>
 
