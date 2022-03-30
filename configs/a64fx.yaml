@@ -4,8 +4,12 @@
 
 Core:
   Simulation-Mode: outoforder
+  # Clock Frequency is in GHz.
   Clock-Frequency: 1.8
+  # Timer-Frequency is in MHz.
+  Timer-Frequency: 100
   Fetch-Block-Size: 32
+  Micro-Operations: True
   Vector-Length: 512
 Process-Image:
   Heap-Size: 1073741824
@@ -28,7 +32,9 @@ Branch-Predictor:
   BTB-bitlength: 11
 L1-Cache:
   Access-Latency: 5
-  Bandwidth: 128
+  Exclusive: True
+  Load-Bandwidth: 128
+  Store-Bandwidth: 64
   Permitted-Requests-Per-Cycle: 2
   Permitted-Loads-Per-Cycle: 2
   Permitted-Stores-Per-Cycle: 1
@@ -47,6 +53,7 @@ Ports:
     Instruction-Support:
     - INT_SIMPLE
     - INT_MUL
+    - STORE_DATA
   3:
     Portname: FLB
     Instruction-Support:
@@ -63,7 +70,7 @@ Ports:
     Portname: EAGA
     Instruction-Support:
     - LOAD
-    - STORE
+    - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
@@ -71,7 +78,7 @@ Ports:
     Portname: EAGB
     Instruction-Support:
     - LOAD
-    - STORE
+    - STORE_ADDRESS
     - INT_SIMPLE_ARTH_NOSHIFT
     - INT_SIMPLE_LOGICAL_NOSHIFT
     - INT_SIMPLE_CMP
@@ -212,14 +219,14 @@ Latencies:
     Instruction-Groups: 
     - LOAD_SCALAR
     - LOAD_VECTOR
-    - STORE_SCALAR
-    - STORE_VECTOR
+    - STORE_ADDRESS_SCALAR
+    - STORE_ADDRESS_VECTOR
     Execution-Latency: 3
     Execution-Throughput: 1
   10:
     Instruction-Groups: 
     - LOAD_SVE
-    - STORE_SVE
+    - STORE_ADDRESS_SVE
     Execution-Latency: 6
     Execution-Throughput: 1
 # CPU-Info mainly used to generate a replica of the special (or system) file directory 

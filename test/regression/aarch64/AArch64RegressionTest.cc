@@ -32,6 +32,13 @@ YAML::Node AArch64RegressionTest::generateConfig() const {
   } else {
     config["Core"]["Vector-Length"] = 512;
   }
+  if (additionalConfig["Micro-Operations"].IsDefined() &&
+      !(additionalConfig["Micro-Operations"].IsNull())) {
+    config["Core"]["Micro-Operations"] =
+        additionalConfig["Micro-Operations"].as<bool>();
+  } else {
+    config["Core"]["Micro-Operations"] = false;
+  }
   return config;
 }
 
@@ -51,7 +58,8 @@ AArch64RegressionTest::createPortAllocator() const {
        simeng::arch::aarch64::InstructionGroups::SVE,
        simeng::arch::aarch64::InstructionGroups::PREDICATE,
        simeng::arch::aarch64::InstructionGroups::LOAD,
-       simeng::arch::aarch64::InstructionGroups::STORE,
+       simeng::arch::aarch64::InstructionGroups::STORE_ADDRESS,
+       simeng::arch::aarch64::InstructionGroups::STORE_DATA,
        simeng::arch::aarch64::InstructionGroups::BRANCH}};
 
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(

@@ -33,16 +33,21 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
         dataSpan({data.data(), data.size()}),
         memory{},
         loadUop(new MockInstruction),
+        loadUop2(new MockInstruction),
         storeUop(new MockInstruction),
+        storeUop2(new MockInstruction),
         loadUopPtr(loadUop),
-        storeUopPtr(storeUop) {
+        loadUopPtr2(loadUop2),
+        storeUopPtr(storeUop),
+        storeUopPtr2(storeUop2) {
     // Set up sensible return values for the load uop
     ON_CALL(*loadUop, isLoad()).WillByDefault(Return(true));
     ON_CALL(*loadUop, getGeneratedAddresses())
         .WillByDefault(Return(addressesSpan));
 
     // Set up sensible return values for the store uop
-    ON_CALL(*storeUop, isStore()).WillByDefault(Return(true));
+    ON_CALL(*storeUop, isStoreAddress()).WillByDefault(Return(true));
+    ON_CALL(*storeUop, isStoreData()).WillByDefault(Return(true));
     ON_CALL(*storeUop, getGeneratedAddresses())
         .WillByDefault(Return(addressesSpan));
     ON_CALL(*storeUop, getData()).WillByDefault(Return(dataSpan));
@@ -76,7 +81,9 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     // Load uop comes sequentially after the store uop, and potentially reads
     // from the same address the store writes to
     storeUop->setSequenceId(0);
+    storeUop->setInstructionId(0);
     loadUop->setSequenceId(1);
+    loadUop->setInstructionId(1);
 
     // Add the memory operations to the queue in program order
     queue.addStore(storeUopPtr);
@@ -88,9 +95,12 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
     loadUop->setExecuted(true);
     loadUop->setCommitReady();
 
+    // Supply data to storeUop
+    queue.supplyStoreData(storeUopPtr);
+
     // Trigger the store, and return any violation
-    // TODO: Once a memory interface is in place, ensure the load was resolved
-    // before triggering the store
+    // TODO: Once a memory interface is in place, ensure the load was
+    // resolved before triggering the store
     storeUop->setCommitReady();
     return queue.commitStore(storeUopPtr);
   }
@@ -107,10 +117,14 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   char memory[1024];
 
   MockInstruction* loadUop;
+  MockInstruction* loadUop2;
   MockInstruction* storeUop;
+  MockInstruction* storeUop2;
 
   std::shared_ptr<Instruction> loadUopPtr;
+  std::shared_ptr<Instruction> loadUopPtr2;
   std::shared_ptr<MockInstruction> storeUopPtr;
+  std::shared_ptr<MockInstruction> storeUopPtr2;
 
   MockForwardOperandsHandler forwardOperandsHandler;
 
@@ -261,8 +275,12 @@ TEST_P(LoadStoreQueueTest, Store) {
   EXPECT_CALL(*storeUop, getGeneratedAddresses()).Times(AtLeast(1));
   EXPECT_CALL(*storeUop, getData()).Times(AtLeast(1));
 
+  storeUop->setSequenceId(1);
+  storeUop->setInstructionId(1);
+
   queue.addStore(storeUopPtr);
   storeUopPtr->setCommitReady();
+  queue.supplyStoreData(storeUopPtr);
 
   // Check that a write request is sent to the memory interface
   EXPECT_CALL(dataMemory,
@@ -288,8 +306,24 @@ TEST_P(LoadStoreQueueTest, Violation) {
 
   EXPECT_CALL(*loadUop, getGeneratedAddresses()).Times(AtLeast(1));
 
-  // Execute a load-after-store sequence
-  bool violation = executeRAWSequence(queue);
+  // Set the store operation to come before the load in the program order
+  storeUop->setSequenceId(0);
+  loadUop->setSequenceId(1);
+
+  // First start the load operation before the store to avoid any reordering
+  // confliction detection
+  queue.addLoad(loadUopPtr);
+  queue.startLoad(loadUopPtr);
+  loadUop->setExecuted(true);
+  loadUop->setCommitReady();
+
+  // Complete a store operation that conflicts with the active load
+  queue.addStore(storeUopPtr);
+  queue.supplyStoreData(storeUopPtr);
+  storeUop->setCommitReady();
+
+  // Expect a violation to be detected
+  bool violation = queue.commitStore(storeUopPtr);
 
   EXPECT_EQ(violation, true);
   EXPECT_EQ(queue.getViolatingLoad(), loadUopPtr);
@@ -351,6 +385,72 @@ TEST_P(LoadStoreQueueTest, NoViolation) {
 
   // No violation should have occurred, as the addresses are different
   EXPECT_EQ(violation, false);
+}
+
+// Test that a flushed load currently in a state of reordering confliction is
+// correctly removed
+TEST_P(LoadStoreQueueTest, FlushDuringConfliction) {
+  auto queue = getQueue();
+
+  storeUop->setSequenceId(0);
+  loadUop->setSequenceId(1);
+  loadUop->setFlushed();
+  loadUop2->setSequenceId(2);
+  loadUop2->setFlushed();
+
+  // Set store addresses and data
+  std::vector<MemoryAccessTarget> storeAddresses = {{1, 1}, {2, 1}};
+  span<const MemoryAccessTarget> storeAddressesSpan = {storeAddresses.data(),
+                                                       storeAddresses.size()};
+  std::vector<RegisterValue> storeData = {static_cast<uint8_t>(0x01),
+                                          static_cast<uint8_t>(0x10)};
+  span<const RegisterValue> storeDataSpan = {storeData.data(),
+                                             storeData.size()};
+  EXPECT_CALL(*storeUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeAddressesSpan));
+  EXPECT_CALL(*storeUop, getData())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(storeDataSpan));
+
+  // Set load address which overlaps on first store address
+  std::vector<MemoryAccessTarget> loadAddresses = {{1, 1}};
+  span<const MemoryAccessTarget> loadAddressesSpan = {loadAddresses.data(),
+                                                      loadAddresses.size()};
+  EXPECT_CALL(*loadUop, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(loadAddressesSpan));
+
+  // Set load address which overlaps on second store address
+  std::vector<MemoryAccessTarget> loadAddresses2 = {{2, 1}};
+  span<const MemoryAccessTarget> loadAddressesSpan2 = {loadAddresses2.data(),
+                                                       loadAddresses2.size()};
+  EXPECT_CALL(*loadUop2, getGeneratedAddresses())
+      .Times(AtLeast(1))
+      .WillRepeatedly(Return(loadAddressesSpan2));
+
+  queue.addStore(storeUopPtr);
+  queue.addLoad(loadUopPtr);
+  queue.addLoad(loadUopPtr2);
+
+  queue.startLoad(loadUopPtr);
+  loadUop->setExecuted(true);
+  loadUop->setCommitReady();
+  queue.startLoad(loadUopPtr2);
+  loadUop2->setExecuted(true);
+  loadUop2->setCommitReady();
+  queue.purgeFlushed();
+
+  queue.supplyStoreData(storeUopPtr);
+  bool violation = queue.commitStore(storeUopPtr);
+
+  // No violation should have occurred, as the loads have been flushed
+  EXPECT_EQ(violation, false);
+
+  // No read requests as loads have been flushed
+  EXPECT_CALL(dataMemory, requestRead(_, _)).Times(0);
+
+  queue.tick();
 }
 
 INSTANTIATE_TEST_SUITE_P(LoadStoreQueueTests, LoadStoreQueueTest,

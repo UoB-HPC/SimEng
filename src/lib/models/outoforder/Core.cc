@@ -58,7 +58,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          config["L1-Cache"]["Bandwidth"].as<uint8_t>(),
+          config["L1-Cache"]["Exclusive"].as<bool>(),
+          config["L1-Cache"]["Load-Bandwidth"].as<uint8_t>(),
+          config["L1-Cache"]["Store-Bandwidth"].as<uint8_t>(),
           config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint8_t>(),
           config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint8_t>(),
           config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint8_t>()),
@@ -76,7 +78,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           renameToDispatchBuffer_, issuePorts_, registerFileSet_, portAllocator,
           physicalRegisterQuantities_, rsArrangement,
           config["Pipeline-Widths"]["Dispatch-Rate"].as<unsigned int>()),
-      writebackUnit_(completionSlots_, registerFileSet_),
+      writebackUnit_(
+          completionSlots_, registerFileSet_,
+          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
       clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
@@ -93,7 +97,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
         [this](auto regs, auto values) {
           dispatchIssueUnit_.forwardOperands(regs, values);
         },
-        [this](auto uop) { loadStoreQueue_.startLoad(uop); }, [](auto uop) {},
+        [this](auto uop) { loadStoreQueue_.startLoad(uop); },
+        [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
         [](auto uop) { uop->setCommitReady(); }, branchPredictor,
         config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
   }
@@ -105,12 +110,13 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
+
+  // Get Virtual Counter Timer system register
+  VCTreg_ = isa_.getVCTreg();
 };
 
 void Core::tick() {
   ticks_++;
-
-  applyStateChange(isa_.getUpdateState());
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -202,6 +208,7 @@ void Core::flushIfNeeded() {
 
     // Flush everything younger than the bad instruction from the ROB
     reorderBuffer_.flush(lowestSeqId);
+    decodeUnit_.purgeFlushed();
     dispatchIssueUnit_.purgeFlushed();
     loadStoreQueue_.purgeFlushed();
     for (auto& eu : executionUnits_) {
@@ -272,7 +279,8 @@ void Core::handleException() {
   // Flush everything younger than the exception-generating instruction.
   // This must happen prior to handling the exception to ensure the commit state
   // is up-to-date with the register mapping table
-  reorderBuffer_.flush(exceptionGeneratingInstruction_->getSequenceId());
+  reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId());
+  decodeUnit_.purgeFlushed();
   dispatchIssueUnit_.purgeFlushed();
   loadStoreQueue_.purgeFlushed();
   for (auto& eu : executionUnits_) {
@@ -310,26 +318,34 @@ void Core::processExceptionHandler() {
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
   // Update registers in accoradance with the ProcessStateChange type
-  if (change.type == arch::ChangeType::REPLACEMENT) {
-    // If type is ChangeType::REPLACEMENT, set new values
-    for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-      mappedRegisterFileSet_.set(change.modifiedRegisters[i],
-                                 change.modifiedRegisterValues[i]);
+  switch (change.type) {
+    case arch::ChangeType::INCREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        mappedRegisterFileSet_.set(
+            change.modifiedRegisters[i],
+            mappedRegisterFileSet_.get(change.modifiedRegisters[i])
+                    .get<uint64_t>() +
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
     }
-  } else {
-    for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-      // Get source and value to update by
-      uint64_t sourceValue =
-          mappedRegisterFileSet_.get(change.modifiedRegisters[i])
-              .get<uint64_t>();
-      uint64_t updatedValue = change.modifiedRegisterValues[i].get<uint64_t>();
-      // Based on type, add or subtract update value and set new
-      RegisterValue updateRegisterValue =
-          (change.type == arch::ChangeType::INCREMENT)
-              ? sourceValue + updatedValue
-              : sourceValue - updatedValue;
-      mappedRegisterFileSet_.set(change.modifiedRegisters[i],
-                                 updateRegisterValue);
+    case arch::ChangeType::DECREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        mappedRegisterFileSet_.set(
+            change.modifiedRegisters[i],
+            mappedRegisterFileSet_.get(change.modifiedRegisters[i])
+                    .get<uint64_t>() -
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
+    }
+    default: {  // arch::ChangeType::REPLACEMENT
+      // If type is ChangeType::REPLACEMENT, set new values
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        mappedRegisterFileSet_.set(change.modifiedRegisters[i],
+                                   change.modifiedRegisterValues[i]);
+      }
+      break;
     }
   }
 
@@ -337,11 +353,14 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    const auto& target = change.memoryAddresses[i];
-    const auto& data = change.memoryAddressValues[i];
-
-    dataMemory_.requestWrite(target, data);
+    dataMemory_.requestWrite(change.memoryAddresses[i],
+                             change.memoryAddressValues[i]);
   }
+}
+
+void Core::incVCT(uint64_t iterations) {
+  registerFileSet_.set(VCTreg_, iterations);
+  return;
 }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
@@ -407,7 +426,9 @@ std::map<std::string, std::string> Core::getStats() const {
           {"issue.portBusyStalls", std::to_string(portBusyStalls)},
           {"branch.executed", std::to_string(totalBranchesExecuted)},
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()}};
+          {"branch.missrate", branchMissRateStr.str()},
+          {"lsq.loadViolations",
+           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
 }
 
 }  // namespace outoforder

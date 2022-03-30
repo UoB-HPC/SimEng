@@ -1,6 +1,7 @@
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 
 #include <algorithm>
+#include <iostream>
 #include <unordered_set>
 
 namespace simeng {

@@ -17,6 +17,7 @@
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
+#include "simeng/arch/aarch64/MicroDecoder.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
@@ -28,14 +29,21 @@
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
+float clockFreq_;
+uint32_t timerFreq_;
+
 /** Tick the provided core model until it halts. */
 int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
              simeng::MemoryInterface& dataMemory) {
   int iterations = 0;
+  float timerModulo = (clockFreq_ * 1e9) / (timerFreq_ * 1e6);
+
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
     // Tick the core
     core.tick();
+    // Update Virtual Counter Timer at correct frequency.
+    if (iterations % (uint32_t)timerModulo == 0) core.incVCT(iterations);
 
     // Tick memory
     instructionMemory.tick();
@@ -73,6 +81,9 @@ int main(int argc, char** argv) {
              "outoforder") {
     mode = SimulationMode::OutOfOrder;
   }
+
+  clockFreq_ = config["Core"]["Clock-Frequency"].as<float>();
+  timerFreq_ = config["Core"]["Timer-Frequency"].as<uint32_t>();
 
   if (argc > 2) {
     executablePath = std::string(argv[2]);
@@ -201,7 +212,8 @@ int main(int argc, char** argv) {
                                                 processMemorySize);
 
   // Create the architecture, with knowledge of the kernel
-  auto arch = simeng::arch::aarch64::Architecture(kernel, config);
+  std::unique_ptr<simeng::arch::Architecture> arch =
+      std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
 
   auto predictor = simeng::BTBPredictor(
       config["Branch-Predictor"]["BTB-bitlength"].as<uint8_t>());
@@ -242,7 +254,7 @@ int main(int argc, char** argv) {
           processMemory, processMemorySize,
           config["L1-Cache"]["Access-Latency"].as<uint16_t>());
       core = std::make_unique<simeng::models::outoforder::Core>(
-          instructionMemory, *dataMemory, processMemorySize, entryPoint, arch,
+          instructionMemory, *dataMemory, processMemorySize, entryPoint, *arch,
           predictor, portAllocator, rsArrangement, config);
       break;
     }
@@ -253,7 +265,7 @@ int main(int argc, char** argv) {
                                                         processMemorySize);
       core = std::make_unique<simeng::models::inorder::Core>(
           instructionMemory, *flatDataMemory, processMemorySize, entryPoint,
-          arch, predictor);
+          *arch, predictor);
       dataMemory = std::move(flatDataMemory);
       break;
     }
@@ -262,7 +274,7 @@ int main(int argc, char** argv) {
       dataMemory = std::make_unique<simeng::FlatMemoryInterface>(
           processMemory, processMemorySize);
       core = std::make_unique<simeng::models::emulation::Core>(
-          instructionMemory, *dataMemory, entryPoint, processMemorySize, arch);
+          instructionMemory, *dataMemory, entryPoint, processMemorySize, *arch);
       break;
     }
   };

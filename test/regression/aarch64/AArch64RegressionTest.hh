@@ -4,18 +4,19 @@
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 
-#define AARCH64_CONFIG                                                        \
-  ("{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "               \
-   "Fetch-Block-Size: 32}, Process-Image: {Heap-Size: 100000, Stack-Size: "   \
-   "100000}, Register-Set: {GeneralPurpose-Count: 154, "                      \
-   "FloatingPoint/SVE-Count: 90, Predicate-Count: 17, Conditional-Count: "    \
-   "128}, Pipeline-Widths: { Commit: 4, Dispatch-Rate: 4, FrontEnd: 4, "      \
-   "LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, "       \
-   "Branch-Predictor: {BTB-bitlength: 16}, L1-Cache: {Access-Latency: 4, "    \
-   "Bandwidth: 32, Permitted-Requests-Per-Cycle: 2, "                         \
-   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "    \
-   "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 12, 46, 58, 59, " \
-   "60, 61]}}, Reservation-Stations: {'0': {Size: 60, Ports: [0]}}, "         \
+#define AARCH64_CONFIG                                                         \
+  ("{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "                \
+   "Fetch-Block-Size: 32, Micro-Operations: False}, Process-Image: "           \
+   "{Heap-Size: 100000, Stack-Size: 100000}, Register-Set: "                   \
+   "{GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "                 \
+   "Predicate-Count: 17, Conditional-Count: 128}, Pipeline-Widths: { Commit: " \
+   "4, Dispatch-Rate: 4, FrontEnd: 4, LSQ-Completion: 2}, Queue-Sizes: {ROB: " \
+   "180, Load: 64, Store: 36}, Branch-Predictor: {BTB-bitlength: 16}, "        \
+   "L1-Cache: {Access-Latency: 4, Exclusive: False, Load-Bandwidth: 32, "      \
+   "Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "                    \
+   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "     \
+   "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 14, 52, 66, 67, "  \
+   "70, 71]}}, Reservation-Stations: {'0': {Size: 60, Ports: [0]}}, "          \
    "Execution-Units: {'0': {Pipelined: true}}}")
 
 /** A helper function to convert the supplied parameters of

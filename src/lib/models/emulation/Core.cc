@@ -27,6 +27,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
+
+  // Get Virtual Counter Timer system register
+  VCTreg_ = isa_.getVCTreg();
 }
 
 void Core::tick() {
@@ -44,7 +47,7 @@ void Core::tick() {
 
   if (pendingReads_ > 0) {
     // Handle pending reads to a uop
-    auto& uop = macroOp_[0];
+    auto& uop = microOps_.front();
 
     const auto& completedReads = dataMemory_.getCompletedReads();
     for (const auto& response : completedReads) {
@@ -65,30 +68,38 @@ void Core::tick() {
 
   // Fetch
 
-  // Find fetched memory that matches the current PC
-  const auto& fetched = instructionMemory_.getCompletedReads();
-  size_t fetchIndex;
-  for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
-    if (fetched[fetchIndex].target.address == pc_) {
-      break;
+  // Determine if new uops are needed to be fetched
+  if (!microOps_.size()) {
+    // Find fetched memory that matches the current PC
+    const auto& fetched = instructionMemory_.getCompletedReads();
+    size_t fetchIndex;
+    for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
+      if (fetched[fetchIndex].target.address == pc_) {
+        break;
+      }
+    }
+    if (fetchIndex == fetched.size()) {
+      // Need to wait for fetched instructions
+      return;
+    }
+
+    const auto& instructionBytes = fetched[fetchIndex].data;
+    auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
+                                    FETCH_SIZE, pc_, {false, 0}, macroOp_);
+
+    // Clear the fetched data
+    instructionMemory_.clearCompletedReads();
+
+    pc_ += bytesRead;
+
+    // Decode
+    for (size_t index = 0; index < macroOp_.size(); index++) {
+      microOps_.push(std::move(macroOp_[index]));
     }
   }
-  if (fetchIndex == fetched.size()) {
-    // Need to wait for fetched instructions
-    return;
-  }
 
-  const auto& instructionBytes = fetched[fetchIndex].data;
-  auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
-                                  FETCH_SIZE, pc_, {false, 0}, macroOp_);
+  auto& uop = microOps_.front();
 
-  // Clear the fetched data
-  instructionMemory_.clearCompletedReads();
-
-  pc_ += bytesRead;
-
-  // Decode
-  auto& uop = macroOp_[0];
   if (uop->exceptionEncountered()) {
     handleException(uop);
     return;
@@ -106,11 +117,18 @@ void Core::tick() {
   // Execute
   if (uop->isLoad()) {
     auto addresses = uop->generateAddresses();
+    previousAddresses_.clear();
+    if (uop->exceptionEncountered()) {
+      handleException(uop);
+      return;
+    }
     if (addresses.size() > 0) {
       // Memory reads are required; request them, set `pendingReads_`
       // accordingly, and end the cycle early
       for (auto const& target : addresses) {
         dataMemory_.requestRead(target);
+        // Store addresses for use by next store data operation
+        previousAddresses_.push_back(target);
       }
       pendingReads_ = addresses.size();
       return;
@@ -119,8 +137,26 @@ void Core::tick() {
       execute(uop);
       return;
     }
-  } else if (uop->isStore()) {
-    uop->generateAddresses();
+  } else if (uop->isStoreAddress()) {
+    auto addresses = uop->generateAddresses();
+    previousAddresses_.clear();
+    if (uop->exceptionEncountered()) {
+      handleException(uop);
+      return;
+    }
+    // Store addresses for use by next store data operation
+    for (auto const& target : addresses) {
+      previousAddresses_.push_back(target);
+    }
+    if (uop->isStoreData()) {
+      execute(uop);
+    } else {
+      // Fetch memory for next cycle
+      instructionMemory_.requestRead({pc_, FETCH_SIZE});
+      microOps_.pop();
+    }
+
+    return;
   }
 
   execute(uop);
@@ -134,11 +170,12 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
     return;
   }
 
-  if (uop->isStore()) {
-    auto addresses = uop->getGeneratedAddresses();
+  if (uop->isStoreData()) {
+    auto results = uop->getResults();
+    auto destinations = uop->getDestinationRegisters();
     auto data = uop->getData();
-    for (size_t i = 0; i < addresses.size(); i++) {
-      dataMemory_.requestWrite(addresses[i], data[i]);
+    for (size_t i = 0; i < previousAddresses_.size(); i++) {
+      dataMemory_.requestWrite(previousAddresses_[i], data[i]);
     }
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
@@ -148,15 +185,23 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   // Writeback
   auto results = uop->getResults();
   auto destinations = uop->getDestinationRegisters();
-  for (size_t i = 0; i < results.size(); i++) {
-    auto reg = destinations[i];
-    registerFileSet_.set(reg, results[i]);
+  if (uop->isStoreData()) {
+    for (size_t i = 0; i < results.size(); i++) {
+      auto reg = destinations[i];
+      registerFileSet_.set(reg, results[i]);
+    }
+  } else {
+    for (size_t i = 0; i < results.size(); i++) {
+      auto reg = destinations[i];
+      registerFileSet_.set(reg, results[i]);
+    }
   }
 
-  instructionsExecuted_++;
+  if (uop->isLastMicroOp()) instructionsExecuted_++;
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
+  microOps_.pop();
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
@@ -191,20 +236,52 @@ void Core::processExceptionHandler() {
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
+  microOps_.pop();
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  // Update registers
-  for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-    registerFileSet_.set(change.modifiedRegisters[i],
-                         change.modifiedRegisterValues[i]);
+  // Update registers in accoradance with the ProcessStateChange type
+  switch (change.type) {
+    case arch::ChangeType::INCREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(
+            change.modifiedRegisters[i],
+            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() +
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
+    }
+    case arch::ChangeType::DECREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(
+            change.modifiedRegisters[i],
+            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() -
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
+    }
+    default: {  // arch::ChangeType::REPLACEMENT
+      // If type is ChangeType::REPLACEMENT, set new values
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(change.modifiedRegisters[i],
+                             change.modifiedRegisterValues[i]);
+      }
+      break;
+    }
   }
 
   // Update memory
+  // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
+  // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
     dataMemory_.requestWrite(change.memoryAddresses[i],
                              change.memoryAddressValues[i]);
   }
+}
+
+void Core::incVCT(uint64_t iterations) {
+  registerFileSet_.set(VCTreg_, iterations);
+  return;
 }
 
 bool Core::hasHalted() const { return hasHalted_; }

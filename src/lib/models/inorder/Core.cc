@@ -35,10 +35,13 @@ Core::Core(FlatMemoryInterface& instructionMemory,
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor, false),
-      writebackUnit_(completionSlots_, registerFileSet_) {
+      writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}) {
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
+
+  // Get Virtual Counter Timer system register
+  VCTreg_ = isa_.getVCTreg();
 };
 
 void Core::tick() {
@@ -89,6 +92,7 @@ void Core::tick() {
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     decodeToExecuteBuffer_.fill(nullptr);
+    decodeUnit_.purgeFlushed();
 
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
@@ -175,6 +179,7 @@ void Core::handleException() {
   // Flush pipeline
   fetchToDecodeBuffer_.fill({});
   decodeToExecuteBuffer_.fill(nullptr);
+  decodeUnit_.purgeFlushed();
   completionSlots_[0].fill(nullptr);
 }
 
@@ -215,13 +220,27 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
 
   assert(instruction->hasAllData() &&
          "Load instruction failed to obtain all data this cycle");
+
+  instruction->execute();
+
+  if (instruction->isStoreData()) {
+    storeData(instruction);
+  }
 }
 
 void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
-  const auto& addresses = instruction->getGeneratedAddresses();
-  const auto& data = instruction->getData();
-  for (size_t i = 0; i < addresses.size(); i++) {
-    dataMemory_.requestWrite(addresses[i], data[i]);
+  if (instruction->isStoreAddress()) {
+    auto addresses = instruction->getGeneratedAddresses();
+    for (auto const& target : addresses) {
+      previousAddresses_.push(target);
+    }
+  }
+  if (instruction->isStoreData()) {
+    const auto data = instruction->getData();
+    for (size_t i = 0; i < data.size(); i++) {
+      dataMemory_.requestWrite(previousAddresses_.front(), data[i]);
+      previousAddresses_.pop();
+    }
   }
 }
 
@@ -274,24 +293,52 @@ void Core::readRegisters() {
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  // Update registers
-  for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-    registerFileSet_.set(change.modifiedRegisters[i],
-                         change.modifiedRegisterValues[i]);
+  // Update registers in accoradance with the ProcessStateChange type
+  switch (change.type) {
+    case arch::ChangeType::INCREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(
+            change.modifiedRegisters[i],
+            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() +
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
+    }
+    case arch::ChangeType::DECREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(
+            change.modifiedRegisters[i],
+            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() -
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
+    }
+    default: {  // arch::ChangeType::REPLACEMENT
+      // If type is ChangeType::REPLACEMENT, set new values
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(change.modifiedRegisters[i],
+                             change.modifiedRegisterValues[i]);
+      }
+      break;
+    }
   }
 
   // Update memory
+  // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
+  // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    const auto& target = change.memoryAddresses[i];
-    const auto& data = change.memoryAddressValues[i];
-
-    dataMemory_.requestWrite(target, data);
+    dataMemory_.requestWrite(change.memoryAddresses[i],
+                             change.memoryAddressValues[i]);
   }
+}
+
+void Core::incVCT(uint64_t iterations) {
+  registerFileSet_.set(VCTreg_, iterations);
+  return;
 }
 
 void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
   loadData(instruction);
-  instruction->execute();
   if (instruction->exceptionEncountered()) {
     raiseException(instruction);
     return;

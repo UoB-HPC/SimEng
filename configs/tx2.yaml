@@ -4,8 +4,12 @@
 
 Core:
   Simulation-Mode: outoforder
+  # Clock Frequency is in GHz.
   Clock-Frequency: 2.5
+  # Timer-Frequency is in MHz.
+  Timer-Frequency: 200
   Fetch-Block-Size: 32
+  Micro-Operations: True
 Process-Image:
   Heap-Size: 1073741824
   Stack-Size: 1048576
@@ -26,7 +30,9 @@ Branch-Predictor:
   BTB-bitlength: 16
 L1-Cache:
   Access-Latency: 4
-  Bandwidth: 32
+  Exclusive: False
+  Load-Bandwidth: 32
+  Store-Bandwidth: 16
   Permitted-Requests-Per-Cycle: 2
   Permitted-Loads-Per-Cycle: 2
   Permitted-Stores-Per-Cycle: 1
@@ -52,14 +58,16 @@ Ports:
     Portname: Port 4
     Instruction-Support:
     - LOAD
+    - STORE_ADDRESS
   4:
     Portname: Port 5
     Instruction-Support:
     - LOAD
+    - STORE_ADDRESS
   5:
     Portname: Port 3
     Instruction-Support:
-    - STORE
+    - STORE_DATA
 Reservation-Stations:
   0:
     Size: 60

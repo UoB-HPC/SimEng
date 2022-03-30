@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -19,7 +20,47 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
          "Attempted to reserve entry in reorder buffer when already full");
   insn->setSequenceId(seqId_);
   seqId_++;
+  insn->setInstructionId(insnId_);
+  if (insn->isLastMicroOp()) insnId_++;
+
   buffer_.push_back(insn);
+}
+
+void ReorderBuffer::commitMicroOps(uint64_t insnId) {
+  if (buffer_.size()) {
+    size_t index = 0;
+    int firstOp = -1;
+    bool validForCommit = false;
+
+    // Find first instance of uop belonging to macro-op instruction
+    for (; index < buffer_.size(); index++) {
+      if (buffer_[index]->getInstructionId() == insnId) {
+        firstOp = index;
+        break;
+      }
+    }
+
+    if (firstOp > -1) {
+      // If found, see if all uops are committable
+      for (; index < buffer_.size(); index++) {
+        if (buffer_[index]->getInstructionId() != insnId) break;
+        if (!buffer_[index]->isWaitingCommit()) {
+          return;
+        } else if (buffer_[index]->isLastMicroOp()) {
+          // all microOps must be in ROB for the commit to be valid
+          validForCommit = true;
+        }
+      }
+      if (!validForCommit) return;
+
+      // No early return thus all uops are committable
+      for (; firstOp < buffer_.size(); firstOp++) {
+        if (buffer_[firstOp]->getInstructionId() != insnId) break;
+        buffer_[firstOp]->setCommitReady();
+      }
+    }
+  }
+  return;
 }
 
 unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
@@ -34,7 +75,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
-    instructionsCommitted_++;
+    if (uop->isLastMicroOp()) instructionsCommitted_++;
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);
@@ -43,21 +84,23 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     const auto& destinations = uop->getDestinationRegisters();
-    for (const auto& reg : destinations) {
-      rat_.commit(reg);
+    const auto& results = uop->getResults();
+    for (int i = 0; i < destinations.size(); i++) {
+      rat_.commit(destinations[i]);
     }
 
     // If it's a memory op, commit the entry at the head of the respective queue
     if (uop->isLoad()) {
       lsq_.commitLoad(uop);
     }
-    if (uop->isStore()) {
+    if (uop->isStoreAddress()) {
       bool violationFound = lsq_.commitStore(uop);
       if (violationFound) {
+        loadViolations_++;
         // Memory order violation found; aborting commits and flushing
         auto load = lsq_.getViolatingLoad();
         shouldFlush_ = true;
-        flushAfter_ = load->getSequenceId() - 1;
+        flushAfter_ = load->getInstructionId() - 1;
         pc_ = load->getInstructionAddress();
 
         buffer_.pop_front();
@@ -75,7 +118,7 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
   // than `afterSeqId`
   while (!buffer_.empty()) {
     auto& uop = buffer_.back();
-    if (uop->getSequenceId() <= afterSeqId) {
+    if (uop->getInstructionId() <= afterSeqId) {
       break;
     }
 
@@ -103,6 +146,10 @@ uint64_t ReorderBuffer::getFlushSeqId() const { return flushAfter_; }
 
 uint64_t ReorderBuffer::getInstructionsCommittedCount() const {
   return instructionsCommitted_;
+}
+
+uint64_t ReorderBuffer::getViolatingLoadsCount() const {
+  return loadViolations_;
 }
 
 }  // namespace pipeline

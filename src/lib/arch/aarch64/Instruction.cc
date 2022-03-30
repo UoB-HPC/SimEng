@@ -12,8 +12,14 @@ const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
                                              (uint16_t)-1};
 
 Instruction::Instruction(const Architecture& architecture,
-                         const InstructionMetadata& metadata)
+                         const InstructionMetadata& metadata,
+                         MicroOpInfo microOpInfo)
     : architecture_(architecture), metadata(metadata) {
+  isMicroOp_ = microOpInfo.isMicroOp;
+  microOpcode_ = microOpInfo.microOpcode;
+  dataSize_ = microOpInfo.dataSize;
+  isLastMicroOp_ = microOpInfo.isLastMicroOp;
+  microOpIndex_ = microOpInfo.microOpIndex;
   decode();
 }
 
@@ -110,12 +116,12 @@ const span<RegisterValue> Instruction::getResults() const {
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
-bool Instruction::isStore() const { return isStore_; }
+bool Instruction::isStoreAddress() const { return isStoreAddress_; }
+bool Instruction::isStoreData() const { return isStoreData_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
 bool Instruction::isRET() const { return isRET_; }
 bool Instruction::isBL() const { return isBL_; }
-bool Instruction::isSVE() const { return isSVEData_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
@@ -162,7 +168,8 @@ uint16_t Instruction::getGroup() const {
     base = InstructionGroups::SVE;
 
   if (isLoad_) return base + 10;
-  if (isStore_) return base + 11;
+  if (isStoreAddress_) return base + 11;
+  if (isStoreData_) return base + 12;
   if (isBranch_) return InstructionGroups::BRANCH;
   if (isPredicate_) return InstructionGroups::PREDICATE;
   if (isDivideOrSqrt_) return base + 9;
@@ -177,8 +184,8 @@ uint16_t Instruction::getGroup() const {
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH
 }
 
-void Instruction::setExecutionInfo(const executionInfo& info) {
-  if (isLoad_ || isStore_) {
+void Instruction::setExecutionInfo(const ExecutionInfo& info) {
+  if (isLoad_ || isStoreAddress_) {
     lsqExecutionLatency_ = info.latency;
   } else {
     latency_ = info.latency;

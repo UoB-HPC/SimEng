@@ -54,6 +54,10 @@ class Core : public simeng::Core {
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
+  /** Change the value of the Virtual Counter Timer system register to number
+   * of cycles completed. */
+  void incVCT(uint64_t iterations) override;
+
  private:
   /** Raise an exception to the core, providing the generating instruction. */
   void raiseException(const std::shared_ptr<Instruction>& instruction);
@@ -141,7 +145,7 @@ class Core : public simeng::Core {
   /** Clock frequency of core */
   unsigned int clockFrequency_ = 2.5 * 1e9;
 
-  /** Core commit width; maximum number of instruction that can be commited per
+  /** Core commit width; maximum number of instruction that can be committed per
    * cycle. */
   unsigned int commitWidth_ = 6;
 
@@ -162,6 +166,9 @@ class Core : public simeng::Core {
 
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
+
+  /** System Register of Virtual Counter Timer. */
+  simeng::Register VCTreg_;
 };
 
 }  // namespace outoforder

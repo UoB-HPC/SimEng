@@ -31,6 +31,9 @@ bool Instruction::wasBranchMispredicted() const {
 void Instruction::setSequenceId(uint64_t seqId) { sequenceId_ = seqId; };
 uint64_t Instruction::getSequenceId() const { return sequenceId_; };
 
+void Instruction::setInstructionId(uint64_t insnId) { instructionId_ = insnId; }
+uint64_t Instruction::getInstructionId() const { return instructionId_; }
+
 void Instruction::setFlushed() { flushed_ = true; }
 bool Instruction::isFlushed() const { return flushed_; }
 
@@ -45,6 +48,10 @@ uint16_t Instruction::getLatency() const { return latency_; }
 uint16_t Instruction::getLSQLatency() const { return lsqExecutionLatency_; }
 uint16_t Instruction::getStallCycles() const { return stallCycles_; }
 
-bool Instruction::shouldSplitRequests() const { return splitMemoryRequests_; }
+bool Instruction::isMicroOp() const { return isMicroOp_; }
+bool Instruction::isLastMicroOp() const { return isLastMicroOp_; }
+void Instruction::setWaitingCommit() { waitingCommit_ = true; }
+bool Instruction::isWaitingCommit() const { return waitingCommit_; }
+int Instruction::getMicroOpIndex() const { return microOpIndex_; }
 
 }  // namespace simeng

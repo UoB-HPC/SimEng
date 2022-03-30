@@ -23,6 +23,8 @@ class ReorderBuffer {
   /** Add the provided instruction to the ROB. */
   void reserve(const std::shared_ptr<Instruction>& insn);
 
+  void commitMicroOps(uint64_t insnId);
+
   /** Commit and remove up to `maxCommitSize` instructions. */
   unsigned int commit(unsigned int maxCommitSize);
 
@@ -49,6 +51,9 @@ class ReorderBuffer {
 
   /** Get the number of instructions the ROB has committed. */
   uint64_t getInstructionsCommittedCount() const;
+
+  /** Get the number of speculated loads which violated load-store ordering. */
+  uint64_t getViolatingLoadsCount() const;
 
  private:
   /** A reference to the register alias table. */
@@ -81,8 +86,15 @@ class ReorderBuffer {
   /** The next available sequence ID. */
   uint64_t seqId_ = 0;
 
+  /** The next available instruction ID. Used to identify in-order groups of
+   * micro-operations. */
+  uint64_t insnId_ = 0;
+
   /** The number of instructions committed. */
   uint64_t instructionsCommitted_ = 0;
+
+  /** The number of speculatived loads which violated load-store ordering. */
+  uint64_t loadViolations_ = 0;
 };
 
 }  // namespace pipeline

@@ -45,6 +45,10 @@ class Core : public simeng::Core {
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
+  /** Change the value of the Virtual Counter Timer system register to number
+   * of cycles completed. */
+  void incVCT(uint64_t iterations) override;
+
  private:
   /** Raise an exception to the core, providing the generating instruction. */
   void raiseException(const std::shared_ptr<Instruction>& instruction);
@@ -99,6 +103,9 @@ class Core : public simeng::Core {
   std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
       completionSlots_;
 
+  /** The previously generated addresses. */
+  std::queue<simeng::MemoryAccessTarget> previousAddresses_;
+
   /** The fetch unit; fetches instructions from memory. */
   pipeline::FetchUnit fetchUnit_;
 
@@ -129,6 +136,9 @@ class Core : public simeng::Core {
 
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
+
+  /** System Register of Virtual Counter Timer. */
+  simeng::Register VCTreg_;
 };
 
 }  // namespace inorder

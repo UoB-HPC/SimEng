@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <queue>
 #include <string>
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
@@ -43,6 +44,10 @@ class Core : public simeng::Core {
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
+  /** Change the value of the Virtual Counter Timer system register to number
+   * of cycles completed. */
+  void incVCT(uint64_t iterations) override;
+
  private:
   /** Execute an instruction. */
   void execute(std::shared_ptr<Instruction>& uop);
@@ -61,6 +66,9 @@ class Core : public simeng::Core {
 
   /** A memory interface to access data. */
   MemoryInterface& dataMemory_;
+
+  /** The previously generated addresses. */
+  std::vector<simeng::MemoryAccessTarget> previousAddresses_;
 
   /** The length of the available instruction memory. */
   uint64_t programByteLength_;
@@ -84,6 +92,9 @@ class Core : public simeng::Core {
   /** A reusable macro-op vector to fill with uops. */
   MacroOp macroOp_;
 
+  /** An internal buffer for storing one or more uops. */
+  std::queue<std::shared_ptr<Instruction>> microOps_;
+
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 
@@ -98,6 +109,9 @@ class Core : public simeng::Core {
 
   /** The number of branches executed. */
   uint64_t branchesExecuted_ = 0;
+
+  /** System Register of Virtual Counter Timer. */
+  simeng::Register VCTreg_;
 };
 
 }  // namespace emulation

@@ -597,6 +597,34 @@ TEST_P(InstLoad, ldr_vector) {
   CHECK_NEON(1, double, {-0.00032, 123456});
 }
 
+TEST_P(InstLoad, ldur_neon) {
+  initialHeapData_.resize(48);
+  float* heap = reinterpret_cast<float*>(initialHeapData_.data());
+  heap[0] = 1.0f;
+  heap[1] = 123.456f;
+  heap[2] = -0.00032f;
+  heap[3] = 123456.0f;
+
+  // ldur 32-bit
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ldur s0, [x0]
+    ldur s1, [x0, #4]
+    add x0, x0, #12
+    ldur s2, [x0]
+    ldur s3, [x0, #-4]
+  )");
+  CHECK_NEON(0, float, {1.0f});
+  CHECK_NEON(1, float, {123.456f});
+  CHECK_NEON(2, float, {123456.0f});
+  CHECK_NEON(3, float, {-0.00032f});
+}
+
 TEST_P(InstLoad, ldurh) {
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());

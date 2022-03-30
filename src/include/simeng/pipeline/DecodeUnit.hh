@@ -1,5 +1,7 @@
 #pragma once
 
+#include <queue>
+
 #include "simeng/arch/Architecture.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
@@ -31,9 +33,14 @@ class DecodeUnit {
    * discovering a branch misprediction early. */
   uint64_t getEarlyFlushes() const;
 
+  /** Clear the microOps_ queue. */
+  void purgeFlushed();
+
  private:
   /** A buffer of macro-ops to split into uops. */
   PipelineBuffer<MacroOp>& input_;
+  /** An internal buffer for storing one or more uops. */
+  std::deque<std::shared_ptr<Instruction>> microOps_;
   /** A buffer for writing decoded uops into. */
   PipelineBuffer<std::shared_ptr<Instruction>>& output_;
 
