@@ -27,6 +27,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
+
+  // Get Virtual Counter Timer system register
+  VCTreg_ = isa_.getVCTreg();
 }
 
 void Core::tick() {
@@ -237,17 +240,48 @@ void Core::processExceptionHandler() {
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
-  // Update registers
-  for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
-    registerFileSet_.set(change.modifiedRegisters[i],
-                         change.modifiedRegisterValues[i]);
+  // Update registers in accoradance with the ProcessStateChange type
+  switch (change.type) {
+    case arch::ChangeType::INCREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(
+            change.modifiedRegisters[i],
+            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() +
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
+    }
+    case arch::ChangeType::DECREMENT: {
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(
+            change.modifiedRegisters[i],
+            registerFileSet_.get(change.modifiedRegisters[i]).get<uint64_t>() -
+                change.modifiedRegisterValues[i].get<uint64_t>());
+      }
+      break;
+    }
+    default: {  // arch::ChangeType::REPLACEMENT
+      // If type is ChangeType::REPLACEMENT, set new values
+      for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
+        registerFileSet_.set(change.modifiedRegisters[i],
+                             change.modifiedRegisterValues[i]);
+      }
+      break;
+    }
   }
 
   // Update memory
+  // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
+  // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
     dataMemory_.requestWrite(change.memoryAddresses[i],
                              change.memoryAddressValues[i]);
   }
+}
+
+void Core::incVCT(uint64_t iterations) {
+  registerFileSet_.set(VCTreg_, iterations);
+  return;
 }
 
 bool Core::hasHalted() const { return hasHalted_; }

@@ -467,6 +467,7 @@ TEST_P(InstFloat, fcvt) {
   CHECK_NEON(1, float, {-10.5f, 0.f, 0.f, 0.f});
 
   // Signed, round to zero
+  // 64-bit to 32-bit
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -485,6 +486,25 @@ TEST_P(InstFloat, fcvt) {
   EXPECT_EQ((getGeneralRegister<int32_t>(2)), 0);
   EXPECT_EQ((getGeneralRegister<int32_t>(3)), 321);
 
+  // 64-bit to 64-bit
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    fcvtzs x0, d0
+    fcvtzs x1, d1
+    fcvtzs x2, d2
+    fcvtzs x3, d3
+  )");
+  EXPECT_EQ((getGeneralRegister<int64_t>(0)), 1);
+  EXPECT_EQ((getGeneralRegister<int64_t>(1)), -42);
+  EXPECT_EQ((getGeneralRegister<int64_t>(2)), 0);
+  EXPECT_EQ((getGeneralRegister<int64_t>(3)), 321);
+
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   fheap[0] = 1.0;
   fheap[1] = -42.76;
@@ -492,6 +512,7 @@ TEST_P(InstFloat, fcvt) {
   fheap[3] = 321.5;
 
   // Signed, round to zero
+  // 32-bit to 32-bit
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -1007,6 +1028,30 @@ TEST_P(InstFloat, fnmsub) {
   CHECK_NEON(4, double, {-2.9375, 0.0});
 }
 
+TEST_P(InstFloat, fnmadd) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    fmov s0, 2.0
+    fmov s1, -0.125
+    fmov s2, 7.5
+    fnmadd s3, s0, s1, s2
+    fnmadd s4, s1, s2, s0
+  )");
+  CHECK_NEON(3, float, {-7.25f, 0.f, 0.f, 0.f});
+  CHECK_NEON(4, float, {-1.0625f, 0.f, 0.f, 0.f});
+
+  // 64-bit
+  RUN_AARCH64(R"(
+    fmov d0, 2.0
+    fmov d1, -0.125
+    fmov d2, 7.5
+    fnmadd d3, d0, d1, d2
+    fnmadd d4, d1, d2, d0
+  )");
+  CHECK_NEON(3, double, {-7.25, 0.0});
+  CHECK_NEON(4, double, {-1.0625, 0.0});
+}
+
 TEST_P(InstFloat, fnmul) {
   // 64-bit
   RUN_AARCH64(R"(
@@ -1168,6 +1213,13 @@ TEST_P(InstFloat, scvtf) {
     ldp x3, x4, [x0, #16]
     scvtf s10, x3
     scvtf s11, x4
+
+
+    # With Fixed Point
+    mov x5, #5
+    mov x6, #-73
+    scvtf d12, x5, #1
+    scvtf s13, x6, #5
   )");
   CHECK_NEON(0, double, {1.0, 0.0});
   CHECK_NEON(1, double, {-1.0, 0.0});
@@ -1181,6 +1233,8 @@ TEST_P(InstFloat, scvtf) {
   CHECK_NEON(9, float, {-1.f, 0.f, 0.f, 0.f});
   CHECK_NEON(10, float, {static_cast<float>(INT64_MAX), 0.f, 0.f, 0.f});
   CHECK_NEON(11, float, {static_cast<float>(INT64_MIN), 0.f, 0.f, 0.f});
+  CHECK_NEON(12, double, {2.5, 0.0});
+  CHECK_NEON(13, float, {-2.28125f, 0.f, 0.f, 0.f});
 }
 
 TEST_P(InstFloat, ucvtf) {

@@ -314,7 +314,7 @@ class Instruction : public simeng::Instruction {
  private:
   /** The maximum number of destination registers any supported AArch64
    * instruction can have. */
-  static const uint8_t MAX_DESTINATION_REGISTERS = 3;
+  static const uint8_t MAX_DESTINATION_REGISTERS = 4;
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;

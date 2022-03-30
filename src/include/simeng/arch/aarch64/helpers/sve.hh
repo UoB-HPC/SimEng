@@ -75,6 +75,49 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `addv dd, pg, zn`.
+   * T represents the type of operands (e.g. for zn.s, T = uint32_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveAddvPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* n = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    uint64_t out = 0;
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active)
+        out += static_cast<uint64_t>(n[i]);
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `adr zd, [zn, zm{,
+   * lsl #<1,2,3>}]`.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveAdr_packedOffsets(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    const int mbytes = 1 << metadata.operands[2].shift.value;
+    for (int i = 0; i < partition_num; i++) {
+      out[i] = n[i] + (m[i] * mbytes);
+    }
+    return {out, 256};
+  }
+
   /** Helper function for instructions with the format `cmp<eq, ge, gt, hi, hs,
    *le, lo, ls, lt, ne> pd, pg/z, zn, <zm, #imm>`.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).
@@ -106,7 +149,7 @@ class sveHelp {
               (func(n[i], m[i])) ? (shifted_active) : 0;
       }
     }
-    // Byte count = sizeof(P) as destination predicate is predicate of P bytes.
+    // Byte count = sizeof(T) as destination predicate is predicate of T bytes.
     return {out, AuxFunc::getNZCVfromPred(out, VL_bits, sizeof(T))};
   }
 
@@ -169,6 +212,32 @@ class sveHelp {
       }
     }
     return out;
+  }
+
+  /** Helper function for SVE instructions with the format `cpy zd, pg/z, #imm{,
+   * shift}`.
+   * T represents the type of operands (e.g. for zd.d, T = int64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveCpy_imm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const int16_t imm = metadata.operands[2].imm;
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i] = imm;
+      } else {
+        out[i] = 0;
+      }
+    }
+    return {out, 256};
   }
 
   /** Helper function for SVE instructions with the format `dec<b,d,h,s> xdn{,
@@ -281,6 +350,128 @@ class sveHelp {
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
       if (p[i / (64 / sizeof(T))] & shifted_active) {
         out[0] += m[i];
+      }
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `fcadd zdn, pg/m,
+   * zdn, zm, #imm`.
+   * T represents the type of operands (e.g. for zm.d, T = double).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveFcaddPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* dn = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+    const uint32_t imm = metadata.operands[4].imm;
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < (partition_num / 2); i++) {
+      T acc_r = dn[2 * i];
+      T acc_i = dn[2 * i + 1];
+      T elt2_r = m[2 * i];
+      T elt2_i = m[2 * i + 1];
+
+      uint64_t shifted_active1 = 1ull
+                                 << (((2 * i) % (64 / sizeof(T))) * sizeof(T));
+      uint64_t shifted_active2 =
+          1ull << (((2 * i + 1) % (64 / sizeof(T))) * sizeof(T));
+      if (p[(2 * i) / (64 / sizeof(T))] & shifted_active1) {
+        if (imm == 90) {
+          elt2_i = 0.0 - elt2_i;
+        }
+        acc_r = acc_r + elt2_i;
+      }
+      if (p[(2 * i + 1) / (64 / sizeof(T))] & shifted_active2) {
+        if (imm == 270) {
+          elt2_r = 0.0 - elt2_r;
+        }
+        acc_i = acc_i + elt2_r;
+      }
+      out[2 * i] = acc_r;
+      out[2 * i + 1] = acc_i;
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `fcmla zda, pg/m,
+   * zn, zm, #imm`.
+   * T represents the type of operands (e.g. for zm.d, T = double).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveFcmlaPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const T* da = operands[0].getAsVector<T>();
+    const uint64_t* p = operands[1].getAsVector<uint64_t>();
+    const T* n = operands[2].getAsVector<T>();
+    const T* m = operands[3].getAsVector<T>();
+    const uint32_t imm = metadata.operands[4].imm;
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    int sel_a = (imm == 0 || imm == 180) ? 0 : 1;
+    int sel_b = (imm == 0 || imm == 180) ? 1 : 0;
+    bool neg_i = (imm == 180 || imm == 270) ? true : false;
+    bool neg_r = (imm == 90 || imm == 180) ? true : false;
+    for (int i = 0; i < (partition_num / 2); i++) {
+      T addend_r = da[2 * i];
+      T addend_i = da[2 * i + 1];
+      T elt1_a = n[2 * i + sel_a];
+      T elt2_a = m[2 * i + sel_a];
+      T elt2_b = m[2 * i + sel_b];
+      uint64_t shifted_active1 = 1ull
+                                 << (((2 * i) % (64 / sizeof(T))) * sizeof(T));
+      uint64_t shifted_active2 =
+          1ull << (((2 * i + 1) % (64 / sizeof(T))) * sizeof(T));
+      if (p[(2 * i) / (64 / sizeof(T))] & shifted_active1) {
+        if (neg_r) {
+          elt2_a = 0.0 - elt2_a;
+        }
+        addend_r = addend_r + (elt1_a * elt2_a);
+      }
+      if (p[(2 * i + 1) / (64 / sizeof(T))] & shifted_active2) {
+        if (neg_i) {
+          elt2_b = 0.0 - elt2_b;
+        }
+        addend_i = addend_i + (elt1_a * elt2_b);
+      }
+      out[2 * i] = addend_r;
+      out[2 * i + 1] = addend_i;
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `fcpy zd, pg/m,
+   * #const`.
+   * T represents the type of operands (e.g. for zd.d, T = double).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveFcpy_imm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const T* dn = operands[0].getAsVector<T>();
+    const uint64_t* p = operands[1].getAsVector<uint64_t>();
+    const T imm = metadata.operands[2].fp;
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i] = imm;
+      } else {
+        out[i] = dn[i];
       }
     }
     return {out, 256};
@@ -903,6 +1094,48 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `mulh zdn, pg/m, zdn,
+   * zm`.
+   * T represents the type of operands (e.g. for zn.s, T = int32_t).
+   * TT represents the type twice the length of T (e.g. for T = int8_t, TT =
+   * int16_T).
+   * Returns correctly formatted RegisterValue. */
+  // TODO : Support for int64_t mulh operations.
+  template <typename T, typename TT>
+  static RegisterValue sveMulhPredicated(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* n = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        bool isNeg = false;
+        T a = n[i];
+        T b = m[i];
+        if (a < 0) {
+          isNeg = !isNeg;
+          a = 0 - a;
+        }
+        if (b < 0) {
+          isNeg = !isNeg;
+          b = 0 - b;
+        }
+        TT tmp = (static_cast<TT>(a) * static_cast<TT>(b));
+        if (isNeg) tmp = 0 - tmp;
+
+        out[i] = static_cast<T>(tmp >> (sizeof(T) * 8));
+      } else
+        out[i] = n[i];
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `orr zd, zn,
    * zm`.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).
@@ -926,15 +1159,23 @@ class sveHelp {
   /** Helper function for SVE instructions with the format `ptrue pd{,
    * pattern}.
    * T represents the type of operands (e.g. for pd.d, T = uint64_t).
-   * Returns correctly formatted RegisterValue. */
+   * Returns an array of 4 uint64_t elements. */
   template <typename T>
-  static std::array<uint64_t, 4> svePtrue(const uint16_t VL_bits) {
+  static std::array<uint64_t, 4> svePtrue(
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
     std::array<uint64_t, 4> out = {0, 0, 0, 0};
 
+    // Get pattern
+    const uint16_t count =
+        AuxFunc::sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
+
     for (int i = 0; i < partition_num; i++) {
-      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
-      out[i / (64 / sizeof(T))] |= shifted_active;
+      if (i < count) {
+        uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+        out[i / (64 / sizeof(T))] |= shifted_active;
+      }
     }
     return out;
   }
@@ -1071,6 +1312,60 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `Sub zdn, pg/m, zdn,
+   * zm`.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveSubrPredicated_3vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* dn = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i] = m[i] - dn[i];
+      } else {
+        out[i] = dn[i];
+      }
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `Sub zdn, pg/m, zdn,
+   * #imm`.
+   * T represents the type of operands (e.g. for zdn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveSubPredicated_imm(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    bool isFP = std::is_floating_point<T>::value;
+    const uint64_t* p = operands[0].getAsVector<uint64_t>();
+    const T* dn = operands[1].getAsVector<T>();
+    const auto imm = isFP ? metadata.operands[3].fp : metadata.operands[3].imm;
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < partition_num; i++) {
+      uint64_t shifted_active = 1ull << ((i % (64 / sizeof(T))) * sizeof(T));
+      if (p[i / (64 / sizeof(T))] & shifted_active) {
+        out[i] = dn[i] - imm;
+      } else {
+        out[i] = dn[i];
+      }
+    }
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `sxt<b,h,w> zd, pg,
    * zn`.
    * T represents the type of vector registers (e.g. for zd.d, T = int64_t).
@@ -1096,6 +1391,46 @@ class sveHelp {
       } else {
         out[i] = d[i];
       }
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `trn1 zd, zn, zm`.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveTrn1_3vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < (partition_num / 2); i++) {
+      out[2 * i] = n[(2 * i)];
+      out[(2 * i) + 1] = m[(2 * i)];
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for SVE instructions with the format `trn2 zd, zn, zm`.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveTrn2_3vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const uint16_t VL_bits) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (int i = 0; i < (partition_num / 2); i++) {
+      out[2 * i] = n[(2 * i) + 1];
+      out[(2 * i) + 1] = m[(2 * i) + 1];
     }
     return {out, 256};
   }

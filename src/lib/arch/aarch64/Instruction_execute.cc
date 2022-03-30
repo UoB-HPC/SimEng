@@ -332,20 +332,23 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_ADD_ZPmZ_B: {
-        return executionNYI();
+      case Opcode::AArch64_ADD_ZPmZ_B: {  // add zdn.b, pg/m, zdn.b, zm.b
+        results[0] = sveHelp::sveAddPredicated_vecs<uint8_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_ADD_ZPmZ_D: {
-        return executionNYI();
+      case Opcode::AArch64_ADD_ZPmZ_D: {  // add zdn.d, pg/m, zdn.d, zm.d
+        results[0] =
+            sveHelp::sveAddPredicated_vecs<uint64_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_ADD_ZPmZ_H: {
-        return executionNYI();
+      case Opcode::AArch64_ADD_ZPmZ_H: {  // add zdn.h, pg/m, zdn.h, zm.h
+        results[0] =
+            sveHelp::sveAddPredicated_vecs<uint16_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_ADD_ZPmZ_S: {
-        return executionNYI();
+      case Opcode::AArch64_ADD_ZPmZ_S: {  // add zdn.s, pg/m, zdn.s, zm.s
+        results[0] =
+            sveHelp::sveAddPredicated_vecs<uint32_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_ADD_ZZZ_B: {  // add zd.b, zn.b, zm.b
@@ -419,36 +422,20 @@ void Instruction::execute() {
             (instructionAddress_ & ~(0xFFF)) + metadata.operands[1].imm;
         break;
       }
-      case Opcode::AArch64_ADR_LSL_ZZZ_D_0: {
-        return executionNYI();
+      case Opcode::AArch64_ADR_LSL_ZZZ_D_0:    // adr zd.d, [zn.d, zm.d]
+      case Opcode::AArch64_ADR_LSL_ZZZ_D_1:    // adr zd.d, [zn.d, zm.d, lsl #1]
+      case Opcode::AArch64_ADR_LSL_ZZZ_D_2:    // adr zd.d, [zn.d, zm.d, lsl #2]
+      case Opcode::AArch64_ADR_LSL_ZZZ_D_3: {  // adr zd.d, [zn.d, zm.d, lsl #3]
+        results[0] = sveHelp::sveAdr_packedOffsets<uint64_t>(operands, metadata,
+                                                             VL_bits);
         break;
       }
-      case Opcode::AArch64_ADR_LSL_ZZZ_D_1: {
-        return executionNYI();
-        break;
-      }
-      case Opcode::AArch64_ADR_LSL_ZZZ_D_2: {
-        return executionNYI();
-        break;
-      }
-      case Opcode::AArch64_ADR_LSL_ZZZ_D_3: {
-        return executionNYI();
-        break;
-      }
-      case Opcode::AArch64_ADR_LSL_ZZZ_S_0: {
-        return executionNYI();
-        break;
-      }
-      case Opcode::AArch64_ADR_LSL_ZZZ_S_1: {
-        return executionNYI();
-        break;
-      }
-      case Opcode::AArch64_ADR_LSL_ZZZ_S_2: {
-        return executionNYI();
-        break;
-      }
-      case Opcode::AArch64_ADR_LSL_ZZZ_S_3: {
-        return executionNYI();
+      case Opcode::AArch64_ADR_LSL_ZZZ_S_0:    // adr zd.s, [zn.s, zm.s]
+      case Opcode::AArch64_ADR_LSL_ZZZ_S_1:    // adr zd.s, [zn.s, zm.s, lsl #1]
+      case Opcode::AArch64_ADR_LSL_ZZZ_S_2:    // adr zd.s, [zn.s, zm.s, lsl #2]
+      case Opcode::AArch64_ADR_LSL_ZZZ_S_3: {  // adr zd.s, [zn.s, zm.s, lsl #3]
+        results[0] = sveHelp::sveAdr_packedOffsets<uint32_t>(operands, metadata,
+                                                             VL_bits);
         break;
       }
       case Opcode::AArch64_ADR_SXTW_ZZZ_D_0: {
@@ -609,8 +596,16 @@ void Instruction::execute() {
             [](uint64_t x, uint64_t y) -> uint64_t { return x & y; });
         break;
       }
-      case Opcode::AArch64_AND_ZI: {
-        return executionNYI();
+      case Opcode::AArch64_AND_ZI: {  // and zdn, zdn, #imm
+        const uint64_t* dn = operands[0].getAsVector<uint64_t>();
+        const uint64_t imm = static_cast<uint64_t>(metadata.operands[2].imm);
+
+        const uint16_t partition_num = VL_bits / 64;
+        uint64_t out[32] = {0};
+        for (int i = 0; i < partition_num; i++) {
+          out[i] = dn[i] & imm;
+        }
+        results[0] = {out, 256};
         break;
       }
       case Opcode::AArch64_AND_ZPmZ_B: {  // and zdn.b, pg/m, zdn.b, zm.b
@@ -945,8 +940,8 @@ void Instruction::execute() {
         results[0] = neonHelp::vecBitwiseInsert<16>(operands, false);
         break;
       }
-      case Opcode::AArch64_BITv8i8: {
-        return executionNYI();
+      case Opcode::AArch64_BITv8i8: {  // bit vd.8b, vn.8b, vm.8b
+        results[0] = neonHelp::vecBitwiseInsert<8>(operands, false);
         break;
       }
       case Opcode::AArch64_BL: {  // bl #imm
@@ -2160,16 +2155,28 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_CMPNE_PPzZI_B: {
-        return executionNYI();
+      case Opcode::AArch64_CMPNE_PPzZI_B: {  // cmpne pd.b, pg/z. zn.b, #imm
+        auto [output, nzcv] = sveHelp::sveCmpPredicated_toPred<int8_t>(
+            operands, metadata, VL_bits, true,
+            [](int8_t x, int8_t y) -> bool { return x != y; });
+        results[0] = nzcv;
+        results[1] = output;
         break;
       }
-      case Opcode::AArch64_CMPNE_PPzZI_D: {
-        return executionNYI();
+      case Opcode::AArch64_CMPNE_PPzZI_D: {  // cmpne pd.d, pg/z. zn.d, #imm
+        auto [output, nzcv] = sveHelp::sveCmpPredicated_toPred<int64_t>(
+            operands, metadata, VL_bits, true,
+            [](int64_t x, int64_t y) -> bool { return x != y; });
+        results[0] = nzcv;
+        results[1] = output;
         break;
       }
-      case Opcode::AArch64_CMPNE_PPzZI_H: {
-        return executionNYI();
+      case Opcode::AArch64_CMPNE_PPzZI_H: {  // cmpne pd.h, pg/z. zn.h, #imm
+        auto [output, nzcv] = sveHelp::sveCmpPredicated_toPred<int16_t>(
+            operands, metadata, VL_bits, true,
+            [](int16_t x, int16_t y) -> bool { return x != y; });
+        results[0] = nzcv;
+        results[1] = output;
         break;
       }
       case Opcode::AArch64_CMPNE_PPzZI_S: {  // cmpne pd.s, pg/z. zn.s, #imm
@@ -2180,20 +2187,36 @@ void Instruction::execute() {
         results[1] = output;
         break;
       }
-      case Opcode::AArch64_CMPNE_PPzZZ_B: {
-        return executionNYI();
+      case Opcode::AArch64_CMPNE_PPzZZ_B: {  // cmpne pd.b, pg/z, zn.b, zm.b
+        auto [output, nzcv] = sveHelp::sveCmpPredicated_toPred<int8_t>(
+            operands, metadata, VL_bits, false,
+            [](int8_t x, int8_t y) -> bool { return x != y; });
+        results[0] = nzcv;
+        results[1] = output;
         break;
       }
-      case Opcode::AArch64_CMPNE_PPzZZ_D: {
-        return executionNYI();
+      case Opcode::AArch64_CMPNE_PPzZZ_D: {  // cmpne pd.d, pg/z, zn.d, zm.d
+        auto [output, nzcv] = sveHelp::sveCmpPredicated_toPred<int64_t>(
+            operands, metadata, VL_bits, false,
+            [](int64_t x, int64_t y) -> bool { return x != y; });
+        results[0] = nzcv;
+        results[1] = output;
         break;
       }
-      case Opcode::AArch64_CMPNE_PPzZZ_H: {
-        return executionNYI();
+      case Opcode::AArch64_CMPNE_PPzZZ_H: {  // cmpne pd.h, pg/z, zn.h, zm.h
+        auto [output, nzcv] = sveHelp::sveCmpPredicated_toPred<int16_t>(
+            operands, metadata, VL_bits, false,
+            [](int16_t x, int16_t y) -> bool { return x != y; });
+        results[0] = nzcv;
+        results[1] = output;
         break;
       }
-      case Opcode::AArch64_CMPNE_PPzZZ_S: {
-        return executionNYI();
+      case Opcode::AArch64_CMPNE_PPzZZ_S: {  // cmpne pd.s, pg/z, zn.s, zm.s
+        auto [output, nzcv] = sveHelp::sveCmpPredicated_toPred<int32_t>(
+            operands, metadata, VL_bits, false,
+            [](int32_t x, int32_t y) -> bool { return x != y; });
+        results[0] = nzcv;
+        results[1] = output;
         break;
       }
       case Opcode::AArch64_CMPNE_WIDE_PPzZZ_B: {
@@ -2388,20 +2411,20 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_CPY_ZPzI_B: {
-        return executionNYI();
+      case Opcode::AArch64_CPY_ZPzI_B: {  // cpy zd.b, pg/z, #imm{, shift}
+        results[0] = sveHelp::sveCpy_imm<int8_t>(operands, metadata, VL_bits);
         break;
       }
-      case Opcode::AArch64_CPY_ZPzI_D: {
-        return executionNYI();
+      case Opcode::AArch64_CPY_ZPzI_D: {  // cpy zd.d, pg/z, #imm{, shift}
+        results[0] = sveHelp::sveCpy_imm<int64_t>(operands, metadata, VL_bits);
         break;
       }
-      case Opcode::AArch64_CPY_ZPzI_H: {
-        return executionNYI();
+      case Opcode::AArch64_CPY_ZPzI_H: {  // cpy zd.h, pg/z, #imm{, shift}
+        results[0] = sveHelp::sveCpy_imm<int16_t>(operands, metadata, VL_bits);
         break;
       }
-      case Opcode::AArch64_CPY_ZPzI_S: {
-        return executionNYI();
+      case Opcode::AArch64_CPY_ZPzI_S: {  // cpy zd.s, pg/z, #imm{, shift}
+        results[0] = sveHelp::sveCpy_imm<int32_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_CPYi16: {
@@ -2633,8 +2656,9 @@ void Instruction::execute() {
                                                           VL_bits, true);
         break;
       }
-      case Opcode::AArch64_DUP_ZR_B: {
-        return executionNYI();
+      case Opcode::AArch64_DUP_ZR_B: {  // dup zd.b, wn
+        results[0] = sveHelp::sveDup_immOrScalar<int8_t>(operands, metadata,
+                                                         VL_bits, false);
         break;
       }
       case Opcode::AArch64_DUP_ZR_D: {  // dup zd.d, xn
@@ -2642,8 +2666,9 @@ void Instruction::execute() {
                                                           VL_bits, false);
         break;
       }
-      case Opcode::AArch64_DUP_ZR_H: {
-        return executionNYI();
+      case Opcode::AArch64_DUP_ZR_H: {  // dup zd.h, wn
+        results[0] = sveHelp::sveDup_immOrScalar<int16_t>(operands, metadata,
+                                                          VL_bits, false);
         break;
       }
       case Opcode::AArch64_DUP_ZR_S: {  // dup zd.s, wn
@@ -2664,8 +2689,25 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_DUP_ZZI_Q: {
-        return executionNYI();
+      case Opcode::AArch64_DUP_ZZI_Q: {  // dup zd.q, zn.q[#imm]
+        // No data-type for quadwords, but as data is just being moved around we
+        // can use uint64_t.
+        const uint16_t index =
+            2 * static_cast<uint16_t>(metadata.operands[1].vector_index);
+        const uint64_t* n = operands[0].getAsVector<uint64_t>();
+
+        const uint16_t partition_num = VL_bits / 128;
+        uint64_t out[32] = {0};
+
+        if (index < partition_num) {
+          const uint64_t elementHi = n[index];
+          const uint64_t elementLo = n[index + 1];
+          for (int i = 0; i < partition_num; i++) {
+            out[2 * i] = elementHi;      // Copy over top half of quadword
+            out[2 * i + 1] = elementLo;  // Copy over lower half of quadword
+          }
+        }
+        results[0] = out;
         break;
       }
       case Opcode::AArch64_DUP_ZZI_S: {  // dup zd.s, zn.s[#imm]
@@ -3202,8 +3244,10 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FCADD_ZPmZ_D: {
-        return executionNYI();
+      case Opcode::AArch64_FCADD_ZPmZ_D: {  // fcadd zdn.d, pg/m, zdn.d, zm.d,
+                                            // #imm
+        results[0] =
+            sveHelp::sveFcaddPredicated<double>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_FCADD_ZPmZ_H: {
@@ -3546,8 +3590,9 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FCMLA_ZPmZZ_D: {
-        return executionNYI();
+      case Opcode::AArch64_FCMLA_ZPmZZ_D: {  // fcmla zda, pg/m, zn, zm, #imm
+        results[0] =
+            sveHelp::sveFcmlaPredicated<double>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_FCMLA_ZPmZZ_H: {
@@ -3779,16 +3824,16 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FCPY_ZPmI_D: {
-        return executionNYI();
+      case Opcode::AArch64_FCPY_ZPmI_D: {  // fcpy zd.d, pg/m, #const
+        results[0] = sveHelp::sveFcpy_imm<double>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_FCPY_ZPmI_H: {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FCPY_ZPmI_S: {
-        return executionNYI();
+      case Opcode::AArch64_FCPY_ZPmI_S: {  // fcpy zd.s, pg/m, #const
+        results[0] = sveHelp::sveFcpy_imm<float>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_FCSELDrrr: {  // fcsel dd, dn, dm, cond
@@ -4369,7 +4414,9 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_FCVTZSUXDr: {
-        return executionNYI();
+        // TODO: Handle NaNs, denorms, and saturation
+        results[0] = {
+            static_cast<int64_t>(std::trunc(operands[0].get<double>())), 8};
         break;
       }
       case Opcode::AArch64_FCVTZSUXHr: {
@@ -5266,8 +5313,10 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FMLAv2i64_indexed: {
-        return executionNYI();
+      case Opcode::AArch64_FMLAv2i64_indexed: {  // fmla vd.2d, vn.2d,
+                                                 // vm.d[index]
+        results[0] =
+            neonHelp::vecFmlaIndexed_3vecs<double, 2>(operands, metadata);
         break;
       }
       case Opcode::AArch64_FMLAv4f16: {
@@ -5345,7 +5394,8 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_FMLSv2i64_indexed: {
-        return executionNYI();
+        results[0] =
+            neonHelp::vecFmlsIndexed_3vecs<double, 2>(operands, metadata);
         break;
       }
       case Opcode::AArch64_FMLSv4f16: {
@@ -5742,16 +5792,16 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FNMADDDrrr: {
-        return executionNYI();
+      case Opcode::AArch64_FNMADDDrrr: {  // fnmadd dd, dn, dm, da
+        results[0] = floatHelp::fnmadd_4ops<double>(operands);
         break;
       }
       case Opcode::AArch64_FNMADDHrrr: {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FNMADDSrrr: {
-        return executionNYI();
+      case Opcode::AArch64_FNMADDSrrr: {  // fnmadd sd, sn, sm, sa
+        results[0] = floatHelp::fnmadd_4ops<float>(operands);
         break;
       }
       case Opcode::AArch64_FNMAD_ZPmZZ_D: {
@@ -6417,16 +6467,17 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FSUBR_ZPmZ_D: {
-        return executionNYI();
+      case Opcode::AArch64_FSUBR_ZPmZ_D: {  // fsubr zdn.d, pg/m, zdn.d, zm.d
+        results[0] =
+            sveHelp::sveSubrPredicated_3vecs<double>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_FSUBR_ZPmZ_H: {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FSUBR_ZPmZ_S: {
-        return executionNYI();
+      case Opcode::AArch64_FSUBR_ZPmZ_S: {  // fsubr zdn.s, pg/m, zdn.s, zm.s
+        results[0] = sveHelp::sveSubrPredicated_3vecs<float>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_FSUBSrr: {  // fsub ss, sn, sm
@@ -6434,16 +6485,18 @@ void Instruction::execute() {
             operands, [](double x, double y) -> double { return x - y; });
         break;
       }
-      case Opcode::AArch64_FSUB_ZPmI_D: {
-        return executionNYI();
+      case Opcode::AArch64_FSUB_ZPmI_D: {  // fsub zdn.d, pg/m, zdn.d, #imm
+        results[0] =
+            sveHelp::sveSubPredicated_imm<double>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_FSUB_ZPmI_H: {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FSUB_ZPmI_S: {
-        return executionNYI();
+      case Opcode::AArch64_FSUB_ZPmI_S: {  // fsub zdn.s, pg/m, zdn.s, #imm
+        results[0] =
+            sveHelp::sveSubPredicated_imm<float>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_FSUB_ZPmZ_D: {  // fsub zdn.d, pg/m, zdn.d, zm.d
@@ -7694,8 +7747,28 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_LD1RQ_D_IMM: {
-        return executionNYI();
+      case Opcode::AArch64_LD1RQ_D_IMM: {  // ld1rqd {zd.d}, pg/z, [xn{, #imm}]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 64;
+        uint64_t out[32] = {0};
+        uint16_t index = 0;
+
+        // Get mini-vector (quadword)
+        uint64_t mini[2] = {0};
+        for (int i = 0; i < 2; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (p[i / 8] & shifted_active)
+            mini[i] = memoryData[index].get<uint64_t>();
+          index++;
+        }
+
+        // Duplicate mini-vector into output vector
+        for (int i = 0; i < (partition_num / 2); i++) {
+          out[2 * i] = mini[0];
+          out[(2 * i) + 1] = mini[1];
+        }
+        results[0] = {out, 256};
         break;
       }
       case Opcode::AArch64_LD1RQ_H: {
@@ -8183,12 +8256,31 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_LD2D: {
-        return executionNYI();
-        break;
-      }
-      case Opcode::AArch64_LD2D_IMM: {
-        return executionNYI();
+      case Opcode::AArch64_LD2D:  // ld2d {zt1.d, zt2.d}, pg/z, [<xn|sp>, xm,
+                                  // lsl #3]
+      case Opcode::AArch64_LD2D_IMM: {  // ld2d {zt1.d, zt2.d}, pg/z, [<xn|sp>{,
+                                        // #imm, mul vl}]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 64;
+        uint16_t index = 0;
+        uint64_t out1[32] = {0};
+        uint64_t out2[32] = {0};
+
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (p[i / 8] & shifted_active) {
+            out1[i] = memoryData[index].get<uint64_t>();
+            index++;
+            out2[i] = memoryData[index].get<uint64_t>();
+            index++;
+          } else {
+            out1[i] = 0;
+            out2[i] = 0;
+          }
+        }
+        results[0] = {out1, 256};
+        results[1] = {out2, 256};
         break;
       }
       case Opcode::AArch64_LD2H: {
@@ -8383,8 +8475,34 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_LD3D_IMM: {
-        return executionNYI();
+      case Opcode::AArch64_LD3D_IMM: {  // ld3d {zt1.d, zt2.d, zt3.d}, pg/z,
+                                        // [xn|sp{, #imm, MUL VL}]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 64;
+        uint16_t index = 0;
+        uint64_t out1[32] = {0};
+        uint64_t out2[32] = {0};
+        uint64_t out3[32] = {0};
+
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (p[i / 8] & shifted_active) {
+            out1[i] = memoryData[index].get<uint64_t>();
+            index++;
+            out2[i] = memoryData[index].get<uint64_t>();
+            index++;
+            out3[i] = memoryData[index].get<uint64_t>();
+            index++;
+          } else {
+            out1[i] = 0;
+            out2[i] = 0;
+            out3[i] = 0;
+          }
+        }
+        results[0] = {out1, 256};
+        results[1] = {out2, 256};
+        results[2] = {out3, 256};
         break;
       }
       case Opcode::AArch64_LD3H: {
@@ -8567,8 +8685,40 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_LD4D_IMM: {
-        return executionNYI();
+      case Opcode::AArch64_LD4D_IMM: {  // ld4d {zt1.d, zt2.d, zt3.d, zt4.d},
+                                        // pg/z, [xn|sp{, #imm, MUL VL}]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 64;
+        uint16_t index = 0;
+        uint64_t out1[32] = {0};
+        uint64_t out2[32] = {0};
+        uint64_t out3[32] = {0};
+        uint64_t out4[32] = {0};
+
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (p[i / 8] & shifted_active) {
+            out1[i] = memoryData[index].get<uint64_t>();
+            index++;
+            out2[i] = memoryData[index].get<uint64_t>();
+            index++;
+            out3[i] = memoryData[index].get<uint64_t>();
+            index++;
+            out4[i] = memoryData[index].get<uint64_t>();
+            index++;
+          } else {
+            out1[i] = 0;
+            out2[i] = 0;
+            out3[i] = 0;
+            out4[i] = 0;
+          }
+        }
+
+        results[0] = {out1, 256};
+        results[1] = {out2, 256};
+        results[2] = {out3, 256};
+        results[3] = {out4, 256};
         break;
       }
       case Opcode::AArch64_LD4Fourv16b: {
@@ -10044,8 +10194,9 @@ void Instruction::execute() {
         results[0] = static_cast<int64_t>(memoryData[0].get<int32_t>());
         break;
       }
-      case Opcode::AArch64_LDURSi: {
-        return executionNYI();
+      case Opcode::AArch64_LDURSi: {  // ldur sd, [<xn|sp>{, #imm}]
+        // LOAD
+        results[0] = {memoryData[0].get<float>(), 256};
         break;
       }
       case Opcode::AArch64_LDURWi: {  // ldur wt, [xn, #imm]
@@ -10746,8 +10897,8 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_NEGv2i64: {
-        return executionNYI();
+      case Opcode::AArch64_NEGv2i64: {  // neg vd.2d, vn.2d
+        results[0] = neonHelp::vecFneg_2ops<int64_t, 2>(operands);
         break;
       }
       case Opcode::AArch64_NEGv4i16: {
@@ -11239,19 +11390,19 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_PTRUE_B: {  // ptrue pd.b{, pattern}
-        results[0] = sveHelp::svePtrue<uint8_t>(VL_bits);
+        results[0] = sveHelp::svePtrue<uint8_t>(metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_PTRUE_D: {  // ptrue pd.d{, pattern}
-        results[0] = sveHelp::svePtrue<uint64_t>(VL_bits);
+        results[0] = sveHelp::svePtrue<uint64_t>(metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_PTRUE_H: {  // ptrue pd.h{, pattern}
-        results[0] = sveHelp::svePtrue<uint16_t>(VL_bits);
+        results[0] = sveHelp::svePtrue<uint16_t>(metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_PTRUE_S: {  // ptrue pd.s{, pattern}
-        results[0] = sveHelp::svePtrue<uint32_t>(VL_bits);
+        results[0] = sveHelp::svePtrue<uint32_t>(metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_PUNPKHI_PP: {  // punpkhi pd.h, pn.b
@@ -11484,12 +11635,12 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_RORVWr: {
-        return executionNYI();
+      case Opcode::AArch64_RORVWr: {  // rorv wd, wn, wm
+        results[0] = {logicalHelp::rorv_3ops<uint32_t>(operands), 8};
         break;
       }
-      case Opcode::AArch64_RORVXr: {
-        return executionNYI();
+      case Opcode::AArch64_RORVXr: {  // rorv xd, xn, xm
+        results[0] = logicalHelp::rorv_3ops<uint64_t>(operands);
         break;
       }
       case Opcode::AArch64_RSHRNv16i8_shift: {
@@ -11819,16 +11970,18 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_SCVTFSXDri: {
-        return executionNYI();
+      case Opcode::AArch64_SCVTFSXDri: {  // scvtf dd, xn, #fbits
+        results[0] =
+            floatHelp::scvtf_FixedPoint<double, int64_t>(operands, metadata);
         break;
       }
       case Opcode::AArch64_SCVTFSXHri: {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_SCVTFSXSri: {
-        return executionNYI();
+      case Opcode::AArch64_SCVTFSXSri: {  // scvtf sd, xn, #fbits
+        results[0] =
+            floatHelp::scvtf_FixedPoint<float, int64_t>(operands, metadata);
         break;
       }
       case Opcode::AArch64_SCVTFUWDri: {  // scvtf dd, wn
@@ -12648,20 +12801,23 @@ void Instruction::execute() {
         results[0] = arithmeticHelp::msubl_4ops<int64_t, int32_t>(operands);
         break;
       }
-      case Opcode::AArch64_SMULH_ZPmZ_B: {
-        return executionNYI();
+      case Opcode::AArch64_SMULH_ZPmZ_B: {  // smulh zdn.b, pg/m, zdn.b, zm.b
+        results[0] =
+            sveHelp::sveMulhPredicated<int8_t, int16_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_SMULH_ZPmZ_D: {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_SMULH_ZPmZ_H: {
-        return executionNYI();
+      case Opcode::AArch64_SMULH_ZPmZ_H: {  // smulh zdn.h, pg/m, zdn.h, zm.h
+        results[0] =
+            sveHelp::sveMulhPredicated<int16_t, int32_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_SMULH_ZPmZ_S: {
-        return executionNYI();
+      case Opcode::AArch64_SMULH_ZPmZ_S: {  // smulh zdn.s, pg/m, zdn.s, zm.s
+        results[0] =
+            sveHelp::sveMulhPredicated<int32_t, int64_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_SMULHrr: {  // smulh xd, xn, xm
@@ -14917,8 +15073,24 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_ST2D_IMM: {
-        return executionNYI();
+      case Opcode::AArch64_ST2D_IMM: {  // st2d {zt1.d, zt2.d}, pg, [<xn|sp>{,
+                                        // #imm, mul vl}]
+        // STORE
+        const uint64_t* d1 = operands[0].getAsVector<uint64_t>();
+        const uint64_t* d2 = operands[1].getAsVector<uint64_t>();
+        const uint64_t* p = operands[2].getAsVector<uint64_t>();
+
+        const uint16_t partition_num = VL_bits / 64;
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (p[i / 8] & shifted_active) {
+            memoryData[index] = d1[i];
+            index++;
+            memoryData[index] = d2[i];
+            index++;
+          }
+        }
         break;
       }
       case Opcode::AArch64_ST2H: {
@@ -16238,19 +16410,19 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_TRN1_ZZZ_B: {
-        return executionNYI();
+        results[0] = sveHelp::sveTrn1_3vecs<uint8_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN1_ZZZ_D: {
-        return executionNYI();
+        results[0] = sveHelp::sveTrn1_3vecs<uint64_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN1_ZZZ_H: {
-        return executionNYI();
+        results[0] = sveHelp::sveTrn1_3vecs<uint16_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN1_ZZZ_S: {
-        return executionNYI();
+        results[0] = sveHelp::sveTrn1_3vecs<uint32_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN1v16i8: {
@@ -16297,20 +16469,20 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_TRN2_ZZZ_B: {
-        return executionNYI();
+      case Opcode::AArch64_TRN2_ZZZ_B: {  // trn2 zd.b, zn.b, zm.b
+        results[0] = sveHelp::sveTrn2_3vecs<uint8_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_TRN2_ZZZ_D: {
-        return executionNYI();
+      case Opcode::AArch64_TRN2_ZZZ_D: {  // trn2 zd.d, zn.d, zm.d
+        results[0] = sveHelp::sveTrn2_3vecs<uint64_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_TRN2_ZZZ_H: {
-        return executionNYI();
+      case Opcode::AArch64_TRN2_ZZZ_H: {  // trn2 zd.h, zn.h, zm.h
+        results[0] = sveHelp::sveTrn2_3vecs<uint16_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_TRN2_ZZZ_S: {
-        return executionNYI();
+      case Opcode::AArch64_TRN2_ZZZ_S: {  // trn2 zd.s, zn.s, zm.s
+        results[0] = sveHelp::sveTrn2_3vecs<uint32_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_TRN2v16i8: {
@@ -16549,20 +16721,20 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_UADDV_VPZ_B: {
-        return executionNYI();
+      case Opcode::AArch64_UADDV_VPZ_B: {  // uaddv dd, pg, zn.b
+        results[0] = sveHelp::sveAddvPredicated<uint8_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_UADDV_VPZ_D: {
-        return executionNYI();
+      case Opcode::AArch64_UADDV_VPZ_D: {  // uaddv dd, pg, zn.d
+        results[0] = sveHelp::sveAddvPredicated<uint64_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_UADDV_VPZ_H: {
-        return executionNYI();
+      case Opcode::AArch64_UADDV_VPZ_H: {  // uaddv dd, pg, zn.h
+        results[0] = sveHelp::sveAddvPredicated<uint16_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_UADDV_VPZ_S: {
-        return executionNYI();
+      case Opcode::AArch64_UADDV_VPZ_S: {  // uaddv dd, pg, zn.s
+        results[0] = sveHelp::sveAddvPredicated<uint32_t>(operands, VL_bits);
         break;
       }
       case Opcode::AArch64_UADDWv16i8_v8i16: {
@@ -18664,9 +18836,9 @@ void Instruction::execute() {
   }
 
 #ifndef NDEBUG
-  // Check if upper bits of vector registers are zeroed because Z configuration
-  // extend to 256 bytes whilst V configurations only extend to 16 bytes.
-  // Thus upper 240 bytes must be ignored by being set to 0.
+  // Check if upper bits of vector registers are zeroed because Z
+  // configuration extend to 256 bytes whilst V configurations only extend
+  // to 16 bytes. Thus upper 240 bytes must be ignored by being set to 0.
   for (int i = 0; i < destinationRegisterCount; i++) {
     if ((destinationRegisters[i].type == RegisterType::VECTOR) && !isSVEData_) {
       if (results[i].size() != 256)
