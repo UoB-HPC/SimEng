@@ -116,7 +116,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 void ReorderBuffer::flush(uint64_t afterSeqId) {
   // Iterate backwards from the tail of the queue to find and remove ops newer
   // than `afterSeqId`
-  // std::cout << "Flushing after " << afterSeqId << std::endl;
   while (!buffer_.empty()) {
     auto& uop = buffer_.back();
     if (uop->getInstructionId() <= afterSeqId) {
