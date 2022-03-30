@@ -882,6 +882,21 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         operands[3].access = CS_AC_READ;
       }
       break;
+    case Opcode::AArch64_STRBui:
+      [[fallthrough]];
+    case Opcode::AArch64_STRDui:
+      [[fallthrough]];
+    case Opcode::AArch64_STRHui:
+      [[fallthrough]];
+    case Opcode::AArch64_STRQui:
+      [[fallthrough]];
+    case Opcode::AArch64_STRSui:
+      [[fallthrough]];
+    case Opcode::AArch64_STRWui:
+      [[fallthrough]];
+    case Opcode::AArch64_STRXui:
+      operands[1].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_STR_PXI:
       [[fallthrough]];
     case Opcode::AArch64_STR_ZXI:

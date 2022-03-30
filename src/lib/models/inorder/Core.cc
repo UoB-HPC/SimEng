@@ -35,7 +35,7 @@ Core::Core(FlatMemoryInterface& instructionMemory,
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor, false),
-      writebackUnit_(completionSlots_, registerFileSet_) {
+      writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}) {
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
@@ -89,6 +89,7 @@ void Core::tick() {
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     decodeToExecuteBuffer_.fill(nullptr);
+    decodeUnit_.purgeFlushed();
 
     flushes_++;
   } else if (decodeUnit_.shouldFlush()) {
@@ -175,6 +176,7 @@ void Core::handleException() {
   // Flush pipeline
   fetchToDecodeBuffer_.fill({});
   decodeToExecuteBuffer_.fill(nullptr);
+  decodeUnit_.purgeFlushed();
   completionSlots_[0].fill(nullptr);
 }
 
@@ -218,16 +220,24 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
 
   instruction->execute();
 
-  if (instruction->isStore()) {
+  if (instruction->isStoreData()) {
     storeData(instruction);
   }
 }
 
 void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
-  const auto& addresses = instruction->getGeneratedAddresses();
-  const auto& data = instruction->getData();
-  for (size_t i = 0; i < addresses.size(); i++) {
-    dataMemory_.requestWrite(addresses[i], data[i]);
+  if (instruction->isStoreAddress()) {
+    auto addresses = instruction->getGeneratedAddresses();
+    for (auto const& target : addresses) {
+      previousAddresses_.push(target);
+    }
+  }
+  if (instruction->isStoreData()) {
+    const auto data = instruction->getData();
+    for (size_t i = 0; i < data.size(); i++) {
+      dataMemory_.requestWrite(previousAddresses_.front(), data[i]);
+      previousAddresses_.pop();
+    }
   }
 }
 

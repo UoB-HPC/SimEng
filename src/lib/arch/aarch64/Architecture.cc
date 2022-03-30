@@ -1,5 +1,3 @@
-#include "simeng/arch/aarch64/Architecture.hh"
-
 #include <algorithm>
 #include <cassert>
 
@@ -13,7 +11,9 @@ std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
 Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
-    : linux_(kernel), VL_(config["Core"]["Vector-Length"].as<uint64_t>()) {
+    : linux_(kernel),
+      microDecoder_(std::make_unique<MicroDecoder>(config)),
+      VL_(config["Core"]["Vector-Length"].as<uint64_t>()) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "Could not create capstone handle" << std::endl;
     exit(1);
@@ -29,7 +29,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
 
-  // Instantiate an executionInfo entry for each group in the InstructionGroup
+  // Instantiate an ExecutionInfo entry for each group in the InstructionGroup
   // namespace.
   for (int i = 0; i < NUM_GROUPS; i++) {
     groupExecutionInfo_[i] = {1, 1, {}};
@@ -115,7 +115,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
         // later access to use group defined latencies instead
         uint16_t opcode = opcode_node[j].as<uint16_t>();
         opcodeExecutionInfo_.try_emplace(
-            opcode, simeng::arch::aarch64::executionInfo{0, 0, {}});
+            opcode, simeng::arch::aarch64::ExecutionInfo{0, 0, {}});
         opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
       }
     }
@@ -185,25 +185,26 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     iter->second.setExecutionInfo(getExecutionInfo(iter->second));
   }
 
-  output.resize(1);
-  auto& uop = output[0];
+  // Split instruction into 1 or more defined micro-ops
+  uint8_t num_ops = microDecoder_->decode(*this, iter->first, iter->second,
+                                          output, capstoneHandle);
 
-  // Retrieve the cached instruction and write to output
-  uop = std::make_shared<Instruction>(iter->second);
-
-  uop->setInstructionAddress(instructionAddress);
-  uop->setBranchPrediction(prediction);
+  // Set instruction address and branch prediction for each micro-op generated
+  for (int i = 0; i < num_ops; i++) {
+    output[i]->setInstructionAddress(instructionAddress);
+    output[i]->setBranchPrediction(prediction);
+  }
 
   return 4;
 }
 
-executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
+ExecutionInfo Architecture::getExecutionInfo(Instruction& insn) const {
   // Asusme no opcode-based override
-  executionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
+  ExecutionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
   if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
       opcodeExecutionInfo_.end()) {
     // Replace with overrided values
-    executionInfo overrideInfo =
+    ExecutionInfo overrideInfo =
         opcodeExecutionInfo_.at(insn.getMetadata().opcode);
     if (overrideInfo.latency != 0) exeInfo.latency = overrideInfo.latency;
     if (overrideInfo.stallCycles != 0)

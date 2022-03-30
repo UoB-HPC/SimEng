@@ -105,8 +105,13 @@ class Instruction {
   /** Was the branch taken? */
   bool wasBranchTaken() const;
 
-  /** Is this a store operation? */
-  virtual bool isStore() const = 0;
+  /** Is this a store address operation (a subcategory of store operations which
+   * deal with the generation of store addresses to store data at)? */
+  virtual bool isStoreAddress() const = 0;
+
+  /** Is this a store data operation (a subcategory of store operations which
+   * deal with the supply of data to be stored)? */
+  virtual bool isStoreData() const = 0;
 
   /** Is this a load operation? */
   virtual bool isLoad() const = 0;
@@ -135,6 +140,12 @@ class Instruction {
   /** Retrieve this instruction's sequence ID. */
   uint64_t getSequenceId() const;
 
+  /** Set this instruction's instruction ID. */
+  void setInstructionId(uint64_t insnId);
+
+  /** Retrieve this instruction's instruction ID. */
+  uint64_t getInstructionId() const;
+
   /** Mark this instruction as flushed. */
   void setFlushed();
 
@@ -157,6 +168,21 @@ class Instruction {
 
   /** Get this instruction's supported set of ports. */
   virtual const std::vector<uint8_t>& getSupportedPorts() = 0;
+
+  /** Is this a micro-operation? */
+  bool isMicroOp() const;
+
+  /** Is this the last uop in the possible sequence of decoded uops? */
+  bool isLastMicroOp() const;
+
+  /** Set the micro-operation in an awaiting commit signal state. */
+  void setWaitingCommit();
+
+  /** Is the micro-operation in an awaiting commit state? */
+  bool isWaitingCommit() const;
+
+  /** Get arbitrary micro-operation index. */
+  int getMicroOpIndex() const;
 
  protected:
   /** Whether an exception has been encountered. */
@@ -206,6 +232,26 @@ class Instruction {
 
   /** The execution ports that this instruction can be issued to. */
   std::vector<uint8_t> supportedPorts_ = {};
+
+  // Micro operations
+  /** Is a resultant micro-operation from an instruction split? */
+  bool isMicroOp_ = false;
+
+  /** Whether or not this instruction is the last uop in the possible sequence
+   * of decoded uops. Default case is that it is. */
+  bool isLastMicroOp_ = true;
+
+  /** This instruction's instruction ID used to group micro-operations together
+   * by macro-op; a higher ID represents a chronologically newer instruction. */
+  uint64_t instructionId_;
+
+  /** Is the micro-operation in a committable state but must wait for all
+   * associated micro-operations to also be committable? */
+  bool waitingCommit_ = false;
+
+  /** An arbitrary index value for the micro-operation. Its use is based on the
+   * implementation of specific micro-operations. */
+  int microOpIndex_;
 };
 
 }  // namespace simeng

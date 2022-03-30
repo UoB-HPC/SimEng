@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <queue>
 #include <string>
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
@@ -62,6 +63,9 @@ class Core : public simeng::Core {
   /** A memory interface to access data. */
   MemoryInterface& dataMemory_;
 
+  /** The previously generated addresses. */
+  std::vector<simeng::MemoryAccessTarget> previousAddresses_;
+
   /** The length of the available instruction memory. */
   uint64_t programByteLength_;
 
@@ -83,6 +87,9 @@ class Core : public simeng::Core {
 
   /** A reusable macro-op vector to fill with uops. */
   MacroOp macroOp_;
+
+  /** An internal buffer for storing one or more uops. */
+  std::queue<std::shared_ptr<Instruction>> microOps_;
 
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;

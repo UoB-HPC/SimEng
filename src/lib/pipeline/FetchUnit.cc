@@ -108,7 +108,7 @@ void FetchUnit::tick() {
     bufferOffset += bytesRead;
     bufferedBytes_ -= bytesRead;
 
-    // Create brnach prediction after identifing instruction type
+    // Create branch prediction after identifing instruction type
     // (e.g. RET, BL, etc).
     prediction = branchPredictor_.predict(macroOp[0]);
     macroOp[0]->setBranchPrediction(prediction);

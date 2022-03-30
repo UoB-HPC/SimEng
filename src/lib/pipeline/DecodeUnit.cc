@@ -11,6 +11,7 @@ DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& input,
     : input_(input), output_(output), predictor_(predictor){};
 
 void DecodeUnit::tick() {
+  // Stall if output buffer is stalled
   if (output_.isStalled()) {
     input_.stall(true);
     return;
@@ -19,22 +20,36 @@ void DecodeUnit::tick() {
   shouldFlush_ = false;
   input_.stall(false);
 
-  for (size_t slot = 0; slot < input_.getWidth(); slot++) {
-    auto& macroOp = input_.getHeadSlots()[slot];
+  // Stall if internal uop is overpopulated, otherwise add uops from input to
+  // internal buffer
+  if (microOps_.size() >= output_.getWidth()) {
+    input_.stall(true);
+  } else {
+    // Populate uop buffer with newly fetched macro-ops
+    for (size_t slot = 0; slot < input_.getWidth(); slot++) {
+      auto& macroOp = input_.getHeadSlots()[slot];
 
-    // Assume single uop per macro op for this version
-    // TODO: Stall on multiple uops and siphon one per cycle, recording progress
-    assert(macroOp.size() <= 1 &&
-           "Multiple uops per macro-op not yet supported");
+      if (macroOp.size() == 0) {
+        // Nothing to process for this macro-op
+        continue;
+      }
 
-    if (macroOp.size() == 0) {
-      // Nothing to process for this macro-op
-      continue;
+      for (uint8_t index = 0; index < macroOp.size(); index++) {
+        microOps_.push_back(std::move(macroOp[index]));
+      }
+
+      input_.getHeadSlots()[slot].clear();
     }
+  }
 
-    auto& uop = (output_.getTailSlots()[slot] = std::move(macroOp[0]));
+  // Process uops in buffer
+  for (size_t slot = 0; slot < output_.getWidth(); slot++) {
+    // If there's no more uops to decode, exit loop early
+    if (!microOps_.size()) break;
 
-    input_.getHeadSlots()[slot].clear();
+    // Move uop to output buffer and remove from internal buffer
+    auto& uop = (output_.getTailSlots()[slot] = std::move(microOps_.front()));
+    microOps_.pop_front();
 
     // Check preliminary branch prediction results now that the instruction is
     // decoded. Identifies:
@@ -49,9 +64,26 @@ void DecodeUnit::tick() {
       if (!uop->isBranch()) {
         // Non-branch incorrectly predicted as a branch; let the predictor know
         predictor_.update(uop, false, pc_);
+        // Remove macro-operations in microOps_ buffer after macro-operation
+        // decoded in this cycle
+        auto uopIt = microOps_.begin();
+        // Find first microOps_ entry not belonging to same address as flushing
+        // instruction
+        while (uopIt != microOps_.end()) {
+          if ((*uopIt)->getInstructionAddress() !=
+              uop->getInstructionAddress()) {
+            break;
+          } else {
+            uopIt++;
+          }
+        }
+        // Remove all entries after first macro-operation in buffer
+        while (uopIt != microOps_.end()) {
+          uopIt = microOps_.erase(uopIt);
+        }
       }
 
-      // Skip processing remaining macro-ops, as they need to be flushed
+      // Skip processing remaining uops, as they need to be flushed
       break;
     }
   }
@@ -60,6 +92,8 @@ void DecodeUnit::tick() {
 bool DecodeUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t DecodeUnit::getFlushAddress() const { return pc_; }
 uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes_; };
+
+void DecodeUnit::purgeFlushed() { microOps_.clear(); }
 
 }  // namespace pipeline
 }  // namespace simeng

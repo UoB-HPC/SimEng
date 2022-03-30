@@ -45,7 +45,7 @@ void ModelConfig::validate() {
   // Core
   root = "Core";
   subFields = {"Simulation-Mode", "Clock-Frequency", "Fetch-Block-Size",
-               "Vector-Length"};
+               "Micro-Operations", "Vector-Length"};
   nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
@@ -64,7 +64,9 @@ void ModelConfig::validate() {
       invalid_ << "\t- Fetch-Block-Size must be a power of 2\n";
     }
   }
-  nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
+  nodeChecker<bool>(configFile_[root][subFields[3]], subFields[3],
+                    std::make_pair(false, true), ExpectedValue::Bool, false);
+  nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
                         {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
                          1408, 1536, 1664, 1792, 1920, 2048},
                         ExpectedValue::UInteger, 512);
@@ -478,6 +480,8 @@ void ModelConfig::createGroupMapping() {
                    "INT_MUL",
                    "INT_DIV_OR_SQRT",
                    "LOAD_INT",
+                   "STORE_ADDRESS_INT",
+                   "STORE_DATA_INT",
                    "STORE_INT",
                    "FP",
                    "FP_SIMPLE",
@@ -500,6 +504,8 @@ void ModelConfig::createGroupMapping() {
                    "SCALAR_MUL",
                    "SCALAR_DIV_OR_SQRT",
                    "LOAD_SCALAR",
+                   "STORE_ADDRESS_SCALAR",
+                   "STORE_DATA_SCALAR",
                    "STORE_SCALAR",
                    "VECTOR",
                    "VECTOR_SIMPLE",
@@ -512,6 +518,8 @@ void ModelConfig::createGroupMapping() {
                    "VECTOR_MUL",
                    "VECTOR_DIV_OR_SQRT",
                    "LOAD_VECTOR",
+                   "STORE_ADDRESS_VECTOR",
+                   "STORE_DATA_VECTOR",
                    "STORE_VECTOR",
                    "SVE",
                    "SVE_SIMPLE",
@@ -524,9 +532,13 @@ void ModelConfig::createGroupMapping() {
                    "SVE_MUL",
                    "SVE_DIV_OR_SQRT",
                    "LOAD_SVE",
+                   "STORE_ADDRESS_SVE",
+                   "STORE_DATA_SVE",
                    "STORE_SVE",
                    "PREDICATE",
                    "LOAD",
+                   "STORE_ADDRESS",
+                   "STORE_DATA",
                    "STORE",
                    "BRANCH"};
   // AARCH64 instruction group namespace contains a set of contiguous assigned

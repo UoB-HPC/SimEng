@@ -6,6 +6,7 @@ set(SIMENG_SOURCES
     arch/aarch64/Instruction_decode.cc
     arch/aarch64/Instruction_execute.cc
     arch/aarch64/InstructionMetadata.cc
+    arch/aarch64/MicroDecoder.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
     models/emulation/Core.cc

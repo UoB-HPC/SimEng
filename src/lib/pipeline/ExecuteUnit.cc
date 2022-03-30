@@ -1,6 +1,7 @@
 #include "simeng/pipeline/ExecuteUnit.hh"
 
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -119,20 +120,25 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
     }
     handleLoad_(uop);
     return;
-  } else if (uop->isStore()) {
-    uop->generateAddresses();
+  } else if (uop->isStoreAddress() || uop->isStoreData()) {
+    if (uop->isStoreAddress()) {
+      uop->generateAddresses();
+    }
+    if (uop->isStoreData()) {
+      uop->execute();
+    }
+    handleStore_(uop);
+  } else {
+    uop->execute();
   }
 
-  uop->execute();
   if (uop->exceptionEncountered()) {
     // Exception; don't forward results, don't pass uop forward
     raiseException_(uop);
     return;
   }
 
-  if (uop->isStore()) {
-    handleStore_(uop);
-  } else if (uop->isBranch()) {
+  if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
 
     // Update branch predictor with branch results

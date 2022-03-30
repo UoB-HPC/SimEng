@@ -1,5 +1,4 @@
 #include "InstructionMetadata.hh"
-#include "simeng/arch/aarch64/Architecture.hh"
 
 #define NOT(bits, length) (~bits & (1 << length - 1))
 #define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)
@@ -248,17 +247,30 @@ void Instruction::decode() {
 
   // Identify loads/stores
   if (accessesMemory) {
+    // Set size of data to be stored if it hasn't already been set
+    if (!isMicroOp_) dataSize_ = getDataSize(metadata.operands[0]);
+
     // Check first operand access to determine if it's a load or store
     if (metadata.operands[0].access & CS_AC_WRITE) {
       if (metadata.id == ARM64_INS_STXR || metadata.id == ARM64_INS_STLXR) {
         // Exceptions to this is load condition are exclusive store with a
         // success flag as first operand
-        isStore_ = true;
+        if (microOpcode_ != MicroOpcode::STR_DATA) {
+          isStoreAddress_ = true;
+        }
+        if (microOpcode_ != MicroOpcode::STR_ADDR) {
+          isStoreData_ = true;
+        }
       } else {
         isLoad_ = true;
       }
     } else {
-      isStore_ = true;
+      if (microOpcode_ != MicroOpcode::STR_DATA) {
+        isStoreAddress_ = true;
+      }
+      if (microOpcode_ != MicroOpcode::STR_ADDR) {
+        isStoreData_ = true;
+      }
     }
 
     // LDADD* are considered to be both a load and a store
@@ -272,13 +284,16 @@ void Instruction::decode() {
       isLoad_ = true;
     }
 
-    if (isStore_) {
+    if (isStoreData_) {
       // Identify whether a store operation uses Z source registers
       if (ARM64_REG_Z0 <= metadata.operands[0].reg &&
           metadata.operands[0].reg <= ARM64_REG_Z31) {
         isSVEData_ = true;
       }
     }
+  } else if (microOpcode_ == MicroOpcode::STR_DATA) {
+    // Edge case for identifying store data micro-operation
+    isStoreData_ = true;
   }
   if (metadata.opcode == Opcode::AArch64_LDRXl ||
       metadata.opcode == Opcode::AArch64_LDRSWl) {

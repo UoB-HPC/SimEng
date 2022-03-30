@@ -6,7 +6,7 @@
 
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
-#include "simeng/arch/aarch64/Instruction.hh"
+#include "simeng/arch/aarch64/MicroDecoder.hh"
 #include "simeng/kernel/Linux.hh"
 
 using csh = size_t;
@@ -53,13 +53,13 @@ class Architecture : public arch::Architecture {
   /** Returns the current vector length set by the provided configuration. */
   uint64_t getVectorLength() const;
 
- private:
-  /** Retrieve an executionInfo object for the requested instruction. If a
+  /** Retrieve an ExecutionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
    * port information, return that instead of the group-defined execution
    * information. */
-  executionInfo getExecutionInfo(Instruction& insn) const;
+  ExecutionInfo getExecutionInfo(Instruction& insn) const;
 
+ private:
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
    * reduce the overhead of future decoding. */
@@ -74,17 +74,20 @@ class Architecture : public arch::Architecture {
 
   /** A map to hold the relationship between aarch64 instruction groups and
    * user-defined execution information. */
-  std::unordered_map<uint16_t, executionInfo> groupExecutionInfo_;
+  std::unordered_map<uint16_t, ExecutionInfo> groupExecutionInfo_;
 
   /** A map to hold the relationship between aarch64 instruction opcode and
    * user-defined execution information. */
-  std::unordered_map<uint16_t, executionInfo> opcodeExecutionInfo_;
+  std::unordered_map<uint16_t, ExecutionInfo> opcodeExecutionInfo_;
 
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;
 
   /** A reference to a Linux kernel object to forward syscalls to. */
   kernel::Linux& linux_;
+
+  /** A reference to a micro decoder object to split macro operations. */
+  std::unique_ptr<MicroDecoder> microDecoder_;
 
   /** The vector length used by the SVE extension in bits. */
   uint64_t VL_;

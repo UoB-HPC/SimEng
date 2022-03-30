@@ -6,6 +6,7 @@ Core:
   Simulation-Mode: outoforder
   Clock-Frequency: 2.5
   Fetch-Block-Size: 32
+  Micro-Operations: True
 Process-Image:
   Heap-Size: 1073741824
   Stack-Size: 1048576
@@ -54,14 +55,16 @@ Ports:
     Portname: Port 4
     Instruction-Support:
     - LOAD
+    - STORE_ADDRESS
   4:
     Portname: Port 5
     Instruction-Support:
     - LOAD
+    - STORE_ADDRESS
   5:
     Portname: Port 3
     Instruction-Support:
-    - STORE
+    - STORE_DATA
 Reservation-Stations:
   0:
     Size: 60

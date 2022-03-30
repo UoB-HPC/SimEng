@@ -78,7 +78,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           renameToDispatchBuffer_, issuePorts_, registerFileSet_, portAllocator,
           physicalRegisterQuantities_, rsArrangement,
           config["Pipeline-Widths"]["Dispatch-Rate"].as<unsigned int>()),
-      writebackUnit_(completionSlots_, registerFileSet_),
+      writebackUnit_(
+          completionSlots_, registerFileSet_,
+          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
       clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
@@ -205,6 +207,7 @@ void Core::flushIfNeeded() {
 
     // Flush everything younger than the bad instruction from the ROB
     reorderBuffer_.flush(lowestSeqId);
+    decodeUnit_.purgeFlushed();
     dispatchIssueUnit_.purgeFlushed();
     loadStoreQueue_.purgeFlushed();
     for (auto& eu : executionUnits_) {
@@ -276,6 +279,7 @@ void Core::handleException() {
   // This must happen prior to handling the exception to ensure the commit state
   // is up-to-date with the register mapping table
   reorderBuffer_.flush(exceptionGeneratingInstruction_->getSequenceId());
+  decodeUnit_.purgeFlushed();
   dispatchIssueUnit_.purgeFlushed();
   loadStoreQueue_.purgeFlushed();
   for (auto& eu : executionUnits_) {

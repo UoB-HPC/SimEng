@@ -3,6 +3,7 @@
 #include <array>
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace pipeline {
@@ -149,8 +150,11 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
 }
 
 void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
+  if (!insn->isStoreData()) return;
   // Get identifier values
-  const uint64_t seqId = insn->getSequenceId();
+  const uint64_t macroOpNum = insn->getInstructionId();
+  const int microOpNum = insn->getMicroOpIndex();
+
   // Get data
   span<const simeng::RegisterValue> data = insn->getData();
 
@@ -158,8 +162,10 @@ void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
   auto itSt = storeQueue_.begin();
   while (itSt != storeQueue_.end()) {
     auto& entry = itSt->first;
-    // Pair entry and incoming store data operation with sequenceID
-    if (entry->getSequenceId() == seqId) {
+    // Pair entry and incoming store data operation with macroOp identifier and
+    // microOp index value pre-detemined in microDecoder
+    if (entry->getInstructionId() == macroOpNum &&
+        entry->getMicroOpIndex() == microOpNum) {
       // Supply data to be stored by operations
       itSt->second = data;
       break;
@@ -234,7 +240,7 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
           if (load->hasAllData()) {
             // This load has completed
             load->execute();
-            if (load->isStore()) {
+            if (load->isStoreData()) {
               supplyStoreData(load);
             }
             completedLoads_.push(load);
@@ -427,7 +433,7 @@ void LoadStoreQueue::tick() {
             const simeng::MemoryAccessTarget req = addressQueue.front();
 
             // Ensure the limit on the data transfered per cycle is adhered to
-            assert(req.size < bandwidth &&
+            assert(req.size <= bandwidth &&
                    "Individual memory request from LoadStoreQueue exceeds L1 "
                    "bandwidth set and thus will never be submitted");
             dataTransfered[isStore] += req.size;
@@ -487,7 +493,7 @@ void LoadStoreQueue::tick() {
     if (load->hasAllData()) {
       // This load has completed
       load->execute();
-      if (load->isStore()) {
+      if (load->isStoreData()) {
         supplyStoreData(load);
       }
       completedLoads_.push(load);
