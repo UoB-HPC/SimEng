@@ -16,9 +16,7 @@ Architectures are expected to support querying the following information:
 Pre-Decoding
 ************
 
-The primary role of the ``Architecture`` class is to enable the conversion of arbitrary bytes of instruction memory into ``Instruction`` objects capable of performing operations. This process is referred to as *pre-decoding*, as it is responsible for grouping bytes into "macro ops" representing individual machine-code instructions, which in real hardware would be decoded later into one or more instructions ("micro-ops"). In SimEng, all the decoding is expected to be performed up-front: the generated macro-op is simply a vector of micro-ops.
-
-.. Note:: At this time, SimEng does not support the logic to convert macro-ops into micro-ops thus it is currently a 1:1 mapping.
+The primary role of the ``Architecture`` class is to enable the conversion of arbitrary bytes of instruction memory into ``Instruction`` objects capable of performing operations. This process is referred to as *pre-decoding*, as it is responsible for grouping bytes into "macro ops" representing individual machine-code instructions, which in real hardware would be decoded later into one or more instructions ("micro-ops"). In SimEng, all the decoding is expected to be performed up-front: the generated macro-op is simply a vector of micro-ops. First, the macro-op is decoded and then, using an architecture-specific decoder, micro-ops are generated that replace the macro-op where necessary.
 
 Exception Handling
 ******************
