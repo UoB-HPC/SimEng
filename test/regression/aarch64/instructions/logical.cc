@@ -480,8 +480,8 @@ TEST_P(InstLogical, orn) {
 TEST_P(InstLogical, rorv) {
   // 32-bit
   RUN_AARCH64(R"(
-    mov w0, #128
-    mov w1, #-64
+    mov w0, #36
+    mov w1, #-66
     mov w2, #13
     mov w3, #27
 
@@ -495,8 +495,8 @@ TEST_P(InstLogical, rorv) {
 
   // 64-bit
   RUN_AARCH64(R"(
-      mov x0, #256
-      mov x1, #-128
+      mov x0, #260
+      mov x1, #-130
       mov x2, #13
       mov x3, #27
 

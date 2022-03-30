@@ -100,7 +100,7 @@ class logicalHelp {
     const T m = operands[1].get<T>();
 
     const uint16_t data_size = sizeof(T) * 8;
-    T remainder = (m / data_size) % data_size;
+    T remainder = m % data_size;
 
     // Check if any rotation done at all
     if (remainder == 0) return n;
