@@ -31,8 +31,16 @@ Simulation-Mode
 Clock-Frequency
     The clock frequency, in GHz, of the processor being modelled.
 
+Timer Frequency
+    This dictates the frequency in MHz that the CPU's internal counter timer is updated. 
+
+    i.e. For models based on an Arm ISA, this dictates how often the Virtual Counter Timer system register is updated to the number of cycles completed. This value is then accessible to programmers through ``mrs x0 CNTVCT_el0``.
+
 Fetch-Block-sizes
     The size, in bytes, of the block fetched from the instruction cache.
+
+Micro-Operations
+    Whether to enable instruction splitting for pre-defined Macro Operations or not.
 
 Vector-Length
     The vector length used by instructions belonging to ARM's Scalable Vector Extension. Supported vector lengths are those between 128 and 2048 in increments of 128.
@@ -117,8 +125,14 @@ This section contains the options used to configure SimEng's simple L1-cache. Th
 Access-Latency
     The cycle latency of L1 cache access.
 
-Bandwidth
-    The number of bytes permitted to be loaded and/or stored per cycle.
+Exclusive
+    If set to true, only one type of memeory access (read or write) can be performed per cycle.
+
+Load-Bandwidth
+    The number of bytes permitted to be loaded per cycle.
+
+Store-Bandwidth
+    The number of bytes permitted to be stored per cycle.
 
 Permitted-Requests-Per-Cycle
     The number of load and store requests permitted per cycle.
