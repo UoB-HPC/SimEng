@@ -16,7 +16,7 @@
 
 #define DEFAULT_CONFIG                                                        \
   ("{Core: {Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5, "        \
-   "Timer-Frequency: 100Fetch-Block-Size: 32, Micro-Operations: True, "       \
+   "Timer-Frequency: 100, Fetch-Block-Size: 32, Micro-Operations: True, "     \
    "Vector-Length: 512}, Process-Image: {Heap-Size: 10485760, Stack-Size: "   \
    "1048576}, Register-Set: {GeneralPurpose-Count: 154, "                     \
    "FloatingPoint/SVE-Count: 90, Predicate-Count: 17, Conditional-Count: "    \
