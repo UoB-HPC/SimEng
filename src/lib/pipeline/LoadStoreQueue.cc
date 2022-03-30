@@ -99,6 +99,9 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     insn->execute();
     completedLoads_.push(insn);
   } else {
+    // Create a speculative entry for the load
+    requestLoadQueue_[tickCounter_ + insn->getLSQLatency()].push_back(
+        {{}, insn});
     // Store load addresses in vector temporarily so that conflictions are
     // only regsitered once on most recent (program order) store
     std::vector<simeng::MemoryAccessTarget> temp_load_addr;
@@ -121,13 +124,18 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
               // If conflict exists, register in conflictionMap_ and delay
               // load request(s) until conflicting store retires
               if (itLd->address == str.address) {
-                conflictionMap_[store->getSequenceId()][str.address].push_back(
-                    {insn, itLd->size});
-                // std::cout << "Confliction on 0x" << std::hex << str.address
-                //           << std::dec << ": " << insn->getSequenceId() << ":"
-                //           << insn->getInstructionId() << ":0x" << std::hex
-                //           << insn->getInstructionAddress() << std::dec << ":"
-                //           << insn->getMicroOpIndex() << std::endl;
+                // Load access size must be no larger than the store access size
+                // to ensure all data is encapsulated in the later forwarding
+                if (itLd->size <= str.size) {
+                  conflictionMap_[store->getSequenceId()][str.address]
+                      .push_back({insn, itLd->size});
+                } else {
+                  // To ensure load doesn't match on an earlier store, generate
+                  // load request for address
+                  requestLoadQueue_[tickCounter_ + insn->getLSQLatency()]
+                      .back()
+                      .reqAddresses.push(*itLd);
+                }
                 // Remove from temporary vector so the confliction can't be
                 // registered again
                 temp_load_addr.erase(itLd);
@@ -142,8 +150,6 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     // If addresses remain that had no conflictions, generate those load
     // request(s)
     if (temp_load_addr.size() > 0) {
-      requestLoadQueue_[tickCounter_ + insn->getLSQLatency()].push_back(
-          {{}, insn});
       for (size_t i = 0; i < temp_load_addr.size(); i++) {
         requestLoadQueue_[tickCounter_ + insn->getLSQLatency()]
             .back()
@@ -154,8 +160,9 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
         //           << insn->getInstructionAddress() << std::dec << ":"
         //           << insn->getMicroOpIndex() << std::endl;
       }
-      requestedLoads_.emplace(insn->getSequenceId(), insn);
     }
+    // Register active load
+    requestedLoads_.emplace(insn->getSequenceId(), insn);
   }
 }
 
@@ -256,9 +263,6 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
               supplyStoreData(load);
             }
             completedLoads_.push(load);
-            // Place completed load entry in requestedLoads_ so that it can
-            // still be flushed if incorrectly speculated
-            requestedLoads_.emplace(load->getSequenceId(), load);
           }
         }
       }
@@ -462,12 +466,13 @@ void LoadStoreQueue::tick() {
               memory_.requestRead(req, itInsn->insn->getSequenceId());
             }
 
-            // Remove entry from vector iff all of its requests have been
-            // scheduled
+            // Remove processed address from queue
             addressQueue.pop();
-            if (addressQueue.size() == 0) {
-              itInsn = itReq->second.erase(itInsn);
-            }
+          }
+          // Remove entry from vector iff all of its requests have been
+          // scheduled
+          if (addressQueue.size() == 0) {
+            itInsn = itReq->second.erase(itInsn);
           }
         }
       }
