@@ -256,6 +256,17 @@ bool LoadStoreQueue::commitStore(const std::shared_ptr<Instruction>& uop) {
             if (load->isStoreData()) {
               supplyStoreData(load);
             }
+            if (load->getTraceId() != 0) {
+              std::map<uint64_t, Trace*>::iterator it =
+                  traceMap.find(load->getTraceId());
+              if (it != traceMap.end()) {
+                cycleTrace tr = it->second->getCycleTraces();
+                if (tr.finished != 1) {
+                  tr.complete = trace_cycle;
+                  it->second->setCycleTraces(tr);
+                }
+              }
+            }
             completedLoads_.push(load);
           }
         }

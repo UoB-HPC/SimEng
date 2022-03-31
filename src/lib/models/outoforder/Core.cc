@@ -235,24 +235,28 @@ void Core::flushIfNeeded() {
 void Core::flushTraces(const bool atDecode) {
   // Flush traces from instructions in fetch to decode buffer
   for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
-    auto& uopH = fetchToDecodeBuffer_.getHeadSlots()[slot][0];
-    if (uopH != nullptr && uopH->getTraceId() != 0) {
-      std::map<uint64_t, Trace*>::iterator it =
-          traceMap.find(uopH->getTraceId());
-      if (it != traceMap.end()) {
-        cycleTrace tr = it->second->getCycleTraces();
-        tr.finished = 1;
-        it->second->setCycleTraces(tr);
+    auto& macroH = fetchToDecodeBuffer_.getHeadSlots()[slot];
+    for (size_t uop = 0; uop < macroH.size(); uop++) {
+      if (macroH[uop] != nullptr && macroH[uop]->getTraceId() != 0) {
+        std::map<uint64_t, Trace*>::iterator it =
+            traceMap.find(macroH[uop]->getTraceId());
+        if (it != traceMap.end()) {
+          cycleTrace tr = it->second->getCycleTraces();
+          tr.finished = 1;
+          it->second->setCycleTraces(tr);
+        }
       }
     }
-    auto& uopT = fetchToDecodeBuffer_.getTailSlots()[slot][0];
-    if (uopT != nullptr && uopT->getTraceId() != 0) {
-      std::map<uint64_t, Trace*>::iterator it =
-          traceMap.find(uopT->getTraceId());
-      if (it != traceMap.end()) {
-        cycleTrace tr = it->second->getCycleTraces();
-        tr.finished = 1;
-        it->second->setCycleTraces(tr);
+    auto& macroT = fetchToDecodeBuffer_.getTailSlots()[slot];
+    for (size_t uop = 0; uop < macroT.size(); uop++) {
+      if (macroT[uop] != nullptr && macroT[uop]->getTraceId() != 0) {
+        std::map<uint64_t, Trace*>::iterator it =
+            traceMap.find(macroT[uop]->getTraceId());
+        if (it != traceMap.end()) {
+          cycleTrace tr = it->second->getCycleTraces();
+          tr.finished = 1;
+          it->second->setCycleTraces(tr);
+        }
       }
     }
   }

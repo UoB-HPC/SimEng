@@ -92,6 +92,15 @@ void DecodeUnit::tick() {
       }
       // Remove all entries after first macro-operation in buffer
       while (uopIt != microOps_.end()) {
+        if ((*uopIt)->getTraceId() != 0) {
+          std::map<uint64_t, Trace*>::iterator it =
+              traceMap.find((*uopIt)->getTraceId());
+          if (it != traceMap.end()) {
+            cycleTrace tr = it->second->getCycleTraces();
+            tr.finished = 1;
+            it->second->setCycleTraces(tr);
+          }
+        }
         uopIt = microOps_.erase(uopIt);
       }
 
@@ -111,7 +120,22 @@ bool DecodeUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t DecodeUnit::getFlushAddress() const { return pc_; }
 uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes_; };
 
-void DecodeUnit::purgeFlushed() { microOps_.clear(); }
+void DecodeUnit::purgeFlushed() {
+  auto uopIt = microOps_.begin();
+  while (uopIt != microOps_.end()) {
+    if ((*uopIt)->getTraceId() != 0) {
+      std::map<uint64_t, Trace*>::iterator it =
+          traceMap.find((*uopIt)->getTraceId());
+      if (it != traceMap.end()) {
+        cycleTrace tr = it->second->getCycleTraces();
+        tr.finished = 1;
+        it->second->setCycleTraces(tr);
+      }
+    }
+    uopIt++;
+  }
+  microOps_.clear();
+}
 
 }  // namespace pipeline
 }  // namespace simeng
