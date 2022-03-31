@@ -70,7 +70,8 @@ class DispatchIssueUnit {
   /** Forwards operands and performs register reads for the currently queued
    * instruction. */
   void forwardOperands(const span<Register>& destinations,
-                       const span<RegisterValue>& values);
+                       const span<RegisterValue>& values,
+                       const uint16_t uopGroup);
 
   /** Set the scoreboard entry for the provided register as ready. */
   void setRegisterReady(Register reg);
@@ -124,6 +125,8 @@ class DispatchIssueUnit {
    * operand. For a register `{type,tag}`, the vector of dependents may be found
    * at `dependencyMatrix[type][tag]`. */
   std::vector<std::vector<std::vector<dependencyEntry>>> dependencyMatrix_;
+
+  std::vector<std::pair<uint16_t, std::vector<uint16_t>>> groupForwardings_;
 
   /** A map to collect flushed instructions for each reservation station. */
   std::unordered_map<uint8_t, std::unordered_set<std::shared_ptr<Instruction>>>

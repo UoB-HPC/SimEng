@@ -59,7 +59,7 @@ class Core : public simeng::Core {
 
   /** Forward operands to the most recently decoded instruction. */
   void forwardOperands(const span<Register>& destinations,
-                       const span<RegisterValue>& values);
+                       const span<RegisterValue>& values, const uint16_t group);
 
   /** Read pending registers for the most recently decoded instruction. */
   void readRegisters();

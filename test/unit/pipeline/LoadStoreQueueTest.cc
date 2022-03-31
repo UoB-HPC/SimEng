@@ -19,8 +19,9 @@ const uint8_t MAX_COMBINED = 64;
 
 class MockForwardOperandsHandler {
  public:
-  MOCK_METHOD2(forwardOperands,
-               void(const span<Register>, const span<RegisterValue>));
+  MOCK_METHOD3(forwardOperands,
+               void(const span<Register>, const span<RegisterValue>,
+                    const uint16_t));
 };
 
 class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
@@ -59,17 +60,17 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
       // Combined queue
       return LoadStoreQueue(MAX_COMBINED, dataMemory,
                             {completionSlots.data(), completionSlots.size()},
-                            [this](auto registers, auto values) {
-                              forwardOperandsHandler.forwardOperands(registers,
-                                                                     values);
+                            [this](auto registers, auto values, auto group) {
+                              forwardOperandsHandler.forwardOperands(
+                                  registers, values, group);
                             });
     } else {
       // Split queue
       return LoadStoreQueue(MAX_LOADS, MAX_STORES, dataMemory,
                             {completionSlots.data(), completionSlots.size()},
-                            [this](auto registers, auto values) {
-                              forwardOperandsHandler.forwardOperands(registers,
-                                                                     values);
+                            [this](auto registers, auto values, auto group) {
+                              forwardOperandsHandler.forwardOperands(
+                                  registers, values, group);
                             });
     }
   }
@@ -135,7 +136,7 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
 TEST_F(LoadStoreQueueTest, SplitQueue) {
   LoadStoreQueue queue =
       LoadStoreQueue(MAX_LOADS, MAX_STORES, dataMemory, {nullptr, 0},
-                     [](auto registers, auto values) {});
+                     [](auto registers, auto values, auto group) {});
 
   EXPECT_EQ(queue.isCombined(), false);
   EXPECT_EQ(queue.getLoadQueueSpace(), MAX_LOADS);
@@ -145,8 +146,9 @@ TEST_F(LoadStoreQueueTest, SplitQueue) {
 
 // Test that a combined queue can be constructed correctly
 TEST_F(LoadStoreQueueTest, CombinedQueue) {
-  LoadStoreQueue queue = LoadStoreQueue(MAX_COMBINED, dataMemory, {nullptr, 0},
-                                        [](auto registers, auto values) {});
+  LoadStoreQueue queue =
+      LoadStoreQueue(MAX_COMBINED, dataMemory, {nullptr, 0},
+                     [](auto registers, auto values, auto group) {});
 
   EXPECT_EQ(queue.isCombined(), true);
   EXPECT_EQ(queue.getLoadQueueSpace(), MAX_COMBINED);

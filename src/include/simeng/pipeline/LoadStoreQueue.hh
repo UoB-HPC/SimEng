@@ -34,7 +34,8 @@ class LoadStoreQueue {
   LoadStoreQueue(
       unsigned int maxCombinedSpace, MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+      std::function<void(span<Register>, span<RegisterValue>, uint16_t)>
+          forwardOperands,
       bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
       uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,
@@ -48,7 +49,8 @@ class LoadStoreQueue {
       unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
       MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
+      std::function<void(span<Register>, span<RegisterValue>, uint16_t)>
+          forwardOperands,
       bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
       uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,
@@ -117,7 +119,8 @@ class LoadStoreQueue {
   std::unordered_map<uint64_t, std::shared_ptr<Instruction>> requestedLoads_;
 
   /** A function handler to call to forward the results of a completed load. */
-  std::function<void(span<Register>, span<RegisterValue>)> forwardOperands_;
+  std::function<void(span<Register>, span<RegisterValue>, uint16_t)>
+      forwardOperands_;
 
   /** The maximum number of loads that can be in-flight. Undefined if this
    * is a combined queue. */

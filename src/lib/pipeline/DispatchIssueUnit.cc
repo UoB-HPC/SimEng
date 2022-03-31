@@ -57,6 +57,46 @@ void DispatchIssueUnit::tick() {
   // Reset the counters
   std::fill(dispatches.begin(), dispatches.end(), 0);
 
+  // Check if uop is ready
+  for (size_t i = 0; i < dependencyMatrix_.size(); i++) {
+    for (size_t j = 0; j < dependencyMatrix_[i].size(); j++) {
+      for (size_t k = 0; k < dependencyMatrix_[i][j].size(); k++) {
+        auto& entry = dependencyMatrix_[i][j][k];
+        auto& sourceRegisters = entry.uop->getOperandRegisters();
+        const auto& reg = sourceRegisters[entry.operandIndex];
+
+        bool supplied = false;
+
+        if (scoreboard_[reg.type][reg.tag]) {
+          // The scoreboard says it's ready; read and supply the register value
+          entry.uop->supplyOperand(entry.operandIndex,
+                                   registerFileSet_.get(reg));
+          supplied = true;
+        }
+
+        if (entry.uop->canExecute()) {
+          // Add the now-ready instruction to the relevant ready queue
+          auto rsInfo = portMapping_[entry.port];
+          reservationStations_[rsInfo.first]
+              .ports[rsInfo.second]
+              .ready.push_back(std::move(entry.uop));
+        }
+
+        if (supplied) dependencyMatrix_[i][j][k] = {nullptr, 0, 0};
+      }
+      // Remove completed instructions from waiting_
+      size_t index = 0;
+      while (index < dependencyMatrix_[i][j].size()) {
+        if (dependencyMatrix_[i][j][index].uop == nullptr) {
+          dependencyMatrix_[i][j].erase(dependencyMatrix_[i][j].begin() +
+                                        index);
+        } else
+          index++;
+      }
+    }
+  }
+
+  // Dispatch from Input Buffer
   for (size_t slot = 0; slot < input_.getWidth(); slot++) {
     auto& uop = input_.getHeadSlots()[slot];
     if (uop == nullptr) {
@@ -169,7 +209,8 @@ void DispatchIssueUnit::issue() {
 }
 
 void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
-                                        const span<RegisterValue>& values) {
+                                        const span<RegisterValue>& values,
+                                        const uint16_t uopGroup) {
   assert(registers.size() == values.size() &&
          "Mismatched register and value vector sizes");
 
@@ -178,20 +219,20 @@ void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
     // Flag scoreboard as ready now result is available
     scoreboard_[reg.type][reg.tag] = true;
 
-    // Supply the value to all dependent uops
-    const auto& dependents = dependencyMatrix_[reg.type][reg.tag];
-    for (auto& entry : dependents) {
-      entry.uop->supplyOperand(entry.operandIndex, values[i]);
-      if (entry.uop->canExecute()) {
-        // Add the now-ready instruction to the relevant ready queue
-        auto rsInfo = portMapping_[entry.port];
-        reservationStations_[rsInfo.first].ports[rsInfo.second].ready.push_back(
-            std::move(entry.uop));
-      }
-    }
+    //   // Supply the value to all dependent uops
+    //   const auto& dependents = dependencyMatrix_[reg.type][reg.tag];
+    //   for (auto& entry : dependents) {
+    //     entry.uop->supplyOperand(entry.operandIndex, values[i]);
+    //     if (entry.uop->canExecute()) {
+    //       // Add the now-ready instruction to the relevant ready queue
+    //       auto rsInfo = portMapping_[entry.port];
+    //       reservationStations_[rsInfo.first].ports[rsInfo.second].ready.push_back(
+    //           std::move(entry.uop));
+    //     }
+    //   }
 
-    // Clear the dependency list
-    dependencyMatrix_[reg.type][reg.tag].clear();
+    //   // Clear the dependency list
+    //   dependencyMatrix_[reg.type][reg.tag].clear();
   }
 }
 

@@ -16,8 +16,9 @@ using ::testing::Return;
 
 class MockExecutionHandlers {
  public:
-  MOCK_METHOD2(forwardOperands,
-               void(const span<Register>, const span<RegisterValue>));
+  MOCK_METHOD3(forwardOperands,
+               void(const span<Register>, const span<RegisterValue>,
+                    const uint16_t));
   MOCK_METHOD1(raiseException, void(std::shared_ptr<Instruction> instruction));
 };
 
@@ -28,8 +29,8 @@ class PipelineExecuteUnitTest : public testing::Test {
         output(1, nullptr),
         executeUnit(
             input, output,
-            [this](auto regs, auto values) {
-              executionHandlers.forwardOperands(regs, values);
+            [this](auto regs, auto values, auto group) {
+              executionHandlers.forwardOperands(regs, values, group);
             },
             [](auto uop) {}, [](auto uop) {},
             [this](auto instruction) {
@@ -87,7 +88,8 @@ TEST_F(PipelineExecuteUnitTest, Execute) {
   EXPECT_CALL(
       executionHandlers,
       forwardOperands(ElementsAre(registers[0]),
-                      ElementsAre(Property(&RegisterValue::get<uint32_t>, 1))))
+                      ElementsAre(Property(&RegisterValue::get<uint32_t>, 1)),
+                      uop->getGroup()))
       .Times(1);
 
   executeUnit.tick();
@@ -123,7 +125,7 @@ TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
       .Times(1);
 
   // Check that empty forwarding call is made
-  EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty()))
+  EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty(), 0))
       .Times(1);
 
   executeUnit.tick();
