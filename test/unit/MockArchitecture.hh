@@ -21,6 +21,7 @@ class MockArchitecture : public arch::Architecture {
                          const std::shared_ptr<Instruction>& instruction,
                          const Core& core, MemoryInterface& memory));
   MOCK_CONST_METHOD0(getInitialState, arch::ProcessStateChange());
+  MOCK_CONST_METHOD0(getUpdateState, arch::ProcessStateChange());
   MOCK_CONST_METHOD0(getMaxInstructionSize, uint8_t());
   MOCK_CONST_METHOD1(getConfigPhysicalRegisterStructure,
                      std::vector<RegisterFileStructure>(YAML::Node config));

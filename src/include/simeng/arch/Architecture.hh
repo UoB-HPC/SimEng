@@ -92,6 +92,9 @@ class Architecture {
   /** Retrieve the initial process state. */
   virtual ProcessStateChange getInitialState() const = 0;
 
+  /** Retrieve any updates to the process state. */
+  virtual ProcessStateChange getUpdateState() const = 0;
+
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;
 
