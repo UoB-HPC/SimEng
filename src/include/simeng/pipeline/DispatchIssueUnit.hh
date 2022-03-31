@@ -126,8 +126,6 @@ class DispatchIssueUnit {
    * at `dependencyMatrix[type][tag]`. */
   std::vector<std::vector<std::vector<dependencyEntry>>> dependencyMatrix_;
 
-  std::vector<std::pair<uint16_t, std::vector<uint16_t>>> groupForwardings_;
-
   /** A map to collect flushed instructions for each reservation station. */
   std::unordered_map<uint8_t, std::unordered_set<std::shared_ptr<Instruction>>>
       flushed_;
@@ -152,6 +150,15 @@ class DispatchIssueUnit {
   /** The number of times an instruction was unable to issue due to a busy port.
    */
   uint64_t portBusyStalls_ = 0;
+
+  /** An unordered map conataining all the allowed forwardings from instruction
+   * group types.
+   * Key = Instruction Classification forwarding from.
+   * Value = Vector of {Instruction Classification can forward to, latency of
+   * forwarding}.
+   */
+  const std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, uint8_t>>>
+      groupForwardings_;
 };
 
 }  // namespace pipeline
