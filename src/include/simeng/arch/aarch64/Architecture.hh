@@ -48,6 +48,9 @@ class Architecture : public arch::Architecture {
   /** Retrieve the initial process state. */
   ProcessStateChange getInitialState() const override;
 
+  /** Retrieve any updates to the process state. */
+  ProcessStateChange getUpdateState() const override;
+
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
 
