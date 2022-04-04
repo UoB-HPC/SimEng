@@ -57,6 +57,7 @@ void DispatchIssueUnit::tick() {
   // Reset the counters
   std::fill(dispatches.begin(), dispatches.end(), 0);
 
+  // TODO : optimise this! Change back to waiting_ vector
   // Check if uop is ready
   for (size_t i = 0; i < dependencyMatrix_.size(); i++) {
     for (size_t j = 0; j < dependencyMatrix_[i].size(); j++) {
@@ -302,6 +303,18 @@ void DispatchIssueUnit::getRSSizes(std::vector<uint64_t>& sizes) const {
   for (auto& rs : reservationStations_) {
     sizes.push_back(rs.capacity - rs.currentSize);
   }
+}
+
+uint16_t getProducerGroup(std::shared_ptr<Instruction> uop) {
+  const uint16_t aarch64Group = uop->getGroup();
+
+  return 0;
+}
+uint16_t getConsumerGroup(std::shared_ptr<Instruction> uop) {
+  const uint16_t aarch64Group = uop->getGroup();
+  auto& destRegisters = uop->getDestinationRegisters();
+
+  return 0;
 }
 
 }  // namespace pipeline
