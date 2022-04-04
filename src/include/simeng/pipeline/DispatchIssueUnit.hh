@@ -13,6 +13,35 @@
 namespace simeng {
 namespace pipeline {
 
+namespace ProducerGroups {
+const uint16_t INT_OP = 0;
+const uint16_t INT_LOAD = 1;
+const uint16_t INT_STORE = 2;
+const uint16_t SIMD_FP_SVE_OP = 3;
+const uint16_t SIMD_FP_SVE_LOAD = 4;
+const uint16_t SIMD_FP_SVE_STORE = 5;
+const uint16_t PRED_OP = 6;
+const uint16_t PRED_LOAD = 7;
+const uint16_t PRED_STORE = 8;
+}  // namespace ProducerGroups
+
+namespace ConsumerGroups {
+const uint16_t INT_OP = 0;
+const uint16_t INT_OP_NZCV = 1;
+const uint16_t INT_LOAD = 2;
+const uint16_t INT_STORE = 3;
+const uint16_t SIMD_FP_SVE_OP = 4;
+const uint16_t SIMD_FP_SVE_OP_NZCV = 5;
+const uint16_t SIMD_FP_SVE_LOAD = 6;
+const uint16_t SIMD_FP_SVE_STORE = 7;
+const uint16_t SVE_CMP_PR = 8;
+const uint16_t SVE_CMP_NZCV = 9;
+const uint16_t PRED_OP = 10;
+const uint16_t PRED_OP_NZCV = 11;
+const uint16_t PRED_LOAD = 12;
+const uint16_t PRED_STORE = 13;
+}  // namespace ConsumerGroups
+
 /** A reservation station issue port */
 struct ReservationStationPort {
   /** Issue port this port maps to */
@@ -99,6 +128,14 @@ class DispatchIssueUnit {
   void getRSSizes(std::vector<uint64_t>&) const;
 
  private:
+  /** Function which given an Instruction will return the ProducerGroup it falls
+   * into. */
+  uint16_t getProducerGroup(std::shared_ptr<Instruction> uop);
+
+  /** Function which given an Instruction will return the ConsumerGroup it falls
+   * into. */
+  uint16_t getConsumerGroup(std::shared_ptr<Instruction> uop);
+
   /** A buffer of instructions to dispatch and read operands for. */
   PipelineBuffer<std::shared_ptr<Instruction>>& input_;
 
@@ -153,13 +190,60 @@ class DispatchIssueUnit {
 
   /** An unordered map conataining all the allowed forwardings from instruction
    * group types.
-   * Key = Instruction Classification forwarding from.
-   * Value = Vector of {Instruction Classification can forward to, latency of
+   * Key = ProducerGroup forwarding from.
+   * Value = Vector of {ConsumerGroups can forward to, latency of the
    * forwarding}.
    */
+  // TODO - update latencies & allowed forwardings to respect Ports. Currently,
+  // worst case scenatio is assumed for latency, and Port is disregarded for
+  // allowed forwarding.
   const std::unordered_map<uint16_t, std::vector<std::pair<uint16_t, uint8_t>>>
-      groupForwardings_;
+      groupForwardings_ = {
+          {ProducerGroups::INT_OP,
+           {{ConsumerGroups::INT_OP, 1},
+            {ConsumerGroups::INT_OP_NZCV, 1},
+            {ConsumerGroups::INT_LOAD, 0},
+            {ConsumerGroups::PRED_OP_NZCV, 6},
+            {ConsumerGroups::SIMD_FP_SVE_OP_NZCV, 5},
+            {ConsumerGroups::SVE_CMP_NZCV, 9}}},
+          {ProducerGroups::INT_LOAD,
+           {{ConsumerGroups::INT_OP, 1}, {ConsumerGroups::INT_LOAD, 0}}},
+          {ProducerGroups::INT_STORE,
+           {{ConsumerGroups::INT_OP, 1}, {ConsumerGroups::INT_LOAD, 0}}},
+          {ProducerGroups::SIMD_FP_SVE_OP,
+           {{ConsumerGroups::INT_OP_NZCV, 7},
+            {ConsumerGroups::SIMD_FP_SVE_LOAD, 0},
+            {ConsumerGroups::PRED_LOAD, 3},
+            {ConsumerGroups::PRED_OP, 3},
+            {ConsumerGroups::PRED_OP_NZCV, 8},
+            {ConsumerGroups::SIMD_FP_SVE_OP, 0},
+            {ConsumerGroups::SIMD_FP_SVE_OP_NZCV, 0},
+            {ConsumerGroups::SVE_CMP_PR, 1},
+            {ConsumerGroups::SVE_CMP_NZCV, 11}}},
+          {ProducerGroups::SIMD_FP_SVE_LOAD,
+           {{ConsumerGroups::INT_OP, 1},
+            {ConsumerGroups::INT_LOAD, 0},
+            {ConsumerGroups::PRED_OP, 1},
+            {ConsumerGroups::PRED_LOAD, 0},
+            {ConsumerGroups::SVE_CMP_PR, 2}}},
+          {ProducerGroups::SIMD_FP_SVE_STORE,
+           {{ConsumerGroups::INT_OP, 1},
+            {ConsumerGroups::INT_LOAD, 0},
+            {ConsumerGroups::PRED_OP, 1},
+            {ConsumerGroups::PRED_LOAD, 0},
+            {ConsumerGroups::SVE_CMP_PR, 2}}},
+          {ProducerGroups::PRED_OP,
+           {{ConsumerGroups::INT_OP_NZCV, 6},
+            {ConsumerGroups::PRED_LOAD, 1},
+            {ConsumerGroups::PRED_OP, 0},
+            {ConsumerGroups::PRED_OP_NZCV, 7},
+            {ConsumerGroups::SIMD_FP_SVE_OP_NZCV, 6},
+            {ConsumerGroups::SVE_CMP_PR, 2},
+            {ConsumerGroups::SVE_CMP_NZCV, 10}}},
+          {ProducerGroups::PRED_LOAD,
+           {{ConsumerGroups::INT_OP, 1}, {ConsumerGroups::INT_LOAD, 0}}},
+          {ProducerGroups::PRED_STORE, {}},
+  };
 };
-
 }  // namespace pipeline
 }  // namespace simeng
