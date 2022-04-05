@@ -29,9 +29,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                   branchPredictor),
       executeUnit_(
           decodeToExecuteBuffer_, completionSlots_[0],
-          [this](auto regs, auto values, auto group) {
-            forwardOperands(regs, values, group);
-          },
+          [this](auto insn) { forwardOperands(insn); },
           [this](auto instruction) { handleLoad(instruction); },
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
@@ -254,9 +252,9 @@ void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
   }
 }
 
-void Core::forwardOperands(const span<Register>& registers,
-                           const span<RegisterValue>& values,
-                           const uint16_t group) {
+void Core::forwardOperands(const std::shared_ptr<Instruction> insn) {
+  const span<Register>& registers = insn->getDestinationRegisters();
+  const span<RegisterValue>& values = insn->getResults();
   assert(registers.size() == values.size() &&
          "Mismatched register and value vector sizes");
 
@@ -350,8 +348,7 @@ void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
     return;
   }
 
-  forwardOperands(instruction->getDestinationRegisters(),
-                  instruction->getResults(), instruction->getGroup());
+  forwardOperands(instruction);
   // Manually add the instruction to the writeback input buffer
   completionSlots_[0].getTailSlots()[0] = instruction;
 }

@@ -18,8 +18,7 @@ bool requestsOverlap(MemoryAccessTarget a, MemoryAccessTarget b) {
 LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-    std::function<void(span<Register>, span<RegisterValue>, uint16_t)>
-        forwardOperands,
+    std::function<void(const std::shared_ptr<Instruction>)> forwardOperands,
     bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
     uint16_t permittedRequests, uint16_t permittedLoads,
     uint16_t permittedStores)
@@ -39,8 +38,7 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
     MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-    std::function<void(span<Register>, span<RegisterValue>, uint16_t)>
-        forwardOperands,
+    std::function<void(const std::shared_ptr<Instruction>)> forwardOperands,
     bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
     uint16_t permittedRequests, uint16_t permittedLoads,
     uint16_t permittedStores)
@@ -532,8 +530,7 @@ void LoadStoreQueue::tick() {
     }
 
     // Forward the results
-    forwardOperands_(insn->getDestinationRegisters(), insn->getResults(),
-                     insn->getGroup());
+    forwardOperands_(insn);
 
     completionSlots_[count].getTailSlots()[0] = std::move(insn);
 

@@ -16,9 +16,7 @@ using ::testing::Return;
 
 class MockExecutionHandlers {
  public:
-  MOCK_METHOD3(forwardOperands,
-               void(const span<Register>, const span<RegisterValue>,
-                    const uint16_t));
+  MOCK_METHOD1(forwardOperands, void(const std::shared_ptr<Instruction>));
   MOCK_METHOD1(raiseException, void(std::shared_ptr<Instruction> instruction));
 };
 
@@ -29,9 +27,7 @@ class PipelineExecuteUnitTest : public testing::Test {
         output(1, nullptr),
         executeUnit(
             input, output,
-            [this](auto regs, auto values, auto group) {
-              executionHandlers.forwardOperands(regs, values, group);
-            },
+            [this](auto insn) { executionHandlers.forwardOperands(insn); },
             [](auto uop) {}, [](auto uop) {},
             [this](auto instruction) {
               executionHandlers.raiseException(instruction);
@@ -76,21 +72,8 @@ TEST_F(PipelineExecuteUnitTest, Execute) {
   ON_CALL(*uop, canExecute()).WillByDefault(Return(true));
   EXPECT_CALL(*uop, execute()).Times(1);
 
-  std::vector<Register> registers = {{0, 1}};
-  std::vector<RegisterValue> values = {RegisterValue(1, 4)};
-  // Check that the results/registers are retrieved
-  EXPECT_CALL(*uop, getResults())
-      .WillOnce(Return(span<RegisterValue>(values.data(), values.size())));
-  EXPECT_CALL(*uop, getDestinationRegisters())
-      .WillOnce(Return(span<Register>(registers.data(), registers.size())));
-
   // Check that the results/registers are forwarded
-  EXPECT_CALL(
-      executionHandlers,
-      forwardOperands(ElementsAre(registers[0]),
-                      ElementsAre(Property(&RegisterValue::get<uint32_t>, 1)),
-                      uop->getGroup()))
-      .Times(1);
+  EXPECT_CALL(executionHandlers, forwardOperands(uopPtr)).Times(1);
 
   executeUnit.tick();
 
@@ -125,8 +108,7 @@ TEST_F(PipelineExecuteUnitTest, ExecuteBranch) {
       .Times(1);
 
   // Check that empty forwarding call is made
-  EXPECT_CALL(executionHandlers, forwardOperands(IsEmpty(), IsEmpty(), 0))
-      .Times(1);
+  EXPECT_CALL(executionHandlers, forwardOperands(uopPtr)).Times(1);
 
   executeUnit.tick();
 

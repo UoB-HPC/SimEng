@@ -58,8 +58,7 @@ class Core : public simeng::Core {
   void storeData(const std::shared_ptr<Instruction>& instruction);
 
   /** Forward operands to the most recently decoded instruction. */
-  void forwardOperands(const span<Register>& destinations,
-                       const span<RegisterValue>& values, const uint16_t group);
+  void forwardOperands(const std::shared_ptr<Instruction>);
 
   /** Read pending registers for the most recently decoded instruction. */
   void readRegisters();

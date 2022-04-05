@@ -98,9 +98,7 @@ class DispatchIssueUnit {
 
   /** Forwards operands and performs register reads for the currently queued
    * instruction. */
-  void forwardOperands(const span<Register>& destinations,
-                       const span<RegisterValue>& values,
-                       const uint16_t uopGroup);
+  void forwardOperands(const std::shared_ptr<Instruction> insn);
 
   /** Set the scoreboard entry for the provided register as ready. */
   void setRegisterReady(Register reg);

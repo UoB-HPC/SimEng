@@ -209,9 +209,10 @@ void DispatchIssueUnit::issue() {
   }
 }
 
-void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
-                                        const span<RegisterValue>& values,
-                                        const uint16_t uopGroup) {
+void DispatchIssueUnit::forwardOperands(
+    const std::shared_ptr<Instruction> insn) {
+  const span<Register>& registers = insn->getDestinationRegisters();
+  const span<RegisterValue>& values = insn->getResults();
   assert(registers.size() == values.size() &&
          "Mismatched register and value vector sizes");
 

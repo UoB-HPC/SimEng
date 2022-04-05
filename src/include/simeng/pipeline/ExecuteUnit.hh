@@ -29,8 +29,7 @@ class ExecuteUnit {
   ExecuteUnit(
       PipelineBuffer<std::shared_ptr<Instruction>>& input,
       PipelineBuffer<std::shared_ptr<Instruction>>& output,
-      std::function<void(span<Register>, span<RegisterValue>, uint16_t)>
-          forwardOperands,
+      std::function<void(const std::shared_ptr<Instruction>)> forwardOperands,
       std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
       std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
@@ -78,8 +77,7 @@ class ExecuteUnit {
   PipelineBuffer<std::shared_ptr<Instruction>>& output_;
 
   /** A function handle called when forwarding operands. */
-  std::function<void(span<Register>, span<RegisterValue>, uint16_t)>
-      forwardOperands_;
+  std::function<void(const std::shared_ptr<Instruction>)> forwardOperands_;
 
   /** A function handle called after generating the addresses for a load. */
   std::function<void(const std::shared_ptr<Instruction>&)> handleLoad_;

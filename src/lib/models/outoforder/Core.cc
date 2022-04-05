@@ -56,9 +56,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           config["Queue-Sizes"]["Store"].as<unsigned int>(), dataMemory,
           {completionSlots_.data() + config["Execution-Units"].size(),
            config["Pipeline-Widths"]["LSQ-Completion"].as<unsigned int>()},
-          [this](auto regs, auto values, auto group) {
-            dispatchIssueUnit_.forwardOperands(regs, values, group);
-          },
+          [this](auto insn) { dispatchIssueUnit_.forwardOperands(insn); },
           config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
           config["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>(),
           config["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>(),
@@ -104,9 +102,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
     }
     executionUnits_.emplace_back(
         issuePorts_[i], completionSlots_[i],
-        [this](auto regs, auto values, auto group) {
-          dispatchIssueUnit_.forwardOperands(regs, values, group);
-        },
+        [this](auto insn) { dispatchIssueUnit_.forwardOperands(insn); },
         [this](auto uop) { loadStoreQueue_.startLoad(uop); },
         [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
         [](auto uop) { uop->setCommitReady(); }, branchPredictor,

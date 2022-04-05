@@ -9,7 +9,7 @@ namespace pipeline {
 ExecuteUnit::ExecuteUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& input,
     PipelineBuffer<std::shared_ptr<Instruction>>& output,
-    std::function<void(span<Register>, span<RegisterValue>, uint16_t)>
+    std::function<void(const std::shared_ptr<Instruction> insn)>
         forwardOperands,
     std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
     std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
@@ -159,8 +159,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   // Operand forwarding; allows a dependent uop to execute next cycle
-  forwardOperands_(uop->getDestinationRegisters(), uop->getResults(),
-                   uop->getGroup());
+  forwardOperands_(uop);
 
   output_.getTailSlots()[0] = std::move(uop);
 }
