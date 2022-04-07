@@ -40,8 +40,9 @@ Core::Core(FlatMemoryInterface& instructionMemory,
   auto state = isa.getInitialState();
   applyStateChange(state);
 
-  // Get Virtual Counter Timer system register
+  // Get Virtual Counter Timer and Processor Cycle Counter system registers.
   VCTreg_ = isa_.getVCTreg();
+  PCCreg_ = isa_.getPCCreg();
 };
 
 void Core::tick() {
@@ -334,6 +335,11 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
 
 void Core::incVCT(uint64_t iterations) {
   registerFileSet_.set(VCTreg_, iterations);
+  return;
+}
+
+void Core::updatePCC(uint64_t iterations) {
+  registerFileSet_.set(PCCreg_, iterations);
   return;
 }
 

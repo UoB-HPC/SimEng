@@ -34,9 +34,12 @@ class Core {
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;
 
-  /** Change the value of the Virtual Counter Timer system register to number
-   * of cycles completed. */
+  /** Increment value of the Virtual Counter Timer system register. */
   virtual void incVCT(uint64_t iterations) = 0;
+
+  /** Change the value of the Processor Cycle Counter system register to number
+   * of cycles completed. */
+  virtual void updatePCC(uint64_t iterations) = 0;
 };
 
 }  // namespace simeng

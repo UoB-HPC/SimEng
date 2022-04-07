@@ -92,6 +92,9 @@ class Architecture {
 
   /** Returns the system register for the Virtual Counter Timer. */
   virtual simeng::Register getVCTreg() const = 0;
+
+  /** Returns the system register for the Processor Cycle Counter. */
+  virtual simeng::Register getPCCreg() const = 0;
 };
 
 }  // namespace arch
