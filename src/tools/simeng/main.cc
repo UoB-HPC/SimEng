@@ -43,6 +43,8 @@ int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
     // Tick the core
     core.tick();
+    // Update the Processor Cycle Counter to total cycles completed.
+    core.updatePCC(iterations);
     // Update Virtual Counter Timer at correct frequency.
     if (iterations % (uint64_t)timerModulo == 0) {
       vitrualCounter++;
