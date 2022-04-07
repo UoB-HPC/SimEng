@@ -278,6 +278,10 @@ simeng::Register Architecture::getPCCreg() const {
       static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0))};
 }
 
+simeng::Register Architecture::getPCCreg() const {
+  return {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0)};
+}
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng
