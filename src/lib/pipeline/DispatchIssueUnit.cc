@@ -305,18 +305,5 @@ void DispatchIssueUnit::getRSSizes(std::vector<uint64_t>& sizes) const {
     sizes.push_back(rs.capacity - rs.currentSize);
   }
 }
-
-uint16_t getProducerGroup(std::shared_ptr<Instruction> uop) {
-  const uint16_t aarch64Group = uop->getGroup();
-
-  return 0;
-}
-uint16_t getConsumerGroup(std::shared_ptr<Instruction> uop) {
-  const uint16_t aarch64Group = uop->getGroup();
-  auto& destRegisters = uop->getDestinationRegisters();
-
-  return 0;
-}
-
 }  // namespace pipeline
 }  // namespace simeng

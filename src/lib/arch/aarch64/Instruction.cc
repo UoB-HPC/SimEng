@@ -263,6 +263,15 @@ uint64_t Instruction::extendOffset(uint64_t value,
   return extendValue(value, op.ext, op.shift.value);
 }
 
+/** Retrieve the producer group this instruction belongs to. */
+uint16_t Instruction::getProducerGroup() const {}
+
+/** Retrieve the consumer group this instruction belongs to. */
+uint16_t Instruction::getConsumerGroup() const {}
+
+/** Check if producer is allowed to forward its result to the consumer. */
+bool Instruction::canForward(uint16_t producer, uint16_t consumer) const {}
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng

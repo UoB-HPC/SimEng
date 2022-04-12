@@ -299,6 +299,15 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
+  /** Retrieve the producer group this instruction belongs to. */
+  uint16_t getProducerGroup() const override;
+
+  /** Retrieve the consumer group this instruction belongs to. */
+  uint16_t getConsumerGroup() const override;
+
+  /** Check if producer is allowed to forward its result to the consumer. */
+  bool canForward(uint16_t producer, uint16_t consumer) const override;
+
   /** Set this instruction's execution information including it's execution
    * latency and throughput, and the set of ports which support it. */
   void setExecutionInfo(const ExecutionInfo& info);

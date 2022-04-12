@@ -149,6 +149,15 @@ class Instruction {
   /** Retrieve the instruction group this instruction belongs to. */
   virtual uint16_t getGroup() const = 0;
 
+  /** Retrieve the producer group this instruction belongs to. */
+  virtual uint16_t getProducerGroup() const = 0;
+
+  /** Retrieve the consumer group this instruction belongs to. */
+  virtual uint16_t getConsumerGroup() const = 0;
+
+  /** Check if producer is allowed to forward its result to the consumer. */
+  virtual bool canForward(uint16_t producer, uint16_t consumer) const = 0;
+
   /** Retrieve the number of cycles this instruction will take to execute. */
   uint16_t getLatency() const;
 
