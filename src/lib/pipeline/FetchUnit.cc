@@ -110,8 +110,11 @@ void FetchUnit::tick() {
 
     // Create branch prediction after identifing instruction type
     // (e.g. RET, BL, etc).
-    prediction = branchPredictor_.predict(macroOp[0]);
-    macroOp[0]->setBranchPrediction(prediction);
+    if (macroOp[0]->isBranch()) {
+      prediction = branchPredictor_.predict(pc_, macroOp[0]->getBranchType(),
+                                            macroOp[0]->getKnownTarget());
+      macroOp[0]->setBranchPrediction(prediction);
+    }
 
     if (!prediction.taken) {
       // Predicted as not taken; increment PC to next instruction

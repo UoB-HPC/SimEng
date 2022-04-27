@@ -49,8 +49,12 @@ class PipelineFetchUnitTest : public testing::Test {
 // predecode from the correct program counter using the supplied prediction, and
 // generates output correctly.
 TEST_F(PipelineFetchUnitTest, Tick) {
-  BranchPrediction prediction{false, 0};
+  BranchPrediction prediction{true, 0};
   MacroOp macroOp = {uopPtr};
+
+  // Return branch type as unconditional by default
+  ON_CALL(*uop, getBranchType())
+      .WillByDefault(Return(BranchType::Unconditional));
 
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
@@ -64,7 +68,8 @@ TEST_F(PipelineFetchUnitTest, Tick) {
                              _))
       .WillOnce(DoAll(SetArgReferee<4>(macroOp), Return(4)));
 
-  EXPECT_CALL(predictor, predict(uopPtr)).WillOnce(Return(prediction));
+  EXPECT_CALL(predictor, predict(0, BranchType::Unconditional, 0))
+      .WillOnce(Return(prediction));
 
   fetchUnit.tick();
 
@@ -78,7 +83,7 @@ TEST_F(PipelineFetchUnitTest, TickStalled) {
 
   EXPECT_CALL(isa, predecode(_, _, _, _, _)).Times(0);
 
-  EXPECT_CALL(predictor, predict(_)).Times(0);
+  EXPECT_CALL(predictor, predict(_, _, _)).Times(0);
 
   fetchUnit.tick();
 

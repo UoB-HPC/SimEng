@@ -2,12 +2,15 @@
 
 namespace simeng {
 
-BranchPrediction AlwaysNotTakenPredictor::predict(
-    std::shared_ptr<Instruction>& uop) {
+BranchPrediction AlwaysNotTakenPredictor::predict(uint64_t address,
+                                                  BranchType type,
+                                                  uint64_t knownTarget) {
   return {false, 0};
 }
 
-void AlwaysNotTakenPredictor::update(std::shared_ptr<Instruction>& uop,
-                                     bool taken, uint64_t targetAddress) {}
+void AlwaysNotTakenPredictor::update(uint64_t address, bool taken,
+                                     uint64_t targetAddress, BranchType type) {}
+
+void AlwaysNotTakenPredictor::flush(uint64_t address) {}
 
 }  // namespace simeng

@@ -68,12 +68,16 @@ TEST_F(PipelineDecodeUnitTest, Flush) {
 
   uop->setInstructionAddress(2);
 
+  // Return branch type as unconditional by default
+  ON_CALL(*uop, getBranchType())
+      .WillByDefault(Return(BranchType::Unconditional));
+
   EXPECT_CALL(*uop, checkEarlyBranchMisprediction())
       .WillOnce(Return(std::tuple<bool, uint64_t>(true, 1)));
   EXPECT_CALL(*uop, isBranch()).WillOnce(Return(false));
 
   // Check the predictor is updated with the correct instruction address and PC
-  EXPECT_CALL(predictor, update(uopPtr, false, 1));
+  EXPECT_CALL(predictor, update(2, false, 1, BranchType::Unconditional));
 
   decodeUnit.tick();
 
