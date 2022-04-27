@@ -9,11 +9,13 @@ namespace pipeline {
 
 ReorderBuffer::ReorderBuffer(
     unsigned int maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
-    std::function<void(const std::shared_ptr<Instruction>&)> raiseException)
+    std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
+    BranchPredictor& predictor)
     : rat_(rat),
       lsq_(lsq),
       maxSize_(maxSize),
-      raiseException_(raiseException) {}
+      raiseException_(raiseException),
+      predictor_(predictor) {}
 
 void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   assert(buffer_.size() < maxSize_ &&
@@ -84,7 +86,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     const auto& destinations = uop->getDestinationRegisters();
-    const auto& results = uop->getResults();
     for (int i = 0; i < destinations.size(); i++) {
       rat_.commit(destinations[i]);
     }
@@ -130,6 +131,10 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
       rat_.rewind(reg);
     }
     uop->setFlushed();
+    // If the instruction is a branch, supply address to branch flushing logic
+    if (uop->isBranch()) {
+      predictor_.flush(uop->getInstructionAddress());
+    }
     buffer_.pop_back();
   }
 }

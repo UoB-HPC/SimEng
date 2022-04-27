@@ -18,7 +18,8 @@ class ReorderBuffer {
    * reference to the register alias table. */
   ReorderBuffer(
       unsigned int maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
-      std::function<void(const std::shared_ptr<Instruction>&)> raiseException);
+      std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
+      BranchPredictor& predictor);
 
   /** Add the provided instruction to the ROB. */
   void reserve(const std::shared_ptr<Instruction>& insn);
@@ -67,6 +68,9 @@ class ReorderBuffer {
 
   /** A function to call upon exception generation. */
   std::function<void(std::shared_ptr<Instruction>)> raiseException_;
+
+  /** A reference to the current branch predictor. */
+  BranchPredictor& predictor_;
 
   /** The buffer containing in-flight instructions. */
   std::deque<std::shared_ptr<Instruction>> buffer_;
