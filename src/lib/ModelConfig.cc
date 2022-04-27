@@ -1,5 +1,7 @@
 #include "simeng/ModelConfig.hh"
 
+#include <math.h>
+
 namespace simeng {
 
 ModelConfig::ModelConfig(std::string path) {
@@ -90,9 +92,37 @@ void ModelConfig::validate() {
 
   // Branch-Predictor
   root = "Branch-Predictor";
-  subFields = {"BTB-bitlength"};
-  nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
+  subFields = {"BTB-Tag-Bits", "Saturating-Count-Bits", "Global-History-Length",
+               "RAS-entries", "Fallback-Static-Predictor"};
+  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
+  nodeChecker<uint64_t>(configFile_[root][subFields[2]], subFields[2],
+                        std::make_pair(1, 64), ExpectedValue::UInteger);
+  nodeChecker<uint64_t>(configFile_[root][subFields[3]], subFields[3],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
+  if (nodeChecker<std::string>(
+          configFile_[root][subFields[4]], subFields[4],
+          std::vector<std::string>{"Always-Taken", "Always-Not-Taken"},
+          ExpectedValue::String)) {
+    // If the Saturating-Count-Bits option is valid, set fallback static
+    // prediction to weakest value of the specific direction (i.e weakly taken
+    // or weakly not-taken)
+    if (nodeChecker<uint64_t>(configFile_[root][subFields[1]], subFields[1],
+                              std::make_pair(1, UINT64_MAX),
+                              ExpectedValue::UInteger)) {
+      // Calculate saturation counter boundary between weakly taken and
+      // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
+      // value
+      uint16_t weaklyTaken =
+          std::pow(2, (configFile_[root][subFields[1]].as<uint64_t>() - 1));
+      // Swap Fallback-Static-Predictor scheme out for equivalent saturating
+      // counter value
+      configFile_[root][subFields[4]] =
+          (configFile_[root][subFields[4]].as<std::string>() == "Always-Taken")
+              ? weaklyTaken
+              : (weaklyTaken - 1);
+    }
+  }
   subFields.clear();
 
   // L1-Cache
