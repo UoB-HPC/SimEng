@@ -115,14 +115,15 @@ bool Core::hasHalted() const {
     return true;
   }
 
-  // Core is considered to have halted when the fetch unit has halted, and there
-  // are no uops at the head of any buffer.
+  // Core is considered to have halted when the fetch unit has halted, there
+  // are no uops at the head of any buffer, and no exception is currently being
+  // handled.
   bool decodePending = fetchToDecodeBuffer_.getHeadSlots()[0].size() > 0;
   bool executePending = decodeToExecuteBuffer_.getHeadSlots()[0] != nullptr;
   bool writebackPending = completionSlots_[0].getHeadSlots()[0] != nullptr;
 
   return (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
-          !executePending);
+          !executePending && exceptionHandler_ == nullptr);
 }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
