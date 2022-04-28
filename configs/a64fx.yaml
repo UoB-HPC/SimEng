@@ -31,7 +31,7 @@ Queue-Sizes:
 Branch-Predictor:
   BTB-Tag-Bits: 11
   Saturating-Count-Bits: 2
-  Global-History-Length: 6
+  Global-History-Length: 11
   RAS-entries: 8
   Fallback-Static-Predictor: "Always-Taken"
 L1-Cache:

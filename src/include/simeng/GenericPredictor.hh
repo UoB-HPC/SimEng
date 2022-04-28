@@ -48,6 +48,9 @@ class GenericPredictor : public BranchPredictor {
    * counter and a branch target. */
   std::vector<std::pair<uint8_t, uint64_t>> btb_;
 
+  /** The previous BTB index calculated for an address. */
+  std::map<uint64_t, uint64_t> btbHistory_;
+
   /** The number of bits used to form the saturating counter in a BTB entry. */
   uint64_t satCntBits_;
 

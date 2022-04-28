@@ -97,7 +97,7 @@ void ModelConfig::validate() {
   nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
                         std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
   nodeChecker<uint64_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(1, 64), ExpectedValue::UInteger);
+                        std::make_pair(0, 64), ExpectedValue::UInteger);
   nodeChecker<uint64_t>(configFile_[root][subFields[3]], subFields[3],
                         std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
   if (nodeChecker<std::string>(

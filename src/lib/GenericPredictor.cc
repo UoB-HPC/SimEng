@@ -30,6 +30,7 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
   // Get index via an XOR hash between the global history and the lower btbBits_
   // bits of the instruction address
   uint64_t hashedIndex = (address & ((1 << btbBits_) - 1)) ^ globalHistory_;
+  btbHistory_[address] = hashedIndex;
 
   // Get prediction from BTB
   bool direction =
@@ -65,9 +66,8 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
 
 void GenericPredictor::update(uint64_t address, bool taken,
                               uint64_t targetAddress, BranchType type) {
-  // Get index via an XOR hash between the global history and the lower btbBits_
-  // bits of the instruction address
-  uint64_t hashedIndex = (address & ((1 << btbBits_) - 1)) ^ globalHistory_;
+  // Get previous index calculated for the instruction address supplied
+  uint64_t hashedIndex = btbHistory_[address];
 
   // Calculate 2-bit saturating counter value
   uint8_t satCntVal = btb_[hashedIndex].first;
@@ -81,7 +81,7 @@ void GenericPredictor::update(uint64_t address, bool taken,
   btb_[hashedIndex] = {satCntVal, targetAddress};
 
   // Update global history value with new direction
-  globalHistory_ = ((globalHistory_ << 1) | taken) && globalHistoryLength_;
+  globalHistory_ = ((globalHistory_ << 1) | taken) & globalHistoryLength_;
   return;
 }
 

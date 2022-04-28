@@ -52,10 +52,6 @@ TEST_F(PipelineFetchUnitTest, Tick) {
   BranchPrediction prediction{true, 0};
   MacroOp macroOp = {uopPtr};
 
-  // Return branch type as unconditional by default
-  ON_CALL(*uop, getBranchType())
-      .WillByDefault(Return(BranchType::Unconditional));
-
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(4));
@@ -68,9 +64,6 @@ TEST_F(PipelineFetchUnitTest, Tick) {
                              _))
       .WillOnce(DoAll(SetArgReferee<4>(macroOp), Return(4)));
 
-  EXPECT_CALL(predictor, predict(0, BranchType::Unconditional, 0))
-      .WillOnce(Return(prediction));
-
   fetchUnit.tick();
 
   // Verify that the macro-op was pushed to the output
@@ -80,6 +73,9 @@ TEST_F(PipelineFetchUnitTest, Tick) {
 // Tests that ticking a fetch unit does nothing if the output has stalled
 TEST_F(PipelineFetchUnitTest, TickStalled) {
   output.stall(true);
+
+  // Anticipate testing instruction type; return true for branch
+  ON_CALL(*uop, isBranch()).WillByDefault(Return(true));
 
   EXPECT_CALL(isa, predecode(_, _, _, _, _)).Times(0);
 
