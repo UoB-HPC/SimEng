@@ -40,7 +40,7 @@ class MockInstruction : public Instruction {
 
   MOCK_CONST_METHOD0(getProducerGroup, uint16_t());
   MOCK_CONST_METHOD0(getConsumerGroup, uint16_t());
-  MOCK_CONST_METHOD2(canForward, bool(uint16_t, uint16_t));
+  MOCK_CONST_METHOD2(canForward, int8_t(uint16_t, uint16_t));
 
   void setBranchResults(bool wasTaken, uint64_t targetAddress) {
     branchTaken_ = wasTaken;

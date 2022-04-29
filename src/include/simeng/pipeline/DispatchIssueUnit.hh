@@ -127,7 +127,15 @@ class DispatchIssueUnit {
   /** Contains all of the instructions that have a dependency with another
    * instruction, but is not permitted to have the result forwarded to them
    * directly. */
-  std::vector<dependencyEntry> waitingInstructions_;
+  std::vector<dependencyEntry> dependantInstructions_;
+
+  /** Contains instructions that have had results forwarded to them, but need to
+   * wait for x-cycles to mimic the in hardware latency of said result
+   * forwarding.
+   * Outer Pair = {ticks_ value when latency has elapsed, Inner Pair}.
+   * Inner Pair = {instruction entry, value it has been forwarded}. */
+  std::vector<std::pair<uint64_t, std::pair<dependencyEntry, RegisterValue>>>
+      waitingInstructions_;
 
   /** A map to collect flushed instructions for each reservation station. */
   std::unordered_map<uint8_t, std::unordered_set<std::shared_ptr<Instruction>>>
@@ -153,6 +161,9 @@ class DispatchIssueUnit {
   /** The number of times an instruction was unable to issue due to a busy port.
    */
   uint64_t portBusyStalls_ = 0;
+
+  /** The number of ticks elapsed so far. */
+  uint64_t ticks_ = 0;
 };
 }  // namespace pipeline
 }  // namespace simeng

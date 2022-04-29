@@ -346,13 +346,16 @@ uint16_t Instruction::getConsumerGroup() const {
 }
 
 /** Check if producer is allowed to forward its result to the consumer. */
-bool Instruction::canForward(uint16_t producer, uint16_t consumer) const {
+int8_t Instruction::canForward(uint16_t producer, uint16_t consumer) const {
   std::vector<std::pair<uint16_t, uint8_t>> forwardings =
       groupForwardings_.at(producer);
   for (int i = 0; i < forwardings.size(); i++) {
-    if (std::get<0>(forwardings[i]) == consumer) return true;
+    if (std::get<0>(forwardings[i]) == consumer)
+      return std::get<1>(forwardings[i]);
   }
-  return false;
+  // As result is typically latency, a result of -1 means that a forwarding is
+  // not permitted.
+  return -1;
 }
 
 }  // namespace aarch64

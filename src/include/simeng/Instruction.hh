@@ -156,7 +156,7 @@ class Instruction {
   virtual uint16_t getConsumerGroup() const = 0;
 
   /** Check if producer is allowed to forward its result to the consumer. */
-  virtual bool canForward(uint16_t producer, uint16_t consumer) const = 0;
+  virtual int8_t canForward(uint16_t producer, uint16_t consumer) const = 0;
 
   /** Retrieve the number of cycles this instruction will take to execute. */
   uint16_t getLatency() const;

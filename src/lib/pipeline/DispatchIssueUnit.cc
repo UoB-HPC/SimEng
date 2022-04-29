@@ -53,13 +53,39 @@ DispatchIssueUnit::DispatchIssueUnit(
 
 void DispatchIssueUnit::tick() {
   input_.stall(false);
+  ticks_++;
 
   // Reset the counters
   std::fill(dispatches.begin(), dispatches.end(), 0);
 
+  // Check if waiting instructions are ready.
+  size_t index = 0;
+  auto begin = waitingInstructions_.begin();
+  while (index < waitingInstructions_.size()) {
+    // Check if item at index has waited long enough
+    if (std::get<0>(waitingInstructions_[index]) == ticks_) {
+      auto& entry = std::get<0>(std::get<1>(waitingInstructions_[index]));
+      auto value = std::get<1>(std::get<1>(waitingInstructions_[index]));
+
+      entry.uop->supplyOperand(entry.operandIndex, value);
+      if (entry.uop->canExecute()) {
+        // Add the now-ready instruction to the relevant ready queue
+        auto rsInfo = portMapping_[entry.port];
+        reservationStations_[rsInfo.first].ports[rsInfo.second].ready.push_back(
+            std::move(entry.uop));
+      }
+
+      // Remove entry from vector
+      waitingInstructions_.erase(begin + index);
+    } else
+      index++;
+  }
+
   // Check if uop is ready.
-  for (size_t i = 0; i < waitingInstructions_.size(); i++) {
-    auto& entry = waitingInstructions_[i];
+  index = 0;
+  auto start = dependantInstructions_.begin();
+  while (index < dependantInstructions_.size()) {
+    auto& entry = dependantInstructions_[index];
     auto& sourceRegisters = entry.uop->getOperandRegisters();
     const auto& reg = sourceRegisters[entry.operandIndex];
 
@@ -78,14 +104,11 @@ void DispatchIssueUnit::tick() {
           std::move(entry.uop));
     }
 
-    if (supplied) waitingInstructions_[i] = {nullptr, 0, 0};
-  }
-  // Remove completed instructions from waitingInstructions_
-  size_t index = 0;
-  while (index < waitingInstructions_.size()) {
-    if (waitingInstructions_[index].uop == nullptr) {
-      waitingInstructions_.erase(waitingInstructions_.begin() + index);
-    } else
+    // Remove completed instructions from dependantInstructions_ or increase
+    // index
+    if (supplied)
+      dependantInstructions_.erase(start + index);
+    else
       index++;
   }
 
@@ -216,8 +239,10 @@ void DispatchIssueUnit::forwardOperands(
     // Supply the value to all dependent uops
     const auto& dependents = dependencyMatrix_[reg.type][reg.tag];
     for (auto& entry : dependents) {
-      if (insn->canForward(insn->getProducerGroup(),
-                           entry.uop->getConsumerGroup())) {
+      int8_t forwardLatency = insn->canForward(insn->getProducerGroup(),
+                                               entry.uop->getConsumerGroup());
+      if (forwardLatency == 0) {
+        // If forwarding latency is 0 then can be issued immidiately
         entry.uop->supplyOperand(entry.operandIndex, values[i]);
         if (entry.uop->canExecute()) {
           // Add the now-ready instruction to the relevant ready queue
@@ -226,8 +251,12 @@ void DispatchIssueUnit::forwardOperands(
               .ports[rsInfo.second]
               .ready.push_back(std::move(entry.uop));
         }
+      } else if (forwardLatency == -1) {
+        // Latecy of -1 means no forwarding is permitted.
+        dependantInstructions_.push_back(entry);
       } else {
-        waitingInstructions_.push_back(entry);
+        waitingInstructions_.push_back(
+            {ticks_ + forwardLatency, {entry, values[i]}});
       }
     }
 

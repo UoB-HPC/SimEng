@@ -306,7 +306,7 @@ class Instruction : public simeng::Instruction {
   uint16_t getConsumerGroup() const override;
 
   /** Check if producer is allowed to forward its result to the consumer. */
-  bool canForward(uint16_t producer, uint16_t consumer) const override;
+  int8_t canForward(uint16_t producer, uint16_t consumer) const override;
 
   /** Set this instruction's execution information including it's execution
    * latency and throughput, and the set of ports which support it. */
