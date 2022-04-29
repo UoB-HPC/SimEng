@@ -124,6 +124,11 @@ class DispatchIssueUnit {
    * at `dependencyMatrix[type][tag]`. */
   std::vector<std::vector<std::vector<dependencyEntry>>> dependencyMatrix_;
 
+  /** Contains all of the instructions that have a dependency with another
+   * instruction, but is not permitted to have the result forwarded to them
+   * directly. */
+  std::vector<dependencyEntry> waitingInstructions_;
+
   /** A map to collect flushed instructions for each reservation station. */
   std::unordered_map<uint8_t, std::unordered_set<std::shared_ptr<Instruction>>>
       flushed_;
