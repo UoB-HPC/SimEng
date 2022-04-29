@@ -288,8 +288,8 @@ uint16_t Instruction::getProducerGroup() const {
     else
       return ProducerGroups::INT_OP;
   }
-  // Default is INT_OP
-  return ProducerGroups::INT_OP;
+
+  return ProducerGroups::DEFAULT;
 }
 
 /** Retrieve the consumer group this instruction belongs to. */
@@ -341,8 +341,8 @@ uint16_t Instruction::getConsumerGroup() const {
       return ConsumerGroups::INT_OP;
     }
   }
-  // Default is INT_OP
-  return ConsumerGroups::INT_OP;
+
+  return ConsumerGroups::DEFAULT;
 }
 
 /** Check if producer is allowed to forward its result to the consumer. */
@@ -354,7 +354,7 @@ int8_t Instruction::canForward(uint16_t producer, uint16_t consumer) const {
       return std::get<1>(forwardings[i]);
   }
   // As result is typically latency, a result of -1 means that a forwarding is
-  // not permitted.
+  // not permitted. DEAFULT falls into this catagory.
   return -1;
 }
 

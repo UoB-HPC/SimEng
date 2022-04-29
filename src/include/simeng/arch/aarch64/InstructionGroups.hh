@@ -190,6 +190,7 @@ const uint16_t SIMD_FP_SVE_STORE = 5;
 const uint16_t PRED_OP = 6;
 const uint16_t PRED_LOAD = 7;
 const uint16_t PRED_STORE = 8;
+const uint16_t DEFAULT = 9;
 }  // namespace ProducerGroups
 
 namespace ConsumerGroups {
@@ -207,6 +208,7 @@ const uint16_t PRED_OP = 10;
 const uint16_t PRED_OP_NZCV = 11;
 const uint16_t PRED_LOAD = 12;
 const uint16_t PRED_STORE = 13;
+const uint16_t DEFAULT = 14;
 }  // namespace ConsumerGroups
 
 /** An unordered map conataining all the allowed forwardings from instruction
