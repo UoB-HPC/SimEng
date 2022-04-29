@@ -264,13 +264,96 @@ uint64_t Instruction::extendOffset(uint64_t value,
 }
 
 /** Retrieve the producer group this instruction belongs to. */
-uint16_t Instruction::getProducerGroup() const {}
+uint16_t Instruction::getProducerGroup() const {
+  if (isPredicate_) {
+    if (isLoad_)
+      return ProducerGroups::PRED_LOAD;
+    else if (isStoreAddress_ || isStoreData_)
+      return ProducerGroups::PRED_STORE;
+    else
+      return ProducerGroups::PRED_OP;
+  } else if (isScalarData_ || isVectorData_ || isSVEData_) {
+    if (isLoad_)
+      return ProducerGroups::SIMD_FP_SVE_LOAD;
+    else if (isStoreAddress_ || isStoreData_)
+      return ProducerGroups::SIMD_FP_SVE_STORE;
+    else
+      return ProducerGroups::SIMD_FP_SVE_OP;
+  } else {
+    // Is INT
+    if (isLoad_)
+      return ProducerGroups::INT_LOAD;
+    else if (isStoreAddress_ || isStoreData_)
+      return ProducerGroups::INT_STORE;
+    else
+      return ProducerGroups::INT_OP;
+  }
+  // Default is INT_OP
+  return ProducerGroups::INT_OP;
+}
 
 /** Retrieve the consumer group this instruction belongs to. */
-uint16_t Instruction::getConsumerGroup() const {}
+uint16_t Instruction::getConsumerGroup() const {
+  const span<Register>& registers = Instruction::getDestinationRegisters();
+
+  if (isPredicate_) {
+    if (isLoad_)
+      return ConsumerGroups::PRED_LOAD;
+    else if (isStoreAddress_ || isStoreData_)
+      return ConsumerGroups::PRED_STORE;
+    else {
+      for (int i = 0; i < registers.size(); i++) {
+        if (registers[i].type == RegisterType::NZCV)
+          return ConsumerGroups::PRED_OP_NZCV;
+      }
+      return ConsumerGroups::PRED_OP;
+    }
+  } else if (isScalarData_ || isVectorData_ || isSVEData_) {
+    if (isLoad_)
+      return ConsumerGroups::SIMD_FP_SVE_LOAD;
+    else if (isStoreAddress_ || isStoreData_)
+      return ConsumerGroups::SIMD_FP_SVE_STORE;
+    else if (isSVEData_ && isCompare_) {
+      for (int i = 0; i < registers.size(); i++) {
+        if (registers[i].type == RegisterType::NZCV)
+          return ConsumerGroups::SVE_CMP_NZCV;
+        if (registers[i].type == RegisterType::PREDICATE)
+          return ConsumerGroups::SVE_CMP_PR;
+      }
+    } else {
+      for (int i = 0; i < registers.size(); i++) {
+        if (registers[i].type == RegisterType::NZCV)
+          return ConsumerGroups::SIMD_FP_SVE_OP_NZCV;
+      }
+      return ConsumerGroups::SIMD_FP_SVE_OP;
+    }
+  } else {
+    // Is INT
+    if (isLoad_)
+      return ConsumerGroups::INT_LOAD;
+    else if (isStoreAddress_ || isStoreData_)
+      return ConsumerGroups::INT_STORE;
+    else {
+      for (int i = 0; i < registers.size(); i++) {
+        if (registers[i].type == RegisterType::NZCV)
+          return ConsumerGroups::INT_OP_NZCV;
+      }
+      return ConsumerGroups::INT_OP;
+    }
+  }
+  // Default is INT_OP
+  return ConsumerGroups::INT_OP;
+}
 
 /** Check if producer is allowed to forward its result to the consumer. */
-bool Instruction::canForward(uint16_t producer, uint16_t consumer) const {}
+bool Instruction::canForward(uint16_t producer, uint16_t consumer) const {
+  std::vector<std::pair<uint16_t, uint8_t>> forwardings =
+      groupForwardings_.at(producer);
+  for (int i = 0; i < forwardings.size(); i++) {
+    if (std::get<0>(forwardings[i]) == consumer) return true;
+  }
+  return false;
+}
 
 }  // namespace aarch64
 }  // namespace arch
