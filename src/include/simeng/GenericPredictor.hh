@@ -54,7 +54,7 @@ class GenericPredictor : public BranchPredictor {
   /** The number of bits used to form the saturating counter in a BTB entry. */
   uint64_t satCntBits_;
 
-  /** A n-bit history of previous branhc directions where n is equal to
+  /** A n-bit history of previous branch directions where n is equal to
    * globalHistoryLength_. */
   uint64_t globalHistory_ = 0;
 
