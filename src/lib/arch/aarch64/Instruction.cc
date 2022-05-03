@@ -169,11 +169,11 @@ uint16_t Instruction::getGroup() const {
   else if (isSVEData_)
     base = InstructionGroups::SVE;
 
-  if (isPredicate_) return InstructionGroups::PREDICATE;
   if (isLoad_) return base + 10;
   if (isStoreAddress_) return base + 11;
   if (isStoreData_) return base + 12;
   if (isBranch_) return InstructionGroups::BRANCH;
+  if (isPredicate_) return InstructionGroups::PREDICATE;
   if (isDivideOrSqrt_) return base + 9;
   if (isMultiply_) return base + 8;
   if (isConvert_) return base + 7;
