@@ -48,6 +48,8 @@ Core::Core(FlatMemoryInterface& instructionMemory,
 void Core::tick() {
   ticks_++;
 
+  if (hasHalted_) return;
+
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
     return;

@@ -36,6 +36,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 void Core::tick() {
   ticks_++;
 
+  if (hasHalted_) return;
+
   if (pc_ >= programByteLength_) {
     hasHalted_ = true;
     return;

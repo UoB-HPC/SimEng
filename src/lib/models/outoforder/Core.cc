@@ -122,6 +122,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 void Core::tick() {
   ticks_++;
 
+  if (hasHalted_) return;
+
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
     return;
