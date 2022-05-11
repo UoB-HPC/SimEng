@@ -174,9 +174,9 @@ class AArch64RegressionTest : public RegressionTest {
   uint64_t getSystemRegister(uint16_t encoding) const {
     auto arch = reinterpret_cast<simeng::arch::aarch64::Architecture*>(
         architecture_.get());
-    uint16_t tag = arch->getSystemRegisterTag(encoding);
     return getRegister<uint64_t>(
-        {simeng::arch::aarch64::RegisterType::SYSTEM, tag});
+        {simeng::arch::aarch64::RegisterType::SYSTEM,
+         static_cast<uint16_t>(arch->getSystemRegisterTag(encoding))});
   }
 
   /** Get the value of a vector register element. */
