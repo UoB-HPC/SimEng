@@ -28,6 +28,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   systemRegisterMap_[ARM64_SYSREG_TPIDR_EL0] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
+  systemRegisterMap_[ARM64_SYSREG_PMCCNTR_EL0] = systemRegisterMap_.size();
 
   // Instantiate an ExecutionInfo entry for each group in the InstructionGroup
   // namespace.
@@ -232,12 +233,16 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
   };
 }
 
-uint16_t Architecture::getSystemRegisterTag(uint16_t reg) const {
+int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   // Check below is done for speculative instructions that may be passed into
   // the function but will not be executed. If such invalid speculative
   // instructions get through they can cause an out-of-range error.
-  if (!systemRegisterMap_.count(reg)) return 0;
+  if (!systemRegisterMap_.count(reg)) return -1;
   return systemRegisterMap_.at(reg);
+}
+
+uint16_t Architecture::getNumSystemRegisters() const {
+  return static_cast<uint16_t>(systemRegisterMap_.size());
 }
 
 ProcessStateChange Architecture::getInitialState() const {
@@ -254,7 +259,8 @@ ProcessStateChange Architecture::getInitialState() const {
   // Temporary: state that DCZ can support clearing 64 bytes at a time,
   // but is disabled due to bit 4 being set
   changes.modifiedRegisters.push_back(
-      {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)});
+      {RegisterType::SYSTEM,
+       static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0))});
   changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
 
   return changes;
@@ -265,11 +271,14 @@ uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 uint64_t Architecture::getVectorLength() const { return VL_; }
 
 simeng::Register Architecture::getVCTreg() const {
-  return {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0)};
+  return {RegisterType::SYSTEM,
+          static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0))};
 }
 
 simeng::Register Architecture::getPCCreg() const {
-  return {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0)};
+  return {
+      RegisterType::SYSTEM,
+      static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0))};
 }
 
 }  // namespace aarch64
