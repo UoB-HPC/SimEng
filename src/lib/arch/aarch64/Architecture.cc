@@ -290,7 +290,9 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
 }
 
 simeng::Register Architecture::getPCCreg() const {
-  return {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0)};
+  return {
+      RegisterType::SYSTEM,
+      static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0))};
 }
 
 }  // namespace aarch64
