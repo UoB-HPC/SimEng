@@ -270,16 +270,21 @@ uint64_t Architecture::getVectorLength() const { return VL_; }
 simeng::Register Architecture::getVCTreg() const {
   return {RegisterType::SYSTEM,
           static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0))};
+<<<<<<< HEAD
 }
 
 simeng::Register Architecture::getPCCreg() const {
   return {
       RegisterType::SYSTEM,
       static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0))};
+=======
+>>>>>>> 75ccc4f5 (Missing sys reg handling (#228))
 }
 
 simeng::Register Architecture::getPCCreg() const {
-  return {RegisterType::SYSTEM, getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0)};
+  return {
+      RegisterType::SYSTEM,
+      static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0))};
 }
 
 }  // namespace aarch64
