@@ -6,7 +6,6 @@
 #include <string>
 
 #include "simeng/AlwaysNotTakenPredictor.hh"
-#include "simeng/BTB_BWTPredictor.hh"
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
