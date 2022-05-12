@@ -221,14 +221,26 @@ void Instruction::decode() {
         sourceRegisterCount++;
       }
     } else if (op.type == ARM64_OP_REG_MRS) {
-      sourceRegisters[sourceRegisterCount] = {
-          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
-      sourceRegisterCount++;
-      operandsPending++;
+      int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
+      if (sysRegTag == -1) {
+        exceptionEncountered_ = true;
+        exception_ = InstructionException::UnmappedSysReg;
+      } else {
+        sourceRegisters[sourceRegisterCount] = {
+            RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
+        sourceRegisterCount++;
+        operandsPending++;
+      }
     } else if (op.type == ARM64_OP_REG_MSR) {
-      destinationRegisters[destinationRegisterCount] = {
-          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
-      destinationRegisterCount++;
+      int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
+      if (sysRegTag == -1) {
+        exceptionEncountered_ = true;
+        exception_ = InstructionException::UnmappedSysReg;
+      } else {
+        destinationRegisters[destinationRegisterCount] = {
+            RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
+        destinationRegisterCount++;
+      }
     }
   }
 

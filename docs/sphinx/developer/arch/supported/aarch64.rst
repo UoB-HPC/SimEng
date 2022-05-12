@@ -202,3 +202,8 @@ Instruction aliases
 As Capstone is primarily a disassembler, it will attempt to generate the correct aliases for instructions: for example, the ``cmp w0, #0`` instruction is an alias for ``subs wzr, w0, #0``. As it's the underlying instruction that is of use (in this case, the ``subs`` instruction), this implementation includes a de-aliasing component that reverses this conversion. The logic for this may be found in ``src/lib/arch/aarch64/InstructionMetadata``.
 
 If a known but unsupported alias is encountered, it will generate an invalid instruction error, and the output will identify the instruction as unknown in place of the usual textual representation. It is recommended to reference a disassembled version of the program to identify what the instruction at this address should be correctly disassembled to, and implement the necessary dealiasing logic accordingly.
+
+Adding supported system registers
+---------------------------------
+
+Similar to instructions, system register support is added when they are encountered in run programs. To add support for a previously unseen system register, it must be added to the ``systemRegisterMap_`` map in the associated ISA ``Architecture.cc`` file.
