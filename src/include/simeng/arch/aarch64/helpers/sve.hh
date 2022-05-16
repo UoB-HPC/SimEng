@@ -162,7 +162,10 @@ class sveHelp {
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits) {
     const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
-    return (uint64_t)((VL_bits / (sizeof(T) * 8)) * imm);
+
+    const uint16_t elems =
+        AuxFunc::sveGetPattern(metadata.operandStr, (sizeof(T) * 8), VL_bits);
+    return (uint64_t)(elems * imm);
   }
 
   /** Helper function for SVE instructions with the format `cntp xd, pg, pn`.

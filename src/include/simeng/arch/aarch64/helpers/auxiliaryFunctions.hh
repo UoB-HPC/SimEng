@@ -268,6 +268,10 @@ class AuxFunc {
 
     // Get pattern string
     std::string pattern(operandStr.substr(operandStr.find(",") + 2));
+    if (pattern.find(',') != std::string::npos) {
+      pattern.erase(pattern.find(","));
+    }
+
     if (pattern == "pow2") {
       int n = 1;
       while (elements >= std::pow(2, n)) {
@@ -304,6 +308,8 @@ class AuxFunc {
       return elements - (elements % 4);
     else if (pattern == "mul3")
       return elements - (elements % 3);
+    else if (pattern == "all")
+      return elements;
 
     return 0;
   }

@@ -1341,6 +1341,36 @@ TEST_P(InstSve, cnt) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), (VL / 16) * 3);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), (VL / 32) * 3);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), (VL / 64) * 3);
+
+  // pattern != all
+  RUN_AARCH64(R"(
+    cntb x0, pow2, mul #2
+    cnth x1, vl1, mul #2
+    cntw x2, vl2, mul #2
+    cntd x3, vl5, mul #2
+    cntb x4, vl7, mul #2
+    cnth x5, vl32, mul #2
+    cntw x6, vl128, mul #2
+    cntd x7, mul4, mul #2
+  )");
+  uint16_t maxElemsB = VL / 8;
+  uint16_t maxElemsH = VL / 16;
+  uint16_t maxElemsS = VL / 32;
+  uint16_t maxElemsD = VL / 64;
+  uint16_t n = 1;
+  while (maxElemsB >= std::pow(2, n)) {
+    n = n + 1;
+  }
+  uint16_t pow2B = std::pow(2, n - 1);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), pow2B * 2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), maxElemsH >= 1 ? (1 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), maxElemsS >= 2 ? (2 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), maxElemsD >= 5 ? (5 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), maxElemsB >= 7 ? (7 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), maxElemsH >= 32 ? (32 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), maxElemsS >= 128 ? (128 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), (maxElemsD - (maxElemsD % 4)) * 2);
 }
 
 TEST_P(InstSve, cntp) {
