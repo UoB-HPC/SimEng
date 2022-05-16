@@ -1635,6 +1635,34 @@ TEST_P(InstSve, dec) {
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 512 - (VL / 64));
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 512 - (VL / 64) * 3);
+
+  // pattern != all
+  RUN_AARCH64(R"(
+    mov x0, #44
+    mov x1, #20
+    mov x2, #71
+    mov x3, #56
+
+    decb x0, pow2, mul #2
+    decd x1, vl5, mul #2
+    decb x2, vl128, mul #2
+    decd x3, mul4, mul #2
+  )");
+  uint16_t maxElemsB = VL / 8;
+  uint16_t maxElemsD = VL / 64;
+  uint16_t n = 1;
+  while (maxElemsB >= std::pow(2, n)) {
+    n = n + 1;
+  }
+  uint16_t pow2B = std::pow(2, n - 1);
+
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), 44 - (pow2B * 2));
+  EXPECT_EQ(getGeneralRegister<int64_t>(1),
+            (maxElemsD >= 5) ? (20 - (5 * 2)) : 20);
+  EXPECT_EQ(getGeneralRegister<int64_t>(2),
+            (maxElemsB >= 128) ? 71 - (128 * 2) : 71);
+  EXPECT_EQ(getGeneralRegister<int64_t>(3),
+            56 - ((maxElemsD - (maxElemsD % 4)) * 2));
 }
 
 TEST_P(InstSve, dupm) {
