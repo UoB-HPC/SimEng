@@ -2092,6 +2092,51 @@ TEST_P(InstSve, inc) {
              fillNeon<int64_t>({(int64_t)(3 + ((VL / 64)))}, (VL / 8)));
   CHECK_NEON(5, int64_t,
              fillNeon<int64_t>({(int64_t)(84 + ((VL / 64) * 5))}, (VL / 8)));
+
+  // pattern != all
+  // Vector Variants
+  RUN_AARCH64(R"(
+    dup z0.s, #15
+    dup z1.s, #37
+    dup z2.h, #25
+    dup z3.h, #19
+    dup z4.d, #3
+    dup z5.d, #84
+
+    incw z0.s, pow2, mul #3
+    incw z1.s, mul3, mul #2
+    inch z2.h, vl2, mul #3
+    inch z3.h, vl128, mul #3
+    incd z4.d, vl7, mul #3
+    incd z5.d, vl1, mul#3 
+  )");
+  n = 1;
+  while (maxElemsS >= std::pow(2, n)) {
+    n = n + 1;
+  }
+  uint16_t pow2S = std::pow(2, n - 1);
+
+  CHECK_NEON(0, int32_t,
+             fillNeon<int32_t>({(int32_t)(15 + (pow2S * 3))}, (VL / 8)));
+  CHECK_NEON(
+      1, int32_t,
+      fillNeon<int32_t>({(int32_t)(37 + ((maxElemsS - (maxElemsS % 3)) * 2))},
+                        (VL / 8)));
+  CHECK_NEON(
+      2, int16_t,
+      fillNeon<int16_t>({(int16_t)((maxElemsH >= 2) ? (25 + (2 * 3)) : 25)},
+                        (VL / 8)));
+  CHECK_NEON(
+      3, int16_t,
+      fillNeon<int16_t>({(int16_t)((maxElemsH >= 128) ? (19 + (128 * 3)) : 19)},
+                        (VL / 8)));
+  CHECK_NEON(4, int64_t,
+             fillNeon<int64_t>(
+                 {(int64_t)((maxElemsD >= 7) ? (3 + (7 * 3)) : 3)}, (VL / 8)));
+  CHECK_NEON(
+      5, int64_t,
+      fillNeon<int64_t>({(int64_t)((maxElemsD >= 1) ? (84 + (1 * 3)) : 84)},
+                        (VL / 8)));
 }
 
 TEST_P(InstSve, fabs) {

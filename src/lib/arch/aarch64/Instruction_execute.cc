@@ -7162,7 +7162,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_INCD_ZPiI: {  // incd zdn.d{, pattern{, #imm}}
-        results[0] = sveHelp::sveInc_imm<uint64_t>(operands, metadata, VL_bits);
+        results[0] = sveHelp::sveInc_imm<int64_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_INCH_XPiI: {  // inch xdn{, pattern{, #imm}}
@@ -7171,7 +7171,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_INCH_ZPiI: {  // inch zdn.h{, pattern{, #imm}}
-        results[0] = sveHelp::sveInc_imm<uint16_t>(operands, metadata, VL_bits);
+        results[0] = sveHelp::sveInc_imm<int16_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_INCP_XP_B: {  // incp xdn, pm.b
@@ -7208,7 +7208,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_INCW_ZPiI: {  // incw zdn.s{, pattern{, #imm}}
-        results[0] = sveHelp::sveInc_imm<uint32_t>(operands, metadata, VL_bits);
+        results[0] = sveHelp::sveInc_imm<int32_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_INDEX_II_B: {  // index zd.b, #imm, #imm

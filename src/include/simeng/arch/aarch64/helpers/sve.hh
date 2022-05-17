@@ -819,9 +819,11 @@ class sveHelp {
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
     typename std::make_signed<T>::type out[256 / sizeof(T)] = {0};
+    const uint16_t elems =
+        AuxFunc::sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
 
     for (int i = 0; i < partition_num; i++) {
-      out[i] = n[i] + ((VL_bits / (sizeof(T) * 8)) * imm);
+      out[i] = n[i] + (elems * imm);
     }
     return {out, 256};
   }
