@@ -7153,12 +7153,12 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_INCB_XPiI: {  // incb xdn{, pattern{, #imm}}
         results[0] =
-            sveHelp::sveInc_gprImm<uint8_t>(operands, metadata, VL_bits);
+            sveHelp::sveInc_gprImm<int8_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_INCD_XPiI: {  // incd xdn{, pattern{, #imm}}
         results[0] =
-            sveHelp::sveInc_gprImm<uint64_t>(operands, metadata, VL_bits);
+            sveHelp::sveInc_gprImm<int64_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_INCD_ZPiI: {  // incd zdn.d{, pattern{, #imm}}
@@ -7167,7 +7167,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_INCH_XPiI: {  // inch xdn{, pattern{, #imm}}
         results[0] =
-            sveHelp::sveInc_gprImm<uint16_t>(operands, metadata, VL_bits);
+            sveHelp::sveInc_gprImm<int16_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_INCH_ZPiI: {  // inch zdn.h{, pattern{, #imm}}
@@ -7204,7 +7204,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_INCW_XPiI: {  // incw xdn{, pattern{, #imm}}
         results[0] =
-            sveHelp::sveInc_gprImm<uint32_t>(operands, metadata, VL_bits);
+            sveHelp::sveInc_gprImm<int32_t>(operands, metadata, VL_bits);
         break;
       }
       case Opcode::AArch64_INCW_ZPiI: {  // incw zdn.s{, pattern{, #imm}}

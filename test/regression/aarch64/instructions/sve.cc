@@ -2018,6 +2018,51 @@ TEST_P(InstSve, inc) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 128 + (VL / 16) * 3);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 160 + (VL / 32) * 3);
 
+  // pattern != all
+  RUN_AARCH64(R"(
+    mov x0, #64
+    mov x1, #96
+    mov x2, #128
+    mov x3, #160
+    mov x4, #64
+    mov x5, #96
+    mov x6, #128
+    mov x7, #160
+    incb x0, pow2, mul #2
+    incd x1, vl16, mul #2
+    inch x2, vl6, mul #2
+    incw x3, vl7, mul #2
+    incb x4, vl256, mul #2
+    incd x5, vl64, mul #2
+    inch x6, vl2, mul #2
+    incw x7, mul3, mul #2
+  )");
+  uint16_t maxElemsB = VL / 8;
+  uint16_t maxElemsH = VL / 16;
+  uint16_t maxElemsS = VL / 32;
+  uint16_t maxElemsD = VL / 64;
+  uint16_t n = 1;
+  while (maxElemsB >= std::pow(2, n)) {
+    n = n + 1;
+  }
+  uint16_t pow2B = std::pow(2, n - 1);
+
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), 64 + (pow2B * 2));
+  EXPECT_EQ(getGeneralRegister<int64_t>(1),
+            (maxElemsD >= 16) ? (96 + (16 * 2)) : 96);
+  EXPECT_EQ(getGeneralRegister<int64_t>(2),
+            (maxElemsH >= 6) ? (128 + (6 * 2)) : 128);
+  EXPECT_EQ(getGeneralRegister<int64_t>(3),
+            (maxElemsS >= 7) ? (160 + (7 * 2)) : 160);
+  EXPECT_EQ(getGeneralRegister<int64_t>(4),
+            (maxElemsB >= 256) ? (64 + (256 * 2)) : 64);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5),
+            (maxElemsD >= 64) ? (96 + (64 * 2)) : 96);
+  EXPECT_EQ(getGeneralRegister<int64_t>(6),
+            (maxElemsH >= 2) ? (128 + (2 * 2)) : 128);
+  EXPECT_EQ(getGeneralRegister<int64_t>(7),
+            160 + ((maxElemsS - (maxElemsS % 3)) * 2));
+
   // pattern = all
   // Vector Variants
   RUN_AARCH64(R"(

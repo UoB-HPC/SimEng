@@ -249,7 +249,7 @@ class sveHelp {
    * Returns single value of type uint64_t. */
   // TODO : Add support for patterns
   template <typename T>
-  static uint64_t sveDec_scalar(
+  static int64_t sveDec_scalar(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits) {
@@ -789,17 +789,19 @@ class sveHelp {
   }
 
   /** Helper function for SVE instructions with the format `inc<b, d, h, w>
-   * xdn{, pattern{, #imm}}`.
+   * xdn{, pattern{, MUL #imm}}`.
    * T represents the type of operation (e.g. for INCB, T = int8_t).
    * Returns single value of type uint64_t. */
   template <typename T>
-  static uint64_t sveInc_gprImm(
+  static int64_t sveInc_gprImm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       const uint16_t VL_bits) {
-    const uint64_t n = operands[0].get<uint64_t>();
+    const int64_t n = operands[0].get<int64_t>();
     const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
-    uint64_t out = n + ((VL_bits / (sizeof(T) * 8)) * imm);
+    const uint16_t elems =
+        AuxFunc::sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
+    int64_t out = n + (elems * imm);
     return out;
   }
 
