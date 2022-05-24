@@ -1072,7 +1072,7 @@ class sveHelp {
     return {out, 256};
   }
 
-  /** Helper function for SVE instructions with the format `mul zd, pg/m, zn,
+  /** Helper function for SVE instructions with the format `mul zdn, pg/m, zdn,
    * <zm, #imm>`.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).
    * Returns correctly formatted RegisterValue. */
