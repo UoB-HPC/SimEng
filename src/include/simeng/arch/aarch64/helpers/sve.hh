@@ -668,8 +668,9 @@ class sveHelp {
   static RegisterValue sveFnegPredicated(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const uint16_t VL_bits) {
-    const uint64_t* p = operands[0].getAsVector<uint64_t>();
-    const T* n = operands[1].getAsVector<T>();
+    const T* d = operands[0].getAsVector<T>();
+    const uint64_t* p = operands[1].getAsVector<uint64_t>();
+    const T* n = operands[2].getAsVector<T>();
 
     const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
     T out[256 / sizeof(T)] = {0};
@@ -679,7 +680,7 @@ class sveHelp {
       if (p[i / (64 / sizeof(T))] & shifted_active)
         out[i] = -n[i];
       else
-        out[i] = n[i];
+        out[i] = d[i];
     }
     return {out, 256};
   }
