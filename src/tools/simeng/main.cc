@@ -222,7 +222,7 @@ int main(int argc, char** argv) {
       std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
 
   auto predictor = simeng::BTBPredictor(
-      config["Branch-Predictor"]["BTB-bitlength"].as<uint8_t>());
+      config["Branch-Predictor"]["BTB-bitlength"].as<uint16_t>());
   auto config_ports = config["Ports"];
   std::vector<std::vector<uint16_t>> portArrangement(config_ports.size());
   // Extract number of ports
