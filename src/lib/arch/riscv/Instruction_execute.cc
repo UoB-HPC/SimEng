@@ -681,28 +681,28 @@ void Instruction::execute() {
       results[0] = static_cast<int64_t>(rs1 * rs2);
       break;
     }
-    case Opcode::RISCV_MULH: {
-      return executionNYI();
-
-      const int64_t rs1 = operands[0].get<int64_t>();
-      const int64_t rs2 = operands[1].get<int64_t>();
-      results[0] = mulhiss(rs1, rs2);
-      break;
-    }
+      //    case Opcode::RISCV_MULH: {
+      //      return executionNYI();
+      //
+      //      const int64_t rs1 = operands[0].get<int64_t>();
+      //      const int64_t rs2 = operands[1].get<int64_t>();
+      //      results[0] = mulhiss(rs1, rs2);
+      //      break;
+      //    }
     case Opcode::RISCV_MULHU: {
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       results[0] = mulhiuu(rs1, rs2);
       break;
     }
-    case Opcode::RISCV_MULHSU: {
-      return executionNYI();
-
-      const int64_t rs1 = operands[0].get<int64_t>();
-      const uint64_t rs2 = operands[1].get<uint64_t>();
-      results[0] = mulhisu(rs1, rs2);
-      break;
-    }
+      //    case Opcode::RISCV_MULHSU: {
+      //      return executionNYI();
+      //
+      //      const int64_t rs1 = operands[0].get<int64_t>();
+      //      const uint64_t rs2 = operands[1].get<uint64_t>();
+      //      results[0] = mulhisu(rs1, rs2);
+      //      break;
+      //    }
     case Opcode::RISCV_MULW: {
       const uint32_t rs1 = operands[0].get<uint32_t>();
       const uint32_t rs2 = operands[1].get<uint32_t>();

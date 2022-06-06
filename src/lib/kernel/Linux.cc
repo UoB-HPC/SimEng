@@ -149,18 +149,23 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
 }
 
 int64_t Linux::close(int64_t fd) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
-  if (hfd < 0) {
-    return EBADF;
+  // Don't close STDOUT or STDERR otherwise no SE output
+  if (fd != 1) {
+    assert(fd < processStates_[0].fileDescriptorTable.size());
+    int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+    if (hfd < 0) {
+      return EBADF;
+    }
+
+    // Deallocate the virtual file descriptor
+    assert(processStates_[0].freeFileDescriptors.count(fd) == 0);
+    processStates_[0].freeFileDescriptors.insert(fd);
+    processStates_[0].fileDescriptorTable[fd] = -1;
+
+    return ::close(hfd);
   }
 
-  // Deallocate the virtual file descriptor
-  assert(processStates_[0].freeFileDescriptors.count(fd) == 0);
-  processStates_[0].freeFileDescriptors.insert(fd);
-  processStates_[0].fileDescriptorTable[fd] = -1;
-
-  return ::close(hfd);
+  return 0;
 }
 
 int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,

@@ -141,7 +141,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   }
 
   assert(bytesAvailable >= 4 &&
-         "Fewer than 4 bytes supplied to AArch64 decoder");
+         "Fewer than 4 bytes supplied to RISC-V decoder");
 
   // Dereference the instruction pointer to obtain the instruction word
   const uint32_t insn = *static_cast<const uint32_t*>(ptr);

@@ -586,6 +586,12 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
+      case 278: {  // getrandom
+        // TODO: Functionality temporarily omitted as it is unused within
+        // workloads regions of interest and not required for their simulation
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+        break;
+      }
       default:
         printException(instruction_);
         std::cout << "Unrecognised syscall: " << syscallId << std::endl;

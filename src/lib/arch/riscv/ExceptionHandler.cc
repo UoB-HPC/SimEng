@@ -339,6 +339,12 @@ bool ExceptionHandler::init() {
         stateChange.memoryAddressValues.push_back(statOut);
         break;
       }
+      case 93: {  // exit
+        auto exitCode = registerFileSet.get(R0).get<uint64_t>();
+        std::cout << "Received exit syscall: terminating with exit code "
+                  << exitCode << std::endl;
+        return fatal();
+      }
       case 94: {  // exit_group
         auto exitCode = registerFileSet.get(R0).get<uint64_t>();
         std::cout << "Received exit_group syscall: terminating with exit code "
@@ -581,6 +587,16 @@ bool ExceptionHandler::init() {
         // TODO: Functionality temporarily omitted as it is unused within
         // workloads regions of interest and not required for their simulation
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+        break;
+      }
+      case 278: {  // getrandom
+        // TODO: Functionality temporarily omitted as it is unused within
+        // workloads regions of interest and not required for their simulation
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+        break;
+      }
+      case 1024: {
+        std::cout << "SIMENG: BROKEN SYSCALL 1024" << std::endl;
         break;
       }
       default:
