@@ -336,7 +336,7 @@ class sveHelp {
   }
 
   /** Helper function for SVE instructions with the format `fadda rd,
-   * pg/m, rn, zm`.
+   * pg, rn, zm`.
    * T represents the type of operands (e.g. for zm.d, T = uint64_t).
    * Returns correctly formatted RegisterValue. */
   template <typename T>
@@ -741,7 +741,7 @@ class sveHelp {
    * zn`.
    * D represents the destination vector register type (e.g. zd.s would be
    * int32_t).
-   * N represents the source vector register type (e.g. zd.d would be
+   * N represents the source vector register type (e.g. zn.d would be
    * double).
    * Returns correctly formatted RegisterValue. */
   template <typename D, typename N>
@@ -757,10 +757,11 @@ class sveHelp {
 
     for (int i = 0; i < partition_num; i++) {
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(N))) * sizeof(N));
-      if (p[i / (64 / sizeof(N))] & shifted_active)
-        out[i] = AuxFunc::doubleRoundToNearestTiesToEven(n[i]);
-      else
+      if (p[i / (64 / sizeof(N))] & shifted_active) {
+        out[i] = AuxFunc::doubleRoundToNearestTiesToEven<N, D>(n[i]);
+      } else {
         out[i] = d[i];
+      }
     }
     return {out, 256};
   }
@@ -904,7 +905,7 @@ class sveHelp {
   }
 
   /** Helper function for SVE instructions with the format `<AND, EOR, ...>
-   * zd, pg/z, zn, zm`.
+   * zd, pg/m, zn, zm`.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).
    * Returns correctly formatted RegisterValue. */
   template <typename T>
@@ -1258,7 +1259,7 @@ class sveHelp {
     return {out, 256};
   }
 
-  /** Helper function for SVE instructions with the format `sel zd, pg/z, zn,
+  /** Helper function for SVE instructions with the format `sel zd, pg, zn,
    * zm`.
    * T represents the type of operands (e.g. for zn.d, T = uint64_t).
    * Returns correctly formatted RegisterValue. */
