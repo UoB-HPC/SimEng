@@ -264,6 +264,10 @@ ProcessStateChange Architecture::getUpdateState() const {
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
+simeng::Register Architecture::getVCTreg() const {
+  return {RegisterType::GENERAL, 0};
+}
+
 }  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

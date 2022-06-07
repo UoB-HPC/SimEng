@@ -12,7 +12,7 @@ using csh = size_t;
 
 namespace simeng {
 namespace arch {
-namespace riscv{
+namespace riscv {
 
 /* A basic RISCV implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
@@ -44,16 +44,19 @@ class Architecture : public arch::Architecture {
   ProcessStateChange getInitialState() const override;
 
   /** Retrieve any updates to the process state. */
-  ProcessStateChange getUpdateState() const override;
+  ProcessStateChange getUpdateState() const;
 
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
 
+  /** Returns the system register for the Virtual Counter Timer. */
+  simeng::Register getVCTreg() const override;
+
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a
- * opcode-based override has been defined for the latency and/or
- * port information, return that instead of the group-defined execution
- * information. */
+   * opcode-based override has been defined for the latency and/or
+   * port information, return that instead of the group-defined execution
+   * information. */
   executionInfo getExecutionInfo(Instruction& insn) const;
 
   /** A decoding cache, mapping an instruction word to a previously decoded
@@ -69,11 +72,11 @@ class Architecture : public arch::Architecture {
   std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
 
   /** A map to hold the relationship between aarch64 instruction groups and
- * user-defined execution information. */
+   * user-defined execution information. */
   std::unordered_map<uint16_t, executionInfo> groupExecutionInfo_;
 
   /** A map to hold the relationship between aarch64 instruction opcode and
- * user-defined execution information. */
+   * user-defined execution information. */
   std::unordered_map<uint16_t, executionInfo> opcodeExecutionInfo_;
 
   /** A Capstone decoding library handle, for decoding instructions. */

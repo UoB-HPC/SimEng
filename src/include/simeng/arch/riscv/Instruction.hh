@@ -151,7 +151,15 @@ class Instruction : public simeng::Instruction {
   std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
 
   /** Is this a store operation? */
-  bool isStore() const override;
+  bool isStore() const;
+
+  /** Is this a store address operation (a subcategory of store operations which
+   * deal with the generation of store addresses to store data at)? */
+  bool isStoreAddress() const override;
+
+  /** Is this a store data operation (a subcategory of store operations which
+   * deal with the supply of data to be stored)? */
+  bool isStoreData() const override;
 
   /** Is this a load operation? */
   bool isLoad() const override;
@@ -164,9 +172,6 @@ class Instruction : public simeng::Instruction {
 
   /** Is this a branch and link instruction? */
   bool isBL() const override;
-
-  /** Is this a SVE instruction? */
-  bool isSVE() const override;
 
   /** Is this an atomic instruction? */
   bool isAtomic();
