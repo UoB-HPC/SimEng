@@ -54,4 +54,4 @@ An example of this would be the pseudoinstruction ``not rd, rs``. This is implem
 
 This must be fixed in the ``InstructionMetadata`` constructor. A new entry should be added to the switch statement and the pseudoinstruction mnemonic checked. The correct set of operands can then be set. A couple of helper functions are used for common operand fixes.
 
-To ensure all pseudoinstructions are accounted for, the table in chapter 25 of the RISC-V Unprivileged specification should be checked. It is recommended to implement all pseudoinstructions for all currently implemented instructions.
+To ensure all pseudoinstructions are accounted for, the table in chapter 25 of the `RISC-V Unprivileged specification <https://riscv.org/technical/specifications/>`_ should be checked. It is recommended to implement all pseudoinstructions for all currently implemented instructions.

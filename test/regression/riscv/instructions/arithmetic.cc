@@ -40,8 +40,8 @@ TEST_P(InstArithmetic, sllw) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(30), 1610612736);
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), -2147483648);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
-  //  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0); // TODO check if > 32 shamt
-  //  allowed
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7),
+            6);  // If shamt >= 32 don't change operand as per qemu
 }
 
 TEST_P(InstArithmetic, srl) {

@@ -36,7 +36,6 @@ uint64_t mulhiuu(uint64_t a, uint64_t b) {
  * https://stackoverflow.com/a/28904636 */
 uint64_t mulhiss(int64_t a, int64_t b) {
   // TODO NYI
-
   return a;
 }
 
@@ -443,6 +442,7 @@ void Instruction::execute() {
       break;
     }
       // TODO EBREAK
+      // used to return control to a debugging environment pg27 20191213
     case Opcode::RISCV_ECALL: {
       exceptionEncountered_ = true;
       exception_ = InstructionException::SupervisorCall;
@@ -454,6 +454,9 @@ void Instruction::execute() {
       // observe any operation in the successor set following a FENCE before any
       // operation in the predecessor set preceding the FENCE."
       // https://msyksphinz-self.github.io/riscv-isadoc/html/rvi.html#fence
+
+      /* "a simple implementation ... might be able to implement the FENCE
+       * instruction as a NOP", pg13 20191213 spec */
       break;
     }
 

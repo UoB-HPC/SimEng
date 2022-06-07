@@ -36,7 +36,7 @@ TEST_P(InstMulDiv, mul) {
             0x8000000000000000);  // 2^31 * 2^32 = 2^63 (NO overflow)
 }
 
-// TODO NYI
+// TODO NYI, tests should fail
 TEST_P(InstMulDiv, mulh) {
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
@@ -52,8 +52,7 @@ TEST_P(InstMulDiv, mulh) {
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(31), -1);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(28),
-            1);  // TODO to make sure test fails
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 1);
 }
 
 TEST_P(InstMulDiv, mulhu) {
@@ -73,7 +72,7 @@ TEST_P(InstMulDiv, mulhu) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFE);
 }
 
-// TODO NYI
+// TODO NYI, tests should fail
 TEST_P(InstMulDiv, mulhsu) {
   initialHeapData_.resize(16);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());

@@ -848,7 +848,7 @@ TEST_P(InstAtomic, amoadd_w_aq_rl) {
   EXPECT_EQ(getMemoryValue<uint32_t>(heapStart + 16), 0x12365478);
 }
 
-// TODO add aq rl tests for all instructions below, ommited as currenlty
+// TODO add aq rl tests for all instructions below, omitted as currently
 // they have the same functionality
 
 TEST_P(InstAtomic, amoadd_d) {
@@ -1543,7 +1543,8 @@ INSTANTIATE_TEST_SUITE_P(
     RISCV, InstAtomic,
     ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
                       std::make_tuple(INORDER, YAML::Load("{}"))
-//                          ,std::make_tuple(OUTOFORDER, YAML::Load("{}"))
+                      //                          ,std::make_tuple(OUTOFORDER,
+                      //                          YAML::Load("{}"))
                       ),
     paramToString);
 

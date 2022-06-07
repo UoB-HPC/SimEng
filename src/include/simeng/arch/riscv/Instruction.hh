@@ -6,8 +6,6 @@
 #include "simeng/BranchPredictor.hh"
 #include "simeng/Instruction.hh"
 
-struct cs_arm64_op;
-
 namespace simeng {
 namespace arch {
 namespace riscv {
