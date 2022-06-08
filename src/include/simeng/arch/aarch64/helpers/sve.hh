@@ -247,7 +247,6 @@ class sveHelp {
    * pattern{, MUL #imm}}`.
    * T represents the type of operation (e.g. for DECD, T = uint64_t).
    * Returns single value of type uint64_t. */
-  // TODO : Add support for patterns
   template <typename T>
   static int64_t sveDec_scalar(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -257,7 +256,7 @@ class sveHelp {
     const uint8_t imm = static_cast<uint8_t>(metadata.operands[1].imm);
     const uint16_t elems =
         AuxFunc::sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
-    return (n - (elems * imm));
+    return (n - static_cast<int64_t>(elems * imm));
   }
 
   /** Helper function for SVE instructions with the format `dup zd, <#imm{,
