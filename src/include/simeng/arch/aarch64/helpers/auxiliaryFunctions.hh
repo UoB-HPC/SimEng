@@ -144,8 +144,10 @@ class AuxFunc {
     IN half = static_cast<IN>(0.5);
     if (std::fabs(input - std::trunc(input)) == half) {
       OUT truncd = static_cast<OUT>(std::trunc(input));
-
-      return ((truncd % 2 == 0) ? truncd : (truncd + 1));
+      // if value is negative, then may need to -1 from truncd, else may need to
+      // +1.
+      OUT addand = (truncd > 0) ? 1 : -1;
+      return ((truncd % 2 == 0) ? truncd : (truncd + addand));
     }
     // Otherwise round to nearest
     return static_cast<OUT>(std::round(input));
