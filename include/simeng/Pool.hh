@@ -12,7 +12,7 @@ namespace simeng {
 /** A class that builds a memory pool with fixed `chunk_size`. It uses a free
  * list to keep track of free memory. The list is stored within the memory used
  * by the pool. */
-template <size_t chunk_size, size_t initial_size = 2>
+template <std::size_t chunk_size, std::size_t initial_size = 2>
 class fixedPool_ {
   static_assert(initial_size && (initial_size & (initial_size - 1)) == 0 &&
                 "initial_size is not a power of 2");
@@ -44,7 +44,7 @@ class fixedPool_ {
   /** Allocate more memory and add new chunks to the free list. */
   bool grow() noexcept {
     // The space in bytes needed to fit `n_allocated` aligned chunks.
-    size_t space = sizeof(chunk) * n_allocated;
+    std::size_t space = sizeof(chunk) * n_allocated;
 
     void* ptr = operator new(space, std::nothrow);
     if (!ptr) return ptr;
@@ -96,7 +96,7 @@ class Pool {
   /** Allocates `bytes` with alignment `alignof(std::max_align_t)`. If memory in
    * the pool is exhausted, a block of memory is allocated from the free
    * store. */
-  void* allocate(uint32_t bytes) {
+  void* allocate(std::uint32_t bytes) {
     switch (roundUp(bytes)) {
       case 32:
         return pool32.allocate();
@@ -115,7 +115,7 @@ class Pool {
 
   /** Returns the memory at `ptr` to the memory pool. If `ptr` is a nullptr, it
    * is a nop. */
-  void deallocate(void* ptr, uint32_t bytes) noexcept {
+  void deallocate(void* ptr, std::uint32_t bytes) noexcept {
     switch (roundUp(bytes)) {
       case 32:
         pool32.deallocate(ptr);
@@ -140,7 +140,7 @@ class Pool {
 
  private:
   /** Round up to the nearest power of 2 that is greater than or equal to v. */
-  uint32_t roundUp(uint32_t v) {
+  std::uint32_t roundUp(std::uint32_t v) {
     --v;
     v |= v >> 1;
     v |= v >> 2;
