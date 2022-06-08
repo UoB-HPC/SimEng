@@ -758,7 +758,7 @@ class sveHelp {
     for (int i = 0; i < partition_num; i++) {
       uint64_t shifted_active = 1ull << ((i % (64 / sizeof(N))) * sizeof(N));
       if (p[i / (64 / sizeof(N))] & shifted_active) {
-        out[i] = AuxFunc::doubleRoundToNearestTiesToEven<N, D>(n[i]);
+        out[i] = AuxFunc::roundToNearestTiesToEven<N, D>(n[i]);
       } else {
         out[i] = d[i];
       }

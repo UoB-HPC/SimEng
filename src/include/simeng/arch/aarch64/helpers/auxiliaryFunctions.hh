@@ -140,10 +140,11 @@ class AuxFunc {
   // Rounding function that rounds a double to nearest integer (64-bit). In
   // event of a tie (i.e. 7.5) it will be rounded to the nearest even number.
   template <typename IN, typename OUT>
-  static OUT doubleRoundToNearestTiesToEven(IN input) {
+  static OUT roundToNearestTiesToEven(IN input) {
     IN half = static_cast<IN>(0.5);
     if (std::fabs(input - std::trunc(input)) == half) {
       OUT truncd = static_cast<OUT>(std::trunc(input));
+
       return ((truncd % 2 == 0) ? truncd : (truncd + 1));
     }
     // Otherwise round to nearest
