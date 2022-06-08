@@ -91,9 +91,8 @@ void FetchUnit::tick() {
   for (size_t slot = 0; slot < output_.getWidth(); slot++) {
     auto& macroOp = outputSlots[slot];
 
-    BranchPrediction prediction = {false, 0};
-    auto bytesRead = isa_.predecode(buffer + bufferOffset, bufferedBytes_, pc_,
-                                    prediction, macroOp);
+    auto bytesRead =
+        isa_.predecode(buffer + bufferOffset, bufferedBytes_, pc_, macroOp);
 
     // If predecode fails, bail and wait for more data
     if (bytesRead == 0) {
@@ -110,6 +109,7 @@ void FetchUnit::tick() {
 
     // Create branch prediction after identifing instruction type
     // (e.g. RET, BL, etc).
+    BranchPrediction prediction = {false, 0};
     if (macroOp[0]->isBranch()) {
       prediction = branchPredictor_.predict(pc_, macroOp[0]->getBranchType(),
                                             macroOp[0]->getKnownTarget());

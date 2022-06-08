@@ -194,10 +194,10 @@ class Instruction {
 
   // Branches
   /** The predicted branching result. */
-  BranchPrediction prediction_;
+  BranchPrediction prediction_ = {false, 0};
 
   /** A branching address calculated by this instruction during execution. */
-  uint64_t branchAddress_;
+  uint64_t branchAddress_ = 0;
 
   /** Was the branch taken? */
   bool branchTaken_ = false;
