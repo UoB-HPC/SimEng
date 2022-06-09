@@ -792,7 +792,7 @@ class sveHelp {
   /** Helper function for SVE instructions with the format `inc<b, d, h, w>
    * xdn{, pattern{, MUL #imm}}`.
    * T represents the type of operation (e.g. for INCB, T = int8_t).
-   * Returns single value of type uint64_t. */
+   * Returns single value of type int64_t. */
   template <typename T>
   static int64_t sveInc_gprImm(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
