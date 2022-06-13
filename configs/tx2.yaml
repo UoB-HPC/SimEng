@@ -9,6 +9,7 @@ Core:
   # Timer-Frequency is in MHz.
   Timer-Frequency: 200
   Micro-Operations: True
+  Bypass-Latency: False
 Fetch:
   Fetch-Block-Size: 32
   Loop-Buffer-Size: 64

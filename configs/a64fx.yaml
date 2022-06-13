@@ -10,6 +10,7 @@ Core:
   Timer-Frequency: 100
   Micro-Operations: True
   Vector-Length: 512
+  Bypass-Latency: True
 Fetch:
   Fetch-Block-Size: 32
   Loop-Buffer-Size: 48

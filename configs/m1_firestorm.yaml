@@ -1,9 +1,12 @@
 # M1 Firestorm core
 Core:
   Simulation-Mode: outoforder
+  # Clock Frequency is in GHz.
   Clock-Frequency: 3.2
+  # Timer-Frequency is in MHz.
   Timer-Frequency: 100
   Micro-Operations: True
+  Bypass-Latency: False
 Fetch:
   Fetch-Block-Size: 64
   Loop-Buffer-Size: 48
