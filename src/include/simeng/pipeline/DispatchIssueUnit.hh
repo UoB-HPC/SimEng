@@ -57,7 +57,7 @@ class DispatchIssueUnit {
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
       std::vector<std::pair<uint8_t, uint64_t>> rsArrangment,
-      uint8_t dispatchRate = UINT8_MAX);
+      bool enableBypassLatency = false, uint8_t dispatchRate = UINT8_MAX);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -164,6 +164,9 @@ class DispatchIssueUnit {
 
   /** The number of ticks elapsed so far. */
   uint64_t ticks_ = 0;
+
+  /** Whether conditional result forwarding with latency is enabled. */
+  bool enableBypassLatency_ = false;
 };
 }  // namespace pipeline
 }  // namespace simeng

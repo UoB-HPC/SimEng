@@ -13,13 +13,14 @@ DispatchIssueUnit::DispatchIssueUnit(
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
     const std::vector<uint16_t>& physicalRegisterStructure,
     std::vector<std::pair<uint8_t, uint64_t>> rsArrangement,
-    uint8_t dispatchRate)
+    bool enableBypassLatency, uint8_t dispatchRate)
     : input_(fromRename),
       issuePorts_(issuePorts),
       registerFileSet_(registerFileSet),
       scoreboard_(physicalRegisterStructure.size()),
       dependencyMatrix_(physicalRegisterStructure.size()),
       portAllocator_(portAllocator),
+      enableBypassLatency_(enableBypassLatency),
       dispatchRate_(dispatchRate) {
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
@@ -239,8 +240,11 @@ void DispatchIssueUnit::forwardOperands(
     // Supply the value to all dependent uops
     const auto& dependents = dependencyMatrix_[reg.type][reg.tag];
     for (auto& entry : dependents) {
-      int8_t forwardLatency = insn->canForward(insn->getProducerGroup(),
-                                               entry.uop->getConsumerGroup());
+      int8_t forwardLatency =
+          (enableBypassLatency_)
+              ? insn->canForward(insn->getProducerGroup(),
+                                 entry.uop->getConsumerGroup())
+              : 0;
       if (forwardLatency == 0) {
         // If forwarding latency is 0 then can be issued immidiately
         entry.uop->supplyOperand(entry.operandIndex, values[i]);

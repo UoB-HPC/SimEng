@@ -85,6 +85,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       dispatchIssueUnit_(
           renameToDispatchBuffer_, issuePorts_, registerFileSet_, portAllocator,
           physicalRegisterQuantities_, rsArrangement,
+          config["Core"]["Bypass-Latency"].as<bool>(),
           config["Pipeline-Widths"]["Dispatch-Rate"].as<unsigned int>()),
       writebackUnit_(
           completionSlots_, registerFileSet_,
@@ -112,7 +113,6 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {
     dispatchIssueUnit_.getRSSizes(sizeVec);
   });
-
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
