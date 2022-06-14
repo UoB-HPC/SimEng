@@ -22,6 +22,22 @@ struct BranchPrediction {
   /** The branch instruction's target address. If `taken = false`, the value
    * will be ignored. */
   uint64_t target;
+
+  /** Check for equality of two branch predictions . */
+  bool operator==(const BranchPrediction& other) {
+    if ((taken == other.taken) && (target == other.target))
+      return true;
+    else
+      return false;
+  }
+
+  /** Check for inequality of two branch predictions . */
+  bool operator!=(const BranchPrediction& other) {
+    if ((taken != other.taken) || (target != other.target))
+      return true;
+    else
+      return false;
+  }
 };
 
 /** An abstract branch predictor interface. */

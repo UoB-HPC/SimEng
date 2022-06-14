@@ -125,6 +125,9 @@ class Instruction {
   /** Supply a branch prediction. */
   void setBranchPrediction(BranchPrediction prediction);
 
+  /** Get a branch prediction. */
+  BranchPrediction getBranchPrediction() const;
+
   /** Set this instruction's sequence ID. */
   void setSequenceId(uint64_t seqId);
 
