@@ -92,9 +92,6 @@ class Architecture {
   /** Retrieve the initial process state. */
   virtual ProcessStateChange getInitialState() const = 0;
 
-  /** Retrieve any updates to the process state. */
-  virtual ProcessStateChange getUpdateState() const = 0;
-
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;
 
@@ -114,7 +111,6 @@ class Architecture {
                                           const uint64_t iterations) const = 0;
 
   /** Relays an increment in a perforamnce event to the linux kernel. */
-  /** Relays the new count of the defined performance event to the kernel. */
   virtual void forwardPMUInc(uint16_t event, uint64_t value) const = 0;
 };
 
