@@ -25,6 +25,9 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
+  // Create fake system register for ::getVCTreg
+  systemRegisterMap_[0] = systemRegisterMap_.size();
+
   // Instantiate an executionInfo entry for each group in the InstructionGroup
   // namespace.
   for (int i = 0; i < NUM_GROUPS; i++) {
@@ -216,19 +219,17 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
     const {
   uint16_t numSysRegs = static_cast<uint16_t>(systemRegisterMap_.size());
   return {
-      {8, 32},  // General purpose
-      {8, 32},  // Floating Point
-
-      // TODO remove. Needed to allow OoO core to work. Otherwise
-      // RegisterAliasTable.cc:15 triggers
-      {32, 17},         // Predicate
-      {1, 1},           // NZCV
+      {8, 32},          // General purpose
+      {8, 32},          // Floating Point
       {8, numSysRegs},  // System
   };
 }
 
 uint16_t Architecture::getSystemRegisterTag(uint16_t reg) const {
-  assert(systemRegisterMap_.count(reg) && "unhandled system register");
+  // Check below is done for speculative instructions that may be passed into
+  // the function but will not be executed. If such invalid speculative
+  // instructions get through they can cause an out-of-range error.
+  if (!systemRegisterMap_.count(reg)) return 0;
   return systemRegisterMap_.at(reg);
 }
 
@@ -265,7 +266,7 @@ ProcessStateChange Architecture::getUpdateState() const {
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 simeng::Register Architecture::getVCTreg() const {
-  return {RegisterType::GENERAL, 0};
+  return {RegisterType::SYSTEM, getSystemRegisterTag(0)};
 }
 
 }  // namespace riscv
