@@ -33,6 +33,29 @@ void FetchUnit::tick() {
     return;
   }
 
+  // If loop buffer has been filled, fill buffer to decode
+  if (loopBufferState_ == LoopBufferState::SUPPLYING) {
+    auto outputSlots = output_.getTailSlots();
+    for (size_t slot = 0; slot < output_.getWidth(); slot++) {
+      auto& macroOp = outputSlots[slot];
+      auto bytesRead = isa_.predecode(&(loopBuffer_.front().encoding),
+                                      loopBuffer_.front().instructionSize,
+                                      loopBuffer_.front().address, macroOp);
+
+      assert(bytesRead == 0 && "predecode failure for loop buffer entry");
+
+      // Set prediction to recorded value during loop buffer filling
+      if (macroOp[0]->isBranch()) {
+        macroOp[0]->setBranchPrediction(loopBuffer_.front().prediction);
+      }
+
+      // Cycle queue by moving front entry to back
+      loopBuffer_.push_back(loopBuffer_.front());
+      loopBuffer_.pop_front();
+    }
+    return;
+  }
+
   // Pointer to the instruction data to decode from
   const uint8_t* buffer;
   uint8_t bufferOffset;
@@ -101,12 +124,6 @@ void FetchUnit::tick() {
       break;
     }
 
-    assert(bytesRead <= bufferedBytes_ &&
-           "Predecode consumed more bytes than were available");
-    // Increment the offset, decrement available bytes
-    bufferOffset += bytesRead;
-    bufferedBytes_ -= bytesRead;
-
     // Create branch prediction after identifing instruction type
     // (e.g. RET, BL, etc).
     BranchPrediction prediction = {false, 0};
@@ -115,6 +132,33 @@ void FetchUnit::tick() {
                                             macroOp[0]->getKnownTarget());
       macroOp[0]->setBranchPrediction(prediction);
     }
+
+    if (loopBufferState_ == LoopBufferState::FILLING) {
+      // Record instruction fetch information in loop body
+      uint32_t encoding;
+      memcpy(&encoding, buffer + bufferOffset, sizeof(uint32_t));
+      loopBuffer_.push_back(
+          {encoding, bytesRead, pc_, macroOp[0]->getBranchPrediction()});
+
+      if (pc_ == loopBoundaryAddress_) {
+        // loopBoundaryAddress_ has been fetched whilst filling the loop buffer.
+        // Stop filling as loop body has been recorded and begin to supply
+        // decode unit with instructions from the loop buffer
+        loopBufferState_ = LoopBufferState::SUPPLYING;
+        bufferedBytes_ = 0;
+        break;
+      }
+    } else if (loopBufferState_ == LoopBufferState::WAITING &&
+               pc_ == loopBoundaryAddress_) {
+      // Once set loopBoundaryAddress_ is fetched, start to fill loop buffer
+      loopBufferState_ = LoopBufferState::FILLING;
+    }
+
+    assert(bytesRead <= bufferedBytes_ &&
+           "Predecode consumed more bytes than were available");
+    // Increment the offset, decrement available bytes
+    bufferOffset += bytesRead;
+    bufferedBytes_ -= bytesRead;
 
     if (!prediction.taken) {
       // Predicted as not taken; increment PC to next instruction
@@ -152,6 +196,14 @@ void FetchUnit::tick() {
   instructionMemory_.clearCompletedReads();
 }
 
+void FetchUnit::registerLoopBoundary(uint64_t branchAddress) {
+  // Set branch which forms the loop as the loopBoundaryAddress_ and place loop
+  // buffer in state to begin filling once the loopBoundaryAddress_ has been
+  // fetched
+  loopBufferState_ = LoopBufferState::WAITING;
+  loopBoundaryAddress_ = branchAddress;
+}
+
 bool FetchUnit::hasHalted() const { return hasHalted_; }
 
 void FetchUnit::updatePC(uint64_t address) {
@@ -182,6 +234,12 @@ void FetchUnit::requestFromPC() {
 }
 
 uint64_t FetchUnit::getBranchStalls() const { return branchStalls_; }
+
+void FetchUnit::flush() {
+  loopBuffer_.clear();
+  loopBufferState_ = LoopBufferState::IDLE;
+  loopBoundaryAddress_ = 0;
+}
 
 }  // namespace pipeline
 }  // namespace simeng

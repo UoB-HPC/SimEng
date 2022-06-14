@@ -65,14 +65,18 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint8_t>(),
           config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint8_t>(),
           config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint8_t>()),
+      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
+                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint8_t>(),
+                 isa, branchPredictor),
       reorderBuffer_(
           config["Queue-Sizes"]["ROB"].as<unsigned int>(), registerAliasTable_,
           loadStoreQueue_,
           [this](auto instruction) { raiseException(instruction); },
-          branchPredictor),
-      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, config["Core"]["Fetch-Block-Size"].as<uint16_t>(),
-                 isa, branchPredictor),
+          [this](auto branchAddress) {
+            fetchUnit_.registerLoopBoundary(branchAddress);
+          },
+          branchPredictor, config["Fetch"]["Loop-Buffer-Size"].as<uint16_t>(),
+          config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>()),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
@@ -202,6 +206,7 @@ void Core::flushIfNeeded() {
       targetAddress = reorderBuffer_.getFlushAddress();
     }
 
+    fetchUnit_.flush();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
@@ -227,6 +232,7 @@ void Core::flushIfNeeded() {
     // Update PC and wipe Fetch/Decode buffer.
     targetAddress = decodeUnit_.getFlushAddress();
 
+    fetchUnit_.flush();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
@@ -318,6 +324,7 @@ void Core::processExceptionHandler() {
     hasHalted_ = true;
     std::cout << "Halting due to fatal exception" << std::endl;
   } else {
+    fetchUnit_.flush();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
   }

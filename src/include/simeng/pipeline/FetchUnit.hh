@@ -1,11 +1,35 @@
 #pragma once
 
+#include <queue>
+
 #include "simeng/MemoryInterface.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
 namespace simeng {
 namespace pipeline {
+
+enum class LoopBufferState {
+  IDLE = 0,  // No operations
+  WAITING,   // Waiting to find boundary instruction in fetch stream
+  FILLING,   // Filling loop buffer with loop body
+  SUPPLYING  // Feeding loop buffer content to output buffer
+};
+
+// Struct to hold information about a fetched instruction
+struct loopBufferEntry {
+  // Encoding of the instruction
+  const uint64_t encoding;
+
+  // Size of the instruction
+  const uint16_t instructionSize;
+
+  // PC of the instruction
+  const uint64_t address;
+
+  // Branch prediction made for instruction
+  const BranchPrediction prediction;
+};
 
 /** A fetch and pre-decode unit for a pipelined processor. Responsible for
  * reading instruction memory and maintaining the program counter. */
@@ -23,6 +47,9 @@ class FetchUnit {
    * current program counter. */
   void tick();
 
+  /** Function handle to retrieve branch that represents loop boundary. */
+  void registerLoopBoundary(uint64_t branchAddress);
+
   /** Check whether the program has ended. Returns `true` if the current PC is
    * outside of instruction memory. */
   bool hasHalted() const;
@@ -36,6 +63,9 @@ class FetchUnit {
   /** Retrieve the number of cycles fetch terminated early due to a predicted
    * branch. */
   uint64_t getBranchStalls() const;
+
+  /** Clear the loop buffer. */
+  void flush();
 
  private:
   /** An output buffer connecting this unit to the decode unit. */
@@ -56,6 +86,15 @@ class FetchUnit {
   /** Reference to the current branch predictor. */
   BranchPredictor& branchPredictor_;
 
+  /** A loop buffer to supply a detected loop instruction stream. */
+  std::deque<loopBufferEntry> loopBuffer_;
+
+  /** State of the loop buffer. */
+  LoopBufferState loopBufferState_ = LoopBufferState::IDLE;
+
+  /** The branch instruction that forms the loop. */
+  uint64_t loopBoundaryAddress_ = 0;
+
   /** The current program halt state. Set to `true` when the PC leaves the
    * instruction memory region, and set back to `false` if the PC is returned to
    * the instruction region. */
@@ -66,6 +105,7 @@ class FetchUnit {
 
   /** The size of a fetch block, in bytes. */
   uint8_t blockSize_;
+
   /** A mask of the bits of the program counter to use for obtaining the block
    * address to fetch. */
   uint64_t blockMask_;

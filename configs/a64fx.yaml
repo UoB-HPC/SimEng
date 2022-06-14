@@ -8,9 +8,12 @@ Core:
   Clock-Frequency: 1.8
   # Timer-Frequency is in MHz.
   Timer-Frequency: 100
-  Fetch-Block-Size: 32
   Micro-Operations: True
   Vector-Length: 512
+Fetch:
+  Fetch-Block-Size: 32
+  Loop-Buffer-Size: 48
+  Loop-Detection-Threshold: 4
 Process-Image:
   Heap-Size: 1073741824
   Stack-Size: 1048576
