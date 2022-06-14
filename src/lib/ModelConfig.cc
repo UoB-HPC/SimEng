@@ -91,8 +91,8 @@ void ModelConfig::validate() {
   // Branch-Predictor
   root = "Branch-Predictor";
   subFields = {"BTB-bitlength"};
-  nodeChecker<uint8_t>(configFile_[root][subFields[0]], subFields[0],
-                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
+  nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
   subFields.clear();
 
   // L1-Cache
@@ -110,20 +110,20 @@ void ModelConfig::validate() {
   nodeChecker<bool>(configFile_[root][subFields[1]], subFields[1],
                     std::vector<bool>{true, false}, ExpectedValue::Bool, false);
   nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
-                        UINT8_MAX);
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
   nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
-                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
-                        UINT8_MAX);
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
   nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
-                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
-                        UINT8_MAX);
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
   nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
-                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
-                        UINT8_MAX);
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
   nodeChecker<uint16_t>(configFile_[root][subFields[6]], subFields[6],
-                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
-                        UINT8_MAX);
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
   subFields.clear();
 
   // Ports
