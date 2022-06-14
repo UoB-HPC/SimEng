@@ -139,16 +139,18 @@ class AuxFunc {
 
   // Rounding function that rounds a double to nearest integer (64-bit). In
   // event of a tie (i.e. 7.5) it will be rounded to the nearest even number.
-  static int64_t doubleRoundToNearestTiesToEven(double input) {
-    if (std::fabs(input - std::trunc(input)) == 0.5) {
-      if (static_cast<int64_t>(input - 0.5) % 2 == 0) {
-        return static_cast<int64_t>(input - 0.5);
-      } else {
-        return static_cast<int64_t>(input + 0.5);
-      }
+  template <typename IN, typename OUT>
+  static OUT roundToNearestTiesToEven(IN input) {
+    IN half = static_cast<IN>(0.5);
+    if (std::fabs(input - std::trunc(input)) == half) {
+      OUT truncd = static_cast<OUT>(std::trunc(input));
+      // if value is negative, then may need to -1 from truncd, else may need to
+      // +1.
+      OUT addand = (truncd > 0) ? 1 : -1;
+      return ((truncd % 2 == 0) ? truncd : (truncd + addand));
     }
     // Otherwise round to nearest
-    return static_cast<int64_t>(std::round(input));
+    return static_cast<OUT>(std::round(input));
   }
 
   /** Extend `value` according to `extendType`, and left-shift the result by
@@ -268,6 +270,10 @@ class AuxFunc {
 
     // Get pattern string
     std::string pattern(operandStr.substr(operandStr.find(",") + 2));
+    if (pattern.find(',') != std::string::npos) {
+      pattern.erase(pattern.find(","));
+    }
+
     if (pattern == "pow2") {
       int n = 1;
       while (elements >= std::pow(2, n)) {
@@ -304,6 +310,8 @@ class AuxFunc {
       return elements - (elements % 4);
     else if (pattern == "mul3")
       return elements - (elements % 3);
+    else if (pattern == "all")
+      return elements;
 
     return 0;
   }
