@@ -42,7 +42,7 @@ void FetchUnit::tick() {
                                       loopBuffer_.front().instructionSize,
                                       loopBuffer_.front().address, macroOp);
 
-      assert(bytesRead == 0 && "predecode failure for loop buffer entry");
+      assert(bytesRead != 0 && "predecode failure for loop buffer entry");
 
       // Set prediction to recorded value during loop buffer filling
       if (macroOp[0]->isBranch()) {
