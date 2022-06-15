@@ -586,6 +586,28 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
+      case 278: {  // getrandom
+        // Write <count> random bytes to buf
+        char* buf = registerFileSet.get(R0).get<char*>();
+        size_t count = registerFileSet.get(R0).get<size_t>();
+
+        for (size_t i = 0; i < count; i++) {
+          // TODO: actually get random bytes, for now this just fills every byte
+          // with 1s
+          buf[i] = 255;
+        }
+
+        break;
+      }
+      case 293: {  // shutdown
+        // TODO: Functionality omitted - returning errno 38 (function not
+        // implemented) is to mimic the behaviour on isambard and avoid an
+        // unrecognised syscall error
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-38)}};
+        break;
+      }
+
       default:
         printException(instruction_);
         std::cout << "Unrecognised syscall: " << syscallId << std::endl;
