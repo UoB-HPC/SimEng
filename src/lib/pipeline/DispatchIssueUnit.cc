@@ -60,33 +60,34 @@ void DispatchIssueUnit::tick() {
   std::fill(dispatches.begin(), dispatches.end(), 0);
 
   // Check if waiting instructions are ready.
-  size_t index = 0;
-  auto begin = waitingInstructions_.begin();
-  while (index < waitingInstructions_.size()) {
-    // Check if item at index has waited long enough
-    if (std::get<0>(waitingInstructions_[index]) == ticks_) {
-      auto& entry = std::get<0>(std::get<1>(waitingInstructions_[index]));
-      auto value = std::get<1>(std::get<1>(waitingInstructions_[index]));
+  auto itWait = waitingInstructions_.find(ticks_);
+  if (itWait != waitingInstructions_.end()) {
+    auto vec = itWait->second;
+    auto itInner = vec.begin();
+    // Loop through each vector entry
+    while (itInner != vec.end()) {
+      auto& entry = itInner->first;
+      auto value = itInner->second;
 
       entry.uop->supplyOperand(entry.operandIndex, value);
       if (entry.uop->canExecute()) {
         // Add the now-ready instruction to the relevant ready queue
         auto rsInfo = portMapping_[entry.port];
+
         reservationStations_[rsInfo.first].ports[rsInfo.second].ready.push_back(
             std::move(entry.uop));
       }
-
-      // Remove entry from vector
-      waitingInstructions_.erase(begin + index);
-    } else
-      index++;
+      // Increment iterator to next vector element.
+      itInner++;
+    }
+    // Once all entrys have been dispatched, remove map entry
+    waitingInstructions_.erase(itWait);
   }
 
   // Check if uop is ready.
-  index = 0;
-  auto start = dependantInstructions_.begin();
-  while (index < dependantInstructions_.size()) {
-    auto& entry = dependantInstructions_[index];
+  auto itDep = dependantInstructions_.begin();
+  while (itDep != dependantInstructions_.end()) {
+    auto& entry = *itDep;
     auto& sourceRegisters = entry.uop->getOperandRegisters();
     const auto& reg = sourceRegisters[entry.operandIndex];
 
@@ -106,11 +107,11 @@ void DispatchIssueUnit::tick() {
     }
 
     // Remove completed instructions from dependantInstructions_ or increase
-    // index
+    // iterator
     if (supplied)
-      dependantInstructions_.erase(start + index);
+      itDep = dependantInstructions_.erase(itDep);
     else
-      index++;
+      itDep++;
   }
 
   // Dispatch from Input Buffer
@@ -240,13 +241,14 @@ void DispatchIssueUnit::forwardOperands(
     // Supply the value to all dependent uops
     const auto& dependents = dependencyMatrix_[reg.type][reg.tag];
     for (auto& entry : dependents) {
+      // If bypass latency is disabled, forwardLatency always = 0.
       int8_t forwardLatency =
           (enableBypassLatency_)
               ? insn->canForward(insn->getProducerGroup(),
                                  entry.uop->getConsumerGroup())
               : 0;
       if (forwardLatency == 0) {
-        // If forwarding latency is 0 then can be issued immidiately
+        // If forwarding latency is 0 then can be issued immediately
         entry.uop->supplyOperand(entry.operandIndex, values[i]);
         if (entry.uop->canExecute()) {
           // Add the now-ready instruction to the relevant ready queue
@@ -259,11 +261,22 @@ void DispatchIssueUnit::forwardOperands(
         // Latecy of -1 means no forwarding is permitted.
         dependantInstructions_.push_back(entry);
       } else {
-        waitingInstructions_.push_back(
-            {ticks_ + forwardLatency, {entry, values[i]}});
+        // Add instruction to waiting list for y ticks
+        uint64_t releaseOnTick = ticks_ + forwardLatency;
+        // See if other instructions are released on the same ticks_ count
+        if (waitingInstructions_.find(releaseOnTick) !=
+            waitingInstructions_.end()) {
+          // If yes, add this instruction and value pair to the vector
+          waitingInstructions_.find(releaseOnTick)
+              ->second.push_back(std::make_pair(entry, values[i]));
+        } else {
+          // If not, create new map entry
+          std::vector<std::pair<dependencyEntry, RegisterValue>> vec;
+          vec.push_back(std::make_pair(entry, values[i]));
+          waitingInstructions_.insert(std::make_pair(releaseOnTick, vec));
+        }
       }
     }
-
     // Clear the dependency list
     dependencyMatrix_[reg.type][reg.tag].clear();
   }

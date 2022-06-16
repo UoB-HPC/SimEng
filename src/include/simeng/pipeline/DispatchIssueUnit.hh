@@ -132,9 +132,10 @@ class DispatchIssueUnit {
   /** Contains instructions that have had results forwarded to them, but need to
    * wait for x-cycles to mimic the in hardware latency of said result
    * forwarding.
-   * Outer Pair = {ticks_ value when latency has elapsed, Inner Pair}.
-   * Inner Pair = {instruction entry, value it has been forwarded}. */
-  std::vector<std::pair<uint64_t, std::pair<dependencyEntry, RegisterValue>>>
+   * Key = Tick count to release instruction on.
+   * Value = Vector of pairs<Instruction entry, value forwarded to it>. */
+  std::unordered_map<uint64_t,
+                     std::vector<std::pair<dependencyEntry, RegisterValue>>>
       waitingInstructions_;
 
   /** A map to collect flushed instructions for each reservation station. */
