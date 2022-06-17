@@ -57,8 +57,16 @@ class Architecture : public arch::Architecture {
   /** Returns the system register for the Virtual Counter Timer. */
   simeng::Register getVCTreg() const override;
 
+
   /** Returns the system register for the Processor Cycle Counter. */
   simeng::Register getPCCreg() const override;
+
+  std::vector<RegisterFileStructure> getConfigPhysicalRegisterStructure(
+      YAML::Node config) const override;
+
+  std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
+      YAML::Node config) const override;
+
 
   /** Retrieve an ExecutionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
@@ -69,7 +77,8 @@ class Architecture : public arch::Architecture {
  private:
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
-   * reduce the overhead of future decoding. */
+   * reduce the over
+    of future decoding. */
   static std::unordered_map<uint32_t, Instruction> decodeCache;
   /** A decoding metadata cache, mapping an instruction word to a previously
    * decoded instruction metadata bundle. Metadata is added to the cache as it's

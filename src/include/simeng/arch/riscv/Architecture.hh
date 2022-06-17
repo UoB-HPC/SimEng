@@ -14,6 +14,8 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
+typedef enum riscv_sysreg { RISCV_SYSREG_FAKE = 0xD807 };
+
 /* A basic RISCV implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
@@ -51,6 +53,12 @@ class Architecture : public arch::Architecture {
 
   /** Returns the system register for the Virtual Counter Timer. */
   simeng::Register getVCTreg() const override;
+
+  std::vector<RegisterFileStructure> getConfigPhysicalRegisterStructure(
+      YAML::Node config) const override;
+
+  std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
+      YAML::Node config) const override;
 
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a

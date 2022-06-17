@@ -26,7 +26,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Create fake system register for ::getVCTreg
-  systemRegisterMap_[0] = systemRegisterMap_.size();
+  systemRegisterMap_[RISCV_SYSREG_FAKE] = systemRegisterMap_.size();
 
   // Instantiate an executionInfo entry for each group in the InstructionGroup
   // namespace.
@@ -266,7 +266,20 @@ ProcessStateChange Architecture::getUpdateState() const {
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 simeng::Register Architecture::getVCTreg() const {
-  return {RegisterType::SYSTEM, getSystemRegisterTag(0)};
+  return {RegisterType::SYSTEM, getSystemRegisterTag(RISCV_SYSREG_FAKE)};
+}
+
+std::vector<RegisterFileStructure>
+Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
+  return {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
+          {8, config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>()},
+          {8, 1}};
+}
+
+std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
+    YAML::Node config) const {
+  return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
+          config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>(), 1};
 }
 
 }  // namespace riscv

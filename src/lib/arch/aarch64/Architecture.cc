@@ -1,3 +1,5 @@
+#include "simeng/arch/aarch64/Architecture.hh"
+
 #include <algorithm>
 #include <cassert>
 
@@ -276,6 +278,24 @@ simeng::Register Architecture::getPCCreg() const {
   return {
       RegisterType::SYSTEM,
       static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0))};
+}
+
+std::vector<RegisterFileStructure>
+Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
+  return {
+      {8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
+      {256, config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>()},
+      {32, config["Register-Set"]["Predicate-Count"].as<uint16_t>()},
+      {1, config["Register-Set"]["Conditional-Count"].as<uint16_t>()},
+      {8, 6}};
+}
+
+std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
+    YAML::Node config) const {
+  return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
+          config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>(),
+          config["Register-Set"]["Predicate-Count"].as<uint16_t>(),
+          config["Register-Set"]["Conditional-Count"].as<uint16_t>(), 6};
 }
 
 }  // namespace aarch64

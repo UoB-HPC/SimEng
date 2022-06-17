@@ -19,7 +19,7 @@ const uint8_t GENERAL = 0;
 /** The 64-bit bit floating point register set. */
 const uint8_t FLOAT = 1;
 /** The system registers. */
-const uint8_t SYSTEM = 3;
+const uint8_t SYSTEM = 2;
 }  // namespace RegisterType
 
 /** The IDs of the instruction groups for RISCV instructions. */
