@@ -1,9 +1,8 @@
 #pragma once
 
-#include "simeng/arch/Architecture.hh"
-
 #include <functional>
 
+#include "simeng/arch/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
 #include "simeng/kernel/Linux.hh"
 
@@ -11,7 +10,7 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-/** An RISCV exception handler. */
+/** A RISCV exception handler. */
 class ExceptionHandler : public simeng::arch::ExceptionHandler {
  public:
   /** Create an exception handler with references to the instruction that caused
