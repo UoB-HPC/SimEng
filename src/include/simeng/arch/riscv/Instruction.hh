@@ -174,7 +174,7 @@ class Instruction : public simeng::Instruction {
   bool isBL() const override;
 
   /** Is this an atomic instruction? */
-  bool isAtomic();
+  bool isAtomic() const;
 
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
@@ -258,7 +258,6 @@ class Instruction : public simeng::Instruction {
   /** Generate an ExecutionNotYetImplemented exception. */
   void executionNYI();
 
-  // TODO not all needed for RISCV
   // Metadata
   /** Is this a store operation? */
   bool isStore_ = false;
@@ -267,7 +266,7 @@ class Instruction : public simeng::Instruction {
   /** Is this a branch operation? */
   bool isBranch_ = false;
   /** Is this an ASIMD operation? */
-  bool isASIMD_ = false;
+  //  bool isASIMD_ = false;
   /** Is this a multilpy operation? */
   bool isMultiply_ = false;
   /** Is this a divide operation? */
@@ -278,8 +277,6 @@ class Instruction : public simeng::Instruction {
   bool isRET_ = false;
   /** Is this a branch and link instruction? */
   bool isBL_ = false;
-  /** Is this a SVE instruction? */
-  bool isSVE_ = false;
   /** Is this an atomic instruction? */
   bool isAtomic_ = false;
   /** Is this a logical instruction? */
