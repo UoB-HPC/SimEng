@@ -287,22 +287,39 @@ void ModelConfig::validate() {
     }
   }
 
-  // Register-Set
-  root = "Register-Set";
-  subFields = {"GeneralPurpose-Count", "FloatingPoint/SVE-Count",
-               "Predicate-Count", "Conditional-Count"};
-  nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(32, UINT16_MAX),
-                        ExpectedValue::UInteger);
-  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
-                        std::make_pair(32, UINT16_MAX),
-                        ExpectedValue::UInteger);
-  nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(17, UINT16_MAX), ExpectedValue::UInteger,
-                        17);
-  nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
-  subFields.clear();
+  // Ensure the ISA Type is defined and valid
+  if (!invalid_.str().length() && !missing_.str().length()) {
+    if (configFile_["ISA"]["Type"].as<std::string>() == "RISCV") {
+      // Register-Set
+      root = "Register-Set";
+      subFields = {"GeneralPurpose-Count", "FloatingPoint"};
+      nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
+                            std::make_pair(32, UINT16_MAX),
+                            ExpectedValue::UInteger);
+      nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
+                            std::make_pair(32, UINT16_MAX),
+                            ExpectedValue::UInteger);
+      subFields.clear();
+    } else if (configFile_["ISA"]["Type"].as<std::string>() == "AArch64") {
+      // Register-Set
+      root = "Register-Set";
+      subFields = {"GeneralPurpose-Count", "FloatingPoint/SVE-Count",
+                   "Predicate-Count", "Conditional-Count"};
+      nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
+                            std::make_pair(32, UINT16_MAX),
+                            ExpectedValue::UInteger);
+      nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
+                            std::make_pair(32, UINT16_MAX),
+                            ExpectedValue::UInteger);
+      nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
+                            std::make_pair(17, UINT16_MAX),
+                            ExpectedValue::UInteger, 17);
+      nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
+                            std::make_pair(1, UINT16_MAX),
+                            ExpectedValue::UInteger);
+      subFields.clear();
+    }
+  }
 
   // Queue-Sizes
   root = "Queue-Sizes";

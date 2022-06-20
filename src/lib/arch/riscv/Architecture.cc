@@ -272,14 +272,14 @@ simeng::Register Architecture::getVCTreg() const {
 std::vector<RegisterFileStructure>
 Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
   return {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
-          {8, config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>()},
+          {8, config["Register-Set"]["FloatingPoint"].as<uint16_t>()},
           {8, 1}};
 }
 
 std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
     YAML::Node config) const {
   return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
-          config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>(), 1};
+          config["Register-Set"]["FloatingPoint"].as<uint16_t>(), 1};
 }
 
 }  // namespace riscv

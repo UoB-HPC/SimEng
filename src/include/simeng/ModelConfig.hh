@@ -101,7 +101,7 @@ class ModelConfig {
                   const std::pair<T, T>& bounds, uint8_t expected,
                   const T& default_value);
 
-  /** Given a set of values (value_set), ensure the supplied node is on of
+  /** Given a set of values (value_set), ensure the supplied node is one of
    * these options. */
   template <typename T>
   int setChecker(YAML::Node node, const std::string& field,
