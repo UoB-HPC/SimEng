@@ -235,7 +235,7 @@ void FetchUnit::requestFromPC() {
 
 uint64_t FetchUnit::getBranchStalls() const { return branchStalls_; }
 
-void FetchUnit::flush() {
+void FetchUnit::flushLoopBuffer() {
   loopBuffer_.clear();
   loopBufferState_ = LoopBufferState::IDLE;
   loopBoundaryAddress_ = 0;

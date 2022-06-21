@@ -65,7 +65,7 @@ class FetchUnit {
   uint64_t getBranchStalls() const;
 
   /** Clear the loop buffer. */
-  void flush();
+  void flushLoopBuffer();
 
  private:
   /** An output buffer connecting this unit to the decode unit. */

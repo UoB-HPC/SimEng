@@ -92,7 +92,7 @@ void Core::tick() {
     // Update PC and wipe younger buffers (Fetch/Decode, Decode/Execute)
     auto targetAddress = executeUnit_.getFlushAddress();
 
-    fetchUnit_.flush();
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     decodeToExecuteBuffer_.fill(nullptr);
@@ -104,7 +104,7 @@ void Core::tick() {
     // Update PC and wipe Fetch/Decode buffer.
     auto targetAddress = decodeUnit_.getFlushAddress();
 
-    fetchUnit_.flush();
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
 
@@ -205,7 +205,7 @@ void Core::processExceptionHandler() {
     hasHalted_ = true;
     std::cout << "Halting due to fatal exception" << std::endl;
   } else {
-    fetchUnit_.flush();
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
   }

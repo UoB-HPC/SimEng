@@ -60,13 +60,13 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
           config["L1-Cache"]["Exclusive"].as<bool>(),
-          config["L1-Cache"]["Load-Bandwidth"].as<uint8_t>(),
-          config["L1-Cache"]["Store-Bandwidth"].as<uint8_t>(),
-          config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint8_t>(),
-          config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint8_t>(),
-          config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint8_t>()),
+          config["L1-Cache"]["Load-Bandwidth"].as<uint16_t>(),
+          config["L1-Cache"]["Store-Bandwidth"].as<uint16_t>(),
+          config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint16_t>(),
+          config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint16_t>(),
+          config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint16_t>()),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint8_t>(),
+                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
                  isa, branchPredictor),
       reorderBuffer_(
           config["Queue-Sizes"]["ROB"].as<unsigned int>(), registerAliasTable_,
@@ -206,7 +206,7 @@ void Core::flushIfNeeded() {
       targetAddress = reorderBuffer_.getFlushAddress();
     }
 
-    fetchUnit_.flush();
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
@@ -232,7 +232,7 @@ void Core::flushIfNeeded() {
     // Update PC and wipe Fetch/Decode buffer.
     targetAddress = decodeUnit_.getFlushAddress();
 
-    fetchUnit_.flush();
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
@@ -324,7 +324,7 @@ void Core::processExceptionHandler() {
     hasHalted_ = true;
     std::cout << "Halting due to fatal exception" << std::endl;
   } else {
-    fetchUnit_.flush();
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
   }
