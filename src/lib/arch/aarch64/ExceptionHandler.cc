@@ -587,15 +587,19 @@ bool ExceptionHandler::init() {
         break;
       }
       case 278: {  // getrandom
-        // Write <count> random bytes to buf
-        char* buf = registerFileSet.get(R0).get<char*>();
-        size_t count = registerFileSet.get(R0).get<size_t>();
+        // Write <buflen> random bytes to buf
+        uint64_t bufPtr = registerFileSet.get(R0).get<uint64_t>();
+        size_t buflen = registerFileSet.get(R1).get<size_t>();
 
-        for (size_t i = 0; i < count; i++) {
-          // TODO: actually get random bytes, for now this just fills every byte
-          // with 1s
-          buf[i] = 255;
+        char buf[buflen];
+        for (size_t i = 0; i < buflen; i++) {
+          buf[i] = (uint8_t)rand();
         }
+
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {(uint64_t)buflen}};
+
+        stateChange.memoryAddresses.push_back({bufPtr, (uint8_t)buflen});
+        stateChange.memoryAddressValues.push_back(RegisterValue(buf, buflen));
 
         break;
       }
