@@ -6,12 +6,11 @@
 #include <string>
 
 #include "simeng/AlwaysNotTakenPredictor.hh"
-#include "simeng/BTBPredictor.hh"
-#include "simeng/BTB_BWTPredictor.hh"
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
+#include "simeng/GenericPredictor.hh"
 #include "simeng/ModelConfig.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
@@ -221,8 +220,7 @@ int main(int argc, char** argv) {
   std::unique_ptr<simeng::arch::Architecture> arch =
       std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
 
-  auto predictor = simeng::BTBPredictor(
-      config["Branch-Predictor"]["BTB-bitlength"].as<uint16_t>());
+  auto predictor = simeng::GenericPredictor(config);
   auto config_ports = config["Ports"];
   std::vector<std::vector<uint16_t>> portArrangement(config_ports.size());
   // Extract number of ports

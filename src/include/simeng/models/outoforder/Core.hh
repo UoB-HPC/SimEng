@@ -117,11 +117,11 @@ class Core : public simeng::Core {
   /** The core's load/store queue. */
   pipeline::LoadStoreQueue loadStoreQueue_;
 
-  /** The core's reorder buffer. */
-  pipeline::ReorderBuffer reorderBuffer_;
-
   /** The fetch unit; fetches instructions from memory. */
   pipeline::FetchUnit fetchUnit_;
+
+  /** The core's reorder buffer. */
+  pipeline::ReorderBuffer reorderBuffer_;
 
   /** The decode unit; decodes instructions into uops and reads operands. */
   pipeline::DecodeUnit decodeUnit_;

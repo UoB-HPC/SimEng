@@ -131,7 +131,6 @@ Architecture::~Architecture() {
 
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
-                                BranchPrediction prediction,
                                 MacroOp& output) const {
   // Check that instruction address is 4-byte aligned as required by Armv8
   if (instructionAddress & 0x3) {
@@ -143,7 +142,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     uop = std::make_shared<Instruction>(*this, metadataCache.front(),
                                         InstructionException::MisalignedPC);
     uop->setInstructionAddress(instructionAddress);
-    uop->setBranchPrediction(prediction);
     // Return non-zero value to avoid fatal error
     return 1;
   }
@@ -193,7 +191,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   // Set instruction address and branch prediction for each micro-op generated
   for (int i = 0; i < num_ops; i++) {
     output[i]->setInstructionAddress(instructionAddress);
-    output[i]->setBranchPrediction(prediction);
   }
 
   return 4;
