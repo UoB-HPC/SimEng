@@ -122,6 +122,7 @@ option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
 option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizatoins" OFF)
+option(SIMENG_ENABLE_SST "Compile SimEng SST Wrapper" OFF)
 
 if (SIMENG_OPTIMIZE)
   # Turn on link time optimization for all targets.
@@ -214,3 +215,7 @@ endif()
 # include sources
 add_subdirectory(src)
 add_subdirectory(docs)
+
+if (SIMENG_ENABLE_SST)
+  add_subdirectory(sst)
+endif()

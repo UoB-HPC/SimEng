@@ -1,3 +1,4 @@
+#ifdef SIMENG_ENABLE_SST
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 
@@ -86,3 +87,4 @@ namespace SST {
         };
     }
 }
+#endif

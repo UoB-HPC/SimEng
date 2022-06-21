@@ -1,5 +1,6 @@
-#include <sst/core/sst_config.h>
+#ifdef SIMENG_ENABLE_SST
 
+#include <sst/core/sst_config.h>
 #include "SimengCoreWrapper.hh"
 
 using namespace SST::SSTSimeng;
@@ -189,3 +190,5 @@ void SimengCoreWrapper::fabricateSimengCore() {
     std::cout << "Starting..." << std::endl;
     start_time = std::chrono::high_resolution_clock::now();
 }
+
+#endif
