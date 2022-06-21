@@ -18,9 +18,9 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
-#include "simeng/BTBPredictor.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
+#include "simeng/GenericPredictor.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/models/emulation/Core.hh"
@@ -93,7 +93,7 @@ void RegressionTest::run(const char* source, const char* triple) {
   const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {{0, 60}};
 
   // Create a branch predictor for a pipelined core
-  simeng::BTBPredictor predictor(8);
+  simeng::GenericPredictor predictor(config);
   // Create the core model
   switch (std::get<0>(GetParam())) {
     case EMULATION:

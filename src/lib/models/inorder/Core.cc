@@ -48,6 +48,8 @@ Core::Core(FlatMemoryInterface& instructionMemory,
 void Core::tick() {
   ticks_++;
 
+  if (hasHalted_) return;
+
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
     return;
@@ -90,6 +92,7 @@ void Core::tick() {
     // Update PC and wipe younger buffers (Fetch/Decode, Decode/Execute)
     auto targetAddress = executeUnit_.getFlushAddress();
 
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     decodeToExecuteBuffer_.fill(nullptr);
@@ -101,6 +104,7 @@ void Core::tick() {
     // Update PC and wipe Fetch/Decode buffer.
     auto targetAddress = decodeUnit_.getFlushAddress();
 
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
 
@@ -115,14 +119,15 @@ bool Core::hasHalted() const {
     return true;
   }
 
-  // Core is considered to have halted when the fetch unit has halted, and there
-  // are no uops at the head of any buffer.
+  // Core is considered to have halted when the fetch unit has halted, there
+  // are no uops at the head of any buffer, and no exception is currently being
+  // handled.
   bool decodePending = fetchToDecodeBuffer_.getHeadSlots()[0].size() > 0;
   bool executePending = decodeToExecuteBuffer_.getHeadSlots()[0] != nullptr;
   bool writebackPending = completionSlots_[0].getHeadSlots()[0] != nullptr;
 
   return (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
-          !executePending);
+          !executePending && exceptionHandler_ == nullptr);
 }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
@@ -200,6 +205,7 @@ void Core::processExceptionHandler() {
     hasHalted_ = true;
     std::cout << "Halting due to fatal exception" << std::endl;
   } else {
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
   }

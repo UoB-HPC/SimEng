@@ -66,7 +66,6 @@ class Architecture {
    * for a valid decoding. */
   virtual uint8_t predecode(const void* ptr, uint8_t bytesAvailable,
                             uint64_t instructionAddress,
-                            BranchPrediction prediction,
                             MacroOp& output) const = 0;
 
   /** Returns a vector of {size, number} pairs describing the available
