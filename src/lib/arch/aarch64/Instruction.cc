@@ -120,8 +120,6 @@ bool Instruction::isStoreAddress() const { return isStoreAddress_; }
 bool Instruction::isStoreData() const { return isStoreData_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
-bool Instruction::isRET() const { return isRET_; }
-bool Instruction::isBL() const { return isBL_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<MemoryAccessTarget>& addresses) {
@@ -155,6 +153,10 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
   // Not enough information to determine this was a misprediction
   return {false, 0};
 }
+
+BranchType Instruction::getBranchType() const { return branchType_; }
+
+uint64_t Instruction::getKnownTarget() const { return knownTarget_; }
 
 uint16_t Instruction::getGroup() const {
   // Use identifiers to decide instruction group

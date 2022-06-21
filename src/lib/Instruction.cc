@@ -15,6 +15,10 @@ void Instruction::setBranchPrediction(BranchPrediction prediction) {
   prediction_ = prediction;
 }
 
+BranchPrediction Instruction::getBranchPrediction() const {
+  return prediction_;
+}
+
 uint64_t Instruction::getBranchAddress() const { return branchAddress_; }
 bool Instruction::wasBranchTaken() const { return branchTaken_; }
 
