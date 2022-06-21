@@ -1,37 +1,38 @@
-#include "simeng/arch/aarch64/ExceptionHandler.hh"
-
-#include <sys/syscall.h>
+#include "simeng/arch/GenericExceptionHandler.hh"
 
 #include <iomanip>
 #include <iostream>
 
-#include "InstructionMetadata.hh"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
+#include "simeng/arch/Architecture.hh"
 
 namespace simeng {
 namespace arch {
-namespace aarch64 {
 
-ExceptionHandler::ExceptionHandler(
-    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory, kernel::Linux& linux_)
-    : instruction_(*static_cast<Instruction*>(instruction.get())),
-      core(core),
-      memory_(memory),
-      linux_(linux_) {
+GenericExceptionHandler::GenericExceptionHandler(const Core& core,
+                                                 MemoryInterface& memory,
+                                                 kernel::Linux& linux_)
+    : core(core), memory_(memory), linux_(linux_) {
   resumeHandling_ = [this]() { return init(); };
 }
 
-bool ExceptionHandler::tick() { return resumeHandling_(); }
+bool GenericExceptionHandler::tick() { return resumeHandling_(); }
 
-bool ExceptionHandler::init() {
-  InstructionException exception = instruction_.getException();
+bool GenericExceptionHandler::init() {
+  R0 = getSupervisorCallRegister(0);  //{RegisterType::GENERAL, 10};
+  R1 = getSupervisorCallRegister(1);  //{RegisterType::GENERAL, 10};
+  R2 = getSupervisorCallRegister(2);  //{RegisterType::GENERAL, 10};
+  R3 = getSupervisorCallRegister(3);  //{RegisterType::GENERAL, 10};
+  R4 = getSupervisorCallRegister(4);  //{RegisterType::GENERAL, 10};
+  R5 = getSupervisorCallRegister(5);  //{RegisterType::GENERAL, 10};
+
+  //  InstructionException exception = instruction_.getException();
   const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
 
-  if (exception == InstructionException::SupervisorCall) {
-    // Retrieve syscall ID held in register x8
-    auto syscallId =
-        registerFileSet.get({RegisterType::GENERAL, 8}).get<uint64_t>();
+  //  if (exception == InstructionException::SupervisorCall) {
+  if (isSupervisorCall()) {
+    // Retrieve syscall ID held in register a7
+    auto syscallId = callNumberConversion(getSyscallID());
 
     ProcessStateChange stateChange;
     switch (syscallId) {
@@ -180,6 +181,17 @@ bool ExceptionHandler::init() {
           return concludeSyscall(stateChange);
         });
       }
+      case 64: {  // write
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t retval = linux_.write(fd, dataBuffer.data(), count);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {retval}};
+          return concludeSyscall(stateChange);
+        });
+      }
       case 65: {  // readv
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
@@ -252,17 +264,6 @@ bool ExceptionHandler::init() {
         // Run the buffer read to load the buffer structures, before invoking
         // the kernel.
         return readBufferThen(iov, iovcnt * 16, invokeKernel);
-      }
-      case 64: {  // write
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
-        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
-        return readBufferThen(bufPtr, count, [=]() {
-          int64_t retval = linux_.write(fd, dataBuffer.data(), count);
-          ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {retval}};
-          return concludeSyscall(stateChange);
-        });
       }
       case 66: {  // writev
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
@@ -361,6 +362,12 @@ bool ExceptionHandler::init() {
         stateChange.memoryAddressValues.push_back(statOut);
         break;
       }
+      case 93: {  // exit
+        auto exitCode = registerFileSet.get(R0).get<uint64_t>();
+        std::cout << "Received exit syscall: terminating with exit code "
+                  << exitCode << std::endl;
+        return fatal();
+      }
       case 94: {  // exit_group
         auto exitCode = registerFileSet.get(R0).get<uint64_t>();
         std::cout << "Received exit_group syscall: terminating with exit code "
@@ -378,7 +385,7 @@ bool ExceptionHandler::init() {
         // workloads regions of interest and not required for their simulation
         int op = registerFileSet.get(R1).get<int>();
         if (op != 129) {
-          printException(instruction_);
+          printException();
           std::cout << "Unsupported arguments for syscall: " << syscallId
                     << std::endl;
           return fatal();
@@ -395,7 +402,6 @@ bool ExceptionHandler::init() {
       case 113: {  // clock_gettime
         uint64_t clkId = registerFileSet.get(R0).get<uint64_t>();
         uint64_t systemTimer = core.getSystemTimer();
-
         uint64_t seconds;
         uint64_t nanoseconds;
         uint64_t retval =
@@ -427,7 +433,7 @@ bool ExceptionHandler::init() {
         if (bitmask > 0) {
           // Currently, only a single CPU bitmask is supported
           if (bitmask != 1) {
-            printException(instruction_);
+            printException();
             std::cout
                 << "Unexpected CPU affinity mask returned in exception handler"
                 << std::endl;
@@ -441,6 +447,10 @@ bool ExceptionHandler::init() {
           stateChange = {ChangeType::REPLACEMENT, {R0}, {-1ll}};
         }
         break;
+      }
+      case 131: {  // tgkill
+        // TODO currently returns success without action
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0}};
       }
       case 134: {  // rt_sigaction
         // TODO: Implement syscall logic. Ignored for now as it's assumed the
@@ -457,26 +467,7 @@ bool ExceptionHandler::init() {
         break;
       }
       case 160: {  // uname
-        const uint64_t base = registerFileSet.get(R0).get<uint64_t>();
-        const uint8_t len =
-            65;  // Reserved length of each string field in Linux
-        const char sysname[] = "Linux";
-        const char nodename[] = "simeng.hpc.cs.bris.ac.uk";
-        const char release[] = "4.14.0";
-        const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019";
-        const char machine[] = "aarch64";
-
-        stateChange = {ChangeType::REPLACEMENT,
-                       {R0},
-                       {0ull},
-                       {{base, sizeof(sysname)},
-                        {base + len, sizeof(nodename)},
-                        {base + (len * 2), sizeof(release)},
-                        {base + (len * 3), sizeof(version)},
-                        {base + (len * 4), sizeof(machine)}},
-                       {RegisterValue(sysname), RegisterValue(nodename),
-                        RegisterValue(release), RegisterValue(version),
-                        RegisterValue(machine)}};
+        stateChange = uname(registerFileSet.get(R0).get<uint64_t>(), R0);
         break;
       }
       case 165: {  // getrusage
@@ -510,10 +501,6 @@ bool ExceptionHandler::init() {
         }
         break;
       }
-      // TODO : as SimEng is single threaded, TID is same as PID.
-      // When SimEng becomes multi-threaded this syscall needs
-      // updating.
-      case 178:  // gettid
       case 172:  // getpid
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getpid()}};
         break;
@@ -528,6 +515,9 @@ bool ExceptionHandler::init() {
         break;
       case 177:  // getegid
         stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.getegid()}};
+        break;
+      case 178:  // gettid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_.gettid()}};
         break;
       case 179:  // sysinfo
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
@@ -544,6 +534,32 @@ bool ExceptionHandler::init() {
 
         int64_t result = linux_.munmap(addr, length);
         stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
+        break;
+      }
+      case 216: {  // mremap
+        uint64_t old_address = registerFileSet.get(R0).get<uint64_t>();
+        size_t old_size = registerFileSet.get(R1).get<size_t>();
+        size_t new_size = registerFileSet.get(R2).get<size_t>();
+        int flags = registerFileSet.get(R3).get<int>();
+        uint64_t new_address = registerFileSet.get(R4).get<uint64_t>();
+
+        // Currently only MAYMOVE supported
+        if (flags == 1) {
+          uint64_t result = linux_.mremap(old_address, old_size, new_size,
+                                          flags, new_address);
+          if (result == -1) {
+            stateChange = {
+                ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-1)}};
+          } else {
+            stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
+          }
+        } else {
+          printException();
+          std::cout << "Unsupported arguments for syscall: " << syscallId
+                    << std::endl;
+          return fatal();
+        }
+
         break;
       }
       case 222: {  // mmap
@@ -568,7 +584,7 @@ bool ExceptionHandler::init() {
           }
           break;
         } else {
-          printException(instruction_);
+          printException();
           std::cout << "Unsupported arguments for syscall: " << syscallId
                     << std::endl;
           return fatal();
@@ -592,8 +608,12 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
+      case 1024: {
+        std::cout << "SIMENG: BROKEN SYSCALL 1024" << std::endl;
+        break;
+      }
       default:
-        printException(instruction_);
+        printException();
         std::cout << "Unrecognised syscall: " << syscallId << std::endl;
         return fatal();
     }
@@ -601,14 +621,13 @@ bool ExceptionHandler::init() {
     return concludeSyscall(stateChange);
   }
 
-  printException(instruction_);
+  printException();
   return fatal();
 }
 
-bool ExceptionHandler::readStringThen(char* buffer, uint64_t address,
-                                      int maxLength,
-                                      std::function<bool(size_t length)> then,
-                                      int offset) {
+bool GenericExceptionHandler::readStringThen(
+    char* buffer, uint64_t address, int maxLength,
+    std::function<bool(size_t length)> then, int offset) {
   if (maxLength <= 0) {
     return then(offset);
   }
@@ -658,7 +677,7 @@ bool ExceptionHandler::readStringThen(char* buffer, uint64_t address,
   return false;
 }
 
-void ExceptionHandler::readLinkAt(span<char> path) {
+void GenericExceptionHandler::readLinkAt(span<char> path) {
   if (path.size() == kernel::Linux::LINUX_PATH_MAX) {
     // TODO: Handle LINUX_PATH_MAX case
     std::cout << "Path exceeds LINUX_PATH_MAX" << std::endl;
@@ -696,9 +715,9 @@ void ExceptionHandler::readLinkAt(span<char> path) {
   concludeSyscall(stateChange);
 }
 
-bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
-                                      std::function<bool()> then,
-                                      bool firstCall) {
+bool GenericExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
+                                             std::function<bool()> then,
+                                             bool firstCall) {
   // If first call, trigger read for first entry and set self as handler
   if (firstCall) {
     if (length == 0) {
@@ -708,7 +727,7 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
     // Request a read of up to 128 bytes
     uint64_t numBytes = std::min<uint64_t>(length, 128);
     memory_.requestRead({ptr, static_cast<uint8_t>(numBytes)},
-                        instruction_.getSequenceId());
+                        getInstructionSequenceID());
     resumeHandling_ = [=]() {
       return readBufferThen(ptr, length, then, false);
     };
@@ -719,7 +738,7 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
   auto response =
       std::find_if(completedReads.begin(), completedReads.end(),
                    [&](const MemoryReadResult& response) {
-                     return response.requestId == instruction_.getSequenceId();
+                     return response.requestId == getInstructionSequenceID();
                    });
   if (response == completedReads.end()) {
     return false;
@@ -741,76 +760,20 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
   return then();
 }
 
-bool ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
-  uint64_t nextInstructionAddress = instruction_.getInstructionAddress() + 4;
+bool GenericExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
+  uint64_t nextInstructionAddress = getInstructionAddress() + 4;
   result_ = {false, nextInstructionAddress, stateChange};
   return true;
 }
 
-const ExceptionResult& ExceptionHandler::getResult() const { return result_; }
-
-void ExceptionHandler::printException(const Instruction& insn) const {
-  auto exception = insn.getException();
-  std::cout << std::endl;
-  std::cout << "Encountered ";
-  switch (exception) {
-    case InstructionException::EncodingUnallocated:
-      std::cout << "illegal instruction";
-      break;
-    case InstructionException::ExecutionNotYetImplemented:
-      std::cout << "execution not-yet-implemented";
-      break;
-    case InstructionException::MisalignedPC:
-      std::cout << "misaligned program counter";
-      break;
-    case InstructionException::DataAbort:
-      std::cout << "data abort";
-      break;
-    case InstructionException::SupervisorCall:
-      std::cout << "supervisor call";
-      break;
-    case InstructionException::HypervisorCall:
-      std::cout << "hypervisor call";
-      break;
-    case InstructionException::SecureMonitorCall:
-      std::cout << "secure monitor call";
-      break;
-    case InstructionException::NoAvailablePort:
-      std::cout << "unsupported execution port";
-      break;
-    case InstructionException::UnmappedSysReg:
-      std::cout << "unmapped system register";
-      break;
-    default:
-      std::cout << "unknown (id: " << static_cast<unsigned int>(exception)
-                << ")";
-  }
-  std::cout << " exception\n";
-
-  std::cout << "  Generated by instruction: \n"
-            << "    0x" << std::hex << std::setfill('0') << std::setw(16)
-            << insn.getInstructionAddress() << ": ";
-
-  auto& metadata = insn.getMetadata();
-  for (uint8_t byte : metadata.encoding) {
-    std::cout << std::setfill('0') << std::setw(2)
-              << static_cast<unsigned int>(byte) << " ";
-  }
-  std::cout << std::dec << "    ";
-  if (exception == InstructionException::EncodingUnallocated) {
-    std::cout << "<unknown>";
-  } else {
-    std::cout << metadata.mnemonic << " " << metadata.operandStr;
-  }
-  std::cout << "\n      opcode ID: " << metadata.opcode;
-  std::cout << std::endl;
+const ExceptionResult& GenericExceptionHandler::getResult() const {
+  return result_;
 }
 
-bool ExceptionHandler::fatal() {
+bool GenericExceptionHandler::fatal() {
   result_ = {true, 0, {}};
   return true;
 }
 
-}  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng

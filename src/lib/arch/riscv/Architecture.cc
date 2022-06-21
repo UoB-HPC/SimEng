@@ -6,6 +6,7 @@
 #include <queue>
 
 #include "InstructionMetadata.hh"
+#include "simeng/arch/riscv/RISCVExceptionHandler.hh"
 
 namespace simeng {
 namespace arch {
@@ -212,7 +213,8 @@ executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
+  return std::make_shared<RISCVExceptionHandler>(instruction, core, memory,
+                                                 linux_);
 }
 
 std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()

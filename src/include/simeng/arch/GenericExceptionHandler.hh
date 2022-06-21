@@ -2,22 +2,20 @@
 
 #include <functional>
 
+#include "simeng/Instruction.hh"
 #include "simeng/arch/Architecture.hh"
-#include "simeng/arch/aarch64/Instruction.hh"
 #include "simeng/kernel/Linux.hh"
 
 namespace simeng {
 namespace arch {
-namespace aarch64 {
 
-/** An AArch64 exception handler. */
-class ExceptionHandler : public simeng::arch::ExceptionHandler {
+/** A generic exception handler. */
+class GenericExceptionHandler : public simeng::arch::ExceptionHandler {
  public:
   /** Create an exception handler with references to the instruction that caused
    * the exception, along with the core model object and process memory. */
-  ExceptionHandler(const std::shared_ptr<simeng::Instruction>& instruction,
-                   const Core& core, MemoryInterface& memory,
-                   kernel::Linux& linux);
+  GenericExceptionHandler(const Core& core, MemoryInterface& memory,
+                          kernel::Linux& linux);
 
   /** Progress handling of the exception, by calling and returning the result of
    * the handler currently assigned to `resumeHandling_`. Returns `false` if
@@ -25,13 +23,33 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   bool tick() override;
 
   /** Retrieve the results of the handled exception. */
-  const ExceptionResult& getResult() const override;
+  [[nodiscard]] const ExceptionResult& getResult() const override;
 
- private:
+ protected:
+  [[nodiscard]] virtual uint64_t callNumberConversion(
+      uint64_t AArch64SyscallNumber) const = 0;
+
+  [[nodiscard]] virtual uint64_t getSyscallID() const = 0;
+
   /** Prints a description of the exception and the instruction that generated
    * it. */
-  void printException(const Instruction& insn) const;
+  virtual void printException() const = 0;
 
+  [[nodiscard]] virtual bool isSupervisorCall() const = 0;
+
+  [[nodiscard]] virtual Register getSupervisorCallRegister(
+      int regNumber) const = 0;
+
+  [[nodiscard]] virtual uint64_t getInstructionSequenceID() const = 0;
+
+  [[nodiscard]] virtual uint64_t getInstructionAddress() const = 0;
+
+  virtual ProcessStateChange uname(uint64_t base, Register R0) const = 0;
+
+  /** The core model object. */
+  const Core& core;
+
+ private:
   /** The initial handling logic. Returns `true` if no further cycles are
    * required or `false` otherwise, in which case `resumeHandling_` has been set
    * to the next step. */
@@ -71,12 +89,6 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   /** Sets a generic fatal result and returns true. */
   bool fatal();
 
-  /** The instruction generating an exception. */
-  const Instruction& instruction_;
-
-  /** The core model object. */
-  const Core& core;
-
   /** The process memory. */
   MemoryInterface& memory_;
 
@@ -89,15 +101,14 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   /** A function to call to resume handling an exception. */
   std::function<bool()> resumeHandling_;
 
-  /** Helper constants for AArch64 general-purpose registers. */
-  static constexpr Register R0 = {RegisterType::GENERAL, 0};
-  static constexpr Register R1 = {RegisterType::GENERAL, 1};
-  static constexpr Register R2 = {RegisterType::GENERAL, 2};
-  static constexpr Register R3 = {RegisterType::GENERAL, 3};
-  static constexpr Register R4 = {RegisterType::GENERAL, 4};
-  static constexpr Register R5 = {RegisterType::GENERAL, 5};
+  /** Helper constants for general-purpose registers. */
+  Register R0;
+  Register R1;
+  Register R2;
+  Register R3;
+  Register R4;
+  Register R5;
 };
 
-}  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng

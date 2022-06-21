@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 #include "simeng/arch/Architecture.hh"
-#include "simeng/arch/aarch64/ExceptionHandler.hh"
+#include "simeng/arch/aarch64/AArch64ExceptionHandler.hh"
 #include "simeng/arch/aarch64/MicroDecoder.hh"
 #include "simeng/kernel/Linux.hh"
 

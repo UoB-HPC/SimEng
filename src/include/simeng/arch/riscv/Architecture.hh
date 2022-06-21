@@ -4,8 +4,8 @@
 #include <unordered_map>
 
 #include "simeng/arch/Architecture.hh"
-#include "simeng/arch/riscv/ExceptionHandler.hh"
 #include "simeng/arch/riscv/Instruction.hh"
+#include "simeng/arch/riscv/RISCVExceptionHandler.hh"
 #include "simeng/kernel/Linux.hh"
 
 using csh = size_t;
@@ -44,9 +44,6 @@ class Architecture : public arch::Architecture {
 
   /** Retrieve the initial process state. */
   ProcessStateChange getInitialState() const override;
-
-  /** Retrieve any updates to the process state. */
-  ProcessStateChange getUpdateState() const;
 
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;

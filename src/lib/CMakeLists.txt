@@ -1,19 +1,20 @@
 set(SIMENG_SOURCES
     arch/aarch64/Architecture.cc
-    arch/aarch64/ExceptionHandler.cc
     arch/aarch64/Instruction.cc
     arch/aarch64/Instruction_address.cc
     arch/aarch64/Instruction_decode.cc
     arch/aarch64/Instruction_execute.cc
     arch/aarch64/InstructionMetadata.cc
+    arch/aarch64/AArch64ExceptionHandler.cc
     arch/aarch64/MicroDecoder.cc
     arch/riscv/Architecture.cc
-    arch/riscv/ExceptionHandler.cc
     arch/riscv/Instruction.cc
     arch/riscv/Instruction_address.cc
     arch/riscv/Instruction_decode.cc
     arch/riscv/Instruction_execute.cc
     arch/riscv/InstructionMetadata.cc
+    arch/riscv/RISCVExceptionHandler.cc
+    arch/GenericExceptionHandler.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
     models/emulation/Core.cc

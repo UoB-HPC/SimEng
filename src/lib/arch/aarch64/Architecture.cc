@@ -4,6 +4,7 @@
 #include <cassert>
 
 #include "InstructionMetadata.hh"
+#include "simeng/arch/aarch64/AArch64ExceptionHandler.hh"
 
 namespace simeng {
 namespace arch {
@@ -217,7 +218,8 @@ ExecutionInfo Architecture::getExecutionInfo(Instruction& insn) const {
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
+  return std::make_shared<AArch64ExceptionHandler>(instruction, core, memory,
+                                                   linux_);
 }
 
 std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
