@@ -14,6 +14,61 @@ using Syscall = AArch64RegressionTest;
 /** The maximum size of a filesystem path. */
 static const size_t LINUX_PATH_MAX = 4096;
 
+TEST_P(Syscall, getrandom) {
+  initialHeapData_.resize(16);
+  memset(initialHeapData_.data(), -1, 8);
+
+  // The assembly will be run 2 times, filling a buffer with random bytes each
+  // run. If these buffers contain different bytes, then the getrandom is
+  // random enough
+  uint8_t* buffers[2];
+
+  for (size_t i = 0; i < 2; i++) {
+    // init buffer to record the output into
+    buffers[i] = (uint8_t*)calloc(8, sizeof(uint8_t));
+
+    RUN_AARCH64(R"(
+      # Get heap address
+      mov x0, 0
+      mov x8, 214
+      svc #0
+      
+      # getrandom(buf * = [a], buflen = 4, no flags)
+      mov x1, #8
+      ldr x0, buf
+      mov x8, #278
+      svc #0
+
+      # Move buf addr into x1 to easily read it from the test
+      ldr x1, buf
+
+      .balign 1
+      buf:  .skip   4
+    )");
+
+    // Check getrandom returned 8 (8 bytes were requested)
+    EXPECT_EQ(getGeneralRegister<int64_t>(0), 8);
+
+    // Record output
+    for (uint8_t j = 0; j < 8; j++) {
+      buffers[i][j] =
+          getMemoryValue<uint8_t>(getGeneralRegister<uint8_t>(1) + j);
+    }
+  }
+
+  // Chech that the values of buffers[0] and buffers[1] dont all match
+  // if they do then the returned bytes surely werent random
+  bool allMatch = true;
+  for (char i = 0; i < 8; i++) {
+    if (!(buffers[0][i] == buffers[1][i])) {
+      allMatch = false;
+      break;
+    }
+  }
+
+  EXPECT_EQ(allMatch, false);
+}
+
 TEST_P(Syscall, ioctl) {
   // TIOCGWINSZ: test it returns zero and sets the output to anything
   initialHeapData_.resize(8);
