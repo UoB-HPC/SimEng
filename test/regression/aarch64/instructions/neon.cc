@@ -2408,6 +2408,64 @@ TEST_P(InstNeon, orr) {
   CHECK_NEON(3, uint32_t, {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01});
 }
 
+TEST_P(InstNeon, umaxp) {
+  initialHeapData_.resize(32);
+  uint8_t* heap = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+
+  // v0
+  heap[0] = 0x01;
+  heap[1] = 0x00;
+  heap[2] = 0xFF;
+  heap[3] = 0xAA;
+  heap[4] = 0xBB;
+  heap[5] = 0xCC;
+  heap[6] = 0xDD;
+  heap[7] = 0xEE;
+
+  heap[8] = 0x01;
+  heap[9] = 0x02;
+  heap[10] = 0x03;
+  heap[11] = 0x04;
+  heap[12] = 0x05;
+  heap[13] = 0x06;
+  heap[14] = 0x07;
+  heap[15] = 0x08;
+
+  // v1
+  heap[16] = 0x00;
+  heap[17] = 0x00;
+  heap[18] = 0xEE;
+  heap[19] = 0x11;
+  heap[20] = 0x22;
+  heap[21] = 0x33;
+  heap[22] = 0x44;
+  heap[23] = 0x55;
+
+  heap[24] = 0xFF;
+  heap[25] = 0xEE;
+  heap[26] = 0xDD;
+  heap[27] = 0xCC;
+  heap[28] = 0xBB;
+  heap[29] = 0xAA;
+  heap[30] = 0x99;
+  heap[31] = 0x88;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    umaxp v2.16b, v0.16b, v1.16b
+
+  )");
+  CHECK_NEON(2, uint8_t,
+             {0x01, 0x00, 0xFF, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0xEE, 0xDD,
+              0xCC, 0xBB, 0xAA, 0x99, 0x88});
+}
+
 TEST_P(InstNeon, smax) {
   initialHeapData_.resize(32);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());

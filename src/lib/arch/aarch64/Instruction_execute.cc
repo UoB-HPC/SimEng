@@ -17023,8 +17023,8 @@ void Instruction::execute() {
         results[0] = multiplyHelp::maddl_4ops<uint64_t, uint32_t>(operands);
         break;
       }
-      case Opcode::AArch64_UMAXPv16i8: {
-        return executionNYI();
+      case Opcode::AArch64_UMAXPv16i8: {  // umaxp vd.16b, vn.16b, vm.16b
+        results[0] = neonHelp::vecUMaxp<uint8_t, 16>(operands);
         break;
       }
       case Opcode::AArch64_UMAXPv2i32: {
