@@ -16,9 +16,10 @@ riscv::RISCVExceptionHandler::RISCVExceptionHandler(
     : GenericExceptionHandler(core, memory, linux),
       instruction_(*static_cast<Instruction*>(instruction.get())) {}
 
-uint64_t riscv::RISCVExceptionHandler::callNumberConversion(
-    uint64_t AArch64SyscallNumber) const {
-  return AArch64SyscallNumber;
+uint64_t riscv::RISCVExceptionHandler::callNumberConversionToAArch64(
+    uint64_t syscallNumber) const {
+  // No conversion necessary
+  return syscallNumber;
 }
 
 uint64_t riscv::RISCVExceptionHandler::getSyscallID() const {
@@ -35,22 +36,16 @@ Register riscv::RISCVExceptionHandler::getSupervisorCallRegister(
   switch (regNumber) {
     case 0:
       return {RegisterType::GENERAL, 10};
-      break;
     case 1:
       return {RegisterType::GENERAL, 11};
-      break;
     case 2:
       return {RegisterType::GENERAL, 12};
-      break;
     case 3:
       return {RegisterType::GENERAL, 13};
-      break;
     case 4:
       return {RegisterType::GENERAL, 14};
-      break;
     case 5:
       return {RegisterType::GENERAL, 15};
-      break;
     default:
       assert(true && "Supervisor call register out of range");
   }

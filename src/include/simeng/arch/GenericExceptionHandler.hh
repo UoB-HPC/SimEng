@@ -26,24 +26,32 @@ class GenericExceptionHandler : public simeng::arch::ExceptionHandler {
   [[nodiscard]] const ExceptionResult& getResult() const override;
 
  protected:
-  [[nodiscard]] virtual uint64_t callNumberConversion(
-      uint64_t AArch64SyscallNumber) const = 0;
+  /** Return the syscall number with AArch64 identification. See
+   * https://marcin.juszkiewicz.com.pl/download/tables/syscalls.html */
+  [[nodiscard]] virtual uint64_t callNumberConversionToAArch64(
+      uint64_t syscallNumber) const = 0;
 
+  /** Return the system call number */
   [[nodiscard]] virtual uint64_t getSyscallID() const = 0;
 
   /** Prints a description of the exception and the instruction that generated
    * it. */
   virtual void printException() const = 0;
 
+  /** Returns whether this is a supervisor call exception */
   [[nodiscard]] virtual bool isSupervisorCall() const = 0;
 
+  /** Get the regNumber'th register, used to hold data for supervisor calls */
   [[nodiscard]] virtual Register getSupervisorCallRegister(
       int regNumber) const = 0;
 
+  /** Returns the sequence ID of the instructions throwing this exception */
   [[nodiscard]] virtual uint64_t getInstructionSequenceID() const = 0;
 
+  /** Returns the address of the instructions throwing this exception */
   [[nodiscard]] virtual uint64_t getInstructionAddress() const = 0;
 
+  /** Implements the ISA specific uname syscall, return a processStateChange */
   virtual ProcessStateChange uname(uint64_t base, Register R0) const = 0;
 
   /** The core model object. */
@@ -101,7 +109,7 @@ class GenericExceptionHandler : public simeng::arch::ExceptionHandler {
   /** A function to call to resume handling an exception. */
   std::function<bool()> resumeHandling_;
 
-  /** Helper constants for general-purpose registers. */
+  /** General-purpose registers. */
   Register R0;
   Register R1;
   Register R2;

@@ -16,9 +16,10 @@ aarch64::AArch64ExceptionHandler::AArch64ExceptionHandler(
     : GenericExceptionHandler(core, memory, linux),
       instruction_(*static_cast<Instruction*>(instruction.get())) {}
 
-uint64_t aarch64::AArch64ExceptionHandler::callNumberConversion(
-    uint64_t AArch64SyscallNumber) const {
-  return AArch64SyscallNumber;
+uint64_t aarch64::AArch64ExceptionHandler::callNumberConversionToAArch64(
+    uint64_t syscallNumber) const {
+  // No conversion necessary
+  return syscallNumber;
 }
 
 uint64_t aarch64::AArch64ExceptionHandler::getSyscallID() const {
@@ -35,22 +36,16 @@ Register aarch64::AArch64ExceptionHandler::getSupervisorCallRegister(
   switch (regNumber) {
     case 0:
       return {RegisterType::GENERAL, 0};
-      break;
     case 1:
       return {RegisterType::GENERAL, 1};
-      break;
     case 2:
       return {RegisterType::GENERAL, 2};
-      break;
     case 3:
       return {RegisterType::GENERAL, 3};
-      break;
     case 4:
       return {RegisterType::GENERAL, 4};
-      break;
     case 5:
       return {RegisterType::GENERAL, 5};
-      break;
     default:
       assert(true && "Supervisor call register out of range");
   }

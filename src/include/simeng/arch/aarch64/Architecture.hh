@@ -57,13 +57,16 @@ class Architecture : public arch::Architecture {
   /** Returns the system register for the Virtual Counter Timer. */
   simeng::Register getVCTreg() const override;
 
-
   /** Returns the system register for the Processor Cycle Counter. */
   simeng::Register getPCCreg() const override;
 
+  /** Returns the physical register structure as defined within the config file
+   */
   std::vector<RegisterFileStructure> getConfigPhysicalRegisterStructure(
       YAML::Node config) const override;
 
+  /** Returns the physical register quantities as defined within the config file
+   */
   std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
       YAML::Node config) const override;
 

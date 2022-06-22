@@ -32,7 +32,7 @@ bool GenericExceptionHandler::init() {
   //  if (exception == InstructionException::SupervisorCall) {
   if (isSupervisorCall()) {
     // Retrieve syscall ID held in register a7
-    auto syscallId = callNumberConversion(getSyscallID());
+    auto syscallId = callNumberConversionToAArch64(getSyscallID());
 
     ProcessStateChange stateChange;
     switch (syscallId) {
