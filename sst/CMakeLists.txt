@@ -31,4 +31,10 @@ target_link_options(sstsimeng PUBLIC -fno-common -Wl,-undefined -Wl,dynamic_look
 
 target_link_libraries(sstsimeng PUBLIC libsimeng)
 
+set(SST_SIMENG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/sst")
+set(SST_REGISTER_BASE_COMMAND "sstsimeng sstsimeng_LIBDIR=${SST_SIMENG_INSTALL_DIR}")
+set(SST_REGISTER_ELEMENT_COMMAND "SST_ELEMENT_SOURCE sstsimeng=${SST_SIMENG_INSTALL_DIR}")
+
 install(TARGETS sstsimeng DESTINATION sst)
+install(CODE "execute_process(COMMAND sst-register ${SST_REGISTER_BASE_COMMAND} COMMAND_ECHO STDOUT)")
+install(CODE "execute_process(COMMAND sst-register ${SST_REGISTER_ELEMENT_COMMAND} COMMAND_ECHO STDOUT)")
