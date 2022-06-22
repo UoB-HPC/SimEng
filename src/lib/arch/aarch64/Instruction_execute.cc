@@ -1663,7 +1663,7 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_CMHSv16i8: {  // cmhs v1.16b, v3.16b, v1.16b
+      case Opcode::AArch64_CMHSv16i8: {  // cmhs vd.16b, vn.16b, vm.16b
         results[0] = neonHelp::vecCompare<uint8_t, 16>(
             operands, false,
             [](uint8_t x, uint8_t y) -> bool { return (x >= y); });
