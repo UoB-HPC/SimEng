@@ -75,7 +75,8 @@ TEST_F(PipelineFetchUnitTest, Tick) {
       .WillOnce(DoAll(SetArgReferee<3>(macroOp), Return(4)));
 
   BranchPrediction prediction = {0, true};
-  EXPECT_CALL(predictor, predict(uopPtr)).WillOnce(Return(prediction));
+  EXPECT_CALL(predictor, predict(0, BranchType::Conditional, 0))
+      .WillOnce(Return(prediction));
 
   fetchUnit.tick();
 

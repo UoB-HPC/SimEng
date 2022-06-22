@@ -5,8 +5,7 @@ namespace simeng {
 Trace::Trace() {}
 
 // Write formatted instruction cycle trace to output file
-int Trace::writeCycleOut(char (&str)[1000], uint64_t traceId,
-                         std::string model) {
+int Trace::writeCycleOut(char* str, uint64_t traceId, std::string model) {
   if (cycleTrace_.finished == 1) {
     cycleTrace element = cycleTrace_;
     fetchTrace fetch = element.fetch;
@@ -49,8 +48,7 @@ int Trace::writeCycleOut(char (&str)[1000], uint64_t traceId,
 }
 
 // Write formatted probe events to output file
-int Trace::writeProbeOut(char (&str)[5], uint64_t index, int newline,
-                         int start) {
+int Trace::writeProbeOut(char* str, uint64_t index, int newline, int start) {
   if (!start) {
     if (newline)
       sprintf(str, "\n%d,%" PRId64 "", probeTrace_.event, probeTrace_.insn_num);

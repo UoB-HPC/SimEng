@@ -38,15 +38,31 @@ void FetchUnit::tick() {
     auto outputSlots = output_.getTailSlots();
     for (size_t slot = 0; slot < output_.getWidth(); slot++) {
       auto& macroOp = outputSlots[slot];
-      auto bytesRead = isa_.predecode(&(loopBuffer_.front().encoding),
-                                      loopBuffer_.front().instructionSize,
-                                      loopBuffer_.front().address, macroOp);
+      std::string disasm;
+      auto bytesRead = isa_.predecode(
+          &(loopBuffer_.front().encoding), loopBuffer_.front().instructionSize,
+          loopBuffer_.front().address, macroOp, disasm);
 
       assert(bytesRead != 0 && "predecode failure for loop buffer entry");
 
       // Set prediction to recorded value during loop buffer filling
       if (macroOp[0]->isBranch()) {
         macroOp[0]->setBranchPrediction(loopBuffer_.front().prediction);
+      }
+
+      // Create map element for new fetch
+      for (int uop = 0; uop < macroOp.size(); uop++) {
+        macroOp[uop]->setTraceId(traceId);
+        const uint32_t insn =
+            static_cast<const uint32_t>(loopBuffer_.front().encoding);
+        fetchTrace newFetch = {trace_cycle, insn, loopBuffer_.front().address,
+                               uop, disasm};
+        cycleTrace newCycleTrace = {newFetch, 0, 0, 0, 0, 0, 0};
+        Trace* newTrace = new Trace;
+        newTrace->setCycleTraces(newCycleTrace);
+        traceMap.insert({macroOp[uop]->getTraceId(), newTrace});
+        // Denote id has been assigned/used
+        traceId++;
       }
 
       // Cycle queue by moving front entry to back
@@ -146,6 +162,20 @@ void FetchUnit::tick() {
       macroOp[0]->setBranchPrediction(prediction);
     }
 
+    // Create map element for new fetch
+    for (int uop = 0; uop < macroOp.size(); uop++) {
+      macroOp[uop]->setTraceId(traceId);
+      const uint32_t insn =
+          *static_cast<const uint32_t*>((void*)(buffer + bufferOffset));
+      fetchTrace newFetch = {trace_cycle, insn, pc_, uop, disasm};
+      cycleTrace newCycleTrace = {newFetch, 0, 0, 0, 0, 0, 0};
+      Trace* newTrace = new Trace;
+      newTrace->setCycleTraces(newCycleTrace);
+      traceMap.insert({macroOp[uop]->getTraceId(), newTrace});
+      // Denote id has been assigned/used
+      traceId++;
+    }
+
     if (loopBufferState_ == LoopBufferState::FILLING) {
       // Record instruction fetch information in loop body
       uint32_t encoding;
@@ -178,20 +208,6 @@ void FetchUnit::tick() {
 
     assert(bytesRead <= bufferedBytes_ &&
            "Predecode consumed more bytes than were available");
-
-    // Create map element for new fetch
-    for (int uop = 0; uop < macroOp.size(); uop++) {
-      macroOp[uop]->setTraceId(traceId);
-      const uint32_t insn =
-          *static_cast<const uint32_t*>((void*)(buffer + bufferOffset));
-      fetchTrace newFetch = {trace_cycle, insn, pc_, uop, disasm};
-      cycleTrace newCycleTrace = {newFetch, 0, 0, 0, 0, 0, 0};
-      Trace* newTrace = new Trace;
-      newTrace->setCycleTraces(newCycleTrace);
-      traceMap.insert({macroOp[uop]->getTraceId(), newTrace});
-      // Denote id has been assigned/used
-      traceId++;
-    }
 
     // Increment the offset, decrement available bytes
     bufferOffset += bytesRead;
