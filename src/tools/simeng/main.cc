@@ -245,7 +245,7 @@ int main(int argc, char** argv) {
       }
       rsArrangement[port] = {
           i, reservation_station["Size"].as<uint16_t>(),
-          reservation_station["Dispatch-Rate"].as<uint8_t>()};
+          reservation_station["Dispatch-Rate"].as<uint16_t>()};
     }
   }
 
