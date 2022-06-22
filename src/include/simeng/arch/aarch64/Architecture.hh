@@ -70,7 +70,6 @@ class Architecture : public arch::Architecture {
   std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
       YAML::Node config) const override;
 
-
   /** Retrieve an ExecutionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
    * port information, return that instead of the group-defined execution

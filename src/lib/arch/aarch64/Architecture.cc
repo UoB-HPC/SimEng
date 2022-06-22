@@ -289,7 +289,7 @@ Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
       {256, config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>()},
       {32, config["Register-Set"]["Predicate-Count"].as<uint16_t>()},
       {1, config["Register-Set"]["Conditional-Count"].as<uint16_t>()},
-      {8, 6}};
+      {8, getNumSystemRegisters()}};
 }
 
 std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
@@ -297,7 +297,8 @@ std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
   return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
           config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>(),
           config["Register-Set"]["Predicate-Count"].as<uint16_t>(),
-          config["Register-Set"]["Conditional-Count"].as<uint16_t>(), 6};
+          config["Register-Set"]["Conditional-Count"].as<uint16_t>(),
+          getNumSystemRegisters()};
 }
 
 }  // namespace aarch64

@@ -126,8 +126,6 @@ bool Instruction::isStoreAddress() const { return isStore_; }
 bool Instruction::isStoreData() const { return isStore_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
-bool Instruction::isRET() const { return isRET_; }
-bool Instruction::isBL() const { return isBL_; }
 bool Instruction::isAtomic() const { return isAtomic_; }
 
 void Instruction::setMemoryAddresses(

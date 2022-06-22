@@ -819,6 +819,8 @@ void Instruction::execute() {
       return executionNYI();
   }
 }
+BranchType Instruction::getBranchType() const { return BranchType::Unknown; }
+uint64_t Instruction::getKnownTarget() const { return 0; }
 
 }  // namespace riscv
 }  // namespace arch

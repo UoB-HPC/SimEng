@@ -27,7 +27,8 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Create fake system register for ::getVCTreg
-  systemRegisterMap_[RISCV_SYSREG_FAKE] = systemRegisterMap_.size();
+  systemRegisterMap_[RISCV_SYSREG_FAKE_VCT] = systemRegisterMap_.size();
+  systemRegisterMap_[RISCV_SYSREG_FAKE_PCC] = systemRegisterMap_.size();
 
   // Instantiate an executionInfo entry for each group in the InstructionGroup
   // namespace.
@@ -127,7 +128,6 @@ Architecture::~Architecture() { cs_close(&capstoneHandle); }
 
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
-                                BranchPrediction prediction,
                                 MacroOp& output) const {
   // Check that instruction address is 4-byte aligned as required by RISCV
   if (instructionAddress & 0x3) {
@@ -139,7 +139,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     uop = std::make_shared<Instruction>(*this, metadataCache.front(),
                                         InstructionException::MisalignedPC);
     uop->setInstructionAddress(instructionAddress);
-    uop->setBranchPrediction(prediction);
     // Return non-zero value to avoid fatal error
     return 1;
   }
@@ -189,7 +188,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   uop = std::make_shared<Instruction>(iter->second);
 
   uop->setInstructionAddress(instructionAddress);
-  uop->setBranchPrediction(prediction);
 
   return 4;
 }
@@ -227,7 +225,7 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
   };
 }
 
-uint16_t Architecture::getSystemRegisterTag(uint16_t reg) const {
+int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   // Check below is done for speculative instructions that may be passed into
   // the function but will not be executed. If such invalid speculative
   // instructions get through they can cause an out-of-range error.
@@ -251,20 +249,30 @@ ProcessStateChange Architecture::getInitialState() const {
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 simeng::Register Architecture::getVCTreg() const {
-  return {RegisterType::SYSTEM, getSystemRegisterTag(RISCV_SYSREG_FAKE)};
+  return {RegisterType::SYSTEM,
+          static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_FAKE_VCT))};
+}
+
+simeng::Register Architecture::getPCCreg() const {
+  return {RegisterType::SYSTEM,
+          static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_FAKE_PCC))};
 }
 
 std::vector<RegisterFileStructure>
 Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
   return {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
           {8, config["Register-Set"]["FloatingPoint"].as<uint16_t>()},
-          {8, 1}};
+          {8, getNumSystemRegisters()}};
 }
 
 std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
     YAML::Node config) const {
   return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
-          config["Register-Set"]["FloatingPoint"].as<uint16_t>(), 1};
+          config["Register-Set"]["FloatingPoint"].as<uint16_t>(),
+          getNumSystemRegisters()};
+}
+uint16_t Architecture::getNumSystemRegisters() const {
+  return static_cast<uint16_t>(systemRegisterMap_.size());
 }
 
 }  // namespace riscv
