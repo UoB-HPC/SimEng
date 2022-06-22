@@ -2,7 +2,6 @@
 
 #include <string>
 
-#include "simeng/BTBPredictor.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"

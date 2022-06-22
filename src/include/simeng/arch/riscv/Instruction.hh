@@ -150,6 +150,12 @@ class Instruction : public simeng::Instruction {
    * instruction. */
   std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
 
+  /** Retrieve branch type. */
+  BranchType getBranchType() const override;
+
+  /** Retrieve a branch target from the instruction's metadata if known. */
+  uint64_t getKnownTarget() const override;
+
   /** Is this a store operation? */
   bool isStore() const;
 
@@ -166,12 +172,6 @@ class Instruction : public simeng::Instruction {
 
   /** Is this a branch operation? */
   bool isBranch() const override;
-
-  /** Is this a return instruction? */
-  bool isRET() const override;
-
-  /** Is this a branch and link instruction? */
-  bool isBL() const override;
 
   /** Is this an atomic instruction? */
   bool isAtomic() const;
@@ -273,10 +273,6 @@ class Instruction : public simeng::Instruction {
   bool isDivide_ = false;
   /** Is this a shift operation? */
   bool isShift_ = false;
-  /** Is this a return instruction? */
-  bool isRET_ = false;
-  /** Is this a branch and link instruction? */
-  bool isBL_ = false;
   /** Is this an atomic instruction? */
   bool isAtomic_ = false;
   /** Is this a logical instruction? */
