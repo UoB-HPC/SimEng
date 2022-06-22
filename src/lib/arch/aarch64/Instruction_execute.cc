@@ -17024,7 +17024,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_UMAXPv16i8: {  // umaxp vd.16b, vn.16b, vm.16b
-        results[0] = neonHelp::vecUMaxp<uint8_t, 16>(operands);
+        results[0] = neonHelp::vecUMaxP<uint8_t, 16>(operands);
         break;
       }
       case Opcode::AArch64_UMAXPv2i32: {
@@ -17140,7 +17140,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_UMINPv16i8: {
-        return executionNYI();
+        results[0] = neonHelp::vecUMinP<uint8_t, 16>(operands);
         break;
       }
       case Opcode::AArch64_UMINPv2i32: {

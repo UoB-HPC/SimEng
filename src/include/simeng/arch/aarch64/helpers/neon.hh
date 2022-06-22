@@ -553,7 +553,7 @@ class neonHelp {
    * for vd.8b I = 8).
    * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
-  static RegisterValue vecUMaxp(
+  static RegisterValue vecUMaxP(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
@@ -561,6 +561,24 @@ class neonHelp {
     T out[I];
     for (int i = 0; i < I; i++) {
       out[i] = std::max(n[i], m[i]);
+    }
+    return {out, 256};
+  }
+
+  /** Helper function for NEON instructions with the format `uminp rd, vn, vm`.
+   * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T, int I>
+  static RegisterValue vecUMinP(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+
+    T out[I];
+    for (int i = 0; i < I; i++) {
+      out[i] = std::min(n[i], m[i]);
     }
     return {out, 256};
   }
