@@ -13,6 +13,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
 
     executable_path = params.find<std::string>("executable_path", "");
     executable_args = params.find<std::string>("executable_args", "");
+    config_path = params.find<std::string>("config_path", "");
 
     if (executable_path.length() == 0) {
         output.fatal(CALL_INFO, 10, 0, "Simeng executable binary filepath not provided.");
