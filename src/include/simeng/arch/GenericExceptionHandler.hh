@@ -31,9 +31,6 @@ class GenericExceptionHandler : public simeng::arch::ExceptionHandler {
   [[nodiscard]] virtual uint64_t callNumberConversionToAArch64(
       uint64_t syscallNumber) const = 0;
 
-  /** Return the system call number */
-  [[nodiscard]] virtual uint64_t getSyscallID() const = 0;
-
   /** Prints a description of the exception and the instruction that generated
    * it. */
   virtual void printException() const = 0;
@@ -110,6 +107,7 @@ class GenericExceptionHandler : public simeng::arch::ExceptionHandler {
   std::function<bool()> resumeHandling_;
 
   /** General-purpose registers. */
+  Register Rsys;
   Register R0;
   Register R1;
   Register R2;

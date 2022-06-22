@@ -19,20 +19,22 @@ GenericExceptionHandler::GenericExceptionHandler(const Core& core,
 bool GenericExceptionHandler::tick() { return resumeHandling_(); }
 
 bool GenericExceptionHandler::init() {
-  R0 = getSupervisorCallRegister(0);  //{RegisterType::GENERAL, 10};
-  R1 = getSupervisorCallRegister(1);  //{RegisterType::GENERAL, 10};
-  R2 = getSupervisorCallRegister(2);  //{RegisterType::GENERAL, 10};
-  R3 = getSupervisorCallRegister(3);  //{RegisterType::GENERAL, 10};
-  R4 = getSupervisorCallRegister(4);  //{RegisterType::GENERAL, 10};
-  R5 = getSupervisorCallRegister(5);  //{RegisterType::GENERAL, 10};
+  Rsys = getSupervisorCallRegister(-1);
+  R0 = getSupervisorCallRegister(0);
+  R1 = getSupervisorCallRegister(1);
+  R2 = getSupervisorCallRegister(2);
+  R3 = getSupervisorCallRegister(3);
+  R4 = getSupervisorCallRegister(4);
+  R5 = getSupervisorCallRegister(5);
 
   //  InstructionException exception = instruction_.getException();
   const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
 
   //  if (exception == InstructionException::SupervisorCall) {
   if (isSupervisorCall()) {
-    // Retrieve syscall ID held in register a7
-    auto syscallId = callNumberConversionToAArch64(getSyscallID());
+    // Retrieve syscall ID
+    auto syscallId = callNumberConversionToAArch64(
+        registerFileSet.get(Rsys).get<uint64_t>());
 
     ProcessStateChange stateChange;
     switch (syscallId) {

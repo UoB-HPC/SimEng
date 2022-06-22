@@ -22,11 +22,6 @@ uint64_t riscv::RISCVExceptionHandler::callNumberConversionToAArch64(
   return syscallNumber;
 }
 
-uint64_t riscv::RISCVExceptionHandler::getSyscallID() const {
-  const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
-  return registerFileSet.get({RegisterType::GENERAL, 17}).get<uint64_t>();
-}
-
 bool riscv::RISCVExceptionHandler::isSupervisorCall() const {
   return instruction_.getException() == InstructionException::SupervisorCall;
 }
@@ -34,6 +29,8 @@ bool riscv::RISCVExceptionHandler::isSupervisorCall() const {
 Register riscv::RISCVExceptionHandler::getSupervisorCallRegister(
     int regNumber) const {
   switch (regNumber) {
+    case -1:
+      return {RegisterType::GENERAL, 17};
     case 0:
       return {RegisterType::GENERAL, 10};
     case 1:

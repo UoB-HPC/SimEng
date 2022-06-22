@@ -22,11 +22,6 @@ uint64_t aarch64::AArch64ExceptionHandler::callNumberConversionToAArch64(
   return syscallNumber;
 }
 
-uint64_t aarch64::AArch64ExceptionHandler::getSyscallID() const {
-  const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
-  return registerFileSet.get({RegisterType::GENERAL, 8}).get<uint64_t>();
-}
-
 bool aarch64::AArch64ExceptionHandler::isSupervisorCall() const {
   return instruction_.getException() == InstructionException::SupervisorCall;
 }
@@ -34,6 +29,8 @@ bool aarch64::AArch64ExceptionHandler::isSupervisorCall() const {
 Register aarch64::AArch64ExceptionHandler::getSupervisorCallRegister(
     int regNumber) const {
   switch (regNumber) {
+    case -1:
+      return {RegisterType::GENERAL, 8};
     case 0:
       return {RegisterType::GENERAL, 0};
     case 1:

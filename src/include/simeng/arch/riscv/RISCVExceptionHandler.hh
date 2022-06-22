@@ -25,9 +25,6 @@ class RISCVExceptionHandler : public simeng::arch::GenericExceptionHandler {
   [[nodiscard]] uint64_t callNumberConversionToAArch64(
       uint64_t syscallNumber) const override;
 
-  /** Return the system call number */
-  [[nodiscard]] uint64_t getSyscallID() const override;
-
   /** Prints a description of the exception and the instruction that generated
    * it. */
   void printException() const override;
