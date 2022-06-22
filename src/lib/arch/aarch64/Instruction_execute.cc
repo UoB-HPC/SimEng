@@ -1663,8 +1663,10 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_CMHSv16i8: {
-        return executionNYI();
+      case Opcode::AArch64_CMHSv16i8: {  // cmhs v1.16b, v3.16b, v1.16b
+        results[0] = neonHelp::vecCompare<uint8_t, 16>(
+            operands, false,
+            [](uint8_t x, uint8_t y) -> bool { return (x >= y); });
         break;
       }
       case Opcode::AArch64_CMHSv1i64: {
@@ -2763,8 +2765,9 @@ void Instruction::execute() {
             neonHelp::vecDup_gprOrIndex<uint32_t, 4>(operands, metadata, false);
         break;
       }
-      case Opcode::AArch64_DUPv8i16gpr: {
-        return executionNYI();
+      case Opcode::AArch64_DUPv8i16gpr: {  // dup vd.8h, wn
+        results[0] =
+            neonHelp::vecDup_gprOrIndex<uint16_t, 8>(operands, metadata, true);
         break;
       }
       case Opcode::AArch64_DUPv8i16lane: {
