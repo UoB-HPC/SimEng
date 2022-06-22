@@ -47,7 +47,7 @@ Register riscv::RISCVExceptionHandler::getSupervisorCallRegister(
     case 5:
       return {RegisterType::GENERAL, 15};
     default:
-      assert(true && "Supervisor call register out of range");
+      assert(false && "Supervisor call register out of range");
   }
 }
 

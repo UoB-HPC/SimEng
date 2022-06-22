@@ -47,7 +47,7 @@ Register aarch64::AArch64ExceptionHandler::getSupervisorCallRegister(
     case 5:
       return {RegisterType::GENERAL, 5};
     default:
-      assert(true && "Supervisor call register out of range");
+      assert(false && "Supervisor call register out of range");
   }
 }
 
