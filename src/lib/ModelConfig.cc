@@ -292,7 +292,7 @@ void ModelConfig::validate() {
     if (configFile_["ISA"]["Type"].as<std::string>() == "RISCV") {
       // Register-Set
       root = "Register-Set";
-      subFields = {"GeneralPurpose-Count", "FloatingPoint"};
+      subFields = {"GeneralPurpose-Count", "FloatingPoint-Count"};
       nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
                             std::make_pair(32, UINT16_MAX),
                             ExpectedValue::UInteger);
