@@ -27,10 +27,8 @@ bool GenericExceptionHandler::init() {
   R4 = getSupervisorCallRegister(4);
   R5 = getSupervisorCallRegister(5);
 
-  //  InstructionException exception = instruction_.getException();
   const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
 
-  //  if (exception == InstructionException::SupervisorCall) {
   if (isSupervisorCall()) {
     // Retrieve syscall ID
     auto syscallId =
@@ -453,6 +451,7 @@ bool GenericExceptionHandler::init() {
       case 131: {  // tgkill
         // TODO currently returns success without action
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0}};
+        break;
       }
       case 134: {  // rt_sigaction
         // TODO: Implement syscall logic. Ignored for now as it's assumed the
@@ -611,6 +610,8 @@ bool GenericExceptionHandler::init() {
         break;
       }
       case 1024: {
+        // TODO this ID does not map to any syscall so no functionality
+        // is provided. SE is allowed to continue after this call
         std::cout << "SIMENG: BROKEN SYSCALL 1024" << std::endl;
         break;
       }
