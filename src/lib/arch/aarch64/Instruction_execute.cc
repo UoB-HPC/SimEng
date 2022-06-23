@@ -1493,12 +1493,16 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_CMEQv8i8: {
-        return executionNYI();
+      case Opcode::AArch64_CMEQv8i8: {  // cmeq vd.8b, vn.8b, vm.8b
+        results[0] = neonHelp::vecCompare<uint16_t, 8>(
+            operands, false,
+            [](uint32_t x, uint32_t y) -> bool { return (x == y); });
         break;
       }
-      case Opcode::AArch64_CMEQv8i8rz: {
-        return executionNYI();
+      case Opcode::AArch64_CMEQv8i8rz: {  // cmeq vd.8b, vn.8b, #0
+        results[0] = neonHelp::vecCompare<uint16_t, 8>(
+            operands, true,
+            [](uint32_t x, uint32_t y) -> bool { return (x == y); });
         break;
       }
       case Opcode::AArch64_CMGEv16i8: {
