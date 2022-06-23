@@ -159,7 +159,7 @@ void Instruction::decode() {
     }
 
     else if (i > 0 && op.type == RISCV_OP_REG) {
-      // Second or third operand
+      //  Second or third operand
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
 
       if (sourceRegisters[sourceRegisterCount] == Instruction::ZERO_REGISTER) {
@@ -173,7 +173,7 @@ void Instruction::decode() {
     }
 
     else if (i > 0 && op.type == RISCV_OP_MEM) {
-      // Memory operand
+      //  Memory operand
       accessesMemory = true;
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
       sourceRegisterCount++;
@@ -207,6 +207,24 @@ void Instruction::decode() {
        metadata.opcode <= Opcode::RISCV_SLTU)) {
     // Compare instructions
     isCompare_ = true;
+  }
+
+  // Set branch type
+  switch (metadata.opcode) {
+    case Opcode::RISCV_BEQ:
+    case Opcode::RISCV_BNE:
+    case Opcode::RISCV_BLT:
+    case Opcode::RISCV_BLTU:
+    case Opcode::RISCV_BGE:
+    case Opcode::RISCV_BGEU:
+      branchType_ = BranchType::Conditional;
+      knownTarget_ = instructionAddress_ + metadata.operands[2].imm;
+      break;
+    case Opcode::RISCV_JAL:
+    case Opcode::RISCV_JALR:
+      branchType_ = BranchType::Unconditional;
+      knownTarget_ = instructionAddress_ + metadata.operands[1].imm;
+      break;
   }
 }
 

@@ -26,7 +26,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
-  // Create fake system register for ::getVCTreg
+  // Create fake system register for ::getVCTreg and ::getPCCreg
   systemRegisterMap_[RISCV_SYSREG_FAKE_VCT] = systemRegisterMap_.size();
   systemRegisterMap_[RISCV_SYSREG_FAKE_PCC] = systemRegisterMap_.size();
 
