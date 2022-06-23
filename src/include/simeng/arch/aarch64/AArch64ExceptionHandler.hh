@@ -20,27 +20,25 @@ class AArch64ExceptionHandler : public simeng::arch::GenericExceptionHandler {
       const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
       MemoryInterface& memory, kernel::Linux& linux);
 
-  /** Return the syscall number with AArch64 identification. See
+  /** Return the syscall number with SE identification. See
    * https://marcin.juszkiewicz.com.pl/download/tables/syscalls.html */
-  [[nodiscard]] uint64_t callNumberConversionToAArch64(
-      uint64_t syscallNumber) const override;
+  uint64_t convertToSEReprisentation(uint64_t syscallNumber) const override;
 
   /** Prints a description of the exception and the instruction that generated
    * it. */
   void printException() const override;
 
   /** Returns whether this is a supervisor call exception */
-  [[nodiscard]] bool isSupervisorCall() const override;
+  bool isSupervisorCall() const override;
 
   /** Get the regNumber'th register, used to hold data for supervisor calls */
-  [[nodiscard]] Register getSupervisorCallRegister(
-      int regNumber) const override;
+  Register getSupervisorCallRegister(int regNumber) const override;
 
   /** Returns the sequence ID of the instructions throwing this exception */
-  [[nodiscard]] uint64_t getInstructionSequenceID() const override;
+  uint64_t getInstructionSequenceID() const override;
 
   /** Returns the address of the instructions throwing this exception */
-  [[nodiscard]] uint64_t getInstructionAddress() const override;
+  uint64_t getInstructionAddress() const override;
 
   /** Implements the ISA specific uname syscall, return a processStateChange */
   ProcessStateChange uname(uint64_t base, Register R0) const override;

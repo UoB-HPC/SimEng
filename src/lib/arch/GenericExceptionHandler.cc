@@ -33,8 +33,8 @@ bool GenericExceptionHandler::init() {
   //  if (exception == InstructionException::SupervisorCall) {
   if (isSupervisorCall()) {
     // Retrieve syscall ID
-    auto syscallId = callNumberConversionToAArch64(
-        registerFileSet.get(Rsys).get<uint64_t>());
+    auto syscallId =
+        convertToSEReprisentation(registerFileSet.get(Rsys).get<uint64_t>());
 
     ProcessStateChange stateChange;
     switch (syscallId) {

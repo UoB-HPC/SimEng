@@ -16,7 +16,7 @@ aarch64::AArch64ExceptionHandler::AArch64ExceptionHandler(
     : GenericExceptionHandler(core, memory, linux),
       instruction_(*static_cast<Instruction*>(instruction.get())) {}
 
-uint64_t aarch64::AArch64ExceptionHandler::callNumberConversionToAArch64(
+uint64_t aarch64::AArch64ExceptionHandler::convertToSEReprisentation(
     uint64_t syscallNumber) const {
   // No conversion necessary
   return syscallNumber;
