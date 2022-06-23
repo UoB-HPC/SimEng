@@ -261,14 +261,14 @@ simeng::Register Architecture::getPCCreg() const {
 std::vector<RegisterFileStructure>
 Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
   return {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
-          {8, config["Register-Set"]["FloatingPoint"].as<uint16_t>()},
+          {8, config["Register-Set"]["FloatingPoint-Count"].as<uint16_t>()},
           {8, getNumSystemRegisters()}};
 }
 
 std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
     YAML::Node config) const {
   return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
-          config["Register-Set"]["FloatingPoint"].as<uint16_t>(),
+          config["Register-Set"]["FloatingPoint-Count"].as<uint16_t>(),
           getNumSystemRegisters()};
 }
 uint16_t Architecture::getNumSystemRegisters() const {
