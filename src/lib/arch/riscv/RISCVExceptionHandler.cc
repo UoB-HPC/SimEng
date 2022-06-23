@@ -16,7 +16,7 @@ riscv::RISCVExceptionHandler::RISCVExceptionHandler(
     : GenericExceptionHandler(core, memory, linux),
       instruction_(*static_cast<Instruction*>(instruction.get())) {}
 
-uint64_t riscv::RISCVExceptionHandler::convertToSEReprisentation(
+uint64_t riscv::RISCVExceptionHandler::convertToSERepresentation(
     uint64_t syscallNumber) const {
   // No conversion necessary
   return syscallNumber;

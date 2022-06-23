@@ -34,7 +34,7 @@ bool GenericExceptionHandler::init() {
   if (isSupervisorCall()) {
     // Retrieve syscall ID
     auto syscallId =
-        convertToSEReprisentation(registerFileSet.get(Rsys).get<uint64_t>());
+        convertToSERepresentation(registerFileSet.get(Rsys).get<uint64_t>());
 
     ProcessStateChange stateChange;
     switch (syscallId) {

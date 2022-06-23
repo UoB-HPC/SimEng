@@ -22,7 +22,7 @@ class AArch64ExceptionHandler : public simeng::arch::GenericExceptionHandler {
 
   /** Return the syscall number with SE identification. See
    * https://marcin.juszkiewicz.com.pl/download/tables/syscalls.html */
-  uint64_t convertToSEReprisentation(uint64_t syscallNumber) const override;
+  uint64_t convertToSERepresentation(uint64_t syscallNumber) const override;
 
   /** Prints a description of the exception and the instruction that generated
    * it. */

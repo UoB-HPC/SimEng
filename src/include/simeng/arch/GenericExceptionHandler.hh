@@ -29,7 +29,7 @@ class GenericExceptionHandler : public simeng::arch::ExceptionHandler {
   /** Return the syscall number with SE identification. See
    * https://marcin.juszkiewicz.com.pl/download/tables/syscalls.html for Linux
    * call number table */
-  virtual uint64_t convertToSEReprisentation(uint64_t syscallNumber) const = 0;
+  virtual uint64_t convertToSERepresentation(uint64_t syscallNumber) const = 0;
 
   /** Prints a description of the exception and the instruction that generated
    * it. */
