@@ -368,6 +368,50 @@ TEST_P(InstNeon, and) {
 }
 
 TEST_P(InstNeon, bic) {
+  // 16 bit
+  // Vector, immediate
+  initialHeapData_.resize(32);
+  uint16_t* heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+
+  // v0
+  heap16[0] = 0xDEAD;
+  heap16[1] = 0x1234;
+  heap16[2] = 0x89AB;
+  heap16[3] = 0xF0F0;
+  heap16[4] = 0xDEAD;
+  heap16[5] = 0x1234;
+  heap16[6] = 0x89AB;
+  heap16[7] = 0xF0F0;
+
+  // v1
+  heap16[8] = 0xDEAD;
+  heap16[9] = 0x1234;
+  heap16[10] = 0x89AB;
+  heap16[11] = 0xF0F0;
+  heap16[12] = 0xDEAD;
+  heap16[13] = 0x1234;
+  heap16[14] = 0x89AB;
+  heap16[15] = 0xF0F0;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    bic v0.8h, #0x80, lsl #8
+    bic v1.8h, #0xFF
+  )");
+
+  CHECK_NEON(0, uint16_t,
+             {0x5ead, 0x1234, 0x09ab, 0x70f0, 0x5EAD, 0x1234, 0x9AB, 0x70F0});
+
+  CHECK_NEON(1, uint16_t,
+             {0xde00, 0x1200, 0x8900, 0xf000, 0xde00, 0x1200, 0x8900, 0xf000});
+
+  // 32-bit
   // Vector, immediate
   initialHeapData_.resize(32);
   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());

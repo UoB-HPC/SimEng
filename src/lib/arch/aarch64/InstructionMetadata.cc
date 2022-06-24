@@ -87,6 +87,9 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // adds incorrectly flags destination as READ
       operands[0].access = CS_AC_WRITE;
       break;
+    case Opcode::AArch64_BICv8i16:
+      operands[0].access = CS_AC_WRITE | CS_AC_READ;
+      break;
     case Opcode::AArch64_BICv8i8:
       // access specifier for last operand was missing
       operands[2].access = CS_AC_READ;
