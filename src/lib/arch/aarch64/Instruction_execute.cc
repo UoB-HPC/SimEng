@@ -920,8 +920,8 @@ void Instruction::execute() {
         results[0] = neonHelp::vecBicShift_imm<uint32_t, 4>(operands, metadata);
         break;
       }
-      case Opcode::AArch64_BICv8i16: {
-        return executionNYI();
+      case Opcode::AArch64_BICv8i16: {  // bic vd.8h, #imm{, lsl #shift}
+        results[0] = neonHelp::vecBicShift_imm<uint16_t, 8>(operands, metadata);
         break;
       }
       case Opcode::AArch64_BICv8i8: {  // bic vd.8b, vn.8b, vm.8b
