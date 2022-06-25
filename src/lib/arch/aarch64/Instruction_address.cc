@@ -178,6 +178,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{base, 16}});
         break;
       }
+      case Opcode::AArch64_LD1Onev16b_POST: {  // ld1 {vt.16b}, [xn], #imm
+        uint64_t base = operands[0].get<uint64_t>();
+        setMemoryAddresses({{base, 16}});
+        break;
+      }
       case Opcode::AArch64_LD1Twov16b: {  // ld1 {vt1.16b, vt2.16b}, [xn]
         uint64_t base = operands[0].get<uint64_t>();
         setMemoryAddresses({{base, 16}, {base + 16, 16}});
