@@ -210,11 +210,28 @@ TEST_P(InstLoad, ld1_multi_struct) {
 
     # Load values from heap
     ld1 {v0.16b}, [x0]
+
+    # save heap address before post index
+    mov x10, x0
+
+    # Load values from heap with post-index
+    ld1 {v1.16b}, [x0], #16
+
+    # save heap address after post index
+    mov x11, x0
+
   )");
 
   CHECK_NEON(0, uint8_t,
              {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
               0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+
+  CHECK_NEON(0, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            getGeneralRegister<uint64_t>(10) + 16);
 }
 
 TEST_P(InstLoad, ld2_multi_struct) {

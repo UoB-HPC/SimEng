@@ -7627,8 +7627,9 @@ void Instruction::execute() {
         results[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
         break;
       }
-      case Opcode::AArch64_LD1Onev16b_POST: {
-        return executionNYI();
+      case Opcode::AArch64_LD1Onev16b_POST: {  // ld1 {vt.16b}, [xn], #imm
+        results[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
+        results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD1Onev1d: {
