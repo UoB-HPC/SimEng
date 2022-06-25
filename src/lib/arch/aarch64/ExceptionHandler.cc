@@ -442,6 +442,12 @@ bool ExceptionHandler::init() {
         }
         break;
       }
+      case 131: {  // tgkill
+        // TODO: Functionality temporarily omitted since simeng only has a
+        // single thread at the moment
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+        break;
+      }
       case 134: {  // rt_sigaction
         // TODO: Implement syscall logic. Ignored for now as it's assumed the
         // current use of this syscall is to setup error handlers. Simualted
