@@ -994,7 +994,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_BRK: {
-        return executionNYI();
+        // TODO: Generate breakpoint exception
         break;
       }
       case Opcode::AArch64_BRKAS_PPzP: {
