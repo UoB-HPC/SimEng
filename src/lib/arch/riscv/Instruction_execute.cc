@@ -9,8 +9,8 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-/** Multiply `a` and `b`, and return the high 64 bits of the result.
- * https://stackoverflow.com/a/28904636 */
+/** Multiply unsigned `a` and unsigned `b`, and return the high 64 bits of the
+ * result. https://stackoverflow.com/a/28904636 */
 uint64_t mulhiuu(uint64_t a, uint64_t b) {
   uint64_t a_lo = (uint32_t)a;
   uint64_t a_hi = a >> 32;
@@ -32,15 +32,15 @@ uint64_t mulhiuu(uint64_t a, uint64_t b) {
   return multhi;
 }
 
-/** Multiply `a` and `b`, and return the high 64 bits of the result.
- * https://stackoverflow.com/a/28904636 */
+/** Multiply signed `a` and signed `b`, and return the high 64 bits of the
+ * result. */
 uint64_t mulhiss(int64_t a, int64_t b) {
   // TODO NYI
   return a;
 }
 
-/** Multiply `a` and `b`, and return the high 64 bits of the result.
- * https://stackoverflow.com/a/28904636 */
+/** Multiply signed `a` and unsigned `b`, and return the high 64 bits of the
+ * result. */
 uint64_t mulhisu(int64_t a, uint64_t b) {
   // TODO NYI
   return a;
