@@ -47,7 +47,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   capstone-lib
   GIT_REPOSITORY https://github.com/finnwilkinson/capstone.git
-  GIT_TAG next
+  GIT_TAG llvm14-update
   GIT_PROGRESS TRUE
 
   # GIT_REPOSITORY https://github.com/UoB-HPC/capstone.git
