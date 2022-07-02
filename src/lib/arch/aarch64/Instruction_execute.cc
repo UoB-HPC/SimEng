@@ -1494,15 +1494,15 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_CMEQv8i8: {  // cmeq vd.8b, vn.8b, vm.8b
-        results[0] = neonHelp::vecCompare<uint16_t, 8>(
+        results[0] = neonHelp::vecCompare<int8_t, 8>(
             operands, false,
-            [](uint32_t x, uint32_t y) -> bool { return (x == y); });
+            [](int8_t x, int8_t y) -> bool { return (x == y); });
         break;
       }
       case Opcode::AArch64_CMEQv8i8rz: {  // cmeq vd.8b, vn.8b, #0
-        results[0] = neonHelp::vecCompare<uint16_t, 8>(
+        results[0] = neonHelp::vecCompare<int8_t, 8>(
             operands, true,
-            [](uint32_t x, uint32_t y) -> bool { return (x == y); });
+            [](int8_t x, int8_t y) -> bool { return (x == y); });
         break;
       }
       case Opcode::AArch64_CMGEv16i8: {
@@ -1668,9 +1668,9 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_CMHSv16i8: {  // cmhs vd.16b, vn.16b, vm.16b
-        results[0] = neonHelp::vecCompare<uint8_t, 16>(
+        results[0] = neonHelp::vecCompare<int8_t, 16>(
             operands, false,
-            [](uint8_t x, uint8_t y) -> bool { return (x >= y); });
+            [](int8_t x, int8_t y) -> bool { return (x >= y); });
         break;
       }
       case Opcode::AArch64_CMHSv1i64: {
@@ -17144,7 +17144,7 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_UMINPv16i8: {
+      case Opcode::AArch64_UMINPv16i8: {  // uminp vd.16b, vn.16b, vm.16b
         results[0] = neonHelp::vecUMinP<uint8_t, 16>(operands);
         break;
       }

@@ -594,7 +594,7 @@ TEST_P(InstNeon, bsl) {
 }
 
 TEST_P(InstNeon, cmeq) {
-  // 8-bit
+  // 8-bit, 16 lane
   initialHeapData_.resize(32);
   uint8_t* heap8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
   for (int i = 0; i < 16; i++) {
@@ -622,15 +622,24 @@ TEST_P(InstNeon, cmeq) {
              {0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00, 0x00, 0x00, 0x00,
               0x00, 0xFF, 0x00, 0x00, 0x00});
 
-  // 16-bit
-  initialHeapData_.resize(32);
-  uint16_t* heap16 = reinterpret_cast<uint16_t*>(initialHeapData_.data());
+  // 8-bit, 8 lane
+  initialHeapData_.resize(16);
+  uint8_t* heapv8i8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
   for (int i = 0; i < 8; i++) {
-    heap16[i] = i;
-    heap16[i + 8] = i;
+    heapv8i8[i] = i;
+    heapv8i8[i + 8] = i;
   }
-  heap16[3] = 0;
-  heap16[6] = 0;
+
+  // v0 changes
+  heapv8i8[0] = -1;
+  heapv8i8[3] = 0;
+  heapv8i8[6] = 0;
+
+  // v1 changes
+  heapv8i8[8] = -1;
+  heapv8i8[11] = -128;
+  heapv8i8[14] = 0;
+
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -638,15 +647,13 @@ TEST_P(InstNeon, cmeq) {
     svc #0
 
     ldr q0, [x0]
-    ldr q1, [x0, #16]
+    ldr q1, [x0, #8]
     cmeq v2.8b, v0.8b, v1.8b
     cmeq v3.8b, v0.8b, 0
   )");
 
-  CHECK_NEON(2, uint16_t,
-             {0xFFFF, 0xFFFF, 0xFFFF, 0x0000, 0xFFFF, 0xFFFF, 0x0000, 0xFFFF});
-  CHECK_NEON(3, uint16_t,
-             {0xFFFF, 0x0000, 0x0000, 0xFFFF, 0x0000, 0x0000, 0xFFFF, 0x0000});
+  CHECK_NEON(2, uint8_t, {0xFF, 0xFF, 0xFF, 0x00, 0xFF, 0xFF, 0xFF, 0xFF});
+  CHECK_NEON(3, uint8_t, {0x00, 0x00, 0x00, 0xFF, 0x00, 0x00, 0xFF, 0x00});
 
   // 32-bit
   initialHeapData_.resize(128);
@@ -660,6 +667,7 @@ TEST_P(InstNeon, cmeq) {
   heap32[5] = 11;
   heap32[6] = 12;
   heap32[7] = 10;
+
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -676,32 +684,32 @@ TEST_P(InstNeon, cmeq) {
 TEST_P(InstNeon, cmhs) {
   // cmhs vd.16b, vn.16b, vm.16b
   initialHeapData_.resize(32);
-  uint8_t* heap = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  int8_t* heap = reinterpret_cast<int8_t*>(initialHeapData_.data());
 
   // v0
   heap[0] = 0;
-  heap[1] = 0xFF;
-  heap[2] = UINT8_MAX;
+  heap[1] = 0x7F;
+  heap[2] = INT8_MAX;
   heap[3] = 1;
-  heap[4] = 1;
-  heap[5] = 1;
+  heap[4] = -128;
+  heap[5] = -1;
   heap[6] = 0xAA;
   heap[7] = 0xBB;
   heap[8] = 0xCC;
-  heap[9] = UINT8_MAX;
-  heap[10] = UINT8_MAX - 1;
-  heap[11] = UINT8_MAX - 2;
-  heap[12] = 0xFF;
-  heap[13] = 0xFF;
-  heap[14] = 0xFF;
-  heap[15] = 0xFF;
+  heap[9] = INT8_MAX;
+  heap[10] = INT8_MAX - 1;
+  heap[11] = INT8_MAX - 2;
+  heap[12] = 0x7F;
+  heap[13] = 0x7F;
+  heap[14] = 0x7F;
+  heap[15] = 0x7F;
 
   // v1
-  heap[16] = UINT8_MAX;
-  heap[17] = 0xFF;
+  heap[16] = INT8_MAX;
+  heap[17] = 0x7F;
   heap[18] = 0;
-  heap[19] = 0;
-  heap[20] = 0;
+  heap[19] = -128;
+  heap[20] = 1;
   heap[21] = 0;
   heap[22] = 0xAA;
   heap[23] = 0xBB;
@@ -709,10 +717,10 @@ TEST_P(InstNeon, cmhs) {
   heap[25] = 0;
   heap[26] = 1;
   heap[27] = 2;
-  heap[28] = 0xFF;
-  heap[29] = 0xFF;
-  heap[30] = 0xFF;
-  heap[31] = 0xFF;
+  heap[28] = 0x7F;
+  heap[29] = 0x7F;
+  heap[30] = 0x7F;
+  heap[31] = 0x7F;
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -728,11 +736,11 @@ TEST_P(InstNeon, cmhs) {
   )");
 
   CHECK_NEON(2, uint8_t,
-             {0x0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+             {0x00, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
               0xFF, 0xFF, 0xFF, 0xFF, 0xFF});
   CHECK_NEON(3, uint8_t,
-             {0xFF, 0xFF, 0x0, 0x0, 0x0, 0x0, 0xFF, 0xFF, 0xFF, 0x0, 0x0, 0x0,
-              0xFF, 0xFF, 0xFF, 0xFF});
+             {0xFF, 0xFF, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00,
+              0x00, 0xFF, 0xFF, 0xFF, 0xFF});
 }
 
 TEST_P(InstNeon, cmhi) {
