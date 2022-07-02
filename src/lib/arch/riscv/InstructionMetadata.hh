@@ -58,11 +58,6 @@ struct InstructionMetadata {
   /** The number of implicitly referenced destination registers. */
   uint8_t implicitDestinationCount;
 
-  /** The instruction groups this instruction belongs to. Non-exhaustive. */
-  uint8_t groups[MAX_GROUPS];
-  /** The number of instruction groups this instruction belongs to. */
-  uint8_t groupCount;
-
   /** The explicit operands. */
   cs_riscv_op operands[MAX_OPERANDS];
   /** The number of explicit operands. */

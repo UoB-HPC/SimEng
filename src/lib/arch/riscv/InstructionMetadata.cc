@@ -12,7 +12,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       opcode(insn.opcode),
       implicitSourceCount(insn.detail->regs_read_count),
       implicitDestinationCount(insn.detail->regs_write_count),
-      //      groupCount(insn.detail->groups_count),
       operandCount(insn.detail->riscv.op_count) {
   std::memcpy(encoding, insn.bytes, sizeof(encoding));
   // Copy printed output
@@ -24,7 +23,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
               sizeof(uint16_t) * implicitSourceCount);
   std::memcpy(implicitDestinations, insn.detail->regs_write,
               sizeof(uint16_t) * implicitDestinationCount);
-  //  std::memcpy(groups, insn.detail->groups, sizeof(uint8_t) * groupCount);
   std::memcpy(operands, insn.detail->riscv.operands,
               sizeof(cs_riscv_op) * operandCount);
 
@@ -202,7 +200,6 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
       opcode(Opcode::RISCV_INSTRUCTION_LIST_END),
       implicitSourceCount(0),
       implicitDestinationCount(0),
-      groupCount(0),
       operandCount(0) {
   assert(bytes <= sizeof(encoding));
   std::memcpy(encoding, invalidEncoding, bytes);
