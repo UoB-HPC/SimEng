@@ -85,13 +85,9 @@ TEST_P(InstJump, jalAlias) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    RISCV, InstJump,
-    ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
-                      std::make_tuple(INORDER, YAML::Load("{}"))
-//                          ,
-//                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))
-                      ),
-    paramToString);
+INSTANTIATE_TEST_SUITE_P(RISCV, InstJump,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

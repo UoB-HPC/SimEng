@@ -406,14 +406,9 @@ TEST_P(InstMulDiv, remuw) {
             0xFFFFFFFF80000000);  // big pos/max pos = 0
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    RISCV, InstMulDiv,
-    ::testing::Values(
-        std::make_tuple(EMULATION, YAML::Load("{}")),
-        std::make_tuple(INORDER, YAML::Load("{}"))
-        //                          ,
-        //                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))
-        ),
-    paramToString);
+INSTANTIATE_TEST_SUITE_P(RISCV, InstMulDiv,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace

@@ -358,14 +358,9 @@ TEST_P(InstArithmetic, liPseudoinstruction) {
   EXPECT_EQ(getGeneralRegister<int64_t>(13), -180);
 }
 
-INSTANTIATE_TEST_SUITE_P(
-    RISCV, InstArithmetic,
-    ::testing::Values(
-        std::make_tuple(EMULATION, YAML::Load("{}")),
-        std::make_tuple(INORDER, YAML::Load("{}"))
-        //                          ,
-        //                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))
-        ),
-    paramToString);
+INSTANTIATE_TEST_SUITE_P(RISCV, InstArithmetic,
+                         ::testing::Values(std::make_tuple(EMULATION,
+                                                           YAML::Load("{}"))),
+                         paramToString);
 
 }  // namespace
