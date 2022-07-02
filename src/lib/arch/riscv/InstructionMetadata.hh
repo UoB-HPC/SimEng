@@ -66,7 +66,7 @@ struct InstructionMetadata {
  private:
   /** Detect instruction aliases and update metadata to match the de-aliased
    * instruction. */
-  void revertAliasing();
+  void revertAliasing(const cs_insn& insn);
 
   /** Flag the instruction as invalid due to a detected unsupported alias. */
   void aliasNYI();

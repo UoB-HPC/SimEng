@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace arch {
@@ -26,6 +27,25 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
   std::memcpy(operands, insn.detail->riscv.operands,
               sizeof(cs_riscv_op) * operandCount);
 
+  revertAliasing(insn);
+}
+
+InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
+                                         uint8_t bytes)
+    : id(RISCV_INS_INVALID),
+      opcode(Opcode::RISCV_INSTRUCTION_LIST_END),
+      implicitSourceCount(0),
+      implicitDestinationCount(0),
+      operandCount(0) {
+  assert(bytes <= sizeof(encoding));
+  std::memcpy(encoding, invalidEncoding, bytes);
+  mnemonic[0] = '\0';
+  operandStr[0] = '\0';
+}
+
+void InstructionMetadata::revertAliasing(const cs_insn& insn) {
+  // Check mnemonics known to be aliases and see if their opcode matches
+  // something else
   // Fix some inaccuracies in the decoded metadata
   switch (opcode) {
     case Opcode::RISCV_ADDI: {
@@ -190,29 +210,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;
     }
   }
-
-  //  revertAliasing();
 }
-
-InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
-                                         uint8_t bytes)
-    : id(RISCV_INS_INVALID),
-      opcode(Opcode::RISCV_INSTRUCTION_LIST_END),
-      implicitSourceCount(0),
-      implicitDestinationCount(0),
-      operandCount(0) {
-  assert(bytes <= sizeof(encoding));
-  std::memcpy(encoding, invalidEncoding, bytes);
-  mnemonic[0] = '\0';
-  operandStr[0] = '\0';
-}
-
-// void InstructionMetadata::revertAliasing() {
-//  // Check mnemonics known to be aliases and see if their opcode matches
-//  // something else
-//  switch (id) {
-//  }
-//}
 
 void InstructionMetadata::aliasNYI() { id = RISCV_INS_INVALID; }
 
