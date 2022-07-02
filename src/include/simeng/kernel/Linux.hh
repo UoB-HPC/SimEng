@@ -32,8 +32,8 @@ struct stat {
   uint64_t mtimensec;  // offset =  96
   int64_t ctime;       // offset = 104
   uint64_t ctimensec;  // offset = 112
-  uint32_t padding6;   // offset = 116
-  uint32_t padding7;   // offset = 124
+  uint32_t padding3;   // offset = 116
+  uint32_t padding4;   // offset = 124
 };
 
 /** Fixed-width definition of `termios`.
