@@ -547,7 +547,7 @@ class neonHelp {
     return {out, 256};
   }
 
-  /** Helper function for NEON instructions with the format `umaxp rd, vn, vm`.
+  /** Helper function for NEON instructions with the format `umaxp vd, vn, vm`.
    * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
    * I represents the number of elements in the output array to be updated (e.g.
    * for vd.8b I = 8).
@@ -565,7 +565,7 @@ class neonHelp {
     return {out, 256};
   }
 
-  /** Helper function for NEON instructions with the format `uminp rd, vn, vm`.
+  /** Helper function for NEON instructions with the format `uminp vd, vn, vm`.
    * T represents the type of operands (e.g. for vn.2d, T = uint64_t).
    * I represents the number of elements in the output array to be updated (e.g.
    * for vd.8b I = 8).

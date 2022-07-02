@@ -89,6 +89,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       break;
     case Opcode::AArch64_BICv8i16:
       operands[0].access = CS_AC_WRITE | CS_AC_READ;
+      operands[1].access = CS_AC_READ;
       break;
     case Opcode::AArch64_BICv8i8:
       // access specifier for last operand was missing
@@ -816,11 +817,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // For vector arrangment of 32-bit, post_index immediate is 4
       operands[2].imm = 4;
       break;
-    case Opcode::AArch64_LD1Onev16b: {
-      // Fix incorrect access types
-      operands[0].access = CS_AC_WRITE;
-      break;
-    }
     case Opcode::AArch64_LD1Twov16b:
       [[fallthrough]];
     case Opcode::AArch64_LD1Twov16b_POST:

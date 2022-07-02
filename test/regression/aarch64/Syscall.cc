@@ -15,52 +15,59 @@ using Syscall = AArch64RegressionTest;
 static const size_t LINUX_PATH_MAX = 4096;
 
 TEST_P(Syscall, getrandom) {
-  initialHeapData_.resize(16);
-  memset(initialHeapData_.data(), -1, 8);
+  initialHeapData_.resize(24);
+  memset(initialHeapData_.data(), -1, 16);
 
-  // The assembly will be run 2 times, filling a buffer with random bytes each
-  // run. If these buffers contain different bytes, then the getrandom is
-  // random enough
-  uint8_t* buffers[2];
-
-  for (size_t i = 0; i < 2; i++) {
-    // init buffer to record the output into
-    buffers[i] = (uint8_t*)calloc(8, sizeof(uint8_t));
-
-    RUN_AARCH64(R"(
+  RUN_AARCH64(R"(
       # Get heap address
       mov x0, 0
       mov x8, 214
       svc #0
-      
-      # getrandom(buf * = [a], buflen = 4, no flags)
+
+      # store inital heap address
+      mov x10, x0
+
+      # Save 8 random bytes to the heap
+      # getrandom(buf * = [a], buflen = 8, no flags)
       mov x1, #8
-      ldr x0, buf
       mov x8, #278
       svc #0
 
-      # Move buf addr into x1 to easily read it from the test
-      ldr x1, buf
+      # Save another 8 random bytes to the heap
+      # getrandom(buf * = [a], buflen = 8, no flags)
+      add x0, x10, #8
+      mov x1, #8
+      mov x8, #278
+      svc #0
 
-      .balign 1
-      buf:  .skip   4
     )");
 
-    // Check getrandom returned 8 (8 bytes were requested)
-    EXPECT_EQ(getGeneralRegister<int64_t>(0), 8);
+  // Check getrandom returned 8 (8 bytes were requested)
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), 8);
 
-    // Record output
-    for (uint8_t j = 0; j < 8; j++) {
-      buffers[i][j] =
-          getMemoryValue<uint8_t>(getGeneralRegister<uint8_t>(1) + j);
-    }
+  int heapStart = getGeneralRegister<int64_t>(10);
+  for (size_t i = 0; i < 8; i++) {
+    printf("compare %x == %x\n", getMemoryValue<uint8_t>(heapStart + i),
+           getMemoryValue<uint8_t>(heapStart + 8 + i));
   }
 
-  // Chech that the values of buffers[0] and buffers[1] dont all match
-  // if they do then the returned bytes surely werent random
+  // check that the retuned bytes arent all equal to -1.
+  // heap was initialised to -1 so check bytes have changed
+  bool allUnchanged = true;
+  for (size_t i = 0; i < 16; i++) {
+    if (getMemoryValue<uint8_t>(heapStart + i) != 0xFF) {
+      allUnchanged = false;
+      break;
+    }
+  }
+  EXPECT_EQ(allUnchanged, false);
+
+  // Check that the returned bytes from the two syscalls dont all match.
+  // If they do then the returned bytes surely werent random
   bool allMatch = true;
   for (char i = 0; i < 8; i++) {
-    if (!(buffers[0][i] == buffers[1][i])) {
+    if (getMemoryValue<uint8_t>(heapStart + i) !=
+        getMemoryValue<uint8_t>(heapStart + 8 + i)) {
       allMatch = false;
       break;
     }

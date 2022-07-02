@@ -593,6 +593,11 @@ bool ExceptionHandler::init() {
         break;
       }
       case 278: {  // getrandom
+        // TODO: support flags argument
+
+        // seed random numbers
+        srand(clock());
+
         // Write <buflen> random bytes to buf
         uint64_t bufPtr = registerFileSet.get(R0).get<uint64_t>();
         size_t buflen = registerFileSet.get(R1).get<size_t>();
@@ -610,7 +615,7 @@ bool ExceptionHandler::init() {
         break;
       }
       case 293: {  // shutdown
-        // TODO: Functionality omitted - returning errno 38 (function not
+        // TODO: Functionality omitted - returns -38 (errno 38, function not
         // implemented) is to mimic the behaviour on isambard and avoid an
         // unrecognised syscall error
         stateChange = {
