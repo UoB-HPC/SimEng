@@ -149,8 +149,8 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
 }
 
 int64_t Linux::close(int64_t fd) {
-  // Don't close STDOUT or STDERR otherwise no SE output
-  if (fd != 1) {
+  // Don't close STDOUT or STDERR otherwise no SimEng output
+  if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
     assert(fd < processStates_[0].fileDescriptorTable.size());
     int64_t hfd = processStates_[0].fileDescriptorTable[fd];
     if (hfd < 0) {
