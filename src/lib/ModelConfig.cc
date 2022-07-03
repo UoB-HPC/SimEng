@@ -45,27 +45,28 @@ void ModelConfig::validate() {
   std::vector<std::string> subFields;
   std::string root = "";
 
-  // ISA
-  root = "ISA";
-  nodeChecker<std::string>(configFile_[root]["Type"], "Type",
-                           std::vector<std::string>({"AArch64", "RISCV"}),
-                           ExpectedValue::String);
-
   // Core
   root = "Core";
-  subFields = {"Simulation-Mode", "Clock-Frequency", "Timer-Frequency",
-               "Micro-Operations", "Vector-Length"};
+  subFields = {"ISA",
+               "Simulation-Mode",
+               "Clock-Frequency",
+               "Timer-Frequency",
+               "Micro-Operations",
+               "Vector-Length"};
   nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
+                           std::vector<std::string>({"AArch64", "rv64"}),
+                           ExpectedValue::String);
+  nodeChecker<std::string>(configFile_[root][subFields[1]], subFields[1],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
-  nodeChecker<float>(configFile_[root][subFields[1]], subFields[1],
+  nodeChecker<float>(configFile_[root][subFields[2]], subFields[2],
                      std::make_pair(0.f, 10.f), ExpectedValue::Float);
-  nodeChecker<uint32_t>(configFile_[root][subFields[2]], subFields[2],
+  nodeChecker<uint32_t>(configFile_[root][subFields[3]], subFields[3],
                         std::make_pair(1, UINT32_MAX), ExpectedValue::UInteger,
                         100);
-  nodeChecker<bool>(configFile_[root][subFields[3]], subFields[3],
+  nodeChecker<bool>(configFile_[root][subFields[4]], subFields[4],
                     std::make_pair(false, true), ExpectedValue::Bool, false);
-  nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
+  nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
                         {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
                          1408, 1536, 1664, 1792, 1920, 2048},
                         ExpectedValue::UInteger, 512);
@@ -289,7 +290,7 @@ void ModelConfig::validate() {
 
   // Ensure the ISA Type is defined and valid
   if (!invalid_.str().length() && !missing_.str().length()) {
-    if (configFile_["ISA"]["Type"].as<std::string>() == "RISCV") {
+    if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
       // Register-Set
       root = "Register-Set";
       subFields = {"GeneralPurpose-Count", "FloatingPoint-Count"};
@@ -300,7 +301,7 @@ void ModelConfig::validate() {
                             std::make_pair(32, UINT16_MAX),
                             ExpectedValue::UInteger);
       subFields.clear();
-    } else if (configFile_["ISA"]["Type"].as<std::string>() == "AArch64") {
+    } else if (configFile_["Core"]["ISA"].as<std::string>() == "AArch64") {
       // Register-Set
       root = "Register-Set";
       subFields = {"GeneralPurpose-Count", "FloatingPoint/SVE-Count",
@@ -536,7 +537,7 @@ void ModelConfig::validate() {
 }
 
 void ModelConfig::createGroupMapping() {
-  if (configFile_["ISA"]["Type"].as<std::string>() == "AArch64") {
+  if (configFile_["Core"]["ISA"].as<std::string>() == "AArch64") {
     groupOptions_ = {"INT",
                      "INT_SIMPLE",
                      "INT_SIMPLE_ARTH",
@@ -609,7 +610,7 @@ void ModelConfig::createGroupMapping() {
                      "STORE_DATA",
                      "STORE",
                      "BRANCH"};
-  } else if (configFile_["ISA"]["Type"].as<std::string>() == "RISCV") {
+  } else if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
     groupOptions_ = {"INT",
                      "INT_SIMPLE",
                      "INT_SIMPLE_ARTH",

@@ -219,9 +219,9 @@ int main(int argc, char** argv) {
 
   // Create the architecture, with knowledge of the kernel
   std::unique_ptr<simeng::arch::Architecture> arch;
-  if (config["ISA"]["Type"].as<std::string>() == "RISCV") {
+  if (config["Core"]["ISA"].as<std::string>() == "rv64") {
     arch = std::make_unique<simeng::arch::riscv::Architecture>(kernel, config);
-  } else if (config["ISA"]["Type"].as<std::string>() == "AArch64") {
+  } else if (config["Core"]["ISA"].as<std::string>() == "AArch64") {
     arch =
         std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
   }

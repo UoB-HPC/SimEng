@@ -15,7 +15,7 @@
 #include "yaml-cpp/yaml.h"
 
 #define DEFAULT_CONFIG                                                         \
-  ("{ISA: {Type: AArch64}, Core: {Simulation-Mode: inorderpipelined, "         \
+  ("{Core: {ISA: AArch64, Simulation-Mode: inorderpipelined, "                 \
    "Clock-Frequency: 2.5, Timer-Frequency: 100, Micro-Operations: True, "      \
    "Vector-Length: 512}, Fetch: {Fetch-Block-Size: 32, Loop-Buffer-Size: 64, " \
    "Loop-Detection-Threshold: 4}, Process-Image: {Heap-Size: 10485760, "       \
