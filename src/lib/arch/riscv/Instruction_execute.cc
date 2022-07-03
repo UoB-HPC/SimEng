@@ -77,30 +77,36 @@ void Instruction::execute() {
   executed_ = true;
   switch (metadata.opcode) {
     case Opcode::RISCV_LB: {  // LB rd,rs1,imm
-      results[0] = bitExtend(memoryData[0].get<uint8_t>(), 8);
+      results[0] = RegisterValue(bitExtend(memoryData[0].get<uint8_t>(), 8), 8);
       break;
     }
     case Opcode::RISCV_LBU: {  // LBU rd,rs1,imm
-      results[0] = zeroExtend(memoryData[0].get<uint8_t>(), 8);
+      results[0] =
+          RegisterValue(zeroExtend(memoryData[0].get<uint8_t>(), 8), 8);
       break;
     }
     case Opcode::RISCV_LH: {  // LH rd,rs1,imm
-      results[0] = bitExtend(memoryData[0].get<uint16_t>(), 16);
+      results[0] =
+          RegisterValue(bitExtend(memoryData[0].get<uint16_t>(), 16), 8);
       break;
     }
     case Opcode::RISCV_LHU: {  // LHU rd,rs1,imm
-      results[0] = zeroExtend(memoryData[0].get<uint16_t>(), 16);
+      results[0] =
+          RegisterValue(zeroExtend(memoryData[0].get<uint16_t>(), 16), 8);
       break;
     }
     case Opcode::RISCV_LW: {  // LW rd,rs1,imm
-      results[0] = bitExtend(memoryData[0].get<uint32_t>(), 32);
+      results[0] =
+          RegisterValue(bitExtend(memoryData[0].get<uint32_t>(), 32), 8);
       break;
     }
     case Opcode::RISCV_LWU: {  // LWU rd,rs1,imm
-      results[0] = zeroExtend(memoryData[0].get<uint32_t>(), 32);
+      results[0] =
+          RegisterValue(zeroExtend(memoryData[0].get<uint32_t>(), 32), 8);
       break;
     }
     case Opcode::RISCV_LD: {  // LD rd,rs1,imm
+      // Note: elements of memory data are RegisterValue's
       results[0] = memoryData[0];
       break;
     }
@@ -119,7 +125,7 @@ void Instruction::execute() {
       const int64_t rs2 =
           operands[1].get<int64_t>() & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int64_t>(rs1 << rs2);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SLLI: {  // SLLI rd,rs1,shamt
@@ -127,7 +133,7 @@ void Instruction::execute() {
       const int64_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int64_t>(rs1 << shamt);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SLLW: {  // SLLW rd,rs1,rs2
@@ -135,7 +141,7 @@ void Instruction::execute() {
       const int32_t rs2 =
           operands[1].get<int32_t>() & 63;  // Only use lowest 6 bits
       int64_t out = signExtendW(static_cast<int32_t>(rs1 << rs2));
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SLLIW: {  // SLLIW rd,rs1,shamt
@@ -143,7 +149,7 @@ void Instruction::execute() {
       const int32_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       uint64_t out = signExtendW(static_cast<uint32_t>(rs1 << shamt));
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SRL: {  // SRL rd,rs1,rs2
@@ -151,7 +157,7 @@ void Instruction::execute() {
       const uint64_t rs2 =
           operands[1].get<uint64_t>() & 63;  // Only use lowest 6 bits
       uint64_t out = static_cast<uint64_t>(rs1 >> rs2);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SRLI: {  // SRLI rd,rs1,shamt
@@ -159,7 +165,7 @@ void Instruction::execute() {
       const uint64_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       uint64_t out = static_cast<uint64_t>(rs1 >> shamt);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SRLW: {  // SRLW rd,rs1,rs2
@@ -167,7 +173,7 @@ void Instruction::execute() {
       const uint32_t rs2 =
           operands[1].get<uint32_t>() & 63;  // Only use lowest 6 bits
       uint64_t out = signExtendW(static_cast<uint64_t>(rs1 >> rs2));
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SRLIW: {  // SRLIW rd,rs1,shamt
@@ -175,7 +181,7 @@ void Instruction::execute() {
       const uint32_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       uint64_t out = signExtendW(static_cast<uint32_t>(rs1 >> shamt));
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SRA: {  // SRA rd,rs1,rs2
@@ -183,7 +189,7 @@ void Instruction::execute() {
       const int64_t rs2 =
           operands[1].get<int64_t>() & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int64_t>(rs1 >> rs2);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SRAI: {  // SRAI rd,rs1,shamt
@@ -191,7 +197,7 @@ void Instruction::execute() {
       const int64_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int64_t>(rs1 >> shamt);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SRAW: {  // SRAW rd,rs1,rs2
@@ -199,7 +205,7 @@ void Instruction::execute() {
       const int32_t rs2 =
           operands[1].get<int32_t>() & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int32_t>(rs1 >> rs2);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SRAIW: {  // SRAIW rd,rs1,shamt
@@ -207,55 +213,55 @@ void Instruction::execute() {
       const int32_t shamt =
           metadata.operands[2].imm & 63;  // Only use lowest 6 bits
       int64_t out = static_cast<int32_t>(rs1 >> shamt);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_ADD: {  // ADD rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       uint64_t out = static_cast<uint64_t>(rs1 + rs2);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_ADDW: {  // ADDW rd,rs1,rs2
       const int32_t rs1 = operands[0].get<int32_t>();
       const int32_t rs2 = operands[1].get<int32_t>();
       int64_t out = static_cast<int64_t>(static_cast<int32_t>(rs1 + rs2));
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_ADDI: {  // ADDI rd,rs1,imm
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = metadata.operands[2].imm;
       uint64_t out = static_cast<uint64_t>(rs1 + rs2);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_ADDIW: {  // ADDIW rd,rs1,imm
       const int32_t rs1 = operands[0].get<int32_t>();
       const int32_t imm = metadata.operands[2].imm;
       uint64_t out = signExtendW(rs1 + imm);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SUB: {  // SUB rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       uint64_t out = static_cast<uint64_t>(rs1 - rs2);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SUBW: {  // SUBW rd,rs1,rs2
       const int32_t rs1 = operands[0].get<int32_t>();
       const int32_t rs2 = operands[1].get<int32_t>();
       int64_t out = static_cast<int64_t>(static_cast<int32_t>(rs1 - rs2));
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_LUI: {  // LUI rd,imm
       uint64_t out = signExtendW(metadata.operands[1].imm
                                  << 12);  // Shift into upper 20 bits
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_AUIPC: {  // AUIPC rd,imm
@@ -263,58 +269,58 @@ void Instruction::execute() {
       const int64_t uimm = signExtendW(metadata.operands[1].imm
                                        << 12);  // Shift into upper 20 bits
       uint64_t out = static_cast<uint64_t>(pc + uimm);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_XOR: {  // XOR rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       uint64_t out = static_cast<uint64_t>(rs1 ^ rs2);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_XORI: {  // XORI rd,rs1,imm
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t imm = metadata.operands[2].imm;
       uint64_t out = static_cast<uint64_t>(rs1 ^ imm);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_OR: {  // OR rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       uint64_t out = static_cast<uint64_t>(rs1 | rs2);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_ORI: {  // ORI rd,rs1,imm
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t imm = metadata.operands[2].imm;
       uint64_t out = static_cast<uint64_t>(rs1 | imm);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_AND: {  // AND rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       uint64_t out = static_cast<uint64_t>(rs1 & rs2);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_ANDI: {  // ANDI rd,rs1,imm
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t imm = metadata.operands[2].imm;
       uint64_t out = static_cast<uint64_t>(rs1 & imm);
-      results[0] = out;
+      results[0] = RegisterValue(out, 8);
       break;
     }
     case Opcode::RISCV_SLT: {  // SLT rd,rs1,rs2
       const int64_t rs1 = operands[0].get<int64_t>();
       const int64_t rs2 = operands[1].get<int64_t>();
       if (rs1 < rs2) {
-        results[0] = static_cast<uint64_t>(1);
+        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
       } else {
-        results[0] = static_cast<uint64_t>(0);
+        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
       }
       break;
     }
@@ -322,9 +328,9 @@ void Instruction::execute() {
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
       if (rs1 < rs2) {
-        results[0] = static_cast<uint64_t>(1);
+        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
       } else {
-        results[0] = static_cast<uint64_t>(0);
+        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
       }
       break;
     }
@@ -332,9 +338,9 @@ void Instruction::execute() {
       const int64_t rs1 = operands[0].get<int64_t>();
       const int64_t imm = metadata.operands[2].imm;
       if (rs1 < imm) {
-        results[0] = static_cast<uint64_t>(1);
+        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
       } else {
-        results[0] = static_cast<uint64_t>(0);
+        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
       }
       break;
     }
@@ -342,9 +348,9 @@ void Instruction::execute() {
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t imm = static_cast<int64_t>(metadata.operands[2].imm);
       if (rs1 < imm) {
-        results[0] = static_cast<uint64_t>(1);
+        results[0] = RegisterValue(static_cast<uint64_t>(1), 8);
       } else {
-        results[0] = static_cast<uint64_t>(0);
+        results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
       }
       break;
     }
@@ -430,7 +436,7 @@ void Instruction::execute() {
       branchAddress_ = instructionAddress_ +
                        metadata.operands[1].imm;  // Set LSB of result to 0
       branchTaken_ = true;
-      results[0] = instructionAddress_ + 4;
+      results[0] = RegisterValue(instructionAddress_ + 4, 8);
       break;
     }
     case Opcode::RISCV_JALR: {  // JALR rd,rs1,imm
@@ -438,7 +444,7 @@ void Instruction::execute() {
           (operands[0].get<uint64_t>() + metadata.operands[2].imm) &
           ~1;  // Set LSB of result to 0
       branchTaken_ = true;
-      results[0] = instructionAddress_ + 4;
+      results[0] = RegisterValue(instructionAddress_ + 4, 8);
       break;
     }
       // TODO EBREAK
@@ -472,14 +478,15 @@ void Instruction::execute() {
       //  if not raise address-misaligned/access-fault exception
       // TODO use aq and rl bits to prevent reordering with other memory
       // operations
-      results[0] = bitExtend(memoryData[0].get<uint32_t>(), 32);
+      results[0] =
+          RegisterValue(bitExtend(memoryData[0].get<uint32_t>(), 32), 8);
       break;
     }
     case Opcode::RISCV_LR_D:  // LR.D rd,rs1
     case Opcode::RISCV_LR_D_AQ:
     case Opcode::RISCV_LR_D_RL:
     case Opcode::RISCV_LR_D_AQ_RL: {
-      results[0] = memoryData[0].get<uint64_t>();
+      results[0] = RegisterValue(memoryData[0].get<uint64_t>(), 8);
       break;
     }
     case Opcode::RISCV_SC_W:  // SC.W rd,rs1,rs2
@@ -498,7 +505,7 @@ void Instruction::execute() {
       // TODO use aq and rl bits to prevent reordering with other memory
       // operations
       memoryData[0] = operands[0];
-      results[0] = static_cast<uint64_t>(0);
+      results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
       break;
     }
     case Opcode::RISCV_AMOSWAP_W:  // AMOSWAP.W rd,rs1,rs2
@@ -512,7 +519,7 @@ void Instruction::execute() {
       // TODO account for AQ and RL bits
       int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
       int32_t rs2 = operands[0].get<int32_t>();
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] = rs2;
       break;
     }
@@ -522,7 +529,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOSWAP_D_AQ_RL: {
       uint64_t rd = memoryData[0].get<uint64_t>();
       uint64_t rs2 = operands[0].get<uint64_t>();
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] = rs2;
       break;
     }
@@ -531,7 +538,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOADD_W_RL:
     case Opcode::RISCV_AMOADD_W_AQ_RL: {
       int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] = static_cast<int32_t>(rd + operands[0].get<int64_t>());
       break;
     }
@@ -540,7 +547,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOADD_D_RL:
     case Opcode::RISCV_AMOADD_D_AQ_RL: {
       int64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] = static_cast<int64_t>(rd + operands[0].get<int64_t>());
       break;
     }
@@ -549,7 +556,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOAND_W_RL:
     case Opcode::RISCV_AMOAND_W_AQ_RL: {
       int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] = static_cast<int32_t>(rd & operands[0].get<int64_t>());
       break;
     }
@@ -558,7 +565,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOAND_D_RL:
     case Opcode::RISCV_AMOAND_D_AQ_RL: {
       int64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] = static_cast<int64_t>(rd & operands[0].get<int64_t>());
       break;
     }
@@ -567,7 +574,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOOR_W_RL:
     case Opcode::RISCV_AMOOR_W_AQ_RL: {
       int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] = static_cast<int32_t>(rd | operands[0].get<int64_t>());
       break;
     }
@@ -576,7 +583,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOOR_D_RL:
     case Opcode::RISCV_AMOOR_D_AQ_RL: {
       int64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] = static_cast<int64_t>(rd | operands[0].get<int64_t>());
       break;
     }
@@ -585,7 +592,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOXOR_W_RL:
     case Opcode::RISCV_AMOXOR_W_AQ_RL: {
       int64_t rd = signExtendW(memoryData[0].get<uint32_t>());
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] = static_cast<int32_t>(rd ^ operands[0].get<int64_t>());
       break;
     }
@@ -594,7 +601,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOXOR_D_RL:
     case Opcode::RISCV_AMOXOR_D_AQ_RL: {
       int64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] = static_cast<int64_t>(rd ^ operands[0].get<int64_t>());
       break;
     }
@@ -603,7 +610,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMIN_W_AQ:
     case Opcode::RISCV_AMOMIN_W_RL:
     case Opcode::RISCV_AMOMIN_W_AQ_RL: {
-      results[0] = signExtendW(memoryData[0].get<int32_t>());
+      results[0] = RegisterValue(signExtendW(memoryData[0].get<int32_t>()), 8);
       memoryData[0] =
           std::min(memoryData[0].get<int32_t>(), operands[0].get<int32_t>());
       break;
@@ -613,7 +620,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMIN_D_RL:
     case Opcode::RISCV_AMOMIN_D_AQ_RL: {
       int64_t rd = memoryData[0].get<int64_t>();
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] =
           static_cast<int64_t>(std::min(rd, operands[0].get<int64_t>()));
       break;
@@ -622,7 +629,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMINU_W_AQ:
     case Opcode::RISCV_AMOMINU_W_RL:
     case Opcode::RISCV_AMOMINU_W_AQ_RL: {
-      results[0] = signExtendW(memoryData[0].get<uint32_t>());
+      results[0] = RegisterValue(signExtendW(memoryData[0].get<uint32_t>()), 8);
       memoryData[0] =
           std::min(memoryData[0].get<uint32_t>(), operands[0].get<uint32_t>());
       break;
@@ -632,7 +639,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMINU_D_RL:
     case Opcode::RISCV_AMOMINU_D_AQ_RL: {
       uint64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] =
           static_cast<uint64_t>(std::min(rd, operands[0].get<uint64_t>()));
       break;
@@ -642,7 +649,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMAX_W_AQ:
     case Opcode::RISCV_AMOMAX_W_RL:
     case Opcode::RISCV_AMOMAX_W_AQ_RL: {
-      results[0] = signExtendW(memoryData[0].get<int32_t>());
+      results[0] = RegisterValue(signExtendW(memoryData[0].get<int32_t>()), 8);
       memoryData[0] =
           std::max(memoryData[0].get<int32_t>(), operands[0].get<int32_t>());
       break;
@@ -652,7 +659,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMAX_D_RL:
     case Opcode::RISCV_AMOMAX_D_AQ_RL: {
       int64_t rd = memoryData[0].get<int64_t>();
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] =
           static_cast<int64_t>(std::max(rd, operands[0].get<int64_t>()));
       break;
@@ -661,7 +668,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMAXU_W_AQ:
     case Opcode::RISCV_AMOMAXU_W_RL:
     case Opcode::RISCV_AMOMAXU_W_AQ_RL: {
-      results[0] = signExtendW(memoryData[0].get<uint32_t>());
+      results[0] = RegisterValue(signExtendW(memoryData[0].get<uint32_t>()), 8);
       memoryData[0] =
           std::max(memoryData[0].get<uint32_t>(), operands[0].get<uint32_t>());
       break;
@@ -671,7 +678,7 @@ void Instruction::execute() {
     case Opcode::RISCV_AMOMAXU_D_RL:
     case Opcode::RISCV_AMOMAXU_D_AQ_RL: {
       uint64_t rd = memoryData[0].get<uint64_t>();
-      results[0] = rd;
+      results[0] = RegisterValue(rd, 8);
       memoryData[0] =
           static_cast<uint64_t>(std::max(rd, operands[0].get<uint64_t>()));
       break;
@@ -681,7 +688,7 @@ void Instruction::execute() {
     case Opcode::RISCV_MUL: {  // MUL rd,rs1,rs2
       const int64_t rs1 = operands[0].get<int64_t>();
       const int64_t rs2 = operands[1].get<int64_t>();
-      results[0] = static_cast<int64_t>(rs1 * rs2);
+      results[0] = RegisterValue(static_cast<int64_t>(rs1 * rs2), 8);
       break;
     }
       //    case Opcode::RISCV_MULH: {//MULH rd,rs1,rs2
@@ -689,13 +696,13 @@ void Instruction::execute() {
       //
       //      const int64_t rs1 = operands[0].get<int64_t>();
       //      const int64_t rs2 = operands[1].get<int64_t>();
-      //      results[0] = mulhiss(rs1, rs2);
+      //      results[0] = RegisterValue(mulhiss(rs1, rs2);
       //      break;
       //    }
     case Opcode::RISCV_MULHU: {  // MULHU rd,rs1,rs2
       const uint64_t rs1 = operands[0].get<uint64_t>();
       const uint64_t rs2 = operands[1].get<uint64_t>();
-      results[0] = mulhiuu(rs1, rs2);
+      results[0] = RegisterValue(mulhiuu(rs1, rs2), 8);
       break;
     }
       //    case Opcode::RISCV_MULHSU: {//MULHSU rd,rs1,rs2
@@ -703,13 +710,13 @@ void Instruction::execute() {
       //
       //      const int64_t rs1 = operands[0].get<int64_t>();
       //      const uint64_t rs2 = operands[1].get<uint64_t>();
-      //      results[0] = mulhisu(rs1, rs2);
+      //      results[0] = RegisterValue(mulhisu(rs1, rs2);
       //      break;
       //    }
     case Opcode::RISCV_MULW: {  // MULW rd,rs1,rs2
       const uint32_t rs1 = operands[0].get<uint32_t>();
       const uint32_t rs2 = operands[1].get<uint32_t>();
-      results[0] = signExtendW(rs1 * rs2);
+      results[0] = RegisterValue(signExtendW(rs1 * rs2), 8);
       break;
     }
 
@@ -718,12 +725,12 @@ void Instruction::execute() {
       const int64_t rs2 = operands[1].get<int64_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = static_cast<uint64_t>(-1);
+        results[0] = RegisterValue(static_cast<uint64_t>(-1), 8);
       } else if (rs1 == static_cast<int64_t>(0x8000000000000000) && rs2 == -1) {
         // division overflow
-        results[0] = rs1;
+        results[0] = RegisterValue(rs1, 8);
       } else {
-        results[0] = static_cast<int64_t>(rs1 / rs2);
+        results[0] = RegisterValue(static_cast<int64_t>(rs1 / rs2), 8);
       }
       break;
     }
@@ -732,12 +739,13 @@ void Instruction::execute() {
       const int32_t rs2 = operands[1].get<int32_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = static_cast<uint64_t>(-1);
+        results[0] = RegisterValue(static_cast<uint64_t>(-1), 8);
       } else if (rs1 == static_cast<int32_t>(0x80000000) && rs2 == -1) {
         // division overflow
-        results[0] = static_cast<int64_t>(signExtendW(rs1));
+        results[0] = RegisterValue(static_cast<int64_t>(signExtendW(rs1)), 8);
       } else {
-        results[0] = static_cast<int64_t>(signExtendW(rs1 / rs2));
+        results[0] =
+            RegisterValue(static_cast<int64_t>(signExtendW(rs1 / rs2)), 8);
       }
       break;
     }
@@ -746,9 +754,9 @@ void Instruction::execute() {
       const uint64_t rs2 = operands[1].get<uint64_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = static_cast<uint64_t>(-1);
+        results[0] = RegisterValue(static_cast<uint64_t>(-1), 8);
       } else {
-        results[0] = static_cast<uint64_t>(rs1 / rs2);
+        results[0] = RegisterValue(static_cast<uint64_t>(rs1 / rs2), 8);
       }
       break;
     }
@@ -757,9 +765,10 @@ void Instruction::execute() {
       const uint32_t rs2 = operands[1].get<uint32_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = static_cast<uint64_t>(-1);
+        results[0] = RegisterValue(static_cast<uint64_t>(-1), 8);
       } else {
-        results[0] = static_cast<uint64_t>(signExtendW(rs1 / rs2));
+        results[0] =
+            RegisterValue(static_cast<uint64_t>(signExtendW(rs1 / rs2)), 8);
       }
       break;
     }
@@ -768,12 +777,12 @@ void Instruction::execute() {
       const int64_t rs2 = operands[1].get<int64_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = static_cast<uint64_t>(rs1);
+        results[0] = RegisterValue(static_cast<uint64_t>(rs1), 8);
       } else if (rs1 == static_cast<int64_t>(0x8000000000000000) && rs2 == -1) {
         // division overflow
-        results[0] = static_cast<int64_t>(0);
+        results[0] = RegisterValue(static_cast<int64_t>(0), 8);
       } else {
-        results[0] = static_cast<int64_t>(rs1 % rs2);
+        results[0] = RegisterValue(static_cast<int64_t>(rs1 % rs2), 8);
       }
       break;
     }
@@ -782,12 +791,13 @@ void Instruction::execute() {
       const int32_t rs2 = operands[1].get<int32_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = static_cast<int64_t>(signExtendW(rs1));
+        results[0] = RegisterValue(static_cast<int64_t>(signExtendW(rs1)), 8);
       } else if (rs1 == static_cast<int32_t>(0x80000000) && rs2 == -1) {
         // division overflow
-        results[0] = static_cast<int64_t>(0);
+        results[0] = RegisterValue(static_cast<int64_t>(0), 8);
       } else {
-        results[0] = static_cast<int64_t>(signExtendW(rs1 % rs2));
+        results[0] =
+            RegisterValue(static_cast<int64_t>(signExtendW(rs1 % rs2)), 8);
       }
       break;
     }
@@ -796,9 +806,9 @@ void Instruction::execute() {
       const uint64_t rs2 = operands[1].get<uint64_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = rs1;
+        results[0] = RegisterValue(rs1, 8);
       } else {
-        results[0] = static_cast<uint64_t>(rs1 % rs2);
+        results[0] = RegisterValue(static_cast<uint64_t>(rs1 % rs2), 8);
       }
       break;
     }
@@ -807,9 +817,10 @@ void Instruction::execute() {
       const uint32_t rs2 = operands[1].get<uint32_t>();
       if (rs2 == 0) {
         // divide by zero
-        results[0] = static_cast<int64_t>(signExtendW(rs1));
+        results[0] = RegisterValue(static_cast<int64_t>(signExtendW(rs1)), 8);
       } else {
-        results[0] = static_cast<uint64_t>(signExtendW(rs1 % rs2));
+        results[0] =
+            RegisterValue(static_cast<uint64_t>(signExtendW(rs1 % rs2)), 8);
       }
       break;
     }
