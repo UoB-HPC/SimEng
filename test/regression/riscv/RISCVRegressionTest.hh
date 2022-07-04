@@ -16,8 +16,8 @@
    "0}, L1-Cache: {Access-Latency: 4, Exclusive: False, "                      \
    "Load-Bandwidth: 32, Store-Bandwidth: 16,Permitted-Requests-Per-Cycle: 2, " \
    "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "     \
-   "{'0': {Portname: Port 0, Instruction-Support: [INT, LOAD, STORE, "         \
-   "BRANCH]}}, Reservation-Stations: {'0': {Size: 60, Ports: [Port 0]}}, "     \
+   "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 10, 11, 12 "       \
+   "]}}, Reservation-Stations: {'0': {Size: 60, Ports: [Port 0]}}, "           \
    "Execution-Units: {'0': {Pipelined: true}}}")
 
 /** A helper function to convert the supplied parameters of

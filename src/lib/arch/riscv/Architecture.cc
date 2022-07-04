@@ -123,7 +123,12 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     }
   }
 }
-Architecture::~Architecture() { cs_close(&capstoneHandle); }
+Architecture::~Architecture() {
+  cs_close(&capstoneHandle);
+  decodeCache.clear();
+  metadataCache.clear();
+  groupExecutionInfo_.clear();
+}
 
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
