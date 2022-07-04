@@ -5,7 +5,7 @@
 #include "simeng/arch/aarch64/Instruction.hh"
 
 #define AARCH64_CONFIG                                                         \
-  ("{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "                \
+  ("{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "  \
    "Micro-Operations: False}, Fetch: {Fetch-Block-Size: 32, "                  \
    "Loop-Buffer-Size: 64, Loop-Detection-Threshold: 4}, Process-Image: "       \
    "{Heap-Size: 100000, Stack-Size: 100000}, Register-Set: "                   \

@@ -41,7 +41,10 @@ RISCVRegressionTest::createPortAllocator() const {
   // TODO: this is currently tightly coupled to the number of execution units,
   // which is specified in the out-of-order core model
   const std::vector<std::vector<uint16_t>> portArrangement = {
-      {simeng::arch::riscv::InstructionGroups::INT_SIMPLE}};
+      {simeng::arch::riscv::InstructionGroups::INT,
+       simeng::arch::riscv::InstructionGroups::BRANCH,
+       simeng::arch::riscv::InstructionGroups::LOAD,
+       simeng::arch::riscv::InstructionGroups::STORE}};
 
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
