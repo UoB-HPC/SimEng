@@ -109,17 +109,15 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
         }
       }
       // Store any opcode-based port support override
-      // YAML::Node opcode_node =
-      // config["Ports"][i]["Instruction-Opcode-Support"]; for (size_t j = 0; j
-      // < opcode_node.size(); j++) {
-      //   // If latency information hasn't been defined, set to zero as to
-      //   inform
-      //   // later access to use group defined latencies instead
-      //   uint16_t opcode = opcode_node[j].as<uint16_t>();
-      //   opcodeExecutionInfo_.try_emplace(
-      //       opcode, simeng::arch::aarch64::executionInfo{0, 0, {}});
-      //   opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
-      // }
+      YAML::Node opcode_node = config["Ports"][i]["Instruction-Opcode-Support"];
+      for (size_t j = 0; j < opcode_node.size(); j++) {
+        // If latency information hasn't been defined, set to zero as to inform
+        // later access to use group defined latencies instead
+        uint16_t opcode = opcode_node[j].as<uint16_t>();
+        opcodeExecutionInfo_.try_emplace(
+            opcode, simeng::arch::riscv::executionInfo{0, 0, {}});
+        opcodeExecutionInfo_[opcode].ports.push_back(static_cast<uint8_t>(i));
+      }
     }
   }
 }
