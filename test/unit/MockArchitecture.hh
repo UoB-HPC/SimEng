@@ -24,6 +24,10 @@ class MockArchitecture : public arch::Architecture {
   MOCK_CONST_METHOD0(getMaxInstructionSize, uint8_t());
   MOCK_CONST_METHOD0(getVCTreg, simeng::Register());
   MOCK_CONST_METHOD0(getPCCreg, simeng::Register());
+  MOCK_CONST_METHOD1(getConfigPhysicalRegisterStructure,
+                     std::vector<RegisterFileStructure>(YAML::Node config));
+  MOCK_CONST_METHOD1(getConfigPhysicalRegisterQuantities,
+                     std::vector<uint16_t>(YAML::Node config));
 };
 
 }  // namespace simeng
