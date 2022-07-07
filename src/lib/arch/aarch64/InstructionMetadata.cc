@@ -777,6 +777,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_LD1Rv4s:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_LD1Rv1d:
       [[fallthrough]];
     case Opcode::AArch64_LD1Rv2d:
@@ -831,10 +835,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // For vector arrangment of 8-bit, post_index immediate is 1
       operands[2].imm = 1;
       break;
-    case Opcode::AArch64_LD1Rv4s:
-      operands[0].access = CS_AC_WRITE;
-      operands[1].access = CS_AC_READ;
-      break;
+
     case Opcode::AArch64_LD1Rv2s_POST:
       [[fallthrough]];
     case Opcode::AArch64_LD1Rv4s_POST:
