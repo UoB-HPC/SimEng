@@ -36,8 +36,8 @@ TEST_P(InstMulDiv, mul) {
             0x8000000000000000);  // 2^31 * 2^32 = 2^63 (NO overflow)
 }
 
-//// TODO NYI, tests should fail
-//TEST_P(InstMulDiv, mulh) {
+// TODO NYI, tests should fail
+// TEST_P(InstMulDiv, mulh) {
 //  initialHeapData_.resize(16);
 //  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
 //  heap[0] = -1;
@@ -74,11 +74,11 @@ TEST_P(InstMulDiv, mulhu) {
 }
 
 // TODO NYI, tests should fail
-//TEST_P(InstMulDiv, mulhsu) {
-//  initialHeapData_.resize(16);
-//  uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
-//  heap[0] = -1;
-//  heap[1] = -1;
+// TEST_P(InstMulDiv, mulhsu) {
+//   initialHeapData_.resize(16);
+//   uint32_t* heap = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+//   heap[0] = -1;
+//   heap[1] = -1;
 //
 //  RUN_RISCV(R"(
 //    li a7, 214
