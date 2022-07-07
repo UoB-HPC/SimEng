@@ -110,75 +110,75 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case Opcode::AArch64_LD1Rv16b: {  // ld1r {vt.16b}, [xn]
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
       case Opcode::AArch64_LD1Rv16b_POST: {  // ld1r {vt.16b}, [xn], #imm
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
       case Opcode::AArch64_LD1Rv1d: {  // ld1r {vt.1d}, [xn]
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
         break;
       }
       case Opcode::AArch64_LD1Rv1d_POST: {  // ld1r {vt.1d}, [xn], #imm
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
         break;
       }
       case Opcode::AArch64_LD1Rv2d: {  // ld1r {vt.2d}, [xn]
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
       case Opcode::AArch64_LD1Rv2d_POST: {  // ld1r {vt.2d}, [xn], #imm
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
       case Opcode::AArch64_LD1Rv2s: {  // ld1r {vt.2s}, [xn]
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
       case Opcode::AArch64_LD1Rv2s_POST: {  // ld1r {vt.2s}, [xn], #imm
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
         break;
       }
       case Opcode::AArch64_LD1Rv4h: {  // ld1r {vt.4h}, [xn]
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
         break;
       }
       case Opcode::AArch64_LD1Rv4h_POST: {  // ld1r {vt.4h}, [xn], #imm
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
         break;
       }
       case Opcode::AArch64_LD1Rv8b: {  // ld1r {vt.8b}, [xn]
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
         break;
       }
       case Opcode::AArch64_LD1Rv8b_POST: {  // ld1r {vt.8b}, [xn], #imm
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
         break;
       }
       case Opcode::AArch64_LD1Rv8h: {  // ld1r {vt.8h}, [xn]
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
       case Opcode::AArch64_LD1Rv8h_POST: {  // ld1r {vt.8h}, [xn], #imm
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
       case Opcode::AArch64_LD1Rv4s: {  // ld1r {vt.4s}, [xn]
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
       case Opcode::AArch64_LD1Rv4s_POST: {  // ld1r {vt.4s}, [xn], #imm
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
       case Opcode::AArch64_LD1Onev16b: {  // ld1 {vt.16b}, [xn]
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
       case Opcode::AArch64_LD1Onev16b_POST: {  // ld1 {vt.16b}, [xn], #imm
-        setMemoryAddresses({{operands[1].get<uint64_t>(), 16}});
+        setMemoryAddresses({{operands[0].get<uint64_t>(), 16}});
         break;
       }
       case Opcode::AArch64_LD1Twov16b: {  // ld1 {vt1.16b, vt2.16b}, [xn]

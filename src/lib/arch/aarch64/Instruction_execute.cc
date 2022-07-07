@@ -7629,7 +7629,7 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_LD1Onev16b_POST: {  // ld1 {vt.16b}, [xn], #imm
         results[0] = memoryData[0].zeroExtend(memoryData[0].size(), 256);
-        results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+        results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD1Onev1d: {
@@ -7863,7 +7863,7 @@ void Instruction::execute() {
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
                            val, val, val, val, val, val, val, val};
         results[0] = {out, 256};
-        results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+        results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD1Rv1d: {  // ld1r {vt.1d}, [xn]
@@ -7878,7 +7878,7 @@ void Instruction::execute() {
         uint64_t val = memoryData[0].get<uint64_t>();
         uint64_t out[2] = {val, 0};
         results[0] = {out, 256};
-        results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+        results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD1Rv2d: {  // ld1r {vt.2d}, [xn]
@@ -7889,11 +7889,11 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LD1Rv2d_POST: {  // ld1r {vt.2d}, [xn], #imm
-        // LOAD
+        // LO0D
         uint64_t val = memoryData[0].get<uint64_t>();
         uint64_t out[2] = {val, val};
         results[0] = {out, 256};
-        results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+        results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD1Rv2s: {  // ld1r {vt.2s}, [xn]
@@ -7908,7 +7908,7 @@ void Instruction::execute() {
         uint32_t val = memoryData[0].get<uint32_t>();
         uint32_t out[4] = {val, val, 0, 0};
         results[0] = {out, 256};
-        results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+        results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD1Rv4h: {  // ld1r {vt.4h}, [xn]
@@ -7923,7 +7923,7 @@ void Instruction::execute() {
         uint16_t val = memoryData[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, 0, 0, 0, 0};
         results[0] = {out, 256};
-        results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+        results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD1Rv4s: {  // ld1r {vt.4s}, [xn]
@@ -7938,7 +7938,7 @@ void Instruction::execute() {
         uint32_t val = memoryData[0].get<uint32_t>();
         uint32_t out[4] = {val, val, val, val};
         results[0] = {out, 256};
-        results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+        results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD1Rv8b: {  // ld1r {vt.8b}, [xn]
@@ -7955,7 +7955,7 @@ void Instruction::execute() {
         uint8_t out[16] = {val, val, val, val, val, val, val, val,
                            0,   0,   0,   0,   0,   0,   0,   0};
         results[0] = {out, 256};
-        results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+        results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD1Rv8h: {  // ld1r {vt.8h}, [xn]
@@ -7970,7 +7970,7 @@ void Instruction::execute() {
         uint16_t val = memoryData[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, val, val, val, val};
         results[0] = {out, 256};
-        results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+        results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD1SB_D: {
