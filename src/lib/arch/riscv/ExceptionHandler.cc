@@ -569,10 +569,6 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
-      case 1024: {
-        std::cout << "SIMENG: BROKEN SYSCALL 1024" << std::endl;
-        break;
-      }
       default:
         printException(instruction_);
         std::cout << "Unrecognised syscall: " << syscallId << std::endl;
