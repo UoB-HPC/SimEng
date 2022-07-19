@@ -3804,7 +3804,7 @@ void Instruction::execute() {
         results[0] = neonHelp::vecSshrShift_imm<int32_t, 4>(operands, metadata);
         break;
       }
-      case Opcode::AArch64_SST1B_D: {  // st1b {zd.d}, pg, [xn, zm.d]
+      case Opcode::AArch64_SST1B_D_REAL: {  // st1b {zd.d}, pg, [xn, zm.d]
         // STORE
         const uint64_t* d = operands[0].getAsVector<uint64_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
@@ -3820,7 +3820,7 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_SST1D: {  // st1d {zt.d}, pg, [xn, zm.d]
+      case Opcode::AArch64_SST1D_REAL: {  // st1d {zt.d}, pg, [xn, zm.d]
         // STORE
         const uint64_t* d = operands[0].getAsVector<uint64_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
@@ -3852,8 +3852,9 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_SST1D_SCALED: {  // st1d {zt.d}, pg, [xn, zm.d, lsl #
-                                            // 3]
+      case Opcode::AArch64_SST1D_SCALED_SCALED_REAL: {  // st1d {zt.d}, pg, [xn,
+                                                        // zm.d, lsl #
+                                                        // 3]
         // STORE
         const uint64_t* d = operands[0].getAsVector<uint64_t>();
         const uint64_t* p = operands[1].getAsVector<uint64_t>();

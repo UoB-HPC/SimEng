@@ -1100,11 +1100,11 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       break;
     }
-    case Opcode::AArch64_SST1B_D:
+    case Opcode::AArch64_SST1B_D_REAL:
       [[fallthrough]];
-    case Opcode::AArch64_SST1D:
+    case Opcode::AArch64_SST1D_REAL:
       [[fallthrough]];
-    case Opcode::AArch64_SST1D_SCALED: {
+    case Opcode::AArch64_SST1D_SCALED_SCALED_REAL: {
       // ST1W doesn't correctly identify first source register
       uint16_t reg_enum = ARM64_REG_Z0;
       // Single or double digit Z register identifier
