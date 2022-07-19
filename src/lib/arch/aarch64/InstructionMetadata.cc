@@ -1749,9 +1749,9 @@ void InstructionMetadata::revertAliasing() {
         operands[2].vector_index = -1;
         return;
       }
-      if (opcode == Opcode::AArch64_CPYi8 || opcode == Opcode::AArch64_CPYi16 ||
-          opcode == Opcode::AArch64_CPYi32 ||
-          opcode == Opcode::AArch64_CPYi64) {
+      if (opcode == Opcode::AArch64_DUPi8 || opcode == Opcode::AArch64_DUPi16 ||
+          opcode == Opcode::AArch64_DUPi32 ||
+          opcode == Opcode::AArch64_DUPi64) {
         // mov vd, Vn.T[index]; alias of dup vd, Vn.T[index]
         return;
       }

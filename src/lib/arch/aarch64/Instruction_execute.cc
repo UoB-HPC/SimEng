@@ -869,12 +869,12 @@ void Instruction::execute() {
         results[0] = sveHelp::sveCpy_imm<int32_t>(operands, metadata, VL_bits);
         break;
       }
-      case Opcode::AArch64_CPYi32: {
+      case Opcode::AArch64_DUPi32: {  // dup vd, vn.s[index]
         results[0] =
             neonHelp::vecDup_gprOrIndex<uint32_t, 1>(operands, metadata, false);
         break;
       }
-      case Opcode::AArch64_CPYi64: {
+      case Opcode::AArch64_DUPi64: {  // dup vd, vn.d[index]
         results[0] =
             neonHelp::vecDup_gprOrIndex<uint64_t, 1>(operands, metadata, false);
         break;
