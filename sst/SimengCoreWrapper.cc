@@ -1,9 +1,11 @@
-#ifdef SIMENG_ENABLE_SST
+// #ifdef SIMENG_ENABLE_SST
 
 #include <sst/core/sst_config.h>
 #include "SimengCoreWrapper.hh"
 
 using namespace SST::SSTSimeng;
+using namespace SST::Interfaces;
+using namespace simeng;
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
@@ -14,7 +16,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     executable_path = params.find<std::string>("executable_path", "");
     executable_args = params.find<std::string>("executable_args", "");
     config_path = params.find<std::string>("config_path", "");
-
+    cache_line_width  = params.find<uint64_t>("cache_line_width", "64");
     if (executable_path.length() == 0) {
         output.fatal(CALL_INFO, 10, 0, "Simeng executable binary filepath not provided.");
     }
@@ -23,14 +25,27 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     vitrual_counter = 0;
     size = 0;
 
+    mem = loadUserSubComponent<SST::Interfaces::StandardMem>("memory", ComponentInfo::SHARE_NONE, clock,
+      new StandardMem::Handler<SimengCoreWrapper>(this, &SimengCoreWrapper::handleEvent));
+
+    data_memory = std::make_unique<SimengMemInterface>(mem, cache_line_width);
+
+    handlers = new SimengMemInterface::SimengMemHandlers(*data_memory, &output);
+
     registerAsPrimaryComponent();
     primaryComponentDoNotEndSim();
-
 }
 
 SimengCoreWrapper::~SimengCoreWrapper() {}
 
 void SimengCoreWrapper::setup() {}
+
+void SimengCoreWrapper::handleEvent( StandardMem::Request* ev) {
+  output.verbose(CALL_INFO, 4, 0, "Recv response from cache\n");
+  ev->handle(handlers);
+  delete ev;
+  output.verbose(CALL_INFO, 4, 0, "Complete cache response handling.\n");
+}
 
 void SimengCoreWrapper::finish() {
 
@@ -169,9 +184,9 @@ void SimengCoreWrapper::fabricateSimengCore() {
     }
 
     modeString = "Out-of-Order";
-    data_memory = std::make_unique<simeng::FixedLatencyMemoryInterface>(
-        process_memory, processMemorySize,
-        config["L1-Cache"]["Access-Latency"].as<uint16_t>());
+    // data_memory = std::make_unique<simeng::FixedLatencyMemoryInterface>(
+    //       process_memory, processMemorySize,
+    //       config["L1-Cache"]["Access-Latency"].as<uint16_t>());
 
     core = std::make_unique<simeng::models::outoforder::Core>(
         *instruction_memory, *data_memory, processMemorySize, entryPoint, *arch,
@@ -192,4 +207,5 @@ void SimengCoreWrapper::fabricateSimengCore() {
     start_time = std::chrono::high_resolution_clock::now();
 }
 
-#endif
+
+// #endif

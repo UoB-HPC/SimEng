@@ -1,8 +1,8 @@
-set(SIMENG_SST_SOURCES SimengCoreWrapper.cc)
+set(SIMENG_SST_SOURCES SimengMemInterface.cc SimengCoreWrapper.cc)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
+message(STATUS "foo: ${CMAKE_CURRENT_SOURCE_DIR}, ${PROJECT_SOURCE_DIR}")
 add_library(sstsimeng SHARED ${SIMENG_SST_SOURCES})
-
 # Including Simeng include files and SST include files
 target_include_directories(sstsimeng PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(sstsimeng PUBLIC ${SST_INSTALL_DIR}/include)
@@ -31,10 +31,14 @@ target_link_options(sstsimeng PUBLIC -fno-common -Wl,-undefined -Wl,dynamic_look
 
 target_link_libraries(sstsimeng PUBLIC libsimeng)
 
+
 set(SST_SIMENG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/sst")
 set(SST_REGISTER_BASE_COMMAND "sstsimeng sstsimeng_LIBDIR=${SST_SIMENG_INSTALL_DIR}")
 set(SST_REGISTER_ELEMENT_COMMAND "SST_ELEMENT_SOURCE sstsimeng=${SST_SIMENG_INSTALL_DIR}")
 
 install(TARGETS sstsimeng DESTINATION sst)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/SimengCoreWrapper.hh ${CMAKE_CURRENT_SOURCE_DIR}/include/SimengMemInterface.hh
+        DESTINATION ${SST_SIMENG_INSTALL_DIR})
+
 install(CODE "execute_process(COMMAND sst-register ${SST_REGISTER_BASE_COMMAND} COMMAND_ECHO STDOUT)")
 install(CODE "execute_process(COMMAND sst-register ${SST_REGISTER_ELEMENT_COMMAND} COMMAND_ECHO STDOUT)")
