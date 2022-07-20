@@ -372,17 +372,21 @@ void Instruction::decode() {
     isLoad_ = true;
   }
 
-  if ((227 < metadata.opcode && metadata.opcode < 254) ||    // AND
-      (299 < metadata.opcode && metadata.opcode < 321) ||    // BIC
-      (733 < metadata.opcode && metadata.opcode < 759) ||    // EOR/EON
-      (2626 < metadata.opcode && metadata.opcode < 2655)) {  // ORR/ORN
+  if ((264 <= metadata.opcode && metadata.opcode <= 267) ||    // AND
+      (1063 <= metadata.opcode && metadata.opcode <= 1084) ||  // AND (pt.2)
+      (284 <= metadata.opcode && metadata.opcode <= 287) ||    // BIC
+      (1167 <= metadata.opcode && metadata.opcode <= 1183) ||  // BIC (pt.2)
+      (321 <= metadata.opcode && metadata.opcode <= 324) ||    // EOR/EON
+      (1707 <= metadata.opcode && metadata.opcode <= 1736) ||  // EOR/EON (pt.2)
+      (771 <= metadata.opcode && metadata.opcode <= 774) ||    // ORR/ORN
+      (3748 <= metadata.opcode && metadata.opcode <= 3771)) {  // ORR/ORN (pt.2)
     isLogical_ = true;
   }
 
-  if ((379 < metadata.opcode && metadata.opcode < 388) ||
-      (437 < metadata.opcode && metadata.opcode < 625) ||
-      (789 < metadata.opcode && metadata.opcode < 812) ||
-      (850 < metadata.opcode && metadata.opcode < 979)) {
+  if ((1252 <= metadata.opcode && metadata.opcode <= 1259) ||
+      (1314 <= metadata.opcode && metadata.opcode <= 1501) ||
+      (1778 <= metadata.opcode && metadata.opcode <= 1799) ||
+      (1842 <= metadata.opcode && metadata.opcode <= 1969)) {
     isCompare_ = true;
     // Capture those floating point compare instructions with no destination
     // register
@@ -392,10 +396,14 @@ void Instruction::decode() {
     }
   }
 
-  if ((984 < metadata.opcode && metadata.opcode < 1190) ||
-      (metadata.opcode == 1210) ||
-      (2871 < metadata.opcode && metadata.opcode < 2907) ||
-      (4010 < metadata.opcode && metadata.opcode < 4046)) {
+  if ((347 <= metadata.opcode && metadata.opcode <= 366) ||
+      (1142 <= metadata.opcode && metadata.opcode <= 1146) ||
+      (1976 <= metadata.opcode && metadata.opcode <= 2186) ||
+      (metadata.opcode == 2207) ||
+      (782 <= metadata.opcode && metadata.opcode <= 788) ||
+      (4063 <= metadata.opcode && metadata.opcode <= 4097) ||
+      (898 <= metadata.opcode && metadata.opcode <= 904) ||
+      (5608 <= metadata.opcode && metadata.opcode <= 5642)) {
     isConvert_ = true;
     // Capture those floating point convert instructions whose destination
     // register is general purpose
@@ -405,26 +413,74 @@ void Instruction::decode() {
   }
 
   // Identify divide or square root operations
-  if ((1189 < metadata.opcode && metadata.opcode < 1204) ||
-      (1605 < metadata.opcode && metadata.opcode < 1617) ||
-      (2906 < metadata.opcode && metadata.opcode < 2913) ||
-      (4045 < metadata.opcode && metadata.opcode < 4052)) {
+  if ((367 <= metadata.opcode && metadata.opcode <= 375) ||
+      (789 <= metadata.opcode && metadata.opcode <= 790) ||
+      (905 <= metadata.opcode && metadata.opcode <= 906) ||
+      (2187 <= metadata.opcode && metadata.opcode <= 2200) ||
+      (4098 <= metadata.opcode && metadata.opcode <= 4103) ||
+      (5644 <= metadata.opcode && metadata.opcode <= 5649) ||
+      (481 <= metadata.opcode && metadata.opcode <= 483) ||
+      (metadata.opcode == 940) ||
+      (2640 <= metadata.opcode && metadata.opcode <= 2661) ||
+      (2665 <= metadata.opcode && metadata.opcode <= 2675) ||
+      (6066 <= metadata.opcode && metadata.opcode <= 6068)) {
     isDivideOrSqrt_ = true;
   }
 
   // Identify multiply operations
-  if ((1210 < metadata.opcode && metadata.opcode < 1214) ||
-      (1328 < metadata.opcode && metadata.opcode < 1367) ||
-      (1393 < metadata.opcode && metadata.opcode < 1444) ||
-      (1454 < metadata.opcode && metadata.opcode < 1458) ||
-      (1469 < metadata.opcode && metadata.opcode < 1476) ||
-      (2502 < metadata.opcode && metadata.opcode < 2505) ||
-      (2578 < metadata.opcode && metadata.opcode < 2599) ||
-      (2992 == metadata.opcode) ||
-      (3076 < metadata.opcode && metadata.opcode < 3093) ||
-      (3148 < metadata.opcode && metadata.opcode < 3197) ||
-      (4072 == metadata.opcode) ||
-      (4154 < metadata.opcode && metadata.opcode < 4171)) {
+  if ((433 <= metadata.opcode && metadata.opcode <= 447) ||  // all MUL variants
+      (759 <= metadata.opcode && metadata.opcode <= 762) ||
+      (816 <= metadata.opcode && metadata.opcode <= 819) ||
+      (915 <= metadata.opcode && metadata.opcode <= 918) ||
+      (2436 <= metadata.opcode && metadata.opcode <= 2482) ||
+      (2512 <= metadata.opcode && metadata.opcode <= 2514) ||
+      (2702 <= metadata.opcode && metadata.opcode <= 2704) ||
+      (3692 <= metadata.opcode && metadata.opcode <= 3716) ||
+      (3793 <= metadata.opcode && metadata.opcode <= 3805) ||
+      (4352 <= metadata.opcode && metadata.opcode <= 4380) ||
+      (4503 <= metadata.opcode && metadata.opcode <= 4543) ||
+      (4625 <= metadata.opcode && metadata.opcode <= 4643) ||
+      (5804 <= metadata.opcode && metadata.opcode <= 5832) ||
+      (2211 <= metadata.opcode &&
+       metadata.opcode <= 2216) ||  // all MADD/MAD variants
+      (2494 <= metadata.opcode && metadata.opcode <= 2499) ||
+      (2699 <= metadata.opcode && metadata.opcode <= 2701) ||
+      (3610 <= metadata.opcode && metadata.opcode <= 3615) ||
+      (4227 == metadata.opcode) || (5682 == metadata.opcode) ||
+      (2433 <= metadata.opcode &&
+       metadata.opcode <= 2435) ||  // all MSUB variants
+      (2509 <= metadata.opcode && metadata.opcode <= 2511) ||
+      (3690 <= metadata.opcode && metadata.opcode <= 3691) ||
+      (4351 == metadata.opcode) || (5803 == metadata.opcode) ||
+      (424 <= metadata.opcode && metadata.opcode <= 426) ||  // all MLA variants
+      (451 <= metadata.opcode && metadata.opcode <= 453) ||
+      (1151 <= metadata.opcode && metadata.opcode <= 1160) ||
+      (1378 <= metadata.opcode && metadata.opcode <= 1383) ||
+      (1914 <= metadata.opcode && metadata.opcode <= 1926) ||
+      (2341 <= metadata.opcode && metadata.opcode <= 2371) ||
+      (2403 <= metadata.opcode && metadata.opcode <= 2404) ||
+      (2500 <= metadata.opcode && metadata.opcode <= 2502) ||
+      (3618 <= metadata.opcode && metadata.opcode <= 3634) ||
+      (4295 <= metadata.opcode && metadata.opcode <= 4314) ||
+      (4335 <= metadata.opcode && metadata.opcode <= 4336) ||
+      (4453 <= metadata.opcode && metadata.opcode <= 4477) ||
+      (4581 <= metadata.opcode && metadata.opcode <= 4605) ||
+      (5749 <= metadata.opcode && metadata.opcode <= 5768) ||
+      (5789 <= metadata.opcode && metadata.opcode <= 5790) ||
+      (6115 <= metadata.opcode && metadata.opcode <= 6116) ||
+      (427 <= metadata.opcode && metadata.opcode <= 429) ||  // all MLS variants
+      (454 <= metadata.opcode && metadata.opcode <= 456) ||
+      (2372 <= metadata.opcode && metadata.opcode <= 2402) ||
+      (2503 <= metadata.opcode && metadata.opcode <= 2505) ||
+      (3635 <= metadata.opcode && metadata.opcode <= 3651) ||
+      (4315 <= metadata.opcode && metadata.opcode <= 4334) ||
+      (4478 <= metadata.opcode && metadata.opcode <= 4502) ||
+      (4606 <= metadata.opcode && metadata.opcode <= 4624) ||
+      (5769 <= metadata.opcode && metadata.opcode <= 5788) ||
+      (2430 <= metadata.opcode &&
+       metadata.opcode <= 2432) ||  // all MSB variants
+      (2506 <= metadata.opcode && metadata.opcode <= 2508) ||
+      (3682 <= metadata.opcode && metadata.opcode <= 3685)) {
     isMultiply_ = true;
   }
 
@@ -434,17 +490,18 @@ void Instruction::decode() {
     isPredicate_ = true;
   }
   // Uncaught float data assignment for FMOV move to general instructions
-  if ((1366 < metadata.opcode && metadata.opcode < 1391) &&
+  if (((430 <= metadata.opcode && metadata.opcode <= 432) ||
+       (2409 <= metadata.opcode && metadata.opcode <= 2429)) &&
       !(isScalarData_ || isVectorData_)) {
     isScalarData_ = true;
   }
   // Uncaught vector data assignment for SMOV and UMOV instructions
-  if ((3071 < metadata.opcode && metadata.opcode < 3077) ||
-      (4150 < metadata.opcode && metadata.opcode < 4155)) {
+  if ((4341 <= metadata.opcode && metadata.opcode <= 4350) ||
+      (5795 <= metadata.opcode && metadata.opcode <= 5802)) {
     isVectorData_ = true;
   }
   // Uncaught float data assignment for FCVT convert to general instructions
-  if ((984 < metadata.opcode && metadata.opcode < 1190) &&
+  if ((1976 <= metadata.opcode && metadata.opcode <= 2186) &&
       !(isScalarData_ || isVectorData_)) {
     isScalarData_ = true;
   }
