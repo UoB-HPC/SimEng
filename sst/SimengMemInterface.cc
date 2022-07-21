@@ -1,12 +1,19 @@
-// #ifndef SIMENG_ENABLE_SST
-
+#ifdef SIMENG_ENABLE_SST
 #include <sst/core/sst_config.h>
 #include "SimengMemInterface.hh"
 
-#include <vector>
+#include <iostream>
 
-using namespace SST::Interfaces;
-using namespace simeng;
+using namespace SST::SSTSimeng;
+
+void SimengMemInterface::hello() {
+    std::cout << "Hello" << std::endl;
+}
+
+SimengMemInterface::SimengMemInterface(StandardMem* mem, uint64_t cl): simeng::MemoryInterface() {
+    this->mem = mem;
+    this->clw=cl;
+};
 
 std::vector<StandardMem::Request*> SimengMemInterface::makeSSTRequests(SSTSimengMemReq* sstReq) { 
     // Add logic for unaligned read/write access.
@@ -74,6 +81,15 @@ void SimengMemInterface::clearCompletedReads() {
     completed_read_requests.clear();
 }
 
+bool SimengMemInterface::hasPendingRequests() const {
+    return completed_read_requests.size() > 0;
+};
+
+const span<MemoryReadResult> SimengMemInterface::getCompletedReads() const {
+    return {const_cast<MemoryReadResult*>(completed_read_requests.data()),
+        completed_read_requests.size()};
+};
+
 void SimengMemInterface::handleCompletedReadRequest(SSTSimengMemReq* aggrReq) {
     if (aggrReq->aggregateCount != 0) return;
     std::vector<uint8_t> mergedData;
@@ -135,4 +151,4 @@ void SimengMemInterface::SimengMemHandlers::handle(StandardMem::ReadResp* rsp) {
     delete rsp;
 }
 
-// #endif
+#endif

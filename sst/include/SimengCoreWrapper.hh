@@ -1,7 +1,8 @@
-// #ifdef SIMENG_ENABLE_SST
-
+#ifdef SIMENG_ENABLE_SST
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
+#include <sst/core/interfaces/stdMem.h>
+#include <sst/core/eli/elementinfo.h>
 
 #include <chrono>
 #include <cmath>
@@ -9,6 +10,9 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <map>
+#include <vector>
+#include <set>
 
 #include "simeng/AlwaysNotTakenPredictor.hh"
 #include "simeng/BTBPredictor.hh"
@@ -16,7 +20,7 @@
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
-// #include "simeng/MemoryInterface.hh"
+#include "simeng/MemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/ModelConfig.hh"
 #include "simeng/SpecialFileDirGen.hh"
@@ -36,6 +40,8 @@
 
 using namespace SST;
 using namespace SST::Interfaces;
+using namespace SST::SSTSimeng;
+using namespace simeng;
 
 namespace SST {
     namespace SSTSimeng {
@@ -100,4 +106,4 @@ namespace SST {
         };
     }
 }
-// #endif
+#endif

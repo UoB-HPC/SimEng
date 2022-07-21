@@ -20,7 +20,7 @@ all: install register
 # 	$(CXX) $(OPTIMIZE_FLAGS) $(CXXFLAGS) $(INC_DIR) $(LDFLAGS) $(LIB_DIR) -o $@ $< -lsimeng
 
 libsstsimeng.so: SimengCoreWrapper.cc
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(INC_DIR) $(LIB_DIR) -o $@ $< SimengMemInterface.cc -ldl -lsimeng
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(INC_DIR) $(LIB_DIR) -lsimeng -o $@ $< SimengMemInterface.cc
 
 # %.o: %.cc
 # 	$(CXX) $(CXXFLAGS) $(INC_DIR) -c $<
@@ -40,3 +40,5 @@ clean-target:
 
 unregister:
 	sst-register -u sstsimeng
+
+clean-all: clean clean-target unregister

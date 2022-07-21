@@ -1,11 +1,11 @@
-// #ifdef SIMENG_ENABLE_SST
+#ifdef SIMENG_ENABLE_SST
 
 #include <sst/core/sst_config.h>
 #include "SimengCoreWrapper.hh"
 
 using namespace SST::SSTSimeng;
 using namespace SST::Interfaces;
-using namespace simeng;
+// using namespace simeng;
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
@@ -38,7 +38,8 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
 
 SimengCoreWrapper::~SimengCoreWrapper() {}
 
-void SimengCoreWrapper::setup() {}
+void SimengCoreWrapper::setup() {
+}
 
 void SimengCoreWrapper::handleEvent( StandardMem::Request* ev) {
   output.verbose(CALL_INFO, 4, 0, "Recv response from cache\n");
@@ -76,6 +77,7 @@ void SimengCoreWrapper::finish() {
 
 void SimengCoreWrapper::init(unsigned int phase) {
     if (phase != 0) return;
+    mem->init(phase);
     fabricateSimengCore();
 }
 
@@ -132,7 +134,7 @@ void SimengCoreWrapper::fabricateSimengCore() {
     uint32_t timerFreq_ = config["Core"]["Timer-Frequency"].as<uint32_t>();
     timer_modulo = (clockFreq_ * 1e9) / (timerFreq_ * 1e6);
 
-    // Create the process Image
+    // // Create the process Image
     std::vector<std::string> commandLine({executable_path, executable_args});
     process = std::make_unique<simeng::kernel::LinuxProcess>(commandLine, config);
     if (!process->isValid()) output.fatal(CALL_INFO, 1, 0, "Could not read/parse %s", executable_path);
@@ -151,7 +153,7 @@ void SimengCoreWrapper::fabricateSimengCore() {
     instruction_memory = std::make_unique<simeng::FlatMemoryInterface>(
         process_memory, processMemorySize);
 
-    // Create the architecture, with knowledge of the kernel
+    // // Create the architecture, with knowledge of the kernel
     arch =
         std::make_unique<simeng::arch::aarch64::Architecture>(*kernel, config);
     
@@ -206,6 +208,4 @@ void SimengCoreWrapper::fabricateSimengCore() {
     std::cout << "Starting..." << std::endl;
     start_time = std::chrono::high_resolution_clock::now();
 }
-
-
-// #endif
+#endif
