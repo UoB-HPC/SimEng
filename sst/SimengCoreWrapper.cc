@@ -1,7 +1,9 @@
-#ifdef SIMENG_ENABLE_SST
-
 #include <sst/core/sst_config.h>
 #include "SimengCoreWrapper.hh"
+
+#include <iostream>
+
+// #include "simeng/RegisterValue.hh"
 
 using namespace SST::SSTSimeng;
 using namespace SST::Interfaces;
@@ -17,8 +19,13 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     executable_args = params.find<std::string>("executable_args", "");
     config_path = params.find<std::string>("config_path", "");
     cache_line_width  = params.find<uint64_t>("cache_line_width", "64");
+    max_addr_memory = params.find<uint64_t>("max_addr_memory", "0");
+
     if (executable_path.length() == 0) {
         output.fatal(CALL_INFO, 10, 0, "Simeng executable binary filepath not provided.");
+    }
+    if (max_addr_memory == 0) {
+      output.fatal(CALL_INFO, 10, 0, "Maximum address range for memory not provided");
     }
 
     iterations = 0;
@@ -28,7 +35,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     mem = loadUserSubComponent<SST::Interfaces::StandardMem>("memory", ComponentInfo::SHARE_NONE, clock,
       new StandardMem::Handler<SimengCoreWrapper>(this, &SimengCoreWrapper::handleEvent));
 
-    data_memory = std::make_unique<SimengMemInterface>(mem, cache_line_width);
+    data_memory = std::make_unique<SimengMemInterface>(mem, cache_line_width, max_addr_memory, &output);
 
     handlers = new SimengMemInterface::SimengMemHandlers(*data_memory, &output);
 
@@ -39,13 +46,13 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
 SimengCoreWrapper::~SimengCoreWrapper() {}
 
 void SimengCoreWrapper::setup() {
+  mem->setup();
+  output.verbose(CALL_INFO, 1, 0, "Memory setup complete\n");
+
 }
 
 void SimengCoreWrapper::handleEvent( StandardMem::Request* ev) {
-  output.verbose(CALL_INFO, 4, 0, "Recv response from cache\n");
   ev->handle(handlers);
-  delete ev;
-  output.verbose(CALL_INFO, 4, 0, "Complete cache response handling.\n");
 }
 
 void SimengCoreWrapper::finish() {
@@ -76,12 +83,14 @@ void SimengCoreWrapper::finish() {
 }
 
 void SimengCoreWrapper::init(unsigned int phase) {
-    if (phase != 0) return;
     mem->init(phase);
-    fabricateSimengCore();
+    if (phase == 0) {
+      fabricateSimengCore();
+    }
 }
 
 bool SimengCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
+    // std::cout << "\r" << "cycle: " << current_cycle << std::endl;
     // Tick the core and memory interfaces until the program has halted
     if (!core->hasHalted() || data_memory->hasPendingRequests()) {
     // Tick the core
@@ -106,7 +115,7 @@ bool SimengCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
 }
 
 void SimengCoreWrapper::fabricateSimengCore() {
-    output.output("Setting up Simeng core \n");
+     output.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
 
     SimulationMode mode = SimulationMode::InOrderPipelined;
     std::string modeString;
@@ -186,9 +195,6 @@ void SimengCoreWrapper::fabricateSimengCore() {
     }
 
     modeString = "Out-of-Order";
-    // data_memory = std::make_unique<simeng::FixedLatencyMemoryInterface>(
-    //       process_memory, processMemorySize,
-    //       config["L1-Cache"]["Access-Latency"].as<uint16_t>());
 
     core = std::make_unique<simeng::models::outoforder::Core>(
         *instruction_memory, *data_memory, processMemorySize, entryPoint, *arch,
@@ -202,10 +208,12 @@ void SimengCoreWrapper::fabricateSimengCore() {
         // Create new special files dir
         SFdir.GenerateSFDir();
     }
+    
+    data_memory->sendProcessImageToSST(processImage);
 
     output.verbose(CALL_INFO, 1, 0, "SimEng core setup successfully.\n");
-    std::cout << "Running in " << modeString << " mode\n";
-    std::cout << "Starting..." << std::endl;
+    std::cout << "Running in " << modeString << " mode." << std::endl;
+    output.verbose(CALL_INFO, 1, 0, "Starting simulation.\n");
     start_time = std::chrono::high_resolution_clock::now();
 }
-#endif
+ 

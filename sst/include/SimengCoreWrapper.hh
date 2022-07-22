@@ -1,4 +1,3 @@
-#ifdef SIMENG_ENABLE_SST
 #include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 #include <sst/core/interfaces/stdMem.h>
@@ -70,7 +69,8 @@ namespace SST {
                 { "config_path", "Path to Simeng YAML config file (string)", "" },
                 { "executable_path", "Path to executable binary to be run by SimEng (string)", "" },
                 { "executable_args", "argument to be passed to the executable binary (string)", "" },
-                { "clock", "Clock rate of the SST clock (string)", "" }
+                { "clock", "Clock rate of the SST clock (string)", "" },
+                { "max_addr_memory", "Maximum address that memory can access (int)"},
                 )
 
             private:
@@ -78,13 +78,14 @@ namespace SST {
                 SST::Output output;
                 TimeConverter* clock;
                 StandardMem* mem;
-                
+
                 // Simeng properties
                 std::unique_ptr<simeng::Core> core;
                 std::string config_path;
                 std::string executable_path;
                 std::string executable_args;
                 uint64_t cache_line_width;
+                uint64_t max_addr_memory;
                 std::unique_ptr<simeng::kernel::LinuxProcess> process;
                 std::unique_ptr<simeng::kernel::Linux> kernel;
                 char* process_memory;
@@ -106,4 +107,3 @@ namespace SST {
         };
     }
 }
-#endif

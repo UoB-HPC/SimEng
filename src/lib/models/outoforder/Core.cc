@@ -425,7 +425,6 @@ std::map<std::string, std::string> Core::getStats() const {
                         static_cast<float>(totalBranchesExecuted);
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
-
   return {{"cycles", std::to_string(ticks_)},
           {"retired", std::to_string(retired)},
           {"ipc", ipcStr.str()},
@@ -445,6 +444,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"branch.missrate", branchMissRateStr.str()},
           {"lsq.loadViolations",
            std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
+
 }
 
 }  // namespace outoforder
