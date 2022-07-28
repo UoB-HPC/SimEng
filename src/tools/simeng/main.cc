@@ -6,9 +6,11 @@
 
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
+#include "simeng/GDBStub.hh"
 #include "simeng/config/SimInfo.hh"
 #include "simeng/memory/MemoryInterface.hh"
 #include "simeng/version.hh"
+bool gdb = 0;
 
 /** Tick the provided core model until it halts. */
 uint64_t simulate(simeng::Core& core,
@@ -114,7 +116,11 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] Starting...\n" << std::endl;
   uint64_t iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
-  iterations = simulate(*core, *dataMemory, *instructionMemory);
+
+  if (gdb)
+    runGDBStub();
+  else
+    iterations = simulate(*core, *dataMemory, instructionMemory);
 
   // Get timing information
   auto endTime = std::chrono::high_resolution_clock::now();
