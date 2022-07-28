@@ -90,7 +90,7 @@ std::string handleReadMemory(std::string address, std::string length){
 
 // creates a socket and listens on a port provided by an argument, or 2424 by default
 // socket handling code taken from  https://ncona.com/2019/04/building-a-simple-server-with-cpp/
-int openSocket(int argc, char* argv[]){
+int openSocket(int port){
 	
 	// Create a socket (IPv4, TCP)
 	int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -98,12 +98,6 @@ int openSocket(int argc, char* argv[]){
 		std::cout << "Failed to create socket. errno: " << errno << std::endl;
 		exit(EXIT_FAILURE);
 	}
-
-	// Listen to port on any address
-
-	int port = 2424;
-	if(argc == 2) port = std::stoi(argv[1]);
-	else if(argc != 1) std::cout << "Too many arguments\n";
 
 	sockaddr_in sockaddr;
 	sockaddr.sin_family = AF_INET;
@@ -134,9 +128,9 @@ int openSocket(int argc, char* argv[]){
 	return connection;
 }
 
-int main(int argc, char* argv[]) {
+int runGDBStub() {
 
-	int connection = openSocket(argc, argv);
+	int connection = openSocket(2425);
 
 	char buffer[10000];
 
