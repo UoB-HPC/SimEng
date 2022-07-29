@@ -43,6 +43,9 @@ class WritebackUnit {
 
   /** A reference to the Statistics class. */
   Statistics& stats_;
+
+  /** Statistics class id for instructionsWritten_ counter. */
+  uint64_t instructionsWrittenCntr_;
 };
 
 }  // namespace pipeline

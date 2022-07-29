@@ -28,7 +28,8 @@ void Statistics::incrementStat(uint64_t id, uint64_t value) {
 }
 
 void Statistics::dumpStats(uint64_t dumpAddress) {
-  outfile_ << "===== " << dumpCounter_ << " === " << dumpAddress << " =====\n";
+  outfile_ << "===== " << dumpCounter_ << " === " << std::hex << dumpAddress
+           << std::dec << " =====\n";
   for (int i = 0; i < statNames_.size(); i++) {
     outfile_ << statNames_[i] << ": " << regionStats_[i] << "\n";
   }
@@ -40,7 +41,7 @@ void Statistics::resetStats() {
 }
 
 void Statistics::getGeneralSimulationStats(
-    std::map<const std::string, std::string>& statMap) {
+    std::map<std::string, std::string>& statMap) {
   // Fill statMap with values based on keys in statMap
   for (auto& key : statMap) {
     auto it = std::find(statNames_.begin(), statNames_.end(), key.first);

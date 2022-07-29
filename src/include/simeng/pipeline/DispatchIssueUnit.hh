@@ -148,6 +148,18 @@ class DispatchIssueUnit {
 
   /** A reference to the Statistics class. */
   Statistics& stats_;
+
+  /** Statistics class id for rsStalls_ counter. */
+  uint64_t rsStallsCntr_;
+
+  /** Statistics class id for frontendStalls_ counter. */
+  uint64_t frontendStallsCntr_;
+
+  /** Statistics class id for backendStalls_ counter. */
+  uint64_t backendStallsCntr_;
+
+  /** Statistics class id for portBusyStalls_ counter. */
+  uint64_t portBusyStallsCntr_;
 };
 
 }  // namespace pipeline

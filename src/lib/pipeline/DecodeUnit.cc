@@ -8,7 +8,10 @@ namespace pipeline {
 DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& input,
                        PipelineBuffer<std::shared_ptr<Instruction>>& output,
                        BranchPredictor& predictor, Statistics& stats)
-    : input_(input), output_(output), predictor_(predictor), stats_(stats){};
+    : input_(input), output_(output), predictor_(predictor), stats_(stats) {
+  // Register stat counters
+  earlyFlushesCntr_ = stats_.registerStat("decode.earlyFlushes");
+};
 
 void DecodeUnit::tick() {
   // Stall if output buffer is stalled
@@ -58,6 +61,7 @@ void DecodeUnit::tick() {
     auto [misprediction, correctAddress] = uop->checkEarlyBranchMisprediction();
     if (misprediction) {
       earlyFlushes_++;
+      stats_.incrementStat(earlyFlushesCntr_, 1);
       shouldFlush_ = true;
       pc_ = correctAddress;
 

@@ -120,10 +120,15 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
+
+  // Register stat counters
+  ticksCntr_ = stats_.registerStat("cycles");
+  flushesCntr_ = stats_.registerStat("flushes");
 };
 
 void Core::tick() {
   ticks_++;
+  stats_.incrementStat(ticksCntr_, 1);
 
   if (hasHalted_) return;
 
@@ -227,6 +232,7 @@ void Core::flushIfNeeded() {
     }
 
     flushes_++;
+    stats_.incrementStat(flushesCntr_, 1);
   } else if (decodeUnit_.shouldFlush()) {
     // Flush was requested at decode stage
     // Update PC and wipe Fetch/Decode buffer.
@@ -238,6 +244,7 @@ void Core::flushIfNeeded() {
     fetchToDecodeBuffer_.stall(false);
 
     flushes_++;
+    stats_.incrementStat(flushesCntr_, 1);
   }
 }
 
@@ -394,57 +401,38 @@ uint64_t Core::getSystemTimer() const {
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  auto retired = reorderBuffer_.getInstructionsCommittedCount();
-  auto ipc = retired / static_cast<float>(ticks_);
-  std::ostringstream ipcStr;
-  ipcStr << std::setprecision(2) << ipc;
+  std::map<std::string, std::string> finalStatDump = {
+      {"retired", "0"},
+      {"fetch.branchStalls", "0"},
+      {"decode.earlyFlushes", "0"},
+      {"rename.allocationStalls", "0"},
+      {"rename.robStalls", "0"},
+      {"rename.lqStalls", "0"},
+      {"rename.sqStalls", "0"},
+      {"dispatch.rsStalls", "0"},
+      {"issue.frontendStalls", "0"},
+      {"issue.backendStalls", "0"},
+      {"issue.portBusyStalls", "0"},
+      {"branch.executed", "0"},
+      {"branch.mispredict", "0"},
+      {"lsq.loadViolations", "0"}};
 
-  auto branchStalls = fetchUnit_.getBranchStalls();
+  stats_.getGeneralSimulationStats(finalStatDump);
 
-  auto earlyFlushes = decodeUnit_.getEarlyFlushes();
+  auto ipc2 = std::stoi(finalStatDump["retired"]) / static_cast<float>(ticks_);
+  std::ostringstream ipcStr2;
+  ipcStr2 << std::setprecision(2) << ipc2;
+  finalStatDump["ipc"] = ipcStr2.str();
 
-  auto allocationStalls = renameUnit_.getAllocationStalls();
-  auto robStalls = renameUnit_.getROBStalls();
-  auto lqStalls = renameUnit_.getLoadQueueStalls();
-  auto sqStalls = renameUnit_.getStoreQueueStalls();
+  auto branchMissRate2 =
+      100.0f *
+      static_cast<float>(std::stoi(finalStatDump["branch.mispredict"])) /
+      static_cast<float>(std::stoi(finalStatDump["branch.executed"]));
+  std::ostringstream branchMissRateStr2;
+  branchMissRateStr2 << std::setprecision(3) << branchMissRate2 << "%";
+  finalStatDump["branch.missrate"] = branchMissRateStr2.str();
 
-  auto rsStalls = dispatchIssueUnit_.getRSStalls();
-  auto frontendStalls = dispatchIssueUnit_.getFrontendStalls();
-  auto backendStalls = dispatchIssueUnit_.getBackendStalls();
-  auto portBusyStalls = dispatchIssueUnit_.getPortBusyStalls();
-
-  uint64_t totalBranchesExecuted = 0;
-  uint64_t totalBranchMispredicts = 0;
-
-  // Sum up the branch stats reported across the execution units.
-  for (auto& eu : executionUnits_) {
-    totalBranchesExecuted += eu.getBranchExecutedCount();
-    totalBranchMispredicts += eu.getBranchMispredictedCount();
-  }
-  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
-                        static_cast<float>(totalBranchesExecuted);
-  std::ostringstream branchMissRateStr;
-  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
-
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(retired)},
-          {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)},
-          {"fetch.branchStalls", std::to_string(branchStalls)},
-          {"decode.earlyFlushes", std::to_string(earlyFlushes)},
-          {"rename.allocationStalls", std::to_string(allocationStalls)},
-          {"rename.robStalls", std::to_string(robStalls)},
-          {"rename.lqStalls", std::to_string(lqStalls)},
-          {"rename.sqStalls", std::to_string(sqStalls)},
-          {"dispatch.rsStalls", std::to_string(rsStalls)},
-          {"issue.frontendStalls", std::to_string(frontendStalls)},
-          {"issue.backendStalls", std::to_string(backendStalls)},
-          {"issue.portBusyStalls", std::to_string(portBusyStalls)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()},
-          {"lsq.loadViolations",
-           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
+  return finalStatDump;
 }
 
 }  // namespace outoforder

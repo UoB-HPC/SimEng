@@ -20,7 +20,8 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
   assert(blockSize_ >= isa_.getMaxInstructionSize() &&
          "fetch block size must be larger than the largest instruction");
   fetchBuffer_ = new uint8_t[2 * blockSize_];
-
+  // Register stat counters
+  branchStallsCntr_ = stats_.registerStat("fetch.branchStalls");
   requestFromPC();
 }
 
@@ -178,6 +179,7 @@ void FetchUnit::tick() {
     if (prediction.taken) {
       if (slot + 1 < output_.getWidth()) {
         branchStalls_++;
+        stats_.incrementStat(branchStallsCntr_, 1);
       }
       // Can't continue fetch immediately after a branch
       bufferedBytes_ = 0;

@@ -12,7 +12,10 @@ WritebackUnit::WritebackUnit(
     : completionSlots_(completionSlots),
       registerFileSet_(registerFileSet),
       flagMicroOpCommits_(flagMicroOpCommits),
-      stats_(stats) {}
+      stats_(stats) {
+  // Register stat counters
+  instructionsWrittenCntr_ = stats_.registerStat("µops.executed");
+}
 
 void WritebackUnit::tick() {
   for (size_t slot = 0; slot < completionSlots_.size(); slot++) {
@@ -35,6 +38,7 @@ void WritebackUnit::tick() {
     } else {
       uop->setCommitReady();
       instructionsWritten_++;
+      stats_.incrementStat(instructionsWrittenCntr_, 1);
     }
 
     completionSlots_[slot].getHeadSlots()[0] = nullptr;

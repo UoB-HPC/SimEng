@@ -51,6 +51,12 @@ DispatchIssueUnit::DispatchIssueUnit(
   }
   for (uint16_t i = 0; i < reservationStations_.size(); i++)
     flushed_.emplace(i, std::initializer_list<std::shared_ptr<Instruction>>{});
+
+  // Register stat counters
+  rsStallsCntr_ = stats_.registerStat("dispatch.rsStalls");
+  frontendStallsCntr_ = stats_.registerStat("issue.frontendStalls");
+  backendStallsCntr_ = stats_.registerStat("issue.backendStalls");
+  portBusyStallsCntr_ = stats_.registerStat("issue.portBusyStalls");
 }
 
 void DispatchIssueUnit::tick() {
@@ -89,6 +95,7 @@ void DispatchIssueUnit::tick() {
       portAllocator_.deallocate(port);
       input_.stall(true);
       rsStalls_++;
+      stats_.incrementStat(rsStallsCntr_, 1);
       return;
     }
 
@@ -143,6 +150,7 @@ void DispatchIssueUnit::issue() {
     if (issuePorts_[i].isStalled()) {
       if (queue.size() > 0) {
         portBusyStalls_++;
+        stats_.incrementStat(portBusyStallsCntr_, 1);
       }
       continue;
     }
@@ -165,10 +173,12 @@ void DispatchIssueUnit::issue() {
     for (const auto& rs : reservationStations_) {
       if (rs.currentSize != 0) {
         backendStalls_++;
+        stats_.incrementStat(backendStallsCntr_, 1);
         return;
       }
     }
     frontendStalls_++;
+    stats_.incrementStat(frontendStallsCntr_, 1);
   }
 }
 

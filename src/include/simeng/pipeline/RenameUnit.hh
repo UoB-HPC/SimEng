@@ -79,6 +79,18 @@ class RenameUnit {
 
   /** A reference to the Statistics class. */
   Statistics& stats_;
+
+  /** Statistics class id for allocationStalls_ counter. */
+  uint64_t allocationStallsCntr_;
+
+  /** Statistics class id for robStalls_ counter. */
+  uint64_t robStallsCntr_;
+
+  /** Statistics class id for lqStalls_ counter. */
+  uint64_t lqStallsCntr_;
+
+  /** Statistics class id for sqStalls_ counter. */
+  uint64_t sqStallsCntr_;
 };
 
 }  // namespace pipeline

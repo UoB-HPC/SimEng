@@ -137,6 +137,12 @@ class ExecuteUnit {
 
   /** A reference to the Statistics class. */
   Statistics& stats_;
+
+  /** Statistics class id for branchesExecuted_ counter. */
+  uint64_t branchesExecutedCntr_;
+
+  /** Statistics class id for branchMispredicts_ counter. */
+  uint64_t branchMispredictsCntr_;
 };
 
 }  // namespace pipeline

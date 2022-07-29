@@ -530,8 +530,8 @@ void ModelConfig::validate() {
   subFields = {"Dump-File"};
   if (nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
                                std::vector<std::string>(),
-                               ExpectedValue::String, "./stats-dump.txt")) {
-    std::ifstream file(configFile_[root][subFields[0]].as<std::string>());
+                               ExpectedValue::String, "stats-dump.txt")) {
+    std::ofstream file(configFile_[root][subFields[0]].as<std::string>());
     if (!file.is_open()) {
       invalid_ << "\t - Chosen stat dump file "
                << configFile_[root][subFields[0]].as<std::string>()

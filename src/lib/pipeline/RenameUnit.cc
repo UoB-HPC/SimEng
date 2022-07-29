@@ -17,7 +17,13 @@ RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
       rat_(rat),
       lsq_(lsq),
       freeRegistersAvailable_(registerTypes),
-      stats_(stats) {}
+      stats_(stats) {
+  // Register stat counters
+  allocationStallsCntr_ = stats_.registerStat("rename.allocationStalls");
+  robStallsCntr_ = stats_.registerStat("rename.robStalls");
+  lqStallsCntr_ = stats_.registerStat("rename.lqStalls");
+  sqStallsCntr_ = stats_.registerStat("rename.sqStalls");
+}
 
 void RenameUnit::tick() {
   if (output_.isStalled()) {
@@ -40,6 +46,7 @@ void RenameUnit::tick() {
     if (reorderBuffer_.getFreeSpace() == 0) {
       input_.stall(true);
       robStalls_++;
+      stats_.incrementStat(robStallsCntr_, 1);
       return;
     }
     if (uop->exceptionEncountered()) {
@@ -57,12 +64,14 @@ void RenameUnit::tick() {
     if (isLoad) {
       if (lsq_.getLoadQueueSpace() == 0) {
         lqStalls_++;
+        stats_.incrementStat(lqStallsCntr_, 1);
         input_.stall(true);
         return;
       }
     } else if (isStore) {
       if (lsq_.getStoreQueueSpace() == 0) {
         sqStalls_++;
+        stats_.incrementStat(sqStallsCntr_, 1);
         input_.stall(true);
         return;
       }
@@ -84,6 +93,7 @@ void RenameUnit::tick() {
         // Not enough free registers available for this uop
         input_.stall(true);
         allocationStalls_++;
+        stats_.incrementStat(allocationStallsCntr_, 1);
         return;
       }
       freeRegistersAvailable_[reg.type]--;

@@ -60,6 +60,9 @@ class DecodeUnit {
 
   /** A reference to the Statistics class. */
   Statistics& stats_;
+
+  /** Statistics class id for branchStalls_ counter. */
+  uint64_t earlyFlushesCntr_;
 };
 
 }  // namespace pipeline

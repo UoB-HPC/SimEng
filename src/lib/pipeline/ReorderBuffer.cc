@@ -21,7 +21,11 @@ ReorderBuffer::ReorderBuffer(
       predictor_(predictor),
       loopBufSize_(loopBufSize),
       loopDetectionThreshold_(loopDetectionThreshold),
-      stats_(stats) {}
+      stats_(stats) {
+  // Register stat counters
+  instructionsCommittedCntr_ = stats_.registerStat("retired");
+  loadViolationsCntr_ = stats_.registerStat("lsq.loadViolations");
+}
 
 void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   assert(buffer_.size() < maxSize_ &&
@@ -83,7 +87,10 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
-    if (uop->isLastMicroOp()) instructionsCommitted_++;
+    if (uop->isLastMicroOp()) {
+      instructionsCommitted_++;
+      stats_.incrementStat(instructionsCommittedCntr_, 1);
+    }
 
     if (uop->exceptionEncountered()) {
       raiseException_(uop);
@@ -104,6 +111,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       bool violationFound = lsq_.commitStore(uop);
       if (violationFound) {
         loadViolations_++;
+        stats_.incrementStat(loadViolationsCntr_, 1);
         // Memory order violation found; aborting commits and flushing
         auto load = lsq_.getViolatingLoad();
         shouldFlush_ = true;

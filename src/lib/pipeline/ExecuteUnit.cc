@@ -24,7 +24,11 @@ ExecuteUnit::ExecuteUnit(
       predictor_(predictor),
       stats_(stats),
       pipelined_(pipelined),
-      blockingGroups_(blockingGroups) {}
+      blockingGroups_(blockingGroups) {
+  // Register stat counters
+  branchesExecutedCntr_ = stats_.registerStat("branch.executed");
+  branchMispredictsCntr_ = stats_.registerStat("branch.mispredict");
+}
 
 void ExecuteUnit::tick() {
   tickCounter_++;
@@ -148,6 +152,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
 
     // Update the branch instruction counter
     branchesExecuted_++;
+    stats_.incrementStat(branchesExecutedCntr_, 1);
 
     if (uop->wasBranchMispredicted()) {
       // Misprediction; flush the pipeline
@@ -155,6 +160,7 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
       flushAfter_ = uop->getInstructionId();
       // Update the branch misprediction counter
       branchMispredicts_++;
+      stats_.incrementStat(branchMispredictsCntr_, 1);
     }
   }
 

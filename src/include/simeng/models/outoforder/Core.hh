@@ -164,6 +164,12 @@ class Core : public simeng::Core {
 
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
+
+  /** Statistics class id for ticks_ counter. */
+  uint64_t ticksCntr_;
+
+  /** Statistics class id for flushes_ counter. */
+  uint64_t flushesCntr_;
 };
 
 }  // namespace outoforder

@@ -27,8 +27,7 @@ class Statistics {
   void resetStats();
 
   /** Fill the passed map with general statistic form the full simulation. */
-  void getGeneralSimulationStats(
-      std::map<const std::string, std::string>& statMap);
+  void getGeneralSimulationStats(std::map<std::string, std::string>& statMap);
 
  private:
   /** Vector to hold statistic names. */

@@ -134,6 +134,12 @@ class ReorderBuffer {
 
   /** A reference to the Statistics class. */
   Statistics& stats_;
+
+  /** Statistics class id for instructionsCommitted_ counter. */
+  uint64_t instructionsCommittedCntr_;
+
+  /** Statistics class id for loadViolations_ counter. */
+  uint64_t loadViolationsCntr_;
 };
 
 }  // namespace pipeline
