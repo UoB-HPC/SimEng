@@ -92,6 +92,9 @@ class ExecuteUnit {
    */
   BranchPredictor& predictor_;
 
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
+
   /** Whether this unit is pipelined, or if all instructions should stall until
    * complete. */
   bool pipelined_;
@@ -134,9 +137,6 @@ class ExecuteUnit {
 
   /** The number of active execution cycles that were observed. */
   uint64_t cycles_ = 0;
-
-  /** A reference to the Statistics class. */
-  Statistics& stats_;
 
   /** Statistics class id for branchesExecuted_ counter. */
   uint64_t branchesExecutedCntr_;

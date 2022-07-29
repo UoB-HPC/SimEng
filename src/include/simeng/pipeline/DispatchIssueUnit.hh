@@ -132,6 +132,9 @@ class DispatchIssueUnit {
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;
 
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
+
   /** The number of cycles stalled due to a full reservation station. */
   uint64_t rsStalls_ = 0;
 
@@ -145,9 +148,6 @@ class DispatchIssueUnit {
   /** The number of times an instruction was unable to issue due to a busy port.
    */
   uint64_t portBusyStalls_ = 0;
-
-  /** A reference to the Statistics class. */
-  Statistics& stats_;
 
   /** Statistics class id for rsStalls_ counter. */
   uint64_t rsStallsCntr_;

@@ -175,6 +175,9 @@ class LoadStoreQueue {
   /** A queue of completed loads ready for writeback. */
   std::queue<std::shared_ptr<Instruction>> completedLoads_;
 
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
+
   /** Whether the LSQ can only process loads xor stores within a cycle. */
   bool exclusive_;
 
@@ -189,9 +192,6 @@ class LoadStoreQueue {
 
   /** The number of loads and stores permitted per cycle. */
   std::array<uint16_t, 2> reqLimits_;
-
-  /** A reference to the Statistics class. */
-  Statistics& stats_;
 };
 
 }  // namespace pipeline
