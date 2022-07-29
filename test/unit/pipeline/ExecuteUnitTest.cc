@@ -47,11 +47,11 @@ class PipelineExecuteUnitTest : public testing::Test {
  protected:
   PipelineBuffer<std::shared_ptr<Instruction>> input;
   PipelineBuffer<std::shared_ptr<Instruction>> output;
+  Statistics stats;
   MockBranchPredictor predictor;
   MockExecutionHandlers executionHandlers;
 
   ExecuteUnit executeUnit;
-  Statistics stats;
 
   MockInstruction* uop;
   MockInstruction* secondUop;

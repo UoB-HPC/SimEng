@@ -18,8 +18,8 @@ class PipelineDecodeUnitTest : public testing::Test {
   PipelineDecodeUnitTest()
       : input(1, {}),
         output(1, nullptr),
-        registerFileSet({{8, 1}}),
         stats("./stats-dump.txt"),
+        registerFileSet({{8, 1}}),
         decodeUnit(input, output, predictor, stats),
         uop(new MockInstruction),
         uopPtr(uop),
@@ -28,10 +28,10 @@ class PipelineDecodeUnitTest : public testing::Test {
  protected:
   PipelineBuffer<MacroOp> input;
   PipelineBuffer<std::shared_ptr<Instruction>> output;
+  Statistics stats;
   RegisterFileSet registerFileSet;
   MockBranchPredictor predictor;
   DecodeUnit decodeUnit;
-  Statistics stats;
 
   MockInstruction* uop;
   std::shared_ptr<Instruction> uopPtr;

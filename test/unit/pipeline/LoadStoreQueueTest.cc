@@ -27,12 +27,12 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
  public:
   LoadStoreQueueTest()
       : completionSlots({{1, nullptr}}),
+        stats("./stats-dump.txt"),
         addresses({{0, 1}}),
         addressesSpan({addresses.data(), addresses.size()}),
         data({RegisterValue(static_cast<uint8_t>(1))}),
         dataSpan({data.data(), data.size()}),
         memory{},
-        stats("./stats-dump.txt"),
         loadUop(new MockInstruction),
         loadUop2(new MockInstruction),
         storeUop(new MockInstruction),
@@ -111,6 +111,8 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   std::vector<pipeline::PipelineBuffer<std::shared_ptr<Instruction>>>
       completionSlots;
 
+  Statistics stats;
+
   std::vector<MemoryAccessTarget> addresses;
   span<const MemoryAccessTarget> addressesSpan;
 
@@ -132,8 +134,6 @@ class LoadStoreQueueTest : public ::testing::TestWithParam<bool> {
   MockForwardOperandsHandler forwardOperandsHandler;
 
   MockMemoryInterface dataMemory;
-
-  Statistics stats;
 };
 
 // Test that a split queue can be constructed correctly

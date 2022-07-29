@@ -25,8 +25,8 @@ class ReorderBufferTest : public testing::Test {
  public:
   ReorderBufferTest()
       : memory{},
-        rat({{8, 32}}, {64}),
         stats("./stats-dump.txt"),
+        rat({{8, 32}}, {64}),
         lsq(
             maxLSQLoads, maxLSQStores, dataMemory, {nullptr, 0},
             [](auto registers, auto values) {}, stats),
@@ -45,8 +45,8 @@ class ReorderBufferTest : public testing::Test {
   const uint8_t maxROBSize = 32;
 
   char memory[1024];
-  RegisterAliasTable rat;
   Statistics stats;
+  RegisterAliasTable rat;
   LoadStoreQueue lsq;
   MockBranchPredictor predictor;
 

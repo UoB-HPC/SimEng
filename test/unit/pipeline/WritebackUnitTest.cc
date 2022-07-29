@@ -19,21 +19,21 @@ class PipelineWritebackUnitTest : public testing::Test {
  public:
   PipelineWritebackUnitTest()
       : input(1, {1, nullptr}),
+        stats("./stats-dump.txt"),
         registerFileSet({{8, 2}}),
         uop(new MockInstruction),
         uopPtr(uop),
-        stats("./stats-dump.txt"),
         writebackUnit(
             input, registerFileSet, [](auto insnId) {}, stats) {}
 
  protected:
   std::vector<PipelineBuffer<std::shared_ptr<Instruction>>> input;
+  Statistics stats;
   RegisterFileSet registerFileSet;
 
   MockInstruction* uop;
   std::shared_ptr<Instruction> uopPtr;
   WritebackUnit writebackUnit;
-  Statistics stats;
 };
 
 // Tests that a value is correctly written back, and the uop is cleared from the

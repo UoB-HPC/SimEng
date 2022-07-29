@@ -22,9 +22,9 @@ class PipelineFetchUnitTest : public testing::Test {
  public:
   PipelineFetchUnitTest()
       : output(1, {}),
+        stats("./stats-dump.txt"),
         fetchBuffer({{0, 16}, 0, 0}),
         completedReads(&fetchBuffer, 1),
-        stats("./stats-dump.txt"),
         fetchUnit(output, memory, 1024, 0, 16, isa, predictor, stats),
         uop(new MockInstruction),
         uopPtr(uop) {
@@ -33,6 +33,7 @@ class PipelineFetchUnitTest : public testing::Test {
 
  protected:
   PipelineBuffer<MacroOp> output;
+  Statistics stats;
   MockMemoryInterface memory;
   MockArchitecture isa;
   MockBranchPredictor predictor;
@@ -41,7 +42,6 @@ class PipelineFetchUnitTest : public testing::Test {
   span<MemoryReadResult> completedReads;
 
   FetchUnit fetchUnit;
-  Statistics stats;
 
   MockInstruction* uop;
   std::shared_ptr<Instruction> uopPtr;
