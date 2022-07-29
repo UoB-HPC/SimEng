@@ -7,6 +7,7 @@
 #include "simeng/MemoryInterface.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/RegisterValue.hh"
+#include "simeng/Statistics.hh"
 #include "simeng/span.hh"
 
 using InstructionException = short;
@@ -177,6 +178,9 @@ class Instruction {
 
   /** Get arbitrary micro-operation index. */
   int getMicroOpIndex() const;
+
+  /** Identify whether it's a Statistic-controlling instruction. */
+  virtual const statInsnType getStatInsnType() const = 0;
 
  protected:
   /** Whether an exception has been encountered. */

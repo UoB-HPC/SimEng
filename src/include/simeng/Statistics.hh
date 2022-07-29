@@ -8,6 +8,8 @@
 
 namespace simeng {
 
+enum class statInsnType { NONE = 0, DUMP, RESET };
+
 /** A class to maintain all statistics registered in SimEng. */
 class Statistics {
  public:

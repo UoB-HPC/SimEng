@@ -185,6 +185,11 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     auto metadata =
         success ? InstructionMetadata(rawInsn) : InstructionMetadata(encoding);
 
+    if (insn == 0xDEADBEEF)
+      metadata.statType = statInsnType::RESET;
+    else if (insn == 0xABBACAFE)
+      metadata.statType = statInsnType::DUMP;
+
     // Cache the metadata
     metadataCache.emplace_front(metadata);
 

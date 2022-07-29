@@ -309,6 +309,9 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
 
+  /** Identify whether it's a Statistic-controlling instruction. */
+  const statInsnType getStatInsnType() const override;
+
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
    * automatically supplied as zero. */

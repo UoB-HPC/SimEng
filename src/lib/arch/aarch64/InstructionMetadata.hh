@@ -77,6 +77,9 @@ struct InstructionMetadata {
   /** The number of explicit operands. */
   uint8_t operandCount;
 
+  /** Which statInsnType value this instruction belongs to. */
+  statInsnType statType = statInsnType::NONE;
+
  private:
   /** Detect instruction aliases and update metadata to match the de-aliased
    * instruction. */

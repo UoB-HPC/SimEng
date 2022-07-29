@@ -93,7 +93,14 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     if (uop->exceptionEncountered()) {
-      raiseException_(uop);
+      // Disregard exception if a SimEng custom statistics instruction
+      if (uop->getStatInsnType() == statInsnType::NONE) {
+        raiseException_(uop);
+      } else if (uop->getStatInsnType() == statInsnType::DUMP) {
+        stats_.dumpStats(uop->getInstructionAddress());
+      } else if (uop->getStatInsnType() == statInsnType::RESET) {
+        stats_.resetStats();
+      }
       buffer_.pop_front();
       return n + 1;
     }
