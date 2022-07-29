@@ -8,6 +8,7 @@
 
 #include "simeng/Instruction.hh"
 #include "simeng/MemoryInterface.hh"
+#include "simeng/Statistics.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
 namespace simeng {
@@ -35,8 +36,8 @@ class LoadStoreQueue {
       unsigned int maxCombinedSpace, MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
-      uint16_t storeBandwidth = UINT16_MAX,
+      Statistics& stats, bool exclusive = false,
+      uint16_t loadBandwidth = UINT16_MAX, uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,
       uint16_t permittedLoads = UINT16_MAX,
       uint16_t permittedStores = UINT16_MAX);
@@ -49,8 +50,8 @@ class LoadStoreQueue {
       MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
       std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-      bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
-      uint16_t storeBandwidth = UINT16_MAX,
+      Statistics& stats, bool exclusive = false,
+      uint16_t loadBandwidth = UINT16_MAX, uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,
       uint16_t permittedLoads = UINT16_MAX,
       uint16_t permittedStores = UINT16_MAX);
@@ -188,6 +189,9 @@ class LoadStoreQueue {
 
   /** The number of loads and stores permitted per cycle. */
   std::array<uint16_t, 2> reqLimits_;
+
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
 };
 
 }  // namespace pipeline

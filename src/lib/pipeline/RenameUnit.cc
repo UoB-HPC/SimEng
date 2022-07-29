@@ -9,13 +9,15 @@ namespace pipeline {
 RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
                        PipelineBuffer<std::shared_ptr<Instruction>>& toDispatch,
                        ReorderBuffer& rob, RegisterAliasTable& rat,
-                       LoadStoreQueue& lsq, uint8_t registerTypes)
+                       LoadStoreQueue& lsq, uint8_t registerTypes,
+                       Statistics& stats)
     : input_(fromDecode),
       output_(toDispatch),
       reorderBuffer_(rob),
       rat_(rat),
       lsq_(lsq),
-      freeRegistersAvailable_(registerTypes) {}
+      freeRegistersAvailable_(registerTypes),
+      stats_(stats) {}
 
 void RenameUnit::tick() {
   if (output_.isStalled()) {

@@ -7,8 +7,8 @@ namespace pipeline {
 
 DecodeUnit::DecodeUnit(PipelineBuffer<MacroOp>& input,
                        PipelineBuffer<std::shared_ptr<Instruction>>& output,
-                       BranchPredictor& predictor)
-    : input_(input), output_(output), predictor_(predictor){};
+                       BranchPredictor& predictor, Statistics& stats)
+    : input_(input), output_(output), predictor_(predictor), stats_(stats){};
 
 void DecodeUnit::tick() {
   // Stall if output buffer is stalled

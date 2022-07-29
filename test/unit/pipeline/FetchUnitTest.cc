@@ -24,7 +24,8 @@ class PipelineFetchUnitTest : public testing::Test {
       : output(1, {}),
         fetchBuffer({{0, 16}, 0, 0}),
         completedReads(&fetchBuffer, 1),
-        fetchUnit(output, memory, 1024, 0, 16, isa, predictor),
+        stats("./stats-dump.txt"),
+        fetchUnit(output, memory, 1024, 0, 16, isa, predictor, stats),
         uop(new MockInstruction),
         uopPtr(uop) {
     uopPtr->setInstructionAddress(0);
@@ -40,6 +41,7 @@ class PipelineFetchUnitTest : public testing::Test {
   span<MemoryReadResult> completedReads;
 
   FetchUnit fetchUnit;
+  Statistics stats;
 
   MockInstruction* uop;
   std::shared_ptr<Instruction> uopPtr;

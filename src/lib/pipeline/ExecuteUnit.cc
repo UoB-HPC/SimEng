@@ -13,7 +13,7 @@ ExecuteUnit::ExecuteUnit(
     std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
     std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-    BranchPredictor& predictor, bool pipelined,
+    BranchPredictor& predictor, Statistics& stats, bool pipelined,
     const std::vector<uint16_t>& blockingGroups)
     : input_(input),
       output_(output),
@@ -22,6 +22,7 @@ ExecuteUnit::ExecuteUnit(
       handleStore_(handleStore),
       raiseException_(raiseException),
       predictor_(predictor),
+      stats_(stats),
       pipelined_(pipelined),
       blockingGroups_(blockingGroups) {}
 

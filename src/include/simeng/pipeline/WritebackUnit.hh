@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "simeng/Instruction.hh"
+#include "simeng/Statistics.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
 namespace simeng {
@@ -17,7 +18,8 @@ class WritebackUnit {
   WritebackUnit(std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>&
                     completionSlots,
                 RegisterFileSet& registerFileSet,
-                std::function<void(uint64_t insnId)> flagMicroOpCommits);
+                std::function<void(uint64_t insnId)> flagMicroOpCommits,
+                Statistics& stats);
 
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
@@ -38,6 +40,9 @@ class WritebackUnit {
 
   /** The number of instructions processed and retired by this stage. */
   uint64_t instructionsWritten_ = 0;
+
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
 };
 
 }  // namespace pipeline

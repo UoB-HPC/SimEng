@@ -2,6 +2,7 @@
 
 #include <queue>
 
+#include "simeng/Statistics.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
@@ -16,7 +17,7 @@ class DecodeUnit {
    * current branch predictor. */
   DecodeUnit(PipelineBuffer<MacroOp>& input,
              PipelineBuffer<std::shared_ptr<Instruction>>& output,
-             BranchPredictor& predictor);
+             BranchPredictor& predictor, Statistics& stats);
 
   /** Ticks the decode unit. Breaks macro-ops into uops, and performs early
    * branch misprediction checks. */
@@ -56,6 +57,9 @@ class DecodeUnit {
   /** The number of times that the decode unit requested a flush due to
    * discovering a branch misprediction early. */
   uint64_t earlyFlushes_ = 0;
+
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
 };
 
 }  // namespace pipeline

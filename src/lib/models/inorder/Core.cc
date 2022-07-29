@@ -15,26 +15,29 @@ const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor)
+           const arch::Architecture& isa, BranchPredictor& branchPredictor,
+           Statistics& stats)
     : dataMemory_(dataMemory),
       isa_(isa),
+      stats_(stats),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, blockSize, isa, branchPredictor),
-      decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
-                  branchPredictor),
+                 entryPoint, blockSize, isa, branchPredictor, stats_),
+      decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_, branchPredictor,
+                  stats_),
       executeUnit_(
           decodeToExecuteBuffer_, completionSlots_[0],
           [this](auto regs, auto values) { forwardOperands(regs, values); },
           [this](auto instruction) { handleLoad(instruction); },
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
-          branchPredictor, false),
-      writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}) {
+          branchPredictor, stats_, false),
+      writebackUnit_(
+          completionSlots_, registerFileSet_, [](auto insnId) {}, stats_) {
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);

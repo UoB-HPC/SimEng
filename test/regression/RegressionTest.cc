@@ -45,6 +45,10 @@ void RegressionTest::run(const char* source, const char* triple) {
   // Get pre-defined config file for OoO model
   YAML::Node config = generateConfig();
 
+  // Create Statistics class for stat maintenance and output
+  simeng::Statistics statistics(
+      config["Statistics"]["Dump-File"].as<std::string>());
+
   // Create a linux process from the assembled code block.
   // Memory allocation for process images also takes place
   // during linux process creation. The Elf binary is parsed
@@ -109,13 +113,14 @@ void RegressionTest::run(const char* source, const char* triple) {
     case INORDER:
       core_ = std::make_unique<simeng::models::inorder::Core>(
           instructionMemory, *flatDataMemory, processMemorySize_, entryPoint,
-          *architecture_, predictor);
+          *architecture_, predictor, statistics);
       dataMemory = std::move(flatDataMemory);
       break;
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *architecture_, predictor, *portAllocator, config);
+          entryPoint, *architecture_, predictor, *portAllocator, config,
+          statistics);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }

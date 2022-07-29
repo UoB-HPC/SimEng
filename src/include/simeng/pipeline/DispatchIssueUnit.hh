@@ -8,6 +8,7 @@
 #include <unordered_set>
 
 #include "simeng/Instruction.hh"
+#include "simeng/Statistics.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/PortAllocator.hh"
 #include "yaml-cpp/yaml.h"
@@ -59,8 +60,8 @@ class DispatchIssueUnit {
       PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
-      const std::vector<uint16_t>& physicalRegisterStructure,
-      YAML::Node config);
+      const std::vector<uint16_t>& physicalRegisterStructure, YAML::Node config,
+      Statistics& stats);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -144,6 +145,9 @@ class DispatchIssueUnit {
   /** The number of times an instruction was unable to issue due to a busy port.
    */
   uint64_t portBusyStalls_ = 0;
+
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
 };
 
 }  // namespace pipeline

@@ -22,7 +22,8 @@ class Core : public simeng::Core {
    * process memory. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        uint64_t processMemorySize, uint64_t entryPoint,
-       const arch::Architecture& isa, BranchPredictor& branchPredictor);
+       const arch::Architecture& isa, BranchPredictor& branchPredictor,
+       Statistics& stats);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -78,6 +79,9 @@ class Core : public simeng::Core {
 
   /** A reference to the core's architecture. */
   const arch::Architecture& isa_;
+
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
 
   /** The core's register file set. */
   RegisterFileSet registerFileSet_;

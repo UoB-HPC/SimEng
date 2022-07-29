@@ -8,10 +8,11 @@ namespace pipeline {
 WritebackUnit::WritebackUnit(
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots,
     RegisterFileSet& registerFileSet,
-    std::function<void(uint64_t insnId)> flagMicroOpCommits)
+    std::function<void(uint64_t insnId)> flagMicroOpCommits, Statistics& stats)
     : completionSlots_(completionSlots),
       registerFileSet_(registerFileSet),
-      flagMicroOpCommits_(flagMicroOpCommits) {}
+      flagMicroOpCommits_(flagMicroOpCommits),
+      stats_(stats) {}
 
 void WritebackUnit::tick() {
   for (size_t slot = 0; slot < completionSlots_.size(); slot++) {

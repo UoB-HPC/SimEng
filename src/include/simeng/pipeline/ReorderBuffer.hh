@@ -4,6 +4,7 @@
 #include <functional>
 
 #include "simeng/Instruction.hh"
+#include "simeng/Statistics.hh"
 #include "simeng/pipeline/LoadStoreQueue.hh"
 #include "simeng/pipeline/RegisterAliasTable.hh"
 
@@ -34,7 +35,7 @@ class ReorderBuffer {
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
       std::function<void(uint64_t branchAddress)> sendLoopBoundary,
       BranchPredictor& predictor, uint16_t loopBufSize,
-      uint16_t loopDetectionThreshold);
+      uint16_t loopDetectionThreshold, Statistics& stats);
 
   /** Add the provided instruction to the ROB. */
   void reserve(const std::shared_ptr<Instruction>& insn);
@@ -130,6 +131,9 @@ class ReorderBuffer {
 
   /** The number of speculatived loads which violated load-store ordering. */
   uint64_t loadViolations_ = 0;
+
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
 };
 
 }  // namespace pipeline

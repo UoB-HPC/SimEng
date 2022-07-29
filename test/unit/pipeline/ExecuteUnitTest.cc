@@ -26,6 +26,7 @@ class PipelineExecuteUnitTest : public testing::Test {
   PipelineExecuteUnitTest()
       : input(1, nullptr),
         output(1, nullptr),
+        stats("./stats-dump.txt"),
         executeUnit(
             input, output,
             [this](auto regs, auto values) {
@@ -35,7 +36,7 @@ class PipelineExecuteUnitTest : public testing::Test {
             [this](auto instruction) {
               executionHandlers.raiseException(instruction);
             },
-            predictor, true, {3, 4, 5}),
+            predictor, stats, true, {3, 4, 5}),
         uop(new MockInstruction),
         secondUop(new MockInstruction),
         thirdUop(new MockInstruction),
@@ -50,6 +51,7 @@ class PipelineExecuteUnitTest : public testing::Test {
   MockExecutionHandlers executionHandlers;
 
   ExecuteUnit executeUnit;
+  Statistics stats;
 
   MockInstruction* uop;
   MockInstruction* secondUop;

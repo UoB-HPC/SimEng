@@ -3,6 +3,7 @@
 #include <queue>
 
 #include "simeng/MemoryInterface.hh"
+#include "simeng/Statistics.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
@@ -40,7 +41,8 @@ class FetchUnit {
    * the current branch predictor, and information on the instruction memory. */
   FetchUnit(PipelineBuffer<MacroOp>& output, MemoryInterface& instructionMemory,
             uint64_t programByteLength, uint64_t entryPoint, uint8_t blockSize,
-            const arch::Architecture& isa, BranchPredictor& branchPredictor);
+            const arch::Architecture& isa, BranchPredictor& branchPredictor,
+            Statistics& stats);
 
   ~FetchUnit();
 
@@ -116,6 +118,9 @@ class FetchUnit {
 
   /** The amount of data currently in the fetch buffer. */
   uint8_t bufferedBytes_ = 0;
+
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
 };
 
 }  // namespace pipeline

@@ -7,7 +7,7 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
                      MemoryInterface& instructionMemory,
                      uint64_t programByteLength, uint64_t entryPoint,
                      uint8_t blockSize, const arch::Architecture& isa,
-                     BranchPredictor& branchPredictor)
+                     BranchPredictor& branchPredictor, Statistics& stats)
     : output_(output),
       pc_(entryPoint),
       instructionMemory_(instructionMemory),
@@ -15,10 +15,12 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
       isa_(isa),
       branchPredictor_(branchPredictor),
       blockSize_(blockSize),
-      blockMask_(~(blockSize_ - 1)) {
+      blockMask_(~(blockSize_ - 1)),
+      stats_(stats) {
   assert(blockSize_ >= isa_.getMaxInstructionSize() &&
          "fetch block size must be larger than the largest instruction");
   fetchBuffer_ = new uint8_t[2 * blockSize_];
+
   requestFromPC();
 }
 

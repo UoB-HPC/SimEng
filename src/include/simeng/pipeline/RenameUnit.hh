@@ -1,6 +1,7 @@
 #pragma once
 
 #include "simeng/Instruction.hh"
+#include "simeng/Statistics.hh"
 #include "simeng/pipeline/LoadStoreQueue.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/RegisterAliasTable.hh"
@@ -19,7 +20,7 @@ class RenameUnit {
   RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& input,
              PipelineBuffer<std::shared_ptr<Instruction>>& output,
              ReorderBuffer& rob, RegisterAliasTable& rat, LoadStoreQueue& lsq,
-             uint8_t registerTypes);
+             uint8_t registerTypes, Statistics& stats);
 
   /** Ticks this unit. Renames registers of instructions, and allocates ROB
    * space. */
@@ -75,6 +76,9 @@ class RenameUnit {
   /** The number of cycles stalled due to insufficient load/store queue space
    * for a store operation. */
   uint64_t sqStalls_ = 0;
+
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
 };
 
 }  // namespace pipeline

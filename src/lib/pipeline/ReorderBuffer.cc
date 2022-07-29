@@ -12,7 +12,7 @@ ReorderBuffer::ReorderBuffer(
     std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
     std::function<void(uint64_t branchAddress)> sendLoopBoundary,
     BranchPredictor& predictor, uint16_t loopBufSize,
-    uint16_t loopDetectionThreshold)
+    uint16_t loopDetectionThreshold, Statistics& stats)
     : rat_(rat),
       lsq_(lsq),
       maxSize_(maxSize),
@@ -20,7 +20,8 @@ ReorderBuffer::ReorderBuffer(
       sendLoopBoundary_(sendLoopBoundary),
       predictor_(predictor),
       loopBufSize_(loopBufSize),
-      loopDetectionThreshold_(loopDetectionThreshold) {}
+      loopDetectionThreshold_(loopDetectionThreshold),
+      stats_(stats) {}
 
 void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   assert(buffer_.size() < maxSize_ &&

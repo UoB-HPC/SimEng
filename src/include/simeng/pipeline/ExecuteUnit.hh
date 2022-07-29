@@ -5,6 +5,7 @@
 
 #include "simeng/BranchPredictor.hh"
 #include "simeng/Instruction.hh"
+#include "simeng/Statistics.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 
 namespace simeng {
@@ -33,7 +34,7 @@ class ExecuteUnit {
       std::function<void(const std::shared_ptr<Instruction>&)> handleLoad,
       std::function<void(const std::shared_ptr<Instruction>&)> handleStore,
       std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
-      BranchPredictor& predictor, bool pipelined = true,
+      BranchPredictor& predictor, Statistics& stats, bool pipelined = true,
       const std::vector<uint16_t>& blockingGroups = {});
 
   /** Tick the execute unit. Places incoming instructions into the pipeline and
@@ -133,6 +134,9 @@ class ExecuteUnit {
 
   /** The number of active execution cycles that were observed. */
   uint64_t cycles_ = 0;
+
+  /** A reference to the Statistics class. */
+  Statistics& stats_;
 };
 
 }  // namespace pipeline

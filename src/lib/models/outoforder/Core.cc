@@ -17,8 +17,10 @@ namespace outoforder {
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator, YAML::Node config)
+           pipeline::PortAllocator& portAllocator, YAML::Node config,
+           Statistics& stats)
     : isa_(isa),
+      stats_(stats),
       physicalRegisterStructures_(
           {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
            {256,
@@ -56,7 +58,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
+          stats_, config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
           config["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>(),
           config["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>(),
           config["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]
@@ -67,7 +69,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
               .as<uint16_t>()),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
                  entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
-                 isa, branchPredictor),
+                 isa, branchPredictor, stats_),
       reorderBuffer_(
           config["Queue-Sizes"]["ROB"].as<unsigned int>(), registerAliasTable_,
           loadStoreQueue_,
@@ -76,16 +78,19 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
             fetchUnit_.registerLoopBoundary(branchAddress);
           },
           branchPredictor, config["Fetch"]["Loop-Buffer-Size"].as<uint16_t>(),
-          config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>()),
-      decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
+          config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>(), stats_),
+      decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor,
+                  stats_),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
-                  physicalRegisterStructures_.size()),
+                  physicalRegisterStructures_.size(), stats_),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities_, config),
+                         portAllocator, physicalRegisterQuantities_, config,
+                         stats_),
       writebackUnit_(
           completionSlots_, registerFileSet_,
-          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
+          [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); },
+          stats_),
       portAllocator_(portAllocator),
       clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
@@ -104,7 +109,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
         },
         [this](auto uop) { loadStoreQueue_.startLoad(uop); },
         [this](auto uop) { loadStoreQueue_.supplyStoreData(uop); },
-        [](auto uop) { uop->setCommitReady(); }, branchPredictor,
+        [](auto uop) { uop->setCommitReady(); }, branchPredictor, stats_,
         config["Execution-Units"][i]["Pipelined"].as<bool>(), blockingGroups);
   }
   // Provide reservation size getter to A64FX port allocator
