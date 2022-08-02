@@ -3,11 +3,13 @@
 #include <cstdlib> // For exit() and EXIT_FAILURE
 #include <iostream> // For cout
 #include <unistd.h> // For read
-#include <string.h> // For memset
+#include <string.h> // For memset, stoi
 #include <regex> // For regex
 
-// colour codes for pretty printing
+#include "simeng/MemoryInterface.hh"
+// src/include/simeng/models/emulation/Core.hh
 
+// colour codes for pretty printing
 #define RESET "\033[0m"
 #define CYAN "\033[36m"
 #define MAGENTA "\033[35m"
@@ -26,6 +28,42 @@ std::string byteToHex(uint8_t byte){
 	if(lsb < 10) output[1] = lsb + 48;
 	else output[1] = lsb + 87;
 
+	return output;
+}
+
+// converts hex into uint64_t, used for converting GDB's memory address
+uint64_t hexToInt(std::string hex){
+	int base = 1;
+	uint64_t output = 0;
+
+	for(int i = hex.length() - 1; i >= 0; i--){
+		if(hex[i] >= '0' && hex[i] <= '9') output += ((hex[i] - 48)* base);
+		else if(hex[i] >= 'a' && hex[i] <= 'f') output += ((hex[i] - 87)* base);
+		else(std::cout << "non hex characters in input string");
+		base *= 16;
+	}
+
+	return output;
+}
+
+// converts uint64_t into RSP compliant hex, i.e. a series of 2 character hex bytes
+std::string decToRSP(uint64_t dec){
+	std::string output = "";
+	if(dec == 0) output = "00";
+	
+	while(dec != 0){
+		int temp = dec % 16;
+		if(temp < 10) output += temp + 48;
+		else output += temp + 87;
+
+		dec = dec / 16;
+	}
+
+	if(output.length() % 2 == 1) output += '0';
+
+	for(int i = 0; i < output.length(); i += 2){
+		std::swap(output[i], output[i+1]);
+	}
 	return output;
 }
 
@@ -81,11 +119,22 @@ std::string handleReadSingleRegister(std::string register){
 }
 
 // reads a SimEng memory location and returns an RSP compliant string
-std::string handleReadMemory(std::string address, std::string length){
+std::string handleReadMemory(std::string address, std::string length, simeng::MemoryInterface& dataMemory){
 
-	// TODO: Get memory value from SimEng and respond in RSP compliant hex
+	simeng::MemoryAccessTarget memoryAccessTarget = simeng::MemoryAccessTarget();
 
-	return "1234567890abcdef";
+	memoryAccessTarget.address = hexToInt(address);
+	memoryAccessTarget.size = std::stoi(length);
+
+	dataMemory.requestRead(memoryAccessTarget);
+	uint64_t value = dataMemory.getCompletedReads()[0].data.get<uint32_t>();
+	dataMemory.clearCompletedReads();
+
+	std::cout << "Value retrieved from memory: " << value << std::endl;
+
+	std::string output = decToRSP(value);
+
+	return output;
 }
 
 // creates a socket and listens on a port provided by an argument, or 2424 by default
@@ -128,7 +177,7 @@ int openSocket(int port){
 	return connection;
 }
 
-int runGDBStub() {
+int runGDBStub(simeng::MemoryInterface& dataMemory) {
 
 	int connection = openSocket(2425);
 
@@ -186,7 +235,7 @@ int runGDBStub() {
 				std::regex mem_regex("^m([0-9a-f]*),([0-9a-f]*)");
 				std::smatch mem_match;
 				regex_match(packet, mem_match, mem_regex);
-				std::string memoryValue = handleReadMemory(mem_match[1], mem_match[2]);
+				std::string memoryValue = handleReadMemory(mem_match[1], mem_match[2], dataMemory);
 				response += generateReply(memoryValue);
 			} else if(packet[0] == 'M'){ // write memory
 				response += generateReply("OK");
