@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
   int iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
 
-  //+  if(gdb) runGDBStub(*dataMemory);
+  if(gdb) runGDBStub(*dataMemory);
   else iterations = simulate(*core, *dataMemory, instructionMemory);
 
   // Get timing information
