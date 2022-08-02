@@ -262,11 +262,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // FMOVXDHighr incorrectly flags destination as only WRITE
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       break;
-    case Opcode::AArch64_FMOVSi:
-      operands[0].access = CS_AC_WRITE;
-      operands[1].access = CS_AC_READ;
-      operands[1].type = ARM64_OP_IMM;
-      break;
     case Opcode::AArch64_FNMSB_ZPmZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FNMSB_ZPmZZ_S:
@@ -274,8 +269,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_FNMLS_ZPmZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FNMLS_ZPmZZ_S:
-      [[fallthrough]];
-    case Opcode::AArch64_FADDA_VPZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FMAD_ZPmZZ_D:
       [[fallthrough]];
@@ -1865,17 +1858,14 @@ void InstructionMetadata::revertAliasing() {
           opcode == Opcode::AArch64_DUP_ZZI_D ||
           opcode == Opcode::AArch64_DUP_ZZI_Q) {
         // mov Zd.T, Vn; alias for dup Zd.T, Zn.T[0]
-        operandCount = 2;
         operands[0].access = CS_AC_WRITE;
-        operands[1].type = ARM64_OP_REG;
         operands[1].access = CS_AC_READ;
 
         uint8_t start = operandStr[2] == '.' ? 7 : 8;
         uint8_t end = operandStr.length() - start;
 
-        // ARM64_REG_Z0 == 245
-        operands[1].reg =
-            static_cast<arm64_reg>(245 + stoi(operandStr.substr(start, end)));
+        operands[1].reg = static_cast<arm64_reg>(
+            ARM64_REG_Z0 + stoi(operandStr.substr(start, end)));
         operands[1].vector_index = 0;
         return;
       }
@@ -1977,6 +1967,11 @@ void InstructionMetadata::revertAliasing() {
           opcode == Opcode::AArch64_INSvi32gpr ||
           opcode == Opcode::AArch64_INSvi64gpr) {
         // mov vd.ts[index], rn; alias for: ins vd.ts[index], rn
+        return;
+      }
+      if (opcode == Opcode::AArch64_UMOVvi32_idx0 ||
+          opcode == Opcode::AArch64_UMOVvi64_idx0) {
+        // mov wd, vn.t[0]; alias for: umov wd, vn.t[0]
         return;
       }
       return aliasNYI();

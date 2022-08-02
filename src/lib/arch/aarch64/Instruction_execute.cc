@@ -4734,17 +4734,20 @@ void Instruction::execute() {
         results[0] = neonHelp::vecUMinP<uint8_t, 16>(operands);
         break;
       }
-      case Opcode::AArch64_UMOVvi32: {  // umov wd, vn.s[index]
+      case Opcode::AArch64_UMOVvi32_idx0:  // umov wd, vn.s[0]
+      case Opcode::AArch64_UMOVvi32: {     // umov wd, vn.s[index]
         const uint32_t* vec = operands[0].getAsVector<uint32_t>();
         results[0] = {vec[metadata.operands[1].vector_index], 8};
         break;
       }
-      case Opcode::AArch64_UMOVvi64: {  // umov xd, vn.d[index]
+      case Opcode::AArch64_UMOVvi64_idx0:  // umov xd, vn.d[0]
+      case Opcode::AArch64_UMOVvi64: {     // umov xd, vn.d[index]
         const uint64_t* vec = operands[0].getAsVector<uint64_t>();
         results[0] = vec[metadata.operands[1].vector_index];
         break;
       }
-      case Opcode::AArch64_UMOVvi8: {  // umov wd, vn.b[index]
+      case Opcode::AArch64_UMOVvi8_idx0:  // umov wd, vn.b[0]
+      case Opcode::AArch64_UMOVvi8: {     // umov wd, vn.b[index]
         const uint8_t* vec = operands[0].getAsVector<uint8_t>();
         results[0] = {vec[metadata.operands[1].vector_index], 8};
         break;
@@ -5009,7 +5012,7 @@ void Instruction::execute() {
         break;
       }
       default:
-        return executionINV();
+        return executionNYI();
     }
   }
 
