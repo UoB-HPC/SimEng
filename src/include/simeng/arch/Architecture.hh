@@ -94,11 +94,9 @@ class Architecture {
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;
 
-  /** Returns the system register for the Virtual Counter Timer. */
-  virtual simeng::Register getVCTreg() const = 0;
-
-  /** Returns the system register for the Processor Cycle Counter. */
-  virtual simeng::Register getPCCreg() const = 0;
+  /** Updates System registers of any system-based timers. */
+  virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
+                                          const uint64_t iterations) const = 0;
 };
 
 }  // namespace arch

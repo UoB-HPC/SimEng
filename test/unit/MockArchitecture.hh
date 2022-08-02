@@ -22,8 +22,8 @@ class MockArchitecture : public arch::Architecture {
                          const Core& core, MemoryInterface& memory));
   MOCK_CONST_METHOD0(getInitialState, arch::ProcessStateChange());
   MOCK_CONST_METHOD0(getMaxInstructionSize, uint8_t());
-  MOCK_CONST_METHOD0(getVCTreg, simeng::Register());
-  MOCK_CONST_METHOD0(getPCCreg, simeng::Register());
+  MOCK_CONST_METHOD2(updateSystemTimerRegisters,
+                     void(RegisterFileSet* regFile, const uint64_t iterations));
 };
 
 }  // namespace simeng

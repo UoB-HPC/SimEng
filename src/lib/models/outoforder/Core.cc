@@ -117,10 +117,6 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
-
-  // Get Virtual Counter Timer and Processor Cycle Counter system registers.
-  VCTreg_ = isa_.getVCTreg();
-  PCCreg_ = isa_.getPCCreg();
 };
 
 void Core::tick() {
@@ -179,6 +175,7 @@ void Core::tick() {
 
   flushIfNeeded();
   fetchUnit_.requestFromPC();
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 void Core::flushIfNeeded() {
@@ -377,16 +374,6 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
     dataMemory_.requestWrite(change.memoryAddresses[i],
                              change.memoryAddressValues[i]);
   }
-}
-
-void Core::incVCT(uint64_t iterations) {
-  registerFileSet_.set(VCTreg_, iterations);
-  return;
-}
-
-void Core::updatePCC(uint64_t iterations) {
-  registerFileSet_.set(PCCreg_, iterations);
-  return;
 }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
