@@ -38,7 +38,6 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
   const uint16_t VL_bits = architecture_.getVectorLength();
-  std::cerr << metadata.mnemonic << " " << metadata.operandStr << std::endl;
   executed_ = true;
   if (isMicroOp_) {
     switch (microOpcode_) {
