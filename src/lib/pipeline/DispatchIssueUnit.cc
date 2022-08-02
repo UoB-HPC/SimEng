@@ -140,6 +140,7 @@ void DispatchIssueUnit::tick() {
     // Increment dispatches made and RS occupied entries size
     dispatches[RS_Index]++;
     rs.currentSize++;
+    rs.ports[RS_Port].currentSize++;
 
     if (ready) {
       rs.ports[RS_Port].ready.push_back(std::move(uop));
@@ -183,8 +184,10 @@ void DispatchIssueUnit::issue() {
 
       assert(rs.currentSize > 0);
       rs.currentSize--;
+      assert(rs.ports[portMapping_[i].second].currentSize > 0);
+      rs.ports[portMapping_[i].second].currentSize--;
     } else {
-      if (rs.currentSize != 0)
+      if (rs.ports[portMapping_[i].second].currentSize != 0)
         stats_.incrementStat(portStats_[i].backendSlotStallsCntr, 1);
       else
         stats_.incrementStat(portStats_[i].frontendSlotStallsCntr, 1);
@@ -249,6 +252,8 @@ void DispatchIssueUnit::purgeFlushed() {
           readyIter = port.ready.erase(readyIter);
           assert(rs.currentSize > 0);
           rs.currentSize--;
+          assert(port.currentSize > 0);
+          port.currentSize--;
         } else {
           readyIter++;
         }
@@ -268,6 +273,13 @@ void DispatchIssueUnit::purgeFlushed() {
           if (!flushed_[rsIndex].count(entry.uop)) {
             flushed_[rsIndex].insert(entry.uop);
             portAllocator_.deallocate(entry.port);
+            auto rsInfo = portMapping_[entry.port];
+            assert(reservationStations_[rsInfo.first]
+                       .ports[rsInfo.second]
+                       .currentSize > 0);
+            reservationStations_[rsInfo.first]
+                .ports[rsInfo.second]
+                .currentSize--;
           }
           it = dependencyList.erase(it);
         } else {

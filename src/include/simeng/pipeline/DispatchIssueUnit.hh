@@ -23,6 +23,9 @@ struct ReservationStationPort {
   /** Queue of instructions that are ready to be
    * issued */
   std::deque<std::shared_ptr<Instruction>> ready;
+  /** Current number of ready and pending instructions being issued to
+   * associated port. */
+  uint64_t currentSize;
 };
 
 /** A reservation station */
