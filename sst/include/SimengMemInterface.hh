@@ -45,6 +45,8 @@ namespace SST {
                         SimengMemInterface& mem_interface;
                 };
 
+                // This struct represents a memory request from SimEng, It is used as base struct for
+                // AggregateWriteRequest and AggregateReadRequest.
                 struct SimengMemoryRequest {
                     const MemoryAccessTarget target;
 
@@ -52,6 +54,13 @@ namespace SST {
                     SimengMemoryRequest(const MemoryAccessTarget& target): target(target) {};
                 };
 
+                /*
+                    Structs AggregatedWriteRequest and AggregatedReadRequest are used to store
+                    information regarding the multiple SST::StandardMem::Request (Read or Write) a memory
+                    request from SimEng is split into if its size is greater than the cache line width.
+                    These structs are also used to represent SimEng requests which aren't split for ease of 
+                    implementation.
+                */
                 struct AggregateWriteRequest: public SimengMemoryRequest {
                     const RegisterValue data;
 
@@ -69,29 +78,6 @@ namespace SST {
                     AggregateReadRequest(const MemoryAccessTarget& target, const uint64_t id):
                         SimengMemoryRequest(target), id(id) {}
                 };
-
-
-
-                // struct SSTSimengMemReq {
-                //     const uint64_t id;
-                //     const MemoryAccessTarget target;
-                //     MemoryRequestType req_type;
-                //     const RegisterValue data;
-                //     std::vector<uint64_t> req_ids;
-                //     int aggregateCount;
-                    
-                //     SSTSimengMemReq(): target(MemoryAccessTarget()), data(RegisterValue()), id(0) {}
-
-                //     SSTSimengMemReq(const MemoryAccessTarget& target, uint64_t requestId): id(requestId), data(RegisterValue()), target(target) {
-                //         req_type = READ;
-                //         aggregateCount =  0;
-                //     };
-
-                //     SSTSimengMemReq(const MemoryAccessTarget& target, const RegisterValue& data): id(0), target(target), data(data) {
-                //         req_type = WRITE;
-                //         aggregateCount = 0;
-                //     };
-                // };
                 
             private:
                 SST::Output* output;
@@ -102,21 +88,35 @@ namespace SST {
                 uint64_t max_addr_memory;
                 
                 std::vector<MemoryReadResult> completed_read_requests;
+                /*
+                    This map is used to store unique ids of SST::StandardMem:Read requests and their corresponding
+                    AggregatedReadRequest as key-value pairs (In some cases SimengMemoryRequest has to be divided
+                    into multiple SST::StandardMem:Request(s) if the SimengMemoryRequest size > cache line width).
+                    i.e the unique ids of multiple read requests and their correspong aggregatedReadRequest are stored 
+                    in a many-to-one fashion. An entry from this map is removed when a response for 
+                    SST::StandardMem::Read request is recieved and recorded. The response holds the same unique id as
+                    the request.
+                    No such key-value pairs are maintained for AggregatedWriteRequest(s) even if they are split into multiple
+                    SST::StandardMem::Write requests as their responses do not need to be aggregated.
+                */
                 std::unordered_map<uint64_t, AggregateReadRequest*> aggregation_map;
 
+                // This method only accepts structs derived from the SimengMemoryRequest struct as the value for aggrReq.
                 template<typename T, typename std::enable_if<std::is_base_of<SimengMemoryRequest, T>::value>::type* = nullptr>
                 std::vector<StandardMem::Request*> makeSSTRequests(T* aggrReq,  uint64_t addrStart, uint64_t addrEnd, uint64_t size);
-                void aggregatedReadResponses(AggregateReadRequest* aggrReq);
-
-
-                // std::vector<StandardMem::Request*> makeSSTRequests(SSTSimengMemReq* sstReq);
-
+                /*
+                    These overloaded methods handle AggregatedWriteRequest, AggregatedReadRequest and SimengMemoryRequest
+                    as values for aggrReq. Any struct dervied from SimengMemoryRequest will require an overloaded definition
+                    and implementation. Dervided structs with no corresponding overloaded method will be passed to
+                    splitAggregatedRequest(SimengMemoryRequest* aggrReq, ....) causing an error.
+                    Any instantiations of base struct (SimengMemoryRequest) passed to splitAggregatedRequest will also cause errors.
+                */
                 std::vector<StandardMem::Request*> splitAggregatedRequest(AggregateWriteRequest* aggrReq, uint64_t addrStart, uint64_t size);
                 std::vector<StandardMem::Request*> splitAggregatedRequest(AggregateReadRequest* aggrReq, uint64_t addrStart, uint64_t size);
                 std::vector<StandardMem::Request*> splitAggregatedRequest(SimengMemoryRequest* aggrReq, uint64_t addrStart, uint64_t size);
 
-                // std::vector<StandardMem::Write*> splitWriteRequest(SSTSimengMemReq* sstReq, uint64_t addrStart, uint64_t size);
-                // std::vector<StandardMem::Read*> splitReadRequest(SSTSimengMemReq* sstReq, uint64_t addrStart, uint64_t size);
+                void aggregatedReadResponses(AggregateReadRequest* aggrReq);
+
                 int getCacheLinesNeeded(int size) {
                     if (size < clw) return 1;
                     if (size % clw == 0) return size / clw;
@@ -126,6 +126,8 @@ namespace SST {
                 bool unsignedOverflow_(uint64_t a, uint64_t b) const {
                     return (a + b) < a || (a + b) < b;
                 };
+                // TODO: Fails if request spans multiple cache lines but ends on a multiple
+                // of cache line width
                 bool requestSpansMultipleCacheLines(uint64_t addrStart, uint64_t addrEnd) {
                     return (addrStart / clw) < (addrEnd / clw) && (addrEnd % clw != 0);
                 };

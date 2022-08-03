@@ -90,7 +90,6 @@ void SimengCoreWrapper::init(unsigned int phase) {
 }
 
 bool SimengCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
-    // std::cout << "\r" << "cycle: " << current_cycle << std::endl;
     // Tick the core and memory interfaces until the program has halted
     if (!core->hasHalted() || data_memory->hasPendingRequests()) {
     // Tick the core
