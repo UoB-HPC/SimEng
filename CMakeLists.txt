@@ -6,11 +6,11 @@ set(FETCHCONTENT_QUIET OFF)
 # there also isn't a version that accepts extra args at the end for add_subdirectory
 # hence we write one ourselves
 macro(FetchContent_MakeAvailable_Args NAME ARGS)
-  FetchContent_GetProperties(${NAME})
-  if(NOT ${NAME}_POPULATED)
-    FetchContent_Populate(${NAME})
-    add_subdirectory(${${NAME}_SOURCE_DIR} ${${NAME}_BINARY_DIR} ${ARGS})
-  endif()
+    FetchContent_GetProperties(${NAME})
+    if(NOT ${NAME}_POPULATED)
+        FetchContent_Populate(${NAME})
+        add_subdirectory(${${NAME}_SOURCE_DIR} ${${NAME}_BINARY_DIR} ${ARGS})
+    endif()
 endmacro()
 
 # we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a small part of it
@@ -60,7 +60,7 @@ project(SimEng VERSION 0.9.3 LANGUAGES C CXX)
 if(NOT CMAKE_BUILD_TYPE)
   message(STATUS "Setting build type to Release as none was specified.")
   set(CMAKE_BUILD_TYPE "Release" CACHE
-    STRING "Choose the type of build." FORCE)
+      STRING "Choose the type of build." FORCE)
 endif()
 
 # Require and enable C++17 support, and disable compiler extensions.
@@ -84,8 +84,8 @@ add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
 # Include SimEng API headers in all targets and install them
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include)
 install(DIRECTORY src/include/simeng
-  DESTINATION include
-  FILES_MATCHING PATTERN "*.hh")
+        DESTINATION include
+        FILES_MATCHING PATTERN "*.hh")
 
 # capstone
 set(CAPSTONE_BUILD_TESTS OFF CACHE BOOL "Disable Capstone tests")
@@ -123,7 +123,7 @@ option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
 option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizatoins" OFF)
 
-if(SIMENG_OPTIMIZE)
+if (SIMENG_OPTIMIZE)
   # Turn on link time optimization for all targets.
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
@@ -136,7 +136,7 @@ if(SIMENG_OPTIMIZE)
 endif()
 
 set(SANITIZE_OPTIONS -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-sanitize-recover=address,undefined)
-if(SIMENG_SANITIZE)
+if (SIMENG_SANITIZE)
     add_compile_options(${SANITIZE_OPTIONS})
     add_link_options(${SANITIZE_OPTIONS})
 endif()
@@ -183,7 +183,7 @@ if(SIMENG_ENABLE_TESTS)
     include_directories("${llvm_BINARY_DIR}/include" "${llvm_SOURCE_DIR}/include")
 
     find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH
-      PATHS "${llvm_BINARY_DIR}/lib/cmake/llvm")
+                 PATHS "${llvm_BINARY_DIR}/lib/cmake/llvm")
 
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
     # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
