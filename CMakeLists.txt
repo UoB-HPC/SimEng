@@ -7,7 +7,6 @@ set(FETCHCONTENT_QUIET OFF)
 # hence we write one ourselves
 macro(FetchContent_MakeAvailable_Args NAME ARGS)
   FetchContent_GetProperties(${NAME})
-
   if(NOT ${NAME}_POPULATED)
     FetchContent_Populate(${NAME})
     add_subdirectory(${${NAME}_SOURCE_DIR} ${${NAME}_BINARY_DIR} ${ARGS})
@@ -15,33 +14,33 @@ macro(FetchContent_MakeAvailable_Args NAME ARGS)
 endmacro()
 
 # we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a small part of it
+
 FetchContent_Declare(
   llvm
-  URL https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/llvm-12.0.0.src.tar.xz
+  URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/llvm-12.0.0.src.tar.xz
   URL_HASH MD5=ceab21c9081e122a88d82216a80d0dc0
 )
 
 # FetchContent_Declare(
-# llvm
-# URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/llvm-9.0.1.src.tar.xz
+#   llvm
+#   URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/llvm-9.0.1.src.tar.xz
 # )
+
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
-
   # this versions requires CMake >= 2.8.12 which silences the deprecation warning
-  GIT_TAG release-1.11.0
-  GIT_PROGRESS TRUE
+  GIT_TAG        release-1.11.0
+  GIT_PROGRESS   TRUE
 )
 
 FetchContent_Declare(
   yaml-cpp
   GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
-
   # the latest tagged version (0.6.3) is fairly old and doesn't contain the needed CMake stuff for this to work properly
   # hence we pick the latest working commit
-  GIT_TAG a6bbe0e50ac4074f0b9b44188c28cf00caf1a723
-  GIT_PROGRESS TRUE
+  GIT_TAG        a6bbe0e50ac4074f0b9b44188c28cf00caf1a723
+  GIT_PROGRESS   TRUE
 )
 
 FetchContent_Declare(
@@ -113,7 +112,7 @@ set(CAPSTONE_RISCV_SUPPORT OFF CACHE BOOL "Disable RISCV support")
 FetchContent_MakeAvailable_Args(capstone-lib EXCLUDE_FROM_ALL)
 include_directories("${capstone_BINARY_DIR}/include" "${capstone_SOURCE_DIR}/include")
 
-# # Setup yaml-cpp ##
+## Setup yaml-cpp ##
 set(YAML_CPP_BUILD_TESTS OFF)
 set(YAML_CPP_INSTALL OFF)
 
@@ -137,23 +136,24 @@ if(SIMENG_OPTIMIZE)
 endif()
 
 set(SANITIZE_OPTIONS -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-sanitize-recover=address,undefined)
-
 if(SIMENG_SANITIZE)
-  add_compile_options(${SANITIZE_OPTIONS})
-  add_link_options(${SANITIZE_OPTIONS})
+    add_compile_options(${SANITIZE_OPTIONS})
+    add_link_options(${SANITIZE_OPTIONS})
 endif()
 
 if(SIMENG_ENABLE_TESTS)
-  # # Setup LLVM ##
-  if(SIMENG_USE_EXTERNAL_LLVM)
+
+  ## Setup LLVM ##
+  if (SIMENG_USE_EXTERNAL_LLVM)
     find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
 
-    # Check LLVM version
-    if(${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0")
+      # Check LLVM version
+    if (${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0")
       message(FATAL_ERROR "LLVM version must be >= 8.0")
     endif()
 
   else()
+
     set(LLVM_TARGETS_TO_BUILD "AArch64" CACHE INTERNAL "")
 
     set(LLVM_BUILD_RUNTIME OFF)
@@ -179,7 +179,6 @@ if(SIMENG_ENABLE_TESTS)
 
     # XXX all LLVM specific cmake variables must be set BEFORE FetchContent_MakeAvailable otherwise they have no effect
     FetchContent_MakeAvailable_Args(llvm EXCLUDE_FROM_ALL)
-
     # make sure we get the headers too
     include_directories("${llvm_BINARY_DIR}/include" "${llvm_SOURCE_DIR}/include")
 
@@ -188,6 +187,7 @@ if(SIMENG_ENABLE_TESTS)
 
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
     # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
+
   endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
@@ -195,16 +195,15 @@ if(SIMENG_ENABLE_TESTS)
   message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
   # Check LLVM was built with the correct targets enabled
-  if(NOT "AArch64" IN_LIST LLVM_TARGETS_TO_BUILD)
+  if (NOT "AArch64" IN_LIST LLVM_TARGETS_TO_BUILD)
     message(FATAL_ERROR "LLVM was built without AArch64 target")
   endif()
 
-  # # Setup googletest ##
+  ## Setup googletest ##
   FetchContent_MakeAvailable_Args(googletest EXCLUDE_FROM_ALL)
   enable_testing()
 
   add_subdirectory(test)
-
   # saves us from having to build all targets before running the tests
   add_custom_target(test-all
     COMMAND ${CMAKE_CTEST_COMMAND}
