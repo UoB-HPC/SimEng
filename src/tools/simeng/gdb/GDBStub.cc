@@ -101,11 +101,12 @@ std::string handleReadRegisters(simeng::ArchitecturalRegisterFileSet registers, 
 }
 
 // reads a single register and returns an RSP compliant string
-std::string handleReadSingleRegister(std::string register){
+std::string handleReadSingleRegister(std::string registerName, simeng::ArchitecturalRegisterFileSet registers){
 	
-	// TODO: read register from SimEng (register name is in hex) and respond in RSP compliant hex
-	
-	return "0000000000000000";
+	uint16_t registerNumber = hexToInt(registerName);
+	uint64_t value = registers.get({0, registerNumber}).get<uint64_t>();
+
+	return decToRSP(value);
 }
 
 // reads a SimEng memory location and returns an RSP compliant string
@@ -219,7 +220,7 @@ int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory) {
 				std::regex reg_regex("^m([0-9a-f]*)");
 				std::smatch reg_match;
 				regex_match(packet, reg_match, reg_regex);
-				std::string registerValue = handleReadSingleRegister(reg_match[1]);
+				std::string registerValue = handleReadSingleRegister(reg_match[1], core.getArchitecturalRegisterFileSet());
 				response += generateReply(registerValue);
 			} else if(packet[0] == 'm'){ // read memory
 				std::regex mem_regex("^m([0-9a-f]*),([0-9a-f]*)");
