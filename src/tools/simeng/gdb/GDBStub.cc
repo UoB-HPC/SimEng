@@ -87,26 +87,16 @@ std::string generateReply(std::string packet){
 	return output;
 }
 
-// reads all registers from SimEng and returns an RSP compliant string (1 byte at a time, in 2 digit hexes)
-std::string handleReadRegisters(){
-	
-	std::array<std::array<uint8_t, 8>, 32> registers;
-	for(int i = 0; i < 32; i++) for(uint8_t byte : registers[i]) byte = 0;
-
-	// TODO replace this loop with reading SimEng registers (bytewise) and converting into hex (little endian wut ?)
-	for(int i = 0; i < registers.size(); i++) registers[i][0] = uint8_t(i);
+std::string handleReadRegisters(simeng::ArchitecturalRegisterFileSet registers, simeng::Core& core){
 
 	std::string output = "";
-	for(int i = 0; i < registers.size(); i++){
-		registers[i][0] = i; // LSByte = incremental
-		for(int j = 1; j < 8; j++) registers[i][j] = 0; //initialising rest of hex to zero
-
-		for(uint8_t byte : registers[i]) {
-			output += byteToHex(byte);
-		}
+	for(uint16_t i = 0; i < 32; i++){
+		uint64_t value = registers.get({0,i}).get<uint64_t>();
+		output += decToRSP(value);
 	}
-	for(int i = 0; i < 16; i++) output += "0"; // pc
-	for(int i = 0; i < 8; i++) output += "0"; // cpsr
+
+	output += decToRSP(core.getProgramCounter());
+
 	return output;
 }
 
