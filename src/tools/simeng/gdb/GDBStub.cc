@@ -6,8 +6,9 @@
 #include <string.h> // For memset, stoi
 #include <regex> // For regex
 
+#include "simeng/Core.hh"
+#include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/MemoryInterface.hh"
-// src/include/simeng/models/emulation/Core.hh
 
 // colour codes for pretty printing
 #define RESET "\033[0m"
@@ -46,10 +47,9 @@ uint64_t hexToInt(std::string hex){
 	return output;
 }
 
-// converts uint64_t into RSP compliant hex, i.e. a series of 2 character hex bytes
+// converts uint64_t into RSP compliant hex, i.e. a series of 8x 2 character hex bytes
 std::string decToRSP(uint64_t dec){
-	std::string output = "";
-	if(dec == 0) output = "00";
+	std::string output = "0";
 	
 	while(dec != 0){
 		int temp = dec % 16;
@@ -59,7 +59,7 @@ std::string decToRSP(uint64_t dec){
 		dec = dec / 16;
 	}
 
-	if(output.length() % 2 == 1) output += '0';
+	output = std::string(16 - output.length(), '0') + output;
 
 	for(int i = 0; i < output.length(); i += 2){
 		std::swap(output[i], output[i+1]);
@@ -177,7 +177,7 @@ int openSocket(int port){
 	return connection;
 }
 
-int runGDBStub(simeng::MemoryInterface& dataMemory) {
+int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory) {
 
 	int connection = openSocket(2425);
 
@@ -223,7 +223,7 @@ int runGDBStub(simeng::MemoryInterface& dataMemory) {
 			if(packet == "?"){ // reason for halting
 				response += generateReply("S05");
 			} else if(packet == "g"){ // read registers
-				std::string registers = handleReadRegisters();
+				std::string registers = handleReadRegisters(core.getArchitecturalRegisterFileSet(), core);
 				response += generateReply(registers);
 			} else if(packet[0] == 'p'){ // read single register
 				std::regex reg_regex("^m([0-9a-f]*)");
