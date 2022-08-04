@@ -154,7 +154,7 @@ std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
 void SimengMemInterface::requestRead(const MemoryAccessTarget& target, uint64_t requestId) {
     uint64_t addrStart = target.address;
     uint64_t size = unsigned(target.size);
-    uint64_t addrEnd = addrStart + size;
+    uint64_t addrEnd = addrStart + size - 1;
     /* 
         Check if address is greater than max memory address or overflows.
         This often happens on wrongly speculated branches leading to 
@@ -177,7 +177,7 @@ void SimengMemInterface::requestRead(const MemoryAccessTarget& target, uint64_t 
 void SimengMemInterface::requestWrite(const MemoryAccessTarget& target, const RegisterValue& data) {
     uint64_t addrStart = target.address;
     uint64_t size = unsigned(target.size);
-    uint64_t addrEnd = addrStart + size;
+    uint64_t addrEnd = addrStart + size - 1;
 
     AggregateWriteRequest* aggrReq = new AggregateWriteRequest(target, data);
     std::vector<StandardMem::Request*> requests = makeSSTRequests<AggregateWriteRequest>(aggrReq, addrStart, addrEnd, size);
@@ -261,3 +261,19 @@ void SimengMemInterface::SimengMemHandlers::handle(StandardMem::ReadResp* rsp) {
         mem_interface.aggregatedReadResponses(aggrReq);
     }
 }
+
+int SimengMemInterface::getCacheLinesNeeded(int size) {
+    if (size < clw) return 1;
+    if (size % clw == 0) return size / clw;
+    return (size / clw) + 1;
+}
+bool SimengMemInterface::unsignedOverflow_(uint64_t a, uint64_t b) const {
+    return (a + b) < a || (a + b) < b;
+};
+bool SimengMemInterface::requestSpansMultipleCacheLines(uint64_t addrStart, uint64_t addrEnd) {
+    uint64_t lineDiff = (addrEnd / clw) - (addrStart/clw);
+    return lineDiff > 0;
+};
+uint64_t SimengMemInterface::nearestCacheLineEnd(uint64_t addrStart) {
+    return (addrStart / clw) + 1;
+};

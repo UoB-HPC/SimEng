@@ -116,24 +116,10 @@ namespace SST {
                 std::vector<StandardMem::Request*> splitAggregatedRequest(SimengMemoryRequest* aggrReq, uint64_t addrStart, uint64_t size);
 
                 void aggregatedReadResponses(AggregateReadRequest* aggrReq);
-
-                int getCacheLinesNeeded(int size) {
-                    if (size < clw) return 1;
-                    if (size % clw == 0) return size / clw;
-                    return (size / clw) + 1;
-                }
-
-                bool unsignedOverflow_(uint64_t a, uint64_t b) const {
-                    return (a + b) < a || (a + b) < b;
-                };
-                // TODO: Fails if request spans multiple cache lines but ends on a multiple
-                // of cache line width
-                bool requestSpansMultipleCacheLines(uint64_t addrStart, uint64_t addrEnd) {
-                    return (addrStart / clw) < (addrEnd / clw) && (addrEnd % clw != 0);
-                };
-                uint64_t nearestCacheLineEnd(uint64_t addrStart) {
-                    return (addrStart / clw) + 1;
-                };
+                int getCacheLinesNeeded(int size);
+                bool unsignedOverflow_(uint64_t a, uint64_t b) const;
+                bool requestSpansMultipleCacheLines(uint64_t addrStart, uint64_t addrEnd);
+                uint64_t nearestCacheLineEnd(uint64_t addrStart);
         };
     };
 };
