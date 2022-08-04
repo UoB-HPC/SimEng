@@ -87,15 +87,19 @@ std::string generateReply(std::string packet){
 	return output;
 }
 
+// reads all registers from SimEng and returns an RSP compliant string
 std::string handleReadRegisters(simeng::ArchitecturalRegisterFileSet registers, simeng::Core& core){
 
 	std::string output = "";
-	for(uint16_t i = 0; i < 32; i++){
+	for(uint16_t i = 0; i < 32; i++){ // general purpose registers 0-31, 31 = stack pointer
 		uint64_t value = registers.get({0,i}).get<uint64_t>();
 		output += decToRSP(value);
 	}
 
-	output += decToRSP(core.getProgramCounter());
+	output += decToRSP(core.getProgramCounter()); // program counter
+
+	output += byteToHex(registers.get({3,0}).get<uint8_t>()); // NZCV (first 4 bits of cpsr)
+	output += "000000"; // rest of cpsr, unneeded
 
 	return output;
 }
