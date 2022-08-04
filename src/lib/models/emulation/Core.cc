@@ -254,6 +254,8 @@ void Core::processExceptionHandler() {
   microOps_.pop();
 }
 
+uint64_t Core::getProgramCounter() { return pc_; }
+
 }  // namespace emulation
 }  // namespace models
 }  // namespace simeng
