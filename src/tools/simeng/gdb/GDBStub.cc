@@ -217,6 +217,11 @@ int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory, simeng::
 
 			if(packet == "?"){ // reason for halting
 				response += generateReply("S05");
+			} else if(packet == "s"){ // step one instruction
+				core.tick();
+				instructionMemory.tick();
+    			dataMemory.tick();
+				response += generateReply("S05");
 			} else if(packet == "g"){ // read registers
 				std::string registers = handleReadRegisters(core.getArchitecturalRegisterFileSet(), core);
 				response += generateReply(registers);
