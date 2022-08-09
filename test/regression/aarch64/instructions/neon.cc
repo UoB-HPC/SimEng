@@ -1148,8 +1148,10 @@ TEST_P(InstNeon, fadd) {
     ldr q0, [x0]
     ldr q1, [x0, #16]
     fadd v2.4s, v0.4s, v1.4s
+    fadd v3.2s, v0.2s, v1.2s
   )");
   CHECK_NEON(2, float, {87.72f, -160.38, -0.927f, 701.90f});
+  CHECK_NEON(3, float, {87.72f, -160.38, 0,0});
 }
 
 TEST_P(InstNeon, fcmeq) {

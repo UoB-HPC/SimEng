@@ -3231,8 +3231,8 @@ void Instruction::execute() {
         results[0] = sveHelp::sveAdd_3ops<float>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_FADDv2f32: {
-        return executionNYI();
+      case Opcode::AArch64_FADDv2f32: {  // fadd vd.2s, vn.2s, vm.2s
+        results[0] = neonHelp::vecAdd_3ops<float>(operands);
         break;
       }
       case Opcode::AArch64_FADDv2f64: {  // fadd vd.2d, vn.2d, vm.2d
