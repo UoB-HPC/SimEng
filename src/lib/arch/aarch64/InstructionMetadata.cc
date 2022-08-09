@@ -2078,6 +2078,18 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_REV64:
+      // rev64 vd.t, vn.t
+      if (opcode == Opcode::AArch64_REV64v16i8 ||
+          opcode == Opcode::AArch64_REV64v2i32 ||
+          opcode == Opcode::AArch64_REV64v4i16 ||
+          opcode == Opcode::AArch64_REV64v4i32 ||
+          opcode == Opcode::AArch64_REV64v8i16 ||
+          opcode == Opcode::AArch64_REV64v8i8) {
+        operandCount = 2;
+        operands[0].access = CS_AC_WRITE;
+        operands[1].access = CS_AC_READ;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_ROR:
       if (opcode == Opcode::AArch64_RORVWr ||
