@@ -10849,8 +10849,8 @@ void Instruction::execute() {
         results[0] = neonHelp::vecMoviShift_imm<uint32_t, 2>(metadata, true);
         break;
       }
-      case Opcode::AArch64_MVNIv2s_msl: {
-        return executionNYI();
+      case Opcode::AArch64_MVNIv2s_msl: {  // mvni vd.2s, #imm, msl #amount
+        results[0] = neonHelp::vecMoviShift_imm<uint32_t, 2>(metadata, true);
         break;
       }
       case Opcode::AArch64_MVNIv4i16: {  // mvni vd.4h, #imm{, lsl #shift}
@@ -10861,8 +10861,8 @@ void Instruction::execute() {
         results[0] = neonHelp::vecMoviShift_imm<uint32_t, 4>(metadata, true);
         break;
       }
-      case Opcode::AArch64_MVNIv4s_msl: {
-        return executionNYI();
+      case Opcode::AArch64_MVNIv4s_msl: {  // mvni vd.4s #imm, msl #amount
+        results[0] = neonHelp::vecMoviShift_imm<uint32_t, 4>(metadata, true);
         break;
       }
       case Opcode::AArch64_MVNIv8i16: {  // mvni vd.8h, #imm{, lsl #shift}
