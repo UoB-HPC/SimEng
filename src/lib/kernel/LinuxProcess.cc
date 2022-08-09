@@ -28,6 +28,12 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   }
   isValid_ = true;
 
+// 5KB + 1GB + 100MB
+
+// 5MB -> elf binary
+// 5MB + 1GB + 100MB -> processImage
+// 5MB + 1GB + 100MB -> char* processMemory
+
   entryPoint_ = elf.getEntryPoint();
 
   span<char> elfProcessImage = elf.getProcessImage();
