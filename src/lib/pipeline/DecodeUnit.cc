@@ -63,24 +63,24 @@ void DecodeUnit::tick() {
 
       if (!uop->isBranch()) {
         // Non-branch incorrectly predicted as a branch; let the predictor know
-        predictor_.update(uop, false, pc_);
-        // Remove macro-operations in microOps_ buffer after macro-operation
-        // decoded in this cycle
-        auto uopIt = microOps_.begin();
-        // Find first microOps_ entry not belonging to same address as flushing
-        // instruction
-        while (uopIt != microOps_.end()) {
-          if ((*uopIt)->getInstructionAddress() !=
-              uop->getInstructionAddress()) {
-            break;
-          } else {
-            uopIt++;
-          }
+        predictor_.update(uop->getInstructionAddress(), false, pc_,
+                          uop->getBranchType());
+      }
+      // Remove macro-operations in microOps_ buffer after macro-operation
+      // decoded in this cycle
+      auto uopIt = microOps_.begin();
+      // Find first microOps_ entry not belonging to same address as flushing
+      // instruction
+      while (uopIt != microOps_.end()) {
+        if ((*uopIt)->getInstructionAddress() != uop->getInstructionAddress()) {
+          break;
+        } else {
+          uopIt++;
         }
-        // Remove all entries after first macro-operation in buffer
-        while (uopIt != microOps_.end()) {
-          uopIt = microOps_.erase(uopIt);
-        }
+      }
+      // Remove all entries after first macro-operation in buffer
+      while (uopIt != microOps_.end()) {
+        uopIt = microOps_.erase(uopIt);
       }
 
       // Skip processing remaining uops, as they need to be flushed
