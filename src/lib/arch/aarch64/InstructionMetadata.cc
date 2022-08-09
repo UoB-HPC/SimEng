@@ -1889,6 +1889,15 @@ void InstructionMetadata::revertAliasing() {
         // vn.T[index2]
         return;
       }
+      if (opcode == Opcode::AArch64_ORRv8i8) {
+        // mov vd, vn; alias for orr vd.t, vn.t, vn.t
+        operandCount = 3;
+
+        operands[2] = operands[1];
+        operands[1].access = CS_AC_READ;
+        operands[2].access = CS_AC_READ;
+        return;
+      }
       if (opcode == Opcode::AArch64_ORRWri ||
           opcode == Opcode::AArch64_ORRWrs ||
           opcode == Opcode::AArch64_ORRXri ||

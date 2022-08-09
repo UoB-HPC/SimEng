@@ -2479,6 +2479,7 @@ TEST_P(InstNeon, orr) {
   heap[5] = 0x77777777;
   heap[6] = 0xEEEEEEEE;
   heap[7] = 0x0F0F0F0F;
+
   RUN_AARCH64(R"(
     # Get heap address
     mov x0, 0
@@ -2488,12 +2489,18 @@ TEST_P(InstNeon, orr) {
     ldr q0, [x0]
     ldr q1, [x0, #16]
     orr v2.16b, v0.16b, v1.16b
+		orr v4.8b, v0.8b, v1.8b 
 
     # Test mov alias as well
     mov v3.16b, v0.16b
+		mov v5.8b, v0.8b 
   )");
   CHECK_NEON(2, uint32_t, {0xFEFDFEFF, 0x7777777F, 0xFEFEFEFE, 0xAFCFEF0F});
+  CHECK_NEON(4, uint32_t, {0xFEFDFEFF, 0x7777777F, 0x00000000, 0x00000000});
+
   CHECK_NEON(3, uint32_t, {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01});
+  CHECK_NEON(5, uint32_t, {0xDEADBEEF, 0x12345678, 0x00000000, 0x00000000});
+
 }
 
 TEST_P(InstNeon, uminp) {
