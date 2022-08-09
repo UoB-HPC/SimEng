@@ -821,6 +821,38 @@ class neonHelp {
     return {out, 256};
   }
 
+  /** Helper function for NEON instructions with the format `rev<16,32,64> Vd.T,
+   * Vn.T`. T represents the type of elements to be reversed (e.g. for Vn.d, T =
+   * uint64_t). V represents the variant: 16-bit, 32-bit, 64-bit. (Eg for 64-bit
+   * each doubleword of the vector will be reversed)   * I represents the number
+   * of elements in the output array to be updated (e.g. I represents the number
+   * of elements in the output array to be updated (e.g. for vd.8b I = 8). It is
+   * only valid for T to be a same or smaller width than V. Returns correctly
+   * formatted RegisterValue. */
+  template <typename T, int V, int I>
+  static RegisterValue vecRev(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* source = operands[0].getAsVector<T>();
+    int element_size = (sizeof(T) * 8);
+    int datasize = I * element_size;
+    int container_size = V;
+    int n_containers = datasize / container_size;
+    int elements_per_container = container_size / element_size;
+
+    int element = 0;
+    int rev_element;
+    T out[16 / sizeof(T)] = {0};
+    for (int c = 0; c < n_containers; c++) {
+      rev_element = element + elements_per_container - 1;
+      for (int e = 0; e < elements_per_container; e++) {
+        out[rev_element] = source[element];
+        element++;
+        rev_element--;
+      }
+    }
+
+    return {out, 256};
+  }
 };
 }  // namespace aarch64
 }  // namespace arch
