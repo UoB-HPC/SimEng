@@ -1436,6 +1436,40 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_TBLv8i8One:
+      [[fallthrough]];
+    case Opcode::AArch64_TBLv16i8One:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_TBLv8i8Two:
+      [[fallthrough]];
+    case Opcode::AArch64_TBLv16i8Two:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_TBLv8i8Three:
+      [[fallthrough]];
+    case Opcode::AArch64_TBLv16i8Three:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[4].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_TBLv8i8Four:
+      [[fallthrough]];
+    case Opcode::AArch64_TBLv16i8Four:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[4].access = CS_AC_READ;
+      operands[5].access = CS_AC_READ;
+      break;
   }
 
   revertAliasing();
