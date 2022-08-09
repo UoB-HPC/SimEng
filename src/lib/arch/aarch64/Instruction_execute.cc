@@ -16293,36 +16293,41 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_TBLv16i8Four: {
-        return executionNYI();
+      case Opcode::AArch64_TBLv16i8Four: {  // tbl Vd.16b {Vn.16b, Vn+1.16b,
+                                            // Vn+2.16b,Vn+3.16b } Vm.16b
+        results[0] = neonHelp::vecTbl<16>(operands, metadata);
         break;
       }
-      case Opcode::AArch64_TBLv16i8One: {
-        return executionNYI();
+      case Opcode::AArch64_TBLv16i8One: {  // tbl Vd.16b {Vn.16b} Vm.16b
+        results[0] = neonHelp::vecTbl<16>(operands, metadata);
         break;
       }
-      case Opcode::AArch64_TBLv16i8Three: {
-        return executionNYI();
+      case Opcode::AArch64_TBLv16i8Three: {  // tbl Vd.16b {Vn.16b, Vn+1.16b,
+                                             // Vn+2.16b } Vm.16b
+        results[0] = neonHelp::vecTbl<16>(operands, metadata);
         break;
       }
-      case Opcode::AArch64_TBLv16i8Two: {
-        return executionNYI();
+      case Opcode::AArch64_TBLv16i8Two: {  // tbl Vd.16b {Vn.16b, Vn+1.16b }
+                                           // Vm.16b
+        results[0] = neonHelp::vecTbl<16>(operands, metadata);
         break;
       }
-      case Opcode::AArch64_TBLv8i8Four: {
-        return executionNYI();
+      case Opcode::AArch64_TBLv8i8Four: {  // tbl Vd.8b {Vn.16b, Vn+1.16b,
+                                           // Vn+2.16b,Vn+3.16b } Vm.8b
+        results[0] = neonHelp::vecTbl<8>(operands, metadata);
         break;
       }
-      case Opcode::AArch64_TBLv8i8One: {
-        return executionNYI();
+      case Opcode::AArch64_TBLv8i8One: {  // tbl Vd.8b {Vn.16b} Vm.8b
+        results[0] = neonHelp::vecTbl<8>(operands, metadata);
         break;
       }
-      case Opcode::AArch64_TBLv8i8Three: {
-        return executionNYI();
+      case Opcode::AArch64_TBLv8i8Three: {  // tbl Vd.8b {Vn.16b, Vn+1.16b,
+                                            // Vn+2.16b } Vm.8b
+        results[0] = neonHelp::vecTbl<8>(operands, metadata);
         break;
       }
-      case Opcode::AArch64_TBLv8i8Two: {
-        return executionNYI();
+      case Opcode::AArch64_TBLv8i8Two: {  // tbl Vd.8b {Vn.16b, Vn+1.16b } Vm.8b
+        results[0] = neonHelp::vecTbl<8>(operands, metadata);
         break;
       }
       case Opcode::AArch64_TBNZW: {  // tbnz wn, #imm, label

@@ -3192,6 +3192,182 @@ TEST_P(InstNeon, xtn) {
   CHECK_NEON(2, uint16_t, {42, (1u << 15), UINT16_MAX, 7, 0, 0, 0, 0});
 }
 
+TEST_P(InstNeon, tbl) {
+  initialHeapData_.resize(512);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  
+  // table for all tests
+  heap[0] = 0x7766554433221100; // v0 bytes 0-7
+  heap[1] = 0xFFEEDDCCBBAA9988; // v0 bytes 8-15
+  heap[2] = 0x7766554433221100; // v1 bytes 0-7
+  heap[3] = 0xFFEEDDCCBBAA9988; // v1 bytes 8-15
+  heap[4] = 0xDEADBEEFDEADBEEF; // v2 bytes 0-7
+  heap[5] = 0xBA5EBA11BA5EBA11; // v2 bytes 8-15
+  heap[6] = 0x50FAFACE50FAFACE; // v3 bytes 0-7
+  heap[7] = 0xF007BA11F007BA11; // v3 bytes 8-15
+
+  // Size 1 table:
+  //Indices
+  heap[8] = 0xFF0004000200FF00; // v4 bytes 0-7 
+  heap[9] = 0x0D000C000B000A00; // v4 bytes 8-15
+ 
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # table
+    ldr q0, [x0]
+   
+    # indicies
+    ldr q4, [x0, #64]
+    ldr q5, [x0, #96]
+
+    # size 1 table
+    tbl v6.8b, {v0.16b}, v4.8b
+    tbl v7.16b, {v0.16b}, v4.16b
+  )");
+
+  CHECK_NEON(6, uint8_t,{ 0x00, 0x00, 0x00, 0x22, 0x00, 0x44, 0x00, 0x00});
+  CHECK_NEON(7, uint8_t,{ 0x00, 0x00, 0x00, 0x22, 0x00, 0x44, 0x00, 0x00, 0x00, 0xAA, 0x00, 0xBB, 0x00, 0xCC, 0x00, 0xDD});
+
+  // Size 2 table:
+  //Indices
+  heap[8] = 0xFF001E000200FF00; // v4 bytes 0-7 
+  heap[9] = 0x1F00FF0012001100; // v4 bytes 8-15
+ 
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # table
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+   
+    # indicies
+    ldr q4, [x0, #64]
+
+    # size 2 table
+    tbl v6.8b, {v0.16b, v1.16b}, v4.8b
+    tbl v7.16b, {v0.16b, v1.16b}, v4.16b
+
+  )");
+
+  CHECK_NEON(6, uint8_t,{ 0x00, 0x00, 0x00, 0x22, 0x00, 0xEE, 0x00, 0x00});
+  CHECK_NEON(7, uint8_t,{ 0x00, 0x00, 0x00, 0x22, 0x00, 0xEE, 0x00, 0x00, 
+		  	  0x00, 0x11, 0x00, 0x22, 0x00, 0x00, 0x00, 0xFF});
+
+  // Size 3 table:
+  //Indices
+  heap[8] = 0xFF002F0002002400; // v4 bytes 0-7 
+  heap[9] = 0x1F00FF002F001100; // v4 bytes 8-15
+ 
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # table
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    ldr q2, [x0, #32]
+   
+    # indicies
+    ldr q4, [x0, #64]
+
+    # size 2 table
+    tbl v6.8b, {v0.16b, v1.16b, v2.16b}, v4.8b
+    tbl v7.16b, {v0.16b, v1.16b, v2.16b}, v4.16b
+
+  )");
+
+  CHECK_NEON(6, uint8_t,{ 0x00, 0xEF, 0x00, 0x22, 0x00, 0xBA, 0x00, 0x00});
+  CHECK_NEON(7, uint8_t,{ 0x00, 0xEF, 0x00, 0x22, 0x00, 0xBA, 0x00, 0x00, 
+		  	  0x00, 0x11, 0x00, 0xBA, 0x00, 0x00, 0x00, 0xFF});
+
+  // Size 4 table:
+  //Indices
+  heap[8] = 0xFF002F000200243F; // v4 bytes 0-7 
+  heap[9] = 0x1F30FF002F001100; // v4 bytes 8-15
+ 
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # table
+    ldr q0, [x0]
+    ldr q1, [x0, #16]
+    ldr q2, [x0, #32]
+    ldr q3, [x0, #48]
+
+    # indicies
+    ldr q4, [x0, #64]
+
+    # size 2 table
+    tbl v6.8b, {v0.16b, v1.16b, v2.16b, v3.16b}, v4.8b
+    tbl v7.16b, {v0.16b, v1.16b, v2.16b, v3.16b}, v4.16b
+
+  )");
+
+  CHECK_NEON(6, uint8_t,{ 0xF0, 0xEF, 0x00, 0x22, 0x00, 0xBA, 0x00, 0x00});
+  CHECK_NEON(7, uint8_t,{ 0xF0, 0xEF, 0x00, 0x22, 0x00, 0xBA, 0x00, 0x00, 
+		  	  0x00, 0x11, 0x00, 0xBA, 0x00, 0x00, 0xCE, 0xFF});
+}
+
+TEST_P(InstNeon, rev) {
+
+  // REV64
+  RUN_AARCH64(R"(
+    index z0.b, #0, #1
+    
+    rev64 v1.16b, v0.16b
+    rev64 v2.4h, v0.4h
+    rev64 v3.8h, v0.8h
+    rev64 v4.2s, v0.2s
+    rev64 v5.4s, v0.4s
+    rev64 v6.8b, v0.8b
+  )");
+
+  CHECK_NEON(1, uint8_t, {0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,0x00, 0x0f, 0x0e, 0x0d, 0x0c, 0x0b,0x0a,0x09,0x08,});
+  CHECK_NEON(2, uint16_t, {0x0706, 0x0504, 0x0302, 0x0100, 0x0000, 0x0000,0x0000,0x0000});
+  CHECK_NEON(3, uint16_t, {0x0706, 0x0504, 0x0302, 0x0100, 0x0f0e, 0x0d0c, 0x0b0a, 0x0908});
+  CHECK_NEON(4, uint32_t, {0x7060504, 0x3020100, 0x0, 0x0});
+  CHECK_NEON(5, uint32_t, {0x7060504, 0x3020100, 0xf0e0d0c, 0xb0a0908});
+  CHECK_NEON(6, uint8_t, {0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,0x00,0x00,0x00,0x00});
+
+  //REV32
+  RUN_AARCH64(R"(
+    index z0.b, #0, #1
+
+    rev32 v1.8b, v0.8b
+    rev32 v2.16b, v0.16b
+    rev32 v3.4h, v0.4h
+    rev32 v4.8h, v0.8h
+  )");
+
+  CHECK_NEON(1, uint8_t, {0x03, 0x02, 0x01, 0x00, 0x07, 0x06, 0x05, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+  CHECK_NEON(2, uint8_t, {0x03, 0x02, 0x01, 0x00, 0x07, 0x06, 0x05, 0x04, 0x0b, 0x0a, 0x09, 0x08, 0x0f, 0x0e, 0x0d, 0x0c});
+  CHECK_NEON(3, uint16_t, {0x0302, 0x0100, 0x0706, 0x0504, 0x0000, 0x0000, 0x0000, 0x0000});
+  CHECK_NEON(4, uint16_t, {0x0302, 0x0100, 0x0706, 0x0504, 0x0b0a, 0x0908, 0x0f0e, 0x0d0c});
+
+  //REV16
+  RUN_AARCH64(R"(
+    index z0.b, #0, #1
+
+    rev16 v1.8b, v0.8b
+    rev16 v2.16b, v0.16b
+  )");
+
+  CHECK_NEON(1,uint8_t,{0x01, 0x00, 0x03, 0x02, 0x05, 0x04, 0x07, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00});
+  CHECK_NEON(2,uint8_t,{0x01, 0x00, 0x03, 0x02, 0x05, 0x04, 0x07, 0x06, 0x09, 0x08, 0x0b, 0x0a, 0x0d, 0x0c, 0x0f, 0xe});
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstNeon,
                          ::testing::Values(std::make_tuple(EMULATION,
                                                            YAML::Load("{}"))),

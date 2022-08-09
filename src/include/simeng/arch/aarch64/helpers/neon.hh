@@ -774,6 +774,53 @@ class neonHelp {
     }
     return {out, 256};
   }
+
+  /** Helper function for NEON instructions with the format `tbl Vd.Ta, {Vn.16b,
+   * ... Vn+3.16b}, Vm.Ta`. I represents the number of elements in the output
+   * vector to be updated (i.e. for vd.8b I = 8, vd.16b I =16). Only 8 or 16 is
+   * valid for TBL instructions. Returns correctly formatted RegisterValue. */
+  template <int I>
+  static RegisterValue vecTbl(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    // Vd and Vm are only valid in format 8b or 16b
+    assert(I == 8 || I == 16);
+
+    // Vm contains the indices to fetch from table
+    const int8_t* Vm =
+        operands[metadata.operandCount - 2]
+            .getAsVector<int8_t>();  // final operand is vecMovi_imm
+
+    // All operands except the first and last are the vector registers to
+    // construct the table from
+    const uint8_t n_table_regs = metadata.operandCount - 2;
+
+    // Create table from vectors. All table operands must be of 16b format.
+    int tableSize = 16 * n_table_regs;
+    uint8_t table[tableSize];
+    for (int i = 0; i < n_table_regs; i++) {
+      const int8_t* currentVector = operands[i].getAsVector<int8_t>();
+      for (int j = 0; j < 16; j++) {
+        table[16 * i + j] = currentVector[j];
+      }
+    }
+
+    int8_t out[16 / sizeof(int8_t)] = {0};
+    for (int i = 0; i < I; i++) {
+      unsigned int index = Vm[i];
+
+      // If an index is out of range for the table, the result for that lookup
+      // is 0
+      if (index >= tableSize) {
+        out[i] = 0;
+        continue;
+      }
+
+      out[i] = table[index];
+    }
+    return {out, 256};
+  }
+
 };
 }  // namespace aarch64
 }  // namespace arch
