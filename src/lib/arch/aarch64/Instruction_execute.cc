@@ -11080,12 +11080,13 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_ORRv8i16: {
+      case Opcode::AArch64_ORRv8i16: { 
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_ORRv8i8: {
-        return executionNYI();
+      case Opcode::AArch64_ORRv8i8: { // orr vd.8b, vn.8b, vm.8b
+        results[0] = neonHelp::vecLogicOp_3vecs<uint8_t, 8>(
+            operands, [](uint8_t x, uint8_t y) -> uint8_t { return x | y; });
         break;
       }
       case Opcode::AArch64_ORV_VPZ_B: {
