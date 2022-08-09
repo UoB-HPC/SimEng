@@ -4,6 +4,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <ostream>
 
 #include "InstructionMetadata.hh"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
@@ -544,6 +545,14 @@ bool ExceptionHandler::init() {
             ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
         break;
       }
+      case 210: {  // shutdown
+        // TODO: Functionality omitted - returns -38 (errno 38, function not
+        // implemented) is to mimic the behaviour on isambard and avoid an
+        // unrecognised syscall error
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-38)}};
+        break;
+      }
       case 215: {  // munmap
         uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
         size_t length = registerFileSet.get(R1).get<size_t>();
@@ -614,12 +623,8 @@ bool ExceptionHandler::init() {
 
         break;
       }
-      case 293: {  // shutdown
-        // TODO: Functionality omitted - returns -38 (errno 38, function not
-        // implemented) is to mimic the behaviour on isambard and avoid an
-        // unrecognised syscall error
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-38)}};
+      case 293:  // rseq
+      {
         break;
       }
 
