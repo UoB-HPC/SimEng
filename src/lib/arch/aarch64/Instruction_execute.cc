@@ -3157,8 +3157,8 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FADDPv2i32p: {
-        return executionNYI();
+      case Opcode::AArch64_FADDPv2i32p: {  // faddp dd, vn.2s
+        results[0] = neonHelp::vecSumElems_2ops<float, 2>(operands);
         break;
       }
       case Opcode::AArch64_FADDPv2i64p: {  // faddp dd, vn.2d

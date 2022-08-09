@@ -1091,6 +1091,14 @@ TEST_P(InstNeon, faddp) {
     faddp v2.2d, v1.2d, v0.2d
   )");
   CHECK_NEON(2, double, {7.5, 0.5});
+
+  // dd, V.2S
+  RUN_AARCH64(R"(
+     fmov v0.2s, #0.125
+     faddp s1, v0.2s 
+  )");
+  CHECK_NEON(1, float, {0.25,0});
+
 }
 TEST_P(InstNeon, fadd) {
   initialHeapData_.resize(64);
