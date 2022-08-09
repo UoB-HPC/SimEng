@@ -172,7 +172,7 @@ int openSocket(int port){
 	return connection;
 }
 
-int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory) {
+int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory, simeng::MemoryInterface& instructionMemory) {
 
 	int connection = openSocket(2425);
 
