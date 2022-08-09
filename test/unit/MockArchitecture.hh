@@ -8,10 +8,9 @@ namespace simeng {
 /** Mock implementation of the `Architecture` interface. */
 class MockArchitecture : public arch::Architecture {
  public:
-  MOCK_CONST_METHOD5(predecode,
+  MOCK_CONST_METHOD4(predecode,
                      uint8_t(const void* ptr, uint8_t bytesAvailable,
-                             uint64_t instructionAddress,
-                             BranchPrediction prediction, MacroOp& output));
+                             uint64_t instructionAddress, MacroOp& output));
   MOCK_CONST_METHOD0(getRegisterFileStructures,
                      std::vector<RegisterFileStructure>());
   MOCK_CONST_METHOD1(canRename, bool(Register reg));

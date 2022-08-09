@@ -270,6 +270,12 @@ class Instruction : public simeng::Instruction {
    * instruction. */
   std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
 
+  /** Retrieve branch type. */
+  BranchType getBranchType() const override;
+
+  /** Retrieve a branch target from the instruction's metadata if known. */
+  uint64_t getKnownTarget() const override;
+
   /** Is this a store address operation (a subcategory of store operations which
    * deal with the generation of store addresses to store data at)? */
   bool isStoreAddress() const override;
@@ -283,12 +289,6 @@ class Instruction : public simeng::Instruction {
 
   /** Is this a branch operation? */
   bool isBranch() const override;
-
-  /** Is this a return instruction? */
-  bool isRET() const override;
-
-  /** Is this a branch and link instruction? */
-  bool isBL() const override;
 
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
@@ -412,10 +412,6 @@ class Instruction : public simeng::Instruction {
   bool isStoreData_ = false;
   /** Is a branch operation. */
   bool isBranch_ = false;
-  /** Is a return instruction. */
-  bool isRET_ = false;
-  /** Is a branch and link instructions. */
-  bool isBL_ = false;
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t microOpcode_ = MicroOpcode::INVALID;
   /** Is the micro-operation opcode of the instruction, where appropriate. */

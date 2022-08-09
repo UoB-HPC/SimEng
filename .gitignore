@@ -4,6 +4,7 @@
 obj
 build
 xcode-build
+docs/sphinx/_build
 binaries
 install
 install-debug

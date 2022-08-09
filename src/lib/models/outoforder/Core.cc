@@ -65,12 +65,18 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint16_t>(),
           config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint16_t>(),
           config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint16_t>()),
-      reorderBuffer_(config["Queue-Sizes"]["ROB"].as<unsigned int>(),
-                     registerAliasTable_, loadStoreQueue_,
-                     [this](auto instruction) { raiseException(instruction); }),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, config["Core"]["Fetch-Block-Size"].as<uint16_t>(),
+                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
                  isa, branchPredictor),
+      reorderBuffer_(
+          config["Queue-Sizes"]["ROB"].as<unsigned int>(), registerAliasTable_,
+          loadStoreQueue_,
+          [this](auto instruction) { raiseException(instruction); },
+          [this](auto branchAddress) {
+            fetchUnit_.registerLoopBoundary(branchAddress);
+          },
+          branchPredictor, config["Fetch"]["Loop-Buffer-Size"].as<uint16_t>(),
+          config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>()),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
@@ -119,6 +125,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 
 void Core::tick() {
   ticks_++;
+
+  if (hasHalted_) return;
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -198,6 +206,7 @@ void Core::flushIfNeeded() {
       targetAddress = reorderBuffer_.getFlushAddress();
     }
 
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
@@ -223,6 +232,7 @@ void Core::flushIfNeeded() {
     // Update PC and wipe Fetch/Decode buffer.
     targetAddress = decodeUnit_.getFlushAddress();
 
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
@@ -236,8 +246,9 @@ bool Core::hasHalted() const {
     return true;
   }
 
-  // Core is considered to have halted when the fetch unit has halted, and there
-  // are no uops at the head of any buffer.
+  // Core is considered to have halted when the fetch unit has halted, there
+  // are no uops at the head of any buffer, and no exception is currently being
+  // handled.
   if (!fetchUnit_.hasHalted()) {
     return false;
   }
@@ -259,6 +270,8 @@ bool Core::hasHalted() const {
       return false;
     }
   }
+
+  if (exceptionHandler_ != nullptr) return false;
 
   return true;
 }
@@ -311,6 +324,7 @@ void Core::processExceptionHandler() {
     hasHalted_ = true;
     std::cout << "Halting due to fatal exception" << std::endl;
   } else {
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
   }

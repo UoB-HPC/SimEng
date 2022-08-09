@@ -10,6 +10,19 @@
 namespace simeng {
 namespace pipeline {
 
+/** A branch prediction outcome with an associated instruction address. */
+struct latestBranch {
+  /** Branch instruction address. */
+  uint64_t address;
+
+  /** Outcome of the branch. */
+  BranchPrediction outcome;
+
+  /** The related instructionsCommitted_ value that this instruction was
+   * committed on. */
+  uint64_t commitNumber;
+};
+
 /** A Reorder Buffer (ROB) implementation. Contains an in-order queue of
  * in-flight instructions. */
 class ReorderBuffer {
@@ -18,7 +31,10 @@ class ReorderBuffer {
    * reference to the register alias table. */
   ReorderBuffer(
       unsigned int maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
-      std::function<void(const std::shared_ptr<Instruction>&)> raiseException);
+      std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
+      std::function<void(uint64_t branchAddress)> sendLoopBoundary,
+      BranchPredictor& predictor, uint16_t loopBufSize,
+      uint16_t loopDetectionThreshold);
 
   /** Add the provided instruction to the ROB. */
   void reserve(const std::shared_ptr<Instruction>& insn);
@@ -68,6 +84,15 @@ class ReorderBuffer {
   /** A function to call upon exception generation. */
   std::function<void(std::shared_ptr<Instruction>)> raiseException_;
 
+  /** A function to send an instruction at a detected loop boundary. */
+  std::function<void(uint64_t branchAddress)> sendLoopBoundary_;
+
+  /** Whether or not a loop has been detected. */
+  bool loopDetected_ = false;
+
+  /** A reference to the current branch predictor. */
+  BranchPredictor& predictor_;
+
   /** The buffer containing in-flight instructions. */
   std::deque<std::shared_ptr<Instruction>> buffer_;
 
@@ -82,6 +107,16 @@ class ReorderBuffer {
   /** The sequence ID of the youngest instruction that should remain after the
    * current flush. */
   uint64_t flushAfter_;
+
+  /** Latest retired branch outcome with a counter. */
+  std::pair<latestBranch, uint64_t> branchCounter_ = {{0, {false, 0}, 0}, 0};
+
+  /** Loop buffer size. */
+  uint16_t loopBufSize_;
+
+  /** Amount of times a branch must be seen without interruption for it to be
+   * considered a loop. */
+  uint16_t loopDetectionThreshold_;
 
   /** The next available sequence ID. */
   uint64_t seqId_ = 0;
