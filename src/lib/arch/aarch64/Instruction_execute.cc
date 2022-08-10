@@ -6536,7 +6536,8 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_FSUBv2f32: {
-        return executionNYI();
+        results[0] = neonHelp::vecLogicOp_3vecs<float, 2>(
+            operands, [](float x, float y) -> float { return x - y; });
         break;
       }
       case Opcode::AArch64_FSUBv2f64: {  // fsub vd.2d, vn.2d, vm.2d

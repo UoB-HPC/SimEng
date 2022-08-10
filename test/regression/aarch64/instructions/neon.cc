@@ -2228,8 +2228,10 @@ TEST_P(InstNeon, fsub) {
     ldr q0, [x0]
     ldr q1, [x0, #16]
     fsub v2.4s, v0.4s, v1.4s
+		fsub v3.2s, v0.2s, v1.2s
   )");
   CHECK_NEON(2, float, {-1.0, -41.76, 320.875, 198.0});
+  CHECK_NEON(3, float, {-1.0, -41.76, 0, 0});
 }
 
 TEST_P(InstNeon, ins) {
