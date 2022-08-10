@@ -5308,16 +5308,18 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_FMLAv2f32: {
-        return executionNYI();
+      case Opcode::AArch64_FMLAv2f32: {  // fmla vd.2s, vn.2s, vm.2s
+        results[0] = neonHelp::vecFmla_3vecs<float, 2>(operands);
         break;
       }
       case Opcode::AArch64_FMLAv2f64: {  // fmla vd.2d, vn.2d, vm.2d
         results[0] = neonHelp::vecFmla_3vecs<double, 2>(operands);
         break;
       }
-      case Opcode::AArch64_FMLAv2i32_indexed: {
-        return executionNYI();
+      case Opcode::AArch64_FMLAv2i32_indexed: {  // fmla vd.2s, vn.2s,
+                                                 // vm.2s[index]
+        results[0] =
+            neonHelp::vecFmlaIndexed_3vecs<float, 2>(operands, metadata);
         break;
       }
       case Opcode::AArch64_FMLAv2i64_indexed: {  // fmla vd.2d, vn.2d,
