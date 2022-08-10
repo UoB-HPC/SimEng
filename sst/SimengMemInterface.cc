@@ -262,7 +262,7 @@ void SimengMemInterface::SimengMemHandlers::handle(StandardMem::ReadResp* rsp) {
     }
 }
 
-int SimengMemInterface::getCacheLinesNeeded(int size) {
+int SimengMemInterface::getCacheLinesNeeded(uint64_t size) {
     if (size < clw) return 1;
     if (size % clw == 0) return size / clw;
     return (size / clw) + 1;

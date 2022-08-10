@@ -161,7 +161,7 @@ class SimengMemInterface: public MemoryInterface {
         /** Get the number of cache lines needed incase the size of a memory request is larger than
          * cache line width.
         */
-        int getCacheLinesNeeded(int size);
+        int getCacheLinesNeeded(uint64_t size);
         bool unsignedOverflow_(uint64_t a, uint64_t b) const;
 
         /** 
