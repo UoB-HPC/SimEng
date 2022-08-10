@@ -43,67 +43,71 @@ using namespace SST::SSTSimeng;
 using namespace simeng;
 
 namespace SST {
-    namespace SSTSimeng {
-        class SimengCoreWrapper: public SST::Component {
-            public:
-                SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params);
-                ~SimengCoreWrapper();
 
-                void setup();
-                void finish();
+namespace SSTSimeng {
 
-                void init(unsigned int phase);
-                bool clockTick( SST::Cycle_t currentCycle );
-                void handleEvent( StandardMem::Request* ev);
+class SimengCoreWrapper: public SST::Component {
+    public:
+        SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params);
+        ~SimengCoreWrapper();
 
-                SST_ELI_REGISTER_COMPONENT(
-                    SimengCoreWrapper,
-                    "sstsimeng",
-                    "simengcore",
-                    SST_ELI_ELEMENT_VERSION( 1, 0, 0 ),
-                    "Simeng core wrapper for SST",
-                    COMPONENT_CATEGORY_PROCESSOR
-                )
+        void setup();
+        void finish();
 
-                SST_ELI_DOCUMENT_PARAMS(
-                { "config_path", "Path to Simeng YAML config file (string)", "" },
-                { "executable_path", "Path to executable binary to be run by SimEng (string)", "" },
-                { "executable_args", "argument to be passed to the executable binary (string)", "" },
-                { "clock", "Clock rate of the SST clock (string)", "" },
-                { "max_addr_memory", "Maximum address that memory can access (int)"},
-                )
+        void init(unsigned int phase);
+        bool clockTick( SST::Cycle_t currentCycle );
+        void handleEvent( StandardMem::Request* ev);
 
-            private:
-                // SST properties
-                SST::Output output;
-                TimeConverter* clock;
-                StandardMem* mem;
+        SST_ELI_REGISTER_COMPONENT(
+            SimengCoreWrapper,
+            "sstsimeng",
+            "simengcore",
+            SST_ELI_ELEMENT_VERSION( 1, 0, 0 ),
+            "Simeng core wrapper for SST",
+            COMPONENT_CATEGORY_PROCESSOR
+        )
 
-                // Simeng properties
-                std::unique_ptr<simeng::Core> core;
-                std::string config_path;
-                std::string executable_path;
-                std::string executable_args;
-                uint64_t cache_line_width;
-                uint64_t max_addr_memory;
-                std::unique_ptr<simeng::kernel::LinuxProcess> process;
-                std::unique_ptr<simeng::kernel::Linux> kernel;
-                char* process_memory;
-                std::unique_ptr<simeng::arch::Architecture> arch;
-                std::unique_ptr<simeng::MemoryInterface> instruction_memory;
-                std::unique_ptr<simeng::BranchPredictor> predictor;
-                std::unique_ptr<simeng::pipeline::PortAllocator> port_allocator;
-                // Replace with SST memory model
-                // std::unique_ptr<simeng::MemoryInterface> data_memory;
-                std::unique_ptr<SimengMemInterface> data_memory;
-                int iterations;
-                int vitrual_counter;
-                double timer_modulo;
-                int size;
-                std::chrono::high_resolution_clock::time_point start_time;
+        SST_ELI_DOCUMENT_PARAMS(
+        { "config_path", "Path to Simeng YAML config file (string)", "" },
+        { "executable_path", "Path to executable binary to be run by SimEng (string)", "" },
+        { "executable_args", "argument to be passed to the executable binary (string)", "" },
+        { "clock", "Clock rate of the SST clock (string)", "" },
+        { "max_addr_memory", "Maximum address that memory can access (int)"},
+        )
 
-                SimengMemInterface::SimengMemHandlers* handlers;
-                void fabricateSimengCore();
-        };
-    }
-}
+    private:
+        // SST properties
+        SST::Output output;
+        TimeConverter* clock;
+        StandardMem* mem;
+
+        // Simeng properties
+        std::unique_ptr<simeng::Core> core;
+        std::string config_path;
+        std::string executable_path;
+        std::string executable_args;
+        uint64_t cache_line_width;
+        uint64_t max_addr_memory;
+        std::unique_ptr<simeng::kernel::LinuxProcess> process;
+        std::unique_ptr<simeng::kernel::Linux> kernel;
+        char* process_memory;
+        std::unique_ptr<simeng::arch::Architecture> arch;
+        std::unique_ptr<simeng::MemoryInterface> instruction_memory;
+        std::unique_ptr<simeng::BranchPredictor> predictor;
+        std::unique_ptr<simeng::pipeline::PortAllocator> port_allocator;
+        // Replace with SST memory model
+        // std::unique_ptr<simeng::MemoryInterface> data_memory;
+        std::unique_ptr<SimengMemInterface> data_memory;
+        int iterations;
+        int vitrual_counter;
+        double timer_modulo;
+        int size;
+        std::chrono::high_resolution_clock::time_point start_time;
+
+        SimengMemInterface::SimengMemHandlers* handlers;
+        void fabricateSimengCore();
+};
+
+} // namespace SSTSimeng
+
+} // namespace SST
