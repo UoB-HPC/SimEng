@@ -252,10 +252,13 @@ TEST_P(InstLoad, ld2_multi_struct) {
     mov x8, 214
     svc #0
 
-    # Save heap address before ld2
+		# Simple version does not alter x0
+		ld2 {v4.4s, v5.4s}, [x0]
+    
+		# Save heap address before ld2 post index
     mov x10, x0
 
-    # Load values from heap
+    # Load values from heap, post index x0
     ld2 {v0.4s, v1.4s}, [x0], #32
     
     # Save heap address after ld2
@@ -265,6 +268,7 @@ TEST_P(InstLoad, ld2_multi_struct) {
     mov x1, #48
     ld2 {v2.4s, v3.4s}, [x0], x1
     mov x12, x0
+		
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(11),
             getGeneralRegister<uint64_t>(10) + 32);
@@ -274,6 +278,8 @@ TEST_P(InstLoad, ld2_multi_struct) {
             getGeneralRegister<uint64_t>(10) + 48);
   CHECK_NEON(2, float, {0.25f, 1.25f, 0.125f, 5.0f});
   CHECK_NEON(3, float, {2.0f, 7.5f, 0.75f, -0.5f});
+  CHECK_NEON(4, float, {0.25f, 1.25f, 0.125f, 5.0f});
+  CHECK_NEON(5, float, {2.0f, 7.5f, 0.75f, -0.5f});
 }
 
 TEST_P(InstLoad, ldadd) {
