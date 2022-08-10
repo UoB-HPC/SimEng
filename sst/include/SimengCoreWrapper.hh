@@ -51,10 +51,12 @@ class SimengCoreWrapper: public SST::Component {
         SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params);
         ~SimengCoreWrapper();
 
+        /** SST lifecycle methods (in-order of invocation) overriden from SST::Component */
+        void init(unsigned int phase);
         void setup();
         void finish();
 
-        void init(unsigned int phase);
+        /** Handler methods overriden from SST::Component */
         bool clockTick( SST::Cycle_t currentCycle );
         void handleEvent( StandardMem::Request* ev);
 

@@ -12,6 +12,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     output.init("SimengCoreWrapper[" + getName() + ":@p:@t]:", 999, 0, SST::Output::STDOUT);
     clock = registerClock(params.find<std::string>("clock", "1GHz"), new SST::Clock::Handler<SimengCoreWrapper>(this, &SimengCoreWrapper::clockTick));
 
+    /** Extract variables from config.py */
     executable_path = params.find<std::string>("executable_path", "");
     executable_args = params.find<std::string>("executable_args", "");
     config_path = params.find<std::string>("config_path", "");
@@ -29,6 +30,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     vitrual_counter = 0;
     size = 0;
 
+    /** Instantiate the StandardMem Interface defined in config.py*/
     mem = loadUserSubComponent<SST::Interfaces::StandardMem>("memory", ComponentInfo::SHARE_NONE, clock,
       new StandardMem::Handler<SimengCoreWrapper>(this, &SimengCoreWrapper::handleEvent));
 
@@ -36,6 +38,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
 
     handlers = new SimengMemInterface::SimengMemHandlers(*data_memory, &output);
 
+    /** Protected methods from SST::Component used to start simulation */
     registerAsPrimaryComponent();
     primaryComponentDoNotEndSim();
 }
@@ -81,6 +84,7 @@ void SimengCoreWrapper::finish() {
 
 void SimengCoreWrapper::init(unsigned int phase) {
     mem->init(phase);
+    /** Init can have multiple phases, only fabricate the core once at phase 0 */
     if (phase == 0) {
       fabricateSimengCore();
     }
@@ -105,6 +109,7 @@ bool SimengCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
 
     return false;
     } else {
+        /** Protected method from SST::Component used to end SST simulation */
         primaryComponentOKToEndSim();
         return true;
     }
