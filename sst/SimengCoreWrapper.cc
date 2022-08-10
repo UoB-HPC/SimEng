@@ -3,11 +3,8 @@
 
 #include <iostream>
 
-// #include "simeng/RegisterValue.hh"
-
 using namespace SST::SSTSimeng;
 using namespace SST::Interfaces;
-// using namespace simeng;
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
