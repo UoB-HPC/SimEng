@@ -95,8 +95,6 @@ class SimengCoreWrapper: public SST::Component {
         std::unique_ptr<simeng::MemoryInterface> instruction_memory;
         std::unique_ptr<simeng::BranchPredictor> predictor;
         std::unique_ptr<simeng::pipeline::PortAllocator> port_allocator;
-        // Replace with SST memory model
-        // std::unique_ptr<simeng::MemoryInterface> data_memory;
         std::unique_ptr<SimengMemInterface> data_memory;
         int iterations;
         int vitrual_counter;
