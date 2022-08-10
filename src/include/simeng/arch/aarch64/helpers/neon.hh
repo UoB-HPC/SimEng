@@ -850,6 +850,45 @@ class neonHelp {
         rev_element--;
       }
     }
+    return {out, 256};
+  }
+  
+  /** Helper function for NEON instructions with the format `trn1 Vd.T, Vn.T, Vm.T`.
+   * T represents the type of operands (e.g. for Vn.d, T = uint64_t).
+   * I represents the number of operands (e.g. for Vn.8b, I = 8).
+   * Returns formatted Register Value. */
+  template <typename T, int I>
+  static RegisterValue vecTrn1(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+    
+		T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I / 2; i++)
+		{
+				out[2*i] = n[2*i];
+				out[(2*i) + 1] = m[2*i];
+		}
+
+    return {out, 256};
+  }
+
+  /** Helper function for NEON instructions with the format `trn2 Vd.T, Vn.T, Vm.T`.
+   * T represents the type of operands (e.g. for Vn.d, T = uint64_t).
+   * I represents the number of operands (e.g. for Vn.8b, I = 8).
+   * Returns formatted Register Value. */
+  template <typename T, int I>
+  static RegisterValue vecTrn2(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+    
+		T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I / 2; i++)
+		{
+				out[2*i] = n[(2*i) + 1];
+				out[(2*i) + 1] = m[(2 * i) + 1];
+		}
 
     return {out, 256};
   }

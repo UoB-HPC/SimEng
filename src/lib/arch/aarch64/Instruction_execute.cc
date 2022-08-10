@@ -16423,48 +16423,48 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_TRN1_ZZZ_B: {
+      case Opcode::AArch64_TRN1_ZZZ_B: {  // trn1 zd.b, zn.b, zm.b
         results[0] = sveHelp::sveTrn1_3vecs<uint8_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_TRN1_ZZZ_D: {
+      case Opcode::AArch64_TRN1_ZZZ_D: {  // trn1 zd.d, zn.d, zm.d
         results[0] = sveHelp::sveTrn1_3vecs<uint64_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_TRN1_ZZZ_H: {
+      case Opcode::AArch64_TRN1_ZZZ_H: {  // trn1 zd.h, zn.h, zm.h
         results[0] = sveHelp::sveTrn1_3vecs<uint16_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_TRN1_ZZZ_S: {
+      case Opcode::AArch64_TRN1_ZZZ_S: {  // trn1 zd.s, zn.s, zm.s
         results[0] = sveHelp::sveTrn1_3vecs<uint32_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_TRN1v16i8: {
-        return executionNYI();
+      case Opcode::AArch64_TRN1v16i8: {  // trn1 vd.16b, vn.16b, vm.16b
+        results[0] = neonHelp::vecTrn1<uint8_t, 16>(operands);
         break;
       }
-      case Opcode::AArch64_TRN1v2i32: {
-        return executionNYI();
+      case Opcode::AArch64_TRN1v2i32: {  // trn1 vd.2s, vn.2s, vm.2s
+        results[0] = neonHelp::vecTrn1<uint32_t, 2>(operands);
         break;
       }
-      case Opcode::AArch64_TRN1v2i64: {
-        return executionNYI();
+      case Opcode::AArch64_TRN1v2i64: {  // trn1 vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecTrn1<uint64_t, 2>(operands);
         break;
       }
-      case Opcode::AArch64_TRN1v4i16: {
-        return executionNYI();
+      case Opcode::AArch64_TRN1v4i16: {  // trn1 vd.4h, vn.4h, vm.4h
+        results[0] = neonHelp::vecTrn1<uint16_t, 4>(operands);
         break;
       }
-      case Opcode::AArch64_TRN1v4i32: {
-        return executionNYI();
+      case Opcode::AArch64_TRN1v4i32: {  // trn1 vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecTrn1<uint32_t, 4>(operands);
         break;
       }
-      case Opcode::AArch64_TRN1v8i16: {
-        return executionNYI();
+      case Opcode::AArch64_TRN1v8i16: {  // trn1 vd.8h, vn.8h, vm.8h
+        results[0] = neonHelp::vecTrn1<uint16_t, 8>(operands);
         break;
       }
-      case Opcode::AArch64_TRN1v8i8: {
-        return executionNYI();
+      case Opcode::AArch64_TRN1v8i8: {  // trn1 vd.8b, vn.8b, vm.8b
+        results[0] = neonHelp::vecTrn1<uint8_t, 8>(operands);
         break;
       }
       case Opcode::AArch64_TRN2_PPP_B: {
@@ -16499,32 +16499,32 @@ void Instruction::execute() {
         results[0] = sveHelp::sveTrn2_3vecs<uint32_t>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_TRN2v16i8: {
-        return executionNYI();
+      case Opcode::AArch64_TRN2v16i8: {  // trn2 vd.16b, vn.16b, vm.16b
+        results[0] = neonHelp::vecTrn2<uint8_t, 16>(operands);
         break;
       }
-      case Opcode::AArch64_TRN2v2i32: {
-        return executionNYI();
+      case Opcode::AArch64_TRN2v2i32: {  // trn2 vd.2s, vn.2s, vm.2s
+        results[0] = neonHelp::vecTrn2<uint32_t, 2>(operands);
         break;
       }
-      case Opcode::AArch64_TRN2v2i64: {
-        return executionNYI();
+      case Opcode::AArch64_TRN2v2i64: {  // trn2 vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecTrn2<uint64_t, 2>(operands);
         break;
       }
-      case Opcode::AArch64_TRN2v4i16: {
-        return executionNYI();
+      case Opcode::AArch64_TRN2v4i16: {  // trn2 vd.4h, vn.4h, vm.4h
+        results[0] = neonHelp::vecTrn2<uint16_t, 4>(operands);
         break;
       }
-      case Opcode::AArch64_TRN2v4i32: {
-        return executionNYI();
+      case Opcode::AArch64_TRN2v4i32: {  // trn2 vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecTrn2<uint32_t, 4>(operands);
         break;
       }
-      case Opcode::AArch64_TRN2v8i16: {
-        return executionNYI();
+      case Opcode::AArch64_TRN2v8i16: {  // trn2 vd.8h, vn.8h, vm.8h
+        results[0] = neonHelp::vecTrn2<uint16_t, 8>(operands);
         break;
       }
-      case Opcode::AArch64_TRN2v8i8: {
-        return executionNYI();
+      case Opcode::AArch64_TRN2v8i8: {  // trn2 vd.8b, vn.8b, vm.8b
+        results[0] = neonHelp::vecTrn2<uint8_t, 8>(operands);
         break;
       }
       case Opcode::AArch64_TSB: {
