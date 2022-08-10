@@ -18450,32 +18450,32 @@ void Instruction::execute() {
         results[0] = sveHelp::sveUzp_vecs<uint32_t>(operands, VL_bits, true);
         break;
       }
-      case Opcode::AArch64_UZP1v16i8: {
-        return executionNYI();
+      case Opcode::AArch64_UZP1v16i8: {  // uzp1 vd.16b, vn.16b, vm.16b
+        results[0] = neonHelp::vecUzp<int8_t, 16>(operands, true);
         break;
       }
-      case Opcode::AArch64_UZP1v2i32: {
-        return executionNYI();
+      case Opcode::AArch64_UZP1v2i32: {  // uzp1 vd.2s, vn.2s, vm.2s
+        results[0] = neonHelp::vecUzp<int32_t, 2>(operands, true);
         break;
       }
-      case Opcode::AArch64_UZP1v2i64: {
-        return executionNYI();
+      case Opcode::AArch64_UZP1v2i64: {  // uzp1 vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecUzp<int64_t, 2>(operands, true);
         break;
       }
-      case Opcode::AArch64_UZP1v4i16: {
-        return executionNYI();
+      case Opcode::AArch64_UZP1v4i16: {  // uzp1 vd.4h, vn.4h, vm.4h
+        results[0] = neonHelp::vecUzp<int16_t, 4>(operands, true);
         break;
       }
-      case Opcode::AArch64_UZP1v4i32: {
-        return executionNYI();
+      case Opcode::AArch64_UZP1v4i32: {  // uzp1 vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecUzp<int32_t, 4>(operands, true);
         break;
       }
-      case Opcode::AArch64_UZP1v8i16: {
-        return executionNYI();
+      case Opcode::AArch64_UZP1v8i16: {  // uzp1 vd.8h, vn.8h, vm.8h
+        results[0] = neonHelp::vecUzp<int16_t, 8>(operands, true);
         break;
       }
-      case Opcode::AArch64_UZP1v8i8: {
-        return executionNYI();
+      case Opcode::AArch64_UZP1v8i8: {  // uzp1 vd.8b, vn.8b, vm.8b
+        results[0] = neonHelp::vecUzp<int8_t, 8>(operands, true);
         break;
       }
       case Opcode::AArch64_UZP2_PPP_B: {
@@ -18510,32 +18510,32 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_UZP2v16i8: {
-        return executionNYI();
+      case Opcode::AArch64_UZP2v16i8: {  // uzp2 vd.16b, vn.16b, vm.16b
+        results[0] = neonHelp::vecUzp<int8_t, 16>(operands, false);
         break;
       }
-      case Opcode::AArch64_UZP2v2i32: {
-        return executionNYI();
+      case Opcode::AArch64_UZP2v2i32: {  // uzp2 vd.2s, vn.2s, vm.2s
+        results[0] = neonHelp::vecUzp<int32_t, 2>(operands, false);
         break;
       }
-      case Opcode::AArch64_UZP2v2i64: {
-        return executionNYI();
+      case Opcode::AArch64_UZP2v2i64: {  // uzp2 vd.2d, vn.2d, vm.2d
+        results[0] = neonHelp::vecUzp<int64_t, 2>(operands, false);
         break;
       }
-      case Opcode::AArch64_UZP2v4i16: {
-        return executionNYI();
+      case Opcode::AArch64_UZP2v4i16: {  // uzp2 vd.4h, vn.4h, vm.4h
+        results[0] = neonHelp::vecUzp<int16_t, 4>(operands, false);
         break;
       }
-      case Opcode::AArch64_UZP2v4i32: {
-        return executionNYI();
+      case Opcode::AArch64_UZP2v4i32: {  // uzp2 vd.4s, vn.4s, vm.4s
+        results[0] = neonHelp::vecUzp<int32_t, 4>(operands, false);
         break;
       }
-      case Opcode::AArch64_UZP2v8i16: {
-        return executionNYI();
+      case Opcode::AArch64_UZP2v8i16: {  // uzp2 vd.8h, vn.8h, vm.8h
+        results[0] = neonHelp::vecUzp<int16_t, 8>(operands, false);
         break;
       }
-      case Opcode::AArch64_UZP2v8i8: {
-        return executionNYI();
+      case Opcode::AArch64_UZP2v8i8: {  // uzp2 vd.8b, vn.8b, vm.8b
+        results[0] = neonHelp::vecUzp<int8_t, 8>(operands, false);
         break;
       }
       case Opcode::AArch64_WHILELE_PWW_B: {

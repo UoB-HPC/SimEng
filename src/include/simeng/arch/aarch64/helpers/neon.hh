@@ -892,6 +892,28 @@ class neonHelp {
 
     return {out, 256};
   }
+
+	/** Helper function for NEON instructions with the format `uzp<1,2> Vd.T, Vn.T, Vm.T`.
+   * T represents the type of operands (e.g. for Vn.d, T = uint64_t).
+   * I represents the number of operands (e.g. for Vn.8b, I = 8).
+   * Returns formatted Register Value. */
+  template <typename T, int I>
+  static RegisterValue vecUzp(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands, bool isUzp1) {
+    const T* n = operands[0].getAsVector<T>();
+    const T* m = operands[1].getAsVector<T>();
+    
+		T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I / 2; i++)
+		{
+				int index = isUzp1 ? (2 * i) : (2 * i) + 1;
+				out[i] = n[index];
+				out[(I / 2) + i] = m[index];
+		}
+
+    return {out, 256};
+  }
+
 };
 }  // namespace aarch64
 }  // namespace arch
