@@ -2436,6 +2436,9 @@ TEST_P(InstNeon, mvni) {
     mvni v3.2s, 42
     mvni v4.2s, 42, lsl #8
     mvni v5.2s, 3, lsl #24
+
+    mvni v6.2s, 32, msl #8 
+    mvni v7.4s, 32, msl #8 
   )");
   CHECK_NEON(0, uint32_t, {~42u, ~42u, ~42u, ~42u});
   CHECK_NEON(1, uint32_t, {~(42u << 8), ~(42u << 8), ~(42u << 8), ~(42u << 8)});
@@ -2443,6 +2446,8 @@ TEST_P(InstNeon, mvni) {
   CHECK_NEON(3, uint32_t, {~42u, ~42u, 0, 0});
   CHECK_NEON(4, uint32_t, {~(42u << 8), ~(42u << 8), 0, 0});
   CHECK_NEON(5, uint32_t, {~(3u << 24), ~(3u << 24), 0, 0});
+  CHECK_NEON(6, uint32_t, { ~((32u << 8) | 255), ~((32u << 8) | 255) , 0, 0});
+  CHECK_NEON(7, uint32_t, { ~((32u << 8) | 255), ~((32u << 8) | 255) ,~((32u << 8) | 255), ~((32u << 8) | 255) });
 }
 
 TEST_P(InstNeon, not ) {
