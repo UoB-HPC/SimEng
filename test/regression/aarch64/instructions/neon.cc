@@ -3482,6 +3482,73 @@ TEST_P(InstNeon, trn) {
 	CHECK_NEON(8, uint64_t, {0x1e1c1a1816141210, 0x1f1d1b1917151311});
 }
 
+TEST_P(InstNeon, uzp) {
+  initialHeapData_.resize(128);
+  uint64_t* heap64 = reinterpret_cast<uint64_t*>(initialHeapData_.data());
+  heap64[0] = 0x0F0D0B0907050301;
+  heap64[1] = 0x1F1D1B1917151311;
+	heap64[2] = 0x0E0C0A0806040200;
+	heap64[3] = 0x1E1C1A1816141210;
+
+	// uzp1
+	RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, #214
+    svc #0
+
+    ldr q0, [x0]
+		ldr q1, [x0, #16]
+		
+		uzp1 v2.16b, v1.16b, v0.16b
+		uzp1 v3.8b, v1.8b, v0.8b
+		uzp1 v4.4h, v1.4h, v0.4h
+		uzp1 v5.8h, v1.8h, v0.8h
+		uzp1 v6.2s, v1.2s, v0.2s
+		uzp1 v7.4s, v1.4s, v0.4s
+		uzp1 v8.2d, v1.2d, v0.2d
+
+	)");
+	
+	CHECK_NEON(2, uint8_t, {0x0, 0x4, 0x8, 0xc, 0x10, 0x14, 0x18, 0x1c, 0x1, 0x5, 0x9, 0xd, 0x11, 0x15, 0x19, 0x1d} );
+	CHECK_NEON(3, uint8_t, {0x0, 0x4, 0x8, 0xc, 0x1, 0x5, 0x9, 0xd, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0} );
+	CHECK_NEON(4, uint16_t,{0x200, 0xa08, 0x301, 0xb09, 0x0, 0x0, 0x0, 0x0} );
+	CHECK_NEON(5, uint16_t,{0x200, 0xa08, 0x1210, 0x1a18, 0x301, 0xb09, 0x1311, 0x1b19} );
+	CHECK_NEON(6, uint32_t,{0x6040200, 0x7050301, 0x0, 0x0} );
+	CHECK_NEON(7, uint32_t,{0x6040200, 0x16141210, 0x7050301, 0x17151311} );
+	CHECK_NEON(8, uint64_t,{0xe0c0a0806040200, 0xf0d0b0907050301});
+
+
+	// uzp2
+	RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, #0
+    mov x8, #214
+    svc #0
+
+    ldr q0, [x0]
+		ldr q1, [x0, #16]
+		
+		uzp2 v2.16b, v1.16b, v0.16b
+		uzp2 v3.8b, v1.8b, v0.8b
+		uzp2 v4.4h, v1.4h, v0.4h
+		uzp2 v5.8h, v1.8h, v0.8h
+		uzp2 v6.2s, v1.2s, v0.2s
+		uzp2 v7.4s, v1.4s, v0.4s
+		uzp2 v8.2d, v1.2d, v0.2d
+
+	)");
+	
+	CHECK_NEON(2, uint8_t, {0x2, 0x6, 0xa, 0xe, 0x12, 0x16, 0x1a, 0x1e, 0x3, 0x7, 0xb, 0xf, 0x13, 0x17, 0x1b, 0x1f});
+	CHECK_NEON(3, uint8_t, {0x2, 0x6, 0xa, 0xe, 0x3, 0x7, 0xb, 0xf, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0} );
+	CHECK_NEON(4, uint16_t, {0x604, 0xe0c, 0x705, 0xf0d, 0x0, 0x0, 0x0, 0x0});
+	CHECK_NEON(5, uint16_t,{0x604, 0xe0c, 0x1614, 0x1e1c, 0x705, 0xf0d, 0x1715, 0x1f1d} );
+	CHECK_NEON(6, uint32_t,{0xe0c0a08, 0xf0d0b09, 0x0, 0x0});
+	CHECK_NEON(7, uint32_t,{0xe0c0a08, 0x1e1c1a18, 0xf0d0b09, 0x1f1d1b19} );
+	CHECK_NEON(8, uint64_t,{0x1e1c1a1816141210, 0x1f1d1b1917151311} );
+
+
+}
 INSTANTIATE_TEST_SUITE_P(AArch64, InstNeon,
                          ::testing::Values(std::make_tuple(EMULATION,
                                                            YAML::Load("{}"))),
