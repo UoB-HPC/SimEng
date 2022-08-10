@@ -26,22 +26,22 @@ namespace SST {
             public:
                 SimengMemInterface(StandardMem* mem, uint64_t cl, uint64_t max_addr, SST::Output* out);
                 void sendProcessImageToSST(const span<char> image);
-                virtual void requestRead(const MemoryAccessTarget& target,
+                void requestRead(const MemoryAccessTarget& target,
                            uint64_t requestId = 0);
-                virtual void requestWrite(const MemoryAccessTarget& target,
+                void requestWrite(const MemoryAccessTarget& target,
                                             const RegisterValue& data);
-                virtual const span<MemoryReadResult> getCompletedReads() const;
-                virtual void clearCompletedReads();
-                virtual bool hasPendingRequests() const;
-                virtual void tick();
+                const span<MemoryReadResult> getCompletedReads() const;
+                void clearCompletedReads();
+                bool hasPendingRequests() const;
+                void tick();
 
                 class SimengMemHandlers : public StandardMem::RequestHandler {
                     friend class SimengMemInterface;
                     public:
                         SimengMemHandlers(SimengMemInterface& interface, SST::Output* out):StandardMem::RequestHandler(out), mem_interface(interface) {}
-                        virtual ~SimengMemHandlers() {}
-                        virtual void handle(StandardMem::ReadResp* resp) override;
-                        virtual void handle(StandardMem::WriteResp* resp) override;
+                        ~SimengMemHandlers() {}
+                        void handle(StandardMem::ReadResp* resp) override;
+                        void handle(StandardMem::WriteResp* resp) override;
                         SimengMemInterface& mem_interface;
                 };
 
