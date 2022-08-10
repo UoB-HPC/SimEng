@@ -8397,8 +8397,15 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_LD2Twov4s: {
-        return executionNYI();
+      case Opcode::AArch64_LD2Twov4s: {  // ld2 {vt1.4s, vt2.4s} [xn]
+        const float* region1 = memoryData[0].getAsVector<float>();
+        const float* region2 = memoryData[1].getAsVector<float>();
+
+        // LD2 multistruct uses de-interleaving
+        float t1[4] = {region1[0], region1[2], region2[0], region2[2]};
+        float t2[4] = {region1[1], region1[3], region2[1], region2[3]};
+        results[0] = {t1, 256};
+        results[1] = {t2, 256};
         break;
       }
       case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn],
