@@ -51,7 +51,7 @@ uint64_t hexToInt(std::string hex){
 
 // converts uint64_t into RSP compliant hex, i.e. a series of 8x 2 character hex bytes
 std::string decToRSP(uint64_t dec){
-	std::string output = "0";
+	std::string output;
 	
 	while(dec != 0){
 		int temp = dec % 16;
@@ -61,7 +61,7 @@ std::string decToRSP(uint64_t dec){
 		dec = dec / 16;
 	}
 
-	output = std::string(16 - output.length(), '0') + output;
+	output = output + std::string(16 - output.length(), '0');
 
 	for(int i = 0; i < output.length(); i += 2){
 		std::swap(output[i], output[i+1]);
