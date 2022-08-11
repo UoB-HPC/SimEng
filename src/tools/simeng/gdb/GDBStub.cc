@@ -15,6 +15,8 @@
 #define CYAN "\033[36m"
 #define MAGENTA "\033[35m"
 
+std::vector<std::string> breakpoints;
+
 // converts bytes into 2 digit hex numbers
 std::string byteToHex(uint8_t byte){
 
@@ -132,6 +134,42 @@ std::string handleReadMemory(std::string address, std::string length, simeng::Me
 	return output;
 }
 
+// creates a breakpoint at the provided address
+void handleCreateBreakpoint(std::string type, std::string address){
+	if(stoi(type) > 1) std::cout << "Watchpoints not supported, no breakpoint created\n";
+
+	breakpoints.push_back(address);
+	std::cout << "Breakpoint created at address 0x" << address << std::endl; ;
+}
+
+// removes breakpoints matching the provided address
+void handleRemoveBreakpoint(std::string type, std::string address){
+	if(stoi(type) > 1) std::cout << "Watchpoints not supported, no breakpoint removed\n";
+
+	for(uint i = 0; i < breakpoints.size(); i++){
+		if(breakpoints[i] == address) breakpoints.erase(breakpoints.begin() + i);
+	}
+	std::cout << "Breakpoint(s) removed at address 0x" << address << std::endl;
+}
+
+// continues execution until the next breakpoint, doing nothing if there are no breakpoints
+std::string handleContinue(simeng::Core& core, simeng::MemoryInterface& dataMemory, simeng::MemoryInterface& instructionMemory){
+	if(breakpoints.size() == 0) return "";
+
+	bool breakpointFound = 0;
+
+	while(!breakpointFound){
+		core.tick();
+		instructionMemory.tick();
+		dataMemory.tick();
+		for(std::string breakpoint : breakpoints){
+			if(hexToInt(breakpoint) == core.getProgramCounter()) breakpointFound = 1;
+		}
+	}
+
+	return "S05";
+}
+
 // creates a socket and listens on a port provided by an argument, or 2424 by default
 // socket handling code taken from  https://ncona.com/2019/04/building-a-simple-server-with-cpp/
 int openSocket(int port){
@@ -222,6 +260,9 @@ int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory, simeng::
 				instructionMemory.tick();
     			dataMemory.tick();
 				response += generateReply("S05");
+			} else if(packet == "c"){ // continue until next breakpoint
+				std::string message = handleContinue(core, dataMemory, instructionMemory);
+				response += generateReply(message);
 			} else if(packet == "g"){ // read registers
 				std::string registers = handleReadRegisters(core.getArchitecturalRegisterFileSet(), core);
 				response += generateReply(registers);
@@ -237,6 +278,16 @@ int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory, simeng::
 				regex_match(packet, mem_match, mem_regex);
 				std::string memoryValue = handleReadMemory(mem_match[1], mem_match[2], dataMemory);
 				response += generateReply(memoryValue);
+			} else if(packet[0] == 'Z' || packet[0] == 'z'){ // create/remove breakpoint
+				std::regex break_regex("^([zZ])([0-4]),([0-9a-f]+),([0-9a-f]+)"); // format: z/Z,type,address,kind
+				std::smatch break_match;
+				regex_match(packet, break_match, break_regex);
+				std::string type = break_match[2];
+				std::string address = break_match[3];
+				// std::string kind = break_match[4]; // kind not used
+				if(packet[0] == 'Z') handleCreateBreakpoint(type, address);
+				else handleRemoveBreakpoint(type, address);
+				response += generateReply("OK");
 			} else if(packet[0] == 'M'){ // write memory
 				response += generateReply("OK");
 			} else if(packet[0] == 'G'){ // write registers
