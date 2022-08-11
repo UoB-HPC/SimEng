@@ -61,7 +61,7 @@ SimEng was first presented by `Professor Simon McIntosh-Smith <http://uob-hpc.gi
 
 Additionally, other works concerning SimEng and its use can be found below:
 
-- :download:`A design space exploration for optimal vector unit composition <assets/modsim22_poster.pdf>`
+- ModSim 2022 - :download:`A design space exploration for optimal vector unit composition <assets/modsim22_poster.pdf>`
 - :download:`Modelling Advanced Arm-based CPUs with SimEng <assets/simeng_arm_cpus.pdf>`
 
 
@@ -92,32 +92,29 @@ Major contributors to SimEng to date include:
 Project leader:
 
 - Simon McIntosh-Smith
+
+Current development team:
+
+- Jack Jones (lead developer) 
+- Finn Wilkinson
     
 Original SimEng design and implementation:
 
 - Hal Jones
 - James Price
 
-Current development team:
+Additional contributions:
 
-- Jack Jones (lead developer) 
-- Harry Waugh
-
-Code reviewers:
-
-- Andrei Poenaru
-
-Build structure design:
-
-- Tom Lin
-
-Internship contributions:
-
-- Daniel Weaver
-- Finn Wilkinson
-- Mutalib Mohammed
-- Seunghun Lee
 - Ainsley Rutterford
+- Andrei Poenaru
+- Daniel Weaver
+- Harry Waugh
+- Mutalib Mohammed
+- Rahat Muneeb
+- Seunghun Lee
+- Tom Hepworth
+- Tom Lin
+- Will Robinson
 
 Funding
 -------
