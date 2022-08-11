@@ -625,6 +625,7 @@ bool ExceptionHandler::init() {
       }
       case 293:  // rseq
       {
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
 
