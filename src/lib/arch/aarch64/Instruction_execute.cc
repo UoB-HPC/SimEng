@@ -37,7 +37,10 @@ void Instruction::execute() {
   assert(
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
-  const uint16_t VL_bits = architecture_.getVectorLength();
+  // 0th bit of SVCR register determins if streaming-mode is enabled.
+  const uint16_t VL_bits = (architecture_.getSVCRval() & 1)
+                               ? architecture_.getStreamingVectorLength()
+                               : architecture_.getVectorLength();
   executed_ = true;
   if (isMicroOp_) {
     switch (microOpcode_) {
