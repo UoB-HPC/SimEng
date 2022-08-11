@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "simeng/Elf.hh"
 #include "yaml-cpp/yaml.h"
 
@@ -60,6 +62,9 @@ class LinuxProcess {
   /** Get the process image. */
   const span<char> getProcessImage() const;
 
+  /** Get the process image vector */
+  std::vector<char>& getProcessImageVector();
+
   /** Get the entry point. */
   uint64_t getEntryPoint() const;
 
@@ -99,6 +104,9 @@ class LinuxProcess {
 
   /** The process image. */
   char* processImage_;
+
+  /** The process image as a vector */
+  std::vector<char> processImageVec;
 
   /** The process image size. */
   uint64_t size_;

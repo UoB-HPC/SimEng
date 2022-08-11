@@ -187,10 +187,10 @@ int main(int argc, char** argv) {
   }
 
   // Read the process image and copy to memory
-  auto processImage = process->getProcessImage();
-  size_t processMemorySize = processImage.size();
-  char* processMemory = new char[processMemorySize]();
-  std::copy(processImage.begin(), processImage.end(), processMemory);
+  auto processImageVec = process->getProcessImageVector();
+
+  size_t processMemorySize = processImageVec.size();
+  char* processMemory = processImageVec.data();
 
   uint64_t entryPoint = process->getEntryPoint();
 
@@ -338,7 +338,6 @@ int main(int argc, char** argv) {
 
 #endif
 
-  delete[] processMemory;
 
   return 0;
 }

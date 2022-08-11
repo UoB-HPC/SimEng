@@ -25,6 +25,7 @@ struct ElfHeader {
 class Elf {
  public:
   Elf(std::string path);
+  Elf(std::string path, std::vector<char>& imageVec);
   ~Elf();
   const span<char> getProcessImage() const;
   bool isValid() const;
