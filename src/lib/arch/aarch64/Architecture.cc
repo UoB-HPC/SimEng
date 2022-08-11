@@ -14,6 +14,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     : linux_(kernel),
       microDecoder_(std::make_unique<MicroDecoder>(config)),
       VL_(config["Core"]["Vector-Length"].as<uint64_t>()),
+      SVL_(config["Core"]["Streaming-Vector-Length"].as<uint64_t>()),
       vctModulo_((config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
                  (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6)) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
@@ -278,11 +279,12 @@ uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 uint64_t Architecture::getVectorLength() const { return VL_; }
 
+uint64_t Architecture::getStreamingVectorLength() const { return SVL_; }
+
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
   // Update the Processor Cycle Counter to total cycles completed.
   regFile->set(PCCreg_, iterations);
-
   // Update Virtual Counter Timer at correct frequency.
   if (iterations % (uint64_t)vctModulo_ == 0) {
     regFile->set(VCTreg_, regFile->get(VCTreg_).get<uint64_t>() + 1);

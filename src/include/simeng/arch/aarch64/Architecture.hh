@@ -54,6 +54,10 @@ class Architecture : public arch::Architecture {
   /** Returns the current vector length set by the provided configuration. */
   uint64_t getVectorLength() const;
 
+  /** Returns the current streaming vector length set by the provided
+   * configuration. */
+  uint64_t getStreamingVectorLength() const;
+
   /** Updates System registers of any system-based timers. */
   void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                   const uint64_t iterations) const override;
@@ -96,6 +100,9 @@ class Architecture : public arch::Architecture {
 
   /** The vector length used by the SVE extension in bits. */
   uint64_t VL_;
+
+  /** The streaming vector length used by the SME extension in bits. */
+  uint64_t SVL_;
 
   /** System Register of Virtual Counter Timer. */
   simeng::Register VCTreg_;
