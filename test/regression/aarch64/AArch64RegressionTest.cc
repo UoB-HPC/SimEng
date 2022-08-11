@@ -32,6 +32,13 @@ YAML::Node AArch64RegressionTest::generateConfig() const {
   } else {
     config["Core"]["Vector-Length"] = 512;
   }
+  if (additionalConfig["Streaming-Vector-Length"].IsDefined() &&
+      !(additionalConfig["Streaming-Vector-Length"].IsNull())) {
+    config["Core"]["Streaming-Vector-Length"] =
+        additionalConfig["Streaming-Vector-Length"].as<uint64_t>();
+  } else {
+    config["Core"]["Streaming-Vector-Length"] = 512;
+  }
   if (additionalConfig["Micro-Operations"].IsDefined() &&
       !(additionalConfig["Micro-Operations"].IsNull())) {
     config["Core"]["Micro-Operations"] =
