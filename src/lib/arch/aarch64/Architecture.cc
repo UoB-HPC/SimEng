@@ -9,6 +9,7 @@ namespace aarch64 {
 
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
+uint64_t Architecture::SVCRval_;
 
 Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     : linux_(kernel),
@@ -33,6 +34,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_PMCCNTR_EL0] = systemRegisterMap_.size();
+  systemRegisterMap_[ARM64_SYSREG_SVCR] = systemRegisterMap_.size();
 
   // Get Virtual Counter Timer and Processor Cycle Counter system registers.
   VCTreg_ = {
@@ -289,6 +291,12 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
   if (iterations % (uint64_t)vctModulo_ == 0) {
     regFile->set(VCTreg_, regFile->get(VCTreg_).get<uint64_t>() + 1);
   }
+}
+
+uint64_t Architecture::getSVCRval() const { return SVCRval_; }
+
+void Architecture::setSVCRval(const uint64_t newVal) const {
+  SVCRval_ = newVal;
 }
 
 }  // namespace aarch64

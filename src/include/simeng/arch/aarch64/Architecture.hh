@@ -68,6 +68,12 @@ class Architecture : public arch::Architecture {
    * information. */
   ExecutionInfo getExecutionInfo(Instruction& insn) const;
 
+  /** Returns the current value of SVCRval_. */
+  uint64_t getSVCRval() const;
+
+  /** Update the value of SVCRval_. */
+  void setSVCRval(const uint64_t newVal) const;
+
  private:
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
@@ -113,6 +119,10 @@ class Architecture : public arch::Architecture {
   /** Modulo component used to define the frequency at which the VCT is updated.
    */
   double vctModulo_;
+
+  /** The value of the SVCR system register.
+   * Allows value to be retrieved within execution pipeline. */
+  static uint64_t SVCRval_;
 };
 
 }  // namespace aarch64
