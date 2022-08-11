@@ -168,6 +168,8 @@ uint16_t Instruction::getGroup() const {
     base = InstructionGroups::VECTOR;
   else if (isSVEData_)
     base = InstructionGroups::SVE;
+  else if (isSMEData_)
+    return InstructionGroups::SME;
 
   if (isLoad_) return base + 10;
   if (isStoreAddress_) return base + 11;

@@ -27,7 +27,7 @@ std::ostream& operator<<(std::ostream& os, simeng::Register const& reg);
 /** Defines the structure of a register file. */
 struct RegisterFileStructure {
   /** The number of bytes per register. */
-  uint16_t bytes;
+  uint32_t bytes;
   /** The number of registers. */
   uint16_t quantity;
 };

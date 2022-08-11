@@ -72,20 +72,18 @@ const uint16_t LOAD_SVE = 62;
 const uint16_t STORE_ADDRESS_SVE = 63;
 const uint16_t STORE_DATA_SVE = 64;
 const uint16_t STORE_SVE = 65;
-const uint16_t SME = 66;
-const uint16_t SME_SIMPLE = 67;
-const uint16_t LOAD_SME = 68;
-const uint16_t STORE_SME = 69;
-const uint16_t PREDICATE = 70;
-const uint16_t LOAD = 71;
-const uint16_t STORE_ADDRESS = 72;
-const uint16_t STORE_DATA = 73;
-const uint16_t STORE = 74;
-const uint16_t BRANCH = 75;
+const uint16_t PREDICATE = 66;
+const uint16_t LOAD = 67;
+const uint16_t STORE_ADDRESS = 68;
+const uint16_t STORE_DATA = 69;
+const uint16_t STORE = 70;
+const uint16_t BRANCH = 71;
+const uint16_t SME = 72;
+const uint16_t SME_SIMPLE = 73;
 }  // namespace InstructionGroups
 
 /** The number of aarch64 instruction groups. */
-#define NUM_GROUPS 72
+#define NUM_GROUPS 74
 const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
     {InstructionGroups::INT,
      {InstructionGroups::INT_SIMPLE, InstructionGroups::INT_DIV_OR_SQRT,
@@ -161,12 +159,10 @@ const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
     {InstructionGroups::SME, {InstructionGroups::SME_SIMPLE}},
     {InstructionGroups::LOAD,
      {InstructionGroups::LOAD_INT, InstructionGroups::LOAD_SCALAR,
-      InstructionGroups::LOAD_VECTOR, InstructionGroups::LOAD_SVE,
-      InstructionGroups::LOAD_SME}},
+      InstructionGroups::LOAD_VECTOR, InstructionGroups::LOAD_SVE}},
     {InstructionGroups::STORE,
      {InstructionGroups::STORE_INT, InstructionGroups::STORE_SCALAR,
-      InstructionGroups::STORE_VECTOR, InstructionGroups::STORE_SVE,
-      InstructionGroups::STORE_SME}},
+      InstructionGroups::STORE_VECTOR, InstructionGroups::STORE_SVE}},
     {InstructionGroups::STORE_INT,
      {InstructionGroups::STORE_ADDRESS_INT, InstructionGroups::STORE_DATA_INT}},
     {InstructionGroups::STORE_SCALAR,

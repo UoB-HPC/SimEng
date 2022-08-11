@@ -48,6 +48,12 @@ Register csRegToRegister(arm64_reg reg) {
     return {RegisterType::VECTOR, static_cast<uint16_t>(reg - ARM64_REG_V0)};
   }
 
+  // ARM64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA), reading from
+  // the matrix file.
+  if (reg >= ARM64_REG_ZAB0) {
+    return {RegisterType::MATRIX, 0};
+  }
+
   // ARM64_REG_Z0 -> +31 are scalable vector registers (Z) registers, reading
   // from the vector file
   if (reg >= ARM64_REG_Z0) {
@@ -115,6 +121,12 @@ Register csRegToRegister(arm64_reg reg) {
     return {RegisterType::PREDICATE, 16};
   }
 
+  // The matrix register (ZA) can also be referenced as a whole in some
+  // instructions.
+  if (reg == ARM64_REG_ZA) {
+    return {RegisterType::MATRIX, 0};
+  }
+
   assert(false && "Decoding failed due to unknown register identifier");
   return {std::numeric_limits<uint8_t>::max(),
           std::numeric_limits<uint16_t>::max()};
@@ -180,6 +192,8 @@ void Instruction::decode() {
         // register operand used
         if (op.reg >= ARM64_REG_V0) {
           isVectorData_ = true;
+        } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
+          isSMEData_ = true;
         } else if (op.reg >= ARM64_REG_Z0) {
           isSVEData_ = true;
         } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {

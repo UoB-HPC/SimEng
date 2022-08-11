@@ -49,8 +49,19 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
 inline uint8_t getDataSize(cs_arm64_op op) {
   // Check from top of the range downwards
 
-  // ARM64_REG_Z0 -> +31 and ARM64_REG_V0 -> {end} are scalable vector registers
-  // (Z) registers and vector registers respectively
+  // ARM64_REG_V0 -> {end} are vector registers
+  if (op.reg >= ARM64_REG_V0) {
+    // Data size for vector registers relies on opcode thus return 0
+    return 0;
+  }
+
+  // ARM64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA)
+  if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
+    // Data size for tile registers relies on opcode thus return 0
+    return 0;
+  }
+
+  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z)
   if (op.reg >= ARM64_REG_Z0) {
     // Data size for vector registers relies on opcode thus return 0
     return 0;
@@ -159,6 +170,8 @@ const uint8_t PREDICATE = 2;
 const uint8_t NZCV = 3;
 /** The system registers. */
 const uint8_t SYSTEM = 4;
+/** The [512-byte x 512] matrix register za. */
+const uint8_t MATRIX = 5;
 }  // namespace RegisterType
 
 /** A struct holding user-defined execution information for a aarch64
@@ -396,6 +409,8 @@ class Instruction : public simeng::Instruction {
   bool isVectorData_ = false;
   /** Uses Z registers as source and/or destination operands. */
   bool isSVEData_ = false;
+  /** Uses ZA register or tiles of ZA as destination. */
+  bool isSMEData_ = false;
   /** Doesn't have a shift operand. */
   bool isNoShift_ = true;
   /** Is a logical operation. */
