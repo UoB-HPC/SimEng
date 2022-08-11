@@ -226,7 +226,7 @@ int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory, simeng::
 				std::string registers = handleReadRegisters(core.getArchitecturalRegisterFileSet(), core);
 				response += generateReply(registers);
 			} else if(packet[0] == 'p'){ // read single register
-				std::regex reg_regex("^m([0-9a-f]*)");
+				std::regex reg_regex("^p([0-9a-f]*)");
 				std::smatch reg_match;
 				regex_match(packet, reg_match, reg_regex);
 				std::string registerValue = handleReadSingleRegister(reg_match[1], core.getArchitecturalRegisterFileSet());
