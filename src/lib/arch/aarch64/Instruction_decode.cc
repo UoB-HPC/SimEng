@@ -234,6 +234,24 @@ void Instruction::decode() {
         checkZeroReg();
         sourceRegisterCount++;
       }
+    } else if (op.type == ARM64_OP_SME_INDEX) {  // SME instruction with index
+      // As reg is stored in the SME_index object, need to add that and its
+      // index-base to sourceRegisters
+      if (op.access & cs_ac_type::CS_AC_WRITE) {
+        destinationRegisters[destinationRegisterCount] =
+            csRegToRegister(op.sme_index.reg);
+        checkZeroReg();
+        destinationRegisterCount++;
+      } else if (op.access & cs_ac_type::CS_AC_READ) {
+        sourceRegisters[sourceRegisterCount] =
+            csRegToRegister(op.sme_index.reg);
+        checkZeroReg();
+        sourceRegisterCount++;
+      }
+      // Register that is base of index will always be a source operand
+      sourceRegisters[sourceRegisterCount] = csRegToRegister(op.sme_index.base);
+      checkZeroReg();
+      sourceRegisterCount++;
     } else if (op.type == ARM64_OP_REG_MRS) {
       int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
       if (sysRegTag == -1) {
