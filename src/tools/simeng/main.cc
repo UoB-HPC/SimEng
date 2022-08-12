@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
   auto processImageVec = process->getProcessImageVector();
 
   size_t processMemorySize = processImageVec.size();
-  char* processMemory = processImageVec.data();
+  char* processMemory = &processImageVec[0];
 
   uint64_t entryPoint = process->getEntryPoint();
 

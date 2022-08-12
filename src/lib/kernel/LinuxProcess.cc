@@ -59,6 +59,7 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
   // Leave program command string empty
   commandLine_.push_back("\0");
+  processImageVec = std::vector<char>();
 
   isValid_ = true;
 
@@ -71,7 +72,9 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
       alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
 
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
-  processImage_ = new char[size_];
+  processImageVec.resize(size_);
+
+  processImage_ = &processImageVec[0];
 
   std::copy(instructions.begin(), instructions.end(), processImage_);
 
