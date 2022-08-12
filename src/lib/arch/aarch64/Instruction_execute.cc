@@ -7892,7 +7892,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_LD1Rv2d_POST: {  // ld1r {vt.2d}, [xn], #imm
-        // LO0D
+        // LOAD
         uint64_t val = memoryData[0].get<uint64_t>();
         uint64_t out[2] = {val, val};
         results[0] = {out, 256};
