@@ -215,11 +215,7 @@ void SimengCoreWrapper::fabricateSimengCore() {
         break;
       }
       case SimulationMode::InOrderPipelined: {
-        modeString = "In-Order Pipelined";
-        core = std::make_unique<simeng::models::inorder::Core>(
-            *instruction_memory, *data_memory, processMemorySize, entryPoint,
-            *arch, predictor);
-        break;
+          output.fatal(CALL_INFO, 1, 0, "SimEng SST build does not support in-order mode yet!\n");
       }
       default: {
         modeString = "Emulation";
