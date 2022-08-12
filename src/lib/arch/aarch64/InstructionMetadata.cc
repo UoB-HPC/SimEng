@@ -807,7 +807,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // For vector arrangment of 16-bit, post_index immediate is 2
       operands[2].imm = 2;
       break;
-
     case Opcode::AArch64_LD1Rv1d_POST:
       [[fallthrough]];
     case Opcode::AArch64_LD1Rv2d_POST:
@@ -833,7 +832,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // For vector arrangment of 8-bit, post_index immediate is 1
       operands[2].imm = 1;
       break;
-
     case Opcode::AArch64_LD1Rv2s_POST:
       [[fallthrough]];
     case Opcode::AArch64_LD1Rv4s_POST:

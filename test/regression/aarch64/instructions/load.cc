@@ -252,10 +252,10 @@ TEST_P(InstLoad, ld2_multi_struct) {
     mov x8, 214
     svc #0
 
-		# Simple version does not alter x0
-		ld2 {v4.4s, v5.4s}, [x0]
-    
-		# Save heap address before ld2 post index
+    # Simple version does not alter x0
+    ld2 {v4.4s, v5.4s}, [x0]
+
+    # Save heap address before ld2 post index
     mov x10, x0
 
     # Load values from heap, post index x0
