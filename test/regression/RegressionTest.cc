@@ -1,6 +1,7 @@
 #include "RegressionTest.hh"
 
 #include <string>
+#include <vector>
 
 #include "llvm/MC/MCAsmBackend.h"
 #include "llvm/MC/MCAsmInfo.h"
@@ -29,13 +30,16 @@
 
 RegressionTest::~RegressionTest() {
   delete[] code_;
-  delete[] processMemory_;
+  process_->getProcessImageVector().clear();
+  processMemory_ = NULL;
 }
 
 void RegressionTest::TearDown() {
   if (!programFinished_) {
     std::cout << testing::internal::GetCapturedStdout();
   }
+  process_->getProcessImageVector().clear();
+  processMemory_ = NULL;
 }
 
 void RegressionTest::run(const char* source, const char* triple) {
@@ -54,12 +58,13 @@ void RegressionTest::run(const char* source, const char* triple) {
   ASSERT_TRUE(process_->isValid());
   uint64_t entryPoint = process_->getEntryPoint();
 
-  // Allocate memory for the process and copy the full process image to it
-  simeng::span<char> processImage = process_->getProcessImage();
-  processMemorySize_ = processImage.size();
-  if (processMemory_) delete[] processMemory_;
-  processMemory_ = new char[processMemorySize_];
-  std::copy(processImage.begin(), processImage.end(), processMemory_);
+  // Get the pre-allocated processImageVec as a char pointer.
+  std::vector<char> processImageVec = process_->getProcessImageVector();
+  processMemorySize_ = processImageVec.size();
+  if (processMemory_) {
+    processMemory_ = NULL;
+  };
+  processMemory_ = &processImageVec[0];
 
   // Create memory interfaces for instruction and data access
   simeng::FlatMemoryInterface instructionMemory(processMemory_,
