@@ -77,13 +77,13 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
   processImage_ = &processImageVec[0];
 
   std::copy(instructions.begin(), instructions.end(), processImage_);
-
+  
   createStack();
 }
 
 LinuxProcess::~LinuxProcess() {
   if (isValid_) {
-    processImageVec.clear();
+    clearProcessImage();
   }
 }
 
@@ -105,6 +105,17 @@ const span<char> LinuxProcess::getProcessImage() const {
 
 std::vector<char>& LinuxProcess::getProcessImageVector() {
   return processImageVec;
+}
+
+void LinuxProcess::clearProcessImage() {
+  isValid_ = false;
+  processImageVec.clear();
+  processImage_ = NULL;
+  size_ = 0;
+  entryPoint_ = 0;
+  heapStart_ = 0;
+  mmapStart_= 0;
+  stackPointer_ = 0;
 }
 
 uint64_t LinuxProcess::getEntryPoint() const { return entryPoint_; }

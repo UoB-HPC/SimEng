@@ -65,6 +65,9 @@ class LinuxProcess {
   /** Get the process image vector */
   std::vector<char>& getProcessImageVector();
 
+  /** destroy all properties related to process image */
+  void clearProcessImage();
+
   /** Get the entry point. */
   uint64_t getEntryPoint() const;
 

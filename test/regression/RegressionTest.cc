@@ -30,7 +30,7 @@
 
 RegressionTest::~RegressionTest() {
   delete[] code_;
-  process_->getProcessImageVector().clear();
+  process_->clearProcessImage();
   processMemory_ = NULL;
 }
 
@@ -38,7 +38,7 @@ void RegressionTest::TearDown() {
   if (!programFinished_) {
     std::cout << testing::internal::GetCapturedStdout();
   }
-  process_->getProcessImageVector().clear();
+  process_->clearProcessImage();
   processMemory_ = NULL;
 }
 
