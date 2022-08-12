@@ -776,9 +776,11 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `tbl Vd.Ta, {Vn.16b,
-   * ... Vn+3.16b}, Vm.Ta`. I represents the number of elements in the output
-   * vector to be updated (i.e. for vd.8b I = 8, vd.16b I =16). Only 8 or 16 is
-   * valid for TBL instructions. Returns correctly formatted RegisterValue. */
+   * ... Vn+3.16b}, Vm.Ta`.
+   * I represents the number of elements in the output vector to be updated
+   * (i.e. for vd.8b I = 8, vd.16b I = 16). Only 8 or 16 is valid for TBL
+   * instructions.
+   * Returns correctly formatted RegisterValue. */
   template <int I>
   static RegisterValue vecTbl(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
@@ -822,13 +824,15 @@ class neonHelp {
   }
 
   /** Helper function for NEON instructions with the format `rev<16,32,64> Vd.T,
-   * Vn.T`. T represents the type of elements to be reversed (e.g. for Vn.d, T =
-   * uint64_t). V represents the variant: 16-bit, 32-bit, 64-bit. (Eg for 64-bit
-   * each doubleword of the vector will be reversed)   * I represents the number
-   * of elements in the output array to be updated (e.g. I represents the number
-   * of elements in the output array to be updated (e.g. for vd.8b I = 8). It is
-   * only valid for T to be a same or smaller width than V. Returns correctly
-   * formatted RegisterValue. */
+   * Vn.T`.
+   * T represents the type of elements to be reversed (e.g. for Vn.d, T =
+   * uint64_t).
+   * V represents the variant: 16-bit, 32-bit, 64-bit. (e.g. for 64-bit each
+   * doubleword of the vector will be reversed).
+   * I represents the number of elements in the output array to be updated (e.g.
+   * for vd.8b I = 8).
+   * It is only valid for T to be a same or smaller width than V.
+   * Returns correctly formatted RegisterValue. */
   template <typename T, int V, int I>
   static RegisterValue vecRev(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
@@ -852,28 +856,29 @@ class neonHelp {
     }
     return {out, 256};
   }
-  
-  /** Helper function for NEON instructions with the format `trn1 Vd.T, Vn.T, Vm.T`.
-   * T represents the type of operands (e.g. for Vn.d, T = uint64_t).
-   * I represents the number of operands (e.g. for Vn.8b, I = 8).
+
+  /** Helper function for NEON instructions with the format `trn1 Vd.T, Vn.T,
+   * Vm.T`.
+   * T represents the type of operands (e.g. for vn.d, T = uint64_t).
+   * I represents the number of operands (e.g. for vn.8b, I = 8).
    * Returns formatted Register Value. */
   template <typename T, int I>
   static RegisterValue vecTrn1(
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
-    
-		T out[16 / sizeof(T)] = {0};
-    for (int i = 0; i < I / 2; i++)
-		{
-				out[2*i] = n[2*i];
-				out[(2*i) + 1] = m[2*i];
-		}
+
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I / 2; i++) {
+      out[2 * i] = n[2 * i];
+      out[(2 * i) + 1] = m[2 * i];
+    }
 
     return {out, 256};
   }
 
-  /** Helper function for NEON instructions with the format `trn2 Vd.T, Vn.T, Vm.T`.
+  /** Helper function for NEON instructions with the format `trn2 Vd.T, Vn.T,
+   * Vm.T`.
    * T represents the type of operands (e.g. for Vn.d, T = uint64_t).
    * I represents the number of operands (e.g. for Vn.8b, I = 8).
    * Returns formatted Register Value. */
@@ -882,38 +887,37 @@ class neonHelp {
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
-    
-		T out[16 / sizeof(T)] = {0};
-    for (int i = 0; i < I / 2; i++)
-		{
-				out[2*i] = n[(2*i) + 1];
-				out[(2*i) + 1] = m[(2 * i) + 1];
-		}
+
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I / 2; i++) {
+      out[2 * i] = n[(2 * i) + 1];
+      out[(2 * i) + 1] = m[(2 * i) + 1];
+    }
 
     return {out, 256};
   }
 
-	/** Helper function for NEON instructions with the format `uzp<1,2> Vd.T, Vn.T, Vm.T`.
+  /** Helper function for NEON instructions with the format `uzp<1,2> Vd.T,
+   * Vn.T, Vm.T`.
    * T represents the type of operands (e.g. for Vn.d, T = uint64_t).
    * I represents the number of operands (e.g. for Vn.8b, I = 8).
    * Returns formatted Register Value. */
   template <typename T, int I>
   static RegisterValue vecUzp(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands, bool isUzp1) {
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      bool isUzp1) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
-    
-		T out[16 / sizeof(T)] = {0};
-    for (int i = 0; i < I / 2; i++)
-		{
-				int index = isUzp1 ? (2 * i) : (2 * i) + 1;
-				out[i] = n[index];
-				out[(I / 2) + i] = m[index];
-		}
+
+    T out[16 / sizeof(T)] = {0};
+    for (int i = 0; i < I / 2; i++) {
+      int index = isUzp1 ? (2 * i) : (2 * i) + 1;
+      out[i] = n[index];
+      out[(I / 2) + i] = m[index];
+    }
 
     return {out, 256};
   }
-
 };
 }  // namespace aarch64
 }  // namespace arch
