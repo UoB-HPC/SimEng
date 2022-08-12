@@ -211,7 +211,7 @@ void SimengCoreWrapper::fabricateSimengCore() {
         modeString = "Out-of-Order";
         core = std::make_unique<simeng::models::outoforder::Core>(
             *instruction_memory, *data_memory, processMemorySize, entryPoint, *arch,
-            predictor, *port_allocator, rsArrangement, config);
+            *predictor, *port_allocator, rsArrangement, config);
         break;
       }
       case SimulationMode::InOrderPipelined: {
