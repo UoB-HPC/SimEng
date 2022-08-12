@@ -59,8 +59,6 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
   // Leave program command string empty
   commandLine_.push_back("\0");
-  processImageVec = std::vector<char>();
-  processImageVec.resize(0);
 
   isValid_ = true;
 
@@ -73,18 +71,16 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
       alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
 
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
-  processImageVec.insert(processImageVec.begin(), instructions.begin(), instructions.end());
+  processImage_ = new char[size_];
 
-  processImageVec.resize(size_);
-
-  processImage_ = &processImageVec[0];
+  std::copy(instructions.begin(), instructions.end(), processImage_);
 
   createStack();
 }
 
 LinuxProcess::~LinuxProcess() {
   if (isValid_) {
-    clearProcessImage();
+    processImageVec.clear();
   }
 }
 
@@ -106,17 +102,6 @@ const span<char> LinuxProcess::getProcessImage() const {
 
 std::vector<char>& LinuxProcess::getProcessImageVector() {
   return processImageVec;
-}
-
-void LinuxProcess::clearProcessImage() {
-  isValid_ = false;
-  processImageVec.clear();
-  processImage_ = NULL;
-  size_ = 0;
-  entryPoint_ = 0;
-  heapStart_ = 0;
-  mmapStart_= 0;
-  stackPointer_ = 0;
 }
 
 uint64_t LinuxProcess::getEntryPoint() const { return entryPoint_; }
