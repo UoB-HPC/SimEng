@@ -424,7 +424,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case Opcode::AArch64_LD2Twov4s: {  // ld2 {vt1.4s, vt2.4s}, [xn]
-      	[[fallthrough]];
+        [[fallthrough]];
       }
       case Opcode::AArch64_LD2Twov4s_POST: {  // ld2 {vt1.4s, vt2.4s}, [xn],
                                               // #imm
