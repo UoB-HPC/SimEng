@@ -64,16 +64,6 @@ std::vector<StandardMem::Request*> SimengMemInterface::makeSSTRequests(T* aggrRe
 }
 
 std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
-    SimengMemoryRequest* aggrReq, uint64_t addrStart, uint64_t size)
-{
-    output->fatal(CALL_INFO, -1,
-        "splitAggregatedRequest should not be called with an instance of the base struct (SimengMemoryRequest)" \
-        "or derived structs unless corresponding overloaded versions of splitAggregatedRequest are declared."
-    );
-    return std::vector<StandardMem::Request*>();
-}
-
-std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
     AggregateWriteRequest* aggrReq, uint64_t addrStart, uint64_t size)
 {
     std::vector<StandardMem::Request*> requests;

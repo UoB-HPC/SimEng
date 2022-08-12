@@ -147,13 +147,10 @@ class SimengMemInterface: public MemoryInterface {
         /**
          * These overloaded methods handle AggregatedWriteRequest, AggregatedReadRequest and SimengMemoryRequest
          * as values for aggrReq. Any struct dervied from SimengMemoryRequest will require an overloaded definition
-         * and implementation. Dervided structs with no corresponding overloaded method will be passed to
-         * splitAggregatedRequest(SimengMemoryRequest* aggrReq, ....) causing an error.
-         * Any instantiations of base struct (SimengMemoryRequest) passed to splitAggregatedRequest will also cause errors.
+         * and implementation.
         */
         std::vector<StandardMem::Request*> splitAggregatedRequest(AggregateWriteRequest* aggrReq, uint64_t addrStart, uint64_t size);
         std::vector<StandardMem::Request*> splitAggregatedRequest(AggregateReadRequest* aggrReq, uint64_t addrStart, uint64_t size);
-        std::vector<StandardMem::Request*> splitAggregatedRequest(SimengMemoryRequest* aggrReq, uint64_t addrStart, uint64_t size);
 
         /** This method is used to aggregate responses from multiple read request into one response */
         void aggregatedReadResponses(AggregateReadRequest* aggrReq);

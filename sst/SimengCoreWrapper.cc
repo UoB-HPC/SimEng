@@ -144,7 +144,7 @@ void SimengCoreWrapper::fabricateSimengCore() {
     uint32_t timerFreq_ = config["Core"]["Timer-Frequency"].as<uint32_t>();
     timer_modulo = (clockFreq_ * 1e9) / (timerFreq_ * 1e6);
 
-    // // Create the process Image
+    // Create the process Image
     std::vector<std::string> commandLine({executable_path, executable_args});
     process = std::make_unique<simeng::kernel::LinuxProcess>(commandLine, config);
     if (!process->isValid()) output.fatal(CALL_INFO, 1, 0, "Could not read/parse %s", executable_path);
@@ -163,7 +163,7 @@ void SimengCoreWrapper::fabricateSimengCore() {
     instruction_memory = std::make_unique<simeng::FlatMemoryInterface>(
         process_memory, processMemorySize);
 
-    // // Create the architecture, with knowledge of the kernel
+    // Create the architecture, with knowledge of the kernel
     arch =
         std::make_unique<simeng::arch::aarch64::Architecture>(*kernel, config);
     
