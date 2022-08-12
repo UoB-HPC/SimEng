@@ -11090,7 +11090,7 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_ORRv8i16: { 
+      case Opcode::AArch64_ORRv8i16: {
         return executionNYI();
         break;
       }
