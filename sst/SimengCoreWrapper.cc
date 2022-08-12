@@ -195,11 +195,28 @@ void SimengCoreWrapper::fabricateSimengCore() {
       }
     }
 
-    modeString = "Out-of-Order";
-
-    core = std::make_unique<simeng::models::outoforder::Core>(
-        *instruction_memory, *data_memory, processMemorySize, entryPoint, *arch,
-        *predictor, *port_allocator, rsArrangement, config);
+    switch (mode) {
+      case SimulationMode::OutOfOrder: {
+        modeString = "Out-of-Order";
+        core = std::make_unique<simeng::models::outoforder::Core>(
+            *instruction_memory, *data_memory, processMemorySize, entryPoint, *arch,
+            predictor, *port_allocator, rsArrangement, config);
+        break;
+      }
+      case SimulationMode::InOrderPipelined: {
+        modeString = "In-Order Pipelined";
+        core = std::make_unique<simeng::models::inorder::Core>(
+            *instruction_memory, *data_memory, processMemorySize, entryPoint,
+            *arch, predictor);
+        break;
+      }
+      default: {
+        modeString = "Emulation";
+        core = std::make_unique<simeng::models::emulation::Core>(
+            *instruction_memory, *data_memory, entryPoint, processMemorySize, *arch);
+        break;
+      }
+    };
 
     simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen(config);
     // Create the Special Files directory if indicated to do so in Config
