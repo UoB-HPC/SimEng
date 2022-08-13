@@ -6538,7 +6538,7 @@ void Instruction::execute() {
         results[0] = sveHelp::sveSub_3vecs<float>(operands, VL_bits);
         break;
       }
-      case Opcode::AArch64_FSUBv2f32: {
+      case Opcode::AArch64_FSUBv2f32: {  // fsub vd.2s, vn.2s, vm.2s
         results[0] = neonHelp::vecLogicOp_3vecs<float, 2>(
             operands, [](float x, float y) -> float { return x - y; });
         break;
