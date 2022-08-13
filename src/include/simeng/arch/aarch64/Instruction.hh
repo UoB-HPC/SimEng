@@ -184,7 +184,8 @@ enum class InstructionException {
   SupervisorCall,
   HypervisorCall,
   SecureMonitorCall,
-  NoAvailablePort
+  NoAvailablePort,
+  BreakpointInstruction
 };
 
 /** The opcodes of simeng aarch64 micro-operations. */
