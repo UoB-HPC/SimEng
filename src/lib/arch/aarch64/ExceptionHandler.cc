@@ -545,8 +545,8 @@ bool ExceptionHandler::init() {
       }
       case 210: {  // shutdown
         // TODO: Functionality omitted - returns -38 (errno 38, function not
-        // implemented) is to mimic the behaviour on isambard and avoid an
-        // unrecognised syscall error
+        // implemented) The targetted linux kernel does not implement this
+        // syscall. Returning -38 avoids an unrecognised syscall error
         stateChange = {
             ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-38)}};
         break;
