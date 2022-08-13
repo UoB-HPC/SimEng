@@ -600,7 +600,12 @@ bool ExceptionHandler::init() {
         break;
       }
       case 278: {  // getrandom
-        // TODO: support flags argument
+
+        // Note: Flags argument remains unimplemented as they only
+        // affect: 1) the random source (random or urandom) 2) The
+        // blocking behaviour if no random bytes are available We
+        // will assume that random bytes are always available, and
+        // the source does not matter.
 
         // seed random numbers
         srand(clock());
@@ -623,6 +628,8 @@ bool ExceptionHandler::init() {
       }
       case 293:  // rseq
       {
+        // Functionality omitted. As simeng runs as a single thread there is no
+        // need to protect a critical section from interruption.
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
