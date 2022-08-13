@@ -993,7 +993,9 @@ void Instruction::execute() {
         return executionNYI();
         break;
       }
-      case Opcode::AArch64_BRK: {
+      case Opcode::AArch64_BRK: {  // brk #imm16
+        // Note that #imm16 does nothing specific. It is sometimes passed to a
+        // debugger in the exception
         exceptionEncountered_ = true;
         exception_ = InstructionException::BreakpointInstruction;
         break;
