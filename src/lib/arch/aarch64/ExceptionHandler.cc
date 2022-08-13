@@ -3,8 +3,6 @@
 #include <sys/syscall.h>
 
 #include <iomanip>
-#include <iostream>
-#include <ostream>
 
 #include "InstructionMetadata.hh"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
