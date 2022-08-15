@@ -38,9 +38,11 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
   // 0th bit of SVCR register determins if streaming-mode is enabled.
-  const uint16_t VL_bits = (architecture_.getSVCRval() & 1)
-                               ? architecture_.getStreamingVectorLength()
-                               : architecture_.getVectorLength();
+  const bool SMenabled = architecture_.getSVCRval() & 1;
+  // 1st bit of SVCR register determins if ZA register is enabled.
+  const bool ZAenabled = architecture_.getSVCRval() & 2;
+  const uint16_t VL_bits = SMenabled ? architecture_.getStreamingVectorLength()
+                                     : architecture_.getVectorLength();
   executed_ = true;
   if (isMicroOp_) {
     switch (microOpcode_) {
@@ -1966,6 +1968,14 @@ void Instruction::execute() {
       case Opcode::AArch64_FRINTN_ZPmZ_S: {  // frintn zd.s, pg/m, zn.s
         results[0] =
             sveHelp::sveFrintnPredicated<int32_t, float>(operands, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FRINTPDr: {  // frintp dd, dn
+        results[0] = floatHelp::frintpScalar_2ops<double>(operands);
+        break;
+      }
+      case Opcode::AArch64_FRINTPSr: {  // frintp sd, sn
+        results[0] = floatHelp::frintpScalar_2ops<float>(operands);
         break;
       }
       case Opcode::AArch64_FRSQRTEv1i32: {  // frsqrte sd, sn

@@ -122,6 +122,26 @@ class floatHelp {
     return {std::fma(-n, m, -a), 256};
   }
 
+  /** Helper function for NEON instructions with the format `frintp rd, rn`.
+   * T represents the type of operands (e.g. for dd T = double).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue frintpScalar_2ops(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+    T n = operands[0].get<T>();
+
+    // Merge always = false due to assumption that FPCR.nep bit = 0
+    // (In SimEng the value of this register is not manually set)
+    T out = 0;
+    // Input of Infinity or 0 gives output of the same sign
+    if (n == 0.0 || n == -0.0 || n == INFINITY || n == -INFINITY)
+      out = n;
+    else
+      out = std::ceil(n);
+
+    return {out, 256};
+  }
+
   /** Helper function for NEON instructions with the format `scvtf rd,
    *  <w,x>n`, #fbits.
    * D represents the destination vector register type (e.g. for dd, D =
