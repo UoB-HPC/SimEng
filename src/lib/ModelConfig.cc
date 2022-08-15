@@ -47,8 +47,9 @@ void ModelConfig::validate() {
   std::string root = "";
   // Core
   root = "Core";
-  subFields = {"Simulation-Mode", "Clock-Frequency", "Timer-Frequency",
-               "Micro-Operations", "Vector-Length", "Streaming-Vector-Length"};
+  subFields = {"Simulation-Mode", "Clock-Frequency",
+               "Timer-Frequency", "Micro-Operations",
+               "Vector-Length",   "Streaming-Vector-Length"};
   nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
@@ -620,7 +621,9 @@ void ModelConfig::createGroupMapping() {
                    "STORE_ADDRESS",
                    "STORE_DATA",
                    "STORE",
-                   "BRANCH"};
+                   "BRANCH",
+                   "SME",
+                   "SME_SIMPLE"};
   // AARCH64 instruction group namespace contains a set of contiguous assigned
   // uint16_t start from 0. Therefore the index of each groupOptions_ entry is
   // also its aarch64::InstructionGroups value (assuming groupOptions_ is
