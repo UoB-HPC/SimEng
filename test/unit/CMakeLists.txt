@@ -10,7 +10,7 @@ set(TEST_SOURCES
     pipeline/RegisterAliasTableTest.cc
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
-    BTBPredictorTest.cc
+    GenericPredictorTest.cc
     ISATest.cc
     RegisterValueTest.cc
     PoolTest.cc

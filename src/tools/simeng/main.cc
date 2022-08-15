@@ -6,12 +6,11 @@
 #include <string>
 
 #include "simeng/AlwaysNotTakenPredictor.hh"
-#include "simeng/BTBPredictor.hh"
-#include "simeng/BTB_BWTPredictor.hh"
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
+#include "simeng/GenericPredictor.hh"
 #include "simeng/ModelConfig.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
@@ -35,15 +34,21 @@ uint32_t timerFreq_;
 /** Tick the provided core model until it halts. */
 int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
              simeng::MemoryInterface& dataMemory) {
-  int iterations = 0;
-  float timerModulo = (clockFreq_ * 1e9) / (timerFreq_ * 1e6);
+  uint64_t iterations = 0;
+  uint64_t vitrualCounter = 0;
+  double timerModulo = (clockFreq_ * 1e9) / (timerFreq_ * 1e6);
 
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
     // Tick the core
     core.tick();
+    // Update the Processor Cycle Counter to total cycles completed.
+    core.updatePCC(iterations);
     // Update Virtual Counter Timer at correct frequency.
-    if (iterations % (uint32_t)timerModulo == 0) core.incVCT(iterations);
+    if (iterations % (uint64_t)timerModulo == 0) {
+      vitrualCounter++;
+      core.incVCT(vitrualCounter);
+    }
 
     // Tick memory
     instructionMemory.tick();
@@ -215,8 +220,7 @@ int main(int argc, char** argv) {
   std::unique_ptr<simeng::arch::Architecture> arch =
       std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
 
-  auto predictor = simeng::BTBPredictor(
-      config["Branch-Predictor"]["BTB-bitlength"].as<uint8_t>());
+  auto predictor = simeng::GenericPredictor(config);
   auto config_ports = config["Ports"];
   std::vector<std::vector<uint16_t>> portArrangement(config_ports.size());
   // Extract number of ports

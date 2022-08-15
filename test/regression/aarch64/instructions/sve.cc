@@ -1341,6 +1341,36 @@ TEST_P(InstSve, cnt) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), (VL / 16) * 3);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), (VL / 32) * 3);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), (VL / 64) * 3);
+
+  // pattern != all
+  RUN_AARCH64(R"(
+    cntb x0, pow2, mul #2
+    cnth x1, vl1, mul #2
+    cntw x2, vl2, mul #2
+    cntd x3, vl5, mul #2
+    cntb x4, vl7, mul #2
+    cnth x5, vl32, mul #2
+    cntw x6, vl128, mul #2
+    cntd x7, mul4, mul #2
+  )");
+  uint16_t maxElemsB = VL / 8;
+  uint16_t maxElemsH = VL / 16;
+  uint16_t maxElemsS = VL / 32;
+  uint16_t maxElemsD = VL / 64;
+  uint16_t n = 1;
+  while (maxElemsB >= std::pow(2, n)) {
+    n = n + 1;
+  }
+  uint16_t pow2B = std::pow(2, n - 1);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), pow2B * 2);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), maxElemsH >= 1 ? (1 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(2), maxElemsS >= 2 ? (2 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(3), maxElemsD >= 5 ? (5 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(4), maxElemsB >= 7 ? (7 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), maxElemsH >= 32 ? (32 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), maxElemsS >= 128 ? (128 * 2) : 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), (maxElemsD - (maxElemsD % 4)) * 2);
 }
 
 TEST_P(InstSve, cntp) {
@@ -1605,6 +1635,34 @@ TEST_P(InstSve, dec) {
 
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 512 - (VL / 64));
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 512 - (VL / 64) * 3);
+
+  // pattern != all
+  RUN_AARCH64(R"(
+    mov x0, #44
+    mov x1, #20
+    mov x2, #71
+    mov x3, #56
+
+    decb x0, pow2, mul #2
+    decd x1, vl5, mul #2
+    decb x2, vl128, mul #2
+    decd x3, mul4, mul #2
+  )");
+  uint16_t maxElemsB = VL / 8;
+  uint16_t maxElemsD = VL / 64;
+  uint16_t n = 1;
+  while (maxElemsB >= std::pow(2, n)) {
+    n = n + 1;
+  }
+  uint16_t pow2B = std::pow(2, n - 1);
+
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), 44 - (pow2B * 2));
+  EXPECT_EQ(getGeneralRegister<int64_t>(1),
+            (maxElemsD >= 5) ? (20 - (5 * 2)) : 20);
+  EXPECT_EQ(getGeneralRegister<int64_t>(2),
+            (maxElemsB >= 128) ? 71 - (128 * 2) : 71);
+  EXPECT_EQ(getGeneralRegister<int64_t>(3),
+            56 - ((maxElemsD - (maxElemsD % 4)) * 2));
 }
 
 TEST_P(InstSve, dupm) {
@@ -1960,6 +2018,51 @@ TEST_P(InstSve, inc) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 128 + (VL / 16) * 3);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 160 + (VL / 32) * 3);
 
+  // pattern != all
+  RUN_AARCH64(R"(
+    mov x0, #64
+    mov x1, #96
+    mov x2, #128
+    mov x3, #160
+    mov x4, #64
+    mov x5, #96
+    mov x6, #128
+    mov x7, #160
+    incb x0, pow2, mul #2
+    incd x1, vl16, mul #2
+    inch x2, vl6, mul #2
+    incw x3, vl7, mul #2
+    incb x4, vl256, mul #2
+    incd x5, vl64, mul #2
+    inch x6, vl2, mul #2
+    incw x7, mul3, mul #2
+  )");
+  uint16_t maxElemsB = VL / 8;
+  uint16_t maxElemsH = VL / 16;
+  uint16_t maxElemsS = VL / 32;
+  uint16_t maxElemsD = VL / 64;
+  uint16_t n = 1;
+  while (maxElemsB >= std::pow(2, n)) {
+    n = n + 1;
+  }
+  uint16_t pow2B = std::pow(2, n - 1);
+
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), 64 + (pow2B * 2));
+  EXPECT_EQ(getGeneralRegister<int64_t>(1),
+            (maxElemsD >= 16) ? (96 + (16 * 2)) : 96);
+  EXPECT_EQ(getGeneralRegister<int64_t>(2),
+            (maxElemsH >= 6) ? (128 + (6 * 2)) : 128);
+  EXPECT_EQ(getGeneralRegister<int64_t>(3),
+            (maxElemsS >= 7) ? (160 + (7 * 2)) : 160);
+  EXPECT_EQ(getGeneralRegister<int64_t>(4),
+            (maxElemsB >= 256) ? (64 + (256 * 2)) : 64);
+  EXPECT_EQ(getGeneralRegister<int64_t>(5),
+            (maxElemsD >= 64) ? (96 + (64 * 2)) : 96);
+  EXPECT_EQ(getGeneralRegister<int64_t>(6),
+            (maxElemsH >= 2) ? (128 + (2 * 2)) : 128);
+  EXPECT_EQ(getGeneralRegister<int64_t>(7),
+            160 + ((maxElemsS - (maxElemsS % 3)) * 2));
+
   // pattern = all
   // Vector Variants
   RUN_AARCH64(R"(
@@ -1989,6 +2092,51 @@ TEST_P(InstSve, inc) {
              fillNeon<int64_t>({(int64_t)(3 + ((VL / 64)))}, (VL / 8)));
   CHECK_NEON(5, int64_t,
              fillNeon<int64_t>({(int64_t)(84 + ((VL / 64) * 5))}, (VL / 8)));
+
+  // pattern != all
+  // Vector Variants
+  RUN_AARCH64(R"(
+    dup z0.s, #15
+    dup z1.s, #37
+    dup z2.h, #25
+    dup z3.h, #19
+    dup z4.d, #3
+    dup z5.d, #84
+
+    incw z0.s, pow2, mul #3
+    incw z1.s, mul3, mul #2
+    inch z2.h, vl2, mul #3
+    inch z3.h, vl128, mul #3
+    incd z4.d, vl7, mul #3
+    incd z5.d, vl1, mul#3 
+  )");
+  n = 1;
+  while (maxElemsS >= std::pow(2, n)) {
+    n = n + 1;
+  }
+  uint16_t pow2S = std::pow(2, n - 1);
+
+  CHECK_NEON(0, int32_t,
+             fillNeon<int32_t>({(int32_t)(15 + (pow2S * 3))}, (VL / 8)));
+  CHECK_NEON(
+      1, int32_t,
+      fillNeon<int32_t>({(int32_t)(37 + ((maxElemsS - (maxElemsS % 3)) * 2))},
+                        (VL / 8)));
+  CHECK_NEON(
+      2, int16_t,
+      fillNeon<int16_t>({(int16_t)((maxElemsH >= 2) ? (25 + (2 * 3)) : 25)},
+                        (VL / 8)));
+  CHECK_NEON(
+      3, int16_t,
+      fillNeon<int16_t>({(int16_t)((maxElemsH >= 128) ? (19 + (128 * 3)) : 19)},
+                        (VL / 8)));
+  CHECK_NEON(4, int64_t,
+             fillNeon<int64_t>(
+                 {(int64_t)((maxElemsD >= 7) ? (3 + (7 * 3)) : 3)}, (VL / 8)));
+  CHECK_NEON(
+      5, int64_t,
+      fillNeon<int64_t>({(int64_t)((maxElemsD >= 1) ? (84 + (1 * 3)) : 84)},
+                        (VL / 8)));
 }
 
 TEST_P(InstSve, fabs) {

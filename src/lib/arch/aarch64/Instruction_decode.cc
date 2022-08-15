@@ -221,14 +221,26 @@ void Instruction::decode() {
         sourceRegisterCount++;
       }
     } else if (op.type == ARM64_OP_REG_MRS) {
-      sourceRegisters[sourceRegisterCount] = {
-          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
-      sourceRegisterCount++;
-      operandsPending++;
+      int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
+      if (sysRegTag == -1) {
+        exceptionEncountered_ = true;
+        exception_ = InstructionException::UnmappedSysReg;
+      } else {
+        sourceRegisters[sourceRegisterCount] = {
+            RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
+        sourceRegisterCount++;
+        operandsPending++;
+      }
     } else if (op.type == ARM64_OP_REG_MSR) {
-      destinationRegisters[destinationRegisterCount] = {
-          RegisterType::SYSTEM, architecture_.getSystemRegisterTag(op.imm)};
-      destinationRegisterCount++;
+      int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
+      if (sysRegTag == -1) {
+        exceptionEncountered_ = true;
+        exception_ = InstructionException::UnmappedSysReg;
+      } else {
+        destinationRegisters[destinationRegisterCount] = {
+            RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
+        destinationRegisterCount++;
+      }
     }
   }
 
@@ -238,11 +250,69 @@ void Instruction::decode() {
       isBranch_ = true;
     }
   }
-  if (metadata.opcode == 325 || metadata.opcode == 326) {
-    isBL_ = true;
-  }
-  if (metadata.opcode == 2756) {
-    isRET_ = true;
+
+  // Identify branch type
+  if (isBranch_) {
+    switch (metadata.opcode) {
+      case Opcode::AArch64_B:  // b label
+        branchType_ = BranchType::Unconditional;
+        knownTarget_ = metadata.operands[0].imm;
+        break;
+      case Opcode::AArch64_BR: {  // br xn
+        branchType_ = BranchType::Unconditional;
+        break;
+      }
+      case Opcode::AArch64_BL:  // bl #imm
+        branchType_ = BranchType::SubroutineCall;
+        knownTarget_ = metadata.operands[0].imm;
+        break;
+      case Opcode::AArch64_BLR: {  // blr xn
+        branchType_ = BranchType::SubroutineCall;
+        break;
+      }
+      case Opcode::AArch64_Bcc: {  // b.cond label
+        if (metadata.operands[0].imm < 0)
+          branchType_ = BranchType::LoopClosing;
+        else
+          branchType_ = BranchType::Conditional;
+        knownTarget_ = metadata.operands[0].imm;
+        break;
+      }
+      case Opcode::AArch64_CBNZW:  // cbnz wn, #imm
+        [[fallthrough]];
+      case Opcode::AArch64_CBNZX:  // cbnz xn, #imm
+        [[fallthrough]];
+      case Opcode::AArch64_CBZW:  // cbz wn, #imm
+        [[fallthrough]];
+      case Opcode::AArch64_CBZX: {  // cbz xn, #imm
+        if (metadata.operands[1].imm < 0)
+          branchType_ = BranchType::LoopClosing;
+        else
+          branchType_ = BranchType::Conditional;
+        knownTarget_ = metadata.operands[1].imm;
+        break;
+      }
+      case Opcode::AArch64_TBNZW:  // tbnz wn, #imm, label
+        [[fallthrough]];
+      case Opcode::AArch64_TBNZX:  // tbnz xn, #imm, label
+        [[fallthrough]];
+      case Opcode::AArch64_TBZW:  // tbz wn, #imm, label
+        [[fallthrough]];
+      case Opcode::AArch64_TBZX: {  // tbz xn, #imm, label
+        if (metadata.operands[2].imm < 0)
+          branchType_ = BranchType::LoopClosing;
+        else
+          branchType_ = BranchType::Conditional;
+        knownTarget_ = metadata.operands[2].imm;
+        break;
+      }
+      case Opcode::AArch64_RET: {  // ret {xr}
+        branchType_ = BranchType::Return;
+        break;
+      }
+      default:
+        break;
+    }
   }
 
   // Identify loads/stores

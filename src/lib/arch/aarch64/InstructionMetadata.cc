@@ -384,10 +384,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FMUL_ZZZ_S:
       [[fallthrough]];
-    case Opcode::AArch64_FNEG_ZPmZ_D:
-      [[fallthrough]];
-    case Opcode::AArch64_FNEG_ZPmZ_S:
-      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_S:
       [[fallthrough]];
     case Opcode::AArch64_SMINV_VPZ_S:
@@ -419,6 +415,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_FCPY_ZPmI_D:
       [[fallthrough]];
     case Opcode::AArch64_FCPY_ZPmI_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FNEG_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FNEG_ZPmZ_S:
       [[fallthrough]];
     case Opcode::AArch64_FRINTN_ZPmZ_D:
       [[fallthrough]];

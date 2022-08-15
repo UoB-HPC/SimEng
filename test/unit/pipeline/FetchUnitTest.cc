@@ -45,26 +45,18 @@ class PipelineFetchUnitTest : public testing::Test {
   std::shared_ptr<Instruction> uopPtr;
 };
 
-// Tests that ticking a fetch unit attempts to predict a branch, attempts to
-// predecode from the correct program counter using the supplied prediction, and
-// generates output correctly.
+// Tests that ticking a fetch unit attempts to predecode from the correct
+// program counter and generates output correctly.
 TEST_F(PipelineFetchUnitTest, Tick) {
-  BranchPrediction prediction{false, 0};
   MacroOp macroOp = {uopPtr};
 
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
   ON_CALL(isa, getMaxInstructionSize()).WillByDefault(Return(4));
 
-  // Verify the prediction matches the one we provided
   // Set the output parameter to a 1-wide macro-op
-  EXPECT_CALL(isa, predecode(_, _, 0,
-                             AllOf(Field(&BranchPrediction::taken, false),
-                                   Field(&BranchPrediction::target, 0)),
-                             _))
-      .WillOnce(DoAll(SetArgReferee<4>(macroOp), Return(4)));
-
-  EXPECT_CALL(predictor, predict(uopPtr)).WillOnce(Return(prediction));
+  EXPECT_CALL(isa, predecode(_, _, 0, _))
+      .WillOnce(DoAll(SetArgReferee<3>(macroOp), Return(4)));
 
   fetchUnit.tick();
 
@@ -76,9 +68,12 @@ TEST_F(PipelineFetchUnitTest, Tick) {
 TEST_F(PipelineFetchUnitTest, TickStalled) {
   output.stall(true);
 
-  EXPECT_CALL(isa, predecode(_, _, _, _, _)).Times(0);
+  // Anticipate testing instruction type; return true for branch
+  ON_CALL(*uop, isBranch()).WillByDefault(Return(true));
 
-  EXPECT_CALL(predictor, predict(_)).Times(0);
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
+
+  EXPECT_CALL(predictor, predict(_, _, _)).Times(0);
 
   fetchUnit.tick();
 
@@ -94,7 +89,7 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   ON_CALL(memory, getCompletedReads()).WillByDefault(Return(completedReads));
 
   // Set PC to 14, so there will not be enough data to start decoding
-  EXPECT_CALL(isa, predecode(_, _, _, _, _)).Times(0);
+  EXPECT_CALL(isa, predecode(_, _, _, _)).Times(0);
   fetchUnit.updatePC(14);
   fetchUnit.tick();
 
@@ -107,8 +102,8 @@ TEST_F(PipelineFetchUnitTest, FetchUnaligned) {
   MemoryReadResult nextBlockValue = {{16, 16}, 0, 1};
   span<MemoryReadResult> nextBlock = {&nextBlockValue, 1};
   EXPECT_CALL(memory, getCompletedReads()).WillOnce(Return(nextBlock));
-  EXPECT_CALL(isa, predecode(_, _, _, _, _))
-      .WillOnce(DoAll(SetArgReferee<4>(macroOp), Return(4)));
+  EXPECT_CALL(isa, predecode(_, _, _, _))
+      .WillOnce(DoAll(SetArgReferee<3>(macroOp), Return(4)));
   fetchUnit.tick();
 }
 

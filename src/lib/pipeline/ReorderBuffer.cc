@@ -9,11 +9,18 @@ namespace pipeline {
 
 ReorderBuffer::ReorderBuffer(
     unsigned int maxSize, RegisterAliasTable& rat, LoadStoreQueue& lsq,
-    std::function<void(const std::shared_ptr<Instruction>&)> raiseException)
+    std::function<void(const std::shared_ptr<Instruction>&)> raiseException,
+    std::function<void(uint64_t branchAddress)> sendLoopBoundary,
+    BranchPredictor& predictor, uint16_t loopBufSize,
+    uint16_t loopDetectionThreshold)
     : rat_(rat),
       lsq_(lsq),
       maxSize_(maxSize),
-      raiseException_(raiseException) {}
+      raiseException_(raiseException),
+      sendLoopBoundary_(sendLoopBoundary),
+      predictor_(predictor),
+      loopBufSize_(loopBufSize),
+      loopDetectionThreshold_(loopDetectionThreshold) {}
 
 void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
   assert(buffer_.size() < maxSize_ &&
@@ -84,7 +91,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     const auto& destinations = uop->getDestinationRegisters();
-    const auto& results = uop->getResults();
     for (int i = 0; i < destinations.size(); i++) {
       rat_.commit(destinations[i]);
     }
@@ -105,6 +111,42 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
         buffer_.pop_front();
         return n + 1;
+      }
+    }
+
+    // Increment or swap out branch counter for loop detection
+    if (uop->isBranch() && !loopDetected_) {
+      bool increment = true;
+      if (branchCounter_.first.address != uop->getInstructionAddress()) {
+        // Mismatch on instruction address, reset
+        increment = false;
+      } else if (branchCounter_.first.outcome != uop->getBranchPrediction()) {
+        // Mismatch on branch outcome, reset
+        increment = false;
+      } else if ((instructionsCommitted_ - branchCounter_.first.commitNumber) >
+                 loopBufSize_) {
+        // Loop too big to fit in loop buffer, reset
+        increment = false;
+      }
+
+      if (increment) {
+        // Reset commitNumber value
+        branchCounter_.first.commitNumber = instructionsCommitted_;
+        // Increment counter
+        branchCounter_.second++;
+
+        if (branchCounter_.second > loopDetectionThreshold_) {
+          // If the same branch with the same outcome is sequentially retired
+          // more times than the loopDetectionThreshold_ value, identify as a
+          // loop boundary
+          loopDetected_ = true;
+          sendLoopBoundary_(uop->getInstructionAddress());
+        }
+      } else {
+        // Swap out latest branch
+        branchCounter_ = {{uop->getInstructionAddress(),
+                           uop->getBranchPrediction(), instructionsCommitted_},
+                          0};
       }
     }
     buffer_.pop_front();
@@ -130,8 +172,16 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
       rat_.rewind(reg);
     }
     uop->setFlushed();
+    // If the instruction is a branch, supply address to branch flushing logic
+    if (uop->isBranch()) {
+      predictor_.flush(uop->getInstructionAddress());
+    }
     buffer_.pop_back();
   }
+
+  // Reset branch counter and loop detection
+  branchCounter_ = {{0, {false, 0}, 0}, 0};
+  loopDetected_ = false;
 }
 
 unsigned int ReorderBuffer::size() const { return buffer_.size(); }

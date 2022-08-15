@@ -1,3 +1,4 @@
+#include "../MockBranchPredictor.hh"
 #include "../MockInstruction.hh"
 #include "../MockMemoryInterface.hh"
 #include "gmock/gmock.h"
@@ -31,9 +32,10 @@ class ReorderBufferTest : public testing::Test {
         uop2(new MockInstruction),
         uopPtr(uop),
         uopPtr2(uop2),
-        reorderBuffer(maxROBSize, rat, lsq, [this](auto insn) {
-          exceptionHandler.raiseException(insn);
-        }) {}
+        reorderBuffer(
+            maxROBSize, rat, lsq,
+            [this](auto insn) { exceptionHandler.raiseException(insn); },
+            [](auto branchAddress) {}, predictor, 0, 0) {}
 
  protected:
   const uint8_t maxLSQLoads = 32;
@@ -43,6 +45,7 @@ class ReorderBufferTest : public testing::Test {
   char memory[1024];
   RegisterAliasTable rat;
   LoadStoreQueue lsq;
+  MockBranchPredictor predictor;
 
   MockExceptionHandler exceptionHandler;
 
