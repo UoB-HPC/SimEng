@@ -381,6 +381,7 @@ void ModelConfig::validate() {
   nodeChecker<uint16_t>(configFile_[root][subFields[6]], subFields[6],
                         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
                         UINT16_MAX);
+
   subFields.clear();
 
   // Queue-Sizes

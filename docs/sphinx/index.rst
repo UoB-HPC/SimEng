@@ -59,8 +59,9 @@ SimEng was first presented by `Professor Simon McIntosh-Smith <http://uob-hpc.gi
 
 - ModSim 2019 - :download:`Enabling Processor Design Space Exploration with SimEng <assets/simeng_modsim_2019.pdf>`
 
-For the most recent presentation on SimEng's progress and status, see:
+Additionally, other works concerning SimEng and its use can be found below:
 
+- :download:`A design space exploration for optimal vector unit composition <assets/modsim22_poster.pdf>`
 - :download:`Modelling Advanced Arm-based CPUs with SimEng <assets/simeng_arm_cpus.pdf>`
 
 

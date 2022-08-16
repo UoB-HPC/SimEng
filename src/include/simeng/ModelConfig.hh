@@ -71,9 +71,9 @@ class ModelConfig {
    * value. */
   void validate();
 
-  /** From a pre-defined vector of instruction group strings, instantiate an ISA
-   * specific mapping between the instruction group strings and the relevant
-   * instruction group variables. */
+  /** From a pre-defined vector of instruction group strings, instantiate an
+   * ISA specific mapping between the instruction group strings and the
+   * relevant instruction group variables. */
   void createGroupMapping();
 
   /** Given a node, value requirements, and possibly a deafult value,
@@ -162,16 +162,16 @@ class ModelConfig {
   /** The YAML formatted config file. */
   YAML::Node configFile_;
 
-  /** The ISA specific vector of instruction group strings for matching against
-   * user inputted groups. */
+  /** The ISA specific vector of instruction group strings for matching
+   * against user inputted groups. */
   std::vector<std::string> groupOptions_;
 
   /** ISA specific mapping between the defined instruction strings and the
    * instruction group variables. */
   std::unordered_map<std::string, uint16_t> groupMapping_;
 
-  /** A mapping between the expected data type and the error message if a field
-   * cannot be read as the expected type. */
+  /** A mapping between the expected data type and the error message if a
+   * field cannot be read as the expected type. */
   std::unordered_map<uint8_t, std::string> invalidTypeMap_ = {
       {ExpectedValue::Integer, " must be of type integer"},
       {ExpectedValue::UInteger, " must be of type unsigned integer"},
