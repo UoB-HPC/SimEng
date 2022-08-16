@@ -279,6 +279,16 @@ void Instruction::decode() {
             RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
         destinationRegisterCount++;
       }
+    } else if (op.type == ARM64_OP_SVCR) {
+      int32_t sysRegTag = architecture_.getSystemRegisterTag(op.sys);
+      if (sysRegTag == -1) {
+        exceptionEncountered_ = true;
+        exception_ = InstructionException::UnmappedSysReg;
+      } else {
+        destinationRegisters[destinationRegisterCount] = {
+            RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)};
+        destinationRegisterCount++;
+      }
     }
   }
 
