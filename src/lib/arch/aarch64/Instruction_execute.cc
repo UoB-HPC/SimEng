@@ -30,6 +30,25 @@ void Instruction::executionNYI() {
 void Instruction::executionINV() {
   exceptionEncountered_ = true;
   exception_ = InstructionException::EncodingUnallocated;
+  return;
+}
+
+void Instruction::streamingModeUpdated() {
+  exceptionEncountered_ = true;
+  exception_ = InstructionException::StreamingModeUpdate;
+  return;
+}
+
+void Instruction::zaRegisterStatusUpdated() {
+  exceptionEncountered_ = true;
+  exception_ = InstructionException::ZAregisterStatusUpdate;
+  return;
+}
+
+void Instruction::SMZAupdated() {
+  exceptionEncountered_ = true;
+  exception_ = InstructionException::SMZAUpdate;
+  return;
 }
 
 void Instruction::execute() {
@@ -3347,10 +3366,24 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_MSR: {  // mrs (systemreg|Sop0_op1_Cn_Cm_op2), xt
         results[0] = operands[0];
-        // Need to update the SVCRval_ in aarch64/Architecture so that SM / ZA
-        // states can be known in execution pipeline
-        if (metadata.operands[0].imm == ARM64_SYSREG_SVCR)
+
+        if (metadata.operands[0].imm == ARM64_SYSREG_SVCR) {
+          // Need to update the SVCRval_ in aarch64/Architecture so that SM / ZA
+          // states can be known in execution pipeline
           architecture_.setSVCRval(results[0].get<uint64_t>());
+
+          // Changing value of SM or ZA zeros out vector, predicate, and ZA
+          // registers.
+          uint64_t svcrBits = results[0].get<uint64_t>() & 0b11;
+          switch (svcrBits) {
+            case ARM64_SVCR_SVCRSM:
+              return streamingModeUpdated();
+            case ARM64_SVCR_SVCRZA:
+              return zaRegisterStatusUpdated();
+            case ARM64_SVCR_SVCRSMZA:
+              return SMZAupdated();
+          }
+        }
         break;
       }
       case Opcode::AArch64_MSUBWrrr: {  // msub wd, wn, wm, wa
@@ -3383,7 +3416,20 @@ void Instruction::execute() {
         // Also update the SVCRval_ in aarch64/Architecture so that SM / ZA
         // states can be known in execution pipeline
         architecture_.setSVCRval(results[0].get<uint64_t>());
-        break;
+
+        // Changing value of SM or ZA zeros out vector, predicate, and ZA
+        // registers
+        switch (svcrBits) {
+          case ARM64_SVCR_SVCRSM:
+            return streamingModeUpdated();
+          case ARM64_SVCR_SVCRZA:
+            return zaRegisterStatusUpdated();
+          case ARM64_SVCR_SVCRSMZA:
+            return SMZAupdated();
+          default:
+            // Invalid instruction
+            return executionINV();
+        }
       }
       case Opcode::AArch64_MUL_ZPmZ_B: {  // mul zdn.b, pg/m, zdn.b, zm.b
         results[0] = sveHelp::sveMulPredicated<uint8_t>(operands, metadata,

@@ -640,6 +640,37 @@ bool ExceptionHandler::init() {
     }
 
     return concludeSyscall(stateChange);
+  } else if (exception == InstructionException::StreamingModeUpdate ||
+             exception == InstructionException::ZAregisterStatusUpdate ||
+             exception == InstructionException::SMZAUpdate) {
+    // Zero out all required registers
+    std::vector<Register> regs;
+    std::vector<RegisterValue> regValues;
+
+    // First, add the SVCR result from Instruction_Execution.cc
+    regs.push_back(instruction_.getDestinationRegisters()[0]);
+    regValues.push_back(instruction_.getResults()[0]);
+
+    // Add Vector/Predicate registers + values
+    if (exception != InstructionException::ZAregisterStatusUpdate) {
+      for (uint16_t i = 0; i < 32; i++) {
+        regs.push_back({RegisterType::VECTOR, i});
+        regValues.push_back(RegisterValue(0, 256));
+        if (i < 17) {
+          regs.push_back({RegisterType::PREDICATE, i});
+          regValues.push_back(RegisterValue(0, 32));
+        }
+      }
+    }
+    // Zero out ZA register
+    if (exception != InstructionException::StreamingModeUpdate) {
+      for (uint16_t i = 0; i < 256; i++) {
+        regs.push_back({RegisterType::MATRIX, i});
+        regValues.push_back(RegisterValue(0, 256));
+      }
+    }
+    ProcessStateChange stateChange = {ChangeType::REPLACEMENT, regs, regValues};
+    return concludeSyscall(stateChange);
   }
 
   printException(instruction_);
@@ -786,7 +817,14 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
 
 bool ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
   uint64_t nextInstructionAddress = instruction_.getInstructionAddress() + 4;
-  result_ = {false, nextInstructionAddress, stateChange};
+  std::shared_ptr<Instruction> uop = nullptr;
+  InstructionException exception = instruction_.getException();
+  if (exception == InstructionException::StreamingModeUpdate ||
+      exception == InstructionException::ZAregisterStatusUpdate ||
+      exception == InstructionException::SMZAUpdate) {
+    uop = std::make_shared<Instruction>(instruction_);
+  }
+  result_ = {false, nextInstructionAddress, stateChange, uop};
   return true;
 }
 
@@ -823,6 +861,15 @@ void ExceptionHandler::printException(const Instruction& insn) const {
       break;
     case InstructionException::UnmappedSysReg:
       std::cout << "unmapped system register";
+      break;
+    case InstructionException::StreamingModeUpdate:
+      std::cout << "streaming mode update";
+      break;
+    case InstructionException::ZAregisterStatusUpdate:
+      std::cout << "ZA register status update";
+      break;
+    case InstructionException::SMZAUpdate:
+      std::cout << "streaming mode & ZA register status update";
       break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)

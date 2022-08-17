@@ -110,7 +110,7 @@ TEST_P(SystemRegister, SVCR) {
     smstop za
     mrs x6, svcr
 
-    mov x7, #10
+    mov x7, #13
     msr svcr, x7
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
@@ -120,7 +120,13 @@ TEST_P(SystemRegister, SVCR) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 3);
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), 2);
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
-  EXPECT_EQ(getSystemRegister(0xda12), 10);
+  EXPECT_EQ(getSystemRegister(0xda12), 13);
+
+  // Manually architecture_.SVCRval_ back to 0 so other tests are not affected
+  RUN_AARCH64(R"(
+    mov x0, #0
+    msr svcr, x0
+  )");
 }
 #endif
 

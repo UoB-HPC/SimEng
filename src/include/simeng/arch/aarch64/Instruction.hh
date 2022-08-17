@@ -199,7 +199,10 @@ enum class InstructionException {
   HypervisorCall,
   SecureMonitorCall,
   NoAvailablePort,
-  UnmappedSysReg
+  UnmappedSysReg,
+  StreamingModeUpdate,
+  ZAregisterStatusUpdate,
+  SMZAUpdate
 };
 
 /** The opcodes of simeng aarch64 micro-operations. */
@@ -329,12 +332,14 @@ class Instruction : public simeng::Instruction {
 
   /** The maximum number of source registers any supported AArch64 instruction
    * can have. */
-  static const uint8_t MAX_SOURCE_REGISTERS = 6;
+  // Increased from 6 to 261 to accomodate for up to 256 ZA Matrix rows.
+  static const uint16_t MAX_SOURCE_REGISTERS = 261;
 
  private:
   /** The maximum number of destination registers any supported AArch64
    * instruction can have. */
-  static const uint8_t MAX_DESTINATION_REGISTERS = 4;
+  // Increased from 4 to 259 to accomodate for up to 256 ZA Matrix rows.
+  static const uint16_t MAX_DESTINATION_REGISTERS = 259;
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
@@ -401,6 +406,18 @@ class Instruction : public simeng::Instruction {
   // Execution
   /** Generate an EncodingUnallocated exception. */
   void executionINV();
+
+  // Execution
+  /** Generate an StreamingModeUpdate exception. */
+  void streamingModeUpdated();
+
+  // Execution
+  /** Generate an ZAregisterStatusUpdate exception. */
+  void zaRegisterStatusUpdated();
+
+  // Execution
+  /** Generate an SMZAupdate exception. */
+  void SMZAupdated();
 
   // Instruction Identifiers
   /** Operates on scalar values */
