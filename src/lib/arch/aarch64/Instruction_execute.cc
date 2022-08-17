@@ -3347,6 +3347,10 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_MSR: {  // mrs (systemreg|Sop0_op1_Cn_Cm_op2), xt
         results[0] = operands[0];
+        // Need to update the SVCRval_ in aarch64/Architecture so that SM / ZA
+        // states can be known in execution pipeline
+        if (metadata.operands[0].imm == ARM64_SYSREG_SVCR)
+          architecture_.setSVCRval(results[0].get<uint64_t>());
         break;
       }
       case Opcode::AArch64_MSUBWrrr: {  // msub wd, wn, wm, wa
@@ -3355,6 +3359,30 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_MSUBXrrr: {  // msub xd, xn, xm, xa
         results[0] = multiplyHelp::msub_4ops<uint64_t>(operands);
+        break;
+      }
+      case Opcode::AArch64_MSRpstatesvcrImm1: {  // msr svcr<sm|za|smza>, #imm
+        // This instruction is always used by SMSTART and SMSTOP aliases.
+        const uint64_t svcrBits =
+            static_cast<uint64_t>(metadata.operands[0].svcr);
+        const uint8_t imm = metadata.operands[1].imm;
+        const uint64_t currSVCR = architecture_.getSVCRval();
+
+        // Imm can only be 0 or 1
+        if (imm == 0) {
+          // Zero out relevant bits
+          const uint64_t mask = 0xFFFFFFFFFFFFFFFF ^ svcrBits;
+          results[0] = currSVCR & mask;
+        } else if (imm == 1) {
+          const uint64_t mask = 0xFFFFFFFFFFFFFFFF & svcrBits;
+          results[0] = currSVCR | mask;
+        } else {
+          // Invalid instruction
+          return executionINV();
+        }
+        // Also update the SVCRval_ in aarch64/Architecture so that SM / ZA
+        // states can be known in execution pipeline
+        architecture_.setSVCRval(results[0].get<uint64_t>());
         break;
       }
       case Opcode::AArch64_MUL_ZPmZ_B: {  // mul zdn.b, pg/m, zdn.b, zm.b
