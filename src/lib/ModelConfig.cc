@@ -323,7 +323,7 @@ void ModelConfig::validate() {
   // Register-Set
   root = "Register-Set";
   subFields = {"GeneralPurpose-Count", "FloatingPoint/SVE-Count",
-               "Predicate-Count", "Conditional-Count"};
+               "Predicate-Count", "Conditional-Count", "MatrixRow-Count"};
   nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
                         std::make_pair(32, UINT16_MAX),
                         ExpectedValue::UInteger);
@@ -335,6 +335,9 @@ void ModelConfig::validate() {
                         17);
   nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
                         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
+  nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        256);
   subFields.clear();
 
   // Queue-Sizes

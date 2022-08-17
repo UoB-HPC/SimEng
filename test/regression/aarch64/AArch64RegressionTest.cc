@@ -67,7 +67,8 @@ AArch64RegressionTest::createPortAllocator() const {
        simeng::arch::aarch64::InstructionGroups::LOAD,
        simeng::arch::aarch64::InstructionGroups::STORE_ADDRESS,
        simeng::arch::aarch64::InstructionGroups::STORE_DATA,
-       simeng::arch::aarch64::InstructionGroups::BRANCH}};
+       simeng::arch::aarch64::InstructionGroups::BRANCH,
+       simeng::arch::aarch64::InstructionGroups::SME}};
 
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
