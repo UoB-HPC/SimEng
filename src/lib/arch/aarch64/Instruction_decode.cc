@@ -51,6 +51,8 @@ Register csRegToRegister(arm64_reg reg) {
   // ARM64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA), reading from
   // the matrix file.
   if (reg >= ARM64_REG_ZAB0) {
+    // Placeholder value returned as each tile (what the enum represents)
+    // consists of multiple vectors (rows)
     return {RegisterType::MATRIX, 0};
   }
 
@@ -124,6 +126,8 @@ Register csRegToRegister(arm64_reg reg) {
   // The matrix register (ZA) can also be referenced as a whole in some
   // instructions.
   if (reg == ARM64_REG_ZA) {
+    // Placeholder value returned as each tile (what the enum represents)
+    // consists of multiple vectors (rows)
     return {RegisterType::MATRIX, 0};
   }
 
@@ -146,6 +150,42 @@ void Instruction::checkZeroReg() {
   } else {
     operandsPending++;
   }
+}
+
+/** Resturns a full set of rows from the ZA matrix register that make up the
+ * supplied SME tile register. */
+std::vector<Register> getZARowVectors(arm64_reg reg, const uint64_t SVL_bits) {
+  std::vector<Register> outRegs;
+  // Get SVL in bytes (will equal total number of implemented ZA rows)
+  uint64_t SVL = SVL_bits / 8;
+
+  uint8_t base = 0;
+  uint8_t tileTypeCount = 0;
+  if (reg == ARM64_REG_ZA || reg == ARM64_REG_ZAB0) {
+    // Treat ZA as byte tile : ZAB0 represents whole matrix, only 1 tile
+    // Add all rows for this SVL
+    // Don't need to set base as will always be 0
+    tileTypeCount = 1;
+  } else if (reg >= ARM64_REG_ZAH0 && reg <= ARM64_REG_ZAH1) {
+    base = reg - ARM64_REG_ZAH0;
+    tileTypeCount = 2;
+  } else if (reg >= ARM64_REG_ZAS0 && reg <= ARM64_REG_ZAS3) {
+    base = reg - ARM64_REG_ZAS0;
+    tileTypeCount = 4;
+  } else if (reg >= ARM64_REG_ZAD0 && reg <= ARM64_REG_ZAD7) {
+    base = reg - ARM64_REG_ZAD0;
+    tileTypeCount = 8;
+  } else if (reg >= ARM64_REG_ZAQ0 && reg <= ARM64_REG_ZAQ15) {
+    base = reg - ARM64_REG_ZAQ0;
+    tileTypeCount = 16;
+  }
+
+  for (uint16_t i = 0; i < (SVL / tileTypeCount); i++) {
+    outRegs.push_back(
+        {RegisterType::MATRIX, uint16_t(base + (i * tileTypeCount))});
+  }
+
+  return outRegs;
 }
 
 /******************
@@ -181,11 +221,6 @@ void Instruction::decode() {
     if (op.type == ARM64_OP_REG) {  // Register operand
       if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&
           op.reg != ARM64_REG_XZR) {
-        // Add register writes to destinations, but skip zero-register
-        // destinations
-        destinationRegisters[destinationRegisterCount] =
-            csRegToRegister(op.reg);
-        destinationRegisterCount++;
         // Belongs to the predicate group if the detsination register is a
         // predicate
         // Determine the data type the instruction operates on based on the
@@ -203,16 +238,41 @@ void Instruction::decode() {
         } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
           isScalarData_ = true;
         }
+
+        if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
+            (op.reg == ARM64_REG_ZA)) {
+          // Add all Matrix register rows as destination operands
+          std::vector<Register> regs =
+              getZARowVectors(op.reg, architecture_.getStreamingVectorLength());
+          for (int i = 0; i < regs.size(); i++) {
+            destinationRegisters[destinationRegisterCount] = regs[i];
+            destinationRegisterCount++;
+          }
+        } else {
+          // Add register writes to destinations, but skip zero-register
+          // destinations
+          destinationRegisters[destinationRegisterCount] =
+              csRegToRegister(op.reg);
+          destinationRegisterCount++;
+        }
       }
       if (op.access & cs_ac_type::CS_AC_READ) {
-        // Add register reads to destinations
-        sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
-
-        checkZeroReg();
-
+        if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
+            (op.reg == ARM64_REG_ZA)) {
+          // Add all Matrix register rows as source operands
+          std::vector<Register> regs =
+              getZARowVectors(op.reg, architecture_.getStreamingVectorLength());
+          for (int i = 0; i < regs.size(); i++) {
+            sourceRegisters[sourceRegisterCount] = regs[i];
+            sourceRegisterCount++;
+          }
+        } else {
+          // Add register reads to destinations
+          sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
+          checkZeroReg();
+          sourceRegisterCount++;
+        }
         if (op.shift.value > 0) isNoShift_ = false;  // Identify shift operands
-
-        sourceRegisterCount++;
       }
     } else if (op.type == ARM64_OP_MEM) {  // Memory operand
       accessesMemory = true;
@@ -235,18 +295,29 @@ void Instruction::decode() {
         sourceRegisterCount++;
       }
     } else if (op.type == ARM64_OP_SME_INDEX) {  // SME instruction with index
+      std::vector<Register> regs;
+      if ((op.sme_index.reg >= ARM64_REG_ZAB0 &&
+           op.sme_index.reg < ARM64_REG_V0) ||
+          (op.sme_index.reg == ARM64_REG_ZA)) {
+        regs = getZARowVectors(op.sme_index.reg,
+                               architecture_.getStreamingVectorLength());
+      } else {
+        regs.push_back(csRegToRegister(op.sme_index.reg));
+      }
       // As reg is stored in the SME_index object, need to add that and its
       // index-base to sourceRegisters
       if (op.access & cs_ac_type::CS_AC_WRITE) {
-        destinationRegisters[destinationRegisterCount] =
-            csRegToRegister(op.sme_index.reg);
-        checkZeroReg();
-        destinationRegisterCount++;
+        for (int i = 0; i < regs.size(); i++) {
+          destinationRegisters[destinationRegisterCount] = regs[i];
+          checkZeroReg();
+          destinationRegisterCount++;
+        }
       } else if (op.access & cs_ac_type::CS_AC_READ) {
-        sourceRegisters[sourceRegisterCount] =
-            csRegToRegister(op.sme_index.reg);
-        checkZeroReg();
-        sourceRegisterCount++;
+        for (int i = 0; i < regs.size(); i++) {
+          sourceRegisters[sourceRegisterCount] = regs[i];
+          checkZeroReg();
+          sourceRegisterCount++;
+        }
       }
       // Register that is base of index will always be a source operand
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.sme_index.base);
