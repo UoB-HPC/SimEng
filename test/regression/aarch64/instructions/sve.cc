@@ -7470,6 +7470,251 @@ TEST_P(InstSve, whilelo) {
   EXPECT_EQ(getNZCV(), 0b0110);
 }
 
+TEST_P(InstSve, whilelt) {
+  // 8-bit arrangement, 64-bit source operands
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+
+    whilelt p0.b, xzr, x0
+  )");
+  CHECK_PREDICATE(0, uint64_t, fillPred(VL / 8, {1}, 1));
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #-2
+    sdiv x2, x0, x1
+    mov x3, #0
+
+    whilelt p1.b, x2, x3
+  )");
+  CHECK_PREDICATE(1, uint64_t, fillPred(VL / 16, {1}, 1));
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #2
+    udiv x2, x0, x1
+    mov x3, #4
+    udiv x4, x0, x3
+    add x5, x4, x2
+
+    whilelt p2.b, x5, x0
+  )");
+  CHECK_PREDICATE(2, uint64_t, fillPred(VL / 32, {1}, 1));
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #4
+    udiv x2, x0, x1
+
+    whilelt p3.b, x2, x0
+  )");
+  CHECK_PREDICATE(3, uint64_t, fillPred((VL / 32) * 3, {1}, 1));
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelt p4.b, xzr, xzr
+  )");
+  CHECK_PREDICATE(4, uint64_t, fillPred((VL / 8), {0}, 1));
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 16-bit arrangement, 64-bit source operands
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #2
+    udiv x2, x0, x1
+
+    whilelt p0.h, xzr, x2
+  )");
+  CHECK_PREDICATE(0, uint64_t, fillPred(VL / 8, {1}, 2));
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #-2
+    mov x2, #2
+    sdiv x3, x0, x1
+
+    sdiv x4, x3, x2
+
+    whilelt p1.h, x3, x4
+  )");
+  CHECK_PREDICATE(1, uint64_t, fillPred(VL / 16, {1}, 2));
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #2
+    udiv x2, x0, x1
+
+    udiv x3, x2, x1
+    mov x4, #4
+    udiv x5, x2, x4
+    add x6, x5, x3
+
+    whilelt p2.h, x6, x2
+  )");
+  CHECK_PREDICATE(2, uint64_t, fillPred(VL / 32, {1}, 2));
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #2
+    udiv x2, x0, x1
+
+    mov x3, #4
+    udiv x4, x2, x3
+
+    whilelt p3.h, x4, x2
+  )");
+  CHECK_PREDICATE(3, uint64_t, fillPred((VL / 32) * 3, {1}, 2));
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelt p4.h, xzr, xzr
+  )");
+  CHECK_PREDICATE(4, uint64_t, fillPred((VL / 8), {0}, 2));
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 32-bit arrangement, 64-bit source operands
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #4
+    udiv x2, x0, x1
+
+    whilelt p0.s, xzr, x2
+  )");
+  CHECK_PREDICATE(0, uint64_t, fillPred(VL / 8, {1}, 4));
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #-4
+    sdiv x2, x0, x1
+
+    mov x3, #2
+    sdiv x4, x2, x3
+
+    whilelt p1.s, x2, x4
+  )");
+  CHECK_PREDICATE(1, uint64_t, fillPred(VL / 16, {1}, 4));
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #4
+    udiv x2, x0, x1
+
+    mov x3, #2
+    udiv x4, x2, x3
+    udiv x5, x2, x1
+    add x6, x5, x4
+
+    whilelt p2.s, x6, x2
+  )");
+  CHECK_PREDICATE(2, uint64_t, fillPred(VL / 32, {1}, 4));
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #4
+    udiv x2, x0, x1
+
+    udiv x3, x2, x1
+
+    whilelt p3.s, x3, x2
+  )");
+  CHECK_PREDICATE(3, uint64_t, fillPred((VL / 32) * 3, {1}, 4));
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    whilelt p4.s, xzr, xzr
+  )");
+  CHECK_PREDICATE(4, uint64_t, fillPred((VL / 8), {0}, 4));
+  EXPECT_EQ(getNZCV(), 0b0110);
+
+  // 64-bit arrangement, 64-bit source operands
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #8
+    udiv x2, x0, x1
+
+    whilelt p0.d, xzr, x2
+  )");
+  CHECK_PREDICATE(0, uint64_t, fillPred(VL / 8, {1}, 8));
+  EXPECT_EQ(getNZCV(), 0b1000);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #-8
+    sdiv x2, x0, x1
+
+    mov x3, #2
+    sdiv x4, x2, x3
+
+    whilelt p1.d, x2, x4
+  )");
+  CHECK_PREDICATE(1, uint64_t, fillPred(VL / 16, {1}, 8));
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #8
+    udiv x2, x0, x1
+
+    mov x3, #2
+    udiv x4, x2, x3
+    mov x5, #4
+    udiv x6, x2, x5
+    add x7, x6, x4
+
+    whilelt p2.d, x7, x2
+  )");
+  CHECK_PREDICATE(2, uint64_t, fillPred(VL / 32, {1}, 8));
+  EXPECT_EQ(getNZCV(), 0b1010);
+
+  RUN_AARCH64(R"(
+    mov x0, #0
+    addvl x0, x0, #1
+    mov x1, #8
+    udiv x2, x0, x1
+
+    mov x3, #4
+    udiv x4, x2, x3
+
+    whilelt p3.d, x4, x2
+  )");
+  CHECK_PREDICATE(3, uint64_t, fillPred((VL / 32) * 3, {1}, 8));
+  if (VL == 128) {
+    EXPECT_EQ(getNZCV(), 0b1000);
+  } else {
+    EXPECT_EQ(getNZCV(), 0b1010);
+  }
+
+  RUN_AARCH64(R"(
+    whilelt p4.d, xzr, xzr
+  )");
+  CHECK_PREDICATE(4, uint64_t, fillPred((VL / 8), {0}, 8));
+  EXPECT_EQ(getNZCV(), 0b0110);
+}
+
 TEST_P(InstSve, zip_pred) {
   RUN_AARCH64(R"(
     ptrue p0.b

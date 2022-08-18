@@ -5034,6 +5034,34 @@ void Instruction::execute() {
         results[1] = output;
         break;
       }
+      case Opcode::AArch64_WHILELT_PXX_B: {  // whilelt pd.b, xn, xm
+        auto [output, nzcv] =
+            sveHelp::sveWhilelo<int64_t, int8_t>(operands, VL_bits, true);
+        results[0] = nzcv;
+        results[1] = output;
+        break;
+      }
+      case Opcode::AArch64_WHILELT_PXX_D: {  // whilelt pd.d, xn, xm
+        auto [output, nzcv] =
+            sveHelp::sveWhilelo<int64_t, int64_t>(operands, VL_bits, true);
+        results[0] = nzcv;
+        results[1] = output;
+        break;
+      }
+      case Opcode::AArch64_WHILELT_PXX_H: {  // whilelt pd.h, xn, xm
+        auto [output, nzcv] =
+            sveHelp::sveWhilelo<int64_t, int16_t>(operands, VL_bits, true);
+        results[0] = nzcv;
+        results[1] = output;
+        break;
+      }
+      case Opcode::AArch64_WHILELT_PXX_S: {  // whilelt pd.s, xn, xm
+        auto [output, nzcv] =
+            sveHelp::sveWhilelo<int64_t, int32_t>(operands, VL_bits, true);
+        results[0] = nzcv;
+        results[1] = output;
+        break;
+      }
       case Opcode::AArch64_XPACLRI: {  // xpaclri
         // SimEng doesn't support PAC, so do nothing
         break;
