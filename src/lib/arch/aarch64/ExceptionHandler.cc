@@ -663,10 +663,12 @@ bool ExceptionHandler::init() {
       }
     }
     // Zero out ZA register
+    const uint64_t SVLbytes =
+        instruction_.getArchitecture().getStreamingVectorLength() / 8;
     if (exception != InstructionException::StreamingModeUpdate) {
-      for (uint16_t i = 0; i < 256; i++) {
+      for (uint16_t i = 0; i < SVLbytes; i++) {
         regs.push_back({RegisterType::MATRIX, i});
-        regValues.push_back(RegisterValue(0, 256));
+        regValues.push_back(RegisterValue(0, SVLbytes));
       }
     }
     ProcessStateChange stateChange = {ChangeType::REPLACEMENT, regs, regValues};

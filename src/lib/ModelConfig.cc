@@ -335,9 +335,12 @@ void ModelConfig::validate() {
                         17);
   nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
                         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
-  nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        256);
+  nodeChecker<uint16_t>(
+      configFile_[root][subFields[4]], subFields[4],
+      std::make_pair(
+          configFile_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8,
+          UINT16_MAX),
+      ExpectedValue::UInteger, 64);
   subFields.clear();
 
   // Queue-Sizes
