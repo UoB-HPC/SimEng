@@ -3555,6 +3555,22 @@ void Instruction::execute() {
       case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
         break;
       }
+      case Opcode::AArch64_PSEL_PPPRI_B: {  // psel pd, pn, pm.b[wa, #imm]
+        results[0] = sveHelp::svePsel<uint8_t>(operands, metadata);
+        break;
+      }
+      case Opcode::AArch64_PSEL_PPPRI_D: {  // psel pd, pn, pm.d[wa, #imm]
+        results[0] = sveHelp::svePsel<uint64_t>(operands, metadata);
+        break;
+      }
+      case Opcode::AArch64_PSEL_PPPRI_H: {  // psel pd, pn, pm.h[wa, #imm]
+        results[0] = sveHelp::svePsel<uint16_t>(operands, metadata);
+        break;
+      }
+      case Opcode::AArch64_PSEL_PPPRI_S: {  // psel pd, pn, pm.s[wa, #imm]
+        results[0] = sveHelp::svePsel<uint32_t>(operands, metadata);
+        break;
+      }
       case Opcode::AArch64_PTEST_PP: {  // ptest pg, pn.b
         const uint64_t* g = operands[0].getAsVector<uint64_t>();
         const uint64_t* s = operands[1].getAsVector<uint64_t>();

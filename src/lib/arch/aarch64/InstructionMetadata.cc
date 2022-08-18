@@ -1310,6 +1310,18 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // No defined metadata.id for SYS instructions
       id = ARM64_INS_SYS;
       break;
+    case Opcode::AArch64_PSEL_PPPRI_B:
+      [[fallthrough]];
+    case Opcode::AArch64_PSEL_PPPRI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_PSEL_PPPRI_H:
+      [[fallthrough]];
+    case Opcode::AArch64_PSEL_PPPRI_S:
+      // Add correct access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_UBFMWri:
       [[fallthrough]];
     case Opcode::AArch64_UBFMXri:

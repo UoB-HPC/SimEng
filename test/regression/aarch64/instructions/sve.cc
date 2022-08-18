@@ -7775,6 +7775,43 @@ TEST_P(InstSve, zip) {
   CHECK_NEON(11, float, fillNeon<float>({-0.5, 0.75}, VL / 8));
 }
 
+#if SIMENG_LLVM_VERSION >= 14
+// If LLVm version supports SVE2 :
+TEST_P(InstSve, psel) {
+  RUN_AARCH64(R"(
+    mov w13, #0
+
+    ptrue p0.b, vl1
+    ptrue p1.h, vl1
+    ptrue p2.s, vl1
+    ptrue p3.d, vl1
+
+    ptrue p4.b
+    ptrue p5.h
+    ptrue p6.s
+    ptrue p7.d
+
+    psel p8, p4, p0.b[w13, #0]
+    psel p9, p5, p1.h[w13, #0]
+    psel p10, p6, p2.s[w13, #0]
+    psel p11, p7, p3.d[w13, #0]
+
+    psel p12, p4, p0.b[w13, #1]
+    psel p13, p5, p1.h[w13, #1]
+    psel p14, p6, p2.s[w13, #1]
+    psel p15, p7, p3.d[w13, #1]
+  )");
+  CHECK_PREDICATE(8, uint64_t, fillPred(VL / 8, {1}, 1));
+  CHECK_PREDICATE(9, uint64_t, fillPred(VL / 8, {1}, 2));
+  CHECK_PREDICATE(10, uint64_t, fillPred(VL / 8, {1}, 4));
+  CHECK_PREDICATE(11, uint64_t, fillPred(VL / 8, {1}, 8));
+  CHECK_PREDICATE(12, uint64_t, fillPred(VL / 8, {0}, 1));
+  CHECK_PREDICATE(13, uint64_t, fillPred(VL / 8, {0}, 2));
+  CHECK_PREDICATE(14, uint64_t, fillPred(VL / 8, {0}, 4));
+  CHECK_PREDICATE(15, uint64_t, fillPred(VL / 8, {0}, 8));
+}
+#endif
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstSve,
                          ::testing::ValuesIn(genCoreTypeVLPairs(EMULATION)),
                          paramToString);

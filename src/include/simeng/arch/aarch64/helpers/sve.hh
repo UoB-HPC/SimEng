@@ -1166,6 +1166,27 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE2 instructions with the format `psel pd, pn,
+   * pm.t[wa, #imm]`.
+   * T represents the type of operands (e.g. for pm.d, T =
+   * uint64_t). Returns an array of 4 uint64_t elements. */
+  template <typename T>
+  static std::array<uint64_t, 4> svePsel(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata) {
+    const uint64_t* pn = operands[0].getAsVector<uint64_t>();
+    const T* pm = operands[1].getAsVector<T>();
+    const uint32_t wa = operands[2].get<uint32_t>();
+    const uint32_t imm = metadata.operands[2].sme_index.disp;
+
+    std::array<uint64_t, 4> out = {0, 0, 0, 0};
+    if (pm[wa + imm]) {
+      out = {pn[0], pn[1], pn[2], pn[3]};
+    }
+
+    return out;
+  }
+
   /** Helper function for SVE instructions with the format `ptrue pd{,
    * pattern}.
    * T represents the type of operands (e.g. for pd.d, T = uint64_t).
