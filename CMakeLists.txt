@@ -158,6 +158,11 @@ if(SIMENG_ENABLE_TESTS)
       message(FATAL_ERROR "LLVM version must be >= 8.0")
     endif()
 
+      # Print message containing if the full test suite will run
+    if (${LLVM_PACKAGE_VERSION} VERSION_LESS "14.0")
+      message(STATUS "LLVM version does not support AArch64 extensions SME or SVE2. These test suites will be skipped.")
+    endif()
+
   else()
 
     set(LLVM_TARGETS_TO_BUILD "AArch64" CACHE INTERNAL "")
