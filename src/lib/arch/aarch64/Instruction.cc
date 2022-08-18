@@ -207,6 +207,10 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
 
+const Architecture& Instruction::getArchitecture() const {
+  return architecture_;
+}
+
 /** Extend `value` according to `extendType`, and left-shift the result by
  * `shift` */
 uint64_t Instruction::extendValue(uint64_t value, uint8_t extendType,
