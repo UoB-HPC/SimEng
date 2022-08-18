@@ -545,7 +545,7 @@ bool ExceptionHandler::init() {
       }
       case 210: {  // shutdown
         // TODO: Functionality omitted - returns -38 (errno 38, function not
-        // implemented) The targetted linux kernel does not implement this
+        // implemented). The targetted linux kernel does not implement this
         // syscall.
         stateChange = {
             ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-38)}};
