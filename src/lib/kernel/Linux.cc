@@ -196,12 +196,22 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
   out.size = statbuf.st_size;
   out.blksize = statbuf.st_blksize;
   out.blocks = statbuf.st_blocks;
+
+#ifdef __MACH__
+  out.atime = statbuf.st_atimespec.tv_sec;
+  out.atimensec = statbuf.st_atimespec.tv_nsec;
+  out.mtime = statbuf.st_mtimespec.tv_sec;
+  out.mtimensec = statbuf.st_mtimespec.tv_nsec;
+  out.ctime = statbuf.st_ctimespec.tv_sec;
+  out.ctimensec = statbuf.st_ctimespec.tv_nsec;
+#else
   out.atime = statbuf.st_atim.tv_sec;
   out.atimensec = statbuf.st_atim.tv_nsec;
   out.mtime = statbuf.st_mtim.tv_sec;
   out.mtimensec = statbuf.st_mtim.tv_nsec;
   out.ctime = statbuf.st_ctim.tv_sec;
   out.ctimensec = statbuf.st_ctim.tv_nsec;
+#endif
 
   return retval;
 }
