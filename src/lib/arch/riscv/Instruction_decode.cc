@@ -58,10 +58,43 @@ Register csRegToRegister(unsigned int reg) {
           std::numeric_limits<uint16_t>::max()};
 }
 
+// Invalidate instructions that are currently not yet implemented. This prevents
+// errors during speculated branches with unknown destinations; non-executable
+// memory is decoded into valid but not implemented instructions tripping
+// assertions.
+// TODO remove once all extensions are supported
+void Instruction::invalidateIfNotImplemented() {
+  if (metadata.opcode >= Opcode::RISCV_ADD &&
+      metadata.opcode <= Opcode::RISCV_BNE)
+    return;
+  if (metadata.opcode >= Opcode::RISCV_DIV &&
+      metadata.opcode <= Opcode::RISCV_ECALL)
+    return;
+  if (metadata.opcode >= Opcode::RISCV_JAL &&
+      metadata.opcode <= Opcode::RISCV_SD)
+    return;
+  if (metadata.opcode >= Opcode::RISCV_SH &&
+      metadata.opcode <= Opcode::RISCV_SRAW)
+    return;
+  if (metadata.opcode >= Opcode::RISCV_SRL &&
+      metadata.opcode <= Opcode::RISCV_SW)
+    return;
+  if (metadata.opcode >= Opcode::RISCV_XOR &&
+      metadata.opcode <= Opcode::RISCV_XORI)
+    return;
+  if (metadata.opcode == Opcode::RISCV_FENCE) return;
+
+  exception_ = InstructionException::EncodingUnallocated;
+  exceptionEncountered_ = true;
+  return;
+}
+
 /******************
  * DECODING LOGIC
  *****************/
 void Instruction::decode() {
+  invalidateIfNotImplemented();
+  if (exceptionEncountered_) return;
   if (metadata.id == RISCV_INS_INVALID) {
     exception_ = InstructionException::EncodingUnallocated;
     exceptionEncountered_ = true;
@@ -181,9 +214,7 @@ void Instruction::decode() {
     }
   }
 
-  if ((Opcode::RISCV_C_SLLI <= metadata.opcode &&
-       metadata.opcode <= Opcode::RISCV_C_SRLI) ||
-      (Opcode::RISCV_SLL <= metadata.opcode &&
+  if ((Opcode::RISCV_SLL <= metadata.opcode &&
        metadata.opcode <= Opcode::RISCV_SLLW) ||
       (Opcode::RISCV_SRA <= metadata.opcode &&
        metadata.opcode <= Opcode::RISCV_SRAW) ||

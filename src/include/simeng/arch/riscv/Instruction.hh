@@ -205,6 +205,8 @@ class Instruction : public simeng::Instruction {
    * registers. */
   void decode();
 
+  void invalidateIfNotImplemented();
+
   /** Generate an EncodingNotYetImplemented exception. */
   void nyi();
 
