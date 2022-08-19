@@ -247,6 +247,10 @@ void Instruction::decode() {
           for (int i = 0; i < regs.size(); i++) {
             destinationRegisters[destinationRegisterCount] = regs[i];
             destinationRegisterCount++;
+            // If WRITE, also need to add to source registers to maintain
+            // unaltered row values
+            sourceRegisters[sourceRegisterCount] = regs[i];
+            sourceRegisterCount++;
           }
         } else {
           // Add register writes to destinations, but skip zero-register
@@ -301,21 +305,25 @@ void Instruction::decode() {
           (op.sme_index.reg == ARM64_REG_ZA)) {
         regs = getZARowVectors(op.sme_index.reg,
                                architecture_.getStreamingVectorLength());
-      } else {
-        regs.push_back(csRegToRegister(op.sme_index.reg));
-      }
-      // As reg is stored in the SME_index object, need to add that and its
-      // index-base to sourceRegisters
-      if (op.access & cs_ac_type::CS_AC_WRITE) {
-        for (int i = 0; i < regs.size(); i++) {
-          destinationRegisters[destinationRegisterCount] = regs[i];
-          checkZeroReg();
-          destinationRegisterCount++;
-        }
-      } else if (op.access & cs_ac_type::CS_AC_READ) {
+        // If WRITE, then also need to add to souce registers to maintain
+        // un-updated rows
         for (int i = 0; i < regs.size(); i++) {
           sourceRegisters[sourceRegisterCount] = regs[i];
-          checkZeroReg();
+          sourceRegisterCount++;
+          if (op.access & cs_ac_type::CS_AC_WRITE) {
+            destinationRegisters[destinationRegisterCount] = regs[i];
+            destinationRegisterCount++;
+          }
+        }
+      } else {
+        // SME_INDEX can also be for predicate
+        if (op.access & cs_ac_type::CS_AC_WRITE) {
+          destinationRegisters[destinationRegisterCount] =
+              csRegToRegister(op.sme_index.reg);
+          destinationRegisterCount++;
+        } else if (op.access & cs_ac_type::CS_AC_READ) {
+          sourceRegisters[sourceRegisterCount] =
+              csRegToRegister(op.sme_index.reg);
           sourceRegisterCount++;
         }
       }
