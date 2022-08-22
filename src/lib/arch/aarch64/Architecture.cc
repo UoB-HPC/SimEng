@@ -237,12 +237,12 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
   uint16_t numSysRegs = static_cast<uint16_t>(systemRegisterMap_.size());
   const uint16_t ZAsize = static_cast<uint16_t>(SVL_ / 8);  // Convert to bytes
   return {
-      {8, 32},           // General purpose
-      {256, 32},         // Vector
-      {32, 17},          // Predicate
-      {1, 1},            // NZCV
-      {8, numSysRegs},   // System
-      {ZAsize, ZAsize},  // Matrix (Each row is a register)
+      {8, 32},          // General purpose
+      {256, 32},        // Vector
+      {32, 17},         // Predicate
+      {1, 1},           // NZCV
+      {8, numSysRegs},  // System
+      {256, ZAsize},    // Matrix (Each row is a register)
   };
 }
 

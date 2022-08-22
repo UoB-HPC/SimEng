@@ -44,7 +44,11 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         break;
     }
   } else {
-    const uint16_t VL_bits = architecture_.getVectorLength();
+    // 0th bit of SVCR register determins if streaming-mode is enabled.
+    const bool SMenabled = architecture_.getSVCRval() & 1;
+    const uint16_t VL_bits = SMenabled
+                                 ? architecture_.getStreamingVectorLength()
+                                 : architecture_.getVectorLength();
     switch (metadata.opcode) {
       case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
         setMemoryAddresses({{operands[2].get<uint64_t>(), 4}});
@@ -52,6 +56,29 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       }
       case Opcode::AArch64_CASALX: {  // casal xs, xt, [xn|sp]
         setMemoryAddresses({{operands[2].get<uint64_t>(), 8}});
+        break;
+      }
+      case Opcode::AArch64_LD1_MXIPXX_H_S: {  // ld1w {zath.s[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, LSL #2}]
+        // SME
+        const uint16_t partition_num = VL_bits / 32;
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+        const uint64_t n = operands[partition_num + 2].get<uint64_t>();
+        uint64_t m = 0;
+        if (metadata.operands[2].mem.index)
+          m = operands[partition_num + 3].get<uint64_t>() << 2;
+
+        std::vector<MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num);
+
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (pg[i / 16] & shifted_active) {
+            addresses.push_back({(n + m) + (i * 4), 8});
+          }
+        }
+        setMemoryAddresses(std::move(addresses));
         break;
       }
       case Opcode::AArch64_LD1i32: {  // ld1 {vt.s}[index], [xn]

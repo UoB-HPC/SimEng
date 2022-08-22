@@ -2345,6 +2345,43 @@ void Instruction::execute() {
                                                                       metadata);
         break;
       }
+      case Opcode::AArch64_LD1_MXIPXX_H_S: {  // ld1w {zath.s[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, LSL #2}]
+        // SME, LOAD
+        if (!ZAenabled) {
+          // Not in right context mode. Raise exception
+          // TODO : implement exception
+        }
+        const uint16_t partition_num = VL_bits / 32;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+        uint16_t index = 0;
+        uint32_t out[64] = {0};
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (pg[i / 16] & shifted_active) {
+            out[i] = memoryData[index].get<uint32_t>();
+            index++;
+          } else {
+            out[i] = 0;
+          }
+        }
+
+        // All Slice vectors are added to results[] so need to update the
+        // correct one
+        for (int i = 0; i < partition_num; i++) {
+          if (i == sliceNum)
+            results[i] = {out, 256};
+          else
+            // Maintain un-updated rows.
+            results[i] = operands[i];
+        }
+        break;
+      }
       case Opcode::AArch64_LD1B: {  // ld1b  {zt.b}, pg/z, [xn, xm]
         // LOAD
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
