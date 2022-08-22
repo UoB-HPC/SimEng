@@ -134,6 +134,25 @@ inline std::vector<std::tuple<CoreType, YAML::Node>> genCoreTypeSVLPairs(
     checkPredicateRegister<type>(tag, __VA_ARGS__); \
   }
 
+/** Check each element of a Matrix register row against expected values.
+ *
+ * The `tag` argument is the register tile the row is contained in, the `index`
+ * argument is the exact row within the selected tile,  and the `type` argument
+ * is the C++ data type to use for value comparisons. The third argument should
+ * be an initializer list containing one value for each register element (for a
+ * total of `(256 / sizeof(type))` values).
+ *
+ * For example:
+ *
+ *     // Compare za1h.s[0] to some expected 32-bit floating point values.
+ *     CHECK_NEON(ARM64_REG_ZAS1, 0, float, {123.456f, 0.f, 42.f, -1.f});
+ */
+#define CHECK_MAT_ROW(tag, index, type, ...)               \
+  {                                                        \
+    SCOPED_TRACE("<<== error generated here");             \
+    checkMatrixRegisterRow<type>(tag, index, __VA_ARGS__); \
+  }
+
 /** The test fixture for all AArch64 regression tests. */
 class AArch64RegressionTest : public RegressionTest {
  protected:
@@ -185,6 +204,45 @@ class AArch64RegressionTest : public RegressionTest {
     }
   }
 
+  /** Check the elements of a Matrix register row (one row from ZA).
+   *
+   * This should be invoked via the `CHECK_MAT_ROW` macro in order to provide
+   * better diagnostic messages, rather than called directly from test code.
+   */
+  template <typename T>
+  void checkMatrixRegisterRow(
+      uint16_t tag, uint16_t index,
+      const std::array<T, (256 / sizeof(T))>& values) const {
+    // Get matrix row register tag
+    uint8_t base = 0;
+    uint8_t tileTypeCount = 0;
+    if (tag == ARM64_REG_ZA || tag == ARM64_REG_ZAB0) {
+      // Treat ZA as byte tile : ZAB0 represents whole matrix, only 1 tile
+      // Add all rows for this SVL
+      // Don't need to set base as will always be 0
+      tileTypeCount = 1;
+    } else if (tag >= ARM64_REG_ZAH0 && tag <= ARM64_REG_ZAH1) {
+      base = tag - ARM64_REG_ZAH0;
+      tileTypeCount = 2;
+    } else if (tag >= ARM64_REG_ZAS0 && tag <= ARM64_REG_ZAS3) {
+      base = tag - ARM64_REG_ZAS0;
+      tileTypeCount = 4;
+    } else if (tag >= ARM64_REG_ZAD0 && tag <= ARM64_REG_ZAD7) {
+      base = tag - ARM64_REG_ZAD0;
+      tileTypeCount = 8;
+    } else if (tag >= ARM64_REG_ZAQ0 && tag <= ARM64_REG_ZAQ15) {
+      base = tag - ARM64_REG_ZAQ0;
+      tileTypeCount = 16;
+    }
+    uint16_t reg_tag = base + (index * tileTypeCount);
+
+    const T* data = getMatrixRegisterRow<T>(reg_tag);
+    for (unsigned i = 0; i < (256 / sizeof(T)); i++) {
+      EXPECT_NEAR(data[i], values[i], 0.0005)
+          << "Mismatch for element " << i << ".";
+    }
+  }
+
   /** Get the value of a general purpose register. */
   template <typename T>
   T getGeneralRegister(uint8_t tag) const {
@@ -206,6 +264,13 @@ class AArch64RegressionTest : public RegressionTest {
     static_assert(element * sizeof(T) < 256);
     return RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::VECTOR, tag})[element];
+  }
+
+  /** Get a pointer to the value of an architectural matrix register row. */
+  template <typename T>
+  const T* getMatrixRegisterRow(uint16_t tag) const {
+    return RegressionTest::getVectorRegister<T>(
+        {simeng::arch::aarch64::RegisterType::MATRIX, tag});
   }
 
   /** Get the value of the NZCV register. */
