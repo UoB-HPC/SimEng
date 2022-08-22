@@ -419,4 +419,11 @@ class AArch64RegressionTest : public RegressionTest {
        !(std::get<1>(GetParam())["Vector-Length"].IsNull()))
           ? std::get<1>(GetParam())["Vector-Length"].as<uint64_t>()
           : 0;
+
+  /** The current streaming-vector-length being used by the test suite. */
+  const uint64_t SVL =
+      (std::get<1>(GetParam())["Streaming-Vector-Length"].IsDefined() &&
+       !(std::get<1>(GetParam())["Streaming-Vector-Length"].IsNull()))
+          ? std::get<1>(GetParam())["Streaming-Vector-Length"].as<uint64_t>()
+          : 0;
 };
