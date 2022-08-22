@@ -53,6 +53,11 @@ TEST_P(InstSme, ld1w) {
   )");
 }
 
+TEST_P(InstSme, st1w) {
+  // TODO : Need to implement LD1W_Vert to properly perform unit test for
+  // ST1W_Vert
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstSme,
                          ::testing::ValuesIn(genCoreTypeSVLPairs(EMULATION)),
                          paramToString);
