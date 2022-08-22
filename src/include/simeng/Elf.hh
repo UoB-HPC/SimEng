@@ -24,8 +24,7 @@ struct ElfHeader {
 /** A processed Executable and Linkable Format (ELF) file. */
 class Elf {
  public:
-  Elf(std::string path);
-  Elf(std::string path, std::vector<char>& imageVec);
+  Elf(std::string path, char** imagePointer);
   ~Elf();
   const span<char> getProcessImage() const;
   bool isValid() const;

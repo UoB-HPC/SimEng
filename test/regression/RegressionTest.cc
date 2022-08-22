@@ -27,10 +27,7 @@
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
 
-RegressionTest::~RegressionTest() {
-  delete[] code_;
-  delete[] processMemory_;
-}
+RegressionTest::~RegressionTest() { delete[] code_; }
 
 void RegressionTest::TearDown() {
   if (!programFinished_) {
@@ -57,9 +54,7 @@ void RegressionTest::run(const char* source, const char* triple) {
   // Allocate memory for the process and copy the full process image to it
   simeng::span<char> processImage = process_->getProcessImage();
   processMemorySize_ = processImage.size();
-  if (processMemory_) delete[] processMemory_;
-  processMemory_ = new char[processMemorySize_];
-  std::copy(processImage.begin(), processImage.end(), processMemory_);
+  processMemory_ = processImage.data();
 
   // Create memory interfaces for instruction and data access
   simeng::FlatMemoryInterface instructionMemory(processMemory_,

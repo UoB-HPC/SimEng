@@ -13,7 +13,7 @@ namespace simeng {
  * https://man7.org/linux/man-pages/man5/elf.5.html
  */
 
-Elf::Elf(std::string path) {
+Elf::Elf(std::string path, char** imagePointer) {
   std::ifstream file(path, std::ios::binary);
 
   if (!file.is_open()) {
@@ -152,92 +152,8 @@ Elf::Elf(std::string path) {
     }
   }
 
-  processImage_ = new char[processImageSize_];
-
-  /**
-   * The ELF Program header has a member called `p_type`, which represents
-   * the kind of data or memory segments described by the program header.
-   * The value PT_LOAD=1 represents a loadable segment. In other words,
-   * it contains initialized data that contributes to the program's
-   * memory image.
-   */
-
-  // Process headers; only observe LOAD sections for this basic implementation
-  for (const auto& header : headers_) {
-    if (header.type == 1) {  // LOAD
-      file.seekg(header.offset);
-      // Read `fileSize` bytes from `file` into the appropriate place in process
-      // memory
-      file.read(processImage_ + header.virtualAddress, header.fileSize);
-    }
-  }
-
-  file.close();
-}
-
-Elf::Elf(std::string path, std::vector<char>& imageVec) {
-  std::ifstream file(path, std::ios::binary);
-
-  if (!file.is_open()) {
-    return;
-  }
-
-  // Check file's magic number
-  char elfMagic[4] = {0x7f, 'E', 'L', 'F'};
-  char fileMagic[4];
-  file.read(fileMagic, 4);
-  if (std::memcmp(elfMagic, fileMagic, sizeof(elfMagic))) {
-    return;
-  }
-
-  // Check whether this is a 32- or 64-bit executable
-  char bitFormat;
-  file.read(&bitFormat, sizeof(bitFormat));
-  if (bitFormat != ElfBitFormat::Format64) {
-    return;
-  }
-
-  isValid_ = true;
-
-  file.seekg(0x18);
-  // Entry point
-  file.read(reinterpret_cast<char*>(&entryPoint_), sizeof(entryPoint_));
-
-  // Header table offset
-  uint64_t headerOffset;
-  file.read(reinterpret_cast<char*>(&headerOffset), sizeof(headerOffset));
-
-  // Header table info
-  file.seekg(0x36);
-  uint16_t headerEntrySize;
-  file.read(reinterpret_cast<char*>(&headerEntrySize), sizeof(headerEntrySize));
-  uint16_t headerEntries;
-  file.read(reinterpret_cast<char*>(&headerEntries), sizeof(headerEntries));
-
-  headers_.resize(headerEntries);
-  processImageSize_ = 0;
-  // Extract headers
-  for (size_t i = 0; i < headerEntries; i++) {
-    file.seekg(headerOffset + (i * headerEntrySize));
-    auto& header = headers_[i];
-
-    // Each address-related field is 8 bytes in a 64-bit ELF file
-    const int fieldBytes = 8;
-    file.read(reinterpret_cast<char*>(&(header.type)), sizeof(header.type));
-    file.seekg(4, std::ios::cur);  // Skip flags
-    file.read(reinterpret_cast<char*>(&(header.offset)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.virtualAddress)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.physicalAddress)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.fileSize)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.memorySize)), fieldBytes);
-
-    if (header.virtualAddress + header.memorySize > processImageSize_) {
-      processImageSize_ = header.virtualAddress + header.memorySize;
-    }
-  }
-
-  imageVec.resize(processImageSize_);
-  processImage_ = imageVec.data();
+  *imagePointer = (char*)malloc(processImageSize_ * sizeof(char));
+  processImage_ = *imagePointer;
 
   // Process headers; only observe LOAD sections for this basic implementation
   for (const auto& header : headers_) {

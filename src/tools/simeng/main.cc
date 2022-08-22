@@ -187,10 +187,9 @@ int main(int argc, char** argv) {
   }
 
   // Read the process image and copy to memory
-  auto processImageVec = process->getProcessImageVector();
-
-  size_t processMemorySize = processImageVec.size();
-  char* processMemory = &processImageVec[0];
+  simeng::span<char> processImage = process->getProcessImage();
+  size_t processMemorySize = processImage.size();
+  char* processMemory = processImage.data();
 
   uint64_t entryPoint = process->getEntryPoint();
 
@@ -337,7 +336,6 @@ int main(int argc, char** argv) {
   std::cout << out.c_str() << std::endl;
 
 #endif
-
 
   return 0;
 }

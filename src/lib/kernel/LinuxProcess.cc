@@ -1,8 +1,8 @@
 #include "simeng/kernel/LinuxProcess.hh"
 
 #include <cassert>
-#include <iostream>
 #include <cstring>
+#include <iostream>
 
 namespace simeng {
 namespace kernel {
@@ -23,10 +23,8 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
       commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
-  
-  processImageVec = std::vector<char>();
 
-  Elf elf(commandLine[0], processImageVec);
+  Elf elf(commandLine[0], &processImage_);
   if (!elf.isValid()) {
     return;
   }
@@ -34,9 +32,8 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
 
   entryPoint_ = elf.getEntryPoint();
 
-
   // Align heap start to a 32-byte boundary
-  heapStart_ = alignToBoundary(processImageVec.size(), 32);
+  heapStart_ = alignToBoundary(elf.getProcessImage().size(), 32);
 
   // Set mmap region start to be an equal distance from the stack and heap
   // starts. Additionally, align to the page size (4kb)
@@ -45,11 +42,17 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
 
   // Calculate process image size, including heap + stack
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
-  processImageVec.resize(size_);
 
-  processImage_ = &processImageVec[0];
+  char* temp = (char*)realloc(processImage_, size_ * sizeof(char));
+  if (temp == NULL) {
+    free(processImage_);
+    std::cout << "ProcessImage cannot be constructed successfully! "
+                 "Reallocation failed."
+              << std::endl;
 
-  // Copy ELF process image to process image
+    exit(EXIT_FAILURE);
+  }
+  processImage_ = temp;
 
   createStack();
 }
@@ -71,7 +74,7 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
       alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
 
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
-  processImage_ = new char[size_];
+  processImage_ = (char*)malloc(size_ * sizeof(char));
 
   std::copy(instructions.begin(), instructions.end(), processImage_);
 
@@ -80,7 +83,7 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
 
 LinuxProcess::~LinuxProcess() {
   if (isValid_) {
-    processImageVec.clear();
+    free(processImage_);
   }
 }
 
@@ -98,10 +101,6 @@ bool LinuxProcess::isValid() const { return isValid_; }
 
 const span<char> LinuxProcess::getProcessImage() const {
   return {processImage_, size_};
-}
-
-std::vector<char>& LinuxProcess::getProcessImageVector() {
-  return processImageVec;
 }
 
 uint64_t LinuxProcess::getEntryPoint() const { return entryPoint_; }
