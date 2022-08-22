@@ -149,7 +149,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
          "Fewer than 4 bytes supplied to RISC-V decoder");
 
   // Dereference the instruction pointer to obtain the instruction word
-  const uint32_t insn = *static_cast<const uint32_t*>(ptr);
+  uint32_t insn;
+  memcpy(&insn, ptr, 4);
   const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
   // Try to find the decoding in the decode cache
@@ -163,6 +164,8 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     size_t size = 4;
     uint64_t address = 0;
 
+    const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
+
     bool success =
         cs_disasm_iter(capstoneHandle, &encoding, &size, &address, &rawInsn);
 
@@ -173,14 +176,10 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
     metadataCache.emplace_front(metadata);
 
     // Create and cache an instruction using the metadata
-    Instruction newInstruction = Instruction(*this, metadataCache.front());
+    iter = decodeCache.try_emplace(insn, *this, metadataCache.front()).first;
 
     // Set execution information for this instruction
-    newInstruction.setExecutionInfo(getExecutionInfo(newInstruction));
-
-    auto result = decodeCache.insert({insn, newInstruction});
-
-    iter = result.first;
+    iter->second.setExecutionInfo(getExecutionInfo(iter->second));
   }
 
   output.resize(1);
