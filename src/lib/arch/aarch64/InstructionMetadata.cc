@@ -638,6 +638,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_LD1_MXIPXX_V_S:
+      [[fallthrough]];
     case Opcode::AArch64_LD1_MXIPXX_H_S: {
       // Lacking access specifiers
       operands[0].access = CS_AC_WRITE;

@@ -2388,6 +2388,35 @@ void Instruction::execute() {
         }
         break;
       }
+      case Opcode::AArch64_LD1_MXIPXX_V_S: {  // ld1w {zatv.s[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, LSL #2}]
+        // SME, LOAD
+        if (!ZAenabled) {
+          // Not in right context mode. Raise exception
+          return ZAdisabled();
+        }
+        const uint16_t partition_num = VL_bits / 32;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint32_t* row =
+              const_cast<uint32_t*>(operands[i].getAsVector<uint32_t>());
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (pg[i / 16] & shifted_active) {
+            row[sliceNum] = memoryData[index].get<uint32_t>();
+            index++;
+          } else {
+            row[sliceNum] = 0;
+          }
+          results[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
+        }
+        break;
+      }
       case Opcode::AArch64_LD1B: {  // ld1b  {zt.b}, pg/z, [xn, xm]
         // LOAD
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
