@@ -51,6 +51,12 @@ void Instruction::SMZAupdated() {
   return;
 }
 
+void Instruction::ZAdisabled() {
+  exceptionEncountered_ = true;
+  exception_ = InstructionException::ZAdisabled;
+  return;
+}
+
 void Instruction::execute() {
   assert(!executed_ && "Attempted to execute an instruction more than once");
   assert(
@@ -2350,7 +2356,7 @@ void Instruction::execute() {
         // SME, LOAD
         if (!ZAenabled) {
           // Not in right context mode. Raise exception
-          // TODO : implement exception
+          return ZAdisabled();
         }
         const uint16_t partition_num = VL_bits / 32;
         const uint32_t ws = operands[partition_num].get<uint32_t>();

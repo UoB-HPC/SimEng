@@ -873,6 +873,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
     case InstructionException::SMZAUpdate:
       std::cout << "streaming mode & ZA register status update";
       break;
+    case InstructionException::ZAdisabled:
+      std::cout << "ZA register read/write attempt when disabled";
+      break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)
                 << ")";
