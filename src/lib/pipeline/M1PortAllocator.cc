@@ -29,7 +29,7 @@ uint8_t M1PortAllocator::allocate(const std::vector<uint8_t>& ports) {
     auto rsSize = rsArrangement_[portIndex].second;
     auto rsFreeSpace = rsFreeSpaces[rsIndex];
 		float rsPercentFull = (float)rsFreeSpace / (float)rsSize;
-    float biasedWeight = (float)weights[portIndex] * rsPercentFull * rsPercentFull
+    float biasedWeight = (float)weights[portIndex] * rsPercentFull * rsPercentFull;
     // printf("RS Index: %d\tRS Size: %lu\nRS Free Space: %lu\tweight:
     // %d\tbiasedWeight:
     // %f\n",rsIndex,rsSize,rsFreeSpace,weights[portIndex],biasedWeight);
