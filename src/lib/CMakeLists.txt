@@ -14,6 +14,7 @@ set(SIMENG_SOURCES
     models/outoforder/Core.cc
     pipeline/A64FXPortAllocator.cc
     pipeline/BalancedPortAllocator.cc
+    pipeline/M1PortAllocator.cc
     pipeline/DecodeUnit.cc
     pipeline/DispatchIssueUnit.cc
     pipeline/ExecuteUnit.cc
