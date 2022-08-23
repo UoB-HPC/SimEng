@@ -43,6 +43,12 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] \tCompile options: " SIMENG_COMPILE_OPTIONS
             << std::endl;
   std::cout << "[SimEng] \tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
+#ifdef GDB_ENABLED
+  // If using GDB, keep as default emulation mode as it's all it currently
+  // supports
+  std::cout << "[SimEng] \t GDB Enabled" << std::endl;
+  return;
+#endif
   std::cout << std::endl;
 
   // Create the instance of the core to be simulated
@@ -117,10 +123,10 @@ int main(int argc, char** argv) {
   uint64_t iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
 
-  if (gdb)
-    runGDBStub(*core, *dataMemory, instructionMemory);
-  else
-    iterations = simulate(*core, *dataMemory, instructionMemory);
+#ifdef GDB_ENABLED
+  runGDBStub(*core, *dataMemory, *instructionMemory);
+#else
+  iterations = simulate(*core, *dataMemory, *instructionMemory);
 
   // Get timing information
   auto endTime = std::chrono::high_resolution_clock::now();
@@ -178,6 +184,7 @@ int main(int argc, char** argv) {
   std::cout << ryml::emitrs_yaml<std::string>(out);
   std::cout << "...\n\n";
 
+#endif
 #endif
 
   return 0;

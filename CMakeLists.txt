@@ -7,36 +7,38 @@ set(FETCHCONTENT_QUIET OFF)
 # there also isn't a version that accepts extra args at the end for add_subdirectory
 # hence we write one ourselves
 macro(FetchContent_MakeAvailable_Args NAME ARGS)
-    FetchContent_GetProperties(${NAME})
-    if(NOT ${NAME}_POPULATED)
-        FetchContent_Populate(${NAME})
-        add_subdirectory(${${NAME}_SOURCE_DIR} ${${NAME}_BINARY_DIR} ${ARGS})
-    endif()
+  FetchContent_GetProperties(${NAME})
+
+  if(NOT ${NAME}_POPULATED)
+    FetchContent_Populate(${NAME})
+    add_subdirectory(${${NAME}_SOURCE_DIR} ${${NAME}_BINARY_DIR} ${ARGS})
+  endif()
 endmacro()
 
 # Need an additional macro for LLVM as a sub-directory needs to be targeted for llvm-14.0.5
 macro(FetchContent_MakeAvailable_SubDir_Args NAME SUBDIR ARGS)
-    FetchContent_GetProperties(${NAME})
-    if(NOT ${NAME}_POPULATED)
-        FetchContent_Populate(${NAME})
-        add_subdirectory(${${NAME}_SOURCE_DIR}/${SUBDIR}/ ${${NAME}_BINARY_DIR} ${ARGS})
-    endif()
+  FetchContent_GetProperties(${NAME})
+
+  if(NOT ${NAME}_POPULATED)
+    FetchContent_Populate(${NAME})
+    add_subdirectory(${${NAME}_SOURCE_DIR}/${SUBDIR}/ ${${NAME}_BINARY_DIR} ${ARGS})
+  endif()
 endmacro()
 
 # we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a small part of it
-
 FetchContent_Declare(
   llvm
-  URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.5/llvm-14.0.5.src.tar.xz
+  URL https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.5/llvm-14.0.5.src.tar.xz
   URL_HASH MD5=6bd202e403d950c78985048ce499a518
 )
 
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
+
   # this versions requires CMake >= 2.8.12 which silences the deprecation warning
-  GIT_TAG        release-1.11.0
-  GIT_PROGRESS   TRUE
+  GIT_TAG release-1.11.0
+  GIT_PROGRESS TRUE
 )
 
 FetchContent_Declare(
@@ -56,7 +58,7 @@ project(SimEng VERSION 0.9.6 LANGUAGES C CXX)
 if(NOT CMAKE_BUILD_TYPE)
   message(STATUS "Setting build type to Release as none was specified.")
   set(CMAKE_BUILD_TYPE "Release" CACHE
-      STRING "Choose the type of build." FORCE)
+    STRING "Choose the type of build." FORCE)
 endif()
 
 # Require and enable C++17 support, and disable compiler extensions.
@@ -80,8 +82,8 @@ add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>)
 # Include SimEng API headers in all targets and install them
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/include)
 install(DIRECTORY src/include/simeng
-        DESTINATION include
-        FILES_MATCHING PATTERN "*.hh")
+  DESTINATION include
+  FILES_MATCHING PATTERN "*.hh")
 
 # capstone
 set(CAPSTONE_BUILD_TESTS OFF CACHE BOOL "Disable Capstone tests")
@@ -114,17 +116,19 @@ option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
 option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizations" OFF)
+option(SIMENG_ENABLE_GDB "Enable GDB for SimEng build" OFF)
+
 option(SIMENG_ENABLE_SST "Compile SimEng SST Wrapper" OFF)
 option(SIMENG_ENABLE_SST_TESTS "Enable testing for SST" OFF)
 
-# Set CXX flag for Apple Mac so that `binary_function` and `unary_function` types that are used in SST can be recognised. 
+# Set CXX flag for Apple Mac so that `binary_function` and `unary_function` types that are used in SST can be recognised.
 # They were deprecated in C++11 and removed in C++17, and Apple Clang v15 no longer supports these types without the following flag
 # TODO: Remove once SST integration has updated to SST version 13 or later - the use of unary and binary functions are removed in later versions.
 if(APPLE)
   add_compile_definitions(_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION)
 endif()
 
-if (SIMENG_OPTIMIZE)
+if(SIMENG_OPTIMIZE)
   # Turn on link time optimization for all targets.
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
@@ -137,29 +141,28 @@ if (SIMENG_OPTIMIZE)
 endif()
 
 set(SANITIZE_OPTIONS -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-sanitize-recover=address,undefined)
-if (SIMENG_SANITIZE)
-    add_compile_options(${SANITIZE_OPTIONS})
-    add_link_options(${SANITIZE_OPTIONS})
+
+if(SIMENG_SANITIZE)
+  add_compile_options(${SANITIZE_OPTIONS})
+  add_link_options(${SANITIZE_OPTIONS})
 endif()
 
 if(SIMENG_ENABLE_TESTS)
-
-  ## Setup LLVM ##
-  if (SIMENG_USE_EXTERNAL_LLVM)
+  # # Setup LLVM ##
+  if(SIMENG_USE_EXTERNAL_LLVM)
     find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
 
-      # Check LLVM version
-    if ((${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0") OR (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "14.1"))
+    # Check LLVM version
+    if((${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0") OR(${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "14.1"))
       message(FATAL_ERROR "LLVM version must be >= 8.0 and <= 14.0")
     endif()
 
-      # Print message containing if the full test suite will run
-    if (${LLVM_PACKAGE_VERSION} VERSION_LESS "14.0")
+    # Print message containing if the full test suite will run
+    if(${LLVM_PACKAGE_VERSION} VERSION_LESS "14.0")
       message(STATUS "LLVM version does not support AArch64 extensions SME or SVE2. These test suites will be skipped.")
     endif()
 
   else()
-
     set(LLVM_TARGETS_TO_BUILD "AArch64;RISCV" CACHE INTERNAL "")
 
     set(LLVM_BUILD_RUNTIME OFF)
@@ -185,33 +188,36 @@ if(SIMENG_ENABLE_TESTS)
 
     # XXX all LLVM specific cmake variables must be set BEFORE FetchContent_MakeAvailable otherwise they have no effect
     FetchContent_MakeAvailable_SubDir_Args(llvm llvm-14.0.5.src EXCLUDE_FROM_ALL)
+
     # make sure we get the headers too
     include_directories("${llvm_BINARY_DIR}/include" "${llvm_SOURCE_DIR}/include")
 
     find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH
-                 PATHS "${llvm_BINARY_DIR}/lib/cmake/llvm")
+      PATHS "${llvm_BINARY_DIR}/lib/cmake/llvm")
 
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
     # we just assume it's good because it must be whitelisted in FetchContent_Declare
-endif()
+  endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
   message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
   # Check LLVM was built with the correct targets enabled
-  if (NOT "AArch64" IN_LIST LLVM_TARGETS_TO_BUILD)
+  if(NOT "AArch64" IN_LIST LLVM_TARGETS_TO_BUILD)
     message(FATAL_ERROR "LLVM was built without AArch64 target")
   endif()
-  if (NOT "RISCV" IN_LIST LLVM_TARGETS_TO_BUILD)
-      message(FATAL_ERROR "LLVM was built without RISC-V target")
+
+  if(NOT "RISCV" IN_LIST LLVM_TARGETS_TO_BUILD)
+    message(FATAL_ERROR "LLVM was built without RISC-V target")
   endif()
 
-  ## Setup googletest ##
+  # # Setup googletest ##
   FetchContent_MakeAvailable_Args(googletest EXCLUDE_FROM_ALL)
   enable_testing()
 
   add_subdirectory(test)
+
   # saves us from having to build all targets before running the tests
   add_custom_target(test-all
     COMMAND ${CMAKE_CTEST_COMMAND}
@@ -223,20 +229,21 @@ endif()
 add_subdirectory(src)
 add_subdirectory(docs)
 
-if (SIMENG_ENABLE_SST)
-  if (SST_INSTALL_DIR)
+if(SIMENG_ENABLE_SST)
+  if(SST_INSTALL_DIR)
     add_subdirectory(sst)
-    if (SIMENG_ENABLE_SST_TESTS)
+
+    if(SIMENG_ENABLE_SST_TESTS)
       enable_testing()
       list(APPEND CMAKE_CTEST_ARGUMENTS "--verbose")
       add_custom_target(test-sst-simeng
-      COMMAND ${CMAKE_CTEST_COMMAND}
-      DEPENDS sstsimengtest
+        COMMAND ${CMAKE_CTEST_COMMAND}
+        DEPENDS sstsimengtest
       )
     endif()
   else()
     message(WARNING "SST build was selected but SST install directory was not specified.
-    Please specify -DSST_INSTALL_DIR=<path> for the SST build to proceed.")  
+    Please specify -DSST_INSTALL_DIR=<path> for the SST build to proceed.")
   endif()
 endif()
 
