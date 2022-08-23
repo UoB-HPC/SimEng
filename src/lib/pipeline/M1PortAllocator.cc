@@ -28,13 +28,13 @@ uint8_t M1PortAllocator::allocate(const std::vector<uint8_t>& ports) {
     auto rsIndex = rsArrangement_[portIndex].first;
     auto rsSize = rsArrangement_[portIndex].second;
     auto rsFreeSpace = rsFreeSpaces[rsIndex];
-    float biasedWeight =
-        (float)weights[portIndex] * (float)rsFreeSpace / (float)rsSize;
+		float rsPercentFull = (float)rsFreeSpace / (float)rsSize;
+    float biasedWeight = (float)weights[portIndex] * rsPercentFull * rsPercentFull
     // printf("RS Index: %d\tRS Size: %lu\nRS Free Space: %lu\tweight:
     // %d\tbiasedWeight:
     // %f\n",rsIndex,rsSize,rsFreeSpace,weights[portIndex],biasedWeight);
     // Search for the lowest-weighted port available
-    if (!foundPort || biasedWeight < bestWeight) {
+    if (!foundPort || biasedWeight < (float)bestWeight) {
       foundPort = true;
       bestWeight = weights[portIndex];
       bestPort = portIndex;
