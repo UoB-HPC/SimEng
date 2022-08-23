@@ -16,11 +16,15 @@ M1PortAllocator::M1PortAllocator(
     : weights(portArrangement.size(), 0), rsArrangement_(rsArrangement) {}
 
 uint8_t M1PortAllocator::allocate(const std::vector<uint8_t>& ports) {
+  //printf("--- Allocating --- \n");
   assert(ports.size() &&
          "No supported ports supplied; cannot allocate from a empty set");
   bool foundPort = false;
-  uint16_t bestWeight = 0xFFFF;
   uint8_t bestPort = 0;
+  uint16_t bestWeight = 0xFFFF;
+
+  uint16_t bestRSQueueSize = 0xFFFF;
+  bool foundRS = false;
   std::vector<uint64_t> rsFreeSpaces;
   rsSizes_(rsFreeSpaces);
 
@@ -28,20 +32,27 @@ uint8_t M1PortAllocator::allocate(const std::vector<uint8_t>& ports) {
     auto rsIndex = rsArrangement_[portIndex].first;
     auto rsSize = rsArrangement_[portIndex].second;
     auto rsFreeSpace = rsFreeSpaces[rsIndex];
-		float rsPercentFull = (float)rsFreeSpace / (float)rsSize;
-    float biasedWeight = (float)weights[portIndex] * rsPercentFull * rsPercentFull;
-    // printf("RS Index: %d\tRS Size: %lu\nRS Free Space: %lu\tweight:
-    // %d\tbiasedWeight:
-    // %f\n",rsIndex,rsSize,rsFreeSpace,weights[portIndex],biasedWeight);
-    // Search for the lowest-weighted port available
-    if (!foundPort || biasedWeight < (float)bestWeight) {
-      foundPort = true;
-      bestWeight = weights[portIndex];
-      bestPort = portIndex;
+    auto rsQueueSize = (rsSize - rsFreeSpace);
+
+    // printf("n_RS: %d\tPort Index %d\tRS Index: %d\tRS Size: %lu\tRS Free
+    // Space: %lu\tqueuesize: %d\tWeight: %f\tbestWeight:
+    // %f\n",rsFreeSpaces.size(),portIndex,
+    // rsIndex,rsSize,rsFreeSpace,rsQueueSize,weights[portIndex], bestWeight);
+    if (rsQueueSize < bestRSQueueSize) {
+      bestRSQueueSize = rsQueueSize;
+      foundRS = true;
+
+      // Search for the lowest-weighted port available
+      if (!foundPort || weights[portIndex] < bestWeight) {
+        // printf("Using RS %d\n",rsIndex);
+        foundPort = true;
+        bestWeight = weights[portIndex];  // weights[portIndex];
+        bestPort = portIndex;
+      }
     }
   }
 
-  assert(foundPort && "Unsupported group; cannot allocate a port");
+  assert(foundPort && foundRS && "Unsupported group; cannot allocate a port");
 
   // Increment the weight of the allocated port
   weights[bestPort]++;
