@@ -65,6 +65,12 @@ void CoreInstance::generateCoreModel(std::string executablePath,
 }
 
 void CoreInstance::setSimulationMode() {
+#ifdef GDB_ENABLED
+  // If using GDB, keep as default emulation mode as it's all it currently
+  // supports
+  std::cout << "GDB Enabled\n";
+  return;
+#endif
   // Get the simualtion mode as defined by the set configuration, defaulting to
   // emulation
   if (config_["Core"]["Simulation-Mode"].as<std::string>() ==

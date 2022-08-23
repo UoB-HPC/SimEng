@@ -1,5 +1,7 @@
 add_executable(simeng main.cc)
-add_subdirectory(gdb)
+if (SIMENG_ENABLE_GDB)
+  add_subdirectory(gdb)
+endif()
 
 # Setting the YAML_OUTPUT macro prints out build metadata and core statistics
 # in YAML format at the end of the program.

@@ -98,10 +98,10 @@ int main(int argc, char** argv) {
   int iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
 
-  if (gdb)
-    runGDBStub(*core, *dataMemory, instructionMemory);
-  else
-    iterations = simulate(*core, *dataMemory, instructionMemory);
+#ifdef GDB_ENABLED
+  runGDBStub(*core, *dataMemory, *instructionMemory);
+#else
+  iterations = simulate(*core, *dataMemory, *instructionMemory);
 
   // Get timing information
   auto endTime = std::chrono::high_resolution_clock::now();
@@ -150,6 +150,7 @@ int main(int argc, char** argv) {
   std::cout << "YAML-SEQ\n";
   std::cout << out.c_str() << std::endl;
 
+#endif
 #endif
 
   return 0;
