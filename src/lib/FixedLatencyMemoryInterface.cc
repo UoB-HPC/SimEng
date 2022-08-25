@@ -74,4 +74,6 @@ bool FixedLatencyMemoryInterface::hasPendingRequests() const {
   return !pendingRequests_.empty();
 }
 
+char* FixedLatencyMemoryInterface::getMemoryPointer() { return memory_; }
+
 }  // namespace simeng
