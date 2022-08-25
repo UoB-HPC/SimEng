@@ -118,18 +118,16 @@ std::string handleReadSingleRegister(std::string registerName, simeng::Architect
 // reads a SimEng memory location and returns an RSP compliant string
 std::string handleReadMemory(std::string address, std::string length, simeng::MemoryInterface& dataMemory){
 
-	simeng::MemoryAccessTarget memoryAccessTarget = simeng::MemoryAccessTarget();
+	int numberOfBytes = std::stoi(length);
+	uint64_t intAddress = hexToInt(address);
 
-	memoryAccessTarget.address = hexToInt(address);
-	memoryAccessTarget.size = std::stoi(length);
+	char* memoryPointer = dataMemory.getMemoryPointer();
+	const char* ptr = memoryPointer + intAddress;
+	uint8_t dest[numberOfBytes];
+	memcpy(dest, ptr, numberOfBytes);
 
-	dataMemory.requestRead(memoryAccessTarget);
-	uint64_t value = dataMemory.getCompletedReads()[0].data.get<uint32_t>();
-	dataMemory.clearCompletedReads();
-
-	std::cout << "Value retrieved from memory: " << value << std::endl;
-
-	std::string output = decToRSP(value);
+	std::string output;
+	for(uint8_t byte : dest) output += byteToHex(byte);
 
 	return output;
 }
@@ -153,14 +151,13 @@ void handleRemoveBreakpoint(std::string type, std::string address){
 }
 
 // continues execution until the next breakpoint, doing nothing if there are no breakpoints
-std::string handleContinue(simeng::Core& core, simeng::MemoryInterface& dataMemory, simeng::MemoryInterface& instructionMemory){
+std::string handleContinue(simeng::Core& core, simeng::MemoryInterface& dataMemory){
 	if(breakpoints.size() == 0) return "";
 
 	bool breakpointFound = 0;
 
 	while(!breakpointFound){
 		core.tick();
-		instructionMemory.tick();
 		dataMemory.tick();
 		for(std::string breakpoint : breakpoints){
 			if(hexToInt(breakpoint) == core.getProgramCounter()) breakpointFound = 1;
@@ -210,7 +207,7 @@ int openSocket(int port){
 	return connection;
 }
 
-int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory, simeng::MemoryInterface& instructionMemory) {
+int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory) {
 
 	int connection = openSocket(2425);
 
@@ -257,11 +254,10 @@ int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory, simeng::
 				response += generateReply("S05");
 			} else if(packet == "s"){ // step one instruction
 				core.tick();
-				instructionMemory.tick();
     			dataMemory.tick();
 				response += generateReply("S05");
 			} else if(packet == "c"){ // continue until next breakpoint
-				std::string message = handleContinue(core, dataMemory, instructionMemory);
+				std::string message = handleContinue(core, dataMemory);
 				response += generateReply(message);
 			} else if(packet == "g"){ // read registers
 				std::string registers = handleReadRegisters(core.getArchitecturalRegisterFileSet(), core);

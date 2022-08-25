@@ -35,6 +35,9 @@ class FlatMemoryInterface : public MemoryInterface {
   /** Tick: do nothing */
   void tick() override;
 
+  /** Retrieves a pointer to the memory array. */
+  char* getMemoryPointer();
+
  private:
   /** The array representing the flat memory system to access. */
   char* memory_;

@@ -43,6 +43,8 @@ const span<MemoryReadResult> FlatMemoryInterface::getCompletedReads() const {
           completedReads_.size()};
 }
 
+char* FlatMemoryInterface::getMemoryPointer() { return memory_; }
+
 void FlatMemoryInterface::clearCompletedReads() { completedReads_.clear(); }
 
 bool FlatMemoryInterface::hasPendingRequests() const { return false; }

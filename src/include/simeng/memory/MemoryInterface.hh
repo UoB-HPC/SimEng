@@ -41,6 +41,9 @@ class MemoryInterface {
   /** Returns true if there are any outstanding memory requests in-flight. */
   virtual bool hasPendingRequests() const = 0;
 
+  /** Retrieves a pointer to the memory array. */
+  virtual char* getMemoryPointer();
+
   /** Tick the memory interface to allow it to process internal tasks.
    *
    * TODO: Move ticking out of the memory interface and into a central "memory
