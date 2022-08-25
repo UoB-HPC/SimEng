@@ -668,7 +668,7 @@ bool ExceptionHandler::init() {
     if (exception != InstructionException::StreamingModeUpdate) {
       for (uint16_t i = 0; i < SVLbytes; i++) {
         regs.push_back({RegisterType::MATRIX, i});
-        regValues.push_back(RegisterValue(0, SVLbytes));
+        regValues.push_back(RegisterValue(0, 256));
       }
     }
     ProcessStateChange stateChange = {ChangeType::REPLACEMENT, regs, regValues};

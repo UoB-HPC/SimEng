@@ -1495,6 +1495,48 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[4].access = CS_AC_READ;
       operands[5].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_ZERO_M: {
+      // Operands often mangled from ZA tile overlap aliasing in decode. Need to
+      // re-extract relevant tiles from operandStr
+      operandCount = 0;
+      size_t pos = operandStr.find("za", 0);
+      while (pos != std::string::npos) {
+        size_t pos_2 = operandStr.find(".", pos);
+        if (pos_2 != std::string::npos) {
+          char type = operandStr[pos_2 + 1];
+          // Tile Number can only ever be 1 digit
+          uint8_t tileNum = std::stoi(operandStr.substr((pos + 2), 1));
+          switch (type) {
+            case 'b':
+              operands[operandCount].reg = ARM64_REG_ZAB0;
+              break;
+            case 'h':
+              operands[operandCount].reg =
+                  static_cast<arm64_reg>(ARM64_REG_ZAH0 + tileNum);
+              break;
+            case 's':
+              operands[operandCount].reg =
+                  static_cast<arm64_reg>(ARM64_REG_ZAS0 + tileNum);
+              break;
+            case 'd':
+              operands[operandCount].reg =
+                  static_cast<arm64_reg>(ARM64_REG_ZAD0 + tileNum);
+              break;
+            case 'q':
+              operands[operandCount].reg =
+                  static_cast<arm64_reg>(ARM64_REG_ZAQ0 + tileNum);
+              break;
+          }
+        } else {
+          operands[operandCount].reg = ARM64_REG_ZA;
+        }
+        operands[operandCount].type = ARM64_OP_REG;
+        operands[operandCount].access = CS_AC_WRITE;
+        operandCount++;
+        pos = operandStr.find("za", pos + 1);
+      }
+      break;
+    }
   }
 
   revertAliasing();
