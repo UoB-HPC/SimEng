@@ -171,6 +171,10 @@ class Core : public simeng::Core {
   /** Statistics class id for flushes_ counter. */
   uint64_t flushesCntr_;
 
+  /** Statistics class ids for counters tracking the number of retirements
+   * within a cycle. */
+  std::vector<uint64_t> commitCntrs_;
+
   /** The YAML formatted config file. */
   YAML::Node config_;
 };

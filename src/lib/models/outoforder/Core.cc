@@ -123,8 +123,18 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   applyStateChange(state);
 
   // Register stat counters
-  ticksCntr_ = stats_.registerStat("cycles");
-  flushesCntr_ = stats_.registerStat("flushes");
+  ticksCntr_ = stats_.registerStat("core.cycles");
+  flushesCntr_ = stats_.registerStat("core.flushes");
+
+  for (int i = 0;
+       i <
+       std::min(commitWidth_, config["Queue-Sizes"]["ROB"].as<unsigned int>()) +
+           1;
+       i++) {
+    std::ostringstream statName;
+    statName << "rob.commits." << i;
+    commitCntrs_.push_back(stats_.registerStat(statName.str()));
+  }
 };
 
 void Core::tick() {
@@ -174,7 +184,8 @@ void Core::tick() {
   }
 
   // Commit instructions from ROB
-  reorderBuffer_.commit(commitWidth_);
+  unsigned int commitQuantity = reorderBuffer_.commit(commitWidth_);
+  stats_.incrementStat(commitCntrs_[commitQuantity], 1);
 
   if (exceptionGenerated_) {
     handleException();
@@ -403,24 +414,30 @@ uint64_t Core::getSystemTimer() const {
 
 std::map<std::string, std::string> Core::getStats() const {
   std::map<std::string, std::string> finalStatDump = {
-      {"retired", "0"},
-      {"fetch.branchStalls", "0"},
-      {"decode.earlyFlushes", "0"},
-      {"rename.allocationStalls", "0"},
-      {"rename.robStalls", "0"},
-      {"rename.lqStalls", "0"},
-      {"rename.sqStalls", "0"},
-      {"dispatch.rsStalls", "0"},
-      {"issue.frontendStalls", "0"},
-      {"issue.backendStalls", "0"},
-      {"issue.portBusyStalls", "0"},
       {"branch.executed", "0"},
       {"branch.mispredict", "0"},
-      {"lsq.loadViolations", "0"}};
+      {"core.cycles", "0"},
+      {"core.flushes", "0"},
+      {"decode.earlyFlushes", "0"},
+      {"dispatch.rsStalls", "0"},
+      {"fetch.branchStalls", "0"},
+      {"issue.backendStalls", "0"},
+      {"issue.frontendStalls", "0"},
+      {"issue.portBusyStalls", "0"},
+      {"lsq.loadViolations", "0"},
+      {"rename.allocationStalls.GP", "0"},
+      {"rename.allocationStalls.FP", "0"},
+      {"rename.allocationStalls.PRED", "0"},
+      {"rename.allocationStalls.COND", "0"},
+      {"rename.lqStalls", "0"},
+      {"rename.robStalls", "0"},
+      {"rename.sqStalls", "0"},
+      {"rob.retired", "0"}};
 
   stats_.getGeneralSimulationStats(finalStatDump);
 
-  auto ipc2 = std::stoi(finalStatDump["retired"]) / static_cast<float>(ticks_);
+  auto ipc2 =
+      std::stoi(finalStatDump["rob.retired"]) / static_cast<float>(ticks_);
   std::ostringstream ipcStr2;
   ipcStr2 << std::setprecision(2) << ipc2;
   finalStatDump["ipc"] = ipcStr2.str();

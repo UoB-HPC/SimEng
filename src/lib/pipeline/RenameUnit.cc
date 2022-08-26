@@ -22,10 +22,14 @@ RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
   robStallsCntr_ = stats_.registerStat("rename.robStalls");
   lqStallsCntr_ = stats_.registerStat("rename.lqStalls");
   sqStallsCntr_ = stats_.registerStat("rename.sqStalls");
-  allocationStallsCntr_.push_back(stats_.registerStat("GP.allocationStalls"));
-  allocationStallsCntr_.push_back(stats_.registerStat("FP.allocationStalls"));
-  allocationStallsCntr_.push_back(stats_.registerStat("PRED.allocationStalls"));
-  allocationStallsCntr_.push_back(stats_.registerStat("COND.allocationStalls"));
+  allocationStallsCntr_.push_back(
+      stats_.registerStat("rename.allocationStalls.GP"));
+  allocationStallsCntr_.push_back(
+      stats_.registerStat("rename.allocationStalls.FP"));
+  allocationStallsCntr_.push_back(
+      stats_.registerStat("rename.allocationStalls.PRED"));
+  allocationStallsCntr_.push_back(
+      stats_.registerStat("rename.allocationStalls.COND"));
 }
 
 void RenameUnit::tick() {

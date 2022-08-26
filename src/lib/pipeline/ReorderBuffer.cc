@@ -23,7 +23,7 @@ ReorderBuffer::ReorderBuffer(
       loopDetectionThreshold_(loopDetectionThreshold),
       stats_(stats) {
   // Register stat counters
-  instructionsCommittedCntr_ = stats_.registerStat("retired");
+  instructionsCommittedCntr_ = stats_.registerStat("rob.retired");
   loadViolationsCntr_ = stats_.registerStat("lsq.loadViolations");
 }
 

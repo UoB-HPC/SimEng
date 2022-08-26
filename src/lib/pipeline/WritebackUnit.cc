@@ -14,7 +14,7 @@ WritebackUnit::WritebackUnit(
       flagMicroOpCommits_(flagMicroOpCommits),
       stats_(stats) {
   // Register stat counters
-  instructionsWrittenCntr_ = stats_.registerStat("µops.executed");
+  instructionsWrittenCntr_ = stats_.registerStat("writeback.µopsExecuted");
 }
 
 void WritebackUnit::tick() {
