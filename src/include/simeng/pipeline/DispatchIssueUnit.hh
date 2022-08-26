@@ -48,6 +48,14 @@ struct dependencyEntry {
   uint8_t operandIndex;
 };
 
+struct portStats {
+  uint64_t possibleIssuesCntr;
+  uint64_t actualIssuesCntr;
+  uint64_t frontendSlotStallsCntr;
+  uint64_t backendSlotStallsCntr;
+  uint64_t portBusySlotStallsCntr;
+};
+
 /** A dispatch/issue unit for an out-of-order pipelined processor. Reads
  * instruction operand and performs scoreboarding. Issues instructions to the
  * execution unit once ready. */
@@ -160,6 +168,8 @@ class DispatchIssueUnit {
 
   /** Statistics class id for portBusyStalls_ counter. */
   uint64_t portBusyStallsCntr_;
+
+  std::vector<portStats> portStats_ = {};
 };
 
 }  // namespace pipeline

@@ -93,7 +93,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           stats_),
       portAllocator_(portAllocator),
       clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
-      commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
+      commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()),
+      config_(config) {
   for (size_t i = 0; i < config["Execution-Units"].size(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};

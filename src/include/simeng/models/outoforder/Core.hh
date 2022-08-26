@@ -170,6 +170,9 @@ class Core : public simeng::Core {
 
   /** Statistics class id for flushes_ counter. */
   uint64_t flushesCntr_;
+
+  /** The YAML formatted config file. */
+  YAML::Node config_;
 };
 
 }  // namespace outoforder

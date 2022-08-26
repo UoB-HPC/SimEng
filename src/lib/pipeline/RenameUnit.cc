@@ -19,10 +19,13 @@ RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
       freeRegistersAvailable_(registerTypes),
       stats_(stats) {
   // Register stat counters
-  allocationStallsCntr_ = stats_.registerStat("rename.allocationStalls");
   robStallsCntr_ = stats_.registerStat("rename.robStalls");
   lqStallsCntr_ = stats_.registerStat("rename.lqStalls");
   sqStallsCntr_ = stats_.registerStat("rename.sqStalls");
+  allocationStallsCntr_.push_back(stats_.registerStat("GP.allocationStalls"));
+  allocationStallsCntr_.push_back(stats_.registerStat("FP.allocationStalls"));
+  allocationStallsCntr_.push_back(stats_.registerStat("PRED.allocationStalls"));
+  allocationStallsCntr_.push_back(stats_.registerStat("COND.allocationStalls"));
 }
 
 void RenameUnit::tick() {
@@ -92,8 +95,7 @@ void RenameUnit::tick() {
       if (freeRegistersAvailable_[reg.type] == 0) {
         // Not enough free registers available for this uop
         input_.stall(true);
-        allocationStalls_++;
-        stats_.incrementStat(allocationStallsCntr_, 1);
+        stats_.incrementStat(allocationStallsCntr_[reg.type], 1);
         return;
       }
       freeRegistersAvailable_[reg.type]--;
@@ -139,7 +141,6 @@ void RenameUnit::tick() {
   }
 }
 
-uint64_t RenameUnit::getAllocationStalls() const { return allocationStalls_; }
 uint64_t RenameUnit::getROBStalls() const { return robStalls_; }
 
 uint64_t RenameUnit::getLoadQueueStalls() const { return lqStalls_; }

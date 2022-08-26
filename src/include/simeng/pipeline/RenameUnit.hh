@@ -62,9 +62,9 @@ class RenameUnit {
    * file. */
   std::vector<uint8_t> freeRegistersAvailable_;
 
-  /** The number of cycles stalled due to inability to allocate enough
-   * destination registers. */
-  uint64_t allocationStalls_ = 0;
+  /** Statistics class id for allocationStalls_ counters. Each counter relates
+   * to a specific register type. */
+  std::vector<uint64_t> allocationStallsCntr_;
 
   /** The number of cycles stalled due to insufficient ROB space. */
   uint64_t robStalls_ = 0;
@@ -79,9 +79,6 @@ class RenameUnit {
 
   /** A reference to the Statistics class. */
   Statistics& stats_;
-
-  /** Statistics class id for allocationStalls_ counter. */
-  uint64_t allocationStallsCntr_;
 
   /** Statistics class id for robStalls_ counter. */
   uint64_t robStallsCntr_;

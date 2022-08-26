@@ -57,6 +57,15 @@ DispatchIssueUnit::DispatchIssueUnit(
   frontendStallsCntr_ = stats_.registerStat("issue.frontendStalls");
   backendStallsCntr_ = stats_.registerStat("issue.backendStalls");
   portBusyStallsCntr_ = stats_.registerStat("issue.portBusyStalls");
+  for (int p = 0; p < config["Ports"].size(); p++) {
+    std::string port_name = config["Ports"][p]["Portname"].as<std::string>();
+    portStats_.push_back(
+        {stats_.registerStat("issue.possibleIssues." + port_name),
+         stats_.registerStat("issue.actualIssues." + port_name),
+         stats_.registerStat("issue.frontendSlotStalls." + port_name),
+         stats_.registerStat("issue.backendSlotStalls." + port_name),
+         stats_.registerStat("issue.portBusySlotStalls." + port_name)});
+  }
 }
 
 void DispatchIssueUnit::tick() {
@@ -151,12 +160,20 @@ void DispatchIssueUnit::issue() {
       if (queue.size() > 0) {
         portBusyStalls_++;
         stats_.incrementStat(portBusyStallsCntr_, 1);
+        stats_.incrementStat(portStats_[i].portBusySlotStallsCntr, 1);
+        stats_.incrementStat(portStats_[i].backendSlotStallsCntr, 1);
       }
       continue;
     }
 
     if (queue.size() > 0) {
       auto& uop = queue.front();
+
+      for (const auto& avail : uop->getSupportedPorts()) {
+        stats_.incrementStat(portStats_[avail].possibleIssuesCntr, 1);
+      }
+      stats_.incrementStat(portStats_[i].actualIssuesCntr, 1);
+
       issuePorts_[i].getTailSlots()[0] = std::move(uop);
       queue.pop_front();
 
@@ -166,6 +183,11 @@ void DispatchIssueUnit::issue() {
 
       assert(rs.currentSize > 0);
       rs.currentSize--;
+    } else {
+      if (rs.currentSize != 0)
+        stats_.incrementStat(portStats_[i].backendSlotStallsCntr, 1);
+      else
+        stats_.incrementStat(portStats_[i].frontendSlotStallsCntr, 1);
     }
   }
 
