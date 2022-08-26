@@ -634,13 +634,8 @@ int ModelConfig::nodeChecker(const YAML::Node& node, const std::string& field,
 template <typename T>
 int ModelConfig::nodeChecker(YAML::Node node, const std::string& field,
                              const std::pair<T, T>& bounds, uint8_t expected,
-<<<<<<< HEAD
                              const T& default_value) {
-  // Check for the existance of the given node
-=======
-                             T default_value) {
   // Check for the existence of the given node
->>>>>>> 142bda6 (Typo corrections)
   if (!(node.IsDefined()) || node.IsNull()) {
     node = default_value;
     return 1;
