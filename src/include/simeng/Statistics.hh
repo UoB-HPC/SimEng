@@ -25,6 +25,9 @@ class Statistics {
   /** Write current region statistics to the set outfile. */
   void dumpStats(uint64_t dumpAddress);
 
+  /** Manually write a provided key, value pair to the outfile_. */
+  void manualOutput(std::string key, std::string value);
+
   /** Reset all region statistics back to 0. */
   void resetStats();
 

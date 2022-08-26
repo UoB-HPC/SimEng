@@ -36,6 +36,10 @@ void Statistics::dumpStats(uint64_t dumpAddress) {
   dumpCounter_++;
 }
 
+void Statistics::manualOutput(std::string key, std::string value) {
+  outfile_ << key << ": " << value << "\n";
+}
+
 void Statistics::resetStats() {
   for (int i = 0; i < regionStats_.size(); i++) regionStats_[i] = 0;
 }
