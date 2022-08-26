@@ -7769,9 +7769,10 @@ void Instruction::execute() {
         uint64_t mini[2] = {0};
         for (int i = 0; i < 2; i++) {
           uint64_t shifted_active = 1ull << ((i % 8) * 8);
-          if (p[i / 8] & shifted_active)
+          if (p[i / 8] & shifted_active) {
             mini[i] = memoryData[index].get<uint64_t>();
-          index++;
+            index++;
+          }
         }
 
         // Duplicate mini-vector into output vector
