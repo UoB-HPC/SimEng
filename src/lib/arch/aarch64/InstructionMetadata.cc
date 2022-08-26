@@ -1491,6 +1491,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_ST1_MXIPXX_H_S:
+      [[fallthrough]];
     case Opcode::AArch64_ST1_MXIPXX_V_S:
       // Access types are not defined
       operands[0].access = CS_AC_READ;

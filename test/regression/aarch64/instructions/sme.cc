@@ -135,6 +135,72 @@ TEST_P(InstSme, ld1w) {
 }
 
 TEST_P(InstSme, st1w) {
+  // Horizontal
+  initialHeapData_.resize(SVL / 4);
+  uint32_t* heap32 = reinterpret_cast<uint32_t*>(initialHeapData_.data());
+  std::vector<uint32_t> src = {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01};
+  fillHeap<uint32_t>(heap32, src, SVL / 16);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    sub sp, sp, #4095
+    mov x1, #0
+    mov x4, #0
+    addvl x4, x4, #1
+    ptrue p0.s
+
+    mov w12, #0
+    ld1w {za0h.s[w12, 0]}, p0/z, [x0, x1, lsl #2]
+    ld1w {za1h.s[w12, 1]}, p0/z, [x0, x1, lsl #2]
+    st1w {za0h.s[w12, 0]}, p0, [sp, x1, lsl #2]
+    st1w {za1h.s[w12, 1]}, p0, [x4]
+  )");
+  for (int i = 0; i < (SVL / 32); i++) {
+    EXPECT_EQ(
+        getMemoryValue<uint32_t>(process_->getStackPointer() - 4095 + (i * 4)),
+        src[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint32_t>((SVL / 8) + (i * 4)), src[i % 4]);
+  }
+  RUN_AARCH64(R"(
+    smstop
+  )");
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    smstart
+
+    mov x2, #0
+    mov x4, #8
+    addvl x2, x2, #1
+    udiv x2, x2, x4
+    mov x3, #4
+    whilelo p1.s, xzr, x2
+    mov x5, #800
+
+    mov w12, #0
+    ld1w {za3h.s[w12, 0]}, p1/z, [x0, x3, lsl #2]
+    st1w {za3h.s[w12, 0]}, p1, [x5]
+    ld1w {za1h.s[w12, 2]}, p1/z, [x0, x3, lsl #2]
+    st1w {za1h.s[w12, 2]}, p1, [x5, x3, lsl #2]
+  )");
+  for (int i = 0; i < (SVL / 64); i++) {
+    EXPECT_EQ(getMemoryValue<uint32_t>(800 + (i * 4)), src[i % 4]);
+    EXPECT_EQ(getMemoryValue<uint32_t>(800 + 16 + (i * 4)), src[i % 4]);
+  }
+  RUN_AARCH64(R"(
+    smstop
+  )");
+
   // Vertical
   initialHeapData_.resize(SVL / 4);
   uint32_t* heap32_vert = reinterpret_cast<uint32_t*>(initialHeapData_.data());
@@ -166,8 +232,6 @@ TEST_P(InstSme, st1w) {
     EXPECT_EQ(
         getMemoryValue<uint32_t>(process_->getStackPointer() - 4095 + (i * 4)),
         src_vert[i % 4]);
-  }
-  for (int i = 0; i < (SVL / 32); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>((SVL / 8) + (i * 4)), src_vert[i % 4]);
   }
   RUN_AARCH64(R"(
@@ -198,8 +262,6 @@ TEST_P(InstSme, st1w) {
   )");
   for (int i = 0; i < (SVL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + (i * 4)), src_vert[i % 4]);
-  }
-  for (int i = 0; i < (SVL / 64); i++) {
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + 16 + (i * 4)), src_vert[i % 4]);
   }
   RUN_AARCH64(R"(
