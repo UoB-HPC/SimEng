@@ -30,7 +30,7 @@ TEST_P(InstSme, fmopa) {
     udiv x0, x0, x1
     whilelo p2.s, xzr, x0
 
-    fmopa za2.s, p2/m, p0/m, z3.s, z4.s
+    fmopa za2.s, p0/m, p2/m, z3.s, z4.s
   )");
   for (int i = 0; i < (SVL / 32); i++) {
     CHECK_MAT_ROW(ARM64_REG_ZAS0, i, float,

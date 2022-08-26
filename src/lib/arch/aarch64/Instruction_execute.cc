@@ -1779,22 +1779,20 @@ void Instruction::execute() {
         const float* zm = operands[rowCount + 3].getAsVector<float>();
 
         // zn is row, zm is col
-        for (int col = 0; col < rowCount; col++) {
-          const float* zadaRow = operands[col].getAsVector<float>();
+        for (int row = 0; row < rowCount; row++) {
           float outRow[64] = {0};
-          uint64_t shifted_active_col = 1ull << ((col % 16) * 4);
-          // If Col element active
-          if (pm[col / 16] & shifted_active_col) {
-            // Iterate through row
-            for (int row = 0; row < rowCount; row++) {
-              outRow[row] = zadaRow[row];
-              uint64_t shifted_active_row = 1ull << ((row % 16) * 4);
-              // If row element active
-              if (pn[row / 16] & shifted_active_row)
-                outRow[row] += zn[row] * zm[col];
-            }
+          uint64_t shifted_active_row = 1ull << ((row % 16) * 4);
+          const float* zadaRow = operands[row].getAsVector<float>();
+          for (int col = 0; col < rowCount; col++) {
+            float zadaElem = zadaRow[col];
+            uint64_t shifted_active_col = 1ull << ((col % 16) * 4);
+            if ((pm[col / 16] & shifted_active_col) &&
+                (pn[row / 16] & shifted_active_row))
+              outRow[col] = zadaElem + (zn[row] * zm[col]);
+            else
+              outRow[col] = zadaElem;
           }
-          results[col] = {outRow, 256};
+          results[row] = {outRow, 256};
         }
         break;
       }
@@ -2407,6 +2405,12 @@ void Instruction::execute() {
             out[i] = 0;
           }
         }
+
+        // printf("LD1_H = {");
+        // for (int i = 0; i < partition_num; i++) {
+        //   printf("%d, ", out[i]);
+        // }
+        // printf("}\n");
 
         // All Slice vectors are added to results[] so need to update the
         // correct one
@@ -4124,6 +4128,12 @@ void Instruction::execute() {
             index++;
           }
         }
+
+        // printf("ST1_V = {");
+        // for (int i = 0; i < index; i++) {
+        //   printf("%d, ", memoryData[i].get<uint32_t>());
+        // }
+        // printf("}\n");
         break;
       }
       case Opcode::AArch64_SST1W_D_IMM: {  // st1w {zt.d}, pg, [zn.d{, #imm}]
