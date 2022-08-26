@@ -109,7 +109,7 @@ TEST_F(GenericPredictorTest, GlobalIndexing) {
   // Ensure default behaviour for first encounter
   auto prediction = predictor.predict(0x1F, BranchType::Conditional, 0);
   EXPECT_FALSE(prediction.taken);
-  EXPECT_EQ(prediction.target, 0);
+  EXPECT_EQ(prediction.target, 0x23);
   // Set entry in BTB
   predictor.update(0x1F, true, 0xAB, BranchType::Conditional);
 
@@ -122,7 +122,7 @@ TEST_F(GenericPredictorTest, GlobalIndexing) {
   // Ensure default behaviour for re-encounter but with different global history
   prediction = predictor.predict(0x1F, BranchType::Conditional, 0);
   EXPECT_FALSE(prediction.taken);
-  EXPECT_EQ(prediction.target, 0);
+  EXPECT_EQ(prediction.target, 0x23);
   // Set entry in BTB
   predictor.update(0x1F, true, 0xBA, BranchType::Conditional);
 
