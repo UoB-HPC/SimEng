@@ -1175,12 +1175,15 @@ class sveHelp {
       std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const uint64_t* pn = operands[0].getAsVector<uint64_t>();
-    const T* pm = operands[1].getAsVector<T>();
+    const uint64_t* pm = operands[1].getAsVector<uint64_t>();
     const uint32_t wa = operands[2].get<uint32_t>();
     const uint32_t imm = metadata.operands[2].sme_index.disp;
 
+    uint32_t index = wa + imm;
+    uint64_t shifted_active = 1ull << ((index % (64 / sizeof(T))) * sizeof(T));
+
     std::array<uint64_t, 4> out = {0, 0, 0, 0};
-    if (pm[wa + imm]) {
+    if (pm[index / (64 / sizeof(T))] & shifted_active) {
       out = {pn[0], pn[1], pn[2], pn[3]};
     }
 
