@@ -7,7 +7,43 @@ namespace {
 
 using InstSme = AArch64RegressionTest;
 
+/** WARNING: Need to `smstop` at the end of each test, on its own, so non-sme
+ * tests have the correct VL in execution stage. */
 #if SIMENG_LLVM_VERSION >= 14
+TEST_P(InstSme, fmopa) {
+  // 32-bit
+  RUN_AARCH64(R"(
+    smstart
+
+    fdup z1.s, #2.0
+    fdup z2.s, #5.0
+    ptrue p0.s
+    ptrue p1.s
+
+    fmopa za0.s, p0/m, p1/m, z1.s, z2.s
+
+    fdup z3.s, #3.0
+    fdup z4.s, #8.0
+    mov x0, #0
+    mov x1, #8
+    addvl x0, x0, #1
+    udiv x0, x0, x1
+    whilelo p2.s, xzr, x0
+
+    fmopa za2.s, p2/m, p0/m, z3.s, z4.s
+  )");
+  for (int i = 0; i < (SVL / 32); i++) {
+    CHECK_MAT_ROW(ARM64_REG_ZAS0, i, float,
+                  fillNeon<float>({10.0f}, (SVL / 8)));
+    CHECK_MAT_ROW(ARM64_REG_ZAS2, i, float,
+                  fillNeon<float>({24.0f}, (SVL / 16)));
+  }
+
+  RUN_AARCH64(R"(
+    smstop
+  )");
+}
+
 TEST_P(InstSme, ld1w) {
   // Horizontal
   initialHeapData_.resize(SVL / 4);
@@ -48,8 +84,6 @@ TEST_P(InstSme, ld1w) {
   CHECK_MAT_ROW(ARM64_REG_ZAS1, 1, uint64_t,
                 fillNeonCombined<uint64_t>(
                     {0x12345678DEADBEEF, 0xABCDEF0198765432}, {0}, SVL / 8));
-  // Need to run this post tests so ZA isn't zero-ed out
-  // Needs running so non-sme tests have the correct VL in execution stage
   RUN_AARCH64(R"(
     smstop
   )");
@@ -95,8 +129,6 @@ TEST_P(InstSme, ld1w) {
       ARM64_REG_ZAS1, 1, uint32_t,
       fillNeonCombined<uint32_t>(
           {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, {0}, SVL / 8));
-  // Need to run this post tests so ZA isn't zero-ed out
-  // Needs running so non-sme tests have the correct VL in execution stage
   RUN_AARCH64(R"(
     smstop
   )");

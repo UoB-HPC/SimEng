@@ -1767,6 +1767,37 @@ void Instruction::execute() {
             neonHelp::vecFmlsIndexed_3vecs<float, 4>(operands, metadata);
         break;
       }
+      case Opcode::AArch64_FMOPA_MPPZZ_S: {  // fmopa zada.s, pn/m, pm/m, zn.s,
+                                             // zm.s
+        // SME
+        // TODO : Add checks to ensure SM and ZA in right mode. Raise exception
+        // if not.
+        const uint16_t rowCount = VL_bits / 32;
+        const uint64_t* pn = operands[rowCount].getAsVector<uint64_t>();
+        const uint64_t* pm = operands[rowCount + 1].getAsVector<uint64_t>();
+        const float* zn = operands[rowCount + 2].getAsVector<float>();
+        const float* zm = operands[rowCount + 3].getAsVector<float>();
+
+        // zn is row, zm is col
+        for (int col = 0; col < rowCount; col++) {
+          const float* zadaRow = operands[col].getAsVector<float>();
+          float outRow[64] = {0};
+          uint64_t shifted_active_col = 1ull << ((col % 16) * 4);
+          // If Col element active
+          if (pm[col / 16] & shifted_active_col) {
+            // Iterate through row
+            for (int row = 0; row < rowCount; row++) {
+              outRow[row] = zadaRow[row];
+              uint64_t shifted_active_row = 1ull << ((row % 16) * 4);
+              // If row element active
+              if (pn[row / 16] & shifted_active_row)
+                outRow[row] += zn[row] * zm[col];
+            }
+          }
+          results[col] = {outRow, 256};
+        }
+        break;
+      }
       case Opcode::AArch64_FMOVDXHighr: {  // fmov xd, vn.d[1]
         results[0] = operands[0].getAsVector<double>()[1];
         break;

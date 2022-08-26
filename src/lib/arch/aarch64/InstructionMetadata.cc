@@ -638,13 +638,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
-    case Opcode::AArch64_LD1_MXIPXX_V_S:
-      [[fallthrough]];
-    case Opcode::AArch64_LD1_MXIPXX_H_S: {
-      // Lacking access specifiers
-      operands[0].access = CS_AC_WRITE;
-      operands[1].access = CS_AC_READ;
-    }
     case Opcode::AArch64_INCP_XP_B:
       [[fallthrough]];
     case Opcode::AArch64_INCP_XP_D:
@@ -1104,11 +1097,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       break;
     }
-    case Opcode::AArch64_ST1_MXIPXX_V_S:
-      // Access types are not defined
-      operands[0].access = CS_AC_READ;
-      operands[1].access = CS_AC_READ;
-      break;
     case Opcode::AArch64_SST1B_D_REAL:
       [[fallthrough]];
     case Opcode::AArch64_SST1D_REAL:
@@ -1495,6 +1483,32 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[4].access = CS_AC_READ;
       operands[5].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_LD1_MXIPXX_V_S:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1_MXIPXX_H_S: {
+      // Lacking access specifiers
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
+    }
+    case Opcode::AArch64_ST1_MXIPXX_V_S:
+      // Access types are not defined
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_FMOPA_MPPZZ_S: {
+      // Need to add access specifiers
+      // although operands[0] should be READ | WRITE, due to the implemented
+      // decode logic for SME tile destinations, the register will be added as
+      // both source and distination with just WRITE access.
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[4].access = CS_AC_READ;
+      operands[5].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_ZERO_M: {
       // Operands often mangled from ZA tile overlap aliasing in decode. Need to
       // re-extract relevant tiles from operandStr
