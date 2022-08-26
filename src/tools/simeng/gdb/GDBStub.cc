@@ -1,25 +1,8 @@
-#include <netinet/in.h>  // For sockaddr_in
-#include <string.h>
-#include <sys/socket.h>  // For socket functions
-#include <unistd.h>
+#include "simeng/GDBStub.hh"
 
-#include <cstdlib>
-#include <iostream>
-#include <regex>
+namespace simeng {
 
-#include "simeng/ArchitecturalRegisterFileSet.hh"
-#include "simeng/Core.hh"
-#include "simeng/MemoryInterface.hh"
-
-// colour codes for pretty printing
-#define RESET "\033[0m"
-#define CYAN "\033[36m"
-#define MAGENTA "\033[35m"
-
-std::vector<std::string> breakpoints;
-
-// converts bytes into 2 digit hex numbers
-std::string byteToHex(uint8_t byte) {
+std::string GDBStub::byteToHex(uint8_t byte) {
   std::string output = "00";
 
   int msb = byte / 16;
@@ -38,8 +21,7 @@ std::string byteToHex(uint8_t byte) {
   return output;
 }
 
-// converts hex into uint64_t, used for converting GDB's memory address
-uint64_t hexToInt(std::string hex) {
+uint64_t GDBStub::hexToInt(std::string hex) {
   int base = 1;
   uint64_t output = 0;
 
@@ -56,8 +38,7 @@ uint64_t hexToInt(std::string hex) {
   return output;
 }
 
-// converts uint64_t into RSP compliant hex, i.e. a series of 8x hex bytes
-std::string decToRSP(uint64_t dec) {
+std::string GDBStub::decToRSP(uint64_t dec) {
   std::string output;
 
   while (dec != 0) {
@@ -79,9 +60,7 @@ std::string decToRSP(uint64_t dec) {
   return output;
 }
 
-// computes a RSP compliant checksum from a packet
-// (sum of chars % 256, in a 2 digit hex)
-std::string computeChecksum(std::string packet) {
+std::string GDBStub::computeChecksum(std::string packet) {
   std::string output;
 
   int decimalChecksum = 0;
@@ -93,24 +72,24 @@ std::string computeChecksum(std::string packet) {
   return output;
 }
 
-// adds RSP compliant start and end characters, and a checksum
-std::string generateReply(std::string packet) {
+std::string GDBStub::generateReply(std::string packet) {
   std::string output = "$" + packet + "#" + computeChecksum(packet);
 
   return output;
 }
 
-// reads all registers from SimEng and returns an RSP compliant string
-std::string handleReadRegisters(simeng::ArchitecturalRegisterFileSet registers,
-                                simeng::Core& core) {
+std::string GDBStub::handleReadRegisters() {
+  simeng::ArchitecturalRegisterFileSet registers =
+      core_.getArchitecturalRegisterFileSet();
   std::string output = "";
+
   for (uint16_t i = 0; i < 32;
        i++) {  // general purpose registers 0-31, 31 = stack pointer
     uint64_t value = registers.get({0, i}).get<uint64_t>();
     output += decToRSP(value);
   }
 
-  output += decToRSP(core.getProgramCounter());  // program counter
+  output += decToRSP(core_.getProgramCounter());  // program counter
 
   output += byteToHex(
       registers.get({3, 0}).get<uint8_t>());  // NZCV (first 4 bits of cpsr)
@@ -120,22 +99,21 @@ std::string handleReadRegisters(simeng::ArchitecturalRegisterFileSet registers,
   return output;
 }
 
-// reads a single register and returns an RSP compliant string
-std::string handleReadSingleRegister(
-    std::string registerName, simeng::ArchitecturalRegisterFileSet registers) {
+std::string GDBStub::handleReadSingleRegister(std::string registerName) {
   uint16_t registerNumber = hexToInt(registerName);
-  uint64_t value = registers.get({0, registerNumber}).get<uint64_t>();
+  uint64_t value = core_.getArchitecturalRegisterFileSet()
+                       .get({0, registerNumber})
+                       .get<uint64_t>();
 
   return decToRSP(value);
 }
 
-// reads a SimEng memory location and returns an RSP compliant string
-std::string handleReadMemory(std::string address, std::string length,
-                             simeng::MemoryInterface& dataMemory) {
+std::string GDBStub::handleReadMemory(std::string hexAddress,
+                                      std::string length) {
   int numberOfBytes = std::stoi(length);
-  uint64_t intAddress = hexToInt(address);
+  uint64_t intAddress = hexToInt(hexAddress);
 
-  char* memoryPointer = dataMemory.getMemoryPointer();
+  char* memoryPointer = dataMemory_.getMemoryPointer();
   const char* ptr = memoryPointer + intAddress;
   uint8_t dest[numberOfBytes];
   memcpy(dest, ptr, numberOfBytes);
@@ -146,8 +124,7 @@ std::string handleReadMemory(std::string address, std::string length,
   return output;
 }
 
-// creates a breakpoint at the provided address
-void handleCreateBreakpoint(std::string type, std::string address) {
+void GDBStub::handleCreateBreakpoint(std::string type, std::string address) {
   if (stoi(type) > 1)
     std::cout << "Watchpoints not supported, no breakpoint created\n";
 
@@ -155,8 +132,7 @@ void handleCreateBreakpoint(std::string type, std::string address) {
   std::cout << "Breakpoint created at address 0x" << address << std::endl;
 }
 
-// removes breakpoints matching the provided address
-void handleRemoveBreakpoint(std::string type, std::string address) {
+void GDBStub::handleRemoveBreakpoint(std::string type, std::string address) {
   if (stoi(type) > 1)
     std::cout << "Watchpoints not supported, no breakpoint removed\n";
 
@@ -166,28 +142,23 @@ void handleRemoveBreakpoint(std::string type, std::string address) {
   std::cout << "Breakpoint(s) removed at address 0x" << address << std::endl;
 }
 
-// continues execution until the next breakpoint; does nothing if no breakpoints
-std::string handleContinue(simeng::Core& core,
-                           simeng::MemoryInterface& dataMemory) {
+std::string GDBStub::handleContinue() {
   if (breakpoints.size() == 0) return "";
 
-  bool breakpointFound = 0;
+  bool hitBreakpoint = 0;
 
-  while (!breakpointFound) {
-    core.tick();
-    dataMemory.tick();
+  while (!hitBreakpoint) {
+    core_.tick();
+    dataMemory_.tick();
     for (std::string breakpoint : breakpoints) {
-      if (hexToInt(breakpoint) == core.getProgramCounter()) breakpointFound = 1;
+      if (hexToInt(breakpoint) == core_.getProgramCounter()) hitBreakpoint = 1;
     }
   }
 
   return "S05";
 }
 
-// creates a socket and listens on a port provided by an argument
-// socket handling code taken from:
-// https://ncona.com/2019/04/building-a-simple-server-with-cpp/
-int openSocket(int port) {
+int GDBStub::openSocket(int port) {
   // Create a socket (IPv4, TCP)
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd == -1) {
@@ -226,7 +197,7 @@ int openSocket(int port) {
   return connection;
 }
 
-int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory) {
+int GDBStub::run() {
   int connection = openSocket(2425);
 
   char buffer[10000];
@@ -274,29 +245,26 @@ int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory) {
       if (packet == "?") {  // reason for halting
         response += generateReply("S05");
       } else if (packet == "s") {  // step one instruction
-        core.tick();
-        dataMemory.tick();
+        core_.tick();
+        dataMemory_.tick();
         response += generateReply("S05");
       } else if (packet == "c") {  // continue until next breakpoint
-        std::string message = handleContinue(core, dataMemory);
+        std::string message = handleContinue();
         response += generateReply(message);
       } else if (packet == "g") {  // read registers
-        std::string registers =
-            handleReadRegisters(core.getArchitecturalRegisterFileSet(), core);
+        std::string registers = handleReadRegisters();
         response += generateReply(registers);
       } else if (packet[0] == 'p') {  // read single register
         std::regex reg_regex("^p([0-9a-f]*)");
         std::smatch reg_match;
         regex_match(packet, reg_match, reg_regex);
-        std::string registerValue = handleReadSingleRegister(
-            reg_match[1], core.getArchitecturalRegisterFileSet());
+        std::string registerValue = handleReadSingleRegister(reg_match[1]);
         response += generateReply(registerValue);
       } else if (packet[0] == 'm') {  // read memory
         std::regex mem_regex("^m([0-9a-f]*),([0-9a-f]*)");
         std::smatch mem_match;
         regex_match(packet, mem_match, mem_regex);
-        std::string memoryValue =
-            handleReadMemory(mem_match[1], mem_match[2], dataMemory);
+        std::string memoryValue = handleReadMemory(mem_match[1], mem_match[2]);
         response += generateReply(memoryValue);
       } else if (packet[0] == 'Z' ||
                  packet[0] == 'z') {  // create/remove breakpoint
@@ -330,3 +298,4 @@ int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory) {
     std::cout << RESET;
   }
 }
+}  // namespace simeng

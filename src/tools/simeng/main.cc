@@ -124,7 +124,8 @@ int main(int argc, char** argv) {
   auto startTime = std::chrono::high_resolution_clock::now();
 
 #ifdef GDB_ENABLED
-  runGDBStub(*core, *dataMemory);
+  simeng::GDBStub GDBStub = simeng::GDBStub(*core, *dataMemory);
+  GDBStub.run();
 #else
   iterations = simulate(*core, *dataMemory, *instructionMemory);
 
