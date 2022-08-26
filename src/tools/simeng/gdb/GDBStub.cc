@@ -1,11 +1,11 @@
 #include <netinet/in.h>  // For sockaddr_in
-#include <string.h>      // For memset, stoi
+#include <string.h>
 #include <sys/socket.h>  // For socket functions
-#include <unistd.h>      // For read
+#include <unistd.h>
 
-#include <cstdlib>   // For exit() and EXIT_FAILURE
-#include <iostream>  // For cout
-#include <regex>     // For regex
+#include <cstdlib>
+#include <iostream>
+#include <regex>
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
@@ -72,9 +72,10 @@ std::string decToRSP(uint64_t dec) {
 
   output = output + std::string(16 - output.length(), '0');
 
-  for (int i = 0; i < output.length(); i += 2) {
+  for (uint i = 0; i < output.length(); i += 2) {
     std::swap(output[i], output[i + 1]);
   }
+
   return output;
 }
 
@@ -152,7 +153,6 @@ void handleCreateBreakpoint(std::string type, std::string address) {
 
   breakpoints.push_back(address);
   std::cout << "Breakpoint created at address 0x" << address << std::endl;
-  ;
 }
 
 // removes breakpoints matching the provided address
@@ -232,7 +232,7 @@ int runGDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory) {
   char buffer[10000];
 
   while (true) {
-    auto bytesRead = read(connection, buffer, 10000);
+    read(connection, buffer, 10000);
 
     // '+' is an acknowledgement of successful receipt of message
     // TODO: handle '-', no acknowledgement
