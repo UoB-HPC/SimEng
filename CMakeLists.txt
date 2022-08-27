@@ -190,7 +190,7 @@ if(SIMENG_ENABLE_TESTS)
     # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
 
   endif()
-  
+
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
   message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
