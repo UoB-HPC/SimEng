@@ -15,7 +15,7 @@ Fetch:
   Loop-Buffer-Size: 48
   Loop-Detection-Threshold: 4
 Process-Image:
-  Heap-Size: 503741824
+  Heap-Size: 1073741824
   Stack-Size: 1048576
 Register-Set:
   GeneralPurpose-Count: 96
