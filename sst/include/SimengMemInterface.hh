@@ -105,12 +105,12 @@ class SimengMemInterface : public MemoryInterface {
   };
 
   /**
-   * Structs AggregatedWriteRequest and AggregatedReadRequest are used to store
-   * information regarding the multiple SST::StandardMem::Request (Read or
-   * Write) a memory request from SimEng is split into if its size is greater
-   * than the cache line width. These structs are also used to represent SimEng
-   * requests which aren't split for ease of implementation.
-   */
+   * Structs AggregatedWriteRequest is used to store information regarding 
+   * the multiple SST::StandardMem::Request (Write) a memory request from SimEng
+   * is split into if its size is greater than the cache line width. 
+   * These structs are also used to represent SimEng write requests which aren't
+   * split for ease of implementation.
+  */
   struct AggregateWriteRequest : public SimengMemoryRequest {
     const RegisterValue data;
 
@@ -120,6 +120,13 @@ class SimengMemInterface : public MemoryInterface {
         : SimengMemoryRequest(target), data(data){};
   };
 
+  /**
+   * Structs AggregatedReadRequest is used to store information regarding 
+   * the multiple SST::StandardMem::Request (Read) a memory request from SimEng
+   * is split into if its size is greater than the cache line width. 
+   * These structs are also used to represent SimEng read requests which aren't
+   * split for ease of implementation.
+  */
   struct AggregateReadRequest : public SimengMemoryRequest {
     const uint64_t id;
     /**
