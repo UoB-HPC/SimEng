@@ -1,7 +1,8 @@
+// DO NOT MOVE FROM TOP OF FILE
+#include <sst/core/sst_config.h>
 #include <sst/core/component.h>
 #include <sst/core/eli/elementinfo.h>
 #include <sst/core/interfaces/stdMem.h>
-#include <sst/core/sst_config.h>
 
 #include <chrono>
 #include <cmath>

@@ -1,6 +1,7 @@
-#include "SimengMemInterface.hh"
-
+// DO NOT MOVE FROM TOP OF FILE
 #include <sst/core/sst_config.h>
+
+#include "SimengMemInterface.hh"
 
 #include <iostream>
 
