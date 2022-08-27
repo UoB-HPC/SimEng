@@ -54,13 +54,13 @@ class SimengCoreWrapper : public SST::Component {
   ~SimengCoreWrapper();
 
   /** SST lifecycle methods (in-order of invocation) overriden from
-   * SST::Component */
+   * SST::Component. */
 
   /**
    * This is the init lifecycle method present in all SST::Components.
    * Here it is overriden to include init calls to all other SST::Components
    * which are contained inside SimengCoreWrapper. It is neccessary call all
-   * lifecycle methods for SST::Component(s)
+   * lifecycle methods for SST::Component(s).
    */
   void init(unsigned int phase);
 
@@ -68,7 +68,7 @@ class SimengCoreWrapper : public SST::Component {
    * This is the setup lifecycle method present in all SST::Components.
    * Here it is overriden to include setup calls to all other SST::Components
    * which are contained inside SimengCoreWrapper. It is neccessary call all
-   * lifecycle methods for SST::Component(s)
+   * lifecycle methods for SST::Component(s).
    */
   void setup();
 

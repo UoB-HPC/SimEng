@@ -26,13 +26,13 @@ namespace SST {
 
 namespace SSTSimeng {
 
-/** A Memeory interface used by SimEng to communicate with SST's memory model */
+/** A memory interface used by SimEng to communicate with SST's memory model. */
 class SimengMemInterface : public MemoryInterface {
  public:
   SimengMemInterface(StandardMem* mem, uint64_t cl, uint64_t max_addr,
                      SST::Output* out);
   /** Send Simeng's processImage to SST memory backend during `init` lifecycle
-   * phase of SST */
+   * phase of SST. */
   void sendProcessImageToSST(const span<char> image);
 
   /**
@@ -54,7 +54,7 @@ class SimengMemInterface : public MemoryInterface {
   /** Clear the completed reads. */
   void clearCompletedReads();
 
-  /** Returns true if there are any oustanding memory requests */
+  /** Returns true if there are any oustanding memory requests. */
   bool hasPendingRequests() const;
 
   /**
@@ -182,7 +182,7 @@ class SimengMemInterface : public MemoryInterface {
       AggregateReadRequest* aggrReq, uint64_t addrStart, uint64_t size);
 
   /** This method is used to aggregate responses from multiple read request into
-   * one response */
+   * one response. */
   void aggregatedReadResponses(AggregateReadRequest* aggrReq);
 
   /** Get the number of cache lines needed incase the size of a memory request
