@@ -29,17 +29,23 @@ target_compile_definitions(sstsimeng PUBLIC SIMENG_ENABLE_SST __STDC_FORMAT_MACR
 # The commmand had to be replaced as some extra flags added using target_include_directories
 target_link_options(sstsimeng PUBLIC -fno-common LINKER:-undefined,dynamic_lookup)
 
-target_link_libraries(sstsimeng PUBLIC libsimeng yaml-cpp dl bfd)
+# Linking yaml and libsimeng.so libraries to sstsimeng.so
+target_link_libraries(sstsimeng PUBLIC libsimeng yaml-cpp)
 
 set(SST_SIMENG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/sst")
 set(SST_REGISTER_BASE_COMMAND "sstsimeng sstsimeng_LIBDIR=${SST_SIMENG_INSTALL_DIR}")
 set(SST_REGISTER_ELEMENT_COMMAND "SST_ELEMENT_SOURCE sstsimeng=${SST_SIMENG_INSTALL_DIR}")
 
+# Install libsstsimeng.so library into <path_to_simeng_install_dir>/sst
 install(TARGETS sstsimeng DESTINATION sst)
+# Install SimengCoreWrapper.hh and SimengMemInterface.hh into <path_to_simeng_install_dir>/include
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include
         DESTINATION ${SST_SIMENG_INSTALL_DIR})
+# Install SST config into <path_to_simeng_install_dir>/config
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/config
         DESTINATION ${SST_SIMENG_INSTALL_DIR})
 
+# Execute the sst-register command from the command-line to register the sstsimeng
+# library with SST.
 install(CODE "execute_process(COMMAND sst-register ${SST_REGISTER_BASE_COMMAND} COMMAND_ECHO STDOUT)")
 install(CODE "execute_process(COMMAND sst-register ${SST_REGISTER_ELEMENT_COMMAND} COMMAND_ECHO STDOUT)")
