@@ -45,12 +45,6 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
 
 SimengCoreWrapper::~SimengCoreWrapper() {}
 
-/**
- * This is the setup lifecycle method present in all SST::Components
- * Here it is overriden to include setup calls to all other SST::Components 
- * which are contained inside SimengCoreWrapper. It is neccessary call all lifecycle
- * methods for SST::Component(s)
- */
 void SimengCoreWrapper::setup() {
   mem->setup();
   output.verbose(CALL_INFO, 1, 0, "Memory setup complete\n");
@@ -87,12 +81,6 @@ void SimengCoreWrapper::finish() {
     delete[] process_memory;
 }
 
-/**
- * This is the init lifecycle method present in all SST::Components
- * Here it is overriden to include init calls to all other SST::Components 
- * which are contained inside SimengCoreWrapper. It is neccessary call all lifecycle
- * methods for SST::Component(s)
- */
 void SimengCoreWrapper::init(unsigned int phase) {
     mem->init(phase);
     /** Init can have multiple phases, only fabricate the core once at phase 0 */
@@ -142,7 +130,7 @@ void SimengCoreWrapper::fabricateSimengCore() {
     if (config["Core"]["Simulation-Mode"].as<std::string>() == "inorder") {
       output.fatal(CALL_INFO, 1, 0, "SimEng SST build does not support in-order mode yet!\n");
     }
-    
+
     if (config["Core"]["Simulation-Mode"].as<std::string>() ==
                "outoforder") {
       mode = SimulationMode::OutOfOrder;

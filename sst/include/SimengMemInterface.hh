@@ -72,7 +72,15 @@ class SimengMemInterface: public MemoryInterface {
             public:
                 SimengMemHandlers(SimengMemInterface& interface, SST::Output* out):StandardMem::RequestHandler(out), mem_interface(interface) {}
                 ~SimengMemHandlers() {}
+                /**
+                 * Overloaded instance of handle method to handle read request responses overriden
+                 * to aggregate responses and send them back to SimEng.
+                 */
                 void handle(StandardMem::ReadResp* resp) override;
+                /**
+                 * Overloaded instance of handle method to handle write request responses overriden
+                 * to delete the incoming responses as SimEng does not have any use for it.
+                 */
                 void handle(StandardMem::WriteResp* resp) override;
                 SimengMemInterface& mem_interface;
         };

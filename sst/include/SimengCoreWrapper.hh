@@ -52,12 +52,41 @@ class SimengCoreWrapper: public SST::Component {
         ~SimengCoreWrapper();
 
         /** SST lifecycle methods (in-order of invocation) overriden from SST::Component */
+
+        /**
+         * This is the init lifecycle method present in all SST::Components.
+         * Here it is overriden to include init calls to all other SST::Components 
+         * which are contained inside SimengCoreWrapper. It is neccessary call all lifecycle
+         * methods for SST::Component(s)
+        */
         void init(unsigned int phase);
+
+        /**
+         * This is the setup lifecycle method present in all SST::Components.
+         * Here it is overriden to include setup calls to all other SST::Components 
+         * which are contained inside SimengCoreWrapper. It is neccessary call all lifecycle
+         * methods for SST::Component(s)
+        */
         void setup();
+
+        /** 
+         * This is the finish lifecycle method present in all SST::Components.
+         * Here it is overriden to finish statistics about the SimEng simulation.
+        */
         void finish();
 
-        /** Handler methods overriden from SST::Component */
+        /**
+         * The clockTick is a method present in all SST::Components. This fuction
+         * is called everytime the SST clock ticks. The current clock cylce is passed
+         * as an argument by SST. The SimEng core ticks in this method.
+        */
         bool clockTick( SST::Cycle_t currentCycle );
+        
+        /**
+         * This handle event method is registered to StandardMem interface is called
+         * everytime a memory request is forwarded by the interface. This functions acts a callback
+         * and invokes SimengMemHandlers on the memory request.
+         */
         void handleEvent( StandardMem::Request* ev);
 
         SST_ELI_REGISTER_COMPONENT(
@@ -105,6 +134,7 @@ class SimengCoreWrapper: public SST::Component {
         std::chrono::high_resolution_clock::time_point start_time;
 
         SimengMemInterface::SimengMemHandlers* handlers;
+        /** Method used to assemble SimEng core. */
         void fabricateSimengCore();
 };
 
