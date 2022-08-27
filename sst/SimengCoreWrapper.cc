@@ -140,9 +140,10 @@ void SimengCoreWrapper::fabricateSimengCore() {
     }
 
     if (config["Core"]["Simulation-Mode"].as<std::string>() == "inorder") {
-      mode = SimulationMode::InOrderPipelined;
-      modeString = "Emulation";
-    } else if (config["Core"]["Simulation-Mode"].as<std::string>() ==
+      output.fatal(CALL_INFO, 1, 0, "SimEng SST build does not support in-order mode yet!\n");
+    }
+    
+    if (config["Core"]["Simulation-Mode"].as<std::string>() ==
                "outoforder") {
       mode = SimulationMode::OutOfOrder;
       modeString = "Out-of-Order";
@@ -206,24 +207,16 @@ void SimengCoreWrapper::fabricateSimengCore() {
       }
     }
 
-    switch (mode) {
-      case SimulationMode::OutOfOrder: {
+    if (mode == SimulationMode::OutOfOrder) {
         modeString = "Out-of-Order";
         core = std::make_unique<simeng::models::outoforder::Core>(
             *instruction_memory, *data_memory, processMemorySize, entryPoint, *arch,
             *predictor, *port_allocator, rsArrangement, config);
-        break;
-      }
-      case SimulationMode::InOrderPipelined: {
-          output.fatal(CALL_INFO, 1, 0, "SimEng SST build does not support in-order mode yet!\n");
-      }
-      default: {
+    } else {
         modeString = "Emulation";
         core = std::make_unique<simeng::models::emulation::Core>(
             *instruction_memory, *data_memory, entryPoint, processMemorySize, *arch);
-        break;
-      }
-    };
+    }
 
     simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen(config);
     // Create the Special Files directory if indicated to do so in Config
