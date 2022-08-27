@@ -1,5 +1,7 @@
-// DO NOT MOVE FROM TOP OF FILE
+// clang-format off
+// DO NOT MOVE FROM TOP OF FILE - https://github.com/sstsimulator/sst-core/issues/865
 #include <sst/core/sst_config.h>
+// clang-format on
 
 #include "SimengCoreWrapper.hh"
 
