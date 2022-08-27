@@ -48,6 +48,13 @@ namespace SST {
 
 namespace SSTSimeng {
 
+/**
+ * A Wrapper class registered as a custom SST::Component to participate in an SST simulation.
+ * The SimEng core as well as componets/interfaces from SST required to ensure a succesful
+ * integration are instantiated and configured in this class as well. This class acts as the 
+ * point of main contact for clock ticks recieved from SST and hence is also responsible for
+ * ticking the SimEng core and other classes assosciated to it.
+*/
 class SimengCoreWrapper : public SST::Component {
  public:
   SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params);
@@ -92,11 +99,19 @@ class SimengCoreWrapper : public SST::Component {
    */
   void handleEvent(StandardMem::Request* ev);
 
+  /**
+   * SST supplied MACRO used to register custom SST:Components with
+   * the SST Core. 
+   */
   SST_ELI_REGISTER_COMPONENT(SimengCoreWrapper, "sstsimeng", "simengcore",
                              SST_ELI_ELEMENT_VERSION(1, 0, 0),
                              "Simeng core wrapper for SST",
                              COMPONENT_CATEGORY_PROCESSOR)
 
+  /**
+   * SST supplied MACRO used to document all parameters needed by
+   * a custom SST:Component.
+   */
   SST_ELI_DOCUMENT_PARAMS(
       {"config_path", "Path to Simeng YAML config file (string)", ""},
       {"executable_path",
@@ -107,12 +122,30 @@ class SimengCoreWrapper : public SST::Component {
       {"max_addr_memory", "Maximum address that memory can access (int)"}, )
 
  private:
-  // SST properties
+  /** SST properties */
+  
+  /**
+   * SST defined output class used to output information to standard output.
+   * This class has in-built method for different levels of severity and can also
+   * be configured to output information like line-number and filename.
+   */
   SST::Output output;
+
+  /**
+   * SST clock for the component register with the custom component 
+   * during instantiation using the registerClock method provided
+   * by SST.
+   */
   TimeConverter* clock;
+
+  /**
+   * SST::Interfaces::StandardMem interface responsible for convering 
+   * SST::StandardMem::Request(s) into SST memory events to be passed
+   * down the memory heirarchy.
+   */
   StandardMem* mem;
 
-  // Simeng properties
+  /** Simeng properties */
   std::unique_ptr<simeng::Core> core;
   std::string config_path;
   std::string executable_path;
@@ -133,6 +166,7 @@ class SimengCoreWrapper : public SST::Component {
   int size;
   std::chrono::high_resolution_clock::time_point start_time;
 
+  /** Reference to memory request handler class defined in SimengMemInterface */
   SimengMemInterface::SimengMemHandlers* handlers;
   /** Method used to assemble SimEng core. */
   void fabricateSimengCore();

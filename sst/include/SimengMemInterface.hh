@@ -143,7 +143,18 @@ class SimengMemInterface : public MemoryInterface {
   };
 
  private:
+  /**
+   * SST defined output class used to output information to standard output.
+   * This class has in-built method for different levels of severity and can also
+   * be configured to output information like line-number and filename.
+   */
   SST::Output* output;
+
+  /**
+   * SST::Interfaces::StandardMem interface responsible for convering 
+   * SST::StandardMem::Request(s) into SST memory events to be passed
+   * down the memory heirarchy.
+   */
   StandardMem* mem;
 
   uint64_t tickCounter = 0;
