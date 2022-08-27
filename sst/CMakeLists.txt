@@ -29,9 +29,7 @@ target_compile_definitions(sstsimeng PUBLIC SIMENG_ENABLE_SST __STDC_FORMAT_MACR
 # The commmand had to be replaced as some extra flags added using target_include_directories
 target_link_options(sstsimeng PUBLIC -fno-common LINKER:-undefined,dynamic_lookup)
 
-
 target_link_libraries(sstsimeng PUBLIC libsimeng yaml-cpp dl bfd)
-
 
 set(SST_SIMENG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/sst")
 set(SST_REGISTER_BASE_COMMAND "sstsimeng sstsimeng_LIBDIR=${SST_SIMENG_INSTALL_DIR}")
