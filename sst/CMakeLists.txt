@@ -1,4 +1,4 @@
-set(SIMENG_SST_SOURCES SimengCoreWrapper.cc SimengMemInterface.cc backward.cc)
+set(SIMENG_SST_SOURCES SimengCoreWrapper.cc SimengMemInterface.cc)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
 add_library(sstsimeng SHARED ${SIMENG_SST_SOURCES})
