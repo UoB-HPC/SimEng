@@ -105,12 +105,12 @@ class SimengMemInterface : public MemoryInterface {
   };
 
   /**
-   * Structs AggregatedWriteRequest is used to store information regarding 
+   * Structs AggregatedWriteRequest is used to store information regarding
    * the multiple SST::StandardMem::Request (Write) a memory request from SimEng
-   * is split into if its size is greater than the cache line width. 
+   * is split into if its size is greater than the cache line width.
    * These structs are also used to represent SimEng write requests which aren't
    * split for ease of implementation.
-  */
+   */
   struct AggregateWriteRequest : public SimengMemoryRequest {
     const RegisterValue data;
 
@@ -121,12 +121,12 @@ class SimengMemInterface : public MemoryInterface {
   };
 
   /**
-   * Structs AggregatedReadRequest is used to store information regarding 
+   * Structs AggregatedReadRequest is used to store information regarding
    * the multiple SST::StandardMem::Request (Read) a memory request from SimEng
-   * is split into if its size is greater than the cache line width. 
+   * is split into if its size is greater than the cache line width.
    * These structs are also used to represent SimEng read requests which aren't
    * split for ease of implementation.
-  */
+   */
   struct AggregateReadRequest : public SimengMemoryRequest {
     const uint64_t id;
     /**
@@ -145,13 +145,13 @@ class SimengMemInterface : public MemoryInterface {
  private:
   /**
    * SST defined output class used to output information to standard output.
-   * This class has in-built method for different levels of severity and can also
-   * be configured to output information like line-number and filename.
+   * This class has in-built method for different levels of severity and can
+   * also be configured to output information like line-number and filename.
    */
   SST::Output* output;
 
   /**
-   * SST::Interfaces::StandardMem interface responsible for convering 
+   * SST::Interfaces::StandardMem interface responsible for convering
    * SST::StandardMem::Request(s) into SST memory events to be passed
    * down the memory heirarchy.
    */

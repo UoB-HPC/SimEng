@@ -49,12 +49,13 @@ namespace SST {
 namespace SSTSimeng {
 
 /**
- * A Wrapper class registered as a custom SST::Component to participate in an SST simulation.
- * The SimEng core as well as componets/interfaces from SST required to ensure a succesful
- * integration are instantiated and configured in this class as well. This class acts as the 
- * point of main contact for clock ticks recieved from SST and hence is also responsible for
- * ticking the SimEng core and other classes assosciated to it.
-*/
+ * A Wrapper class registered as a custom SST::Component to participate in an
+ * SST simulation. The SimEng core as well as componets/interfaces from SST
+ * required to ensure a succesful integration are instantiated and configured in
+ * this class as well. This class acts as the point of main contact for clock
+ * ticks recieved from SST and hence is also responsible for ticking the SimEng
+ * core and other classes assosciated to it.
+ */
 class SimengCoreWrapper : public SST::Component {
  public:
   SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params);
@@ -101,7 +102,7 @@ class SimengCoreWrapper : public SST::Component {
 
   /**
    * SST supplied MACRO used to register custom SST:Components with
-   * the SST Core. 
+   * the SST Core.
    */
   SST_ELI_REGISTER_COMPONENT(SimengCoreWrapper, "sstsimeng", "simengcore",
                              SST_ELI_ELEMENT_VERSION(1, 0, 0),
@@ -123,23 +124,23 @@ class SimengCoreWrapper : public SST::Component {
 
  private:
   /** SST properties */
-  
+
   /**
    * SST defined output class used to output information to standard output.
-   * This class has in-built method for different levels of severity and can also
-   * be configured to output information like line-number and filename.
+   * This class has in-built method for different levels of severity and can
+   * also be configured to output information like line-number and filename.
    */
   SST::Output output;
 
   /**
-   * SST clock for the component register with the custom component 
+   * SST clock for the component register with the custom component
    * during instantiation using the registerClock method provided
    * by SST.
    */
   TimeConverter* clock;
 
   /**
-   * SST::Interfaces::StandardMem interface responsible for convering 
+   * SST::Interfaces::StandardMem interface responsible for convering
    * SST::StandardMem::Request(s) into SST memory events to be passed
    * down the memory heirarchy.
    */
