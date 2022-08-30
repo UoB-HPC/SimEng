@@ -89,3 +89,35 @@ An example of its use to filter the aarch64 regression test suite:
    ./test/regression/aarch64/regression-aarch64 --gtest_filter="*InstNeon*"
 
 This applied filter would only run those tests in the aarch64 regression test suite with the *InstNeon* string in their full test name.
+
+GDB Support
+-----------
+
+In order to help debug binaries, SimEng includes a GDB stub which can be connected to via GDB's remote debugging feature. Using this, it is possible to run a binary on SimEng, and use GDB to step through the program one instruction at a time, or set break points and continue execution until those breakpoints, while being able to inspect the registers and memory of SimEng.
+
+In order to connect SimEng to GDB, please follow these instructions:
+
+#. Ensure that you have gdb-multiarch installed by typing ``gdb-multiarch -v``, otherwise install it using your favourite package manager. (N.B. if you are running this on a machine that matches the architecture that SimEng is running, then a default gdb install should suffice - just replace instances of ``gdb-multiarch`` in these instructions with ``gdb``.)
+
+#. When building SimEng, include the parameter ``-DSIMENG_ENABLE_GDB=ON``, and otherwise continue to build and install SimEng as you would normally.
+
+#. Run SimEng as you would normally, including a config file and the binary you would like to debug.  The console's output should say ``Started listening on port 2424``.
+
+#. In another console window, make sure you are in the same folder as the binary you are debugging, and run ``gdb-multiarch <binary name>``.  This should give you a ``(gdb)`` prompt after having read in the symbols from your binary.
+
+#. In the GDB shell, type ``set architecture aarch64``. (N.B. this step is not needed if you are aready running on an aarch64 processor).
+
+#. In the GDB shell, type ``target remote localhost:2424``.  After a small delay, the SimEng console should print ``Connection to GDB client established, debugging in progress`` and the gdb shell should print the memory address of ``_start``, and provide you with a ``(gdb)`` prompt.
+
+#. Continue to use GDB as you would normally, noting what SimEng currently supports:
+
+   * Setting breakpoints (but not watchpoints)
+   * Continuing until a breakpoint or the end of the program
+   * Stepping through, including one instruction at a time
+   * Reading registers (currently only general purpose registers) and memory
+   * The TUI, showing registers, assembly or source code (if applicable)
+   * N.B. ``run``, ``start``, arguments are not currently supported
+
+#. Once SimEng has finished running your binary, use ctrl+c to kill the SimEng instance.  At this point, GDB should close its connection to SimEng.  Simply re-run SimEng and continue in GDB from the ``target remote localhost:2424`` command.
+
+Please note that this is a small subset of what GDB can do, and this is a work in progress.  We aim to add more features in time.
