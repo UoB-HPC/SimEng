@@ -16,7 +16,8 @@
 // colour codes for pretty printing
 #define RESET "\033[0m"
 #define CYAN "\033[36m"
-#define MAGENTA "\033[35m"
+#define GREEN "\033[32m"
+#define RED "\033[31m"
 
 namespace simeng {
 
@@ -78,6 +79,9 @@ class GDBStub {
    * Socket handling code taken from:
    * https://ncona.com/2019/04/building-a-simple-server-with-cpp/. */
   int openSocket(int port);
+
+  /** Boolean for if the runtime -v verbose flag has been set. */
+  bool verbose = 0;
 
   /** The core used for the simulation.  Currently only supports the
    * emulation core*/

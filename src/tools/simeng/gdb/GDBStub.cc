@@ -31,7 +31,7 @@ uint64_t GDBStub::hexToInt(std::string hex) {
     else if (hex[i] >= 'a' && hex[i] <= 'f')
       output += ((hex[i] - 87) * base);
     else
-      (std::cout << "non hex characters in input string");
+      std::cout << RED << "non hex characters in input string" << RESET;
     base *= 16;
   }
 
@@ -116,6 +116,11 @@ std::string GDBStub::handleReadMemory(std::string hexAddress,
   char* memoryPointer = dataMemory_.getMemoryPointer();
   const char* ptr = memoryPointer + intAddress;
   uint8_t dest[numberOfBytes];
+
+  if (verbose)
+    std::cout << "   Reading " << numberOfBytes << " bytes from memory address "
+              << intAddress << std::endl;
+
   memcpy(dest, ptr, numberOfBytes);
 
   std::string output;
@@ -126,20 +131,25 @@ std::string GDBStub::handleReadMemory(std::string hexAddress,
 
 void GDBStub::handleCreateBreakpoint(std::string type, std::string address) {
   if (stoi(type) > 1)
-    std::cout << "Watchpoints not supported, no breakpoint created\n";
+    std::cout << RED << "   Watchpoints not supported, no breakpoint created\n"
+              << RESET;
 
   breakpoints.push_back(address);
-  std::cout << "Breakpoint created at address 0x" << address << std::endl;
+  if (verbose)
+    std::cout << "   Breakpoint created at address 0x" << address << std::endl;
 }
 
 void GDBStub::handleRemoveBreakpoint(std::string type, std::string address) {
   if (stoi(type) > 1)
-    std::cout << "Watchpoints not supported, no breakpoint removed\n";
+    std::cout << RED << "   Watchpoints not supported, no breakpoint removed\n"
+              << RESET;
 
   for (uint i = 0; i < breakpoints.size(); i++) {
     if (breakpoints[i] == address) breakpoints.erase(breakpoints.begin() + i);
   }
-  std::cout << "Breakpoint(s) removed at address 0x" << address << std::endl;
+  if (verbose)
+    std::cout << "   Breakpoint(s) removed at address 0x" << address
+              << std::endl;
 }
 
 std::string GDBStub::handleContinue() {
@@ -162,7 +172,9 @@ int GDBStub::openSocket(int port) {
   // Create a socket (IPv4, TCP)
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd == -1) {
-    std::cout << "Failed to create socket. errno: " << errno << std::endl;
+    std::cout << RED << "   Failed to create socket. errno: " << errno
+              << std::endl
+              << RESET;
     exit(EXIT_FAILURE);
   }
 
@@ -172,8 +184,9 @@ int GDBStub::openSocket(int port) {
   sockaddr.sin_port = htons(port);  // htons is necessary to convert a number to
                                     // network byte order
   if (bind(sockfd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
-    std::cout << "Failed to bind to port " << port << ". errno: " << errno
-              << std::endl;
+    std::cout << RED << "   Failed to bind to port " << port
+              << ". errno: " << errno << std::endl
+              << RESET;
     exit(EXIT_FAILURE);
   } else {
     std::cout << "Started listening on port " << port << std::endl;
@@ -181,7 +194,9 @@ int GDBStub::openSocket(int port) {
 
   // Start listening. Hold at most 10 connections in the queue
   if (listen(sockfd, 10) < 0) {
-    std::cout << "Failed to listen on socket. errno: " << errno << std::endl;
+    std::cout << RED << "   Failed to listen on socket. errno: " << errno
+              << std::endl
+              << RESET;
     exit(EXIT_FAILURE);
   }
 
@@ -190,7 +205,9 @@ int GDBStub::openSocket(int port) {
   int connection =
       accept(sockfd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
   if (connection < 0) {
-    std::cout << "Failed to grab connection. errno: " << errno << std::endl;
+    std::cout << RED << "   Failed to grab connection. errno: " << errno
+              << std::endl
+              << RESET;
     exit(EXIT_FAILURE);
   }
 
@@ -198,7 +215,13 @@ int GDBStub::openSocket(int port) {
 }
 
 int GDBStub::run() {
-  int connection = openSocket(2425);
+  // verbose = 1; // uncomment this if you'd like the GDBStub to run verbosely
+
+  int connection = openSocket(2424);  // change this if the port is blocked
+
+  std::cout << "Connection to GDB client established, debugging in progress"
+            << std::endl
+            << std::endl;
 
   char buffer[10000];
 
@@ -215,27 +238,29 @@ int GDBStub::run() {
     std::string bufferString = buffer;
 
     if (regex_match(bufferString, ack_regex)) {
-      std::cout << MAGENTA;
-      std::cout << "<- Message Acknowledged" << std::endl;
+      if (verbose)
+        std::cout << CYAN << "<- Received message acknowledgement" << std::endl
+                  << RESET;
     } else if (regex_match(bufferString, packet_match, packet_regex)) {
-      std::cout << CYAN;
       std::string packet = packet_match[1].str();
-      if (packet_match.size() == 3)
-        std::cout << "<- Received: " << packet << std::endl;
-      else
-        std::cout << "<- Unknown message" << std::endl;  // TODO: take action
-
+      if (verbose) {
+        std::cout << CYAN;
+        if (packet_match.size() == 3)
+          std::cout << "<- Received packet: " << packet << std::endl;
+        else
+          std::cout << RED << "<- Unknown message"
+                    << std::endl;  // TODO: take action
+        std::cout << RESET;
+      }
       std::string checksum = packet_match[2].str();
       std::string expected = computeChecksum(packet);
-
-      if (checksum == expected)
-        std::cout << "<- Checksum passed\n";
-      else {
-        std::cout << "<- Checksum failed\n";  // TODO: take action
-        std::cout << "Expected checksum: " << expected
-                  << ", but received: " << checksum << std::endl;
+      if (verbose && checksum != expected) {
+        std::cout << RED << "   Checksum failed\n"
+                  << "   Expected checksum: " << expected
+                  << "   , but received: " << checksum << std::endl
+                  << RESET;
+        // TODO: take action
       }
-      std::cout << MAGENTA;
 
       std::regex qSupported_regex("^qSupported:(.*)");
       std::smatch qSupported_match;
@@ -286,16 +311,16 @@ int GDBStub::run() {
       } else if (packet[0] == 'G') {  // write registers
         response += generateReply("OK");
       } else {
-        std::cout << "Packet not supported\n";
+        if (verbose) std::cout << RED << "   Packet not supported\n" << RESET;
         response += generateReply("");
       }
 
-      std::cout << "-> Sending: " << response << std::endl;
+      if (verbose)
+        std::cout << GREEN << "-> Sending: " << response << RESET << std::endl;
       send(connection, response.c_str(), response.size(), 0);
     }
 
     memset(buffer, 0, sizeof(buffer));
-    std::cout << RESET;
   }
 }
 }  // namespace simeng
