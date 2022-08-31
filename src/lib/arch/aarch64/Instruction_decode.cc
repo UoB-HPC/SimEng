@@ -251,6 +251,7 @@ void Instruction::decode() {
             // unaltered row values
             sourceRegisters[sourceRegisterCount] = regs[i];
             sourceRegisterCount++;
+            operandsPending++;
           }
         } else {
           // Add register writes to destinations, but skip zero-register
@@ -269,6 +270,7 @@ void Instruction::decode() {
           for (int i = 0; i < regs.size(); i++) {
             sourceRegisters[sourceRegisterCount] = regs[i];
             sourceRegisterCount++;
+            operandsPending++;
           }
         } else {
           // Add register reads to destinations
@@ -281,7 +283,6 @@ void Instruction::decode() {
     } else if (op.type == ARM64_OP_MEM) {  // Memory operand
       accessesMemory = true;
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
-
       checkZeroReg();
       sourceRegisterCount++;
 
@@ -294,7 +295,6 @@ void Instruction::decode() {
       if (op.mem.index) {
         // Register offset; add to sources
         sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.index);
-
         checkZeroReg();
         sourceRegisterCount++;
       }
@@ -310,6 +310,7 @@ void Instruction::decode() {
         for (int i = 0; i < regs.size(); i++) {
           sourceRegisters[sourceRegisterCount] = regs[i];
           sourceRegisterCount++;
+          operandsPending++;
           if (op.access & cs_ac_type::CS_AC_WRITE) {
             destinationRegisters[destinationRegisterCount] = regs[i];
             destinationRegisterCount++;
@@ -324,6 +325,7 @@ void Instruction::decode() {
         } else if (op.access & cs_ac_type::CS_AC_READ) {
           sourceRegisters[sourceRegisterCount] =
               csRegToRegister(op.sme_index.reg);
+          checkZeroReg();
           sourceRegisterCount++;
         }
       }
