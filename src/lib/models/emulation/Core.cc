@@ -254,7 +254,7 @@ void Core::processExceptionHandler() {
   microOps_.pop();
 }
 
-uint64_t Core::getProgramCounter() { return pc_; }
+uint64_t Core::getProgramCounter() const { return pc_; }
 
 }  // namespace emulation
 }  // namespace models

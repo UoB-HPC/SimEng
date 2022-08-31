@@ -69,6 +69,9 @@ class FetchUnit {
   /** Clear the loop buffer. */
   void flushLoopBuffer();
 
+  /** Retrieve the current program counter value. */
+  uint64_t getPC() const;
+
  private:
   /** An output buffer connecting this unit to the decode unit. */
   PipelineBuffer<MacroOp>& output_;

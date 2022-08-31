@@ -32,11 +32,11 @@ class FlatMemoryInterface : public MemoryInterface {
   /** Returns true if there are any outstanding memory requests in-flight. */
   bool hasPendingRequests() const override;
 
+  /** Retrieves a pointer to the memory array. */
+  char* getMemoryPointer() const override;
+
   /** Tick: do nothing */
   void tick() override;
-
-  /** Retrieves a pointer to the memory array. */
-  char* getMemoryPointer();
 
  private:
   /** The array representing the flat memory system to access. */

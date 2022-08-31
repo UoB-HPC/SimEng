@@ -315,6 +315,8 @@ void Core::readRegisters() {
   }
 }
 
+uint64_t Core::getProgramCounter() const { return fetchUnit_.getPC(); }
+
 }  // namespace inorder
 }  // namespace models
 }  // namespace simeng

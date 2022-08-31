@@ -43,8 +43,8 @@ class Core : public simeng::Core {
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
-  /** Retrieve the Program Counter. */
-  uint64_t getProgramCounter() { return 0; };
+  /** Retrieve the program counter. */
+  uint64_t getProgramCounter() const override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */

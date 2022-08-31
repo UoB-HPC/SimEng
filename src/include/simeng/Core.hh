@@ -53,8 +53,8 @@ class Core {
     return (ticks_ / clockFrequency_);
   }
 
-  /** Retrieve the Program Counter. */
-  virtual uint64_t getProgramCounter();
+  /** Retrieve the program counter. */
+  virtual uint64_t getProgramCounter() const = 0;
 
  protected:
   /** Apply changes to the process state. */

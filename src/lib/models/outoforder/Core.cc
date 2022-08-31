@@ -378,6 +378,8 @@ void Core::flushIfNeeded() {
   }
 }
 
+uint64_t Core::getProgramCounter() const { return fetchUnit_.getPC(); }
+
 }  // namespace outoforder
 }  // namespace models
 }  // namespace simeng
