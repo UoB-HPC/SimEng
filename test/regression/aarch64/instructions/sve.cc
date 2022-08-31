@@ -2730,6 +2730,45 @@ TEST_P(InstSve, fadd) {
 }
 
 TEST_P(InstSve, fadda) {
+  // float
+  initialHeapData_.resize(VL / 4);
+  float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
+  std::vector<float> fsrc = {1.0f,    -42.76f, -0.125f, 0.0f,
+                             -34.71f, -0.917f, 0.0f,    80.72f};
+  fillHeap<float>(fheap, fsrc, VL / 32);
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    fmov s1, 2.75
+    fmov s3, 2.75
+
+    mov x1, #0
+    mov x2, #0
+    mov x3, #8
+    addvl x2, x2, #1
+    sdiv x2, x2, x3
+    whilelo p1.s, xzr, x2
+    ptrue p0.s
+
+    ld1w {z0.s}, p0/z, [x0, x1, lsl #2]
+    ld1w {z2.s}, p1/z, [x0, x2, lsl #2]
+
+    fadda s1, p1, s1, z0.s
+    fadda s3, p1, s3, z2.s
+  )");
+  float fresultA = 2.75f;
+  float fresultB = 2.75f;
+  for (int i = 0; i < VL / 64; i++) {
+    fresultA += fsrc[i % 8];
+    fresultB += fsrc[(i + VL / 64) % 8];
+  }
+  CHECK_NEON(1, float, {fresultA, 0, 0, 0});
+  CHECK_NEON(3, float, {fresultB, 0, 0, 0});
+
   // double
   initialHeapData_.resize(VL / 8);
   double* dheap = reinterpret_cast<double*>(initialHeapData_.data());
