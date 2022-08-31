@@ -1207,6 +1207,27 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
+      case Opcode::AArch64_GLD1W_D_SCALED_REAL: {  // ld1w {zd.d}, pg/z,
+                                                   // [<xn|sp>, zm.d, lsl #2]
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 64;
+
+        const uint64_t n = operands[1].get<uint64_t>();
+        const uint64_t* m = operands[2].getAsVector<uint64_t>();
+
+        std::vector<MemoryAccessTarget> addresses;
+        addresses.reserve(partition_num);
+
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (p[i / 8] & shifted_active) {
+            uint64_t addr = n + (m[i] * 4);
+            addresses.push_back({addr, 4});
+          }
+        }
+        setMemoryAddresses(addresses);
+        break;
+      }
       case Opcode::AArch64_SST1D_IMM: {  // st1d {zt.d}, pg, [zn.d{, #imm}]
         const uint64_t* p = operands[1].getAsVector<uint64_t>();
         const uint16_t partition_num = VL_bits / 64;

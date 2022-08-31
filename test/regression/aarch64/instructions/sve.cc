@@ -4621,6 +4621,30 @@ TEST_P(InstSve, ld1sw_gather) {
   CHECK_NEON(6, int64_t, fillNeonCombined<int64_t>({-4}, {0}, VL / 8));
 }
 
+TEST_P(InstSve, ld1w_gather) {
+  // Scalar plus vector
+  // 64-bit
+  RUN_AARCH64(R"(
+    mov x0, #800
+    index z1.d, x0, #8
+    dup z2.d, #8
+
+    ptrue p0.d
+    mov x1, #0
+    mov x2, #16
+    addvl x1, x1, #1
+    udiv x1, x1, x2
+    whilelo p1.d, xzr, x1
+
+    # Put data into memory so we have something to load
+    st1d {z2.d}, p0, [z1.d]  
+
+    index z4.d, #0, #2
+    ld1w {z5.d}, p1/z, [x0, z4.d, lsl #2]
+  )");
+  CHECK_NEON(5, uint64_t, fillNeonCombined<uint64_t>({8}, {0}, VL / 8));
+}
+
 TEST_P(InstSve, ld1d_gather) {
   // Vector plus immediate
   RUN_AARCH64(R"(

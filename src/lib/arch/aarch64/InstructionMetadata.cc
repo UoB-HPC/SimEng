@@ -652,6 +652,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1i64:
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_GLD1W_D_SCALED_REAL: {
+      // Access types are not set correctly
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_GLD1D_SCALED_REAL:
       [[fallthrough]];
     case Opcode::AArch64_GLD1D_REAL: {

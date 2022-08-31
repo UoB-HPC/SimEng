@@ -2220,6 +2220,24 @@ void Instruction::execute() {
         results[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_GLD1W_D_SCALED_REAL: {  // ld1w {zd.d}, pg/z,
+                                                   // [<xn|sp>, zm.d, lsl #2]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+        const uint16_t partition_num = VL_bits / 64;
+        uint64_t out[32] = {0};
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (p[i / 8] & shifted_active) {
+            out[i] = static_cast<uint64_t>(memoryData[index].get<uint32_t>());
+            index++;
+          }
+        }
+        results[0] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
         // TODO: Observe hints
         break;
