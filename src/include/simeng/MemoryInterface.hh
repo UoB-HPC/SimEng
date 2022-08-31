@@ -67,7 +67,7 @@ class MemoryInterface {
   virtual bool hasPendingRequests() const = 0;
 
   /** Retrieves a pointer to the memory array. */
-  virtual char* getMemoryPointer();
+  virtual char* getMemoryPointer() const = 0;
 
   /** Tick the memory interface to allow it to process internal tasks.
    *

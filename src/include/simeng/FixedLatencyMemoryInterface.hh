@@ -61,7 +61,7 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
   bool hasPendingRequests() const override;
 
   /** Retrieves a pointer to the memory array. */
-  char* getMemoryPointer();
+  char* getMemoryPointer() const override;
 
   /** Tick the memory model to process the request queue. */
   void tick() override;

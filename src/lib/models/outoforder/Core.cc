@@ -388,6 +388,8 @@ uint64_t Core::getSystemTimer() const {
   return ticks_ / (clockFrequency_ / 1e9);
 }
 
+uint64_t Core::getProgramCounter() const { return fetchUnit_.getPC(); }
+
 std::map<std::string, std::string> Core::getStats() const {
   auto retired = reorderBuffer_.getInstructionsCommittedCount();
   auto ipc = retired / static_cast<float>(ticks_);

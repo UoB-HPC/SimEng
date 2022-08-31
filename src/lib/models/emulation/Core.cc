@@ -303,7 +303,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"branch.executed", std::to_string(branchesExecuted_)}};
 };
 
-uint64_t Core::getProgramCounter() { return pc_; }
+uint64_t Core::getProgramCounter() const { return pc_; }
 
 }  // namespace emulation
 }  // namespace models

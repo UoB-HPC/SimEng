@@ -353,6 +353,8 @@ void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
   completionSlots_[0].getTailSlots()[0] = instruction;
 }
 
+uint64_t Core::getProgramCounter() const { return fetchUnit_.getPC(); }
+
 }  // namespace inorder
 }  // namespace models
 }  // namespace simeng

@@ -20,6 +20,8 @@ class MockMemoryInterface : public MemoryInterface {
 
   MOCK_CONST_METHOD0(hasPendingRequests, bool());
 
+  MOCK_CONST_METHOD0(getMemoryPointer, char*());
+
   MOCK_METHOD0(tick, void());
 };
 

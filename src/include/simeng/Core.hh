@@ -34,8 +34,8 @@ class Core {
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;
 
-  /** Retrieve the Program Counter. */
-  virtual uint64_t getProgramCounter();
+  /** Retrieve the program counter. */
+  virtual uint64_t getProgramCounter() const = 0;
 };
 
 }  // namespace simeng
