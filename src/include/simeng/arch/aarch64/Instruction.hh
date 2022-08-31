@@ -336,14 +336,14 @@ class Instruction : public simeng::Instruction {
 
   /** The maximum number of source registers any supported AArch64 instruction
    * can have. */
-  // Increased from 6 to 261 to accomodate for up to 256 ZA Matrix rows.
-  static const uint16_t MAX_SOURCE_REGISTERS = 261;
+  // Increased from 6 to 262 to accomodate for up to 256 ZA Matrix rows.
+  static const uint16_t MAX_SOURCE_REGISTERS = 262;
 
  private:
   /** The maximum number of destination registers any supported AArch64
    * instruction can have. */
-  // Increased from 4 to 259 to accomodate for up to 256 ZA Matrix rows.
-  static const uint16_t MAX_DESTINATION_REGISTERS = 259;
+  // Increased from 4 to 260 to accomodate for up to 256 ZA Matrix rows.
+  static const uint16_t MAX_DESTINATION_REGISTERS = 260;
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
@@ -354,12 +354,12 @@ class Instruction : public simeng::Instruction {
   /** An array of source registers. */
   std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
   /** The number of source registers this instruction reads from. */
-  uint8_t sourceRegisterCount = 0;
+  uint16_t sourceRegisterCount = 0;
 
   /** An array of destination registers. */
   std::array<Register, MAX_DESTINATION_REGISTERS> destinationRegisters;
   /** The number of destination registers this instruction writes to. */
-  uint8_t destinationRegisterCount = 0;
+  uint16_t destinationRegisterCount = 0;
 
   /** An array of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
