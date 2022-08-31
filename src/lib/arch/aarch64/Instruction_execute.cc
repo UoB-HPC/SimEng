@@ -2612,6 +2612,32 @@ void Instruction::execute() {
         results[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_LD1RQ_W_IMM: {  // ld1rqw {zd.s}, pg/z, [xn{, #imm}]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 32;
+        uint32_t out[64] = {0};
+        uint16_t index = 0;
+
+        // Get mini-vector (quadword)
+        uint32_t mini[4] = {0};
+        for (int i = 0; i < 4; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (p[i / 16] & shifted_active)
+            mini[i] = memoryData[index].get<uint32_t>();
+          index++;
+        }
+
+        // Duplicate mini-vector into output vector
+        for (int i = 0; i < (partition_num / 4); i++) {
+          out[4 * i] = mini[0];
+          out[(4 * i) + 1] = mini[1];
+          out[(4 * i) + 2] = mini[2];
+          out[(4 * i) + 3] = mini[3];
+        }
+        results[0] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_LD1RW_IMM: {  // ld1rw {zt.s}, pg/z, [xn, #imm]
         // LOAD
         const uint16_t partition_num = VL_bits / 32;

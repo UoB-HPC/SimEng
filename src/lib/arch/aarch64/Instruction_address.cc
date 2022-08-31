@@ -126,6 +126,25 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
+      case Opcode::AArch64_LD1RQ_W_IMM: {  // ld1rqw {zd.s}, pg/z, [xn{, #imm}]
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+        uint64_t addr =
+            operands[1].get<uint64_t>() + metadata.operands[2].mem.disp;
+
+        std::vector<MemoryAccessTarget> addresses;
+        addresses.reserve(4);
+
+        for (int i = 0; i < 4; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (p[i / 16] & shifted_active) {
+            addresses.push_back({addr, 4});
+          }
+          addr += 4;
+        }
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
       case Opcode::AArch64_LD1RW_IMM: {  // ld1rw {zt.s}, pg/z, [xn, #imm]
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
         for (int i = 0; i < 4; i++) {

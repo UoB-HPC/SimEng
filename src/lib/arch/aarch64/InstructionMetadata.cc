@@ -693,6 +693,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].mem.index = static_cast<arm64_reg>(vec_enum);
       break;
     }
+    case Opcode::AArch64_LD1RQ_W_IMM: {
+      // LD1RQW doesn't identify correct access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_LD1RQ_D_IMM: {
       // LD1RQ gather instruction doesn't correctly identify destination
       // register
