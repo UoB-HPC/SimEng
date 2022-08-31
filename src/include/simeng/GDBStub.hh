@@ -30,8 +30,7 @@ class GDBStub {
   /** Construct a GDBStub with pointers to a core and memory interface.  N.B.
    * There is currently only support for an emulation core and a
    * FlatMemoryInterface */
-  GDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory)
-      : core_(core), dataMemory_(dataMemory){};
+  GDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory);
 
   /** Run the GDBStub using the core and dataMemory properties.  This gives
    * control of the emulation core and hands it to a GDB client that connects to
@@ -40,30 +39,32 @@ class GDBStub {
 
  private:
   /** Convert a byte into a 2 digit hex value. */
-  std::string byteToHex(uint8_t byte);
+  std::string byteToHex(uint8_t byte) const;
 
   /** Convert hex into uint64_t, used for converting GDB's memory address. */
-  uint64_t hexToInt(std::string hex);
+  uint64_t hexToInt(std::string hex) const;
 
   /** Convert uint64_t into RSP compliant hex - a series of 8 hex bytes. */
-  std::string decToRSP(uint64_t dec);
+  std::string decToRSP(uint64_t dec) const;
 
   /** Compute an RSP compliant checksum from a packet (sum of chars % 256, in a
    * 2 digit hex). */
-  std::string computeChecksum(std::string packet);
+  std::string computeChecksum(std::string packet) const;
 
   /** Add RSP compliant start and end characters, followed by a checksum. */
-  std::string generateReply(std::string packet);
+  std::string generateReply(std::string packet) const;
+  ;
 
   /** Read all registers from the core and return an RSP compliant string. */
-  std::string handleReadRegisters();
+  std::string handleReadRegisters() const;
 
   /** Read a single register and return an RSP compliant string. */
-  std::string handleReadSingleRegister(std::string registerName);
+  std::string handleReadSingleRegister(std::string registerName) const;
 
   /** Read `length` number of bytes from memory location `hexAddress` and return
    * an RSP compliant string. */
-  std::string handleReadMemory(std::string hexAddress, std::string length);
+  std::string handleReadMemory(std::string hexAddress,
+                               std::string length) const;
 
   /** Create a breakpoint at the provided address. */
   void handleCreateBreakpoint(std::string type, std::string address);
@@ -78,10 +79,10 @@ class GDBStub {
   /** Create a socket and listen on the port number provided.
    * Socket handling code taken from:
    * https://ncona.com/2019/04/building-a-simple-server-with-cpp/. */
-  int openSocket(int port);
+  int openSocket(int port) const;
 
   /** Boolean for if the runtime -v verbose flag has been set. */
-  bool verbose = 0;
+  bool verbose_ = 0;
 
   /** The core used for the simulation.  Currently only supports the
    * emulation core*/
@@ -92,6 +93,6 @@ class GDBStub {
   simeng::MemoryInterface& dataMemory_;
 
   /** A set of breakpoints provided by the GDB client. */
-  std::vector<std::string> breakpoints;
+  std::vector<std::string> breakpoints_;
 };
 }  // namespace simeng
