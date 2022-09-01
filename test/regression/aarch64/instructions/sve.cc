@@ -3743,6 +3743,66 @@ TEST_P(InstSve, fmls) {
   CHECK_NEON(2, double, fillNeonCombined<double>(dresults, dsrcB, VL / 8));
 }
 
+TEST_P(InstSve, fmla_indexed) {
+  // float
+  RUN_AARCH64(R"(
+    fdup z0.s, #2.75
+    fdup z1.s, #-2.75
+
+    index z2.s, #5, #5
+    ptrue p0.s
+    scvtf z2.s, p0/m, z2.s
+
+    fdup z3.s, #0.5
+    fdup z4.s, #0.5
+    fmla z3.s, z0.s, z2.s[1]
+    fmla z4.s, z1.s, z2.s[2]
+  )");
+  std::vector<float> resultsA;
+  std::vector<float> resultsB;
+  float itemA;
+  float itemB;
+  for (size_t i = 0; i < (VL / 32); i++) {
+    if (i % 4 == 0) {
+      itemA = 5.0f + (5.0f * static_cast<float>(i + 1));
+      itemB = 5.0f + (5.0f * static_cast<float>(i + 2));
+    }
+    resultsA.push_back(0.5f + (2.75f * itemA));
+    resultsB.push_back(0.5f + (-2.75f * itemB));
+  }
+  CHECK_NEON(3, float, fillNeon<float>(resultsA, VL / 8));
+  CHECK_NEON(4, float, fillNeon<float>(resultsB, VL / 8));
+
+  // double
+  RUN_AARCH64(R"(
+    fdup z0.d, #2.75
+    fdup z1.d, #-2.75
+
+    index z2.d, #5, #5
+    ptrue p0.d
+    scvtf z2.d, p0/m, z2.d
+
+    fdup z3.d, #0.5
+    fdup z4.d, #0.5
+    fmla z3.d, z0.d, z2.d[0]
+    fmla z4.d, z1.d, z2.d[1]
+  )");
+  std::vector<double> resultsC;
+  std::vector<double> resultsD;
+  double itemC;
+  double itemD;
+  for (size_t i = 0; i < (VL / 64); i++) {
+    if (i % 2 == 0) {
+      itemC = 5.0 + (5.0 * static_cast<double>(i));
+      itemD = 5.0 + (5.0 * static_cast<double>(i + 1));
+    }
+    resultsC.push_back(0.5 + (2.75 * itemC));
+    resultsD.push_back(0.5 + (-2.75 * itemD));
+  }
+  CHECK_NEON(3, double, fillNeon<double>(resultsC, VL / 8));
+  CHECK_NEON(4, double, fillNeon<double>(resultsD, VL / 8));
+}
+
 TEST_P(InstSve, fmsb) {
   // float
   initialHeapData_.resize(VL / 8);

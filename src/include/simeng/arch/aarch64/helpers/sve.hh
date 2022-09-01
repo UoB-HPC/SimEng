@@ -1019,6 +1019,34 @@ class sveHelp {
     return {out, 256};
   }
 
+  /** Helper function for SVE instructions with the format `fmla zda, zn,
+   * zm[index]`.
+   * T represents the type of operands (e.g. for zn.d, T = uint64_t).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue sveMlaIndexed_vecs(
+      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      const simeng::arch::aarch64::InstructionMetadata& metadata,
+      const uint16_t VL_bits) {
+    const T* d = operands[0].getAsVector<T>();
+    const T* n = operands[1].getAsVector<T>();
+    const T* m = operands[2].getAsVector<T>();
+    const size_t index = static_cast<size_t>(metadata.operands[2].vector_index);
+
+    const uint16_t elemsPer128 = 128 / (sizeof(T) * 8);
+    const uint16_t partition_num = VL_bits / (sizeof(T) * 8);
+    T out[256 / sizeof(T)] = {0};
+
+    for (size_t i = 0; i < partition_num; i += elemsPer128) {
+      const T zm_elem = m[i + index];
+      for (size_t j = 0; j < elemsPer128; j++) {
+        out[i + j] = d[i + j] + (n[i + j] * zm_elem);
+      }
+    }
+
+    return {out, 256};
+  }
+
   /** Helper function for SVE instructions with the format `movprfx zd,
    * pg/z, zn`.
    * T represents the type of operands (e.g. for zd.d, T = uint64_t).

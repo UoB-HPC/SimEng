@@ -1718,6 +1718,16 @@ void Instruction::execute() {
         results[0] = neonHelp::vecFmla_3vecs<float, 2>(operands);
         break;
       }
+      case Opcode::AArch64_FMLA_ZZZI_D: {  // fmla zda.d, zn.d, zm.d[index]
+        results[0] =
+            sveHelp::sveMlaIndexed_vecs<double>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FMLA_ZZZI_S: {  // fmla zda.s, zn.s, zm.s[index]
+        results[0] =
+            sveHelp::sveMlaIndexed_vecs<float>(operands, metadata, VL_bits);
+        break;
+      }
       case Opcode::AArch64_FMLAv2f64: {  // fmla vd.2d, vn.2d, vm.2d
         results[0] = neonHelp::vecFmla_3vecs<double, 2>(operands);
         break;

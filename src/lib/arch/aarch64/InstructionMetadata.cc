@@ -508,6 +508,15 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_FMLA_ZZZI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FMLA_ZZZI_S: {
+      // Need to define missing access types
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_FDIVR_ZPmZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FDIVR_ZPmZ_S:
