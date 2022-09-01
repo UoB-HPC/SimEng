@@ -23,7 +23,6 @@
 #include "simeng/models/outoforder/Core.hh"
 #include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
-#include "simeng/pipeline/M1PortAllocator.hh"
 #include "simeng/version.hh"
 #include "yaml-cpp/yaml.h"
 
@@ -232,6 +231,7 @@ int main(int argc, char** argv) {
       portArrangement[i].push_back(config_groups[j].as<uint16_t>());
     }
   }
+  auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
 
   // Configure reservation station arrangment
   std::vector<std::pair<uint8_t, uint64_t>> rsArrangement;
@@ -245,11 +245,6 @@ int main(int argc, char** argv) {
       rsArrangement[port] = {i, reservation_station["Size"].as<uint16_t>()};
     }
   }
-
-  // auto portAllocator =
-  // simeng::pipeline::BalancedPortAllocator(portArrangement);
-  auto portAllocator =
-      simeng::pipeline::M1PortAllocator(portArrangement, rsArrangement);
 
   int iterations = 0;
 
