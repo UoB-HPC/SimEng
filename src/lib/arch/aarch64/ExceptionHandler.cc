@@ -876,6 +876,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
     case InstructionException::ZAdisabled:
       std::cout << "ZA register access attempt when disabled";
       break;
+    case InstructionException::SMdisabled:
+      std::cout << "SME execution attempt when streaming mode disabled";
+      break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)
                 << ")";

@@ -57,6 +57,12 @@ void Instruction::ZAdisabled() {
   return;
 }
 
+void Instruction::SMdisabled() {
+  exceptionEncountered_ = true;
+  exception_ = InstructionException::SMdisabled;
+  return;
+}
+
 void Instruction::execute() {
   assert(!executed_ && "Attempted to execute an instruction more than once");
   assert(
@@ -1784,8 +1790,10 @@ void Instruction::execute() {
       case Opcode::AArch64_FMOPA_MPPZZ_S: {  // fmopa zada.s, pn/m, pm/m, zn.s,
                                              // zm.s
         // SME
-        // TODO : Add checks to ensure SM and ZA in right mode. Raise exception
-        // if not.
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
         const uint16_t rowCount = VL_bits / 32;
         const uint64_t* pn = operands[rowCount].getAsVector<uint64_t>();
         const uint64_t* pm = operands[rowCount + 1].getAsVector<uint64_t>();
