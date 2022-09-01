@@ -77,7 +77,7 @@ class SimengMemInterface : public MemoryInterface {
 
    public:
     SimengMemHandlers(SimengMemInterface& interface, SST::Output* out)
-        : StandardMem::RequestHandler(out), mem_interface(interface) {}
+        : StandardMem::RequestHandler(out), mem_interface_(interface) {}
     ~SimengMemHandlers() {}
     /**
      * Overloaded instance of handle method to handle read request responses
@@ -90,7 +90,9 @@ class SimengMemInterface : public MemoryInterface {
      * use for it.
      */
     void handle(StandardMem::WriteResp* resp) override;
-    SimengMemInterface& mem_interface;
+
+    /** Reference to SimengMemInterface used for interfacing with SST */
+    SimengMemInterface& mem_interface_;
   };
 
   /**
@@ -148,21 +150,21 @@ class SimengMemInterface : public MemoryInterface {
    * This class has in-built method for different levels of severity and can
    * also be configured to output information like line-number and filename.
    */
-  SST::Output* output;
+  SST::Output* output_;
   /**
    * SST::Interfaces::StandardMem interface responsible for convering
    * SST::StandardMem::Request(s) into SST memory events to be passed
    * down the memory heirarchy.
    */
-  StandardMem* mem;
+  StandardMem* mem_;
   /** Counter for clock ticks */
-  uint64_t tickCounter = 0;
+  uint64_t tickCounter_ = 0;
   /** The cache line width specified by SST config.py */
-  uint64_t clw;
+  uint64_t clw_;
   /** Maximum address availbale for memory purposes */
-  uint64_t max_addr_memory;
+  uint64_t max_addr_memory_;
   /** A vector containing all completed read requests. */
-  std::vector<MemoryReadResult> completed_read_requests;
+  std::vector<MemoryReadResult> completed_read_requests_;
   /**
    * This map is used to store unique ids of SST::StandardMem:Read requests and
    * their corresponding AggregateReadRequest as key-value pairs (In some cases
@@ -177,7 +179,7 @@ class SimengMemInterface : public MemoryInterface {
    * SST::StandardMem::Write requests as their responses do not need to be
    * aggregated.
    */
-  std::unordered_map<uint64_t, AggregateReadRequest*> aggregation_map;
+  std::unordered_map<uint64_t, AggregateReadRequest*> aggregation_map_;
 
   /** This method only accepts structs derived from the SimengMemoryRequest
    * struct as the value for aggrReq. */

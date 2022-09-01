@@ -12,10 +12,10 @@ using namespace SST::SSTSimeng;
 SimengMemInterface::SimengMemInterface(StandardMem* mem, uint64_t cl,
                                        uint64_t max_addr, SST::Output* out)
     : simeng::MemoryInterface() {
-  this->mem = mem;
-  this->clw = cl;
-  this->max_addr_memory = max_addr;
-  this->output = out;
+  this->mem_ = mem;
+  this->clw_ = cl;
+  this->max_addr_memory_ = max_addr;
+  this->output_ = out;
 };
 
 void SimengMemInterface::sendProcessImageToSST(const span<char> image) {
@@ -27,7 +27,7 @@ void SimengMemInterface::sendProcessImageToSST(const span<char> image) {
   }
 
   StandardMem::Request* req = new StandardMem::Write(0, data.size(), data);
-  mem->sendUntimedData(req);
+  mem_->sendUntimedData(req);
   return;
 };
 
@@ -59,7 +59,7 @@ std::vector<StandardMem::Request*> SimengMemInterface::makeSSTRequests(
   */
   if (requestSpansMultipleCacheLines(addrStart, addrEnd)) {
     std::vector<StandardMem::Request*> reqs;
-    uint64_t cacheLineEndAddr = nearestCacheLineEnd(addrStart) * clw;
+    uint64_t cacheLineEndAddr = nearestCacheLineEnd(addrStart) * clw_;
     uint64_t firstFragmentSize = cacheLineEndAddr - addrStart;
     uint64_t secondFragmentSize = size - firstFragmentSize;
     std::vector<StandardMem::Request*> rvec1 =
@@ -93,9 +93,9 @@ std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
   // Loop used to divide a write request from SimEng based on cache-line size.
   for (int x = 0; x < cacheLinesNeeded; x++) {
     uint64_t currReqSize = size;
-    if (size > clw) {
-      size -= clw;
-      currReqSize = clw;
+    if (size > clw_) {
+      size -= clw_;
+      currReqSize = clw_;
     }
     // SST write requests accept uint8_t vectors as data.
     std::vector<uint8_t> payload;
@@ -126,9 +126,9 @@ std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
   // Loop used to divide a read request from SimEng based on cache-line size.
   for (int x = 0; x < cacheLinesNeeded; x++) {
     uint64_t currReqSize = size;
-    if (size > clw) {
-      size -= clw;
-      currReqSize = clw;
+    if (size > clw_) {
+      size -= clw_;
+      currReqSize = clw_;
     }
 
     StandardMem::Request* readReq =
@@ -149,7 +149,7 @@ std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
        many-to-one relation between multiple SST requests and a SimEng read
        request.
     */
-    aggregation_map.insert({id, aggrReq});
+    aggregation_map_.insert({id, aggrReq});
   }
   req_ids.clear();
   return requests;
@@ -167,8 +167,8 @@ void SimengMemInterface::requestRead(const MemoryAccessTarget& target,
       which signals an exception. However, wrongly speculated branches
       lead to a pipeline flush after which execution continues.
   */
-  if (addrEnd > max_addr_memory || unsignedOverflow_(addrStart, size)) {
-    completed_read_requests.push_back({target, RegisterValue(), requestId});
+  if (addrEnd > max_addr_memory_ || unsignedOverflow_(addrStart, size)) {
+    completed_read_requests_.push_back({target, RegisterValue(), requestId});
     return;
   }
 
@@ -176,7 +176,7 @@ void SimengMemInterface::requestRead(const MemoryAccessTarget& target,
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateReadRequest>(aggrReq, addrStart, addrEnd, size);
   for (StandardMem::Request* req : requests) {
-    mem->send(req);
+    mem_->send(req);
   }
 }
 
@@ -190,23 +190,23 @@ void SimengMemInterface::requestWrite(const MemoryAccessTarget& target,
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateWriteRequest>(aggrReq, addrStart, addrEnd, size);
   for (StandardMem::Request* req : requests) {
-    mem->send(req);
+    mem_->send(req);
   }
 }
 
-void SimengMemInterface::tick() { tickCounter++; }
+void SimengMemInterface::tick() { tickCounter_++; }
 
 void SimengMemInterface::clearCompletedReads() {
-  completed_read_requests.clear();
+  completed_read_requests_.clear();
 }
 
 bool SimengMemInterface::hasPendingRequests() const {
-  return completed_read_requests.size() > 0;
+  return completed_read_requests_.size() > 0;
 };
 
 const span<MemoryReadResult> SimengMemInterface::getCompletedReads() const {
-  return {const_cast<MemoryReadResult*>(completed_read_requests.data()),
-          completed_read_requests.size()};
+  return {const_cast<MemoryReadResult*>(completed_read_requests_.data()),
+          completed_read_requests_.size()};
 };
 
 void SimengMemInterface::aggregatedReadResponses(
@@ -219,12 +219,12 @@ void SimengMemInterface::aggregatedReadResponses(
   for (auto itr = aggrReq->response_map.begin();
        itr != aggrReq->response_map.end(); itr++) {
     mergedData.insert(mergedData.end(), itr->second.begin(), itr->second.end());
-    aggregation_map.erase(itr->first);
+    aggregation_map_.erase(itr->first);
   }
   // Send the completed read request back to SimEng via the
   // completed_read_requests queue.
   const char* char_data = reinterpret_cast<const char*>(&mergedData[0]);
-  completed_read_requests.push_back(
+  completed_read_requests_.push_back(
       {aggrReq->target,
        RegisterValue(char_data, uint16_t(unsigned(aggrReq->target.size))),
        aggrReq->id});
@@ -246,8 +246,8 @@ void SimengMemInterface::SimengMemHandlers::handle(StandardMem::ReadResp* rsp) {
 
   // Upon recieving a response from SST the aggregation_map is used to retrieve
   // the AggregatedReadRequest the recieved SST response is a part of.
-  auto itr = mem_interface.aggregation_map.find(id);
-  if (itr == mem_interface.aggregation_map.end()) return;
+  auto itr = mem_interface_.aggregation_map_.find(id);
+  if (itr == mem_interface_.aggregation_map_.end()) return;
   /*
       After succesful retrieval of AggregatedReadRequest from aggregation_map
      the response data is stored inside the AggregatedReadRequest in an ordered
@@ -265,23 +265,23 @@ void SimengMemInterface::SimengMemHandlers::handle(StandardMem::ReadResp* rsp) {
       data back to SimEng.
   */
   if (--aggrReq->aggregateCount <= 0) {
-    mem_interface.aggregatedReadResponses(aggrReq);
+    mem_interface_.aggregatedReadResponses(aggrReq);
   }
 }
 
 int SimengMemInterface::getCacheLinesNeeded(uint64_t size) {
-  if (size < clw) return 1;
-  if (size % clw == 0) return size / clw;
-  return (size / clw) + 1;
+  if (size < clw_) return 1;
+  if (size % clw_ == 0) return size / clw_;
+  return (size / clw_) + 1;
 }
 bool SimengMemInterface::unsignedOverflow_(uint64_t a, uint64_t b) const {
   return (a + b) < a || (a + b) < b;
 };
 bool SimengMemInterface::requestSpansMultipleCacheLines(uint64_t addrStart,
                                                         uint64_t addrEnd) {
-  uint64_t lineDiff = (addrEnd / clw) - (addrStart / clw);
+  uint64_t lineDiff = (addrEnd / clw_) - (addrStart / clw_);
   return lineDiff > 0;
 };
 uint64_t SimengMemInterface::nearestCacheLineEnd(uint64_t addrStart) {
-  return (addrStart / clw) + 1;
+  return (addrStart / clw_) + 1;
 };
