@@ -50,21 +50,29 @@ void RegressionTest::run(const char* source, const char* triple) {
       simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), config);
   ASSERT_TRUE(process_->isValid());
   uint64_t entryPoint = process_->getEntryPoint();
+  processMemorySize_ = process_->getProcessImageSize();
+  // This instance of procImgPtr pointer needs to be shared because
+  // getMemoryValue in RegressionTest.hh uses reference to the class
+  // member processMemory_.
+  std::shared_ptr<char> procImgPtr = process_->getProcessImage();
+  processMemory_ = procImgPtr.get();
 
-  // Allocate memory for the process and copy the full process image to it
-  simeng::span<char> processImage = process_->getProcessImage();
-  processMemorySize_ = processImage.size();
-  processMemory_ = processImage.data();
-
-  // Create memory interfaces for instruction and data access
-  simeng::FlatMemoryInterface instructionMemory(processMemory_,
+  // Create memory interfaces for instruction and data access.
+  // For each memory interface, a dereferenced shared_ptr to the
+  // processImage is passed as argument.
+  std::shared_ptr<char> procImgForInstrMem = process_->getProcessImage();
+  simeng::FlatMemoryInterface instructionMemory(procImgForInstrMem.get(),
                                                 processMemorySize_);
+
+  std::shared_ptr<char> procImgForFlatDataMem = process_->getProcessImage();
   std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-      std::make_unique<simeng::FlatMemoryInterface>(processMemory_,
+      std::make_unique<simeng::FlatMemoryInterface>(procImgForFlatDataMem.get(),
                                                     processMemorySize_);
+
+  std::shared_ptr<char> procImgForFixedDataMem = process_->getProcessImage();
   std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
       std::make_unique<simeng::FixedLatencyMemoryInterface>(
-          processMemory_, processMemorySize_, 4);
+          procImgForFixedDataMem.get(), processMemorySize_, 4);
   std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
   // Create the OS kernel and the process

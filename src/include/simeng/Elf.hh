@@ -26,16 +26,14 @@ class Elf {
  public:
   Elf(std::string path, char** imagePointer);
   ~Elf();
-  const span<char> getProcessImage() const;
+  uint64_t getProcessImageSize() const;
   bool isValid() const;
   uint64_t getEntryPoint() const;
 
  private:
   uint64_t entryPoint_;
   std::vector<ElfHeader> headers_;
-
   bool isValid_ = false;
-  char* processImage_;
   uint64_t processImageSize_;
 };
 

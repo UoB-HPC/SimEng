@@ -153,15 +153,13 @@ Elf::Elf(std::string path, char** imagePointer) {
   }
 
   *imagePointer = (char*)malloc(processImageSize_ * sizeof(char));
-  processImage_ = *imagePointer;
-
   // Process headers; only observe LOAD sections for this basic implementation
   for (const auto& header : headers_) {
     if (header.type == 1) {  // LOAD
       file.seekg(header.offset);
       // Read `fileSize` bytes from `file` into the appropriate place in process
       // memory
-      file.read(processImage_ + header.virtualAddress, header.fileSize);
+      file.read(*imagePointer + header.virtualAddress, header.fileSize);
     }
   }
 
@@ -171,11 +169,10 @@ Elf::Elf(std::string path, char** imagePointer) {
 
 Elf::~Elf() {}
 
-const span<char> Elf::getProcessImage() const {
-  return {processImage_, processImageSize_};
-}
+uint64_t Elf::getProcessImageSize() const { return processImageSize_; }
 
 uint64_t Elf::getEntryPoint() const { return entryPoint_; }
+
 bool Elf::isValid() const { return isValid_; }
 
 }  // namespace simeng

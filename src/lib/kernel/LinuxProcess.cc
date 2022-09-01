@@ -23,8 +23,8 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
       commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
-
-  Elf elf(commandLine[0], &processImage_);
+  char* unwrappedProcImgPtr;
+  Elf elf(commandLine[0], &unwrappedProcImgPtr);
   if (!elf.isValid()) {
     return;
   }
@@ -33,7 +33,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   entryPoint_ = elf.getEntryPoint();
 
   // Align heap start to a 32-byte boundary
-  heapStart_ = alignToBoundary(elf.getProcessImage().size(), 32);
+  heapStart_ = alignToBoundary(elf.getProcessImageSize(), 32);
 
   // Set mmap region start to be an equal distance from the stack and heap
   // starts. Additionally, align to the page size (4kb)
@@ -43,18 +43,18 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   // Calculate process image size, including heap + stack
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
 
-  char* temp = (char*)realloc(processImage_, size_ * sizeof(char));
+  char* temp = (char*)realloc(unwrappedProcImgPtr, size_ * sizeof(char));
   if (temp == NULL) {
-    free(processImage_);
-    std::cout << "ProcessImage cannot be constructed successfully! "
+    free(unwrappedProcImgPtr);
+    std::cerr << "ProcessImage cannot be constructed successfully! "
                  "Reallocation failed."
               << std::endl;
-
     exit(EXIT_FAILURE);
   }
-  processImage_ = temp;
+  unwrappedProcImgPtr = temp;
 
-  createStack();
+  createStack(&unwrappedProcImgPtr);
+  processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
 }
 
 LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
@@ -74,18 +74,14 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
       alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
 
   size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
-  processImage_ = (char*)malloc(size_ * sizeof(char));
+  char* unwrappedProcImgPtr = (char*)malloc(size_ * sizeof(char));
+  std::copy(instructions.begin(), instructions.end(), unwrappedProcImgPtr);
 
-  std::copy(instructions.begin(), instructions.end(), processImage_);
-
-  createStack();
+  createStack(&unwrappedProcImgPtr);
+  processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
 }
 
-LinuxProcess::~LinuxProcess() {
-  if (isValid_) {
-    free(processImage_);
-  }
-}
+LinuxProcess::~LinuxProcess() {}
 
 uint64_t LinuxProcess::getHeapStart() const { return heapStart_; }
 
@@ -99,15 +95,17 @@ std::string LinuxProcess::getPath() const { return commandLine_[0]; }
 
 bool LinuxProcess::isValid() const { return isValid_; }
 
-const span<char> LinuxProcess::getProcessImage() const {
-  return {processImage_, size_};
+std::shared_ptr<char> LinuxProcess::getProcessImage() const {
+  return std::shared_ptr<char>(processImage_);
 }
+
+uint64_t LinuxProcess::getProcessImageSize() const { return size_; }
 
 uint64_t LinuxProcess::getEntryPoint() const { return entryPoint_; }
 
 uint64_t LinuxProcess::getStackPointer() const { return stackPointer_; }
 
-void LinuxProcess::createStack() {
+void LinuxProcess::createStack(char** processImage) {
   // Decrement the stack pointer and populate with initial stack state
   // (https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html)
   // The argv and env strings are added to the top of the stack first and the
@@ -154,7 +152,7 @@ void LinuxProcess::createStack() {
       initialStackFrame.push_back(stackPointer_ + (i));  // argv/env ptr
       ptrCount++;
     }
-    processImage_[stackPointer_ + i] = stringBytes[i];
+    (*processImage)[stackPointer_ + i] = stringBytes[i];
   }
 
   initialStackFrame.push_back(0);  // null terminator
@@ -176,7 +174,7 @@ void LinuxProcess::createStack() {
   // Copy initial stack frame to process memory
   char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame.data());
   std::copy(stackFrameBytes, stackFrameBytes + stackFrameSize,
-            processImage_ + stackPointer_);
+            (*processImage) + stackPointer_);
 }
 
 }  // namespace kernel
