@@ -629,7 +629,19 @@ void ModelConfig::createGroupMapping() {
                    "STORE",
                    "BRANCH",
                    "SME",
-                   "SME_SIMPLE"};
+                   "SME_SIMPLE",
+                   "SME_SIMPLE_ARTH",
+                   "SME_SIMPLE_ARTH_NOSHIFT",
+                   "SME_SIMPLE_LOGICAL",
+                   "SME_SIMPLE_LOGICAL_NOSHIFT",
+                   "SME_SIMPLE_CMP",
+                   "SME_SIMPLE_CVT",
+                   "SME_MUL",
+                   "SME_DIV_OR_SQRT",
+                   "LOAD_SME",
+                   "STORE_ADDRESS_SME",
+                   "STORE_DATA_SME",
+                   "STORE_SME"};
   // AARCH64 instruction group namespace contains a set of contiguous assigned
   // uint16_t start from 0. Therefore the index of each groupOptions_ entry is
   // also its aarch64::InstructionGroups value (assuming groupOptions_ is
