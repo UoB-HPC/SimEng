@@ -76,6 +76,10 @@ class GDBStub {
    * breakpoints. */
   std::string handleContinue();
 
+  /** Handle qSupported request at start of gdb connection.  Provides GDB
+   * information about what the GDBStub supports. */
+  std::string handleQSupported(std::string qSupported);
+
   /** Create a socket and listen on the port number provided.
    * Socket handling code taken from:
    * https://ncona.com/2019/04/building-a-simple-server-with-cpp/. */
@@ -94,5 +98,8 @@ class GDBStub {
 
   /** A set of breakpoints provided by the GDB client. */
   std::vector<std::string> breakpoints_;
+
+  /** Boolean for whether to send and handle acknowledgements. */
+  bool noAckMode_ = 0;
 };
 }  // namespace simeng
