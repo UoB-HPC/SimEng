@@ -131,14 +131,12 @@ class SimengCoreWrapper : public SST::Component {
    * also be configured to output information like line-number and filename.
    */
   SST::Output output;
-
   /**
    * SST clock for the component register with the custom component
    * during instantiation using the registerClock method provided
    * by SST.
    */
   TimeConverter* clock;
-
   /**
    * SST::Interfaces::StandardMem interface responsible for convering
    * SST::StandardMem::Request(s) into SST memory events to be passed
@@ -147,28 +145,48 @@ class SimengCoreWrapper : public SST::Component {
   StandardMem* mem;
 
   /** Simeng properties */
-  std::unique_ptr<simeng::Core> core;
-  std::string config_path;
-  std::string executable_path;
-  std::string executable_args;
-  uint64_t cache_line_width;
-  uint64_t max_addr_memory;
-  std::unique_ptr<simeng::kernel::LinuxProcess> process;
-  std::unique_ptr<simeng::kernel::Linux> kernel;
-  char* process_memory;
-  std::unique_ptr<simeng::arch::Architecture> arch;
-  std::unique_ptr<simeng::MemoryInterface> instruction_memory;
-  std::unique_ptr<simeng::BranchPredictor> predictor;
-  std::unique_ptr<simeng::pipeline::PortAllocator> port_allocator;
-  std::unique_ptr<SimengMemInterface> data_memory;
-  int iterations;
-  int vitrual_counter;
-  double timer_modulo;
-  int size;
-  std::chrono::high_resolution_clock::time_point start_time;
 
+  /** Reference to SimEng core */
+  std::unique_ptr<simeng::Core> core;
+  /** Path to the YAML configuration file for SimEng */
+  std::string config_path;
+  /** Path to the executable binary to be simulated by SimEng */
+  std::string executable_path;
+  /** Arguments to be passed to executable binary */
+  std::string executable_args;
+  /** The cache line width for SST */
+  uint64_t cache_line_width;
+  /** Maximum address availbale to SimEng for memory purposes */
+  uint64_t max_addr_memory;
+  /** Reference to the SimEng LinuxProcess */
+  std::unique_ptr<simeng::kernel::LinuxProcess> process;
+  /** Reference to the SimEng Linux kernel */
+  std::unique_ptr<simeng::kernel::Linux> kernel;
+  /** Reference to the process memory used in SimEng */
+  char* process_memory;
+  /** Reference to the SimEng architecture */
+  std::unique_ptr<simeng::arch::Architecture> arch;
+  /** Reference to SimEng instruction memory */
+  std::unique_ptr<simeng::MemoryInterface> instruction_memory;
+  /** Reference to the SimEng branch predictor */
+  std::unique_ptr<simeng::BranchPredictor> predictor;
+  /** Reference to the SimEng port allocator */
+  std::unique_ptr<simeng::pipeline::PortAllocator> port_allocator;
+  /** Reference to SimengMemInterface used for interfacing with SST */
+  std::unique_ptr<SimengMemInterface> data_memory;
+  /** Number of clock iterations */
+  int iterations;
+  /** Value of Virtual Counter Timer system register */
+  int vitrual_counter;
+  /** Value used to increment the Virtual Counter Timer system register at a
+   * denied frequency that differs to the main clock speed of the CPU
+   */
+  double timer_modulo;
+  /** Start time of simulation */
+  std::chrono::high_resolution_clock::time_point start_time;
   /** Reference to memory request handler class defined in SimengMemInterface */
   SimengMemInterface::SimengMemHandlers* handlers;
+
   /** Method used to assemble SimEng core. */
   void fabricateSimengCore();
 };
