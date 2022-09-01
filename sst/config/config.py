@@ -11,7 +11,7 @@ cpu.addParams({
     "executable_path": "/home/rahat/asimov/simeng-progs/stream",
     "executable_args": "",
     "clock" : "1GHz",
-    "max_addr_memory": 1*1024*1024*1024-1,
+    "max_addr_memory": 2*1024*1024*1024-1,
     "cache_line_width": "64",
 })
 
@@ -42,7 +42,7 @@ memctrl.addParams({
     "request_width" : "64",
     "debug" : DEBUG_MEM,
     "debug_level" : DEBUG_LEVEL,
-    "addr_range_end" : 1*1024*1024*1024-1,
+    "addr_range_end" : 2*1024*1024*1024-1,
 })
 Mtol1 = memctrl.setSubComponent("cpulink", "memHierarchy.MemLink")
 
@@ -50,7 +50,8 @@ Mtol1 = memctrl.setSubComponent("cpulink", "memHierarchy.MemLink")
 memory = memctrl.setSubComponent("backend", "memHierarchy.simpleMem")
 memory.addParams({
       "access_time" : "1ns",
-      "mem_size" : "1GiB",
+      "mem_size" : "2GiB",
+      "request_width": "64"
 })
 
 # Define the simulation links

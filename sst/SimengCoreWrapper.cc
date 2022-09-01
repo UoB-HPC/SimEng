@@ -5,6 +5,7 @@
 
 #include "SimengCoreWrapper.hh"
 
+#include <cstdlib>
 #include <iostream>
 
 using namespace SST::SSTSimeng;
@@ -21,23 +22,23 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
                              this, &SimengCoreWrapper::clockTick));
 
   // Extract variables from config.py
-  executable_path_ = params.find<std::string>("executable_path", "");
-  executable_args_ = params.find<std::string>("executable_args", "");
-  config_path_ = params.find<std::string>("config_path", "");
-  cache_line_width_ = params.find<uint64_t>("cache_line_width", "64");
-  max_addr_memory_ = params.find<uint64_t>("max_addr_memory", "0");
+  executablePath_ = params.find<std::string>("executable_path", "");
+  executableArgs_ = params.find<std::string>("executable_args", "");
+  configPath_ = params.find<std::string>("config_path", "");
+  cacheLineWidth_ = params.find<uint64_t>("cache_line_width", "64");
+  maxAddrMemory_ = params.find<uint64_t>("max_addr_memory", "0");
 
-  if (executable_path_.length() == 0) {
+  if (executablePath_.length() == 0) {
     output_.fatal(CALL_INFO, 10, 0,
                   "Simeng executable binary filepath not provided.");
   }
-  if (max_addr_memory_ == 0) {
+  if (maxAddrMemory_ == 0) {
     output_.fatal(CALL_INFO, 10, 0,
                   "Maximum address range for memory not provided");
   }
 
   iterations_ = 0;
-  vitrual_counter_ = 0;
+  vitrualCounter_ = 0;
 
   // Instantiate the StandardMem Interface defined in config.py
   mem_ = loadUserSubComponent<SST::Interfaces::StandardMem>(
@@ -45,11 +46,10 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
       new StandardMem::Handler<SimengCoreWrapper>(
           this, &SimengCoreWrapper::handleEvent));
 
-  data_memory_ = std::make_unique<SimengMemInterface>(
-      mem_, cache_line_width_, max_addr_memory_, &output_);
+  dataMemory_ = std::make_unique<SimengMemInterface>(mem_, cacheLineWidth_,
+                                                     maxAddrMemory_, &output_);
 
-  handlers_ =
-      new SimengMemInterface::SimengMemHandlers(*data_memory_, &output_);
+  handlers_ = new SimengMemInterface::SimengMemHandlers(*dataMemory_, &output_);
 
   // Protected methods from SST::Component used to start simulation
   registerAsPrimaryComponent();
@@ -73,7 +73,7 @@ void SimengCoreWrapper::finish() {
 
   auto endTime = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
-                      endTime - start_time_)
+                      endTime - startTime_)
                       .count();
   double hz = iterations_ / (static_cast<double>(duration) / 1000.0);
   double khz = hz / 1000.0;
@@ -91,7 +91,7 @@ void SimengCoreWrapper::finish() {
             << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
             << mips << " MIPS)" << std::endl;
 
-  delete[] process_memory_;
+  delete[] processMemory_;
 }
 
 void SimengCoreWrapper::init(unsigned int phase) {
@@ -104,18 +104,18 @@ void SimengCoreWrapper::init(unsigned int phase) {
 
 bool SimengCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
   // Tick the core and memory interfaces until the program has halted
-  if (!core_->hasHalted() || data_memory_->hasPendingRequests()) {
+  if (!core_->hasHalted() || dataMemory_->hasPendingRequests()) {
     // Tick the core
     core_->tick();
     // Update Virtual Counter Timer at correct frequency.
-    if (iterations_ % (uint64_t)timer_modulo_ == 0) {
-      vitrual_counter_++;
-      core_->incVCT(vitrual_counter_);
+    if (iterations_ % (uint64_t)timerModulo_ == 0) {
+      vitrualCounter_++;
+      core_->incVCT(vitrualCounter_);
     }
 
     // Tick memory
-    instruction_memory_->tick();
-    data_memory_->tick();
+    instructionMemory_->tick();
+    dataMemory_->tick();
 
     iterations_++;
 
@@ -134,8 +134,8 @@ void SimengCoreWrapper::fabricateSimengCore() {
   std::string modeString;
   YAML::Node config;
 
-  if (config_path_ != "") {
-    config = simeng::ModelConfig(config_path_).getConfigFile();
+  if (configPath_ != "") {
+    config = simeng::ModelConfig(configPath_).getConfigFile();
   } else {
     config = YAML::Load(DEFAULT_CONFIG);
   }
@@ -155,19 +155,32 @@ void SimengCoreWrapper::fabricateSimengCore() {
 
   float clockFreq_ = config["Core"]["Clock-Frequency"].as<float>();
   uint32_t timerFreq_ = config["Core"]["Timer-Frequency"].as<uint32_t>();
-  timer_modulo_ = (clockFreq_ * 1e9) / (timerFreq_ * 1e6);
+  timerModulo_ = (clockFreq_ * 1e9) / (timerFreq_ * 1e6);
 
   // Create the process Image
-  std::vector<std::string> commandLine({executable_path_, executable_args_});
+  std::vector<std::string> commandLine({executablePath_, executableArgs_});
   process_ =
       std::make_unique<simeng::kernel::LinuxProcess>(commandLine, config);
   if (!process_->isValid())
-    output_.fatal(CALL_INFO, 1, 0, "Could not read/parse %s", executable_path_);
+    output_.fatal(CALL_INFO, 1, 0, "Could not read/parse %s", executablePath_);
 
   auto processImage = process_->getProcessImage();
   size_t processMemorySize = processImage.size();
-  process_memory_ = new char[processMemorySize]();
-  std::copy(processImage.begin(), processImage.end(), process_memory_);
+  processMemory_ = new char[processMemorySize]();
+  std::copy(processImage.begin(), processImage.end(), processMemory_);
+
+  // This check ensure that SST has enough memory to store the entire
+  // processImage constructed by SimEng.
+  if (maxAddrMemory_ < processMemorySize) {
+    output_.verbose(
+        CALL_INFO, 1, 0,
+        "Error: SST backend memory is less than processImage size. Please "
+        "increase the memory allocated to memHierarchy.memBackend and "
+        "ensure it is consistent with \'max_addr_memory\' and "
+        "\'addr_range_end\'. \n");
+    primaryComponentOKToEndSim();
+    std::exit(EXIT_FAILURE);
+  }
 
   uint64_t entryPoint = process_->getEntryPoint();
 
@@ -175,8 +188,8 @@ void SimengCoreWrapper::fabricateSimengCore() {
   kernel_ = std::make_unique<simeng::kernel::Linux>();
   kernel_->createProcess(*process_.get());
 
-  instruction_memory_ = std::make_unique<simeng::FlatMemoryInterface>(
-      process_memory_, processMemorySize);
+  instructionMemory_ = std::make_unique<simeng::FlatMemoryInterface>(
+      processMemory_, processMemorySize);
 
   // Create the architecture, with knowledge of the kernel
   arch_ =
@@ -194,7 +207,7 @@ void SimengCoreWrapper::fabricateSimengCore() {
       portArrangement[i].push_back(config_groups[j].as<uint16_t>());
     }
   }
-  port_allocator_ = std::make_unique<simeng::pipeline::BalancedPortAllocator>(
+  portAllocator_ = std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
 
   // Configure reservation station arrangment
@@ -213,12 +226,12 @@ void SimengCoreWrapper::fabricateSimengCore() {
   if (mode == SimulationMode::OutOfOrder) {
     modeString = "Out-of-Order";
     core_ = std::make_unique<simeng::models::outoforder::Core>(
-        *instruction_memory_, *data_memory_, processMemorySize, entryPoint,
-        *arch_, *predictor_, *port_allocator_, rsArrangement, config);
+        *instructionMemory_, *dataMemory_, processMemorySize, entryPoint,
+        *arch_, *predictor_, *portAllocator_, rsArrangement, config);
   } else {
     modeString = "Emulation";
     core_ = std::make_unique<simeng::models::emulation::Core>(
-        *instruction_memory_, *data_memory_, entryPoint, processMemorySize,
+        *instructionMemory_, *dataMemory_, entryPoint, processMemorySize,
         *arch_);
   }
 
@@ -231,10 +244,10 @@ void SimengCoreWrapper::fabricateSimengCore() {
     SFdir.GenerateSFDir();
   }
 
-  data_memory_->sendProcessImageToSST(processImage);
+  dataMemory_->sendProcessImageToSST(processImage);
 
   output_.verbose(CALL_INFO, 1, 0, "SimEng core setup successfully.\n");
   std::cout << "Running in " << modeString << " mode." << std::endl;
   output_.verbose(CALL_INFO, 1, 0, "Starting simulation.\n");
-  start_time_ = std::chrono::high_resolution_clock::now();
+  startTime_ = std::chrono::high_resolution_clock::now();
 }

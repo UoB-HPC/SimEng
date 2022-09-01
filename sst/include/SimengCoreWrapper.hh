@@ -123,7 +123,7 @@ class SimengCoreWrapper : public SST::Component {
       {"max_addr_memory", "Maximum address that memory can access (int)"}, )
 
  private:
-  /** SST properties */
+  /** SST properties. */
 
   /**
    * SST defined output class used to output information to standard output.
@@ -144,47 +144,48 @@ class SimengCoreWrapper : public SST::Component {
    */
   StandardMem* mem_;
 
-  /** Simeng properties */
+  /** Simeng properties. */
 
-  /** Reference to SimEng core */
+  /** Reference to SimEng core. */
   std::unique_ptr<simeng::Core> core_;
-  /** Path to the YAML configuration file for SimEng */
-  std::string config_path_;
-  /** Path to the executable binary to be simulated by SimEng */
-  std::string executable_path_;
-  /** Arguments to be passed to executable binary */
-  std::string executable_args_;
-  /** The cache line width for SST */
-  uint64_t cache_line_width_;
-  /** Maximum address availbale to SimEng for memory purposes */
-  uint64_t max_addr_memory_;
-  /** Reference to the SimEng LinuxProcess */
+  /** Path to the YAML configuration file for SimEng. */
+  std::string configPath_;
+  /** Path to the executable binary to be simulated by SimEng. */
+  std::string executablePath_;
+  /** Arguments to be passed to executable binary. */
+  std::string executableArgs_;
+  /** The cache line width for SST. */
+  uint64_t cacheLineWidth_;
+  /** Maximum address availbale to SimEng for memory purposes. */
+  uint64_t maxAddrMemory_;
+  /** Reference to the SimEng LinuxProcess. */
   std::unique_ptr<simeng::kernel::LinuxProcess> process_;
-  /** Reference to the SimEng Linux kernel */
+  /** Reference to the SimEng Linux kernel. */
   std::unique_ptr<simeng::kernel::Linux> kernel_;
-  /** Reference to the process memory used in SimEng */
-  char* process_memory_;
-  /** Reference to the SimEng architecture */
+  /** Reference to the process memory used in SimEng. */
+  char* processMemory_;
+  /** Reference to the SimEng architecture. */
   std::unique_ptr<simeng::arch::Architecture> arch_;
-  /** Reference to SimEng instruction memory */
-  std::unique_ptr<simeng::MemoryInterface> instruction_memory_;
-  /** Reference to the SimEng branch predictor */
+  /** Reference to SimEng instruction memory. */
+  std::unique_ptr<simeng::MemoryInterface> instructionMemory_;
+  /** Reference to the SimEng branch predictor. */
   std::unique_ptr<simeng::BranchPredictor> predictor_;
-  /** Reference to the SimEng port allocator */
-  std::unique_ptr<simeng::pipeline::PortAllocator> port_allocator_;
-  /** Reference to SimengMemInterface used for interfacing with SST */
-  std::unique_ptr<SimengMemInterface> data_memory_;
-  /** Number of clock iterations */
+  /** Reference to the SimEng port allocator. */
+  std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator_;
+  /** Reference to SimengMemInterface used for interfacing with SST. */
+  std::unique_ptr<SimengMemInterface> dataMemory_;
+  /** Number of clock iterations. */
   int iterations_;
-  /** Value of Virtual Counter Timer system register */
-  int vitrual_counter_;
+  /** Value of Virtual Counter Timer system register. */
+  int vitrualCounter_;
   /** Value used to increment the Virtual Counter Timer system register at a
-   * denied frequency that differs to the main clock speed of the CPU
+   * denied frequency that differs to the main clock speed of the CPU.
    */
-  double timer_modulo_;
-  /** Start time of simulation */
-  std::chrono::high_resolution_clock::time_point start_time_;
-  /** Reference to memory request handler class defined in SimengMemInterface */
+  double timerModulo_;
+  /** Start time of simulation. */
+  std::chrono::high_resolution_clock::time_point startTime_;
+  /** Reference to memory request handler class defined in SimengMemInterface.
+   */
   SimengMemInterface::SimengMemHandlers* handlers_;
 
   /** Method used to assemble SimEng core. */

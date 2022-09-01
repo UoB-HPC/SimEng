@@ -14,7 +14,7 @@ SimengMemInterface::SimengMemInterface(StandardMem* mem, uint64_t cl,
     : simeng::MemoryInterface() {
   this->mem_ = mem;
   this->clw_ = cl;
-  this->max_addr_memory_ = max_addr;
+  this->maxAddrMemory_ = max_addr;
   this->output_ = out;
 };
 
@@ -136,7 +136,7 @@ std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
 
     // Increase the aggregate count to denote the number SST requests a read
     // request from SimEng was split into.
-    aggrReq->aggregateCount++;
+    aggrReq->aggregateCount_++;
     addrStart += currReqSize;
     req_ids.push_back(readReq->getID());
     requests.push_back(readReq);
@@ -149,7 +149,7 @@ std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
        many-to-one relation between multiple SST requests and a SimEng read
        request.
     */
-    aggregation_map_.insert({id, aggrReq});
+    aggregationMap_.insert({id, aggrReq});
   }
   req_ids.clear();
   return requests;
@@ -167,8 +167,8 @@ void SimengMemInterface::requestRead(const MemoryAccessTarget& target,
       which signals an exception. However, wrongly speculated branches
       lead to a pipeline flush after which execution continues.
   */
-  if (addrEnd > max_addr_memory_ || unsignedOverflow_(addrStart, size)) {
-    completed_read_requests_.push_back({target, RegisterValue(), requestId});
+  if (addrEnd > maxAddrMemory_ || unsignedOverflow_(addrStart, size)) {
+    completedReadRequests_.push_back({target, RegisterValue(), requestId});
     return;
   }
 
@@ -197,40 +197,40 @@ void SimengMemInterface::requestWrite(const MemoryAccessTarget& target,
 void SimengMemInterface::tick() { tickCounter_++; }
 
 void SimengMemInterface::clearCompletedReads() {
-  completed_read_requests_.clear();
+  completedReadRequests_.clear();
 }
 
 bool SimengMemInterface::hasPendingRequests() const {
-  return completed_read_requests_.size() > 0;
+  return completedReadRequests_.size() > 0;
 };
 
 const span<MemoryReadResult> SimengMemInterface::getCompletedReads() const {
-  return {const_cast<MemoryReadResult*>(completed_read_requests_.data()),
-          completed_read_requests_.size()};
+  return {const_cast<MemoryReadResult*>(completedReadRequests_.data()),
+          completedReadRequests_.size()};
 };
 
 void SimengMemInterface::aggregatedReadResponses(
     AggregateReadRequest* aggrReq) {
-  if (aggrReq->aggregateCount != 0) return;
+  if (aggrReq->aggregateCount_ != 0) return;
   std::vector<uint8_t> mergedData;
   // Loop through the ordered map and merge the data in order inside the
   // mergedData vector. Also remove entries from the aggregation_map as we loop
   // through each SST Request id.
-  for (auto itr = aggrReq->response_map.begin();
-       itr != aggrReq->response_map.end(); itr++) {
+  for (auto itr = aggrReq->responseMap_.begin();
+       itr != aggrReq->responseMap_.end(); itr++) {
     mergedData.insert(mergedData.end(), itr->second.begin(), itr->second.end());
-    aggregation_map_.erase(itr->first);
+    aggregationMap_.erase(itr->first);
   }
   // Send the completed read request back to SimEng via the
   // completed_read_requests queue.
   const char* char_data = reinterpret_cast<const char*>(&mergedData[0]);
-  completed_read_requests_.push_back(
+  completedReadRequests_.push_back(
       {aggrReq->target,
        RegisterValue(char_data, uint16_t(unsigned(aggrReq->target.size))),
-       aggrReq->id});
+       aggrReq->id_});
 
   // Cleanup
-  aggrReq->response_map.clear();
+  aggrReq->responseMap_.clear();
   delete aggrReq;
 }
 
@@ -246,8 +246,8 @@ void SimengMemInterface::SimengMemHandlers::handle(StandardMem::ReadResp* rsp) {
 
   // Upon recieving a response from SST the aggregation_map is used to retrieve
   // the AggregatedReadRequest the recieved SST response is a part of.
-  auto itr = mem_interface_.aggregation_map_.find(id);
-  if (itr == mem_interface_.aggregation_map_.end()) return;
+  auto itr = memInterface_.aggregationMap_.find(id);
+  if (itr == memInterface_.aggregationMap_.end()) return;
   /*
       After succesful retrieval of AggregatedReadRequest from aggregation_map
      the response data is stored inside the AggregatedReadRequest in an ordered
@@ -258,18 +258,18 @@ void SimengMemInterface::SimengMemHandlers::handle(StandardMem::ReadResp* rsp) {
      "interfaces/stdMem.(hh/cc)" (SST-Core)
   */
   SimengMemInterface::AggregateReadRequest* aggrReq = itr->second;
-  aggrReq->response_map.insert({id, data});
+  aggrReq->responseMap_.insert({id, data});
   /*
       Decrement aggregateCount as we keep on recieving responses from SST.
       If all responses have been recieved aggregate all responses and send
       data back to SimEng.
   */
-  if (--aggrReq->aggregateCount <= 0) {
-    mem_interface_.aggregatedReadResponses(aggrReq);
+  if (--aggrReq->aggregateCount_ <= 0) {
+    memInterface_.aggregatedReadResponses(aggrReq);
   }
 }
 
-int SimengMemInterface::getCacheLinesNeeded(uint64_t size) {
+int SimengMemInterface::getCacheLinesNeeded(uint64_t size) const {
   if (size < clw_) return 1;
   if (size % clw_ == 0) return size / clw_;
   return (size / clw_) + 1;
@@ -277,11 +277,11 @@ int SimengMemInterface::getCacheLinesNeeded(uint64_t size) {
 bool SimengMemInterface::unsignedOverflow_(uint64_t a, uint64_t b) const {
   return (a + b) < a || (a + b) < b;
 };
-bool SimengMemInterface::requestSpansMultipleCacheLines(uint64_t addrStart,
-                                                        uint64_t addrEnd) {
+bool SimengMemInterface::requestSpansMultipleCacheLines(
+    uint64_t addrStart, uint64_t addrEnd) const {
   uint64_t lineDiff = (addrEnd / clw_) - (addrStart / clw_);
   return lineDiff > 0;
 };
-uint64_t SimengMemInterface::nearestCacheLineEnd(uint64_t addrStart) {
+uint64_t SimengMemInterface::nearestCacheLineEnd(uint64_t addrStart) const {
   return (addrStart / clw_) + 1;
 };

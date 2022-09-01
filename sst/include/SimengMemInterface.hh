@@ -77,7 +77,7 @@ class SimengMemInterface : public MemoryInterface {
 
    public:
     SimengMemHandlers(SimengMemInterface& interface, SST::Output* out)
-        : StandardMem::RequestHandler(out), mem_interface_(interface) {}
+        : StandardMem::RequestHandler(out), memInterface_(interface) {}
     ~SimengMemHandlers() {}
     /**
      * Overloaded instance of handle method to handle read request responses
@@ -91,8 +91,8 @@ class SimengMemInterface : public MemoryInterface {
      */
     void handle(StandardMem::WriteResp* resp) override;
 
-    /** Reference to SimengMemInterface used for interfacing with SST */
-    SimengMemInterface& mem_interface_;
+    /** Reference to SimengMemInterface used for interfacing with SST. */
+    SimengMemInterface& memInterface_;
   };
 
   /**
@@ -100,6 +100,7 @@ class SimengMemInterface : public MemoryInterface {
    * struct for AggregateWriteRequest and AggregateReadRequest.
    */
   struct SimengMemoryRequest {
+    /** MemoryAccessTarget from SimEng memory instruction. */
     const MemoryAccessTarget target;
 
     SimengMemoryRequest() : target(MemoryAccessTarget()){};
@@ -114,6 +115,7 @@ class SimengMemInterface : public MemoryInterface {
    * split for ease of implementation.
    */
   struct AggregateWriteRequest : public SimengMemoryRequest {
+    /** RegisterValue (write data) from SimEng memory instruction. */
     const RegisterValue data;
 
     AggregateWriteRequest() : SimengMemoryRequest(), data(RegisterValue()){};
@@ -130,18 +132,21 @@ class SimengMemInterface : public MemoryInterface {
    * split for ease of implementation.
    */
   struct AggregateReadRequest : public SimengMemoryRequest {
-    const uint64_t id;
+    /** Unique identifier of each AggregatedReadRequest copied from Simeng read
+     * request. */
+    const uint64_t id_;
     /**
      * This response map is used to store all responses of SST read request,
      * this aggregated read request was split into. An ordered map is used to
      * record and maintain the order to split responses.
      */
-    std::map<uint64_t, std::vector<uint8_t>> response_map;
-    int aggregateCount = 0;
+    std::map<uint64_t, std::vector<uint8_t>> responseMap_;
+    /** Total number of SST request the SimEng memory request was split into. */
+    int aggregateCount_ = 0;
 
-    AggregateReadRequest() : SimengMemoryRequest(), id(0){};
+    AggregateReadRequest() : SimengMemoryRequest(), id_(0){};
     AggregateReadRequest(const MemoryAccessTarget& target, const uint64_t id)
-        : SimengMemoryRequest(target), id(id) {}
+        : SimengMemoryRequest(target), id_(id) {}
   };
 
  private:
@@ -157,14 +162,14 @@ class SimengMemInterface : public MemoryInterface {
    * down the memory heirarchy.
    */
   StandardMem* mem_;
-  /** Counter for clock ticks */
+  /** Counter for clock ticks. */
   uint64_t tickCounter_ = 0;
-  /** The cache line width specified by SST config.py */
+  /** The cache line width specified by SST config.py. */
   uint64_t clw_;
-  /** Maximum address availbale for memory purposes */
-  uint64_t max_addr_memory_;
+  /** Maximum address availbale for memory purposes. */
+  uint64_t maxAddrMemory_;
   /** A vector containing all completed read requests. */
-  std::vector<MemoryReadResult> completed_read_requests_;
+  std::vector<MemoryReadResult> completedReadRequests_;
   /**
    * This map is used to store unique ids of SST::StandardMem:Read requests and
    * their corresponding AggregateReadRequest as key-value pairs (In some cases
@@ -179,7 +184,7 @@ class SimengMemInterface : public MemoryInterface {
    * SST::StandardMem::Write requests as their responses do not need to be
    * aggregated.
    */
-  std::unordered_map<uint64_t, AggregateReadRequest*> aggregation_map_;
+  std::unordered_map<uint64_t, AggregateReadRequest*> aggregationMap_;
 
   /** This method only accepts structs derived from the SimengMemoryRequest
    * struct as the value for aggrReq. */
@@ -209,7 +214,7 @@ class SimengMemInterface : public MemoryInterface {
   /** Get the number of cache lines needed incase the size of a memory request
    * is larger than cache line width.
    */
-  int getCacheLinesNeeded(uint64_t size);
+  int getCacheLinesNeeded(uint64_t size) const;
   bool unsignedOverflow_(uint64_t a, uint64_t b) const;
 
   /**
@@ -218,14 +223,15 @@ class SimengMemInterface : public MemoryInterface {
    * lie on the same cache line. This can even happen if the size of the memory
    * request is less than cache line width.
    */
-  bool requestSpansMultipleCacheLines(uint64_t addrStart, uint64_t addrEnd);
+  bool requestSpansMultipleCacheLines(uint64_t addrStart,
+                                      uint64_t addrEnd) const;
 
   /**
    * This method is used to find the end address of the cache line specified by
    * the start address of the memory request. This method is used when a memory
    * request spans multiple cahce lines.
    */
-  uint64_t nearestCacheLineEnd(uint64_t addrStart);
+  uint64_t nearestCacheLineEnd(uint64_t addrStart) const;
 };
 
 };  // namespace SSTSimeng
