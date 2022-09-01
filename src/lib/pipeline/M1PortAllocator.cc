@@ -4,9 +4,6 @@
 #include <cstdint>
 #include <vector>
 
-// TODO REMOVE
-#include "stdio.h"
-
 namespace simeng {
 namespace pipeline {
 
@@ -43,7 +40,7 @@ uint8_t M1PortAllocator::allocate(const std::vector<uint8_t>& ports) {
       // Search for the lowest-weighted port available
       if (!foundPort || weights[portIndex] < bestWeight) {
         foundPort = true;
-        bestWeight = weights[portIndex];  // weights[portIndex];
+        bestWeight = weights[portIndex];
         bestPort = portIndex;
       }
     }
