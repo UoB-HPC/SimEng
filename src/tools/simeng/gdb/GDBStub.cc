@@ -19,20 +19,24 @@ int GDBStub::run() {
   while (true) {
     read(connection, buffer, 10000);
 
-    // '+' is an acknowledgement of successful receipt of message
-    // TODO: handle '-', no acknowledgement
-    std::regex ack_regex("^\\+.*");
-
     // First parentheses = package, second = checksum
-    std::regex packet_regex("^\\$([^#]*)#([0-9a-f]{2})");
+    std::regex packet_regex("^\\+*\\$([^#]*)#([0-9a-f]{2})");
     std::smatch packet_match;
     std::string bufferString = buffer;
 
-    if (regex_match(bufferString, ack_regex)) {
-      if (verbose_)
-        std::cout << CYAN << "<- Received message acknowledgement" << std::endl
-                  << RESET;
-    } else if (regex_match(bufferString, packet_match, packet_regex)) {
+    if (!noAckMode_) {
+      // '+' is an acknowledgement of successful receipt of message
+      // TODO: handle '-', no acknowledgement
+      std::regex ack_regex("^\\+.*");
+      if (regex_match(bufferString, ack_regex)) {
+        if (verbose_)
+          std::cout << CYAN << "<- Received message acknowledgement"
+                    << std::endl
+                    << RESET;
+      }
+    }
+
+    if (regex_match(bufferString, packet_match, packet_regex)) {
       std::string packet = packet_match[1].str();
       if (verbose_) {
         std::cout << CYAN;
@@ -56,7 +60,8 @@ int GDBStub::run() {
       std::regex qSupported_regex("^qSupported:(.*)");
       std::smatch qSupported_match;
 
-      std::string response = "+";  // acknowledgement
+      std::string response = "";
+      if (!noAckMode_) response += "+";  // acknowledgement
 
       if (packet == "?") {  // reason for halting
         response += generateReply("S05");
@@ -100,6 +105,14 @@ int GDBStub::run() {
       } else if (packet[0] == 'M') {  // write memory
         response += generateReply("OK");
       } else if (packet[0] == 'G') {  // write registers
+        response += generateReply("OK");
+      } else if (regex_match(packet, qSupported_match,
+                             qSupported_regex)) {  // tells gdb what features
+                                                   // are supported
+        std::string supported = handleQSupported(qSupported_match[1]);
+        response += generateReply(supported);
+      } else if (packet == "QStartNoAckMode") {  // starts noAckMode
+        noAckMode_ = 1;
         response += generateReply("OK");
       } else {
         if (verbose_) std::cout << RED << "   Packet not supported\n" << RESET;
@@ -280,6 +293,14 @@ std::string GDBStub::handleContinue() {
   }
 
   return "S05";
+}
+
+std::string GDBStub::handleQSupported(std::string qSupported) {
+  std::string output = "";
+
+  output += "QStartNoAckMode+";
+
+  return output;
 }
 
 int GDBStub::openSocket(int port) const {
