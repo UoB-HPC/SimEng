@@ -70,7 +70,6 @@ void DispatchIssueUnit::tick() {
       input_.getHeadSlots()[slot] = nullptr;
       continue;
     }
-
     // Allocate issue port to uop
     uint8_t port = portAllocator_.allocate(supportedPorts);
     uint8_t RS_Index = portMapping_[port].first;
