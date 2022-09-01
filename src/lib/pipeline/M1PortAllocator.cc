@@ -16,7 +16,6 @@ M1PortAllocator::M1PortAllocator(
     : weights(portArrangement.size(), 0), rsArrangement_(rsArrangement) {}
 
 uint8_t M1PortAllocator::allocate(const std::vector<uint8_t>& ports) {
-  //printf("--- Allocating --- \n");
   assert(ports.size() &&
          "No supported ports supplied; cannot allocate from a empty set");
   bool foundPort = false;
@@ -25,6 +24,9 @@ uint8_t M1PortAllocator::allocate(const std::vector<uint8_t>& ports) {
 
   uint16_t bestRSQueueSize = 0xFFFF;
   bool foundRS = false;
+
+  // Update the the reference for number of free spaces in the reservation
+  // stations
   std::vector<uint64_t> rsFreeSpaces;
   rsSizes_(rsFreeSpaces);
 
@@ -34,17 +36,12 @@ uint8_t M1PortAllocator::allocate(const std::vector<uint8_t>& ports) {
     auto rsFreeSpace = rsFreeSpaces[rsIndex];
     auto rsQueueSize = (rsSize - rsFreeSpace);
 
-    // printf("n_RS: %d\tPort Index %d\tRS Index: %d\tRS Size: %lu\tRS Free
-    // Space: %lu\tqueuesize: %d\tWeight: %f\tbestWeight:
-    // %f\n",rsFreeSpaces.size(),portIndex,
-    // rsIndex,rsSize,rsFreeSpace,rsQueueSize,weights[portIndex], bestWeight);
     if (rsQueueSize < bestRSQueueSize) {
       bestRSQueueSize = rsQueueSize;
       foundRS = true;
 
       // Search for the lowest-weighted port available
       if (!foundPort || weights[portIndex] < bestWeight) {
-        // printf("Using RS %d\n",rsIndex);
         foundPort = true;
         bestWeight = weights[portIndex];  // weights[portIndex];
         bestPort = portIndex;
