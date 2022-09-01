@@ -40,121 +40,116 @@ void Core::tick() {
     return;
   }
 
-  if (pendingReads_ > 0) {
-    // Handle pending reads to a uop
+  // Fetch
+  // Find fetched memory that matches the current PC
+  const auto& fetched = instructionMemory_.getCompletedReads();
+  size_t fetchIndex;
+  for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
+    if (fetched[fetchIndex].target.address == pc_) {
+      break;
+    }
+  }
+  if (fetchIndex == fetched.size()) {
+    // Need to wait for fetched instructions
+    return;
+  }
+
+  const auto& instructionBytes = fetched[fetchIndex].data;
+  auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
+                                  FETCH_SIZE, pc_, macroOp_);
+
+  // Clear the fetched data
+  instructionMemory_.clearCompletedReads();
+
+  pc_ += bytesRead;
+
+  // Decode
+  for (size_t index = 0; index < macroOp_.size(); index++) {
+    microOps_.push(std::move(macroOp_[index]));
+  }
+
+  while (!microOps_.empty()) {
     auto& uop = microOps_.front();
 
-    const auto& completedReads = dataMemory_.getCompletedReads();
-    for (const auto& response : completedReads) {
-      assert(pendingReads_ > 0);
-      uop->supplyData(response.target.address, response.data);
-      pendingReads_--;
-    }
-    dataMemory_.clearCompletedReads();
-
-    if (pendingReads_ == 0) {
-      // Load complete: resume execution
-      execute(uop);
-    }
-
-    // More data pending, end cycle early
-    return;
-  }
-
-  // Fetch
-
-  // Determine if new uops are needed to be fetched
-  if (!microOps_.size()) {
-    // Find fetched memory that matches the current PC
-    const auto& fetched = instructionMemory_.getCompletedReads();
-    size_t fetchIndex;
-    for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
-      if (fetched[fetchIndex].target.address == pc_) {
-        break;
-      }
-    }
-    if (fetchIndex == fetched.size()) {
-      // Need to wait for fetched instructions
-      return;
-    }
-
-    const auto& instructionBytes = fetched[fetchIndex].data;
-    auto bytesRead = isa_.predecode(instructionBytes.getAsVector<char>(),
-                                    FETCH_SIZE, pc_, macroOp_);
-
-    // Clear the fetched data
-    instructionMemory_.clearCompletedReads();
-
-    pc_ += bytesRead;
-
-    // Decode
-    for (size_t index = 0; index < macroOp_.size(); index++) {
-      microOps_.push(std::move(macroOp_[index]));
-    }
-  }
-
-  auto& uop = microOps_.front();
-
-  if (uop->exceptionEncountered()) {
-    handleException(uop);
-    return;
-  }
-
-  // Issue
-  auto registers = uop->getSourceRegisters();
-  for (size_t i = 0; i < registers.size(); i++) {
-    auto reg = registers[i];
-    if (!uop->isOperandReady(i)) {
-      uop->supplyOperand(i, registerFileSet_.get(reg));
-    }
-  }
-
-  // Execute
-  if (uop->isLoad()) {
-    auto addresses = uop->generateAddresses();
-    previousAddresses_.clear();
+    // Check for an exception and return early if it was fatal
     if (uop->exceptionEncountered()) {
       handleException(uop);
-      return;
+      if (hasHalted_) return;
     }
-    if (addresses.size() > 0) {
-      // Memory reads are required; request them, set `pendingReads_`
-      // accordingly, and end the cycle early
+
+    // Issue
+    auto registers = uop->getSourceRegisters();
+    for (size_t i = 0; i < registers.size(); i++) {
+      auto reg = registers[i];
+      if (!uop->isOperandReady(i)) {
+        uop->supplyOperand(i, registerFileSet_.get(reg));
+      }
+    }
+
+    // Execute
+    if (uop->isLoad()) {
+      auto addresses = uop->generateAddresses();
+      previousAddresses_.clear();
+
+      // Check for an exception and return early if it was fatal
+      if (uop->exceptionEncountered()) {
+        handleException(uop);
+        if (hasHalted_) return;
+      }
+
+      if (addresses.size() > 0) {
+        // Memory reads are required; request them, set `pendingReads_`
+        // accordingly
+        for (auto const& target : addresses) {
+          dataMemory_.requestRead(target);
+          // Store addresses for use by next store data operation
+          previousAddresses_.push_back(target);
+        }
+        pendingReads_ = addresses.size();
+        // Tick data memory until all data is recieved
+        while (pendingReads_) {
+          dataMemory_.tick();
+          const auto& completedReads = dataMemory_.getCompletedReads();
+          // Supply data to load uop
+          for (const auto& response : completedReads) {
+            assert(pendingReads_ > 0);
+            uop->supplyData(response.target.address, response.data);
+            pendingReads_--;
+          }
+          dataMemory_.clearCompletedReads();
+        }
+
+        // Load complete: resume execution
+        execute(uop);
+      } else {
+        // Early execution due to lacking addresses
+        execute(uop);
+      }
+    } else if (uop->isStoreAddress()) {
+      auto addresses = uop->generateAddresses();
+      previousAddresses_.clear();
+
+      // Check for an exception and return early if it was fatal
+      if (uop->exceptionEncountered()) {
+        handleException(uop);
+        if (hasHalted_) return;
+      }
+
+      // Store addresses for use by next store data operation
       for (auto const& target : addresses) {
-        dataMemory_.requestRead(target);
-        // Store addresses for use by next store data operation
         previousAddresses_.push_back(target);
       }
-      pendingReads_ = addresses.size();
-      return;
+      if (uop->isStoreData()) {
+        execute(uop);
+      }
     } else {
-      // Early execution due to lacking addresses
       execute(uop);
-      return;
     }
-  } else if (uop->isStoreAddress()) {
-    auto addresses = uop->generateAddresses();
-    previousAddresses_.clear();
-    if (uop->exceptionEncountered()) {
-      handleException(uop);
-      return;
-    }
-    // Store addresses for use by next store data operation
-    for (auto const& target : addresses) {
-      previousAddresses_.push_back(target);
-    }
-    if (uop->isStoreData()) {
-      execute(uop);
-    } else {
-      // Fetch memory for next cycle
-      instructionMemory_.requestRead({pc_, FETCH_SIZE});
-      microOps_.pop();
-    }
-
-    return;
+    microOps_.pop();
   }
 
-  execute(uop);
+  // Fetch memory for next cycle
+  instructionMemory_.requestRead({pc_, FETCH_SIZE});
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
@@ -196,23 +191,12 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   // Writeback
   auto results = uop->getResults();
   auto destinations = uop->getDestinationRegisters();
-  if (uop->isStoreData()) {
-    for (size_t i = 0; i < results.size(); i++) {
-      auto reg = destinations[i];
-      registerFileSet_.set(reg, results[i]);
-    }
-  } else {
-    for (size_t i = 0; i < results.size(); i++) {
-      auto reg = destinations[i];
-      registerFileSet_.set(reg, results[i]);
-    }
+  for (size_t i = 0; i < results.size(); i++) {
+    auto reg = destinations[i];
+    registerFileSet_.set(reg, results[i]);
   }
 
   if (uop->isLastMicroOp()) instructionsExecuted_++;
-
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
-  microOps_.pop();
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
@@ -230,10 +214,8 @@ void Core::processExceptionHandler() {
   }
 
   bool success = exceptionHandler_->tick();
-  if (!success) {
-    // Handler needs further ticks to complete
-    return;
-  }
+  // Tick handler until the exception is fully processed
+  while (!success) success = exceptionHandler_->tick();
 
   const auto& result = exceptionHandler_->getResult();
 
@@ -248,10 +230,6 @@ void Core::processExceptionHandler() {
 
   // Clear the handler
   exceptionHandler_ = nullptr;
-
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
-  microOps_.pop();
 }
 
 uint64_t Core::getProgramCounter() const { return pc_; }
