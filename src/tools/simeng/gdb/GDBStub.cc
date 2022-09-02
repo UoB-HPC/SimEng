@@ -227,6 +227,12 @@ std::string GDBStub::handleReadRegisters() const {
 
 std::string GDBStub::handleReadSingleRegister(std::string registerName) const {
   uint16_t registerNumber = hexToInt(registerName);
+
+  if (registerNumber > 31) return "";  // out of supported register range
+  std::cout << RED << "Requested register " << registerNumber
+            << "is out of supported range\n"
+            << RESET;
+
   uint64_t value = core_.getArchitecturalRegisterFileSet()
                        .get({0, registerNumber})
                        .get<uint64_t>();
