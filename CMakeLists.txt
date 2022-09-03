@@ -18,7 +18,7 @@ endmacro()
 FetchContent_Declare(
   llvm
   URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.5/llvm-14.0.5.src.tar.xz
-  URL_HASH MD5=5ae9e6fcacceed57361e5bc4d5b32d00
+  URL_HASH MD5=6bd202e403d950c78985048ce499a518
 )
 
 # FetchContent_Declare(
