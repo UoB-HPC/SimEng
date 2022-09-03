@@ -8,8 +8,7 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
-                                             (uint16_t)-1};
+const Register Instruction::ZERO_REGISTER = {RegisterType::ZERO, 0};
 
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,
@@ -32,33 +31,6 @@ Instruction::Instruction(const Architecture& architecture,
 }
 
 InstructionException Instruction::getException() const { return exception_; }
-
-void Instruction::setSourceRegisters(const std::vector<Register>& registers) {
-  // assert(registers.size() <= MAX_SOURCE_REGISTERS &&
-  //        "Exceeded maximum source registers for an AArch64 instruction");
-
-  sourceRegisterCount = registers.size();
-  operandsPending = registers.size();
-
-  for (size_t i = 0; i < registers.size(); i++) {
-    auto reg = registers[i];
-    if (reg == Instruction::ZERO_REGISTER) {
-      // Any zero-register references should be marked as ready, and
-      //  the corresponding operand value zeroed
-      operands.push_back(RegisterValue(0, 8));
-      operandsPending--;
-    }
-    sourceRegisters.push_back(reg);
-  }
-}
-void Instruction::setDestinationRegisters(
-    const std::vector<Register>& registers) {
-  // assert(registers.size() <= MAX_DESTINATION_REGISTERS &&
-  //        "Exceeded maximum destination registers for an AArch64
-  //        instruction");
-  destinationRegisterCount = registers.size();
-  std::copy(registers.begin(), registers.end(), destinationRegisters.begin());
-}
 
 const span<Register> Instruction::getOperandRegisters() const {
   return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};

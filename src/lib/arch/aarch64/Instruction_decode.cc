@@ -136,23 +136,6 @@ Register csRegToRegister(arm64_reg reg) {
           std::numeric_limits<uint16_t>::max()};
 }
 
-// Check for and mark WZR/XZR references
-const Register& filterZR(const Register& reg) {
-  return (reg.type == RegisterType::GENERAL && reg.tag == 31
-              ? Instruction::ZERO_REGISTER
-              : reg);
-}
-
-void Instruction::checkZeroReg() {
-  if (sourceRegisters[sourceRegisterCount] == Instruction::ZERO_REGISTER) {
-    // Catch zero register references and pre-complete those operands
-    operands.resize(sourceRegisterCount + 1);
-    operands[sourceRegisterCount] = RegisterValue(0, 8);
-  } else {
-    operandsPending++;
-  }
-}
-
 /** Resturns a full set of rows from the ZA matrix register that make up the
  * supplied SME tile register. */
 std::vector<Register> getZARowVectors(arm64_reg reg, const uint64_t SVL_bits) {
@@ -209,7 +192,7 @@ void Instruction::decode() {
   for (size_t i = 0; i < metadata.implicitSourceCount; i++) {
     sourceRegisters.push_back(
         csRegToRegister(static_cast<arm64_reg>(metadata.implicitSources[i])));
-    checkZeroReg();
+    operandsPending++;
     sourceRegisterCount++;
   }
 
@@ -275,7 +258,7 @@ void Instruction::decode() {
         } else {
           // Add register reads to destinations
           sourceRegisters.push_back(csRegToRegister(op.reg));
-          checkZeroReg();
+          operandsPending++;
           sourceRegisterCount++;
         }
         if (op.shift.value > 0) isNoShift_ = false;  // Identify shift operands
@@ -283,7 +266,7 @@ void Instruction::decode() {
     } else if (op.type == ARM64_OP_MEM) {  // Memory operand
       accessesMemory = true;
       sourceRegisters.push_back(csRegToRegister(op.mem.base));
-      checkZeroReg();
+      operandsPending++;
       sourceRegisterCount++;
 
       if (metadata.writeback) {
@@ -294,7 +277,7 @@ void Instruction::decode() {
       if (op.mem.index) {
         // Register offset; add to sources
         sourceRegisters.push_back(csRegToRegister(op.mem.index));
-        checkZeroReg();
+        operandsPending++;
         sourceRegisterCount++;
       }
     } else if (op.type == ARM64_OP_SME_INDEX) {  // SME instruction with index
@@ -322,13 +305,13 @@ void Instruction::decode() {
           destinationRegisterCount++;
         } else if (op.access & cs_ac_type::CS_AC_READ) {
           sourceRegisters.push_back(csRegToRegister(op.sme_index.reg));
-          checkZeroReg();
+          operandsPending++;
           sourceRegisterCount++;
         }
       }
       // Register that is base of index will always be a source operand
       sourceRegisters.push_back(csRegToRegister(op.sme_index.base));
-      checkZeroReg();
+      operandsPending++;
       sourceRegisterCount++;
     } else if (op.type == ARM64_OP_REG_MRS) {
       int32_t sysRegTag = architecture_.getSystemRegisterTag(op.imm);
