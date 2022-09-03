@@ -338,13 +338,13 @@ class Instruction : public simeng::Instruction {
   /** The maximum number of source registers any supported AArch64 instruction
    * can have. */
   // Increased from 6 to 262 to accomodate for up to 256 ZA Matrix rows.
-  static const uint16_t MAX_SOURCE_REGISTERS = 262;
+  // static const uint16_t MAX_SOURCE_REGISTERS = 262;
 
  private:
   /** The maximum number of destination registers any supported AArch64
    * instruction can have. */
   // Increased from 4 to 260 to accomodate for up to 256 ZA Matrix rows.
-  static const uint16_t MAX_DESTINATION_REGISTERS = 260;
+  // static const uint16_t MAX_DESTINATION_REGISTERS = 260;
 
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
@@ -353,22 +353,26 @@ class Instruction : public simeng::Instruction {
   const InstructionMetadata& metadata;
 
   /** An array of source registers. */
-  std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
+  // std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
+  std::vector<Register> sourceRegisters;
   /** The number of source registers this instruction reads from. */
   uint16_t sourceRegisterCount = 0;
 
   /** An array of destination registers. */
-  std::array<Register, MAX_DESTINATION_REGISTERS> destinationRegisters;
+  // std::array<Register, MAX_DESTINATION_REGISTERS> destinationRegisters;
+  std::vector<Register> destinationRegisters;
   /** The number of destination registers this instruction writes to. */
   uint16_t destinationRegisterCount = 0;
 
   /** An array of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  std::array<RegisterValue, MAX_SOURCE_REGISTERS> operands;
+  // std::array<RegisterValue, MAX_SOURCE_REGISTERS> operands;
+  std::vector<RegisterValue> operands;
 
   /** An array of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
-  std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results;
+  // std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results;
+  std::vector<RegisterValue> results;
 
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
