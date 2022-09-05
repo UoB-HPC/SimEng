@@ -591,7 +591,13 @@ void Instruction::decode() {
       (2430 <= metadata.opcode &&
        metadata.opcode <= 2432) ||  // all MSB variants
       (2506 <= metadata.opcode && metadata.opcode <= 2508) ||
-      (3682 <= metadata.opcode && metadata.opcode <= 3685)) {
+      (3682 <= metadata.opcode && metadata.opcode <= 3685) ||
+      (2405 <= metadata.opcode &&
+       metadata.opcode <= 2408) ||  // all SME FMOPS & FMOPA variants
+      (4337 <= metadata.opcode && metadata.opcode <= 4340) ||
+      (5391 <= metadata.opcode && metadata.opcode <= 5394) ||
+      (5791 <= metadata.opcode && metadata.opcode <= 5794) ||
+      (6117 <= metadata.opcode && metadata.opcode <= 6120)) {
     isMultiply_ = true;
   }
 
