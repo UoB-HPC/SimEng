@@ -13,6 +13,15 @@ macro(FetchContent_MakeAvailable_Args NAME ARGS)
     endif()
 endmacro()
 
+# Need an additional macro for LLVM as a sub-directory needs to be targeted for llvm-14.0.5
+macro(FetchContent_MakeAvailable_SubDir_Args NAME SUBDIR ARGS)
+    FetchContent_GetProperties(${NAME})
+    if(NOT ${NAME}_POPULATED)
+        FetchContent_Populate(${NAME})
+        add_subdirectory(${${NAME}_SOURCE_DIR}/${SUBDIR}/ ${${NAME}_BINARY_DIR} ${ARGS})
+    endif()
+endmacro()
+
 # we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a small part of it
 
 FetchContent_Declare(
@@ -189,7 +198,7 @@ if(SIMENG_ENABLE_TESTS)
     set(LLVM_INSTALL_UTILS OFF)
 
     # XXX all LLVM specific cmake variables must be set BEFORE FetchContent_MakeAvailable otherwise they have no effect
-    FetchContent_MakeAvailable_Args(llvm EXCLUDE_FROM_ALL)
+    FetchContent_MakeAvailable_SubDir_Args(llvm llvm-14.0.5.src EXCLUDE_FROM_ALL)
     # make sure we get the headers too
     include_directories("${llvm_BINARY_DIR}/include" "${llvm_SOURCE_DIR}/include")
 
