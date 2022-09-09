@@ -10,7 +10,6 @@
 #include "simeng/config/SimInfo.hh"
 #include "simeng/memory/MemoryInterface.hh"
 #include "simeng/version.hh"
-bool gdb = 0;
 
 /** Tick the provided core model until it halts. */
 uint64_t simulate(simeng::Core& core,
