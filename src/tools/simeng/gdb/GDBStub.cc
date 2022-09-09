@@ -6,7 +6,7 @@ GDBStub::GDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory)
     : core_(core), dataMemory_(dataMemory) {}
 
 int GDBStub::run() {
-  // verbose_ = 1; // uncomment this if you'd like the GDBStub to run verbosely
+  // verbose_ = true; // uncomment this if you'd like the GDBStub to run verbosely
 
   int connection = openSocket(2424);  // change this if the port is blocked
 
@@ -112,7 +112,7 @@ int GDBStub::run() {
         std::string supported = handleQSupported(qSupported_match[1]);
         response += generateReply(supported);
       } else if (packet == "QStartNoAckMode") {  // starts noAckMode
-        noAckMode_ = 1;
+        noAckMode_ = true;
         response += generateReply("OK");
       } else {
         if (verbose_) std::cout << RED << "   Packet not supported\n" << RESET;

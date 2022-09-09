@@ -85,7 +85,7 @@ class GDBStub {
   int openSocket(int port) const;
 
   /** Boolean for if the runtime -v verbose flag has been set. */
-  bool verbose_ = 0;
+  bool verbose_ = false;
 
   /** The core used for the simulation.  Currently only supports the
    * emulation core. */
@@ -99,6 +99,6 @@ class GDBStub {
   std::vector<std::string> breakpoints_;
 
   /** Boolean for whether to send and handle acknowledgements. */
-  bool noAckMode_ = 0;
+  bool noAckMode_ = false;
 };
 }  // namespace simeng
