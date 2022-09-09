@@ -6,7 +6,8 @@ GDBStub::GDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory)
     : core_(core), dataMemory_(dataMemory) {}
 
 int GDBStub::run() {
-  // verbose_ = true; // uncomment this if you'd like the GDBStub to run verbosely
+  // verbose_ = true; // uncomment this if you'd like the GDBStub to run
+  // verbosely
 
   int connection = openSocket(2424);  // change this if the port is blocked
 
@@ -47,23 +48,24 @@ int GDBStub::run() {
                     << std::endl;  // TODO: take action
         std::cout << RESET;
       }
-      std::string checksum = packet_match[2].str();
-      std::string expected = computeChecksum(packet);
-      if (verbose_ && checksum != expected) {
-        std::cout << RED << "   Checksum failed\n"
-                  << "   Expected checksum: " << expected
-                  << "   , but received: " << checksum << std::endl
-                  << RESET;
-        // TODO: take action
-      }
-
-      std::regex qSupported_regex("^qSupported:(.*)");
-      std::smatch qSupported_match;
 
       std::string response = "";
       if (!noAckMode_) response += "+";  // acknowledgement
 
-      if (packet == "?") {  // reason for halting
+      std::regex qSupported_regex("^qSupported:(.*)");
+      std::smatch qSupported_match;
+
+      std::string checksum = packet_match[2].str();
+      std::string expected = computeChecksum(packet);
+
+      if (checksum != expected) {
+        if (verbose_)
+          std::cout << RED << "   Checksum failed\n"
+                    << "   Expected checksum: " << expected
+                    << "   , but received: " << checksum << std::endl
+                    << RESET;
+        response = "-";            // request for re-transmission
+      } else if (packet == "?") {  // reason for halting
         response += generateReply("S05");
       } else if (packet == "s") {  // step one instruction
         core_.tick();
