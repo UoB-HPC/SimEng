@@ -29,12 +29,12 @@ class GDBStub {
  public:
   /** Construct a GDBStub with pointers to a core and memory interface.  N.B.
    * There is currently only support for an emulation core and a
-   * FlatMemoryInterface */
+   * FlatMemoryInterface. */
   GDBStub(simeng::Core& core, simeng::MemoryInterface& dataMemory);
 
   /** Run the GDBStub using the core and dataMemory properties.  This gives
    * control of the emulation core and hands it to a GDB client that connects to
-   * the GDBStub via the provided port (2425 by default)*/
+   * the GDBStub via the provided port (2425 by default). */
   int run();
 
  private:
@@ -53,7 +53,6 @@ class GDBStub {
 
   /** Add RSP compliant start and end characters, followed by a checksum. */
   std::string generateReply(std::string packet) const;
-  ;
 
   /** Read all registers from the core and return an RSP compliant string. */
   std::string handleReadRegisters() const;
@@ -89,11 +88,11 @@ class GDBStub {
   bool verbose_ = 0;
 
   /** The core used for the simulation.  Currently only supports the
-   * emulation core*/
+   * emulation core. */
   simeng::Core& core_;
 
   /** The memory interface used for the simulation.  Currently only supports a
-   * FlatMemoryInterface */
+   * FlatMemoryInterface. */
   simeng::MemoryInterface& dataMemory_;
 
   /** A set of breakpoints provided by the GDB client. */

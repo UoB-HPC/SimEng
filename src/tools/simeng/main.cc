@@ -11,7 +11,6 @@
 #include "simeng/MemoryInterface.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/version.hh"
-bool gdb = 0;
 
 /** Tick the provided core model until it halts. */
 int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
