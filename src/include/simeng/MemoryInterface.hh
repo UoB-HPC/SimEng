@@ -5,6 +5,8 @@
 
 namespace simeng {
 
+enum class MemInterfaceType { Flat, Fixed };
+
 /** A generic memory access target; describes a region of memory to access. */
 struct MemoryAccessTarget {
   /** The address to access. */
