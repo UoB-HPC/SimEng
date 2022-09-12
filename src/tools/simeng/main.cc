@@ -5,33 +5,21 @@
 #include <iostream>
 #include <string>
 
-#include "simeng/AlwaysNotTakenPredictor.hh"
 #include "simeng/Core.hh"
-#include "simeng/Elf.hh"
-#include "simeng/FixedLatencyMemoryInterface.hh"
-#include "simeng/FlatMemoryInterface.hh"
-#include "simeng/GenericPredictor.hh"
-#include "simeng/ModelConfig.hh"
+#include "simeng/CoreInstance.hh"
+#include "simeng/MemoryInterface.hh"
 #include "simeng/SpecialFileDirGen.hh"
-#include "simeng/arch/Architecture.hh"
-#include "simeng/arch/aarch64/Architecture.hh"
-#include "simeng/arch/aarch64/Instruction.hh"
-#include "simeng/arch/aarch64/MicroDecoder.hh"
-#include "simeng/kernel/Linux.hh"
-#include "simeng/models/emulation/Core.hh"
-#include "simeng/models/inorder/Core.hh"
-#include "simeng/models/outoforder/Core.hh"
-#include "simeng/pipeline/A64FXPortAllocator.hh"
-#include "simeng/pipeline/BalancedPortAllocator.hh"
 #include "simeng/version.hh"
-#include "yaml-cpp/yaml.h"
 
-enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
+float clockFreq;
+uint32_t timerFreq;
 
 /** Tick the provided core model until it halts. */
-int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
-             simeng::MemoryInterface& dataMemory) {
+int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
+             simeng::MemoryInterface& instructionMemory) {
   uint64_t iterations = 0;
+  uint64_t vitrualCounter = 0;
+  double timerModulo = (clockFreq * 1e9) / (timerFreq * 1e6);
 
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
@@ -58,39 +46,24 @@ int main(int argc, char** argv) {
   std::cout << "\tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
   std::cout << std::endl;
 
-  SimulationMode mode = SimulationMode::InOrderPipelined;
-  std::string executablePath = "";
-  YAML::Node config;
-
+  // Create the instance of the core to be simulated
+  std::unique_ptr<simeng::CoreInstance> coreInstance;
   if (argc > 1) {
-    config = simeng::ModelConfig(argv[1]).getConfigFile();
+    coreInstance = std::make_unique<simeng::CoreInstance>(argv[1]);
   } else {
-    config = YAML::Load(DEFAULT_CONFIG);
+    coreInstance = std::make_unique<simeng::CoreInstance>();
   }
 
-  if (config["Core"]["Simulation-Mode"].as<std::string>() == "emulation") {
-    mode = SimulationMode::Emulation;
-  } else if (config["Core"]["Simulation-Mode"].as<std::string>() ==
-             "outoforder") {
-    mode = SimulationMode::OutOfOrder;
-  }
-
+  // Extract path of binary to be run if available
+  std::string executablePath = "";
   if (argc > 2) {
     executablePath = std::string(argv[2]);
   }
 
-  // Create the process image
-  std::unique_ptr<simeng::kernel::LinuxProcess> process;
-
   if (executablePath.length() > 0) {
     // Attempt to create the process image from the specified command-line
     std::vector<std::string> commandLine(argv + 2, argv + argc);
-    process =
-        std::make_unique<simeng::kernel::LinuxProcess>(commandLine, config);
-    if (!process->isValid()) {
-      std::cerr << "Could not read/parse " << argv[2] << std::endl;
-      exit(1);
-    }
+    coreInstance->createProcess(commandLine);
   } else {
     // Create the process image directly
 
@@ -182,109 +155,46 @@ int main(int argc, char** argv) {
     //                                  17, 4, 3, 22, 117, 11, 4,  12, 10, 18};
     // memcpy(memory, memoryValues.data(), memoryValues.size() * sizeof(int));
 
-    process = std::make_unique<simeng::kernel::LinuxProcess>(
-        simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)), config);
+    coreInstance->createProcess(
+        simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)));
   }
 
-  size_t processMemorySize = process->getProcessImageSize();
-  uint64_t entryPoint = process->getEntryPoint();
-
-  // Create the OS kernel with the process
-  simeng::kernel::Linux kernel;
-  kernel.createProcess(*process.get());
-
-  // Dereferenced shared_ptr instance of process image held inside
-  // LinuxProcess.hh is passed to instruction memory.
-  std::shared_ptr<char> procImgForInstrMem = process->getProcessImage();
-  simeng::FlatMemoryInterface instructionMemory(procImgForInstrMem.get(),
-                                                processMemorySize);
-
-  // Create the architecture, with knowledge of the kernel
-  std::unique_ptr<simeng::arch::Architecture> arch =
-      std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
-
-  auto predictor = simeng::GenericPredictor(config);
-  auto config_ports = config["Ports"];
-  std::vector<std::vector<uint16_t>> portArrangement(config_ports.size());
-  // Extract number of ports
-  for (size_t i = 0; i < config_ports.size(); i++) {
-    auto config_groups = config_ports[i]["Instruction-Group-Support"];
-    // Extract number of groups in port
-    for (size_t j = 0; j < config_groups.size(); j++) {
-      portArrangement[i].push_back(config_groups[j].as<uint16_t>());
-    }
+  // Get simualtion mode and data memory interface type
+  simeng::SimulationMode mode = coreInstance->getSimulationMode();
+  simeng::MemInterfaceType L1Dtype = simeng::MemInterfaceType::Flat;
+  std::string modeString = "Emulation";
+  if (mode == simeng::SimulationMode::OutOfOrder) {
+    modeString = "Out-of-Order";
+    L1Dtype = simeng::MemInterfaceType::Fixed;
   }
-  auto portAllocator = simeng::pipeline::BalancedPortAllocator(portArrangement);
-
-  // Configure reservation station arrangment
-  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement;
-  for (size_t i = 0; i < config["Reservation-Stations"].size(); i++) {
-    auto reservation_station = config["Reservation-Stations"][i];
-    for (size_t j = 0; j < reservation_station["Ports"].size(); j++) {
-      uint8_t port = reservation_station["Ports"][j].as<uint8_t>();
-      if (rsArrangement.size() < port + 1) {
-        rsArrangement.resize(port + 1);
-      }
-      rsArrangement[port] = {i, reservation_station["Size"].as<uint16_t>()};
-    }
+  if (mode == simeng::SimulationMode::InOrderPipelined) {
+    modeString = "In-Order Pipelined";
   }
 
-  int iterations = 0;
+  // Create memory interfaces
+  std::shared_ptr<simeng::MemoryInterface> dataMemory =
+      coreInstance->createL1DataMemory(L1Dtype);
+  std::shared_ptr<simeng::MemoryInterface> instructionMemory =
+      coreInstance->createL1InstructionMemory(simeng::MemInterfaceType::Flat);
 
-  // Dereferenced shared_ptr instance of process image held inside
-  // LinuxProcess.hh is passed to data memory.
-  std::shared_ptr<char> procImgForDataMem = process->getProcessImage();
-  char* processMemory = procImgForDataMem.get();
-  std::string modeString;
-  std::unique_ptr<simeng::Core> core;
-  std::unique_ptr<simeng::MemoryInterface> dataMemory;
-  switch (mode) {
-    case SimulationMode::OutOfOrder: {
-      modeString = "Out-of-Order";
-      dataMemory = std::make_unique<simeng::FixedLatencyMemoryInterface>(
-          processMemory, processMemorySize,
-          config["L1-Cache"]["Access-Latency"].as<uint16_t>());
-      core = std::make_unique<simeng::models::outoforder::Core>(
-          instructionMemory, *dataMemory, processMemorySize, entryPoint, *arch,
-          predictor, portAllocator, rsArrangement, config);
-      break;
-    }
-    case SimulationMode::InOrderPipelined: {
-      modeString = "In-Order Pipelined";
-      std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-          std::make_unique<simeng::FlatMemoryInterface>(processMemory,
-                                                        processMemorySize);
-      core = std::make_unique<simeng::models::inorder::Core>(
-          instructionMemory, *flatDataMemory, processMemorySize, entryPoint,
-          *arch, predictor);
-      dataMemory = std::move(flatDataMemory);
-      break;
-    }
-    default: {
-      modeString = "Emulation";
-      dataMemory = std::make_unique<simeng::FlatMemoryInterface>(
-          processMemory, processMemorySize);
-      core = std::make_unique<simeng::models::emulation::Core>(
-          instructionMemory, *dataMemory, entryPoint, processMemorySize, *arch);
-      break;
-    }
-  };
+  // Create core
+  std::shared_ptr<simeng::Core> core = coreInstance->createCore();
 
-  simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen(config);
-  // Create the Special Files directory if indicated to do so in Config
-  if (config["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
-    // Remove any current special files dir
-    SFdir.RemoveExistingSFDir();
-    // Create new special files dir
-    SFdir.GenerateSFDir();
-  }
+  // Create Special Files directory if indicated to do so in Config
+  coreInstance->createSpecialFileDirectory();
 
+  // Get clockFreq and timerFreq variables from passed config
+  clockFreq = coreInstance->getClockFrequency();
+  timerFreq = coreInstance->getTimerFrequency();
+
+  // Run simulation
   std::cout << "Running in " << modeString << " mode\n";
   std::cout << "Starting..." << std::endl;
   auto startTime = std::chrono::high_resolution_clock::now();
+  int iterations = 0;
+  iterations = simulate(*core, *dataMemory, *instructionMemory);
 
-  iterations = simulate(*core, *dataMemory, instructionMemory);
-
+  // Get timing information
   auto endTime = std::chrono::high_resolution_clock::now();
   auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)
