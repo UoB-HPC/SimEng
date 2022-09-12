@@ -162,7 +162,8 @@ void SimengCoreWrapper::fabricateSimengCore() {
   process_ =
       std::make_unique<simeng::kernel::LinuxProcess>(commandLine, config);
   if (!process_->isValid())
-    output_.fatal(CALL_INFO, 1, 0, "Could not read/parse %s", executablePath_);
+    output_.fatal(CALL_INFO, 1, 0, "Could not read/parse %s",
+                  executablePath_.c_str());
 
   auto processImage = process_->getProcessImage();
   size_t processMemorySize = processImage.size();

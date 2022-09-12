@@ -31,10 +31,9 @@ void SimengMemInterface::sendProcessImageToSST(const span<char> image) {
   return;
 };
 
-template <
-    typename T,
-    typename std::enable_if<std::is_base_of<
-        SimengMemInterface::SimengMemoryRequest, T>::value>::type* = nullptr>
+template <typename T,
+          typename std::enable_if<std::is_base_of<
+              SimengMemInterface::SimengMemoryRequest, T>::value>::type*>
 std::vector<StandardMem::Request*> SimengMemInterface::makeSSTRequests(
     T* aggrReq, uint64_t addrStart, uint64_t addrEnd, uint64_t size) {
   /*
