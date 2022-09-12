@@ -45,7 +45,14 @@ void RegressionTest::run(const char* source, const char* triple) {
   // Get pre-defined config file for OoO model
   YAML::Node config = generateConfig();
 
-  // Create a linux process from the assembled code block
+  // Create a linux process from the assembled code block.
+  // Memory allocation for process images also takes place
+  // during linux process creation. The Elf binary is parsed
+  // and relevant sections are copied to the process image.
+  // The process image is finalised by the createStack method
+  // which creates and populates the initial process stack.
+  // The created process image can be accessed via a shared_ptr
+  // returned by the getProcessImage method.
   process_ = std::make_unique<simeng::kernel::LinuxProcess>(
       simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), config);
   ASSERT_TRUE(process_->isValid());
@@ -60,19 +67,16 @@ void RegressionTest::run(const char* source, const char* triple) {
   // Create memory interfaces for instruction and data access.
   // For each memory interface, a dereferenced shared_ptr to the
   // processImage is passed as argument.
-  std::shared_ptr<char> procImgForInstrMem = process_->getProcessImage();
-  simeng::FlatMemoryInterface instructionMemory(procImgForInstrMem.get(),
+  simeng::FlatMemoryInterface instructionMemory(processMemory_,
                                                 processMemorySize_);
 
-  std::shared_ptr<char> procImgForFlatDataMem = process_->getProcessImage();
   std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-      std::make_unique<simeng::FlatMemoryInterface>(procImgForFlatDataMem.get(),
+      std::make_unique<simeng::FlatMemoryInterface>(processMemory_,
                                                     processMemorySize_);
 
-  std::shared_ptr<char> procImgForFixedDataMem = process_->getProcessImage();
   std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
       std::make_unique<simeng::FixedLatencyMemoryInterface>(
-          procImgForFixedDataMem.get(), processMemorySize_, 4);
+          processMemory_, processMemorySize_, 4);
   std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
   // Create the OS kernel and the process
