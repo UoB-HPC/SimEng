@@ -24,13 +24,13 @@ Elf::Elf(std::string path) {
    * In the Linux source tree the ELF header
    * is defined by the elf64_hdr struct for 64-bit systems.
    * `elf64_hdr->e_ident` is an array of bytes which specifies
-   * how to interpret the ELF file, independent of the 
+   * how to interpret the ELF file, independent of the
    * processor or the file's remaining contents. All ELF
    * files start with the ELF header.
    */
 
-  /** 
-   * First four bytes of the ELF header represent the ELF Magic Number. 
+  /**
+   * First four bytes of the ELF header represent the ELF Magic Number.
    */
   char elfMagic[4] = {0x7f, 'E', 'L', 'F'};
   char fileMagic[4];
@@ -52,7 +52,7 @@ Elf::Elf(std::string path) {
   }
 
   isValid_ = true;
-  
+
   /**
    * Starting from the 24th byte of the ELF header a 64-bit value
    * represents the virtual address to which the system first transfers
@@ -60,14 +60,14 @@ Elf::Elf(std::string path) {
    * In `elf64_hdr` this value maps to the member `Elf64_Addr e_entry`.
    */
 
-  // Seek to the entry point of the file. 
-  // The information in between is discarded 
-  file.seekg(0x18); 
+  // Seek to the entry point of the file.
+  // The information in between is discarded
+  file.seekg(0x18);
   file.read(reinterpret_cast<char*>(&entryPoint_), sizeof(entryPoint_));
 
   /**
    * Starting from the 32nd byte of the ELF Header a 64-bit value
-   * represents the offset of the ELF Program header or 
+   * represents the offset of the ELF Program header or
    * Program header table in the ELF file.
    * In `elf64_hdr` this value maps to the member `Elf64_Addr e_phoff`.
    */
@@ -80,10 +80,10 @@ Elf::Elf(std::string path) {
    * Starting 54th byte of the ELF Header a 16-bit value indicates
    * the size of each entry in the ELF Program header. In the `elf64_hdr`
    * struct this value maps to the member `Elf64_Half e_phentsize`. All
-   * header entries have the same size. 
+   * header entries have the same size.
    * Starting from the 56th byte a 16-bit value represents the number
    * of header entries in the ELF Program header. In the `elf64_hdr`
-   * struct this value maps to `Elf64_Half e_phnum`. 
+   * struct this value maps to `Elf64_Half e_phnum`.
    */
 
   // Seek to the byte representing header entry size.
@@ -118,16 +118,16 @@ Elf::Elf(std::string path) {
      *    uint64_t   p_memsz;
      *    uint64_t   p_align;
      *  } Elf64_Phdr;
-     * 
-     * The ELF Program header table is an array of structures, 
+     *
+     * The ELF Program header table is an array of structures,
      * each describing a segment or other information the system
-     * needs to prepare the program for execution. A segment 
+     * needs to prepare the program for execution. A segment
      * contains one or more sections (ELF Program Section).
-     * 
+     *
      * The `p_vaddr` field holds the virtual address at which the first
-     * byte of the segment resides in memory and the `p_memsz` field 
+     * byte of the segment resides in memory and the `p_memsz` field
      * holds the number of bytes in the memory image of the segment.
-     * It may be zero. The `p_offset` member holds the offset from the 
+     * It may be zero. The `p_offset` member holds the offset from the
      * beginning of the file at which the first byte of the segment resides.
      */
 
@@ -143,23 +143,22 @@ Elf::Elf(std::string path) {
 
     // To construct the process we look for the largest virtual address and
     // add it to the memory size of the header. This way we obtain a very
-    // large array which can hold data at large virtual address. 
-    // However, this way we end up creating a sparse array, in which most 
+    // large array which can hold data at large virtual address.
+    // However, this way we end up creating a sparse array, in which most
     // of the entries are unused. Also SimEng internally treats these
-    // virtual address as physical addresses to index into this large array. 
-    // TODO: This mechanism needs to be improved.
+    // virtual address as physical addresses to index into this large array.
     if (header.virtualAddress + header.memorySize > processImageSize_) {
       processImageSize_ = header.virtualAddress + header.memorySize;
     }
   }
 
   processImage_ = new char[processImageSize_];
-  
+
   /**
    * The ELF Program header has a member called `p_type`, which represents
    * the kind of data or memory segments described by the program header.
-   * The value PT_LOAD=1 represents a loadable segment. In other words, 
-   * it contains initialized data that contributes to the program's 
+   * The value PT_LOAD=1 represents a loadable segment. In other words,
+   * it contains initialized data that contributes to the program's
    * memory image.
    */
 
