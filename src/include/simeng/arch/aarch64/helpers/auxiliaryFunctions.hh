@@ -269,7 +269,7 @@ class AuxFunc {
         "pow2", "vl1",  "vl2",  "vl3",   "vl4",   "vl5",  "vl6",  "vl7", "vl8",
         "vl16", "vl32", "vl64", "vl128", "vl256", "mul3", "mul4", "all"};
 
-    // If not pattern then same as ALL
+    // If no pattern present in operandStr then same behaviour as ALL
     std::string pattern = "all";
     for (uint8_t i = 0; i < patterns.size(); i++) {
       if (operandStr.find(patterns[i]) != std::string::npos) {
