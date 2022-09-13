@@ -161,6 +161,14 @@ Elf::Elf(std::string path, char** imagePointer) {
    * memory image.
    */
 
+  /**
+   * The ELF Program header has a member called `p_type`, which represents
+   * the kind of data or memory segments described by the program header.
+   * The value PT_LOAD=1 represents a loadable segment. In other words,
+   * it contains initialized data that contributes to the program's
+   * memory image.
+   */
+
   // Process headers; only observe LOAD sections for this basic implementation
   for (const auto& header : headers_) {
     if (header.type == 1) {  // LOAD
