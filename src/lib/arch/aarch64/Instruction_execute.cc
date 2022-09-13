@@ -2598,7 +2598,7 @@ void Instruction::execute() {
         uint16_t val = memoryData[0].get<uint16_t>();
         uint16_t out[8] = {val, val, val, val, val, val, val, val};
         results[0] = {out, 256};
-        results[1] = operands[1].get<uint64_t>() + metadata.operands[2].imm;
+        results[1] = operands[0].get<uint64_t>() + metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_LD1Twov16b: {  // ld1 {vt1.16b, vt2.16b}, [xn]
