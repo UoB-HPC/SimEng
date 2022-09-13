@@ -192,6 +192,11 @@ void Core::handleException() {
 void Core::processExceptionHandler() {
   assert(exceptionHandler_ != nullptr &&
          "Attempted to process an exception handler that wasn't present");
+  if (dataMemory_.hasPendingRequests()) {
+    // Must wait for all memory requests to complete before processing the
+    // exception
+    return;
+  }
 
   auto success = exceptionHandler_->tick();
   if (!success) {
