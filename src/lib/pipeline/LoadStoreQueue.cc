@@ -425,7 +425,7 @@ void LoadStoreQueue::tick() {
 
       // Iterate over requests ready this cycle
       while (itInsn != itReq->second.end()) {
-        // Increment count of this request type
+        // Speculatively increment count of this request type
         reqCounts[isStore]++;
 
         // Ensure the limit on the number of permitted operations is adhered
@@ -437,6 +437,9 @@ void LoadStoreQueue::tick() {
         } else if (reqCounts[isStore] > reqLimits_[isStore]) {
           // No more requests of this type can be scheduled this cycle
           exceededLimits[isStore] = true;
+          // Remove speculative increment to ensure it doesn't count for
+          // comparisons aginast the totalLimit_
+          reqCounts[isStore]--;
           break;
         } else {
           // Schedule requests from the queue of addresses in
@@ -519,6 +522,12 @@ void LoadStoreQueue::tick() {
   size_t count = 0;
   while (completedLoads_.size() > 0 && count < completionSlots_.size()) {
     const auto& insn = completedLoads_.front();
+
+    // Don't process load instruction if it has been flushed
+    if (insn->isFlushed()) {
+      completedLoads_.pop();
+      continue;
+    }
 
     // Forward the results
     forwardOperands_(insn->getDestinationRegisters(), insn->getResults());

@@ -79,7 +79,7 @@ class ModelConfig {
 
   /** Given a node, value requirements, and possibly a deafult value,
    * validate the value held within the node. All methods perform, at
-   * least, an existance and "read as type" check with the latter
+   * least, an existence and "read as type" check with the latter
    * reading the value as the given type within a try catch
    * expressions. */
   // Set of values requirement, no default value

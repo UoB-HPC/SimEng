@@ -13,7 +13,9 @@ std::forward_list<InstructionMetadata> Architecture::metadataCache;
 Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     : linux_(kernel),
       microDecoder_(std::make_unique<MicroDecoder>(config)),
-      VL_(config["Core"]["Vector-Length"].as<uint64_t>()) {
+      VL_(config["Core"]["Vector-Length"].as<uint64_t>()),
+      vctModulo_((config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
+                 (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6)) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "Could not create capstone handle" << std::endl;
     exit(1);
@@ -29,6 +31,14 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_PMCCNTR_EL0] = systemRegisterMap_.size();
+
+  // Get Virtual Counter Timer and Processor Cycle Counter system registers.
+  VCTreg_ = {
+      RegisterType::SYSTEM,
+      static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0))};
+  PCCreg_ = {
+      RegisterType::SYSTEM,
+      static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0))};
 
   // Instantiate an ExecutionInfo entry for each group in the InstructionGroup
   // namespace.
@@ -267,15 +277,15 @@ uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 uint64_t Architecture::getVectorLength() const { return VL_; }
 
-simeng::Register Architecture::getVCTreg() const {
-  return {RegisterType::SYSTEM,
-          static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_CNTVCT_EL0))};
-}
+void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
+                                              const uint64_t iterations) const {
+  // Update the Processor Cycle Counter to total cycles completed.
+  regFile->set(PCCreg_, iterations);
 
-simeng::Register Architecture::getPCCreg() const {
-  return {
-      RegisterType::SYSTEM,
-      static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_PMCCNTR_EL0))};
+  // Update Virtual Counter Timer at correct frequency.
+  if (iterations % (uint64_t)vctModulo_ == 0) {
+    regFile->set(VCTreg_, regFile->get(VCTreg_).get<uint64_t>() + 1);
+  }
 }
 
 }  // namespace aarch64
