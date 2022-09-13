@@ -215,9 +215,13 @@ void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
 void Core::processExceptionHandler() {
   assert(exceptionHandler_ != nullptr &&
          "Attempted to process an exception handler that wasn't present");
+  if (dataMemory_.hasPendingRequests()) {
+    // Must wait for all memory requests to complete before processing the
+    // exception
+    return;
+  }
 
   bool success = exceptionHandler_->tick();
-
   if (!success) {
     // Handler needs further ticks to complete
     return;
