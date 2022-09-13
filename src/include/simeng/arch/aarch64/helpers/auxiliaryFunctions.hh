@@ -316,8 +316,6 @@ class AuxFunc {
       return elements - (elements % 4);
     else if (pattern == "mul3")
       return elements - (elements % 3);
-    else if (pattern == "all")
-      return elements;
 
     return 0;
   }

@@ -58,9 +58,6 @@ class Architecture : public arch::Architecture {
   void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                   const uint64_t iterations) const override;
 
-  /** Returns the system register for the Processor Cycle Counter. */
-  simeng::Register getPCCreg() const override;
-
   /** Retrieve an ExecutionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
    * port information, return that instead of the group-defined execution
