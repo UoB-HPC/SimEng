@@ -54,11 +54,9 @@ class Architecture : public arch::Architecture {
   /** Returns the current vector length set by the provided configuration. */
   uint64_t getVectorLength() const;
 
-  /** Returns the system register for the Virtual Counter Timer. */
-  simeng::Register getVCTreg() const override;
-
-  /** Returns the system register for the Processor Cycle Counter. */
-  simeng::Register getPCCreg() const override;
+  /** Updates System registers of any system-based timers. */
+  void updateSystemTimerRegisters(RegisterFileSet* regFile,
+                                  const uint64_t iterations) const override;
 
   /** Returns the physical register structure as defined within the config file
    */
@@ -109,6 +107,16 @@ class Architecture : public arch::Architecture {
 
   /** The vector length used by the SVE extension in bits. */
   uint64_t VL_;
+
+  /** System Register of Virtual Counter Timer. */
+  simeng::Register VCTreg_;
+
+  /** System Register of Processor Cycle Counter. */
+  simeng::Register PCCreg_;
+
+  /** Modulo component used to define the frequency at which the VCT is updated.
+   */
+  double vctModulo_;
 };
 
 }  // namespace aarch64

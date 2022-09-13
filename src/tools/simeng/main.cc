@@ -29,27 +29,15 @@
 
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
-float clockFreq_;
-uint32_t timerFreq_;
-
 /** Tick the provided core model until it halts. */
 int simulate(simeng::Core& core, simeng::MemoryInterface& instructionMemory,
              simeng::MemoryInterface& dataMemory) {
   uint64_t iterations = 0;
-  uint64_t vitrualCounter = 0;
-  double timerModulo = (clockFreq_ * 1e9) / (timerFreq_ * 1e6);
 
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
     // Tick the core
     core.tick();
-    // Update the Processor Cycle Counter to total cycles completed.
-    core.updatePCC(iterations);
-    // Update Virtual Counter Timer at correct frequency.
-    if (iterations % (uint64_t)timerModulo == 0) {
-      vitrualCounter++;
-      core.incVCT(vitrualCounter);
-    }
 
     // Tick memory
     instructionMemory.tick();
@@ -87,9 +75,6 @@ int main(int argc, char** argv) {
              "outoforder") {
     mode = SimulationMode::OutOfOrder;
   }
-
-  clockFreq_ = config["Core"]["Clock-Frequency"].as<float>();
-  timerFreq_ = config["Core"]["Timer-Frequency"].as<uint32_t>();
 
   if (argc > 2) {
     executablePath = std::string(argv[2]);

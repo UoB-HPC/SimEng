@@ -265,16 +265,22 @@ class AuxFunc {
   static uint16_t sveGetPattern(const std::string operandStr,
                                 const uint8_t esize, const uint16_t VL_) {
     const uint16_t elements = VL_ / esize;
-    // If not pattern then same as ALL
-    if (operandStr.find(",") == std::string::npos) return elements;
+    const std::vector<std::string> patterns = {
+        "pow2", "vl1",  "vl2",  "vl3",   "vl4",   "vl5",  "vl6",  "vl7", "vl8",
+        "vl16", "vl32", "vl64", "vl128", "vl256", "mul3", "mul4", "all"};
 
-    // Get pattern string
-    std::string pattern(operandStr.substr(operandStr.find(",") + 2));
-    if (pattern.find(',') != std::string::npos) {
-      pattern.erase(pattern.find(","));
+    // If no pattern present in operandStr then same behaviour as ALL
+    std::string pattern = "all";
+    for (uint8_t i = 0; i < patterns.size(); i++) {
+      if (operandStr.find(patterns[i]) != std::string::npos) {
+        pattern = patterns[i];
+        // Don't break when pattern found as vl1 will be found in vl128 etc
+      }
     }
 
-    if (pattern == "pow2") {
+    if (pattern == "all")
+      return elements;
+    else if (pattern == "pow2") {
       int n = 1;
       while (elements >= std::pow(2, n)) {
         n = n + 1;
@@ -310,8 +316,6 @@ class AuxFunc {
       return elements - (elements % 4);
     else if (pattern == "mul3")
       return elements - (elements % 3);
-    else if (pattern == "all")
-      return elements;
 
     return 0;
   }

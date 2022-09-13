@@ -4,6 +4,7 @@
 
 #include <iomanip>
 #include <iostream>
+#include <ostream>
 
 #include "InstructionMetadata.hh"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
@@ -442,6 +443,12 @@ bool ExceptionHandler::init() {
         }
         break;
       }
+      case 131: {  // tgkill
+        // TODO: Functionality temporarily omitted since simeng only has a
+        // single thread at the moment
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+        break;
+      }
       case 134: {  // rt_sigaction
         // TODO: Implement syscall logic. Ignored for now as it's assumed the
         // current use of this syscall is to setup error handlers. Simualted
@@ -538,6 +545,14 @@ bool ExceptionHandler::init() {
             ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
         break;
       }
+      case 210: {  // shutdown
+        // TODO: Functionality omitted - returns -38 (errno 38, function not
+        // implemented) is to mimic the behaviour on isambard and avoid an
+        // unrecognised syscall error
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-38)}};
+        break;
+      }
       case 215: {  // munmap
         uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
         size_t length = registerFileSet.get(R1).get<size_t>();
@@ -587,11 +602,33 @@ bool ExceptionHandler::init() {
         break;
       }
       case 278: {  // getrandom
-        // TODO: Functionality temporarily omitted as it is unused within
-        // workloads regions of interest and not required for their simulation
+        // TODO: support flags argument
+
+        // seed random numbers
+        srand(clock());
+
+        // Write <buflen> random bytes to buf
+        uint64_t bufPtr = registerFileSet.get(R0).get<uint64_t>();
+        size_t buflen = registerFileSet.get(R1).get<size_t>();
+
+        char buf[buflen];
+        for (size_t i = 0; i < buflen; i++) {
+          buf[i] = (uint8_t)rand();
+        }
+
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {(uint64_t)buflen}};
+
+        stateChange.memoryAddresses.push_back({bufPtr, (uint8_t)buflen});
+        stateChange.memoryAddressValues.push_back(RegisterValue(buf, buflen));
+
+        break;
+      }
+      case 293:  // rseq
+      {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
+
       default:
         printException(instruction_);
         std::cout << "Unrecognised syscall: " << syscallId << std::endl;

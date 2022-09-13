@@ -645,7 +645,7 @@ template <typename T>
 int ModelConfig::nodeChecker(const YAML::Node& node, const std::string& field,
                              const std::vector<T>& value_set,
                              uint8_t expected) {
-  // Check for the existance of the given node
+  // Check for the existence of the given node
   if (!(node.IsDefined()) || node.IsNull()) {
     missing_ << "\t- " << field << "\n";
     return 0;
@@ -658,7 +658,7 @@ template <typename T>
 int ModelConfig::nodeChecker(YAML::Node node, const std::string& field,
                              const std::vector<T>& value_set, uint8_t expected,
                              T default_value) {
-  // Check for the existance of the given node
+  // Check for the existence of the given node
   if (!(node.IsDefined()) || node.IsNull()) {
     node = default_value;
     return 1;
@@ -670,7 +670,7 @@ int ModelConfig::nodeChecker(YAML::Node node, const std::string& field,
 template <typename T>
 int ModelConfig::nodeChecker(const YAML::Node& node, const std::string& field,
                              const std::pair<T, T>& bounds, uint8_t expected) {
-  // Check for the existance of the given node
+  // Check for the existence of the given node
   if (!(node.IsDefined()) || node.IsNull()) {
     missing_ << "\t- " << field << "\n";
     return 0;
@@ -683,7 +683,7 @@ template <typename T>
 int ModelConfig::nodeChecker(YAML::Node node, const std::string& field,
                              const std::pair<T, T>& bounds, uint8_t expected,
                              const T& default_value) {
-  // Check for the existance of the given node
+  // Check for the existence of the given node
   if (!(node.IsDefined()) || node.IsNull()) {
     node = default_value;
     return 1;

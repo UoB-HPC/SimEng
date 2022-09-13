@@ -51,17 +51,12 @@ class Architecture : public arch::Architecture {
   /** Retrieve the initial process state. */
   ProcessStateChange getInitialState() const override;
 
-  /** Retrieve any updates to the process state. */
-  ProcessStateChange getUpdateState() const;
-
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
 
-  /** Returns the system register for the Virtual Counter Timer. */
-  simeng::Register getVCTreg() const override;
-
-  /** Returns the system register for the Processor Cycle Counter. */
-  simeng::Register getPCCreg() const override;
+  /** Updates System registers of any system-based timers. */
+  void updateSystemTimerRegisters(RegisterFileSet* regFile,
+                                  const uint64_t iterations) const override;
 
   /** Returns the physical register structure as defined within the config file
    */

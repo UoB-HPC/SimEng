@@ -40,7 +40,7 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
   BranchPrediction prediction = {direction, target};
 
   // Ammend prediction based on branch type
-  if (type == BranchType::Unconditional || type == BranchType::LoopClosing) {
+  if (type == BranchType::Unconditional) {
     prediction.taken = true;
   } else if (type == BranchType::Return) {
     prediction.taken = true;
@@ -60,6 +60,8 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
     ras_.push_back(address + 4);
     // Record that this address is a branch-and-link instruction
     rasHistory_[address] = 0;
+  } else if (type == BranchType::Conditional) {
+    if (!prediction.taken) prediction.target = address + 4;
   }
   return prediction;
 }

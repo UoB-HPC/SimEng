@@ -94,13 +94,8 @@ class Architecture {
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;
 
-  /** Returns the system register for the Virtual Counter Timer. */
-  virtual simeng::Register getVCTreg() const = 0;
-
-  /** Returns the system register for the Processor Cycle Counter. */
-  virtual simeng::Register getPCCreg() const = 0;
-
-  /** Returns the physical register structure as defined within the config file
+  /** Returns the physical register structure as defined within the config
+   * file
    */
   virtual std::vector<RegisterFileStructure> getConfigPhysicalRegisterStructure(
       YAML::Node config) const = 0;
@@ -109,6 +104,10 @@ class Architecture {
    */
   virtual std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
       YAML::Node config) const = 0;
+
+  /** Updates System registers of any system-based timers. */
+  virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
+                                          const uint64_t iterations) const = 0;
 };
 
 }  // namespace arch

@@ -248,16 +248,6 @@ ProcessStateChange Architecture::getInitialState() const {
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
-simeng::Register Architecture::getVCTreg() const {
-  return {RegisterType::SYSTEM,
-          static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_FAKE_VCT))};
-}
-
-simeng::Register Architecture::getPCCreg() const {
-  return {RegisterType::SYSTEM,
-          static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_FAKE_PCC))};
-}
-
 std::vector<RegisterFileStructure>
 Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
   return {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
@@ -273,6 +263,11 @@ std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
 }
 uint16_t Architecture::getNumSystemRegisters() const {
   return static_cast<uint16_t>(systemRegisterMap_.size());
+}
+
+// Left blank as no implementation necessary
+void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
+                                              const uint64_t iterations) const {
 }
 
 }  // namespace riscv
