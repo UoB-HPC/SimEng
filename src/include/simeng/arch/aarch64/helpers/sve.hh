@@ -1180,6 +1180,8 @@ class sveHelp {
     // Get pattern
     const uint16_t count =
         AuxFunc::sveGetPattern(metadata.operandStr, sizeof(T) * 8, VL_bits);
+    // Exit early if count == 0
+    if (count == 0) return out;
 
     for (int i = 0; i < partition_num; i++) {
       if (i < count) {
@@ -1479,15 +1481,17 @@ class sveHelp {
       const uint16_t VL_bits) {
     const D d = operands[0].get<D>();
     const uint8_t imm = metadata.operands[1].imm;
+    const uint16_t count =
+        AuxFunc::sveGetPattern(metadata.operandStr, N, VL_bits);
 
     // The range of possible values does not fit in the range of any integral
     // type, so a double is used as an intermediate value. The end result must
     // be saturated to fit in uint64_t.
-    auto intermediate = double(d) - (imm * (VL_bits / N));
+    auto intermediate = double(d) - (imm * count);
     if (intermediate < 0) {
       return (uint64_t)0;
     }
-    return (uint64_t)(d - (imm * (VL_bits / N)));
+    return (uint64_t)(d - (imm * count));
   }
 
   /** Helper function for SVE instructions with the format `uzp<1,2> zd, zn,

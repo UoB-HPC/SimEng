@@ -44,13 +44,6 @@ class Core : public simeng::Core {
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
-  /** Increment value of the Virtual Counter Timer system register. */
-  void incVCT(uint64_t iterations) override;
-
-  /** Change the value of the Processor Cycle Counter system register to number
-   * of cycles completed. */
-  void updatePCC(uint64_t iterations) override;
-
  private:
   /** Execute an instruction. */
   void execute(std::shared_ptr<Instruction>& uop);
@@ -112,12 +105,6 @@ class Core : public simeng::Core {
 
   /** The number of branches executed. */
   uint64_t branchesExecuted_ = 0;
-
-  /** System Register of Virtual Counter Timer. */
-  simeng::Register VCTreg_;
-
-  /** System Register of Processor Cycle Counter. */
-  simeng::Register PCCreg_;
 };
 
 }  // namespace emulation

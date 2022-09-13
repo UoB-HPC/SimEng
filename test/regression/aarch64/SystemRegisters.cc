@@ -71,6 +71,20 @@ TEST_P(SystemRegister, sysreg_access) {
   EXPECT_EQ(getSystemRegister(0xde82), 42);
 }
 
+TEST_P(SystemRegister, counter_timers) {
+  // Ensure that the VCT is incremented at correct rate : once per ((2.5 * 1e9)
+  // / (100 * 1e6)) cycles (i.e. once per 25 cycles).
+  RUN_AARCH64(R"(
+    mov x2, xzr
+    mov x1, #16
+    # Loop of 3 instructions * 16 iterations = 48, + 2 mov instructions = 50 total instructions & ~50 cycles
+    sub x1, x1, #1
+    cmp x1, x2
+    b.ne #-8
+  )");
+  EXPECT_EQ(getSystemRegister(0xdf02), 2);
+}
+
 INSTANTIATE_TEST_SUITE_P(
     AArch64, SystemRegister,
     ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),

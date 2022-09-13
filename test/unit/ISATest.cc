@@ -9,7 +9,8 @@ namespace {
 TEST(ISATest, CreateAArch64) {
   simeng::kernel::Linux kernel;
   YAML::Node config = YAML::Load(
-      "{Core: {Simulation-Mode: emulation, Micro-Operations: True, "
+      "{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "
+      "Timer-Frequency: 100, Micro-Operations: True, "
       "Vector-Length: 512}}");
   // Pass a config file with only the options required by the aarch64
   // architecture class to function
