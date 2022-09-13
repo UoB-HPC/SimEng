@@ -462,8 +462,10 @@ cs_detail MicroDecoder::createDefaultDetail(std::vector<OpType> opTypes) {
       case arm64_op_type::ARM64_OP_REG_MSR:
       case arm64_op_type::ARM64_OP_PSTATE:
       case arm64_op_type::ARM64_OP_SYS:
+      case arm64_op_type::ARM64_OP_SVCR:
       case arm64_op_type::ARM64_OP_PREFETCH:
       case arm64_op_type::ARM64_OP_BARRIER:
+      case arm64_op_type::ARM64_OP_SME_INDEX:
         break;
     }
   }
