@@ -84,10 +84,10 @@ class CoreInstance {
   std::unique_ptr<simeng::kernel::LinuxProcess> process_ = nullptr;
 
   /** The size of the process memory. */
-  size_t processMemorySize_;
+  uint64_t processMemorySize_;
 
   /** The process memory space. */
-  char* processMemory_;
+  std::shared_ptr<char> processMemory_;
 
   /** The SimEng kernel object. */
   simeng::kernel::Linux kernel_;

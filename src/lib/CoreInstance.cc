@@ -31,15 +31,9 @@ void CoreInstance::setSimulationMode() {
 }
 
 void CoreInstance::createProcessMemory() {
-  // Get the process image
-  auto processImage = process_->getProcessImage();
-
-  // Allocate a region of memory for the process memory
-  processMemorySize_ = processImage.size();
-  processMemory_ = new char[processMemorySize_]();
-
-  // Fill the process memory with the generated process image
-  std::copy(processImage.begin(), processImage.end(), processMemory_);
+  // Get the process image and its size
+  processMemory_ = process_->getProcessImage();
+  processMemorySize_ = process_->getProcessImageSize();
 }
 
 void CoreInstance::createProcess(const std::vector<std::string>& commandLine) {
@@ -94,10 +88,10 @@ CoreInstance::createL1InstructionMemory(const simeng::MemInterfaceType type) {
   // Create a L1I cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
     instructionMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
-        processMemory_, processMemorySize_);
+        processMemory_.get(), processMemorySize_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
     instructionMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        processMemory_, processMemorySize_,
+        processMemory_.get(), processMemorySize_,
         config_["L1-Cache"]["Access-Latency"].as<uint16_t>());
   }
 
@@ -127,10 +121,10 @@ std::shared_ptr<simeng::MemoryInterface> CoreInstance::createL1DataMemory(
   // Create a L1D cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
     dataMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
-        processMemory_, processMemorySize_);
+        processMemory_.get(), processMemorySize_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
     dataMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        processMemory_, processMemorySize_,
+        processMemory_.get(), processMemorySize_,
         config_["L1-Cache"]["Access-Latency"].as<uint16_t>());
   }
 
