@@ -35,9 +35,6 @@ class CoreInstance {
   /** Constructor with a config file path. */
   CoreInstance(std::string configPath);
 
-  /** Constructor with a pre-constructed config file. */
-  CoreInstance(YAML::Node config);
-
   ~CoreInstance();
 
   /** Construct the SimEng linux process object from an executable ELF file and

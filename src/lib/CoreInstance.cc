@@ -12,15 +12,11 @@ CoreInstance::CoreInstance(std::string configPath) {
   setSimulationMode();
 }
 
-CoreInstance::CoreInstance(YAML::Node config) {
-  config_ = config;
-  setSimulationMode();
-}
-
 CoreInstance::~CoreInstance() {}
 
 void CoreInstance::setSimulationMode() {
-  // Get simualtion mode as defined by the set configuration
+  // Get the simualtion mode as defined by the set configuration, defaulting to
+  // emulation
   if (config_["Core"]["Simulation-Mode"].as<std::string>() ==
       "inorderpipelined") {
     mode_ = SimulationMode::InOrderPipelined;
@@ -80,8 +76,9 @@ CoreInstance::createL1InstructionMemory(const simeng::MemInterfaceType type) {
   // Currently, only a flat memory interface can be used for the instruction
   // memory
   if (type != simeng::MemInterfaceType::Flat) {
-    std::cerr << "Incompatible instruction memory interface type requested"
-              << std::endl;
+    std::cerr
+        << "Incompatible non-flat instruction memory interface type requested"
+        << std::endl;
     exit(1);
   }
 
@@ -109,13 +106,19 @@ std::shared_ptr<simeng::MemoryInterface> CoreInstance::createL1DataMemory(
     const simeng::MemInterfaceType type) {
   // Currently, if the core in use is emulation or in-order, only a flat data
   // memory interface can be used
-  if (mode_ == SimulationMode::Emulation ||
-      mode_ == SimulationMode::InOrderPipelined) {
-    if (type != simeng::MemInterfaceType::Flat) {
-      std::cerr << "Incompatible instruction memory interface type requested"
-                << std::endl;
-      exit(1);
-    }
+  if (mode_ == SimulationMode::Emulation &&
+      type != simeng::MemInterfaceType::Flat) {
+    std::cerr << "Incompatible non-flat data memory interface type requested "
+                 "with emulation core"
+              << std::endl;
+    exit(1);
+  }
+  if (mode_ == SimulationMode::InOrderPipelined &&
+      type != simeng::MemInterfaceType::Flat) {
+    std::cerr << "Incompatible non-flat data memory interface type requested "
+                 "with in-order core"
+              << std::endl;
+    exit(1);
   }
 
   // Create a L1D cache instance based on type supplied
