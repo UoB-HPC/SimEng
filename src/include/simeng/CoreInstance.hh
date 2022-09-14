@@ -67,6 +67,12 @@ class CoreInstance {
   /** Getter for the set simulation mode. */
   const SimulationMode getSimulationMode() const;
 
+  /** Getter for a shared pointer to the created process image. */
+  std::shared_ptr<char> getProcessImage() const;
+
+  /** Getter for the size of the created process image. */
+  const uint64_t getProcessImageSize() const;
+
  private:
   /** Extract simulation mode from config file. */
   void setSimulationMode();

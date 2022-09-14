@@ -161,8 +161,7 @@ int main(int argc, char** argv) {
   if (mode == simeng::SimulationMode::OutOfOrder) {
     modeString = "Out-of-Order";
     L1Dtype = simeng::MemInterfaceType::Fixed;
-  }
-  if (mode == simeng::SimulationMode::InOrderPipelined) {
+  } else if (mode == simeng::SimulationMode::InOrderPipelined) {
     modeString = "In-Order Pipelined";
   }
 

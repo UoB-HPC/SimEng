@@ -224,6 +224,14 @@ void CoreInstance::createSpecialFileDirectory() {
   return;
 }
 
+std::shared_ptr<char> CoreInstance::getProcessImage() const {
+  return processMemory_;
+}
+
+const uint64_t CoreInstance::getProcessImageSize() const {
+  return processMemorySize_;
+}
+
 const SimulationMode CoreInstance::getSimulationMode() const { return mode_; }
 
 }  // namespace simeng
