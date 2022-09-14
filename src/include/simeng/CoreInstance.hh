@@ -67,12 +67,6 @@ class CoreInstance {
   /** Construct the special file directory. */
   void createSpecialFileDirectory();
 
-  /** Getter for the set CPU clock speed. */
-  const float getClockFrequency() const;
-
-  /** Getter for the set virtual counter timer frequency. */
-  const uint32_t getTimerFrequency() const;
-
   /** Getter for the set simulation mode. */
   const SimulationMode getSimulationMode() const;
 
@@ -110,7 +104,7 @@ class CoreInstance {
   /** Reference to the SimEng core object. */
   std::shared_ptr<simeng::Core> core_ = nullptr;
 
-  /** The simulation mode in use, defaulting to emualtion. */
+  /** The simulation mode in use, defaulting to emulation. */
   SimulationMode mode_ = SimulationMode::Emulation;
 
   /** Reference to the SimEng instruction memory object. */
@@ -118,12 +112,6 @@ class CoreInstance {
 
   /** Reference to the SimEng data memory object. */
   std::shared_ptr<simeng::MemoryInterface> dataMemory_ = nullptr;
-
-  /** CPU clock speed. */
-  float clockFreq_ = 0;
-
-  /** Virtual counter timer frequency. */
-  uint32_t timerFreq_ = 0;
 };
 
 }  // namespace simeng

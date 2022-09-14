@@ -11,15 +11,10 @@
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/version.hh"
 
-float clockFreq;
-uint32_t timerFreq;
-
 /** Tick the provided core model until it halts. */
 int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
              simeng::MemoryInterface& instructionMemory) {
   uint64_t iterations = 0;
-  uint64_t vitrualCounter = 0;
-  double timerModulo = (clockFreq * 1e9) / (timerFreq * 1e6);
 
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
@@ -182,10 +177,6 @@ int main(int argc, char** argv) {
 
   // Create Special Files directory if indicated to do so in Config
   coreInstance->createSpecialFileDirectory();
-
-  // Get clockFreq and timerFreq variables from passed config
-  clockFreq = coreInstance->getClockFrequency();
-  timerFreq = coreInstance->getTimerFrequency();
 
   // Run simulation
   std::cout << "Running in " << modeString << " mode\n";

@@ -157,10 +157,6 @@ std::shared_ptr<simeng::Core> CoreInstance::createCore() {
     exit(1);
   }
 
-  // Get frequnecy information
-  clockFreq_ = config_["Core"]["Clock-Frequency"].as<float>();
-  timerFreq_ = config_["Core"]["Timer-Frequency"].as<uint32_t>();
-
   // Construct architecture object
   arch_ =
       std::make_unique<simeng::arch::aarch64::Architecture>(kernel_, config_);
@@ -230,10 +226,6 @@ void CoreInstance::createSpecialFileDirectory() {
 
   return;
 }
-
-const float CoreInstance::getClockFrequency() const { return clockFreq_; }
-
-const uint32_t CoreInstance::getTimerFrequency() const { return timerFreq_; }
 
 const SimulationMode CoreInstance::getSimulationMode() const { return mode_; }
 
