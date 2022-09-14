@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "simeng/Elf.hh"
 #include "yaml-cpp/yaml.h"
 
@@ -57,8 +59,11 @@ class LinuxProcess {
   /** Get the page size. */
   uint64_t getPageSize() const;
 
-  /** Get the process image. */
-  const span<char> getProcessImage() const;
+  /** Get a shared_ptr to process image. */
+  std::shared_ptr<char> getProcessImage() const;
+
+  /** Get the size of the process image. */
+  uint64_t getProcessImageSize() const;
 
   /** Get the entry point. */
   uint64_t getEntryPoint() const;
@@ -80,7 +85,7 @@ class LinuxProcess {
   const uint64_t HEAP_SIZE;
 
   /** Create and populate the initial process stack. */
-  void createStack();
+  void createStack(char** processImage);
 
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
@@ -97,9 +102,6 @@ class LinuxProcess {
   /** The address of the stack pointer. */
   uint64_t stackPointer_;
 
-  /** The process image. */
-  char* processImage_;
-
   /** The process image size. */
   uint64_t size_;
 
@@ -108,6 +110,9 @@ class LinuxProcess {
 
   /** Whether the process image was created successfully. */
   bool isValid_ = false;
+
+  /** Shared pointer to processImage. */
+  std::shared_ptr<char> processImage_;
 };
 
 }  // namespace kernel
