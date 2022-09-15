@@ -44,9 +44,13 @@ FetchContent_Declare(
 )
 
 FetchContent_Declare(
-  capstone
+  capstone-lib
   GIT_REPOSITORY https://github.com/UoB-HPC/capstone.git
-  GIT_TAG        e7be7d99e718ef9741026b80fc6f5e100fdf4f94 # trunk
+  GIT_TAG Armv9.2-update
+  GIT_PROGRESS TRUE
+
+  # Old Git tag pre-Armv9.2
+  # GIT_TAG e7be7d99e718ef9741026b80fc6f5e100fdf4f94 # trunk
 )
 
 cmake_policy(SET CMP0048 NEW)
@@ -87,6 +91,7 @@ install(DIRECTORY src/include/simeng
 set(CAPSTONE_BUILD_TESTS OFF CACHE BOOL "Disable Capstone tests")
 set(CAPSTONE_BUILD_SHARED OFF CACHE BOOL "Disable Capstone shared library")
 set(CAPSTONE_BUILD_CSTOOL OFF CACHE BOOL "Disable cstool build")
+set(CAPSTONE_INSTALL OFF CACHE BOOL "Disable install of capstone")
 
 set(CAPSTONE_ARM_SUPPORT OFF CACHE BOOL "Disable A32 support")
 set(CAPSTONE_MIPS_SUPPORT OFF CACHE BOOL "Disable MIPS support")
@@ -103,7 +108,7 @@ set(CAPSTONE_MOS65XX_SUPPORT OFF CACHE BOOL "Disable MSO65XX support")
 set(CAPSTONE_WASM_SUPPORT OFF CACHE BOOL "Disable WASM support")
 set(CAPSTONE_BPF_SUPPORT OFF CACHE BOOL "Disable BPF support")
 
-FetchContent_MakeAvailable_Args(capstone EXCLUDE_FROM_ALL)
+FetchContent_MakeAvailable_Args(capstone-lib EXCLUDE_FROM_ALL)
 include_directories("${capstone_BINARY_DIR}/include" "${capstone_SOURCE_DIR}/include")
 
 ## Setup yaml-cpp ##
@@ -117,7 +122,7 @@ option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
 option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizatoins" OFF)
 
-if(SIMENG_OPTIMIZE)
+if (SIMENG_OPTIMIZE)
   # Turn on link time optimization for all targets.
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
 
@@ -176,12 +181,12 @@ if(SIMENG_ENABLE_TESTS)
     # make sure we get the headers too
     include_directories("${llvm_BINARY_DIR}/include" "${llvm_SOURCE_DIR}/include")
 
-    find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH 
+    find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH
                  PATHS "${llvm_BINARY_DIR}/lib/cmake/llvm")
-                 
+
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
     # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
- 
+
   endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")

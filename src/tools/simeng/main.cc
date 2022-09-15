@@ -187,19 +187,17 @@ int main(int argc, char** argv) {
         simeng::span<char>(reinterpret_cast<char*>(hex), sizeof(hex)), config);
   }
 
-  // Read the process image and copy to memory
-  auto processImage = process->getProcessImage();
-  size_t processMemorySize = processImage.size();
-  char* processMemory = new char[processMemorySize]();
-  std::copy(processImage.begin(), processImage.end(), processMemory);
-
+  size_t processMemorySize = process->getProcessImageSize();
   uint64_t entryPoint = process->getEntryPoint();
 
   // Create the OS kernel with the process
   simeng::kernel::Linux kernel;
   kernel.createProcess(*process.get());
 
-  simeng::FlatMemoryInterface instructionMemory(processMemory,
+  // Dereferenced shared_ptr instance of process image held inside
+  // LinuxProcess.hh is passed to instruction memory.
+  std::shared_ptr<char> procImgForInstrMem = process->getProcessImage();
+  simeng::FlatMemoryInterface instructionMemory(procImgForInstrMem.get(),
                                                 processMemorySize);
 
   // Create the architecture, with knowledge of the kernel
@@ -239,6 +237,10 @@ int main(int argc, char** argv) {
 
   int iterations = 0;
 
+  // Dereferenced shared_ptr instance of process image held inside
+  // LinuxProcess.hh is passed to data memory.
+  std::shared_ptr<char> procImgForDataMem = process->getProcessImage();
+  char* processMemory = procImgForDataMem.get();
   std::string modeString;
   std::unique_ptr<simeng::Core> core;
   std::unique_ptr<simeng::MemoryInterface> dataMemory;
@@ -343,8 +345,6 @@ int main(int argc, char** argv) {
   std::cout << out.c_str() << std::endl;
 
 #endif
-
-  delete[] processMemory;
 
   return 0;
 }
