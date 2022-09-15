@@ -535,8 +535,7 @@ class neonHelp {
    * for vd.8b I = 8).
    * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
-  static RegisterValue vecUMaxP(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static RegisterValue vecUMaxP(std::vector<RegisterValue>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
 
@@ -553,8 +552,7 @@ class neonHelp {
    * for vd.8b I = 8).
    * Returns correctly formatted RegisterValue. */
   template <typename T, int I>
-  static RegisterValue vecUMinP(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static RegisterValue vecUMinP(std::vector<RegisterValue>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
 
@@ -760,7 +758,7 @@ class neonHelp {
    * Returns correctly formatted RegisterValue. */
   template <int I>
   static RegisterValue vecTbl(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     // Vd and Vm are only valid in format 8b or 16b
     assert(I == 8 || I == 16);
@@ -811,8 +809,7 @@ class neonHelp {
    * It is only valid for T to be a same or smaller width than V.
    * Returns correctly formatted RegisterValue. */
   template <typename T, int V, int I>
-  static RegisterValue vecRev(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static RegisterValue vecRev(std::vector<RegisterValue>& operands) {
     const T* source = operands[0].getAsVector<T>();
     int element_size = (sizeof(T) * 8);
     int datasize = I * element_size;
@@ -840,8 +837,7 @@ class neonHelp {
    * I represents the number of operands (e.g. for vn.8b, I = 8).
    * Returns formatted Register Value. */
   template <typename T, int I>
-  static RegisterValue vecTrn1(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static RegisterValue vecTrn1(std::vector<RegisterValue>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
 
@@ -860,8 +856,7 @@ class neonHelp {
    * I represents the number of operands (e.g. for Vn.8b, I = 8).
    * Returns formatted Register Value. */
   template <typename T, int I>
-  static RegisterValue vecTrn2(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static RegisterValue vecTrn2(std::vector<RegisterValue>& operands) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
 
@@ -880,9 +875,8 @@ class neonHelp {
    * I represents the number of operands (e.g. for Vn.8b, I = 8).
    * Returns formatted Register Value. */
   template <typename T, int I>
-  static RegisterValue vecUzp(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      bool isUzp1) {
+  static RegisterValue vecUzp(std::vector<RegisterValue>& operands,
+                              bool isUzp1) {
     const T* n = operands[0].getAsVector<T>();
     const T* m = operands[1].getAsVector<T>();
 
