@@ -5,6 +5,8 @@
 
 namespace simeng {
 
+/** The available memory interface types. Flat providing a zero access latency
+ * and Fixed a set non-zero access latency. */
 enum class MemInterfaceType { Flat, Fixed };
 
 /** A generic memory access target; describes a region of memory to access. */

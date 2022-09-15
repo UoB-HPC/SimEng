@@ -24,6 +24,7 @@
 
 namespace simeng {
 
+/** The available modes of simulation. */
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
 /** A class to create a SimEng core instance from a supplied config. */
@@ -58,7 +59,8 @@ class CoreInstance {
   /** Set the SimEng L1 data cache memory. */
   void setL1DataMemory(std::shared_ptr<simeng::MemoryInterface> memRef);
 
-  /** Construct the core and all its associated simulation objects. */
+  /** Construct the core and all its associated simulation objects after the
+   * process and memory interfaces have been instantiated. */
   std::shared_ptr<simeng::Core> createCore();
 
   /** Construct the special file directory. */
@@ -92,7 +94,7 @@ class CoreInstance {
   /** The process memory space. */
   std::shared_ptr<char> processMemory_;
 
-  /** The SimEng kernel object. */
+  /** The SimEng Linux kernel object. */
   simeng::kernel::Linux kernel_;
 
   /** Reference to the SimEng architecture object. */
