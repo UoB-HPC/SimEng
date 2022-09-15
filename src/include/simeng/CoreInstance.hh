@@ -22,10 +22,8 @@
 #include "simeng/pipeline/BalancedPortAllocator.hh"
 #include "yaml-cpp/yaml.h"
 
-// Out-of-order test; counts down from 1024*1024, with an independent `orr`
-// at the start of each branch. With an instruction latency of 2 or greater,
-// the `orr` at the start of the next loop should issue/execute while the
-// preceding branch is waiting on the result from the `subs`.
+// Instruction set used when no executable is provided; counts down from
+// 1024*1024, with an independent `orr` at the start of each branch.
 uint32_t hex_[] = {
     0x320C03E0,  // orr w0, wzr, #1048576
     0x320003E1,  // orr w0, wzr, #1
@@ -67,6 +65,9 @@ class CoreInstance {
 
   /** Getter for the set simulation mode. */
   const SimulationMode getSimulationMode() const;
+
+  /** Getter for the set simulation mode in a string format. */
+  const std::string getSimulationModeString() const;
 
   /** Getter for the create core object. */
   std::shared_ptr<simeng::Core> getCore() const;
@@ -123,9 +124,6 @@ class CoreInstance {
   /** The SimEng Linux kernel object. */
   simeng::kernel::Linux kernel_;
 
-  /** Whether or not the createCore() function must be manually called. */
-  bool manualCreateCore_ = false;
-
   /** Whether or not the dataMemory_ must be set manually. */
   bool setDataMemory_ = false;
 
@@ -146,6 +144,10 @@ class CoreInstance {
 
   /** The simulation mode in use, defaulting to emulation. */
   SimulationMode mode_ = SimulationMode::Emulation;
+
+  /** A string format for the simulation mode in use, defaulting to emulation.
+   */
+  std::string modeString_ = "Emulation";
 
   /** Reference to the SimEng data memory object. */
   std::shared_ptr<simeng::MemoryInterface> dataMemory_ = nullptr;

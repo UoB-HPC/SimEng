@@ -55,15 +55,6 @@ int main(int argc, char** argv) {
     coreInstance = std::make_unique<simeng::CoreInstance>(argc - 1, argv);
   }
 
-  // Get simualtion mode and data memory interface type
-  simeng::SimulationMode mode = coreInstance->getSimulationMode();
-  std::string modeString = "Emulation";
-  if (mode == simeng::SimulationMode::OutOfOrder) {
-    modeString = "Out-of-Order";
-  } else if (mode == simeng::SimulationMode::InOrderPipelined) {
-    modeString = "In-Order Pipelined";
-  }
-
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();
   std::shared_ptr<simeng::MemoryInterface> dataMemory =
@@ -72,7 +63,8 @@ int main(int argc, char** argv) {
       coreInstance->getInstructionMemory();
 
   // Run simulation
-  std::cout << "Running in " << modeString << " mode\n";
+  std::cout << "Running in " << coreInstance->getSimulationModeString()
+            << " mode\n";
   std::cout << "Starting..." << std::endl;
   int iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();

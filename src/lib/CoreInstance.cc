@@ -33,7 +33,6 @@ void CoreInstance::generateCoreModel(int argc, char** argv) {
   }
   // Create data memory if appropriate
   if (dType == simeng::MemInterfaceType::External) {
-    manualCreateCore_ = true;
     setDataMemory_ = true;
   } else {
     createL1DataMemory(dType);
@@ -51,14 +50,13 @@ void CoreInstance::generateCoreModel(int argc, char** argv) {
   }
   // Create instruction memory if appropriate
   if (iType == simeng::MemInterfaceType::External) {
-    manualCreateCore_ = true;
     setInstructionMemory_ = true;
   } else {
     createL1InstructionMemory(iType);
   }
 
   // Create the core if neither memory interfaces are externally constructed
-  if (!manualCreateCore_) createCore();
+  if (setDataMemory_ || setInstructionMemory_) createCore();
 
   return;
 }
@@ -69,10 +67,14 @@ void CoreInstance::setSimulationMode() {
   if (config_["Core"]["Simulation-Mode"].as<std::string>() ==
       "inorderpipelined") {
     mode_ = SimulationMode::InOrderPipelined;
+    modeString_ = "Out-of-Order";
   } else if (config_["Core"]["Simulation-Mode"].as<std::string>() ==
              "outoforder") {
     mode_ = SimulationMode::OutOfOrder;
+    modeString_ = "In-Order Pipelined";
   }
+
+  return;
 }
 
 void CoreInstance::createProcess(int argc, char** argv) {
@@ -119,6 +121,8 @@ void CoreInstance::createProcessMemory() {
   // Get the process image and its size
   processMemory_ = process_->getProcessImage();
   processMemorySize_ = process_->getProcessImageSize();
+
+  return;
 }
 
 void CoreInstance::createL1InstructionMemory(
@@ -263,14 +267,17 @@ void CoreInstance::createSpecialFileDirectory() {
 
 const SimulationMode CoreInstance::getSimulationMode() const { return mode_; }
 
+const std::string CoreInstance::getSimulationModeString() const {
+  return modeString_;
+}
+
 std::shared_ptr<simeng::Core> CoreInstance::getCore() const {
-  if (manualCreateCore_ && (core_ == nullptr)) {
-    std::cerr << "Core object not constructed and marked as needed to be "
-                 "manually created via the createCore() function. If either "
-                 "data or instruction memory interfaces are marked as an "
-                 "`External` type, they must be set manually and then core's "
-                 "creation must be called manually."
-              << std::endl;
+  if (core_ == nullptr) {
+    std::cerr
+        << "Core object not constructed. If either data or instruction memory "
+           "interfaces are marked as an `External` type, they must be set "
+           "manually and then core's creation must be called manually."
+        << std::endl;
     exit(1);
   }
   return core_;
