@@ -56,7 +56,7 @@ void CoreInstance::generateCoreModel(int argc, char** argv) {
   }
 
   // Create the core if neither memory interfaces are externally constructed
-  if (setDataMemory_ || setInstructionMemory_) createCore();
+  if (!(setDataMemory_ || setInstructionMemory_)) createCore();
 
   return;
 }
@@ -67,11 +67,11 @@ void CoreInstance::setSimulationMode() {
   if (config_["Core"]["Simulation-Mode"].as<std::string>() ==
       "inorderpipelined") {
     mode_ = SimulationMode::InOrderPipelined;
-    modeString_ = "Out-of-Order";
+    modeString_ = "In-Order Pipelined";
   } else if (config_["Core"]["Simulation-Mode"].as<std::string>() ==
              "outoforder") {
     mode_ = SimulationMode::OutOfOrder;
-    modeString_ = "In-Order Pipelined";
+    modeString_ = "Out-of-Order";
   }
 
   return;
