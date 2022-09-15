@@ -43,13 +43,15 @@ enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 /** A class to create a SimEng core instance from a supplied config. */
 class CoreInstance {
  public:
-  /** Default constructor with command line arguments but no passed
+  /** Default constructor with an executable and its arguments but no model
    * configuration. */
-  CoreInstance(int argc, char** argv);
+  CoreInstance(std::string executablePath,
+               std::vector<std::string> executableArgs);
 
-  /** Constructor with with command line arguments and a configuration file
-   * path. */
-  CoreInstance(int argc, char** argv, std::string configPath);
+  /** Constructor with an executable, its arguments, and a model configuration.
+   */
+  CoreInstance(std::string configPath, std::string executablePath,
+               std::vector<std::string> executableArgs);
 
   ~CoreInstance();
 
@@ -87,7 +89,8 @@ class CoreInstance {
  private:
   /** Generate the appropriate simulation objects as parameterised by the
    * configuration.*/
-  void generateCoreModel(int argc, char** argv);
+  void generateCoreModel(std::string executablePath,
+                         std::vector<std::string> executableArgs);
 
   /** Extract simulation mode from config file. */
   void setSimulationMode();
@@ -95,7 +98,8 @@ class CoreInstance {
   /** Construct the SimEng linux process object from command line arguments.
    * Empty command line arguments denote the usage of hardcoded
    * instructions held in the hex_ array. */
-  void createProcess(int argc, char** argv);
+  void createProcess(std::string executablePath,
+                     std::vector<std::string> executableArgs);
 
   /** Construct the process memory from the generated process_ object. */
   void createProcessMemory();

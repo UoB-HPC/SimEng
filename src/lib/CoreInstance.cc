@@ -2,21 +2,24 @@
 
 namespace simeng {
 
-CoreInstance::CoreInstance(int argc, char** argv) {
+CoreInstance::CoreInstance(std::string executablePath,
+                           std::vector<std::string> executableArgs) {
   config_ = YAML::Load(DEFAULT_CONFIG);
-  generateCoreModel(argc, argv);
+  generateCoreModel(executablePath, executableArgs);
 }
 
-CoreInstance::CoreInstance(int argc, char** argv, std::string configPath) {
+CoreInstance::CoreInstance(std::string configPath, std::string executablePath,
+                           std::vector<std::string> executableArgs) {
   config_ = simeng::ModelConfig(configPath).getConfigFile();
-  generateCoreModel(argc, argv);
+  generateCoreModel(executablePath, executableArgs);
 }
 
 CoreInstance::~CoreInstance() {}
 
-void CoreInstance::generateCoreModel(int argc, char** argv) {
+void CoreInstance::generateCoreModel(std::string executablePath,
+                                     std::vector<std::string> executableArgs) {
   setSimulationMode();
-  createProcess(argc, argv);
+  createProcess(executablePath, executableArgs);
   // Check to see if either of the instruction or data memory interfaces should
   // be created. Don't create the core if either interface is marked as External
   // as they must be set manually prior to the core's creation.
@@ -77,16 +80,14 @@ void CoreInstance::setSimulationMode() {
   return;
 }
 
-void CoreInstance::createProcess(int argc, char** argv) {
-  // Check for passed executable
-  std::string executablePath = "";
-  if (argc != 0) {
-    executablePath = std::string(argv[0]);
-  }
-
+void CoreInstance::createProcess(std::string executablePath,
+                                 std::vector<std::string> executableArgs) {
   if (executablePath.length() > 0) {
-    // Attempt to create the process image from the specified command-line
-    std::vector<std::string> commandLine(argv, argv + argc);
+    // Concatenate the command line arguments into a single vector and create
+    // the process image
+    std::vector<std::string> commandLine = {executablePath};
+    commandLine.insert(commandLine.end(), executableArgs.begin(),
+                       executableArgs.end());
     process_ =
         std::make_unique<simeng::kernel::LinuxProcess>(commandLine, config_);
 
@@ -96,6 +97,7 @@ void CoreInstance::createProcess(int argc, char** argv) {
       exit(1);
     }
   } else {
+    // Create a process image from the set of instructions held in hex_
     process_ = std::make_unique<simeng::kernel::LinuxProcess>(
         simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
         config_);

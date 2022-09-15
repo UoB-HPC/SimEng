@@ -43,16 +43,28 @@ int main(int argc, char** argv) {
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance;
+  std::string executablePath = "";
+  std::vector<std::string> executableArgs = {};
+
+  // Determine if a config file has been supplied.
   if (argc > 1) {
-    // Pass the cli arguments, excluding the invoking command and
-    // config path, and the config path (argv[1]) to the CoreInstance
-    // constructor
-    coreInstance =
-        std::make_unique<simeng::CoreInstance>(argc - 2, argv + 2, argv[1]);
+    // Determine if an executable has been supplied
+    if (argc > 2) {
+      executablePath = std::string(argv[2]);
+      // Create a vector of any potential executable arguments from their
+      // relative position within the argv variable
+      char** startOfArgs = argv + 3;
+      int numberofArgs = argc - 3;
+      executableArgs =
+          std::vector<std::string>(startOfArgs, startOfArgs + numberofArgs);
+    }
+    coreInstance = std::make_unique<simeng::CoreInstance>(
+        std::string(argv[1]), executablePath, executableArgs);
   } else {
-    // Pass the cli arguments, excluding the invoking command, to the
-    // CoreInstance constructor
-    coreInstance = std::make_unique<simeng::CoreInstance>(argc - 1, argv);
+    // Without a config file, no executable can be supplied so pass default
+    // (empty) values for executable information
+    coreInstance =
+        std::make_unique<simeng::CoreInstance>(executablePath, executableArgs);
   }
 
   // Get simulation objects needed to forward simulation
