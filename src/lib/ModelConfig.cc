@@ -135,21 +135,8 @@ void ModelConfig::validate() {
   }
   subFields.clear();
 
-  // Instruction Memory
-  root = "Instruction-Memory";
-  subFields = {"Interface-Type"};
-  nodeChecker<std::string>(
-      configFile_[root][subFields[0]], root + " " + subFields[0],
-      std::vector<std::string>{"Flat", "Fixed", "External"},
-      ExpectedValue::String);
-  // Currently, fixed instruction memory interfaces are unsupported
-  if (configFile_[root][subFields[0]].as<std::string>() != "Flat") {
-    invalid_ << "\t- Non-Flat instruction memory interface types are currently "
-                "unsupported\n";
-  }
-
   // Data Memory
-  root = "Data-Memory";
+  root = "L1-Data-Memory";
   subFields = {"Interface-Type"};
   nodeChecker<std::string>(
       configFile_[root][subFields[0]], root + " " + subFields[0],
@@ -164,6 +151,19 @@ void ModelConfig::validate() {
                   "currently unsupported for 'emulation' and "
                   "'inorderpipelined' simulation modes\n";
     }
+  }
+
+  // Instruction Memory
+  root = "L1-Instruction-Memory";
+  subFields = {"Interface-Type"};
+  nodeChecker<std::string>(
+      configFile_[root][subFields[0]], root + " " + subFields[0],
+      std::vector<std::string>{"Flat", "Fixed", "External"},
+      ExpectedValue::String);
+  // Currently, fixed instruction memory interfaces are unsupported
+  if (configFile_[root][subFields[0]].as<std::string>() != "Flat") {
+    invalid_ << "\t- Non-Flat instruction memory interface types are currently "
+                "unsupported\n";
   }
 
   // LSQ-L1-Interface

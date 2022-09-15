@@ -24,7 +24,7 @@ void CoreInstance::generateCoreModel(int argc, char** argv) {
   // Convert Data-Memory's Interface-Type value from a string to
   // simeng::MemInterfaceType
   std::string dType_string =
-      config_["Data-Memory"]["Interface-Type"].as<std::string>();
+      config_["L1-Data-Memory"]["Interface-Type"].as<std::string>();
   simeng::MemInterfaceType dType = simeng::MemInterfaceType::Flat;
   if (dType_string == "Fixed") {
     dType = simeng::MemInterfaceType::Fixed;
@@ -42,7 +42,7 @@ void CoreInstance::generateCoreModel(int argc, char** argv) {
   // Convert Instruction-Memory's Interface-Type value from a string to
   // simeng::MemInterfaceType
   std::string iType_string =
-      config_["Instruction-Memory"]["Interface-Type"].as<std::string>();
+      config_["L1-Instruction-Memory"]["Interface-Type"].as<std::string>();
   simeng::MemInterfaceType iType = simeng::MemInterfaceType::Flat;
   if (iType_string == "Fixed") {
     iType = simeng::MemInterfaceType::Fixed;
