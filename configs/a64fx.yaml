@@ -241,7 +241,7 @@ Latencies:
 CPU-Info:
   # Set Generate-Special-Dir to 'T' to generate the special files directory, or to 'F' to not.
   # (Not generating the special files directory may require the user to copy over files manually)
-  Generate-Special-Dir: T
+  Generate-Special-Dir: true
   # Core-Count MUST be 1 as multi-core is not supported at this time. (A64FX true value is 48)
   Core-Count: 1
   # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (A64FX true value is 1)

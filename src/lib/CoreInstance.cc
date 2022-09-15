@@ -214,7 +214,7 @@ std::shared_ptr<simeng::Core> CoreInstance::createCore() {
 void CoreInstance::createSpecialFileDirectory() {
   simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen(config_);
   // Create the Special Files directory if indicated to do so in Config
-  if (config_["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
+  if (config_["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true) {
     // Remove any current special files dir
     SFdir.RemoveExistingSFDir();
     // Create new special files dir

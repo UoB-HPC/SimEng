@@ -446,8 +446,8 @@ void ModelConfig::validate() {
                "CPU-Part",
                "CPU-Revision",
                "Package-Count"};
-  nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
-                           {"T", "F", ""}, ExpectedValue::String, "F");
+  nodeChecker<bool>(configFile_[root][subFields[0]], subFields[0],
+                    std::vector<bool>{false, true}, ExpectedValue::Bool, false);
   nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger, 1);

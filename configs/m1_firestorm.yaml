@@ -278,7 +278,7 @@ Latencies:
     Execution-Latency: 3
     Execution-Throughput: 1
 CPU-Info:
-  Generate-Special-Dir: T
+  Generate-Special-Dir: true
   Core-Count: 1
   Socket-Count: 1
   SMT: 1

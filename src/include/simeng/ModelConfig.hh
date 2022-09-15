@@ -37,7 +37,7 @@
    "60, Ports: [0, 1, 2, 3, 4, 5]}}, Execution-Units: {'0': {Pipelined: "     \
    "true}, '1': {Pipelined: true}, '2': {Pipelined: true}, '3': {Pipelined: " \
    "true}, '4': {Pipelined: true}, '5': {Pipelined: true}}, CPU-Info: "       \
-   "{Generate-Special-Dir: F, Core-Count: 1, Socket-Count: 1, SMT: 1, "       \
+   "{Generate-Special-Dir: false, Core-Count: 1, Socket-Count: 1, SMT: 1, "   \
    "BogoMIPS: 200.00, Features: fp asimd evtstrm atomics cpuid, "             \
    "CPU-Implementer: 0x0, CPU-Architecture: 0, CPU-Variant: 0x0, CPU-Part: "  \
    "0x0, CPU-Revision: 0, Package-Count: 1}}")
