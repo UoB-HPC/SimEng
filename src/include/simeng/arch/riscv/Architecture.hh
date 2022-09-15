@@ -14,10 +14,7 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-typedef enum riscv_sysreg {
-  RISCV_SYSREG_FAKE_VCT = 0xD807,
-  RISCV_SYSREG_FAKE_PCC = 0xD808
-};
+typedef enum riscv_sysreg {};
 
 /* A basic RISCV implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
