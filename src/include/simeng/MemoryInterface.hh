@@ -5,9 +5,13 @@
 
 namespace simeng {
 
-/** The available memory interface types. Flat providing a zero access latency
- * and Fixed a set non-zero access latency. */
-enum class MemInterfaceType { Flat, Fixed };
+/** The available memory interface types. */
+enum class MemInterfaceType {
+  Flat,     // A zero access latency interface
+  Fixed,    // A fixed, non-zero, access latency interface
+  External  // An interface generated outside of the standard SimEng
+            // instantiation
+};
 
 /** A generic memory access target; describes a region of memory to access. */
 struct MemoryAccessTarget {

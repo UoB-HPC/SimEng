@@ -135,8 +135,39 @@ void ModelConfig::validate() {
   }
   subFields.clear();
 
-  // L1-Cache
-  root = "L1-Cache";
+  // Instruction Memory
+  root = "Instruction-Memory";
+  subFields = {"Interface-Type"};
+  nodeChecker<std::string>(
+      configFile_[root][subFields[0]], root + " " + subFields[0],
+      std::vector<std::string>{"Flat", "Fixed", "External"},
+      ExpectedValue::String);
+  // Currently, fixed instruction memory interfaces are unsupported
+  if (configFile_[root][subFields[0]].as<std::string>() != "Flat") {
+    invalid_ << "\t- Non-Flat instruction memory interface types are currently "
+                "unsupported\n";
+  }
+
+  // Data Memory
+  root = "Data-Memory";
+  subFields = {"Interface-Type"};
+  nodeChecker<std::string>(
+      configFile_[root][subFields[0]], root + " " + subFields[0],
+      std::vector<std::string>{"Flat", "Fixed", "External"},
+      ExpectedValue::String);
+  // Currently, fixed instruction memory interfaces are unsupported for
+  // emulation and inorder simulation modes
+  if (configFile_[root][subFields[0]].as<std::string>() != "Flat") {
+    std::string mode = configFile_["Core"]["Simulation-Mode"].as<std::string>();
+    if (mode == "emulation" || mode == "inorderpipelined") {
+      invalid_ << "\t- Non-Flat data memory interface types are "
+                  "currently unsupported for 'emulation' and "
+                  "'inorderpipelined' simulation modes\n";
+    }
+  }
+
+  // LSQ-L1-Interface
+  root = "LSQ-L1-Interface";
   subFields = {"Access-Latency",
                "Exclusive",
                "Load-Bandwidth",

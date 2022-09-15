@@ -59,12 +59,15 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          config["L1-Cache"]["Exclusive"].as<bool>(),
-          config["L1-Cache"]["Load-Bandwidth"].as<uint16_t>(),
-          config["L1-Cache"]["Store-Bandwidth"].as<uint16_t>(),
-          config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint16_t>(),
-          config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint16_t>(),
-          config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint16_t>()),
+          config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
+          config["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]
+              .as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Permitted-Loads-Per-Cycle"]
+              .as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
+              .as<uint16_t>()),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
                  entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
                  isa, branchPredictor),
