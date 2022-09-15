@@ -35,9 +35,9 @@ Branch-Predictor:
   Global-History-Length: 10
   RAS-entries: 5
   Fallback-Static-Predictor: "Always-Taken"
-Data-Memory:
+L1-Data-Memory:
   Interface-Type: Fixed
-Instruction-Memory:
+L1-Instruction-Memory:
   Interface-Type: Flat
 LSQ-L1-Interface:
   Access-Latency: 4
@@ -163,9 +163,9 @@ Latencies:
 # CPU-Info mainly used to generate a replica of the special (or system) file directory 
 # structure
 CPU-Info:
-  # Set Generate-Special-Dir to 'T' to generate the special files directory, or to 'F' to not.
+  # Set Generate-Special-Dir to True to generate the special files directory, or to False to not.
   # (Not generating the special files directory may require the user to copy over files manually)
-  Generate-Special-Dir: true
+  Generate-Special-Dir: True
   # Core-Count MUST be 1 as multi-core is not supported at this time. (TX2 true value is 32)
   Core-Count: 1
   # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (TX2 true value is 2)
