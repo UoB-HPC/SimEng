@@ -176,12 +176,12 @@ void CoreInstance::setL1DataMemory(
 
 void CoreInstance::createCore() {
   // If memory interfaces must be manually set, ensure they have been
-  if (setDataMemory_ && dataMemory_ == nullptr) {
+  if (setDataMemory_ && (dataMemory_ == nullptr)) {
     std::cerr << "Data memory not set. External Data memory must be manually "
                  "set using the setL1DataMemory(...) function."
               << std::endl;
     exit(1);
-  } else if (setInstructionMemory_ && instructionMemory_ == nullptr) {
+  } else if (setInstructionMemory_ && (instructionMemory_ == nullptr)) {
     std::cerr << "Instruction memory not set. External instruction memory "
                  "interface must be manually set using the "
                  "setL1InstructionMemory(...) function."
@@ -249,9 +249,9 @@ void CoreInstance::createCore() {
 }
 
 void CoreInstance::createSpecialFileDirectory() {
-  simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen(config_);
   // Create the Special Files directory if indicated to do so in Config
   if (config_["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true) {
+    simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen(config_);
     // Remove any current special files dir
     SFdir.RemoveExistingSFDir();
     // Create new special files dir
@@ -264,7 +264,7 @@ void CoreInstance::createSpecialFileDirectory() {
 const SimulationMode CoreInstance::getSimulationMode() const { return mode_; }
 
 std::shared_ptr<simeng::Core> CoreInstance::getCore() const {
-  if (manualCreateCore_ && core_ == nullptr) {
+  if (manualCreateCore_ && (core_ == nullptr)) {
     std::cerr << "Core object not constructed and marked as needed to be "
                  "manually created via the createCore() function. If either "
                  "data or instruction memory interfaces are marked as an "
@@ -277,7 +277,7 @@ std::shared_ptr<simeng::Core> CoreInstance::getCore() const {
 }
 
 std::shared_ptr<simeng::MemoryInterface> CoreInstance::getDataMemory() const {
-  if (setDataMemory_) {
+  if (setDataMemory_ && (dataMemory_ == nullptr)) {
     std::cerr << "`External` data memory object not set." << std::endl;
     exit(1);
   }
@@ -286,7 +286,7 @@ std::shared_ptr<simeng::MemoryInterface> CoreInstance::getDataMemory() const {
 
 std::shared_ptr<simeng::MemoryInterface> CoreInstance::getInstructionMemory()
     const {
-  if (setInstructionMemory_) {
+  if (setInstructionMemory_ && (instructionMemory_ == nullptr)) {
     std::cerr << "`External` instruction memory object not set." << std::endl;
     exit(1);
   }

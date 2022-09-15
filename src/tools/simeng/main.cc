@@ -44,9 +44,14 @@ int main(int argc, char** argv) {
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance;
   if (argc > 1) {
+    // Pass the cli arguments, excluding the invoking command and
+    // config path, and the config path (argv[1]) to the CoreInstance
+    // constructor
     coreInstance =
         std::make_unique<simeng::CoreInstance>(argc - 2, argv + 2, argv[1]);
   } else {
+    // Pass the cli arguments, excluding the invoking command, to the
+    // CoreInstance constructor
     coreInstance = std::make_unique<simeng::CoreInstance>(argc - 1, argv);
   }
 
