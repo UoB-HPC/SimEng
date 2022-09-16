@@ -9,6 +9,7 @@
 namespace simeng {
 namespace pipeline {
 
+/** The various states of the loop buffer. */
 enum class LoopBufferState {
   IDLE = 0,  // No operations
   WAITING,   // Waiting to find boundary instruction in fetch stream
