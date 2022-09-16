@@ -29,8 +29,12 @@ Branch-Predictor:
   Saturating-Count-Bits: 2  
   Global-History-Length: 11 
   RAS-entries: 8 
-  Fallback-Static-Predictor: "Always-Taken" 
-L1-Cache:
+  Fallback-Static-Predictor: "Always-Taken"
+L1-Data-Memory:
+  Interface-Type: Fixed
+L1-Instruction-Memory:
+  Interface-Type: Flat
+LSQ-L1-Interface:
   Access-Latency: 3
   Exclusive: False
   L1 Load Bandwidth: 48
@@ -277,11 +281,19 @@ Latencies:
       - SCALAR
     Execution-Latency: 3
     Execution-Throughput: 1
+# CPU-Info mainly used to generate a replica of the special (or system) file directory 
+# structure
 CPU-Info:
-  Generate-Special-Dir: T
+  # Set Generate-Special-Dir to True to generate the special files directory, or to False to not.
+  # (Not generating the special files directory may require the user to copy over files manually)
+  Generate-Special-Dir: True
+  # Core-Count MUST be 1 as multi-core is not supported at this time. (A64FX true value is 48)
   Core-Count: 1
+  # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (A64FX true value is 1)
   Socket-Count: 1
+  # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (A64FX true value is 1)
   SMT: 1
+  # Below are the values needed to generate /proc/cpuinfo
   BogoMIPS: 48.00
   Features: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint
   CPU-Implementer: "0x46"
@@ -289,5 +301,7 @@ CPU-Info:
   CPU-Variant: "0x1"
   CPU-Part: "0x001"
   CPU-Revision: 0
+  # Package-Count is used to generate 
+  # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
   Package-Count: 1
 

@@ -28,6 +28,7 @@ set(SIMENG_SOURCES
     AlwaysNotTakenPredictor.cc
     ArchitecturalRegisterFileSet.cc
     CMakeLists.txt
+    CoreInstance.cc
     Elf.cc
     FixedLatencyMemoryInterface.cc
     FlatMemoryInterface.cc
@@ -37,7 +38,7 @@ set(SIMENG_SOURCES
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
-    )
+)
 
 configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
 

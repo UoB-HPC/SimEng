@@ -13,10 +13,9 @@ namespace inorder {
 const unsigned int blockSize = 16;
 const unsigned int clockFrequency = 2.5 * 1e9;
 
-Core::Core(FlatMemoryInterface& instructionMemory,
-           FlatMemoryInterface& dataMemory, uint64_t processMemorySize,
-           uint64_t entryPoint, const arch::Architecture& isa,
-           BranchPredictor& branchPredictor)
+Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+           uint64_t processMemorySize, uint64_t entryPoint,
+           const arch::Architecture& isa, BranchPredictor& branchPredictor)
     : dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),

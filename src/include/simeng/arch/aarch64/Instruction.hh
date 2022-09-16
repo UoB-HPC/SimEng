@@ -174,6 +174,7 @@ struct ExecutionInfo {
   std::vector<uint8_t> ports = {};
 };
 
+/** The various exceptions that can be raised by an individual instruction. */
 enum class InstructionException {
   None = 0,
   EncodingUnallocated,
