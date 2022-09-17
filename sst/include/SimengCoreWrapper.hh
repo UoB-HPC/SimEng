@@ -17,26 +17,10 @@
 #include <vector>
 
 #include "SimengMemInterface.hh"
-#include "simeng/AlwaysNotTakenPredictor.hh"
-#include "simeng/BTBPredictor.hh"
-#include "simeng/BTB_BWTPredictor.hh"
 #include "simeng/Core.hh"
-#include "simeng/Elf.hh"
-#include "simeng/FixedLatencyMemoryInterface.hh"
-#include "simeng/FlatMemoryInterface.hh"
+#include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
-#include "simeng/ModelConfig.hh"
 #include "simeng/SpecialFileDirGen.hh"
-#include "simeng/arch/Architecture.hh"
-#include "simeng/arch/aarch64/Architecture.hh"
-#include "simeng/arch/aarch64/Instruction.hh"
-#include "simeng/arch/aarch64/MicroDecoder.hh"
-#include "simeng/kernel/Linux.hh"
-#include "simeng/models/emulation/Core.hh"
-#include "simeng/models/inorder/Core.hh"
-#include "simeng/models/outoforder/Core.hh"
-#include "simeng/pipeline/A64FXPortAllocator.hh"
-#include "simeng/pipeline/BalancedPortAllocator.hh"
 #include "simeng/version.hh"
 
 using namespace SST;
@@ -123,20 +107,28 @@ class SimengCoreWrapper : public SST::Component {
       {"max_addr_memory", "Maximum address that memory can access (int)"}, )
 
  private:
-  /** SST properties. */
+  /** Method used to assemble SimEng core. */
+  void fabricateSimengCore();
 
+  /** Method to split the passed executable argument's string into a vector of
+   * individual arguments. */
+  std::vector<std::string> splitArgs(std::string argString);
+
+  // SST properties
   /**
    * SST defined output class used to output information to standard output.
    * This class has in-built method for different levels of severity and can
    * also be configured to output information like line-number and filename.
    */
   SST::Output output_;
+
   /**
    * SST clock for the component register with the custom component
    * during instantiation using the registerClock method provided
    * by SST.
    */
   TimeConverter* clock_;
+
   /**
    * SST::Interfaces::StandardMem interface responsible for convering
    * SST::StandardMem::Request(s) into SST memory events to be passed
@@ -144,52 +136,50 @@ class SimengCoreWrapper : public SST::Component {
    */
   StandardMem* mem_;
 
-  /** Simeng properties. */
+  // Simeng properties
+  /** Reference to the CoreInstance class responsible for creating the core to
+   * be simulated. */
+  std::unique_ptr<simeng::CoreInstance> coreInstance_;
 
   /** Reference to SimEng core. */
-  std::unique_ptr<simeng::Core> core_;
+  std::shared_ptr<simeng::Core> core_;
+
   /** Path to the YAML configuration file for SimEng. */
   std::string configPath_;
+
   /** Path to the executable binary to be simulated by SimEng. */
   std::string executablePath_;
+
   /** Arguments to be passed to executable binary. */
-  std::string executableArgs_;
+  std::vector<std::string> executableArgs_;
+
   /** The cache line width for SST. */
   uint64_t cacheLineWidth_;
+
   /** Maximum address availbale to SimEng for memory purposes. */
   uint64_t maxAddrMemory_;
+
   /** Reference to the SimEng LinuxProcess. */
-  std::unique_ptr<simeng::kernel::LinuxProcess> process_;
-  /** Reference to the SimEng Linux kernel. */
-  std::unique_ptr<simeng::kernel::Linux> kernel_;
+  std::shared_ptr<simeng::kernel::LinuxProcess> process_;
+
   /** Reference to the process memory used in SimEng. */
-  char* processMemory_;
-  /** Reference to the SimEng architecture. */
-  std::unique_ptr<simeng::arch::Architecture> arch_;
+  std::shared_ptr<char> processMemory_;
+
   /** Reference to SimEng instruction memory. */
-  std::unique_ptr<simeng::MemoryInterface> instructionMemory_;
-  /** Reference to the SimEng branch predictor. */
-  std::unique_ptr<simeng::BranchPredictor> predictor_;
-  /** Reference to the SimEng port allocator. */
-  std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator_;
+  std::shared_ptr<simeng::MemoryInterface> instructionMemory_;
+
   /** Reference to SimengMemInterface used for interfacing with SST. */
-  std::unique_ptr<SimengMemInterface> dataMemory_;
+  std::shared_ptr<SimengMemInterface> dataMemory_;
+
   /** Number of clock iterations. */
   int iterations_;
-  /** Value of Virtual Counter Timer system register. */
-  int vitrualCounter_;
-  /** Value used to increment the Virtual Counter Timer system register at a
-   * denied frequency that differs to the main clock speed of the CPU.
-   */
-  double timerModulo_;
+
   /** Start time of simulation. */
   std::chrono::high_resolution_clock::time_point startTime_;
+
   /** Reference to memory request handler class defined in SimengMemInterface.
    */
   SimengMemInterface::SimengMemHandlers* handlers_;
-
-  /** Method used to assemble SimEng core. */
-  void fabricateSimengCore();
 };
 
 }  // namespace SSTSimeng

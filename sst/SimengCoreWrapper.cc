@@ -11,8 +11,6 @@
 using namespace SST::SSTSimeng;
 using namespace SST::Interfaces;
 
-enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
-
 SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     : SST::Component(id) {
   output_.init("SimengCoreWrapper[" + getName() + ":@p:@t]:", 999, 0,
@@ -23,7 +21,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
 
   // Extract variables from config.py
   executablePath_ = params.find<std::string>("executable_path", "");
-  executableArgs_ = params.find<std::string>("executable_args", "");
+  executableArgs_ = splitArgs(params.find<std::string>("executable_args", ""));
   configPath_ = params.find<std::string>("config_path", "");
   cacheLineWidth_ = params.find<uint64_t>("cache_line_width", "64");
   maxAddrMemory_ = params.find<uint64_t>("max_addr_memory", "0");
@@ -38,7 +36,6 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   }
 
   iterations_ = 0;
-  vitrualCounter_ = 0;
 
   // Instantiate the StandardMem Interface defined in config.py
   mem_ = loadUserSubComponent<SST::Interfaces::StandardMem>(
@@ -46,7 +43,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
       new StandardMem::Handler<SimengCoreWrapper>(
           this, &SimengCoreWrapper::handleEvent));
 
-  dataMemory_ = std::make_unique<SimengMemInterface>(mem_, cacheLineWidth_,
+  dataMemory_ = std::make_shared<SimengMemInterface>(mem_, cacheLineWidth_,
                                                      maxAddrMemory_, &output_);
 
   handlers_ = new SimengMemInterface::SimengMemHandlers(*dataMemory_, &output_);
@@ -90,8 +87,6 @@ void SimengCoreWrapper::finish() {
   std::cout << "\nFinished " << iterations_ << " ticks in " << duration
             << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
             << mips << " MIPS)" << std::endl;
-
-  delete[] processMemory_;
 }
 
 void SimengCoreWrapper::init(unsigned int phase) {
@@ -107,11 +102,6 @@ bool SimengCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
   if (!core_->hasHalted() || dataMemory_->hasPendingRequests()) {
     // Tick the core
     core_->tick();
-    // Update Virtual Counter Timer at correct frequency.
-    if (iterations_ % (uint64_t)timerModulo_ == 0) {
-      vitrualCounter_++;
-      core_->incVCT(vitrualCounter_);
-    }
 
     // Tick memory
     instructionMemory_->tick();
@@ -127,52 +117,52 @@ bool SimengCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
   }
 }
 
+std::vector<std::string> SimengCoreWrapper::splitArgs(std::string argString) {
+  std::vector<std::string> arguments = {};
+
+  // Using a custom delimiter, split the argString string into individual
+  // arguments and collate in a vector
+  for (int c = 0; c < argString.length(); c++) {
+    // Find starting delimiter
+    if (argString[c] == '[') {
+      c++;
+      std::string newArg = "";
+      while (argString[c] != ']') {
+        newArg += argString[c];
+        c++;
+      }
+      arguments.push_back(newArg);
+    }
+  }
+
+  return arguments;
+}
+
 void SimengCoreWrapper::fabricateSimengCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
 
-  SimulationMode mode = SimulationMode::InOrderPipelined;
-  std::string modeString;
-  YAML::Node config;
-
+  // Create the instance of the core to be simulated
   if (configPath_ != "") {
-    config = simeng::ModelConfig(configPath_).getConfigFile();
+    coreInstance_ = std::make_unique<simeng::CoreInstance>(
+        configPath_, executablePath_, executableArgs_);
   } else {
-    config = YAML::Load(DEFAULT_CONFIG);
+    coreInstance_ = std::make_unique<simeng::CoreInstance>(executablePath_,
+                                                           executableArgs_);
   }
 
-  if (config["Core"]["Simulation-Mode"].as<std::string>() == "inorder") {
-    output_.fatal(CALL_INFO, 1, 0,
-                  "SimEng SST build does not support in-order mode yet!\n");
-  }
+  // Set the SST data memory SimEng should use
+  coreInstance_->setL1DataMemory(dataMemory_);
 
-  if (config["Core"]["Simulation-Mode"].as<std::string>() == "outoforder") {
-    mode = SimulationMode::OutOfOrder;
-    modeString = "Out-of-Order";
-  } else {
-    mode = SimulationMode::Emulation;
-    modeString = "Emulation";
-  }
+  // Construct core
+  coreInstance_->createCore();
 
-  float clockFreq_ = config["Core"]["Clock-Frequency"].as<float>();
-  uint32_t timerFreq_ = config["Core"]["Timer-Frequency"].as<uint32_t>();
-  timerModulo_ = (clockFreq_ * 1e9) / (timerFreq_ * 1e6);
-
-  // Create the process Image
-  std::vector<std::string> commandLine({executablePath_, executableArgs_});
-  process_ =
-      std::make_unique<simeng::kernel::LinuxProcess>(commandLine, config);
-  if (!process_->isValid())
-    output_.fatal(CALL_INFO, 1, 0, "Could not read/parse %s",
-                  executablePath_.c_str());
-
-  auto processImage = process_->getProcessImage();
-  size_t processMemorySize = processImage.size();
-  processMemory_ = new char[processMemorySize]();
-  std::copy(processImage.begin(), processImage.end(), processMemory_);
+  // Get remaining simulation objects needed to forward simulation
+  core_ = coreInstance_->getCore();
+  instructionMemory_ = coreInstance_->getInstructionMemory();
 
   // This check ensure that SST has enough memory to store the entire
   // processImage constructed by SimEng.
-  if (maxAddrMemory_ < processMemorySize) {
+  if (maxAddrMemory_ < coreInstance_->getProcessImageSize()) {
     output_.verbose(
         CALL_INFO, 1, 0,
         "Error: SST backend memory is less than processImage size. Please "
@@ -183,72 +173,21 @@ void SimengCoreWrapper::fabricateSimengCore() {
     std::exit(EXIT_FAILURE);
   }
 
-  uint64_t entryPoint = process_->getEntryPoint();
-
-  // Create the OS kernel with the process
-  kernel_ = std::make_unique<simeng::kernel::Linux>();
-  kernel_->createProcess(*process_.get());
-
-  instructionMemory_ = std::make_unique<simeng::FlatMemoryInterface>(
-      processMemory_, processMemorySize);
-
-  // Create the architecture, with knowledge of the kernel
-  arch_ =
-      std::make_unique<simeng::arch::aarch64::Architecture>(*kernel_, config);
-
-  predictor_ = std::make_unique<simeng::BTBPredictor>(
-      config["Branch-Predictor"]["BTB-bitlength"].as<uint8_t>());
-  auto config_ports = config["Ports"];
-  std::vector<std::vector<uint16_t>> portArrangement(config_ports.size());
-  // Extract number of ports
-  for (size_t i = 0; i < config_ports.size(); i++) {
-    auto config_groups = config_ports[i]["Instruction-Group-Support"];
-    // Extract number of groups in port
-    for (size_t j = 0; j < config_groups.size(); j++) {
-      portArrangement[i].push_back(config_groups[j].as<uint16_t>());
-    }
-  }
-  portAllocator_ = std::make_unique<simeng::pipeline::BalancedPortAllocator>(
-      portArrangement);
-
-  // Configure reservation station arrangment
-  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement;
-  for (size_t i = 0; i < config["Reservation-Stations"].size(); i++) {
-    auto reservation_station = config["Reservation-Stations"][i];
-    for (size_t j = 0; j < reservation_station["Ports"].size(); j++) {
-      uint8_t port = reservation_station["Ports"][j].as<uint8_t>();
-      if (rsArrangement.size() < port + 1) {
-        rsArrangement.resize(port + 1);
-      }
-      rsArrangement[port] = {i, reservation_station["Size"].as<uint16_t>()};
-    }
-  }
-
-  if (mode == SimulationMode::OutOfOrder) {
-    modeString = "Out-of-Order";
-    core_ = std::make_unique<simeng::models::outoforder::Core>(
-        *instructionMemory_, *dataMemory_, processMemorySize, entryPoint,
-        *arch_, *predictor_, *portAllocator_, rsArrangement, config);
-  } else {
-    modeString = "Emulation";
-    core_ = std::make_unique<simeng::models::emulation::Core>(
-        *instructionMemory_, *dataMemory_, entryPoint, processMemorySize,
-        *arch_);
-  }
-
-  simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen(config);
-  // Create the Special Files directory if indicated to do so in Config
-  if (config["CPU-Info"]["Generate-Special-Dir"].as<std::string>() == "T") {
-    // Remove any current special files dir
-    SFdir.RemoveExistingSFDir();
-    // Create new special files dir
-    SFdir.GenerateSFDir();
-  }
-
-  dataMemory_->sendProcessImageToSST(processImage);
+  // Send the process image data over to the SST memory
+  dataMemory_->sendProcessImageToSST(coreInstance_->getProcessImage().get(),
+                                     coreInstance_->getProcessImageSize());
 
   output_.verbose(CALL_INFO, 1, 0, "SimEng core setup successfully.\n");
-  std::cout << "Running in " << modeString << " mode." << std::endl;
+  // Print out build metadata
+  std::cout << "Build metadata:" << std::endl;
+  std::cout << "\tVersion: " SIMENG_VERSION << std::endl;
+  std::cout << "\tCompile Time - Date: " __TIME__ " - " __DATE__ << std::endl;
+  std::cout << "\tBuild type: " SIMENG_BUILD_TYPE << std::endl;
+  std::cout << "\tCompile options: " SIMENG_COMPILE_OPTIONS << std::endl;
+  std::cout << "\tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
+  std::cout << std::endl;
+  std::cout << "Running in " << coreInstance_->getSimulationModeString()
+            << " mode." << std::endl;
   output_.verbose(CALL_INFO, 1, 0, "Starting simulation.\n");
   startTime_ = std::chrono::high_resolution_clock::now();
 }
