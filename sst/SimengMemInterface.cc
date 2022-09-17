@@ -200,7 +200,7 @@ void SimengMemInterface::clearCompletedReads() {
 }
 
 bool SimengMemInterface::hasPendingRequests() const {
-  return completedReadRequests_.size() > 0;
+  return aggregationMap_.size() > 0;
 };
 
 const span<MemoryReadResult> SimengMemInterface::getCompletedReads() const {
