@@ -33,7 +33,7 @@ class SimengMemInterface : public MemoryInterface {
                      SST::Output* out);
   /** Send Simeng's processImage to SST memory backend during `init` lifecycle
    * phase of SST. */
-  void sendProcessImageToSST(const span<char> image);
+  void sendProcessImageToSST(char* image, uint64_t size);
 
   /**
    * Construct an AggregatedReadRequest and use it to generate
@@ -78,12 +78,15 @@ class SimengMemInterface : public MemoryInterface {
    public:
     SimengMemHandlers(SimengMemInterface& interface, SST::Output* out)
         : StandardMem::RequestHandler(out), memInterface_(interface) {}
+
     ~SimengMemHandlers() {}
+
     /**
      * Overloaded instance of handle method to handle read request responses
      * overriden to aggregate responses and send them back to SimEng.
      */
     void handle(StandardMem::ReadResp* resp) override;
+
     /**
      * Overloaded instance of handle method to handle write request responses
      * overriden to delete the incoming responses as SimEng does not have any
@@ -156,20 +159,26 @@ class SimengMemInterface : public MemoryInterface {
    * also be configured to output information like line-number and filename.
    */
   SST::Output* output_;
+
   /**
    * SST::Interfaces::StandardMem interface responsible for convering
    * SST::StandardMem::Request(s) into SST memory events to be passed
    * down the memory heirarchy.
    */
   StandardMem* mem_;
+
   /** Counter for clock ticks. */
   uint64_t tickCounter_ = 0;
+
   /** The cache line width specified by SST config.py. */
   uint64_t clw_;
+
   /** Maximum address availbale for memory purposes. */
   uint64_t maxAddrMemory_;
+
   /** A vector containing all completed read requests. */
   std::vector<MemoryReadResult> completedReadRequests_;
+
   /**
    * This map is used to store unique ids of SST::StandardMem:Read requests and
    * their corresponding AggregateReadRequest as key-value pairs (In some cases

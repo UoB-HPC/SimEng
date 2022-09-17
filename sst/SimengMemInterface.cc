@@ -18,11 +18,11 @@ SimengMemInterface::SimengMemInterface(StandardMem* mem, uint64_t cl,
   this->output_ = out;
 };
 
-void SimengMemInterface::sendProcessImageToSST(const span<char> image) {
+void SimengMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
   std::vector<uint8_t> data;
-  data.reserve(image.size());
+  data.reserve(size);
 
-  for (size_t i = 0; i < image.size(); i++) {
+  for (uint64_t i = 0; i < size; i++) {
     data.push_back((uint8_t)image[i]);
   }
 
