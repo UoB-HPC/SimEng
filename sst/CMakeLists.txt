@@ -29,7 +29,7 @@ target_compile_definitions(sstsimeng PUBLIC SIMENG_ENABLE_SST __STDC_FORMAT_MACR
 target_link_options(sstsimeng PUBLIC -fno-common LINKER:-undefined,dynamic_lookup)
 
 # Linking yaml and libsimeng.so libraries to sstsimeng.so
-target_link_libraries(sstsimeng PUBLIC libsimeng yaml-cpp)
+target_link_libraries(sstsimeng PUBLIC libsimeng)
 
 set(SST_SIMENG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/sst")
 set(SST_REGISTER_BASE_COMMAND "sstsimeng sstsimeng_LIBDIR=${SST_SIMENG_INSTALL_DIR}")
