@@ -36,7 +36,7 @@ Branch-Predictor:
   RAS-entries: 5
   Fallback-Static-Predictor: "Always-Taken"
 L1-Data-Memory:
-  Interface-Type: Fixed
+  Interface-Type: External
 L1-Instruction-Memory:
   Interface-Type: Flat
 LSQ-L1-Interface:
