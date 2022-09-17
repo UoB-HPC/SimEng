@@ -152,6 +152,9 @@ void CoreInstance::createL1InstructionMemory(
 
 void CoreInstance::setL1InstructionMemory(
     std::shared_ptr<simeng::MemoryInterface> memRef) {
+  assert(setInstructionMemory_ &&
+         "setL1InstructionMemory(...) called but the interface was created by "
+         "the CoreInstance class.");
   // Set the L1I cache instance to use
   instructionMemory_ = memRef;
   return;
@@ -178,6 +181,9 @@ void CoreInstance::createL1DataMemory(const simeng::MemInterfaceType type) {
 
 void CoreInstance::setL1DataMemory(
     std::shared_ptr<simeng::MemoryInterface> memRef) {
+  assert(setDataMemory_ &&
+         "setL1DataMemory(...) called but the interface was created by the "
+         "CoreInstance class.");
   // Set the L1D cache instance to use
   dataMemory_ = memRef;
   return;
