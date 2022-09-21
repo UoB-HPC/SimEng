@@ -22,7 +22,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   // Extract variables from config.py
   executablePath_ = params.find<std::string>("executable_path", "");
   executableArgs_ = splitArgs(params.find<std::string>("executable_args", ""));
-  configPath_ = params.find<std::string>("simeng_config_path", "");
+  simengConfigPath_ = params.find<std::string>("simeng_config_path", "");
   cacheLineWidth_ = params.find<uint64_t>("cache_line_width", "64");
   maxAddrMemory_ = params.find<uint64_t>("max_addr_memory", "0");
 
@@ -44,7 +44,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
           this, &SimengCoreWrapper::handleEvent));
 
   dataMemory_ = std::make_shared<SimengMemInterface>(mem_, cacheLineWidth_,
-                                                     maxAddrMemory_, &output_);
+                                                     maxAddrMemory_);
 
   handlers_ = new SimengMemInterface::SimengMemHandlers(*dataMemory_, &output_);
 
@@ -162,9 +162,9 @@ void SimengCoreWrapper::fabricateSimengCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
 
   // Create the instance of the core to be simulated
-  if (configPath_ != "") {
+  if (simengConfigPath_ != "") {
     coreInstance_ = std::make_unique<simeng::CoreInstance>(
-        configPath_, executablePath_, executableArgs_);
+        simengConfigPath_, executablePath_, executableArgs_);
   } else {
     coreInstance_ = std::make_unique<simeng::CoreInstance>(executablePath_,
                                                            executableArgs_);
@@ -180,7 +180,7 @@ void SimengCoreWrapper::fabricateSimengCore() {
   core_ = coreInstance_->getCore();
   instructionMemory_ = coreInstance_->getInstructionMemory();
 
-  // This check ensure that SST has enough memory to store the entire
+  // This check ensures that SST has enough memory to store the entire
   // processImage constructed by SimEng.
   if (maxAddrMemory_ < coreInstance_->getProcessImageSize()) {
     output_.verbose(

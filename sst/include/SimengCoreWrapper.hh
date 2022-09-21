@@ -51,7 +51,7 @@ class SimengCoreWrapper : public SST::Component {
   /**
    * This is the init lifecycle method present in all SST::Components.
    * Here it is overriden to include init calls to all other SST::Components
-   * which are contained inside SimengCoreWrapper. It is neccessary call all
+   * which are contained inside SimengCoreWrapper. It is neccessary to call all
    * lifecycle methods for SST::Component(s).
    */
   void init(unsigned int phase);
@@ -59,7 +59,7 @@ class SimengCoreWrapper : public SST::Component {
   /**
    * This is the setup lifecycle method present in all SST::Components.
    * Here it is overriden to include setup calls to all other SST::Components
-   * which are contained inside SimengCoreWrapper. It is neccessary call all
+   * which are contained inside SimengCoreWrapper. It is neccessary to call all
    * lifecycle methods for SST::Component(s).
    */
   void setup();
@@ -78,9 +78,10 @@ class SimengCoreWrapper : public SST::Component {
   bool clockTick(SST::Cycle_t currentCycle);
 
   /**
-   * This handle event method is registered to StandardMem interface is called
-   * everytime a memory request is forwarded by the interface. This functions
-   * acts a callback and invokes SimengMemHandlers on the memory request.
+   * This handle event method is registered to StandardMem interface. This
+   * method is called everytime a memory request is forwarded by the interface.
+   * This function acts a callback and invokes SimengMemHandler on the memory
+   * requests.
    */
   void handleEvent(StandardMem::Request* ev);
 
@@ -105,7 +106,8 @@ class SimengCoreWrapper : public SST::Component {
       {"executable_args",
        "argument to be passed to the executable binary (string)", ""},
       {"clock", "Clock rate of the SST clock (string)", ""},
-      {"max_addr_memory", "Maximum address that memory can access (int)"}, )
+      {"max_addr_memory", "Maximum address that memory can access (int)"},
+      {"cache_line_width", "The width of the cache line in bytes. (int)"}, )
 
  private:
   /** Method used to assemble SimEng core. */
@@ -131,7 +133,7 @@ class SimengCoreWrapper : public SST::Component {
   TimeConverter* clock_;
 
   /**
-   * SST::Interfaces::StandardMem interface responsible for convering
+   * SST::Interfaces::StandardMem interface responsible for converting
    * SST::StandardMem::Request(s) into SST memory events to be passed
    * down the memory heirarchy.
    */
@@ -146,7 +148,7 @@ class SimengCoreWrapper : public SST::Component {
   std::shared_ptr<simeng::Core> core_;
 
   /** Path to the YAML configuration file for SimEng. */
-  std::string configPath_;
+  std::string simengConfigPath_;
 
   /** Path to the executable binary to be simulated by SimEng. */
   std::string executablePath_;
@@ -159,9 +161,6 @@ class SimengCoreWrapper : public SST::Component {
 
   /** Maximum address availbale to SimEng for memory purposes. */
   uint64_t maxAddrMemory_;
-
-  /** Reference to the SimEng LinuxProcess. */
-  std::shared_ptr<simeng::kernel::LinuxProcess> process_;
 
   /** Reference to the process memory used in SimEng. */
   std::shared_ptr<char> processMemory_;

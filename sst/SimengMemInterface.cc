@@ -10,12 +10,11 @@
 using namespace SST::SSTSimeng;
 
 SimengMemInterface::SimengMemInterface(StandardMem* mem, uint64_t cl,
-                                       uint64_t max_addr, SST::Output* out)
+                                       uint64_t max_addr)
     : simeng::MemoryInterface() {
   this->mem_ = mem;
-  this->clw_ = cl;
+  this->cacheLineWidth_ = cl;
   this->maxAddrMemory_ = max_addr;
-  this->output_ = out;
 };
 
 void SimengMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
@@ -58,7 +57,8 @@ std::vector<StandardMem::Request*> SimengMemInterface::makeSSTRequests(
   */
   if (requestSpansMultipleCacheLines(addrStart, addrEnd)) {
     std::vector<StandardMem::Request*> reqs;
-    uint64_t cacheLineEndAddr = nearestCacheLineEnd(addrStart) * clw_;
+    uint64_t cacheLineEndAddr =
+        nearestCacheLineEnd(addrStart) * cacheLineWidth_;
     uint64_t firstFragmentSize = cacheLineEndAddr - addrStart;
     uint64_t secondFragmentSize = size - firstFragmentSize;
     std::vector<StandardMem::Request*> rvec1 =
@@ -79,7 +79,7 @@ std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
   std::vector<uint64_t> req_ids;
   // Determine the number of cache-lines needed to store the data in the write
   // request
-  int cacheLinesNeeded = getCacheLinesNeeded(size);
+  int numCacheLinesNeeded = getNumCacheLinesNeeded(size);
   /*
       This check here increments the data index to a value indexing the portion
      of data which succeeds the portion data already copied incase the request
@@ -90,11 +90,11 @@ std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
     dataIndex += addrStart - aggrReq->target.address;
   }
   // Loop used to divide a write request from SimEng based on cache-line size.
-  for (int x = 0; x < cacheLinesNeeded; x++) {
+  for (int x = 0; x < numCacheLinesNeeded; x++) {
     uint64_t currReqSize = size;
-    if (size > clw_) {
-      size -= clw_;
-      currReqSize = clw_;
+    if (size > cacheLineWidth_) {
+      size -= cacheLineWidth_;
+      currReqSize = cacheLineWidth_;
     }
     // SST write requests accept uint8_t vectors as data.
     std::vector<uint8_t> payload;
@@ -120,14 +120,14 @@ std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
   std::vector<uint64_t> req_ids;
   // Get the number of cache-lines needed to read the data requested by the read
   // request.
-  int cacheLinesNeeded = getCacheLinesNeeded(size);
+  int numCacheLinesNeeded = getNumCacheLinesNeeded(size);
 
   // Loop used to divide a read request from SimEng based on cache-line size.
-  for (int x = 0; x < cacheLinesNeeded; x++) {
+  for (int x = 0; x < numCacheLinesNeeded; x++) {
     uint64_t currReqSize = size;
-    if (size > clw_) {
-      size -= clw_;
-      currReqSize = clw_;
+    if (size > cacheLineWidth_) {
+      size -= cacheLineWidth_;
+      currReqSize = cacheLineWidth_;
     }
 
     StandardMem::Request* readReq =
@@ -268,19 +268,20 @@ void SimengMemInterface::SimengMemHandlers::handle(StandardMem::ReadResp* rsp) {
   }
 }
 
-int SimengMemInterface::getCacheLinesNeeded(uint64_t size) const {
-  if (size < clw_) return 1;
-  if (size % clw_ == 0) return size / clw_;
-  return (size / clw_) + 1;
+int SimengMemInterface::getNumCacheLinesNeeded(uint64_t size) const {
+  if (size < cacheLineWidth_) return 1;
+  if (size % cacheLineWidth_ == 0) return size / cacheLineWidth_;
+  return (size / cacheLineWidth_) + 1;
 }
 bool SimengMemInterface::unsignedOverflow_(uint64_t a, uint64_t b) const {
   return (a + b) < a || (a + b) < b;
 };
 bool SimengMemInterface::requestSpansMultipleCacheLines(
     uint64_t addrStart, uint64_t addrEnd) const {
-  uint64_t lineDiff = (addrEnd / clw_) - (addrStart / clw_);
+  uint64_t lineDiff =
+      (addrEnd / cacheLineWidth_) - (addrStart / cacheLineWidth_);
   return lineDiff > 0;
 };
 uint64_t SimengMemInterface::nearestCacheLineEnd(uint64_t addrStart) const {
-  return (addrStart / clw_) + 1;
+  return (addrStart / cacheLineWidth_) + 1;
 };

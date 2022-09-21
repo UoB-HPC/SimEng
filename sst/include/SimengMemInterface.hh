@@ -29,8 +29,7 @@ namespace SSTSimeng {
 /** A memory interface used by SimEng to communicate with SST's memory model. */
 class SimengMemInterface : public MemoryInterface {
  public:
-  SimengMemInterface(StandardMem* mem, uint64_t cl, uint64_t max_addr,
-                     SST::Output* out);
+  SimengMemInterface(StandardMem* mem, uint64_t cl, uint64_t max_addr);
   /** Send Simeng's processImage to SST memory backend during `init` lifecycle
    * phase of SST. */
   void sendProcessImageToSST(char* image, uint64_t size);
@@ -113,9 +112,9 @@ class SimengMemInterface : public MemoryInterface {
   /**
    * Struct AggregatedWriteRequest is used to store information regarding
    * the multiple SST::StandardMem::Request (Write) a memory request from SimEng
-   * is split into. This happens if its size is greater than the cache line width.
-   * These structs are also used to represent SimEng write requests which aren't
-   * split for ease of implementation.
+   * is split into. This happens if its size is greater than the cache line
+   * width. These structs are also used to represent SimEng write requests which
+   * aren't split for ease of implementation.
    */
   struct AggregateWriteRequest : public SimengMemoryRequest {
     /** RegisterValue (write data) from SimEng memory instruction. */
@@ -130,9 +129,9 @@ class SimengMemInterface : public MemoryInterface {
   /**
    * Struct AggregatedReadRequest is used to store information regarding
    * the multiple SST::StandardMem::Request (Read) a memory request from SimEng
-   * is split into. This happens if its size is greater than the cache line width.
-   * These structs are also used to represent SimEng read requests which aren't
-   * split for ease of implementation.
+   * is split into. This happens if its size is greater than the cache line
+   * width. These structs are also used to represent SimEng read requests which
+   * aren't split for ease of implementation.
    */
   struct AggregateReadRequest : public SimengMemoryRequest {
     /** Unique identifier of each AggregatedReadRequest copied from Simeng read
@@ -154,13 +153,6 @@ class SimengMemInterface : public MemoryInterface {
 
  private:
   /**
-   * SST defined output class used to output information to standard output.
-   * This class has in-built methods for different levels of severity and can
-   * also be configured to output information like line-number and filename.
-   */
-  SST::Output* output_;
-
-  /**
    * SST::Interfaces::StandardMem interface responsible for converting
    * SST::StandardMem::Request(s) into SST memory events to be passed
    * down the memory heirarchy.
@@ -171,7 +163,7 @@ class SimengMemInterface : public MemoryInterface {
   uint64_t tickCounter_ = 0;
 
   /** The cache line width specified by SST config.py. */
-  uint64_t clw_;
+  uint64_t cacheLineWidth_;
 
   /** Maximum address available for memory purposes. */
   uint64_t maxAddrMemory_;
@@ -185,10 +177,10 @@ class SimengMemInterface : public MemoryInterface {
    * SimengMemoryRequest has to be divided into multiple
    * SST::StandardMem::Request(s) if the SimengMemoryRequest size > cache line
    * width). That is, the unique ids of multiple read requests and their
-   * corresponding aggregatedReadRequest are stored in a many-to-one fashion. 
-   * An entry from this map is removed when a response for 
-   * SST::StandardMem::Read request is recieved and recorded. The response holds 
-   * the same unique id as the request. No such key-value pairs are maintained 
+   * corresponding aggregatedReadRequest are stored in a many-to-one fashion.
+   * An entry from this map is removed when a response for
+   * SST::StandardMem::Read request is recieved and recorded. The response holds
+   * the same unique id as the request. No such key-value pairs are maintained
    * for AggregatedWriteRequest(s) even if they are split into multiple
    * SST::StandardMem::Write requests as their responses do not need to be
    * aggregated.
@@ -223,7 +215,7 @@ class SimengMemInterface : public MemoryInterface {
   /** Get the number of cache lines needed incase the size of a memory request
    * is larger than cache line width.
    */
-  int getCacheLinesNeeded(uint64_t size) const;
+  int getNumCacheLinesNeeded(uint64_t size) const;
   bool unsignedOverflow_(uint64_t a, uint64_t b) const;
 
   /**
