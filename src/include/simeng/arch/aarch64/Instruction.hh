@@ -243,6 +243,9 @@ class Instruction : public simeng::Instruction {
               const InstructionMetadata& metadata,
               InstructionException exception);
 
+  /** Copy Constructor. */
+  Instruction(const Instruction& insn);
+
   /** Retrieve the identifier for the first exception that occurred during
    * processing this instruction. */
   virtual InstructionException getException() const;
