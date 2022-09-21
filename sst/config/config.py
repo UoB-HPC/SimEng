@@ -7,7 +7,7 @@ DEBUG_LEVEL = 0
 # Define the simulation components
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "config_path": "<PATH TO CONFIG .YAML FILE>",
+    "simeng_config_path": "<PATH TO SIMENG MODEL CONFIG .YAML FILE>",
     "executable_path": "<PATH TO EXECUTABLE BINARY>",
     "executable_args": "",
     "clock" : "1GHz",

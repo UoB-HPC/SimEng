@@ -22,7 +22,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   // Extract variables from config.py
   executablePath_ = params.find<std::string>("executable_path", "");
   executableArgs_ = splitArgs(params.find<std::string>("executable_args", ""));
-  configPath_ = params.find<std::string>("config_path", "");
+  configPath_ = params.find<std::string>("simeng_config_path", "");
   cacheLineWidth_ = params.find<uint64_t>("cache_line_width", "64");
   maxAddrMemory_ = params.find<uint64_t>("max_addr_memory", "0");
 

@@ -98,7 +98,8 @@ class SimengCoreWrapper : public SST::Component {
    * a custom SST:Component.
    */
   SST_ELI_DOCUMENT_PARAMS(
-      {"config_path", "Path to Simeng YAML config file (string)", ""},
+      {"simeng_config_path", "Path to SimEng YAML model config file (string)",
+       ""},
       {"executable_path",
        "Path to executable binary to be run by SimEng (string)", ""},
       {"executable_args",
