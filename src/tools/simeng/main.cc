@@ -102,10 +102,9 @@ int main(int argc, char** argv) {
   auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime)
           .count();
-  auto hz = iterations / (static_cast<double>(duration) / 1000.0);
-  auto khz = hz / 1000.0;
-  auto retired = core->getInstructionsRetiredCount();
-  auto mips = retired / static_cast<double>(duration) / 1000.0;
+  double khz = (iterations / (static_cast<double>(duration) / 1000.0)) / 1000.0;
+  uint64_t retired = core->getInstructionsRetiredCount();
+  double mips = retired / (static_cast<double>(duration) / 1000.0);
 
   // Print stats
   std::cout << std::endl;
