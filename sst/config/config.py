@@ -7,8 +7,8 @@ DEBUG_LEVEL = 0
 # Define the simulation components
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "config_path": "/home/rahat/asimov/SimEng/configs/a64fx.yaml",
-    "executable_path": "/home/rahat/asimov/simeng-progs/stream",
+    "config_path": "<PATH TO CONFIG .YAML FILE>",
+    "executable_path": "<PATH TO EXECUTABLE BINARY>",
     "executable_args": "",
     "clock" : "1GHz",
     "max_addr_memory": 2*1024*1024*1024-1,
