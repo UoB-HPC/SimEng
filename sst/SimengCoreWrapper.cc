@@ -72,10 +72,10 @@ void SimengCoreWrapper::finish() {
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
                       endTime - startTime_)
                       .count();
-  double hz = iterations_ / (static_cast<double>(duration) / 1000.0);
-  double khz = hz / 1000.0;
+  double khz =
+      (iterations_ / (static_cast<double>(duration) / 1000.0)) / 1000.0;
   uint64_t retired = core_->getInstructionsRetiredCount();
-  double mips = retired / static_cast<double>(duration) / 1000.0;
+  double mips = retired / (static_cast<double>(duration) / 1000.0);
 
   // Print stats
   std::cout << "\n";
