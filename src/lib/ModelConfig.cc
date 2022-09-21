@@ -8,7 +8,7 @@ ModelConfig::ModelConfig(std::string path) {
   // Ensure the file exists
   std::ifstream file(path);
   if (!file.is_open()) {
-    std::cerr << "Could not read " << path << std::endl;
+    std::cerr << "[SimEng:ModelConfig] Could not read " << path << std::endl;
     exit(1);
   }
   file.close();
@@ -33,7 +33,8 @@ void ModelConfig::inherit() {
   if (!configFile_["Inherit-From"]) {
     return;
   } else {
-    std::cerr << "Config inheritance not yet supported" << std::endl;
+    std::cerr << "[SimEng:ModelConfig] Config inheritance not yet supported"
+              << std::endl;
     exit(1);
     // TODO: Merge files
   }
@@ -528,15 +529,16 @@ void ModelConfig::validate() {
   std::string invalidStr = invalid_.str();
   // Print all missing fields
   if (missingStr.length()) {
-    std::cerr << "The following fields are missing from the provided "
+    std::cerr << "[SimEng:ModelConfig] The following fields are missing from "
+                 "the provided "
                  "configuration file:\n"
               << missingStr << std::endl;
   }
   // Print all invalid values
   if (invalidStr.length()) {
-    std::cerr
-        << "The following values are invalid for their associated field:\n"
-        << invalidStr << std::endl;
+    std::cerr << "[SimEng:ModelConfig] The following values are invalid for "
+                 "their associated field:\n"
+              << invalidStr << std::endl;
   }
   if (missingStr.length() || invalidStr.length()) exit(1);
   return;
