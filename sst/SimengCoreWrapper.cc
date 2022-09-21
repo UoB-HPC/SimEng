@@ -118,21 +118,41 @@ bool SimengCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
 }
 
 std::vector<std::string> SimengCoreWrapper::splitArgs(std::string argString) {
+  int brCount = 0;
+  std::string newArg = "";
   std::vector<std::string> arguments = {};
 
   // Using a custom delimiter, split the argString string into individual
   // arguments and collate in a vector
   for (int c = 0; c < argString.length(); c++) {
-    // Find starting delimiter
-    if (argString[c] == '[') {
-      c++;
-      std::string newArg = "";
-      while (argString[c] != ']') {
-        newArg += argString[c];
-        c++;
+    // Recored starting delimiter
+    if (argString.at(c) == '[') {
+      brCount++;
+    } else if (argString.at(c) == ']') {
+      // Ensure ending delimiter has a matching start
+      if (brCount <= 0) {
+        std::cerr << "Invalid argument format, mismatch on delimiters"
+                  << std::endl;
+        exit(1);
       }
       arguments.push_back(newArg);
+      newArg = "";
+      brCount--;
+    } else if (argString.at(c) == '\\') {
+      // Identified escape character, read next character as an argument
+      // character
+      c++;
+      newArg += argString.at(c);
+    } else {
+      newArg += argString.at(c);
     }
+  }
+
+  // Ensure all starting delimiters have been matched
+  if (brCount != 0) {
+    std::cerr << "Invalid argument format, unmatched delimiter" << std::endl;
+    exit(1);
+    return {};
   }
 
   return arguments;
