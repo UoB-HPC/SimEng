@@ -227,7 +227,7 @@ class SimengMemInterface : public MemoryInterface {
   bool unsignedOverflow_(uint64_t a, uint64_t b) const;
 
   /**
-   * check to see if a request span multiple cache lines. This methods
+   * Check to see if a request span multiple cache lines. This method
    * indentifies the case when the start and end address of the request do not
    * lie on the same cache line. This can even happen if the size of the memory
    * request is less than cache line width.

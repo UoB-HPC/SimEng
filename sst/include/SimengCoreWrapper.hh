@@ -72,7 +72,7 @@ class SimengCoreWrapper : public SST::Component {
 
   /**
    * The clockTick is a method present in all SST::Components. This fuction
-   * is called everytime the SST clock ticks. The current clock cylce is passed
+   * is called everytime the SST clock ticks. The current clock cycle is passed
    * as an argument by SST. The SimEng core ticks in this method.
    */
   bool clockTick(SST::Cycle_t currentCycle);
