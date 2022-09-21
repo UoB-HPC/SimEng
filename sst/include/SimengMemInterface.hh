@@ -65,7 +65,7 @@ class SimengMemInterface : public MemoryInterface {
   void tick();
 
   /**
-   * An instance of `SimengMemHanders` is registered to an instance of
+   * An instance of `SimengMemHandlers` is registered to an instance of
    * SST::StandardMem and is used to handle Read and Write response. The same
    * instance of SST::StandardMem is passed to `SimengMemHandlers` to access
    * private variables needed to handle responses correctly. Defining
@@ -99,7 +99,7 @@ class SimengMemInterface : public MemoryInterface {
   };
 
   /**
-   * This struct represents a memory request from SimEng, It is used as base
+   * This struct represents a memory request from SimEng. It is used as base
    * struct for AggregateWriteRequest and AggregateReadRequest.
    */
   struct SimengMemoryRequest {
@@ -111,9 +111,9 @@ class SimengMemInterface : public MemoryInterface {
   };
 
   /**
-   * Structs AggregatedWriteRequest is used to store information regarding
+   * Struct AggregatedWriteRequest is used to store information regarding
    * the multiple SST::StandardMem::Request (Write) a memory request from SimEng
-   * is split into if its size is greater than the cache line width.
+   * is split into. This happens if its size is greater than the cache line width.
    * These structs are also used to represent SimEng write requests which aren't
    * split for ease of implementation.
    */
@@ -128,9 +128,9 @@ class SimengMemInterface : public MemoryInterface {
   };
 
   /**
-   * Structs AggregatedReadRequest is used to store information regarding
+   * Struct AggregatedReadRequest is used to store information regarding
    * the multiple SST::StandardMem::Request (Read) a memory request from SimEng
-   * is split into if its size is greater than the cache line width.
+   * is split into. This happens if its size is greater than the cache line width.
    * These structs are also used to represent SimEng read requests which aren't
    * split for ease of implementation.
    */
@@ -155,13 +155,13 @@ class SimengMemInterface : public MemoryInterface {
  private:
   /**
    * SST defined output class used to output information to standard output.
-   * This class has in-built method for different levels of severity and can
+   * This class has in-built methods for different levels of severity and can
    * also be configured to output information like line-number and filename.
    */
   SST::Output* output_;
 
   /**
-   * SST::Interfaces::StandardMem interface responsible for convering
+   * SST::Interfaces::StandardMem interface responsible for converting
    * SST::StandardMem::Request(s) into SST memory events to be passed
    * down the memory heirarchy.
    */
@@ -173,23 +173,23 @@ class SimengMemInterface : public MemoryInterface {
   /** The cache line width specified by SST config.py. */
   uint64_t clw_;
 
-  /** Maximum address availbale for memory purposes. */
+  /** Maximum address available for memory purposes. */
   uint64_t maxAddrMemory_;
 
   /** A vector containing all completed read requests. */
   std::vector<MemoryReadResult> completedReadRequests_;
 
   /**
-   * This map is used to store unique ids of SST::StandardMem:Read requests and
+   * This map is used to store unique ids of SST::StandardMem::Read requests and
    * their corresponding AggregateReadRequest as key-value pairs (In some cases
    * SimengMemoryRequest has to be divided into multiple
-   * SST::StandardMem:Request(s) if the SimengMemoryRequest size > cache line
-   * width). i.e the unique ids of multiple read requests and their correspong
-   * aggregatedReadRequest are stored in a many-to-one fashion. An entry from
-   * this map is removed when a response for SST::StandardMem::Read request is
-   * recieved and recorded. The response holds the same unique id as the
-   * request. No such key-value pairs are maintained for
-   * AggregatedWriteRequest(s) even if they are split into multiple
+   * SST::StandardMem::Request(s) if the SimengMemoryRequest size > cache line
+   * width). That is, the unique ids of multiple read requests and their
+   * corresponding aggregatedReadRequest are stored in a many-to-one fashion. 
+   * An entry from this map is removed when a response for 
+   * SST::StandardMem::Read request is recieved and recorded. The response holds 
+   * the same unique id as the request. No such key-value pairs are maintained 
+   * for AggregatedWriteRequest(s) even if they are split into multiple
    * SST::StandardMem::Write requests as their responses do not need to be
    * aggregated.
    */
@@ -227,8 +227,8 @@ class SimengMemInterface : public MemoryInterface {
   bool unsignedOverflow_(uint64_t a, uint64_t b) const;
 
   /**
-   * Check to see if a request span multiple cache lines. This method
-   * indentifies the case when the start and end address of the request do not
+   * Check to see if a request spans multiple cache lines. This method
+   * identifies the case when the start and end address of the request do not
    * lie on the same cache line. This can even happen if the size of the memory
    * request is less than cache line width.
    */
@@ -238,7 +238,7 @@ class SimengMemInterface : public MemoryInterface {
   /**
    * This method is used to find the end address of the cache line specified by
    * the start address of the memory request. This method is used when a memory
-   * request spans multiple cahce lines.
+   * request spans multiple cache lines.
    */
   uint64_t nearestCacheLineEnd(uint64_t addrStart) const;
 };
