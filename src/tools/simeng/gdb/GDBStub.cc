@@ -66,11 +66,11 @@ int GDBStub::run() {
                     << RESET;
         response = "-";            // request for re-transmission
       } else if (packet == "?") {  // reason for halting
-        response += generateReply("S05");
+        response += generateReply(BREAK_POINT_HIT);
       } else if (packet == "s") {  // step one instruction
         core_.tick();
         dataMemory_.tick();
-        response += generateReply("S05");
+        response += generateReply(BREAK_POINT_HIT);
       } else if (packet == "c") {  // continue until next breakpoint
         std::string message = handleContinue();
         response += generateReply(message);
@@ -103,11 +103,11 @@ int GDBStub::run() {
           handleCreateBreakpoint(type, address);
         else
           handleRemoveBreakpoint(type, address);
-        response += generateReply("OK");
+        response += generateReply(GDB_OK);
       } else if (packet[0] == 'M') {  // write memory
-        response += generateReply("OK");
+        response += generateReply(GDB_OK);
       } else if (packet[0] == 'G') {  // write registers
-        response += generateReply("OK");
+        response += generateReply(GDB_OK);
       } else if (regex_match(packet, qSupported_match,
                              qSupported_regex)) {  // tells gdb what features
                                                    // are supported
@@ -115,7 +115,7 @@ int GDBStub::run() {
         response += generateReply(supported);
       } else if (packet == "QStartNoAckMode") {  // starts noAckMode
         noAckMode_ = true;
-        response += generateReply("OK");
+        response += generateReply(GDB_OK);
       } else {
         if (verbose_) std::cout << RED << "   Packet not supported\n" << RESET;
         response += generateReply("");
@@ -300,7 +300,7 @@ std::string GDBStub::handleContinue() {
     }
   }
 
-  return "S05";
+  return BREAK_POINT_HIT;
 }
 
 std::string GDBStub::handleQSupported(std::string qSupported) {

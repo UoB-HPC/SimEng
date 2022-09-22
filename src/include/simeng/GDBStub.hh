@@ -19,6 +19,8 @@
 #define GREEN "\033[32m"
 #define RED "\033[31m"
 
+#define BREAK_POINT_HIT "S05"
+#define GDB_OK "OK"
 namespace simeng {
 
 /** A class that is a GDB server stub, managing communication between SimEng and
