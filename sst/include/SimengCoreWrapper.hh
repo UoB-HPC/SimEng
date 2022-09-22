@@ -117,6 +117,9 @@ class SimengCoreWrapper : public SST::Component {
    * individual arguments. */
   std::vector<std::string> splitArgs(std::string argString);
 
+  /** This method trims any leading or trailing spaces in a string. */
+  std::string trimSpaces(std::string argsStr);
+
   // SST properties
   /**
    * SST defined output class used to output information to standard output.

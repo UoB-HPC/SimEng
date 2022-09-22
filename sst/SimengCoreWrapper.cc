@@ -116,46 +116,109 @@ bool SimengCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
     return true;
   }
 }
-
-std::vector<std::string> SimengCoreWrapper::splitArgs(std::string argString) {
-  int brCount = 0;
-  std::string newArg = "";
-  std::vector<std::string> arguments = {};
-
-  // Using a custom delimiter, split the argString string into individual
-  // arguments and collate in a vector
-  for (int c = 0; c < argString.length(); c++) {
-    // Recored starting delimiter
-    if (argString.at(c) == '[') {
-      brCount++;
-    } else if (argString.at(c) == ']') {
-      // Ensure ending delimiter has a matching start
-      if (brCount <= 0) {
-        std::cerr << "Invalid argument format, mismatch on delimiters"
-                  << std::endl;
-        exit(1);
-      }
-      arguments.push_back(newArg);
-      newArg = "";
-      brCount--;
-    } else if (argString.at(c) == '\\') {
-      // Identified escape character, read next character as an argument
-      // character
-      c++;
-      newArg += argString.at(c);
-    } else {
-      newArg += argString.at(c);
+std::string SimengCoreWrapper::trimSpaces(std::string strArgs) {
+  int trailingEnd = -1;
+  int leadingEnd = -1;
+  for (int x = 0; x < strArgs.size(); x++) {
+    int end = strArgs.size() - 1 - x;
+    // Find the index, from the start of the string, which is not a space.
+    if (strArgs.at(x) != ' ' && leadingEnd == -1) {
+      leadingEnd = x;
+    }
+    // Find the index, from the end of the string, which is not a space.
+    if (strArgs.at(end) != ' ' && trailingEnd == -1) {
+      trailingEnd = end;
+    }
+    if (trailingEnd != -1 && leadingEnd != -1) {
+      break;
     }
   }
+  // The string has leading or trailing spaces, return the substring which
+  // doesn't have those spaces.
+  if (trailingEnd != -1 && leadingEnd != -1) {
+    return strArgs.substr(leadingEnd, trailingEnd - leadingEnd + 1);
+  }
+  // The string does not have leading or trailing spaces, return the original
+  // string.
+  return strArgs;
+};
 
-  // Ensure all starting delimiters have been matched
-  if (brCount != 0) {
-    std::cerr << "Invalid argument format, unmatched delimiter" << std::endl;
-    exit(1);
-    return {};
+std::vector<std::string> SimengCoreWrapper::splitArgs(std::string strArgs) {
+  std::string trimmedStrArgs = trimSpaces(strArgs);
+  std::string str = "";
+  std::vector<std::string> args;
+  std::size_t argSize = trimmedStrArgs.size();
+  bool escapeSingle = false;
+  bool escapeDouble = false;
+  bool captureEscape = false;
+
+  if (argSize == 0) {
+    return args;
   }
 
-  return arguments;
+  for (int x = 0; x < argSize; x++) {
+    bool escaped = escapeDouble || escapeSingle;
+    char currChar = trimmedStrArgs.at(x);
+    if (captureEscape) {
+      captureEscape = false;
+      str += currChar;
+    }
+    // This if statement check for an escaped '\' in the string.
+    // Any character after the '\' is appended to the current argument,
+    // without any delimiting or escape behaviour.
+    else if (currChar == '\\') {
+      captureEscape = true;
+    } else if (escaped) {
+      // If a portion of the argument string starts with a single quote (") and
+      // we encounter another single quote, capture the substring enclosed by a
+      // valid set of single quotes into an argument without producing any
+      // delimiting or escape behavior even with double quotes.
+      // e.g "arg1=1 arg2='"Hi"' arg3=2" will be parsed as
+      // std::vector<std::string>{arg1=1, arg2="Hi", arg3=2}
+      if (currChar == '\'' && escapeSingle) {
+        escapeSingle = 0;
+      }
+      // If a portion of the argument string starts with a double quote (") and
+      // we encounter another double quote, capture the substring enclosed by a
+      // valid set of double quotes into an argument without producing any
+      // delimiting or escape behavior even with single quotes.
+      // e.g "arg1=1 arg2="James' Car" arg3=2" will be parsed as
+      // std::vector<std::string>{arg1=1, arg2=James' Car, arg3=2}
+      else if (currChar == '\"' && escapeDouble) {
+        escapeDouble = 0;
+      } else {
+        str += currChar;
+      }
+    } else {
+      if (currChar == ' ') {
+        if (str != "") {
+          args.push_back(str);
+          str = "";
+        }
+      }
+      // Check for escape character ("), this signals the algorithm to capture
+      // any char inside a set of ("") without producing any delimiting or
+      // escape behavior.
+      else if (currChar == '\"') {
+        escapeDouble = 1;
+        // Check for escape character ('), this signals the algorithm to capture
+        // any char inside a set of ('') without producing any delimiting or
+        // escape behavior.
+      } else if (currChar == '\'') {
+        escapeSingle = 1;
+      } else {
+        str += currChar;
+      }
+    }
+  }
+  if (escapeSingle || escapeDouble) {
+    std::cerr << "Parsing failed: Invalid format - Please make sure all "
+                 "characters/strings are escaped properly."
+              << std::endl;
+    exit(1);
+  }
+  args.push_back(str);
+  return args;
 }
 
 void SimengCoreWrapper::fabricateSimengCore() {
