@@ -12,7 +12,7 @@ using namespace SST::SSTSimeng;
 SimengMemInterface::SimengMemInterface(StandardMem* mem, uint64_t cl,
                                        uint64_t max_addr)
     : simeng::MemoryInterface() {
-  this->mem_ = mem;
+  this->sstMem_ = mem;
   this->cacheLineWidth_ = cl;
   this->maxAddrMemory_ = max_addr;
 };
@@ -26,7 +26,7 @@ void SimengMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
   }
 
   StandardMem::Request* req = new StandardMem::Write(0, data.size(), data);
-  mem_->sendUntimedData(req);
+  sstMem_->sendUntimedData(req);
   return;
 };
 
@@ -175,7 +175,7 @@ void SimengMemInterface::requestRead(const MemoryAccessTarget& target,
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateReadRequest>(aggrReq, addrStart, addrEnd, size);
   for (StandardMem::Request* req : requests) {
-    mem_->send(req);
+    sstMem_->send(req);
   }
 }
 
@@ -189,7 +189,7 @@ void SimengMemInterface::requestWrite(const MemoryAccessTarget& target,
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateWriteRequest>(aggrReq, addrStart, addrEnd, size);
   for (StandardMem::Request* req : requests) {
-    mem_->send(req);
+    sstMem_->send(req);
   }
 }
 

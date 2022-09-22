@@ -83,7 +83,7 @@ class SimengCoreWrapper : public SST::Component {
    * This function acts a callback and invokes SimengMemHandler on the memory
    * requests.
    */
-  void handleEvent(StandardMem::Request* ev);
+  void handleMemoryEvent(StandardMem::Request* memEvent);
 
   /**
    * SST supplied MACRO used to register custom SST:Components with
@@ -140,7 +140,7 @@ class SimengCoreWrapper : public SST::Component {
    * SST::StandardMem::Request(s) into SST memory events to be passed
    * down the memory heirarchy.
    */
-  StandardMem* mem_;
+  StandardMem* sstMem_;
 
   // Simeng properties
   /** Reference to the CoreInstance class responsible for creating the core to

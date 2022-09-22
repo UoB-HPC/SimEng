@@ -157,7 +157,7 @@ class SimengMemInterface : public MemoryInterface {
    * SST::StandardMem::Request(s) into SST memory events to be passed
    * down the memory heirarchy.
    */
-  StandardMem* mem_;
+  StandardMem* sstMem_;
 
   /** Counter for clock ticks. */
   uint64_t tickCounter_ = 0;

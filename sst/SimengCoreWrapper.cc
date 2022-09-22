@@ -38,12 +38,12 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   iterations_ = 0;
 
   // Instantiate the StandardMem Interface defined in config.py
-  mem_ = loadUserSubComponent<SST::Interfaces::StandardMem>(
+  sstMem_ = loadUserSubComponent<SST::Interfaces::StandardMem>(
       "memory", ComponentInfo::SHARE_NONE, clock_,
       new StandardMem::Handler<SimengCoreWrapper>(
-          this, &SimengCoreWrapper::handleEvent));
+          this, &SimengCoreWrapper::handleMemoryEvent));
 
-  dataMemory_ = std::make_shared<SimengMemInterface>(mem_, cacheLineWidth_,
+  dataMemory_ = std::make_shared<SimengMemInterface>(sstMem_, cacheLineWidth_,
                                                      maxAddrMemory_);
 
   handlers_ = new SimengMemInterface::SimengMemHandlers(*dataMemory_, &output_);
@@ -56,12 +56,12 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
 SimengCoreWrapper::~SimengCoreWrapper() {}
 
 void SimengCoreWrapper::setup() {
-  mem_->setup();
+  sstMem_->setup();
   output_.verbose(CALL_INFO, 1, 0, "Memory setup complete\n");
 }
 
-void SimengCoreWrapper::handleEvent(StandardMem::Request* ev) {
-  ev->handle(handlers_);
+void SimengCoreWrapper::handleMemoryEvent(StandardMem::Request* memEvent) {
+  memEvent->handle(handlers_);
 }
 
 void SimengCoreWrapper::finish() {
@@ -90,7 +90,7 @@ void SimengCoreWrapper::finish() {
 }
 
 void SimengCoreWrapper::init(unsigned int phase) {
-  mem_->init(phase);
+  sstMem_->init(phase);
   // Init can have multiple phases, only fabricate the core once at phase 0
   if (phase == 0) {
     fabricateSimengCore();
