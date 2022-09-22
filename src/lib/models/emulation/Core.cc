@@ -158,6 +158,7 @@ void Core::tick() {
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
