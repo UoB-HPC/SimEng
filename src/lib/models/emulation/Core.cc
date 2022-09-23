@@ -229,7 +229,7 @@ void Core::processExceptionHandler() {
   if (result.fatal) {
     pc_ = programByteLength_;
     hasHalted_ = true;
-    std::cout << "Halting due to fatal exception" << std::endl;
+    std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     pc_ = result.instructionAddress;
     applyStateChange(result.stateChange);
