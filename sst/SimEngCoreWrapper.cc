@@ -262,15 +262,24 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
 
   output_.verbose(CALL_INFO, 1, 0, "SimEng core setup successfully.\n");
   // Print out build metadata
-  std::cout << "Build metadata:" << std::endl;
-  std::cout << "\tVersion: " SIMENG_VERSION << std::endl;
-  std::cout << "\tCompile Time - Date: " __TIME__ " - " __DATE__ << std::endl;
-  std::cout << "\tBuild type: " SIMENG_BUILD_TYPE << std::endl;
-  std::cout << "\tCompile options: " SIMENG_COMPILE_OPTIONS << std::endl;
-  std::cout << "\tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
+  std::cout << "[SimEng] Build metadata:" << std::endl;
+  std::cout << "[SimEng] \tVersion: " SIMENG_VERSION << std::endl;
+  std::cout << "[SimEng] \tCompile Time - Date: " __TIME__ " - " __DATE__
+            << std::endl;
+  std::cout << "[SimEng] \tBuild type: " SIMENG_BUILD_TYPE << std::endl;
+  std::cout << "[SimEng] \tCompile options: " SIMENG_COMPILE_OPTIONS
+            << std::endl;
+  std::cout << "[SimEng] \tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
   std::cout << std::endl;
-  std::cout << "Running in " << coreInstance_->getSimulationModeString()
-            << " mode." << std::endl;
-  output_.verbose(CALL_INFO, 1, 0, "Starting simulation.\n");
+
+  std::cout << "[SimEng] Running in "
+            << coreInstance_->getSimulationModeString() << " mode" << std::endl;
+  std::cout << "[SimEng] Workload: " << executablePath_;
+  for (const auto& arg : executableArgs_) std::cout << " " << arg;
+  std::cout << std::endl;
+  std::cout << "[SimEng] Config file: " << simengConfigPath_ << std::endl;
+
+  // Run simulation
+  std::cout << "[SimEng] Starting...\n" << std::endl;
   startTime_ = std::chrono::high_resolution_clock::now();
 }

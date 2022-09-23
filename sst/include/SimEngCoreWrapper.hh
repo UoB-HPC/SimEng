@@ -80,7 +80,7 @@ class SimEngCoreWrapper : public SST::Component {
   /**
    * This handle event method is registered to StandardMem interface. This
    * method is called everytime a memory request is forwarded by the interface.
-   * This function acts a callback and invokes SimEngMemHandler on the memory
+   * This function acts as a callback and invokes SimEngMemHandler on the memory
    * requests.
    */
   void handleMemoryEvent(StandardMem::Request* memEvent);
