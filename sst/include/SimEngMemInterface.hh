@@ -24,13 +24,13 @@ using namespace SST::Interfaces;
 
 namespace SST {
 
-namespace SSTSimeng {
+namespace SSTSimEng {
 
 /** A memory interface used by SimEng to communicate with SST's memory model. */
-class SimengMemInterface : public MemoryInterface {
+class SimEngMemInterface : public MemoryInterface {
  public:
-  SimengMemInterface(StandardMem* mem, uint64_t cl, uint64_t max_addr);
-  /** Send Simeng's processImage to SST memory backend during `init` lifecycle
+  SimEngMemInterface(StandardMem* mem, uint64_t cl, uint64_t max_addr);
+  /** Send SimEng's processImage to SST memory backend during `init` lifecycle
    * phase of SST. */
   void sendProcessImageToSST(char* image, uint64_t size);
 
@@ -64,21 +64,21 @@ class SimengMemInterface : public MemoryInterface {
   void tick();
 
   /**
-   * An instance of `SimengMemHandlers` is registered to an instance of
+   * An instance of `SimEngMemHandlers` is registered to an instance of
    * SST::StandardMem and is used to handle Read and Write response. The same
-   * instance of SST::StandardMem is passed to `SimengMemHandlers` to access
+   * instance of SST::StandardMem is passed to `SimEngMemHandlers` to access
    * private variables needed to handle responses correctly. Defining
-   * `SimengMemHandlers` as a friend class gives it access to all private
-   * variables defined in `SimengMemInterface`.
+   * `SimEngMemHandlers` as a friend class gives it access to all private
+   * variables defined in `SimEngMemInterface`.
    */
-  class SimengMemHandlers : public StandardMem::RequestHandler {
-    friend class SimengMemInterface;
+  class SimEngMemHandlers : public StandardMem::RequestHandler {
+    friend class SimEngMemInterface;
 
    public:
-    SimengMemHandlers(SimengMemInterface& interface, SST::Output* out)
+    SimEngMemHandlers(SimEngMemInterface& interface, SST::Output* out)
         : StandardMem::RequestHandler(out), memInterface_(interface) {}
 
-    ~SimengMemHandlers() {}
+    ~SimEngMemHandlers() {}
 
     /**
      * Overloaded instance of handle method to handle read request responses
@@ -93,20 +93,20 @@ class SimengMemInterface : public MemoryInterface {
      */
     void handle(StandardMem::WriteResp* resp) override;
 
-    /** Reference to SimengMemInterface used for interfacing with SST. */
-    SimengMemInterface& memInterface_;
+    /** Reference to SimEngMemInterface used for interfacing with SST. */
+    SimEngMemInterface& memInterface_;
   };
 
   /**
    * This struct represents a memory request from SimEng. It is used as base
    * struct for AggregateWriteRequest and AggregateReadRequest.
    */
-  struct SimengMemoryRequest {
+  struct SimEngMemoryRequest {
     /** MemoryAccessTarget from SimEng memory instruction. */
     const MemoryAccessTarget target;
 
-    SimengMemoryRequest() : target(MemoryAccessTarget()){};
-    SimengMemoryRequest(const MemoryAccessTarget& target) : target(target){};
+    SimEngMemoryRequest() : target(MemoryAccessTarget()){};
+    SimEngMemoryRequest(const MemoryAccessTarget& target) : target(target){};
   };
 
   /**
@@ -116,14 +116,14 @@ class SimengMemInterface : public MemoryInterface {
    * width. These structs are also used to represent SimEng write requests which
    * aren't split for ease of implementation.
    */
-  struct AggregateWriteRequest : public SimengMemoryRequest {
+  struct AggregateWriteRequest : public SimEngMemoryRequest {
     /** RegisterValue (write data) from SimEng memory instruction. */
     const RegisterValue data;
 
-    AggregateWriteRequest() : SimengMemoryRequest(), data(RegisterValue()){};
+    AggregateWriteRequest() : SimEngMemoryRequest(), data(RegisterValue()){};
     AggregateWriteRequest(const MemoryAccessTarget& target,
                           const RegisterValue& data)
-        : SimengMemoryRequest(target), data(data){};
+        : SimEngMemoryRequest(target), data(data){};
   };
 
   /**
@@ -133,8 +133,8 @@ class SimengMemInterface : public MemoryInterface {
    * width. These structs are also used to represent SimEng read requests which
    * aren't split for ease of implementation.
    */
-  struct AggregateReadRequest : public SimengMemoryRequest {
-    /** Unique identifier of each AggregatedReadRequest copied from Simeng read
+  struct AggregateReadRequest : public SimEngMemoryRequest {
+    /** Unique identifier of each AggregatedReadRequest copied from SimEng read
      * request. */
     const uint64_t id_;
     /**
@@ -146,9 +146,9 @@ class SimengMemInterface : public MemoryInterface {
     /** Total number of SST request the SimEng memory request was split into. */
     int aggregateCount_ = 0;
 
-    AggregateReadRequest() : SimengMemoryRequest(), id_(0){};
+    AggregateReadRequest() : SimEngMemoryRequest(), id_(0){};
     AggregateReadRequest(const MemoryAccessTarget& target, const uint64_t id)
-        : SimengMemoryRequest(target), id_(id) {}
+        : SimEngMemoryRequest(target), id_(id) {}
   };
 
  private:
@@ -174,8 +174,8 @@ class SimengMemInterface : public MemoryInterface {
   /**
    * This map is used to store unique ids of SST::StandardMem::Read requests and
    * their corresponding AggregateReadRequest as key-value pairs (In some cases
-   * SimengMemoryRequest has to be divided into multiple
-   * SST::StandardMem::Request(s) if the SimengMemoryRequest size > cache line
+   * SimEngMemoryRequest has to be divided into multiple
+   * SST::StandardMem::Request(s) if the SimEngMemoryRequest size > cache line
    * width). That is, the unique ids of multiple read requests and their
    * corresponding aggregatedReadRequest are stored in a many-to-one fashion.
    * An entry from this map is removed when a response for
@@ -187,10 +187,10 @@ class SimengMemInterface : public MemoryInterface {
    */
   std::unordered_map<uint64_t, AggregateReadRequest*> aggregationMap_;
 
-  /** This method only accepts structs derived from the SimengMemoryRequest
+  /** This method only accepts structs derived from the SimEngMemoryRequest
    * struct as the value for aggrReq. */
   template <typename T, typename std::enable_if<std::is_base_of<
-                            SimengMemoryRequest, T>::value>::type* = nullptr>
+                            SimEngMemoryRequest, T>::value>::type* = nullptr>
   std::vector<StandardMem::Request*> makeSSTRequests(T* aggrReq,
                                                      uint64_t addrStart,
                                                      uint64_t addrEnd,
@@ -235,6 +235,6 @@ class SimengMemInterface : public MemoryInterface {
   uint64_t nearestCacheLineEnd(uint64_t addrStart) const;
 };
 
-};  // namespace SSTSimeng
+};  // namespace SSTSimEng
 
 };  // namespace SST

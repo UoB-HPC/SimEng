@@ -3,21 +3,21 @@
 #include <sst/core/sst_config.h>
 // clang-format on
 
-#include "SimengCoreWrapper.hh"
+#include "SimEngCoreWrapper.hh"
 
 #include <cstdlib>
 #include <iostream>
 
-using namespace SST::SSTSimeng;
+using namespace SST::SSTSimEng;
 using namespace SST::Interfaces;
 
-SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
+SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     : SST::Component(id) {
-  output_.init("SimengCoreWrapper[" + getName() + ":@p:@t]:", 999, 0,
+  output_.init("SimEngCoreWrapper[" + getName() + ":@p:@t]:", 999, 0,
                SST::Output::STDOUT);
   clock_ = registerClock(params.find<std::string>("clock", "1GHz"),
-                         new SST::Clock::Handler<SimengCoreWrapper>(
-                             this, &SimengCoreWrapper::clockTick));
+                         new SST::Clock::Handler<SimEngCoreWrapper>(
+                             this, &SimEngCoreWrapper::clockTick));
 
   // Extract variables from config.py
   executablePath_ = params.find<std::string>("executable_path", "");
@@ -28,7 +28,7 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
 
   if (executablePath_.length() == 0) {
     output_.fatal(CALL_INFO, 10, 0,
-                  "Simeng executable binary filepath not provided.");
+                  "SimEng executable binary filepath not provided.");
   }
   if (maxAddrMemory_ == 0) {
     output_.fatal(CALL_INFO, 10, 0,
@@ -40,31 +40,31 @@ SimengCoreWrapper::SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   // Instantiate the StandardMem Interface defined in config.py
   sstMem_ = loadUserSubComponent<SST::Interfaces::StandardMem>(
       "memory", ComponentInfo::SHARE_NONE, clock_,
-      new StandardMem::Handler<SimengCoreWrapper>(
-          this, &SimengCoreWrapper::handleMemoryEvent));
+      new StandardMem::Handler<SimEngCoreWrapper>(
+          this, &SimEngCoreWrapper::handleMemoryEvent));
 
-  dataMemory_ = std::make_shared<SimengMemInterface>(sstMem_, cacheLineWidth_,
+  dataMemory_ = std::make_shared<SimEngMemInterface>(sstMem_, cacheLineWidth_,
                                                      maxAddrMemory_);
 
-  handlers_ = new SimengMemInterface::SimengMemHandlers(*dataMemory_, &output_);
+  handlers_ = new SimEngMemInterface::SimEngMemHandlers(*dataMemory_, &output_);
 
   // Protected methods from SST::Component used to start simulation
   registerAsPrimaryComponent();
   primaryComponentDoNotEndSim();
 }
 
-SimengCoreWrapper::~SimengCoreWrapper() {}
+SimEngCoreWrapper::~SimEngCoreWrapper() {}
 
-void SimengCoreWrapper::setup() {
+void SimEngCoreWrapper::setup() {
   sstMem_->setup();
   output_.verbose(CALL_INFO, 1, 0, "Memory setup complete\n");
 }
 
-void SimengCoreWrapper::handleMemoryEvent(StandardMem::Request* memEvent) {
+void SimEngCoreWrapper::handleMemoryEvent(StandardMem::Request* memEvent) {
   memEvent->handle(handlers_);
 }
 
-void SimengCoreWrapper::finish() {
+void SimEngCoreWrapper::finish() {
   output_.verbose(CALL_INFO, 1, 0,
                   "Simulation complete. Finalising stats....\n");
 
@@ -89,15 +89,15 @@ void SimengCoreWrapper::finish() {
             << mips << " MIPS)" << std::endl;
 }
 
-void SimengCoreWrapper::init(unsigned int phase) {
+void SimEngCoreWrapper::init(unsigned int phase) {
   sstMem_->init(phase);
   // Init can have multiple phases, only fabricate the core once at phase 0
   if (phase == 0) {
-    fabricateSimengCore();
+    fabricateSimEngCore();
   }
 }
 
-bool SimengCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
+bool SimEngCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
   // Tick the core and memory interfaces until the program has halted
   if (!core_->hasHalted() || dataMemory_->hasPendingRequests()) {
     // Tick the core
@@ -116,7 +116,7 @@ bool SimengCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
     return true;
   }
 }
-std::string SimengCoreWrapper::trimSpaces(std::string strArgs) {
+std::string SimEngCoreWrapper::trimSpaces(std::string strArgs) {
   int trailingEnd = -1;
   int leadingEnd = -1;
   for (int x = 0; x < strArgs.size(); x++) {
@@ -143,7 +143,7 @@ std::string SimengCoreWrapper::trimSpaces(std::string strArgs) {
   return strArgs;
 };
 
-std::vector<std::string> SimengCoreWrapper::splitArgs(std::string strArgs) {
+std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
   std::string trimmedStrArgs = trimSpaces(strArgs);
   std::string str = "";
   std::vector<std::string> args;
@@ -221,7 +221,7 @@ std::vector<std::string> SimengCoreWrapper::splitArgs(std::string strArgs) {
   return args;
 }
 
-void SimengCoreWrapper::fabricateSimengCore() {
+void SimEngCoreWrapper::fabricateSimEngCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
 
   // Create the instance of the core to be simulated

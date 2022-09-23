@@ -1,7 +1,7 @@
-set(SIMENG_SST_SOURCES SimengCoreWrapper.cc SimengMemInterface.cc)
+set(SIMENG_SST_SOURCES SimEngCoreWrapper.cc SimEngMemInterface.cc)
 
 add_library(sstsimeng SHARED ${SIMENG_SST_SOURCES})
-# Including Simeng include files and SST include files
+# Including SimEng include files and SST include files
 target_include_directories(sstsimeng PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(sstsimeng PUBLIC ${SST_INSTALL_DIR}/include)
 # Including libsimeng.so
@@ -37,7 +37,7 @@ set(SST_REGISTER_ELEMENT_COMMAND "SST_ELEMENT_SOURCE sstsimeng=${SST_SIMENG_INST
 
 # Install libsstsimeng.so library into <path_to_simeng_install_dir>/sst
 install(TARGETS sstsimeng DESTINATION sst)
-# Install SimengCoreWrapper.hh and SimengMemInterface.hh into <path_to_simeng_install_dir>/include
+# Install SimEngCoreWrapper.hh and SimEngMemInterface.hh into <path_to_simeng_install_dir>/include
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include
         DESTINATION ${SST_SIMENG_INSTALL_DIR})
 # Install SST config into <path_to_simeng_install_dir>/config

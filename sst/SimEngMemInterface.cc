@@ -3,13 +3,13 @@
 #include <sst/core/sst_config.h>
 // clang-format on
 
-#include "SimengMemInterface.hh"
+#include "SimEngMemInterface.hh"
 
 #include <iostream>
 
-using namespace SST::SSTSimeng;
+using namespace SST::SSTSimEng;
 
-SimengMemInterface::SimengMemInterface(StandardMem* mem, uint64_t cl,
+SimEngMemInterface::SimEngMemInterface(StandardMem* mem, uint64_t cl,
                                        uint64_t max_addr)
     : simeng::MemoryInterface() {
   this->sstMem_ = mem;
@@ -17,7 +17,7 @@ SimengMemInterface::SimengMemInterface(StandardMem* mem, uint64_t cl,
   this->maxAddrMemory_ = max_addr;
 };
 
-void SimengMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
+void SimEngMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
   std::vector<uint8_t> data;
   data.reserve(size);
 
@@ -32,8 +32,8 @@ void SimengMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
 
 template <typename T,
           typename std::enable_if<std::is_base_of<
-              SimengMemInterface::SimengMemoryRequest, T>::value>::type*>
-std::vector<StandardMem::Request*> SimengMemInterface::makeSSTRequests(
+              SimEngMemInterface::SimEngMemoryRequest, T>::value>::type*>
+std::vector<StandardMem::Request*> SimEngMemInterface::makeSSTRequests(
     T* aggrReq, uint64_t addrStart, uint64_t addrEnd, uint64_t size) {
   /*
       Here we check if the memory request spans multiple cache lines.
@@ -72,7 +72,7 @@ std::vector<StandardMem::Request*> SimengMemInterface::makeSSTRequests(
   return splitAggregatedRequest(aggrReq, addrStart, size);
 }
 
-std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
+std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     AggregateWriteRequest* aggrReq, uint64_t addrStart, uint64_t size) {
   std::vector<StandardMem::Request*> requests;
   uint64_t dataIndex = 0;
@@ -114,7 +114,7 @@ std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
   return requests;
 }
 
-std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
+std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     AggregateReadRequest* aggrReq, uint64_t addrStart, uint64_t size) {
   std::vector<StandardMem::Request*> requests;
   std::vector<uint64_t> req_ids;
@@ -154,7 +154,7 @@ std::vector<StandardMem::Request*> SimengMemInterface::splitAggregatedRequest(
   return requests;
 }
 
-void SimengMemInterface::requestRead(const MemoryAccessTarget& target,
+void SimEngMemInterface::requestRead(const MemoryAccessTarget& target,
                                      uint64_t requestId) {
   uint64_t addrStart = target.address;
   uint64_t size = unsigned(target.size);
@@ -179,7 +179,7 @@ void SimengMemInterface::requestRead(const MemoryAccessTarget& target,
   }
 }
 
-void SimengMemInterface::requestWrite(const MemoryAccessTarget& target,
+void SimEngMemInterface::requestWrite(const MemoryAccessTarget& target,
                                       const RegisterValue& data) {
   uint64_t addrStart = target.address;
   uint64_t size = unsigned(target.size);
@@ -193,22 +193,22 @@ void SimengMemInterface::requestWrite(const MemoryAccessTarget& target,
   }
 }
 
-void SimengMemInterface::tick() { tickCounter_++; }
+void SimEngMemInterface::tick() { tickCounter_++; }
 
-void SimengMemInterface::clearCompletedReads() {
+void SimEngMemInterface::clearCompletedReads() {
   completedReadRequests_.clear();
 }
 
-bool SimengMemInterface::hasPendingRequests() const {
+bool SimEngMemInterface::hasPendingRequests() const {
   return aggregationMap_.size() > 0;
 };
 
-const span<MemoryReadResult> SimengMemInterface::getCompletedReads() const {
+const span<MemoryReadResult> SimEngMemInterface::getCompletedReads() const {
   return {const_cast<MemoryReadResult*>(completedReadRequests_.data()),
           completedReadRequests_.size()};
 };
 
-void SimengMemInterface::aggregatedReadResponses(
+void SimEngMemInterface::aggregatedReadResponses(
     AggregateReadRequest* aggrReq) {
   if (aggrReq->aggregateCount_ != 0) return;
   std::vector<uint8_t> mergedData;
@@ -233,12 +233,12 @@ void SimengMemInterface::aggregatedReadResponses(
   delete aggrReq;
 }
 
-void SimengMemInterface::SimengMemHandlers::handle(
+void SimEngMemInterface::SimEngMemHandlers::handle(
     StandardMem::WriteResp* rsp) {
   delete rsp;
 }
 
-void SimengMemInterface::SimengMemHandlers::handle(StandardMem::ReadResp* rsp) {
+void SimEngMemInterface::SimEngMemHandlers::handle(StandardMem::ReadResp* rsp) {
   uint64_t id = rsp->getID();
   auto data = rsp->data;
   delete rsp;
@@ -256,7 +256,7 @@ void SimengMemInterface::SimengMemHandlers::handle(StandardMem::ReadResp* rsp) {
      are generated using an atomic incrementing couter. Reference -
      "interfaces/stdMem.(hh/cc)" (SST-Core)
   */
-  SimengMemInterface::AggregateReadRequest* aggrReq = itr->second;
+  SimEngMemInterface::AggregateReadRequest* aggrReq = itr->second;
   aggrReq->responseMap_.insert({id, data});
   /*
       Decrement aggregateCount as we keep on recieving responses from SST.
@@ -268,20 +268,20 @@ void SimengMemInterface::SimengMemHandlers::handle(StandardMem::ReadResp* rsp) {
   }
 }
 
-int SimengMemInterface::getNumCacheLinesNeeded(uint64_t size) const {
+int SimEngMemInterface::getNumCacheLinesNeeded(uint64_t size) const {
   if (size < cacheLineWidth_) return 1;
   if (size % cacheLineWidth_ == 0) return size / cacheLineWidth_;
   return (size / cacheLineWidth_) + 1;
 }
-bool SimengMemInterface::unsignedOverflow_(uint64_t a, uint64_t b) const {
+bool SimEngMemInterface::unsignedOverflow_(uint64_t a, uint64_t b) const {
   return (a + b) < a || (a + b) < b;
 };
-bool SimengMemInterface::requestSpansMultipleCacheLines(
+bool SimEngMemInterface::requestSpansMultipleCacheLines(
     uint64_t addrStart, uint64_t addrEnd) const {
   uint64_t lineDiff =
       (addrEnd / cacheLineWidth_) - (addrStart / cacheLineWidth_);
   return lineDiff > 0;
 };
-uint64_t SimengMemInterface::nearestCacheLineEnd(uint64_t addrStart) const {
+uint64_t SimEngMemInterface::nearestCacheLineEnd(uint64_t addrStart) const {
   return (addrStart / cacheLineWidth_) + 1;
 };

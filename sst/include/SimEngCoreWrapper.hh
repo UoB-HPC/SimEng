@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "SimengMemInterface.hh"
+#include "SimEngMemInterface.hh"
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
@@ -25,12 +25,12 @@
 
 using namespace SST;
 using namespace SST::Interfaces;
-using namespace SST::SSTSimeng;
+using namespace SST::SSTSimEng;
 using namespace simeng;
 
 namespace SST {
 
-namespace SSTSimeng {
+namespace SSTSimEng {
 
 /**
  * A Wrapper class registered as a custom SST::Component to participate in an
@@ -40,10 +40,10 @@ namespace SSTSimeng {
  * ticks recieved from SST and hence is also responsible for ticking the SimEng
  * core and other classes assosciated to it.
  */
-class SimengCoreWrapper : public SST::Component {
+class SimEngCoreWrapper : public SST::Component {
  public:
-  SimengCoreWrapper(SST::ComponentId_t id, SST::Params& params);
-  ~SimengCoreWrapper();
+  SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params);
+  ~SimEngCoreWrapper();
 
   /** SST lifecycle methods (in-order of invocation) overriden from
    * SST::Component. */
@@ -51,7 +51,7 @@ class SimengCoreWrapper : public SST::Component {
   /**
    * This is the init lifecycle method present in all SST::Components.
    * Here it is overriden to include init calls to all other SST::Components
-   * which are contained inside SimengCoreWrapper. It is neccessary to call all
+   * which are contained inside SimEngCoreWrapper. It is neccessary to call all
    * lifecycle methods for SST::Component(s).
    */
   void init(unsigned int phase);
@@ -59,7 +59,7 @@ class SimengCoreWrapper : public SST::Component {
   /**
    * This is the setup lifecycle method present in all SST::Components.
    * Here it is overriden to include setup calls to all other SST::Components
-   * which are contained inside SimengCoreWrapper. It is neccessary to call all
+   * which are contained inside SimEngCoreWrapper. It is neccessary to call all
    * lifecycle methods for SST::Component(s).
    */
   void setup();
@@ -80,7 +80,7 @@ class SimengCoreWrapper : public SST::Component {
   /**
    * This handle event method is registered to StandardMem interface. This
    * method is called everytime a memory request is forwarded by the interface.
-   * This function acts a callback and invokes SimengMemHandler on the memory
+   * This function acts a callback and invokes SimEngMemHandler on the memory
    * requests.
    */
   void handleMemoryEvent(StandardMem::Request* memEvent);
@@ -89,9 +89,9 @@ class SimengCoreWrapper : public SST::Component {
    * SST supplied MACRO used to register custom SST:Components with
    * the SST Core.
    */
-  SST_ELI_REGISTER_COMPONENT(SimengCoreWrapper, "sstsimeng", "simengcore",
+  SST_ELI_REGISTER_COMPONENT(SimEngCoreWrapper, "sstsimeng", "simengcore",
                              SST_ELI_ELEMENT_VERSION(1, 0, 0),
-                             "Simeng core wrapper for SST",
+                             "SimEng core wrapper for SST",
                              COMPONENT_CATEGORY_PROCESSOR)
 
   /**
@@ -111,7 +111,7 @@ class SimengCoreWrapper : public SST::Component {
 
  private:
   /** Method used to assemble SimEng core. */
-  void fabricateSimengCore();
+  void fabricateSimEngCore();
 
   /** Method to split the passed executable argument's string into a vector of
    * individual arguments. */
@@ -142,7 +142,7 @@ class SimengCoreWrapper : public SST::Component {
    */
   StandardMem* sstMem_;
 
-  // Simeng properties
+  // SimEng properties
   /** Reference to the CoreInstance class responsible for creating the core to
    * be simulated. */
   std::unique_ptr<simeng::CoreInstance> coreInstance_;
@@ -171,8 +171,8 @@ class SimengCoreWrapper : public SST::Component {
   /** Reference to SimEng instruction memory. */
   std::shared_ptr<simeng::MemoryInterface> instructionMemory_;
 
-  /** Reference to SimengMemInterface used for interfacing with SST. */
-  std::shared_ptr<SimengMemInterface> dataMemory_;
+  /** Reference to SimEngMemInterface used for interfacing with SST. */
+  std::shared_ptr<SimEngMemInterface> dataMemory_;
 
   /** Number of clock iterations. */
   int iterations_;
@@ -180,11 +180,11 @@ class SimengCoreWrapper : public SST::Component {
   /** Start time of simulation. */
   std::chrono::high_resolution_clock::time_point startTime_;
 
-  /** Reference to memory request handler class defined in SimengMemInterface.
+  /** Reference to memory request handler class defined in SimEngMemInterface.
    */
-  SimengMemInterface::SimengMemHandlers* handlers_;
+  SimEngMemInterface::SimEngMemHandlers* handlers_;
 };
 
-}  // namespace SSTSimeng
+}  // namespace SSTSimEng
 
 }  // namespace SST
