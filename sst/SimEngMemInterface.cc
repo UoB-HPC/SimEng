@@ -76,7 +76,6 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     AggregateWriteRequest* aggrReq, uint64_t addrStart, uint64_t size) {
   std::vector<StandardMem::Request*> requests;
   uint64_t dataIndex = 0;
-  std::vector<uint64_t> req_ids;
   // Determine the number of cache-lines needed to store the data in the write
   // request
   int numCacheLinesNeeded = getNumCacheLinesNeeded(size);
@@ -117,7 +116,6 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
 std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     AggregateReadRequest* aggrReq, uint64_t addrStart, uint64_t size) {
   std::vector<StandardMem::Request*> requests;
-  std::vector<uint64_t> req_ids;
   // Get the number of cache-lines needed to read the data requested by the read
   // request.
   int numCacheLinesNeeded = getNumCacheLinesNeeded(size);
@@ -137,20 +135,16 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     // request from SimEng was split into.
     aggrReq->aggregateCount_++;
     addrStart += currReqSize;
-    req_ids.push_back(readReq->getID());
     requests.push_back(readReq);
-  }
-  for (uint64_t id : req_ids) {
     /*
-        Insert a key-value pair of SST request id and AggregatedReadRequest
-       reference in the aggregation map. These key-value pairs will later be
-       used to store read response data recieved from SST. This models a
-       many-to-one relation between multiple SST requests and a SimEng read
-       request.
+    Insert a key-value pair of SST request id and AggregatedReadRequest
+    reference in the aggregation map. These key-value pairs will later be
+    used to store read response data recieved from SST. This models a
+    many-to-one relation between multiple SST requests and a SimEng read
+    request.
     */
-    aggregationMap_.insert({id, aggrReq});
+    aggregationMap_.insert({readReq->getID(), aggrReq});
   }
-  req_ids.clear();
   return requests;
 }
 
