@@ -11,7 +11,8 @@ int GDBStub::run() {
 
   int connection = openSocket(2424);  // change this if the port is blocked
 
-  std::cout << "Connection to GDB client established, debugging in progress"
+  std::cout << "[SimEng:GDBStub] Connection to GDB client established, "
+               "debugging in progress"
             << std::endl
             << std::endl;
 
@@ -31,7 +32,8 @@ int GDBStub::run() {
       std::regex ack_regex("^\\+.*");
       if (regex_match(bufferString, ack_regex)) {
         if (verbose_)
-          std::cout << CYAN << "<- Received message acknowledgement"
+          std::cout << CYAN
+                    << "[SimEng:GDBStub] <- Received message acknowledgement"
                     << std::endl
                     << RESET;
       }
@@ -42,9 +44,10 @@ int GDBStub::run() {
       if (verbose_) {
         std::cout << CYAN;
         if (packet_match.size() == 3)
-          std::cout << "<- Received packet: " << packet << std::endl;
+          std::cout << "[SimEng:GDBStub] <- Received packet: " << packet
+                    << std::endl;
         else
-          std::cout << RED << "<- Unknown message"
+          std::cout << RED << "[SimEng:GDBStub] <- Unknown message"
                     << std::endl;  // TODO: take action
         std::cout << RESET;
       }
@@ -60,7 +63,7 @@ int GDBStub::run() {
 
       if (checksum != expected) {
         if (verbose_)
-          std::cout << RED << "   Checksum failed\n"
+          std::cout << RED << "[SimEng:GDBStub]    Checksum failed\n"
                     << "   Expected checksum: " << expected
                     << "   , but received: " << checksum << std::endl
                     << RESET;
@@ -117,12 +120,15 @@ int GDBStub::run() {
         noAckMode_ = true;
         response += generateReply(GDB_OK);
       } else {
-        if (verbose_) std::cout << RED << "   Packet not supported\n" << RESET;
+        if (verbose_)
+          std::cout << RED << "[SimEng:GDBStub]    Packet not supported\n"
+                    << RESET;
         response += generateReply("");
       }
 
       if (verbose_)
-        std::cout << GREEN << "-> Sending: " << response << RESET << std::endl;
+        std::cout << GREEN << "[SimEng:GDBStub] -> Sending: " << response
+                  << RESET << std::endl;
       send(connection, response.c_str(), response.size(), 0);
     }
 
@@ -159,7 +165,8 @@ uint64_t GDBStub::hexToInt(std::string hex) const {
     else if (hex[i] >= 'a' && hex[i] <= 'f')
       output += ((hex[i] - 87) * base);
     else
-      std::cout << RED << "non hex characters in input string" << RESET;
+      std::cout << RED << "[SimEng:GDBStub] non hex characters in input string"
+                << RESET;
     base *= 16;
   }
 
@@ -231,7 +238,7 @@ std::string GDBStub::handleReadSingleRegister(std::string registerName) const {
   uint16_t registerNumber = hexToInt(registerName);
 
   if (registerNumber > 31) return "";  // out of supported register range
-  std::cout << RED << "Requested register " << registerNumber
+  std::cout << RED << "[SimEng:GDBStub] Requested register " << registerNumber
             << "is out of supported range\n"
             << RESET;
 
@@ -252,8 +259,8 @@ std::string GDBStub::handleReadMemory(std::string hexAddress,
   uint8_t dest[numberOfBytes];
 
   if (verbose_)
-    std::cout << "   Reading " << numberOfBytes << " bytes from memory address "
-              << intAddress << std::endl;
+    std::cout << "[SimEng:GDBStub]    Reading " << numberOfBytes
+              << " bytes from memory address " << intAddress << std::endl;
 
   memcpy(dest, ptr, numberOfBytes);
 
@@ -265,17 +272,22 @@ std::string GDBStub::handleReadMemory(std::string hexAddress,
 
 void GDBStub::handleCreateBreakpoint(std::string type, std::string address) {
   if (stoi(type) > 1)
-    std::cout << RED << "   Watchpoints not supported, no breakpoint created\n"
+    std::cout << RED
+              << "[SimEng:GDBStub]    Watchpoints not supported, no breakpoint "
+                 "created\n"
               << RESET;
 
   breakpoints_.push_back(address);
   if (verbose_)
-    std::cout << "   Breakpoint created at address 0x" << address << std::endl;
+    std::cout << "[SimEng:GDBStub]    Breakpoint created at address 0x"
+              << address << std::endl;
 }
 
 void GDBStub::handleRemoveBreakpoint(std::string type, std::string address) {
   if (stoi(type) > 1)
-    std::cout << RED << "   Watchpoints not supported, no breakpoint removed\n"
+    std::cout << RED
+              << "[SimEng:GDBStub]    Watchpoints not supported, no breakpoint "
+                 "removed\n"
               << RESET;
 
   for (uint i = 0; i < breakpoints_.size(); i++) {
@@ -283,8 +295,8 @@ void GDBStub::handleRemoveBreakpoint(std::string type, std::string address) {
       breakpoints_.erase(breakpoints_.begin() + i);
   }
   if (verbose_)
-    std::cout << "   Breakpoint(s) removed at address 0x" << address
-              << std::endl;
+    std::cout << "[SimEng:GDBStub]    Breakpoint(s) removed at address 0x"
+              << address << std::endl;
 }
 
 std::string GDBStub::handleContinue() {
@@ -315,7 +327,8 @@ int GDBStub::openSocket(int port) const {
   // Create a socket (IPv4, TCP)
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd == -1) {
-    std::cout << RED << "   Failed to create socket. errno: " << errno
+    std::cout << RED
+              << "[SimEng:GDBStub]    Failed to create socket. errno: " << errno
               << std::endl
               << RESET;
     exit(EXIT_FAILURE);
@@ -327,18 +340,20 @@ int GDBStub::openSocket(int port) const {
   sockaddr.sin_port = htons(port);  // htons is necessary to convert a number to
                                     // network byte order
   if (bind(sockfd, (struct sockaddr*)&sockaddr, sizeof(sockaddr)) < 0) {
-    std::cout << RED << "   Failed to bind to port " << port
+    std::cout << RED << "[SimEng:GDBStub]    Failed to bind to port " << port
               << ". errno: " << errno << std::endl
               << RESET;
     exit(EXIT_FAILURE);
   } else {
-    std::cout << "Started listening on port " << port << std::endl;
+    std::cout << "[SimEng:GDBStub] Started listening on port " << port
+              << std::endl;
   }
 
   // Start listening. Hold at most 10 connections in the queue
   if (listen(sockfd, 10) < 0) {
-    std::cout << RED << "   Failed to listen on socket. errno: " << errno
-              << std::endl
+    std::cout << RED
+              << "[SimEng:GDBStub]    Failed to listen on socket. errno: "
+              << errno << std::endl
               << RESET;
     exit(EXIT_FAILURE);
   }
@@ -348,8 +363,8 @@ int GDBStub::openSocket(int port) const {
   int connection =
       accept(sockfd, (struct sockaddr*)&sockaddr, (socklen_t*)&addrlen);
   if (connection < 0) {
-    std::cout << RED << "   Failed to grab connection. errno: " << errno
-              << std::endl
+    std::cout << RED << "[SimEng:GDBStub]    Failed to grab connection. errno: "
+              << errno << std::endl
               << RESET;
     exit(EXIT_FAILURE);
   }
