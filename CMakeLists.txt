@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
-
+set(CMAKE_VERBOSE_MAKEFILE ON)
 # FetchContent_MakeAvailable was introduced in 3.14
 # there also isn't a version that accepts extra args at the end for add_subdirectory
 # hence we write one ourselves
@@ -122,6 +122,7 @@ option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
 option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizatoins" OFF)
+option(SIMENG_ENABLE_SST "Compile SimEng SST Wrapper" OFF)
 
 if (SIMENG_OPTIMIZE)
   # Turn on link time optimization for all targets.
@@ -214,3 +215,12 @@ endif()
 # include sources
 add_subdirectory(src)
 add_subdirectory(docs)
+
+if (SIMENG_ENABLE_SST)
+  if (SST_INSTALL_DIR)
+    add_subdirectory(sst)
+  else()
+    message(WARNING "SST build was selected but SST install directory was not specified.
+    Please specify -DSST_INSTALL_DIR=<path> for the SST build to proceed.")  
+  endif()
+endif()
