@@ -10,7 +10,9 @@ TEST_P(Exception, misaligned_pc) {
     mov x0, 5
     br x0
   )");
-  const char err[] = "\nEncountered misaligned program counter exception";
+  const char err[] =
+      "\n[SimEng:ExceptionHandler] Encountered misaligned program counter "
+      "exception";
   EXPECT_EQ(stdout_.substr(0, sizeof(err) - 1), err);
 }
 
