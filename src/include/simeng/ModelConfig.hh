@@ -25,22 +25,25 @@
    "LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, "        \
    "Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, "           \
    "Global-History-Length: 10, RAS-entries: 5, Fallback-Static-Predictor: "    \
-   "2}, L1-Cache: {Access-Latency: 4, Exclusive: False, Load-Bandwidth: 32, "  \
-   "Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "                    \
-   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "     \
-   "{'0': {Portname: Port 0, Instruction-Group-Support: [1, 8, 14]}, '1': "    \
-   "{Portname: Port 1, Instruction-Group-Support: [0, 14]}, '2': {Portname: "  \
-   "Port 2, Instruction-Group-Support: [1, 8, 71]}, '3': {Portname: Port 4, "  \
+   "2}, L1-Data-Memory: {Interface-Type: Flat}, L1-Instruction-Memory: "       \
+   "{Interface-Type: Flat}, LSQ-L1-Interface: {Access-Latency: 4, Exclusive: " \
+   "False, Load-Bandwidth: 32, Store-Bandwidth: 16, "                          \
+   "Permitted-Requests-Per-Cycle: 2, Permitted-Loads-Per-Cycle: 2, "           \
+   "Permitted-Stores-Per-Cycle: 1}, Ports: {'0': {Portname: Port 0, "          \
+   "Instruction-Group-Support: [1, 8, 14]}, '1': {Portname: Port 1, "          \
+   "Instruction-Group-Support: [0, 14]}, '2': {Portname: Port 2, "             \
+   "Instruction-Group-Support: [1, 8, 71]}, '3': {Portname: Port 4, "          \
    "Instruction-Group-Support: [67]}, '4': {Portname: Port 5, "                \
    "Instruction-Group-Support: [67]}, '5': {Portname: Port 3, "                \
    "Instruction-Group-Support: [70]}}, Reservation-Stations: {'0': {Size: "    \
    "60, Ports: [0, 1, 2, 3, 4, 5]}}, Execution-Units: {'0': {Pipelined: "      \
-   "true}, '1': {Pipelined: true}, '2': {Pipelined: true}, '3': {Pipelined: "  \
-   "true}, '4': {Pipelined: true}, '5': {Pipelined: true}}, CPU-Info: "        \
-   "{Generate-Special-Dir: F, Core-Count: 1, Socket-Count: 1, SMT: 1, "        \
-   "BogoMIPS: 200.00, Features: fp asimd evtstrm atomics cpuid, "              \
+   "true}, '1': {Pipelined: true}, '2': {Pipelined: true}, '3': "              \
+   "{Pipelined:true}, '4': {Pipelined: true}, '5': {Pipelined: true}}, "       \
+   "CPU-Info: {Generate-Special-Dir: false, Core-Count: 1, Socket-Count: 1, "  \
+   "SMT: 1, BogoMIPS: 200.00, Features: fp asimd evtstrm atomics cpuid, "      \
    "CPU-Implementer: 0x0, CPU-Architecture: 0, CPU-Variant: 0x0, CPU-Part: "   \
    "0x0, CPU-Revision: 0, Package-Count: 1}}")
+
 namespace simeng {
 
 namespace ExpectedValue {
@@ -63,11 +66,11 @@ class ModelConfig {
   YAML::Node getConfigFile();
 
  private:
-  /** If using a base config file, inherit and overwite values form
+  /** If using a base config file, inherit and overwrite values form
    * the base file. */
   void inherit();
 
-  /** Validate all required fields are filled with an approriate
+  /** Validate all required fields are filled with an appropriate
    * value. */
   void validate();
 
@@ -76,7 +79,7 @@ class ModelConfig {
    * relevant instruction group variables. */
   void createGroupMapping();
 
-  /** Given a node, value requirements, and possibly a deafult value,
+  /** Given a node, value requirements, and possibly a default value,
    * validate the value held within the node. All methods perform, at
    * least, an existence and "read as type" check with the latter
    * reading the value as the given type within a try catch
@@ -130,8 +133,8 @@ class ModelConfig {
     return 1;
   }
 
-  /** Given a set of bounds (bounds) ensure the supplied node is betwene these
-   * value inclusively. */
+  /** Given a set of bounds (bounds) ensure the supplied node is between
+   * these value inclusively. */
   template <typename T>
   int boundChecker(YAML::Node node, const std::string& field,
                    const std::pair<T, T>& bounds, uint8_t expected) {

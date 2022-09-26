@@ -5,6 +5,7 @@
 
 namespace simeng {
 
+/** The types of branches recognised. */
 enum class BranchType {
   Conditional = 0,
   LoopClosing,

@@ -8,7 +8,7 @@ ModelConfig::ModelConfig(std::string path) {
   // Ensure the file exists
   std::ifstream file(path);
   if (!file.is_open()) {
-    std::cerr << "Could not read " << path << std::endl;
+    std::cerr << "[SimEng:ModelConfig] Could not read " << path << std::endl;
     exit(1);
   }
   file.close();
@@ -30,7 +30,8 @@ void ModelConfig::inherit() {
   if (!configFile_["Inherit-From"]) {
     return;
   } else {
-    std::cerr << "Config inheritance not yet supported" << std::endl;
+    std::cerr << "[SimEng:ModelConfig] Config inheritance not yet supported"
+              << std::endl;
     exit(1);
     // TODO: Merge files
   }
@@ -352,8 +353,39 @@ void ModelConfig::validate() {
   }
   subFields.clear();
 
-  // L1-Cache
-  root = "L1-Cache";
+  // Data Memory
+  root = "L1-Data-Memory";
+  subFields = {"Interface-Type"};
+  nodeChecker<std::string>(
+      configFile_[root][subFields[0]], root + " " + subFields[0],
+      std::vector<std::string>{"Flat", "Fixed", "External"},
+      ExpectedValue::String);
+  // Currently, fixed instruction memory interfaces are unsupported for
+  // emulation and inorder simulation modes
+  if (configFile_[root][subFields[0]].as<std::string>() != "Flat") {
+    std::string mode = configFile_["Core"]["Simulation-Mode"].as<std::string>();
+    if (mode == "emulation" || mode == "inorderpipelined") {
+      invalid_ << "\t- Non-Flat data memory interface types are "
+                  "currently unsupported for 'emulation' and "
+                  "'inorderpipelined' simulation modes\n";
+    }
+  }
+
+  // Instruction Memory
+  root = "L1-Instruction-Memory";
+  subFields = {"Interface-Type"};
+  nodeChecker<std::string>(
+      configFile_[root][subFields[0]], root + " " + subFields[0],
+      std::vector<std::string>{"Flat", "Fixed", "External"},
+      ExpectedValue::String);
+  // Currently, fixed instruction memory interfaces are unsupported
+  if (configFile_[root][subFields[0]].as<std::string>() != "Flat") {
+    invalid_ << "\t- Non-Flat instruction memory interface types are currently "
+                "unsupported\n";
+  }
+
+  // LSQ-L1-Interface
+  root = "LSQ-L1-Interface";
   subFields = {"Access-Latency",
                "Exclusive",
                "Load-Bandwidth",
@@ -478,8 +510,8 @@ void ModelConfig::validate() {
                "CPU-Part",
                "CPU-Revision",
                "Package-Count"};
-  nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
-                           {"T", "F", ""}, ExpectedValue::String, "F");
+  nodeChecker<bool>(configFile_[root][subFields[0]], subFields[0],
+                    std::vector<bool>{false, true}, ExpectedValue::Bool, false);
   nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger, 1);
@@ -529,15 +561,16 @@ void ModelConfig::validate() {
   std::string invalidStr = invalid_.str();
   // Print all missing fields
   if (missingStr.length()) {
-    std::cerr << "The following fields are missing from the provided "
+    std::cerr << "[SimEng:ModelConfig] The following fields are missing from "
+                 "the provided "
                  "configuration file:\n"
               << missingStr << std::endl;
   }
   // Print all invalid values
   if (invalidStr.length()) {
-    std::cerr
-        << "The following values are invalid for their associated field:\n"
-        << invalidStr << std::endl;
+    std::cerr << "[SimEng:ModelConfig] The following values are invalid for "
+                 "their associated field:\n"
+              << invalidStr << std::endl;
   }
   if (missingStr.length() || invalidStr.length()) exit(1);
   return;

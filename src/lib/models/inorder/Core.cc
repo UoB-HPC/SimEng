@@ -13,10 +13,9 @@ namespace inorder {
 const unsigned int blockSize = 16;
 const unsigned int clockFrequency = 2.5 * 1e9;
 
-Core::Core(FlatMemoryInterface& instructionMemory,
-           FlatMemoryInterface& dataMemory, uint64_t processMemorySize,
-           uint64_t entryPoint, const arch::Architecture& isa,
-           BranchPredictor& branchPredictor)
+Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+           uint64_t processMemorySize, uint64_t entryPoint,
+           const arch::Architecture& isa, BranchPredictor& branchPredictor)
     : dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
@@ -205,7 +204,7 @@ void Core::processExceptionHandler() {
 
   if (result.fatal) {
     hasHalted_ = true;
-    std::cout << "Halting due to fatal exception" << std::endl;
+    std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);

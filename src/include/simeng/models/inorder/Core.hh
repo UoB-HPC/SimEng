@@ -20,7 +20,7 @@ class Core : public simeng::Core {
   /** Construct a core model, providing an ISA and branch predictor to use,
    * along with a pointer and size of instruction memory, and a pointer to
    * process memory. */
-  Core(FlatMemoryInterface& instructionMemory, FlatMemoryInterface& dataMemory,
+  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        uint64_t processMemorySize, uint64_t entryPoint,
        const arch::Architecture& isa, BranchPredictor& branchPredictor);
 

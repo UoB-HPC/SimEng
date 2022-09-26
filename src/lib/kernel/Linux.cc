@@ -67,14 +67,16 @@ std::string Linux::getSpecialFile(const std::string filename) {
     if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
       for (int i = 0; i < supportedSpecialFiles_.size(); i++) {
         if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
-          std::cerr << "-- Using Special File: " << filename.c_str()
+          std::cerr << "[SimEng:Linux] Using Special File: " << filename.c_str()
                     << std::endl;
           return specialFilesDir_ + filename;
         }
       }
-      std::cerr << "-- WARNING: unable to open unsupported special file: "
+      std::cerr << "[SimEng:Linux] WARNING: unable to open unsupported "
+                   "special file: "
                 << "'" << filename.c_str() << "'" << std::endl
-                << "--          allowing simulation to continue" << std::endl;
+                << "[SimEng:Linux]           allowing simulation to continue"
+                << std::endl;
       break;
     }
   }

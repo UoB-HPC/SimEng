@@ -13,6 +13,7 @@
 namespace simeng {
 namespace pipeline {
 
+/** The memory access types which are processed. */
 enum accessType { LOAD = 0, STORE };
 
 /** A requestQueue_ entry. */
