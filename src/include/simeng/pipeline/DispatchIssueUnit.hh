@@ -3,6 +3,7 @@
 #include <deque>
 #include <initializer_list>
 #include <queue>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -57,7 +58,7 @@ class DispatchIssueUnit {
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
       std::vector<std::pair<uint8_t, uint64_t>> rsArrangment,
-      bool enableBypassLatency = false, uint8_t dispatchRate = UINT8_MAX);
+      std::string operandBypassType, uint8_t dispatchRate = UINT8_MAX);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -167,7 +168,7 @@ class DispatchIssueUnit {
   uint64_t ticks_ = 0;
 
   /** Whether conditional result forwarding with latency is enabled. */
-  bool enableBypassLatency_ = false;
+  std::string operandBypassType_ = "All";
 };
 }  // namespace pipeline
 }  // namespace simeng

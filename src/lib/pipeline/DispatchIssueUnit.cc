@@ -13,14 +13,14 @@ DispatchIssueUnit::DispatchIssueUnit(
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
     const std::vector<uint16_t>& physicalRegisterStructure,
     std::vector<std::pair<uint8_t, uint64_t>> rsArrangement,
-    bool enableBypassLatency, uint8_t dispatchRate)
+    std::string operandBypassType, uint8_t dispatchRate)
     : input_(fromRename),
       issuePorts_(issuePorts),
       registerFileSet_(registerFileSet),
       scoreboard_(physicalRegisterStructure.size()),
       dependencyMatrix_(physicalRegisterStructure.size()),
       portAllocator_(portAllocator),
-      enableBypassLatency_(enableBypassLatency),
+      operandBypassType_(operandBypassType),
       dispatchRate_(dispatchRate) {
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
@@ -241,12 +241,15 @@ void DispatchIssueUnit::forwardOperands(
     // Supply the value to all dependent uops
     const auto& dependents = dependencyMatrix_[reg.type][reg.tag];
     for (auto& entry : dependents) {
-      // If bypass latency is disabled, forwardLatency always = 0.
-      int8_t forwardLatency =
-          (enableBypassLatency_)
-              ? insn->canForward(insn->getProducerGroup(),
-                                 entry.uop->getConsumerGroup())
-              : 0;
+      // Forward latency defaults to an all-to-all mapping where latency is
+      // always 0.
+      int8_t forwardLatency = 0;
+      if (operandBypassType_ == "None")
+        forwardLatency = -1;
+      else if (operandBypassType_ == "Mapping")
+        forwardLatency = insn->canForward(insn->getProducerGroup(),
+                                          entry.uop->getConsumerGroup());
+
       if (forwardLatency == 0) {
         // If forwarding latency is 0 then can be issued immediately
         entry.uop->supplyOperand(entry.operandIndex, values[i]);

@@ -85,7 +85,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       dispatchIssueUnit_(
           renameToDispatchBuffer_, issuePorts_, registerFileSet_, portAllocator,
           physicalRegisterQuantities_, rsArrangement,
-          config["Core"]["Bypass-Latency"].as<bool>(),
+          config["Core"]["Operand-Bypass"].as<std::string>(),
           config["Pipeline-Widths"]["Dispatch-Rate"].as<unsigned int>()),
       writebackUnit_(
           completionSlots_, registerFileSet_,

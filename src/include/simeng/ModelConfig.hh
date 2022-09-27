@@ -17,7 +17,7 @@
 #define DEFAULT_CONFIG                                                         \
   ("{Core: {Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5, "         \
    "Timer-Frequency: 100, Micro-Operations: True, Vector-Length: 512, "        \
-   "Bypass-Latency: False}, Fetch: {Fetch-Block-Size: 32, Loop-Buffer-Size: "  \
+   "Operand-Bypass: All}, Fetch: {Fetch-Block-Size: 32, Loop-Buffer-Size: "    \
    "64, Loop-Detection-Threshold: 4}, Process-Image: {Heap-Size: 10485760, "   \
    "Stack-Size: 1048576}, Register-Set: {GeneralPurpose-Count: 154, "          \
    "FloatingPoint/SVE-Count: 90, Predicate-Count: 17, Conditional-Count: "     \

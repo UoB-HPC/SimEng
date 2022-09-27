@@ -47,7 +47,7 @@ void ModelConfig::validate() {
   // Core
   root = "Core";
   subFields = {"Simulation-Mode",  "Clock-Frequency", "Timer-Frequency",
-               "Micro-Operations", "Vector-Length",   "Bypass-Latency"};
+               "Micro-Operations", "Vector-Length",   "Operand-Bypass"};
   nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
@@ -62,8 +62,9 @@ void ModelConfig::validate() {
                         {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
                          1408, 1536, 1664, 1792, 1920, 2048},
                         ExpectedValue::UInteger, 512);
-  nodeChecker<bool>(configFile_[root][subFields[5]], subFields[5],
-                    std::make_pair(false, true), ExpectedValue::Bool, false);
+  nodeChecker<std::string>(configFile_[root][subFields[5]], subFields[5],
+                           {"All", "None", "Mapping"}, ExpectedValue::String,
+                           "All");
   subFields.clear();
 
   // Fetch

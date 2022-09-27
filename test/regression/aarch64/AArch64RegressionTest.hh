@@ -6,7 +6,7 @@
 
 #define AARCH64_CONFIG                                                         \
   ("{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "                \
-   "Timer-Frequency: 100, Micro-Operations: False, Bypass-Latency: False}, "   \
+   "Timer-Frequency: 100, Micro-Operations: False, Operand-Bypass: All}, "     \
    "Fetch: {Fetch-Block-Size: 32, Loop-Buffer-Size: 64, "                      \
    "Loop-Detection-Threshold: 4}, Process-Image: {Heap-Size: 100000, "         \
    "Stack-Size: 100000}, Register-Set: {GeneralPurpose-Count: 154, "           \
