@@ -20,15 +20,12 @@ int GDBStub::run() {
 
   while (true) {
     read(connection, buffer, 10000);
-
-    // First parentheses = package, second = checksum
-    std::regex packet_regex("^\\+*\\$([^#]*)#([0-9a-f]{2})");
-    std::smatch packet_match;
     std::string bufferString = buffer;
 
     if (!noAckMode_) {
       // '+' is an acknowledgement of successful receipt of message
       // TODO: handle '-', no acknowledgement
+      // Pattern match: '+' followed by any number of any character
       std::regex ack_regex("^\\+.*");
       if (regex_match(bufferString, ack_regex)) {
         if (verbose_)
@@ -36,8 +33,14 @@ int GDBStub::run() {
                     << "[SimEng:GDBStub] <- Received message acknowledgement"
                     << std::endl
                     << RESET;
+        continue;
       }
     }
+
+    // Pattern match: $<packet>#<checksum>, where package can be any character
+    // except '#', and checksum is a 2 digit hex
+    std::regex packet_regex("^\\+*\\$([^#]*)#([0-9a-f]{2})");
+    std::smatch packet_match;
 
     if (regex_match(bufferString, packet_match, packet_regex)) {
       std::string packet = packet_match[1].str();
@@ -55,6 +58,7 @@ int GDBStub::run() {
       std::string response = "";
       if (!noAckMode_) response += "+";  // acknowledgement
 
+      // Pattern match: "qSupported:" followed by any number of any character
       std::regex qSupported_regex("^qSupported:(.*)");
       std::smatch qSupported_match;
 
@@ -81,22 +85,27 @@ int GDBStub::run() {
         std::string registers = handleReadRegisters();
         response += generateReply(registers);
       } else if (packet[0] == 'p') {  // read single register
-        std::regex reg_regex("^p([0-9a-f]*)");
+        // Pattern match: "p<registerName>" where registerName is a hex number
+        // of any length
+        std::regex reg_regex("^p([0-9a-f]+)");
         std::smatch reg_match;
         regex_match(packet, reg_match, reg_regex);
         std::string registerValue = handleReadSingleRegister(reg_match[1]);
         response += generateReply(registerValue);
       } else if (packet[0] == 'm') {  // read memory
-        std::regex mem_regex("^m([0-9a-f]*),([0-9a-f]*)");
+        // Pattern match: "m<address>,<length>" where address and length hex
+        // numbers of any length
+        std::regex mem_regex("^m([0-9a-f]+),([0-9a-f]+)");
         std::smatch mem_match;
         regex_match(packet, mem_match, mem_regex);
         std::string memoryValue = handleReadMemory(mem_match[1], mem_match[2]);
         response += generateReply(memoryValue);
       } else if (packet[0] == 'Z' ||
                  packet[0] == 'z') {  // create/remove breakpoint
-        std::regex break_regex(
-            "^([zZ])([0-4]),([0-9a-f]+),([0-9a-f]+)");  // format:
-                                                        // z/Z,type,address,kind
+        // Pattern match: "z/Z<type>,<address>,<kind>",
+        // where type and kind are a digit 0-4, and address is a hex number of
+        // any length
+        std::regex break_regex("^([zZ])([0-4]),([0-9a-f]+),([0-4]+)");
         std::smatch break_match;
         regex_match(packet, break_match, break_regex);
         std::string type = break_match[2];
