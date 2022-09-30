@@ -31,6 +31,10 @@ target_link_options(sstsimeng PUBLIC -fno-common LINKER:-undefined,dynamic_looku
 # Linking yaml and libsimeng.so libraries to sstsimeng.so
 target_link_libraries(sstsimeng PUBLIC libsimeng)
 
+if (SIMENG_ENABLE_SST_TESTS)
+  add_subdirectory(test)
+endif()
+
 set(SST_SIMENG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/sst")
 set(SST_REGISTER_BASE_COMMAND "sstsimeng sstsimeng_LIBDIR=${SST_SIMENG_INSTALL_DIR}")
 set(SST_REGISTER_ELEMENT_COMMAND "SST_ELEMENT_SOURCE sstsimeng=${SST_SIMENG_INSTALL_DIR}")
