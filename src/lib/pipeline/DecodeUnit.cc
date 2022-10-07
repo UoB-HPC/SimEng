@@ -60,7 +60,7 @@ void DecodeUnit::tick() {
     // - Incorrect targets for immediate branches
     auto [misprediction, correctAddress] = uop->checkEarlyBranchMisprediction();
     if (misprediction) {
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
       stats_.incrementStat(earlyFlushesCntr_, 1);
 #endif
       shouldFlush_ = true;

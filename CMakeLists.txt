@@ -217,6 +217,12 @@ if(SIMENG_ENABLE_TESTS)
   )
 endif()
 
+if(SIMENG_VERBOSE_STATS)
+  set(SIMENG_ENABLE_VERBOSE_STATS 1 CACHE INTERNAL "Whether to enable verbose statistic ouputting for SimEng")
+else()
+  set(SIMENG_ENABLE_VERBOSE_STATS 0 CACHE INTERNAL "Whether to enable verbose statistic ouputting for SimEng") 
+endif()
+
 # include sources
 add_subdirectory(src)
 add_subdirectory(docs)

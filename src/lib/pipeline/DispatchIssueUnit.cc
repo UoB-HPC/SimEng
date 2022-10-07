@@ -103,7 +103,7 @@ void DispatchIssueUnit::tick() {
       // Deallocate port given
       portAllocator_.deallocate(port);
       input_.stall(true);
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
       stats_.incrementStat(rsStallsCntr_, 1);
 #endif
       return;
@@ -160,7 +160,7 @@ void DispatchIssueUnit::issue() {
     auto& queue = rs.ports[portMapping_[i].second].ready;
     if (issuePorts_[i].isStalled()) {
       if (queue.size() > 0) {
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
         stats_.incrementStat(portBusyStallsCntr_, 1);
         stats_.incrementStat(portStats_[i].portBusySlotStallsCntr, 1);
         stats_.incrementStat(portStats_[i].backendSlotStallsCntr, 1);
@@ -172,7 +172,7 @@ void DispatchIssueUnit::issue() {
     if (queue.size() > 0) {
       auto& uop = queue.front();
 
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
       for (const auto& avail : uop->getSupportedPorts()) {
         stats_.incrementStat(portStats_[avail].possibleIssuesCntr, 1);
       }
@@ -191,7 +191,7 @@ void DispatchIssueUnit::issue() {
       assert(rs.ports[portMapping_[i].second].currentSize > 0);
       rs.ports[portMapping_[i].second].currentSize--;
     } else {
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
       if (rs.ports[portMapping_[i].second].currentSize != 0)
         stats_.incrementStat(portStats_[i].backendSlotStallsCntr, 1);
       else

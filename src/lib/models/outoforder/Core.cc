@@ -184,7 +184,7 @@ void Core::tick() {
 
   // Commit instructions from ROB
   unsigned int commitQuantity = reorderBuffer_.commit(commitWidth_);
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
   stats_.incrementStat(commitCntrs_[commitQuantity], 1);
 #endif
 
@@ -420,7 +420,8 @@ std::map<std::string, std::string> Core::getStats() const {
       {"rob.retired", "0"}};
   stats_.fillSimulationStats(finalStatDump);
 
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
+
   stats_.dumpStats(0x0);
 #endif
 

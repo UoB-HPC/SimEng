@@ -178,7 +178,7 @@ void FetchUnit::tick() {
 
     if (prediction.taken) {
       if (slot + 1 < output_.getWidth()) {
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
         stats_.incrementStat(branchStallsCntr_, 1);
 #endif
       }

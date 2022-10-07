@@ -52,7 +52,7 @@ void RenameUnit::tick() {
     }
     if (reorderBuffer_.getFreeSpace() == 0) {
       input_.stall(true);
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
       stats_.incrementStat(robStallsCntr_, 1);
 #endif
       return;
@@ -71,7 +71,7 @@ void RenameUnit::tick() {
     bool isStore = uop->isStoreAddress();
     if (isLoad) {
       if (lsq_.getLoadQueueSpace() == 0) {
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
         stats_.incrementStat(lqStallsCntr_, 1);
 #endif
         input_.stall(true);
@@ -79,7 +79,7 @@ void RenameUnit::tick() {
       }
     } else if (isStore) {
       if (lsq_.getStoreQueueSpace() == 0) {
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
         stats_.incrementStat(sqStallsCntr_, 1);
 #endif
         input_.stall(true);
@@ -102,7 +102,7 @@ void RenameUnit::tick() {
       if (freeRegistersAvailable_[reg.type] == 0) {
         // Not enough free registers available for this uop
         input_.stall(true);
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
         stats_.incrementStat(allocationStallsCntr_[reg.type], 1);
 #endif
         return;

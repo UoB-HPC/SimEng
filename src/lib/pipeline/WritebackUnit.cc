@@ -35,12 +35,12 @@ void WritebackUnit::tick() {
     if (uop->isMicroOp()) {
       uop->setWaitingCommit();
       flagMicroOpCommits_(uop->getInstructionId());
-#if SIMENG_VERBOSE_STATS
-      if (uop->isLastMicrOp()) stats_.incrementStat(mopsWrittenCntr_, 1);
+#if SIMENG_ENABLE_VERBOSE_STATS
+      if (uop->isLastMicroOp()) stats_.incrementStat(mopsWrittenCntr_, 1);
 #endif
     } else {
       uop->setCommitReady();
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
       stats_.incrementStat(mopsWrittenCntr_, 1);
 #endif
     }

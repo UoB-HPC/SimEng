@@ -41,6 +41,8 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] \tCompile options: " SIMENG_COMPILE_OPTIONS
             << std::endl;
   std::cout << "[SimEng] \tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
+  std::cout << "[SimEng] \tVerbose statistics: " SIMENG_VERBOSE_STATS
+            << std::endl;
   std::cout << std::endl;
 
   // Create the instance of the core to be simulated

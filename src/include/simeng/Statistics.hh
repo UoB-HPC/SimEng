@@ -6,6 +6,8 @@
 #include <map>
 #include <vector>
 
+#include "simeng/BuildMetadata.hh"
+
 namespace simeng {
 
 enum class statInsnType { NONE = 0, DUMP, RESET };

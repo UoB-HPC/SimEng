@@ -116,7 +116,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     if (uop->isStoreAddress()) {
       bool violationFound = lsq_.commitStore(uop);
       if (violationFound) {
-#if SIMENG_VERBOSE_STATS
+#if SIMENG_ENABLE_VERBOSE_STATS
         stats_.incrementStat(loadViolationsCntr_, 1);
 #endif
         // Memory order violation found; aborting commits and flushing
