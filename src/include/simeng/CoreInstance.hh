@@ -10,6 +10,7 @@
 #include "simeng/GenericPredictor.hh"
 #include "simeng/ModelConfig.hh"
 #include "simeng/SpecialFileDirGen.hh"
+#include "simeng/Statistics.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
@@ -133,6 +134,9 @@ class CoreInstance {
 
   /** Whether or not the instructionMemory_ must be set manually. */
   bool setInstructionMemory_ = false;
+
+  /** Reference to the SimEng statistics object. */
+  std::unique_ptr<simeng::Statistics> statistics_ = nullptr;
 
   /** Reference to the SimEng architecture object. */
   std::unique_ptr<simeng::arch::Architecture> arch_ = nullptr;

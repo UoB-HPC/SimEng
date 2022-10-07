@@ -26,22 +26,6 @@ class RenameUnit {
    * space. */
   void tick();
 
-  /** Retrieve the number of cycles this unit stalled due to an inability to
-   * allocate enough destination registers. */
-  uint64_t getAllocationStalls() const;
-
-  /** Retrieve the number of cycles this unit stalled due to insufficient ROB
-   * space. */
-  uint64_t getROBStalls() const;
-
-  /** Retrieve the number of cycles stalled due to insufficient load/store queue
-   * space for a load operation. */
-  uint64_t getLoadQueueStalls() const;
-
-  /** Retrieve the number of cycles stalled due to insufficient load/store queue
-   * space for a store operation. */
-  uint64_t getStoreQueueStalls() const;
-
  private:
   /** A buffer of instructions to rename. */
   PipelineBuffer<std::shared_ptr<Instruction>>& input_;
@@ -62,31 +46,23 @@ class RenameUnit {
    * file. */
   std::vector<uint8_t> freeRegistersAvailable_;
 
-  /** Statistics class id for allocationStalls_ counters. Each counter relates
-   * to a specific register type. */
-  std::vector<uint64_t> allocationStallsCntr_;
-
-  /** The number of cycles stalled due to insufficient ROB space. */
-  uint64_t robStalls_ = 0;
-
-  /** The number of cycles stalled due to insufficient load/store queue space
-   * for a load operation. */
-  uint64_t lqStalls_ = 0;
-
-  /** The number of cycles stalled due to insufficient load/store queue space
-   * for a store operation. */
-  uint64_t sqStalls_ = 0;
-
   /** A reference to the Statistics class. */
   Statistics& stats_;
 
-  /** Statistics class id for robStalls_ counter. */
+  /** Vector of statistics class id's for the number of cycles stalled due to
+   * inability to allocate enough destination registers of each type. */
+  std::vector<uint64_t> allocationStallsCntr_;
+
+  /** Statistics class id for the number of cycles stalled due to insufficient
+   * ROB space. */
   uint64_t robStallsCntr_;
 
-  /** Statistics class id for lqStalls_ counter. */
+  /** Statistics class id for the number of cycles stalled due to insufficient
+   * load/store queue space for a load operation. */
   uint64_t lqStallsCntr_;
 
-  /** Statistics class id for sqStalls_ counter. */
+  /** Statistics class id for the number of cycles stalled due to insufficient
+   * load/store queue space for a store operation. */
   uint64_t sqStallsCntr_;
 };
 

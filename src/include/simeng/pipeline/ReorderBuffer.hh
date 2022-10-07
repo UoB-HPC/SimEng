@@ -69,9 +69,6 @@ class ReorderBuffer {
   /** Get the number of instructions the ROB has committed. */
   uint64_t getInstructionsCommittedCount() const;
 
-  /** Get the number of speculated loads which violated load-store ordering. */
-  uint64_t getViolatingLoadsCount() const;
-
  private:
   /** A reference to the register alias table. */
   RegisterAliasTable& rat_;
@@ -126,19 +123,14 @@ class ReorderBuffer {
    * micro-operations. */
   uint64_t insnId_ = 0;
 
-  /** The number of instructions committed. */
-  uint64_t instructionsCommitted_ = 0;
-
-  /** The number of speculatived loads which violated load-store ordering. */
-  uint64_t loadViolations_ = 0;
-
   /** A reference to the Statistics class. */
   Statistics& stats_;
 
-  /** Statistics class id for instructionsCommitted_ counter. */
+  /** Statistics class id for the number of instructions committed. */
   uint64_t instructionsCommittedCntr_;
 
-  /** Statistics class id for loadViolations_ counter. */
+  /** Statistics class id for the number of speculatived loads which violated
+   * load-store ordering. */
   uint64_t loadViolationsCntr_;
 };
 

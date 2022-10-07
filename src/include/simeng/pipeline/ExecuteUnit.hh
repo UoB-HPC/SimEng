@@ -57,12 +57,6 @@ class ExecuteUnit {
    * stall, if applicable. */
   void purgeFlushed();
 
-  /** Retrieve the number of branch instructions that have been executed. */
-  uint64_t getBranchExecutedCount() const;
-
-  /** Retrieve the number of branch mispredictions. */
-  uint64_t getBranchMispredictedCount() const;
-
   /** Retrieve the number of active execution cycles. */
   uint64_t getCycles() const;
 
@@ -129,19 +123,15 @@ class ExecuteUnit {
   /** The cycle this unit will become unstalled. */
   uint64_t stallUntil_ = 0;
 
-  /** The number of branch instructions that were executed. */
-  uint64_t branchesExecuted_ = 0;
-
-  /** The number of branch mispredictions that were observed. */
-  uint64_t branchMispredicts_ = 0;
-
   /** The number of active execution cycles that were observed. */
   uint64_t cycles_ = 0;
 
-  /** Statistics class id for branchesExecuted_ counter. */
+  /** Statistics class id for the number of branch instructions that were
+   * executed. */
   uint64_t branchesExecutedCntr_;
 
-  /** Statistics class id for branchMispredicts_ counter. */
+  /** Statistics class id for the number of branch mispredictions that were
+   * observed. */
   uint64_t branchMispredictsCntr_;
 };
 

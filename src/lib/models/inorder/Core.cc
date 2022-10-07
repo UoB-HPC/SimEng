@@ -41,10 +41,14 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
+
+  // Register stat counters
+  ticksCntr_ = stats_.registerStat("core.cycles");
+  flushesCntr_ = stats_.registerStat("core.flushes");
 };
 
 void Core::tick() {
-  ticks_++;
+  stats_.incrementStat(ticksCntr_, 1);
 
   if (hasHalted_) return;
 
@@ -96,7 +100,7 @@ void Core::tick() {
     decodeToExecuteBuffer_.fill(nullptr);
     decodeUnit_.purgeFlushed();
 
-    flushes_++;
+    stats_.incrementStat(flushesCntr_, 1);
   } else if (decodeUnit_.shouldFlush()) {
     // Flush was requested at decode stage
     // Update PC and wipe Fetch/Decode buffer.
@@ -106,11 +110,12 @@ void Core::tick() {
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
 
-    flushes_++;
+    stats_.incrementStat(flushesCntr_, 1);
   }
 
   fetchUnit_.requestFromPC();
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
+  isa_.updateSystemTimerRegisters(&registerFileSet_,
+                                  stats_.getFullSimStat(ticksCntr_));
 }
 
 bool Core::hasHalted() const {
@@ -135,37 +140,40 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 }
 
 uint64_t Core::getInstructionsRetiredCount() const {
-  return writebackUnit_.getInstructionsWrittenCount();
+  return writebackUnit_.getµopsWrittenCount();
 }
 
 uint64_t Core::getSystemTimer() const {
   // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency / 1e9);
+  return stats_.getFullSimStat(ticksCntr_) / (clockFrequency / 1e9);
 }
 
 std::map<std::string, std::string> Core::getStats() const {
-  auto retired = writebackUnit_.getInstructionsWrittenCount();
-  auto ipc = retired / static_cast<float>(ticks_);
+  std::map<std::string, std::string> finalStatDump = {
+      {"branch.executed", "0"},
+      {"branch.mispredict", "0"},
+      {"core.cycles", "0"},
+      {"core.flushes", "0"},
+      {"writeback.µopsExecuted", "0"}};
+  stats_.fillSimulationStats(finalStatDump);
+
+  // Calculate IPC
+  auto ipc = std::stoi(finalStatDump["writeback.µopsExecuted"]) /
+             static_cast<float>(stats_.getFullSimStat(ticksCntr_));
   std::ostringstream ipcStr;
   ipcStr << std::setprecision(2) << ipc;
+  finalStatDump["ipc"] = ipcStr.str();
 
-  // Sum up the branch stats reported across the execution units.
-  uint64_t totalBranchesExecuted = 0;
-  uint64_t totalBranchMispredicts = 0;
-  totalBranchesExecuted += executeUnit_.getBranchExecutedCount();
-  totalBranchMispredicts += executeUnit_.getBranchMispredictedCount();
-  auto branchMissRate = 100.0f * static_cast<float>(totalBranchMispredicts) /
-                        static_cast<float>(totalBranchesExecuted);
+  // Calculate the branch miss rate
+  auto branchMissRate =
+      100.0f *
+      static_cast<float>(std::stoi(finalStatDump["branch.mispredict"])) /
+      static_cast<float>(std::stoi(finalStatDump["branch.executed"]));
   std::ostringstream branchMissRateStr;
   branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
+  finalStatDump["branch.missrate"] = branchMissRateStr.str();
 
-  return {{"cycles", std::to_string(ticks_)},
-          {"retired", std::to_string(retired)},
-          {"ipc", ipcStr.str()},
-          {"flushes", std::to_string(flushes_)},
-          {"branch.executed", std::to_string(totalBranchesExecuted)},
-          {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()}};
+  return finalStatDump;
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {

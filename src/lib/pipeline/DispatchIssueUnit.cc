@@ -103,8 +103,9 @@ void DispatchIssueUnit::tick() {
       // Deallocate port given
       portAllocator_.deallocate(port);
       input_.stall(true);
-      rsStalls_++;
+#if SIMENG_VERBOSE_STATS
       stats_.incrementStat(rsStallsCntr_, 1);
+#endif
       return;
     }
 
@@ -159,10 +160,11 @@ void DispatchIssueUnit::issue() {
     auto& queue = rs.ports[portMapping_[i].second].ready;
     if (issuePorts_[i].isStalled()) {
       if (queue.size() > 0) {
-        portBusyStalls_++;
+#if SIMENG_VERBOSE_STATS
         stats_.incrementStat(portBusyStallsCntr_, 1);
         stats_.incrementStat(portStats_[i].portBusySlotStallsCntr, 1);
         stats_.incrementStat(portStats_[i].backendSlotStallsCntr, 1);
+#endif
       }
       continue;
     }
@@ -170,10 +172,12 @@ void DispatchIssueUnit::issue() {
     if (queue.size() > 0) {
       auto& uop = queue.front();
 
+#if SIMENG_VERBOSE_STATS
       for (const auto& avail : uop->getSupportedPorts()) {
         stats_.incrementStat(portStats_[avail].possibleIssuesCntr, 1);
       }
       stats_.incrementStat(portStats_[i].actualIssuesCntr, 1);
+#endif
 
       issuePorts_[i].getTailSlots()[0] = std::move(uop);
       queue.pop_front();
@@ -187,22 +191,22 @@ void DispatchIssueUnit::issue() {
       assert(rs.ports[portMapping_[i].second].currentSize > 0);
       rs.ports[portMapping_[i].second].currentSize--;
     } else {
+#if SIMENG_VERBOSE_STATS
       if (rs.ports[portMapping_[i].second].currentSize != 0)
         stats_.incrementStat(portStats_[i].backendSlotStallsCntr, 1);
       else
         stats_.incrementStat(portStats_[i].frontendSlotStallsCntr, 1);
+#endif
     }
   }
 
   if (issued == 0) {
     for (const auto& rs : reservationStations_) {
       if (rs.currentSize != 0) {
-        backendStalls_++;
         stats_.incrementStat(backendStallsCntr_, 1);
         return;
       }
     }
-    frontendStalls_++;
     stats_.incrementStat(frontendStallsCntr_, 1);
   }
 }
@@ -294,15 +298,6 @@ void DispatchIssueUnit::purgeFlushed() {
     assert(reservationStations_[i].currentSize >= flushed_[i].size());
     reservationStations_[i].currentSize -= flushed_[i].size();
   }
-}
-
-uint64_t DispatchIssueUnit::getRSStalls() const { return rsStalls_; }
-uint64_t DispatchIssueUnit::getFrontendStalls() const {
-  return frontendStalls_;
-}
-uint64_t DispatchIssueUnit::getBackendStalls() const { return backendStalls_; }
-uint64_t DispatchIssueUnit::getPortBusyStalls() const {
-  return portBusyStalls_;
 }
 
 void DispatchIssueUnit::getRSSizes(std::vector<uint64_t>& sizes) const {

@@ -30,10 +30,6 @@ class DecodeUnit {
    * discovered misprediction. */
   uint64_t getFlushAddress() const;
 
-  /** Retrieve the number of times that the decode unit requested a flush due to
-   * discovering a branch misprediction early. */
-  uint64_t getEarlyFlushes() const;
-
   /** Clear the microOps_ queue. */
   void purgeFlushed();
 
@@ -54,14 +50,11 @@ class DecodeUnit {
   /** The target instruction address the PC should be updated to upon flush. */
   uint64_t pc_;
 
-  /** The number of times that the decode unit requested a flush due to
-   * discovering a branch misprediction early. */
-  uint64_t earlyFlushes_ = 0;
-
   /** A reference to the Statistics class. */
   Statistics& stats_;
 
-  /** Statistics class id for branchStalls_ counter. */
+  /** Statistics class id for the number of times that the decode unit requested
+   * a flush due to discovering a branch misprediction early. */
   uint64_t earlyFlushesCntr_;
 };
 

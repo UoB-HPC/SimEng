@@ -206,6 +206,10 @@ void CoreInstance::createCore() {
     exit(1);
   }
 
+  // Construct Statistics class for stat maintenance and output
+  statistics_ = std::make_unique<simeng::Statistics>(
+      config_["Statistics"]["Dump-File"].as<std::string>());
+
   // Construct architecture object
   arch_ =
       std::make_unique<simeng::arch::aarch64::Architecture>(kernel_, config_);
@@ -235,11 +239,11 @@ void CoreInstance::createCore() {
   } else if (mode_ == SimulationMode::InOrderPipelined) {
     core_ = std::make_shared<simeng::models::inorder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
-        *arch_, *predictor_);
+        *arch_, *predictor_, *statistics_);
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
-        *arch_, *predictor_, *portAllocator_, config_);
+        *arch_, *predictor_, *portAllocator_, config_, *statistics_);
   }
 
   createSpecialFileDirectory();

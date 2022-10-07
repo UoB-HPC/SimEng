@@ -122,6 +122,7 @@ option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
 option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizatoins" OFF)
+option(SIMENG_VERBOSE_STATS "Whether to enable verbose statistic ouputting for SimEng" OFF)
 
 if (SIMENG_OPTIMIZE)
   # Turn on link time optimization for all targets.

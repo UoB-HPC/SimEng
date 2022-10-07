@@ -88,7 +88,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     if (uop->isLastMicroOp()) {
-      instructionsCommitted_++;
       stats_.incrementStat(instructionsCommittedCntr_, 1);
     }
 
@@ -117,8 +116,9 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     if (uop->isStoreAddress()) {
       bool violationFound = lsq_.commitStore(uop);
       if (violationFound) {
-        loadViolations_++;
+#if SIMENG_VERBOSE_STATS
         stats_.incrementStat(loadViolationsCntr_, 1);
+#endif
         // Memory order violation found; aborting commits and flushing
         auto load = lsq_.getViolatingLoad();
         shouldFlush_ = true;
@@ -139,15 +139,16 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       } else if (branchCounter_.first.outcome != uop->getBranchPrediction()) {
         // Mismatch on branch outcome, reset
         increment = false;
-      } else if ((instructionsCommitted_ - branchCounter_.first.commitNumber) >
-                 loopBufSize_) {
+      } else if ((stats_.getFullSimStat(instructionsCommittedCntr_) -
+                  branchCounter_.first.commitNumber) > loopBufSize_) {
         // Loop too big to fit in loop buffer, reset
         increment = false;
       }
 
       if (increment) {
         // Reset commitNumber value
-        branchCounter_.first.commitNumber = instructionsCommitted_;
+        branchCounter_.first.commitNumber =
+            stats_.getFullSimStat(instructionsCommittedCntr_);
         // Increment counter
         branchCounter_.second++;
 
@@ -160,9 +161,10 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
         }
       } else {
         // Swap out latest branch
-        branchCounter_ = {{uop->getInstructionAddress(),
-                           uop->getBranchPrediction(), instructionsCommitted_},
-                          0};
+        branchCounter_ = {
+            {uop->getInstructionAddress(), uop->getBranchPrediction(),
+             stats_.getFullSimStat(instructionsCommittedCntr_)},
+            0};
       }
     }
     buffer_.pop_front();
@@ -211,11 +213,7 @@ uint64_t ReorderBuffer::getFlushAddress() const { return pc_; }
 uint64_t ReorderBuffer::getFlushSeqId() const { return flushAfter_; }
 
 uint64_t ReorderBuffer::getInstructionsCommittedCount() const {
-  return instructionsCommitted_;
-}
-
-uint64_t ReorderBuffer::getViolatingLoadsCount() const {
-  return loadViolations_;
+  return stats_.getFullSimStat(instructionsCommittedCntr_);
 }
 
 }  // namespace pipeline

@@ -27,6 +27,16 @@ void Statistics::incrementStat(uint64_t id, uint64_t value) {
   fullSimulationStats_[id] += value;
 }
 
+uint64_t Statistics::getFullSimStat(uint64_t id) {
+  assert(id < fullSimulationStats_.size() && "Id not registered");
+  return fullSimulationStats_[id];
+}
+
+uint64_t Statistics::getRegionStat(uint64_t id) {
+  assert(id < regionStats_.size() && "Id not registered");
+  return regionStats_[id];
+}
+
 void Statistics::dumpStats(uint64_t dumpAddress) {
   outfile_ << "===== " << dumpCounter_ << " === " << std::hex << dumpAddress
            << std::dec << " =====\n";
@@ -44,7 +54,7 @@ void Statistics::resetStats() {
   for (int i = 0; i < regionStats_.size(); i++) regionStats_[i] = 0;
 }
 
-void Statistics::getGeneralSimulationStats(
+void Statistics::fillSimulationStats(
     std::map<std::string, std::string>& statMap) {
   // Fill statMap with values based on keys in statMap
   for (auto& key : statMap) {

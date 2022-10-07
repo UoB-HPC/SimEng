@@ -147,12 +147,6 @@ class Core : public simeng::Core {
    * cycle. */
   unsigned int commitWidth_ = 6;
 
-  /** The number of times the pipeline has been flushed. */
-  uint64_t flushes_ = 0;
-
-  /** The number of times this core has been ticked. */
-  uint64_t ticks_ = 0;
-
   /** Whether an exception was generated during the cycle. */
   bool exceptionGenerated_ = false;
 
@@ -165,14 +159,15 @@ class Core : public simeng::Core {
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 
-  /** Statistics class id for ticks_ counter. */
+  /** Statistics class id for the number of times this core has been ticked. */
   uint64_t ticksCntr_;
 
-  /** Statistics class id for flushes_ counter. */
+  /** Statistics class id for the number of times the pipeline has been flushed.
+   */
   uint64_t flushesCntr_;
 
-  /** Statistics class ids for counters tracking the number of retirements
-   * within a cycle. */
+  /** Statistics class ids for tracking the number of retirements within a
+   * cycle. */
   std::vector<uint64_t> commitCntrs_;
 
   /** The YAML formatted config file. */

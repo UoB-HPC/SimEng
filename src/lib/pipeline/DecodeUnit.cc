@@ -60,8 +60,9 @@ void DecodeUnit::tick() {
     // - Incorrect targets for immediate branches
     auto [misprediction, correctAddress] = uop->checkEarlyBranchMisprediction();
     if (misprediction) {
-      earlyFlushes_++;
+#if SIMENG_VERBOSE_STATS
       stats_.incrementStat(earlyFlushesCntr_, 1);
+#endif
       shouldFlush_ = true;
       pc_ = correctAddress;
 
@@ -95,7 +96,6 @@ void DecodeUnit::tick() {
 
 bool DecodeUnit::shouldFlush() const { return shouldFlush_; }
 uint64_t DecodeUnit::getFlushAddress() const { return pc_; }
-uint64_t DecodeUnit::getEarlyFlushes() const { return earlyFlushes_; };
 
 void DecodeUnit::purgeFlushed() { microOps_.clear(); }
 

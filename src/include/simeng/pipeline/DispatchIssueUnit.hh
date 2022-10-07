@@ -52,10 +52,24 @@ struct dependencyEntry {
 };
 
 struct portStats {
+  /** An issues ports' statistics class id for the number of times it could have
+   * been issue to. */
   uint64_t possibleIssuesCntr;
+
+  /** An issues ports' statistics class id for the number of times it has been
+   * issue to. */
   uint64_t actualIssuesCntr;
+
+  /** An issues ports' statistics class id for the number cycles no issue to it
+   * occurred due to an empty RS. */
   uint64_t frontendSlotStallsCntr;
+
+  /** An issues ports' statistics class id for the number cycles no issue to it
+   * occurred due to dependencies or a lack of available ports. */
   uint64_t backendSlotStallsCntr;
+
+  /** An issues ports' statistics class id for the number cycles no issue to it
+   * occurred due to a busy port. */
   uint64_t portBusySlotStallsCntr;
 };
 
@@ -92,22 +106,6 @@ class DispatchIssueUnit {
 
   /** Clear the RS of all flushed instructions. */
   void purgeFlushed();
-
-  /** Retrieve the number of cycles this unit stalled due to insufficient RS
-   * space. */
-  uint64_t getRSStalls() const;
-
-  /** Retrieve the number of cycles no instructions were issued due to an empty
-   * RS. */
-  uint64_t getFrontendStalls() const;
-
-  /** Retrieve the number of cycles no instructions were issued due to
-   * dependencies or a lack of available ports. */
-  uint64_t getBackendStalls() const;
-
-  /** Retrieve the number of times an instruction was unable to issue due to a
-   * busy port. */
-  uint64_t getPortBusyStalls() const;
 
   /** Retrieve the current sizes and capacities of the reservation stations*/
   void getRSSizes(std::vector<uint64_t>&) const;
@@ -146,32 +144,23 @@ class DispatchIssueUnit {
   /** A reference to the Statistics class. */
   Statistics& stats_;
 
-  /** The number of cycles stalled due to a full reservation station. */
-  uint64_t rsStalls_ = 0;
-
-  /** The number of cycles no instructions were issued due to an empty RS. */
-  uint64_t frontendStalls_ = 0;
-
-  /** The number of cycles no instructions were issued due to dependencies or a
-   * lack of available ports. */
-  uint64_t backendStalls_ = 0;
-
-  /** The number of times an instruction was unable to issue due to a busy port.
-   */
-  uint64_t portBusyStalls_ = 0;
-
-  /** Statistics class id for rsStalls_ counter. */
+  /** Statistics class id for the number of cycles stalled due to a full
+   * reservation station. */
   uint64_t rsStallsCntr_;
 
-  /** Statistics class id for frontendStalls_ counter. */
+  /** Statistics class id for the number of cycles no instructions were issued
+   * due to an empty RS. */
   uint64_t frontendStallsCntr_;
 
-  /** Statistics class id for backendStalls_ counter. */
+  /** Statistics class id for the number of cycles no instructions were issued
+   * due to dependencies or a lack of available ports. */
   uint64_t backendStallsCntr_;
 
-  /** Statistics class id for portBusyStalls_ counter. */
+  /** Statistics class id The number of times an instruction was unable to issue
+   * due to a busy port. */
   uint64_t portBusyStallsCntr_;
 
+  /** Vector of specific port related statistic class ids. */
   std::vector<portStats> portStats_ = {};
 };
 

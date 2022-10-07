@@ -138,7 +138,6 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
 };
 
 void Core::tick() {
-  ticks_++;
   stats_.incrementStat(ticksCntr_, 1);
 
   if (hasHalted_) return;
@@ -185,7 +184,9 @@ void Core::tick() {
 
   // Commit instructions from ROB
   unsigned int commitQuantity = reorderBuffer_.commit(commitWidth_);
+#if SIMENG_VERBOSE_STATS
   stats_.incrementStat(commitCntrs_[commitQuantity], 1);
+#endif
 
   if (exceptionGenerated_) {
     handleException();
@@ -195,7 +196,8 @@ void Core::tick() {
 
   flushIfNeeded();
   fetchUnit_.requestFromPC();
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
+  isa_.updateSystemTimerRegisters(&registerFileSet_,
+                                  stats_.getFullSimStat(ticksCntr_));
 }
 
 void Core::flushIfNeeded() {
@@ -243,7 +245,6 @@ void Core::flushIfNeeded() {
       eu.purgeFlushed();
     }
 
-    flushes_++;
     stats_.incrementStat(flushesCntr_, 1);
   } else if (decodeUnit_.shouldFlush()) {
     // Flush was requested at decode stage
@@ -255,7 +256,6 @@ void Core::flushIfNeeded() {
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
 
-    flushes_++;
     stats_.incrementStat(flushesCntr_, 1);
   }
 }
@@ -409,46 +409,36 @@ uint64_t Core::getInstructionsRetiredCount() const {
 
 uint64_t Core::getSystemTimer() const {
   // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency_ / 1e9);
+  return stats_.getFullSimStat(ticksCntr_) / (clockFrequency_ / 1e9);
 }
 
 std::map<std::string, std::string> Core::getStats() const {
   std::map<std::string, std::string> finalStatDump = {
-      {"branch.executed", "0"},
-      {"branch.mispredict", "0"},
-      {"core.cycles", "0"},
-      {"core.flushes", "0"},
-      {"decode.earlyFlushes", "0"},
-      {"dispatch.rsStalls", "0"},
-      {"fetch.branchStalls", "0"},
-      {"issue.backendStalls", "0"},
-      {"issue.frontendStalls", "0"},
-      {"issue.portBusyStalls", "0"},
-      {"lsq.loadViolations", "0"},
-      {"rename.allocationStalls.GP", "0"},
-      {"rename.allocationStalls.FP", "0"},
-      {"rename.allocationStalls.PRED", "0"},
-      {"rename.allocationStalls.COND", "0"},
-      {"rename.lqStalls", "0"},
-      {"rename.robStalls", "0"},
-      {"rename.sqStalls", "0"},
+      {"branch.executed", "0"},     {"branch.mispredict", "0"},
+      {"core.cycles", "0"},         {"core.flushes", "0"},
+      {"issue.backendStalls", "0"}, {"issue.frontendStalls", "0"},
       {"rob.retired", "0"}};
+  stats_.fillSimulationStats(finalStatDump);
 
-  stats_.getGeneralSimulationStats(finalStatDump);
+#if SIMENG_VERBOSE_STATS
+  stats_.dumpStats(0x0);
+#endif
 
-  auto ipc2 =
-      std::stoi(finalStatDump["rob.retired"]) / static_cast<float>(ticks_);
-  std::ostringstream ipcStr2;
-  ipcStr2 << std::setprecision(2) << ipc2;
-  finalStatDump["ipc"] = ipcStr2.str();
+  // Calculate IPC
+  auto ipc = std::stoi(finalStatDump["rob.retired"]) /
+             static_cast<float>(stats_.getFullSimStat(ticksCntr_));
+  std::ostringstream ipcStr;
+  ipcStr << std::setprecision(2) << ipc;
+  finalStatDump["ipc"] = ipcStr.str();
 
-  auto branchMissRate2 =
+  // Calculate the branch miss rate
+  auto branchMissRate =
       100.0f *
       static_cast<float>(std::stoi(finalStatDump["branch.mispredict"])) /
       static_cast<float>(std::stoi(finalStatDump["branch.executed"]));
-  std::ostringstream branchMissRateStr2;
-  branchMissRateStr2 << std::setprecision(3) << branchMissRate2 << "%";
-  finalStatDump["branch.missrate"] = branchMissRateStr2.str();
+  std::ostringstream branchMissRateStr;
+  branchMissRateStr << std::setprecision(3) << branchMissRate << "%";
+  finalStatDump["branch.missrate"] = branchMissRateStr.str();
 
   return finalStatDump;
 }

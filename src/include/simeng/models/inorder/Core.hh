@@ -119,11 +119,12 @@ class Core : public simeng::Core {
   /** The writeback unit; writes uop results to the register files. */
   pipeline::WritebackUnit writebackUnit_;
 
-  /** The number of times the pipeline has been flushed. */
-  uint64_t flushes_ = 0;
+  /** Statistics class id for the number of times this core has been ticked. */
+  uint64_t ticksCntr_;
 
-  /** The number of times this core has been ticked. */
-  uint64_t ticks_ = 0;
+  /** Statistics class id for the number of times the pipeline has been flushed.
+   */
+  uint64_t flushesCntr_;
 
   /** Whether an exception was generated during the cycle. */
   bool exceptionGenerated_ = false;

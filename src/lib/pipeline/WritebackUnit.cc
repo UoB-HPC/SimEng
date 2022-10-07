@@ -14,7 +14,8 @@ WritebackUnit::WritebackUnit(
       flagMicroOpCommits_(flagMicroOpCommits),
       stats_(stats) {
   // Register stat counters
-  instructionsWrittenCntr_ = stats_.registerStat("writeback.µopsExecuted");
+  µopsWrittenCntr_ = stats_.registerStat("writeback.µopsExecuted");
+  mopsWrittenCntr_ = stats_.registerStat("writeback.MopsExecuted");
 }
 
 void WritebackUnit::tick() {
@@ -34,19 +35,27 @@ void WritebackUnit::tick() {
     if (uop->isMicroOp()) {
       uop->setWaitingCommit();
       flagMicroOpCommits_(uop->getInstructionId());
-      if (uop->isLastMicroOp()) instructionsWritten_++;
+#if SIMENG_VERBOSE_STATS
+      if (uop->isLastMicrOp()) stats_.incrementStat(mopsWrittenCntr_, 1);
+#endif
     } else {
       uop->setCommitReady();
-      instructionsWritten_++;
-      stats_.incrementStat(instructionsWrittenCntr_, 1);
+#if SIMENG_VERBOSE_STATS
+      stats_.incrementStat(mopsWrittenCntr_, 1);
+#endif
     }
+    stats_.incrementStat(µopsWrittenCntr_, 1);
 
     completionSlots_[slot].getHeadSlots()[0] = nullptr;
   }
 }
 
-uint64_t WritebackUnit::getInstructionsWrittenCount() const {
-  return instructionsWritten_;
+uint64_t WritebackUnit::getµopsWrittenCount() const {
+  return stats_.getFullSimStat(µopsWrittenCntr_);
+}
+
+uint64_t WritebackUnit::getMopsWrittenCount() const {
+  return stats_.getFullSimStat(mopsWrittenCntr_);
 }
 
 }  // namespace pipeline

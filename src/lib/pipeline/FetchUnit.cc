@@ -178,8 +178,9 @@ void FetchUnit::tick() {
 
     if (prediction.taken) {
       if (slot + 1 < output_.getWidth()) {
-        branchStalls_++;
+#if SIMENG_VERBOSE_STATS
         stats_.incrementStat(branchStallsCntr_, 1);
+#endif
       }
       // Can't continue fetch immediately after a branch
       bufferedBytes_ = 0;
@@ -236,8 +237,6 @@ void FetchUnit::requestFromPC() {
 
   instructionMemory_.requestRead({blockAddress, blockSize_});
 }
-
-uint64_t FetchUnit::getBranchStalls() const { return branchStalls_; }
 
 void FetchUnit::flushLoopBuffer() {
   loopBuffer_.clear();

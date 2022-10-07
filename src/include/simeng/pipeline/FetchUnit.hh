@@ -63,10 +63,6 @@ class FetchUnit {
   /** Request instructions at the current program counter for a future cycle. */
   void requestFromPC();
 
-  /** Retrieve the number of cycles fetch terminated early due to a predicted
-   * branch. */
-  uint64_t getBranchStalls() const;
-
   /** Clear the loop buffer. */
   void flushLoopBuffer();
 
@@ -103,9 +99,6 @@ class FetchUnit {
    * the instruction region. */
   bool hasHalted_ = false;
 
-  /** The number of cycles fetch terminated early due to a predicted branch. */
-  uint64_t branchStalls_ = 0;
-
   /** The size of a fetch block, in bytes. */
   uint8_t blockSize_;
 
@@ -122,7 +115,8 @@ class FetchUnit {
   /** A reference to the Statistics class. */
   Statistics& stats_;
 
-  /** Statistics class id for branchStalls_ counter. */
+  /** Statistics class id for the number of cycles fetch terminated early due to
+   * a predicted branch. */
   uint64_t branchStallsCntr_;
 };
 

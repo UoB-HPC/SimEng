@@ -24,8 +24,11 @@ class WritebackUnit {
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
 
-  /** Retrieve a count of the number of instructions retired. */
-  uint64_t getInstructionsWrittenCount() const;
+  /** Retrieve a count of the number of µops processed by the unit. */
+  uint64_t getµopsWrittenCount() const;
+
+  /** Retrieve a count of the number of Mops processed by the unit. */
+  uint64_t getMopsWrittenCount() const;
 
  private:
   /** Buffers of completed instructions to process. */
@@ -38,14 +41,16 @@ class WritebackUnit {
    * ID can now be committed. */
   std::function<void(uint64_t insnId)> flagMicroOpCommits_;
 
-  /** The number of instructions processed and retired by this stage. */
-  uint64_t instructionsWritten_ = 0;
-
   /** A reference to the Statistics class. */
   Statistics& stats_;
 
-  /** Statistics class id for instructionsWritten_ counter. */
-  uint64_t instructionsWrittenCntr_;
+  /** Statistics class id for the number of micro-ops processed by this stage.
+   */
+  uint64_t µopsWrittenCntr_;
+
+  /** Statistics class id for the number of macro-ops processed by this stage.
+   */
+  uint64_t mopsWrittenCntr_;
 };
 
 }  // namespace pipeline
