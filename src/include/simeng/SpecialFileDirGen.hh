@@ -3,7 +3,7 @@
 #include <fstream>
 #include <string>
 
-#include "simeng/version.hh"
+#include "simeng/BuildMetadata.hh"
 #include "yaml-cpp/yaml.h"
 
 namespace simeng {

@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "simeng/BuildMetadata.hh"
 #include "simeng/kernel/LinuxProcess.hh"
-#include "simeng/version.hh"
 
 namespace simeng {
 namespace kernel {

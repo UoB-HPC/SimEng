@@ -9,7 +9,7 @@ binaries
 install
 install-debug
 capstone.pc
-version.hh
+BuildMetadata.hh
 **/specialFiles/
 **/stats-dump.txt
 

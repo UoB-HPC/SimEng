@@ -55,8 +55,8 @@ set_target_properties(libsimeng PROPERTIES SOVERSION ${SimEng_VERSION_MAJOR})
 
 install(TARGETS libsimeng DESTINATION lib)
 
-# Store build metadata in version.hh
+# Store build metadata in BuildMetadata.hh
 get_target_property(SIMENG_COMPILE_OPTIONS libsimeng COMPILE_OPTIONS)
 get_target_property(SIMENG_COMPILE_DEFINITIONS libsimeng COMPILE_DEFINITIONS)
 get_target_property(SIMENG_VERSION libsimeng VERSION)
-configure_file(${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh.in ${PROJECT_SOURCE_DIR}/src/include/simeng/version.hh)
+configure_file(${PROJECT_SOURCE_DIR}/src/include/simeng/BuildMetadata.hh.in ${PROJECT_SOURCE_DIR}/src/include/simeng/BuildMetadata.hh)

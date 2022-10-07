@@ -5,11 +5,11 @@
 #include <iostream>
 #include <string>
 
+#include "simeng/BuildMetadata.hh"
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/SpecialFileDirGen.hh"
-#include "simeng/version.hh"
 
 /** Tick the provided core model until it halts. */
 int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
