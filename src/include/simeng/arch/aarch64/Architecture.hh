@@ -77,8 +77,7 @@ class Architecture : public arch::Architecture {
  private:
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
-   * reduce the over
-    of future decoding. */
+   * reduce the overhead of future decoding. */
   static std::unordered_map<uint32_t, Instruction> decodeCache;
   /** A decoding metadata cache, mapping an instruction word to a previously
    * decoded instruction metadata bundle. Metadata is added to the cache as it's
