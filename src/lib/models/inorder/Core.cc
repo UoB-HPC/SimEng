@@ -140,7 +140,7 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 }
 
 uint64_t Core::getInstructionsRetiredCount() const {
-  return writebackUnit_.getµopsWrittenCount();
+  return writebackUnit_.getuopsWrittenCount();
 }
 
 uint64_t Core::getSystemTimer() const {
@@ -154,11 +154,11 @@ std::map<std::string, std::string> Core::getStats() const {
       {"branch.mispredict", "0"},
       {"core.cycles", "0"},
       {"core.flushes", "0"},
-      {"writeback.µopsExecuted", "0"}};
+      {"writeback.uopsExecuted", "0"}};
   stats_.fillSimulationStats(finalStatDump);
 
   // Calculate IPC
-  auto ipc = std::stoi(finalStatDump["writeback.µopsExecuted"]) /
+  auto ipc = std::stoi(finalStatDump["writeback.uopsExecuted"]) /
              static_cast<float>(stats_.getFullSimStat(ticksCntr_));
   std::ostringstream ipcStr;
   ipcStr << std::setprecision(2) << ipc;

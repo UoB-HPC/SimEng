@@ -14,7 +14,7 @@ WritebackUnit::WritebackUnit(
       flagMicroOpCommits_(flagMicroOpCommits),
       stats_(stats) {
   // Register stat counters
-  µopsWrittenCntr_ = stats_.registerStat("writeback.µopsExecuted");
+  uopsWrittenCntr_ = stats_.registerStat("writeback.uopsExecuted");
   mopsWrittenCntr_ = stats_.registerStat("writeback.MopsExecuted");
 }
 
@@ -44,14 +44,14 @@ void WritebackUnit::tick() {
       stats_.incrementStat(mopsWrittenCntr_, 1);
 #endif
     }
-    stats_.incrementStat(µopsWrittenCntr_, 1);
+    stats_.incrementStat(uopsWrittenCntr_, 1);
 
     completionSlots_[slot].getHeadSlots()[0] = nullptr;
   }
 }
 
-uint64_t WritebackUnit::getµopsWrittenCount() const {
-  return stats_.getFullSimStat(µopsWrittenCntr_);
+uint64_t WritebackUnit::getuopsWrittenCount() const {
+  return stats_.getFullSimStat(uopsWrittenCntr_);
 }
 
 uint64_t WritebackUnit::getMopsWrittenCount() const {

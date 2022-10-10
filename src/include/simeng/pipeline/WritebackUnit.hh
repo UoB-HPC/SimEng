@@ -24,8 +24,8 @@ class WritebackUnit {
   /** Tick the writeback unit to perform its operation for this cycle. */
   void tick();
 
-  /** Retrieve a count of the number of µops processed by the unit. */
-  uint64_t getµopsWrittenCount() const;
+  /** Retrieve a count of the number of uops processed by the unit. */
+  uint64_t getuopsWrittenCount() const;
 
   /** Retrieve a count of the number of Mops processed by the unit. */
   uint64_t getMopsWrittenCount() const;
@@ -46,7 +46,7 @@ class WritebackUnit {
 
   /** Statistics class id for the number of micro-ops processed by this stage.
    */
-  uint64_t µopsWrittenCntr_;
+  uint64_t uopsWrittenCntr_;
 
   /** Statistics class id for the number of macro-ops processed by this stage.
    */
