@@ -22,6 +22,10 @@
 #include "simeng/pipeline/BalancedPortAllocator.hh"
 #include "yaml-cpp/yaml.h"
 
+#ifdef SIMENG_ENABLE_TESTS
+
+#endif
+
 // Program used when no executable is provided; counts down from
 // 1024*1024, with an independent `orr` at the start of each branch.
 uint32_t hex_[] = {
@@ -52,6 +56,10 @@ class CoreInstance {
    */
   CoreInstance(std::string configPath, std::string executablePath,
                std::vector<std::string> executableArgs);
+
+#ifdef SIMENG_ENABLE_TESTS
+  CoreInstance(std::string instructions, std::string configPath);
+#endif
 
   ~CoreInstance();
 
@@ -112,6 +120,20 @@ class CoreInstance {
 
   /** Construct the special file directory. */
   void createSpecialFileDirectory();
+
+#ifdef SIMENG_ENABLE_TESTS
+  /** Assemble test source to a flat binary for the given triple. */
+  void assemble(const char* source, const char* triple);
+
+  /** The flat binary produced by assembling the test source. */
+  uint8_t* code_ = nullptr;
+
+  /** The size of the assembled flat binary in bytes. */
+  size_t codeSize_ = 0;
+
+  /** Whether or not the executable binary is created by LLVM in code. */
+  bool constructBinaryByLLVM_ = false;
+#endif
 
   /** The config file describing the modelled core to be created. */
   YAML::Node config_;

@@ -47,7 +47,16 @@ set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(libsimeng capstone yaml-cpp)
+if(SIMENG_ENABLE_TESTS)
+    # Add LLVM includes
+    target_include_directories(libsimeng PUBLIC ${LLVM_INCLUDE_DIRS})
+
+    # Link to LLVM libraries
+    llvm_map_components_to_libnames(LLVM_LIBS aarch64asmparser object)
+    target_link_libraries(libsimeng capstone yaml-cpp ${LLVM_LIBS})
+else()
+    target_link_libraries(libsimeng capstone yaml-cpp)
+endif()
 
 set_target_properties(libsimeng PROPERTIES VERSION ${SimEng_VERSION})
 set_target_properties(libsimeng PROPERTIES SOVERSION ${SimEng_VERSION_MAJOR})
