@@ -10,6 +10,7 @@
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/PortAllocator.hh"
+#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 namespace pipeline {
@@ -17,7 +18,7 @@ namespace pipeline {
 /** A reservation station issue port */
 struct ReservationStationPort {
   /** Issue port this port maps to */
-  uint8_t issuePort;
+  uint16_t issuePort;
   /** Queue of instructions that are ready to be
    * issued */
   std::deque<std::shared_ptr<Instruction>> ready;
@@ -41,7 +42,7 @@ struct dependencyEntry {
   /** The instruction to execute. */
   std::shared_ptr<Instruction> uop;
   /** The port to issue to. */
-  uint8_t port;
+  uint16_t port;
   /** The operand waiting on a value. */
   uint8_t operandIndex;
 };
@@ -59,7 +60,7 @@ class DispatchIssueUnit {
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
-      std::vector<std::tuple<uint8_t, uint16_t, uint8_t>> rsArrangement);
+      YAML::Node config);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -115,12 +116,8 @@ class DispatchIssueUnit {
   /** Reservation stations */
   std::vector<ReservationStation> reservationStations_;
 
-  /** Stores the number of instructions dispatched each cycle, for each
-  reservation station. */
-  std::vector<uint8_t> dispatches = {};
-
   /** A mapping from port to RS port */
-  std::vector<std::pair<uint8_t, uint8_t>> portMapping_;
+  std::vector<std::pair<uint16_t, uint16_t>> portMapping_;
 
   /** A dependency matrix, containing all the instructions waiting on an
    * operand. For a register `{type,tag}`, the vector of dependents may be found
@@ -128,7 +125,7 @@ class DispatchIssueUnit {
   std::vector<std::vector<std::vector<dependencyEntry>>> dependencyMatrix_;
 
   /** A map to collect flushed instructions for each reservation station. */
-  std::unordered_map<uint8_t, std::unordered_set<std::shared_ptr<Instruction>>>
+  std::unordered_map<uint16_t, std::unordered_set<std::shared_ptr<Instruction>>>
       flushed_;
 
   /** A reference to the execution port allocator. */

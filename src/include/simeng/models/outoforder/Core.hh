@@ -29,9 +29,7 @@ class Core : public simeng::Core {
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        uint64_t processMemorySize, uint64_t entryPoint,
        const arch::Architecture& isa, BranchPredictor& branchPredictor,
-       pipeline::PortAllocator& portAllocator,
-       const std::vector<std::tuple<uint8_t, uint16_t, uint8_t>>& rsArrangment,
-       YAML::Node config);
+       pipeline::PortAllocator& portAllocator, YAML::Node config);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
