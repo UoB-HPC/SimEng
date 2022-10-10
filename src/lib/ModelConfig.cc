@@ -280,8 +280,9 @@ void ModelConfig::validate() {
     nodeChecker<uint16_t>(rs["Size"], rs_num + "Size",
                           std::make_pair(1, UINT16_MAX),
                           ExpectedValue::UInteger);
-    nodeChecker<uint8_t>(rs["Dispatch-Rate"], rs_num + "Dispatch-Rate",
-                         std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
+    nodeChecker<uint16_t>(rs["Dispatch-Rate"], rs_num + "Dispatch-Rate",
+                          std::make_pair(1, UINT16_MAX),
+                          ExpectedValue::UInteger);
     // Check for existance of Ports field
     if (!(rs["Ports"].IsDefined()) || rs["Ports"].IsNull()) {
       missing_ << "\t- " << rs_num << "Ports\n";
@@ -296,7 +297,7 @@ void ModelConfig::validate() {
       if (nodeChecker<std::string>(port_node, rs_num + port_num + "Portname",
                                    portNames, ExpectedValue::String)) {
         // Change port name to port index
-        for (uint8_t k = 0; k < portNames.size(); k++) {
+        for (size_t k = 0; k < portNames.size(); k++) {
           if (port_node.as<std::string>() == portNames[k]) {
             configFile_["Reservation-Stations"][i]["Ports"][j] = unsigned(k);
             portLinked[portNames[k]] = true;
