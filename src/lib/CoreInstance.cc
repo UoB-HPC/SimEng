@@ -227,7 +227,7 @@ void CoreInstance::createCore() {
       portArrangement);
 
   // Configure reservation station arrangment
-  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement;
+  std::vector<std::tuple<uint8_t, uint16_t, uint8_t>> rsArrangement;
   for (size_t i = 0; i < config_["Reservation-Stations"].size(); i++) {
     // Iterate over each reservation station in config
     auto reservation_station = config_["Reservation-Stations"][i];
@@ -240,7 +240,9 @@ void CoreInstance::createCore() {
         rsArrangement.resize(port + 1);
       }
       // Map an execution port to a reservation station
-      rsArrangement[port] = {i, reservation_station["Size"].as<uint16_t>()};
+      rsArrangement[port] = {
+          i, reservation_station["Size"].as<uint16_t>(),
+          reservation_station["Dispatch-Rate"].as<uint16_t>()};
     }
   }
 
