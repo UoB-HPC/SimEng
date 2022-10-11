@@ -175,7 +175,7 @@ struct ExprBuilder {
 };
 
 /**
- * This class represent the Lhs and rhs of any expression containing strings
+ * This class represent the LHS and RHS of any expression containing strings
  * which can be evaluated to a boolean result.
  */
 class StrExpr : public BaseExpr {
