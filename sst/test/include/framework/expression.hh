@@ -72,7 +72,7 @@ class BaseExpr {
 /**
  * This class represent the LHS of any expression which can be evaluated to a
  * boolean result. For Unary expression the value evaluated is still stored
- * as Lhs, however during evaluation the makeUnaryExprEval method uses the
+ * as LHS, however during evaluation the makeUnaryExprEval method uses the
  * static_cast method for evaluation.
  */
 template <typename Lhs, typename = IsFundamentalType<Lhs>>
@@ -86,7 +86,7 @@ class LhsExpr : public BaseExpr {
 
   /**
    * This operator overload enables the execution of the 'greater than'
-   * operation on the rhs value without having to define its template type. The
+   * operation on the RHS value without having to define its template type. The
    * templated type is filtered by a SFINAE type trait which only allows
    * template argument to be a fundamental type.
    */
@@ -97,7 +97,7 @@ class LhsExpr : public BaseExpr {
 
   /**
    * This operator overload enables the execution of the 'less than' operation
-   * on the rhs value without having to define its template type. The templated
+   * on the RHS value without having to define its template type. The templated
    * type is filtered by a SFINAE type trait which only allows the template
    * argument to be a fundamental type.
    */
@@ -108,7 +108,7 @@ class LhsExpr : public BaseExpr {
 
   /**
    * This operator overload enables the execution of the 'greater than or
-   * equal' operation on the rhs value without having to define its template
+   * equal' operation on the RHS value without having to define its template
    * type. The templated type is filtered by a SFINAE type trait which only
    * allows the template argument to be a fundamental type.
    */
@@ -119,7 +119,7 @@ class LhsExpr : public BaseExpr {
 
   /**
    * This operator overload enables the execution of the 'less than or equal'
-   * operation on the rhs value without having to define its template type. The
+   * operation on the RHS value without having to define its template type. The
    * templated type is filtered by a SFINAE type trait which only allows the
    * template argument to be a fundamental type.
    */
@@ -130,7 +130,7 @@ class LhsExpr : public BaseExpr {
 
   /**
    * This operator overload enables the execution of the 'equals' operation on
-   * the rhs value without having to define its template type. The templated
+   * the RHS value without having to define its template type. The templated
    * type is filtered by a SFINAE type trait which only allows the template
    * argument to be a fundamental type.
    */
@@ -141,7 +141,7 @@ class LhsExpr : public BaseExpr {
 
   /**
    * This operator overload enables the execution of the 'not equals' operation
-   * on the rhs value without having to define its template type. The templated
+   * on the RHS value without having to define its template type. The templated
    * type is filtered by a SFINAE type trait which only allows the template
    * argument to be a fundamental type.
    */
@@ -202,21 +202,21 @@ class StrExpr : public BaseExpr {
     return *(this);
   }
   /**
-   * This method checks if the lhs string is equal to the rhs string and returns
+   * This method checks if the LHS string is equal to the RHS string and returns
    * the result as an ExprEval struct.
    */
   auto compareEqual() -> ExprEval {
     return ExprEval{!lhs_.compare(rhs_), true};
   }
   /**
-   * This method checks if the lhs string is not equal to the rhs string and
+   * This method checks if the LHS string is not equal to the RHS string and
    * returns the result as an ExprEval struct.
    */
   auto compareNotEqual() -> ExprEval {
     return ExprEval{lhs_.compare(rhs_), true};
   }
   /**
-   * This method checks if the lhs string starts with the rhs string and returns
+   * This method checks if the LHS string starts with the RHS string and returns
    * the result as an ExprEval struct.
    */
   auto startWith() -> ExprEval {
@@ -224,7 +224,7 @@ class StrExpr : public BaseExpr {
     return ExprEval{pos == 0, true};
   }
   /**
-   * This method checks if the lhs string contains the rhs string and returns
+   * This method checks if the LHS string contains the RHS string and returns
    * the result as an ExprEval struct.
    */
   auto contains() -> ExprEval {
