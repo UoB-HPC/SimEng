@@ -8,6 +8,8 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "Assemble.hh"
+
 using namespace SST::SSTSimEng;
 using namespace SST::Interfaces;
 
@@ -25,8 +27,10 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   simengConfigPath_ = params.find<std::string>("simeng_config_path", "");
   cacheLineWidth_ = params.find<uint64_t>("cache_line_width", "64");
   maxAddrMemory_ = params.find<uint64_t>("max_addr_memory", "0");
+  source_ = params.find<std::string>("source", "");
+  assembleWithSource_ = params.find<bool>("assemble_with_source", false);
 
-  if (executablePath_.length() == 0) {
+  if (executablePath_.length() == 0 && !assembleWithSource_) {
     output_.fatal(CALL_INFO, 10, 0,
                   "SimEng executable binary filepath not provided.");
   }
@@ -223,8 +227,25 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
 
 void SimEngCoreWrapper::fabricateSimEngCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
-
   // Create the instance of the core to be simulated
+#ifdef SIMENG_ENABLE_SST_TESTS
+  if (simengConfigPath_ != "") {
+    if (assembleWithSource_) {
+      output_.verbose(CALL_INFO, 1, 0,
+                      "Assembling source instructions using LLVM\n");
+      Assembler assemble = Assembler(source_);
+      coreInstance_ = std::make_unique<simeng::CoreInstance>(
+          assemble.getAssembledSource(), assemble.getAssembledSourceSize(),
+          simengConfigPath_);
+    } else {
+      coreInstance_ = std::make_unique<simeng::CoreInstance>(
+          simengConfigPath_, executablePath_, executableArgs_);
+    }
+  } else {
+    coreInstance_ = std::make_unique<simeng::CoreInstance>(executablePath_,
+                                                           executableArgs_);
+  }
+#else
   if (simengConfigPath_ != "") {
     coreInstance_ = std::make_unique<simeng::CoreInstance>(
         simengConfigPath_, executablePath_, executableArgs_);
@@ -232,6 +253,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
     coreInstance_ = std::make_unique<simeng::CoreInstance>(executablePath_,
                                                            executableArgs_);
   }
+#endif
 
   // Set the SST data memory SimEng should use
   coreInstance_->setL1DataMemory(dataMemory_);

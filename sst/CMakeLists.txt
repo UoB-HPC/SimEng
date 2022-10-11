@@ -1,4 +1,4 @@
-set(SIMENG_SST_SOURCES SimEngCoreWrapper.cc SimEngMemInterface.cc)
+set(SIMENG_SST_SOURCES SimEngCoreWrapper.cc SimEngMemInterface.cc Assemble.cc)
 
 add_library(sstsimeng SHARED ${SIMENG_SST_SOURCES})
 # Including SimEng include files and SST include files
@@ -31,8 +31,16 @@ target_link_options(sstsimeng PUBLIC -fno-common LINKER:-undefined,dynamic_looku
 # Linking yaml and libsimeng.so libraries to sstsimeng.so
 target_link_libraries(sstsimeng PUBLIC libsimeng)
 
-if (SIMENG_ENABLE_SST_TESTS)
-  add_subdirectory(test)
+if (SIMENG_ENABLE_TESTS)
+  if(SIMENG_ENABLE_SST_TESTS)
+    target_compile_definitions(sstsimeng PUBLIC SIMENG_ENABLE_TESTS SIMENG_ENABLE_SST_TESTS -DSIMENG_LLVM_VERSION=12)
+    # Add LLVM includes
+    target_include_directories(sstsimeng PUBLIC ${LLVM_INCLUDE_DIRS})
+    # Link to LLVM libraries
+    llvm_map_components_to_libnames(LLVM_LIBS aarch64asmparser object)
+    target_link_libraries(sstsimeng PUBLIC ${LLVM_LIBS})
+    add_subdirectory(test)
+  endif()
 endif()
 
 set(SST_SIMENG_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/sst")

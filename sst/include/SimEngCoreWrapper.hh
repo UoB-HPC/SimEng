@@ -107,7 +107,12 @@ class SimEngCoreWrapper : public SST::Component {
        "argument to be passed to the executable binary (string)", ""},
       {"clock", "Clock rate of the SST clock (string)", ""},
       {"max_addr_memory", "Maximum address that memory can access (int)"},
-      {"cache_line_width", "The width of the cache line in bytes. (int)"}, )
+      {"cache_line_width", "The width of the cache line in bytes. (int)"},
+      {"source", "The string of instruction be executed (if any). (string)"},
+      {"assemble_with_source",
+       "Value which indicates whether to assemble the instructions supplied "
+       "through the source parameter using LLVM (boolean)",
+       "false"}, )
 
  private:
   /** Method used to assemble SimEng core. */
@@ -183,6 +188,12 @@ class SimEngCoreWrapper : public SST::Component {
   /** Reference to memory request handler class defined in SimEngMemInterface.
    */
   SimEngMemInterface::SimEngMemHandlers* handlers_;
+
+  /** String which holds source instructions to be assembled. (if any)*/
+  std::string source_;
+
+  /** Boolean which indicates whether or not to assemble by source. */
+  bool assembleWithSource_ = false;
 };
 
 }  // namespace SSTSimEng
