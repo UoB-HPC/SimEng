@@ -37,7 +37,7 @@ class TestContext {
   TestContext(TestFunc fn, const SourceInfo& info, std::string tname) {
     tsinfo_ = info;
     tname_ = tname;
-    tfn_ = std::function<void(std::string)>(fn);
+    tfn_ = fn;
   };
 
   /** Constructor used to create an empty TestContext. */
