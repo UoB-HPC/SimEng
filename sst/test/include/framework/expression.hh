@@ -64,7 +64,7 @@ class BaseExpr {
 };
 
 /**
- * This class represent the Lhs of any expression which can evaluated to a
+ * This class represent the LHS of any expression which can be evaluated to a
  * boolean result. For Unary expression the value evaluated is still stored
  * as Lhs, however during evaluation the makeUnaryExprEval method uses the
  * static_cast method for evaluation.
