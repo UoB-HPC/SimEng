@@ -3,6 +3,12 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
+/**
+ * Substitution failure is not an error (SFINAE) refers to a
+ * situation in C++ where an invalid substitution of template parameters is not
+ * in itself an error.
+ * https://en.cppreference.com/w/cpp/language/sfinae
+ */
 
 /**
  * SFINAE type trait which only allows the template arguments to be a
