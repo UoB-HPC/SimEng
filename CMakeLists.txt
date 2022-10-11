@@ -206,7 +206,6 @@ if(SIMENG_ENABLE_TESTS)
   enable_testing()
 
   add_subdirectory(test)
-  
   # saves us from having to build all targets before running the tests
   add_custom_target(test-all
     COMMAND ${CMAKE_CTEST_COMMAND}
