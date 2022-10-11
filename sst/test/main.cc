@@ -15,4 +15,5 @@ int main(void) {
   if (stats->getFailureCount() > 0) {
     exit(EXIT_FAILURE);
   }
+  return 0;
 }
