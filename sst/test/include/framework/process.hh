@@ -19,7 +19,7 @@
  * inside the exception handler.
  */
 struct ProcessException {
-  /** Custon error string specifying the type of error. */
+  /** Custom error string specifying the type of error. */
   std::string errString_;
   /** Captured stdout of the child process. */
   std::string stderrStr_;
@@ -72,10 +72,10 @@ class Process {
   Process() {}
 
   /**
-   * This method is used to run the SST executable with a config file and cli
-   * arguments. This method takes in additional cli arguments which replace
-   * default ones. If no additional cli arguments are given the default ones are
-   * used.
+   * This method is used to run the SST executable with a config file and
+   * command line arguments. This method takes in additional command line
+   * arguments which replace default ones. If no additional command line
+   * arguments are given the default ones are used.
    */
   void runExecAndCaptureStdout(
       std::vector<std::string> newArgs = std::vector<std::string>{}) {
@@ -147,12 +147,12 @@ class Process {
       const std::vector<std::string>& argsToCpy =
           newArgs.size() ? newArgs : defaultCliArgs_;
       // Execv calls takes in a char* path to the binary and char* argv[] array
-      // for all cli argument. To maintain consistency in parsing, the structure
-      // of cliArgs mimics the invocation format of SST i.e.
-      // [sstCmd_] [sstSimConfigFile] -- [cliArg1] [cliArg2] [cliArg3]
-      // for e.g: {"sst","/home/a/b/c/config.py" , "--", "e", "f", "g", nullptr}
-      // Anything following '--' is treated as an argument to the config.py file
-      // by SST and can be used to change values in the config.py file.
+      // for all command line arguments. To maintain consistency in parsing, the
+      // structure of cliArgs mimics the invocation format of SST i.e. [sstCmd_]
+      // [sstSimConfigFile] -- [cliArg1] [cliArg2] [cliArg3] for e.g:
+      // {"sst","/home/a/b/c/config.py" , "--", "e", "f", "g", nullptr} Anything
+      // following '--' is treated as an argument to the config.py file by SST
+      // and can be used to change values in the config.py file.
       std::vector<char*> cliArgs;
       // The additional 4 entries are reserved for:
       // sstCmd_ , sstSimConfigFile, '--' and nullptr.
