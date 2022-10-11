@@ -23,8 +23,8 @@ using IsString = typename std::enable_if<std::conjunction<std::disjunction<
     std::is_same<std::string, typename std::decay_t<Ts>>>...>::value>::type;
 
 /**
- * This struct represent the evaluation of expression and all details related
- * to it.
+ * This struct represents the evaluation of an expression and all details
+ * related to it.
  */
 struct ExprEval {
   /** The result of the evaluation. */
