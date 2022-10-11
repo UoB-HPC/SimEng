@@ -44,7 +44,6 @@ class TestContext {
   TestContext() {
     tsinfo_ = SourceInfo{};
     tname_ = "";
-    tfn_ = std::function([](std::string) {});
   };
   /** Returns the name of the test case. */
   std::string getTestCaseName() const { return tname_; }
