@@ -6,8 +6,7 @@
 using TestFunc = std::function<void(std::string)>;
 
 /**
- * This struct is used to store information regarding the TEST_CASE location in
- * the code base. This struct stores the filename and line number of the
+ * This struct stores the filename and line number of the
  * TEST_CASE.
  */
 struct SourceInfo {
