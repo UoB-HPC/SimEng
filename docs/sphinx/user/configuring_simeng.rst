@@ -21,7 +21,7 @@ SimEng cores can be one of three types:
 
 These core types are primarily referred to as core "archetypes".
 
-.. Note:: Currently, the configuration files do not take into account the core archetype being modelled. However, future developments plan for the exemption of those options not used under the selected core archetype. For example, reservation station definitions under the ``inorderpiplined`` archetype will not be required.
+.. Note:: Currently, the configuration files do not take into account the core archetype being modelled and require all parameters to be defined, even if unused (e.g. reservation statsion definitions for an ``emulation`` core archetype). However, future developments plan for the exemption of those options not used under the selected core archetype.
 
 Configuration options within the Core section are concerned with the functionality of the simulated processor pipeline. These include:
 
@@ -80,9 +80,6 @@ This section is concerned with the width of the simulated processor pipeline at 
 
 Commit
     The commitment/retirement width from the re-order buffer.
-
-Dispatch-Rate
-    The width of instruction dispatch into the reservation stations.
 
 FrontEnd
     The width of the pipeline before the execution stage (also excludes the dispatch/issue stage if simulating an ``outoforder`` core archetype).
@@ -173,7 +170,7 @@ With N as the number of execution ports.
 Reservation-Stations
 --------------------
 
-The relationships between reservation stations and the execution ports, which reservation stations map to which execution ports, are defined in this section. The configuration of each reservation station contains a size value and a set of port names, previously defined in the Ports section. 
+The relationships between reservation stations and the execution ports, which reservation stations map to which execution ports, are defined in this section. The configuration of each reservation station contains a size value, a dispatch rate value, and a set of port names, previously defined in the Ports section. 
 
 The following structure must be adhered to when defining a reservation station:
 
@@ -181,6 +178,7 @@ The following structure must be adhered to when defining a reservation station:
 
     0:
       Size: <number_of_entries>
+      Dispatch-Rate: <number_of_permitted_dispatches_per_cycle>
       Ports:
       - <port_name>
       - ...
@@ -188,6 +186,7 @@ The following structure must be adhered to when defining a reservation station:
     ...
     N-1:
         Size: <number_of_entries>
+        Dispatch-Rate: <number_of_permitted_dispatches_per_cycle>
         Ports:
         - <port_name>
         - ...
