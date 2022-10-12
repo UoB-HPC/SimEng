@@ -171,7 +171,7 @@ struct ExecutionInfo {
   uint16_t stallCycles = 1;
 
   /** The ports that support the instruction. */
-  std::vector<uint8_t> ports = {};
+  std::vector<uint16_t> ports = {};
 };
 
 /** The various exceptions that can be raised by an individual instruction. */
@@ -304,7 +304,7 @@ class Instruction : public simeng::Instruction {
   void setExecutionInfo(const ExecutionInfo& info);
 
   /** Get this instruction's supported set of ports. */
-  const std::vector<uint8_t>& getSupportedPorts() override;
+  const std::vector<uint16_t>& getSupportedPorts() override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
