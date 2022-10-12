@@ -13,6 +13,25 @@ If no arguments are passed to SimEng, default options are used. The default conf
 
 Whilst a configuration file can be specified without a program (will use default program), a specified program must be accompanied by a configuration file.
 
+Simulation Output
+-----------------
+
+For a successful simulation, SimEng's output can be split into 4 parts;
+
+Build Metadata
+    A summary of the build options set and general information about the SimEng framework built.
+
+Workload Output
+    All outputs from the supplied workload under simulation.
+
+Exit Clause
+    The reason why the simulation has halted. Most commonly this is due to the invoking of the ``exit()`` system call by the workload under simulation.
+
+Statistics
+    A selection of simulation statistics describing the emergent simulated PMU-style hardware events.
+
+All non-workload outputs from SimEng are prefixed with a tag of the format ``[SimEng:Object]`` (e.g. ``[SimEng:ExceptionHandler]``). If the output came from the root of the framework, the ``Object`` field is omitted.
+
 Configuration files
 -------------------
 
