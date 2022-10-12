@@ -161,7 +161,7 @@ class Instruction {
   uint16_t getStallCycles() const;
 
   /** Get this instruction's supported set of ports. */
-  virtual const std::vector<uint8_t>& getSupportedPorts() = 0;
+  virtual const std::vector<uint16_t>& getSupportedPorts() = 0;
 
   /** Is this a micro-operation? */
   bool isMicroOp() const;
@@ -231,7 +231,7 @@ class Instruction {
   uint16_t stallCycles_ = 1;
 
   /** The execution ports that this instruction can be issued to. */
-  std::vector<uint8_t> supportedPorts_ = {};
+  std::vector<uint16_t> supportedPorts_ = {};
 
   // Micro operations
   /** Is a resultant micro-operation from an instruction split? */
