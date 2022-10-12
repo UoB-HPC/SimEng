@@ -206,14 +206,14 @@ class StrExpr : public BaseExpr {
    * the result as an ExprEval struct.
    */
   auto compareEqual() -> ExprEval {
-    return ExprEval{!lhs_.compare(rhs_), true};
+    return ExprEval{!static_cast<bool>(lhs_.compare(rhs_)), true};
   }
   /**
    * This method checks if the LHS string is not equal to the RHS string and
    * returns the result as an ExprEval struct.
    */
   auto compareNotEqual() -> ExprEval {
-    return ExprEval{lhs_.compare(rhs_), true};
+    return ExprEval{static_cast<bool>(lhs_.compare(rhs_)), true};
   }
   /**
    * This method checks if the LHS string starts with the RHS string and returns

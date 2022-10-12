@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "framework/output.hh"
 
@@ -78,7 +79,7 @@ class Process {
    * arguments are given the default ones are used.
    */
   void runExecAndCaptureStdout(
-      std::vector<std::string> newArgs = std::vector<std::string>{}) {
+      std::vector<std::string> newArgs = std::vector<std::string>()) {
     stderrCapture_ = "";
     stdoutCapture_ = "";
 

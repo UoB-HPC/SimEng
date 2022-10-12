@@ -11,14 +11,14 @@ print(len(sys.argv))
 # Define the simulation components
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": sys.argv[1],
-    "executable_path": "",
+    "simeng_config_path": "<PATH TO SIMENG MODEL CONFIG .YAML FILE>",
+    "executable_path": "<PATH TO EXECUTABLE BINARY OR EMTRY STRING IF INSTRUCTIONS SUPPLIED THROUGH TEST>",
     "executable_args": "",
     "clock" : "1GHz",
     "max_addr_memory": 2*1024*1024*1024-1,
     "cache_line_width": "64",
-    "source": sys.argv[3],
-    "assemble_with_source": sys.argv[2] == "src",
+    "source": sys.argv[2],
+    "assemble_with_source": sys.argv[1] == "src",
 })
 
 iface = cpu.setSubComponent("memory", "memHierarchy.standardInterface")

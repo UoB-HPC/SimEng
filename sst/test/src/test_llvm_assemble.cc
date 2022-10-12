@@ -3,8 +3,7 @@
 TEST_GROUP(LLVAssembleTG,
            "SSTSimeng correct assembles instructions using LLVM and runs the "
            "assembled source code.",
-           "test-llvm-assemble-config.py",
-           "/home/rahat/asimov/SimEng/configs/sst-cores/a64fx-sst.yaml", "src",
+           "test-llvm-assemble-config.py", "src",
            R"(
     mov w0, wzr
     add w1, w0, #2
