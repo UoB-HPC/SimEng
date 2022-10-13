@@ -30,17 +30,17 @@ SimEng is a framework for building modern, cycle-accurate processor simulators. 
 - Fast, typically 4-5X faster than gem5
 - Easy to use and modify to model desired microarchitecture configurations. New cores can be configured in just a few hours
 - Scalable, from simple scalar microarchitectures up to the most sophisticated, superscalar, out-of-order designs
-- Capable of supporting a wide range of instruction set architectures (ISAs), starting with Armv8 but eventually including RISC-V, x86, POWER, etc.
+- Capable of supporting a wide range of instruction set architectures (ISAs), starting with Armv9.2-a but eventually including RISC-V, x86, POWER, etc.
 - Accurate, aiming for simulated cycle times being within 5-10% of real hardware
 - Open source, with a permissive license to enable collaboration across academia and industry
 
-SimEng places an emphasis on performance and ease of use, whilst maintaining a clean, modern, simple and well-documented code base. For example, the current out-of-order (OoO) model is implemented in around 10,000 lines of simple C++, with another 9,000 lines or so implementing the specifics of the Armv8 ISA, and around 13,000 lines of code in the accompanying test suite. SimEng should be simple to read and understand, making it ideal to modify to your requirements and include it in your projects.
+SimEng places an emphasis on performance and ease of use, whilst maintaining a clean, modern, simple and well-documented code base. For example, the current out-of-order (OoO) model is implemented in around 10,000 lines of simple C++, with another 9,000 lines or so implementing the specifics of the Armv9.2-a ISA, and around 13,000 lines of code in the accompanying test suite. SimEng should be simple to read and understand, making it ideal to modify to your requirements and include it in your projects.
 
 
 Features
 --------
 
-Currently, SimEng targets the Armv8+SVE ISA with the ability to model up to out-of-order, superscalar, single-core processors, and to emulate a subset of Linux system-calls. It supports statically compiled C and Fortran binaries that run on real hardware. SimEng currently models memory as an infinite L1 cache, i.e. it assumes that all loads and stores hit the L1 cache; a future release will add a proper memory hierarchy model (see the discussion about SST below).
+Currently, SimEng targets the Armv9.2-a+SVE ISA with the ability to model up to out-of-order, superscalar, single-core processors, and to emulate a subset of Linux system-calls. It supports statically compiled C and Fortran binaries that run on real hardware. SimEng currently models memory as an infinite L1 cache, i.e. it assumes that all loads and stores hit the L1 cache; a future release will add a proper memory hierarchy model (see the discussion about SST below).
 
 The main component provided by the simulator is a discrete processor core model, shown in diagrammatic form below.  This model accepts a clock signal and supports a memory access interface. A single YAML format configuration file can be passed to the simulation to specify models of existing microarchitectures, such as Marvell's ThunderX2 or Fujitsu's A64fx, or to model hypothetical core designs.
 
@@ -77,7 +77,7 @@ External project usage
 
 While we have tried to minimise SimEng's dependencies to keep it as simple as possible, it does make use of a small number of libraries and frameworks to provide crucial capabilities:
 
-- `Capstone disassembly engine <https://www.capstone-engine.org/>`_ - Provides instruction decoding for Armv8, RISC-V, x86 and other important ISAs
+- `Capstone disassembly engine <https://www.capstone-engine.org/>`_ - Provides instruction decoding for Armv9.2-a, RISC-V, x86 and other important ISAs
 - `Yaml-cpp <https://github.com/jbeder/yaml-cpp>`_ - Parsing YAML configuration files
 - `GoogleTest <https://github.com/google/googletest>`_ - Framework for the test suites
 - `LLVM <https://github.com/llvm-mirror/llvm>`_ - Generation of binaries for use in the regression test suite

@@ -1,7 +1,7 @@
 AArch64
 =======
 
-SimEng provides a basic implementation of the 64-bit AArch64 architecture, part of the ARMv8-a ISA. This implementation provides support for decoding and executing a range of common instructions, sufficient to run a number of simple benchmarks. It is also capable of handling supervisor call (syscall) exceptions via basic system call emulation, allowing the execution of programs that have been statically compiled with the standard library.
+SimEng provides an implementation of the 64-bit AArch64 architecture, specifically the ARMv9.2-a ISA. This implementation provides support for decoding and executing a range of common instructions, sufficient to run a number of simple benchmarks. It is also capable of handling supervisor call (syscall) exceptions via basic system call emulation, allowing the execution of programs that have been statically compiled with the standard library.
 
 .. contents:: Contents
 
