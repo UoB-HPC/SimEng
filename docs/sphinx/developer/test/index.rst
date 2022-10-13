@@ -33,6 +33,7 @@ In addition to tests for the instruction functionality of the ISA, that are loca
 
 - Exception: Test non-supervisor call based exceptions.
 - LoadStoreQueue: Test the correct implementation of load and store instructions concerning their interaction with the LSQ.
+- MicroOperation: Test the supported instruction splitting provides the correct output from the execution of said instructions.
 - SmokeTest: Trivial ISA related tests.
 - Syscall: Ensure the correct functionality of aarch64 system calls.
 - SystemRegisters: Ensure aarch64 system registers are correctly written to and read from.
