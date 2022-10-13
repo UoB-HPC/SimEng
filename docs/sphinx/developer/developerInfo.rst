@@ -49,7 +49,7 @@ test that each pull request builds and passes the test suite for multiple compil
 before being merged. Those compilers include:
 
 - GCC 7/8/9/10
-- ARMCLANG 20
+- ARMCLANG 22
 
 .. todo::
 
