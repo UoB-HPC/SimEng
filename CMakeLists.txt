@@ -54,7 +54,7 @@ FetchContent_Declare(
 )
 
 cmake_policy(SET CMP0048 NEW)
-project(SimEng VERSION 0.9.3 LANGUAGES C CXX)
+project(SimEng VERSION 0.9.4 LANGUAGES C CXX)
 
 # If no build type was defined, default to Release
 if(NOT CMAKE_BUILD_TYPE)
