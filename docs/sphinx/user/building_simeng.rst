@@ -18,29 +18,35 @@ Building
 
 2. Configure with CMake, specifying the path to your desired installation directory if necessary::
 
+.. code-block:: text
+
         cd SimEng
-        cmake -B build -S . # build files will be generated in a directory called "build"
-                -DCMAKE_BUILD_TYPE=Release                        
+        cmake -B build -S .
+                -DCMAKE_BUILD_TYPE={Release, Debug, RelWithDebInfo, MinSizeRel}
                 -DCMAKE_INSTALL_PREFIX=<simeng_install_directory>
-                -DSIMENG_ENABLE_TESTS={ON, OFF} # Defaults to OFF
-                # -GNinja # enable Ninja for faster LLVM builds
+                -DSIMENG_ENABLE_TESTS={ON, OFF} #Defaults to OFF
+
+With this configuration, the build files will be generated in a directory called "build".
 
 ..
 
-        a. The SimEng test suites depend on a selection of LLVM libraries. Building this dependency can take a while, therefore, the use of prebuilt LLVM libraries is supported. The following cmake configuration flags should be set to enable this::
+        a. The SimEng test suites depend on a selection of LLVM libraries. Building this dependency can take a while, therefore, the use of prebuilt LLVM libraries is supported. The following CMake configuration flags should be set to enable this::
                 
                 -DSIMENG_USE_EXTERNAL_LLVM=ON
                 -DLLVM_DIR=<llvm_library_directory> # directory of LLVM libraries as CMake targets
 
         .. Note::
                 More information about the LLVM_DIR value can be found `here <https://llvm.org/docs/CMake.html#embedding-llvm-in-your-project>`_.
-        
-3. Once configured, use ``cmake --build build`` or whichever generator you have selected for CMake to build. Append the ``-j`` flag to build in parallel, keep in mind that building LLVM like this usually has very high (1.5GB per core) memory requirements.
+
+        b. Two additional flags are available when building SimEng. Firstly is ``-DSIMENG_SANITIZE={ON, OFF}`` which adds a selection of sanitisation compilation flags (primarily used during the development of the framework). Secondly is ``-SIMENG_OPTIMIZE={ON, OFF}`` which attempts to optimise the framework's compilation for the host machine through a set of compiler flags and options.
+
+We recommend using the `Ninja <https://ninja-build.org/>`_ build system for faster builds, especially if not using pre-built LLVM libraries. After installation, it can be enabled through the addition of the ``-GNinja`` flag in the above CMake build command.
+
+3. Once configured, use ``cmake --build build`` or whichever generator you have selected for CMake to build. Append the ``-j{Num_Cores}`` flag to build in parallel, keep in mind that building LLVM like this usually has very high (1.5GB per core) memory requirements.
 
 4. (Optional) Run ``cmake --build build --target test`` to run the SimEng regression tests and unit tests. Please report any test failures as `a GitHub issue <https://github.com/UoB-HPC/SimEng/issues>`_.
 
 5. Finally, run ``cmake --build build --target install`` to install SimEng to the directory specified with CMake.
-
 
 Docker
 ------
