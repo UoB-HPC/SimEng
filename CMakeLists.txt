@@ -191,8 +191,8 @@ if(SIMENG_ENABLE_TESTS)
   endif()
 
   # Check LLVM version
-  if (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "13.0")
-    message(FATAL_ERROR "LLVM version must be < 13.0")
+  if ((${LLVM_PACKAGE_VERSION} VERSION_LESS "9.0") OR (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "13.0"))
+    message(FATAL_ERROR "LLVM version must be > 9.0 and < 13.0")
   endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
