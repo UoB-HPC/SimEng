@@ -89,9 +89,6 @@ Directory structure
 ``docs/``
     Documentation for users and developers
 
-``external/``
-    Third-party dependencies, as submodules
-
 ``src/include/simeng/``
     Header files for publicly visible SimEng APIs
 
