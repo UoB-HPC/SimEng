@@ -202,4 +202,4 @@ Behaviour
 
 Each cycle, the unit will read instructions from the input buffer, and retrieve any results generated during execution. All results are written to the supplied register file set, and the instructions are flagged as ready to commit. As the unit has no output buffer, instructions are discarded once writeback is complete.
 
-.. Note:: (Relevant for outoforder models) AT the writeback stage, Instructions created from a macro-op split are placed into a ``waitingCommit`` state and inform the ``ReorderBuffer`` that the instruction is ready to commit once all other associated micro-ops are. More information can be found :ref:`here <microOpCommit>`.
+.. Note:: (Relevant for outoforder models) At the writeback stage, instructions created from a macro-op split are placed into a ``waitingCommit`` state and inform the ``ReorderBuffer`` that the instruction is ready to commit once all other associated micro-ops are. More information can be found :ref:`here <microOpCommit>`.
