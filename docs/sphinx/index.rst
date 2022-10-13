@@ -24,7 +24,6 @@ The Simulation Engine - SimEng
    user/running_simeng
    user/configuring_simeng
    user/creating_binaries
-   user/docker
 
 SimEng is a framework for building modern, cycle-accurate processor simulators. Its goals are to be:
 

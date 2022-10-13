@@ -48,8 +48,8 @@ We recommend using the `Ninja <https://ninja-build.org/>`_ build system for fast
 
 5. Finally, run ``cmake --build build --target install`` to install SimEng to the directory specified with CMake.
 
-Docker
-------
+.. Docker
+.. ------
 
-We have also created a SimEng docker container, offering pre-built images with the SimEng source code and binary. More details on the docker container can be found :doc:`here<docker>`.
+.. We have also created a SimEng docker container, offering pre-built images with the SimEng source code and binary. More details on the docker container can be found :doc:`here<docker>`.
 
