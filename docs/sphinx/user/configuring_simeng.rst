@@ -274,6 +274,8 @@ Latencies
 
 The execution latency and throughput can be configured under the Latencies section. A latency/throughput pair can be defined for a set of instruction groups, the groups available are the same as the set discussed in the Ports section.
 
+The execution latency defines the total number of cycles an instruction will spend in an execution unit. The throughput is how many cycles an instruction will block another instruction entering the execution unit. In un-pipelined execution units, the throughput = latency.
+
 The following structure must be adhered to when defining group latencies:
 
 .. code-block:: text
