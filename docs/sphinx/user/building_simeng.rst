@@ -38,6 +38,9 @@ With this configuration, the build files will be generated in a directory called
         .. Note::
                 More information about the LLVM_DIR value can be found `here <https://llvm.org/docs/CMake.html#embedding-llvm-in-your-project>`_.
 
+        .. Note::
+                LLVM versions greater than 12 are not supported. We'd recommend using LLVM 12 where possible.
+
         b. Two additional flags are available when building SimEng. Firstly is ``-DSIMENG_SANITIZE={ON, OFF}`` which adds a selection of sanitisation compilation flags (primarily used during the development of the framework). Secondly is ``-SIMENG_OPTIMIZE={ON, OFF}`` which attempts to optimise the framework's compilation for the host machine through a set of compiler flags and options.
 
 We recommend using the `Ninja <https://ninja-build.org/>`_ build system for faster builds, especially if not using pre-built LLVM libraries. After installation, it can be enabled through the addition of the ``-GNinja`` flag in the above CMake build command.

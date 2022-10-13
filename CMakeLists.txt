@@ -190,6 +190,11 @@ if(SIMENG_ENABLE_TESTS)
 
   endif()
 
+  # Check LLVM version
+  if (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "13.0")
+    message(FATAL_ERROR "LLVM version must be < 13.0")
+  endif()
+
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
   message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
