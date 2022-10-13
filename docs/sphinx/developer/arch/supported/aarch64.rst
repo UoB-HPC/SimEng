@@ -203,8 +203,10 @@ As Capstone is primarily a disassembler, it will attempt to generate the correct
 
 If a known but unsupported alias is encountered, it will generate an invalid instruction error, and the output will identify the instruction as unknown in place of the usual textual representation. It is recommended to reference a disassembled version of the program to identify what the instruction at this address should be correctly disassembled to, and implement the necessary dealiasing logic accordingly.
 
-Adding supported system registers
----------------------------------
+System registers
+----------------
+
+AArch64 defines many system registers, which are treated the same as any other explicit souce or destination register within SimEng.
 
 Similar to instructions, system register support is added when they are encountered in run programs. To add support for a previously unseen system register, it must be added to the ``systemRegisterMap_`` map in the associated ISA ``Architecture.cc`` file.
 
