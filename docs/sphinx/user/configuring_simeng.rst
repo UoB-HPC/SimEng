@@ -139,10 +139,30 @@ RAS-entries
 Fallback-Static-Predictor
     The static predictor used when no dynamic prediction is available. The options are either ``"Always-Taken"`` or ``"Always-Not-Taken"``.
 
-L1-Cache
---------
+L1-Data-Memory
+--------------
 
-This section contains the options used to configure SimEng's simple L1-cache. These options include:
+This section describes the configuration for the L1 data cache in use.
+
+Interface-Type
+    The type of memory interface used to model the L1 data cache. Options are currently ``Flat`` or ``Fixed`` which represent a ``FlatMemoryInterface`` or ``FixedMemoryInterface`` respectively. More information concerning these interfaces can be found :ref:`here <memInt>`.
+
+.. Note:: Currently, if the chosen ``Simulation-Mode`` option is ``emulation`` or ``inorderpipelined``, then only a ``Flat`` value is permitted. Future developments will seek to allow for more memory interfaces with these simulation archetypes.
+
+L1-Instruction-Memory
+---------------------
+
+This section describes the configuration for the L1 instruction cache in use.
+
+Interface-Type
+    The type of memory interface used to model the L1 instruction cache. Options are currently ``Flat`` or ``Fixed`` which represent a ``FlatMemoryInterface`` or ``FixedMemoryInterface`` respectively. More information concerning these interfaces can be found :ref:`here <memInt>`.
+
+.. Note:: Currently, only a ``Flat`` value is permitted for the L1 instruction cache interface. Future developments will seek to allow for more memory interfaces to be used with the L1 instruction cache.
+
+LSQ-L1-Interface
+----------------
+
+This section contains the options used to configure SimEng's interface between the LSQ and the L1 data cache. These options include:
 
 Access-Latency
     The cycle latency of L1 cache access.
@@ -284,7 +304,7 @@ CPU Info
     These fields are currently only used to generate a replica of the required Special Files directory structure.
 
 Generate-Special-Dir
-    Values are either "T" or "F", representing True or False.
+    Values are either True or False.
     Dictates whether or not SimEng should generate the SpecialFiles directory tree at runtime.
     The alternative to this would be to copy in the required SpecialFiles by hand.
 
