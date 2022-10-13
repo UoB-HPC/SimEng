@@ -36,14 +36,25 @@ Timer Frequency
 
     i.e. For models based on an Arm ISA, this dictates how often the Virtual Counter Timer system register is updated to the number of cycles completed. This value is then accessible to programmers through ``mrs x0 CNTVCT_el0``.
 
-Fetch-Block-sizes
-    The size, in bytes, of the block fetched from the instruction cache.
-
 Micro-Operations
     Whether to enable instruction splitting for pre-defined Macro Operations or not.
 
 Vector-Length
     The vector length used by instructions belonging to ARM's Scalable Vector Extension. Supported vector lengths are those between 128 and 2048 in increments of 128.
+
+Fetch
+-----
+
+This section is concerned with the parameterisation of the fetch unit and its internal structures.
+
+Fetch-Block-sizes
+    The size, in bytes, of the block fetched from the instruction cache.
+
+Loop-Buffer-Size
+    The number of Macro-ops which can be stored in the loop buffer.
+
+Loop-Detection-Threshold
+    The number of commits a unique branch instruction must go through, without another branch instruction being committed, before a loop is detected and the loop buffer is filled.
 
 Process Image
 -------------
@@ -111,8 +122,20 @@ The Branch-Prediction section contains those options to parameterise the branch 
 
 The current options include:
 
-BTB-bitlength
-    The number of bits used to denote the size of a Branch Target Buffer (BTB). For example, a ``bits`` value of 12 would denote 4096 entries with the calculation 1 << ``bits``.
+BTB-Tag-Bits
+    The number of bits used to denote an entry in the Branch Target Buffer (BTB). For example, a ``bits`` value of 12 could denote 4096 entries with the calculation 1 << ``bits``.
+
+Saturating-Count-Bits
+    The number of bits used in the saturating counter value.
+
+Global-History-Length
+    The number of bits used to record the global history of branch directions. Each bit represents one branch direction.
+
+RAS-entries
+    The number of entries in the Return Address Stack (RAS).
+
+Fallback-Static-Predictor
+    The static predictor used when no dynamic prediction is available. The options are either ``"Always-Taken"`` or ``"Always-Not-Taken"``.
 
 L1-Cache
 --------

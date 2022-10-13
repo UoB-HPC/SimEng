@@ -25,7 +25,7 @@ The fetch unit fetches memory in discrete boundary-aligned blocks, according to 
 
 Each cycle, it will process the most recently fetched memory block by passing it to the supplied ``Architecture`` instance for pre-decoding into macro-ops. Once pre-decoded, the macro-op is passed to the supplied branch predictor: if the instruction is predicted to be a taken branch, then the PC will be updated to the predicted target address and the cycle will end, otherwise, the PC is incremented by the number of bytes consumed to produce the pre-decoded macro-op. The remaining bytes in the block are once again passed to the architecture for pre-decoding.
 
-This process of pre-decoding, predicting, and updating the PC continues until one of the following occurs:
+This standard process of pre-decoding, predicting, and updating the PC continues until one of the following occurs:
 
 .. glossary::
 
@@ -37,6 +37,31 @@ This process of pre-decoding, predicting, and updating the PC continues until on
 
   The fetched memory block is exhausted
     The next block may be requested, and processing will resume once the data is available.
+
+.. _loopBuf:
+
+Loop Buffer
+***********
+
+Within the fetch unit is a loop buffer that can store a configurable number of Macro-Ops. The loop buffer can be pulled from instead of memory if a loop is detected. This avoids the need to re-request data from memory if a branch is taken and increases the throughput of the fetch unit.
+
+Each entry of the loop buffer is the encoding of the Macro-Op, therefore, when supplying an instruction from the loop buffer, the pre-decoding step must still be performed. This was required to avoid any issues with multiple instantiations of the same instruction editing eachothers class members.
+
+The Loop buffer has four states:
+
+IDLE
+  No loop has been detected so no operation is required.
+
+WAITING
+  A loop has been detected and the loop buffer is waiting until the branch representing the loop is found in the instruction stream.
+
+FILLING
+  The branch representing the loop has been found and the buffer is being filled until it is seen again.
+
+SUPPLYING
+  The supply of instructions from the fetch unit has been handed over to the loop buffer. The stream of instructions is taken from the loop buffer in order and resets to the top of the buffer once it reaches the end of the loop body.
+
+The detection of a loop and the branch which represents it comes from the ROB. More information can be found :ref:`here <loopDetect>`.
 
 If the output buffer is stalled when the cycle begins, the fetch unit will idle and perform no operation.
 
