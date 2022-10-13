@@ -23,7 +23,7 @@ Behaviour
 
 The fetch unit fetches memory in discrete boundary-aligned blocks, according to the current program counter (PC); this is to prevent the fetched block overlapping an inaccessible or unmapped memory region that may result in the request incorrectly responding with a fault despite the validity of the initial region.
 
-Each cycle, it will process the most recently fetched memory block by passing it to the supplied ``Architecture`` instance for pre-decoding into macro-ops. Once pre-decoded, the macro-op is passed to the supplied branch predictor: if the instruction is predicted to be a taken branch, then the PC will be updated to the predicted target address and the cycle will end, otherwise, the PC is incremented by the number of bytes consumed to produce the pre-decoded macro-op. The remaining bytes in the block are once again passed to the architecture for pre-decoding.
+Each cycle, it will process the most recently fetched memory block by passing it to the supplied ``Architecture`` instance for pre-decoding into macro-ops. Once pre-decoded, the head of the vector of micro-ops, or macro-op, is passed to the supplied branch predictor: if the instruction is predicted to be a taken branch, then the PC will be updated to the predicted target address and the cycle will end, otherwise, the PC is incremented by the number of bytes consumed to produce the pre-decoded macro-op. The remaining bytes in the block are once again passed to the architecture for pre-decoding.
 
 This standard process of pre-decoding, predicting, and updating the PC continues until one of the following occurs:
 
