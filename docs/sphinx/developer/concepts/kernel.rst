@@ -8,7 +8,7 @@ The SimEng Kernel is split into two classes, ``LinuxProcess`` and ``Linux``.
 LinuxProcess
 ------------
 
-The ``LinuxProcess`` class provides the functionality to process the supplied program. It creates the initial process memory space, including the Executable and Linkable Format (ELF) process image and the stack. The population of the initial stack state is based on the information `here <https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html>`_.
+The ``LinuxProcess`` class provides the functionality to process the supplied program. It creates the initial process memory space, including the Executable and Linkable Format (ELF) process image and the stack. The population of the initial stack state is based on the information `here <https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html>`_. To date, note that the only environment variable set is ``OMP_NUM_THREADS=1``, however, functionality to add more is available.
 
 For the supplied program, the ``LinuxProcess`` class supports both statically compiled binaries and raw instructions in a hexadecimal format.
 
