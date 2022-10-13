@@ -207,3 +207,8 @@ Adding supported system registers
 ---------------------------------
 
 Similar to instructions, system register support is added when they are encountered in run programs. To add support for a previously unseen system register, it must be added to the ``systemRegisterMap_`` map in the associated ISA ``Architecture.cc`` file.
+
+System Counter Timers
+---------------------
+
+Present in AArch64 are two main system timers; the Counter-timer Vitrual Count Register `CNTVCT <https://developer.arm.com/documentation/ddi0601/2022-09/AArch64-Registers/CNTVCT-EL0--Counter-timer-Virtual-Count-register?lang=en>`_, and the Performance Monitors Cycle Count Register `PMCCNTR <https://developer.arm.com/documentation/ddi0601/2022-09/AArch64-Registers/PMCCNTR-EL0--Performance-Monitors-Cycle-Count-Register?lang=en>`_. The CNTVCT system register holds a virtual cycle count, and is incremented at a defined frequency (see :ref:` Configuring SimEng <core>`). The PMCCNTR system register holds the real processor cycle count. Both are supported in SimEng and are acceccible to the programmer through the appropriate ``mrs`` instructions. The logic which updates these registers can be found at ``src/lib/arch/aarch64/Architecture.cc:updateSystemTimerRegisters`` and is invoked inside each of the core model's ``tick()`` function.
