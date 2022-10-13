@@ -6,7 +6,7 @@ The SimEng pipeline units provide a ``tick`` method, which performs a single cyc
 The available units are:
 
 * ``FetchUnit``: Reads instruction data from memory, to produce a stream of macro-ops.
-* ``DecodeUnit``: Reads macro-ops from the input, converts them into SimEng instruction objects as micro-ops, and writes them to the output.
+* ``DecodeUnit``: Reads macro-ops from the input, splits them into pre-decoded SimEng instruction objects stored in the macro-ops as micro-ops, and writes them to the output.
 * ``RenameUnit``: Reads micro-ops from the input, renames their operands, places an entry in a reorder buffer, and writes them to the output.
 * ``DispatchIssueUnit``: Reads micro-ops from the input, reads operands from register files, and adds them to an internal queue until any missing operands have been broadcast. Writes execution-ready micro-ops to multiple outputs.
 * ``ExecuteUnit``: Reads micro-ops from the input and holds them in an internal queue for a cycle-duration determined by their execution latency, after which they're written to the output.
