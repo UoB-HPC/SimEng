@@ -1,7 +1,9 @@
+.. _cnfSimEng:
+
 Configuring SimEng
 ==================
 
-SimEng configuration files are written in a YAML format, and provide values for the parameters of the processor architecture to be simulated. 
+SimEng configuration files are written in a YAML format, and provide values for the parameters of the processor architecture to be simulated. Pre-written model configuration files can be found in the ``configs/`` directory.
 
 The configuration files are split into several sections, each of which is associated with a specific area of the architecture modelled.
 
