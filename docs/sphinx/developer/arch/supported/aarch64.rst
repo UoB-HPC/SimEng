@@ -42,7 +42,7 @@ The above diagram describes the instruction groups currently implemented for the
 
 This hierarchy-based naming convention has been chosen to provide the user with greater control over the number of instructions grouped under one name, whilst also remaining intuitive. A variety of combinations/instruction scopes can be defined through this method and only uses a small set of easily interpreted operation descriptions.
 
-If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/external/capstone/arch/AArch64/AArch64GenInstrInfo.inc``) with the format ``~{CAPSTONE_OPCODE}``.
+If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/build/_deps/capstone-lib-src/arch/AArch64/AArch64GenInstrInfo.inc``) with the format ``~{CAPSTONE_OPCODE}``.
 
 Implementation
 ''''''''''''''
