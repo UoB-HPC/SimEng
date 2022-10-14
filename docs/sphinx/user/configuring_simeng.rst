@@ -139,6 +139,8 @@ RAS-entries
 Fallback-Static-Predictor
     The static predictor used when no dynamic prediction is available. The options are either ``"Always-Taken"`` or ``"Always-Not-Taken"``.
 
+.. _l1dcnf:
+
 L1-Data-Memory
 --------------
 
@@ -148,6 +150,8 @@ Interface-Type
     The type of memory interface used to model the L1 data cache. Options are currently ``Flat`` or ``Fixed`` which represent a ``FlatMemoryInterface`` or ``FixedMemoryInterface`` respectively. More information concerning these interfaces can be found :ref:`here <memInt>`.
 
 .. Note:: Currently, if the chosen ``Simulation-Mode`` option is ``emulation`` or ``inorderpipelined``, then only a ``Flat`` value is permitted. Future developments will seek to allow for more memory interfaces with these simulation archetypes.
+
+.. _l1icnf:
 
 L1-Instruction-Memory
 ---------------------
