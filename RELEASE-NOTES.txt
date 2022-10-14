@@ -45,7 +45,7 @@ Some benchmarks we’ve run ourselves and so should work:
 * miniBUDE - https://github.com/UoB-HPC/miniBUDE 
 * CloverLeaf - https://github.com/UK-MAC/CloverLeaf_Serial 
 * Tealeaf - https://github.com/UoB-HPC/TeaLeaf
-* FFTW - 
+* FFTW3 - https://github.com/rdolbeau/fftw3/tree/arm-sve
 
 When you hit issues building or running SimEng, please do let us know, either by submitting a PR, or filing an issue via the SimEng Github repo:
 
