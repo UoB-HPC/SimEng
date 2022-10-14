@@ -300,6 +300,8 @@ With N as the number of user-defined latency mappings. The default latencies, bo
 
 **Note**, unlike other operations, the execution latency defined for load/store operations are triggered in the LoadStoreQueue as opposed to within the execution unit (more details :ref:`here <lsq-restrict>`).
 
+.. _cpu-info:
+
 CPU Info
 --------
     This section contains information about the physical properties of the CPU.
