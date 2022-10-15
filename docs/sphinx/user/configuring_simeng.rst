@@ -23,7 +23,7 @@ SimEng cores can be one of three types:
 
 These core types are primarily referred to as core "archetypes".
 
-.. Note:: Currently, the configuration files do not take into account the core archetype being modelled and require all parameters to be defined, even if unused (e.g. reservation statsion definitions for an ``emulation`` core archetype). However, future developments plan for the exemption of those options not used under the selected core archetype.
+.. Note:: Currently, the configuration files do not take into account the core archetype being modelled and require all parameters to be defined, even if unused (e.g. reservation station definitions for an ``emulation`` core archetype). However, future developments plan for the exemption of those options not used under the selected core archetype.
 
 Configuration options within the Core section are concerned with the functionality of the simulated processor pipeline. These include:
 
@@ -49,7 +49,7 @@ Fetch
 
 This section is concerned with the parameterisation of the fetch unit and its internal structures.
 
-Fetch-Block-sizes
+Fetch-Block-size
     The size, in bytes, of the block fetched from the instruction cache.
 
 Loop-Buffer-Size
@@ -219,7 +219,7 @@ With N as the number of execution ports.
 Reservation-Stations
 --------------------
 
-The relationships between reservation stations and the execution ports, which reservation stations map to which execution ports, are defined in this section. The configuration of each reservation station contains a size value, a dispatch rate value, and a set of port names, previously defined in the Ports section. 
+The relationships between reservation stations and the execution ports, i.e. which reservation stations map to which execution ports, are defined in this section. The configuration of each reservation station contains a size value, a dispatch rate value, and a set of port names, previously defined in the Ports section. 
 
 The following structure must be adhered to when defining a reservation station:
 
@@ -312,7 +312,7 @@ CPU Info
     These fields are currently only used to generate a replica of the required Special Files directory structure.
 
 Generate-Special-Dir
-    Values are either True or False.
+    Values are either "True" or "False".
     Dictates whether or not SimEng should generate the SpecialFiles directory tree at runtime.
     The alternative to this would be to copy in the required SpecialFiles by hand.
 

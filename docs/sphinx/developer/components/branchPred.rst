@@ -7,11 +7,11 @@ Access to the ``BranchPredictor`` is supported through the ``predict``, ``update
 
 The ``predict`` function is passed an instruction address, branch type, and a possible known target. The branch type argument currently supports the following types:
 
-- Conditional
-- LoopClosing
-- Return
-- SubroutineCall
-- Unconditional
+- ``Conditional``
+- ``LoopClosing``
+- ``Return``
+- ``SubroutineCall``
+- ``Unconditional``
 
 The usage of these parameters within a branch predictor's ``predict`` function is algorithm specific.
 
@@ -28,7 +28,7 @@ Global History
 Branch Target Buffer (BTB)
     For each entry, the BTB stores the most recent target along with an n-bit saturating counter for an associated direction. The indexing of this structure uses the lower bits of an instruction address XOR'ed with the current global branch history value.
 
-    If the supplied branch type is Unconditional, then the predicted direction is overridden to be taken. If the supplied branch type is Conditional and the predicted direction is not taken, then the predicted target is overridden to be the next sequential instruction.
+    If the supplied branch type is ``Unconditional``, then the predicted direction is overridden to be taken. If the supplied branch type is ``Conditional`` and the predicted direction is not taken, then the predicted target is overridden to be the next sequential instruction.
 
 Return Address Stack (RAS)
     Identified through the supplied branch type, Return instructions pop values off of the RAS to get their branch target whilst Branch-and-Link instructions push values onto the RAS, for use by a proceeding Return instruction.

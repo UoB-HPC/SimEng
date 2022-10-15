@@ -6,7 +6,7 @@ The SimEng pipeline units provide a ``tick`` method, which performs a single cyc
 The available units are:
 
 * ``FetchUnit``: Reads instruction data from memory, to produce a stream of macro-ops.
-* ``DecodeUnit``: Reads macro-ops from the input, splits them into pre-decoded SimEng instruction objects stored in the macro-ops as micro-ops, and writes them to the output.
+* ``DecodeUnit``: Reads macro-ops from the input, splits them into micro-ops, and writes them to the output.
 * ``RenameUnit``: Reads micro-ops from the input, renames their operands, places an entry in a reorder buffer, and writes them to the output.
 * ``DispatchIssueUnit``: Reads micro-ops from the input, reads operands from register files, and adds them to an internal queue until any missing operands have been broadcast. Writes execution-ready micro-ops to multiple outputs.
 * ``ExecuteUnit``: Reads micro-ops from the input and holds them in an internal queue for a cycle-duration determined by their execution latency, after which they're written to the output.
@@ -23,7 +23,7 @@ Behaviour
 
 The fetch unit fetches memory in discrete boundary-aligned blocks, according to the current program counter (PC); this is to prevent the fetched block overlapping an inaccessible or unmapped memory region that may result in the request incorrectly responding with a fault despite the validity of the initial region.
 
-Each cycle, it will process the most recently fetched memory block by passing it to the supplied ``Architecture`` instance for pre-decoding into macro-ops. Once pre-decoded, the head of the vector of micro-ops, or macro-op, is passed to the supplied branch predictor: if the instruction is predicted to be a taken branch, then the PC will be updated to the predicted target address and the cycle will end, otherwise, the PC is incremented by the number of bytes consumed to produce the pre-decoded macro-op. The remaining bytes in the block are once again passed to the architecture for pre-decoding.
+Each cycle, it will process the most recently fetched memory block by passing it to the supplied ``Architecture`` instance for pre-decoding into macro-ops. Once pre-decoded, the head of the vector of micro-ops, or macro-op, is passed to the supplied branch predictor. If the instruction is predicted to be a taken branch, then the PC will be updated to the predicted target address and the cycle will end. If this is not the case, the PC is incremented by the number of bytes consumed to produce the pre-decoded macro-op. The remaining bytes in the block are once again passed to the architecture for pre-decoding.
 
 This standard process of pre-decoding, predicting, and updating the PC continues until one of the following occurs:
 
@@ -45,7 +45,7 @@ Loop Buffer
 
 Within the fetch unit is a loop buffer that can store a configurable number of Macro-Ops. The loop buffer can be pulled from instead of memory if a loop is detected. This avoids the need to re-request data from memory if a branch is taken and increases the throughput of the fetch unit.
 
-Each entry of the loop buffer is the encoding of the Macro-Op, therefore, when supplying an instruction from the loop buffer, the pre-decoding step must still be performed. This was required to avoid any issues with multiple instantiations of the same instruction editing eachothers class members.
+Each entry of the loop buffer is the encoding of the Macro-Op. Therefore, when supplying an instruction from the loop buffer, the pre-decoding step must still be performed. This was required to avoid any issues with multiple instantiations of the same instruction editing eachothers class members.
 
 The Loop buffer has four states:
 

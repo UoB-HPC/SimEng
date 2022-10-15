@@ -45,11 +45,11 @@ With this configuration, the build files will be generated in a directory called
 
 We recommend using the `Ninja <https://ninja-build.org/>`_ build system for faster builds, especially if not using pre-built LLVM libraries. After installation, it can be enabled through the addition of the ``-GNinja`` flag in the above CMake build command.
 
-3. Once configured, use ``cmake --build build`` or whichever generator you have selected for CMake to build. Append the ``-j{Num_Cores}`` flag to build in parallel, keep in mind that building LLVM like this usually has very high (1.5GB per core) memory requirements.
+1. Once configured, use ``cmake --build build`` or whichever generator you have selected for CMake to build. Append the ``-j{Num_Cores}`` flag to build in parallel, keep in mind that building without a linked external LLVM library usually has very high (1.5GB per core) memory requirements.
 
-4. (Optional) Run ``cmake --build build --target test`` to run the SimEng regression tests and unit tests. Please report any test failures as `a GitHub issue <https://github.com/UoB-HPC/SimEng/issues>`_.
+2. (Optional) Run ``cmake --build build --target test`` to run the SimEng regression tests and unit tests. Please report any test failures as `a GitHub issue <https://github.com/UoB-HPC/SimEng/issues>`_.
 
-5. Finally, run ``cmake --build build --target install`` to install SimEng to the directory specified with CMake.
+3. Finally, run ``cmake --build build --target install`` to install SimEng to the directory specified with CMake.
 
 .. Docker
 .. ------

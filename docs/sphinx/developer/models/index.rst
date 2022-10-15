@@ -53,5 +53,5 @@ Through SimEng's configurable options, the above archetypes can be transformed i
 The current existing processors have supplied configuration files:
 
 - `ThunderX2 <https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan>`_
-- `A64FX <https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_Microarchitecture_Manual_en_1.4.pdf>`_
+- `A64FX <https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_Microarchitecture_Manual_en_1.8.pdf>`_
 - `M1 Firestorm <https://github.com/UoB-HPC/SimEng/blob/m1-dev/m1_docs/M1_Findings.md>`_
