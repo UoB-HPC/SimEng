@@ -1,7 +1,7 @@
 AArch64
 =======
 
-SimEng provides an implementation of the 64-bit AArch64 architecture, specifically the ARMv9.2-a ISA. This implementation provides support for decoding and executing a range of common instructions, sufficient to run a number of simple benchmarks. It is also capable of handling supervisor call (syscall) exceptions via basic system call emulation, allowing the execution of programs that have been statically compiled with the standard library.
+SimEng provides an implementation of the 64-bit AArch64 architecture, specifically the Armv9.2-a ISA. This implementation provides support for decoding and executing a range of common instructions, sufficient to run a number of simple benchmarks. It is also capable of handling supervisor call (syscall) exceptions via basic system call emulation, allowing the execution of programs that have been statically compiled with the standard library.
 
 .. contents:: Contents
 
@@ -207,9 +207,9 @@ If a known but unsupported alias is encountered, it will generate an invalid ins
 
 Common Instruction Execution behaviour issues
 *********************************************
-Often newly added instructions will be implemented correctly but their tests will fail or they will exhibit incorrect execution behaviour. This is especially common with SVE instructions. The most common reason for this is Capstone assigning incorrect operand access rights to each operand. To fix this, a statement should be added to the switch statement in the ``InstructionMetadata.cc`` constructor function. An example statement can be seen below :
+Often newly added instructions will be implemented correctly but their tests will fail or they will exhibit incorrect execution behaviour. This is especially common with SVE instructions. The most common reason for this is Capstone assigning incorrect operand access rights to each operand. To fix this, a case should be added to the switch statement in the ``InstructionMetadata.cc`` constructor function. An example statement can be seen below::
 
-    $ case Opcode::AArch64_LD1Onev16b_POST: // ld1 {vt.16b}, [xn], #imm
+    case Opcode::AArch64_LD1Onev16b_POST: // ld1 {vt.16b}, [xn], #imm
       operands[0].access = CS_AC_WRITE;               // vt.16b access
       operands[1].access = CS_AC_READ | CS_AC_WRITE;  // xn access
       break;
