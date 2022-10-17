@@ -45,7 +45,7 @@ Loop Buffer
 
 Within the fetch unit is a loop buffer that can store a configurable number of Macro-Ops. The loop buffer can be pulled from instead of memory if a loop is detected. This avoids the need to re-request data from memory if a branch is taken and increases the throughput of the fetch unit.
 
-Each entry of the loop buffer is the encoding of the Macro-Op. Therefore, when supplying an instruction from the loop buffer, the pre-decoding step must still be performed. This was required to avoid any issues with multiple instantiations of the same instruction editing eachothers class members.
+Each entry of the loop buffer is the encoding of the Macro-Op. Therefore, when supplying an instruction from the loop buffer, the pre-decoding step must still be performed. This was required to avoid any issues with multiple instantiations of the same instruction editing each others class members.
 
 The Loop buffer has four states:
 

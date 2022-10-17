@@ -219,7 +219,7 @@ If after adding a case to the metadata switch statement the execution behaviour 
 System registers
 ----------------
 
-AArch64 defines many system registers, which are treated the same as any other explicit souce or destination register within SimEng.
+AArch64 defines many system registers, which are treated the same as any other explicit source or destination register within SimEng.
 
 Similar to instructions, system register support is added when they are encountered in run programs. To add support for a previously unseen system register, it must be added to the ``systemRegisterMap_`` map in the associated ISA ``Architecture.cc`` file.
 

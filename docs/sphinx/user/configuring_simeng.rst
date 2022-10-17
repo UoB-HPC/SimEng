@@ -348,5 +348,5 @@ Package-Count
     Used to generate `/sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}` files.
     On each CPU the cores are split into packages. The number of packages used can be calculated by analysing the `physical_package_id` files on a Linux system using the CPU being modelled.
 
-.. Note:: Core-Count must be wholely divisible by Package-Count.
+.. Note:: Core-Count must be wholly divisible by Package-Count.
 .. Note:: Max Package-Count currently supported is 1.

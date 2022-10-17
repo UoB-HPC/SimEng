@@ -58,7 +58,7 @@ The standard structure of an AArch64 regression test body is as followed:
       ** Comparisons against values in the SimEng model after simulation **
    }
 
-**Note**, the ``RUN_AARCH64`` function is a proxy call to the ``run`` function in the ``RegressionTest`` class with the "aarch64" target defined. Also, helper functions for comparrisons against the SimEng model are implemented and well documented in ``test/regression/aarch64/AArch64RegressionTest.hh``.
+**Note**, the ``RUN_AARCH64`` function is a proxy call to the ``run`` function in the ``RegressionTest`` class with the "aarch64" target defined. Also, helper functions for comparisons against the SimEng model are implemented and well documented in ``test/regression/aarch64/AArch64RegressionTest.hh``.
 
 Unit suite
 ----------

@@ -15,7 +15,7 @@ ELF Parsing
 The ELF binaries have a defined structure for 32-bit and 64-bit architectures, all information regarding parsing ELF binaries has been referenced from the `Linux manual page <https://man7.org/linux/man-pages/man5/elf.5.html>`_. The ELF binary is divided into multiple parts. SimEng stores all relevant parts of the `ELF Binary` in a ``char[] processImage`` array, which is a private member variable of the ``LinuxProcess`` class.
 
 .. image:: ../../assets/elfstruct.png
-  :alt: ELF Strucutre
+  :alt: ELF Structure
   :align: center
 
 * The `ELF Header` is the first part of `ELF binary`. The `ELF Header` holds information regarding the structure of the `ELF Binary`. SimEng extracts the following from the `ELF Header`:
@@ -27,7 +27,7 @@ The ELF binaries have a defined structure for 32-bit and 64-bit architectures, a
 
     * The offset from the beginning of the file at which the first byte of the segment resides.
     * The number of bytes in the memory image of the segment.
-* SimEng uses these extracted values to loop through all `ELF Program Headers` and looks for the `ELF Program Header` located at largest virtual address range. SimEng uses the largest virtual address and size assosciated with that `ELF Program Header` to create an array called the ``ElfProcessImage``. Internally, SimEng treats these virtual address as physical addresses to index into said array.
+* SimEng uses these extracted values to loop through all `ELF Program Headers` and looks for the `ELF Program Header` located at largest virtual address range. SimEng uses the largest virtual address and size associated with that `ELF Program Header` to create an array called the ``ElfProcessImage``. Internally, SimEng treats these virtual address as physical addresses to index into said array.
 
 * The segment referenced by an ELF Program Header has a type attribute which explains its contents and how to interpret it. SimEng, only extracts segments of type ``LOAD`` which specifies a loadable segment. Loadable segments most notably contain the workloads' compiled instructions and initialised data that contributes to the program's memory space. This completes the creation of the ``ElfProcessImage``.
 
