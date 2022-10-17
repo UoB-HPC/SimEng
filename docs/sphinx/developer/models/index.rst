@@ -48,17 +48,10 @@ This model also supports speculative execution, using a supplied branch predicti
 Current Hardware Models
 -----------------------
 
-Through SimEng's configurable options, the above archetypes can be transformed into models based on existing processors. More information on the configurable options of SimEng can be found here.
-
-.. todo::
-
-    Insert link to user documentation configuration options Pages
+Through SimEng's configurable options, the above archetypes can be transformed into models based on existing processors. More information on the configurable options of SimEng can be found :ref:`here <cnfSimEng>`.
 
 The current existing processors have supplied configuration files:
 
 - `ThunderX2 <https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan>`_
-- `A64FX <https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_Microarchitecture_Manual_en_1.4.pdf>`_
-
-.. todo::
-
-    Insert path to config files
+- `A64FX <https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_Microarchitecture_Manual_en_1.8.pdf>`_
+- `M1 Firestorm <https://github.com/UoB-HPC/SimEng/blob/m1-dev/m1_docs/M1_Findings.md>`_

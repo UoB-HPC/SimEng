@@ -6,7 +6,7 @@ The SimEng pipeline units provide a ``tick`` method, which performs a single cyc
 The available units are:
 
 * ``FetchUnit``: Reads instruction data from memory, to produce a stream of macro-ops.
-* ``DecodeUnit``: Reads macro-ops from the input, converts them into SimEng instruction objects as micro-ops, and writes them to the output.
+* ``DecodeUnit``: Reads macro-ops from the input, splits them into micro-ops, and writes them to the output.
 * ``RenameUnit``: Reads micro-ops from the input, renames their operands, places an entry in a reorder buffer, and writes them to the output.
 * ``DispatchIssueUnit``: Reads micro-ops from the input, reads operands from register files, and adds them to an internal queue until any missing operands have been broadcast. Writes execution-ready micro-ops to multiple outputs.
 * ``ExecuteUnit``: Reads micro-ops from the input and holds them in an internal queue for a cycle-duration determined by their execution latency, after which they're written to the output.
@@ -23,9 +23,9 @@ Behaviour
 
 The fetch unit fetches memory in discrete boundary-aligned blocks, according to the current program counter (PC); this is to prevent the fetched block overlapping an inaccessible or unmapped memory region that may result in the request incorrectly responding with a fault despite the validity of the initial region.
 
-Each cycle, it will process the most recently fetched memory block by passing it to the supplied ``Architecture`` instance for pre-decoding into macro-ops. Once pre-decoded, the macro-op is passed to the supplied branch predictor: if the instruction is predicted to be a taken branch, then the PC will be updated to the predicted target address and the cycle will end, otherwise, the PC is incremented by the number of bytes consumed to produce the pre-decoded macro-op. The remaining bytes in the block are once again passed to the architecture for pre-decoding.
+Each cycle, it will process the most recently fetched memory block by passing it to the supplied ``Architecture`` instance for pre-decoding into macro-ops. Once pre-decoded, the head of the vector of micro-ops, or macro-op, is passed to the supplied branch predictor. If the instruction is predicted to be a taken branch, then the PC will be updated to the predicted target address and the cycle will end. If this is not the case, the PC is incremented by the number of bytes consumed to produce the pre-decoded macro-op. The remaining bytes in the block are once again passed to the architecture for pre-decoding.
 
-This process of pre-decoding, predicting, and updating the PC continues until one of the following occurs:
+This standard process of pre-decoding, predicting, and updating the PC continues until one of the following occurs:
 
 .. glossary::
 
@@ -37,6 +37,31 @@ This process of pre-decoding, predicting, and updating the PC continues until on
 
   The fetched memory block is exhausted
     The next block may be requested, and processing will resume once the data is available.
+
+.. _loopBuf:
+
+Loop Buffer
+***********
+
+Within the fetch unit is a loop buffer that can store a configurable number of Macro-Ops. The loop buffer can be pulled from instead of memory if a loop is detected. This avoids the need to re-request data from memory if a branch is taken and increases the throughput of the fetch unit.
+
+Each entry of the loop buffer is the encoding of the Macro-Op. Therefore, when supplying an instruction from the loop buffer, the pre-decoding step must still be performed. This was required to avoid any issues with multiple instantiations of the same instruction editing each others class members.
+
+The Loop buffer has four states:
+
+IDLE
+  No loop has been detected so no operation is required.
+
+WAITING
+  A loop has been detected and the loop buffer is waiting until the branch representing the loop is found in the instruction stream.
+
+FILLING
+  The branch representing the loop has been found and the buffer is being filled until it is seen again.
+
+SUPPLYING
+  The supply of instructions from the fetch unit has been handed over to the loop buffer. The stream of instructions is taken from the loop buffer in order and resets to the top of the buffer once it reaches the end of the loop body.
+
+The detection of a loop and the branch which represents it comes from the ROB. More information can be found :ref:`here <loopDetect>`.
 
 If the output buffer is stalled when the cycle begins, the fetch unit will idle and perform no operation.
 
@@ -114,9 +139,9 @@ During dispatch, the unit will read instructions from the input buffer, and chec
 
 Before operand checking, each instruction is allocated a destination port that corresponds to one of the output buffers. A supplied port allocator is used to determine the destination port of the supplied instruction. The logic of the port allocator can be model-independent but SimEng provides a basic ``BalancedPortAllocator`` class that attempts to balance port allocation amongst the available reservation stations for that instruction. A ``getRSSizes`` function is supplied to port allocator classes to support algorithms that rely on information relating to the occupancy of reservation stations. Within a port allocator, there also exists a ``tick`` function which, similarly to the pipeline units, allows for per-cycle logic to be triggered.
 
-A reservation station can have many ports, with each port maintaining a ready queue containing instructions that are ready to execute. The port is also assigned an associated destination port number to map reservation station ports to output buffers. Note that there is no dedicated data structure for the instructions in the reservation stations; all instructions it contains are either in the dependency matrix or one of its associated port ready queues, so we simply keep track of the number of instructions instead.
+After a destination port has been allocated and all required operands are either supplied or their dependency registered, the instruction is then assigned to a reservation station, where it will remain until issued. A reservation station can have many ports, with each port maintaining a ready queue containing instructions that are ready to execute. The port is also assigned an associated destination port number to map reservation station ports to output buffers. Each reservation station also has an associated dispatch-rate value which limits the number of instructions that can be dispatched to it per cycle.
 
-The instruction is then assigned to a reservation station, where it will remain until issued. If at any point the reservation station becomes full while instructions remain in the input, the cycle stops and the input buffer becomes stalled. The remaining instructions will be processed during a future dispatch, once space is available, and the input buffer will be unstalled once emptied. 
+If at any point the reservation station becomes full while instructions remain in the input, or the dispatch-rate is exceeded, the cycle stops and the input buffer becomes stalled. The remaining instructions will be processed during a future dispatch, once space is available, and the input buffer will be unstalled once emptied. Note that there is no dedicated data structure for the instructions in the reservation stations; all instructions it contains are either in the dependency matrix or one of its associated port ready queues, so we simply keep track of the number of instructions instead.
 
 Operand forwarding
 ''''''''''''''''''
@@ -177,4 +202,4 @@ Behaviour
 
 Each cycle, the unit will read instructions from the input buffer, and retrieve any results generated during execution. All results are written to the supplied register file set, and the instructions are flagged as ready to commit. As the unit has no output buffer, instructions are discarded once writeback is complete.
 
-.. Note:: (Relevant for outoforder models) AT the writeback stage, Instructions created from a macro-op split are placed into a ``waitingCommit`` state and inform the ``ReorderBuffer`` that the instruction is ready to commit once all other associated micro-ops are. More information can be found :ref:`here <microOpCommit>`.
+.. Note:: (Relevant for outoforder models) At the writeback stage, instructions created from a macro-op split are placed into a ``waitingCommit`` state and inform the ``ReorderBuffer`` that the instruction is ready to commit once all other associated micro-ops are. More information can be found :ref:`here <microOpCommit>`.

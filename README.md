@@ -5,7 +5,7 @@ The Simulation Engine (SimEng) is a framework for building modern cycle-accurate
 - Fast
 - Easy to use and modify to desired configurations
 - Scalable, supporting simulation of simple scalar cores, up to superscalar out-of-order designs
-- Capable of supporting a wide range of ISAs, starting with ARMv8 but eventually including x86, RISC-V, POWER, etc.
+- Capable of supporting a wide range of ISAs, starting with AArch64 but eventually including x86, RISC-V, POWER, etc.
 - Open source, with a permissive license to enable collaboration across academia and industry
 
 SimEng places an emphasis on performance and scalability, whilst maintaining a clean, modern, and well-documented code base.
