@@ -49,7 +49,7 @@ Fetch
 
 This section is concerned with the parameterisation of the fetch unit and its internal structures.
 
-Fetch-Block-size
+Fetch-Block-Size
     The size, in bytes, of the block fetched from the instruction cache.
 
 Loop-Buffer-Size

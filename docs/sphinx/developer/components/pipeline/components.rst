@@ -26,7 +26,7 @@ Only a specific number of instructions can be committed per cycle as defined by 
 
 .. _microOpCommit:
 
-commitMicroOps
+CommitMicroOps
 **************
 
 When a macro-op is split, all created micro-ops can only be committed when all are ready to do so. These micro-ops firstly enter a "waiting commit" state and once all associated micro-ops are in said state, they can then enter a "ready to commit" state and commit in the standard manner. The ``commitMicroOps`` function facilitates this state transition whilst the ``WritebackUnit`` sets the "waiting commit" state.
