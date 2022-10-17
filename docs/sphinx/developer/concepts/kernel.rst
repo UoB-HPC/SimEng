@@ -12,7 +12,7 @@ The ``LinuxProcess`` class provides the functionality to process the supplied pr
 
 ELF Parsing
 ~~~~~~~~~~~~
-The ELF binaries have a defined structure for 32-bit and 64-bit architectures, all information regarding parsing ELF binaries has been refereced from the `Linux manual page <https://man7.org/linux/man-pages/man5/elf.5.html>`_. The ELF binary is divided into multiple parts. SimEng stores all relevant parts of the ``ELF Binary`` in a ``char[] processImage`` array, which is a private member variable of the ``LinuxProcess`` class.
+The ELF binaries have a defined structure for 32-bit and 64-bit architectures, all information regarding parsing ELF binaries has been refereced from the `Linux manual page <https://man7.org/linux/man-pages/man5/elf.5.html>`_. The ELF binary is divided into multiple parts. SimEng stores all relevant parts of the `ELF Binary` in a ``char[] processImage`` array, which is a private member variable of the ``LinuxProcess`` class.
 
 .. image:: ../../assets/elfstruct.png
   :alt: ELF Strucutre
@@ -27,7 +27,7 @@ The ELF binaries have a defined structure for 32-bit and 64-bit architectures, a
 
     * The offset from the beginning of the file at which the first byte of the segment resides.
     * The number of bytes in the memory image of the segment.
-* SimEng uses these extracted values to loop through all `ELF Program Headers` and looks for the `ELF Program Header` located at largest virtual address range. SimEng uses the largest virtual address and size assosciated with that `ELF Program Header` to create an array called the ``ElfProcessImage``. However, this way SimEng ends up creating a sparse array, in which most of the entries are unused. Internally, SimEng treats these virtual address as physical addresses to index into this large array.
+* SimEng uses these extracted values to loop through all `ELF Program Headers` and looks for the `ELF Program Header` located at largest virtual address range. SimEng uses the largest virtual address and size assosciated with that `ELF Program Header` to create an array called the ``ElfProcessImage``. Internally, SimEng treats these virtual address as physical addresses to index into said array.
 
 * The segment of an `ELF Program Header` has a type and SimEng only extracts and stores a loadable segment type i.e  the segment which contains initialized data that contributes to the program's memory image. This completes the creation of the ``ElfProcessImage``.
 
