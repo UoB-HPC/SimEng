@@ -29,7 +29,7 @@ The ELF binaries have a defined structure for 32-bit and 64-bit architectures, a
     * The number of bytes in the memory image of the segment.
 * SimEng uses these extracted values to loop through all `ELF Program Headers` and looks for the `ELF Program Header` located at largest virtual address range. SimEng uses the largest virtual address and size assosciated with that `ELF Program Header` to create an array called the ``ElfProcessImage``. Internally, SimEng treats these virtual address as physical addresses to index into said array.
 
-* The segment of an `ELF Program Header` has a type and SimEng only extracts and stores a loadable segment type i.e  the segment which contains initialized data that contributes to the program's memory image. This completes the creation of the ``ElfProcessImage``.
+* The segment referenced by an ELF Program Header has a type attribute which explains its contents and how to interpret it. SimEng, only extracts segments of type ``LOAD`` which specifies a loadable segment. Loadable segments most notably contain the workloads' compiled instructions and initialised data that contributes to the program's memory space. This completes the creation of the ``ElfProcessImage``.
 
 * After the ``ElfProcessImage`` has been created the ``LinuxProcess`` class creates an array ``char[] processImage``. The size of ``processImage`` is much larger than ``ElfProcessImage`` as SimEng adds the ``HEAP_SIZE`` and ``STACK_SIZE`` values specified in the YAML configuration file to the 32-byte aligned value of ``ElfProcessImage`` size. After this, SimEng proceeds to create a process stack around ``processImage``.
 
