@@ -23,7 +23,7 @@ SimEng cores can be one of three types:
 
 These core types are primarily referred to as core "archetypes".
 
-.. Note:: Currently, the configuration files do not take into account the core archetype being modelled and require all parameters to be defined, even if unused (e.g. reservation station definitions for an ``emulation`` core archetype). However, future developments plan for the exemption of those options not used under the selected core archetype.
+.. Note:: Currently, the configuration files do not take into account the core archetype being modelled and require all parameters (without default values) to be defined, even if unused (e.g. reservation station definitions for an ``emulation`` core archetype). However, future developments plan for the exemption of those options not used under the selected core archetype.
 
 Configuration options within the Core section are concerned with the functionality of the simulated processor pipeline. These include:
 

@@ -12,13 +12,13 @@ The ``LinuxProcess`` class provides the functionality to process the supplied pr
 
 ELF Parsing
 ~~~~~~~~~~~~
-The ELF binaries have a defined structure for 32-bit and 64-bit architectures, all information regarding parsing ELF binaries has been refereced from the `Linux manual page <https://man7.org/linux/man-pages/man5/elf.5.html>`_. The ELF binary is divided into multiple parts. SimEng stores all relevant parts of the `ELF Binary` in a ``char[] processImage`` array, which is a private member variable of the ``LinuxProcess`` class.
+The ELF binaries have a defined structure for 32-bit and 64-bit architectures, all information regarding parsing ELF binaries has been referenced from the `Linux manual page <https://man7.org/linux/man-pages/man5/elf.5.html>`_. The ELF binary is divided into multiple parts. SimEng stores all relevant parts of the `ELF Binary` in a ``char[] processImage`` array, which is a private member variable of the ``LinuxProcess`` class.
 
 .. image:: ../../assets/elfstruct.png
   :alt: ELF Strucutre
   :align: center
 
-* The `ELF Header` is the First part of `ELF binary`. The `ELF Header` holds information regarding the structure of the `ELF Binary`. SimEng extracts the following from the `ELF Header`:
+* The `ELF Header` is the first part of `ELF binary`. The `ELF Header` holds information regarding the structure of the `ELF Binary`. SimEng extracts the following from the `ELF Header`:
 
     * The entry point of binary i.e. the virtual address to which the system first transfers control, thus starting execution.
     * The file offset of the `ELF Program Headers`.
