@@ -23,7 +23,7 @@ The ELF binaries have a defined structure for 32-bit and 64-bit architectures, a
     * The entry point of binary i.e. the virtual address to which the system first transfers control, thus starting execution.
     * The file offset of the `ELF Program Headers`.
     * The size of each entry stored in the `ELF Program Header`.
-* The `ELF Program Header` table is an array of structures, each describing a segment or other information the system needs to prepare the program for execution. An object file segment contains one or more sections. `ELF Program Headers` are meaningful only for the executable and shared object files. SimEng extracts the following from the `ELF Program Headers`:
+* The `ELF Program Header` table is an array of structures, each describing a segment or other information the system needs to prepare the program for execution. An object file segment contains one or more sections, each section holds program and control information. SimEng extracts the following from the `ELF Program Headers`:
 
     * The offset from the beginning of the file at which the first byte of the segment resides.
     * The number of bytes in the memory image of the segment.
