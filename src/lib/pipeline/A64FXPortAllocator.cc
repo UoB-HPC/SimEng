@@ -12,13 +12,13 @@ A64FXPortAllocator::A64FXPortAllocator(
     :  // Initiliase reservation station to port mapping
       rsToPort_({{0, 1, 2}, {3, 4}, {5}, {6}, {7}}) {}
 
-uint8_t A64FXPortAllocator::allocate(const std::vector<uint8_t>& ports) {
+uint16_t A64FXPortAllocator::allocate(const std::vector<uint16_t>& ports) {
   assert(ports.size() &&
          "No supported ports supplied; cannot allocate from a empty set");
   const uint8_t attribute = attributeMapping(ports);
 
-  uint8_t rs = 0;
-  uint8_t port = 0;
+  uint16_t rs = 0;
+  uint16_t port = 0;
   bool foundRS = false;
   bool foundPort = false;
 
@@ -144,11 +144,11 @@ uint8_t A64FXPortAllocator::allocate(const std::vector<uint8_t>& ports) {
   return port;
 }
 
-void A64FXPortAllocator::issued(uint8_t port) {}
-void A64FXPortAllocator::deallocate(uint8_t port) { issued(port); };
+void A64FXPortAllocator::issued(uint16_t port) {}
+void A64FXPortAllocator::deallocate(uint16_t port) { issued(port); };
 
 uint8_t A64FXPortAllocator::attributeMapping(
-    const std::vector<uint8_t>& ports) {
+    const std::vector<uint16_t>& ports) {
   uint8_t attribute = 0;
   bool foundAttribute = false;
   if (ports == EXA_EXB_EAGA_EAGB) {  // EXA,EXB,EAGA,EAGB

@@ -13,13 +13,10 @@ namespace models {
 namespace outoforder {
 
 // TODO: System register count has to match number of supported system registers
-
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator,
-           const std::vector<std::pair<uint8_t, uint64_t>>& rsArrangement,
-           YAML::Node config)
+           pipeline::PortAllocator& portAllocator, YAML::Node config)
     : isa_(isa),
       physicalRegisterStructures_(
           isa.getConfigPhysicalRegisterStructure(config)),
@@ -74,10 +71,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures_.size()),
-      dispatchIssueUnit_(
-          renameToDispatchBuffer_, issuePorts_, registerFileSet_, portAllocator,
-          physicalRegisterQuantities_, rsArrangement,
-          config["Pipeline-Widths"]["Dispatch-Rate"].as<unsigned int>()),
+      dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
+                         portAllocator, physicalRegisterQuantities_, config),
       writebackUnit_(
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),

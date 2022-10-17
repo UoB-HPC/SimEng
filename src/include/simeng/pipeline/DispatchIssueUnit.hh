@@ -3,12 +3,14 @@
 #include <deque>
 #include <initializer_list>
 #include <queue>
+#include <tuple>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/PortAllocator.hh"
+#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 namespace pipeline {
@@ -16,7 +18,7 @@ namespace pipeline {
 /** A reservation station issue port */
 struct ReservationStationPort {
   /** Issue port this port maps to */
-  uint8_t issuePort;
+  uint16_t issuePort;
   /** Queue of instructions that are ready to be
    * issued */
   std::deque<std::shared_ptr<Instruction>> ready;
@@ -26,6 +28,8 @@ struct ReservationStationPort {
 struct ReservationStation {
   /** Size of reservation station */
   uint16_t capacity;
+  /** Number of instructions that can be dispatched to this unit per cycle. */
+  uint16_t dispatchRate;
   /** Current number of non-stalled instructions
    * in reservation station */
   uint16_t currentSize;
@@ -38,7 +42,7 @@ struct dependencyEntry {
   /** The instruction to execute. */
   std::shared_ptr<Instruction> uop;
   /** The port to issue to. */
-  uint8_t port;
+  uint16_t port;
   /** The operand waiting on a value. */
   uint8_t operandIndex;
 };
@@ -56,8 +60,7 @@ class DispatchIssueUnit {
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
-      std::vector<std::pair<uint8_t, uint64_t>> rsArrangment,
-      uint8_t dispatchRate = UINT8_MAX);
+      YAML::Node config);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */
@@ -113,12 +116,8 @@ class DispatchIssueUnit {
   /** Reservation stations */
   std::vector<ReservationStation> reservationStations_;
 
-  /** Stores the number of instructions dispatched each cycle, for each
-  reservation station. */
-  std::vector<uint8_t> dispatches = {};
-
   /** A mapping from port to RS port */
-  std::vector<std::pair<uint8_t, uint8_t>> portMapping_;
+  std::vector<std::pair<uint16_t, uint16_t>> portMapping_;
 
   /** A dependency matrix, containing all the instructions waiting on an
    * operand. For a register `{type,tag}`, the vector of dependents may be found
@@ -126,15 +125,11 @@ class DispatchIssueUnit {
   std::vector<std::vector<std::vector<dependencyEntry>>> dependencyMatrix_;
 
   /** A map to collect flushed instructions for each reservation station. */
-  std::unordered_map<uint8_t, std::unordered_set<std::shared_ptr<Instruction>>>
+  std::unordered_map<uint16_t, std::unordered_set<std::shared_ptr<Instruction>>>
       flushed_;
 
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;
-
-  /** The number of instructions that can be dispatched to a reservation station
-   * per cycle. */
-  uint64_t dispatchRate_;
 
   /** The number of cycles stalled due to a full reservation station. */
   uint64_t rsStalls_ = 0;

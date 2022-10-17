@@ -33,7 +33,7 @@ struct executionInfo {
   uint16_t stallCycles = 1;
 
   /** The ports that support the instruction. */
-  std::vector<uint8_t> ports = {};
+  std::vector<uint16_t> ports = {};
 };
 
 enum class InstructionException {
@@ -155,7 +155,7 @@ class Instruction : public simeng::Instruction {
   void setExecutionInfo(const executionInfo& info);
 
   /** Get this instruction's supported set of ports. */
-  const std::vector<uint8_t>& getSupportedPorts() override;
+  const std::vector<uint16_t>& getSupportedPorts() override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;

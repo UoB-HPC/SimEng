@@ -182,7 +182,7 @@ void Instruction::setExecutionInfo(const executionInfo& info) {
   supportedPorts_ = info.ports;
 }
 
-const std::vector<uint8_t>& Instruction::getSupportedPorts() {
+const std::vector<uint16_t>& Instruction::getSupportedPorts() {
   if (supportedPorts_.size() == 0) {
     exception_ = InstructionException::NoAvailablePort;
     exceptionEncountered_ = true;
