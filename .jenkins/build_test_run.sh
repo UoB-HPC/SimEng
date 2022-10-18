@@ -51,7 +51,7 @@ run () {
     echo "Simulation without configuration file argument:"
     cat run
     echo ""
-    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "3145731" "retired instructions"
+    compare_outputs "$(grep "uopsExecuted:" run | rev | cut -d ' ' -f1 | rev)" "3145731" "retired instructions"
     compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "3145736" "simulated cycles"
     echo ""
 
@@ -59,7 +59,7 @@ run () {
     echo "Simulation with configuration file argument:"
     cat run
     echo ""
-    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "3145732" "retired instructions"
+    compare_outputs "$(grep "uopsExecuted:" run | rev | cut -d ' ' -f1 | rev)" "3145732" "retired instructions"
     compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "1048588" "simulated cycles"
     echo ""
 }
