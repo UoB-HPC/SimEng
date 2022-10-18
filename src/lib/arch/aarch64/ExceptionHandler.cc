@@ -181,6 +181,17 @@ bool ExceptionHandler::init() {
           return concludeSyscall(stateChange);
         });
       }
+      case 64: {  // write
+        int64_t fd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
+        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t retval = linux_.write(fd, dataBuffer.data(), count);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {retval}};
+          return concludeSyscall(stateChange);
+        });
+      }
       case 65: {  // readv
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
@@ -253,17 +264,6 @@ bool ExceptionHandler::init() {
         // Run the buffer read to load the buffer structures, before invoking
         // the kernel.
         return readBufferThen(iov, iovcnt * 16, invokeKernel);
-      }
-      case 64: {  // write
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
-        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
-        return readBufferThen(bufPtr, count, [=]() {
-          int64_t retval = linux_.write(fd, dataBuffer.data(), count);
-          ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {retval}};
-          return concludeSyscall(stateChange);
-        });
       }
       case 66: {  // writev
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
@@ -541,18 +541,18 @@ bool ExceptionHandler::init() {
       case 179:  // sysinfo
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
-      case 214: {  // brk
-        auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
-        break;
-      }
       case 210: {  // shutdown
         // TODO: Functionality omitted - returns -38 (errno 38, function not
         // implemented) is to mimic the behaviour on isambard and avoid an
         // unrecognised syscall error
         stateChange = {
             ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-38)}};
+        break;
+      }
+      case 214: {  // brk
+        auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
         break;
       }
       case 215: {  // munmap

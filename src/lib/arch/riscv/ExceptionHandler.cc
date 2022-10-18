@@ -56,6 +56,26 @@ bool ExceptionHandler::init() {
             ChangeType::REPLACEMENT, {R0}, {linux_.ftruncate(fd, length)}};
         break;
       }
+      case 48: {  // faccessat
+        int64_t dfd = registerFileSet.get(R0).get<int64_t>();
+        uint64_t filenamePtr = registerFileSet.get(R1).get<uint64_t>();
+        int64_t mode = registerFileSet.get(R2).get<int64_t>();
+        // flag component not used, although function definition includes it
+        int64_t flag = 0;
+
+        char* filename = new char[kernel::Linux::LINUX_PATH_MAX];
+        return readStringThen(filename, filenamePtr,
+                              kernel::Linux::LINUX_PATH_MAX, [=](auto length) {
+                                // Invoke the kernel
+                                int64_t retval =
+                                    linux_.faccessat(dfd, filename, mode, flag);
+                                ProcessStateChange stateChange = {
+                                    ChangeType::REPLACEMENT, {R0}, {retval}};
+                                delete[] filename;
+                                return concludeSyscall(stateChange);
+                              });
+        break;
+      }
       case 56: {  // openat
         int64_t dirfd = registerFileSet.get(R0).get<int64_t>();
         uint64_t pathnamePtr = registerFileSet.get(R1).get<uint64_t>();
@@ -347,7 +367,8 @@ bool ExceptionHandler::init() {
       }
       case 94: {  // exit_group
         auto exitCode = registerFileSet.get(R0).get<uint64_t>();
-        std::cout << "Received exit_group syscall: terminating with exit code "
+        std::cout << "\n[SimEng:ExceptionHandler] Received exit_group syscall: "
+                     "terminating with exit code "
                   << exitCode << std::endl;
         return fatal();
       }
@@ -363,8 +384,9 @@ bool ExceptionHandler::init() {
         int op = registerFileSet.get(R1).get<int>();
         if (op != 129) {
           printException(instruction_);
-          std::cout << "Unsupported arguments for syscall: " << syscallId
-                    << std::endl;
+          std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
+                       "syscall: "
+                    << syscallId << std::endl;
           return fatal();
         }
         stateChange = {ChangeType::REPLACEMENT, {R0}, {1ull}};
@@ -468,6 +490,17 @@ bool ExceptionHandler::init() {
                         RegisterValue(machine), RegisterValue(domainname)}};
         break;
       }
+      case 165: {  // getrusage
+        int who = registerFileSet.get(R0).get<int>();
+        uint64_t usagePtr = registerFileSet.get(R1).get<uint64_t>();
+
+        kernel::rusage usageOut;
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {linux_.getrusage(who, usageOut)}};
+        stateChange.memoryAddresses.push_back({usagePtr, sizeof(usageOut)});
+        stateChange.memoryAddressValues.push_back(usageOut);
+        break;
+      }
       case 169: {  // gettimeofday
         uint64_t tvPtr = registerFileSet.get(R0).get<uint64_t>();
         uint64_t tzPtr = registerFileSet.get(R1).get<uint64_t>();
@@ -509,6 +542,14 @@ bool ExceptionHandler::init() {
       case 179:  // sysinfo
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
+      case 210: {  // shutdown
+        // TODO: Functionality omitted - returns -38 (errno 38, function not
+        // implemented) is to mimic the behaviour on isambard and avoid an
+        // unrecognised syscall error
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-38)}};
+        break;
+      }
       case 214: {  // brk
         auto result = linux_.brk(registerFileSet.get(R0).get<uint64_t>());
         stateChange = {
@@ -546,8 +587,9 @@ bool ExceptionHandler::init() {
           break;
         } else {
           printException(instruction_);
-          std::cout << "Unsupported arguments for syscall: " << syscallId
-                    << std::endl;
+          std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
+                       "syscall: "
+                    << syscallId << std::endl;
           return fatal();
         }
       }
@@ -569,9 +611,16 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
+      case 293:  // rseq
+      {
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+        break;
+      }
+
       default:
         printException(instruction_);
-        std::cout << "Unrecognised syscall: " << syscallId << std::endl;
+        std::cout << "\n[SimEng:ExceptionHandler] Unrecognised syscall: "
+                  << syscallId << std::endl;
         return fatal();
     }
 
@@ -638,7 +687,8 @@ bool ExceptionHandler::readStringThen(char* buffer, uint64_t address,
 void ExceptionHandler::readLinkAt(span<char> path) {
   if (path.size() == kernel::Linux::LINUX_PATH_MAX) {
     // TODO: Handle LINUX_PATH_MAX case
-    std::cout << "Path exceeds LINUX_PATH_MAX" << std::endl;
+    std::cout << "[SimEng:ExceptionHandler] Path exceeds LINUX_PATH_MAX"
+              << std::endl;
     fatal();
     return;
   }
@@ -653,7 +703,8 @@ void ExceptionHandler::readLinkAt(span<char> path) {
 
   if (result < 0) {
     // TODO: Handle error case
-    std::cout << "Error generated by readlinkat" << std::endl;
+    std::cout << "[SimEng:ExceptionHandler] Error generated by readlinkat"
+              << std::endl;
     fatal();
     return;
   }
@@ -729,7 +780,7 @@ const ExceptionResult& ExceptionHandler::getResult() const { return result_; }
 void ExceptionHandler::printException(const Instruction& insn) const {
   auto exception = insn.getException();
   std::cout << std::endl;
-  std::cout << "Encountered ";
+  std::cout << "[SimEng:ExceptionHandler] Encountered ";
   switch (exception) {
     case InstructionException::EncodingUnallocated:
       std::cout << "illegal instruction";
@@ -761,8 +812,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
   }
   std::cout << " exception\n";
 
-  std::cout << "  Generated by instruction: \n"
-            << "    0x" << std::hex << std::setfill('0') << std::setw(16)
+  std::cout << "[SimEng:ExceptionHandler]  Generated by instruction: \n"
+            << "[SimEng:ExceptionHandler]    0x" << std::hex
+            << std::setfill('0') << std::setw(16)
             << insn.getInstructionAddress() << ": ";
 
   auto& metadata = insn.getMetadata();
@@ -776,7 +828,8 @@ void ExceptionHandler::printException(const Instruction& insn) const {
   } else {
     std::cout << metadata.mnemonic << " " << metadata.operandStr;
   }
-  std::cout << "\n      opcode ID: " << metadata.opcode;
+  std::cout << std::endl;
+  std::cout << "[SimEng:ExceptionHandler]      opcode ID: " << metadata.opcode;
   std::cout << std::endl;
 }
 
