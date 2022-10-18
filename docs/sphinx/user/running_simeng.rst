@@ -7,11 +7,30 @@ SimEng uses a configuration file and a program binary to produce a cycle-accurat
 
         <simeng_install_directory>/bin/simeng <config file> <binary>
 
-If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor, and the default program binary is defined in ``src/tools/simeng/main.cc`` under the ``hex[]`` array.
+If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor. The default program binary is defined in ``SimEng/src/include/simeng/CoreInstance.hh`` under the ``hex[]`` array which contains a set of raw instructions in a hexadecimal format.
 
 .. Note:: Paths to binaries must be in full, and not relative.
 
 Whilst a configuration file can be specified without a program (will use default program), a specified program must be accompanied by a configuration file.
+
+Simulation Output
+-----------------
+
+For a successful simulation, SimEng's output can be split into 4 parts;
+
+Build Metadata
+    A summary of the build options set and general information about the SimEng framework built.
+
+Workload Output
+    All outputs from the supplied workload under simulation.
+
+Exit Clause
+    The reason why the simulation has halted. Most commonly this is due to the invoking of the ``exit()`` system call by the workload under simulation.
+
+Statistics
+    A selection of simulation statistics describing the emergent simulated PMU-style hardware events.
+
+All non-workload outputs from SimEng are prefixed with a tag of the format ``[SimEng:Object]`` (e.g. ``[SimEng:ExceptionHandler]``). If the output came from the root of the framework, the ``Object`` field is omitted.
 
 Configuration files
 -------------------

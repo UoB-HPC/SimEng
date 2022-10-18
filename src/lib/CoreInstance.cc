@@ -252,24 +252,6 @@ void CoreInstance::createCore() {
   portAllocator_ = std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);
 
-  // Configure reservation station arrangment
-  std::vector<std::pair<uint8_t, uint64_t>> rsArrangement;
-  for (size_t i = 0; i < config_["Reservation-Stations"].size(); i++) {
-    // Iterate over each reservation station in config
-    auto reservation_station = config_["Reservation-Stations"][i];
-    for (size_t j = 0; j < reservation_station["Ports"].size(); j++) {
-      // Iterate over issue ports in reservation station
-      uint8_t port = reservation_station["Ports"][j].as<uint8_t>();
-      if (rsArrangement.size() < port + 1) {
-        // Resize vector to match number of execution ports available across
-        // all reservation stations
-        rsArrangement.resize(port + 1);
-      }
-      // Map an execution port to a reservation station
-      rsArrangement[port] = {i, reservation_station["Size"].as<uint16_t>()};
-    }
-  }
-
   // Construct the core object based on the defined simulation mode
   uint64_t entryPoint = process_->getEntryPoint();
   if (mode_ == SimulationMode::Emulation) {
@@ -283,7 +265,7 @@ void CoreInstance::createCore() {
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
-        *arch_, *predictor_, *portAllocator_, rsArrangement, config_);
+        *arch_, *predictor_, *portAllocator_, config_);
   }
 
   createSpecialFileDirectory();

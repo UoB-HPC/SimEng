@@ -15,7 +15,7 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-/* A basic ARMv8-a implementation of the `Architecture` interface. */
+/* A basic Armv9.2-a implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
   Architecture(kernel::Linux& kernel, YAML::Node config);
@@ -27,7 +27,7 @@ class Architecture : public arch::Architecture {
                     uint64_t instructionAddress,
                     MacroOp& output) const override;
 
-  /** Returns an ARMv8-a register file structure description. */
+  /** Returns an Armv9.2-a register file structure description. */
   std::vector<RegisterFileStructure> getRegisterFileStructures() const override;
 
   /** Returns a zero-indexed register tag for a system register encoding.

@@ -280,7 +280,10 @@ void ModelConfig::validate() {
     nodeChecker<uint16_t>(rs["Size"], rs_num + "Size",
                           std::make_pair(1, UINT16_MAX),
                           ExpectedValue::UInteger);
-    // Check for existence of Ports field
+    nodeChecker<uint16_t>(rs["Dispatch-Rate"], rs_num + "Dispatch-Rate",
+                          std::make_pair(1, UINT16_MAX),
+                          ExpectedValue::UInteger);
+    // Check for existance of Ports field
     if (!(rs["Ports"].IsDefined()) || rs["Ports"].IsNull()) {
       missing_ << "\t- " << rs_num << "Ports\n";
       continue;
@@ -294,7 +297,7 @@ void ModelConfig::validate() {
       if (nodeChecker<std::string>(port_node, rs_num + port_num + "Portname",
                                    portNames, ExpectedValue::String)) {
         // Change port name to port index
-        for (uint8_t k = 0; k < portNames.size(); k++) {
+        for (size_t k = 0; k < portNames.size(); k++) {
           if (port_node.as<std::string>() == portNames[k]) {
             configFile_["Reservation-Stations"][i]["Ports"][j] = unsigned(k);
             portLinked[portNames[k]] = true;
@@ -345,7 +348,7 @@ void ModelConfig::validate() {
 
   // Pipeline-Widths
   root = "Pipeline-Widths";
-  subFields = {"Commit", "Dispatch-Rate", "FrontEnd", "LSQ-Completion"};
+  subFields = {"Commit", "FrontEnd", "LSQ-Completion"};
   nodeChecker<unsigned int>(configFile_[root][subFields[0]], subFields[0],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger);
@@ -353,9 +356,6 @@ void ModelConfig::validate() {
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger);
   nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  nodeChecker<unsigned int>(configFile_[root][subFields[3]], subFields[3],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger);
   subFields.clear();
