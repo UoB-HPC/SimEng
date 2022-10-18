@@ -12,7 +12,7 @@ print(len(sys.argv))
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
     "simeng_config_path": "<PATH TO SIMENG MODEL CONFIG .YAML FILE>",
-    "executable_path": "<PATH TO EXECUTABLE BINARY OR EMTRY STRING IF INSTRUCTIONS SUPPLIED THROUGH TEST>",
+    "executable_path": "<PATH TO EXECUTABLE BINARY OR EMPTY STRING IF INSTRUCTIONS SUPPLIED THROUGH TEST>",
     "executable_args": "",
     "clock" : "1GHz",
     "max_addr_memory": 2*1024*1024*1024-1,
