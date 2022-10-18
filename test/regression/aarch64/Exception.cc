@@ -27,7 +27,8 @@ TEST_P(Exception, SME_context_modes) {
   fmopa	za0.s, p2/m, p0/m, z1.s, z2.s
   )");
   const char err0[] =
-      "\nEncountered SME execution attempt when streaming mode disabled";
+      "\n[SimEng:ExceptionHandler] Encountered SME execution attempt when "
+      "streaming mode disabled";
   EXPECT_EQ(stdout_.substr(0, sizeof(err0) - 1), err0);
   // Reset SVCR in AArch64_Architecture to
   RUN_AARCH64(R"(
@@ -38,7 +39,9 @@ TEST_P(Exception, SME_context_modes) {
   smstart sm
   fmopa	za0.s, p2/m, p0/m, z1.s, z2.s
   )");
-  const char err1[] = "\nEncountered ZA register access attempt when disabled";
+  const char err1[] =
+      "\n[SimEng:ExceptionHandler] Encountered ZA register access attempt when "
+      "disabled";
   EXPECT_EQ(stdout_.substr(0, sizeof(err1) - 1), err1);
   // Reset SVCR in AArch64_Architecture to
   RUN_AARCH64(R"(
@@ -49,7 +52,9 @@ TEST_P(Exception, SME_context_modes) {
   smstart sm
   zero {za}
   )");
-  const char err2[] = "\nEncountered ZA register access attempt when disabled";
+  const char err2[] =
+      "\n[SimEng:ExceptionHandler] Encountered ZA register access attempt when "
+      "disabled";
   EXPECT_EQ(stdout_.substr(0, sizeof(err2) - 1), err2);
   // Reset SVCR in AArch64_Architecture to
   RUN_AARCH64(R"(
