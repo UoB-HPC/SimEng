@@ -180,6 +180,60 @@ TEST_P(InstLoad, ld1_tworeg) {  // 128-bit
   CHECK_NEON(3, uint64_t, {(0x98765432ull << 16), (0xABCDEF12ull << 32)});
 }
 
+TEST_P(InstLoad, ld1_multi_struct) {
+  // 16-bit, load into one register
+  // 16B = 16 elements of one byte
+  initialHeapData_.resize(16);
+  uint8_t* heapi8 = reinterpret_cast<uint8_t*>(initialHeapData_.data());
+  heapi8[0] = 0xFF;
+  heapi8[1] = 0x00;
+  heapi8[2] = 0x11;
+  heapi8[3] = 0x22;
+  heapi8[4] = 0x33;
+  heapi8[5] = 0x44;
+  heapi8[6] = 0x55;
+  heapi8[7] = 0x66;
+  heapi8[8] = 0x77;
+  heapi8[9] = 0x88;
+  heapi8[10] = 0x99;
+  heapi8[11] = 0xAA;
+  heapi8[12] = 0xBB;
+  heapi8[13] = 0xCC;
+  heapi8[14] = 0xDD;
+  heapi8[15] = 0xEE;
+
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    # Load values from heap
+    ld1 {v0.16b}, [x0]
+
+    # save heap address before post index
+    mov x10, x0
+
+    # Load values from heap with post-index
+    ld1 {v1.16b}, [x0], #16
+
+    # save heap address after post index
+    mov x11, x0
+
+  )");
+
+  CHECK_NEON(0, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+
+  CHECK_NEON(1, uint8_t,
+             {0xFF, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99,
+              0xAA, 0xBB, 0xCC, 0xDD, 0xEE});
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(11),
+            getGeneralRegister<uint64_t>(10) + 16);
+}
+
 TEST_P(InstLoad, ld2_multi_struct) {
   // 32-bit Post index
   initialHeapData_.resize(64);
@@ -198,10 +252,13 @@ TEST_P(InstLoad, ld2_multi_struct) {
     mov x8, 214
     svc #0
 
-    # Save heap address before ld2
+    # Simple version does not alter x0
+    ld2 {v4.4s, v5.4s}, [x0]
+
+    # Save heap address before ld2 post index
     mov x10, x0
 
-    # Load values from heap
+    # Load values from heap, post index x0
     ld2 {v0.4s, v1.4s}, [x0], #32
     
     # Save heap address after ld2
@@ -211,6 +268,7 @@ TEST_P(InstLoad, ld2_multi_struct) {
     mov x1, #48
     ld2 {v2.4s, v3.4s}, [x0], x1
     mov x12, x0
+		
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(11),
             getGeneralRegister<uint64_t>(10) + 32);
@@ -220,6 +278,8 @@ TEST_P(InstLoad, ld2_multi_struct) {
             getGeneralRegister<uint64_t>(10) + 48);
   CHECK_NEON(2, float, {0.25f, 1.25f, 0.125f, 5.0f});
   CHECK_NEON(3, float, {2.0f, 7.5f, 0.75f, -0.5f});
+  CHECK_NEON(4, float, {0.25f, 1.25f, 0.125f, 5.0f});
+  CHECK_NEON(5, float, {2.0f, 7.5f, 0.75f, -0.5f});
 }
 
 TEST_P(InstLoad, ldadd) {

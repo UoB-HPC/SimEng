@@ -14,6 +14,68 @@ using Syscall = AArch64RegressionTest;
 /** The maximum size of a filesystem path. */
 static const size_t LINUX_PATH_MAX = 4096;
 
+TEST_P(Syscall, getrandom) {
+  initialHeapData_.resize(24);
+  memset(initialHeapData_.data(), -1, 16);
+
+  RUN_AARCH64(R"(
+      # Get heap address
+      mov x0, 0
+      mov x8, 214
+      svc #0
+
+      # store inital heap address
+      mov x10, x0
+
+      # Save 8 random bytes to the heap
+      # getrandom(buf * = [a], buflen = 8, no flags)
+      mov x1, #8
+      mov x8, #278
+      svc #0
+
+      # Save another 8 random bytes to the heap
+      # getrandom(buf * = [a], buflen = 8, no flags)
+      add x0, x10, #8
+      mov x1, #8
+      mov x8, #278
+      svc #0
+
+    )");
+
+  // Check getrandom returned 8 (8 bytes were requested)
+  EXPECT_EQ(getGeneralRegister<int64_t>(0), 8);
+
+  int heapStart = getGeneralRegister<int64_t>(10);
+  for (size_t i = 0; i < 8; i++) {
+    printf("compare %x == %x\n", getMemoryValue<uint8_t>(heapStart + i),
+           getMemoryValue<uint8_t>(heapStart + 8 + i));
+  }
+
+  // check that the retuned bytes arent all equal to -1.
+  // heap was initialised to -1 so check bytes have changed
+  bool allUnchanged = true;
+  for (size_t i = 0; i < 16; i++) {
+    if (getMemoryValue<uint8_t>(heapStart + i) != 0xFF) {
+      allUnchanged = false;
+      break;
+    }
+  }
+  EXPECT_EQ(allUnchanged, false);
+
+  // Check that the returned bytes from the two syscalls dont all match.
+  // If they do then the returned bytes surely werent random
+  bool allMatch = true;
+  for (char i = 0; i < 8; i++) {
+    if (getMemoryValue<uint8_t>(heapStart + i) !=
+        getMemoryValue<uint8_t>(heapStart + 8 + i)) {
+      allMatch = false;
+      break;
+    }
+  }
+
+  EXPECT_EQ(allMatch, false);
+}
+
 TEST_P(Syscall, ioctl) {
   // TIOCGWINSZ: test it returns zero and sets the output to anything
   initialHeapData_.resize(8);

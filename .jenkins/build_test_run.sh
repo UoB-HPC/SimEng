@@ -51,16 +51,16 @@ run () {
     echo "Simulation without configuration file argument:"
     cat run
     echo ""
-    compare_outputs "$(tail -n 3 run | head -n 1)" "retired: 3145731" "retired instructions"
-    compare_outputs "$(tail -n 1 run | cut -c10-16)" "3145738" "simulated ticks"
+    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "3145731" "retired instructions"
+    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "3145736" "simulated cycles"
     echo ""
 
     ./bin/simeng "$SIMENG_TOP"/configs/tx2.yaml > run
     echo "Simulation with configuration file argument:"
     cat run
     echo ""
-    compare_outputs "$(tail -n 3 run | head -n 1)" "retired: 3145732" "retired instructions"
-    compare_outputs "$(tail -n 1 run | cut -c10-16)" "1048593" "simulated ticks"
+    compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "3145732" "retired instructions"
+    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "1048588" "simulated cycles"
     echo ""
 }
 

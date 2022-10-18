@@ -51,7 +51,7 @@ class AuxFunc {
   }
 
   /** Manipulate the bitfield `value` according to the logic of the (U|S)BFM
-   * ARMv8 instructions. */
+   * Armv9.2-a instructions. */
   template <typename T>
   static std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
   bitfieldManipulate(T value, T dest, uint8_t rotateBy, uint8_t sourceBits,
@@ -139,16 +139,18 @@ class AuxFunc {
 
   // Rounding function that rounds a double to nearest integer (64-bit). In
   // event of a tie (i.e. 7.5) it will be rounded to the nearest even number.
-  static int64_t doubleRoundToNearestTiesToEven(double input) {
-    if (std::fabs(input - std::trunc(input)) == 0.5) {
-      if (static_cast<int64_t>(input - 0.5) % 2 == 0) {
-        return static_cast<int64_t>(input - 0.5);
-      } else {
-        return static_cast<int64_t>(input + 0.5);
-      }
+  template <typename IN, typename OUT>
+  static OUT roundToNearestTiesToEven(IN input) {
+    IN half = static_cast<IN>(0.5);
+    if (std::fabs(input - std::trunc(input)) == half) {
+      OUT truncd = static_cast<OUT>(std::trunc(input));
+      // if value is negative, then may need to -1 from truncd, else may need to
+      // +1.
+      OUT addand = (truncd > 0) ? 1 : -1;
+      return ((truncd % 2 == 0) ? truncd : (truncd + addand));
     }
     // Otherwise round to nearest
-    return static_cast<int64_t>(std::round(input));
+    return static_cast<OUT>(std::round(input));
   }
 
   /** Extend `value` according to `extendType`, and left-shift the result by
@@ -263,12 +265,22 @@ class AuxFunc {
   static uint16_t sveGetPattern(const std::string operandStr,
                                 const uint8_t esize, const uint16_t VL_) {
     const uint16_t elements = VL_ / esize;
-    // If not pattern then same as ALL
-    if (operandStr.find(",") == std::string::npos) return elements;
+    const std::vector<std::string> patterns = {
+        "pow2", "vl1",  "vl2",  "vl3",   "vl4",   "vl5",  "vl6",  "vl7", "vl8",
+        "vl16", "vl32", "vl64", "vl128", "vl256", "mul3", "mul4", "all"};
 
-    // Get pattern string
-    std::string pattern(operandStr.substr(operandStr.find(",") + 2));
-    if (pattern == "pow2") {
+    // If no pattern present in operandStr then same behaviour as ALL
+    std::string pattern = "all";
+    for (uint8_t i = 0; i < patterns.size(); i++) {
+      if (operandStr.find(patterns[i]) != std::string::npos) {
+        pattern = patterns[i];
+        // Don't break when pattern found as vl1 will be found in vl128 etc
+      }
+    }
+
+    if (pattern == "all")
+      return elements;
+    else if (pattern == "pow2") {
       int n = 1;
       while (elements >= std::pow(2, n)) {
         n = n + 1;

@@ -32,6 +32,11 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
       amount &= mask;
       return (value >> amount) | (value << ((-amount) & mask));
     }
+    case ARM64_SFT_MSL: {
+      // pad in with ones instead of zeros
+      const auto mask = (1 << amount) - 1;
+      return (value << amount) | mask;
+    }
     case ARM64_SFT_INVALID:
       return value;
     default:
@@ -166,9 +171,10 @@ struct ExecutionInfo {
   uint16_t stallCycles = 1;
 
   /** The ports that support the instruction. */
-  std::vector<uint8_t> ports = {};
+  std::vector<uint16_t> ports = {};
 };
 
+/** The various exceptions that can be raised by an individual instruction. */
 enum class InstructionException {
   None = 0,
   EncodingUnallocated,
@@ -179,7 +185,8 @@ enum class InstructionException {
   SupervisorCall,
   HypervisorCall,
   SecureMonitorCall,
-  NoAvailablePort
+  NoAvailablePort,
+  UnmappedSysReg
 };
 
 /** The opcodes of simeng aarch64 micro-operations. */
@@ -202,7 +209,7 @@ struct MicroOpInfo {
   int microOpIndex = 0;
 };
 
-/** A basic ARMv8-a implementation of the `Instruction` interface. */
+/** A basic Armv9.2-a implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.
@@ -269,6 +276,12 @@ class Instruction : public simeng::Instruction {
    * instruction. */
   std::tuple<bool, uint64_t> checkEarlyBranchMisprediction() const override;
 
+  /** Retrieve branch type. */
+  BranchType getBranchType() const override;
+
+  /** Retrieve a branch target from the instruction's metadata if known. */
+  uint64_t getKnownTarget() const override;
+
   /** Is this a store address operation (a subcategory of store operations which
    * deal with the generation of store addresses to store data at)? */
   bool isStoreAddress() const override;
@@ -283,12 +296,6 @@ class Instruction : public simeng::Instruction {
   /** Is this a branch operation? */
   bool isBranch() const override;
 
-  /** Is this a return instruction? */
-  bool isRET() const override;
-
-  /** Is this a branch and link instruction? */
-  bool isBL() const override;
-
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
@@ -297,7 +304,7 @@ class Instruction : public simeng::Instruction {
   void setExecutionInfo(const ExecutionInfo& info);
 
   /** Get this instruction's supported set of ports. */
-  const std::vector<uint8_t>& getSupportedPorts() override;
+  const std::vector<uint16_t>& getSupportedPorts() override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
@@ -411,10 +418,6 @@ class Instruction : public simeng::Instruction {
   bool isStoreData_ = false;
   /** Is a branch operation. */
   bool isBranch_ = false;
-  /** Is a return instruction. */
-  bool isRET_ = false;
-  /** Is a branch and link instructions. */
-  bool isBL_ = false;
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t microOpcode_ = MicroOpcode::INVALID;
   /** Is the micro-operation opcode of the instruction, where appropriate. */

@@ -25,19 +25,18 @@ class MockInstruction : public Instruction {
 
   MOCK_CONST_METHOD0(checkEarlyBranchMisprediction,
                      std::tuple<bool, uint64_t>());
+  MOCK_CONST_METHOD0(getBranchType, BranchType());
+  MOCK_CONST_METHOD0(getKnownTarget, uint64_t());
 
   MOCK_CONST_METHOD0(isStoreAddress, bool());
   MOCK_CONST_METHOD0(isStoreData, bool());
   MOCK_CONST_METHOD0(isLoad, bool());
   MOCK_CONST_METHOD0(isBranch, bool());
   MOCK_CONST_METHOD0(isASIMD, bool());
-  MOCK_CONST_METHOD0(isRET, bool());
-  MOCK_CONST_METHOD0(isBL, bool());
   MOCK_CONST_METHOD0(isPredicate, bool());
   MOCK_CONST_METHOD0(getGroup, uint16_t());
 
-  MOCK_METHOD1(setSupportedPorts, void(std::vector<uint8_t>));
-  MOCK_METHOD0(getSupportedPorts, const std::vector<uint8_t>&());
+  MOCK_METHOD0(getSupportedPorts, const std::vector<uint16_t>&());
 
   void setBranchResults(bool wasTaken, uint64_t targetAddress) {
     branchTaken_ = wasTaken;

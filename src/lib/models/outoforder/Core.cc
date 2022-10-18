@@ -14,13 +14,10 @@ namespace models {
 namespace outoforder {
 
 // TODO: System register count has to match number of supported system registers
-
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator,
-           const std::vector<std::pair<uint8_t, uint64_t>>& rsArrangement,
-           YAML::Node config)
+           pipeline::PortAllocator& portAllocator, YAML::Node config)
     : isa_(isa),
       physicalRegisterStructures_(
           {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
@@ -28,12 +25,13 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
             config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>()},
            {32, config["Register-Set"]["Predicate-Count"].as<uint16_t>()},
            {1, config["Register-Set"]["Conditional-Count"].as<uint16_t>()},
-           {8, 6}}),
+           {8, isa.getNumSystemRegisters()}}),
       physicalRegisterQuantities_(
           {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
            config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>(),
            config["Register-Set"]["Predicate-Count"].as<uint16_t>(),
-           config["Register-Set"]["Conditional-Count"].as<uint16_t>(), 6}),
+           config["Register-Set"]["Conditional-Count"].as<uint16_t>(),
+           isa.getNumSystemRegisters()}),
       registerFileSet_(physicalRegisterStructures_),
       registerAliasTable_(isa.getRegisterFileStructures(),
                           physicalRegisterQuantities_),
@@ -58,26 +56,33 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto regs, auto values) {
             dispatchIssueUnit_.forwardOperands(regs, values);
           },
-          config["L1-Cache"]["Exclusive"].as<bool>(),
-          config["L1-Cache"]["Load-Bandwidth"].as<uint8_t>(),
-          config["L1-Cache"]["Store-Bandwidth"].as<uint8_t>(),
-          config["L1-Cache"]["Permitted-Requests-Per-Cycle"].as<uint8_t>(),
-          config["L1-Cache"]["Permitted-Loads-Per-Cycle"].as<uint8_t>(),
-          config["L1-Cache"]["Permitted-Stores-Per-Cycle"].as<uint8_t>()),
-      reorderBuffer_(config["Queue-Sizes"]["ROB"].as<unsigned int>(),
-                     registerAliasTable_, loadStoreQueue_,
-                     [this](auto instruction) { raiseException(instruction); }),
+          config["LSQ-L1-Interface"]["Exclusive"].as<bool>(),
+          config["LSQ-L1-Interface"]["Load-Bandwidth"].as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Store-Bandwidth"].as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Permitted-Requests-Per-Cycle"]
+              .as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Permitted-Loads-Per-Cycle"]
+              .as<uint16_t>(),
+          config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
+              .as<uint16_t>()),
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, config["Core"]["Fetch-Block-Size"].as<uint8_t>(),
+                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
                  isa, branchPredictor),
+      reorderBuffer_(
+          config["Queue-Sizes"]["ROB"].as<unsigned int>(), registerAliasTable_,
+          loadStoreQueue_,
+          [this](auto instruction) { raiseException(instruction); },
+          [this](auto branchAddress) {
+            fetchUnit_.registerLoopBoundary(branchAddress);
+          },
+          branchPredictor, config["Fetch"]["Loop-Buffer-Size"].as<uint16_t>(),
+          config["Fetch"]["Loop-Detection-Threshold"].as<uint16_t>()),
       decodeUnit_(fetchToDecodeBuffer_, decodeToRenameBuffer_, branchPredictor),
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures_.size()),
-      dispatchIssueUnit_(
-          renameToDispatchBuffer_, issuePorts_, registerFileSet_, portAllocator,
-          physicalRegisterQuantities_, rsArrangement,
-          config["Pipeline-Widths"]["Dispatch-Rate"].as<unsigned int>()),
+      dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
+                         portAllocator, physicalRegisterQuantities_, config),
       writebackUnit_(
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
@@ -110,13 +115,12 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
-
-  // Get Virtual Counter Timer system register
-  VCTreg_ = isa_.getVCTreg();
 };
 
 void Core::tick() {
   ticks_++;
+
+  if (hasHalted_) return;
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -169,6 +173,7 @@ void Core::tick() {
 
   flushIfNeeded();
   fetchUnit_.requestFromPC();
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 void Core::flushIfNeeded() {
@@ -196,6 +201,7 @@ void Core::flushIfNeeded() {
       targetAddress = reorderBuffer_.getFlushAddress();
     }
 
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
@@ -221,6 +227,7 @@ void Core::flushIfNeeded() {
     // Update PC and wipe Fetch/Decode buffer.
     targetAddress = decodeUnit_.getFlushAddress();
 
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     fetchToDecodeBuffer_.stall(false);
@@ -234,8 +241,9 @@ bool Core::hasHalted() const {
     return true;
   }
 
-  // Core is considered to have halted when the fetch unit has halted, and there
-  // are no uops at the head of any buffer.
+  // Core is considered to have halted when the fetch unit has halted, there
+  // are no uops at the head of any buffer, and no exception is currently being
+  // handled.
   if (!fetchUnit_.hasHalted()) {
     return false;
   }
@@ -257,6 +265,8 @@ bool Core::hasHalted() const {
       return false;
     }
   }
+
+  if (exceptionHandler_ != nullptr) return false;
 
   return true;
 }
@@ -296,6 +306,11 @@ void Core::handleException() {
 void Core::processExceptionHandler() {
   assert(exceptionHandler_ != nullptr &&
          "Attempted to process an exception handler that wasn't present");
+  if (dataMemory_.hasPendingRequests()) {
+    // Must wait for all memory requests to complete before processing the
+    // exception
+    return;
+  }
 
   bool success = exceptionHandler_->tick();
   if (!success) {
@@ -307,8 +322,9 @@ void Core::processExceptionHandler() {
 
   if (result.fatal) {
     hasHalted_ = true;
-    std::cout << "Halting due to fatal exception" << std::endl;
+    std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
   }
@@ -356,11 +372,6 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
     dataMemory_.requestWrite(change.memoryAddresses[i],
                              change.memoryAddressValues[i]);
   }
-}
-
-void Core::incVCT(uint64_t iterations) {
-  registerFileSet_.set(VCTreg_, iterations);
-  return;
 }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()

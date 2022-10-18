@@ -8,9 +8,12 @@ Core:
   Clock-Frequency: 1.8
   # Timer-Frequency is in MHz.
   Timer-Frequency: 100
-  Fetch-Block-Size: 32
   Micro-Operations: True
   Vector-Length: 512
+Fetch:
+  Fetch-Block-Size: 32
+  Loop-Buffer-Size: 48
+  Loop-Detection-Threshold: 4
 Process-Image:
   Heap-Size: 1073741824
   Stack-Size: 1048576
@@ -21,7 +24,6 @@ Register-Set:
   Conditional-Count: 128
 Pipeline-Widths:
   Commit: 4
-  Dispatch-Rate: 2
   FrontEnd: 4
   LSQ-Completion: 2
 Queue-Sizes:
@@ -29,8 +31,16 @@ Queue-Sizes:
   Load: 40
   Store: 24
 Branch-Predictor:
-  BTB-bitlength: 11
-L1-Cache:
+  BTB-Tag-Bits: 11
+  Saturating-Count-Bits: 2
+  Global-History-Length: 11
+  RAS-entries: 8
+  Fallback-Static-Predictor: "Always-Taken"
+L1-Data-Memory:
+  Interface-Type: Fixed
+L1-Instruction-Memory:
+  Interface-Type: Flat
+LSQ-L1-Interface:
   Access-Latency: 5
   Exclusive: True
   Load-Bandwidth: 128
@@ -89,25 +99,30 @@ Ports:
 Reservation-Stations:
   0:
     Size: 20
+    Dispatch-Rate: 2
     Ports:
     - FLA
     - PR
     - EXA
   1:
     Size: 20
+    Dispatch-Rate: 2
     Ports:
     - FLB
     - EXB
   2:
     Size: 10
+    Dispatch-Rate: 2
     Ports:
     - EAGA
   3:
     Size: 10
+    Dispatch-Rate: 2
     Ports:
     - EAGB
   4:
     Size: 19
+    Dispatch-Rate: 2
     Ports:
     - BR
 Execution-Units:
@@ -232,9 +247,9 @@ Latencies:
 # CPU-Info mainly used to generate a replica of the special (or system) file directory 
 # structure
 CPU-Info:
-  # Set Generate-Special-Dir to 'T' to generate the special files directory, or to 'F' to not.
+  # Set Generate-Special-Dir to True to generate the special files directory, or to False to not.
   # (Not generating the special files directory may require the user to copy over files manually)
-  Generate-Special-Dir: T
+  Generate-Special-Dir: True
   # Core-Count MUST be 1 as multi-core is not supported at this time. (A64FX true value is 48)
   Core-Count: 1
   # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (A64FX true value is 1)

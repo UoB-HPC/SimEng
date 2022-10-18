@@ -13,10 +13,9 @@ namespace inorder {
 const unsigned int blockSize = 16;
 const unsigned int clockFrequency = 2.5 * 1e9;
 
-Core::Core(FlatMemoryInterface& instructionMemory,
-           FlatMemoryInterface& dataMemory, uint64_t processMemorySize,
-           uint64_t entryPoint, const arch::Architecture& isa,
-           BranchPredictor& branchPredictor)
+Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+           uint64_t processMemorySize, uint64_t entryPoint,
+           const arch::Architecture& isa, BranchPredictor& branchPredictor)
     : dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
@@ -39,13 +38,12 @@ Core::Core(FlatMemoryInterface& instructionMemory,
   // Query and apply initial state
   auto state = isa.getInitialState();
   applyStateChange(state);
-
-  // Get Virtual Counter Timer system register
-  VCTreg_ = isa_.getVCTreg();
 };
 
 void Core::tick() {
   ticks_++;
+
+  if (hasHalted_) return;
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -89,6 +87,7 @@ void Core::tick() {
     // Update PC and wipe younger buffers (Fetch/Decode, Decode/Execute)
     auto targetAddress = executeUnit_.getFlushAddress();
 
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
     decodeToExecuteBuffer_.fill(nullptr);
@@ -100,6 +99,7 @@ void Core::tick() {
     // Update PC and wipe Fetch/Decode buffer.
     auto targetAddress = decodeUnit_.getFlushAddress();
 
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(targetAddress);
     fetchToDecodeBuffer_.fill({});
 
@@ -107,6 +107,7 @@ void Core::tick() {
   }
 
   fetchUnit_.requestFromPC();
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 bool Core::hasHalted() const {
@@ -114,14 +115,15 @@ bool Core::hasHalted() const {
     return true;
   }
 
-  // Core is considered to have halted when the fetch unit has halted, and there
-  // are no uops at the head of any buffer.
+  // Core is considered to have halted when the fetch unit has halted, there
+  // are no uops at the head of any buffer, and no exception is currently being
+  // handled.
   bool decodePending = fetchToDecodeBuffer_.getHeadSlots()[0].size() > 0;
   bool executePending = decodeToExecuteBuffer_.getHeadSlots()[0] != nullptr;
   bool writebackPending = completionSlots_[0].getHeadSlots()[0] != nullptr;
 
   return (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
-          !executePending);
+          !executePending && exceptionHandler_ == nullptr);
 }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
@@ -186,6 +188,11 @@ void Core::handleException() {
 void Core::processExceptionHandler() {
   assert(exceptionHandler_ != nullptr &&
          "Attempted to process an exception handler that wasn't present");
+  if (dataMemory_.hasPendingRequests()) {
+    // Must wait for all memory requests to complete before processing the
+    // exception
+    return;
+  }
 
   auto success = exceptionHandler_->tick();
   if (!success) {
@@ -197,8 +204,9 @@ void Core::processExceptionHandler() {
 
   if (result.fatal) {
     hasHalted_ = true;
-    std::cout << "Halting due to fatal exception" << std::endl;
+    std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
+    fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
   }
@@ -330,11 +338,6 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
     dataMemory_.requestWrite(change.memoryAddresses[i],
                              change.memoryAddressValues[i]);
   }
-}
-
-void Core::incVCT(uint64_t iterations) {
-  registerFileSet_.set(VCTreg_, iterations);
-  return;
 }
 
 void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {

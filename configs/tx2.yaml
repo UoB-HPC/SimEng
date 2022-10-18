@@ -8,8 +8,11 @@ Core:
   Clock-Frequency: 2.5
   # Timer-Frequency is in MHz.
   Timer-Frequency: 200
-  Fetch-Block-Size: 32
   Micro-Operations: True
+Fetch:
+  Fetch-Block-Size: 32
+  Loop-Buffer-Size: 64
+  Loop-Detection-Threshold: 4
 Process-Image:
   Heap-Size: 1073741824
   Stack-Size: 1048576
@@ -19,7 +22,6 @@ Register-Set:
   Conditional-Count: 128
 Pipeline-Widths:
   Commit: 4
-  Dispatch-Rate: 4
   FrontEnd: 4
   LSQ-Completion: 2
 Queue-Sizes:
@@ -27,8 +29,16 @@ Queue-Sizes:
   Load: 64
   Store: 36
 Branch-Predictor:
-  BTB-bitlength: 16
-L1-Cache:
+  BTB-Tag-Bits: 11
+  Saturating-Count-Bits: 2
+  Global-History-Length: 10
+  RAS-entries: 5
+  Fallback-Static-Predictor: "Always-Taken"
+L1-Data-Memory:
+  Interface-Type: Fixed
+L1-Instruction-Memory:
+  Interface-Type: Flat
+LSQ-L1-Interface:
   Access-Latency: 4
   Exclusive: False
   Load-Bandwidth: 32
@@ -71,6 +81,7 @@ Ports:
 Reservation-Stations:
   0:
     Size: 60
+    Dispatch-Rate: 4
     Ports:
     - Port 0
     - Port 1
@@ -152,9 +163,9 @@ Latencies:
 # CPU-Info mainly used to generate a replica of the special (or system) file directory 
 # structure
 CPU-Info:
-  # Set Generate-Special-Dir to 'T' to generate the special files directory, or to 'F' to not.
+  # Set Generate-Special-Dir to True to generate the special files directory, or to False to not.
   # (Not generating the special files directory may require the user to copy over files manually)
-  Generate-Special-Dir: T
+  Generate-Special-Dir: True
   # Core-Count MUST be 1 as multi-core is not supported at this time. (TX2 true value is 32)
   Core-Count: 1
   # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (TX2 true value is 2)

@@ -15,6 +15,10 @@ void Instruction::setBranchPrediction(BranchPrediction prediction) {
   prediction_ = prediction;
 }
 
+BranchPrediction Instruction::getBranchPrediction() const {
+  return prediction_;
+}
+
 uint64_t Instruction::getBranchAddress() const { return branchAddress_; }
 bool Instruction::wasBranchTaken() const { return branchTaken_; }
 
@@ -25,7 +29,7 @@ bool Instruction::wasBranchMispredicted() const {
   // Flag as mispredicted if taken state was wrongly predicted, or taken and
   // predicted target is wrong
   return (branchTaken_ != prediction_.taken ||
-          (branchTaken_ && prediction_.target != branchAddress_));
+          (prediction_.target != branchAddress_));
 }
 
 void Instruction::setSequenceId(uint64_t seqId) { sequenceId_ = seqId; };

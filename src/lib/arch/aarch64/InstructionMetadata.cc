@@ -87,6 +87,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // adds incorrectly flags destination as READ
       operands[0].access = CS_AC_WRITE;
       break;
+    case Opcode::AArch64_BICv8i16:
+      operands[0].access = CS_AC_WRITE | CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_BICv8i8:
       // access specifier for last operand was missing
       operands[2].access = CS_AC_READ;
@@ -258,11 +262,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // FMOVXDHighr incorrectly flags destination as only WRITE
       operands[0].access = CS_AC_READ | CS_AC_WRITE;
       break;
-    case Opcode::AArch64_FMOVSi:
-      operands[0].access = CS_AC_WRITE;
-      operands[1].access = CS_AC_READ;
-      operands[1].type = ARM64_OP_IMM;
-      break;
     case Opcode::AArch64_FNMSB_ZPmZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FNMSB_ZPmZZ_S:
@@ -270,8 +269,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_FNMLS_ZPmZZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FNMLS_ZPmZZ_S:
-      [[fallthrough]];
-    case Opcode::AArch64_FADDA_VPZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FMAD_ZPmZZ_D:
       [[fallthrough]];
@@ -380,10 +377,6 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FMUL_ZZZ_S:
       [[fallthrough]];
-    case Opcode::AArch64_FNEG_ZPmZ_D:
-      [[fallthrough]];
-    case Opcode::AArch64_FNEG_ZPmZ_S:
-      [[fallthrough]];
     case Opcode::AArch64_SMAX_ZI_S:
       [[fallthrough]];
     case Opcode::AArch64_SMINV_VPZ_S:
@@ -415,6 +408,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_FCPY_ZPmI_D:
       [[fallthrough]];
     case Opcode::AArch64_FCPY_ZPmI_S:
+      [[fallthrough]];
+    case Opcode::AArch64_FNEG_ZPmZ_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FNEG_ZPmZ_S:
       [[fallthrough]];
     case Opcode::AArch64_FRINTN_ZPmZ_D:
       [[fallthrough]];
@@ -773,9 +770,29 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_LD1Rv4s:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Rv1d:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Rv2d:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Rv2s:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Rv8b:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Rv16b:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Rv8h:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1Rv4h:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_LD1Rv4h_POST:
       [[fallthrough]];
     case Opcode::AArch64_LD1Rv8h_POST:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ | CS_AC_WRITE;
       // Fix for exclusion of post_index immediate in disassembly
       operandCount = 3;
       operands[2].type = ARM64_OP_IMM;
@@ -786,6 +803,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1Rv1d_POST:
       [[fallthrough]];
     case Opcode::AArch64_LD1Rv2d_POST:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ | CS_AC_WRITE;
       // Fix for exclusion of post_index immediate in disassembly
       operandCount = 3;
       operands[2].type = ARM64_OP_IMM;
@@ -796,6 +815,9 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1Rv16b_POST:
       [[fallthrough]];
     case Opcode::AArch64_LD1Rv8b_POST:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ | CS_AC_WRITE;
+
       // Fix for exclusion of post_index immediate in disassembly
       operandCount = 3;
       operands[2].type = ARM64_OP_IMM;
@@ -806,12 +828,23 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1Rv2s_POST:
       [[fallthrough]];
     case Opcode::AArch64_LD1Rv4s_POST:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ | CS_AC_WRITE;
+
       // Fix for exclusion of post_index immediate in disassembly
       operandCount = 3;
       operands[2].type = ARM64_OP_IMM;
       operands[2].access = CS_AC_READ;
       // For vector arrangment of 32-bit, post_index immediate is 4
       operands[2].imm = 4;
+      break;
+    case Opcode::AArch64_LD1Onev16b:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_LD1Onev16b_POST:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ | CS_AC_WRITE;
       break;
     case Opcode::AArch64_LD1Twov16b:
       [[fallthrough]];
@@ -1060,11 +1093,11 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       break;
     }
-    case Opcode::AArch64_SST1B_D:
+    case Opcode::AArch64_SST1B_D_REAL:
       [[fallthrough]];
-    case Opcode::AArch64_SST1D:
+    case Opcode::AArch64_SST1D_REAL:
       [[fallthrough]];
-    case Opcode::AArch64_SST1D_SCALED: {
+    case Opcode::AArch64_SST1D_SCALED_SCALED_REAL: {
       // ST1W doesn't correctly identify first source register
       uint16_t reg_enum = ARM64_REG_Z0;
       // Single or double digit Z register identifier
@@ -1392,6 +1425,40 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_TBLv8i8One:
+      [[fallthrough]];
+    case Opcode::AArch64_TBLv16i8One:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_TBLv8i8Two:
+      [[fallthrough]];
+    case Opcode::AArch64_TBLv16i8Two:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_TBLv8i8Three:
+      [[fallthrough]];
+    case Opcode::AArch64_TBLv16i8Three:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[4].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_TBLv8i8Four:
+      [[fallthrough]];
+    case Opcode::AArch64_TBLv16i8Four:
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[4].access = CS_AC_READ;
+      operands[5].access = CS_AC_READ;
+      break;
   }
 
   revertAliasing();
@@ -1675,9 +1742,9 @@ void InstructionMetadata::revertAliasing() {
         operands[2].vector_index = -1;
         return;
       }
-      if (opcode == Opcode::AArch64_CPYi8 || opcode == Opcode::AArch64_CPYi16 ||
-          opcode == Opcode::AArch64_CPYi32 ||
-          opcode == Opcode::AArch64_CPYi64) {
+      if (opcode == Opcode::AArch64_DUPi8 || opcode == Opcode::AArch64_DUPi16 ||
+          opcode == Opcode::AArch64_DUPi32 ||
+          opcode == Opcode::AArch64_DUPi64) {
         // mov vd, Vn.T[index]; alias of dup vd, Vn.T[index]
         return;
       }
@@ -1791,17 +1858,14 @@ void InstructionMetadata::revertAliasing() {
           opcode == Opcode::AArch64_DUP_ZZI_D ||
           opcode == Opcode::AArch64_DUP_ZZI_Q) {
         // mov Zd.T, Vn; alias for dup Zd.T, Zn.T[0]
-        operandCount = 2;
         operands[0].access = CS_AC_WRITE;
-        operands[1].type = ARM64_OP_REG;
         operands[1].access = CS_AC_READ;
 
         uint8_t start = operandStr[2] == '.' ? 7 : 8;
         uint8_t end = operandStr.length() - start;
 
-        // ARM64_REG_Z0 == 245
-        operands[1].reg =
-            static_cast<arm64_reg>(245 + stoi(operandStr.substr(start, end)));
+        operands[1].reg = static_cast<arm64_reg>(
+            ARM64_REG_Z0 + stoi(operandStr.substr(start, end)));
         operands[1].vector_index = 0;
         return;
       }
@@ -1809,6 +1873,15 @@ void InstructionMetadata::revertAliasing() {
           opcode == Opcode::AArch64_INSvi64lane) {
         // mov vd.T[index1], vn.T[index2]; alias for ins vd.T[index1],
         // vn.T[index2]
+        return;
+      }
+      if (opcode == Opcode::AArch64_ORRv8i8) {
+        // mov vd, vn; alias for orr vd.t, vn.t, vn.t
+        operandCount = 3;
+
+        operands[2] = operands[1];
+        operands[1].access = CS_AC_READ;
+        operands[2].access = CS_AC_READ;
         return;
       }
       if (opcode == Opcode::AArch64_ORRWri ||
@@ -1894,6 +1967,11 @@ void InstructionMetadata::revertAliasing() {
           opcode == Opcode::AArch64_INSvi32gpr ||
           opcode == Opcode::AArch64_INSvi64gpr) {
         // mov vd.ts[index], rn; alias for: ins vd.ts[index], rn
+        return;
+      }
+      if (opcode == Opcode::AArch64_UMOVvi32_idx0 ||
+          opcode == Opcode::AArch64_UMOVvi64_idx0) {
+        // mov wd, vn.t[0]; alias for: umov wd, vn.t[0]
         return;
       }
       return aliasNYI();
@@ -2000,6 +2078,18 @@ void InstructionMetadata::revertAliasing() {
       }
       return aliasNYI();
     case ARM64_INS_REV64:
+      // rev64 vd.t, vn.t
+      if (opcode == Opcode::AArch64_REV64v16i8 ||
+          opcode == Opcode::AArch64_REV64v2i32 ||
+          opcode == Opcode::AArch64_REV64v4i16 ||
+          opcode == Opcode::AArch64_REV64v4i32 ||
+          opcode == Opcode::AArch64_REV64v8i16 ||
+          opcode == Opcode::AArch64_REV64v8i8) {
+        operandCount = 2;
+        operands[0].access = CS_AC_WRITE;
+        operands[1].access = CS_AC_READ;
+        return;
+      }
       return aliasNYI();
     case ARM64_INS_ROR:
       if (opcode == Opcode::AArch64_RORVWr ||

@@ -20,7 +20,7 @@ class Core : public simeng::Core {
   /** Construct a core model, providing an ISA and branch predictor to use,
    * along with a pointer and size of instruction memory, and a pointer to
    * process memory. */
-  Core(FlatMemoryInterface& instructionMemory, FlatMemoryInterface& dataMemory,
+  Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        uint64_t processMemorySize, uint64_t entryPoint,
        const arch::Architecture& isa, BranchPredictor& branchPredictor);
 
@@ -44,10 +44,6 @@ class Core : public simeng::Core {
 
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
-
-  /** Change the value of the Virtual Counter Timer system register to number
-   * of cycles completed. */
-  void incVCT(uint64_t iterations) override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
@@ -136,9 +132,6 @@ class Core : public simeng::Core {
 
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
-
-  /** System Register of Virtual Counter Timer. */
-  simeng::Register VCTreg_;
 };
 
 }  // namespace inorder

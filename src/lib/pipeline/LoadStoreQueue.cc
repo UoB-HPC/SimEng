@@ -19,8 +19,9 @@ LoadStoreQueue::LoadStoreQueue(
     unsigned int maxCombinedSpace, MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    bool exclusive, uint8_t loadBandwidth, uint8_t storeBandwidth,
-    uint8_t permittedRequests, uint8_t permittedLoads, uint8_t permittedStores)
+    bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
+    uint16_t permittedRequests, uint16_t permittedLoads,
+    uint16_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxCombinedSpace_(maxCombinedSpace),
@@ -38,8 +39,9 @@ LoadStoreQueue::LoadStoreQueue(
     MemoryInterface& memory,
     span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
     std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
-    bool exclusive, uint8_t loadBandwidth, uint8_t storeBandwidth,
-    uint8_t permittedRequests, uint8_t permittedLoads, uint8_t permittedStores)
+    bool exclusive, uint16_t loadBandwidth, uint16_t storeBandwidth,
+    uint16_t permittedRequests, uint16_t permittedLoads,
+    uint16_t permittedStores)
     : completionSlots_(completionSlots),
       forwardOperands_(forwardOperands),
       maxLoadQueueSpace_(maxLoadQueueSpace),
@@ -374,7 +376,7 @@ void LoadStoreQueue::tick() {
   // Send memory requests adhering to set bandwidth and number of permitted
   // requests per cycle
   // Index 0: loads, index 1: stores
-  std::array<uint8_t, 2> reqCounts = {0, 0};
+  std::array<uint16_t, 2> reqCounts = {0, 0};
   std::array<uint64_t, 2> dataTransfered = {0, 0};
   std::array<bool, 2> exceededLimits = {false, false};
   auto itLoad = requestLoadQueue_.begin();
@@ -423,7 +425,7 @@ void LoadStoreQueue::tick() {
 
       // Iterate over requests ready this cycle
       while (itInsn != itReq->second.end()) {
-        // Increment count of this request type
+        // Speculatively increment count of this request type
         reqCounts[isStore]++;
 
         // Ensure the limit on the number of permitted operations is adhered
@@ -435,6 +437,9 @@ void LoadStoreQueue::tick() {
         } else if (reqCounts[isStore] > reqLimits_[isStore]) {
           // No more requests of this type can be scheduled this cycle
           exceededLimits[isStore] = true;
+          // Remove speculative increment to ensure it doesn't count for
+          // comparisons aginast the totalLimit_
+          reqCounts[isStore]--;
           break;
         } else {
           // Schedule requests from the queue of addresses in
@@ -517,6 +522,12 @@ void LoadStoreQueue::tick() {
   size_t count = 0;
   while (completedLoads_.size() > 0 && count < completionSlots_.size()) {
     const auto& insn = completedLoads_.front();
+
+    // Don't process load instruction if it has been flushed
+    if (insn->isFlushed()) {
+      completedLoads_.pop();
+      continue;
+    }
 
     // Forward the results
     forwardOperands_(insn->getDestinationRegisters(), insn->getResults());

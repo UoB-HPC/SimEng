@@ -14,6 +14,7 @@ set(SIMENG_SOURCES
     models/outoforder/Core.cc
     pipeline/A64FXPortAllocator.cc
     pipeline/BalancedPortAllocator.cc
+    pipeline/M1PortAllocator.cc
     pipeline/DecodeUnit.cc
     pipeline/DispatchIssueUnit.cc
     pipeline/ExecuteUnit.cc
@@ -26,18 +27,18 @@ set(SIMENG_SOURCES
     pipeline/WritebackUnit.cc
     AlwaysNotTakenPredictor.cc
     ArchitecturalRegisterFileSet.cc
-    BTB_BWTPredictor.cc
-    BTBPredictor.cc
     CMakeLists.txt
+    CoreInstance.cc
     Elf.cc
     FixedLatencyMemoryInterface.cc
     FlatMemoryInterface.cc
+    GenericPredictor.cc
     Instruction.cc
     ModelConfig.cc
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
-    )
+)
 
 configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
 
@@ -46,7 +47,7 @@ set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(libsimeng capstone-static yaml-cpp)
+target_link_libraries(libsimeng capstone yaml-cpp)
 
 set_target_properties(libsimeng PROPERTIES VERSION ${SimEng_VERSION})
 set_target_properties(libsimeng PROPERTIES SOVERSION ${SimEng_VERSION_MAJOR})

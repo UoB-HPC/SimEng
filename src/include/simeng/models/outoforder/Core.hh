@@ -29,9 +29,7 @@ class Core : public simeng::Core {
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        uint64_t processMemorySize, uint64_t entryPoint,
        const arch::Architecture& isa, BranchPredictor& branchPredictor,
-       pipeline::PortAllocator& portAllocator,
-       const std::vector<std::pair<uint8_t, uint64_t>>& rsArrangment,
-       YAML::Node config);
+       pipeline::PortAllocator& portAllocator, YAML::Node config);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -53,10 +51,6 @@ class Core : public simeng::Core {
 
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
-
-  /** Change the value of the Virtual Counter Timer system register to number
-   * of cycles completed. */
-  void incVCT(uint64_t iterations) override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
@@ -114,11 +108,11 @@ class Core : public simeng::Core {
   /** The core's load/store queue. */
   pipeline::LoadStoreQueue loadStoreQueue_;
 
-  /** The core's reorder buffer. */
-  pipeline::ReorderBuffer reorderBuffer_;
-
   /** The fetch unit; fetches instructions from memory. */
   pipeline::FetchUnit fetchUnit_;
+
+  /** The core's reorder buffer. */
+  pipeline::ReorderBuffer reorderBuffer_;
 
   /** The decode unit; decodes instructions into uops and reads operands. */
   pipeline::DecodeUnit decodeUnit_;
@@ -166,9 +160,6 @@ class Core : public simeng::Core {
 
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
-
-  /** System Register of Virtual Counter Timer. */
-  simeng::Register VCTreg_;
 };
 
 }  // namespace outoforder

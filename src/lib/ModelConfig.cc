@@ -1,12 +1,14 @@
 #include "simeng/ModelConfig.hh"
 
+#include <math.h>
+
 namespace simeng {
 
 ModelConfig::ModelConfig(std::string path) {
   // Ensure the file exists
   std::ifstream file(path);
   if (!file.is_open()) {
-    std::cerr << "Could not read " << path << std::endl;
+    std::cerr << "[SimEng:ModelConfig] Could not read " << path << std::endl;
     exit(1);
   }
   file.close();
@@ -31,7 +33,8 @@ void ModelConfig::inherit() {
   if (!configFile_["Inherit-From"]) {
     return;
   } else {
-    std::cerr << "Config inheritance not yet supported" << std::endl;
+    std::cerr << "[SimEng:ModelConfig] Config inheritance not yet supported"
+              << std::endl;
     exit(1);
     // TODO: Merge files
   }
@@ -44,8 +47,8 @@ void ModelConfig::validate() {
   std::string root = "";
   // Core
   root = "Core";
-  subFields = {"Simulation-Mode",  "Clock-Frequency",  "Timer-Frequency",
-               "Fetch-Block-Size", "Micro-Operations", "Vector-Length"};
+  subFields = {"Simulation-Mode", "Clock-Frequency", "Timer-Frequency",
+               "Micro-Operations", "Vector-Length"};
   nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
@@ -54,10 +57,22 @@ void ModelConfig::validate() {
   nodeChecker<uint32_t>(configFile_[root][subFields[2]], subFields[2],
                         std::make_pair(1, UINT32_MAX), ExpectedValue::UInteger,
                         100);
-  if (nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
+  nodeChecker<bool>(configFile_[root][subFields[3]], subFields[3],
+                    std::make_pair(false, true), ExpectedValue::Bool, false);
+  nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
+                        {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
+                         1408, 1536, 1664, 1792, 1920, 2048},
+                        ExpectedValue::UInteger, 512);
+  subFields.clear();
+
+  // Fetch
+  root = "Fetch";
+  subFields = {"Fetch-Block-Size", "Loop-Buffer-Size",
+               "Loop-Detection-Threshold"};
+  if (nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
                             std::make_pair(4, UINT16_MAX),
                             ExpectedValue::UInteger)) {
-    uint16_t block_size = configFile_[root][subFields[3]].as<uint16_t>();
+    uint16_t block_size = configFile_[root][subFields[0]].as<uint16_t>();
     // Ensure fetch block size is a power of 2
     if ((block_size & (block_size - 1)) == 0) {
       uint8_t alignment_bits = log2(block_size);
@@ -67,12 +82,10 @@ void ModelConfig::validate() {
       invalid_ << "\t- Fetch-Block-Size must be a power of 2\n";
     }
   }
-  nodeChecker<bool>(configFile_[root][subFields[4]], subFields[4],
-                    std::make_pair(false, true), ExpectedValue::Bool, false);
-  nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
-                        {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
-                         1408, 1536, 1664, 1792, 1920, 2048},
-                        ExpectedValue::UInteger, 512);
+  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
+                        std::make_pair(0, UINT16_MAX), ExpectedValue::UInteger);
+  nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
+                        std::make_pair(0, UINT16_MAX), ExpectedValue::UInteger);
   subFields.clear();
 
   // Process-Image
@@ -90,13 +103,72 @@ void ModelConfig::validate() {
 
   // Branch-Predictor
   root = "Branch-Predictor";
-  subFields = {"BTB-bitlength"};
-  nodeChecker<uint8_t>(configFile_[root][subFields[0]], subFields[0],
-                       std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger);
+  subFields = {"BTB-Tag-Bits", "Saturating-Count-Bits", "Global-History-Length",
+               "RAS-entries", "Fallback-Static-Predictor"};
+  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
+  nodeChecker<uint64_t>(configFile_[root][subFields[2]], subFields[2],
+                        std::make_pair(0, 64), ExpectedValue::UInteger);
+  nodeChecker<uint64_t>(configFile_[root][subFields[3]], subFields[3],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
+  if (nodeChecker<std::string>(
+          configFile_[root][subFields[4]], subFields[4],
+          std::vector<std::string>{"Always-Taken", "Always-Not-Taken"},
+          ExpectedValue::String)) {
+    // If the Saturating-Count-Bits option is valid, set fallback static
+    // prediction to weakest value of the specific direction (i.e weakly taken
+    // or weakly not-taken)
+    if (nodeChecker<uint64_t>(configFile_[root][subFields[1]], subFields[1],
+                              std::make_pair(1, UINT64_MAX),
+                              ExpectedValue::UInteger)) {
+      // Calculate saturation counter boundary between weakly taken and
+      // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
+      // value
+      uint16_t weaklyTaken =
+          std::pow(2, (configFile_[root][subFields[1]].as<uint64_t>() - 1));
+      // Swap Fallback-Static-Predictor scheme out for equivalent saturating
+      // counter value
+      configFile_[root][subFields[4]] =
+          (configFile_[root][subFields[4]].as<std::string>() == "Always-Taken")
+              ? weaklyTaken
+              : (weaklyTaken - 1);
+    }
+  }
   subFields.clear();
 
-  // L1-Cache
-  root = "L1-Cache";
+  // Data Memory
+  root = "L1-Data-Memory";
+  subFields = {"Interface-Type"};
+  nodeChecker<std::string>(
+      configFile_[root][subFields[0]], root + " " + subFields[0],
+      std::vector<std::string>{"Flat", "Fixed", "External"},
+      ExpectedValue::String);
+  // Currently, fixed instruction memory interfaces are unsupported for
+  // emulation and inorder simulation modes
+  if (configFile_[root][subFields[0]].as<std::string>() != "Flat") {
+    std::string mode = configFile_["Core"]["Simulation-Mode"].as<std::string>();
+    if (mode == "emulation" || mode == "inorderpipelined") {
+      invalid_ << "\t- Non-Flat data memory interface types are "
+                  "currently unsupported for 'emulation' and "
+                  "'inorderpipelined' simulation modes\n";
+    }
+  }
+
+  // Instruction Memory
+  root = "L1-Instruction-Memory";
+  subFields = {"Interface-Type"};
+  nodeChecker<std::string>(
+      configFile_[root][subFields[0]], root + " " + subFields[0],
+      std::vector<std::string>{"Flat", "Fixed", "External"},
+      ExpectedValue::String);
+  // Currently, fixed instruction memory interfaces are unsupported
+  if (configFile_[root][subFields[0]].as<std::string>() != "Flat") {
+    invalid_ << "\t- Non-Flat instruction memory interface types are currently "
+                "unsupported\n";
+  }
+
+  // LSQ-L1-Interface
+  root = "LSQ-L1-Interface";
   subFields = {"Access-Latency",
                "Exclusive",
                "Load-Bandwidth",
@@ -110,20 +182,20 @@ void ModelConfig::validate() {
   nodeChecker<bool>(configFile_[root][subFields[1]], subFields[1],
                     std::vector<bool>{true, false}, ExpectedValue::Bool, false);
   nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
-                        UINT8_MAX);
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
   nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
-                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
-                        UINT8_MAX);
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
   nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
-                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
-                        UINT8_MAX);
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
   nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
-                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
-                        UINT8_MAX);
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
   nodeChecker<uint16_t>(configFile_[root][subFields[6]], subFields[6],
-                        std::make_pair(1, UINT8_MAX), ExpectedValue::UInteger,
-                        UINT8_MAX);
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
   subFields.clear();
 
   // Ports
@@ -140,7 +212,7 @@ void ModelConfig::validate() {
     char port_msg[10];
     sprintf(port_msg, "Port %zu ", i);
     std::string port_num = std::string(port_msg);
-    // Check for existance of Portname field and record name
+    // Check for existence of Portname field and record name
     if (nodeChecker<std::string>(port_node["Portname"], port_num + "Portname",
                                  std::vector<std::string>{},
                                  ExpectedValue::String)) {
@@ -155,7 +227,7 @@ void ModelConfig::validate() {
                  << "\" already used\n";
       }
     }
-    // Check for existance of Instruction-Support field
+    // Check for existence of Instruction-Support field
     if (!(port_node["Instruction-Support"].IsDefined()) ||
         port_node["Instruction-Support"].IsNull()) {
       missing_ << "\t- " << port_num << "Instruction-Support\n";
@@ -208,6 +280,9 @@ void ModelConfig::validate() {
     nodeChecker<uint16_t>(rs["Size"], rs_num + "Size",
                           std::make_pair(1, UINT16_MAX),
                           ExpectedValue::UInteger);
+    nodeChecker<uint16_t>(rs["Dispatch-Rate"], rs_num + "Dispatch-Rate",
+                          std::make_pair(1, UINT16_MAX),
+                          ExpectedValue::UInteger);
     // Check for existance of Ports field
     if (!(rs["Ports"].IsDefined()) || rs["Ports"].IsNull()) {
       missing_ << "\t- " << rs_num << "Ports\n";
@@ -222,7 +297,7 @@ void ModelConfig::validate() {
       if (nodeChecker<std::string>(port_node, rs_num + port_num + "Portname",
                                    portNames, ExpectedValue::String)) {
         // Change port name to port index
-        for (uint8_t k = 0; k < portNames.size(); k++) {
+        for (size_t k = 0; k < portNames.size(); k++) {
           if (port_node.as<std::string>() == portNames[k]) {
             configFile_["Reservation-Stations"][i]["Ports"][j] = unsigned(k);
             portLinked[portNames[k]] = true;
@@ -273,7 +348,7 @@ void ModelConfig::validate() {
 
   // Pipeline-Widths
   root = "Pipeline-Widths";
-  subFields = {"Commit", "Dispatch-Rate", "FrontEnd", "LSQ-Completion"};
+  subFields = {"Commit", "FrontEnd", "LSQ-Completion"};
   nodeChecker<unsigned int>(configFile_[root][subFields[0]], subFields[0],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger);
@@ -281,9 +356,6 @@ void ModelConfig::validate() {
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger);
   nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  nodeChecker<unsigned int>(configFile_[root][subFields[3]], subFields[3],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger);
   subFields.clear();
@@ -406,8 +478,8 @@ void ModelConfig::validate() {
                "CPU-Part",
                "CPU-Revision",
                "Package-Count"};
-  nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
-                           {"T", "F", ""}, ExpectedValue::String, "F");
+  nodeChecker<bool>(configFile_[root][subFields[0]], subFields[0],
+                    std::vector<bool>{false, true}, ExpectedValue::Bool, false);
   nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger, 1);
@@ -457,15 +529,16 @@ void ModelConfig::validate() {
   std::string invalidStr = invalid_.str();
   // Print all missing fields
   if (missingStr.length()) {
-    std::cerr << "The following fields are missing from the provided "
+    std::cerr << "[SimEng:ModelConfig] The following fields are missing from "
+                 "the provided "
                  "configuration file:\n"
               << missingStr << std::endl;
   }
   // Print all invalid values
   if (invalidStr.length()) {
-    std::cerr
-        << "The following values are invalid for their associated field:\n"
-        << invalidStr << std::endl;
+    std::cerr << "[SimEng:ModelConfig] The following values are invalid for "
+                 "their associated field:\n"
+              << invalidStr << std::endl;
   }
   if (missingStr.length() || invalidStr.length()) exit(1);
   return;
@@ -557,7 +630,7 @@ template <typename T>
 int ModelConfig::nodeChecker(const YAML::Node& node, const std::string& field,
                              const std::vector<T>& value_set,
                              uint8_t expected) {
-  // Check for the existance of the given node
+  // Check for the existence of the given node
   if (!(node.IsDefined()) || node.IsNull()) {
     missing_ << "\t- " << field << "\n";
     return 0;
@@ -570,7 +643,7 @@ template <typename T>
 int ModelConfig::nodeChecker(YAML::Node node, const std::string& field,
                              const std::vector<T>& value_set, uint8_t expected,
                              T default_value) {
-  // Check for the existance of the given node
+  // Check for the existence of the given node
   if (!(node.IsDefined()) || node.IsNull()) {
     node = default_value;
     return 1;
@@ -582,7 +655,7 @@ int ModelConfig::nodeChecker(YAML::Node node, const std::string& field,
 template <typename T>
 int ModelConfig::nodeChecker(const YAML::Node& node, const std::string& field,
                              const std::pair<T, T>& bounds, uint8_t expected) {
-  // Check for the existance of the given node
+  // Check for the existence of the given node
   if (!(node.IsDefined()) || node.IsNull()) {
     missing_ << "\t- " << field << "\n";
     return 0;
@@ -595,7 +668,7 @@ template <typename T>
 int ModelConfig::nodeChecker(YAML::Node node, const std::string& field,
                              const std::pair<T, T>& bounds, uint8_t expected,
                              const T& default_value) {
-  // Check for the existance of the given node
+  // Check for the existence of the given node
   if (!(node.IsDefined()) || node.IsNull()) {
     node = default_value;
     return 1;

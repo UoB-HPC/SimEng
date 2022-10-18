@@ -18,19 +18,16 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
-#include "simeng/BTBPredictor.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
+#include "simeng/GenericPredictor.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
 
-RegressionTest::~RegressionTest() {
-  delete[] code_;
-  delete[] processMemory_;
-}
+RegressionTest::~RegressionTest() { delete[] code_; }
 
 void RegressionTest::TearDown() {
   if (!programFinished_) {
@@ -48,25 +45,35 @@ void RegressionTest::run(const char* source, const char* triple) {
   // Get pre-defined config file for OoO model
   YAML::Node config = generateConfig();
 
-  // Create a linux process from the assembled code block
+  // Create a linux process from the assembled code block.
+  // Memory allocation for process images also takes place
+  // during linux process creation. The Elf binary is parsed
+  // and relevant sections are copied to the process image.
+  // The process image is finalised by the createStack method
+  // which creates and populates the initial process stack.
+  // The created process image can be accessed via a shared_ptr
+  // returned by the getProcessImage method.
   process_ = std::make_unique<simeng::kernel::LinuxProcess>(
       simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), config);
   ASSERT_TRUE(process_->isValid());
   uint64_t entryPoint = process_->getEntryPoint();
+  processMemorySize_ = process_->getProcessImageSize();
+  // This instance of procImgPtr pointer needs to be shared because
+  // getMemoryValue in RegressionTest.hh uses reference to the class
+  // member processMemory_.
+  std::shared_ptr<char> procImgPtr = process_->getProcessImage();
+  processMemory_ = procImgPtr.get();
 
-  // Allocate memory for the process and copy the full process image to it
-  simeng::span<char> processImage = process_->getProcessImage();
-  processMemorySize_ = processImage.size();
-  if (processMemory_) delete[] processMemory_;
-  processMemory_ = new char[processMemorySize_];
-  std::copy(processImage.begin(), processImage.end(), processMemory_);
-
-  // Create memory interfaces for instruction and data access
+  // Create memory interfaces for instruction and data access.
+  // For each memory interface, a dereferenced shared_ptr to the
+  // processImage is passed as argument.
   simeng::FlatMemoryInterface instructionMemory(processMemory_,
                                                 processMemorySize_);
+
   std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
       std::make_unique<simeng::FlatMemoryInterface>(processMemory_,
                                                     processMemorySize_);
+
   std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
       std::make_unique<simeng::FixedLatencyMemoryInterface>(
           processMemory_, processMemorySize_, 4);
@@ -89,11 +96,8 @@ void RegressionTest::run(const char* source, const char* triple) {
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
       createPortAllocator();
 
-  // Create the reservationStation-Port mapping relationship
-  const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {{0, 60}};
-
   // Create a branch predictor for a pipelined core
-  simeng::BTBPredictor predictor(8);
+  simeng::GenericPredictor predictor(config);
   // Create the core model
   switch (std::get<0>(GetParam())) {
     case EMULATION:
@@ -111,8 +115,7 @@ void RegressionTest::run(const char* source, const char* triple) {
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *architecture_, predictor, *portAllocator, rsArrangement,
-          config);
+          entryPoint, *architecture_, predictor, *portAllocator, config);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }

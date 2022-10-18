@@ -85,6 +85,7 @@ class MicroDecoder {
                             {ARM64_SFT_INVALID, 0},
                             ARM64_EXT_INVALID,
                             ARM64_OP_INVALID,
+                            ARM64_SVCR_INVALID,
                             {},
                             CS_AC_READ};
 

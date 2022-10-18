@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "capstone/capstone.h"
+#include "simeng/BranchPredictor.hh"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/RegisterValue.hh"
@@ -11,16 +12,6 @@
 using InstructionException = short;
 
 namespace simeng {
-
-/** A branch result prediction for an instruction. */
-struct BranchPrediction {
-  /** Whether the branch will be taken. */
-  bool taken;
-
-  /** The branch instruction's target address. If `taken = false`, the value
-   * will be ignored. */
-  uint64_t target;
-};
 
 /** An abstract instruction definition.
  * Each supported ISA should provide a derived implementation of this class. */
@@ -105,6 +96,12 @@ class Instruction {
   /** Was the branch taken? */
   bool wasBranchTaken() const;
 
+  /** Retrieve branch type. */
+  virtual BranchType getBranchType() const = 0;
+
+  /** Retrieve a branch target from the instruction's metadata if known. */
+  virtual uint64_t getKnownTarget() const = 0;
+
   /** Is this a store address operation (a subcategory of store operations which
    * deal with the generation of store addresses to store data at)? */
   virtual bool isStoreAddress() const = 0;
@@ -119,12 +116,6 @@ class Instruction {
   /** Is this a branch operation? */
   virtual bool isBranch() const = 0;
 
-  /** Is this a return instruction? */
-  virtual bool isRET() const = 0;
-
-  /** Is this a branch and link instruction? */
-  virtual bool isBL() const = 0;
-
   /** Set this instruction's instruction memory address. */
   void setInstructionAddress(uint64_t address);
 
@@ -133,6 +124,9 @@ class Instruction {
 
   /** Supply a branch prediction. */
   void setBranchPrediction(BranchPrediction prediction);
+
+  /** Get a branch prediction. */
+  BranchPrediction getBranchPrediction() const;
 
   /** Set this instruction's sequence ID. */
   void setSequenceId(uint64_t seqId);
@@ -167,7 +161,7 @@ class Instruction {
   uint16_t getStallCycles() const;
 
   /** Get this instruction's supported set of ports. */
-  virtual const std::vector<uint8_t>& getSupportedPorts() = 0;
+  virtual const std::vector<uint16_t>& getSupportedPorts() = 0;
 
   /** Is this a micro-operation? */
   bool isMicroOp() const;
@@ -203,13 +197,19 @@ class Instruction {
 
   // Branches
   /** The predicted branching result. */
-  BranchPrediction prediction_;
+  BranchPrediction prediction_ = {false, 0};
 
   /** A branching address calculated by this instruction during execution. */
-  uint64_t branchAddress_;
+  uint64_t branchAddress_ = 0;
 
   /** Was the branch taken? */
   bool branchTaken_ = false;
+
+  /** What type of branch this instruction is. */
+  BranchType branchType_ = BranchType::Unknown;
+
+  /** If the branch target is known at the time of decode, store it. */
+  uint64_t knownTarget_ = 0;
 
   // Flushing
   /** This instruction's sequence ID; a higher ID represents a chronologically
@@ -231,7 +231,7 @@ class Instruction {
   uint16_t stallCycles_ = 1;
 
   /** The execution ports that this instruction can be issued to. */
-  std::vector<uint8_t> supportedPorts_ = {};
+  std::vector<uint16_t> supportedPorts_ = {};
 
   // Micro operations
   /** Is a resultant micro-operation from an instruction split? */
