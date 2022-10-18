@@ -100,6 +100,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../developerInfo.html">Developer information</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../concepts/index.html">Simulation Concepts</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">Simulation Components</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../coreinstance.html">Core Instance</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html">Pipeline</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="units.html">Pipeline Units</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Common Components</a><ul>
@@ -124,7 +125,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/running_simeng.html">Running SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/creating_binaries.html">Creating Binaries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/docker.html">Docker</a></li>
 </ul>
 
             
@@ -214,8 +214,12 @@
 <p>Only a specific number of instructions can be committed per cycle as defined by the model.</p>
 </div>
 <div class="section" id="commitmicroops">
-<span id="microopcommit"></span><h3>commitMicroOps<a class="headerlink" href="#commitmicroops" title="Permalink to this headline">¶</a></h3>
+<span id="microopcommit"></span><h3>CommitMicroOps<a class="headerlink" href="#commitmicroops" title="Permalink to this headline">¶</a></h3>
 <p>When a macro-op is split, all created micro-ops can only be committed when all are ready to do so. These micro-ops firstly enter a “waiting commit” state and once all associated micro-ops are in said state, they can then enter a “ready to commit” state and commit in the standard manner. The <code class="docutils literal"><span class="pre">commitMicroOps</span></code> function facilitates this state transition whilst the <code class="docutils literal"><span class="pre">WritebackUnit</span></code> sets the “waiting commit” state.</p>
+</div>
+<div class="section" id="loop-detection">
+<span id="loopdetect"></span><h3>Loop detection<a class="headerlink" href="#loop-detection" title="Permalink to this headline">¶</a></h3>
+<p>For the loop buffer to operate within the fetch unit (detailed <a class="reference internal" href="units.html#loopbuf"><span class="std std-ref">here</span></a>) the detection of loops, and the branches which represent them, must be facilitated. The ROB supports this functionality by tracking the retirement of branch instructions. If the same branch instruction retires a configurable number of times, with the same target and direction, then a loop is detected. No other branch or different outcomes from the same branch can be retired within this period.</p>
 </div>
 </div>
 <div class="section" id="loadstorequeue">

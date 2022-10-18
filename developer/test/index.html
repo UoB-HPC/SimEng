@@ -123,7 +123,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/running_simeng.html">Running SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../user/docker.html">Docker</a></li>
 </ul>
 
             
@@ -231,6 +230,7 @@
 <ul class="simple">
 <li>Exception: Test non-supervisor call based exceptions.</li>
 <li>LoadStoreQueue: Test the correct implementation of load and store instructions concerning their interaction with the LSQ.</li>
+<li>MicroOperation: Test the supported instruction splitting provides the correct output from the execution of said instructions.</li>
 <li>SmokeTest: Trivial ISA related tests.</li>
 <li>Syscall: Ensure the correct functionality of aarch64 system calls.</li>
 <li>SystemRegisters: Ensure aarch64 system registers are correctly written to and read from.</li>
@@ -251,7 +251,7 @@
 }
 </pre></div>
 </div>
-<p><strong>Note</strong>, the <code class="docutils literal"><span class="pre">RUN_AARCH64</span></code> function is a proxy call to the <code class="docutils literal"><span class="pre">run</span></code> function in the <code class="docutils literal"><span class="pre">RegressionTest</span></code> class with the “aarch64” target defined. Also, helper functions for comparrisons against the SimEng model are implemented and well documented in <code class="docutils literal"><span class="pre">test/regression/aarch64/AArch64RegressionTest.hh</span></code>.</p>
+<p><strong>Note</strong>, the <code class="docutils literal"><span class="pre">RUN_AARCH64</span></code> function is a proxy call to the <code class="docutils literal"><span class="pre">run</span></code> function in the <code class="docutils literal"><span class="pre">RegressionTest</span></code> class with the “aarch64” target defined. Also, helper functions for comparisons against the SimEng model are implemented and well documented in <code class="docutils literal"><span class="pre">test/regression/aarch64/AArch64RegressionTest.hh</span></code>.</p>
 </div>
 </div>
 </div>

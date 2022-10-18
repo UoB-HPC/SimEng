@@ -115,8 +115,11 @@
 <li class="toctree-l4"><a class="reference internal" href="#zero-registers">Zero registers</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#loads-and-stores">Loads and stores</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#instruction-aliases">Instruction aliases</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#common-instruction-execution-behaviour-issues">Common Instruction Execution behaviour issues</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#system-registers">System registers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#system-counter-timers">System Counter Timers</a></li>
 </ul>
 </li>
 </ul>
@@ -130,7 +133,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../user/running_simeng.html">Running SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user/creating_binaries.html">Creating Binaries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../user/docker.html">Docker</a></li>
 </ul>
 
             
@@ -202,7 +204,7 @@
             
   <div class="section" id="aarch64">
 <h1><a class="toc-backref" href="#id1">AArch64</a><a class="headerlink" href="#aarch64" title="Permalink to this headline">¶</a></h1>
-<p>SimEng provides a basic implementation of the 64-bit AArch64 architecture, part of the ARMv8-a ISA. This implementation provides support for decoding and executing a range of common instructions, sufficient to run a number of simple benchmarks. It is also capable of handling supervisor call (syscall) exceptions via basic system call emulation, allowing the execution of programs that have been statically compiled with the standard library.</p>
+<p>SimEng provides an implementation of the 64-bit AArch64 architecture, specifically the Armv9.2-a ISA. This implementation provides support for decoding and executing a range of common instructions, sufficient to run a number of simple benchmarks. It is also capable of handling supervisor call (syscall) exceptions via basic system call emulation, allowing the execution of programs that have been statically compiled with the standard library.</p>
 <div class="contents topic" id="contents">
 <p class="topic-title">Contents</p>
 <ul class="simple">
@@ -225,8 +227,11 @@
 <li><a class="reference internal" href="#zero-registers" id="id11">Zero registers</a></li>
 <li><a class="reference internal" href="#loads-and-stores" id="id12">Loads and stores</a></li>
 <li><a class="reference internal" href="#instruction-aliases" id="id13">Instruction aliases</a></li>
+<li><a class="reference internal" href="#common-instruction-execution-behaviour-issues" id="id14">Common Instruction Execution behaviour issues</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#system-registers" id="id15">System registers</a></li>
+<li><a class="reference internal" href="#system-counter-timers" id="id16">System Counter Timers</a></li>
 </ul>
 </li>
 </ul>
@@ -259,10 +264,10 @@
 <img alt="AArch64 instruction groups" src="../../../_images/instruction_groups.png" />
 <p>The above diagram describes the instruction groups currently implemented for the AArch64 ISA. Each level of the diagram represents a different scope of instructions supported, the primary/top-level encapsulates the most instructions whilst the tertiary/bottom-level the least. The naming convention of the AArch64 instruction groups combines each of the levels within the above diagram through <code class="docutils literal"><span class="pre">_</span></code> characters, the top level is used first and connected to the required lower levels following the relationships shown. For example, to express an instruction group containing integer logical operations without any shift operands, the group <code class="docutils literal"><span class="pre">INT_SIMPLE_LOGICAL_NOSHIFT</span></code> would be used. Another example for all operations (excluding loads and stores) that operate on vector values would simply be <code class="docutils literal"><span class="pre">VECTOR</span></code>. The groups/subgroups chosen in the above diagram are derived from common separations in execution unit support and execution latencies of studied HPC processors.</p>
 <p>This hierarchy-based naming convention has been chosen to provide the user with greater control over the number of instructions grouped under one name, whilst also remaining intuitive. A variety of combinations/instruction scopes can be defined through this method and only uses a small set of easily interpreted operation descriptions.</p>
-<p>If the supplied instruction groups don’t provide a small enough scope, a Capstone opcode can be used instead (found in <code class="docutils literal"><span class="pre">SimEng/external/capstone/arch/AArch64/AArch64GenInstrInfo.inc</span></code>) with the format <code class="docutils literal"><span class="pre">~{CAPSTONE_OPCODE}</span></code>.</p>
+<p>If the supplied instruction groups don’t provide a small enough scope, a Capstone opcode can be used instead (found in <code class="docutils literal"><span class="pre">SimEng/build/_deps/capstone-lib-src/arch/AArch64/AArch64GenInstrInfo.inc</span></code>) with the format <code class="docutils literal"><span class="pre">~{CAPSTONE_OPCODE}</span></code>.</p>
 <div class="section" id="implementation">
 <h4><a class="toc-backref" href="#id4">Implementation</a><a class="headerlink" href="#implementation" title="Permalink to this headline">¶</a></h4>
-<p>The available instruction groups can be found in <code class="docutils literal"><span class="pre">SimEng/src/include/simeng/arch/aarch64/Instruction.hh</span></code> under the <code class="docutils literal"><span class="pre">InstructionGroups</span></code> namespace. The implementation of the relationship between groups, as described in the above diagram, can be found in the same file as an <code class="docutils literal"><span class="pre">unordered_map</span></code> named <code class="docutils literal"><span class="pre">groupInheritance</span></code>. The keys of <code class="docutils literal"><span class="pre">groupInheritance</span></code> represent the parent node of the relationship and the values, the children nodes. The relationships defined by one entry of the <code class="docutils literal"><span class="pre">groupInheritance</span></code> map only represents a single parent-child relationship, therefore, the reading of <code class="docutils literal"><span class="pre">groupInheritance</span></code> relationships are performed recursively. This decision was made to reduce the amount of code used in the instantiation of the <code class="docutils literal"><span class="pre">groupInheritance</span></code> object.</p>
+<p>The available instruction groups can be found in <code class="docutils literal"><span class="pre">SimEng/src/include/simeng/arch/aarch64/InstructionGroups.hh</span></code> under the <code class="docutils literal"><span class="pre">InstructionGroups</span></code> namespace. The implementation of the relationship between groups, as described in the above diagram, can be found in the same file as an <code class="docutils literal"><span class="pre">unordered_map</span></code> named <code class="docutils literal"><span class="pre">groupInheritance</span></code>. The keys of <code class="docutils literal"><span class="pre">groupInheritance</span></code> represent the parent node of the relationship and the values, the children nodes. The relationships defined by one entry of the <code class="docutils literal"><span class="pre">groupInheritance</span></code> map only represents a single parent-child relationship, therefore, the reading of <code class="docutils literal"><span class="pre">groupInheritance</span></code> relationships are performed recursively. This decision was made to reduce the amount of code used in the instantiation of the <code class="docutils literal"><span class="pre">groupInheritance</span></code> object.</p>
 <p>The <code class="docutils literal"><span class="pre">getGroup()</span></code> function in <code class="docutils literal"><span class="pre">SimEng/src/lib/arch/aarch64/Instruction.cc</span></code> contains the logic for converting an instructions’ identifiers to an instruction group. The <code class="docutils literal"><span class="pre">InstructionGroups</span></code> namespace has been ordered such that each data type group (<code class="docutils literal"><span class="pre">INT</span></code>, <code class="docutils literal"><span class="pre">SCALAR</span></code>, etc) is followed by the set of possible operation type groups (<code class="docutils literal"><span class="pre">*_SIMPLE_ARTH</span></code>, <code class="docutils literal"><span class="pre">*_MUL</span></code>, etc). A combination of a base and a relative offset value is used to implement the conversion. The base value is defined as one of the data type groups, whilst the relative offset value represents an operation type group. For those groups that don’t conform to this relationship, e.g. <code class="docutils literal"><span class="pre">BRANCH</span></code> or <code class="docutils literal"><span class="pre">PREDICATE</span></code>, a simple conditional clause is defined.</p>
 </div>
 <div class="section" id="additional-information">
@@ -341,6 +346,10 @@
 </dd>
 </dl>
 <p>SimEng supports the ARM SVE extension and thus the use of <code class="docutils literal"><span class="pre">Z</span></code> vector registers. <code class="docutils literal"><span class="pre">Z</span></code> registers are an extension of the ARM NEON <code class="docutils literal"><span class="pre">V</span></code> vector registers whereby the <code class="docutils literal"><span class="pre">V</span></code> register variant occupies the lower 16 bytes of the <code class="docutils literal"><span class="pre">Z</span></code> registers total 256 bytes. Under the ARM SVE extension, the implemented logic for writing to a <code class="docutils literal"><span class="pre">V</span></code> register is to zero-out the upper 240 bytes of the associated <code class="docutils literal"><span class="pre">Z</span></code> register (e.g. <code class="docutils literal"><span class="pre">z1</span></code> and <code class="docutils literal"><span class="pre">v1</span></code>) and treat its lower 16 bytes as the <code class="docutils literal"><span class="pre">V</span></code> register. SimEng will automatically apply this logic when the execution of an instruction contains a <code class="docutils literal"><span class="pre">V</span></code> register as a destination location.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">We strongly encourage adding regression tests for each implemented instruction at the same time as adding execution behaviour to ensure functional validity.</p>
+</div>
 </div>
 <div class="section" id="helper-functions">
 <h3><a class="toc-backref" href="#id9">Helper Functions</a><a class="headerlink" href="#helper-functions" title="Permalink to this headline">¶</a></h3>
@@ -395,6 +404,26 @@ If none of the existing helper functions are of use, then we recommend implement
 <p>As Capstone is primarily a disassembler, it will attempt to generate the correct aliases for instructions: for example, the <code class="docutils literal"><span class="pre">cmp</span> <span class="pre">w0,</span> <span class="pre">#0</span></code> instruction is an alias for <code class="docutils literal"><span class="pre">subs</span> <span class="pre">wzr,</span> <span class="pre">w0,</span> <span class="pre">#0</span></code>. As it’s the underlying instruction that is of use (in this case, the <code class="docutils literal"><span class="pre">subs</span></code> instruction), this implementation includes a de-aliasing component that reverses this conversion. The logic for this may be found in <code class="docutils literal"><span class="pre">src/lib/arch/aarch64/InstructionMetadata</span></code>.</p>
 <p>If a known but unsupported alias is encountered, it will generate an invalid instruction error, and the output will identify the instruction as unknown in place of the usual textual representation. It is recommended to reference a disassembled version of the program to identify what the instruction at this address should be correctly disassembled to, and implement the necessary dealiasing logic accordingly.</p>
 </div>
+<div class="section" id="common-instruction-execution-behaviour-issues">
+<h3><a class="toc-backref" href="#id14">Common Instruction Execution behaviour issues</a><a class="headerlink" href="#common-instruction-execution-behaviour-issues" title="Permalink to this headline">¶</a></h3>
+<p>Often newly added instructions will be implemented correctly but their tests will fail or they will exhibit incorrect execution behaviour. This is especially common with SVE instructions. The most common reason for this is Capstone assigning incorrect operand access rights to each operand. To fix this, a case should be added to the switch statement in the <code class="docutils literal"><span class="pre">InstructionMetadata.cc</span></code> constructor function. An example statement can be seen below:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">case</span> <span class="n">Opcode</span><span class="p">::</span><span class="n">AArch64_LD1Onev16b_POST</span><span class="p">:</span> <span class="o">//</span> <span class="n">ld1</span> <span class="p">{</span><span class="n">vt</span><span class="mf">.16</span><span class="n">b</span><span class="p">},</span> <span class="p">[</span><span class="n">xn</span><span class="p">],</span> <span class="c1">#imm</span>
+  <span class="n">operands</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">access</span> <span class="o">=</span> <span class="n">CS_AC_WRITE</span><span class="p">;</span>               <span class="o">//</span> <span class="n">vt</span><span class="mf">.16</span><span class="n">b</span> <span class="n">access</span>
+  <span class="n">operands</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">access</span> <span class="o">=</span> <span class="n">CS_AC_READ</span> <span class="o">|</span> <span class="n">CS_AC_WRITE</span><span class="p">;</span>  <span class="o">//</span> <span class="n">xn</span> <span class="n">access</span>
+  <span class="k">break</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>If after adding a case to the metadata switch statement the execution behaviour of your instruction is still incorrect, please submit an issue describing the instruction in question along with the error you are experiencing.</p>
+</div>
+</div>
+<div class="section" id="system-registers">
+<h2><a class="toc-backref" href="#id15">System registers</a><a class="headerlink" href="#system-registers" title="Permalink to this headline">¶</a></h2>
+<p>AArch64 defines many system registers, which are treated the same as any other explicit source or destination register within SimEng.</p>
+<p>Similar to instructions, system register support is added when they are encountered in run programs. To add support for a previously unseen system register, it must be added to the <code class="docutils literal"><span class="pre">systemRegisterMap_</span></code> map in the associated ISA <code class="docutils literal"><span class="pre">Architecture.cc</span></code> file.</p>
+</div>
+<div class="section" id="system-counter-timers">
+<h2><a class="toc-backref" href="#id16">System Counter Timers</a><a class="headerlink" href="#system-counter-timers" title="Permalink to this headline">¶</a></h2>
+<p>Present in AArch64 are two main system timers; the Counter-timer Virtual Count Register <a class="reference external" href="https://developer.arm.com/documentation/ddi0601/2022-09/AArch64-Registers/CNTVCT-EL0--Counter-timer-Virtual-Count-register?lang=en">CNTVCT</a>, and the Performance Monitors Cycle Count Register <a class="reference external" href="https://developer.arm.com/documentation/ddi0601/2022-09/AArch64-Registers/PMCCNTR-EL0--Performance-Monitors-Cycle-Count-Register?lang=en">PMCCNTR</a>. The CNTVCT system register holds a virtual cycle count, and is incremented at a defined frequency (see :ref:` Configuring SimEng &lt;core&gt;`). The PMCCNTR system register holds the real processor cycle count. Both are supported in SimEng and are accessible to the programmer through the appropriate <code class="docutils literal"><span class="pre">mrs</span></code> instructions. The logic which updates these registers can be found at <code class="docutils literal"><span class="pre">src/lib/arch/aarch64/Architecture.cc:updateSystemTimerRegisters</span></code> and is invoked inside each of the core model’s <code class="docutils literal"><span class="pre">tick()</span></code> function.</p>
 </div>
 </div>
 

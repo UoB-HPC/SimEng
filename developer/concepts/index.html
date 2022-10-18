@@ -118,7 +118,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/running_simeng.html">Running SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../user/docker.html">Docker</a></li>
 </ul>
 
             
@@ -188,7 +187,7 @@
             
   <div class="section" id="simulation-concepts">
 <h1>Simulation Concepts<a class="headerlink" href="#simulation-concepts" title="Permalink to this headline">¶</a></h1>
-<p>A SimEng simulation consists of two core components: a <a class="reference internal" href="../models/index.html"><span class="doc">model</span></a> and an <a class="reference internal" href="../arch/index.html"><span class="doc">architecture</span></a>. The model describes the type and structure of the processor being simulated, while the architecture describes the instruction set and related mechanisms and features. This separation allows for reusing the same basic instruction set across a wide range of simulated processors, such as modelling in-order and out-of-order processors which both support ARMv8. Similarly, similar processor designs with different instruction sets may use the same model, such as a ThunderX2 versus an Ivy Bridge or similar Intel Core processor; while one is ARMv8 and the other x86, they are both out-of-order processors with a unified reservation station and a similar arrangement of execution units.</p>
+<p>A SimEng simulation consists of two core components: a <a class="reference internal" href="../models/index.html"><span class="doc">model</span></a> and an <a class="reference internal" href="../arch/index.html"><span class="doc">architecture</span></a>. The model describes the type and structure of the processor being simulated, while the architecture describes the instruction set and related mechanisms and features. This separation allows for reusing the same basic instruction set across a wide range of simulated processors, such as modelling in-order and out-of-order processors which both support Armv9.2-a. Similarly, similar processor designs with different instruction sets may use the same model, such as a ThunderX2 versus an Ivy Bridge or similar Intel Core processor; while one is ARMv8 and the other x86, they are both out-of-order processors with a unified reservation station and a similar arrangement of execution units.</p>
 <p>The following information is concerned with those concepts whose interactions flow beyond the scope of the processor core or don’t fit the description of a <a class="reference internal" href="../components/index.html"><span class="doc">Simulation Component</span></a>.</p>
 <div class="toctree-wrapper compound">
 <ul>

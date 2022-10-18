@@ -1,7 +1,7 @@
 AArch64
 =======
 
-SimEng provides a basic implementation of the 64-bit AArch64 architecture, part of the ARMv8-a ISA. This implementation provides support for decoding and executing a range of common instructions, sufficient to run a number of simple benchmarks. It is also capable of handling supervisor call (syscall) exceptions via basic system call emulation, allowing the execution of programs that have been statically compiled with the standard library.
+SimEng provides an implementation of the 64-bit AArch64 architecture, specifically the Armv9.2-a ISA. This implementation provides support for decoding and executing a range of common instructions, sufficient to run a number of simple benchmarks. It is also capable of handling supervisor call (syscall) exceptions via basic system call emulation, allowing the execution of programs that have been statically compiled with the standard library.
 
 .. contents:: Contents
 
@@ -42,12 +42,12 @@ The above diagram describes the instruction groups currently implemented for the
 
 This hierarchy-based naming convention has been chosen to provide the user with greater control over the number of instructions grouped under one name, whilst also remaining intuitive. A variety of combinations/instruction scopes can be defined through this method and only uses a small set of easily interpreted operation descriptions.
 
-If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/external/capstone/arch/AArch64/AArch64GenInstrInfo.inc``) with the format ``~{CAPSTONE_OPCODE}``.
+If the supplied instruction groups don't provide a small enough scope, a Capstone opcode can be used instead (found in ``SimEng/build/_deps/capstone-lib-src/arch/AArch64/AArch64GenInstrInfo.inc``) with the format ``~{CAPSTONE_OPCODE}``.
 
 Implementation
 ''''''''''''''
 
-The available instruction groups can be found in ``SimEng/src/include/simeng/arch/aarch64/Instruction.hh`` under the ``InstructionGroups`` namespace. The implementation of the relationship between groups, as described in the above diagram, can be found in the same file as an ``unordered_map`` named ``groupInheritance``. The keys of ``groupInheritance`` represent the parent node of the relationship and the values, the children nodes. The relationships defined by one entry of the ``groupInheritance`` map only represents a single parent-child relationship, therefore, the reading of ``groupInheritance`` relationships are performed recursively. This decision was made to reduce the amount of code used in the instantiation of the ``groupInheritance`` object.
+The available instruction groups can be found in ``SimEng/src/include/simeng/arch/aarch64/InstructionGroups.hh`` under the ``InstructionGroups`` namespace. The implementation of the relationship between groups, as described in the above diagram, can be found in the same file as an ``unordered_map`` named ``groupInheritance``. The keys of ``groupInheritance`` represent the parent node of the relationship and the values, the children nodes. The relationships defined by one entry of the ``groupInheritance`` map only represents a single parent-child relationship, therefore, the reading of ``groupInheritance`` relationships are performed recursively. This decision was made to reduce the amount of code used in the instantiation of the ``groupInheritance`` object.
 
 The ``getGroup()`` function in ``SimEng/src/lib/arch/aarch64/Instruction.cc`` contains the logic for converting an instructions' identifiers to an instruction group. The ``InstructionGroups`` namespace has been ordered such that each data type group (``INT``, ``SCALAR``, etc) is followed by the set of possible operation type groups (``*_SIMPLE_ARTH``, ``*_MUL``, etc). A combination of a base and a relative offset value is used to implement the conversion. The base value is defined as one of the data type groups, whilst the relative offset value represents an operation type group. For those groups that don't conform to this relationship, e.g. ``BRANCH`` or ``PREDICATE``, a simple conditional clause is defined.
 
@@ -144,6 +144,8 @@ There are several useful variables that execution behaviours have access to:
 
 SimEng supports the ARM SVE extension and thus the use of ``Z`` vector registers. ``Z`` registers are an extension of the ARM NEON ``V`` vector registers whereby the ``V`` register variant occupies the lower 16 bytes of the ``Z`` registers total 256 bytes. Under the ARM SVE extension, the implemented logic for writing to a ``V`` register is to zero-out the upper 240 bytes of the associated ``Z`` register (e.g. ``z1`` and ``v1``) and treat its lower 16 bytes as the ``V`` register. SimEng will automatically apply this logic when the execution of an instruction contains a ``V`` register as a destination location.
 
+.. Note:: We strongly encourage adding regression tests for each implemented instruction at the same time as adding execution behaviour to ensure functional validity.
+
 Helper Functions
 ****************
 
@@ -202,3 +204,26 @@ Instruction aliases
 As Capstone is primarily a disassembler, it will attempt to generate the correct aliases for instructions: for example, the ``cmp w0, #0`` instruction is an alias for ``subs wzr, w0, #0``. As it's the underlying instruction that is of use (in this case, the ``subs`` instruction), this implementation includes a de-aliasing component that reverses this conversion. The logic for this may be found in ``src/lib/arch/aarch64/InstructionMetadata``.
 
 If a known but unsupported alias is encountered, it will generate an invalid instruction error, and the output will identify the instruction as unknown in place of the usual textual representation. It is recommended to reference a disassembled version of the program to identify what the instruction at this address should be correctly disassembled to, and implement the necessary dealiasing logic accordingly.
+
+Common Instruction Execution behaviour issues
+*********************************************
+Often newly added instructions will be implemented correctly but their tests will fail or they will exhibit incorrect execution behaviour. This is especially common with SVE instructions. The most common reason for this is Capstone assigning incorrect operand access rights to each operand. To fix this, a case should be added to the switch statement in the ``InstructionMetadata.cc`` constructor function. An example statement can be seen below::
+
+    case Opcode::AArch64_LD1Onev16b_POST: // ld1 {vt.16b}, [xn], #imm
+      operands[0].access = CS_AC_WRITE;               // vt.16b access
+      operands[1].access = CS_AC_READ | CS_AC_WRITE;  // xn access
+      break;
+
+If after adding a case to the metadata switch statement the execution behaviour of your instruction is still incorrect, please submit an issue describing the instruction in question along with the error you are experiencing.
+
+System registers
+----------------
+
+AArch64 defines many system registers, which are treated the same as any other explicit source or destination register within SimEng.
+
+Similar to instructions, system register support is added when they are encountered in run programs. To add support for a previously unseen system register, it must be added to the ``systemRegisterMap_`` map in the associated ISA ``Architecture.cc`` file.
+
+System Counter Timers
+---------------------
+
+Present in AArch64 are two main system timers; the Counter-timer Virtual Count Register `CNTVCT <https://developer.arm.com/documentation/ddi0601/2022-09/AArch64-Registers/CNTVCT-EL0--Counter-timer-Virtual-Count-register?lang=en>`_, and the Performance Monitors Cycle Count Register `PMCCNTR <https://developer.arm.com/documentation/ddi0601/2022-09/AArch64-Registers/PMCCNTR-EL0--Performance-Monitors-Cycle-Count-Register?lang=en>`_. The CNTVCT system register holds a virtual cycle count, and is incremented at a defined frequency (see :ref:` Configuring SimEng <core>`). The PMCCNTR system register holds the real processor cycle count. Both are supported in SimEng and are accessible to the programmer through the appropriate ``mrs`` instructions. The logic which updates these registers can be found at ``src/lib/arch/aarch64/Architecture.cc:updateSystemTimerRegisters`` and is invoked inside each of the core model's ``tick()`` function.

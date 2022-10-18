@@ -129,7 +129,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/running_simeng.html">Running SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../user/docker.html">Docker</a></li>
 </ul>
 
             
@@ -207,7 +206,7 @@
 <p>To permit instructions to function independently of the type of model they exist within, the lifetime of each instruction is broken down into a sequence of stages.</p>
 <div class="section" id="post-decode">
 <h3>Post-Decode<a class="headerlink" href="#post-decode" title="Permalink to this headline">¶</a></h3>
-<p>This is the initial step of an instruction. At this stage, the instruction has been fully decoded and is now capable of advertising the registers it reads and writes, as well as various metadata such as whether it’s a load, store, or branch. The instruction is also allocated an architecture-specific group and, when appropriate, a set of execution ports that it can flow through. The set of ports available in the model is defined by the user through <a class="reference internal" href="../../user/configuring_simeng.html#execution-ports"><span class="std std-ref">configuration options</span></a>.</p>
+<p>This is the initial step of an instruction. At this stage, the instruction has been fully decoded and is now capable of advertising the registers it reads and writes, as well as various metadata such as whether it’s a load, store, or branch. The instruction is also allocated an architecture-specific group (when appropriate), a set of execution ports that it can flow through, and execution latency values. The set of ports available in the model is defined by the user through <a class="reference internal" href="../../user/configuring_simeng.html#execution-ports"><span class="std std-ref">configuration options</span></a>.</p>
 <p>The model can use this information to supply the instruction with the appropriate values for each source operand and determine where the instruction should be sent for processing.</p>
 <div class="section" id="instruction-group">
 <span id="id2"></span><h4>Instruction group<a class="headerlink" href="#instruction-group" title="Permalink to this headline">¶</a></h4>

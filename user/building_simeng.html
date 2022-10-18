@@ -110,13 +110,11 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Building SimEng</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#building">Building</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#docker">Docker</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="running_simeng.html">Running SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="creating_binaries.html">Creating Binaries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
 </ul>
 
             
@@ -198,21 +196,20 @@
 <div class="highlight-text"><div class="highlight"><pre><span></span>git clone https://github.com/UoB-HPC/SimEng.git
 </pre></div>
 </div>
-<ol class="arabic" start="2">
-<li><p class="first">Configure with CMake, specifying the path to your desired installation directory if necessary:</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="n">SimEng</span>
-<span class="n">cmake</span> <span class="o">-</span><span class="n">B</span> <span class="n">build</span> <span class="o">-</span><span class="n">S</span> <span class="o">.</span> <span class="c1"># build files will be generated in a directory called &quot;build&quot;</span>
-        <span class="o">-</span><span class="n">DCMAKE_BUILD_TYPE</span><span class="o">=</span><span class="n">Release</span>
-        <span class="o">-</span><span class="n">DCMAKE_INSTALL_PREFIX</span><span class="o">=&lt;</span><span class="n">simeng_install_directory</span><span class="o">&gt;</span>
-        <span class="o">-</span><span class="n">DSIMENG_ENABLE_TESTS</span><span class="o">=</span><span class="p">{</span><span class="n">ON</span><span class="p">,</span> <span class="n">OFF</span><span class="p">}</span> <span class="c1"># Defaults to OFF</span>
-        <span class="c1"># -GNinja # enable Ninja for faster LLVM builds</span>
+<ol class="arabic simple" start="2">
+<li>Configure with CMake, specifying the path to your desired installation directory if necessary:</li>
+</ol>
+<div class="highlight-text"><div class="highlight"><pre><span></span>cd SimEng
+cmake -B build -S .
+        -DCMAKE_BUILD_TYPE={Release, Debug, RelWithDebInfo, MinSizeRel}
+        -DCMAKE_INSTALL_PREFIX=&lt;simeng_install_directory&gt;
+        -DSIMENG_ENABLE_TESTS={ON, OFF} #Defaults to OFF
 </pre></div>
 </div>
-</li>
-</ol>
+<p>With this configuration, the build files will be generated in a directory called “build”.</p>
 <blockquote>
 <div><ol class="loweralpha">
-<li><p class="first">The SimEng test suites depend on a selection of LLVM libraries. Building this dependency can take a while, therefore, the use of prebuilt LLVM libraries is supported. The following cmake configuration flags should be set to enable this:</p>
+<li><p class="first">The SimEng test suites depend on a selection of LLVM libraries. Building this dependency can take a while, therefore, the use of prebuilt LLVM libraries is supported. The following CMake configuration flags should be set to enable this:</p>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="o">-</span><span class="n">DSIMENG_USE_EXTERNAL_LLVM</span><span class="o">=</span><span class="n">ON</span>
 <span class="o">-</span><span class="n">DLLVM_DIR</span><span class="o">=&lt;</span><span class="n">llvm_library_directory</span><span class="o">&gt;</span> <span class="c1"># directory of LLVM libraries as CMake targets</span>
 </pre></div>
@@ -223,16 +220,20 @@
 <p class="first admonition-title">Note</p>
 <p class="last">More information about the LLVM_DIR value can be found <a class="reference external" href="https://llvm.org/docs/CMake.html#embedding-llvm-in-your-project">here</a>.</p>
 </div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">LLVM versions greater than 12 or less than 9 are not supported. We’d recommend using LLVM 12 where possible.</p>
+</div>
+<ol class="loweralpha simple" start="2">
+<li>Two additional flags are available when building SimEng. Firstly is <code class="docutils literal"><span class="pre">-DSIMENG_SANITIZE={ON,</span> <span class="pre">OFF}</span></code> which adds a selection of sanitisation compilation flags (primarily used during the development of the framework). Secondly is <code class="docutils literal"><span class="pre">-SIMENG_OPTIMIZE={ON,</span> <span class="pre">OFF}</span></code> which attempts to optimise the framework’s compilation for the host machine through a set of compiler flags and options.</li>
+</ol>
 </div></blockquote>
-<ol class="arabic simple" start="3">
-<li>Once configured, use <code class="docutils literal"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span></code> or whichever generator you have selected for CMake to build. Append the <code class="docutils literal"><span class="pre">-j</span></code> flag to build in parallel, keep in mind that building LLVM like this usually has very high (1.5GB per core) memory requirements.</li>
+<p>We recommend using the <a class="reference external" href="https://ninja-build.org/">Ninja</a> build system for faster builds, especially if not using pre-built LLVM libraries. After installation, it can be enabled through the addition of the <code class="docutils literal"><span class="pre">-GNinja</span></code> flag in the above CMake build command.</p>
+<ol class="arabic simple">
+<li>Once configured, use <code class="docutils literal"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span></code> or whichever generator you have selected for CMake to build. Append the <code class="docutils literal"><span class="pre">-j{Num_Cores}</span></code> flag to build in parallel, keep in mind that building without a linked external LLVM library usually has very high (1.5GB per core) memory requirements.</li>
 <li>(Optional) Run <code class="docutils literal"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span> <span class="pre">--target</span> <span class="pre">test</span></code> to run the SimEng regression tests and unit tests. Please report any test failures as <a class="reference external" href="https://github.com/UoB-HPC/SimEng/issues">a GitHub issue</a>.</li>
 <li>Finally, run <code class="docutils literal"><span class="pre">cmake</span> <span class="pre">--build</span> <span class="pre">build</span> <span class="pre">--target</span> <span class="pre">install</span></code> to install SimEng to the directory specified with CMake.</li>
 </ol>
-</div>
-<div class="section" id="docker">
-<h2>Docker<a class="headerlink" href="#docker" title="Permalink to this headline">¶</a></h2>
-<p>We have also created a SimEng docker container, offering pre-built images with the SimEng source code and binary. More details on the docker container can be found <a class="reference internal" href="docker.html"><span class="doc">here</span></a>.</p>
 </div>
 </div>
 

@@ -109,12 +109,12 @@
 <li class="toctree-l1"><a class="reference internal" href="index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="building_simeng.html">Building SimEng</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Running SimEng</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#simulation-output">Simulation Output</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#configuration-files">Configuration files</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="creating_binaries.html">Creating Binaries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="docker.html">Docker</a></li>
 </ul>
 
             
@@ -188,12 +188,27 @@
 <div class="highlight-text"><div class="highlight"><pre><span></span>&lt;simeng_install_directory&gt;/bin/simeng &lt;config file&gt; &lt;binary&gt;
 </pre></div>
 </div>
-<p>If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor, and the default program binary is defined in <code class="docutils literal"><span class="pre">src/tools/simeng/main.cc</span></code> under the <code class="docutils literal"><span class="pre">hex[]</span></code> array.</p>
+<p>If no arguments are passed to SimEng, default options are used. The default configuration file is tuned to a ThunderX2 processor. The default program binary is defined in <code class="docutils literal"><span class="pre">SimEng/src/include/simeng/CoreInstance.hh</span></code> under the <code class="docutils literal"><span class="pre">hex[]</span></code> array which contains a set of raw instructions in a hexadecimal format.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Paths to binaries must be in full, and not relative.</p>
 </div>
 <p>Whilst a configuration file can be specified without a program (will use default program), a specified program must be accompanied by a configuration file.</p>
+<div class="section" id="simulation-output">
+<h2>Simulation Output<a class="headerlink" href="#simulation-output" title="Permalink to this headline">¶</a></h2>
+<p>For a successful simulation, SimEng’s output can be split into 4 parts;</p>
+<dl class="docutils">
+<dt>Build Metadata</dt>
+<dd>A summary of the build options set and general information about the SimEng framework built.</dd>
+<dt>Workload Output</dt>
+<dd>All outputs from the supplied workload under simulation.</dd>
+<dt>Exit Clause</dt>
+<dd>The reason why the simulation has halted. Most commonly this is due to the invoking of the <code class="docutils literal"><span class="pre">exit()</span></code> system call by the workload under simulation.</dd>
+<dt>Statistics</dt>
+<dd>A selection of simulation statistics describing the emergent simulated PMU-style hardware events.</dd>
+</dl>
+<p>All non-workload outputs from SimEng are prefixed with a tag of the format <code class="docutils literal"><span class="pre">[SimEng:Object]</span></code> (e.g. <code class="docutils literal"><span class="pre">[SimEng:ExceptionHandler]</span></code>). If the output came from the root of the framework, the <code class="docutils literal"><span class="pre">Object</span></code> field is omitted.</p>
+</div>
 <div class="section" id="configuration-files">
 <h2>Configuration files<a class="headerlink" href="#configuration-files" title="Permalink to this headline">¶</a></h2>
 <p>SimEng provides several configuration files that parameterise the simulated model. These can be found in <code class="docutils literal"><span class="pre">&lt;simeng_repository&gt;/configs</span></code> and more information about their content can be found <a class="reference internal" href="configuring_simeng.html"><span class="doc">here</span></a>.</p>

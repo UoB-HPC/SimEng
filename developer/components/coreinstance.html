@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
-  <title>Architectures &mdash; SimEng  documentation</title>
+  <title>Core Instance &mdash; SimEng  documentation</title>
   
 
   
@@ -48,8 +48,8 @@
     
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Abstract Structure" href="abstract.html" />
-    <link rel="prev" title="Models" href="../models/index.html" /> 
+    <link rel="next" title="Pipeline" href="pipeline/index.html" />
+    <link rel="prev" title="Simulation Components" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -99,13 +99,15 @@
 <li class="toctree-l1"><a class="reference internal" href="../index.html">Overview</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../developerInfo.html">Developer information</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../concepts/index.html">Simulation Concepts</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../components/index.html">Simulation Components</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../models/index.html">Models</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Architectures</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="abstract.html">Abstract Structure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="supported/aarch64.html">AArch64</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Simulation Components</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Core Instance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pipeline/index.html">Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="branchPred.html">Branch prediction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="registerFiles.html">Register Files</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../models/index.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../arch/index.html">Architectures</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../test/index.html">Testing</a></li>
 </ul>
 <p class="caption"><span class="caption-text">User Documentation</span></p>
@@ -163,13 +165,15 @@
     
       <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
         
-      <li>Architectures</li>
+          <li><a href="index.html">Simulation Components</a> &raquo;</li>
+        
+      <li>Core Instance</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
           
-            <a href="../../_sources/developer/arch/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/developer/components/coreinstance.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -182,29 +186,23 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="architectures">
-<h1>Architectures<a class="headerlink" href="#architectures" title="Permalink to this headline">¶</a></h1>
-<p>SimEng architecture definitions are responsible for describing the features and behaviour of specific Instruction Set Architectures (ISAs) in a standardised way, allowing SimEng to model processors that use these ISAs while itself remaining ISA agnostic.</p>
-<p>To achieve this, SimEng defines a set of abstract architecture-related classes. Discrete implementations of these classes are provided for each of the ISAs SimEng supports by default, and must also be implemented for adding support for new or custom ISAs.</p>
-<p>ISA support is achieved through the use of the <a class="reference external" href="https://github.com/aquynh/capstone/">Capstone</a> disassembly framework, which disassembles a binary instruction into a C/C++ object that include operand registers, access types, and immediate values to name a few. In order to update SimEng’s AArch64 support from Armv8.4-a to Armv9.2-a, we undertook a Capstone update to allow for disassembly of the Armv9.2-a ISA. The work done for this can be found <a class="reference external" href="https://github.com/capstone-engine/capstone/pull/1907">here</a>, and other useful ISA updating tools present in Capstone can be found <a class="reference external" href="https://github.com/capstone-engine/capstone/tree/next/suite/synctools">here</a>.</p>
-<p>Below provides more information on the abstract structure of a SimEng architecture and currently supported ISAs.</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="abstract.html">Abstract Structure</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="abstract.html#architecture">Architecture</a></li>
-<li class="toctree-l2"><a class="reference internal" href="abstract.html#instructions">Instructions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="abstract.html#exception-handler">Exception Handler</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="supported/aarch64.html">AArch64</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="supported/aarch64.html#decoding">Decoding</a></li>
-<li class="toctree-l2"><a class="reference internal" href="supported/aarch64.html#adding-instructions">Adding instructions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="supported/aarch64.html#system-registers">System registers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="supported/aarch64.html#system-counter-timers">System Counter Timers</a></li>
-</ul>
-</li>
-</ul>
-</div>
+  <div class="section" id="core-instance">
+<h1>Core Instance<a class="headerlink" href="#core-instance" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="docutils literal"><span class="pre">CoreInstance</span></code> component supplies the functionality for instantiating all simulation objects and linking them together.</p>
+<p>The standard process taken to create an instance of the modelled core is as follows:</p>
+<dl class="docutils">
+<dt>Process the config file</dt>
+<dd>Either the passed configuration file path, or default configuration string, is used to generate the model configuration class. All subsequent parameterised instantiations of simulation objects utilise this configuration class.</dd>
+<dt>Create the image process</dt>
+<dd>From the passed workload path, or default set of instructions, a process image is created. A region of host memory is populated with workload data (e.g. instructions), a region for the HEAP, and an initial stack frame. References to it are then passed between various simulation objects to serve as the underlying process memory space.</dd>
+<dt>Construct on-chip cache interfaces</dt>
+<dd>Based on the supplied configuration options, the on-chip cache interfaces are constructed. These interfaces sit on top of a reference to the process memory space constructed prior. Currently, only L1 instruction and data caches are supported and the interfaces are defined under the <a class="reference internal" href="../../user/configuring_simeng.html#l1dcnf"><span class="std std-ref">L1-Data-Memory</span></a> and  <a class="reference internal" href="../../user/configuring_simeng.html#l1icnf"><span class="std std-ref">L1-Instruction-Memory</span></a> config options.</dd>
+<dt>Construct the core simulation object</dt>
+<dd>After all the general components are created, the simulated core object is constructed. The architecture, branch predictor, and issue port allocator are first constructed and subsequently passed to the core object. Within the core object itself, relevant simulation objects are constructed using the instantiations carried out in the <code class="docutils literal"><span class="pre">CoreInstance</span></code> class. The exact simulation objects created are dependent on the core <a class="reference internal" href="../models/index.html#archetypes"><span class="std std-ref">archetype</span></a> in use.</dd>
+<dt>Special File Directory</dt>
+<dd>Finally, SimEng’s special file directory is constructed if enabled within the passed configuration. More information about its usage can be found <a class="reference internal" href="../concepts/syscalls.html#specialdir"><span class="std std-ref">here</span></a>.</dd>
+</dl>
+<p>The <code class="docutils literal"><span class="pre">CoreInstance</span></code> class also contains a selection of getter functions for obtaining information about the simulation objects constructed.</p>
 </div>
 
 
@@ -213,8 +211,8 @@
           </div>
           <footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-        <a href="abstract.html" class="btn btn-neutral float-right" title="Abstract Structure" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
-        <a href="../models/index.html" class="btn btn-neutral float-left" title="Models" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pipeline/index.html" class="btn btn-neutral float-right" title="Pipeline" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Simulation Components" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
     </div>
 
   <hr/>

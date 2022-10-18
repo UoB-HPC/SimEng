@@ -125,7 +125,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../user/running_simeng.html">Running SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/configuring_simeng.html">Configuring SimEng</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../user/creating_binaries.html">Creating Binaries</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../user/docker.html">Docker</a></li>
 </ul>
 
             
@@ -199,7 +198,7 @@
 <h1>Memory<a class="headerlink" href="#memory" title="Permalink to this headline">¶</a></h1>
 <p>The SimEng core models simulate everything in a core up to and including the load/store units, but stop short of the memory system. This is to allow integration and interoperability with a wide range of external memory models, and to focus the development of SimEng primarily on the simulation of the core itself.</p>
 <div class="section" id="memoryinterface">
-<h2>MemoryInterface<a class="headerlink" href="#memoryinterface" title="Permalink to this headline">¶</a></h2>
+<span id="memint"></span><h2>MemoryInterface<a class="headerlink" href="#memoryinterface" title="Permalink to this headline">¶</a></h2>
 <p>All SimEng components that interact with the memory system make memory access requests using supplied instances of the abstract <code class="docutils literal"><span class="pre">MemoryInterface</span></code> class.</p>
 <p><code class="docutils literal"><span class="pre">MemoryInterface</span></code> access requests are asynchronous, and may be either read or write. All requests must supply a <code class="docutils literal"><span class="pre">MemoryAccessTarget</span></code>, containing the memory address and the number of bytes to access</p>
 <p>While write requests receive no response, a read request may be responded to an indeterminate number of cycles later. The <code class="docutils literal"><span class="pre">MemoryInterface::getCompletedReads</span></code> function may be used to retrieve a list of the read requests that completed during the previous cycle. Once processed, responses should be dismissed using the <code class="docutils literal"><span class="pre">MemoryInterface::clearCompletedReads</span></code> function.</p>
