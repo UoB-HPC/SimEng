@@ -17,7 +17,6 @@ Register-Set:
   Conditional-Count: 128
 Pipeline-Widths:
   Commit: 16
-  Dispatch-Rate: 16
   FrontEnd: 8 
   LSQ-Completion: 4 
 Queue-Sizes:
@@ -112,58 +111,72 @@ Ports:
 Reservation-Stations:
   0:
     Size: 24
+    Dispatch-Rate: 16
     Ports:
       - INT1
   1:
     Size: 26
+    Dispatch-Rate: 16
     Ports:
       - INT2
   2:
     Size: 16
+    Dispatch-Rate: 16
     Ports:
       - INT3
   3:
     Size: 12
+    Dispatch-Rate: 16
     Ports:
       - INT4
   4:
     Size: 28
+    Dispatch-Rate: 16
     Ports:
       - INT5
   5:
     Size: 28
+    Dispatch-Rate: 16
     Ports:
       - INT6
   6:
     Size: 12
+    Dispatch-Rate: 16
     Ports:
       - LS1
   7:
     Size: 12
+    Dispatch-Rate: 16
     Ports:
       - LS2
   8:
     Size: 12
+    Dispatch-Rate: 16
     Ports:
       - LS3
   9:
     Size: 12
+    Dispatch-Rate: 16
     Ports:
       - LS4
   10:
     Size: 36
+    Dispatch-Rate: 16
     Ports:
       - FP_SIMD1
   11:
     Size: 36
+    Dispatch-Rate: 16
     Ports:
       - FP_SIMD2
   12:
     Size: 36
+    Dispatch-Rate: 16
     Ports:
       - FP_SIMD3
   13:
     Size: 36
+    Dispatch-Rate: 16
     Ports:
       - FP_SIMD4
 

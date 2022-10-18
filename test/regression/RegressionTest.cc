@@ -96,9 +96,6 @@ void RegressionTest::run(const char* source, const char* triple) {
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
       createPortAllocator();
 
-  // Create the reservationStation-Port mapping relationship
-  const std::vector<std::pair<uint8_t, uint64_t>> rsArrangement = {{0, 60}};
-
   // Create a branch predictor for a pipelined core
   simeng::GenericPredictor predictor(config);
   // Create the core model
@@ -118,8 +115,7 @@ void RegressionTest::run(const char* source, const char* triple) {
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *architecture_, predictor, *portAllocator, rsArrangement,
-          config);
+          entryPoint, *architecture_, predictor, *portAllocator, config);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }

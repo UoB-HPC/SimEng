@@ -54,7 +54,7 @@ FetchContent_Declare(
 )
 
 cmake_policy(SET CMP0048 NEW)
-project(SimEng VERSION 0.9.3 LANGUAGES C CXX)
+project(SimEng VERSION 0.9.4 LANGUAGES C CXX)
 
 # If no build type was defined, default to Release
 if(NOT CMAKE_BUILD_TYPE)
@@ -189,6 +189,11 @@ if(SIMENG_ENABLE_TESTS)
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
     # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
 
+  endif()
+
+  # Check LLVM version
+  if ((${LLVM_PACKAGE_VERSION} VERSION_LESS "9.0") OR (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "13.0"))
+    message(FATAL_ERROR "LLVM version must be >= 9.0 and < 13.0")
   endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")

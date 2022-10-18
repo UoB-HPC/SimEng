@@ -1,28 +1,26 @@
 Major contributors to SimEng to date include:
 
-Project leader
-    Simon McIntosh-Smith
-    
+Project leader:
+ Simon McIntosh-Smith
+
 Original SimEng design and implementation:
-    Hal Jones
-    James Price
+  Hal Jones
+  James Price
 
 Current development team:
-    Jack Jones (lead developer)
-    Finn Wilkinson
+  Jack Jones (Lead Developer)
+  Finn Wilkinson
+  Rahat Muneeb
+  Daniel Weaver
 
-Prior development members:
-    Harry Waugh
-
-Code reviewers:
-    Andrei Poenaru
-
-Build structure design:
-    Tom Lin
-
-Internship contributions:
-    Daniel Weaver
-    Mutalib Mohammed
-    Seunghun Lee
+Additional Contributors:
+  Ainsley Rutterford
+  Andrei Poenaru
+  Harry Waugh
+  Mutalib Mohammed
+  Seunghun Lee
+  Tom Hepworth
+  Tom Lin
+  Will Robinson
     
 SimEng's development has been funded by the UKRI/EPSRC ASiMoV project, EP/S005072/1.

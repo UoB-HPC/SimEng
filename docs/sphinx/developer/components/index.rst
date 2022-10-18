@@ -8,6 +8,7 @@ The following information is concerned with those simulation components.
 .. toctree::
    :maxdepth: 2
 
+   coreinstance
    pipeline/index
    branchPred
    registerFiles

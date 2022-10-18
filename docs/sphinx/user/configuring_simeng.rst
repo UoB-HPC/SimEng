@@ -1,7 +1,9 @@
+.. _cnfSimEng:
+
 Configuring SimEng
 ==================
 
-SimEng configuration files are written in a YAML format, and provide values for the parameters of the processor architecture to be simulated. 
+SimEng configuration files are written in a YAML format, and provide values for the parameters of the processor architecture to be simulated. Pre-written model configuration files can be found in the ``configs/`` directory.
 
 The configuration files are split into several sections, each of which is associated with a specific area of the architecture modelled.
 
@@ -21,7 +23,7 @@ SimEng cores can be one of three types:
 
 These core types are primarily referred to as core "archetypes".
 
-.. Note:: Currently, the configuration files do not take into account the core archetype being modelled. However, future developments plan for the exemption of those options not used under the selected core archetype. For example, reservation station definitions under the ``inorderpiplined`` archetype will not be required.
+.. Note:: Currently, the configuration files do not take into account the core archetype being modelled and require all parameters (without default values) to be defined, even if unused (e.g. reservation station definitions for an ``emulation`` core archetype). However, future developments plan for the exemption of those options not used under the selected core archetype.
 
 Configuration options within the Core section are concerned with the functionality of the simulated processor pipeline. These include:
 
@@ -36,14 +38,25 @@ Timer Frequency
 
     i.e. For models based on an Arm ISA, this dictates how often the Virtual Counter Timer system register is updated to the number of cycles completed. This value is then accessible to programmers through ``mrs x0 CNTVCT_el0``.
 
-Fetch-Block-sizes
-    The size, in bytes, of the block fetched from the instruction cache.
-
 Micro-Operations
     Whether to enable instruction splitting for pre-defined Macro Operations or not.
 
 Vector-Length
     The vector length used by instructions belonging to ARM's Scalable Vector Extension. Supported vector lengths are those between 128 and 2048 in increments of 128.
+
+Fetch
+-----
+
+This section is concerned with the parameterisation of the fetch unit and its internal structures.
+
+Fetch-Block-Size
+    The size, in bytes, of the block fetched from the instruction cache.
+
+Loop-Buffer-Size
+    The number of Macro-ops which can be stored in the loop buffer.
+
+Loop-Detection-Threshold
+    The number of commits a unique branch instruction must go through, without another branch instruction being committed, before a loop is detected and the loop buffer is filled.
 
 Process Image
 -------------
@@ -81,9 +94,6 @@ This section is concerned with the width of the simulated processor pipeline at 
 Commit
     The commitment/retirement width from the re-order buffer.
 
-Dispatch-Rate
-    The width of instruction dispatch into the reservation stations.
-
 FrontEnd
     The width of the pipeline before the execution stage (also excludes the dispatch/issue stage if simulating an ``outoforder`` core archetype).
 
@@ -114,13 +124,49 @@ The Branch-Prediction section contains those options to parameterise the branch 
 
 The current options include:
 
-BTB-bitlength
-    The number of bits used to denote the size of a Branch Target Buffer (BTB). For example, a ``bits`` value of 12 would denote 4096 entries with the calculation 1 << ``bits``.
+BTB-Tag-Bits
+    The number of bits used to denote an entry in the Branch Target Buffer (BTB). For example, a ``bits`` value of 12 could denote 4096 entries with the calculation 1 << ``bits``.
 
-L1-Cache
---------
+Saturating-Count-Bits
+    The number of bits used in the saturating counter value.
 
-This section contains the options used to configure SimEng's simple L1-cache. These options include:
+Global-History-Length
+    The number of bits used to record the global history of branch directions. Each bit represents one branch direction.
+
+RAS-entries
+    The number of entries in the Return Address Stack (RAS).
+
+Fallback-Static-Predictor
+    The static predictor used when no dynamic prediction is available. The options are either ``"Always-Taken"`` or ``"Always-Not-Taken"``.
+
+.. _l1dcnf:
+
+L1-Data-Memory
+--------------
+
+This section describes the configuration for the L1 data cache in use.
+
+Interface-Type
+    The type of memory interface used to model the L1 data cache. Options are currently ``Flat`` or ``Fixed`` which represent a ``FlatMemoryInterface`` or ``FixedMemoryInterface`` respectively. More information concerning these interfaces can be found :ref:`here <memInt>`.
+
+.. Note:: Currently, if the chosen ``Simulation-Mode`` option is ``emulation`` or ``inorderpipelined``, then only a ``Flat`` value is permitted. Future developments will seek to allow for more memory interfaces with these simulation archetypes.
+
+.. _l1icnf:
+
+L1-Instruction-Memory
+---------------------
+
+This section describes the configuration for the L1 instruction cache in use.
+
+Interface-Type
+    The type of memory interface used to model the L1 instruction cache. Options are currently ``Flat`` or ``Fixed`` which represent a ``FlatMemoryInterface`` or ``FixedMemoryInterface`` respectively. More information concerning these interfaces can be found :ref:`here <memInt>`.
+
+.. Note:: Currently, only a ``Flat`` value is permitted for the L1 instruction cache interface. Future developments will seek to allow for more memory interfaces to be used with the L1 instruction cache.
+
+LSQ-L1-Interface
+----------------
+
+This section contains the options used to configure SimEng's interface between the LSQ and the L1 data cache. These options include:
 
 Access-Latency
     The cycle latency of L1 cache access.
@@ -173,7 +219,7 @@ With N as the number of execution ports.
 Reservation-Stations
 --------------------
 
-The relationships between reservation stations and the execution ports, which reservation stations map to which execution ports, are defined in this section. The configuration of each reservation station contains a size value and a set of port names, previously defined in the Ports section. 
+The relationships between reservation stations and the execution ports, i.e. which reservation stations map to which execution ports, are defined in this section. The configuration of each reservation station contains a size value, a dispatch rate value, and a set of port names, previously defined in the Ports section. 
 
 The following structure must be adhered to when defining a reservation station:
 
@@ -181,6 +227,7 @@ The following structure must be adhered to when defining a reservation station:
 
     0:
       Size: <number_of_entries>
+      Dispatch-Rate: <number_of_permitted_dispatches_per_cycle>
       Ports:
       - <port_name>
       - ...
@@ -188,6 +235,7 @@ The following structure must be adhered to when defining a reservation station:
     ...
     N-1:
         Size: <number_of_entries>
+        Dispatch-Rate: <number_of_permitted_dispatches_per_cycle>
         Ports:
         - <port_name>
         - ...
@@ -230,6 +278,8 @@ Latencies
 
 The execution latency and throughput can be configured under the Latencies section. A latency/throughput pair can be defined for a set of instruction groups, the groups available are the same as the set discussed in the Ports section.
 
+The execution latency defines the total number of cycles an instruction will spend in an execution unit. The throughput is how many cycles an instruction will block another instruction entering the execution unit. In non-pipelined execution units, the throughput is equal to the latency.
+
 The following structure must be adhered to when defining group latencies:
 
 .. code-block:: text
@@ -254,13 +304,15 @@ With N as the number of user-defined latency mappings. The default latencies, bo
 
 **Note**, unlike other operations, the execution latency defined for load/store operations are triggered in the LoadStoreQueue as opposed to within the execution unit (more details :ref:`here <lsq-restrict>`).
 
+.. _cpu-info:
+
 CPU Info
 --------
     This section contains information about the physical properties of the CPU.
     These fields are currently only used to generate a replica of the required Special Files directory structure.
 
 Generate-Special-Dir
-    Values are either "T" or "F", representing True or False.
+    Values are either "True" or "False".
     Dictates whether or not SimEng should generate the SpecialFiles directory tree at runtime.
     The alternative to this would be to copy in the required SpecialFiles by hand.
 
@@ -296,5 +348,5 @@ Package-Count
     Used to generate `/sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}` files.
     On each CPU the cores are split into packages. The number of packages used can be calculated by analysing the `physical_package_id` files on a Linux system using the CPU being modelled.
 
-.. Note:: Core-Count must be wholely divisible by Package-Count.
+.. Note:: Core-Count must be wholly divisible by Package-Count.
 .. Note:: Max Package-Count currently supported is 1.
