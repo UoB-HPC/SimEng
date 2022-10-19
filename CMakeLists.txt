@@ -163,8 +163,8 @@ if(SIMENG_ENABLE_TESTS)
     find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
 
       # Check LLVM version
-    if (${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0")
-      message(FATAL_ERROR "LLVM version must be >= 8.0")
+    if ((${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0") OR (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "14.1"))
+      message(FATAL_ERROR "LLVM version must be >= 8.0 and <= 14.0")
     endif()
 
       # Print message containing if the full test suite will run
@@ -208,11 +208,6 @@ if(SIMENG_ENABLE_TESTS)
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
     # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
 
-  endif()
-
-  # Check LLVM version
-  if ((${LLVM_PACKAGE_VERSION} VERSION_LESS "9.0") OR (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "13.0"))
-    message(FATAL_ERROR "LLVM version must be >= 9.0 and < 13.0")
   endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
