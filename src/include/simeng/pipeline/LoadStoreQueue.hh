@@ -34,11 +34,7 @@ class LoadStoreQueue {
   LoadStoreQueue(
       unsigned int maxCombinedSpace, MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-<<<<<<< HEAD
       std::function<void(const std::shared_ptr<Instruction>)> forwardOperands,
-=======
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
->>>>>>> origin/dev
       bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
       uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,
@@ -52,11 +48,7 @@ class LoadStoreQueue {
       unsigned int maxLoadQueueSpace, unsigned int maxStoreQueueSpace,
       MemoryInterface& memory,
       span<PipelineBuffer<std::shared_ptr<Instruction>>> completionSlots,
-<<<<<<< HEAD
       std::function<void(const std::shared_ptr<Instruction>)> forwardOperands,
-=======
-      std::function<void(span<Register>, span<RegisterValue>)> forwardOperands,
->>>>>>> origin/dev
       bool exclusive = false, uint16_t loadBandwidth = UINT16_MAX,
       uint16_t storeBandwidth = UINT16_MAX,
       uint16_t permittedRequests = UINT16_MAX,

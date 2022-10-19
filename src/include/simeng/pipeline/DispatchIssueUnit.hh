@@ -3,11 +3,8 @@
 #include <deque>
 #include <initializer_list>
 #include <queue>
-<<<<<<< HEAD
 #include <string>
-=======
 #include <tuple>
->>>>>>> origin/dev
 #include <unordered_map>
 #include <unordered_set>
 
@@ -64,12 +61,7 @@ class DispatchIssueUnit {
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
       const std::vector<uint16_t>& physicalRegisterStructure,
-<<<<<<< HEAD
-      std::vector<std::pair<uint8_t, uint64_t>> rsArrangment,
-      std::string operandBypassType, uint8_t dispatchRate = UINT8_MAX);
-=======
       YAML::Node config);
->>>>>>> origin/dev
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */

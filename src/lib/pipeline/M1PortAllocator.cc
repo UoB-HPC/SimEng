@@ -58,11 +58,11 @@ void M1PortAllocator::issued(uint16_t port) {
   weights[port]--;
 }
 
-<<<<<<< HEAD
-void M1PortAllocator::deallocate(uint8_t port) { issued(port); };
-=======
 void M1PortAllocator::deallocate(uint16_t port) { issued(port); };
+
+void M1PortAllocator::setRSSizeGetter(
     std::function<void(std::vector<uint64_t>&)> rsSizes) {
+  rsSizes_ = rsSizes;
 }
 
 void M1PortAllocator::tick() {}
