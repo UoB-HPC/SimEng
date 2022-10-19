@@ -333,4 +333,8 @@ const uint64_t CoreInstance::getProcessImageSize() const {
   return processMemorySize_;
 }
 
+const uint64_t CoreInstance::getHeapStart() const {
+  return process_->getHeapStart();
+};
+
 }  // namespace simeng

@@ -43,24 +43,25 @@
 
 // This MACRO creates a unique test name from the class name.
 #define CREATE_TEST_NAME_G(ClassName) \
-  CREATE_UNIQUE_TEST_NAME_G(CONCAT(ClassName, _TEST_CASE_), __COUNTER__)
+  CREATE_UNIQUE_TEST_NAME_G(CONCAT(ClassName, TEST_CASE), __COUNTER__)
 
 // This MACRO expands to define all logic which creates and registers the
 // TestContext related to a TEST_CASE to a TEST_GROUP.
-#define REGISTER_TC_G(ClassName, TestName, ptr, TestCaseName, ...)     \
-  std::unique_ptr<TestContext> CONCAT(ClassName, ptr) =                \
-      std::make_unique<TestContext>(&TestName, MAKE_TEST_SOURCE,       \
-                                    TestCaseName);                     \
-  const bool CONCAT(TestName, _registered_) = ClassName::registerTest( \
-      CONCAT(ClassName, ptr), ClassName::getGroupName(),               \
-      std::vector<std::string>{__VA_ARGS__});
+#define REGISTER_TC_G(ClassName, TestName, ptr, counter, TestCaseName, ...) \
+  std::unique_ptr<TestContext> CREATE_UNIQUE_TEST_NAME_G(                   \
+      ClassName, CONCAT(counter, ptr)) =                                    \
+      std::make_unique<TestContext>(&TestName, MAKE_TEST_SOURCE,            \
+                                    TestCaseName);                          \
+  const bool CONCAT(TestName, _registered_) = ClassName::registerTest(      \
+      CREATE_UNIQUE_TEST_NAME_G(ClassName, CONCAT(counter, ptr)),           \
+      ClassName::getGroupName(), std::vector<std::string>{__VA_ARGS__});
 
 // Internal MACRO called inside TEST_CASE MACRO which declares and registers the
 // TEST_CASE.
-#define CREATE_TEST_CASE_G(ClassName, TestName, TestCaseName, ...)            \
-  void TestName(std::string capturedStdout);                                  \
-  REGISTER_TC_G(ClassName, TestName, CONCAT(ptr_, __COUNTER__), TestCaseName, \
-                __VA_ARGS__)                                                  \
+#define CREATE_TEST_CASE_G(ClassName, TestName, TestCaseName, ...)   \
+  void TestName(std::string capturedStdout);                         \
+  REGISTER_TC_G(ClassName, TestName, ptr, __COUNTER__, TestCaseName, \
+                __VA_ARGS__)                                         \
   void TestName(std::string capturedStdout)
 
 // This MACRO expands to define all source code required for the TEST_CASE

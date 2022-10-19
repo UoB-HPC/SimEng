@@ -1,40 +1,43 @@
 import sst
 import sys
 
-DEBUG_L1 = 0
-DEBUG_MEM = 0
-DEBUG_LEVEL = 0
+DEBUG_L1 = 1
+DEBUG_MEM = 1
+DEBUG_LEVEL = 1
 
-print(sys.argv)
-print(len(sys.argv))
+heap = ""
+if len(sys.argv) > 3:
+    heap = sys.argv[3]
 
 # Define the simulation components
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": "<PATH TO SIMENG MODEL CONFIG .YAML FILE>",
-    "executable_path": "<PATH TO EXECUTABLE BINARY OR EMPTY STRING IF INSTRUCTIONS SUPPLIED THROUGH TEST>",
+    "simeng_config_path": "/home/rahat/asimov/SimEng/configs/sst-cores/a64fx-sst.yaml",
+    "executable_path": "",
     "executable_args": "",
-    "clock" : "1GHz",
+    "clock" : "1.8GHz",
     "max_addr_memory": 2*1024*1024*1024-1,
-    "cache_line_width": "64",
+    "cache_line_width": "8",
     "source": sys.argv[2],
     "assemble_with_source": sys.argv[1] == "src",
+    "heap": heap,
 })
 
 iface = cpu.setSubComponent("memory", "memHierarchy.standardInterface")
 
 l1cache = sst.Component("l1cache.mesi", "memHierarchy.Cache")
 l1cache.addParams({
-      "access_latency_cycles" : "2",
-      "cache_frequency" : "2Ghz",
+      "access_latency_cycles" : "1",
+      "cache_frequency" : "1.8Ghz",
       "replacement_policy" : "nmru",
       "coherence_protocol" : "MESI",
       "associativity" : "4",
-      "cache_line_size" : "64",
-      "debug" : DEBUG_L1,
-      "debug_level" : DEBUG_LEVEL,
+      "cache_line_size" : "8",
+      "debug" : "0",
+      "debug_level" : "10",
+      "verbose": "2",
       "L1" : "1",
-      "cache_size" : "200KiB"
+      "cache_size" : "2KiB"
 })
 
 # Explicitly set the link subcomponents instead of having cache figure them out based on connected port names
@@ -44,7 +47,7 @@ l1toM = l1cache.setSubComponent("memlink", "memHierarchy.MemLink")
 # Memory controller
 memctrl = sst.Component("memory", "memHierarchy.MemController")
 memctrl.addParams({
-    "clock" : "1GHz",
+    "clock" : "1.8GHz",
     "request_width" : "64",
     "debug" : DEBUG_MEM,
     "debug_level" : DEBUG_LEVEL,
@@ -55,14 +58,14 @@ Mtol1 = memctrl.setSubComponent("cpulink", "memHierarchy.MemLink")
 # Memory model
 memory = memctrl.setSubComponent("backend", "memHierarchy.simpleMem")
 memory.addParams({
-      "access_time" : "1ns",
+      "access_time" : "0ps",
       "mem_size" : "2GiB",
       "request_width": "64"
 })
 
 # Define the simulation links
 link_cpu_cache_link = sst.Link("link_cpu_cache_link")
-link_cpu_cache_link.connect( (iface, "port", "100ps"), (l1toC, "port", "100ps") )
+link_cpu_cache_link.connect( (iface, "port", "0ps"), (l1toC, "port", "0ps") )
 link_mem_bus_link = sst.Link("link_mem_bus_link")
-link_mem_bus_link.connect( (l1toM, "port", "50ps"), (Mtol1, "port", "50ps") )
+link_mem_bus_link.connect( (l1toM, "port", "0ps"), (Mtol1, "port", "0ps") )
 

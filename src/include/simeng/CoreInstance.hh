@@ -91,6 +91,9 @@ class CoreInstance {
   /** Getter for the size of the created process image. */
   const uint64_t getProcessImageSize() const;
 
+  /* Getter for heap start. */
+  const uint64_t getHeapStart() const;
+
  private:
   /** Generate the appropriate simulation objects as parameterised by the
    * configuration.*/

@@ -1,4 +1,4 @@
-set(SIMENG_SST_TEST_SOURCES main.cc src/test.cc src/test_llvm_assemble.cc)
+set(SIMENG_SST_TEST_SOURCES main.cc src/test_load.cc)
 add_executable(sstsimengtest ${SIMENG_SST_TEST_SOURCES})
 
 add_compile_options(-Wall)

@@ -164,7 +164,11 @@ void SimEngMemInterface::requestRead(const MemoryAccessTarget& target,
     completedReadRequests_.push_back({target, RegisterValue(), requestId});
     return;
   }
-
+#ifdef SIMENG_ENABLE_SST_TESTS
+  std::cout << "[SimEng:SSTDebug:MemRead]"
+            << "-read-request-" << requestId << "-cycle-" << tickCounter_
+            << std::endl;
+#endif
   AggregateReadRequest* aggrReq = new AggregateReadRequest(target, requestId);
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateReadRequest>(aggrReq, addrStart, addrEnd, size);
@@ -216,6 +220,16 @@ void SimEngMemInterface::aggregatedReadResponses(
   }
   // Send the completed read request back to SimEng via the
   // completed_read_requests queue.
+  uint64_t resp = 0;
+  for (int x = mergedData.size() - 1; x >= 0; x--) {
+    resp = (resp << 8) | mergedData[x];
+  }
+#ifdef SIMENG_ENABLE_SST_TESTS
+  std::cout << "[SimEng:SSTDebug:MemRead]"
+            << "-read-response-" << aggrReq->id_ << "-cycle-" << tickCounter_
+            << "-data-" << resp << std::endl;
+#endif
+
   const char* char_data = reinterpret_cast<const char*>(&mergedData[0]);
   completedReadRequests_.push_back(
       {aggrReq->target,

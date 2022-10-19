@@ -125,6 +125,10 @@ class SimEngCoreWrapper : public SST::Component {
   /** This method trims any leading or trailing spaces in a string. */
   std::string trimSpaces(std::string argsStr);
 
+  /** This method splits the comma separated heap string into a vector of
+   * uint32_t values. */
+  std::vector<uint64_t> splitHeapStr();
+
   // SST properties
   /**
    * SST defined output class used to output information to standard output.
@@ -194,6 +198,9 @@ class SimEngCoreWrapper : public SST::Component {
 
   /** Boolean which indicates whether or not to assemble by source. */
   bool assembleWithSource_ = false;
+
+  /** Heap contents as string. */
+  std::string heapStr_;
 };
 
 }  // namespace SSTSimEng

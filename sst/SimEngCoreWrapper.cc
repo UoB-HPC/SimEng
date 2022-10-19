@@ -29,6 +29,7 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   maxAddrMemory_ = params.find<uint64_t>("max_addr_memory", "0");
   source_ = params.find<std::string>("source", "");
   assembleWithSource_ = params.find<bool>("assemble_with_source", false);
+  heapStr_ = params.find<std::string>("heap", "");
 
   if (executablePath_.length() == 0 && !assembleWithSource_) {
     output_.fatal(CALL_INFO, 10, 0,
@@ -62,6 +63,9 @@ SimEngCoreWrapper::~SimEngCoreWrapper() {}
 void SimEngCoreWrapper::setup() {
   sstMem_->setup();
   output_.verbose(CALL_INFO, 1, 0, "Memory setup complete\n");
+  // Run Simulation
+  std::cout << "[SimEng] Starting...\n" << std::endl;
+  startTime_ = std::chrono::high_resolution_clock::now();
 }
 
 void SimEngCoreWrapper::handleMemoryEvent(StandardMem::Request* memEvent) {
@@ -104,12 +108,12 @@ void SimEngCoreWrapper::init(unsigned int phase) {
 bool SimEngCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
   // Tick the core and memory interfaces until the program has halted
   if (!core_->hasHalted() || dataMemory_->hasPendingRequests()) {
+    dataMemory_->tick();
     // Tick the core
     core_->tick();
 
     // Tick memory
     instructionMemory_->tick();
-    dataMemory_->tick();
 
     iterations_++;
 
@@ -277,7 +281,21 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
     primaryComponentOKToEndSim();
     std::exit(EXIT_FAILURE);
   }
-
+#ifdef SIMENG_ENABLE_SST_TESTS
+  if (heapStr_ != "") {
+    std::vector<uint8_t> initialHeapData;
+    std::vector<uint64_t> heapVals = splitHeapStr();
+    uint64_t heapSize = heapVals.size() * 8;
+    initialHeapData.resize(heapSize);
+    uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData.data());
+    for (int x = 0; x < heapVals.size(); x++) {
+      heap[x] = heapVals[x];
+    }
+    uint64_t heapStart = coreInstance_->getHeapStart();
+    std::copy(initialHeapData.begin(), initialHeapData.end(),
+              coreInstance_->getProcessImage().get() + heapStart);
+  }
+#endif
   // Send the process image data over to the SST memory
   dataMemory_->sendProcessImageToSST(coreInstance_->getProcessImage().get(),
                                      coreInstance_->getProcessImageSize());
@@ -300,8 +318,19 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   for (const auto& arg : executableArgs_) std::cout << " " << arg;
   std::cout << std::endl;
   std::cout << "[SimEng] Config file: " << simengConfigPath_ << std::endl;
+}
 
-  // Run simulation
-  std::cout << "[SimEng] Starting...\n" << std::endl;
-  startTime_ = std::chrono::high_resolution_clock::now();
+std::vector<uint64_t> SimEngCoreWrapper::splitHeapStr() {
+  std::vector<uint64_t> out;
+  std::string acc = "";
+  for (int a = 0; a < heapStr_.size(); a++) {
+    if (heapStr_[a] == ',') {
+      out.push_back(static_cast<uint64_t>(std::stoull(acc)));
+      acc = "";
+    } else {
+      acc += heapStr_[a];
+    }
+  }
+  out.push_back(static_cast<uint64_t>(std::stoull(acc)));
+  return out;
 }
