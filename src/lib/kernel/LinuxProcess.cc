@@ -46,7 +46,8 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   char* temp = (char*)realloc(unwrappedProcImgPtr, size_ * sizeof(char));
   if (temp == NULL) {
     free(unwrappedProcImgPtr);
-    std::cerr << "ProcessImage cannot be constructed successfully! "
+    std::cerr << "[SimEng:LinuxProcess] ProcessImage cannot be constructed "
+                 "successfully! "
                  "Reallocation failed."
               << std::endl;
     exit(EXIT_FAILURE);

@@ -204,7 +204,7 @@ void Core::processExceptionHandler() {
 
   if (result.fatal) {
     hasHalted_ = true;
-    std::cout << "Halting due to fatal exception" << std::endl;
+    std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);

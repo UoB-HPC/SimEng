@@ -23,7 +23,6 @@ Register-Set:
   Conditional-Count: 128
 Pipeline-Widths:
   Commit: 4
-  Dispatch-Rate: 4
   FrontEnd: 4
   LSQ-Completion: 2
 Queue-Sizes:
@@ -83,6 +82,7 @@ Ports:
 Reservation-Stations:
   0:
     Size: 60
+    Dispatch-Rate: 4
     Ports:
     - Port 0
     - Port 1

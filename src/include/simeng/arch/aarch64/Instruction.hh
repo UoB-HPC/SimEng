@@ -171,7 +171,7 @@ struct ExecutionInfo {
   uint16_t stallCycles = 1;
 
   /** The ports that support the instruction. */
-  std::vector<uint8_t> ports = {};
+  std::vector<uint16_t> ports = {};
 };
 
 /** The various exceptions that can be raised by an individual instruction. */
@@ -209,7 +209,7 @@ struct MicroOpInfo {
   int microOpIndex = 0;
 };
 
-/** A basic ARMv8-a implementation of the `Instruction` interface. */
+/** A basic Armv9.2-a implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.
@@ -313,7 +313,7 @@ class Instruction : public simeng::Instruction {
   void setExecutionInfo(const ExecutionInfo& info);
 
   /** Get this instruction's supported set of ports. */
-  const std::vector<uint8_t>& getSupportedPorts() override;
+  const std::vector<uint16_t>& getSupportedPorts() override;
 
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;

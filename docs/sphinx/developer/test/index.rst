@@ -33,6 +33,7 @@ In addition to tests for the instruction functionality of the ISA, that are loca
 
 - Exception: Test non-supervisor call based exceptions.
 - LoadStoreQueue: Test the correct implementation of load and store instructions concerning their interaction with the LSQ.
+- MicroOperation: Test the supported instruction splitting provides the correct output from the execution of said instructions.
 - SmokeTest: Trivial ISA related tests.
 - Syscall: Ensure the correct functionality of aarch64 system calls.
 - SystemRegisters: Ensure aarch64 system registers are correctly written to and read from.
@@ -57,7 +58,7 @@ The standard structure of an AArch64 regression test body is as followed:
       ** Comparisons against values in the SimEng model after simulation **
    }
 
-**Note**, the ``RUN_AARCH64`` function is a proxy call to the ``run`` function in the ``RegressionTest`` class with the "aarch64" target defined. Also, helper functions for comparrisons against the SimEng model are implemented and well documented in ``test/regression/aarch64/AArch64RegressionTest.hh``.
+**Note**, the ``RUN_AARCH64`` function is a proxy call to the ``run`` function in the ``RegressionTest`` class with the "aarch64" target defined. Also, helper functions for comparisons against the SimEng model are implemented and well documented in ``test/regression/aarch64/AArch64RegressionTest.hh``.
 
 Unit suite
 ----------

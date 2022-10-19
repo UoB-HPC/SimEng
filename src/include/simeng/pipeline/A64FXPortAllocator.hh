@@ -23,14 +23,14 @@ class A64FXPortAllocator : public PortAllocator {
  public:
   A64FXPortAllocator(const std::vector<std::vector<uint16_t>>& portArrangement);
 
-  uint8_t allocate(const std::vector<uint8_t>& ports) override;
+  uint16_t allocate(const std::vector<uint16_t>& ports) override;
 
-  void issued(uint8_t port) override;
+  void issued(uint16_t port) override;
 
-  void deallocate(uint8_t port) override;
+  void deallocate(uint16_t port) override;
 
   /** A mapping from issye ports to instruction attribute */
-  uint8_t attributeMapping(const std::vector<uint8_t>& ports);
+  uint8_t attributeMapping(const std::vector<uint16_t>& ports);
 
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */
@@ -50,7 +50,7 @@ class A64FXPortAllocator : public PortAllocator {
   std::function<void(std::vector<uint64_t>&)> rsSizes_;
 
   /** Mapping from reservation station to ports. */
-  std::vector<std::vector<uint8_t>> rsToPort_;
+  std::vector<std::vector<uint16_t>> rsToPort_;
 
   /** Vector of free entires across all reservation stations. */
   std::vector<uint64_t> freeEntries_;
@@ -65,16 +65,16 @@ class A64FXPortAllocator : public PortAllocator {
   /** RSA with least free entries. */
   uint8_t RSAf_;
 
-  const std::vector<uint8_t> EXA_EXB_EAGA_EAGB = {2, 4, 5, 6};
-  const std::vector<uint8_t> EXA_EXB = {2, 4};
-  const std::vector<uint8_t> FLA_FLB = {0, 3};
-  const std::vector<uint8_t> EAGA_EAGB = {5, 6};
-  const std::vector<uint8_t> EXA = {2};
-  const std::vector<uint8_t> FLA = {0};
-  const std::vector<uint8_t> PR = {1};
-  const std::vector<uint8_t> EXB = {4};
-  const std::vector<uint8_t> FLB = {3};
-  const std::vector<uint8_t> BR = {7};
+  const std::vector<uint16_t> EXA_EXB_EAGA_EAGB = {2, 4, 5, 6};
+  const std::vector<uint16_t> EXA_EXB = {2, 4};
+  const std::vector<uint16_t> FLA_FLB = {0, 3};
+  const std::vector<uint16_t> EAGA_EAGB = {5, 6};
+  const std::vector<uint16_t> EXA = {2};
+  const std::vector<uint16_t> FLA = {0};
+  const std::vector<uint16_t> PR = {1};
+  const std::vector<uint16_t> EXB = {4};
+  const std::vector<uint16_t> FLB = {3};
+  const std::vector<uint16_t> BR = {7};
 };
 
 }  // namespace pipeline

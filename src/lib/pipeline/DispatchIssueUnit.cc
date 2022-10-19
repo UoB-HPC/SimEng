@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <iostream>
-#include <unordered_set>
 
 namespace simeng {
 namespace pipeline {
@@ -11,44 +10,44 @@ DispatchIssueUnit::DispatchIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
-    const std::vector<uint16_t>& physicalRegisterStructure,
-    std::vector<std::pair<uint8_t, uint64_t>> rsArrangement,
-    std::string operandBypassType, uint8_t dispatchRate)
+    const std::vector<uint16_t>& physicalRegisterStructure, YAML::Node config)
     : input_(fromRename),
       issuePorts_(issuePorts),
       registerFileSet_(registerFileSet),
       scoreboard_(physicalRegisterStructure.size()),
       dependencyMatrix_(physicalRegisterStructure.size()),
       portAllocator_(portAllocator),
-      operandBypassType_(operandBypassType),
-      dispatchRate_(dispatchRate) {
-  // Initialise scoreboard
+      operandBypassType_(config["Core"]["Operand-Bypass"].as<std::string>()) {
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
     scoreboard_[type].assign(physicalRegisterStructure[type], true);
     dependencyMatrix_[type].resize(physicalRegisterStructure[type]);
   }
-  // Create set of reservation station structs with correct issue port mappings
-  for (int port = 0; port < rsArrangement.size(); port++) {
-    auto RS = rsArrangement[port];
-    if (reservationStations_.size() < RS.first + 1) {
-      std::vector<ReservationStationPort> ports;
-      reservationStations_.resize(RS.first + 1, {0, 0, ports});
-    }
-    reservationStations_[RS.first].capacity = RS.second;
-    // Find number of ports already mapping to the given RS
-    uint8_t port_index = 0;
-    for (auto rsPort : portMapping_) {
-      if (rsPort.first == RS.first) {
-        port_index++;
+  // Create set of reservation station structs with correct issue port
+  // mappings
+  for (size_t i = 0; i < config["Reservation-Stations"].size(); i++) {
+    // Iterate over each reservation station in config
+    auto reservation_station = config["Reservation-Stations"][i];
+    // Create ReservationStation struct to be stored
+    ReservationStation rs = {
+        reservation_station["Size"].as<uint16_t>(),
+        reservation_station["Dispatch-Rate"].as<uint16_t>(),
+        0,
+        {}};
+    // Resize rs port attribute to match what's defined in config file
+    rs.ports.resize(reservation_station["Ports"].size());
+    for (size_t j = 0; j < reservation_station["Ports"].size(); j++) {
+      // Iterate over issue ports in config
+      uint16_t issue_port = reservation_station["Ports"][j].as<uint16_t>();
+      rs.ports[j].issuePort = issue_port;
+      // Add port mapping entry, resizing vector if needed
+      if ((issue_port + 1) > portMapping_.size()) {
+        portMapping_.resize((issue_port + 1));
       }
+      portMapping_[issue_port] = {i, j};
     }
-    // Add port
-    portMapping_.push_back({RS.first, port_index});
-    reservationStations_[RS.first].ports.resize(port_index + 1);
-    reservationStations_[RS.first].ports[port_index].issuePort = port;
+    reservationStations_.push_back(rs);
   }
-  dispatches.resize(reservationStations_.size());
-  for (uint8_t i = 0; i < reservationStations_.size(); i++)
+  for (uint16_t i = 0; i < reservationStations_.size(); i++)
     flushed_.emplace(i, std::initializer_list<std::shared_ptr<Instruction>>{});
 }
 
@@ -56,8 +55,10 @@ void DispatchIssueUnit::tick() {
   input_.stall(false);
   ticks_++;
 
-  // Reset the counters
-  std::fill(dispatches.begin(), dispatches.end(), 0);
+  /** Stores the number of instructions dispatched for each
+   * reservation station. */
+  std::vector<uint16_t> dispatches = {
+      0, static_cast<unsigned short>(reservationStations_.size())};
 
   // Check if waiting instructions are ready.
   auto itWait = waitingInstructions_.find(ticks_);
@@ -121,7 +122,7 @@ void DispatchIssueUnit::tick() {
       continue;
     }
 
-    const std::vector<uint8_t>& supportedPorts = uop->getSupportedPorts();
+    const std::vector<uint16_t>& supportedPorts = uop->getSupportedPorts();
     if (uop->exceptionEncountered()) {
       // Exception; mark as ready to commit, and remove from pipeline
       uop->setCommitReady();
@@ -129,16 +130,16 @@ void DispatchIssueUnit::tick() {
       continue;
     }
     // Allocate issue port to uop
-    uint8_t port = portAllocator_.allocate(supportedPorts);
-    uint8_t RS_Index = portMapping_[port].first;
-    uint8_t RS_Port = portMapping_[port].second;
+    uint16_t port = portAllocator_.allocate(supportedPorts);
+    uint16_t RS_Index = portMapping_[port].first;
+    uint16_t RS_Port = portMapping_[port].second;
     assert(RS_Index < reservationStations_.size() &&
            "Allocated port inaccessible");
     ReservationStation& rs = reservationStations_[RS_Index];
 
     // When appropriate, stall uop or input buffer if stall buffer full
     if (rs.currentSize == rs.capacity ||
-        dispatches[RS_Index] == dispatchRate_) {
+        dispatches[RS_Index] == rs.dispatchRate) {
       // Deallocate port given
       portAllocator_.deallocate(port);
       input_.stall(true);

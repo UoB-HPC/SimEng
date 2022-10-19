@@ -36,7 +36,7 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(isPredicate, bool());
   MOCK_CONST_METHOD0(getGroup, uint16_t());
 
-  MOCK_METHOD0(getSupportedPorts, const std::vector<uint8_t>&());
+  MOCK_METHOD0(getSupportedPorts, const std::vector<uint16_t>&());
 
   MOCK_CONST_METHOD0(getProducerGroup, uint16_t());
   MOCK_CONST_METHOD0(getConsumerGroup, uint16_t());

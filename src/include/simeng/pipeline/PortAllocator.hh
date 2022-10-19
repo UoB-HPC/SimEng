@@ -20,15 +20,15 @@ class PortAllocator {
 
   /** Allocate a port for the specified instruction group; returns the allocated
    * port. */
-  virtual uint8_t allocate(const std::vector<uint8_t>& ports) = 0;
+  virtual uint16_t allocate(const std::vector<uint16_t>& ports) = 0;
 
   /** Inform the allocator that an instruction was issued to the specified port.
    */
-  virtual void issued(uint8_t port) = 0;
+  virtual void issued(uint16_t port) = 0;
 
   /** Inform the allocator that an instruction will not issue to its
    * allocated port. */
-  virtual void deallocate(uint8_t port) = 0;
+  virtual void deallocate(uint16_t port) = 0;
 
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */

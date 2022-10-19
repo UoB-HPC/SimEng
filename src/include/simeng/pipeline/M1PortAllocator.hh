@@ -24,6 +24,7 @@ class M1PortAllocator : public PortAllocator {
   /** Allocate the lowest weighted port available for the specified instruction
    * group. Returns the allocated port, and increases the weight of the port.
    */
+<<<<<<< HEAD
   uint8_t allocate(const std::vector<uint8_t>& ports) override;
 
   /** Decrease the weight for the specified port. */
@@ -31,6 +32,15 @@ class M1PortAllocator : public PortAllocator {
 
   /** Decrease the weight for the specified port. */
   void deallocate(uint8_t port) override;
+=======
+  uint16_t allocate(const std::vector<uint16_t>& ports) override;
+
+  /** Decrease the weight for the specified port. */
+  void issued(uint16_t port) override;
+
+  /** Decrease the weight for the specified port. */
+  void deallocate(uint16_t port) override;
+>>>>>>> origin/dev
 
   /** Set function from DispatchIssueUnit to retrieve reservation
    * station sizes during execution. */

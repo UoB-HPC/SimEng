@@ -14,13 +14,10 @@ namespace models {
 namespace outoforder {
 
 // TODO: System register count has to match number of supported system registers
-
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator,
-           const std::vector<std::pair<uint8_t, uint64_t>>& rsArrangement,
-           YAML::Node config)
+           pipeline::PortAllocator& portAllocator, YAML::Node config)
     : isa_(isa),
       physicalRegisterStructures_(
           {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
@@ -82,11 +79,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       renameUnit_(decodeToRenameBuffer_, renameToDispatchBuffer_,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures_.size()),
-      dispatchIssueUnit_(
-          renameToDispatchBuffer_, issuePorts_, registerFileSet_, portAllocator,
-          physicalRegisterQuantities_, rsArrangement,
-          config["Core"]["Operand-Bypass"].as<std::string>(),
-          config["Pipeline-Widths"]["Dispatch-Rate"].as<unsigned int>()),
+      dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
+                         portAllocator, physicalRegisterQuantities_, config),
       writebackUnit_(
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
@@ -323,7 +317,7 @@ void Core::processExceptionHandler() {
 
   if (result.fatal) {
     hasHalted_ = true;
-    std::cout << "Halting due to fatal exception" << std::endl;
+    std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);

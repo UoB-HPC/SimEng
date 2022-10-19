@@ -5023,7 +5023,8 @@ void Instruction::execute() {
   for (int i = 0; i < destinationRegisterCount; i++) {
     if ((destinationRegisters[i].type == RegisterType::VECTOR) && !isSVEData_) {
       if (results[i].size() != 256)
-        std::cerr << metadata.mnemonic << " opcode: " << metadata.opcode
+        std::cerr << "[SimEng:Instruction_execute] " << metadata.mnemonic
+                  << " opcode: " << metadata.opcode
                   << " has not been zero extended correctly\n";
     }
   }
