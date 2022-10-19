@@ -61,7 +61,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   capstone-lib
   GIT_REPOSITORY https://github.com/UoB-HPC/capstone.git
-  GIT_TAG next
+  GIT_TAG Armv9.2-update
   GIT_PROGRESS TRUE
 
   # Old Git tag pre-Armv9.2
