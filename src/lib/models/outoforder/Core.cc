@@ -421,8 +421,7 @@ std::map<std::string, std::string> Core::getStats() const {
   stats_.fillSimulationStats(finalStatDump);
 
 #if SIMENG_ENABLE_VERBOSE_STATS
-
-  stats_.dumpStats(0x0);
+  stats_.dumpFullStats();
 #endif
 
   // Calculate IPC

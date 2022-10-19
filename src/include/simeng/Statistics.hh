@@ -35,8 +35,11 @@ class Statistics {
   /** Get a current region statistic value by a given id. */
   uint64_t getRegionStat(uint64_t id);
 
+  /** Write the current full simulation statistics to the set outfile. */
+  void dumpFullStats();
+
   /** Write current region statistics to the set outfile. */
-  void dumpStats(uint64_t dumpAddress);
+  void dumpRegionStats(uint64_t dumpAddress);
 
   /** Manually write a provided key, value pair to the outfile_. */
   void manualOutput(std::string key, std::string value);

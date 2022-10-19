@@ -96,7 +96,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       if (uop->getStatInsnType() == statInsnType::NONE) {
         raiseException_(uop);
       } else if (uop->getStatInsnType() == statInsnType::DUMP) {
-        stats_.dumpStats(uop->getInstructionAddress());
+        stats_.dumpRegionStats(uop->getInstructionAddress());
       } else if (uop->getStatInsnType() == statInsnType::RESET) {
         stats_.resetStats();
       }

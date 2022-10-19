@@ -37,7 +37,14 @@ uint64_t Statistics::getRegionStat(uint64_t id) {
   return regionStats_[id];
 }
 
-void Statistics::dumpStats(uint64_t dumpAddress) {
+void Statistics::dumpFullStats() {
+  outfile_ << "===== Full Simulation Statistics =====\n";
+  for (int i = 0; i < statNames_.size(); i++) {
+    outfile_ << statNames_[i] << ": " << fullSimulationStats_[i] << "\n";
+  }
+}
+
+void Statistics::dumpRegionStats(uint64_t dumpAddress) {
   outfile_ << "===== " << dumpCounter_ << " === " << std::hex << dumpAddress
            << std::dec << " =====\n";
   for (int i = 0; i < statNames_.size(); i++) {
