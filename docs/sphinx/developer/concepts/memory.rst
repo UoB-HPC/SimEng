@@ -3,6 +3,8 @@ Memory
 
 The SimEng core models simulate everything in a core up to and including the load/store units, but stop short of the memory system. This is to allow integration and interoperability with a wide range of external memory models, and to focus the development of SimEng primarily on the simulation of the core itself.
 
+.. _memInt:
+
 MemoryInterface
 ---------------
 

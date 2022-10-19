@@ -15,6 +15,7 @@ The following information is intended for those users of SimEng who wish to modi
 
 * :doc:`Simulation Components <components/index>`
 
+   * :doc:`Core Instance <components/coreinstance>`
    * :doc:`Pipeline <components/pipeline/index>`
    * :doc:`Branch Prediction <components/branchPred>`
    * :doc:`Register Files <components/registerFiles>`

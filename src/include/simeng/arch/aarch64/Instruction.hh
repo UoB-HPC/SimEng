@@ -209,7 +209,7 @@ struct MicroOpInfo {
   int microOpIndex = 0;
 };
 
-/** A basic ARMv8-a implementation of the `Instruction` interface. */
+/** A basic Armv9.2-a implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.

@@ -51,7 +51,7 @@ class AuxFunc {
   }
 
   /** Manipulate the bitfield `value` according to the logic of the (U|S)BFM
-   * ARMv8 instructions. */
+   * Armv9.2-a instructions. */
   template <typename T>
   static std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T>
   bitfieldManipulate(T value, T dest, uint8_t rotateBy, uint8_t sourceBits,

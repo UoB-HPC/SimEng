@@ -26,10 +26,17 @@ Only a specific number of instructions can be committed per cycle as defined by 
 
 .. _microOpCommit:
 
-commitMicroOps
+CommitMicroOps
 **************
 
 When a macro-op is split, all created micro-ops can only be committed when all are ready to do so. These micro-ops firstly enter a "waiting commit" state and once all associated micro-ops are in said state, they can then enter a "ready to commit" state and commit in the standard manner. The ``commitMicroOps`` function facilitates this state transition whilst the ``WritebackUnit`` sets the "waiting commit" state.
+
+.. _loopDetect:
+
+Loop detection
+**************
+
+For the loop buffer to operate within the fetch unit (detailed :ref:`here <loopBuf>`) the detection of loops, and the branches which represent them, must be facilitated. The ROB supports this functionality by tracking the retirement of branch instructions. If the same branch instruction retires a configurable number of times, with the same target and direction, then a loop is detected. No other branch or different outcomes from the same branch can be retired within this period.
 
 LoadStoreQueue
 --------------

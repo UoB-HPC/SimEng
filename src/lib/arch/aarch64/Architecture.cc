@@ -145,7 +145,7 @@ Architecture::~Architecture() {
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
                                 MacroOp& output) const {
-  // Check that instruction address is 4-byte aligned as required by Armv8
+  // Check that instruction address is 4-byte aligned as required by Armv9.2-a
   if (instructionAddress & 0x3) {
     // Consume 1-byte and raise a misaligned PC exception
     auto metadata = InstructionMetadata((uint8_t*)ptr, 1);
