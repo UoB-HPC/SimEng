@@ -71,7 +71,8 @@ void ModelConfig::validate() {
                         ExpectedValue::UInteger, 512);
   subFields.clear();
 
-  // Ensure the ISA Type is defined and valid
+  // Check options that differ when different ISA's are used. First check ISA
+  // config option is valid before switching on it
   if (validISA == 1) {
     // Generate groupOptions_ and groupMapping_
     createGroupMapping();

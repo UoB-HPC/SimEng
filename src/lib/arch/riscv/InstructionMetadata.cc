@@ -44,9 +44,8 @@ InstructionMetadata::InstructionMetadata(const uint8_t* invalidEncoding,
 }
 
 void InstructionMetadata::revertAliasing(const cs_insn& insn) {
-  // Check mnemonics known to be aliases and see if their opcode matches
-  // something else
-  // Fix some inaccuracies in the decoded metadata
+  // Check for pseudoinstructions and change operands given by capstone to be
+  // suitable for SimEng
   switch (opcode) {
     case Opcode::RISCV_ADDI: {
       if (operandCount == 0 && strcmp(mnemonic, "nop") == 0) {

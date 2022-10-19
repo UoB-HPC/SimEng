@@ -121,7 +121,6 @@ const span<RegisterValue> Instruction::getResults() const {
   return {const_cast<RegisterValue*>(results.data()), destinationRegisterCount};
 }
 
-bool Instruction::isStore() const { return isStore_; }
 bool Instruction::isStoreAddress() const { return isStore_; }
 bool Instruction::isStoreData() const { return isStore_; }
 bool Instruction::isLoad() const { return isLoad_; }
@@ -163,7 +162,7 @@ uint16_t Instruction::getGroup() const {
 
   if (isBranch()) return InstructionGroups::BRANCH;
   if (isLoad()) return base + 8;
-  if (isStore()) return base + 9;
+  if (isStoreAddress()) return base + 9;
   if (isDivide_) return base + 7;
   if (isMultiply_) return base + 6;
   if (isShift_) return base + 5;

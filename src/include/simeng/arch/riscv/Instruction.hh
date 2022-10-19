@@ -127,9 +127,6 @@ class Instruction : public simeng::Instruction {
   /** Retrieve a branch target from the instruction's metadata if known. */
   uint64_t getKnownTarget() const override;
 
-  /** Is this a store operation? */
-  bool isStore() const;
-
   /** Is this a store address operation (a subcategory of store operations which
    * deal with the generation of store addresses to store data at)? */
   bool isStoreAddress() const override;
@@ -238,8 +235,6 @@ class Instruction : public simeng::Instruction {
   bool isLoad_ = false;
   /** Is this a branch operation? */
   bool isBranch_ = false;
-  /** Is this an ASIMD operation? */
-  //  bool isASIMD_ = false;
   /** Is this a multilpy operation? */
   bool isMultiply_ = false;
   /** Is this a divide operation? */

@@ -2,11 +2,6 @@
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
 
-#define NOT(bits, length) (~bits & (1 << length - 1))
-#define CONCAT(hi, lo, lowLen) ((hi << lowLen) & lo)
-#define ONES(n) ((1 << (n)) - 1)
-#define ROR(x, shift, size) ((x >> shift) | (x << (size - shift)))
-
 namespace simeng {
 namespace arch {
 namespace riscv {
@@ -14,25 +9,6 @@ namespace riscv {
 /********************
  * HELPER FUNCTIONS
  *******************/
-
-// Extract bit `start` of `value`
-constexpr bool bit(uint32_t value, uint8_t start) {
-  return (value >> start) & 1;
-}
-// Extract bits `start` to `start+width` of `value`
-constexpr uint32_t bits(uint32_t value, uint8_t start, uint8_t width) {
-  return ((value >> start) & ((1 << width) - 1));
-}
-
-// Generate a general purpose register identifier with tag `tag`
-constexpr Register genReg(uint16_t tag) { return {RegisterType::GENERAL, tag}; }
-
-// Sign-extend a bitstring of length `currentLength`
-constexpr int32_t signExtend(uint32_t value, int currentLength) {
-  uint32_t mask = (-1) << currentLength;
-  bool negative = bit(value, currentLength - 1);
-  return static_cast<int32_t>(value) | (negative ? mask : 0);
-}
 
 /** Parses the Capstone `riscv_reg` value to generate an architectural register
  * representation.
@@ -159,17 +135,19 @@ void Instruction::decode() {
     isAtomic_ = true;
   }
 
-  bool accessesMemory = false;
-
-  // Extract explicit register accesses
+  // Extract explicit register accesses, ignore immediates until execute
   for (size_t i = 0; i < metadata.operandCount; i++) {
     const auto& op = metadata.operands[i];
 
+    // First operand is always be of REG type but could be either source or
+    // destination
     if (i == 0 && op.type == RISCV_OP_REG) {
-      // First operand
+      // If opcode is branch or store (but not atomic or jump) the first operand
+      // is a source register, for all other instructions the first operand is a
+      // destination register
       if ((isBranch() && metadata.opcode != Opcode::RISCV_JAL &&
            metadata.opcode != Opcode::RISCV_JALR) ||
-          (isStore() && !isAtomic())) {
+          (isStoreAddress() && !isAtomic())) {
         sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
 
         if (sourceRegisters[sourceRegisterCount] ==
@@ -191,6 +169,8 @@ void Instruction::decode() {
       }
     }
 
+    // For all instructions, every register operand after the first is a source
+    // register
     else if (i > 0 && op.type == RISCV_OP_REG) {
       //  Second or third operand
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.reg);
@@ -205,9 +185,10 @@ void Instruction::decode() {
       sourceRegisterCount++;
     }
 
+    // First operand is never MEM type, only check after the first. If register
+    // contains memory address, extract reg number from capstone object
     else if (i > 0 && op.type == RISCV_OP_MEM) {
       //  Memory operand
-      accessesMemory = true;
       sourceRegisters[sourceRegisterCount] = csRegToRegister(op.mem.base);
       sourceRegisterCount++;
       operandsPending++;
