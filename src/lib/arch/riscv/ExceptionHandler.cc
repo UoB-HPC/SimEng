@@ -606,9 +606,25 @@ bool ExceptionHandler::init() {
         break;
       }
       case 278: {  // getrandom
-        // TODO: Functionality temporarily omitted as it is unused within
-        // workloads regions of interest and not required for their simulation
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+                   // TODO: support flags argument
+
+        // seed random numbers
+        srand(clock());
+
+        // Write <buflen> random bytes to buf
+        uint64_t bufPtr = registerFileSet.get(R0).get<uint64_t>();
+        size_t buflen = registerFileSet.get(R1).get<size_t>();
+
+        char buf[buflen];
+        for (size_t i = 0; i < buflen; i++) {
+          buf[i] = (uint8_t)rand();
+        }
+
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {(uint64_t)buflen}};
+
+        stateChange.memoryAddresses.push_back({bufPtr, (uint8_t)buflen});
+        stateChange.memoryAddressValues.push_back(RegisterValue(buf, buflen));
+
         break;
       }
       case 293:  // rseq

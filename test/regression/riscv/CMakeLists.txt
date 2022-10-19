@@ -3,6 +3,7 @@ add_executable(regression-riscv
             RISCVRegressionTest.hh
             LoadStoreQueue.cc
             SmokeTest.cc
+            Syscall.cc
             instructions/arithmetic.cc
             instructions/multiplyDivide.cc
             instructions/load.cc
