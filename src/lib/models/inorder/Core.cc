@@ -52,8 +52,6 @@ void Core::tick() {
 
   if (hasHalted_) return;
 
-  if (hasHalted_) return;
-
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
     return;
