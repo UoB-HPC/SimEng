@@ -127,7 +127,7 @@ class CoreInstance {
   /** Reference to source assembled by LLVM. */
   char* source_ = nullptr;
 
-  /** Size of the source code assembled by LLVM*/
+  /** Size of the source code assembled by LLVM. */
   size_t sourceSize_ = 0;
 
   /** The config file describing the modelled core to be created. */

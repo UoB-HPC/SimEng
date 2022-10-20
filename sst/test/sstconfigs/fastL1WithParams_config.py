@@ -1,15 +1,17 @@
 import sst
 import sys
 
-DEBUG_L1 = 1
+DEBUG_L1 = 0
 DEBUG_MEM = 1
 DEBUG_LEVEL = 1
 
 heap = ""
+clw = "8"
 if len(sys.argv) > 3:
     heap = sys.argv[3]
+if len(sys.argv) > 4:
+    clw = sys.argv[4]
 
-# Define the simulation components
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
     "simeng_config_path": "/home/rahat/asimov/SimEng/configs/sst-cores/a64fx-sst.yaml",
@@ -17,7 +19,7 @@ cpu.addParams({
     "executable_args": "",
     "clock" : "1.8GHz",
     "max_addr_memory": 2*1024*1024*1024-1,
-    "cache_line_width": "8",
+    "cache_line_width": clw,
     "source": sys.argv[2],
     "assemble_with_source": sys.argv[1] == "src",
     "heap": heap,
@@ -27,13 +29,13 @@ iface = cpu.setSubComponent("memory", "memHierarchy.standardInterface")
 
 l1cache = sst.Component("l1cache.mesi", "memHierarchy.Cache")
 l1cache.addParams({
-      "access_latency_cycles" : "1",
+      "access_latency_cycles" : "2",
       "cache_frequency" : "1.8Ghz",
       "replacement_policy" : "nmru",
       "coherence_protocol" : "MESI",
       "associativity" : "4",
-      "cache_line_size" : "8",
-      "debug" : "0",
+      "cache_line_size" : clw,
+      "debug" : DEBUG_L1,
       "debug_level" : "10",
       "verbose": "2",
       "L1" : "1",

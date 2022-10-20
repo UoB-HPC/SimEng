@@ -9,11 +9,19 @@ struct ParsedMemRead {
   uint64_t startCycle_;
   uint64_t endCycle_;
   uint64_t data_;
+  uint64_t numReqs_;
 };
 
+/**
+ * Parser class used to parse captured stdout into meaninful and comparable
+ * data.
+ */
 class Parser {
  private:
+  /** Captured Stdout split into lines. */
   std::vector<std::string> splitStdout_;
+
+  /** vector of ParsedMemReads. */
   std::vector<ParsedMemRead*> parsedMemReads_;
 
  public:
@@ -22,14 +30,16 @@ class Parser {
     parsedMemReads_ = parseOutput();
   };
   ~Parser(){};
-  std::vector<ParsedMemRead*> getParseMemReads() { return parsedMemReads_; }
+  /** Returns the parsed stdout as ParsedMemReads. */
+  std::vector<ParsedMemRead*> getParsedMemReads() { return parsedMemReads_; }
 
  private:
+  /** This methiod parses the captured stdout */
   std::vector<ParsedMemRead*> parseOutput() {
     std::map<uint64_t, ParsedMemRead*> pmap;
     std::vector<ParsedMemRead*> out;
     for (int x = 0; x < splitStdout_.size(); x++) {
-      if (splitStdout_[x].find("SimEng:SSTDebug") == std::string::npos)
+      if (splitStdout_[x].find("SimEng:SSTDebug:MemRead") == std::string::npos)
         continue;
       std::vector<std::string> splitStr = split(splitStdout_[x], "-");
       if (splitStr[0] == "[SimEng:SSTDebug:MemRead]") {
@@ -43,12 +53,15 @@ class Parser {
           ParsedMemRead* p = new ParsedMemRead();
           p->reqId_ = id;
           p->startCycle_ = std::stoull(splitStr[5]);
+          p->numReqs_ = std::stoull(splitStr[7]);
           pmap.insert(std::pair<uint64_t, ParsedMemRead*>(id, p));
         }
       }
     }
     return out;
   }
+
+  /** This method splits capturedStdout into lines. */
   std::vector<std::string> splitStdoutIntoLines(std::string capturedStdout) {
     std::stringstream ss(capturedStdout);
     std::string line;
@@ -71,6 +84,7 @@ class Parser {
     return lines;
   };
 
+  /** This method split a string into a vector of strings given a delimiter. */
   std::vector<std::string> split(std::string s, std::string delimiter) {
     size_t pos_start = 0, pos_end, delim_len = delimiter.length();
     std::string token;

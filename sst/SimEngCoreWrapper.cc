@@ -108,6 +108,8 @@ void SimEngCoreWrapper::init(unsigned int phase) {
 bool SimEngCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
   // Tick the core and memory interfaces until the program has halted
   if (!core_->hasHalted() || dataMemory_->hasPendingRequests()) {
+    // Ticking dataMemory just increases cycle count. Tick first to ensure
+    // proper cycle count.
     dataMemory_->tick();
     // Tick the core
     core_->tick();
@@ -281,6 +283,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
     primaryComponentOKToEndSim();
     std::exit(EXIT_FAILURE);
   }
+// If testing is enabled populate heap if heap values have been specified.
 #ifdef SIMENG_ENABLE_SST_TESTS
   if (heapStr_ != "") {
     std::vector<uint8_t> initialHeapData;
