@@ -244,5 +244,11 @@ void FetchUnit::flushLoopBuffer() {
   loopBoundaryAddress_ = 0;
 }
 
+void FetchUnit::flushLoopBuffer() {
+  loopBuffer_.clear();
+  loopBufferState_ = LoopBufferState::IDLE;
+  loopBoundaryAddress_ = 0;
+}
+
 }  // namespace pipeline
 }  // namespace simeng

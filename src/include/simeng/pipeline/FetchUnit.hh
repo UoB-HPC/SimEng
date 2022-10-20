@@ -66,6 +66,9 @@ class FetchUnit {
   /** Clear the loop buffer. */
   void flushLoopBuffer();
 
+  /** Clear the loop buffer. */
+  void flushLoopBuffer();
+
  private:
   /** An output buffer connecting this unit to the decode unit. */
   PipelineBuffer<MacroOp>& output_;
