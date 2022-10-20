@@ -74,6 +74,8 @@ void Instruction::execute() {
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
 
+  // Implementation of rv64iam according to the v. 20191213 unprivileged spec
+
   executed_ = true;
   switch (metadata.opcode) {
     case Opcode::RISCV_LB: {  // LB rd,rs1,imm
