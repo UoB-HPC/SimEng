@@ -235,7 +235,7 @@ class Instruction : public simeng::Instruction {
   bool isLoad_ = false;
   /** Is this a branch operation? */
   bool isBranch_ = false;
-  /** Is this a multilpy operation? */
+  /** Is this a multiply operation? */
   bool isMultiply_ = false;
   /** Is this a divide operation? */
   bool isDivide_ = false;
