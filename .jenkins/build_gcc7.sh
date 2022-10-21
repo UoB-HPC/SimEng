@@ -11,11 +11,7 @@ module swap PrgEnv-cray PrgEnv-gnu
 module swap gcc gcc/7.3.0
 module load tools/cmake
 
-## Setup environment
-export CMAKE_C_COMPILER=gcc
-export CMAKE_CXX_COMPILER=g++
-
 ## Build, test, and run SimEng
-build
+build(gcc, g++)
 test
 run

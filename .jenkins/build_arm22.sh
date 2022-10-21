@@ -11,11 +11,7 @@ module use /software/arm64/modulefiles
 module load tools/arm-compiler-sles
 module load tools/cmake
 
-## Setup environment
-export CMAKE_C_COMPILER=armclang
-export CMAKE_CXX_COMPILER=armclang++
-
 ## Build, test, and run SimEng
-build
+build(armclang, armclang++)
 test
 run
