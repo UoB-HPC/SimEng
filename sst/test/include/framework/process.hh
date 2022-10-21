@@ -64,7 +64,7 @@ class Process {
 #else
     sstCmd_ = "sst";
 #endif
-    sstSimConfigFile_ = std::string(SST_CONFIG_DIR) + "/" + args.at(1);
+    sstSimConfigFile_ = std::string(SST_TEST_DIR) + "/sstconfigs/" + args.at(1);
     sstBinPath_ = std::string(SST_INSTALL_DIR) + "/bin/" + sstCmd_;
     args.erase(args.begin());
     args.erase(args.begin());
