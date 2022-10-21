@@ -30,6 +30,7 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   source_ = params.find<std::string>("source", "");
   assembleWithSource_ = params.find<bool>("assemble_with_source", false);
   heapStr_ = params.find<std::string>("heap", "");
+  debug_ = params.find<bool>("debug", false);
 
   if (executablePath_.length() == 0 && !assembleWithSource_) {
     output_.fatal(CALL_INFO, 10, 0,
@@ -49,7 +50,7 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
           this, &SimEngCoreWrapper::handleMemoryEvent));
 
   dataMemory_ = std::make_shared<SimEngMemInterface>(sstMem_, cacheLineWidth_,
-                                                     maxAddrMemory_);
+                                                     maxAddrMemory_, debug_);
 
   handlers_ = new SimEngMemInterface::SimEngMemHandlers(*dataMemory_, &output_);
 

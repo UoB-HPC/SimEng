@@ -2,9 +2,9 @@ import sst
 import sys
 
 DEBUG_L1 = 0
-DEBUG_MEM = 1
-DEBUG_LEVEL = 1
-clw = "8"
+DEBUG_MEM = 0
+DEBUG_LEVEL = 10
+clw = "64"
 
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
@@ -17,6 +17,7 @@ cpu.addParams({
     "source": "",
     "assemble_with_source": False,
     "heap": "",
+    "debug": False
 })
 
 iface = cpu.setSubComponent("memory", "memHierarchy.standardInterface")
@@ -30,7 +31,7 @@ l1cache.addParams({
       "associativity" : "4",
       "cache_line_size" : clw,
       "debug" : DEBUG_L1,
-      "debug_level" : "10",
+      "debug_level" : DEBUG_LEVEL,
       "verbose": "2",
       "L1" : "1",
       "cache_size" : "2KiB"

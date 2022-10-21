@@ -29,7 +29,8 @@ namespace SSTSimEng {
 /** A memory interface used by SimEng to communicate with SST's memory model. */
 class SimEngMemInterface : public MemoryInterface {
  public:
-  SimEngMemInterface(StandardMem* mem, uint64_t cl, uint64_t max_addr);
+  SimEngMemInterface(StandardMem* mem, uint64_t cl, uint64_t max_addr,
+                     bool debug);
   /** Send SimEng's processImage to SST memory backend during `init` lifecycle
    * phase of SST. */
   void sendProcessImageToSST(char* image, uint64_t size);
@@ -233,6 +234,9 @@ class SimEngMemInterface : public MemoryInterface {
    * request spans multiple cache lines.
    */
   uint64_t nearestCacheLineEnd(uint64_t addrStart) const;
+
+  /** Variable to enable parseable print debug statements in test mode. */
+  bool debug_ = false;
 };
 
 };  // namespace SSTSimEng

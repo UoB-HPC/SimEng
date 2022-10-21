@@ -2,8 +2,8 @@ import sst
 import sys
 
 DEBUG_L1 = 0
-DEBUG_MEM = 1
-DEBUG_LEVEL = 1
+DEBUG_MEM = 0
+DEBUG_LEVEL = 10
 
 heap = ""
 clw = "8"
@@ -23,6 +23,7 @@ cpu.addParams({
     "source": sys.argv[2],
     "assemble_with_source": sys.argv[1] == "src",
     "heap": heap,
+    "debug": True
 })
 
 iface = cpu.setSubComponent("memory", "memHierarchy.standardInterface")
@@ -36,7 +37,7 @@ l1cache.addParams({
       "associativity" : "4",
       "cache_line_size" : clw,
       "debug" : DEBUG_L1,
-      "debug_level" : "10",
+    "debug_level" : DEBUG_LEVEL,
       "verbose": "2",
       "L1" : "1",
       "cache_size" : "2KiB"

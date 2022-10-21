@@ -10,11 +10,12 @@
 using namespace SST::SSTSimEng;
 
 SimEngMemInterface::SimEngMemInterface(StandardMem* mem, uint64_t cl,
-                                       uint64_t max_addr)
+                                       uint64_t max_addr, bool debug)
     : simeng::MemoryInterface() {
   this->sstMem_ = mem;
   this->cacheLineWidth_ = cl;
   this->maxAddrMemory_ = max_addr;
+  this->debug_ = debug;
 };
 
 void SimEngMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
@@ -173,9 +174,11 @@ void SimEngMemInterface::requestRead(const MemoryAccessTarget& target,
 // [SimEng:SSTDebug:MemRead]-read-<type=request|response>-<request ID>
 // -cycle-<cycle count>-split-<number of requests>
 #ifdef SIMENG_ENABLE_SST_TESTS
-  std::cout << "[SimEng:SSTDebug:MemRead]"
-            << "-read-request-" << requestId << "-cycle-" << tickCounter_
-            << "-split-" << requests.size() << std::endl;
+  if (debug_) {
+    std::cout << "[SimEng:SSTDebug:MemRead]"
+              << "-read-request-" << requestId << "-cycle-" << tickCounter_
+              << "-split-" << requests.size() << std::endl;
+  }
 
 #endif
   for (StandardMem::Request* req : requests) {
@@ -236,9 +239,11 @@ void SimEngMemInterface::aggregatedReadResponses(
 // [SimEng:SSTDebug:MemRead]-read-<type=request|response>-<request ID>
 // -cycle-<cycle count>-data-<value>
 #ifdef SIMENG_ENABLE_SST_TESTS
-  std::cout << "[SimEng:SSTDebug:MemRead]"
-            << "-read-response-" << aggrReq->id_ << "-cycle-" << tickCounter_
-            << "-data-" << resp << std::endl;
+  if (debug_) {
+    std::cout << "[SimEng:SSTDebug:MemRead]"
+              << "-read-response-" << aggrReq->id_ << "-cycle-" << tickCounter_
+              << "-data-" << resp << std::endl;
+  }
 #endif
 
   const char* char_data = reinterpret_cast<const char*>(&mergedData[0]);

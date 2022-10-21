@@ -201,6 +201,9 @@ class SimEngCoreWrapper : public SST::Component {
 
   /** Heap contents as string. */
   std::string heapStr_;
+
+  /** Variable to enable parseable print debug statements in test mode. */
+  bool debug_ = false;
 };
 
 }  // namespace SSTSimEng
