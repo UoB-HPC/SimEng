@@ -12,6 +12,6 @@ module swap gcc gcc/9.3.0
 module load tools/cmake
 
 ## Build, test, and run SimEng
-build(gcc, g++)
+build("gcc", "g++")
 test
 run

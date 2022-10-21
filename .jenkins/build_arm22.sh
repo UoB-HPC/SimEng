@@ -12,6 +12,6 @@ module load tools/arm-compiler-sles
 module load tools/cmake
 
 ## Build, test, and run SimEng
-build(armclang, armclang++)
+build("armclang", "armclang++")
 test
 run
