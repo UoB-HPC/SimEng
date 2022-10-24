@@ -194,7 +194,7 @@ uint16_t Instruction::getGroup() const {
   else if (isSVEData_)
     base = InstructionGroups::SVE;
   else if (isSMEData_)
-    return InstructionGroups::SME;
+    base = InstructionGroups::SME;
 
   if (isLoad_) return base + 10;
   if (isStoreAddress_) return base + 11;

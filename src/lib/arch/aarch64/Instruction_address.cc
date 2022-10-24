@@ -46,6 +46,8 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
   } else {
     // 0th bit of SVCR register determins if streaming-mode is enabled.
     const bool SMenabled = architecture_.getSVCRval() & 1;
+    // When streaming mode is enabled, the architectural vector length goes from
+    // SVE's VL to SME's SVL.
     const uint16_t VL_bits = SMenabled
                                  ? architecture_.getStreamingVectorLength()
                                  : architecture_.getVectorLength();

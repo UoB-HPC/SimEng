@@ -120,8 +120,7 @@ class Architecture : public arch::Architecture {
    */
   double vctModulo_;
 
-  /** The value of the SVCR system register.
-   * Allows value to be retrieved within execution pipeline. */
+  /** A copy of the value of the SVCR system register. */
   static uint64_t SVCRval_;
 };
 

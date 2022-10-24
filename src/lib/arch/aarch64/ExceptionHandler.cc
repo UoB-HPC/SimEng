@@ -643,30 +643,35 @@ bool ExceptionHandler::init() {
   } else if (exception == InstructionException::StreamingModeUpdate ||
              exception == InstructionException::ZAregisterStatusUpdate ||
              exception == InstructionException::SMZAUpdate) {
-    // Zero out all required registers
+    // Initialise vectors for all registers & values
     std::vector<Register> regs;
     std::vector<RegisterValue> regValues;
+
+    // Retrieve register file structure from architecture
+    auto regFileStruct =
+        instruction_.getArchitecture().getRegisterFileStructures();
 
     // First, add the SVCR result from Instruction_Execution.cc
     regs.push_back(instruction_.getDestinationRegisters()[0]);
     regValues.push_back(instruction_.getResults()[0]);
 
-    // Add Vector/Predicate registers + values
+    // Add Vector/Predicate registers + 0 values (zeroed out on Streaming Mode
+    // context switch)
     if (exception != InstructionException::ZAregisterStatusUpdate) {
-      for (uint16_t i = 0; i < 32; i++) {
+      for (uint16_t i = 0; i < regFileStruct[RegisterType::VECTOR].quantity;
+           i++) {
         regs.push_back({RegisterType::VECTOR, i});
         regValues.push_back(RegisterValue(0, 256));
-        if (i < 17) {
+        if (i < regFileStruct[RegisterType::PREDICATE].quantity) {
           regs.push_back({RegisterType::PREDICATE, i});
           regValues.push_back(RegisterValue(0, 32));
         }
       }
     }
-    // Zero out ZA register
-    const uint64_t SVLbytes =
-        instruction_.getArchitecture().getStreamingVectorLength() / 8;
+    // Zero out ZA register (zeroed out on ZA-reg context switch)
     if (exception != InstructionException::StreamingModeUpdate) {
-      for (uint16_t i = 0; i < SVLbytes; i++) {
+      for (uint16_t i = 0; i < regFileStruct[RegisterType::MATRIX].quantity;
+           i++) {
         regs.push_back({RegisterType::MATRIX, i});
         regValues.push_back(RegisterValue(0, 256));
       }

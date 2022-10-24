@@ -297,6 +297,10 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
   }
 }
 
+/** The SVCR value is stored in Architecture to allow the value to be retrieved
+ * within execution pipeline.
+ * This prevents adding an implicit operand to every SME instruction; reducing
+ * the amount of complexity when implementing SME execution logic. */
 uint64_t Architecture::getSVCRval() const { return SVCRval_; }
 
 void Architecture::setSVCRval(const uint64_t newVal) const {

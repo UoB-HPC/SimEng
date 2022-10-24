@@ -170,7 +170,7 @@ const uint8_t PREDICATE = 2;
 const uint8_t NZCV = 3;
 /** The system registers. */
 const uint8_t SYSTEM = 4;
-/** The [512-byte x 512] matrix register za. */
+/** The [256-byte x (SVL / 8)] SME matrix register za. */
 const uint8_t MATRIX = 5;
 /** The 64-bit zero register: [w|x]zr. */
 const uint8_t ZERO = 6;

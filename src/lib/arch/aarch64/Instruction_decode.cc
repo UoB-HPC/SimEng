@@ -164,6 +164,10 @@ std::vector<Register> getZARowVectors(arm64_reg reg, const uint64_t SVL_bits) {
     tileTypeCount = 16;
   }
 
+  // Each sub-tile in ZA is allocated rows in an interleaved fashion with the
+  // other sub-tiles in its group; rather than sequentially - as per the AArch64
+  // specification.
+  // i.e. zah0 would have rows {0,2,4,6,...}; zah1 would have rows {1,3,5,7,...}
   for (uint16_t i = 0; i < (SVL / tileTypeCount); i++) {
     outRegs.push_back(
         {RegisterType::MATRIX, uint16_t(base + (i * tileTypeCount))});

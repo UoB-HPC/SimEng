@@ -340,7 +340,7 @@ void ModelConfig::validate() {
       std::make_pair(
           configFile_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8,
           UINT16_MAX),
-      ExpectedValue::UInteger, 64);
+      ExpectedValue::UInteger, 128);
   subFields.clear();
 
   // Queue-Sizes

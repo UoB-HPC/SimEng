@@ -72,6 +72,8 @@ void Instruction::execute() {
   const bool SMenabled = architecture_.getSVCRval() & 1;
   // 1st bit of SVCR register determins if ZA register is enabled.
   const bool ZAenabled = architecture_.getSVCRval() & 2;
+  // When streaming mode is enabled, the architectural vector length goes from
+  // SVE's VL to SME's SVL.
   const uint16_t VL_bits = SMenabled ? architecture_.getStreamingVectorLength()
                                      : architecture_.getVectorLength();
   executed_ = true;
