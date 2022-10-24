@@ -106,13 +106,23 @@ class SimEngCoreWrapper : public SST::Component {
       {"executable_args",
        "argument to be passed to the executable binary (string)", ""},
       {"clock", "Clock rate of the SST clock (string)", ""},
-      {"max_addr_memory", "Maximum address that memory can access (int)"},
-      {"cache_line_width", "The width of the cache line in bytes. (int)"},
-      {"source", "The string of instruction be executed (if any). (string)"},
+      {"max_addr_memory", "Maximum address that memory can access (int)", ""},
+      {"cache_line_width", "The width of the cache line in bytes. (int)", ""},
+      {"source", "The string of instruction be executed (if any). (string)",
+       ""},
       {"assemble_with_source",
        "Value which indicates whether to assemble the instructions supplied "
        "through the source parameter using LLVM (boolean)",
-       "false"}, )
+       "false"},
+      {"heap",
+       "comma separated uint64_t values used to populate the heap. This "
+       "parameter will only be used if assemble_with_source=true",
+       ""},
+      {"debug",
+       "Enabling this parameter outputs statistics that can be parsed by the "
+       "testing "
+       "framework",
+       "false"})
 
  private:
   /** Method used to assemble SimEng core. */
