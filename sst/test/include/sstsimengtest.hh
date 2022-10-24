@@ -6,5 +6,5 @@
 #include "framework/stats.hh"
 
 inline std::string appendBinDirPath(std::string binName) {
-  return (std::string(SST_TEST_DIR) + "/binaries/" + binName);
+  return (std::string(SST_TEST_DIR) + "/sstbinaries/" + binName);
 }
