@@ -15,8 +15,8 @@ TEST_CASE(TG3, "Clw_8_bits_req_size_64bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 8);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)8);
 }
 
 TEST_CASE(TG3, "Clw_8_bits_req_size_32bits", "src", R"(
@@ -31,8 +31,8 @@ TEST_CASE(TG3, "Clw_8_bits_req_size_32bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 4);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)4);
 }
 
 TEST_CASE(TG3, "Clw_8_bits_req_size_16bits", "src", R"(
@@ -47,8 +47,8 @@ TEST_CASE(TG3, "Clw_8_bits_req_size_16bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 2);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)2);
 }
 
 TEST_CASE(TG3, "Clw_8_bits_req_size_8bits", "src", R"(
@@ -63,8 +63,8 @@ TEST_CASE(TG3, "Clw_8_bits_req_size_8bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 1);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)1);
 }
 
 TEST_CASE(TG3, "Clw_16_bits_req_size_64bits", "src", R"(
@@ -79,8 +79,8 @@ TEST_CASE(TG3, "Clw_16_bits_req_size_64bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 4);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)4);
 }
 
 TEST_CASE(TG3, "Clw_16_bits_req_size_32bits", "src", R"(
@@ -95,8 +95,8 @@ TEST_CASE(TG3, "Clw_16_bits_req_size_32bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 2);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)2);
 }
 
 TEST_CASE(TG3, "Clw_16_bits_req_size_16bits", "src", R"(
@@ -111,8 +111,8 @@ TEST_CASE(TG3, "Clw_16_bits_req_size_16bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 1);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)1);
 }
 
 TEST_CASE(TG3, "Clw_16_bits_req_size_8bits", "src", R"(
@@ -127,8 +127,8 @@ TEST_CASE(TG3, "Clw_16_bits_req_size_8bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 1);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)1);
 }
 
 TEST_CASE(TG3, "Clw_32_bits_req_size_64bits", "src", R"(
@@ -143,8 +143,8 @@ TEST_CASE(TG3, "Clw_32_bits_req_size_64bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 2);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)2);
 }
 
 TEST_CASE(TG3, "Clw_32_bits_req_size_32bits", "src", R"(
@@ -159,8 +159,8 @@ TEST_CASE(TG3, "Clw_32_bits_req_size_32bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 1);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)1);
 }
 
 TEST_CASE(TG3, "Clw_32_bits_req_size_16bits", "src", R"(
@@ -175,8 +175,8 @@ TEST_CASE(TG3, "Clw_32_bits_req_size_16bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 1);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)1);
 }
 
 TEST_CASE(TG3, "Clw_32_bits_req_size_8bits", "src", R"(
@@ -191,8 +191,8 @@ TEST_CASE(TG3, "Clw_32_bits_req_size_8bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 1);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)1);
 }
 
 TEST_CASE(TG3, "Clw_64_bits_req_size_64bits", "src", R"(
@@ -207,8 +207,8 @@ TEST_CASE(TG3, "Clw_64_bits_req_size_64bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 1);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)1);
 }
 
 TEST_CASE(TG3, "Clw_64_bits_req_size_32bits", "src", R"(
@@ -223,8 +223,8 @@ TEST_CASE(TG3, "Clw_64_bits_req_size_32bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 1);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)1);
 }
 
 TEST_CASE(TG3, "Clw_64_bits_req_size_16bits", "src", R"(
@@ -239,8 +239,8 @@ TEST_CASE(TG3, "Clw_64_bits_req_size_16bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 1);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)1);
 }
 
 TEST_CASE(TG3, "Clw_64_bits_req_size_8bits", "src", R"(
@@ -255,6 +255,6 @@ TEST_CASE(TG3, "Clw_64_bits_req_size_8bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 10);
-  EXPECT_EQ(reads[1]->numReqs_, 1);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)10);
+  EXPECT_EQ(reads[1]->numReqs_, (uint64_t)1);
 }

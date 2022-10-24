@@ -90,8 +90,14 @@ class Process {
     int stderr_pipes[2];
 
     // Pipe syscall which converts the int arrays defined above into pipes.
-    pipe(stdout_pipes);
-    pipe(stderr_pipes);
+    if (pipe(stdout_pipes) < 0) {
+      perror("Error occured while creating stdout pipes.");
+      exit(EXIT_FAILURE);
+    };
+    if (pipe(stderr_pipes) < 0) {
+      perror("Error occured while creating stderr pipes.");
+      exit(EXIT_FAILURE);
+    };
 
     // forking into a child process.
     pid_t pid = fork();
@@ -159,10 +165,11 @@ class Process {
       // sstCmd_ , sstSimConfigFile, '--' and nullptr.
       // The last entry of cliArgs vector is nullptr because execv requires a
       // null terminated char* argv[].
+      char* sstDelim = (char*)"--";
       cliArgs.resize(argsToCpy.size() + 4, nullptr);
       cliArgs[0] = strToCharPtr(sstCmd_);
       cliArgs[1] = strToCharPtr(sstSimConfigFile_);
-      cliArgs[2] = "--";
+      cliArgs[2] = sstDelim;
       std::transform(argsToCpy.begin(), argsToCpy.end(), cliArgs.begin() + 3,
                      [&](const std::string& str) { return strToCharPtr(str); });
       execv(sstBinPath_.c_str(), &cliArgs[0]);

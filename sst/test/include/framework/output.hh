@@ -82,9 +82,9 @@ class Output {
   /** default indent value set for all string builders and output methods. */
   int indent_ = 0;
   /** This method return an indent string. */
-  auto indent(int t) const {
+  auto indent(uint32_t t) const {
     std::string ss = "";
-    for (int x = 0; x < t; x++) {
+    for (uint32_t x = 0; x < t; x++) {
       ss += ' ';
     }
     return ss;
@@ -111,7 +111,7 @@ class Output {
 
     std::string str = oss.str();
     std::string builder = "";
-    for (int x = 0; x < oss.str().size(); x++) {
+    for (size_t x = 0; x < oss.str().size(); x++) {
       if (str[x] == '\n') {
         std::cout << indent(ind + indent_) << builder << std::endl;
         builder = "";

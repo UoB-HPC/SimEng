@@ -26,7 +26,7 @@ class Runner {
    * The TestContext for a Group changes everytime a new test is run
    */
   virtual std::unique_ptr<TestContext>& getCurrContext() {
-    auto ptr = std::make_unique<TestContext>();
+    std::unique_ptr<TestContext> ptr = std::make_unique<TestContext>();
     return ptr;
   };
 };
@@ -66,6 +66,12 @@ class Group : public Runner {
   using Args = std::vector<std::vector<std::string>>;
 
  private:
+  /**
+   * Added to remove compiler warning for getGroupConfig base
+   * implementation.
+   */
+  const GroupConfig emptyConfig_ = GroupConfig{};
+
   /** TextContext of the currently executing test. */
   std::unique_ptr<TestContext> ctx_;
   /** Output class used to capture stdout of testcases and output to stdout. */
@@ -108,7 +114,7 @@ class Group : public Runner {
 
     output_.group(config.groupStr_);
     output_.setIndent(4);
-    for (int x = 0; x < tctxs_->size(); x++) {
+    for (size_t x = 0; x < tctxs_->size(); x++) {
       bool fail = true;
       try {
         auto arg = args->at(x);
@@ -179,5 +185,5 @@ class Group : public Runner {
    * This method returns a reference of GroupConfig. This method gets overriden
    * by TEST_GROUP Macro with the config defined in the source code.
    */
-  virtual const GroupConfig& getGroupConfig() { return GroupConfig{}; }
+  virtual const GroupConfig& getGroupConfig() { return emptyConfig_; }
 };

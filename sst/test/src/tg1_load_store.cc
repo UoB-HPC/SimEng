@@ -15,7 +15,7 @@ TEST_CASE(TG1, "load_of_different_size_from_memory_64bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 348709988);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)348709988);
 }
 
 TEST_CASE(TG1, "load_of_different_size_from_memory_32bits", "src", R"(
@@ -30,7 +30,7 @@ TEST_CASE(TG1, "load_of_different_size_from_memory_32bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 23323);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)23323);
 }
 
 TEST_CASE(TG1, "load_of_different_size_from_memory_16bits", "src", R"(
@@ -45,7 +45,7 @@ TEST_CASE(TG1, "load_of_different_size_from_memory_16bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 23214);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)23214);
 }
 
 TEST_CASE(TG1, "load of_different_size_8bits", "src", R"(
@@ -60,7 +60,7 @@ TEST_CASE(TG1, "load of_different_size_8bits", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[1]->data_, 120);
+  EXPECT_EQ(reads[1]->data_, (uint64_t)120);
 }
 
 TEST_CASE(TG1, "multiple_loads_from_memory_64bit", "src", R"(
@@ -77,9 +77,9 @@ TEST_CASE(TG1, "multiple_loads_from_memory_64bit", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first two parsed requests as those will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[2]->data_, 20);
-  EXPECT_EQ(reads[3]->data_, 40);
-  EXPECT_EQ(reads[4]->data_, 50);
+  EXPECT_EQ(reads[2]->data_, (uint64_t)20);
+  EXPECT_EQ(reads[3]->data_, (uint64_t)40);
+  EXPECT_EQ(reads[4]->data_, (uint64_t)50);
 }
 
 TEST_CASE(TG1, "multiple_loads_from_memory_32bit", "src", R"(
@@ -96,9 +96,9 @@ TEST_CASE(TG1, "multiple_loads_from_memory_32bit", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first two parsed requests as those will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[2]->data_, 20);
-  EXPECT_EQ(reads[3]->data_, 40);
-  EXPECT_EQ(reads[4]->data_, 50);
+  EXPECT_EQ(reads[2]->data_, (uint64_t)20);
+  EXPECT_EQ(reads[3]->data_, (uint64_t)40);
+  EXPECT_EQ(reads[4]->data_, (uint64_t)50);
 }
 
 TEST_CASE(TG1, "multiple_loads_from_memory_16bit", "src", R"(
@@ -115,9 +115,9 @@ TEST_CASE(TG1, "multiple_loads_from_memory_16bit", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first two parsed requests as those will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[2]->data_, 20);
-  EXPECT_EQ(reads[3]->data_, 40);
-  EXPECT_EQ(reads[4]->data_, 50);
+  EXPECT_EQ(reads[2]->data_, (uint64_t)20);
+  EXPECT_EQ(reads[3]->data_, (uint64_t)40);
+  EXPECT_EQ(reads[4]->data_, (uint64_t)50);
 }
 
 TEST_CASE(TG1, "multiple_loads_from_memory_8bit", "src", R"(
@@ -134,9 +134,9 @@ TEST_CASE(TG1, "multiple_loads_from_memory_8bit", "src", R"(
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first two parsed requests as those will be caused by heap address
   // retrieval into x0.
-  EXPECT_EQ(reads[2]->data_, 20);
-  EXPECT_EQ(reads[3]->data_, 40);
-  EXPECT_EQ(reads[4]->data_, 50);
+  EXPECT_EQ(reads[2]->data_, (uint64_t)20);
+  EXPECT_EQ(reads[3]->data_, (uint64_t)40);
+  EXPECT_EQ(reads[4]->data_, (uint64_t)50);
 }
 
 TEST_CASE(TG1, "store_than_load_64bit", "src", R"(
@@ -149,7 +149,7 @@ TEST_CASE(TG1, "store_than_load_64bit", "src", R"(
           "") {
   Parser p = Parser(capturedStdout);
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
-  EXPECT_EQ(reads[0]->data_, 2048);
+  EXPECT_EQ(reads[0]->data_, (uint64_t)2048);
 }
 
 TEST_CASE(TG1, "store_than_load_32bit", "src", R"(
@@ -162,7 +162,7 @@ TEST_CASE(TG1, "store_than_load_32bit", "src", R"(
           "") {
   Parser p = Parser(capturedStdout);
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
-  EXPECT_EQ(reads[0]->data_, 256);
+  EXPECT_EQ(reads[0]->data_, (uint64_t)256);
 }
 
 TEST_CASE(TG1, "store_than_load_16bit", "src", R"(
@@ -175,7 +175,7 @@ TEST_CASE(TG1, "store_than_load_16bit", "src", R"(
           "") {
   Parser p = Parser(capturedStdout);
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
-  EXPECT_EQ(reads[0]->data_, 64);
+  EXPECT_EQ(reads[0]->data_, (uint64_t)64);
 }
 
 TEST_CASE(TG1, "store_than_load_8bit", "src", R"(
@@ -188,5 +188,5 @@ TEST_CASE(TG1, "store_than_load_8bit", "src", R"(
           "") {
   Parser p = Parser(capturedStdout);
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
-  EXPECT_EQ(reads[0]->data_, 8);
+  EXPECT_EQ(reads[0]->data_, (uint64_t)8);
 }

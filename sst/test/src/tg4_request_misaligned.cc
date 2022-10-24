@@ -20,8 +20,8 @@ TEST_CASE(TG4, "16_bit_cache_line_to_retrieve_16_bit_data", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 128);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)128);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "16_bit_cache_line_to_retrieve_32_bit_data", "src", R"(
@@ -41,8 +41,8 @@ TEST_CASE(TG4, "16_bit_cache_line_to_retrieve_32_bit_data", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 128);
-  EXPECT_EQ(numReqs, 3);
+  EXPECT_EQ(data, (uint64_t)128);
+  EXPECT_EQ(numReqs, (uint64_t)3);
 }
 
 TEST_CASE(TG4, "16_bit_cache_line_to_retrieve_64_bit_data", "src", R"(
@@ -62,8 +62,8 @@ TEST_CASE(TG4, "16_bit_cache_line_to_retrieve_64_bit_data", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 12);
-  EXPECT_EQ(numReqs, 5);
+  EXPECT_EQ(data, (uint64_t)12);
+  EXPECT_EQ(numReqs, (uint64_t)5);
 }
 
 TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_16_bit_data", "src", R"(
@@ -83,8 +83,8 @@ TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_16_bit_data", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 128);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)128);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_32_bit_data_#1", "src", R"(
@@ -104,8 +104,8 @@ TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_32_bit_data_#1", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_32_bit_data_#2", "src", R"(
@@ -125,8 +125,8 @@ TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_32_bit_data_#2", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_64_bit_data_#1", "src", R"(
@@ -146,8 +146,8 @@ TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_64_bit_data_#1", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 3);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)3);
 }
 
 TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_64_bit_data_#2", "src", R"(
@@ -167,8 +167,8 @@ TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_64_bit_data_#2", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 3);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)3);
 }
 
 TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_64_bit_data_#3", "src", R"(
@@ -188,8 +188,8 @@ TEST_CASE(TG4, "32_bit_cache_line_to_retrieve_64_bit_data_#3", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 3);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)3);
 }
 
 TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_16_bit_data", "src", R"(
@@ -209,8 +209,8 @@ TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_16_bit_data", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_32_bit_data_#1", "src", R"(
@@ -230,8 +230,8 @@ TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_32_bit_data_#1", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_32_bit_data_#2", "src", R"(
@@ -251,8 +251,8 @@ TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_32_bit_data_#2", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_32_bit_data_#3", "src", R"(
@@ -272,8 +272,8 @@ TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_32_bit_data_#3", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#1", "src", R"(
@@ -293,8 +293,8 @@ TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#1", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#2", "src", R"(
@@ -314,8 +314,8 @@ TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#2", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#3", "src", R"(
@@ -335,8 +335,8 @@ TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#3", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#4", "src", R"(
@@ -356,8 +356,8 @@ TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#4", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#5", "src", R"(
@@ -377,8 +377,8 @@ TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#5", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#6", "src", R"(
@@ -398,8 +398,8 @@ TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#6", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }
 
 TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#7", "src", R"(
@@ -419,6 +419,6 @@ TEST_CASE(TG4, "64_bit_cache_line_to_retrieve_64_bit_data_#7", "src", R"(
   // retrieval into x0.
   uint64_t data = reads[reads.size() - 1]->data_;
   uint64_t numReqs = reads[reads.size() - 1]->numReqs_;
-  EXPECT_EQ(data, 256);
-  EXPECT_EQ(numReqs, 2);
+  EXPECT_EQ(data, (uint64_t)256);
+  EXPECT_EQ(numReqs, (uint64_t)2);
 }

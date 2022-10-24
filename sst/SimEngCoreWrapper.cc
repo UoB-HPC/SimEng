@@ -292,7 +292,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
     uint64_t heapSize = heapVals.size() * 8;
     initialHeapData.resize(heapSize);
     uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData.data());
-    for (int x = 0; x < heapVals.size(); x++) {
+    for (size_t x = 0; x < heapVals.size(); x++) {
       heap[x] = heapVals[x];
     }
     uint64_t heapStart = coreInstance_->getHeapStart();
@@ -327,7 +327,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
 std::vector<uint64_t> SimEngCoreWrapper::splitHeapStr() {
   std::vector<uint64_t> out;
   std::string acc = "";
-  for (int a = 0; a < heapStr_.size(); a++) {
+  for (size_t a = 0; a < heapStr_.size(); a++) {
     if (heapStr_[a] == ',') {
       out.push_back(static_cast<uint64_t>(std::stoull(acc)));
       acc = "";

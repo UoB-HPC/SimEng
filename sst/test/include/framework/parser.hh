@@ -47,7 +47,7 @@ class Parser {
   std::vector<ParsedMemRead*> parseOutput() {
     std::map<uint64_t, ParsedMemRead*> pmap;
     std::vector<ParsedMemRead*> out;
-    for (int x = 0; x < splitStdout_.size(); x++) {
+    for (size_t x = 0; x < splitStdout_.size(); x++) {
       if (splitStdout_[x].find("SimEng:SSTDebug") == std::string::npos)
         continue;
       std::vector<std::string> splitStr = split(splitStdout_[x], "-");
@@ -69,8 +69,8 @@ class Parser {
       if (splitStr[0] == "[SimEng:SSTDebug:OutputLine]") {
         std::string str = "";
 
-        for (int x = 1; x < splitStr.size(); x++) {
-          str += splitStr[x];
+        for (size_t y = 1; y < splitStr.size(); y++) {
+          str += splitStr[y];
         }
         outputLines.push_back(str);
       }
