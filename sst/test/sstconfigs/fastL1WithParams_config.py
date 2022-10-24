@@ -40,7 +40,7 @@ l1cache.addParams({
     "debug_level" : DEBUG_LEVEL,
       "verbose": "2",
       "L1" : "1",
-      "cache_size" : "2KiB"
+      "cache_size" : "64KiB"
 })
 
 # Explicitly set the link subcomponents instead of having cache figure them out based on connected port names

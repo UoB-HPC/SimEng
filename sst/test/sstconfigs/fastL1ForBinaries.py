@@ -6,13 +6,16 @@ DEBUG_L1 = 0
 DEBUG_MEM = 0
 DEBUG_LEVEL = 10
 clw = "64"
+execArgs = ""
+if len(sys.argv) > 2:
+    execArgs = sys.argv[2]
 
 
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
     "simeng_config_path": "/home/rahat/asimov/SimEng/configs/sst-cores/a64fx-sst.yaml",
     "executable_path": sys.argv[1],
-    "executable_args": "",
+    "executable_args": execArgs,
     "clock" : "1.8GHz",
     "max_addr_memory": 2*1024*1024*1024-1,
     "cache_line_width": clw,
@@ -36,7 +39,7 @@ l1cache.addParams({
       "debug_level" : DEBUG_LEVEL,
       "verbose": "2",
       "L1" : "1",
-      "cache_size" : "2KiB"
+      "cache_size" : "64KiB"
 })
 
 # Explicitly set the link subcomponents instead of having cache figure them out based on connected port names

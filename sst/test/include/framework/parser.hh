@@ -24,6 +24,9 @@ class Parser {
   /** vector of ParsedMemReads. */
   std::vector<ParsedMemRead*> parsedMemReads_;
 
+  /** vector of stdout lines having the SimEng:SSTDebug:OutputLine prefix. */
+  std::vector<std::string> outputLines;
+
  public:
   Parser(std::string capturedStdOut) {
     splitStdout_ = splitStdoutIntoLines(capturedStdOut);
@@ -33,13 +36,19 @@ class Parser {
   /** Returns the parsed stdout as ParsedMemReads. */
   std::vector<ParsedMemRead*> getParsedMemReads() { return parsedMemReads_; }
 
+  /**
+   * Returns a vector of stdout lines having the SimEng:SSTDebug:OutputLine
+   * prefix.
+   */
+  std::vector<std::string> getOutputLines() { return outputLines; }
+
  private:
   /** This methiod parses the captured stdout */
   std::vector<ParsedMemRead*> parseOutput() {
     std::map<uint64_t, ParsedMemRead*> pmap;
     std::vector<ParsedMemRead*> out;
     for (int x = 0; x < splitStdout_.size(); x++) {
-      if (splitStdout_[x].find("SimEng:SSTDebug:MemRead") == std::string::npos)
+      if (splitStdout_[x].find("SimEng:SSTDebug") == std::string::npos)
         continue;
       std::vector<std::string> splitStr = split(splitStdout_[x], "-");
       if (splitStr[0] == "[SimEng:SSTDebug:MemRead]") {
@@ -56,6 +65,14 @@ class Parser {
           p->numReqs_ = std::stoull(splitStr[7]);
           pmap.insert(std::pair<uint64_t, ParsedMemRead*>(id, p));
         }
+      }
+      if (splitStr[0] == "[SimEng:SSTDebug:OutputLine]") {
+        std::string str = "";
+
+        for (int x = 1; x < splitStr.size(); x++) {
+          str += splitStr[x];
+        }
+        outputLines.push_back(str);
       }
     }
     return out;
