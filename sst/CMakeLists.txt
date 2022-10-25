@@ -33,7 +33,7 @@ target_link_libraries(sstsimeng PUBLIC libsimeng)
 
 if (SIMENG_ENABLE_TESTS)
   if(SIMENG_ENABLE_SST_TESTS)
-    target_compile_definitions(sstsimeng PUBLIC SIMENG_ENABLE_TESTS SIMENG_ENABLE_SST_TESTS -DSIMENG_LLVM_VERSION=12)
+    target_compile_definitions(sstsimeng PUBLIC SIMENG_ENABLE_TESTS SIMENG_ENABLE_SST_TESTS)
     # Add LLVM includes
     target_include_directories(sstsimeng PUBLIC ${LLVM_INCLUDE_DIRS})
     # Link to LLVM libraries

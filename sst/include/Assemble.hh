@@ -5,6 +5,8 @@
 #include <iostream>
 #include <string>
 
+#include "simeng/version.hh"
+
 namespace SST {
 
 namespace SSTSimEng {
@@ -21,7 +23,7 @@ class Assembler {
   void assemble(const char* source, const char* triple);
 
  public:
-  /** Constructor for Assemble class which takes in source code. */
+  /** Constructor for Assembler class which takes in source code. */
   Assembler(std::string source);
   ~Assembler();
 

@@ -16,7 +16,7 @@ TEST_CASE(TG5, "Running_stream_triad_sve", appendBinDirPath("stream_t_sve")) {
 
 // Very basic test cases for cachebw. Since cachebw requires arg size to
 // accurately hit cache levels, More benchmark tests should be added as and when
-// more cache models are added. This test case will to test whether cachebw
+// more cache models are added. These test cases will only test whether cachebw
 // works on SSTSimEng or not.
 TEST_CASE(TG5, "Running_cachebw_static", appendBinDirPath("cachebw_static"),
           "32 100") {

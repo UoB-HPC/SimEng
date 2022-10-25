@@ -53,7 +53,7 @@ class CoreInstance {
   CoreInstance(std::string configPath, std::string executablePath,
                std::vector<std::string> executableArgs);
 
-  /** CoreInstance with an source assembled by LLVM and a model configuration.
+  /** CoreInstance with source code assembled by LLVM and a model configuration.
    */
   CoreInstance(char* assembledSource, size_t sourceSize,
                std::string configPath);

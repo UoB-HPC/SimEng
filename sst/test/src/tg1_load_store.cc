@@ -139,7 +139,7 @@ TEST_CASE(TG1, "multiple_loads_from_memory_8bit", "src", R"(
   EXPECT_EQ(reads[4]->data_, (uint64_t)50);
 }
 
-TEST_CASE(TG1, "store_than_load_64bit", "src", R"(
+TEST_CASE(TG1, "store_then_load_64bit", "src", R"(
 
     mov x0, #1
     mov x1, #2048
@@ -152,7 +152,7 @@ TEST_CASE(TG1, "store_than_load_64bit", "src", R"(
   EXPECT_EQ(reads[0]->data_, (uint64_t)2048);
 }
 
-TEST_CASE(TG1, "store_than_load_32bit", "src", R"(
+TEST_CASE(TG1, "store_then_load_32bit", "src", R"(
 
     mov x0, #1
     mov w1, #256
@@ -165,7 +165,7 @@ TEST_CASE(TG1, "store_than_load_32bit", "src", R"(
   EXPECT_EQ(reads[0]->data_, (uint64_t)256);
 }
 
-TEST_CASE(TG1, "store_than_load_16bit", "src", R"(
+TEST_CASE(TG1, "store_then_load_16bit", "src", R"(
 
     mov x0, #1
     mov w1, #64
@@ -178,7 +178,7 @@ TEST_CASE(TG1, "store_than_load_16bit", "src", R"(
   EXPECT_EQ(reads[0]->data_, (uint64_t)64);
 }
 
-TEST_CASE(TG1, "store_than_load_8bit", "src", R"(
+TEST_CASE(TG1, "store_then_load_8bit", "src", R"(
 
     mov x0, #1
     mov w1, #8

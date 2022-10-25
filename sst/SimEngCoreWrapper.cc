@@ -237,6 +237,8 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   // Create the instance of the core to be simulated
 #ifdef SIMENG_ENABLE_SST_TESTS
   if (simengConfigPath_ != "") {
+    // if string of instructions are supplied, assemble them using the Assembler
+    // class and call CoreInstance with a corresponding constructor.
     if (assembleWithSource_) {
       output_.verbose(CALL_INFO, 1, 0,
                       "Assembling source instructions using LLVM\n");
