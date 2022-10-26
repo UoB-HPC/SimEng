@@ -209,9 +209,6 @@ void Core::processExceptionHandler() {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
-    if (result.uop)
-      forwardOperands(result.uop->getDestinationRegisters(),
-                      result.uop->getResults());
   }
 
   exceptionHandler_ = nullptr;
