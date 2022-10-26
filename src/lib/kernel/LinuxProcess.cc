@@ -129,7 +129,8 @@ void LinuxProcess::createStack(char** processImage) {
     stringBytes.push_back(0);
   }
   // Environment strings
-  std::vector<std::string> envStrings = {"OMP_NUM_THREADS=1"};
+  std::vector<std::string> envStrings = {
+      "OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1"};
   for (std::string& env : envStrings) {
     for (int i = 0; i < env.size(); i++) {
       stringBytes.push_back(env.c_str()[i]);
