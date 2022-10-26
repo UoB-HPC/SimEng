@@ -347,21 +347,21 @@ class Instruction : public simeng::Instruction {
   /** A reference to the decoding metadata for this instruction. */
   const InstructionMetadata& metadata;
 
-  /** An array of source registers. */
+  /** A vector of source registers. */
   std::vector<Register> sourceRegisters;
   /** The number of source registers this instruction reads from. */
   uint16_t sourceRegisterCount = 0;
 
-  /** An array of destination registers. */
+  /** A vector of destination registers. */
   std::vector<Register> destinationRegisters;
   /** The number of destination registers this instruction writes to. */
   uint16_t destinationRegisterCount = 0;
 
-  /** An array of provided operand values. Each entry corresponds to a
+  /** A vector of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
   std::vector<RegisterValue> operands;
 
-  /** An array of generated output results. Each entry corresponds to a
+  /** A vector of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
   std::vector<RegisterValue> results;
 

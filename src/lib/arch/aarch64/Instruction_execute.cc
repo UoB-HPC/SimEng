@@ -2448,12 +2448,6 @@ void Instruction::execute() {
           }
         }
 
-        // printf("LD1_H = {");
-        // for (int i = 0; i < partition_num; i++) {
-        //   printf("%d, ", out[i]);
-        // }
-        // printf("}\n");
-
         // All Slice vectors are added to results[] so need to update the
         // correct one
         for (int i = 0; i < partition_num; i++) {
@@ -4197,11 +4191,6 @@ void Instruction::execute() {
           }
         }
 
-        // printf("ST1_V = {");
-        // for (int i = 0; i < index; i++) {
-        //   printf("%d, ", memoryData[i].get<uint32_t>());
-        // }
-        // printf("}\n");
         break;
       }
       case Opcode::AArch64_SST1W_D_IMM: {  // st1w {zt.d}, pg, [zn.d{, #imm}]
@@ -5402,7 +5391,7 @@ void Instruction::execute() {
     }
   }
 #endif
-}  // namespace aarch64
+}
 
 }  // namespace aarch64
 }  // namespace arch

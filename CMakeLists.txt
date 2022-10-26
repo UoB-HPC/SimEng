@@ -30,17 +30,6 @@ FetchContent_Declare(
   URL_HASH MD5=6bd202e403d950c78985048ce499a518
 )
 
-# FetchContent_Declare(
-#   llvm
-#   URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/llvm-12.0.0.src.tar.xz
-#   URL_HASH MD5=ceab21c9081e122a88d82216a80d0dc0
-# )
-
-# FetchContent_Declare(
-#   llvm
-#   URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/llvm-9.0.1.src.tar.xz
-# )
-
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git
