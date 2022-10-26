@@ -8,7 +8,8 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-const Register Instruction::ZERO_REGISTER = {RegisterType::ZERO, 0};
+const Register Instruction::ZERO_REGISTER = {RegisterType::GENERAL,
+                                             (uint16_t)-1};
 
 Instruction::Instruction(const Architecture& architecture,
                          const InstructionMetadata& metadata,

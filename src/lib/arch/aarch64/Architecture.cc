@@ -244,7 +244,6 @@ std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
       {1, 1},           // NZCV
       {8, numSysRegs},  // System
       {256, ZAsize},    // Matrix (Each row is a register)
-      {8, 1},           // Zero
   };
 }
 
