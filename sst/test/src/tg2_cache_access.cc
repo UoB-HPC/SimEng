@@ -27,7 +27,7 @@ TEST_CASE(TG2, "cache_access_of_load_to_same_address", "src",
 
     # Last Load
     end:
-    # Adding dependency to for preventing any load due to branch misprediction
+    # Adding dependency for preventing any load due to branch misprediction
     mov x6, #0
     add x6, x6, x0
     ldr x1, [x6]
@@ -49,7 +49,7 @@ TEST_CASE(TG2, "cache_access_of_load_to_same_address", "src",
   EXPECT_EQ(firstLoadData, lastLoadData);
 }
 
-TEST_CASE(TG2, "load_after_store_on_same_address_should_be_return_from_cache",
+TEST_CASE(TG2, "load_after_store_on_same_address_should_return_from_cache",
           "src",
           R"(
     # Get heap address
@@ -77,7 +77,7 @@ TEST_CASE(TG2, "load_after_store_on_same_address_should_be_return_from_cache",
 
     # last load
     end:
-    # Adding dependency to for preventing load due to branch misprediction
+    # Adding dependency for preventing load due to branch misprediction
     mov x6, #0
     add x6, x6, #1024
     add x6, x6, x6

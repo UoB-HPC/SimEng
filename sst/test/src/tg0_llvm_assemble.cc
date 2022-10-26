@@ -1,8 +1,8 @@
 #include "sstsimengtest.hh"
 
 // Only load and store instructions of various types and basic arithmetic
-// instructions are checked as LLVM assembly will only used the SST testing
-// framework, which is only used to test loads and stores.
+// instructions are checked as LLVM assembly will only be used by the SST
+// testing framework, which only tests loads and stores.
 
 TEST_GROUP(TG0, "SSTSimEng_correctly_assembles_instructions_using_LLVM",
            "fastL1WithParams_config.py", "src",
