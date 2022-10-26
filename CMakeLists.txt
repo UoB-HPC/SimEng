@@ -202,7 +202,7 @@ endif()
     message(FATAL_ERROR "LLVM was built without AArch64 target")
   endif()
   if (NOT "RISCV" IN_LIST LLVM_TARGETS_TO_BUILD)
-      message(FATAL_ERROR "LLVM was built without RISC target")
+      message(FATAL_ERROR "LLVM was built without RISC-V target")
   endif()
 
   ## Setup googletest ##
@@ -211,10 +211,10 @@ endif()
 
   add_subdirectory(test)
   # saves us from having to build all targets before running the tests
-    add_custom_target(test-all
-        COMMAND ${CMAKE_CTEST_COMMAND}
-        DEPENDS unittests regression-aarch64 regression-riscv
-    )
+  add_custom_target(test-all
+    COMMAND ${CMAKE_CTEST_COMMAND}
+    DEPENDS unittests regression-aarch64 regression-riscv
+  )
 endif()
 
 # include sources

@@ -4,7 +4,7 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-/** The IDs of the instruction groups for RISCV instructions. */
+/** The IDs of the instruction groups for RISC-V instructions. */
 namespace InstructionGroups {
 const uint16_t INT = 0;
 const uint16_t INT_SIMPLE = 1;

@@ -16,7 +16,7 @@ namespace riscv {
 
 typedef enum riscv_sysreg {};
 
-/* A basic RISCV implementation of the `Architecture` interface. */
+/* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
   Architecture(kernel::Linux& kernel, YAML::Node config);
@@ -28,7 +28,7 @@ class Architecture : public arch::Architecture {
                     uint64_t instructionAddress,
                     MacroOp& output) const override;
 
-  /** Returns an RISCV register file structure description. */
+  /** Returns an RISC-V register file structure description. */
   std::vector<RegisterFileStructure> getRegisterFileStructures() const override;
 
   /** Returns a zero-indexed register tag for a system register encoding. */

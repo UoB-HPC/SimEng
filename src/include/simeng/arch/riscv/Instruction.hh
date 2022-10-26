@@ -49,7 +49,7 @@ enum class InstructionException {
   NoAvailablePort
 };
 
-/** A basic RISCV implementation of the `Instruction` interface. */
+/** A basic RISC-V implementation of the `Instruction` interface. */
 class Instruction : public simeng::Instruction {
  public:
   /** Construct an instruction instance by decoding a provided instruction word.
@@ -163,10 +163,10 @@ class Instruction : public simeng::Instruction {
   static const Register ZERO_REGISTER;
 
  private:
-  /** The maximum number of source registers any supported RISCV instruction
+  /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
   static const uint8_t MAX_SOURCE_REGISTERS = 2;
-  /** The maximum number of destination registers any supported RISCV
+  /** The maximum number of destination registers any supported RISC-V
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
 

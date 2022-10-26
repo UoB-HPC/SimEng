@@ -174,7 +174,7 @@ void Instruction::decode() {
         destinationRegisters[destinationRegisterCount] =
             csRegToRegister(op.reg);
         destinationRegisterCount++;
-        // Belongs to the predicate group if the detsination register is a
+        // Belongs to the predicate group if the destination register is a
         // predicate
         // Determine the data type the instruction operates on based on the
         // register operand used

@@ -139,7 +139,7 @@ void Instruction::decode() {
   for (size_t i = 0; i < metadata.operandCount; i++) {
     const auto& op = metadata.operands[i];
 
-    // First operand is always be of REG type but could be either source or
+    // First operand is always of REG type but could be either source or
     // destination
     if (i == 0 && op.type == RISCV_OP_REG) {
       // If opcode is branch or store (but not atomic or jump) the first operand

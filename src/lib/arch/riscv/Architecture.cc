@@ -18,8 +18,9 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
     : linux_(kernel) {
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
   if (n != CS_ERR_OK) {
-    std::cerr << "Could not create capstone handle due to error " << n
-              << std::endl;
+    std::cerr << "[SimEng:Architecture] Could not create capstone handle due "
+                 "to error "
+              << n << std::endl;
     exit(1);
   }
 
@@ -127,7 +128,7 @@ Architecture::~Architecture() {
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
                                 uint64_t instructionAddress,
                                 MacroOp& output) const {
-  // Check that instruction address is 4-byte aligned as required by RISCV
+  // Check that instruction address is 4-byte aligned as required by RISC-V
   if (instructionAddress & 0x3) {
     // Consume 1-byte and raise a misaligned PC exception
     auto metadata = InstructionMetadata((uint8_t*)ptr, 1);

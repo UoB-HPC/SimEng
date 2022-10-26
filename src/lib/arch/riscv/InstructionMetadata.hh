@@ -8,13 +8,13 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-/** RISCV opcodes. Each opcode represents a unique RISCV operation. */
+/** RISC-V opcodes. Each opcode represents a unique RISC-V operation. */
 namespace Opcode {
 #define GET_INSTRINFO_ENUM
 #include "RISCVGenInstrInfo.inc"
 }  // namespace Opcode
 
-/** A simplified RISCV-only version of the Capstone instruction structure. */
+/** A simplified RISC-V-only version of the Capstone instruction structure. */
 struct InstructionMetadata {
  public:
   /** Constructs a metadata object from a Capstone instruction representation.
@@ -66,16 +66,16 @@ struct InstructionMetadata {
  private:
   /** Detect instruction aliases and update metadata to match the de-aliased
    * instruction. */
-  void revertAliasing(const cs_insn& insn);
+  void alterPseudoInstructions(const cs_insn& insn);
 
   /** Flag the instruction as invalid due to a detected unsupported alias. */
   void aliasNYI();
 
-  /** RISCV helper function
+  /** RISC-V helper function
    * Use register zero as operands[1] and immediate value as operands[2] */
   void includeZeroRegisterPosOne();
 
-  /** RISCV helper function
+  /** RISC-V helper function
    * Use register zero as operands[0] and immediate value as operands[2] */
   void includeZeroRegisterPosZero();
 };

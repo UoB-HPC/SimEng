@@ -1,4 +1,5 @@
 ---
+# This file is based off of the current tx2.yaml config and serves as an example configuration for RISC-V cores.
 # The following resources where utilised to create the config file and naming schemes:
 # https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan
 

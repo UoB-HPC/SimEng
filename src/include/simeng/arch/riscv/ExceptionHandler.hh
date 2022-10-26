@@ -10,7 +10,7 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-/** A RISCV exception handler. */
+/** A RISC-V exception handler. */
 class ExceptionHandler : public simeng::arch::ExceptionHandler {
  public:
   /** Create an exception handler with references to the instruction that caused
@@ -89,7 +89,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   /** A function to call to resume handling an exception. */
   std::function<bool()> resumeHandling_;
 
-  /** Helper constants for RISCV general-purpose registers. */
+  /** Helper constants for RISC-V general-purpose registers. */
   static constexpr Register R0 = {RegisterType::GENERAL, 10};
   static constexpr Register R1 = {RegisterType::GENERAL, 11};
   static constexpr Register R2 = {RegisterType::GENERAL, 12};

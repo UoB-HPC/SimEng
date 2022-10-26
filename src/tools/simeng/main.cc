@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<simeng::MemoryInterface> instructionMemory =
       coreInstance->getInstructionMemory();
 
-  // Output general simumlation details
+  // Output general simulation details
   std::cout << "[SimEng] Running in " << coreInstance->getSimulationModeString()
             << " mode" << std::endl;
   std::cout << "[SimEng] Workload: " << executablePath;
