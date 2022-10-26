@@ -15,7 +15,7 @@ if len(sys.argv) > 4:
 
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": os.getcwd() + "/configs/sst-cores/a64fx-sst.yaml",
+    "simeng_config_path": os.getcwd() + "/../../../configs/sst-cores/a64fx-sst.yaml",
     "executable_path": "",
     "executable_args": "",
     "clock" : "1.8GHz",
