@@ -21,11 +21,12 @@
 
 using namespace SST::SSTSimEng;
 
-#define ASSERT(expr, errStr)                                             \
-  if (!(expr)) {                                                         \
-    std::cerr << "Error occured while assembling source through LLVM:\n" \
-              << errStr << std::endl;                                    \
-    exit(1);                                                             \
+#define ASSERT(expr, errStr)                                                 \
+  if (!(expr)) {                                                             \
+    std::cerr << "[SSTSimEngTest:Assembler] Error occured while assembling " \
+                 "source through LLVM:\n"                                    \
+              << errStr << std::endl;                                        \
+    exit(1);                                                                 \
   }
 
 Assembler::Assembler(std::string source) {
