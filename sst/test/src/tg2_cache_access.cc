@@ -27,7 +27,7 @@ TEST_CASE(TG2, "cache_access_of_load_to_same_address", "src",
 
     # Last Load
     end:
-    # Adding dependency for preventing any load due to branch misprediction
+    # Adding dependency to prevent any load being speculatively executed due to branch misprediction.
     mov x6, #0
     add x6, x6, x0
     ldr x1, [x6]
@@ -69,6 +69,7 @@ TEST_CASE(TG2, "load_after_store_on_same_address_should_return_from_cache",
     mov x4, #0
     mov x5, #0
 
+    # Buffer loop
     loop:
     cmp x5, #256
     b.eq end
@@ -77,7 +78,7 @@ TEST_CASE(TG2, "load_after_store_on_same_address_should_return_from_cache",
 
     # last load
     end:
-    # Adding dependency for preventing load due to branch misprediction
+    # Adding dependency to prevent any load being speculatively executed due to branch misprediction.
     mov x6, #0
     add x6, x6, #1024
     add x6, x6, x6
@@ -133,7 +134,7 @@ TEST_CASE(TG2,
 
     # last load
     end:
-    # Adding dependency for preventing any loads due to branch misprediction
+    # Adding dependency to prevent any load being speculatively executed due to branch misprediction.
     mov x6, #0
     add x6, x6, #1024
     add x6, x6, x6
