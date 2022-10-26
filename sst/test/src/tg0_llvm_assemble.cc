@@ -47,7 +47,7 @@ TEST_GROUP(TG0, "SSTSimEng_correctly_assembles_instructions_using_LLVM",
     hlt #0
   )")
 TEST_CASE(TG0, "Test_asssembly_of_simple_instructions") {
-  size_t pos = capturedStdout.find("retired: ");
+  size_t pos = capturedStdout.find("[SimEng] retired:");
   std::string retired = "";
   // Extract the retired: <count> string from capturedStdout.
   for (size_t y = pos; y < capturedStdout.length(); y++) {
@@ -59,8 +59,8 @@ TEST_CASE(TG0, "Test_asssembly_of_simple_instructions") {
   }
   // Extract retired instruction count from "retired: <count>" string and cast
   // to uint64_t.
-  size_t len = retired.length() - 9;
-  uint64_t retiredCount = std::stoull(retired.substr(9, len));
+  size_t len = retired.length() - 18;
+  uint64_t retiredCount = std::stoull(retired.substr(18, len));
   std::cout << "Total instructions retired: " << retiredCount << std::endl;
   // This should be equal to the total number of instructions in the test case.
   EXPECT_EQ(retiredCount, (uint64_t)38);

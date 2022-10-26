@@ -15,7 +15,7 @@ using namespace SST::Interfaces;
 
 SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     : SST::Component(id) {
-  output_.init("SimEngCoreWrapper[" + getName() + ":@p:@t]:", 999, 0,
+  output_.init("[SimEng] SimEngCoreWrapper[" + getName() + ":@p:@t]:", 999, 0,
                SST::Output::STDOUT);
   clock_ = registerClock(params.find<std::string>("clock", "1GHz"),
                          new SST::Clock::Handler<SimEngCoreWrapper>(
@@ -90,10 +90,10 @@ void SimEngCoreWrapper::finish() {
   std::cout << "\n";
   auto stats = core_->getStats();
   for (const auto& [key, value] : stats) {
-    std::cout << key << ": " << value << "\n";
+    std::cout << "[SimEng] " << key << ": " << value << "\n";
   }
 
-  std::cout << "\nFinished " << iterations_ << " ticks in " << duration
+  std::cout << "\n[SimEng] Finished " << iterations_ << " ticks in " << duration
             << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
             << mips << " MIPS)" << std::endl;
 }
@@ -279,8 +279,8 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   if (maxAddrMemory_ < coreInstance_->getProcessImageSize()) {
     output_.verbose(
         CALL_INFO, 1, 0,
-        "Error: SST backend memory is less than processImage size. Please "
-        "increase the memory allocated to memHierarchy.memBackend and "
+        "Error: SST backend memory is less than processImage size. "
+        "Please increase the memory allocated to memHierarchy.memBackend and "
         "ensure it is consistent with \'max_addr_memory\' and "
         "\'addr_range_end\'. \n");
     primaryComponentOKToEndSim();
