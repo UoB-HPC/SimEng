@@ -109,13 +109,13 @@ void SimEngCoreWrapper::init(unsigned int phase) {
 bool SimEngCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
   // Tick the core and memory interfaces until the program has halted
   if (!core_->hasHalted() || dataMemory_->hasPendingRequests()) {
-    // Ticking dataMemory just increases cycle count. Tick first to ensure
-    // proper cycle count.
+    // Tick the data memory.
     dataMemory_->tick();
-    // Tick the core
+
+    // Tick the core.
     core_->tick();
 
-    // Tick memory
+    // Tick the instruction memory.
     instructionMemory_->tick();
 
     iterations_++;
@@ -234,9 +234,8 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
 
 void SimEngCoreWrapper::fabricateSimEngCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
-  // Create the instance of the core to be simulated
-#ifdef SIMENG_ENABLE_SST_TESTS
   if (simengConfigPath_ != "") {
+#ifdef SIMENG_ENABLE_SST_TESTS
     // if string of instructions are supplied, assemble them using the Assembler
     // class and call CoreInstance with a corresponding constructor.
     if (assembleWithSource_) {
@@ -246,23 +245,15 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
       coreInstance_ = std::make_unique<simeng::CoreInstance>(
           assemble.getAssembledSource(), assemble.getAssembledSourceSize(),
           simengConfigPath_);
-    } else {
-      coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          simengConfigPath_, executablePath_, executableArgs_);
     }
-  } else {
-    coreInstance_ = std::make_unique<simeng::CoreInstance>(executablePath_,
-                                                           executableArgs_);
-  }
 #else
-  if (simengConfigPath_ != "") {
     coreInstance_ = std::make_unique<simeng::CoreInstance>(
         simengConfigPath_, executablePath_, executableArgs_);
+#endif
   } else {
     coreInstance_ = std::make_unique<simeng::CoreInstance>(executablePath_,
                                                            executableArgs_);
   }
-#endif
 
   // Set the SST data memory SimEng should use
   coreInstance_->setL1DataMemory(dataMemory_);
