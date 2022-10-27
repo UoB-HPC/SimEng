@@ -35,7 +35,7 @@ params = parseParams(sys.argv[1:])
 
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": "",
+    "simeng_config_path": params["model"],
     "executable_path": "",
     "executable_args": "",
     "clock" : "1.8GHz",

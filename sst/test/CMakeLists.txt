@@ -3,9 +3,9 @@ set(SIMENG_SST_TEST_SOURCES
     src/tg0_llvm_assemble.cc
     src/tg1_load_store.cc
     src/tg2_cache_access.cc
-    # src/tg3_request_split.cc
-    # src/tg4_request_misaligned.cc
-    # src/tg5_benchmarks.cc
+    src/tg3_request_split.cc
+    src/tg4_request_misaligned.cc
+    src/tg5_benchmarks.cc
 )
 add_executable(sstsimengtest ${SIMENG_SST_TEST_SOURCES})
 
