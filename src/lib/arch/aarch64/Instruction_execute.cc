@@ -4238,15 +4238,23 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_ST1Twov16b: {  // st1v {vt.16b, vt2.16b}, [xn]
+      case Opcode::AArch64_ST1Twov16b: {  // st1 {vt.16b, vt2.16b}, [xn|sp]
         // STORE
         const uint8_t* t = operands[0].getAsVector<uint8_t>();
         const uint8_t* t2 = operands[1].getAsVector<uint8_t>();
         for (int i = 0; i < 16; i++) {
           memoryData[i] = t[i];
-        }
-        for (int i = 0; i < 16; i++) {
           memoryData[i + 16] = t2[i];
+        }
+        break;
+      }
+      case Opcode::AArch64_ST1Twov4s: {  // st1 {vt.4s, vt2.4s}, [xn|sp]
+        // STORE
+        const uint32_t* t = operands[0].getAsVector<uint32_t>();
+        const uint32_t* t2 = operands[1].getAsVector<uint32_t>();
+        for (int i = 0; i < 4; i++) {
+          memoryData[i] = t[i];
+          memoryData[i + 4] = t2[i];
         }
         break;
       }

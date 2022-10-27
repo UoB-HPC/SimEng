@@ -368,6 +368,25 @@ TEST_P(InstStore, st1twov) {
     EXPECT_EQ(getMemoryValue<uint8_t>(getGeneralRegister<uint64_t>(31) + i),
               (static_cast<uint8_t>(2)));
   }
+
+  // V.4S
+  RUN_AARCH64(R"(
+    movi v0.4s, #1
+    movi v1.4s, #2
+    sub sp, sp, #32
+    st1 {v0.4s, v1.4s}, [sp]
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 32);
+  for (int i = 0; i < 4; i++) {
+    EXPECT_EQ(
+        getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + (i * 4)),
+        (static_cast<uint32_t>(1)));
+  }
+  for (uint64_t i = 4; i < 8; i++) {
+    EXPECT_EQ(
+        getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + (i * 4)),
+        (static_cast<uint32_t>(2)));
+  }
 }
 
 TEST_P(InstStore, st2_multi_struct) {

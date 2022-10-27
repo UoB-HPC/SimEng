@@ -1285,6 +1285,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         operands[2].access = CS_AC_READ;
       }
       break;
+    case Opcode::AArch64_ST1Twov4s:
+      [[fallthrough]];
     case Opcode::AArch64_ST1Twov16b:
       // ST1 incorrectly flags read and write
       operands[1].access = CS_AC_READ;

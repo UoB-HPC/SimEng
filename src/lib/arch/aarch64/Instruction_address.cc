@@ -1270,13 +1270,24 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
-      case Opcode::AArch64_ST1Twov16b: {  // st1v {vt.16b, vt2.16b}, [xn]
+      case Opcode::AArch64_ST1Twov16b: {  // st1 {vt.16b, vt2.16b}, [xn]
         const uint64_t base = operands[2].get<uint64_t>();
         std::vector<MemoryAccessTarget> addresses;
         addresses.reserve(32);
 
         for (int i = 0; i < 32; i++) {
           addresses.push_back({base + i, 1});
+        }
+        setMemoryAddresses(std::move(addresses));
+        break;
+      }
+      case Opcode::AArch64_ST1Twov4s: {  // st1 {vt.4s, vt2.4s}, [xn]
+        const uint64_t base = operands[2].get<uint64_t>();
+        std::vector<MemoryAccessTarget> addresses;
+        addresses.reserve(8);
+
+        for (int i = 0; i < 8; i++) {
+          addresses.push_back({base + (i * 4), 4});
         }
         setMemoryAddresses(std::move(addresses));
         break;
