@@ -333,8 +333,9 @@ void Core::processExceptionHandler() {
       auto regs = result.uop->getDestinationRegisters();
       for (auto& reg : regs) dispatchIssueUnit_.setRegisterReady(reg);
     }
-    exceptionHandler_ = nullptr;
   }
+
+  exceptionHandler_ = nullptr;
 }
 
 void Core::applyStateChange(const arch::ProcessStateChange& change) {
