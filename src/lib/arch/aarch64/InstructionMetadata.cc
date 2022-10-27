@@ -1273,6 +1273,18 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+    case Opcode::AArch64_ST1Fourv2s_POST:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1Fourv4s_POST: {
+      // ST1 four vectors doesn't set access rights correctly
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      // operands[4] is memory + write-back enabled already
+      if (operandCount == 6) operands[5].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_ST1i8_POST:
       [[fallthrough]];
     case Opcode::AArch64_ST1i16_POST:

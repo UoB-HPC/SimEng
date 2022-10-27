@@ -389,6 +389,111 @@ TEST_P(InstStore, st1twov) {
   }
 }
 
+TEST_P(InstStore, st1fourv_post) {
+  // V.2S
+  RUN_AARCH64(R"(
+      movi v0.2s, #1
+      movi v1.2s, #2
+      movi v2.2s, #3
+      movi v3.2s, #4
+
+      sub sp, sp, #64
+      mov x0, sp
+
+      st1 {v0.2s, v1.2s, v2.2s, v3.2s}, [x0], #32
+
+      movi v4.2s, #5
+      movi v5.2s, #6
+      movi v6.2s, #7
+      movi v7.2s, #8
+      mov x1, x0
+      mov x2, #17
+
+      st1 {v4.2s, v5.2s, v6.2s, v7.2s}, [x1], x2
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31), process_->getStackPointer() - 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), process_->getStackPointer() - 32);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), process_->getStackPointer() - 15);
+  for (int i = 0; i < 2; i++) {
+    EXPECT_EQ(
+        getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + (i * 4)),
+        (static_cast<uint32_t>(1)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 8 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(2)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 16 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(3)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 24 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(4)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 32 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(5)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 40 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(6)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 48 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(7)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 56 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(8)));
+  }
+
+  // V.4S
+  RUN_AARCH64(R"(
+      movi v0.4s, #1
+      movi v1.4s, #2
+      movi v2.4s, #3
+      movi v3.4s, #4
+
+      sub sp, sp, #128
+      mov x0, sp
+
+      st1 {v0.4s, v1.4s, v2.4s, v3.4s}, [x0], #64
+
+      movi v4.4s, #5
+      movi v5.4s, #6
+      movi v6.4s, #7
+      movi v7.4s, #8
+      mov x1, x0
+      mov x2, #17
+
+      st1 {v4.4s, v5.4s, v6.4s, v7.4s}, [x1], x2
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(31),
+            process_->getStackPointer() - 128);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(0), process_->getStackPointer() - 64);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(1), process_->getStackPointer() - 47);
+  for (int i = 0; i < 4; i++) {
+    EXPECT_EQ(
+        getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + (i * 4)),
+        (static_cast<uint32_t>(1)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 16 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(2)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 32 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(3)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 48 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(4)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 64 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(5)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 80 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(6)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 96 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(7)));
+    EXPECT_EQ(getMemoryValue<uint32_t>(getGeneralRegister<uint64_t>(31) + 112 +
+                                       (i * 4)),
+              (static_cast<uint32_t>(8)));
+  }
+}
+
 TEST_P(InstStore, st2_multi_struct) {
   // V.4S (float)
   RUN_AARCH64(R"(
