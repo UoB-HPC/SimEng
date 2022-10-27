@@ -238,3 +238,7 @@ if (SIMENG_ENABLE_SST)
     Please specify -DSST_INSTALL_DIR=<path> for the SST build to proceed.")  
   endif()
 endif()
+
+# Install SimEng model configs in the build directory
+set(SIMENG_CONFIG_INSTALL_DIR "${CMAKE_BINARY_DIR}/simeng-configs")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/configs/ DESTINATION ${SIMENG_CONFIG_INSTALL_DIR})

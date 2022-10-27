@@ -234,27 +234,55 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
 
 void SimEngCoreWrapper::fabricateSimEngCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
-  if (simengConfigPath_ != "") {
+
 #ifdef SIMENG_ENABLE_SST_TESTS
+  bool testsEnabled = true;
+#else
+  bool testsEnabled = false;
+#endif
+
+  if (simengConfigPath_ != "") {
     // if string of instructions are supplied, assemble them using the Assembler
     // class and call CoreInstance with a corresponding constructor.
-    if (assembleWithSource_) {
+    if (testsEnabled && assembleWithSource_) {
       output_.verbose(CALL_INFO, 1, 0,
                       "Assembling source instructions using LLVM\n");
       Assembler assemble = Assembler(source_);
       coreInstance_ = std::make_unique<simeng::CoreInstance>(
           assemble.getAssembledSource(), assemble.getAssembledSourceSize(),
           simengConfigPath_);
+    } else {
+      coreInstance_ = std::make_unique<simeng::CoreInstance>(
+          simengConfigPath_, executablePath_, executableArgs_);
     }
-#else
-    coreInstance_ = std::make_unique<simeng::CoreInstance>(
-        simengConfigPath_, executablePath_, executableArgs_);
-#endif
   } else {
-    coreInstance_ = std::make_unique<simeng::CoreInstance>(executablePath_,
-                                                           executableArgs_);
+    // if string of instructions are supplied, assemble them using the Assembler
+    // class and call CoreInstance with a corresponding constructor but without
+    // a config path.
+    if (testsEnabled && assembleWithSource_) {
+      // Construct path for a64fx-sst.yaml from SIMENG_BUILD_DIR
+      std::string defaultA64fxConfigPath =
+          std::string(SIMENG_BUILD_DIR) +
+          "/simeng-configs/sst-cores/a64fx-sst.yaml";
+      output_.verbose(CALL_INFO, 1, 0,
+                      "Assembling source instructions using LLVM with default "
+                      "a64fx-sst.yaml configuration.\n");
+      Assembler assemble = Assembler(source_);
+      coreInstance_ = std::make_unique<simeng::CoreInstance>(
+          assemble.getAssembledSource(), assemble.getAssembledSourceSize(),
+          defaultA64fxConfigPath);
+    } else {
+      coreInstance_ = std::make_unique<simeng::CoreInstance>(executablePath_,
+                                                             executableArgs_);
+    }
   }
 
+  if (coreInstance_->getSimulationMode() !=
+      simeng::SimulationMode::OutOfOrder) {
+    output_.fatal(
+        CALL_INFO, 1, 0,
+        "SimEng only supports out-of-order cores with SST currently.");
+  }
   // Set the SST data memory SimEng should use
   coreInstance_->setL1DataMemory(dataMemory_);
 

@@ -19,7 +19,7 @@ TEST_CASE(TG5, "Running_stream_triad_sve", appendBinDirPath("stream_t_sve")) {
 // more cache models are added. These test cases will only test whether cachebw
 // works on SSTSimEng or not.
 TEST_CASE(TG5, "Running_cachebw_static", appendBinDirPath("cachebw_static"),
-          "32 100") {
+          "args=32 100") {
   Parser p = Parser(capturedStdout);
   std::vector<std::string> outputLines = p.getOutputLines();
   STR_CONTAINS(outputLines[0], "n");
@@ -29,7 +29,7 @@ TEST_CASE(TG5, "Running_cachebw_static", appendBinDirPath("cachebw_static"),
 }
 
 TEST_CASE(TG5, "Running_cachebw_static_sve",
-          appendBinDirPath("cachebw_static_sve"), "32 100") {
+          appendBinDirPath("cachebw_static_sve"), "args=32 100") {
   Parser p = Parser(capturedStdout);
   std::vector<std::string> outputLines = p.getOutputLines();
   STR_CONTAINS(outputLines[0], "n");

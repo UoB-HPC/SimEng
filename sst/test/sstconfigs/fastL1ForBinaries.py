@@ -2,23 +2,43 @@ import sst
 import sys
 import os
 
+def split(param: str) -> list[str]:
+    return param.split("=")
+
+def parseParams(params: list[str]):
+    out = {
+        "withSrc": False,
+        "source": "",
+        "clw": 8,
+        "heap": "",
+        "model": "",
+        "args": "",
+        "execBin": ""
+    }
+    for param in params:
+        key, value = split(param)
+        if (key == "withSrc"):
+            out[key] = value == "True"
+        else:
+            out[key] = value
+    return out
+
 DEBUG_L1 = 0
 DEBUG_MEM = 0
 DEBUG_LEVEL = 10
-clw = "64"
-execArgs = ""
 
-if len(sys.argv) > 2:
-    execArgs = sys.argv[2]
+params = parseParams(sys.argv[1:])
+
+
 
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": os.getcwd() + "/../../../configs/sst-cores/a64fx-sst.yaml",
-    "executable_path": sys.argv[1],
-    "executable_args": execArgs,
+    "simeng_config_path": params["model"],
+    "executable_path": params["execBin"],
+    "executable_args": params["args"],
     "clock" : "1.8GHz",
     "max_addr_memory": 2*1024*1024*1024-1,
-    "cache_line_width": clw,
+    "cache_line_width": params["clw"],
     "source": "",
     "assemble_with_source": False,
     "heap": "",
@@ -34,7 +54,7 @@ l1cache.addParams({
       "replacement_policy" : "nmru",
       "coherence_protocol" : "MESI",
       "associativity" : "4",
-      "cache_line_size" : clw,
+      "cache_line_size" : params["clw"],
       "debug" : DEBUG_L1,
       "debug_level" : DEBUG_LEVEL,
       "verbose": "2",

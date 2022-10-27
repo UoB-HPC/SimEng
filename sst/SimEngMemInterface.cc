@@ -169,13 +169,19 @@ void SimEngMemInterface::requestRead(const MemoryAccessTarget& target,
   AggregateReadRequest* aggrReq = new AggregateReadRequest(target, requestId);
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateReadRequest>(aggrReq, addrStart, addrEnd, size);
+  uint64_t id = requestId;
+#ifdef SIMENG_ENABLE_SST_TESTS
+  testReqCounter_++;
+  aggrReq->testId = testReqCounter_;
+  id = testReqCounter_;
+#endif
   // SST output data parsed by the testing framework.
   // Format:
-  // [SimEng:SSTDebug:MemRead]-read-<type=request|response>-<request ID>
+  // [SimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
   // -cycle-<cycle count>-split-<number of requests>
   if (debug_) {
-    std::cout << "[SimEng:SSTDebug:MemRead]"
-              << "-read-request-" << requestId << "-cycle-" << tickCounter_
+    std::cout << "[SimEng:SSTDebug] MemRead"
+              << "-read-request-" << id << "-cycle-" << tickCounter_
               << "-split-" << requests.size() << std::endl;
   }
   for (StandardMem::Request* req : requests) {
@@ -233,11 +239,15 @@ void SimEngMemInterface::aggregatedReadResponses(
   }
   // SST output data parsed by the testing framework.
   // Format:
-  // [SimEng:SSTDebug:MemRead]-read-<type=request|response>-<request ID>
+  // [SimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
   // -cycle-<cycle count>-data-<value>
+  uint64_t id = aggrReq->id_;
+#ifdef SIMENG_ENABLE_SST_TESTS
+  id = aggrReq->testId;
+#endif
   if (debug_) {
-    std::cout << "[SimEng:SSTDebug:MemRead]"
-              << "-read-response-" << aggrReq->id_ << "-cycle-" << tickCounter_
+    std::cout << "[SimEng:SSTDebug] MemRead"
+              << "-read-response-" << id << "-cycle-" << tickCounter_
               << "-data-" << resp << std::endl;
   }
 

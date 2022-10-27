@@ -6,24 +6,44 @@ DEBUG_L1 = 0
 DEBUG_MEM = 0
 DEBUG_LEVEL = 10
 
-heap = ""
-clw = "8"
-if len(sys.argv) > 3:
-    heap = sys.argv[3]
-if len(sys.argv) > 4:
-    clw = sys.argv[4]
+def split(param: str) -> list[str]:
+    return param.split("=")
+
+def parseParams(params: list[str]):
+    out = {
+        "withSrc": False,
+        "source": "",
+        "clw": 8,
+        "heap": "",
+        "model": "",
+        "args": "",
+        "execBin": ""
+    }
+    for param in params:
+        key, value = split(param)
+        if (key == "withSrc"):
+            out[key] = value == "True"
+        else:
+            out[key] = value
+    return out
+
+DEBUG_L1 = 0
+DEBUG_MEM = 0
+DEBUG_LEVEL = 10
+
+params = parseParams(sys.argv[1:])
 
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": os.getcwd() + "/../../../configs/sst-cores/a64fx-sst.yaml",
+    "simeng_config_path": "",
     "executable_path": "",
     "executable_args": "",
     "clock" : "1.8GHz",
     "max_addr_memory": 2*1024*1024*1024-1,
-    "cache_line_width": clw,
-    "source": sys.argv[2],
-    "assemble_with_source": sys.argv[1] == "src",
-    "heap": heap,
+    "cache_line_width": params["clw"],
+    "source": params["source"],
+    "assemble_with_source": params["withSrc"],
+    "heap": params["heap"],
     "debug": True
 })
 
@@ -36,7 +56,7 @@ l1cache.addParams({
       "replacement_policy" : "nmru",
       "coherence_protocol" : "MESI",
       "associativity" : "4",
-      "cache_line_size" : clw,
+      "cache_line_size" : params["clw"],
       "debug" : DEBUG_L1,
     "debug_level" : DEBUG_LEVEL,
       "verbose": "2",

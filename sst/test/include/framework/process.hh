@@ -147,12 +147,21 @@ class Process {
             "in child process");
         exit(EXIT_FAILURE);
       };
+
+#ifdef SST_TESTS_MODEL_CONFIG_PATH
+      std::string modelConfigPath =
+          "model=" + std::string(SST_TESTS_MODEL_CONFIG_PATH);
+#else
+      std::string modelConfigPath = R"(model="")";
+#endif
       // Execute the binary using the execv syscall. Execv doesn't return as it
       // replaces the current process image (child process) with the process
       // image of the executable. However, a return from execv indicates an
       // error in invocation of execv and not the executable.
-      const std::vector<std::string>& argsToCpy =
+
+      std::vector<std::string> argsToCpy =
           newArgs.size() ? newArgs : defaultCliArgs_;
+      argsToCpy.push_back(modelConfigPath);
       // Execv calls takes in a char* path to the binary and char* argv[] array
       // for all command line arguments. To maintain consistency in parsing, the
       // structure of cliArgs mimics the invocation format of SST i.e. [sstCmd_]

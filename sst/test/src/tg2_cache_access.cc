@@ -1,10 +1,11 @@
 #include "sstsimengtest.hh"
 
 TEST_GROUP(TG2, "SSTSimEng_uses_cache_for_memory_access",
-           "fastL1WithParams_config.py", "src", R"( mov x1, #1 )");
+           "fastL1WithParams_config.py", "withSrc=True",
+           R"(source= mov x1, #1 )");
 
-TEST_CASE(TG2, "cache_access_of_load_to_same_address", "src",
-          R"(
+TEST_CASE(TG2, "cache_access_of_load_to_same_address", "withSrc=True",
+          R"(source=
     # Get heap address
     mov x0, 0
     mov x8, 214
@@ -32,7 +33,7 @@ TEST_CASE(TG2, "cache_access_of_load_to_same_address", "src",
     add x6, x6, x0
     ldr x1, [x6]
     )",
-          "2048") {
+          "heap=2048") {
   Parser p = Parser(capturedStdout);
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
@@ -50,8 +51,8 @@ TEST_CASE(TG2, "cache_access_of_load_to_same_address", "src",
 }
 
 TEST_CASE(TG2, "load_after_store_on_same_address_should_return_from_cache",
-          "src",
-          R"(
+          "withSrc=True",
+          R"(source=
     # Get heap address
     mov x0, 0
     mov x8, 214
@@ -85,7 +86,7 @@ TEST_CASE(TG2, "load_after_store_on_same_address_should_return_from_cache",
     ldr x4, [x6]
 
     )",
-          "1024") {
+          "heap=1024") {
   Parser p = Parser(capturedStdout);
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address
@@ -104,8 +105,8 @@ TEST_CASE(TG2, "load_after_store_on_same_address_should_return_from_cache",
 TEST_CASE(TG2,
           "multiple_loads_after_stores_on_same_address_should_return_"
           "from_cache",
-          "src",
-          R"(
+          "withSrc=True",
+          R"(source=
     # Get heap address
     mov x0, 0
     mov x8, 214
@@ -145,7 +146,7 @@ TEST_CASE(TG2,
     ldr x4, [x6, #32]
 
     )",
-          "1024") {
+          "heap=1024") {
   Parser p = Parser(capturedStdout);
   std::vector<ParsedMemRead*> reads = p.getParsedMemReads();
   // skip first parsed request as that one will be caused by heap address

@@ -105,6 +105,10 @@ class SimEngMemInterface : public MemoryInterface {
   struct SimEngMemoryRequest {
     /** MemoryAccessTarget from SimEng memory instruction. */
     const MemoryAccessTarget target;
+#ifdef SIMENG_ENABLE_SST_TESTS
+    /** Variable which tracks requestId for the testing framework. */
+    uint64_t testId = 0;
+#endif
 
     SimEngMemoryRequest() : target(MemoryAccessTarget()){};
     SimEngMemoryRequest(const MemoryAccessTarget& target) : target(target){};
@@ -237,6 +241,10 @@ class SimEngMemInterface : public MemoryInterface {
 
   /** Variable to enable parseable print debug statements in test mode. */
   bool debug_ = false;
+
+  /** Counter for test request, as request id is always 0 for default model
+   * config. */
+  uint64_t testReqCounter_ = 0;
 };
 
 };  // namespace SSTSimEng
