@@ -15,7 +15,7 @@ using namespace SST::Interfaces;
 
 SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     : SST::Component(id) {
-  output_.init("[SSTSimEng:SimEngCoreWrapper] " + getName() + "@p:@l", 999, 0,
+  output_.init("[SSTSimEng:SimEngCoreWrapper] " + getName() + "@p:@l ", 999, 0,
                SST::Output::STDOUT);
   clock_ = registerClock(params.find<std::string>("clock", "1GHz"),
                          new SST::Clock::Handler<SimEngCoreWrapper>(
@@ -164,12 +164,13 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
   bool escapeSingle = false;
   bool escapeDouble = false;
   bool captureEscape = false;
-
+  uint64_t index = 0;
   if (argSize == 0) {
     return args;
   }
 
   for (int x = 0; x < argSize; x++) {
+    index = x;
     bool escaped = escapeDouble || escapeSingle;
     char currChar = trimmedStrArgs.at(x);
     if (captureEscape) {
@@ -225,11 +226,15 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
     }
   }
   if (escapeSingle || escapeDouble) {
+    std::string err;
     output_.verbose(CALL_INFO, 1, 0, R"(
            Parsing failed: Invalid format - Please make sure all
            characters/strings are escaped properly within a set single or 
-           double quotes. To escape quotes use (\\) instead of (\).
+           double quotes. To escape quotes use (\\\) instead of (\).\n
            )");
+    std::cerr << "Error occured at index " << index
+              << " of the argument string - substring: "
+              << "[ " << str << " ]" << std::endl;
     std::exit(EXIT_FAILURE);
   }
   args.push_back(str);
@@ -281,7 +286,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   if (coreInstance_->getSimulationMode() !=
       simeng::SimulationMode::OutOfOrder) {
     output_.verbose(CALL_INFO, 1, 0,
-                    "SimEng currently only supports Out-of-order "
+                    "SimEng currently only supports Out-of-Order "
                     "archetypes with SST.");
     std::exit(EXIT_FAILURE);
   }
