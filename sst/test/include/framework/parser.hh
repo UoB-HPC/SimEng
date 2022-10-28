@@ -48,10 +48,10 @@ class Parser {
     std::map<uint64_t, ParsedMemRead*> pmap;
     std::vector<ParsedMemRead*> out;
     for (size_t x = 0; x < splitStdout_.size(); x++) {
-      if (splitStdout_[x].find("SimEng:SSTDebug") == std::string::npos)
+      if (splitStdout_[x].find("SSTSimEng:SSTDebug") == std::string::npos)
         continue;
       std::vector<std::string> splitStr = split(splitStdout_[x], "-");
-      if (splitStr[0] == "[SimEng:SSTDebug] MemRead") {
+      if (splitStr[0] == "[SSTSimEng:SSTDebug] MemRead") {
         uint64_t id = std::stoull(splitStr[3]);
         auto itr = pmap.find(id);
         if (itr != pmap.end()) {
@@ -66,7 +66,7 @@ class Parser {
           pmap.insert(std::pair<uint64_t, ParsedMemRead*>(id, p));
         }
       }
-      if (splitStr[0] == "[SimEng:SSTDebug] OutputLine") {
+      if (splitStr[0] == "[SSTSimEng:SSTDebug] OutputLine") {
         std::string str = "";
 
         for (size_t y = 1; y < splitStr.size(); y++) {

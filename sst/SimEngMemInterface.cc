@@ -171,10 +171,10 @@ void SimEngMemInterface::requestRead(const MemoryAccessTarget& target,
       makeSSTRequests<AggregateReadRequest>(aggrReq, addrStart, addrEnd, size);
   // SST output data parsed by the testing framework.
   // Format:
-  // [SimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
+  // [SSTSimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
   // -cycle-<cycle count>-split-<number of requests>
   if (debug_) {
-    std::cout << "[SimEng:SSTDebug] MemRead"
+    std::cout << "[SSTSimEng:SSTDebug] MemRead"
               << "-read-request-" << requestId << "-cycle-" << tickCounter_
               << "-split-" << requests.size() << std::endl;
   }
@@ -233,11 +233,11 @@ void SimEngMemInterface::aggregatedReadResponses(
   }
   // SST output data parsed by the testing framework.
   // Format:
-  // [SimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
+  // [SSTSimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
   // -cycle-<cycle count>-data-<value>
   uint64_t id = aggrReq->id_;
   if (debug_) {
-    std::cout << "[SimEng:SSTDebug] MemRead"
+    std::cout << "[SSTSimEng:SSTDebug] MemRead"
               << "-read-response-" << id << "-cycle-" << tickCounter_
               << "-data-" << resp << std::endl;
   }

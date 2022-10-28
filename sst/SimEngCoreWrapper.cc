@@ -15,8 +15,8 @@ using namespace SST::Interfaces;
 
 SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     : SST::Component(id) {
-  output_.init("[SSTSimEng:SimEngCoreWrapper " + getName() + ":@p:@t ] ", 999,
-               0, SST::Output::STDOUT);
+  output_.init("[SSTSimEng:SimEngCoreWrapper] " + getName() + "@p:@l", 999, 0,
+               SST::Output::STDOUT);
   clock_ = registerClock(params.find<std::string>("clock", "1GHz"),
                          new SST::Clock::Handler<SimEngCoreWrapper>(
                              this, &SimEngCoreWrapper::clockTick));
