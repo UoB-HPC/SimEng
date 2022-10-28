@@ -1611,6 +1611,12 @@ void Instruction::execute() {
         results[0] = static_cast<int64_t>(std::trunc(operands[0].get<float>()));
         break;
       }
+      case Opcode::AArch64_FCVTZUv1i64: {  // fcvtzu dd, dn
+        // TODO: Handle NaNs, denorms, and saturation
+        results[0] = {
+            static_cast<uint64_t>(std::trunc(operands[0].get<double>())), 256};
+        break;
+      }
       case Opcode::AArch64_FCVT_ZPmZ_DtoS: {  // fcvt zd.s, pg/m, zn.d
         results[0] =
             sveHelp::sveFcvtPredicated<float, double>(operands, VL_bits);

@@ -578,6 +578,29 @@ TEST_P(InstFloat, fcvtzu) {
   EXPECT_EQ((getGeneralRegister<uint64_t>(2)), 0);
   EXPECT_EQ((getGeneralRegister<uint64_t>(3)), 321);
 
+  // Double to implicit_cast<double>(uint64)
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0]
+    ldp d2, d3, [x0, #16]
+    fcvtzu d10, d0
+    fcvtzu d11, d1
+    fcvtzu d12, d2
+    fcvtzu d13, d3
+  )");
+  // Values verified on A64FX via simple assembly test kernel
+  double a = 4.9406564584124654e-324;
+  double b = 0.0;
+  double c = 1.5859507231504014e-321;
+  CHECK_NEON(10, double, {a, 0.0});
+  CHECK_NEON(11, double, {b, 0.0});
+  CHECK_NEON(12, double, {b, 0.0});
+  CHECK_NEON(13, double, {c, 0.0});
+
   float* fheap = reinterpret_cast<float*>(initialHeapData_.data());
   fheap[0] = 1.0;
   fheap[1] = -42.76;
