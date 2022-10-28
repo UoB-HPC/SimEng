@@ -15,7 +15,7 @@ using namespace SST::Interfaces;
 
 SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     : SST::Component(id) {
-  output_.init("[SimEng] SimEngCoreWrapper[" + getName() + ":@p:@t]:", 999, 0,
+  output_.init("[SSTSimEng:SimEngCoreWrapper " + getName() + ":@p:@t ]", 999, 0,
                SST::Output::STDOUT);
   clock_ = registerClock(params.find<std::string>("clock", "1GHz"),
                          new SST::Clock::Handler<SimEngCoreWrapper>(
@@ -33,12 +33,14 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   debug_ = params.find<bool>("debug", false);
 
   if (executablePath_.length() == 0 && !assembleWithSource_) {
-    output_.fatal(CALL_INFO, 10, 0,
-                  "SimEng executable binary filepath not provided.");
+    output_.verbose(CALL_INFO, 10, 0,
+                    "SimEng executable binary filepath not provided.");
+    std::exit(EXIT_FAILURE);
   }
   if (maxAddrMemory_ == 0) {
-    output_.fatal(CALL_INFO, 10, 0,
-                  "Maximum address range for memory not provided");
+    output_.verbose(CALL_INFO, 10, 0,
+                    "Maximum address range for memory not provided");
+    std::exit(EXIT_FAILURE);
   }
 
   iterations_ = 0;
@@ -223,12 +225,12 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
     }
   }
   if (escapeSingle || escapeDouble) {
-    std::cerr << R"(
-           [SimEng] Parsing failed: Invalid format - Please make sure all
+    output_.verbose(CALL_INFO, 1, 0, R"(
+           Parsing failed: Invalid format - Please make sure all
            characters/strings are escaped properly within a set single or 
            double quotes. To escape quotes use (\\) instead of (\).
-           )" << std::endl;
-    exit(1);
+           )");
+    std::exit(EXIT_FAILURE);
   }
   args.push_back(str);
   return args;
@@ -278,11 +280,10 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   }
   if (coreInstance_->getSimulationMode() !=
       simeng::SimulationMode::OutOfOrder) {
-    std::cerr
-        << "[SimEng] SimEng only supports Out-of-order archetypes with SST "
-           "currently."
-        << std::endl;
-    exit(1);
+    output_.verbose(CALL_INFO, 1, 0,
+                    "SimEng currently only supports Out-of-order "
+                    "archetypes with SST.");
+    std::exit(EXIT_FAILURE);
   }
   // Set the SST data memory SimEng should use
   coreInstance_->setL1DataMemory(dataMemory_);
