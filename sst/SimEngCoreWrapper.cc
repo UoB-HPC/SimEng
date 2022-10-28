@@ -223,10 +223,11 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
     }
   }
   if (escapeSingle || escapeDouble) {
-    std::cerr
-        << "[SimEng] Parsing failed: Invalid format - Please make sure all "
-           "characters/strings are escaped properly."
-        << std::endl;
+    std::cerr << R"(
+           [SimEng] Parsing failed: Invalid format - Please make sure all
+           characters/strings are escaped properly within a set single or 
+           double quotes. To escape quotes use (\\) instead of (\).
+           )" << std::endl;
     exit(1);
   }
   args.push_back(str);
@@ -277,9 +278,10 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   }
   if (coreInstance_->getSimulationMode() !=
       simeng::SimulationMode::OutOfOrder) {
-    std::cerr << "[SimEng] SimEng only supports out-of-order cores with SST "
-                 "currently."
-              << std::endl;
+    std::cerr
+        << "[SimEng] SimEng only supports Out-of-order archetypes with SST "
+           "currently."
+        << std::endl;
     exit(1);
   }
   // Set the SST data memory SimEng should use
