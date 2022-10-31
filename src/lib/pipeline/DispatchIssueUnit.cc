@@ -56,8 +56,8 @@ void DispatchIssueUnit::tick() {
 
   /** Stores the number of instructions dispatched for each
    * reservation station. */
-  std::vector<uint16_t> dispatches = {
-      0, static_cast<unsigned short>(reservationStations_.size())};
+  std::vector<uint16_t> dispatches(
+      static_cast<unsigned short>(reservationStations_.size()), 0);
 
   for (size_t slot = 0; slot < input_.getWidth(); slot++) {
     auto& uop = input_.getHeadSlots()[slot];
