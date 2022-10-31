@@ -3533,26 +3533,8 @@ void Instruction::execute() {
         results[0] = operands[0];
         break;
       }
-      case Opcode::AArch64_MSR: {  // mrs (systemreg|Sop0_op1_Cn_Cm_op2), xt
+      case Opcode::AArch64_MSR: {  // msr (systemreg|Sop0_op1_Cn_Cm_op2), xt
         results[0] = operands[0];
-
-        if (metadata.operands[0].imm == ARM64_SYSREG_SVCR) {
-          // Need to update the SVCRval_ in aarch64/Architecture so that SM / ZA
-          // states can be known in execution pipeline
-          architecture_.setSVCRval(results[0].get<uint64_t>());
-
-          // Changing value of SM or ZA zeros out vector, predicate, and ZA
-          // registers.
-          uint64_t svcrBits = results[0].get<uint64_t>() & 0b11;
-          switch (svcrBits) {
-            case ARM64_SVCR_SVCRSM:
-              return streamingModeUpdated();
-            case ARM64_SVCR_SVCRZA:
-              return zaRegisterStatusUpdated();
-            case ARM64_SVCR_SVCRSMZA:
-              return SMZAupdated();
-          }
-        }
         break;
       }
       case Opcode::AArch64_MSUBWrrr: {  // msub wd, wn, wm, wa
@@ -3568,26 +3550,9 @@ void Instruction::execute() {
         const uint64_t svcrBits =
             static_cast<uint64_t>(metadata.operands[0].svcr);
         const uint8_t imm = metadata.operands[1].imm;
-        const uint64_t currSVCR = architecture_.getSVCRval();
 
-        // Imm can only be 0 or 1
-        if (imm == 0) {
-          // Zero out relevant bits
-          const uint64_t mask = 0xFFFFFFFFFFFFFFFF ^ svcrBits;
-          results[0] = currSVCR & mask;
-        } else if (imm == 1) {
-          const uint64_t mask = 0xFFFFFFFFFFFFFFFF & svcrBits;
-          results[0] = currSVCR | mask;
-        } else {
-          // Invalid instruction
-          return executionINV();
-        }
-        // Also update the SVCRval_ in aarch64/Architecture so that SM / ZA
-        // states can be known in execution pipeline
-        architecture_.setSVCRval(results[0].get<uint64_t>());
-
-        // Changing value of SM or ZA zeros out vector, predicate, and ZA
-        // registers
+        // Changing value of SM or ZA bits in SVCR zeros out vector, predicate,
+        // and ZA registers. Raise an exception to do this.
         switch (svcrBits) {
           case ARM64_SVCR_SVCRSM:
             return streamingModeUpdated();

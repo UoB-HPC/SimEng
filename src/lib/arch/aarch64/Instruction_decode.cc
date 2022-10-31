@@ -345,15 +345,10 @@ void Instruction::decode() {
         destinationRegisterCount++;
       }
     } else if (op.type == ARM64_OP_SVCR) {
-      int32_t sysRegTag = architecture_.getSystemRegisterTag(op.sys);
-      if (sysRegTag == -1) {
-        exceptionEncountered_ = true;
-        exception_ = InstructionException::UnmappedSysReg;
-      } else {
-        destinationRegisters.push_back(
-            {RegisterType::SYSTEM, static_cast<uint16_t>(sysRegTag)});
-        destinationRegisterCount++;
-      }
+      // Updating of SVCR is done via an exception and not via the sysreg file.
+      // No operands are required for this operation.
+      // Any access to SVCR other than SMSTART and SMSTOP (i.e. this OP_TYPE)
+      // will result in an `unmapped system register` exception.
     }
   }
 

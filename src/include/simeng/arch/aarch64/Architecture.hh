@@ -84,6 +84,9 @@ class Architecture : public arch::Architecture {
    * decoded, to reduce the overhead of future decoding. */
   static std::forward_list<InstructionMetadata> metadataCache;
 
+  /** A copy of the value of the SVCR system register. */
+  static uint64_t SVCRval_;
+
   /** A mapping from system register encoding to a zero-indexed tag. */
   std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
 
@@ -119,9 +122,6 @@ class Architecture : public arch::Architecture {
   /** Modulo component used to define the frequency at which the VCT is updated.
    */
   double vctModulo_;
-
-  /** A copy of the value of the SVCR system register. */
-  static uint64_t SVCRval_;
 };
 
 }  // namespace aarch64

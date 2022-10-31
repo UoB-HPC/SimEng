@@ -643,17 +643,35 @@ bool ExceptionHandler::init() {
   } else if (exception == InstructionException::StreamingModeUpdate ||
              exception == InstructionException::ZAregisterStatusUpdate ||
              exception == InstructionException::SMZAUpdate) {
-    // Initialise vectors for all registers & values
-    std::vector<Register> regs;
-    std::vector<RegisterValue> regValues;
-
     // Retrieve register file structure from architecture
     auto regFileStruct =
         instruction_.getArchitecture().getRegisterFileStructures();
+    // Retrieve metadata from architecture
+    auto metadata = instruction_.getMetadata();
 
-    // First, add the SVCR result from Instruction_Execution.cc
-    regs.push_back(instruction_.getDestinationRegisters()[0]);
-    regValues.push_back(instruction_.getResults()[0]);
+    // Update SVCR value
+    const uint64_t svcrBits = static_cast<uint64_t>(metadata.operands[0].svcr);
+    const uint8_t imm = metadata.operands[1].imm;
+    const uint64_t currSVCR = instruction_.getArchitecture().getSVCRval();
+    uint64_t newSVCR = 0;
+
+    if (imm == 0) {
+      // Zero out relevant bits dictated by svcrBits
+      const uint64_t mask = 0xFFFFFFFFFFFFFFFF ^ svcrBits;
+      newSVCR = currSVCR & mask;
+    } else if (imm == 1) {
+      // Enable relevant bits, dictated by svcrBits
+      const uint64_t mask = 0xFFFFFFFFFFFFFFFF & svcrBits;
+      newSVCR = currSVCR | mask;
+    } else {
+      // Invalid instruction
+      assert("SVCR Instruction invalid - Imm value can only be 0 or 1");
+    }
+    instruction_.getArchitecture().setSVCRval(newSVCR);
+
+    // Initialise vectors for all registers & values
+    std::vector<Register> regs;
+    std::vector<RegisterValue> regValues;
 
     // Add Vector/Predicate registers + 0 values (zeroed out on Streaming Mode
     // context switch)
@@ -824,14 +842,7 @@ bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
 
 bool ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
   uint64_t nextInstructionAddress = instruction_.getInstructionAddress() + 4;
-  std::shared_ptr<Instruction> uop = nullptr;
-  InstructionException exception = instruction_.getException();
-  if (exception == InstructionException::StreamingModeUpdate ||
-      exception == InstructionException::ZAregisterStatusUpdate ||
-      exception == InstructionException::SMZAUpdate) {
-    uop = std::make_shared<Instruction>(instruction_);
-  }
-  result_ = {false, nextInstructionAddress, stateChange, uop};
+  result_ = {false, nextInstructionAddress, stateChange};
   return true;
 }
 

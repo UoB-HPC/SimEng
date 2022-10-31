@@ -85,51 +85,6 @@ TEST_P(SystemRegister, counter_timers) {
   EXPECT_EQ(getSystemRegister(0xdf02), 2);
 }
 
-#if SIMENG_LLVM_VERSION > 13
-TEST_P(SystemRegister, SVCR) {
-  // Check that smstart and smstop correctly change value of SVCR system
-  // register
-  RUN_AARCH64(R"(
-    # Reset SVCR to 0. As this test is performed 3 times (one for each core-type) 
-    # the SVCR value in the Architecture needs to be reset.
-    mov x0, #0
-    msr svcr, x0
-
-    mrs x0, svcr
-    smstart
-    mrs x1, svcr
-    smstop
-    mrs x2, svcr
-
-    smstart sm
-    mrs x3, svcr
-    smstart za
-    mrs x4, svcr
-    smstop sm
-    mrs x5, svcr
-    smstop za
-    mrs x6, svcr
-
-    mov x7, #13
-    msr svcr, x7
-  )");
-  EXPECT_EQ(getGeneralRegister<uint64_t>(0), 0);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(1), 3);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(3), 1);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(4), 3);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 2);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
-  EXPECT_EQ(getSystemRegister(0xda12), 13);
-
-  // Manually architecture_.SVCRval_ back to 0 so other tests are not affected
-  RUN_AARCH64(R"(
-    mov x0, #0
-    msr svcr, x0
-  )");
-}
-#endif
-
 INSTANTIATE_TEST_SUITE_P(
     AArch64, SystemRegister,
     ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),

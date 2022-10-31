@@ -39,9 +39,6 @@ struct ExceptionResult {
   uint64_t instructionAddress;
   /** Any changes to apply to the process state. */
   ProcessStateChange stateChange;
-  /** The uop to pass to forwardOperand() and clear its destination registers
-   * from the scoreboard. */
-  std::shared_ptr<Instruction> uop;
 };
 
 /** An abstract multi-cycle exception handler interface. Should be ticked each

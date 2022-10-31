@@ -7,8 +7,6 @@ namespace {
 
 using InstSme = AArch64RegressionTest;
 
-/** WARNING: Need to `smstop` at the end of each test, on its own, so non-sme
- * tests have the correct VL in execution stage. */
 #if SIMENG_LLVM_VERSION >= 14
 TEST_P(InstSme, fmopa) {
   // 32-bit
@@ -38,10 +36,6 @@ TEST_P(InstSme, fmopa) {
     CHECK_MAT_ROW(ARM64_REG_ZAS2, i, float,
                   fillNeon<float>({24.0f}, (SVL / 16)));
   }
-
-  RUN_AARCH64(R"(
-    smstop
-  )");
 }
 
 TEST_P(InstSme, ld1w) {
@@ -84,9 +78,6 @@ TEST_P(InstSme, ld1w) {
   CHECK_MAT_ROW(ARM64_REG_ZAS1, 1, uint64_t,
                 fillNeonCombined<uint64_t>(
                     {0x12345678DEADBEEF, 0xABCDEF0198765432}, {0}, SVL / 8));
-  RUN_AARCH64(R"(
-    smstop
-  )");
 
   // Vertical
   initialHeapData_.resize(SVL / 4);
@@ -129,9 +120,6 @@ TEST_P(InstSme, ld1w) {
       ARM64_REG_ZAS1, 1, uint32_t,
       fillNeonCombined<uint32_t>(
           {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, {0}, SVL / 8));
-  RUN_AARCH64(R"(
-    smstop
-  )");
 }
 
 TEST_P(InstSme, st1w) {
@@ -167,9 +155,6 @@ TEST_P(InstSme, st1w) {
         src[i % 4]);
     EXPECT_EQ(getMemoryValue<uint32_t>((SVL / 8) + (i * 4)), src[i % 4]);
   }
-  RUN_AARCH64(R"(
-    smstop
-  )");
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -197,9 +182,6 @@ TEST_P(InstSme, st1w) {
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + (i * 4)), src[i % 4]);
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + 16 + (i * 4)), src[i % 4]);
   }
-  RUN_AARCH64(R"(
-    smstop
-  )");
 
   // Vertical
   initialHeapData_.resize(SVL / 4);
@@ -234,9 +216,6 @@ TEST_P(InstSme, st1w) {
         src_vert[i % 4]);
     EXPECT_EQ(getMemoryValue<uint32_t>((SVL / 8) + (i * 4)), src_vert[i % 4]);
   }
-  RUN_AARCH64(R"(
-    smstop
-  )");
 
   RUN_AARCH64(R"(
     # Get heap address
@@ -264,9 +243,6 @@ TEST_P(InstSme, st1w) {
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + (i * 4)), src_vert[i % 4]);
     EXPECT_EQ(getMemoryValue<uint32_t>(800 + 16 + (i * 4)), src_vert[i % 4]);
   }
-  RUN_AARCH64(R"(
-    smstop
-  )");
 }
 
 TEST_P(InstSme, zero) {
@@ -278,9 +254,6 @@ TEST_P(InstSme, zero) {
   for (int i = 0; i < (SVL / 8); i++) {
     CHECK_MAT_ROW(ARM64_REG_ZA, i, uint64_t, fillNeon<uint64_t>({0}, SVL / 8));
   }
-  RUN_AARCH64(R"(
-    smstop
-  )");
 
   initialHeapData_.resize(SVL / 4);
   uint32_t* heap32_vert = reinterpret_cast<uint32_t*>(initialHeapData_.data());
@@ -323,9 +296,6 @@ TEST_P(InstSme, zero) {
   CHECK_MAT_COL(ARM64_REG_ZAS1, 3, uint32_t,
                 fillNeon<uint32_t>(
                     {0xDEADBEEF, 0x12345678, 0x98765432, 0xABCDEF01}, SVL / 8));
-  RUN_AARCH64(R"(
-    smstop
-  )");
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstSme,

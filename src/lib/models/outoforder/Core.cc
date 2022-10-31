@@ -329,10 +329,6 @@ void Core::processExceptionHandler() {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
-    if (result.uop) {
-      auto regs = result.uop->getDestinationRegisters();
-      for (auto& reg : regs) dispatchIssueUnit_.setRegisterReady(reg);
-    }
   }
 
   exceptionHandler_ = nullptr;
