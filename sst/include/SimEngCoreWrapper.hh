@@ -99,29 +99,42 @@ class SimEngCoreWrapper : public SST::Component {
    * a custom SST:Component.
    */
   SST_ELI_DOCUMENT_PARAMS(
-      {"simeng_config_path", "Path to SimEng YAML model config file (string)",
+      {"simeng_config_path",
+       "Value which specifies the path to SimEng YAML model config file. "
+       "(string)",
        ""},
       {"executable_path",
-       "Path to executable binary to be run by SimEng (string)", ""},
+       "Value which specifies the path to executable binary to be run by "
+       "SimEng. (string)",
+       ""},
       {"executable_args",
-       "argument to be passed to the executable binary (string)", ""},
-      {"clock", "Clock rate of the SST clock (string)", ""},
-      {"max_addr_memory", "Maximum address that memory can access (int)", ""},
-      {"cache_line_width", "The width of the cache line in bytes. (int)", ""},
-      {"source", "The string of instruction be executed (if any). (string)",
+       "Value which specifies the argument to be passed to the executable "
+       "binary. (string)",
+       ""},
+      {"clock", "Value which specifies clock rate of the SST clock. (string)",
+       ""},
+      {"max_addr_memory",
+       "Value which specifies the maximum address that memory can access. "
+       "(int)",
+       ""},
+      {"cache_line_width",
+       "Value which specifies the width of the cache line in bytes. (int)", ""},
+      {"source",
+       "Value which specifies the string of instructions to be assembled by "
+       "LLVM and executed by SimEng (if any). (string)",
        ""},
       {"assemble_with_source",
        "Value which indicates whether to assemble the instructions supplied "
-       "through the source parameter using LLVM (boolean)",
+       "through the source parameter using LLVM. (boolean)",
        "false"},
       {"heap",
-       "comma separated uint64_t values used to populate the heap. This "
-       "parameter will only be used if assemble_with_source=true",
+       "Value which specifies comma separated uint64_t values used to populate "
+       "the heap. This parameter will only be used if "
+       "assemble_with_source=true. (string)",
        ""},
       {"debug",
-       "Enabling this parameter outputs statistics that can be parsed by the "
-       "testing "
-       "framework",
+       "Value which enables output statistics that can be parsed by the "
+       "testing framework. (boolean)",
        "false"})
 
  private:

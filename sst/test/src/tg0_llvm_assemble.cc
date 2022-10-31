@@ -63,6 +63,6 @@ TEST_CASE(TG0, "Test_asssembly_of_simple_instructions") {
   uint64_t retiredCount = std::stoull(retired.substr(18, len));
   std::cout << "Total instructions retired: " << retiredCount << std::endl;
   // This should be equal to the total number of instructions in the test case.
-  EXPECT_GTE(retiredCount, (uint64_t)37);
+  EXPECT_EQ(retiredCount, (uint64_t)38);
   std::cout << capturedStdout << std::endl;
 }

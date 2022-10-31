@@ -123,7 +123,7 @@ option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
 option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizatoins" OFF)
 option(SIMENG_ENABLE_SST "Compile SimEng SST Wrapper" OFF)
-option(SIMENG_ENABLE_SST_TESTS "Whether to enable testing for sst" OFF)
+option(SIMENG_ENABLE_SST_TESTS "Enable testing for SST" OFF)
 
 if (SIMENG_OPTIMIZE)
   # Turn on link time optimization for all targets.
