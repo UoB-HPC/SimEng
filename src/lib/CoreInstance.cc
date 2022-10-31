@@ -14,7 +14,22 @@ CoreInstance::CoreInstance(std::string configPath, std::string executablePath,
   generateCoreModel(executablePath, executableArgs);
 }
 
-CoreInstance::~CoreInstance() {}
+CoreInstance::CoreInstance(char* assembledSource, size_t sourceSize,
+                           std::string configPath) {
+  config_ = simeng::ModelConfig(configPath).getConfigFile();
+  source_ = assembledSource;
+  sourceSize_ = sourceSize;
+  assembledSource_ = true;
+  // Pass an empty string for executablePath and empty vector of strings for
+  // executableArgs.
+  generateCoreModel("", std::vector<std::string>{});
+}
+
+CoreInstance::~CoreInstance() {
+  if (source_) {
+    delete[] source_;
+  }
+}
 
 void CoreInstance::generateCoreModel(std::string executablePath,
                                      std::vector<std::string> executableArgs) {
@@ -95,6 +110,17 @@ void CoreInstance::createProcess(std::string executablePath,
     if (!process_->isValid()) {
       std::cerr << "[SimEng:CoreInstance] Could not read/parse "
                 << commandLine[0] << std::endl;
+      exit(1);
+    }
+  } else if (assembledSource_) {
+    // Create a process image from the source code assembled by LLVM.
+    process_ = std::make_unique<simeng::kernel::LinuxProcess>(
+        simeng::span<char>(source_, sourceSize_), config_);
+    // Raise error if created process is not valid
+    if (!process_->isValid()) {
+      std::cerr << "[SimEng:CoreInstance] Could not create process based on "
+                   "source assembled by LLVM"
+                << std::endl;
       exit(1);
     }
   } else {
@@ -306,5 +332,9 @@ std::shared_ptr<char> CoreInstance::getProcessImage() const {
 const uint64_t CoreInstance::getProcessImageSize() const {
   return processMemorySize_;
 }
+
+const uint64_t CoreInstance::getHeapStart() const {
+  return process_->getHeapStart();
+};
 
 }  // namespace simeng

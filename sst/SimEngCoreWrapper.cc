@@ -8,12 +8,14 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "Assemble.hh"
+
 using namespace SST::SSTSimEng;
 using namespace SST::Interfaces;
 
 SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     : SST::Component(id) {
-  output_.init("SimEngCoreWrapper[" + getName() + ":@p:@t]:", 999, 0,
+  output_.init("[SSTSimEng:SimEngCoreWrapper] " + getName() + "@p:@l ", 999, 0,
                SST::Output::STDOUT);
   clock_ = registerClock(params.find<std::string>("clock", "1GHz"),
                          new SST::Clock::Handler<SimEngCoreWrapper>(
@@ -25,14 +27,20 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
   simengConfigPath_ = params.find<std::string>("simeng_config_path", "");
   cacheLineWidth_ = params.find<uint64_t>("cache_line_width", "64");
   maxAddrMemory_ = params.find<uint64_t>("max_addr_memory", "0");
+  source_ = params.find<std::string>("source", "");
+  assembleWithSource_ = params.find<bool>("assemble_with_source", false);
+  heapStr_ = params.find<std::string>("heap", "");
+  debug_ = params.find<bool>("debug", false);
 
-  if (executablePath_.length() == 0) {
-    output_.fatal(CALL_INFO, 10, 0,
-                  "SimEng executable binary filepath not provided.");
+  if (executablePath_.length() == 0 && !assembleWithSource_) {
+    output_.verbose(CALL_INFO, 10, 0,
+                    "SimEng executable binary filepath not provided.");
+    std::exit(EXIT_FAILURE);
   }
   if (maxAddrMemory_ == 0) {
-    output_.fatal(CALL_INFO, 10, 0,
-                  "Maximum address range for memory not provided");
+    output_.verbose(CALL_INFO, 10, 0,
+                    "Maximum address range for memory not provided");
+    std::exit(EXIT_FAILURE);
   }
 
   iterations_ = 0;
@@ -44,7 +52,7 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
           this, &SimEngCoreWrapper::handleMemoryEvent));
 
   dataMemory_ = std::make_shared<SimEngMemInterface>(sstMem_, cacheLineWidth_,
-                                                     maxAddrMemory_);
+                                                     maxAddrMemory_, debug_);
 
   handlers_ = new SimEngMemInterface::SimEngMemHandlers(*dataMemory_, &output_);
 
@@ -58,6 +66,9 @@ SimEngCoreWrapper::~SimEngCoreWrapper() {}
 void SimEngCoreWrapper::setup() {
   sstMem_->setup();
   output_.verbose(CALL_INFO, 1, 0, "Memory setup complete\n");
+  // Run Simulation
+  std::cout << "[SimEng] Starting...\n" << std::endl;
+  startTime_ = std::chrono::high_resolution_clock::now();
 }
 
 void SimEngCoreWrapper::handleMemoryEvent(StandardMem::Request* memEvent) {
@@ -81,10 +92,10 @@ void SimEngCoreWrapper::finish() {
   std::cout << "\n";
   auto stats = core_->getStats();
   for (const auto& [key, value] : stats) {
-    std::cout << key << ": " << value << "\n";
+    std::cout << "[SimEng] " << key << ": " << value << "\n";
   }
 
-  std::cout << "\nFinished " << iterations_ << " ticks in " << duration
+  std::cout << "\n[SimEng] Finished " << iterations_ << " ticks in " << duration
             << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
             << mips << " MIPS)" << std::endl;
 }
@@ -100,12 +111,14 @@ void SimEngCoreWrapper::init(unsigned int phase) {
 bool SimEngCoreWrapper::clockTick(SST::Cycle_t current_cycle) {
   // Tick the core and memory interfaces until the program has halted
   if (!core_->hasHalted() || dataMemory_->hasPendingRequests()) {
-    // Tick the core
+    // Tick the data memory.
+    dataMemory_->tick();
+
+    // Tick the core.
     core_->tick();
 
-    // Tick memory
+    // Tick the instruction memory.
     instructionMemory_->tick();
-    dataMemory_->tick();
 
     iterations_++;
 
@@ -151,12 +164,13 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
   bool escapeSingle = false;
   bool escapeDouble = false;
   bool captureEscape = false;
-
+  uint64_t index = 0;
   if (argSize == 0) {
     return args;
   }
 
   for (int x = 0; x < argSize; x++) {
+    index = x;
     bool escaped = escapeDouble || escapeSingle;
     char currChar = trimmedStrArgs.at(x);
     if (captureEscape) {
@@ -212,10 +226,16 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
     }
   }
   if (escapeSingle || escapeDouble) {
-    std::cerr << "Parsing failed: Invalid format - Please make sure all "
-                 "characters/strings are escaped properly."
-              << std::endl;
-    exit(1);
+    std::string err;
+    output_.verbose(CALL_INFO, 1, 0, R"(
+           Parsing failed: Invalid format - Please make sure all
+           characters/strings are escaped properly within a set single or 
+           double quotes. To escape quotes use (\\\) instead of (\).\n
+           )");
+    std::cerr << "Error occured at index " << index
+              << " of the argument string - substring: "
+              << "[ " << str << " ]" << std::endl;
+    std::exit(EXIT_FAILURE);
   }
   args.push_back(str);
   return args;
@@ -223,16 +243,53 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
 
 void SimEngCoreWrapper::fabricateSimEngCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
-
-  // Create the instance of the core to be simulated
   if (simengConfigPath_ != "") {
+#ifdef SIMENG_ENABLE_SST_TESTS
+    if (assembleWithSource_) {
+      output_.verbose(CALL_INFO, 1, 0,
+                      "Assembling source instructions using LLVM\n");
+      Assembler assemble = Assembler(source_);
+      coreInstance_ = std::make_unique<simeng::CoreInstance>(
+          assemble.getAssembledSource(), assemble.getAssembledSourceSize(),
+          simengConfigPath_);
+    } else {
+      coreInstance_ = std::make_unique<simeng::CoreInstance>(
+          simengConfigPath_, executablePath_, executableArgs_);
+    }
+#else
     coreInstance_ = std::make_unique<simeng::CoreInstance>(
         simengConfigPath_, executablePath_, executableArgs_);
+#endif
   } else {
+#ifdef SIMENG_ENABLE_SST_TESTS
+    std::string a64fxConfigPath = std::string(SIMENG_BUILD_DIR) +
+                                  "/simeng-configs/sst-cores/a64fx-sst.yaml";
+    output_.verbose(
+        CALL_INFO, 1, 0,
+        "No config path provided so defaulting to a64fx-sst.yaml\n");
+    if (assembleWithSource_) {
+      output_.verbose(CALL_INFO, 1, 0,
+                      "Assembling source instructions using LLVM\n");
+      Assembler assemble = Assembler(source_);
+      coreInstance_ = std::make_unique<simeng::CoreInstance>(
+          assemble.getAssembledSource(), assemble.getAssembledSourceSize(),
+          a64fxConfigPath);
+    } else {
+      coreInstance_ = std::make_unique<simeng::CoreInstance>(
+          a64fxConfigPath, executablePath_, executableArgs_);
+    }
+#else
     coreInstance_ = std::make_unique<simeng::CoreInstance>(executablePath_,
                                                            executableArgs_);
+#endif
   }
-
+  if (coreInstance_->getSimulationMode() !=
+      simeng::SimulationMode::OutOfOrder) {
+    output_.verbose(CALL_INFO, 1, 0,
+                    "SimEng currently only supports Out-of-Order "
+                    "archetypes with SST.");
+    std::exit(EXIT_FAILURE);
+  }
   // Set the SST data memory SimEng should use
   coreInstance_->setL1DataMemory(dataMemory_);
 
@@ -248,14 +305,29 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   if (maxAddrMemory_ < coreInstance_->getProcessImageSize()) {
     output_.verbose(
         CALL_INFO, 1, 0,
-        "Error: SST backend memory is less than processImage size. Please "
-        "increase the memory allocated to memHierarchy.memBackend and "
+        "Error: SST backend memory is less than processImage size. "
+        "Please increase the memory allocated to memHierarchy.memBackend and "
         "ensure it is consistent with \'max_addr_memory\' and "
         "\'addr_range_end\'. \n");
     primaryComponentOKToEndSim();
     std::exit(EXIT_FAILURE);
   }
-
+// If testing is enabled populate heap if heap values have been specified.
+#ifdef SIMENG_ENABLE_SST_TESTS
+  if (heapStr_ != "") {
+    std::vector<uint8_t> initialHeapData;
+    std::vector<uint64_t> heapVals = splitHeapStr();
+    uint64_t heapSize = heapVals.size() * 8;
+    initialHeapData.resize(heapSize);
+    uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData.data());
+    for (size_t x = 0; x < heapVals.size(); x++) {
+      heap[x] = heapVals[x];
+    }
+    uint64_t heapStart = coreInstance_->getHeapStart();
+    std::copy(initialHeapData.begin(), initialHeapData.end(),
+              coreInstance_->getProcessImage().get() + heapStart);
+  }
+#endif
   // Send the process image data over to the SST memory
   dataMemory_->sendProcessImageToSST(coreInstance_->getProcessImage().get(),
                                      coreInstance_->getProcessImageSize());
@@ -278,8 +350,19 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   for (const auto& arg : executableArgs_) std::cout << " " << arg;
   std::cout << std::endl;
   std::cout << "[SimEng] Config file: " << simengConfigPath_ << std::endl;
+}
 
-  // Run simulation
-  std::cout << "[SimEng] Starting...\n" << std::endl;
-  startTime_ = std::chrono::high_resolution_clock::now();
+std::vector<uint64_t> SimEngCoreWrapper::splitHeapStr() {
+  std::vector<uint64_t> out;
+  std::string acc = "";
+  for (size_t a = 0; a < heapStr_.size(); a++) {
+    if (heapStr_[a] == ',') {
+      out.push_back(static_cast<uint64_t>(std::stoull(acc)));
+      acc = "";
+    } else {
+      acc += heapStr_[a];
+    }
+  }
+  out.push_back(static_cast<uint64_t>(std::stoull(acc)));
+  return out;
 }
