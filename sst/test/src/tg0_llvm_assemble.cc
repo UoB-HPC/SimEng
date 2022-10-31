@@ -59,6 +59,9 @@ TEST_CASE(TG0, "Test_asssembly_of_simple_instructions") {
   }
   // Extract retired instruction count from "retired: <count>" string and cast
   // to uint64_t.
+  // Subtract 18 (length of the prefix: "[SimEng] retired:") from retired string
+  // to obtain the length of the substring containing the numeric value
+  // representing the total number of retired instructions.
   size_t len = retired.length() - 18;
   uint64_t retiredCount = std::stoull(retired.substr(18, len));
   std::cout << "Total instructions retired: " << retiredCount << std::endl;
