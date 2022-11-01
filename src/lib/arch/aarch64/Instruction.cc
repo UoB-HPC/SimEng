@@ -31,33 +31,59 @@ Instruction::Instruction(const Architecture& architecture,
   exceptionEncountered_ = true;
 }
 
+Instruction::Instruction(const Instruction& insn)
+    : architecture_(insn.architecture_), metadata(insn.metadata) {
+  // Parent class variables
+  exceptionEncountered_ = insn.exceptionEncountered_;
+  instructionAddress_ = insn.instructionAddress_;
+  executed_ = insn.executed_;
+  canCommit_ = insn.canCommit_;
+  dataPending_ = insn.dataPending_;
+  prediction_ = insn.prediction_;
+  branchAddress_ = insn.branchAddress_;
+  branchTaken_ = insn.branchTaken_;
+  branchType_ = insn.branchType_;
+  knownTarget_ = insn.knownTarget_;
+  sequenceId_ = insn.sequenceId_;
+  flushed_ = insn.flushed_;
+  latency_ = insn.latency_;
+  lsqExecutionLatency_ = insn.lsqExecutionLatency_;
+  stallCycles_ = insn.stallCycles_;
+  supportedPorts_ = insn.supportedPorts_;
+  isMicroOp_ = insn.isMicroOp_;
+  isLastMicroOp_ = insn.isLastMicroOp_;
+  instructionId_ = insn.instructionId_;
+  waitingCommit_ = insn.waitingCommit_;
+  microOpIndex_ = insn.microOpIndex_;
+  // Child class variables
+  sourceRegisters = insn.sourceRegisters;
+  sourceRegisterCount = insn.sourceRegisterCount;
+  destinationRegisters = insn.destinationRegisters;
+  destinationRegisterCount = insn.destinationRegisterCount;
+  operands = insn.operands;
+  results = insn.results;
+  exception_ = insn.exception_;
+  operandsPending = insn.operandsPending;
+  isScalarData_ = insn.isScalarData_;
+  isVectorData_ = insn.isVectorData_;
+  isSVEData_ = insn.isSVEData_;
+  isSMEData_ = insn.isSMEData_;
+  isNoShift_ = insn.isNoShift_;
+  isLogical_ = insn.isLogical_;
+  isCompare_ = insn.isCompare_;
+  isConvert_ = insn.isConvert_;
+  isMultiply_ = insn.isMultiply_;
+  isDivideOrSqrt_ = insn.isDivideOrSqrt_;
+  isPredicate_ = insn.isPredicate_;
+  isLoad_ = insn.isLoad_;
+  isStoreAddress_ = insn.isStoreAddress_;
+  isStoreData_ = insn.isStoreData_;
+  isBranch_ = insn.isBranch_;
+  microOpcode_ = insn.microOpcode_;
+  dataSize_ = insn.dataSize_;
+}
+
 InstructionException Instruction::getException() const { return exception_; }
-
-void Instruction::setSourceRegisters(const std::vector<Register>& registers) {
-  assert(registers.size() <= MAX_SOURCE_REGISTERS &&
-         "Exceeded maximum source registers for an AArch64 instruction");
-
-  sourceRegisterCount = registers.size();
-  operandsPending = registers.size();
-
-  for (size_t i = 0; i < registers.size(); i++) {
-    auto reg = registers[i];
-    if (reg == Instruction::ZERO_REGISTER) {
-      // Any zero-register references should be marked as ready, and
-      //  the corresponding operand value zeroed
-      operands[i] = RegisterValue(0, 8);
-      operandsPending--;
-    }
-    sourceRegisters[i] = reg;
-  }
-}
-void Instruction::setDestinationRegisters(
-    const std::vector<Register>& registers) {
-  assert(registers.size() <= MAX_DESTINATION_REGISTERS &&
-         "Exceeded maximum destination registers for an AArch64 instruction");
-  destinationRegisterCount = registers.size();
-  std::copy(registers.begin(), registers.end(), destinationRegisters.begin());
-}
 
 const span<Register> Instruction::getOperandRegisters() const {
   return {const_cast<Register*>(sourceRegisters.data()), sourceRegisterCount};
@@ -168,6 +194,8 @@ uint16_t Instruction::getGroup() const {
     base = InstructionGroups::VECTOR;
   else if (isSVEData_)
     base = InstructionGroups::SVE;
+  else if (isSMEData_)
+    base = InstructionGroups::SME;
 
   if (isLoad_) return base + 10;
   if (isStoreAddress_) return base + 11;
@@ -204,6 +232,10 @@ const std::vector<uint16_t>& Instruction::getSupportedPorts() {
 }
 
 const InstructionMetadata& Instruction::getMetadata() const { return metadata; }
+
+const Architecture& Instruction::getArchitecture() const {
+  return architecture_;
+}
 
 /** Extend `value` according to `extendType`, and left-shift the result by
  * `shift` */

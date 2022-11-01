@@ -47,8 +47,9 @@ void ModelConfig::validate() {
   std::string root = "";
   // Core
   root = "Core";
-  subFields = {"Simulation-Mode", "Clock-Frequency", "Timer-Frequency",
-               "Micro-Operations", "Vector-Length"};
+  subFields = {"Simulation-Mode", "Clock-Frequency",
+               "Timer-Frequency", "Micro-Operations",
+               "Vector-Length",   "Streaming-Vector-Length"};
   nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
@@ -60,6 +61,10 @@ void ModelConfig::validate() {
   nodeChecker<bool>(configFile_[root][subFields[3]], subFields[3],
                     std::make_pair(false, true), ExpectedValue::Bool, false);
   nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
+                        {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
+                         1408, 1536, 1664, 1792, 1920, 2048},
+                        ExpectedValue::UInteger, 512);
+  nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
                         {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
                          1408, 1536, 1664, 1792, 1920, 2048},
                         ExpectedValue::UInteger, 512);
@@ -318,7 +323,7 @@ void ModelConfig::validate() {
   // Register-Set
   root = "Register-Set";
   subFields = {"GeneralPurpose-Count", "FloatingPoint/SVE-Count",
-               "Predicate-Count", "Conditional-Count"};
+               "Predicate-Count", "Conditional-Count", "MatrixRow-Count"};
   nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
                         std::make_pair(32, UINT16_MAX),
                         ExpectedValue::UInteger);
@@ -330,6 +335,12 @@ void ModelConfig::validate() {
                         17);
   nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
                         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
+  nodeChecker<uint16_t>(
+      configFile_[root][subFields[4]], subFields[4],
+      std::make_pair(
+          configFile_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8,
+          UINT16_MAX),
+      ExpectedValue::UInteger, 128);
   subFields.clear();
 
   // Queue-Sizes
@@ -616,7 +627,21 @@ void ModelConfig::createGroupMapping() {
                    "STORE_ADDRESS",
                    "STORE_DATA",
                    "STORE",
-                   "BRANCH"};
+                   "BRANCH",
+                   "SME",
+                   "SME_SIMPLE",
+                   "SME_SIMPLE_ARTH",
+                   "SME_SIMPLE_ARTH_NOSHIFT",
+                   "SME_SIMPLE_LOGICAL",
+                   "SME_SIMPLE_LOGICAL_NOSHIFT",
+                   "SME_SIMPLE_CMP",
+                   "SME_SIMPLE_CVT",
+                   "SME_MUL",
+                   "SME_DIV_OR_SQRT",
+                   "LOAD_SME",
+                   "STORE_ADDRESS_SME",
+                   "STORE_DATA_SME",
+                   "STORE_SME"};
   // AARCH64 instruction group namespace contains a set of contiguous assigned
   // uint16_t start from 0. Therefore the index of each groupOptions_ entry is
   // also its aarch64::InstructionGroups value (assuming groupOptions_ is

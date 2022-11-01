@@ -11,8 +11,7 @@ class logicalHelp {
    * T represents the type of operands (e.g. for xn, T = int64_t).
    * Returns single value of type T. */
   template <typename T>
-  static T asrv_3gpr(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static T asrv_3gpr(std::vector<RegisterValue>& operands) {
     const T n = operands[0].get<T>();
     const T m = operands[1].get<typename std::make_unsigned<T>::type>();
     return n >> (m % (sizeof(T) * 8));
@@ -24,7 +23,7 @@ class logicalHelp {
    * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> bicShift_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       bool calcNZCV) {
     const T x = operands[0].get<T>();
@@ -45,7 +44,7 @@ class logicalHelp {
    * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> logicOp_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata, bool calcNZCV,
       std::function<T(T, T)> func) {
     const T n = operands[0].get<T>();
@@ -63,7 +62,7 @@ class logicalHelp {
    * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> logicOpShift_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata, bool calcNZCV,
       std::function<T(T, T)> func) {
     const T n = operands[0].get<T>();
@@ -81,9 +80,8 @@ class logicalHelp {
    * T represents the type of operands (e.g. for xn, T = uint64_t).
    * Returns single value of type uint64_t. */
   template <typename T>
-  static uint64_t logicalShiftLR_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      bool isLSL) {
+  static uint64_t logicalShiftLR_3ops(std::vector<RegisterValue>& operands,
+                                      bool isLSL) {
     const T n = operands[0].get<T>();
     const T m = operands[1].get<T>() & ((sizeof(T) * 8) - 1);
     uint64_t result = static_cast<uint64_t>(isLSL ? n << m : n >> m);
@@ -94,8 +92,7 @@ class logicalHelp {
    * T represents the type of operands (e.g. for xn, T = uint64_t).
    * Returns single value of type T. */
   template <typename T>
-  static T rorv_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static T rorv_3ops(std::vector<RegisterValue>& operands) {
     const T n = operands[0].get<T>();
     const T m = operands[1].get<T>();
 

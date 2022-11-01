@@ -30,6 +30,37 @@ void Instruction::executionNYI() {
 void Instruction::executionINV() {
   exceptionEncountered_ = true;
   exception_ = InstructionException::EncodingUnallocated;
+  return;
+}
+
+void Instruction::streamingModeUpdated() {
+  exceptionEncountered_ = true;
+  exception_ = InstructionException::StreamingModeUpdate;
+  return;
+}
+
+void Instruction::zaRegisterStatusUpdated() {
+  exceptionEncountered_ = true;
+  exception_ = InstructionException::ZAregisterStatusUpdate;
+  return;
+}
+
+void Instruction::SMZAupdated() {
+  exceptionEncountered_ = true;
+  exception_ = InstructionException::SMZAUpdate;
+  return;
+}
+
+void Instruction::ZAdisabled() {
+  exceptionEncountered_ = true;
+  exception_ = InstructionException::ZAdisabled;
+  return;
+}
+
+void Instruction::SMdisabled() {
+  exceptionEncountered_ = true;
+  exception_ = InstructionException::SMdisabled;
+  return;
 }
 
 void Instruction::execute() {
@@ -37,7 +68,14 @@ void Instruction::execute() {
   assert(
       canExecute() &&
       "Attempted to execute an instruction before all operands were provided");
-  const uint16_t VL_bits = architecture_.getVectorLength();
+  // 0th bit of SVCR register determins if streaming-mode is enabled.
+  const bool SMenabled = architecture_.getSVCRval() & 1;
+  // 1st bit of SVCR register determins if ZA register is enabled.
+  const bool ZAenabled = architecture_.getSVCRval() & 2;
+  // When streaming mode is enabled, the architectural vector length goes from
+  // SVE's VL to SME's SVL.
+  const uint16_t VL_bits = SMenabled ? architecture_.getStreamingVectorLength()
+                                     : architecture_.getVectorLength();
   executed_ = true;
   if (isMicroOp_) {
     switch (microOpcode_) {
@@ -1189,6 +1227,10 @@ void Instruction::execute() {
         results[0] = sveHelp::sveFaddaPredicated<double>(operands, VL_bits);
         break;
       }
+      case Opcode::AArch64_FADDA_VPZ_S: {  // fadda sd, pg/m, sn, zm.s
+        results[0] = sveHelp::sveFaddaPredicated<float>(operands, VL_bits);
+        break;
+      }
       case Opcode::AArch64_FADDDrr: {  // fadd dd, dn, dm
         results[0] = {arithmeticHelp::add_3ops<double>(operands), 256};
         break;
@@ -1684,6 +1726,16 @@ void Instruction::execute() {
         results[0] = neonHelp::vecFmla_3vecs<float, 2>(operands);
         break;
       }
+      case Opcode::AArch64_FMLA_ZZZI_D: {  // fmla zda.d, zn.d, zm.d[index]
+        results[0] =
+            sveHelp::sveMlaIndexed_vecs<double>(operands, metadata, VL_bits);
+        break;
+      }
+      case Opcode::AArch64_FMLA_ZZZI_S: {  // fmla zda.s, zn.s, zm.s[index]
+        results[0] =
+            sveHelp::sveMlaIndexed_vecs<float>(operands, metadata, VL_bits);
+        break;
+      }
       case Opcode::AArch64_FMLAv2f64: {  // fmla vd.2d, vn.2d, vm.2d
         results[0] = neonHelp::vecFmla_3vecs<double, 2>(operands);
         break;
@@ -1735,6 +1787,37 @@ void Instruction::execute() {
                                                  // vm.s[index]
         results[0] =
             neonHelp::vecFmlsIndexed_3vecs<float, 4>(operands, metadata);
+        break;
+      }
+      case Opcode::AArch64_FMOPA_MPPZZ_S: {  // fmopa zada.s, pn/m, pm/m, zn.s,
+                                             // zm.s
+        // SME
+        // Check core is in correct context mode (check SM first)
+        if (!SMenabled) return SMdisabled();
+        if (!ZAenabled) return ZAdisabled();
+
+        const uint16_t rowCount = VL_bits / 32;
+        const uint64_t* pn = operands[rowCount].getAsVector<uint64_t>();
+        const uint64_t* pm = operands[rowCount + 1].getAsVector<uint64_t>();
+        const float* zn = operands[rowCount + 2].getAsVector<float>();
+        const float* zm = operands[rowCount + 3].getAsVector<float>();
+
+        // zn is row, zm is col
+        for (int row = 0; row < rowCount; row++) {
+          float outRow[64] = {0};
+          uint64_t shifted_active_row = 1ull << ((row % 16) * 4);
+          const float* zadaRow = operands[row].getAsVector<float>();
+          for (int col = 0; col < rowCount; col++) {
+            float zadaElem = zadaRow[col];
+            uint64_t shifted_active_col = 1ull << ((col % 16) * 4);
+            if ((pm[col / 16] & shifted_active_col) &&
+                (pn[row / 16] & shifted_active_row))
+              outRow[col] = zadaElem + (zn[row] * zm[col]);
+            else
+              outRow[col] = zadaElem;
+          }
+          results[row] = {outRow, 256};
+        }
         break;
       }
       case Opcode::AArch64_FMOVDXHighr: {  // fmov xd, vn.d[1]
@@ -1965,6 +2048,14 @@ void Instruction::execute() {
             sveHelp::sveFrintnPredicated<int32_t, float>(operands, VL_bits);
         break;
       }
+      case Opcode::AArch64_FRINTPDr: {  // frintp dd, dn
+        results[0] = floatHelp::frintpScalar_2ops<double>(operands);
+        break;
+      }
+      case Opcode::AArch64_FRINTPSr: {  // frintp sd, sn
+        results[0] = floatHelp::frintpScalar_2ops<float>(operands);
+        break;
+      }
       case Opcode::AArch64_FRSQRTEv1i32: {  // frsqrte sd, sn
         results[0] = neonHelp::vecFrsqrte_2ops<float, 1>(operands);
         break;
@@ -2153,6 +2244,24 @@ void Instruction::execute() {
         results[0] = {out, 256};
         break;
       }
+      case Opcode::AArch64_GLD1W_D_SCALED_REAL: {  // ld1w {zd.d}, pg/z,
+                                                   // [<xn|sp>, zm.d, lsl #2]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+
+        const uint16_t partition_num = VL_bits / 64;
+        uint64_t out[32] = {0};
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 8) * 8);
+          if (p[i / 8] & shifted_active) {
+            out[i] = static_cast<uint64_t>(memoryData[index].get<uint32_t>());
+            index++;
+          }
+        }
+        results[0] = {out, 256};
+        break;
+      }
       case Opcode::AArch64_HINT: {  // nop|yield|wfe|wfi|etc...
         // TODO: Observe hints
         break;
@@ -2313,6 +2422,72 @@ void Instruction::execute() {
                                                                       metadata);
         break;
       }
+      case Opcode::AArch64_LD1_MXIPXX_H_S: {  // ld1w {zath.s[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, LSL #2}]
+        // SME, LOAD
+        if (!ZAenabled) {
+          // Not in right context mode. Raise exception
+          return ZAdisabled();
+        }
+        const uint16_t partition_num = VL_bits / 32;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+        uint16_t index = 0;
+        uint32_t out[64] = {0};
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (pg[i / 16] & shifted_active) {
+            out[i] = memoryData[index].get<uint32_t>();
+            index++;
+          } else {
+            out[i] = 0;
+          }
+        }
+
+        // All Slice vectors are added to results[] so need to update the
+        // correct one
+        for (int i = 0; i < partition_num; i++) {
+          if (i == sliceNum)
+            results[i] = {out, 256};
+          else
+            // Maintain un-updated rows.
+            results[i] = operands[i];
+        }
+        break;
+      }
+      case Opcode::AArch64_LD1_MXIPXX_V_S: {  // ld1w {zatv.s[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, LSL #2}]
+        // SME, LOAD
+        if (!ZAenabled) {
+          // Not in right context mode. Raise exception
+          return ZAdisabled();
+        }
+        const uint16_t partition_num = VL_bits / 32;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint32_t* row =
+              const_cast<uint32_t*>(operands[i].getAsVector<uint32_t>());
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (pg[i / 16] & shifted_active) {
+            row[sliceNum] = memoryData[index].get<uint32_t>();
+            index++;
+          } else {
+            row[sliceNum] = 0;
+          }
+          results[i] = RegisterValue(reinterpret_cast<char*>(row), 256);
+        }
+        break;
+      }
       case Opcode::AArch64_LD1B: {  // ld1b  {zt.b}, pg/z, [xn, xm]
         // LOAD
         const uint64_t* p = operands[0].getAsVector<uint64_t>();
@@ -2447,6 +2622,32 @@ void Instruction::execute() {
         for (int i = 0; i < (partition_num / 2); i++) {
           out[2 * i] = mini[0];
           out[(2 * i) + 1] = mini[1];
+        }
+        results[0] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_LD1RQ_W_IMM: {  // ld1rqw {zd.s}, pg/z, [xn{, #imm}]
+        // LOAD
+        const uint64_t* p = operands[0].getAsVector<uint64_t>();
+        const uint16_t partition_num = VL_bits / 32;
+        uint32_t out[64] = {0};
+        uint16_t index = 0;
+
+        // Get mini-vector (quadword)
+        uint32_t mini[4] = {0};
+        for (int i = 0; i < 4; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (p[i / 16] & shifted_active)
+            mini[i] = memoryData[index].get<uint32_t>();
+          index++;
+        }
+
+        // Duplicate mini-vector into output vector
+        for (int i = 0; i < (partition_num / 4); i++) {
+          out[4 * i] = mini[0];
+          out[(4 * i) + 1] = mini[1];
+          out[(4 * i) + 2] = mini[2];
+          out[(4 * i) + 3] = mini[3];
         }
         results[0] = {out, 256};
         break;
@@ -3332,7 +3533,7 @@ void Instruction::execute() {
         results[0] = operands[0];
         break;
       }
-      case Opcode::AArch64_MSR: {  // mrs (systemreg|Sop0_op1_Cn_Cm_op2), xt
+      case Opcode::AArch64_MSR: {  // msr (systemreg|Sop0_op1_Cn_Cm_op2), xt
         results[0] = operands[0];
         break;
       }
@@ -3343,6 +3544,26 @@ void Instruction::execute() {
       case Opcode::AArch64_MSUBXrrr: {  // msub xd, xn, xm, xa
         results[0] = multiplyHelp::msub_4ops<uint64_t>(operands);
         break;
+      }
+      case Opcode::AArch64_MSRpstatesvcrImm1: {  // msr svcr<sm|za|smza>, #imm
+        // This instruction is always used by SMSTART and SMSTOP aliases.
+        const uint64_t svcrBits =
+            static_cast<uint64_t>(metadata.operands[0].svcr);
+        const uint8_t imm = metadata.operands[1].imm;
+
+        // Changing value of SM or ZA bits in SVCR zeros out vector, predicate,
+        // and ZA registers. Raise an exception to do this.
+        switch (svcrBits) {
+          case ARM64_SVCR_SVCRSM:
+            return streamingModeUpdated();
+          case ARM64_SVCR_SVCRZA:
+            return zaRegisterStatusUpdated();
+          case ARM64_SVCR_SVCRSMZA:
+            return SMZAupdated();
+          default:
+            // Invalid instruction
+            return executionINV();
+        }
       }
       case Opcode::AArch64_MUL_ZPmZ_B: {  // mul zdn.b, pg/m, zdn.b, zm.b
         results[0] = sveHelp::sveMulPredicated<uint8_t>(operands, metadata,
@@ -3466,6 +3687,22 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_PRFMui: {  // prfm op, [xn, xm{, extend{, #amount}}]
+        break;
+      }
+      case Opcode::AArch64_PSEL_PPPRI_B: {  // psel pd, pn, pm.b[wa, #imm]
+        results[0] = sveHelp::svePsel<uint8_t>(operands, metadata);
+        break;
+      }
+      case Opcode::AArch64_PSEL_PPPRI_D: {  // psel pd, pn, pm.d[wa, #imm]
+        results[0] = sveHelp::svePsel<uint64_t>(operands, metadata);
+        break;
+      }
+      case Opcode::AArch64_PSEL_PPPRI_H: {  // psel pd, pn, pm.h[wa, #imm]
+        results[0] = sveHelp::svePsel<uint16_t>(operands, metadata);
+        break;
+      }
+      case Opcode::AArch64_PSEL_PPPRI_S: {  // psel pd, pn, pm.s[wa, #imm]
+        results[0] = sveHelp::svePsel<uint32_t>(operands, metadata);
         break;
       }
       case Opcode::AArch64_PTEST_PP: {  // ptest pg, pn.b
@@ -3868,6 +4105,57 @@ void Instruction::execute() {
             index++;
           }
         }
+        break;
+      }
+      case Opcode::AArch64_ST1_MXIPXX_H_S: {  // st1w {zath.s[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, LSL #2}]
+        // SME, STORE
+        if (!ZAenabled) {
+          // Not in right context mode. Raise exception
+          return ZAdisabled();
+        }
+        const uint16_t partition_num = VL_bits / 32;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+
+        const uint32_t* tileSlice = operands[sliceNum].getAsVector<uint32_t>();
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (pg[i / 16] & shifted_active) {
+            memoryData[index] = tileSlice[i];
+            index++;
+          }
+        }
+        break;
+      }
+      case Opcode::AArch64_ST1_MXIPXX_V_S: {  // st1w {zatv.s[ws, #imm]}, pg/z,
+                                              // [<xn|sp>{, xm, LSL #2}]
+        // SME, STORE
+        if (!ZAenabled) {
+          // Not in right context mode. Raise exception
+          return ZAdisabled();
+        }
+        const uint16_t partition_num = VL_bits / 32;
+        const uint32_t ws = operands[partition_num].get<uint32_t>();
+        const uint64_t* pg =
+            operands[partition_num + 1].getAsVector<uint64_t>();
+
+        const uint32_t sliceNum =
+            (ws + metadata.operands[0].sme_index.disp) % partition_num;
+        uint16_t index = 0;
+        for (int i = 0; i < partition_num; i++) {
+          uint64_t shifted_active = 1ull << ((i % 16) * 4);
+          if (pg[i / 16] & shifted_active) {
+            memoryData[index] = operands[i].getAsVector<uint32_t>()[sliceNum];
+            index++;
+          }
+        }
+
         break;
       }
       case Opcode::AArch64_SST1W_D_IMM: {  // st1w {zt.d}, pg, [zn.d{, #imm}]
@@ -4947,6 +5235,34 @@ void Instruction::execute() {
         results[1] = output;
         break;
       }
+      case Opcode::AArch64_WHILELT_PXX_B: {  // whilelt pd.b, xn, xm
+        auto [output, nzcv] =
+            sveHelp::sveWhilelo<int64_t, int8_t>(operands, VL_bits, true);
+        results[0] = nzcv;
+        results[1] = output;
+        break;
+      }
+      case Opcode::AArch64_WHILELT_PXX_D: {  // whilelt pd.d, xn, xm
+        auto [output, nzcv] =
+            sveHelp::sveWhilelo<int64_t, int64_t>(operands, VL_bits, true);
+        results[0] = nzcv;
+        results[1] = output;
+        break;
+      }
+      case Opcode::AArch64_WHILELT_PXX_H: {  // whilelt pd.h, xn, xm
+        auto [output, nzcv] =
+            sveHelp::sveWhilelo<int64_t, int16_t>(operands, VL_bits, true);
+        results[0] = nzcv;
+        results[1] = output;
+        break;
+      }
+      case Opcode::AArch64_WHILELT_PXX_S: {  // whilelt pd.s, xn, xm
+        auto [output, nzcv] =
+            sveHelp::sveWhilelo<int64_t, int32_t>(operands, VL_bits, true);
+        results[0] = nzcv;
+        results[1] = output;
+        break;
+      }
       case Opcode::AArch64_XPACLRI: {  // xpaclri
         // SimEng doesn't support PAC, so do nothing
         break;
@@ -5009,6 +5325,17 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_ZIP2_ZZZ_S: {  // zip2 zd.s, zn.s, zm.s
         results[0] = sveHelp::sveZip_vecs<uint32_t>(operands, VL_bits, true);
+        break;
+      }
+      case Opcode::AArch64_ZERO_M: {  // zero {mask}
+        // SME
+        if (!ZAenabled) {
+          // Not in right context mode. Raise exception
+          return ZAdisabled();
+        }
+        for (int i = 0; i < destinationRegisterCount; i++) {
+          results[i] = RegisterValue(0, 256);
+        }
         break;
       }
       default:

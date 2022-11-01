@@ -13,18 +13,22 @@ macro(FetchContent_MakeAvailable_Args NAME ARGS)
     endif()
 endmacro()
 
+# Need an additional macro for LLVM as a sub-directory needs to be targeted for llvm-14.0.5
+macro(FetchContent_MakeAvailable_SubDir_Args NAME SUBDIR ARGS)
+    FetchContent_GetProperties(${NAME})
+    if(NOT ${NAME}_POPULATED)
+        FetchContent_Populate(${NAME})
+        add_subdirectory(${${NAME}_SOURCE_DIR}/${SUBDIR}/ ${${NAME}_BINARY_DIR} ${ARGS})
+    endif()
+endmacro()
+
 # we don't use git for LLVM here as it clones the entire LLVM repo which takes too long and we only need a small part of it
 
 FetchContent_Declare(
   llvm
-  URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-12.0.0/llvm-12.0.0.src.tar.xz
-  URL_HASH MD5=ceab21c9081e122a88d82216a80d0dc0
+  URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.5/llvm-14.0.5.src.tar.xz
+  URL_HASH MD5=6bd202e403d950c78985048ce499a518
 )
-
-# FetchContent_Declare(
-#   llvm
-#   URL      https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/llvm-9.0.1.src.tar.xz
-# )
 
 FetchContent_Declare(
   googletest
@@ -46,7 +50,7 @@ FetchContent_Declare(
 FetchContent_Declare(
   capstone-lib
   GIT_REPOSITORY https://github.com/UoB-HPC/capstone.git
-  GIT_TAG Armv9.2-update
+  GIT_TAG next
   GIT_PROGRESS TRUE
 
   # Old Git tag pre-Armv9.2
@@ -148,8 +152,13 @@ if(SIMENG_ENABLE_TESTS)
     find_package(LLVM REQUIRED CONFIG NO_CMAKE_BUILDS_PATH)
 
       # Check LLVM version
-    if (${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0")
-      message(FATAL_ERROR "LLVM version must be >= 8.0")
+    if ((${LLVM_PACKAGE_VERSION} VERSION_LESS "8.0") OR (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "14.1"))
+      message(FATAL_ERROR "LLVM version must be >= 8.0 and <= 14.0")
+    endif()
+
+      # Print message containing if the full test suite will run
+    if (${LLVM_PACKAGE_VERSION} VERSION_LESS "14.0")
+      message(STATUS "LLVM version does not support AArch64 extensions SME or SVE2. These test suites will be skipped.")
     endif()
 
   else()
@@ -178,7 +187,7 @@ if(SIMENG_ENABLE_TESTS)
     set(LLVM_INSTALL_UTILS OFF)
 
     # XXX all LLVM specific cmake variables must be set BEFORE FetchContent_MakeAvailable otherwise they have no effect
-    FetchContent_MakeAvailable_Args(llvm EXCLUDE_FROM_ALL)
+    FetchContent_MakeAvailable_SubDir_Args(llvm llvm-14.0.5.src EXCLUDE_FROM_ALL)
     # make sure we get the headers too
     include_directories("${llvm_BINARY_DIR}/include" "${llvm_SOURCE_DIR}/include")
 
@@ -188,11 +197,6 @@ if(SIMENG_ENABLE_TESTS)
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
     # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
 
-  endif()
-
-  # Check LLVM version
-  if ((${LLVM_PACKAGE_VERSION} VERSION_LESS "9.0") OR (${LLVM_PACKAGE_VERSION} VERSION_GREATER_EQUAL "13.0"))
-    message(FATAL_ERROR "LLVM version must be >= 9.0 and < 13.0")
   endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")

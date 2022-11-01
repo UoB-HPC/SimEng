@@ -11,8 +11,7 @@ class floatHelp {
    * T represents the type of operands (e.g. for sd T = float).
    * Returns correctly formatted RegisterValue. */
   template <typename T>
-  static RegisterValue fabd_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static RegisterValue fabd_3ops(std::vector<RegisterValue>& operands) {
     const T n = operands[0].get<T>();
     const T m = operands[1].get<T>();
     return {std::fabs(n - m), 256};
@@ -22,8 +21,7 @@ class floatHelp {
    * T represents the type of operands (e.g. for sd T = float).
    * Returns correctly formatted RegisterValue. */
   template <typename T>
-  static RegisterValue fabs_2ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static RegisterValue fabs_2ops(std::vector<RegisterValue>& operands) {
     const T n = operands[0].get<T>();
     return {std::fabs(n), 256};
   }
@@ -34,7 +32,7 @@ class floatHelp {
    * Returns single value of type uint8_t. */
   template <typename T>
   static uint8_t fccmp(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
       T a = operands[1].get<T>();
@@ -57,9 +55,7 @@ class floatHelp {
    * T represents the type of operands (e.g. for sn T = float).
    * Returns single value of type uint8_t. */
   template <typename T>
-  static uint8_t fcmp(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      bool useImm) {
+  static uint8_t fcmp(std::vector<RegisterValue>& operands, bool useImm) {
     T a = operands[0].get<T>();
     // Dont need to fetch imm as will always be 0.0
     T b = useImm ? 0 : operands[1].get<T>();
@@ -78,8 +74,7 @@ class floatHelp {
    * T represents the type of operands (e.g. for sd T = float).
    * Returns correctly formatted RegisterValue. */
   template <typename T>
-  static RegisterValue fmaxnm_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static RegisterValue fmaxnm_3ops(std::vector<RegisterValue>& operands) {
     const T n = operands[0].get<T>();
     const T m = operands[1].get<T>();
     return {std::fmax(n, m), 256};
@@ -89,8 +84,7 @@ class floatHelp {
    * T represents the type of operands (e.g. for sd T = float).
    * Returns correctly formatted RegisterValue. */
   template <typename T>
-  static RegisterValue fminnm_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static RegisterValue fminnm_3ops(std::vector<RegisterValue>& operands) {
     const T n = operands[0].get<T>();
     const T m = operands[1].get<T>();
     return {std::fmin(n, m), 256};
@@ -101,8 +95,7 @@ class floatHelp {
    * T represents the type of operands (e.g. for sd T = float).
    * Returns correctly formatted RegisterValue. */
   template <typename T>
-  static RegisterValue fnmsub_4ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static RegisterValue fnmsub_4ops(std::vector<RegisterValue>& operands) {
     T n = operands[0].get<T>();
     T m = operands[1].get<T>();
     T a = operands[2].get<T>();
@@ -114,12 +107,30 @@ class floatHelp {
    * T represents the type of operands (e.g. for sd T = float).
    * Returns correctly formatted RegisterValue. */
   template <typename T>
-  static RegisterValue fnmadd_4ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static RegisterValue fnmadd_4ops(std::vector<RegisterValue>& operands) {
     T n = operands[0].get<T>();
     T m = operands[1].get<T>();
     T a = operands[2].get<T>();
     return {std::fma(-n, m, -a), 256};
+  }
+
+  /** Helper function for NEON instructions with the format `frintp rd, rn`.
+   * T represents the type of operands (e.g. for dd T = double).
+   * Returns correctly formatted RegisterValue. */
+  template <typename T>
+  static RegisterValue frintpScalar_2ops(std::vector<RegisterValue>& operands) {
+    T n = operands[0].get<T>();
+
+    // Merge always = false due to assumption that FPCR.nep bit = 0
+    // (In SimEng the value of this register is not manually set)
+    T out = 0;
+    // Input of Infinity or 0 gives output of the same sign
+    if (n == 0.0 || n == -0.0 || n == INFINITY || n == -INFINITY)
+      out = n;
+    else
+      out = std::ceil(n);
+
+    return {out, 256};
   }
 
   /** Helper function for NEON instructions with the format `scvtf rd,
@@ -130,7 +141,7 @@ class floatHelp {
    * Returns correctly formated RegisterValue. */
   template <typename D, typename N>
   static RegisterValue scvtf_FixedPoint(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     N n = operands[0].get<N>();
     const uint8_t fbits = metadata.operands[2].imm;

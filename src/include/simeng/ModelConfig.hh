@@ -16,12 +16,13 @@
 
 #define DEFAULT_CONFIG                                                         \
   ("{Core: {Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5, "         \
-   "Timer-Frequency: 100, Micro-Operations: True, Vector-Length: 512}, "       \
-   "Fetch: {Fetch-Block-Size: 32, Loop-Buffer-Size: 64, "                      \
-   "Loop-Detection-Threshold: 4}, Process-Image: {Heap-Size: 10485760, "       \
-   "Stack-Size: 1048576}, Register-Set: {GeneralPurpose-Count: 154, "          \
-   "FloatingPoint/SVE-Count: 90, Predicate-Count: 17, Conditional-Count: "     \
-   "128}, Pipeline-Widths: {Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "      \
+   "Timer-Frequency: 100, Micro-Operations: True, Vector-Length: 512, "        \
+   "Streaming-Vector-Length: 512}, Fetch: {Fetch-Block-Size: 32, "             \
+   "Loop-Buffer-Size: 64, Loop-Detection-Threshold: 4}, Process-Image: "       \
+   "{Heap-Size: 10485760, Stack-Size: 1048576}, Register-Set: "                \
+   "{GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "                 \
+   "Predicate-Count: 17, Conditional-Count: 128, MatrixRow-Count: 128}, "      \
+   "Pipeline-Widths: {Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "            \
    "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "          \
    "{BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, Global-History-Length: 10, "  \
    "RAS-entries: 5, Fallback-Static-Predictor: 2}, L1-Data-Memory: "           \
