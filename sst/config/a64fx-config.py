@@ -136,7 +136,7 @@ l2cache.addParams({
       "associativity" : A64FX_SA_L2,
       "cache_line_size" : A64FX_CLW,
       "cache_size" : A64FX_L2_SIZE,
-      "debug" : DEBUG_L1,
+      "debug" : DEBUG_L2,
       "debug_level" : DEBUG_LEVEL,
       "coherence_protocol": A64FX_COHP,
       "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
@@ -156,6 +156,7 @@ replacement_policy_l2 = l2cache.setSubcomponent("replacement", "memHierarchy.rep
 memory_controller = sst.Component("a64fx.memorycontroller", "memHierarchy.MemController")
 memory_controller.addParams({
       "clock": A64FX_CLOCK,
+      "backend.access_time": A64FX_MEM_ACCESS,
       "request_width": A64FX_MEMTOL2_PCMG_TPUT,
       "debug": DEBUG_MEM,
       "debug_level": DEBUG_LEVEL,
@@ -171,3 +172,16 @@ memory_backend.addParams({
 })
 
 # ----------------------------------- Memory Backend & Controller -------------------------------------
+
+
+# ---------------------------------------------- Links ------------------------------------------------
+
+link_cpu_l1cache = sst.Link("link_cpu_l1cache_link")
+link_cpu_l1cache.connect( (interface, "port", "0ps"), (l1cache, "high_network_0", "0ps") )
+link_l1cache_l2cache = sst.Link("link_l1cache_l2cache_link")
+link_l1cache_l2cache.connect( (l1cache, "low_network_0", "0ps"), (l2cache, "high_network_0", "0ps") )
+link_mem_bus = sst.Link("link_mem_bus_link")
+link_mem_bus.connect( (l2cache, "low_network_0", "0ps"), (memory_controller, "direct_link", "0ps") )
+
+# ---------------------------------------------- Links ------------------------------------------------
+
