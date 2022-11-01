@@ -59,7 +59,7 @@ A64FX_CACHE_TYPE = "inclusive"
 # Throughput of L1 to L2 per core in A64FX. (bytes per cycle)
 A64FX_L1TOL2_PC_TPUT = "32B"
 # Throughput of L1 to CPU per core in A64FX. Value of 0 indicates infinity. (bytes per cycle)
-A64FX_L1TOCPU_PC_TPUT = "0B"
+A64FX_L1TOCPU_PC_TPUT = "128B"
 # Throughput of L2 to Memory per CMG in A64FX. (bytes per cycle)
 A64FX_L2TOMEM_PCMG_TPUT = "64B"
 # Throughput of L2 to L1 per core in A64FX. (bytes per cycle)
