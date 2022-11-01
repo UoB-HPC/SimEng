@@ -10,11 +10,12 @@
 using namespace SST::SSTSimEng;
 
 SimEngMemInterface::SimEngMemInterface(StandardMem* mem, uint64_t cl,
-                                       uint64_t max_addr)
+                                       uint64_t max_addr, bool debug)
     : simeng::MemoryInterface() {
   this->sstMem_ = mem;
   this->cacheLineWidth_ = cl;
   this->maxAddrMemory_ = max_addr;
+  this->debug_ = debug;
 };
 
 void SimEngMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
@@ -168,6 +169,15 @@ void SimEngMemInterface::requestRead(const MemoryAccessTarget& target,
   AggregateReadRequest* aggrReq = new AggregateReadRequest(target, requestId);
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateReadRequest>(aggrReq, addrStart, addrEnd, size);
+  // SST output data parsed by the testing framework.
+  // Format:
+  // [SSTSimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
+  // -cycle-<cycle count>-split-<number of requests>
+  if (debug_) {
+    std::cout << "[SSTSimEng:SSTDebug] MemRead"
+              << "-read-request-" << requestId << "-cycle-" << tickCounter_
+              << "-split-" << requests.size() << std::endl;
+  }
   for (StandardMem::Request* req : requests) {
     sstMem_->send(req);
   }
@@ -182,6 +192,7 @@ void SimEngMemInterface::requestWrite(const MemoryAccessTarget& target,
   AggregateWriteRequest* aggrReq = new AggregateWriteRequest(target, data);
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateWriteRequest>(aggrReq, addrStart, addrEnd, size);
+
   for (StandardMem::Request* req : requests) {
     sstMem_->send(req);
   }
@@ -216,6 +227,21 @@ void SimEngMemInterface::aggregatedReadResponses(
   }
   // Send the completed read request back to SimEng via the
   // completed_read_requests queue.
+  uint64_t resp = 0;
+  for (int x = mergedData.size() - 1; x >= 0; x--) {
+    resp = (resp << 8) | mergedData[x];
+  }
+  // SST output data parsed by the testing framework.
+  // Format:
+  // [SSTSimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
+  // -cycle-<cycle count>-data-<value>
+  uint64_t id = aggrReq->id_;
+  if (debug_) {
+    std::cout << "[SSTSimEng:SSTDebug] MemRead"
+              << "-read-response-" << id << "-cycle-" << tickCounter_
+              << "-data-" << resp << std::endl;
+  }
+
   const char* char_data = reinterpret_cast<const char*>(&mergedData[0]);
   completedReadRequests_.push_back(
       {aggrReq->target,
