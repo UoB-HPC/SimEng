@@ -25,6 +25,7 @@ def getMemoryProps(memory_size: int, si: str):
             props["end_addr"] = memory_size - 1
       else:
             raise Exception("Unknown SI units provided to getMemoryProps")
+      return props
 
 # ------------------------------------------------ Utility -------------------------------------------
 
