@@ -5,6 +5,33 @@ DEBUG_L2 = 0
 DEBUG_MEM = 0
 DEBUG_LEVEL = 0
 
+
+# ------------------------------------------------ Utility -------------------------------------------
+
+def getMemoryProps(memory_size: int, si: str):
+      props = {
+            "start_addr": 0,
+            "end_addr": 0,
+            "size": ""
+      }
+      props["size"] = memory_size + si
+      if si == "GiB":
+            props["end_addr"] = memory_size * 1024 * 1024 * 1024 - 1
+      elif si == "MiB":
+            props["end_addr"] = memory_size * 1024 * 1024 - 1
+      elif si == "KiB":
+            props["end_addr"] = memory_size * 1024 - 1
+      elif si == "B":
+            props["end_addr"] = memory_size - 1
+      else:
+            raise Exception("Unknown SI units provided to getMemoryProps")
+
+# ------------------------------------------------ Utility -------------------------------------------
+
+
+
+# ------------------------------------------- A64FX Properties ---------------------------------------
+
 # This SST configuration file represents the memory model for the Fujitsu A64fx processor.
 # Reference: https://github.com/fujitsu/A64FX/blob/master/doc/A64FX_Microarchitecture_Manual_en_1.8.pdf
 
@@ -33,9 +60,23 @@ A64FX_L1TOL2_PC_TPUT = "32B"
 # Throughput of L1 to CPU per core in A64FX. Value of 0 indicates infinity. (bytes per cycle)
 A64FX_L1TOCPU_PC_TPUT = "0B"
 # Throughput of L2 to Memory per CMG in A64FX. (bytes per cycle)
-A64FX_L2TOMEMORY_PCMG_TPUT = "64B"
+A64FX_L2TOMEM_PCMG_TPUT = "64B"
 # Throughput of L2 to L1 per core in A64FX. (bytes per cycle)
 A64FX_L2TOL1_PC_TPUT = "64B"
+# Throughput of Memory to L2 per CMG in A64FX. (bytes per cycle)
+A64FX_MEMTOL2_PCMG_TPUT = 128
+# A64FX Memory access time.
+A64FX_MEM_ACCESS = "135.5ns"
+
+# ------------------------------------------- A64FX Properties ---------------------------------------
+
+
+# ---------------------------------------------- Variables -------------------------------------------
+
+memprops = getMemoryProps(8, "GiB")
+
+# ---------------------------------------------- Variables -------------------------------------------
+
 
 # --------------------------------------------- SSTSimEng Core ---------------------------------------
 
@@ -75,10 +116,10 @@ l1cache.addParams({
       "response_link_width": A64FX_L1TOCPU_PC_TPUT
 })
 # Set MESI L1 coherence controller to the "coherence" slot
-coherence_controller = l1cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
+coherence_controller_l1 = l1cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
-replacement_policy = l1cache.setSubcomponent("replacement", "memHierarchy.replacement.lru", 0)
+replacement_policy_l1 = l1cache.setSubcomponent("replacement", "memHierarchy.replacement.lru", 0)
 
 # --------------------------------------------- L1 Cache ---------------------------------------------
 
@@ -86,7 +127,7 @@ replacement_policy = l1cache.setSubcomponent("replacement", "memHierarchy.replac
 # --------------------------------------------- L2 Cache ---------------------------------------------
 
 # Using sst-info memHierarchy.Cache to get all cache parameters, ports and subcomponent slots.
-l2cache = sst.Component("a64fx.l1cache", "memHierarchy.Cache")
+l2cache = sst.Component("a64fx.l2cache", "memHierarchy.Cache")
 l2cache.addParams({
       "L1" : 0,
       "cache_type": A64FX_CACHE_TYPE,
@@ -98,13 +139,35 @@ l2cache.addParams({
       "debug" : DEBUG_L1,
       "debug_level" : DEBUG_LEVEL,
       "coherence_protocol": A64FX_COHP,
-      "request_link_width": A64FX_L2TOMEMORY_PCMG_TPUT,
+      "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
       "response_link_width": A64FX_L2TOL1_PC_TPUT,
 })
 # Set MESI L2 coherence controller to the "coherence" slot
-coherence_controller = l1cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
+coherence_controller_l2 = l2cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_inclusive")
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
-replacement_policy = l1cache.setSubcomponent("replacement", "memHierarchy.replacement.lru", 0)
+replacement_policy_l2 = l2cache.setSubcomponent("replacement", "memHierarchy.replacement.lru", 0)
 
 # --------------------------------------------- L2 Cache ---------------------------------------------
+
+
+# ----------------------------------- Memory Backend & Controller -------------------------------------
+
+memory_controller = sst.Component("a64fx.memorycontroller", "memHierarchy.MemController")
+memory_controller.addParams({
+      "clock": A64FX_CLOCK,
+      "request_width": A64FX_MEMTOL2_PCMG_TPUT,
+      "debug": DEBUG_MEM,
+      "debug_level": DEBUG_LEVEL,
+      "addr_range_start": memprops["start_addr"],
+      "addr_range_end": memprops["end_addr"]
+})
+
+memory_backend = memory_controller.setSubComponent("a64fx.memorybackend", "memHierarchy.simpleMem")
+memory_backend.addParams({
+      "access_time": A64FX_MEM_ACCESS,
+      "mem_size": memprops["size"],
+      "request_width": 128,
+})
+
+# ----------------------------------- Memory Backend & Controller -------------------------------------
