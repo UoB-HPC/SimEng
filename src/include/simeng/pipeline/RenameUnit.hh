@@ -19,7 +19,7 @@ class RenameUnit {
   RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& input,
              PipelineBuffer<std::shared_ptr<Instruction>>& output,
              ReorderBuffer& rob, RegisterAliasTable& rat, LoadStoreQueue& lsq,
-             uint8_t registerTypes);
+             uint16_t registerTypes);
 
   /** Ticks this unit. Renames registers of instructions, and allocates ROB
    * space. */
@@ -59,7 +59,7 @@ class RenameUnit {
 
   /** A table recording the numbers of free physical registers for each register
    * file. */
-  std::vector<uint8_t> freeRegistersAvailable_;
+  std::vector<uint16_t> freeRegistersAvailable_;
 
   /** The number of cycles stalled due to inability to allocate enough
    * destination registers. */

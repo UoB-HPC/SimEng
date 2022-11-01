@@ -49,8 +49,19 @@ std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, T> shiftValue(
 inline uint8_t getDataSize(cs_arm64_op op) {
   // Check from top of the range downwards
 
-  // ARM64_REG_Z0 -> +31 and ARM64_REG_V0 -> {end} are scalable vector registers
-  // (Z) registers and vector registers respectively
+  // ARM64_REG_V0 -> {end} are vector registers
+  if (op.reg >= ARM64_REG_V0) {
+    // Data size for vector registers relies on opcode thus return 0
+    return 0;
+  }
+
+  // ARM64_REG_ZAB0 -> +31 are tiles of the matrix register (ZA)
+  if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
+    // Data size for tile registers relies on opcode thus return 0
+    return 0;
+  }
+
+  // ARM64_REG_Z0 -> +31 are scalable vector registers (Z)
   if (op.reg >= ARM64_REG_Z0) {
     // Data size for vector registers relies on opcode thus return 0
     return 0;
@@ -159,6 +170,8 @@ const uint8_t PREDICATE = 2;
 const uint8_t NZCV = 3;
 /** The system registers. */
 const uint8_t SYSTEM = 4;
+/** The [256-byte x (SVL / 8)] SME matrix register za. */
+const uint8_t MATRIX = 5;
 }  // namespace RegisterType
 
 /** A struct holding user-defined execution information for a aarch64
@@ -186,7 +199,12 @@ enum class InstructionException {
   HypervisorCall,
   SecureMonitorCall,
   NoAvailablePort,
-  UnmappedSysReg
+  UnmappedSysReg,
+  StreamingModeUpdate,
+  ZAregisterStatusUpdate,
+  SMZAUpdate,
+  ZAdisabled,
+  SMdisabled
 };
 
 /** The opcodes of simeng aarch64 micro-operations. */
@@ -222,6 +240,9 @@ class Instruction : public simeng::Instruction {
   Instruction(const Architecture& architecture,
               const InstructionMetadata& metadata,
               InstructionException exception);
+
+  /** Copy Constructor. */
+  Instruction(const Instruction& insn);
 
   /** Retrieve the identifier for the first exception that occurred during
    * processing this instruction. */
@@ -309,43 +330,38 @@ class Instruction : public simeng::Instruction {
   /** Retrieve the instruction's metadata. */
   const InstructionMetadata& getMetadata() const;
 
+  /** Retrieve the instruction's associated architecture. */
+  const Architecture& getArchitecture() const;
+
   /** A special register value representing the zero register. If passed to
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
 
-  /** The maximum number of source registers any supported AArch64 instruction
-   * can have. */
-  static const uint8_t MAX_SOURCE_REGISTERS = 6;
-
  private:
-  /** The maximum number of destination registers any supported AArch64
-   * instruction can have. */
-  static const uint8_t MAX_DESTINATION_REGISTERS = 4;
-
   /** A reference to the ISA instance this instruction belongs to. */
   const Architecture& architecture_;
 
   /** A reference to the decoding metadata for this instruction. */
   const InstructionMetadata& metadata;
 
-  /** An array of source registers. */
-  std::array<Register, MAX_SOURCE_REGISTERS> sourceRegisters;
+  /** A vector of source registers. */
+  std::vector<Register> sourceRegisters;
   /** The number of source registers this instruction reads from. */
-  uint8_t sourceRegisterCount = 0;
+  uint16_t sourceRegisterCount = 0;
 
-  /** An array of destination registers. */
-  std::array<Register, MAX_DESTINATION_REGISTERS> destinationRegisters;
+  /** A vector of destination registers. */
+  std::vector<Register> destinationRegisters;
   /** The number of destination registers this instruction writes to. */
-  uint8_t destinationRegisterCount = 0;
+  uint16_t destinationRegisterCount = 0;
 
-  /** An array of provided operand values. Each entry corresponds to a
+  /** A vector of provided operand values. Each entry corresponds to a
    * `sourceRegisters` entry. */
-  std::array<RegisterValue, MAX_SOURCE_REGISTERS> operands;
+  std::vector<RegisterValue> operands;
 
-  /** An array of generated output results. Each entry corresponds to a
+  /** A vector of generated output results. Each entry corresponds to a
    * `destinationRegisters` entry. */
-  std::array<RegisterValue, MAX_DESTINATION_REGISTERS> results;
+  std::vector<RegisterValue> results;
 
   /** The current exception state of this instruction. */
   InstructionException exception_ = InstructionException::None;
@@ -354,12 +370,6 @@ class Instruction : public simeng::Instruction {
   /** Process the instruction's metadata to determine source/destination
    * registers. */
   void decode();
-
-  /** Helper function to check if the current source register is a
-   * Zero-register. If it is then it is immediatly decoded as such and added to
-   * the instruction's operands list. Otherwise, the count for operands pending
-   * is incremented by 1.*/
-  void checkZeroReg();
 
   /** Generate an EncodingNotYetImplemented exception. */
   void nyi();
@@ -389,6 +399,26 @@ class Instruction : public simeng::Instruction {
   /** Generate an EncodingUnallocated exception. */
   void executionINV();
 
+  // Execution
+  /** Generate an StreamingModeUpdate exception. */
+  void streamingModeUpdated();
+
+  // Execution
+  /** Generate an ZAregisterStatusUpdate exception. */
+  void zaRegisterStatusUpdated();
+
+  // Execution
+  /** Generate an SMZAupdate exception. */
+  void SMZAupdated();
+
+  // Execution
+  /** Generate a ZAdisabled exception. */
+  void ZAdisabled();
+
+  // Execution
+  /** Generate a SMdisabled exception. */
+  void SMdisabled();
+
   // Instruction Identifiers
   /** Operates on scalar values */
   bool isScalarData_ = false;
@@ -396,6 +426,8 @@ class Instruction : public simeng::Instruction {
   bool isVectorData_ = false;
   /** Uses Z registers as source and/or destination operands. */
   bool isSVEData_ = false;
+  /** Uses ZA register or tiles of ZA as destination. */
+  bool isSMEData_ = false;
   /** Doesn't have a shift operand. */
   bool isNoShift_ = true;
   /** Is a logical operation. */

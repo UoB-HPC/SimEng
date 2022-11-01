@@ -9,7 +9,7 @@ namespace pipeline {
 RenameUnit::RenameUnit(PipelineBuffer<std::shared_ptr<Instruction>>& fromDecode,
                        PipelineBuffer<std::shared_ptr<Instruction>>& toDispatch,
                        ReorderBuffer& rob, RegisterAliasTable& rat,
-                       LoadStoreQueue& lsq, uint8_t registerTypes)
+                       LoadStoreQueue& lsq, uint16_t registerTypes)
     : input_(fromDecode),
       output_(toDispatch),
       reorderBuffer_(rob),

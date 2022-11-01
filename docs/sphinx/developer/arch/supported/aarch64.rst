@@ -15,6 +15,7 @@ The logic held in ``src/lib/arch/aarch64/Instruction_decode.cc`` is primarily as
 - ``isScalarData_``, operates on scalar values.
 - ``isVectorData_``, operates on vector values.
 - ``isSVEData_``, uses Z registers as source and/or destination operands.
+- ``isSMEData_``, uses ZA tiles as source and/or destination operands.
 - ``isNoShift_``, doesn't have a shift operand.
 - ``isLogical_``, is a logical operation.
 - ``isCompare_``, is a compare operation.
@@ -37,6 +38,8 @@ Through a combination of the above identifiers, an instruction can be allocated 
 
 .. image:: ../../../assets/instruction_groups.png
   :alt: AArch64 instruction groups
+
+.. Note:: The SME group is not present in the diagram, but follows the same structure as the SVE identifier.
 
 The above diagram describes the instruction groups currently implemented for the AArch64 ISA. Each level of the diagram represents a different scope of instructions supported, the primary/top-level encapsulates the most instructions whilst the tertiary/bottom-level the least. The naming convention of the AArch64 instruction groups combines each of the levels within the above diagram through ``_`` characters, the top level is used first and connected to the required lower levels following the relationships shown. For example, to express an instruction group containing integer logical operations without any shift operands, the group ``INT_SIMPLE_LOGICAL_NOSHIFT`` would be used. Another example for all operations (excluding loads and stores) that operate on vector values would simply be ``VECTOR``. The groups/subgroups chosen in the above diagram are derived from common separations in execution unit support and execution latencies of studied HPC processors.
 
@@ -142,7 +145,19 @@ There are several useful variables that execution behaviours have access to:
 
   For memory operations, the *entire* memory address section is treated as a single ``metadata.operands`` entry, with information available under ``metadata.operands[n].mem``. For example, for the instruction ``ldr x0, [sp, #8]``, ``metadata.operands[1].mem`` contains information on the ``[sp, #8]`` block, with ``metadata.operands[1].mem.disp`` containing the specified offset of ``8``.
 
-SimEng supports the ARM SVE extension and thus the use of ``Z`` vector registers. ``Z`` registers are an extension of the ARM NEON ``V`` vector registers whereby the ``V`` register variant occupies the lower 16 bytes of the ``Z`` registers total 256 bytes. Under the ARM SVE extension, the implemented logic for writing to a ``V`` register is to zero-out the upper 240 bytes of the associated ``Z`` register (e.g. ``z1`` and ``v1``) and treat its lower 16 bytes as the ``V`` register. SimEng will automatically apply this logic when the execution of an instruction contains a ``V`` register as a destination location.
+Scalable Vector Extension
+''''''''''''''''''''''''''
+SimEng supports the Arm SVE extension and thus the use of ``Z`` vector registers. ``Z`` registers are an extension of the Arm NEON ``V`` vector registers whereby the ``V`` register variant occupies the lower 16 bytes of the ``Z`` registers total 256 bytes. Under the Arm SVE extension, the implemented logic for writing to a ``V`` register is to zero-out the upper 240 bytes of the associated ``Z`` register (e.g. ``z1`` and ``v1``) and treat its lower 16 bytes as the ``V`` register. SimEng will automatically apply this logic when the execution of an instruction contains a ``V`` register as a destination location.
+
+Scalable Matrix Extension
+''''''''''''''''''''''''''
+Also supported is the Arm SME extension and thus the use of ``ZA`` sub-tile registers. The implementation of the ``ZA`` register is to treat each horizontal row the same as a vector (or ``Z``) register. Therefore, if a source operand is a sub-tile of ``ZA`` and contains 16 rows, then there will be 16 corresponding entries in the ``operands`` vector. Likewise, if a destination operand is ``ZA`` or a sub-tile of ``ZA`` then the ``results`` vector will require the corresponding number of horizontal rows. 
+
+SME instructions can also operate on sub-tile slices; individual rows or columns within a sub-tile. Regardless of whether a whole sub-tile or a slice is used as a source operand, all rows associated with said tile will be added to the ``operands`` vector. There are two reasons for this. First, the index value pointing to the relevant slice cannot be evaluated before instruction execution, thus, all sub-tile rows need to be provided. Second, if the source slice is a vertical slice (or a column of the sub-tile) then an element from each row is needed to construct the correct output.
+
+Furthermore, a similar situation is present when a sub-tile slice is a destination operand. The ``results`` vector will expect a ``registerValue`` entry for each row of the targetted sub-tile, again due to the same two reasons listed previously. But, when a sub-tile slice is a destination operand, **all** associated rows of the sub-tile will also be added to the ``operands`` vector. Again, this is down to two key, similar reasons. First, when a destination is a sub-tile slice, we only want to update that row or column. As the we are unable to calculate which slice will be our destination before execution has commenced, all possible slices must be added to the ``results`` vector. If we were to not provide a ``RegisterValue`` to each entry of the ``results`` vector, the default value is 0. Therefore, in order to not zero-out the other slices within the sub-tile we will need access to their current values. Secondly, if the destination is a vertical slice (or sub-tile column) then only one element per row should be updated; the rest should remain unchanged.
+
+Before implementing any SME functionality we highly recommend familiarising yourself with the specification; found `here <https://developer.arm.com/documentation/ddi0616/latest>`_.
 
 .. Note:: We strongly encourage adding regression tests for each implemented instruction at the same time as adding execution behaviour to ensure functional validity.
 
@@ -226,4 +241,4 @@ Similar to instructions, system register support is added when they are encounte
 System Counter Timers
 ---------------------
 
-Present in AArch64 are two main system timers; the Counter-timer Virtual Count Register `CNTVCT <https://developer.arm.com/documentation/ddi0601/2022-09/AArch64-Registers/CNTVCT-EL0--Counter-timer-Virtual-Count-register?lang=en>`_, and the Performance Monitors Cycle Count Register `PMCCNTR <https://developer.arm.com/documentation/ddi0601/2022-09/AArch64-Registers/PMCCNTR-EL0--Performance-Monitors-Cycle-Count-Register?lang=en>`_. The CNTVCT system register holds a virtual cycle count, and is incremented at a defined frequency (see :ref:` Configuring SimEng <core>`). The PMCCNTR system register holds the real processor cycle count. Both are supported in SimEng and are accessible to the programmer through the appropriate ``mrs`` instructions. The logic which updates these registers can be found at ``src/lib/arch/aarch64/Architecture.cc:updateSystemTimerRegisters`` and is invoked inside each of the core model's ``tick()`` function.
+Present in AArch64 are two main system timers; the Counter-timer Virtual Count Register `CNTVCT <https://developer.arm.com/documentation/ddi0601/2022-09/AArch64-Registers/CNTVCT-EL0--Counter-timer-Virtual-Count-register?lang=en>`_, and the Performance Monitors Cycle Count Register `PMCCNTR <https://developer.arm.com/documentation/ddi0601/2022-09/AArch64-Registers/PMCCNTR-EL0--Performance-Monitors-Cycle-Count-Register?lang=en>`_. The CNTVCT system register holds a virtual cycle count, and is incremented at a defined frequency (see :ref:`Configuring SimEng <core>`). The PMCCNTR system register holds the real processor cycle count. Both are supported in SimEng and are accessible to the programmer through the appropriate ``mrs`` instructions. The logic which updates these registers can be found at ``src/lib/arch/aarch64/Architecture.cc:updateSystemTimerRegisters`` and is invoked inside each of the core model's ``tick()`` function.
