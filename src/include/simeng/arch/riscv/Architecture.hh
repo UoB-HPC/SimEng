@@ -32,7 +32,7 @@ class Architecture : public arch::Architecture {
   std::vector<RegisterFileStructure> getRegisterFileStructures() const override;
 
   /** Returns a zero-indexed register tag for a system register encoding. */
-  int32_t getSystemRegisterTag(uint16_t reg) const;
+  int32_t getSystemRegisterTag(uint16_t reg) const override;
 
   /** Returns the number of system registers that have a mapping. */
   uint16_t getNumSystemRegisters() const override;

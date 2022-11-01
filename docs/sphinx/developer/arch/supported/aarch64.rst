@@ -98,6 +98,8 @@ Each micro-operation opcode is set to one of the options available in the ``Micr
 Adding instructions
 -------------------
 
+.. _aarch64-adding-instructions:
+
 Due to the vast number of AArch64 instruction variants, instructions are only added to this architecture as encountered in programs using them; as a result, to run a new program it will likely be necessary to add support for a number of instructions.
 
 .. Note:: When adding support for new instructions, it's recommended to run SimEng in emulation mode for both speed, and for an execution flow that's easier to follow.

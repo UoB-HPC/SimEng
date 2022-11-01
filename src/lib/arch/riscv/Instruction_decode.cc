@@ -34,11 +34,11 @@ Register csRegToRegister(unsigned int reg) {
           std::numeric_limits<uint16_t>::max()};
 }
 
-// Invalidate instructions that are currently not yet implemented. This prevents
-// errors during speculated branches with unknown destinations; non-executable
-// memory is decoded into valid but not implemented instructions tripping
-// assertions.
-// TODO remove once all extensions are supported
+/** Invalidate instructions that are currently not yet implemented. This
+ prevents errors during speculated branches with unknown destinations;
+ non-executable assertions. memory is decoded into valid but not implemented
+ instructions tripping assertions.
+ TODO remove once all extensions are supported*/
 void Instruction::invalidateIfNotImplemented() {
   if (metadata.opcode >= Opcode::RISCV_ADD &&
       metadata.opcode <= Opcode::RISCV_BNE)
@@ -238,15 +238,6 @@ void Instruction::decode() {
       knownTarget_ = instructionAddress_ + metadata.operands[1].imm;
       break;
   }
-}
-
-void Instruction::nyi() {
-  exceptionEncountered_ = true;
-  exception_ = InstructionException::EncodingNotYetImplemented;
-}
-void Instruction::unallocated() {
-  exceptionEncountered_ = true;
-  exception_ = InstructionException::EncodingUnallocated;
 }
 
 }  // namespace riscv

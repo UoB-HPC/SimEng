@@ -14,7 +14,7 @@ The logic held in ``src/lib/arch/riscv/Instruction_decode.cc`` is primarily asso
 
 - ``isLoad_``, is a load operation.
 - ``isStore_``, is a store operation.
-- ``isAtomic_``, is an atomic operation
+- ``isAtomic_``, is an atomic operation.
 
 Adding instructions
 -------------------
@@ -27,7 +27,7 @@ As the currently ratified extensions are relatively small it is recommended that
 Adding execution behaviour
 **************************
 
-The process for adding a new instruction is very similar to that of AArch64, by adding a new, uniquely identified entry to ``src/lib/arch/riscv/Instruction_execute.cc``.
+The process for adding a new instruction is very similar to that of :ref:`AArch64 <_aarch64-adding-instructions>`, by adding a new, uniquely identified entry to ``src/lib/arch/riscv/Instruction_execute.cc``.
 
 Zero registers
 **************
@@ -50,7 +50,7 @@ Pseudoinstructions
 
 Similar to AArch64 instruction aliases, RISCV has many pseudoinstructions. These are usually specific instances of a more general instruction. They will have the same opcode but a different mnemonic. Capstone will disassemble these instructions giving a valid opcode but will often miss vital operands that need to be inferred from the instruction mnemonic. This can be quite dangerous as the instruction may pass through the pipeline completely unhindered, but will give an incorrect result. These sorts of errors are very hard to track down.
 
-An example of this would be the pseudoinstruction ``not rd, rs``. This is implemented using the more specific instance ``xori rd, rs, -1``. Capstone will dissasemble this giving the opcode for ``xori`` as well as the register codes for ``rd`` and ``rs`` but not the immediate ``-1``.
+An example of this would be the pseudoinstruction ``not rd, rs``. This is implemented using the more specific instance ``xori rd, rs, -1``. Capstone will disassemble this giving the opcode for ``xori`` as well as the register codes for ``rd`` and ``rs`` but not the immediate ``-1``.
 
 This must be fixed in the ``InstructionMetadata`` constructor. A new entry should be added to the switch statement and the pseudoinstruction mnemonic checked. The correct set of operands can then be set. A couple of helper functions are used for common operand fixes.
 

@@ -151,7 +151,8 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
 }
 
 int64_t Linux::close(int64_t fd) {
-  // Don't close STDOUT or STDERR otherwise no SimEng output
+  // Don't close STDOUT or STDERR otherwise no SimEng output is given
+  // afterwards. This includes final results given at the end of execution
   if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
     assert(fd < processStates_[0].fileDescriptorTable.size());
     int64_t hfd = processStates_[0].fileDescriptorTable[fd];
@@ -167,6 +168,7 @@ int64_t Linux::close(int64_t fd) {
     return ::close(hfd);
   }
 
+  // Return success if STDOUT or STDERR is closed to allow execution to proceed
   return 0;
 }
 
@@ -199,6 +201,8 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
   out.blksize = statbuf.st_blksize;
   out.blocks = statbuf.st_blocks;
 
+  // Mac and linux systems define the stat buff with the same format but
+  // different names
 #ifdef __MACH__
   out.atime = statbuf.st_atimespec.tv_sec;
   out.atimensec = statbuf.st_atimespec.tv_nsec;

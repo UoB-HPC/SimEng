@@ -36,6 +36,7 @@ struct executionInfo {
   std::vector<uint16_t> ports = {};
 };
 
+/** The various exceptions that can be raised by an individual instruction. */
 enum class InstructionException {
   None = 0,
   EncodingUnallocated,
@@ -202,22 +203,12 @@ class Instruction : public simeng::Instruction {
    * registers. */
   void decode();
 
+  /** Invalidate instructions that are currently not yet implemented. This
+ prevents errors during speculated branches with unknown destinations;
+ non-executable assertions. memory is decoded into valid but not implemented
+ instructions tripping assertions.
+ TODO remove once all extensions are supported*/
   void invalidateIfNotImplemented();
-
-  /** Generate an EncodingNotYetImplemented exception. */
-  void nyi();
-
-  /** Generate an EncodingUnallocated exception. */
-  void unallocated();
-
-  /** Set the source registers of the instruction, and create a corresponding
-   * operands vector. Zero register references will be pre-supplied with a value
-   * of 0. */
-  void setSourceRegisters(const std::vector<Register>& registers);
-
-  /** Set the destination registers for the instruction, and create a
-   * corresponding results vector. */
-  void setDestinationRegisters(const std::vector<Register>& registers);
 
   // Scheduling
   /** The number of operands that have not yet had values supplied. Used to

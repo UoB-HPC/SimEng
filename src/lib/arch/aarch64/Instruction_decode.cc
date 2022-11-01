@@ -513,15 +513,6 @@ void Instruction::decode() {
   }
 }
 
-void Instruction::nyi() {
-  exceptionEncountered_ = true;
-  exception_ = InstructionException::EncodingNotYetImplemented;
-}
-void Instruction::unallocated() {
-  exceptionEncountered_ = true;
-  exception_ = InstructionException::EncodingUnallocated;
-}
-
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng
