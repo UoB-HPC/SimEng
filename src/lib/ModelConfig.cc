@@ -1,8 +1,20 @@
 #include "simeng/ModelConfig.hh"
 
-#include <math.h>
+#include <cmath>
 
 namespace simeng {
+
+/** RISC-V opcodes. Each opcode represents a unique RISC-V operation. */
+namespace RISCVOpcode {
+#define GET_INSTRINFO_ENUM
+#include "RISCVGenInstrInfo.inc"
+}  // namespace RISCVOpcode
+
+/** AArch64 opcodes. Each opcode represents a unique AArch64 operation. */
+namespace AARCH64Opcode {
+#define GET_INSTRINFO_ENUM
+#include "AArch64GenInstrInfo.inc"
+}  // namespace AARCH64Opcode
 
 ModelConfig::ModelConfig(std::string path) {
   // Ensure the file exists
@@ -120,19 +132,37 @@ void ModelConfig::validate() {
         char group_msg[10];
         sprintf(group_msg, "Group %zu ", j);
         std::string group_num = std::string(group_msg);
-        // Check for existance of instruction group
+        // Check for existence of instruction group
         if (group.as<std::string>()[0] == '~') {
           // Extract opcode and store in config option
           uint16_t opcode = std::stoi(group.as<std::string>().substr(
               1, group.as<std::string>().size()));
           configFile_["Ports"][i]["Instruction-Opcode-Support"][opcodeIndex] =
               opcode;
-          // Ensure opcode is between the bounds of 0 and Capstones'
-          // AArch64_INSTRUCTION_LIST_END
-          boundChecker(configFile_["Ports"][i]["Instruction-Opcode-Support"]
-                                  [opcodeIndex],
-                       port_num + group_num, std::make_pair(0, 4516),
-                       ExpectedValue::UInteger);
+          if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
+            // Ensure opcode is between the bounds of 0 and Capstones'
+            // RISCV_INSTRUCTION_LIST_END
+            boundChecker(
+                configFile_["Ports"][i]["Instruction-Opcode-Support"]
+                           [opcodeIndex],
+                port_num + group_num,
+                std::make_pair(0, static_cast<int>(
+                                      RISCVOpcode::RISCV_INSTRUCTION_LIST_END)),
+                ExpectedValue::UInteger);
+          } else if (configFile_["Core"]["ISA"].as<std::string>() ==
+                     "AArch64") {
+            // Ensure opcode is between the bounds of 0 and Capstones'
+            // AArch64_INSTRUCTION_LIST_END
+            boundChecker(
+                configFile_["Ports"][i]["Instruction-Opcode-Support"]
+                           [opcodeIndex],
+                port_num + group_num,
+                std::make_pair(
+                    0, static_cast<int>(
+                           AARCH64Opcode::AArch64_INSTRUCTION_LIST_END)),
+                ExpectedValue::UInteger);
+          }
+
           opcodeIndex++;
         } else if (nodeChecker<std::string>(group, port_num + group_num,
                                             groupOptions_,
@@ -162,7 +192,7 @@ void ModelConfig::validate() {
       nodeChecker<uint16_t>(rs["Dispatch-Rate"], rs_num + "Dispatch-Rate",
                             std::make_pair(1, UINT16_MAX),
                             ExpectedValue::UInteger);
-      // Check for existance of Ports field
+      // Check for existence of Ports field
       if (!(rs["Ports"].IsDefined()) || rs["Ports"].IsNull()) {
         missing_ << "\t- " << rs_num << "Ports\n";
         continue;
