@@ -11,7 +11,14 @@ void AArch64RegressionTest::run(const char* source) {
   LLVMInitializeAArch64TargetMC();
   LLVMInitializeAArch64AsmParser();
 
-  RegressionTest::run(source, "aarch64", "+sve,+lse");
+  const char* subtargetFeatures;
+#if SIMENG_LLVM_VERSION < 14
+  subtargetFeatures = "+sve,+lse";
+#else
+  subtargetFeatures = "+sve,+lse,+sve2,+sme";
+#endif
+
+  RegressionTest::run(source, "aarch64", subtargetFeatures);
 }
 
 YAML::Node AArch64RegressionTest::generateConfig() const {
@@ -36,6 +43,13 @@ YAML::Node AArch64RegressionTest::generateConfig() const {
         additionalConfig["Vector-Length"].as<uint64_t>();
   } else {
     config["Core"]["Vector-Length"] = 512;
+  }
+  if (additionalConfig["Streaming-Vector-Length"].IsDefined() &&
+      !(additionalConfig["Streaming-Vector-Length"].IsNull())) {
+    config["Core"]["Streaming-Vector-Length"] =
+        additionalConfig["Streaming-Vector-Length"].as<uint64_t>();
+  } else {
+    config["Core"]["Streaming-Vector-Length"] = 512;
   }
   if (additionalConfig["Micro-Operations"].IsDefined() &&
       !(additionalConfig["Micro-Operations"].IsNull())) {
@@ -65,7 +79,8 @@ AArch64RegressionTest::createPortAllocator() const {
        simeng::arch::aarch64::InstructionGroups::LOAD,
        simeng::arch::aarch64::InstructionGroups::STORE_ADDRESS,
        simeng::arch::aarch64::InstructionGroups::STORE_DATA,
-       simeng::arch::aarch64::InstructionGroups::BRANCH}};
+       simeng::arch::aarch64::InstructionGroups::BRANCH,
+       simeng::arch::aarch64::InstructionGroups::SME}};
 
   return std::make_unique<simeng::pipeline::BalancedPortAllocator>(
       portArrangement);

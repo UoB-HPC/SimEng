@@ -13,7 +13,7 @@ class comparisonHelp {
    * Returns single value of type T. */
   template <typename T>
   static T orrShift_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     const T n = operands[0].get<T>();
     const T m =

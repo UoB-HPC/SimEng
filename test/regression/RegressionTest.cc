@@ -153,15 +153,27 @@ void RegressionTest::assemble(const char* source, const char* triple,
 
   // Create MC context and object file info
   llvm::MCObjectFileInfo objectFileInfo;
+#if SIMENG_LLVM_VERSION < 13
   llvm::MCContext context(asmInfo.get(), regInfo.get(), &objectFileInfo,
                           &srcMgr);
   objectFileInfo.InitMCObjectFileInfo(llvm::Triple(triple), false, context,
                                       false);
+#endif
 
   // Create MC subtarget info
   std::unique_ptr<llvm::MCSubtargetInfo> subtargetInfo(
       target->createMCSubtargetInfo(triple, "", extensions));
   ASSERT_NE(subtargetInfo, nullptr) << "Failed to create LLVM subtarget info";
+
+// For LLVM versions 13+, MC subtarget info is needed to create context and
+// object file info
+#if SIMENG_LLVM_VERSION > 12
+  llvm::MCContext context(llvm::Triple(triple), asmInfo.get(), regInfo.get(),
+                          subtargetInfo.get(), &srcMgr, &options, false, "");
+
+  objectFileInfo.initMCObjectFileInfo(context, false, false);
+  context.setObjectFileInfo(&objectFileInfo);
+#endif
 
   // Create MC instruction info
   std::unique_ptr<llvm::MCInstrInfo> instrInfo(target->createMCInstrInfo());

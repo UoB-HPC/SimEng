@@ -1339,6 +1339,90 @@ TEST_P(InstFloat, ucvtf) {
   CHECK_NEON(11, float, {0.f, 0.f, 0.f, 0.f});
 }
 
+TEST_P(InstFloat, frintp) {
+  // 32-bit
+  initialHeapData_.resize(32);
+  float* heap32 = reinterpret_cast<float*>(initialHeapData_.data());
+  heap32[0] = 0;
+  heap32[1] = -0;
+  heap32[2] = INFINITY;
+  heap32[3] = -INFINITY;
+  heap32[4] = 1.08f;
+  heap32[5] = -65.92f;
+  heap32[6] = 301.5f;
+  heap32[7] = -16.5f;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp s0, s1, [x0], #8
+    ldp s2, s3, [x0], #8
+    ldp s4, s5, [x0], #8
+    ldp s6, s7, [x0], #8
+
+    frintp s8, s0
+    frintp s9, s1
+    frintp s10, s2
+    frintp s11, s3
+    frintp s12, s4
+    frintp s13, s5
+    frintp s14, s6
+    frintp s15, s7
+  )");
+  CHECK_NEON(8, float, {0.0f, 0.0f, 0.0f, 0.0f});
+  CHECK_NEON(9, float, {-0.0f, 0.0f, 0.0f, 0.0f});
+  // Cannot use GTEST to validate ±INFINITY as difference is nan and fails
+  // 0.0005 threshold check. Failure of the test does show that both data[i] and
+  // values[i] = inf, so result is correct.
+  CHECK_NEON(12, float, {2.0f, 0.0f, 0.0f, 0.0f});
+  CHECK_NEON(13, float, {-65.0f, 0.0f, 0.0f, 0.0f});
+  CHECK_NEON(14, float, {302.0f, 0.0f, 0.0f, 0.0f});
+  CHECK_NEON(15, float, {-16.0f, 0.0f, 0.0f, 0.0f});
+
+  // 64-bit
+  initialHeapData_.resize(64);
+  double* heap64 = reinterpret_cast<double*>(initialHeapData_.data());
+  heap64[0] = 0;
+  heap64[1] = -0;
+  heap64[2] = INFINITY;
+  heap64[3] = -INFINITY;
+  heap64[4] = 1.08;
+  heap64[5] = -65.92;
+  heap64[6] = 301.5;
+  heap64[7] = -16.5;
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+
+    ldp d0, d1, [x0], #16
+    ldp d2, d3, [x0], #16
+    ldp d4, d5, [x0], #16
+    ldp d6, d7, [x0], #16
+
+    frintp d8, d0
+    frintp d9, d1
+    frintp d10, d2
+    frintp d11, d3
+    frintp d12, d4
+    frintp d13, d5
+    frintp d14, d6
+    frintp d15, d7
+  )");
+  CHECK_NEON(8, double, {0.0, 0.0, 0.0, 0.0});
+  CHECK_NEON(9, double, {-0.0, 0.0, 0.0, 0.0});
+  // Cannot use GTEST to validate ±INFINITY as difference is nan and fails
+  // 0.0005 threshold check. Failure of the test does show that both data[i] and
+  // values[i] = inf, so result is correct.
+  CHECK_NEON(12, double, {2.0, 0.0, 0.0, 0.0});
+  CHECK_NEON(13, double, {-65.0, 0.0, 0.0, 0.0});
+  CHECK_NEON(14, double, {302.0, 0.0, 0.0, 0.0});
+  CHECK_NEON(15, double, {-16.0, 0.0, 0.0, 0.0});
+}
+
 INSTANTIATE_TEST_SUITE_P(AArch64, InstFloat,
                          ::testing::Values(std::make_tuple(EMULATION,
                                                            YAML::Load("{}"))),

@@ -640,6 +640,62 @@ bool ExceptionHandler::init() {
     }
 
     return concludeSyscall(stateChange);
+  } else if (exception == InstructionException::StreamingModeUpdate ||
+             exception == InstructionException::ZAregisterStatusUpdate ||
+             exception == InstructionException::SMZAUpdate) {
+    // Retrieve register file structure from architecture
+    auto regFileStruct =
+        instruction_.getArchitecture().getRegisterFileStructures();
+    // Retrieve metadata from architecture
+    auto metadata = instruction_.getMetadata();
+
+    // Update SVCR value
+    const uint64_t svcrBits = static_cast<uint64_t>(metadata.operands[0].svcr);
+    const uint8_t imm = metadata.operands[1].imm;
+    const uint64_t currSVCR = instruction_.getArchitecture().getSVCRval();
+    uint64_t newSVCR = 0;
+
+    if (imm == 0) {
+      // Zero out relevant bits dictated by svcrBits
+      const uint64_t mask = 0xFFFFFFFFFFFFFFFF ^ svcrBits;
+      newSVCR = currSVCR & mask;
+    } else if (imm == 1) {
+      // Enable relevant bits, dictated by svcrBits
+      const uint64_t mask = 0xFFFFFFFFFFFFFFFF & svcrBits;
+      newSVCR = currSVCR | mask;
+    } else {
+      // Invalid instruction
+      assert("SVCR Instruction invalid - Imm value can only be 0 or 1");
+    }
+    instruction_.getArchitecture().setSVCRval(newSVCR);
+
+    // Initialise vectors for all registers & values
+    std::vector<Register> regs;
+    std::vector<RegisterValue> regValues;
+
+    // Add Vector/Predicate registers + 0 values (zeroed out on Streaming Mode
+    // context switch)
+    if (exception != InstructionException::ZAregisterStatusUpdate) {
+      for (uint16_t i = 0; i < regFileStruct[RegisterType::VECTOR].quantity;
+           i++) {
+        regs.push_back({RegisterType::VECTOR, i});
+        regValues.push_back(RegisterValue(0, 256));
+        if (i < regFileStruct[RegisterType::PREDICATE].quantity) {
+          regs.push_back({RegisterType::PREDICATE, i});
+          regValues.push_back(RegisterValue(0, 32));
+        }
+      }
+    }
+    // Zero out ZA register (zeroed out on ZA-reg context switch)
+    if (exception != InstructionException::StreamingModeUpdate) {
+      for (uint16_t i = 0; i < regFileStruct[RegisterType::MATRIX].quantity;
+           i++) {
+        regs.push_back({RegisterType::MATRIX, i});
+        regValues.push_back(RegisterValue(0, 256));
+      }
+    }
+    ProcessStateChange stateChange = {ChangeType::REPLACEMENT, regs, regValues};
+    return concludeSyscall(stateChange);
   }
 
   printException(instruction_);
@@ -823,6 +879,21 @@ void ExceptionHandler::printException(const Instruction& insn) const {
       break;
     case InstructionException::UnmappedSysReg:
       std::cout << "unmapped system register";
+      break;
+    case InstructionException::StreamingModeUpdate:
+      std::cout << "streaming mode update";
+      break;
+    case InstructionException::ZAregisterStatusUpdate:
+      std::cout << "ZA register status update";
+      break;
+    case InstructionException::SMZAUpdate:
+      std::cout << "streaming mode & ZA register status update";
+      break;
+    case InstructionException::ZAdisabled:
+      std::cout << "ZA register access attempt when disabled";
+      break;
+    case InstructionException::SMdisabled:
+      std::cout << "SME execution attempt when streaming mode disabled";
       break;
     default:
       std::cout << "unknown (id: " << static_cast<unsigned int>(exception)

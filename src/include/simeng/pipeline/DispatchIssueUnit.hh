@@ -44,7 +44,7 @@ struct dependencyEntry {
   /** The port to issue to. */
   uint16_t port;
   /** The operand waiting on a value. */
-  uint8_t operandIndex;
+  uint16_t operandIndex;
 };
 
 /** A dispatch/issue unit for an out-of-order pipelined processor. Reads

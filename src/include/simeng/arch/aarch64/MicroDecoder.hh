@@ -27,7 +27,8 @@ class MicroDecoder {
   /** From a macro-op, split into one or more micro-ops and populate passed
    * vector. Return the number of micro-ops generated. */
   uint8_t decode(const Architecture& architecture, uint32_t word,
-                 Instruction macroOp, MacroOp& output, csh capstoneHandle);
+                 const Instruction& macroOp, MacroOp& output,
+                 csh capstoneHandle);
 
   /** Detect if there's an overlap between the underlying hardware registers
    * (e.g. z5, v5, q5, d5, s5, h5, and b5). */

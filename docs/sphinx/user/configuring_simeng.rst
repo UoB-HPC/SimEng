@@ -7,6 +7,7 @@ SimEng configuration files are written in a YAML format, and provide values for 
 
 The configuration files are split into several sections, each of which is associated with a specific area of the architecture modelled.
 
+.. _core:
 Core
 ----
 
@@ -42,7 +43,10 @@ Micro-Operations
     Whether to enable instruction splitting for pre-defined Macro Operations or not.
 
 Vector-Length
-    The vector length used by instructions belonging to ARM's Scalable Vector Extension. Supported vector lengths are those between 128 and 2048 in increments of 128.
+    The vector length used by instructions belonging to Arm's Scalable Vector Extension. Supported vector lengths are those between 128 and 2048 in increments of 128.
+
+Streaming-Vector-Length
+    The vector length used by instructions belonging to Arm's Scalable Matrix Extension. Although the architecturally valid vector lengths are powers of 2 between 128 and 2048 inclusive, the supported vector lengths are those between 128 and 2048 in increments of 128.
 
 Fetch
 -----
@@ -78,13 +82,16 @@ GeneralPurpose-Count
     The number of physical general-purpose registers.
 
 FloatingPoint/SVE-Count
-    The number of physical floating point registers. Also considered as the number of ARM SVE extension ``z`` registers where appropriate.
+    The number of physical floating point registers. Also considered as the number of Arm SVE extension ``z`` registers where appropriate.
 
 Predicate-Count (Optional)
-    The number of physical ARM SVE extension predicate registers.
+    The number of physical Arm SVE extension predicate registers.
 
 Conditional-Count
     The number of physical status/flag/conditional-code registers.
+
+MatrixRow-Count
+    The number of physical rows for SME's ``za`` register. SimEng's implementation of the ``za`` matrix register treats each row as a vector register. Having the MatrixRow-Count equal to the Streaming-Vector-Length/8 will yield a single physical ``za`` register. As such, the MatrixRow-Count must be a minimum of Streaming-Vector-Length/8.
 
 Pipeline-widths
 ---------------

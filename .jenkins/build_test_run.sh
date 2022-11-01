@@ -31,7 +31,7 @@ build () {
     cd "$SIMENG_TOP" || exit
     rm -rf build/* install/*
 
-    cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX="$SIMENG_INSTALL" -DSIMENG_ENABLE_TESTS=ON -DSIMENG_USE_EXTERNAL_LLVM=ON -DLLVM_DIR=/home/br-simeng/llvm9/lib/cmake/llvm/
+    cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX="$SIMENG_INSTALL" -DSIMENG_ENABLE_TESTS=ON -DSIMENG_USE_EXTERNAL_LLVM=ON -DLLVM_DIR=/home/br-simeng/llvm14.0.5/install-gcc7/lib/cmake/llvm/ -DCMAKE_C_COMPILER=$1 -DCMAKE_CXX_COMPILER=$2
     cmake --build build -j
     cmake --build build --target install
 }

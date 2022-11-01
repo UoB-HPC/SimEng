@@ -11,8 +11,7 @@ class divideHelp {
    * T represents the type of operands (e.g. for xd, T = uint64_t).
    * Returns single value of type T. */
   template <typename T>
-  static T div_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static T div_3ops(std::vector<RegisterValue>& operands) {
     const T n = operands[0].get<T>();
     const T m = operands[1].get<T>();
     if (m == 0) return 0;

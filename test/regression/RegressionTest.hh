@@ -19,7 +19,6 @@
 #include "llvm/Object/ELF.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
@@ -28,6 +27,12 @@
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/pipeline/PortAllocator.hh"
 #include "simeng/version.hh"
+
+#if SIMENG_LLVM_VERSION < 14
+#include "llvm/Support/TargetRegistry.h"
+#else
+#include "llvm/MC/TargetRegistry.h"
+#endif
 
 /** The different types of core model that can be used in tests. */
 enum CoreType { EMULATION, INORDER, OUTOFORDER };
