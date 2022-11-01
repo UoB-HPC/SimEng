@@ -14,7 +14,7 @@ def getMemoryProps(memory_size: int, si: str):
             "end_addr": 0,
             "size": ""
       }
-      props["size"] = memory_size + si
+      props["size"] = "%s%s" % (memory_size , si)
       if si == "GiB":
             props["end_addr"] = memory_size * 1024 * 1024 * 1024 - 1
       elif si == "MiB":
@@ -85,10 +85,10 @@ memprops = getMemoryProps(8, "GiB")
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
     "simeng_config_path": "<PATH TO A64FX SIMENG MODEL CONFIG>",
-    "executable_path": "<PATH TO EXECUTABLE BINARY>",
+    "executable_path": "<PATH OF EXECUTABLE BINARY>",
     "executable_args": "",
     "clock" : A64FX_CLOCK,
-    "max_addr_memory": 2*1024*1024*1024-1,
+    "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
 })
 
@@ -120,7 +120,7 @@ l1cache.addParams({
 coherence_controller_l1 = l1cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
-replacement_policy_l1 = l1cache.setSubcomponent("replacement", "memHierarchy.replacement.lru", 0)
+replacement_policy_l1 = l1cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 
 # --------------------------------------------- L1 Cache ---------------------------------------------
 
@@ -147,7 +147,7 @@ l2cache.addParams({
 coherence_controller_l2 = l2cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_inclusive")
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
-replacement_policy_l2 = l2cache.setSubcomponent("replacement", "memHierarchy.replacement.lru", 0)
+replacement_policy_l2 = l2cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 
 # --------------------------------------------- L2 Cache ---------------------------------------------
 
@@ -165,7 +165,7 @@ memory_controller.addParams({
       "addr_range_end": memprops["end_addr"]
 })
 
-memory_backend = memory_controller.setSubComponent("a64fx.memorybackend", "memHierarchy.simpleMem")
+memory_backend = memory_controller.setSubComponent("backend", "memHierarchy.simpleMem")
 memory_backend.addParams({
       "access_time": A64FX_MEM_ACCESS,
       "mem_size": memprops["size"],
@@ -185,4 +185,3 @@ link_mem_bus = sst.Link("link_mem_bus_link")
 link_mem_bus.connect( (l2cache, "low_network_0", "0ps"), (memory_controller, "direct_link", "0ps") )
 
 # ---------------------------------------------- Links ------------------------------------------------
-
