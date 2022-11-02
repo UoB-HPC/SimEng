@@ -11,8 +11,7 @@ class arithmeticHelp {
    * T represents the type of operands (e.g. for xn, T = uint64_t).
    * Returns single value of type T. */
   template <typename T>
-  static T add_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static T add_3ops(std::vector<RegisterValue>& operands) {
     const T n = operands[0].get<T>();
     const T m = operands[1].get<T>();
     return (n + m);
@@ -23,7 +22,7 @@ class arithmeticHelp {
    * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> addCarry_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+      std::vector<RegisterValue>& operands) {
     const uint8_t carry = operands[0].get<uint8_t>() & 0b0010;
     const T n = operands[1].get<T>();
     const T m = operands[2].get<T>();
@@ -36,7 +35,7 @@ class arithmeticHelp {
    * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> addExtend_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       bool calcNZCV) {
     const T n = operands[0].get<T>();
@@ -53,7 +52,7 @@ class arithmeticHelp {
    * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> addShift_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       bool calcNZCV) {
     const T n = operands[0].get<T>();
@@ -70,7 +69,7 @@ class arithmeticHelp {
    * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> addShift_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       bool calcNZCV) {
     const T n = operands[0].get<T>();
@@ -85,8 +84,7 @@ class arithmeticHelp {
    * T represents the type of operands (e.g. for xn, T = int64_t).
    * Returns single value of type T. */
   template <typename T>
-  static T clz_reg(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static T clz_reg(std::vector<RegisterValue>& operands) {
     T x = operands[0].get<T>();
     uint8_t i;
     for (i = 0; i < (sizeof(T) * 8); i++) {
@@ -104,7 +102,7 @@ class arithmeticHelp {
    * Returns single value of type T. */
   template <typename T>
   static T movkShift_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     // Clear 16-bit region offset by `shift` and replace with immediate
     uint8_t shift = metadata.operands[1].shift.value;
@@ -134,8 +132,7 @@ class arithmeticHelp {
    * int32_t or uint32_t).
    * Returns single value of type D. */
   template <typename D, typename N>
-  static D msubl_4ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static D msubl_4ops(std::vector<RegisterValue>& operands) {
     const N n = operands[0].get<N>();
     const N m = operands[1].get<N>();
     const D a = operands[2].get<D>();
@@ -146,8 +143,7 @@ class arithmeticHelp {
    * T represents the type of operands (e.g. for xn, T = uint64_t).
    * Returns single value of type T. */
   template <typename T>
-  static T sbc(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+  static T sbc(std::vector<RegisterValue>& operands) {
     auto nzcv = operands[0].get<uint8_t>();
     const T x = operands[1].get<T>();
     const T y = operands[2].get<T>();
@@ -163,7 +159,7 @@ class arithmeticHelp {
    * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> subExtend_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       bool calcNZCV) {
     const T n = operands[0].get<T>();
@@ -179,7 +175,7 @@ class arithmeticHelp {
    * Returns single value of type T. */
   template <typename T>
   static std::tuple<T, uint8_t> subShift_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       bool calcNZCV) {
     const T n = operands[0].get<T>();
@@ -196,7 +192,7 @@ class arithmeticHelp {
    * Returns tuple of [resulting value, nzcv]. */
   template <typename T>
   static std::tuple<T, uint8_t> subShift_3ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       bool calcNZCV) {
     const T n = operands[0].get<T>();

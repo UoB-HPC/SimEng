@@ -16,7 +16,6 @@
 #include "llvm/Object/ELF.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetRegistry.h"
 #include "llvm/Support/TargetSelect.h"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
@@ -26,6 +25,12 @@
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
+
+#if SIMENG_LLVM_VERSION < 14
+#include "llvm/Support/TargetRegistry.h"
+#else
+#include "llvm/MC/TargetRegistry.h"
+#endif
 
 RegressionTest::~RegressionTest() { delete[] code_; }
 
@@ -172,15 +177,33 @@ void RegressionTest::assemble(const char* source, const char* triple) {
 
   // Create MC context and object file info
   llvm::MCObjectFileInfo objectFileInfo;
+#if SIMENG_LLVM_VERSION < 13
   llvm::MCContext context(asmInfo.get(), regInfo.get(), &objectFileInfo,
                           &srcMgr);
   objectFileInfo.InitMCObjectFileInfo(llvm::Triple(triple), false, context,
                                       false);
+#endif
 
   // Create MC subtarget info
+  const char* subtargetFeatures;
+#if SIMENG_LLVM_VERSION < 14
+  subtargetFeatures = "+sve,+lse";
+#else
+  subtargetFeatures = "+sve,+lse,+sve2,+sme";
+#endif
   std::unique_ptr<llvm::MCSubtargetInfo> subtargetInfo(
-      target->createMCSubtargetInfo(triple, "", "+sve,+lse"));
+      target->createMCSubtargetInfo(triple, "", subtargetFeatures));
   ASSERT_NE(subtargetInfo, nullptr) << "Failed to create LLVM subtarget info";
+
+// For LLVM versions 13+, MC subtarget info is needed to create context and
+// object file info
+#if SIMENG_LLVM_VERSION > 12
+  llvm::MCContext context(llvm::Triple(triple), asmInfo.get(), regInfo.get(),
+                          subtargetInfo.get(), &srcMgr, &options, false, "");
+
+  objectFileInfo.initMCObjectFileInfo(context, false, false);
+  context.setObjectFileInfo(&objectFileInfo);
+#endif
 
   // Create MC instruction info
   std::unique_ptr<llvm::MCInstrInfo> instrInfo(target->createMCInstrInfo());

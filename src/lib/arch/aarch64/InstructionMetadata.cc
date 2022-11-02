@@ -508,6 +508,15 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       break;
     }
+    case Opcode::AArch64_FMLA_ZZZI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_FMLA_ZZZI_S: {
+      // Need to define missing access types
+      operands[0].access = CS_AC_READ | CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_FDIVR_ZPmZ_D:
       [[fallthrough]];
     case Opcode::AArch64_FDIVR_ZPmZ_S:
@@ -558,6 +567,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       [[fallthrough]];
     case Opcode::AArch64_FSUB_ZPmZ_S:
       [[fallthrough]];
+    case Opcode::AArch64_FADDA_VPZ_S:
+      [[fallthrough]];
     case Opcode::AArch64_MUL_ZPmZ_B:
       [[fallthrough]];
     case Opcode::AArch64_MUL_ZPmZ_D:
@@ -583,6 +594,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[2].access = CS_AC_READ;
       operands[3].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_FRINTPDr:
+      [[fallthrough]];
+    case Opcode::AArch64_FRINTPSr:
+      [[fallthrough]];
     case Opcode::AArch64_FDUP_ZI_D:
       [[fallthrough]];
     case Opcode::AArch64_FDUP_ZI_S:
@@ -648,6 +663,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
     case Opcode::AArch64_LD1i64:
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_GLD1W_D_SCALED_REAL: {
+      // Access types are not set correctly
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
+    }
     case Opcode::AArch64_GLD1D_SCALED_REAL:
       [[fallthrough]];
     case Opcode::AArch64_GLD1D_REAL: {
@@ -679,6 +700,12 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         vec_enum += std::stoi(tmp_str.substr(tmp_str.find("z") + 1, 2));
       }
       operands[2].mem.index = static_cast<arm64_reg>(vec_enum);
+      break;
+    }
+    case Opcode::AArch64_LD1RQ_W_IMM: {
+      // LD1RQW doesn't identify correct access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
       break;
     }
     case Opcode::AArch64_LD1RQ_D_IMM: {
@@ -1306,6 +1333,18 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // No defined metadata.id for SYS instructions
       id = ARM64_INS_SYS;
       break;
+    case Opcode::AArch64_PSEL_PPPRI_B:
+      [[fallthrough]];
+    case Opcode::AArch64_PSEL_PPPRI_D:
+      [[fallthrough]];
+    case Opcode::AArch64_PSEL_PPPRI_H:
+      [[fallthrough]];
+    case Opcode::AArch64_PSEL_PPPRI_S:
+      // Add correct access types
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      break;
     case Opcode::AArch64_UBFMWri:
       [[fallthrough]];
     case Opcode::AArch64_UBFMXri:
@@ -1350,6 +1389,14 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_WHILELT_PXX_B:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELT_PXX_D:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELT_PXX_H:
+      [[fallthrough]];
+    case Opcode::AArch64_WHILELT_PXX_S:
+      [[fallthrough]];
     case Opcode::AArch64_WHILELO_PWW_B:
       [[fallthrough]];
     case Opcode::AArch64_WHILELO_PWW_D:
@@ -1459,6 +1506,76 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[4].access = CS_AC_READ;
       operands[5].access = CS_AC_READ;
       break;
+    case Opcode::AArch64_LD1_MXIPXX_V_S:
+      [[fallthrough]];
+    case Opcode::AArch64_LD1_MXIPXX_H_S: {
+      // Lacking access specifiers
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      break;
+    }
+    case Opcode::AArch64_ST1_MXIPXX_H_S:
+      [[fallthrough]];
+    case Opcode::AArch64_ST1_MXIPXX_V_S:
+      // Access types are not defined
+      operands[0].access = CS_AC_READ;
+      operands[1].access = CS_AC_READ;
+      break;
+    case Opcode::AArch64_FMOPA_MPPZZ_S: {
+      // Need to add access specifiers
+      // although operands[0] should be READ | WRITE, due to the implemented
+      // decode logic for SME tile destinations, the register will be added as
+      // both source and distination with just WRITE access.
+      operands[0].access = CS_AC_WRITE;
+      operands[1].access = CS_AC_READ;
+      operands[2].access = CS_AC_READ;
+      operands[3].access = CS_AC_READ;
+      operands[4].access = CS_AC_READ;
+      operands[5].access = CS_AC_READ;
+      break;
+    }
+    case Opcode::AArch64_ZERO_M: {
+      // Operands often mangled from ZA tile overlap aliasing in decode. Need to
+      // re-extract relevant tiles from operandStr
+      operandCount = 0;
+      size_t pos = operandStr.find("za", 0);
+      while (pos != std::string::npos) {
+        size_t pos_2 = operandStr.find(".", pos);
+        if (pos_2 != std::string::npos) {
+          char type = operandStr[pos_2 + 1];
+          // Tile Number can only ever be 1 digit
+          uint8_t tileNum = std::stoi(operandStr.substr((pos + 2), 1));
+          switch (type) {
+            case 'b':
+              operands[operandCount].reg = ARM64_REG_ZAB0;
+              break;
+            case 'h':
+              operands[operandCount].reg =
+                  static_cast<arm64_reg>(ARM64_REG_ZAH0 + tileNum);
+              break;
+            case 's':
+              operands[operandCount].reg =
+                  static_cast<arm64_reg>(ARM64_REG_ZAS0 + tileNum);
+              break;
+            case 'd':
+              operands[operandCount].reg =
+                  static_cast<arm64_reg>(ARM64_REG_ZAD0 + tileNum);
+              break;
+            case 'q':
+              operands[operandCount].reg =
+                  static_cast<arm64_reg>(ARM64_REG_ZAQ0 + tileNum);
+              break;
+          }
+        } else {
+          operands[operandCount].reg = ARM64_REG_ZA;
+        }
+        operands[operandCount].type = ARM64_OP_REG;
+        operands[operandCount].access = CS_AC_WRITE;
+        operandCount++;
+        pos = operandStr.find("za", pos + 1);
+      }
+      break;
+    }
   }
 
   revertAliasing();

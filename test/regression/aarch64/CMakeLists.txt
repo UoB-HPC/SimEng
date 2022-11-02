@@ -18,6 +18,7 @@ add_executable(regression-aarch64
                instructions/misc.cc
                instructions/multiply.cc
                instructions/neon.cc
+               instructions/sme.cc
                instructions/store.cc
                instructions/sve.cc
                )

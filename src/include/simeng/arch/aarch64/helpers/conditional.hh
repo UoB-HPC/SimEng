@@ -13,7 +13,7 @@ class conditionalHelp {
    * Returns single value of type uint8_t. */
   template <typename T>
   static uint8_t ccmn_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
       uint8_t nzcv;
@@ -30,7 +30,7 @@ class conditionalHelp {
    * Returns single value of type uint8_t. */
   template <typename T>
   static uint8_t ccmp_imm(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
       uint8_t nzcv;
@@ -47,7 +47,7 @@ class conditionalHelp {
    * Returns single value of type uint8_t. */
   template <typename T>
   static uint8_t ccmp_reg(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
       uint8_t nzcv;
@@ -63,7 +63,7 @@ class conditionalHelp {
    * Returns tuple of type [bool branch taken, uint64_t address]. */
   template <typename T>
   static std::tuple<bool, uint64_t> condBranch_cmpToZero(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       uint64_t instructionAddress, std::function<bool(T)> func) {
     bool branchTaken;
@@ -83,10 +83,9 @@ class conditionalHelp {
    * T represents the type of operands (e.g. for xd, T = uint64_t).
    * Returns single value of type T. */
   template <typename T>
-  static T cs_4ops(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata,
-      std::function<T(T)> func) {
+  static T cs_4ops(std::vector<RegisterValue>& operands,
+                   const simeng::arch::aarch64::InstructionMetadata& metadata,
+                   std::function<T(T)> func) {
     if (AuxFunc::conditionHolds(metadata.cc, operands[0].get<uint8_t>())) {
       return operands[1].get<T>();
     }
@@ -99,7 +98,7 @@ class conditionalHelp {
    * Returns tuple of type [bool branch taken, uint64_t address]. */
   template <typename T>
   static std::tuple<bool, uint64_t> tbnz_tbz(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata,
       uint64_t instructionAddress, bool isNZ) {
     bool branchTaken;

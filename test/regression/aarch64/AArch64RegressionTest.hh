@@ -4,24 +4,24 @@
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 
-#define AARCH64_CONFIG                                                         \
-  ("{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "                \
-   "Timer-Frequency: 100, Micro-Operations: False}, Fetch: "                   \
-   "{Fetch-Block-Size: 32, Loop-Buffer-Size: 64, Loop-Detection-Threshold: "   \
-   "4}, Process-Image: {Heap-Size: 100000, Stack-Size: 100000}, "              \
-   "Register-Set: {GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "   \
-   "Predicate-Count: 17, Conditional-Count: 128}, Pipeline-Widths: { Commit: " \
-   "4, FrontEnd: 4, LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, "    \
-   "Store: 36}, Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: "  \
-   "2, Global-History-Length: 10, RAS-entries: 5, Fallback-Static-Predictor: " \
-   "2}, Data-Memory: {Interface-Type: Flat}, Instruction-Memory: "             \
-   "{Interface-Type: Flat}, LSQ-L1-Interface: {Access-Latency: 4, Exclusive: " \
-   "False, Load-Bandwidth: 32, Store-Bandwidth: 16, "                          \
-   "Permitted-Requests-Per-Cycle: 2, Permitted-Loads-Per-Cycle: 2, "           \
-   "Permitted-Stores-Per-Cycle: 1}, Ports: {'0': {Portname: Port 0, "          \
-   "Instruction-Group-Support: [0, 14, 52, 66, 67, 70, 71]}}, "                \
-   "Reservation-Stations: {'0': {Size: 60, Dispatch-Rate: 4, Ports: [0]}}, "   \
-   "Execution-Units: {'0': {Pipelined: true}}}")
+#define AARCH64_CONFIG                                                        \
+  ("{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "               \
+   "Timer-Frequency: 100, Micro-Operations: False}, Fetch: "                  \
+   "{Fetch-Block-Size: 32, Loop-Buffer-Size: 64, Loop-Detection-Threshold: "  \
+   "4}, Process-Image: {Heap-Size: 100000, Stack-Size: 100000}, "             \
+   "Register-Set: {GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "  \
+   "Predicate-Count: 17, Conditional-Count: 128, MatrixRow-Count: 256}, "     \
+   "Pipeline-Widths: { Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "          \
+   "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "         \
+   "{BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, Global-History-Length: 10, " \
+   "RAS-entries: 5, Fallback-Static-Predictor: 2}, Data-Memory: "             \
+   "{Interface-Type: Flat}, Instruction-Memory: {Interface-Type: Flat}, "     \
+   "LSQ-L1-Interface: {Access-Latency: 4, Exclusive: False, Load-Bandwidth: " \
+   "32, Store-Bandwidth: 16, Permitted-Requests-Per-Cycle: 2, "               \
+   "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "    \
+   "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 14, 52, 66, 67, " \
+   "70, 71, 72]}}, Reservation-Stations: {'0': {Size: 60, Dispatch-Rate: 4, " \
+   "Ports: [0]}}, Execution-Units: {'0': {Pipelined: true}}}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */
@@ -51,6 +51,11 @@ inline std::string paramToString(
       !(std::get<1>(val.param)["Vector-Length"].IsNull())) {
     vectorLengthString =
         "WithVL" + std::get<1>(val.param)["Vector-Length"].as<std::string>();
+  } else if (std::get<1>(val.param)["Streaming-Vector-Length"].IsDefined() &&
+             !(std::get<1>(val.param)["Streaming-Vector-Length"].IsNull())) {
+    vectorLengthString =
+        "WithSVL" +
+        std::get<1>(val.param)["Streaming-Vector-Length"].as<std::string>();
   }
   return coreString + vectorLengthString;
 }
@@ -65,6 +70,18 @@ inline std::vector<std::tuple<CoreType, YAML::Node>> genCoreTypeVLPairs(
     coreVLPairs.push_back(std::make_tuple(type, vlNode));
   }
   return coreVLPairs;
+}
+
+/** A helper function to generate all coreType streaming-vector-length pairs. */
+inline std::vector<std::tuple<CoreType, YAML::Node>> genCoreTypeSVLPairs(
+    CoreType type) {
+  std::vector<std::tuple<CoreType, YAML::Node>> coreSVLPairs;
+  for (uint64_t i = 128; i <= 2048; i += 128) {
+    YAML::Node svlNode;
+    svlNode["Streaming-Vector-Length"] = i;
+    coreSVLPairs.push_back(std::make_tuple(type, svlNode));
+  }
+  return coreSVLPairs;
 }
 
 /** A helper macro to run a snippet of Armv9.2-a assembly code, returning from
@@ -115,6 +132,44 @@ inline std::vector<std::tuple<CoreType, YAML::Node>> genCoreTypeVLPairs(
   {                                                 \
     SCOPED_TRACE("<<== error generated here");      \
     checkPredicateRegister<type>(tag, __VA_ARGS__); \
+  }
+
+/** Check each element of a Matrix register row against expected values.
+ *
+ * The `tag` argument is the register tile the row is contained in, the `index`
+ * argument is the exact row within the selected tile,  and the `type` argument
+ * is the C++ data type to use for value comparisons. The third argument should
+ * be an initializer list containing one value for each register element (for a
+ * total of `(256 / sizeof(type))` values).
+ *
+ * For example:
+ *
+ *     // Compare za1h.s[0] to some expected 32-bit floating point values.
+ *     CHECK_MAT_ROW(ARM64_REG_ZAS1, 0, float, {123.456f, 0.f, 42.f, -1.f});
+ */
+#define CHECK_MAT_ROW(tag, index, type, ...)               \
+  {                                                        \
+    SCOPED_TRACE("<<== error generated here");             \
+    checkMatrixRegisterRow<type>(tag, index, __VA_ARGS__); \
+  }
+
+/** Check each element of a Matrix register column against expected values.
+ *
+ * The `tag` argument is the register tile the column is contained in, the
+ * `index` argument is the exact column within the selected tile,  and the
+ * `type` argument is the C++ data type to use for value comparisons. The third
+ * argument should be an initializer list containing one value for each register
+ * element (for a total of `(256 / sizeof(type))` values).
+ *
+ * For example:
+ *
+ *     // Compare za1v.s[0] to some expected 32-bit floating point values.
+ *     CHECK_MAT_COL(ARM64_REG_ZAS1, 0, float, {123.456f, 0.f, 42.f, -1.f});
+ */
+#define CHECK_MAT_COL(tag, index, type, ...)               \
+  {                                                        \
+    SCOPED_TRACE("<<== error generated here");             \
+    checkMatrixRegisterCol<type>(tag, index, __VA_ARGS__); \
   }
 
 /** The test fixture for all AArch64 regression tests. */
@@ -168,6 +223,84 @@ class AArch64RegressionTest : public RegressionTest {
     }
   }
 
+  /** Check the elements of a Matrix register row (one row from ZA).
+   *
+   * This should be invoked via the `CHECK_MAT_ROW` macro in order to provide
+   * better diagnostic messages, rather than called directly from test code.
+   */
+  template <typename T>
+  void checkMatrixRegisterRow(
+      uint16_t tag, uint16_t index,
+      const std::array<T, (256 / sizeof(T))>& values) const {
+    // Get matrix row register tag
+    uint8_t base = 0;
+    uint8_t tileTypeCount = 0;
+    if (tag == ARM64_REG_ZA || tag == ARM64_REG_ZAB0) {
+      // Treat ZA as byte tile : ZAB0 represents whole matrix, only 1 tile
+      // Add all rows for this SVL
+      // Don't need to set base as will always be 0
+      tileTypeCount = 1;
+    } else if (tag >= ARM64_REG_ZAH0 && tag <= ARM64_REG_ZAH1) {
+      base = tag - ARM64_REG_ZAH0;
+      tileTypeCount = 2;
+    } else if (tag >= ARM64_REG_ZAS0 && tag <= ARM64_REG_ZAS3) {
+      base = tag - ARM64_REG_ZAS0;
+      tileTypeCount = 4;
+    } else if (tag >= ARM64_REG_ZAD0 && tag <= ARM64_REG_ZAD7) {
+      base = tag - ARM64_REG_ZAD0;
+      tileTypeCount = 8;
+    } else if (tag >= ARM64_REG_ZAQ0 && tag <= ARM64_REG_ZAQ15) {
+      base = tag - ARM64_REG_ZAQ0;
+      tileTypeCount = 16;
+    }
+    uint16_t reg_tag = base + (index * tileTypeCount);
+
+    const T* data = getMatrixRegisterRow<T>(reg_tag);
+    for (unsigned i = 0; i < (256 / sizeof(T)); i++) {
+      EXPECT_NEAR(data[i], values[i], 0.0005)
+          << "Mismatch for element " << i << ".";
+    }
+  }
+
+  /** Check the elements of a Matrix register row (one row from ZA).
+   *
+   * This should be invoked via the `CHECK_MAT_ROW` macro in order to provide
+   * better diagnostic messages, rather than called directly from test code.
+   */
+  template <typename T>
+  void checkMatrixRegisterCol(
+      uint16_t tag, uint16_t index,
+      const std::array<T, (256 / sizeof(T))>& values) const {
+    // Get matrix row register tag
+    uint8_t base = 0;
+    uint8_t tileTypeCount = 0;
+    if (tag == ARM64_REG_ZA || tag == ARM64_REG_ZAB0) {
+      // Treat ZA as byte tile : ZAB0 represents whole matrix, only 1 tile
+      // Add all rows for this SVL
+      // Don't need to set base as will always be 0
+      tileTypeCount = 1;
+    } else if (tag >= ARM64_REG_ZAH0 && tag <= ARM64_REG_ZAH1) {
+      base = tag - ARM64_REG_ZAH0;
+      tileTypeCount = 2;
+    } else if (tag >= ARM64_REG_ZAS0 && tag <= ARM64_REG_ZAS3) {
+      base = tag - ARM64_REG_ZAS0;
+      tileTypeCount = 4;
+    } else if (tag >= ARM64_REG_ZAD0 && tag <= ARM64_REG_ZAD7) {
+      base = tag - ARM64_REG_ZAD0;
+      tileTypeCount = 8;
+    } else if (tag >= ARM64_REG_ZAQ0 && tag <= ARM64_REG_ZAQ15) {
+      base = tag - ARM64_REG_ZAQ0;
+      tileTypeCount = 16;
+    }
+
+    for (unsigned i = 0; i < (SVL / (sizeof(T) * 8)); i++) {
+      uint16_t reg_tag = base + (i * tileTypeCount);
+      const T data_i = getMatrixRegisterRow<T>(reg_tag)[index];
+      EXPECT_NEAR(data_i, values[i], 0.0005)
+          << "Mismatch for element " << i << ".";
+    }
+  }
+
   /** Get the value of a general purpose register. */
   template <typename T>
   T getGeneralRegister(uint8_t tag) const {
@@ -189,6 +322,13 @@ class AArch64RegressionTest : public RegressionTest {
     static_assert(element * sizeof(T) < 256);
     return RegressionTest::getVectorRegister<T>(
         {simeng::arch::aarch64::RegisterType::VECTOR, tag})[element];
+  }
+
+  /** Get a pointer to the value of an architectural matrix register row. */
+  template <typename T>
+  const T* getMatrixRegisterRow(uint16_t tag) const {
+    return RegressionTest::getVectorRegister<T>(
+        {simeng::arch::aarch64::RegisterType::MATRIX, tag});
   }
 
   /** Get the value of the NZCV register. */
@@ -336,5 +476,12 @@ class AArch64RegressionTest : public RegressionTest {
       (std::get<1>(GetParam())["Vector-Length"].IsDefined() &&
        !(std::get<1>(GetParam())["Vector-Length"].IsNull()))
           ? std::get<1>(GetParam())["Vector-Length"].as<uint64_t>()
+          : 0;
+
+  /** The current streaming-vector-length being used by the test suite. */
+  const uint64_t SVL =
+      (std::get<1>(GetParam())["Streaming-Vector-Length"].IsDefined() &&
+       !(std::get<1>(GetParam())["Streaming-Vector-Length"].IsNull()))
+          ? std::get<1>(GetParam())["Streaming-Vector-Length"].as<uint64_t>()
           : 0;
 };

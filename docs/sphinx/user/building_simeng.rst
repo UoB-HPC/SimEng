@@ -39,7 +39,7 @@ With this configuration, the build files will be generated in a directory called
                 More information about the LLVM_DIR value can be found `here <https://llvm.org/docs/CMake.html#embedding-llvm-in-your-project>`_.
 
         .. Note::
-                LLVM versions greater than 12 or less than 9 are not supported. We'd recommend using LLVM 12 where possible.
+                LLVM versions greater than 14 or less than 8 are not supported. We'd recommend using LLVM 14.0.5 where possible as this has been verified by us to work correctly.
 
         b. Two additional flags are available when building SimEng. Firstly is ``-DSIMENG_SANITIZE={ON, OFF}`` which adds a selection of sanitisation compilation flags (primarily used during the development of the framework). Secondly is ``-SIMENG_OPTIMIZE={ON, OFF}`` which attempts to optimise the framework's compilation for the host machine through a set of compiler flags and options.
 

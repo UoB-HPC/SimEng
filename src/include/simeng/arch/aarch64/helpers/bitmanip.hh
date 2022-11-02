@@ -12,10 +12,9 @@ class bitmanipHelp {
    * T represents the type of operands (e.g. for xn, T = uint64_t).
    * Returns single value of type T. */
   template <typename T>
-  static T bfm_2imms(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
-      const simeng::arch::aarch64::InstructionMetadata& metadata,
-      bool signExtend, bool zeroDestReg) {
+  static T bfm_2imms(std::vector<RegisterValue>& operands,
+                     const simeng::arch::aarch64::InstructionMetadata& metadata,
+                     bool signExtend, bool zeroDestReg) {
     uint8_t r = metadata.operands[2].imm;
     uint8_t s = metadata.operands[3].imm;
     T dest, source;
@@ -34,7 +33,7 @@ class bitmanipHelp {
    * Returns single value of type T. */
   template <typename T>
   static T extrLSB_registers(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     T n = operands[0].get<T>();
     T m = operands[1].get<T>();
@@ -48,7 +47,7 @@ class bitmanipHelp {
    * Returns single value of type uint64_t. */
   template <typename T>
   static uint64_t rbit(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands,
+      std::vector<RegisterValue>& operands,
       const simeng::arch::aarch64::InstructionMetadata& metadata) {
     int width = sizeof(T) * 8;
 
@@ -71,7 +70,7 @@ class bitmanipHelp {
    * Returns array of uint8_t with number of elements = bytes in T. */
   template <typename T>
   static std::array<uint8_t, sizeof(T)> rev(
-      std::array<RegisterValue, Instruction::MAX_SOURCE_REGISTERS>& operands) {
+      std::vector<RegisterValue>& operands) {
     auto bytes = operands[0].getAsVector<uint8_t>();
     std::array<uint8_t, sizeof(T)> reversed;
     // Copy `bytes` backwards onto `reversed`
