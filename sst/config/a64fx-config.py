@@ -51,7 +51,7 @@ A64FX_SA_L2 = 16
 # Hit latency of A64FX L1 cache (cycles).
 A64FX_HL_L1 = 5
 # Hit latency of A64FX L2 cache (cycles).
-A64FX_HL_L2 = 46
+A64FX_HL_L2 = 56
 # Cohenrence protocol of A64FX caches.
 A64FX_COHP = "MESI"
 # L1 & L2 cache type of A64FX.
@@ -67,7 +67,7 @@ A64FX_L2TOL1_PC_TPUT = "64B"
 # Throughput of Memory to L2 per CMG in A64FX. (bytes per cycle)
 A64FX_MEMTOL2_PCMG_TPUT = 128
 # A64FX Memory access time.
-A64FX_MEM_ACCESS = "135.5ns"
+A64FX_MEM_ACCESS = "144.5ns"
 
 # ------------------------------------------- A64FX Properties ---------------------------------------
 
@@ -85,7 +85,7 @@ memprops = getMemoryProps(8, "GiB")
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
     "simeng_config_path": "<PATH TO A64FX SIMENG MODEL CONFIG>",
-    "executable_path": "<PATH OF EXECUTABLE BINARY>",
+    "executable_path": "<PATH TO EXECUTABLE BINARY>",
     "executable_args": "",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
