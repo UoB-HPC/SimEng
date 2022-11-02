@@ -88,8 +88,10 @@ void ModelConfig::validate() {
                         ExpectedValue::UInteger, 512);
   subFields.clear();
 
-  // Check options that differ when different ISA's are used. First check ISA
-  // config option is valid before switching on it
+  // First check that the ISA config option is valid, this protects reads from
+  // the ISA config option as well as everything that depends on them. This
+  // includes uses of groupOptions_ and groupMapping_ as these are dependent on
+  // the ISA
   if (validISA == 1) {
     // Generate groupOptions_ and groupMapping_
     createGroupMapping();
