@@ -167,7 +167,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   // `ptr` is not guaranteed to be aligned.
   uint32_t insn;
   memcpy(&insn, ptr, 4);
-  const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
   // Try to find the decoding in the decode cache
   auto iter = decodeCache.find(insn);

@@ -148,7 +148,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   // Dereference the instruction pointer to obtain the instruction word
   uint32_t insn;
   memcpy(&insn, ptr, 4);
-  const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
   // Try to find the decoding in the decode cache
   auto iter = decodeCache.find(insn);
@@ -170,13 +169,14 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
         success ? InstructionMetadata(rawInsn) : InstructionMetadata(encoding);
 
     // Cache the metadata
-    metadataCache.emplace_front(metadata);
+    metadataCache.push_front(metadata);
 
-    // Create and cache an instruction using the metadata
-    iter = decodeCache.try_emplace(insn, *this, metadataCache.front()).first;
-
+    // Create an instruction using the metadata
+    Instruction newInsn(*this, metadataCache.front());
     // Set execution information for this instruction
-    iter->second.setExecutionInfo(getExecutionInfo(iter->second));
+    newInsn.setExecutionInfo(getExecutionInfo(newInsn));
+    // Cache the instruction
+    iter = decodeCache.insert({insn, newInsn}).first;
   }
 
   output.resize(1);

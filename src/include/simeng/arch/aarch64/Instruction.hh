@@ -371,12 +371,6 @@ class Instruction : public simeng::Instruction {
    * registers. */
   void decode();
 
-  /** Helper function to check if the current source register is a
-   * Zero-register. If it is then it is immediately decoded as such and added to
-   * the instruction's operands list. Otherwise, the count for operands pending
-   * is incremented by 1.*/
-  void checkZeroReg();
-
   /** Set the source registers of the instruction, and create a corresponding
    * operands vector. Zero register references will be pre-supplied with a value
    * of 0. */

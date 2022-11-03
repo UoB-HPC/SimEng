@@ -176,6 +176,12 @@ void Instruction::decode() {
            * zero sized spans are returned (determined by the value of
            * destinationRegisterCount). This in turn means no register update is
            * performed.
+           *
+           * TODO this will break if there are more than 2 destination registers
+           * with one being the zero register e.g. if an instruction implicitly
+           * writes to a system register. The current implementation could mean
+           * that the second result is discarded
+           *
            */
         }
       }
