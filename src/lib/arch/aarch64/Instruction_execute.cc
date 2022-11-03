@@ -3555,7 +3555,6 @@ void Instruction::execute() {
         // This instruction is always used by SMSTART and SMSTOP aliases.
         const uint64_t svcrBits =
             static_cast<uint64_t>(metadata.operands[0].svcr);
-        const uint8_t imm = metadata.operands[1].imm;
 
         // Changing value of SM or ZA bits in SVCR zeros out vector, predicate,
         // and ZA registers. Raise an exception to do this.
@@ -3871,6 +3870,11 @@ void Instruction::execute() {
       case Opcode::AArch64_SBFMXri: {  // sbfm xd, xn, #immr, #imms
         results[0] =
             bitmanipHelp::bfm_2imms<uint64_t>(operands, metadata, true, true);
+        break;
+      }
+      case Opcode::AArch64_SCVTFSWSri: {  // scvtf sd, wn, #fbits
+        results[0] =
+            floatHelp::scvtf_FixedPoint<float, int32_t>(operands, metadata);
         break;
       }
       case Opcode::AArch64_SCVTFSXDri: {  // scvtf dd, xn, #fbits
