@@ -14,8 +14,6 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
-typedef enum riscv_sysreg {};
-
 /* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
