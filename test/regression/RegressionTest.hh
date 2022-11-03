@@ -86,7 +86,9 @@ class RegressionTest
   template <typename T>
   T getMemoryValue(uint64_t address) const {
     EXPECT_LE(address + sizeof(T), processMemorySize_);
-    return *(T*)(processMemory_ + address);
+    T dest{};
+    std::memcpy(&dest, processMemory_ + address, sizeof(T));
+    return dest;
   }
 
   /** The initial data to populate the heap with. */
