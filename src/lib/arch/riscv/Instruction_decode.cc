@@ -165,6 +165,18 @@ void Instruction::decode() {
               csRegToRegister(op.reg);
 
           destinationRegisterCount++;
+        } else {
+          /**
+           * Register writes to x0 are discarded so no destination register is
+           * set.
+           *
+           * While the execution stage may still write to the results array,
+           * when Instruction::getResults and
+           * Instruction::getDestinationRegisters are called during writeback,
+           * zero sized spans are returned (determined by the value of
+           * destinationRegisterCount). This in turn means no register update is
+           * performed.
+           */
         }
       }
     }
