@@ -27,7 +27,7 @@ As the currently ratified extensions are relatively small it is recommended that
 Adding execution behaviour
 **************************
 
-The process for adding a new instruction is very similar to that of :ref:`AArch64 <_aarch64-adding-instructions>`, by adding a new, uniquely identified entry to ``src/lib/arch/riscv/Instruction_execute.cc``.
+The process for adding a new instruction is very similar to that of :ref:`AArch64 <aarch64-adding-instructions>`, by adding a new, uniquely identified entry to ``src/lib/arch/riscv/Instruction_execute.cc``.
 
 Zero registers
 **************
@@ -41,7 +41,7 @@ Loads and stores
 
 In addition to an execution behaviour, memory instructions also require a new entry in the address generation behaviour table found in ``src/lib/arch/riscv/Instruction_address.cc``. These entries are responsible for describing the method used to generate the addresses that these instructions will read from or write to.
 
-Address generation is expected to generate one or more instances of ``MemoryAddressTarget``, containing an address and the number of bytes to access. The same variables described above (``operands``, ``metadata``) are available to use to generate these addresses.
+Address generation is expected to generate one or more instances of ``MemoryAddressTarget``, containing an address and the number of bytes to access. The same variables as described in the :ref:`AArch64 documentation <aarch64-adding-execution-behaviour-operands>` (``operands``, ``metadata``) are available to use to generate these addresses.
 
 Once the addresses have been generated, they should be supplied in a vector to the ``setMemoryAddresses`` helper function.
 
