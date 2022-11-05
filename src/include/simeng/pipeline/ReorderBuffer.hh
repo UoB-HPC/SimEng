@@ -10,6 +10,20 @@
 namespace simeng {
 namespace pipeline {
 
+/** Check if the instruction ID is less/greater than a given value used by
+ *  binary_search. */
+struct idCompare {
+  bool operator()(const std::shared_ptr<Instruction>& first,
+                  const uint64_t second) {
+    return first->getInstructionId() < second;
+  }
+
+  bool operator()(const uint64_t first,
+                  const std::shared_ptr<Instruction>& second) {
+    return first < second->getInstructionId();
+  }
+};
+
 /** A branch prediction outcome with an associated instruction address. */
 struct latestBranch {
   /** Branch instruction address. */
