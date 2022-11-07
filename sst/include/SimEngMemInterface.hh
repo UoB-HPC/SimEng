@@ -11,11 +11,13 @@
 #include <iomanip>
 #include <iostream>
 #include <map>
+#include <mutex>
 #include <set>
 #include <string>
 #include <type_traits>
 #include <vector>
 
+#include "Stats.hh"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/span.hh"
 
@@ -30,7 +32,7 @@ namespace SSTSimEng {
 class SimEngMemInterface : public MemoryInterface {
  public:
   SimEngMemInterface(StandardMem* mem, uint64_t cl, uint64_t max_addr,
-                     bool debug);
+                     bool debug, Stats* stats);
   /** Send SimEng's processImage to SST memory backend during `init` lifecycle
    * phase of SST. */
   void sendProcessImageToSST(char* image, uint64_t size);
@@ -120,6 +122,9 @@ class SimEngMemInterface : public MemoryInterface {
   struct AggregateWriteRequest : public SimEngMemoryRequest {
     /** RegisterValue (write data) from SimEng memory instruction. */
     const RegisterValue data;
+    uint64_t id_ = 0;
+    uint64_t aggregateCount_ = 0;
+    std::vector<uint64_t> splitReqIds;
 
     AggregateWriteRequest() : SimEngMemoryRequest(), data(RegisterValue()){};
     AggregateWriteRequest(const MemoryAccessTarget& target,
@@ -138,6 +143,7 @@ class SimEngMemInterface : public MemoryInterface {
     /** Unique identifier of each AggregatedReadRequest copied from SimEng read
      * request. */
     const uint64_t id_;
+    uint64_t uid_ = 0;
     /**
      * This response map is used to store all responses of SST read request,
      * this aggregated read request was split into. An ordered map is used to
@@ -188,6 +194,9 @@ class SimEngMemInterface : public MemoryInterface {
    */
   std::unordered_map<uint64_t, AggregateReadRequest*> aggregationMap_;
 
+  /** Write aggr map for stats */
+  std::unordered_map<uint64_t, AggregateWriteRequest*> writeAggregationMap_;
+
   /** This method only accepts structs derived from the SimEngMemoryRequest
    * struct as the value for aggrReq. */
   template <typename T, typename std::enable_if<std::is_base_of<
@@ -213,6 +222,8 @@ class SimEngMemInterface : public MemoryInterface {
    * one response. */
   void aggregatedReadResponses(AggregateReadRequest* aggrReq);
 
+  void aggregatedWriteResponses(AggregateWriteRequest* aggrReq);
+
   /** Get the number of cache lines needed incase the size of a memory request
    * is larger than cache line width.
    */
@@ -237,6 +248,15 @@ class SimEngMemInterface : public MemoryInterface {
 
   /** Variable to enable parseable print debug statements in test mode. */
   bool debug_ = false;
+
+  /** write reqid */
+  std::atomic<uint64_t> writeId = std::atomic<uint64_t>(0);
+
+  /** read id*/
+  std::atomic<uint64_t> readId = std::atomic<uint64_t>(0);
+
+  /** Stats class ref*/
+  Stats* stats_ = nullptr;
 };
 
 };  // namespace SSTSimEng

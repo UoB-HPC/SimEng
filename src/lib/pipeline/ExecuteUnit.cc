@@ -34,6 +34,12 @@ void ExecuteUnit::tick() {
     // Input isn't stalled; process instruction and add to pipeline
 
     auto& uop = input_.getHeadSlots()[0];
+
+    // if (uop->isStoreData() || uop->isStoreAddress() || uop->isLoad()) {
+    //   std::cout << " ~ Latency: " << uop->getLatency()
+    //             << " ~ Stall-Cycles: " << uop->getStallCycles() << std::endl;
+    // }
+
     if (uop != nullptr) {
       if (!uop->isFlushed()) {
         // Retrieve execution latency from the instruction

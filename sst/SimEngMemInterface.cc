@@ -10,12 +10,16 @@
 using namespace SST::SSTSimEng;
 
 SimEngMemInterface::SimEngMemInterface(StandardMem* mem, uint64_t cl,
-                                       uint64_t max_addr, bool debug)
+                                       uint64_t max_addr, bool debug,
+                                       Stats* stats)
     : simeng::MemoryInterface() {
   this->sstMem_ = mem;
   this->cacheLineWidth_ = cl;
   this->maxAddrMemory_ = max_addr;
   this->debug_ = debug;
+  this->stats_ = stats;
+  // std::atomic<uint64_t> writeId{1};
+  // std::atomic<uint64_t> readId{1};
 };
 
 void SimEngMemInterface::sendProcessImageToSST(char* image, uint64_t size) {
@@ -96,6 +100,7 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
       size -= cacheLineWidth_;
       currReqSize = cacheLineWidth_;
     }
+
     // SST write requests accept uint8_t vectors as data.
     std::vector<uint8_t> payload;
     payload.resize(currReqSize);
@@ -110,6 +115,10 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
     dataIndex += currReqSize;
     addrStart += currReqSize;
     requests.push_back(writeReq);
+
+    aggrReq->splitReqIds.push_back(writeReq->getID());
+    aggrReq->aggregateCount_++;
+    writeAggregationMap_.insert({writeReq->getID(), aggrReq});
   }
   return requests;
 }
@@ -178,6 +187,11 @@ void SimEngMemInterface::requestRead(const MemoryAccessTarget& target,
               << "-read-request-" << requestId << "-cycle-" << tickCounter_
               << "-split-" << requests.size() << std::endl;
   }
+  readId++;
+  aggrReq->uid_ = readId.load();
+  stats_->recordRead();
+  stats_->recordReadSplit(requests.size());
+  stats_->recordLoadAccessStart(readId, tickCounter_);
   for (StandardMem::Request* req : requests) {
     sstMem_->send(req);
   }
@@ -190,9 +204,12 @@ void SimEngMemInterface::requestWrite(const MemoryAccessTarget& target,
   uint64_t addrEnd = addrStart + size - 1;
 
   AggregateWriteRequest* aggrReq = new AggregateWriteRequest(target, data);
+  writeId++;
+  aggrReq->id_ = writeId.load();
   std::vector<StandardMem::Request*> requests =
       makeSSTRequests<AggregateWriteRequest>(aggrReq, addrStart, addrEnd, size);
-
+  stats_->recordWrite();
+  stats_->recordWriteSplit(requests.size());
   for (StandardMem::Request* req : requests) {
     sstMem_->send(req);
   }
@@ -236,6 +253,7 @@ void SimEngMemInterface::aggregatedReadResponses(
   // [SSTSimEng:SSTDebug] MemRead-read-<type=request|response>-<request ID>
   // -cycle-<cycle count>-data-<value>
   uint64_t id = aggrReq->id_;
+  uint64_t uid = aggrReq->uid_;
   if (debug_) {
     std::cout << "[SSTSimEng:SSTDebug] MemRead"
               << "-read-response-" << id << "-cycle-" << tickCounter_
@@ -248,14 +266,34 @@ void SimEngMemInterface::aggregatedReadResponses(
        RegisterValue(char_data, uint16_t(unsigned(aggrReq->target.size))),
        aggrReq->id_});
 
+  stats_->recordLoadAccessEnd(uid, tickCounter_);
   // Cleanup
   aggrReq->responseMap_.clear();
   delete aggrReq;
 }
 
+void SimEngMemInterface::aggregatedWriteResponses(
+    AggregateWriteRequest* aggrReq) {
+  for (auto itr = aggrReq->splitReqIds.begin();
+       itr != aggrReq->splitReqIds.end(); itr++) {
+    writeAggregationMap_.erase(*itr);
+  }
+  aggrReq->splitReqIds.clear();
+  delete aggrReq;
+}
+
 void SimEngMemInterface::SimEngMemHandlers::handle(
     StandardMem::WriteResp* rsp) {
+  uint64_t id = rsp->getID();
   delete rsp;
+
+  auto itr = memInterface_.writeAggregationMap_.find(id);
+  if (itr == memInterface_.writeAggregationMap_.end()) return;
+
+  SimEngMemInterface::AggregateWriteRequest* aggrReq = itr->second;
+  if (--aggrReq->aggregateCount_ <= 0) {
+    memInterface_.aggregatedWriteResponses(aggrReq);
+  }
 }
 
 void SimEngMemInterface::SimEngMemHandlers::handle(StandardMem::ReadResp* rsp) {

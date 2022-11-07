@@ -2,8 +2,8 @@ import sst
 import sys
 import os
 
-DEBUG_L1 = 0
-DEBUG_MEM = 0
+DEBUG_L1 = 1
+DEBUG_MEM = 1
 DEBUG_LEVEL = 10
 
 def split(param: str) -> list[str]:

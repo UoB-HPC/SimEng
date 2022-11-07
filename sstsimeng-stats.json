@@ -1,0 +1,11 @@
+{
+    "total_L1_access": 4085646,
+    "total_L2_access": 16729,
+    "total_mem_access": 238,
+    "total_memory_requests": 5473874,
+    "total_read_requests": 4102613,
+    "total_read_split_requests": 4102616,
+    "total_split_count": 5473879,
+    "total_write_count": 1371261,
+    "total_write_split_requests": 1371263
+}

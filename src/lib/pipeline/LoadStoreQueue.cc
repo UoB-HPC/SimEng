@@ -153,6 +153,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     // request(s)
     if (temp_load_addr.size() > 0) {
       for (size_t i = 0; i < temp_load_addr.size(); i++) {
+        // std::cout << "Ins-seqId: " << tickCounter_ << std::endl;
         requestLoadQueue_[tickCounter_ + insn->getLSQLatency()]
             .back()
             .reqAddresses.push(temp_load_addr[i]);

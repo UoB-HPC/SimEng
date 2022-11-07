@@ -425,6 +425,22 @@ void Instruction::decode() {
 
   // Identify loads/stores
   if (accessesMemory) {
+    const auto& op = metadata.operands[0];
+    if (op.type == ARM64_OP_REG) {
+      if (op.reg >= ARM64_REG_V0) {
+        isVectorData_ = true;
+      } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
+        isSMEData_ = true;
+      } else if (op.reg >= ARM64_REG_Z0) {
+        isSVEData_ = true;
+      } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
+        isScalarData_ = true;
+      } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
+        isPredicate_ = true;
+      } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
+        isScalarData_ = true;
+      }
+    }
     // Set size of data to be stored if it hasn't already been set
     if (!isMicroOp_) dataSize_ = getDataSize(metadata.operands[0]);
 

@@ -64,6 +64,13 @@ void Instruction::SMdisabled() {
 }
 
 void Instruction::execute() {
+  // if (isStoreData_ || isStoreAddress_ || isLoad_) {
+  //   std::cout << metadata.mnemonic << " " << metadata.operandStr
+  //             << " ~ Group: " << getGroup() << " ~ Execution: " <<
+  //             getLatency()
+  //             << " ~ Stall-Cycle: " << getStallCycles()
+  //             << " ~ LSQLatency: " << getLSQLatency() << std::endl;
+  // }
   assert(!executed_ && "Attempted to execute an instruction more than once");
   assert(
       canExecute() &&

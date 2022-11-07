@@ -227,6 +227,9 @@ class SimEngCoreWrapper : public SST::Component {
 
   /** Variable to enable parseable print debug statements in test mode. */
   bool debug_ = false;
+
+  /** Stats class reference */
+  Stats* _stats_;
 };
 
 }  // namespace SSTSimEng

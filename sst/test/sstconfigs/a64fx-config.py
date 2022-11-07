@@ -1,10 +1,37 @@
 import sst
+import sys
+
+DEBUG_L1 = 1
+DEBUG_L2 = 1
+DEBUG_MEM = 1
+DEBUG_LEVEL = 10
+
+def split(param: str) -> list[str]:
+    return param.split("=")
+
+def parseParams(params: list[str]):
+    out = {
+        "withSrc": False,
+        "source": "",
+        "clw": 8,
+        "heap": "",
+        "model": "",
+        "args": "",
+        "execBin": ""
+    }
+    for param in params:
+        key, value = split(param)
+        if (key == "withSrc"):
+            out[key] = value == "True"
+        else:
+            out[key] = value
+    return out
 
 DEBUG_L1 = 0
-DEBUG_L2 = 0
 DEBUG_MEM = 0
-DEBUG_LEVEL = 0
+DEBUG_LEVEL = 10
 
+params = parseParams(sys.argv[1:])
 
 # ------------------------------------------------ Utility -------------------------------------------
 
@@ -84,12 +111,16 @@ memprops = getMemoryProps(8, "GiB")
 # Using sst-info sstsimeng.simengcore to get all cache parameters, ports and subcomponent slots.
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": "/home/rahat/asimov/SimEng/configs/sst-cores/a64fx-sst.yaml",
-    "executable_path": "/home/rahat/asimov/ssh-dir/cachebw_static",
-    "executable_args": "64 1000",
+    "simeng_config_path": params["model"],
+    "executable_path": "",
+    "executable_args": "",
     "clock" : A64FX_CLOCK,
-    "max_addr_memory": memprops["end_addr"],
+    "max_addr_memory": 2*1024*1024*1024-1,
     "cache_line_width": A64FX_CLW,
+    "source": params["source"],
+    "assemble_with_source": params["withSrc"],
+    "heap": params["heap"],
+    "debug": True
 })
 
 # Instantiating the StandardInterface which communicates with the SST memory model.

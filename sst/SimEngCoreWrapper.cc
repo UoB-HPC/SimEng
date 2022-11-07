@@ -51,8 +51,10 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
       new StandardMem::Handler<SimEngCoreWrapper>(
           this, &SimEngCoreWrapper::handleMemoryEvent));
 
-  dataMemory_ = std::make_shared<SimEngMemInterface>(sstMem_, cacheLineWidth_,
-                                                     maxAddrMemory_, debug_);
+  _stats_ = new Stats();
+
+  dataMemory_ = std::make_shared<SimEngMemInterface>(
+      sstMem_, cacheLineWidth_, maxAddrMemory_, debug_, _stats_);
 
   handlers_ = new SimEngMemInterface::SimEngMemHandlers(*dataMemory_, &output_);
 
@@ -94,6 +96,8 @@ void SimEngCoreWrapper::finish() {
   for (const auto& [key, value] : stats) {
     std::cout << "[SimEng] " << key << ": " << value << "\n";
   }
+
+  _stats_->dumpStats();
 
   std::cout << "\n[SimEng] Finished " << iterations_ << " ticks in " << duration
             << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
