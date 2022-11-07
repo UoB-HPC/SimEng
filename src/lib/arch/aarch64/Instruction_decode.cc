@@ -206,27 +206,29 @@ void Instruction::decode() {
   for (size_t i = 0; i < metadata.operandCount; i++) {
     const auto& op = metadata.operands[i];
 
+    // Determine the data type the instruction operates on based on the
+    // register operand used
+    if (i == 0) {
+      // Belongs to the predicate group if the detsination register is a
+      // predicate
+      if (op.reg >= ARM64_REG_V0) {
+        isVectorData_ = true;
+      } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
+        isSMEData_ = true;
+      } else if (op.reg >= ARM64_REG_Z0) {
+        isSVEData_ = true;
+      } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
+        isScalarData_ = true;
+      } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
+        isPredicate_ = true;
+      } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
+        isScalarData_ = true;
+      }
+    }
+
     if (op.type == ARM64_OP_REG) {  // Register operand
       if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&
           op.reg != ARM64_REG_XZR) {
-        // Belongs to the predicate group if the destination register is a
-        // predicate
-        // Determine the data type the instruction operates on based on the
-        // register operand used
-        if (op.reg >= ARM64_REG_V0) {
-          isVectorData_ = true;
-        } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
-          isSMEData_ = true;
-        } else if (op.reg >= ARM64_REG_Z0) {
-          isSVEData_ = true;
-        } else if (op.reg <= ARM64_REG_S31 && op.reg >= ARM64_REG_Q0) {
-          isScalarData_ = true;
-        } else if (op.reg <= ARM64_REG_P15 && op.reg >= ARM64_REG_P0) {
-          isPredicate_ = true;
-        } else if (op.reg <= ARM64_REG_H31 && op.reg >= ARM64_REG_B0) {
-          isScalarData_ = true;
-        }
-
         if ((op.reg >= ARM64_REG_ZAB0 && op.reg < ARM64_REG_V0) ||
             (op.reg == ARM64_REG_ZA)) {
           // Add all Matrix register rows as destination operands
