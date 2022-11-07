@@ -163,7 +163,7 @@ void Assembler::assemble(const char* source, const char* triple) {
   ASSERT(!textOrErr.takeError(), "Failed to find .text section");
   auto& text = *textOrErr;
 
-// Get reference to .text section data
+  // Get reference to .text section data
 #if SIMENG_LLVM_VERSION < 12
   auto textDataOrErr = elf.getSectionContents(text);
 #else
