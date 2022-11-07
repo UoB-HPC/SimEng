@@ -15,8 +15,13 @@
 #include "llvm/Object/ELF.h"
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/SourceMgr.h"
+
+#if SIMENG_LLVM_VERSION < 14
 #include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
+#else
+#include "llvm/MC/TargetRegistry.h"
+#endif
+
 #endif
 
 using namespace SST::SSTSimEng;
