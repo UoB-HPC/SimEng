@@ -49,15 +49,15 @@ DispatchIssueUnit::DispatchIssueUnit(
   }
   for (uint16_t i = 0; i < reservationStations_.size(); i++)
     flushed_.emplace(i, std::initializer_list<std::shared_ptr<Instruction>>{});
+
+  dispatches_ = std::make_unique<uint16_t[]>(reservationStations_.size());
 }
 
 void DispatchIssueUnit::tick() {
   input_.stall(false);
 
-  /** Stores the number of instructions dispatched for each
-   * reservation station. */
-  std::vector<uint16_t> dispatches(
-      static_cast<unsigned short>(reservationStations_.size()), 0);
+  // Reset the array
+  std::fill_n(dispatches_.get(), reservationStations_.size(), 0);
 
   for (size_t slot = 0; slot < input_.getWidth(); slot++) {
     auto& uop = input_.getHeadSlots()[slot];
@@ -82,7 +82,7 @@ void DispatchIssueUnit::tick() {
 
     // When appropriate, stall uop or input buffer if stall buffer full
     if (rs.currentSize == rs.capacity ||
-        dispatches[RS_Index] == rs.dispatchRate) {
+        dispatches_[RS_Index] == rs.dispatchRate) {
       // Deallocate port given
       portAllocator_.deallocate(port);
       input_.stall(true);
@@ -120,7 +120,7 @@ void DispatchIssueUnit::tick() {
     }
 
     // Increment dispatches made and RS occupied entries size
-    dispatches[RS_Index]++;
+    dispatches_[RS_Index]++;
     rs.currentSize++;
 
     if (ready) {
