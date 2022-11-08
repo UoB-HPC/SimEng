@@ -274,6 +274,9 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
             : std::make_unique<simeng::CoreInstance>(
                   simengConfigPath_, executablePath_, executableArgs_);
   } else {
+    output_.verbose(CALL_INFO, 1, 0,
+                    "No SimEng configuration provided. Using the default "
+                    "a64fx-sst.yaml configuration file.\n");
     coreInstance_ =
         assembleWithSource_
             ? std::make_unique<simeng::CoreInstance>(
