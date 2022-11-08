@@ -230,6 +230,11 @@ class SimEngCoreWrapper : public SST::Component {
 
   /** Variable to enable parseable print debug statements in test mode. */
   bool debug_ = false;
+
+  /** Path to A64fx model config. */
+  const std::string a64fxConfigPath_ =
+      std::string(SIMENG_BUILD_DIR) +
+      "/simeng-configs/sst-cores/a64fx-sst.yaml";
 };
 
 }  // namespace SSTSimEng

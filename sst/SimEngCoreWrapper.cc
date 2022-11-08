@@ -232,8 +232,8 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
            characters/strings are escaped properly within a set single or 
            double quotes. To escape quotes use (\\\) instead of (\).\n
            )");
-    std::cerr << "[SSTSimEng:SimEngCoreWrapper] Error occured at index " << index
-              << " of the argument string - substring: "
+    std::cerr << "[SSTSimEng:SimEngCoreWrapper] Error occured at index "
+              << index << " of the argument string - substring: "
               << "[ " << str << " ]" << std::endl;
     std::exit(EXIT_FAILURE);
   }
@@ -257,40 +257,42 @@ void SimEngCoreWrapper::initialiseHeapData() {
 
 void SimEngCoreWrapper::fabricateSimEngCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
+  char* assembled_source = NULL;
+  size_t assembled_source_size = 0;
+  if (assembleWithSource_) {
+#ifdef SIMENG_ENABLE_SST_TESTS
+    output_.verbose(CALL_INFO, 1, 0,
+                    "Assembling source instructions using LLVM\n");
+    Assembler assemble = Assembler(source_);
+    assembled_source = assemble.getAssembledSource();
+    assembled_source_size = assemble.getAssembledSourceSize();
+#else
+    output_.verbose(
+        CALL_INFO, 1, 0,
+        "assembled_with_source parameter was supplied as true by the "
+        "SST configuration file used. However, LLVM wasn't injected as a "
+        "dependency to properly assemble source instructions. Please ensure "
+        "SIMENG_ENABLE_SST_TESTS compile option is specified during the "
+        "initial cmake configuration step.");
+    std::exit(1);
+#endif
+  }
   if (simengConfigPath_ != "") {
     if (assembleWithSource_) {
-      output_.verbose(CALL_INFO, 1, 0,
-                      "Assembling source instructions using LLVM\n");
-      Assembler assemble = Assembler(source_);
       coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          assemble.getAssembledSource(), assemble.getAssembledSourceSize(),
-          simengConfigPath_);
+          assembled_source, assembled_source_size, simengConfigPath_);
     } else {
       coreInstance_ = std::make_unique<simeng::CoreInstance>(
           simengConfigPath_, executablePath_, executableArgs_);
     }
   } else {
-#ifdef SIMENG_ENABLE_SST_TESTS
-    std::string a64fxConfigPath = std::string(SIMENG_BUILD_DIR) +
-                                  "/simeng-configs/sst-cores/a64fx-sst.yaml";
-    output_.verbose(
-        CALL_INFO, 1, 0,
-        "No config path provided so defaulting to a64fx-sst.yaml\n");
     if (assembleWithSource_) {
-      output_.verbose(CALL_INFO, 1, 0,
-                      "Assembling source instructions using LLVM\n");
-      Assembler assemble = Assembler(source_);
       coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          assemble.getAssembledSource(), assemble.getAssembledSourceSize(),
-          a64fxConfigPath);
+          assembled_source, assembled_source_size, a64fxConfigPath_);
     } else {
       coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          a64fxConfigPath, executablePath_, executableArgs_);
+          a64fxConfigPath_, executablePath_, executableArgs_);
     }
-#else
-    coreInstance_ = std::make_unique<simeng::CoreInstance>(executablePath_,
-                                                           executableArgs_);
-#endif
   }
   if (coreInstance_->getSimulationMode() !=
       simeng::SimulationMode::OutOfOrder) {
