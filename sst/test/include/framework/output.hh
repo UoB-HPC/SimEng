@@ -6,6 +6,13 @@
 
 #include "framework/context.hh"
 
+/**
+ * Substitution failure is not an error (SFINAE) refers to a
+ * situation in C++ where an invalid substitution of template parameters is not
+ * in itself an error.
+ * https://en.cppreference.com/w/cpp/language/sfinae
+ */
+
 /** Static class which exposes methods to color strings. */
 class Formatter {
  private:

@@ -39,7 +39,7 @@ def getMemoryProps(memory_size: int, si: str):
 # Cache line size of L1 & L2 in A64FX in bytes.
 A64FX_CLW = 256
 # Clock Frequency of A64FX.
-A64FX_CLOCK = "2GHz"
+A64FX_CLOCK = "1.8GHz"
 # Size of L1 cache in A64fx.
 A64FX_L1_SIZE = "64KiB"
 # Size of L2 cache in A64fx.

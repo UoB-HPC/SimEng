@@ -232,7 +232,7 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
            characters/strings are escaped properly within a set single or 
            double quotes. To escape quotes use (\\\) instead of (\).\n
            )");
-    std::cerr << "Error occured at index " << index
+    std::cerr << "[SSTSimEng:SimEngCoreWrapper] Error occured at index " << index
               << " of the argument string - substring: "
               << "[ " << str << " ]" << std::endl;
     std::exit(EXIT_FAILURE);
@@ -241,10 +241,23 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
   return args;
 }
 
+void SimEngCoreWrapper::initialiseHeapData() {
+  std::vector<uint8_t> initialHeapData;
+  std::vector<uint64_t> heapVals = splitHeapStr();
+  uint64_t heapSize = heapVals.size() * 8;
+  initialHeapData.resize(heapSize);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData.data());
+  for (size_t x = 0; x < heapVals.size(); x++) {
+    heap[x] = heapVals[x];
+  }
+  uint64_t heapStart = coreInstance_->getHeapStart();
+  std::copy(initialHeapData.begin(), initialHeapData.end(),
+            coreInstance_->getProcessImage().get() + heapStart);
+}
+
 void SimEngCoreWrapper::fabricateSimEngCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
   if (simengConfigPath_ != "") {
-#ifdef SIMENG_ENABLE_SST_TESTS
     if (assembleWithSource_) {
       output_.verbose(CALL_INFO, 1, 0,
                       "Assembling source instructions using LLVM\n");
@@ -256,10 +269,6 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
       coreInstance_ = std::make_unique<simeng::CoreInstance>(
           simengConfigPath_, executablePath_, executableArgs_);
     }
-#else
-    coreInstance_ = std::make_unique<simeng::CoreInstance>(
-        simengConfigPath_, executablePath_, executableArgs_);
-#endif
   } else {
 #ifdef SIMENG_ENABLE_SST_TESTS
     std::string a64fxConfigPath = std::string(SIMENG_BUILD_DIR) +
@@ -315,17 +324,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
 // If testing is enabled populate heap if heap values have been specified.
 #ifdef SIMENG_ENABLE_SST_TESTS
   if (heapStr_ != "") {
-    std::vector<uint8_t> initialHeapData;
-    std::vector<uint64_t> heapVals = splitHeapStr();
-    uint64_t heapSize = heapVals.size() * 8;
-    initialHeapData.resize(heapSize);
-    uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData.data());
-    for (size_t x = 0; x < heapVals.size(); x++) {
-      heap[x] = heapVals[x];
-    }
-    uint64_t heapStart = coreInstance_->getHeapStart();
-    std::copy(initialHeapData.begin(), initialHeapData.end(),
-              coreInstance_->getProcessImage().get() + heapStart);
+    initialiseHeapData();
   }
 #endif
   // Send the process image data over to the SST memory

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 include(FetchContent)
 set(FETCHCONTENT_QUIET OFF)
-set(CMAKE_VERBOSE_MAKEFILE ON)
+
 # FetchContent_MakeAvailable was introduced in 3.14
 # there also isn't a version that accepts extra args at the end for add_subdirectory
 # hence we write one ourselves

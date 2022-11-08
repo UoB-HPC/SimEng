@@ -152,6 +152,9 @@ class SimEngCoreWrapper : public SST::Component {
    * uint32_t values. */
   std::vector<uint64_t> splitHeapStr();
 
+  /** Initialises heap data specified by the testing framework. */
+  void initialiseHeapData();
+
   // SST properties
   /**
    * SST defined output class used to output information to standard output.
