@@ -5,7 +5,6 @@ set(SIMENG_SST_TEST_SOURCES
     test_files/tg2_cache_access.cc
     test_files/tg3_request_split.cc
     test_files/tg4_request_misaligned.cc
-    test_files/tg5_benchmarks.cc
 )
 add_executable(sstsimengtest ${SIMENG_SST_TEST_SOURCES})
 

@@ -23,9 +23,6 @@
 #endif
 #endif
 
-
-
-
 using namespace SST::SSTSimEng;
 
 #define ASSERT(expr, errStr)                                                 \
@@ -43,6 +40,8 @@ Assembler::Assembler(std::string source) {
 
 Assembler::~Assembler(){};
 
+// Conditional compilation code to ensure LLVM is used to assemble source
+// instruction which SIMENG_ENABLE_SST_TESTS is defined
 #ifdef SIMENG_ENABLE_SST_TESTS
 void Assembler::assemble(const char* source, const char* triple) {
   // Initialise LLVM
