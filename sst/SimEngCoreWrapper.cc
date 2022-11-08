@@ -260,39 +260,26 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
   char* assembled_source = NULL;
   size_t assembled_source_size = 0;
   if (assembleWithSource_) {
-#ifdef SIMENG_ENABLE_SST_TESTS
     output_.verbose(CALL_INFO, 1, 0,
                     "Assembling source instructions using LLVM\n");
     Assembler assemble = Assembler(source_);
     assembled_source = assemble.getAssembledSource();
     assembled_source_size = assemble.getAssembledSourceSize();
-#else
-    output_.verbose(
-        CALL_INFO, 1, 0,
-        "assembled_with_source parameter was supplied as true by the "
-        "SST configuration file used. However, LLVM wasn't injected as a "
-        "dependency to properly assemble source instructions. Please ensure "
-        "SIMENG_ENABLE_SST_TESTS compile option is specified during the "
-        "initial cmake configuration step.");
-    std::exit(1);
-#endif
   }
   if (simengConfigPath_ != "") {
-    if (assembleWithSource_) {
-      coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          assembled_source, assembled_source_size, simengConfigPath_);
-    } else {
-      coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          simengConfigPath_, executablePath_, executableArgs_);
-    }
+    coreInstance_ =
+        assembleWithSource_
+            ? std::make_unique<simeng::CoreInstance>(
+                  assembled_source, assembled_source_size, simengConfigPath_)
+            : std::make_unique<simeng::CoreInstance>(
+                  simengConfigPath_, executablePath_, executableArgs_);
   } else {
-    if (assembleWithSource_) {
-      coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          assembled_source, assembled_source_size, a64fxConfigPath_);
-    } else {
-      coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          a64fxConfigPath_, executablePath_, executableArgs_);
-    }
+    coreInstance_ =
+        assembleWithSource_
+            ? std::make_unique<simeng::CoreInstance>(
+                  assembled_source, assembled_source_size, a64fxConfigPath_)
+            : std::make_unique<simeng::CoreInstance>(
+                  a64fxConfigPath_, executablePath_, executableArgs_);
   }
   if (coreInstance_->getSimulationMode() !=
       simeng::SimulationMode::OutOfOrder) {
