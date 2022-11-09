@@ -1,11 +1,11 @@
 {
-    "total_L1_access": 4085646,
-    "total_L2_access": 16729,
-    "total_mem_access": 238,
-    "total_memory_requests": 5473874,
-    "total_read_requests": 4102613,
-    "total_read_split_requests": 4102616,
-    "total_split_count": 5473879,
-    "total_write_count": 1371261,
-    "total_write_split_requests": 1371263
+    "total_L1_access": 415069,
+    "total_L2_access": 1826,
+    "total_mem_access": 251,
+    "total_memory_requests": 559907,
+    "total_read_requests": 417146,
+    "total_read_split_requests": 417147,
+    "total_split_count": 559910,
+    "total_write_count": 142761,
+    "total_write_split_requests": 142763
 }

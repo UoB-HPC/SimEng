@@ -86,7 +86,7 @@ cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
     "simeng_config_path": "/home/rahat/asimov/SimEng/configs/sst-cores/a64fx-sst.yaml",
     "executable_path": "/home/rahat/asimov/ssh-dir/cachebw_static",
-    "executable_args": "64 1000",
+    "executable_args": "64 100",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -146,15 +146,15 @@ l2cache.addParams({
       "response_link_width": A64FX_L2TOL1_PC_TPUT,
       "addr_range_start": 0,
       "addr_range_end": 8 * 1024 * 1024 - 1
-
 })
+
 # Set MESI L2 coherence controller to the "coherence" slot
 coherence_controller_l2 = l2cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_inclusive")
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
 replacement_policy_l2 = l2cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 
-# --------------------------------------------- L2 Cache ---------------------------------------------
+# --------------------------------------------- L2 Cache ----------------------------------------------
 
 
 # ----------------------------------- Memory Backend & Controller -------------------------------------
