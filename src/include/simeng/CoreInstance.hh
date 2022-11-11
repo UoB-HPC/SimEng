@@ -53,6 +53,11 @@ class CoreInstance {
   CoreInstance(std::string configPath, std::string executablePath,
                std::vector<std::string> executableArgs);
 
+  /** CoreInstance with source code assembled by LLVM and a model configuration.
+   */
+  CoreInstance(char* assembledSource, size_t sourceSize,
+               std::string configPath);
+
   ~CoreInstance();
 
   /** Set the SimEng L1 instruction cache memory. */
@@ -86,6 +91,9 @@ class CoreInstance {
   /** Getter for the size of the created process image. */
   const uint64_t getProcessImageSize() const;
 
+  /* Getter for heap start. */
+  const uint64_t getHeapStart() const;
+
  private:
   /** Generate the appropriate simulation objects as parameterised by the
    * configuration.*/
@@ -112,6 +120,15 @@ class CoreInstance {
 
   /** Construct the special file directory. */
   void createSpecialFileDirectory();
+
+  /** Whether or not the source has been assembled by LLVM. */
+  bool assembledSource_ = false;
+
+  /** Reference to source assembled by LLVM. */
+  char* source_ = nullptr;
+
+  /** Size of the source code assembled by LLVM. */
+  size_t sourceSize_ = 0;
 
   /** The config file describing the modelled core to be created. */
   YAML::Node config_;
