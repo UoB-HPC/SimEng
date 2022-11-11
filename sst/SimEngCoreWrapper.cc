@@ -86,7 +86,7 @@ void SimEngCoreWrapper::finish() {
   double khz =
       (iterations_ / (static_cast<double>(duration) / 1000.0)) / 1000.0;
   uint64_t retired = core_->getInstructionsRetiredCount();
-  double mips = retired / (static_cast<double>(duration) / 1000.0);
+  double mips = (retired / (static_cast<double>(duration))) / 1000.0;
 
   // Print stats
   std::cout << "\n";
