@@ -236,7 +236,7 @@ Latencies:
     - LOAD_VECTOR
     - STORE_ADDRESS_SCALAR
     - STORE_ADDRESS_VECTOR
-    Execution-Latency: 6
+    Execution-Latency: 3
     Execution-Throughput: 1
   10:
     Instruction-Groups: 
