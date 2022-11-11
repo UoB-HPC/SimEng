@@ -100,7 +100,6 @@ std::vector<StandardMem::Request*> SimEngMemInterface::splitAggregatedRequest(
       size -= cacheLineWidth_;
       currReqSize = cacheLineWidth_;
     }
-
     // SST write requests accept uint8_t vectors as data.
     std::vector<uint8_t> payload;
     payload.resize(currReqSize);

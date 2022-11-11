@@ -39,7 +39,7 @@ def getMemoryProps(memory_size: int, si: str):
 # Cache line size of L1 & L2 in A64FX in bytes.
 A64FX_CLW = 256
 # Clock Frequency of A64FX.
-A64FX_CLOCK = "2GHz"
+A64FX_CLOCK = "1.8GHz"
 # Size of L1 cache in A64fx.
 A64FX_L1_SIZE = "64KiB"
 # Size of L2 cache in A64fx.
@@ -84,9 +84,9 @@ memprops = getMemoryProps(8, "GiB")
 # Using sst-info sstsimeng.simengcore to get all cache parameters, ports and subcomponent slots.
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": "/home/rahat/asimov/SimEng/configs/sst-cores/a64fx-sst.yaml",
-    "executable_path": "/home/rahat/asimov/ssh-dir/cachebw_static",
-    "executable_args": "64 100",
+    "simeng_config_path": "<PATH TO A64FX SIMENG MODEL CONFIG>",
+    "executable_path": "<PATH TO EXECUTABLE BINARY>",
+    "executable_args": "",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": A64FX_CLW,
@@ -114,9 +114,7 @@ l1cache.addParams({
       "debug_level" : DEBUG_LEVEL,
       "coherence_protocol": A64FX_COHP,
       "request_link_width": A64FX_L1TOL2_PC_TPUT,
-      "response_link_width": A64FX_L1TOCPU_PC_TPUT,
-      "addr_range_start": 0,
-      "addr_range_end": 64 * 1024 - 1
+      "response_link_width": A64FX_L1TOCPU_PC_TPUT
 })
 # Set MESI L1 coherence controller to the "coherence" slot
 coherence_controller_l1 = l1cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_l1")
@@ -144,17 +142,14 @@ l2cache.addParams({
       "coherence_protocol": A64FX_COHP,
       "request_link_width": A64FX_L2TOMEM_PCMG_TPUT,
       "response_link_width": A64FX_L2TOL1_PC_TPUT,
-      "addr_range_start": 0,
-      "addr_range_end": 8 * 1024 * 1024 - 1
 })
-
 # Set MESI L2 coherence controller to the "coherence" slot
 coherence_controller_l2 = l2cache.setSubComponent("coherence", "memHierarchy.coherence.mesi_inclusive")
 # Set LRU replacement policy to the "replacement" slot.
 # index=0 indicates replacement policy is for cache.
 replacement_policy_l2 = l2cache.setSubComponent("replacement", "memHierarchy.replacement.lru", 0)
 
-# --------------------------------------------- L2 Cache ----------------------------------------------
+# --------------------------------------------- L2 Cache ---------------------------------------------
 
 
 # ----------------------------------- Memory Backend & Controller -------------------------------------

@@ -152,6 +152,9 @@ class SimEngCoreWrapper : public SST::Component {
    * uint32_t values. */
   std::vector<uint64_t> splitHeapStr();
 
+  /** Initialises heap data specified by the testing framework. */
+  void initialiseHeapData();
+
   // SST properties
   /**
    * SST defined output class used to output information to standard output.
@@ -230,6 +233,10 @@ class SimEngCoreWrapper : public SST::Component {
 
   /** Stats class reference */
   Stats* _stats_;
+  /** Path to A64fx model config. */
+  const std::string a64fxConfigPath_ =
+      std::string(SIMENG_BUILD_DIR) +
+      "/simeng-configs/sst-cores/a64fx-sst.yaml";
 };
 
 }  // namespace SSTSimEng

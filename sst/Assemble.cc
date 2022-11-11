@@ -40,6 +40,12 @@ Assembler::Assembler(std::string source) {
 
 Assembler::~Assembler(){};
 
+// The assemble method is conditionally compiled. The
+// SIMENG_ENABLE_SST_TESTS compile definition adds LLVM as a
+// dependency to the testing framework, so that a string of instructions can be
+// assembled and executed by SSTSimEng. If SIMENG_ENABLE_SST_TESTS is not
+// defined SST will not be testing mode and hence LLVM is not required as a
+// dependency.
 #ifdef SIMENG_ENABLE_SST_TESTS
 void Assembler::assemble(const char* source, const char* triple) {
   // Initialise LLVM
@@ -95,8 +101,8 @@ void Assembler::assemble(const char* source, const char* triple) {
       target->createMCSubtargetInfo(triple, "", subtargetFeatures));
   ASSERT(subtargetInfo != nullptr, "Failed to create LLVM subtarget info");
 
-  // For LLVM versions 13+, MC subtarget info is needed to create context and
-  // object file info
+// For LLVM versions 13+, MC subtarget info is needed to create context and
+// object file info
 #if SIMENG_LLVM_VERSION > 12
   llvm::MCContext context(llvm::Triple(triple), asmInfo.get(), regInfo.get(),
                           subtargetInfo.get(), &srcMgr, &options, false, "");
@@ -176,7 +182,16 @@ void Assembler::assemble(const char* source, const char* triple) {
   std::copy(textData.begin(), textData.end(), code_);
 }
 #else
-void Assembler::assemble(const char* source, const char* triple) {}
+void Assembler::assemble(const char* source, const char* triple) {
+  std::cerr
+      << "[SSTSimEng:Assembler] assembled_with_source parameter was "
+         "supplied as true by the SST configuration file used. However, LLVM "
+         "wasn't injected as a dependency to properly assemble source "
+         "instructions. Please ensure SIMENG_ENABLE_SST_TESTS compile option "
+         "is specified during the initial cmake configuration step."
+      << std::endl;
+  std::exit(1);
+}
 #endif
 
 char* Assembler::getAssembledSource() { return reinterpret_cast<char*>(code_); }

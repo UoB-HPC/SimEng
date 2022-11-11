@@ -1,6 +1,6 @@
 set(SIMENG_SST_TEST_SOURCES 
     main.cc
-    src/tg0_llvm_assemble.cc
+    # src/tg0_llvm_assemble.cc
     # src/tg1_load_store.cc
     # src/tg2_cache_access.cc
     # src/tg3_request_split.cc

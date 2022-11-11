@@ -15,7 +15,7 @@ using namespace SST::Interfaces;
 
 SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
     : SST::Component(id) {
-  output_.init("[SSTSimEng:SimEngCoreWrapper] " + getName() + "@p:@l ", 999, 0,
+  output_.init("[SSTSimEng:SimEngCoreWrapper] " + getName() + ":@p:@l ", 999, 0,
                SST::Output::STDOUT);
   clock_ = registerClock(params.find<std::string>("clock", "1GHz"),
                          new SST::Clock::Handler<SimEngCoreWrapper>(
@@ -236,8 +236,8 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
            characters/strings are escaped properly within a set single or 
            double quotes. To escape quotes use (\\\) instead of (\).\n
            )");
-    std::cerr << "Error occured at index " << index
-              << " of the argument string - substring: "
+    std::cerr << "[SSTSimEng:SimEngCoreWrapper] Error occured at index "
+              << index << " of the argument string - substring: "
               << "[ " << str << " ]" << std::endl;
     std::exit(EXIT_FAILURE);
   }
@@ -245,47 +245,48 @@ std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
   return args;
 }
 
+void SimEngCoreWrapper::initialiseHeapData() {
+  std::vector<uint8_t> initialHeapData;
+  std::vector<uint64_t> heapVals = splitHeapStr();
+  uint64_t heapSize = heapVals.size() * 8;
+  initialHeapData.resize(heapSize);
+  uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData.data());
+  for (size_t x = 0; x < heapVals.size(); x++) {
+    heap[x] = heapVals[x];
+  }
+  uint64_t heapStart = coreInstance_->getHeapStart();
+  std::copy(initialHeapData.begin(), initialHeapData.end(),
+            coreInstance_->getProcessImage().get() + heapStart);
+}
+
 void SimEngCoreWrapper::fabricateSimEngCore() {
   output_.verbose(CALL_INFO, 1, 0, "Setting up SimEng Core\n");
+  char* assembled_source = NULL;
+  size_t assembled_source_size = 0;
+  if (assembleWithSource_) {
+    output_.verbose(CALL_INFO, 1, 0,
+                    "Assembling source instructions using LLVM\n");
+    Assembler assemble = Assembler(source_);
+    assembled_source = assemble.getAssembledSource();
+    assembled_source_size = assemble.getAssembledSourceSize();
+  }
   if (simengConfigPath_ != "") {
-#ifdef SIMENG_ENABLE_SST_TESTS
-    if (assembleWithSource_) {
-      output_.verbose(CALL_INFO, 1, 0,
-                      "Assembling source instructions using LLVM\n");
-      Assembler assemble = Assembler(source_);
-      coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          assemble.getAssembledSource(), assemble.getAssembledSourceSize(),
-          simengConfigPath_);
-    } else {
-      coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          simengConfigPath_, executablePath_, executableArgs_);
-    }
-#else
-    coreInstance_ = std::make_unique<simeng::CoreInstance>(
-        simengConfigPath_, executablePath_, executableArgs_);
-#endif
+    coreInstance_ =
+        assembleWithSource_
+            ? std::make_unique<simeng::CoreInstance>(
+                  assembled_source, assembled_source_size, simengConfigPath_)
+            : std::make_unique<simeng::CoreInstance>(
+                  simengConfigPath_, executablePath_, executableArgs_);
   } else {
-#ifdef SIMENG_ENABLE_SST_TESTS
-    std::string a64fxConfigPath = std::string(SIMENG_BUILD_DIR) +
-                                  "/simeng-configs/sst-cores/a64fx-sst.yaml";
-    output_.verbose(
-        CALL_INFO, 1, 0,
-        "No config path provided so defaulting to a64fx-sst.yaml\n");
-    if (assembleWithSource_) {
-      output_.verbose(CALL_INFO, 1, 0,
-                      "Assembling source instructions using LLVM\n");
-      Assembler assemble = Assembler(source_);
-      coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          assemble.getAssembledSource(), assemble.getAssembledSourceSize(),
-          a64fxConfigPath);
-    } else {
-      coreInstance_ = std::make_unique<simeng::CoreInstance>(
-          a64fxConfigPath, executablePath_, executableArgs_);
-    }
-#else
-    coreInstance_ = std::make_unique<simeng::CoreInstance>(executablePath_,
-                                                           executableArgs_);
-#endif
+    output_.verbose(CALL_INFO, 1, 0,
+                    "No SimEng configuration provided. Using the default "
+                    "a64fx-sst.yaml configuration file.\n");
+    coreInstance_ =
+        assembleWithSource_
+            ? std::make_unique<simeng::CoreInstance>(
+                  assembled_source, assembled_source_size, a64fxConfigPath_)
+            : std::make_unique<simeng::CoreInstance>(
+                  a64fxConfigPath_, executablePath_, executableArgs_);
   }
   if (coreInstance_->getSimulationMode() !=
       simeng::SimulationMode::OutOfOrder) {
@@ -319,17 +320,7 @@ void SimEngCoreWrapper::fabricateSimEngCore() {
 // If testing is enabled populate heap if heap values have been specified.
 #ifdef SIMENG_ENABLE_SST_TESTS
   if (heapStr_ != "") {
-    std::vector<uint8_t> initialHeapData;
-    std::vector<uint64_t> heapVals = splitHeapStr();
-    uint64_t heapSize = heapVals.size() * 8;
-    initialHeapData.resize(heapSize);
-    uint64_t* heap = reinterpret_cast<uint64_t*>(initialHeapData.data());
-    for (size_t x = 0; x < heapVals.size(); x++) {
-      heap[x] = heapVals[x];
-    }
-    uint64_t heapStart = coreInstance_->getHeapStart();
-    std::copy(initialHeapData.begin(), initialHeapData.end(),
-              coreInstance_->getProcessImage().get() + heapStart);
+    initialiseHeapData();
   }
 #endif
   // Send the process image data over to the SST memory
