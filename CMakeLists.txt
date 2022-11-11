@@ -126,6 +126,8 @@ option(SIMENG_ENABLE_TESTS "Whether to enable testing for SimEng" OFF)
 option(SIMENG_USE_EXTERNAL_LLVM "Use an external LLVM rather than building it as a submodule" OFF)
 option(SIMENG_SANITIZE "Enable compiler sanitizers" OFF)
 option(SIMENG_OPTIMIZE "Enable Extra Compiler Optimizatoins" OFF)
+option(SIMENG_ENABLE_SST "Compile SimEng SST Wrapper" OFF)
+option(SIMENG_ENABLE_SST_TESTS "Enable testing for SST" OFF)
 
 if (SIMENG_OPTIMIZE)
   # Turn on link time optimization for all targets.
@@ -223,3 +225,24 @@ endif()
 # include sources
 add_subdirectory(src)
 add_subdirectory(docs)
+
+if (SIMENG_ENABLE_SST)
+  if (SST_INSTALL_DIR)
+    add_subdirectory(sst)
+    if (SIMENG_ENABLE_SST_TESTS)
+      enable_testing()
+      list(APPEND CMAKE_CTEST_ARGUMENTS "--verbose")
+      add_custom_target(test-sst-simeng
+      COMMAND ${CMAKE_CTEST_COMMAND}
+      DEPENDS sstsimengtest
+      )
+    endif()
+  else()
+    message(WARNING "SST build was selected but SST install directory was not specified.
+    Please specify -DSST_INSTALL_DIR=<path> for the SST build to proceed.")  
+  endif()
+endif()
+
+# Install SimEng model configs in the build directory
+set(SIMENG_CONFIG_INSTALL_DIR "${CMAKE_BINARY_DIR}/simeng-configs")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/configs/ DESTINATION ${SIMENG_CONFIG_INSTALL_DIR})
