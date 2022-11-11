@@ -49,7 +49,7 @@ A64FX_SA_L1 = 4
 # Set associativity of A64FX L2
 A64FX_SA_L2 = 16
 # Hit latency of A64FX L1 cache (cycles).
-A64FX_HL_L1 = 5
+A64FX_HL_L1 = 8
 # Hit latency of A64FX L2 cache (cycles).
 A64FX_HL_L2 = 42
 # Cohenrence protocol of A64FX caches.
@@ -84,8 +84,8 @@ memprops = getMemoryProps(8, "GiB")
 # Using sst-info sstsimeng.simengcore to get all cache parameters, ports and subcomponent slots.
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": "/home/rahat/asimov/SimEng/configs/sst-cores/a64fx-sst.yaml",
-    "executable_path": "/home/rahat/asimov/ssh-dir/cachebw_static",
+    "simeng_config_path": "/Users/rahahahat/SimEng/configs/sst-cores/a64fx-sst.yaml",
+    "executable_path": "/Users/rahahahat/ssh-dir/cachebw_static",
     "executable_args": "64 1000",
     "clock" : A64FX_CLOCK,
     "max_addr_memory": memprops["end_addr"],

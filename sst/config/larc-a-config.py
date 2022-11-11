@@ -84,9 +84,9 @@ memprops = getMemoryProps(8, "GiB")
 # Using sst-info sstsimeng.simengcore to get all cache parameters, ports and subcomponent slots.
 cpu = sst.Component("core", "sstsimeng.simengcore")
 cpu.addParams({
-    "simeng_config_path": "<PATH TO LARC SIMENG MODEL CONFIG>",
-    "executable_path": "<PATH TO EXECUTABLE BINARY>",
-    "executable_args": "",
+    "simeng_config_path": "/Users/rahahahat/SimEng/configs/sst-cores/a64fx-sst.yaml",
+    "executable_path": "/Users/rahahahat/ssh-dir/cachebw_static",
+    "executable_args": "64 1000",
     "clock" : LARC_CLOCK,
     "max_addr_memory": memprops["end_addr"],
     "cache_line_width": LARC_CLW,
