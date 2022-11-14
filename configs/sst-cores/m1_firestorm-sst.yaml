@@ -1,0 +1,320 @@
+# M1 Firestorm core
+Core:
+  Simulation-Mode: outoforder
+  Clock-Frequency: 3.2
+  Timer-Frequency: 100
+  Micro-Operations: True
+Fetch:
+  Fetch-Block-Size: 64
+  Loop-Buffer-Size: 48
+  Loop-Detection-Threshold: 4
+Process-Image:
+  Heap-Size: 1073741824 
+  Stack-Size: 1048576 
+Register-Set:
+  GeneralPurpose-Count: 394
+  FloatingPoint/SVE-Count: 432
+  Conditional-Count: 128
+Pipeline-Widths:
+  Commit: 16
+  FrontEnd: 8 
+  LSQ-Completion: 4 
+Queue-Sizes:
+  ROB: 630
+  Load: 130
+  Store: 60
+Branch-Predictor:
+  BTB-Tag-Bits: 11 
+  Saturating-Count-Bits: 2  
+  Global-History-Length: 11 
+  RAS-entries: 8 
+  Fallback-Static-Predictor: "Always-Taken"
+L1-Data-Memory:
+  Interface-Type: External
+L1-Instruction-Memory:
+  Interface-Type: Flat
+LSQ-L1-Interface:
+  Access-Latency: 3
+  Exclusive: False
+  L1 Load Bandwidth: 48
+  L1 Store Bandwidth: 48
+  Permitted Requests-Per-Cycle: 4
+  Permitted-Loads-Per-Cycle: 3
+  Permitted-Stores-Per-Cycle: 2
+Ports:
+  0:
+    Portname: INT1
+    Instruction-Support:
+      - INT_SIMPLE
+      - BRANCH
+  1:
+    Portname: INT2
+    Instruction-Support:
+      - INT_SIMPLE
+      - BRANCH
+  2:
+    Portname: INT3
+    Instruction-Support:
+      - INT_SIMPLE
+  3:
+    Portname: INT4
+    Instruction-Support:
+      - INT_SIMPLE
+  4:
+    Portname: INT5
+    Instruction-Support:
+      - INT_SIMPLE
+      - INT_MUL
+      - INT_DIV_OR_SQRT
+  5:
+    Portname: INT6
+    Instruction-Support:
+      - INT_SIMPLE
+      - INT_MUL
+  6:
+    Portname: LS1
+    Instruction-Support:
+      - STORE
+  7:
+    Portname: LS2
+    Instruction-Support:
+      - LOAD
+      - STORE
+  8:
+    Portname: LS3
+    Instruction-Support:
+      - LOAD
+  9:
+    Portname: LS4
+    Instruction-Support:
+      - LOAD
+  10:
+    Portname: FP_SIMD1
+    Instruction-Support:
+      - FP
+      - VECTOR
+  11:
+    Portname: FP_SIMD2
+    Instruction-Support:
+      - FP
+      - VECTOR
+  12:
+    Portname: FP_SIMD3
+    Instruction-Support:
+      - FP
+      - VECTOR
+  13:
+    Portname: FP_SIMD4
+    Instruction-Support:
+      - FP
+      - VECTOR
+Reservation-Stations:
+  0:
+    Size: 24
+    Dispatch-Rate: 16
+    Ports:
+      - INT1
+  1:
+    Size: 26
+    Dispatch-Rate: 16
+    Ports:
+      - INT2
+  2:
+    Size: 16
+    Dispatch-Rate: 16
+    Ports:
+      - INT3
+  3:
+    Size: 12
+    Dispatch-Rate: 16
+    Ports:
+      - INT4
+  4:
+    Size: 28
+    Dispatch-Rate: 16
+    Ports:
+      - INT5
+  5:
+    Size: 28
+    Dispatch-Rate: 16
+    Ports:
+      - INT6
+  6:
+    Size: 12
+    Dispatch-Rate: 16
+    Ports:
+      - LS1
+  7:
+    Size: 12
+    Dispatch-Rate: 16
+    Ports:
+      - LS2
+  8:
+    Size: 12
+    Dispatch-Rate: 16
+    Ports:
+      - LS3
+  9:
+    Size: 12
+    Dispatch-Rate: 16
+    Ports:
+      - LS4
+  10:
+    Size: 36
+    Dispatch-Rate: 16
+    Ports:
+      - FP_SIMD1
+  11:
+    Size: 36
+    Dispatch-Rate: 16
+    Ports:
+      - FP_SIMD2
+  12:
+    Size: 36
+    Dispatch-Rate: 16
+    Ports:
+      - FP_SIMD3
+  13:
+    Size: 36
+    Dispatch-Rate: 16
+    Ports:
+      - FP_SIMD4
+
+Execution-Units:
+  0:
+    Pipelined: True
+  1:
+    Pipelined: True
+  2:
+    Pipelined: True
+  3:
+    Pipelined: True
+  4:
+    Pipelined: True
+  5:
+    Pipelined: True
+  6:
+    Pipelined: True
+  7:
+    Pipelined: True
+  8:
+    Pipelined: True
+  9:
+    Pipelined: True
+  10:
+    Pipelined: True
+  11:
+    Pipelined: True
+  12:
+    Pipelined: True
+  13:
+    Pipelined: True
+Latencies:
+  0:
+    Instruction-Groups:
+      - INT_SIMPLE
+      - BRANCH
+    Execution-Latency: 1
+    Execution-Throughput: 1
+  1:
+    Instruction-Groups:
+      - INT_SIMPLE
+      - BRANCH
+    Execution-Latency: 1
+    Execution-Throughput: 1
+  2:
+    Instruction-Groups:
+      - INT_SIMPLE
+    Execution-Latency: 1
+    Execution-Throughput: 1
+  3:
+    Instruction-Groups:
+      - INT_SIMPLE
+    Execution-Latency: 1
+    Execution-Throughput: 1
+  4:
+    Instruction-Groups:
+      - INT_SIMPLE
+      - INT_MUL
+      - INT_DIV_OR_SQRT
+    Execution-Latency: 1
+    Execution-Throughput: 1
+  5:
+    Instruction-Groups:
+      - INT_SIMPLE
+      - INT_MUL
+    Execution-Latency: 1
+    Execution-Throughput: 1
+  6:
+    Instruction-Groups:
+      - STORE
+    Execution-Latency: 1
+    Execution-Throughput: 1
+  7:
+    Instruction-Groups:
+      - LOAD
+      - STORE
+    Execution-Latency: 1
+    Execution-Throughput: 1
+  8:
+    Instruction-Groups:
+      - LOAD
+    Execution-Latency: 1
+    Execution-Throughput: 1
+  9:
+    Instruction-Groups:
+      - LOAD
+    Execution-Latency: 1
+    Execution-Throughput: 1
+  10:
+    Instruction-Groups:
+      - FP
+      - VECTOR
+      - SCALAR
+    Execution-Latency: 3
+    Execution-Throughput: 1
+  11:
+    Instruction-Groups:
+      - FP
+      - VECTOR
+      - SCALAR
+    Execution-Latency: 3
+    Execution-Throughput: 1
+  12:
+    Instruction-Groups:
+      - FP
+      - VECTOR
+      - SCALAR
+    Execution-Latency: 3
+    Execution-Throughput: 1
+  13:
+    Instruction-Groups:
+      - FP
+      - VECTOR
+      - SCALAR
+    Execution-Latency: 3
+    Execution-Throughput: 1
+# CPU-Info mainly used to generate a replica of the special (or system) file directory 
+# structure
+CPU-Info:
+  # Set Generate-Special-Dir to True to generate the special files directory, or to False to not.
+  # (Not generating the special files directory may require the user to copy over files manually)
+  Generate-Special-Dir: True
+  # Core-Count MUST be 1 as multi-core is not supported at this time. (A64FX true value is 48)
+  Core-Count: 1
+  # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (A64FX true value is 1)
+  Socket-Count: 1
+  # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (A64FX true value is 1)
+  SMT: 1
+  # Below are the values needed to generate /proc/cpuinfo
+  BogoMIPS: 48.00
+  Features: fp asimd evtstrm aes pmull sha1 sha2 crc32 atomics fphp asimdhp cpuid asimdrdm jscvt fcma lrcpc dcpop sha3 asimddp sha512 asimdfhm dit uscat ilrcpc flagm ssbs sb paca pacg dcpodp flagm2 frint
+  CPU-Implementer: "0x46"
+  CPU-Architecture: 8
+  CPU-Variant: "0x1"
+  CPU-Part: "0x001"
+  CPU-Revision: 0
+  # Package-Count is used to generate 
+  # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
+  Package-Count: 1
+
