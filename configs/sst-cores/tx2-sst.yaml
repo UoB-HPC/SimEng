@@ -3,6 +3,7 @@
 # https://en.wikichip.org/wiki/cavium/microarchitectures/vulcan
 
 Core:
+  ISA: AArch64
   Simulation-Mode: outoforder
   # Clock Frequency is in GHz.
   Clock-Frequency: 2.5
