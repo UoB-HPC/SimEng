@@ -166,7 +166,7 @@ Latencies:
 CPU-Info:
   # Set Generate-Special-Dir to True to generate the special files directory, or to False to not.
   # (Not generating the special files directory may require the user to copy over files manually)
-  Generate-Special-Dir: True
+  Generate-Special-Dir: False
   # Core-Count MUST be 1 as multi-core is not supported at this time. (TX2 true value is 32)
   Core-Count: 1
   # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (TX2 true value is 2)
