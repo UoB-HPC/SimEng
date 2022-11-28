@@ -12,8 +12,6 @@
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
-#include "simeng/arch/aarch64/Instruction.hh"
-#include "simeng/arch/aarch64/MicroDecoder.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/kernel/Linux.hh"
 #include "simeng/models/emulation/Core.hh"
