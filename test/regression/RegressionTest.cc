@@ -2,21 +2,6 @@
 
 #include <string>
 
-#include "llvm/MC/MCAsmBackend.h"
-#include "llvm/MC/MCAsmInfo.h"
-#include "llvm/MC/MCCodeEmitter.h"
-#include "llvm/MC/MCContext.h"
-#include "llvm/MC/MCInstrInfo.h"
-#include "llvm/MC/MCObjectFileInfo.h"
-#include "llvm/MC/MCObjectWriter.h"
-#include "llvm/MC/MCParser/MCAsmParser.h"
-#include "llvm/MC/MCParser/MCTargetAsmParser.h"
-#include "llvm/MC/MCRegisterInfo.h"
-#include "llvm/MC/MCStreamer.h"
-#include "llvm/Object/ELF.h"
-#include "llvm/Support/MemoryBuffer.h"
-#include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/TargetSelect.h"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
@@ -26,12 +11,6 @@
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
 
-#if SIMENG_LLVM_VERSION < 14
-#include "llvm/Support/TargetRegistry.h"
-#else
-#include "llvm/MC/TargetRegistry.h"
-#endif
-
 RegressionTest::~RegressionTest() { delete[] code_; }
 
 void RegressionTest::TearDown() {
@@ -40,11 +19,12 @@ void RegressionTest::TearDown() {
   }
 }
 
-void RegressionTest::run(const char* source, const char* triple) {
+void RegressionTest::run(const char* source, const char* triple,
+                         const char* extensions) {
   testing::internal::CaptureStdout();
 
   // Assemble the source to a flat binary
-  assemble(source, triple);
+  assemble(source, triple, extensions);
   if (HasFatalFailure()) return;
 
   // Get pre-defined config file for OoO model
@@ -140,12 +120,8 @@ void RegressionTest::run(const char* source, const char* triple) {
   programFinished_ = true;
 }
 
-void RegressionTest::assemble(const char* source, const char* triple) {
-  // Initialise LLVM
-  LLVMInitializeAArch64TargetInfo();
-  LLVMInitializeAArch64TargetMC();
-  LLVMInitializeAArch64AsmParser();
-
+void RegressionTest::assemble(const char* source, const char* triple,
+                              const char* extensions) {
   // Get LLVM target
   std::string errStr;
   const llvm::Target* target =
@@ -185,14 +161,8 @@ void RegressionTest::assemble(const char* source, const char* triple) {
 #endif
 
   // Create MC subtarget info
-  const char* subtargetFeatures;
-#if SIMENG_LLVM_VERSION < 14
-  subtargetFeatures = "+sve,+lse";
-#else
-  subtargetFeatures = "+sve,+lse,+sve2,+sme";
-#endif
   std::unique_ptr<llvm::MCSubtargetInfo> subtargetInfo(
-      target->createMCSubtargetInfo(triple, "", subtargetFeatures));
+      target->createMCSubtargetInfo(triple, "", extensions));
   ASSERT_NE(subtargetInfo, nullptr) << "Failed to create LLVM subtarget info";
 
 // For LLVM versions 13+, MC subtarget info is needed to create context and

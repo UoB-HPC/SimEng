@@ -25,13 +25,20 @@ struct InstructionMetadata {
   /** Constructs an invalid metadata object containing the invalid encoding. */
   InstructionMetadata(const uint8_t* invalidEncoding, uint8_t bytes = 4);
 
+  /** The maximum operand string length as defined in Capstone */
   static const size_t MAX_OPERAND_STR_LENGTH =
       sizeof(cs_insn::op_str) / sizeof(char);
+  /** The maximum number of implicit source register as defined in Capstone */
   static const size_t MAX_IMPLICIT_SOURCES =
       sizeof(cs_detail::regs_read) / sizeof(uint16_t);
+  /** The maximum number of implicit destination register as defined in Capstone
+   */
   static const size_t MAX_IMPLICIT_DESTINATIONS =
       sizeof(cs_detail::regs_write) / sizeof(uint16_t);
+  /** The maximum number of groups and instruction can belong to as defined in
+   * Capstone */
   static const size_t MAX_GROUPS = sizeof(cs_detail::groups) / sizeof(uint8_t);
+  /** The maximum number of operands as defined in Capstone */
   static const size_t MAX_OPERANDS =
       sizeof(cs_arm64::operands) / sizeof(cs_arm64_op);
 

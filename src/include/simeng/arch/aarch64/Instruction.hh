@@ -371,12 +371,6 @@ class Instruction : public simeng::Instruction {
    * registers. */
   void decode();
 
-  /** Generate an EncodingNotYetImplemented exception. */
-  void nyi();
-
-  /** Generate an EncodingUnallocated exception. */
-  void unallocated();
-
   /** Set the source registers of the instruction, and create a corresponding
    * operands vector. Zero register references will be pre-supplied with a value
    * of 0. */

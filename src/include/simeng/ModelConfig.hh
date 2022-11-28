@@ -15,12 +15,12 @@
 #include "yaml-cpp/yaml.h"
 
 #define DEFAULT_CONFIG                                                         \
-  ("{Core: {Simulation-Mode: inorderpipelined, Clock-Frequency: 2.5, "         \
-   "Timer-Frequency: 100, Micro-Operations: True, Vector-Length: 512, "        \
-   "Streaming-Vector-Length: 512}, Fetch: {Fetch-Block-Size: 32, "             \
-   "Loop-Buffer-Size: 64, Loop-Detection-Threshold: 4}, Process-Image: "       \
-   "{Heap-Size: 10485760, Stack-Size: 1048576}, Register-Set: "                \
-   "{GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "                 \
+  ("{Core: {ISA: AArch64, Simulation-Mode: inorderpipelined, "                 \
+   "Clock-Frequency: 2.5, Timer-Frequency: 100, Micro-Operations: True, "      \
+   "Vector-Length: 512, Streaming-Vector-Length: 512}, Fetch: "                \
+   "{Fetch-Block-Size: 32, Loop-Buffer-Size: 64, Loop-Detection-Threshold: "   \
+   "4}, Process-Image: {Heap-Size: 10485760, Stack-Size: 1048576}, "           \
+   "Register-Set: {GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "   \
    "Predicate-Count: 17, Conditional-Count: 128, MatrixRow-Count: 128}, "      \
    "Pipeline-Widths: {Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "            \
    "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "          \
@@ -66,20 +66,20 @@ class ModelConfig {
   YAML::Node getConfigFile();
 
  private:
-  /** If using a base config file, inherit and overwite values form
+  /** If using a base config file, inherit and overwrite values form
    * the base file. */
   void inherit();
 
-  /** Validate all required fields are filled with an approriate
+  /** Validate all required fields are filled with an appropriate
    * value. */
   void validate();
 
-  /** From a pre-defined vector of instruction group strings, instantiate an ISA
-   * specific mapping between the instruction group strings and the relevant
-   * instruction group variables. */
+  /** From a pre-defined vector of instruction group strings, instantiate an
+   * ISA specific mapping between the instruction group strings and the
+   * relevant instruction group variables. */
   void createGroupMapping();
 
-  /** Given a node, value requirements, and possibly a deafult value,
+  /** Given a node, value requirements, and possibly a default value,
    * validate the value held within the node. All methods perform, at
    * least, an existence and "read as type" check with the latter
    * reading the value as the given type within a try catch
@@ -103,7 +103,7 @@ class ModelConfig {
                   const std::pair<T, T>& bounds, uint8_t expected,
                   const T& default_value);
 
-  /** Given a set of values (value_set), ensure the supplied node is on of
+  /** Given a set of values (value_set), ensure the supplied node is one of
    * these options. */
   template <typename T>
   int setChecker(YAML::Node node, const std::string& field,
@@ -133,8 +133,8 @@ class ModelConfig {
     return 1;
   }
 
-  /** Given a set of bounds (bounds) ensure the supplied node is betwene these
-   * value inclusively. */
+  /** Given a set of bounds (bounds) ensure the supplied node is between
+   * these value inclusively. */
   template <typename T>
   int boundChecker(YAML::Node node, const std::string& field,
                    const std::pair<T, T>& bounds, uint8_t expected) {
@@ -165,16 +165,16 @@ class ModelConfig {
   /** The YAML formatted config file. */
   YAML::Node configFile_;
 
-  /** The ISA specific vector of instruction group strings for matching against
-   * user inputted groups. */
+  /** The ISA specific vector of instruction group strings for matching
+   * against user inputted groups. */
   std::vector<std::string> groupOptions_;
 
   /** ISA specific mapping between the defined instruction strings and the
    * instruction group variables. */
   std::unordered_map<std::string, uint16_t> groupMapping_;
 
-  /** A mapping between the expected data type and the error message if a field
-   * cannot be read as the expected type. */
+  /** A mapping between the expected data type and the error message if a
+   * field cannot be read as the expected type. */
   std::unordered_map<uint8_t, std::string> invalidTypeMap_ = {
       {ExpectedValue::Integer, " must be of type integer"},
       {ExpectedValue::UInteger, " must be of type unsigned integer"},

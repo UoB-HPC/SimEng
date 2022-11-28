@@ -167,7 +167,6 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
   // `ptr` is not guaranteed to be aligned.
   uint32_t insn;
   memcpy(&insn, ptr, 4);
-  const uint8_t* encoding = reinterpret_cast<const uint8_t*>(ptr);
 
   // Try to find the decoding in the decode cache
   auto iter = decodeCache.find(insn);
@@ -296,10 +295,30 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
   }
 }
 
-/** The SVCR value is stored in Architecture to allow the value to be retrieved
- * within execution pipeline.
- * This prevents adding an implicit operand to every SME instruction; reducing
- * the amount of complexity when implementing SME execution logic. */
+std::vector<RegisterFileStructure>
+Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
+  return {
+      {8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
+      {256, config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>()},
+      {32, config["Register-Set"]["Predicate-Count"].as<uint16_t>()},
+      {1, config["Register-Set"]["Conditional-Count"].as<uint16_t>()},
+      {8, getNumSystemRegisters()},
+      {256, config["Register-Set"]["MatrixRow-Count"].as<uint16_t>()}};
+}
+
+std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
+    YAML::Node config) const {
+  return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
+          config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>(),
+          config["Register-Set"]["Predicate-Count"].as<uint16_t>(),
+          config["Register-Set"]["Conditional-Count"].as<uint16_t>(),
+          getNumSystemRegisters(),
+          config["Register-Set"]["MatrixRow-Count"].as<uint16_t>()};
+}
+/** The SVCR value is stored in Architecture to allow the value to be
+ * retrieved within execution pipeline. This prevents adding an implicit
+ * operand to every SME instruction; reducing the amount of complexity when
+ * implementing SME execution logic. */
 uint64_t Architecture::getSVCRval() const { return SVCRval_; }
 
 void Architecture::setSVCRval(const uint64_t newVal) const {

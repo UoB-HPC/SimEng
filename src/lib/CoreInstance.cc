@@ -232,9 +232,14 @@ void CoreInstance::createCore() {
     exit(1);
   }
 
-  // Construct architecture object
-  arch_ =
-      std::make_unique<simeng::arch::aarch64::Architecture>(kernel_, config_);
+  // Create the architecture, with knowledge of the kernel
+  if (config_["Core"]["ISA"].as<std::string>() == "rv64") {
+    arch_ =
+        std::make_unique<simeng::arch::riscv::Architecture>(kernel_, config_);
+  } else if (config_["Core"]["ISA"].as<std::string>() == "AArch64") {
+    arch_ =
+        std::make_unique<simeng::arch::aarch64::Architecture>(kernel_, config_);
+  }
 
   // Construct branch predictor object
   predictor_ = std::make_unique<simeng::GenericPredictor>(config_);

@@ -8,7 +8,6 @@
 
 // Temporary; until config options are available
 #include "simeng/arch/aarch64/Instruction.hh"
-
 namespace simeng {
 namespace models {
 namespace outoforder {
@@ -20,20 +19,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            pipeline::PortAllocator& portAllocator, YAML::Node config)
     : isa_(isa),
       physicalRegisterStructures_(
-          {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
-           {256,
-            config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>()},
-           {32, config["Register-Set"]["Predicate-Count"].as<uint16_t>()},
-           {1, config["Register-Set"]["Conditional-Count"].as<uint16_t>()},
-           {8, isa.getNumSystemRegisters()},
-           {256, config["Register-Set"]["MatrixRow-Count"].as<uint16_t>()}}),
+          isa.getConfigPhysicalRegisterStructure(config)),
       physicalRegisterQuantities_(
-          {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
-           config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>(),
-           config["Register-Set"]["Predicate-Count"].as<uint16_t>(),
-           config["Register-Set"]["Conditional-Count"].as<uint16_t>(),
-           isa.getNumSystemRegisters(),
-           config["Register-Set"]["MatrixRow-Count"].as<uint16_t>()}),
+          isa.getConfigPhysicalRegisterQuantities(config)),
       registerFileSet_(physicalRegisterStructures_),
       registerAliasTable_(isa.getRegisterFileStructures(),
                           physicalRegisterQuantities_),

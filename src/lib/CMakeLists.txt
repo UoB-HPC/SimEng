@@ -7,6 +7,13 @@ set(SIMENG_SOURCES
     arch/aarch64/Instruction_execute.cc
     arch/aarch64/InstructionMetadata.cc
     arch/aarch64/MicroDecoder.cc
+    arch/riscv/Architecture.cc
+    arch/riscv/ExceptionHandler.cc
+    arch/riscv/Instruction.cc
+    arch/riscv/Instruction_address.cc
+    arch/riscv/Instruction_decode.cc
+    arch/riscv/Instruction_execute.cc
+    arch/riscv/InstructionMetadata.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
     models/emulation/Core.cc
@@ -41,6 +48,7 @@ set(SIMENG_SOURCES
 )
 
 configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
+configure_file(${capstone_SOURCE_DIR}/arch/RISCV/RISCVGenInstrInfo.inc RISCVGenInstrInfo.inc COPYONLY)
 
 add_library(libsimeng SHARED ${SIMENG_SOURCES} ${SIMENG_HEADERS})
 set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)

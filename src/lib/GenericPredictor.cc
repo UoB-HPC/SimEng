@@ -53,7 +53,7 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
     }
   } else if (type == BranchType::SubroutineCall) {
     prediction.taken = true;
-    // Subroutine call branches must push their assoicated return address to RAS
+    // Subroutine call branches must push their associated return address to RAS
     if (ras_.size() >= rasSize_) {
       ras_.pop_front();
     }

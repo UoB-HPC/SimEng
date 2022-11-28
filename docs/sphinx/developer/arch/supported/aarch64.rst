@@ -101,6 +101,8 @@ Each micro-operation opcode is set to one of the options available in the ``Micr
 Adding instructions
 -------------------
 
+.. _aarch64-adding-instructions:
+
 Due to the vast number of AArch64 instruction variants, instructions are only added to this architecture as encountered in programs using them; as a result, to run a new program it will likely be necessary to add support for a number of instructions.
 
 .. Note:: When adding support for new instructions, it's recommended to run SimEng in emulation mode for both speed, and for an execution flow that's easier to follow.
@@ -123,6 +125,9 @@ The first step to add a new instruction (and the only, for many instructions) is
 There are several useful variables that execution behaviours have access to:
 
 ``operands``
+
+.. _aarch64-adding-execution-behaviour-operands:
+
   This is a vector of ``RegisterValue``, with each value corresponding to one of the input operands. For most instructions, ``operands[0]`` will be the *second* operand as written textually, as the first operand is typically the destination register. E.g., for the instruction ``add w0, w1, w2``, ``operands[0]`` will correspond to ``w1`` and ``[1]`` to ``w2``.
   
   Some instructions have "implicit" register reads: these are added to the **start** of the operand array. E.g., the instruction ``b.ne #16`` implicitly reads the "NZCV" flags. In this case, ``operands[0]`` will be the value of the flag register. 

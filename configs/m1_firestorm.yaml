@@ -1,5 +1,6 @@
 # M1 Firestorm core
 Core:
+  ISA: AArch64
   Simulation-Mode: outoforder
   Clock-Frequency: 3.2
   Timer-Frequency: 100

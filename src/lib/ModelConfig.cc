@@ -1,8 +1,20 @@
 #include "simeng/ModelConfig.hh"
 
-#include <math.h>
+#include <cmath>
 
 namespace simeng {
+
+/** RISC-V opcodes. Each opcode represents a unique RISC-V operation. */
+namespace RISCVOpcode {
+#define GET_INSTRINFO_ENUM
+#include "RISCVGenInstrInfo.inc"
+}  // namespace RISCVOpcode
+
+/** AArch64 opcodes. Each opcode represents a unique AArch64 operation. */
+namespace AARCH64Opcode {
+#define GET_INSTRINFO_ENUM
+#include "AArch64GenInstrInfo.inc"
+}  // namespace AARCH64Opcode
 
 ModelConfig::ModelConfig(std::string path) {
   // Ensure the file exists
@@ -15,9 +27,6 @@ ModelConfig::ModelConfig(std::string path) {
 
   // Read in the config file
   configFile_ = YAML::LoadFile(path);
-
-  // Generate groupOptions_ and groupMapping_
-  createGroupMapping();
 
   // Check if the config file inherits values from a base config
   inherit();
@@ -45,30 +54,280 @@ void ModelConfig::validate() {
   // Loop through expected fields and ensure a valid value exists
   std::vector<std::string> subFields;
   std::string root = "";
+  int validISA;
+
   // Core
   root = "Core";
-  subFields = {"Simulation-Mode", "Clock-Frequency",
-               "Timer-Frequency", "Micro-Operations",
-               "Vector-Length",   "Streaming-Vector-Length"};
-  nodeChecker<std::string>(configFile_[root][subFields[0]], subFields[0],
+  subFields = {"ISA",
+               "Simulation-Mode",
+               "Clock-Frequency",
+               "Timer-Frequency",
+               "Micro-Operations",
+               "Vector-Length",
+               "Streaming-Vector-Length"};
+  validISA = nodeChecker<std::string>(
+      configFile_[root][subFields[0]], subFields[0],
+      std::vector<std::string>({"AArch64", "rv64"}), ExpectedValue::String);
+  nodeChecker<std::string>(configFile_[root][subFields[1]], subFields[1],
                            {"emulation", "inorderpipelined", "outoforder"},
                            ExpectedValue::String);
-  nodeChecker<float>(configFile_[root][subFields[1]], subFields[1],
+  nodeChecker<float>(configFile_[root][subFields[2]], subFields[2],
                      std::make_pair(0.f, 10.f), ExpectedValue::Float);
-  nodeChecker<uint32_t>(configFile_[root][subFields[2]], subFields[2],
+  nodeChecker<uint32_t>(configFile_[root][subFields[3]], subFields[3],
                         std::make_pair(1, UINT32_MAX), ExpectedValue::UInteger,
                         100);
-  nodeChecker<bool>(configFile_[root][subFields[3]], subFields[3],
+  nodeChecker<bool>(configFile_[root][subFields[4]], subFields[4],
                     std::make_pair(false, true), ExpectedValue::Bool, false);
-  nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
-                        {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
-                         1408, 1536, 1664, 1792, 1920, 2048},
-                        ExpectedValue::UInteger, 512);
   nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
                         {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
                          1408, 1536, 1664, 1792, 1920, 2048},
                         ExpectedValue::UInteger, 512);
+  nodeChecker<uint16_t>(configFile_[root][subFields[6]], subFields[6],
+                        {128, 256, 384, 512, 640, 768, 896, 1024, 1152, 1280,
+                         1408, 1536, 1664, 1792, 1920, 2048},
+                        ExpectedValue::UInteger, 512);
   subFields.clear();
+
+  // First check that the ISA config option is valid, this protects reads from
+  // the ISA config option as well as everything that depends on them. This
+  // includes uses of groupOptions_ and groupMapping_ as these are dependent on
+  // the ISA
+  if (validISA == 1) {
+    // Generate groupOptions_ and groupMapping_
+    createGroupMapping();
+
+    // Ports
+    std::vector<std::string> portNames;
+    std::map<std::string, bool> portLinked;
+    root = "Ports";
+    size_t num_ports = configFile_[root].size();
+    if (!num_ports) {
+      missing_ << "\t- " << root << "\n";
+    }
+    for (size_t i = 0; i < num_ports; i++) {
+      YAML::Node port_node = configFile_[root][i];
+      // Get port number into a string format
+      char port_msg[10];
+      sprintf(port_msg, "Port %zu ", i);
+      std::string port_num = std::string(port_msg);
+      // Check for existence of Portname field and record name
+      if (nodeChecker<std::string>(port_node["Portname"], port_num + "Portname",
+                                   std::vector<std::string>{},
+                                   ExpectedValue::String)) {
+        std::string name = port_node["Portname"].as<std::string>();
+        // Ensure port name is unique
+        if (std::find(portNames.begin(), portNames.end(), name) ==
+            portNames.end()) {
+          portNames.push_back(name);
+          portLinked.insert({name, false});
+        } else {
+          invalid_ << "\t- " << port_num << "name \"" << name
+                   << "\" already used\n";
+        }
+      }
+      // Check for existence of Instruction-Support field
+      if (!(port_node["Instruction-Support"].IsDefined()) ||
+          port_node["Instruction-Support"].IsNull()) {
+        missing_ << "\t- " << port_num << "Instruction-Support\n";
+        continue;
+      }
+      uint16_t groupIndex = 0;
+      uint16_t opcodeIndex = 0;
+      for (size_t j = 0; j < port_node["Instruction-Support"].size(); j++) {
+        YAML::Node group = port_node["Instruction-Support"][j];
+        // Get group number into a string format
+        char group_msg[10];
+        sprintf(group_msg, "Group %zu ", j);
+        std::string group_num = std::string(group_msg);
+        // Check for existence of instruction group
+        if (group.as<std::string>()[0] == '~') {
+          // Extract opcode and store in config option
+          uint16_t opcode = std::stoi(group.as<std::string>().substr(
+              1, group.as<std::string>().size()));
+          configFile_["Ports"][i]["Instruction-Opcode-Support"][opcodeIndex] =
+              opcode;
+          if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
+            // Ensure opcode is between the bounds of 0 and Capstones'
+            // RISCV_INSTRUCTION_LIST_END
+            boundChecker(
+                configFile_["Ports"][i]["Instruction-Opcode-Support"]
+                           [opcodeIndex],
+                port_num + group_num,
+                std::make_pair(0, static_cast<int>(
+                                      RISCVOpcode::RISCV_INSTRUCTION_LIST_END)),
+                ExpectedValue::UInteger);
+          } else if (configFile_["Core"]["ISA"].as<std::string>() ==
+                     "AArch64") {
+            // Ensure opcode is between the bounds of 0 and Capstones'
+            // AArch64_INSTRUCTION_LIST_END
+            boundChecker(
+                configFile_["Ports"][i]["Instruction-Opcode-Support"]
+                           [opcodeIndex],
+                port_num + group_num,
+                std::make_pair(
+                    0, static_cast<int>(
+                           AARCH64Opcode::AArch64_INSTRUCTION_LIST_END)),
+                ExpectedValue::UInteger);
+          }
+
+          opcodeIndex++;
+        } else if (nodeChecker<std::string>(group, port_num + group_num,
+                                            groupOptions_,
+                                            ExpectedValue::String)) {
+          configFile_["Ports"][i]["Instruction-Group-Support"][groupIndex] =
+              unsigned(groupMapping_[group.as<std::string>()]);
+          groupIndex++;
+        }
+      }
+    }
+
+    // Reservation-Stations
+    root = "Reservation-Stations";
+    size_t num_rs = configFile_[root].size();
+    if (!num_rs) {
+      missing_ << "\t- " << root << "\n";
+    }
+    for (size_t i = 0; i < num_rs; i++) {
+      YAML::Node rs = configFile_[root][i];
+      // Get rs number into a string format
+      char rs_msg[25];
+      sprintf(rs_msg, "Reservation Station %zu ", i);
+      std::string rs_num = std::string(rs_msg);
+      nodeChecker<uint16_t>(rs["Size"], rs_num + "Size",
+                            std::make_pair(1, UINT16_MAX),
+                            ExpectedValue::UInteger);
+      nodeChecker<uint16_t>(rs["Dispatch-Rate"], rs_num + "Dispatch-Rate",
+                            std::make_pair(1, UINT16_MAX),
+                            ExpectedValue::UInteger);
+      // Check for existence of Ports field
+      if (!(rs["Ports"].IsDefined()) || rs["Ports"].IsNull()) {
+        missing_ << "\t- " << rs_num << "Ports\n";
+        continue;
+      }
+      for (size_t j = 0; j < rs["Ports"].size(); j++) {
+        YAML::Node port_node = rs["Ports"][j];
+        // Get port index into a string format
+        char port_msg[25];
+        sprintf(port_msg, "Port %zu ", j);
+        std::string port_num = std::string(port_msg);
+        if (nodeChecker<std::string>(port_node, rs_num + port_num + "Portname",
+                                     portNames, ExpectedValue::String)) {
+          // Change port name to port index
+          for (size_t k = 0; k < portNames.size(); k++) {
+            if (port_node.as<std::string>() == portNames[k]) {
+              configFile_["Reservation-Stations"][i]["Ports"][j] = unsigned(k);
+              portLinked[portNames[k]] = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+    // Ensure all ports have an associated reservation station
+    for (auto& port : portLinked) {
+      if (!port.second) {
+        missing_ << "\t- " << port.first
+                 << " has no associated reservation station\n";
+      }
+    }
+
+    // TODO make as many subfields as possible generic to avoid repeated code
+    // e.g. AArch64 FloatingPoint/SVE-Count -> FloatingPoint-Count
+    if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
+      // Register-Set
+      root = "Register-Set";
+      subFields = {"GeneralPurpose-Count", "FloatingPoint-Count"};
+      nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
+                            std::make_pair(32, UINT16_MAX),
+                            ExpectedValue::UInteger);
+      nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
+                            std::make_pair(32, UINT16_MAX),
+                            ExpectedValue::UInteger);
+    } else if (configFile_["Core"]["ISA"].as<std::string>() == "AArch64") {
+      // Register-Set
+      root = "Register-Set";
+      subFields = {"GeneralPurpose-Count", "FloatingPoint/SVE-Count",
+                   "Predicate-Count", "Conditional-Count", "MatrixRow-Count"};
+      nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
+                            std::make_pair(32, UINT16_MAX),
+                            ExpectedValue::UInteger);
+      nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
+                            std::make_pair(32, UINT16_MAX),
+                            ExpectedValue::UInteger);
+      nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
+                            std::make_pair(17, UINT16_MAX),
+                            ExpectedValue::UInteger, 17);
+      nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
+                            std::make_pair(1, UINT16_MAX),
+                            ExpectedValue::UInteger);
+      nodeChecker<uint16_t>(
+          configFile_[root][subFields[4]], subFields[4],
+          std::make_pair(
+              configFile_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8,
+              UINT16_MAX),
+          ExpectedValue::UInteger, 128);
+    }
+
+    subFields.clear();
+
+    // Execution-Units
+    root = "Execution-Units";
+    subFields = {"Pipelined", "Blocking-Groups"};
+    size_t num_units = configFile_[root].size();
+    if (!num_units) {
+      missing_ << "\t- " << root << "\n";
+    } else if (num_ports != num_units) {
+      invalid_
+          << "\t- Number of issue ports and execution units should be equal\n";
+    }
+    for (size_t i = 0; i < num_units; i++) {
+      char euNum[50];
+      sprintf(euNum, "Execution Unit %zu ", i);
+      YAML::Node euNode = configFile_[root][i];
+      nodeChecker<bool>(configFile_[root][i][subFields[0]],
+                        (std::string(euNum) + subFields[0]),
+                        std::vector<bool>{false, true}, ExpectedValue::Bool);
+      if (euNode[subFields[1]].IsDefined() &&
+          !(euNode[subFields[1]].IsNull())) {
+        // Compile set of blocking groups into a queue
+        std::queue<uint16_t> blockingGroups;
+        for (size_t j = 0; j < euNode[subFields[1]].size(); j++) {
+          char bgNum[50];
+          sprintf(bgNum, "Blocking group %zu", j);
+          if (nodeChecker<std::string>(
+                  configFile_[root][i][subFields[1]][j],
+                  (std::string(euNum) + std::string(bgNum)), groupOptions_,
+                  ExpectedValue::String)) {
+            uint16_t mappedGroup =
+                groupMapping_[euNode[subFields[1]][j].as<std::string>()];
+            blockingGroups.push(mappedGroup);
+            configFile_["Execution-Units"][i]["Blocking-Groups"][j] =
+                mappedGroup;
+          }
+        }
+        // Expand set of blocking groups to include those that inherit from the
+        // user defined set
+        uint16_t config_index =
+            configFile_["Execution-Units"][i]["Blocking-Groups"].size();
+        while (blockingGroups.size()) {
+          // Determine if there's any inheritance
+          if (arch::aarch64::groupInheritance.find(blockingGroups.front()) !=
+              arch::aarch64::groupInheritance.end()) {
+            std::vector<uint16_t> inheritedGroups =
+                arch::aarch64::groupInheritance.at(blockingGroups.front());
+            for (int k = 0; k < inheritedGroups.size(); k++) {
+              blockingGroups.push(inheritedGroups[k]);
+              configFile_["Execution-Units"][i]["Blocking-Groups"]
+                         [config_index] = inheritedGroups[k];
+              config_index++;
+            }
+          }
+          blockingGroups.pop();
+        }
+      }
+    }
+    subFields.clear();
+  }
 
   // Fetch
   root = "Fetch";
@@ -203,146 +462,6 @@ void ModelConfig::validate() {
                         UINT16_MAX);
   subFields.clear();
 
-  // Ports
-  std::vector<std::string> portNames;
-  std::map<std::string, bool> portLinked;
-  root = "Ports";
-  size_t num_ports = configFile_[root].size();
-  if (!num_ports) {
-    missing_ << "\t- " << root << "\n";
-  }
-  for (size_t i = 0; i < num_ports; i++) {
-    YAML::Node port_node = configFile_[root][i];
-    // Get port number into a string format
-    char port_msg[10];
-    sprintf(port_msg, "Port %zu ", i);
-    std::string port_num = std::string(port_msg);
-    // Check for existence of Portname field and record name
-    if (nodeChecker<std::string>(port_node["Portname"], port_num + "Portname",
-                                 std::vector<std::string>{},
-                                 ExpectedValue::String)) {
-      std::string name = port_node["Portname"].as<std::string>();
-      // Ensure port name is unique
-      if (std::find(portNames.begin(), portNames.end(), name) ==
-          portNames.end()) {
-        portNames.push_back(name);
-        portLinked.insert({name, false});
-      } else {
-        invalid_ << "\t- " << port_num << "name \"" << name
-                 << "\" already used\n";
-      }
-    }
-    // Check for existence of Instruction-Support field
-    if (!(port_node["Instruction-Support"].IsDefined()) ||
-        port_node["Instruction-Support"].IsNull()) {
-      missing_ << "\t- " << port_num << "Instruction-Support\n";
-      continue;
-    }
-    uint16_t groupIndex = 0;
-    uint16_t opcodeIndex = 0;
-    for (size_t j = 0; j < port_node["Instruction-Support"].size(); j++) {
-      YAML::Node group = port_node["Instruction-Support"][j];
-      // Get group number into a string format
-      char group_msg[10];
-      sprintf(group_msg, "Group %zu ", j);
-      std::string group_num = std::string(group_msg);
-      // Check for existance of instruction group
-      if (group.as<std::string>()[0] == '~') {
-        // Extract opcode and store in config option
-        uint16_t opcode = std::stoi(
-            group.as<std::string>().substr(1, group.as<std::string>().size()));
-        configFile_["Ports"][i]["Instruction-Opcode-Support"][opcodeIndex] =
-            opcode;
-        // Ensure opcode is between the bounds of 0 and Capstones'
-        // AArch64_INSTRUCTION_LIST_END
-        boundChecker(
-            configFile_["Ports"][i]["Instruction-Opcode-Support"][opcodeIndex],
-            port_num + group_num, std::make_pair(0, 4516),
-            ExpectedValue::UInteger);
-        opcodeIndex++;
-      } else if (nodeChecker<std::string>(group, port_num + group_num,
-                                          groupOptions_,
-                                          ExpectedValue::String)) {
-        configFile_["Ports"][i]["Instruction-Group-Support"][groupIndex] =
-            unsigned(groupMapping_[group.as<std::string>()]);
-        groupIndex++;
-      }
-    }
-  }
-
-  // Reservation-Stations
-  root = "Reservation-Stations";
-  size_t num_rs = configFile_[root].size();
-  if (!num_rs) {
-    missing_ << "\t- " << root << "\n";
-  }
-  for (size_t i = 0; i < num_rs; i++) {
-    YAML::Node rs = configFile_[root][i];
-    // Get rs number into a string format
-    char rs_msg[25];
-    sprintf(rs_msg, "Reservation Station %zu ", i);
-    std::string rs_num = std::string(rs_msg);
-    nodeChecker<uint16_t>(rs["Size"], rs_num + "Size",
-                          std::make_pair(1, UINT16_MAX),
-                          ExpectedValue::UInteger);
-    nodeChecker<uint16_t>(rs["Dispatch-Rate"], rs_num + "Dispatch-Rate",
-                          std::make_pair(1, UINT16_MAX),
-                          ExpectedValue::UInteger);
-    // Check for existance of Ports field
-    if (!(rs["Ports"].IsDefined()) || rs["Ports"].IsNull()) {
-      missing_ << "\t- " << rs_num << "Ports\n";
-      continue;
-    }
-    for (size_t j = 0; j < rs["Ports"].size(); j++) {
-      YAML::Node port_node = rs["Ports"][j];
-      // Get port index into a string format
-      char port_msg[25];
-      sprintf(port_msg, "Port %zu ", j);
-      std::string port_num = std::string(port_msg);
-      if (nodeChecker<std::string>(port_node, rs_num + port_num + "Portname",
-                                   portNames, ExpectedValue::String)) {
-        // Change port name to port index
-        for (size_t k = 0; k < portNames.size(); k++) {
-          if (port_node.as<std::string>() == portNames[k]) {
-            configFile_["Reservation-Stations"][i]["Ports"][j] = unsigned(k);
-            portLinked[portNames[k]] = true;
-            break;
-          }
-        }
-      }
-    }
-  }
-  // Ensure all ports have an associated reservation station
-  for (auto& port : portLinked) {
-    if (!port.second) {
-      missing_ << "\t- " << port.first
-               << " has no associated reservation station\n";
-    }
-  }
-
-  // Register-Set
-  root = "Register-Set";
-  subFields = {"GeneralPurpose-Count", "FloatingPoint/SVE-Count",
-               "Predicate-Count", "Conditional-Count", "MatrixRow-Count"};
-  nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(32, UINT16_MAX),
-                        ExpectedValue::UInteger);
-  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
-                        std::make_pair(32, UINT16_MAX),
-                        ExpectedValue::UInteger);
-  nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(17, UINT16_MAX), ExpectedValue::UInteger,
-                        17);
-  nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
-  nodeChecker<uint16_t>(
-      configFile_[root][subFields[4]], subFields[4],
-      std::make_pair(
-          configFile_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8,
-          UINT16_MAX),
-      ExpectedValue::UInteger, 128);
-  subFields.clear();
-
   // Queue-Sizes
   root = "Queue-Sizes";
   subFields = {"ROB", "Load", "Store"};
@@ -369,61 +488,6 @@ void ModelConfig::validate() {
   nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
                             std::make_pair(1, UINT_MAX),
                             ExpectedValue::UInteger);
-  subFields.clear();
-
-  // Execution-Units
-  root = "Execution-Units";
-  subFields = {"Pipelined", "Blocking-Groups"};
-  size_t num_units = configFile_[root].size();
-  if (!num_units) {
-    missing_ << "\t- " << root << "\n";
-  } else if (num_ports != num_units) {
-    invalid_
-        << "\t- Number of issue ports and execution units should be equal\n";
-  }
-  for (size_t i = 0; i < num_units; i++) {
-    char euNum[50];
-    sprintf(euNum, "Execution Unit %zu ", i);
-    YAML::Node euNode = configFile_[root][i];
-    nodeChecker<bool>(configFile_[root][i][subFields[0]],
-                      (std::string(euNum) + subFields[0]),
-                      std::vector<bool>{false, true}, ExpectedValue::Bool);
-    if (euNode[subFields[1]].IsDefined() && !(euNode[subFields[1]].IsNull())) {
-      // Compile set of blocking groups into a queue
-      std::queue<uint16_t> blockingGroups;
-      for (size_t j = 0; j < euNode[subFields[1]].size(); j++) {
-        char bgNum[50];
-        sprintf(bgNum, "Blocking group %zu", j);
-        if (nodeChecker<std::string>(configFile_[root][i][subFields[1]][j],
-                                     (std::string(euNum) + std::string(bgNum)),
-                                     groupOptions_, ExpectedValue::String)) {
-          uint16_t mappedGroup =
-              groupMapping_[euNode[subFields[1]][j].as<std::string>()];
-          blockingGroups.push(mappedGroup);
-          configFile_["Execution-Units"][i]["Blocking-Groups"][j] = mappedGroup;
-        }
-      }
-      // Expand set of blocking groups to include those that inherit from the
-      // user defined set
-      uint16_t config_index =
-          configFile_["Execution-Units"][i]["Blocking-Groups"].size();
-      while (blockingGroups.size()) {
-        // Determine if there's any inheritance
-        if (arch::aarch64::groupInheritance.find(blockingGroups.front()) !=
-            arch::aarch64::groupInheritance.end()) {
-          std::vector<uint16_t> inheritedGroups =
-              arch::aarch64::groupInheritance.at(blockingGroups.front());
-          for (int k = 0; k < inheritedGroups.size(); k++) {
-            blockingGroups.push(inheritedGroups[k]);
-            configFile_["Execution-Units"][i]["Blocking-Groups"][config_index] =
-                inheritedGroups[k];
-            config_index++;
-          }
-        }
-        blockingGroups.pop();
-      }
-    }
-  }
   subFields.clear();
 
   // Latencies
@@ -556,96 +620,112 @@ void ModelConfig::validate() {
 }
 
 void ModelConfig::createGroupMapping() {
-  groupOptions_ = {"INT",
-                   "INT_SIMPLE",
-                   "INT_SIMPLE_ARTH",
-                   "INT_SIMPLE_ARTH_NOSHIFT",
-                   "INT_SIMPLE_LOGICAL",
-                   "INT_SIMPLE_LOGICAL_NOSHIFT",
-                   "INT_SIMPLE_CMP",
-                   "INT_SIMPLE_CVT",
-                   "INT_MUL",
-                   "INT_DIV_OR_SQRT",
-                   "LOAD_INT",
-                   "STORE_ADDRESS_INT",
-                   "STORE_DATA_INT",
-                   "STORE_INT",
-                   "FP",
-                   "FP_SIMPLE",
-                   "FP_SIMPLE_ARTH",
-                   "FP_SIMPLE_ARTH_NOSHIFT",
-                   "FP_SIMPLE_LOGICAL",
-                   "FP_SIMPLE_LOGICAL_NOSHIFT",
-                   "FP_SIMPLE_CMP",
-                   "FP_SIMPLE_CVT",
-                   "FP_MUL",
-                   "FP_DIV_OR_SQRT",
-                   "SCALAR",
-                   "SCALAR_SIMPLE",
-                   "SCALAR_SIMPLE_ARTH",
-                   "SCALAR_SIMPLE_ARTH_NOSHIFT",
-                   "SCALAR_SIMPLE_LOGICAL",
-                   "SCALAR_SIMPLE_LOGICAL_NOSHIFT",
-                   "SCALAR_SIMPLE_CMP",
-                   "SCALAR_SIMPLE_CVT",
-                   "SCALAR_MUL",
-                   "SCALAR_DIV_OR_SQRT",
-                   "LOAD_SCALAR",
-                   "STORE_ADDRESS_SCALAR",
-                   "STORE_DATA_SCALAR",
-                   "STORE_SCALAR",
-                   "VECTOR",
-                   "VECTOR_SIMPLE",
-                   "VECTOR_SIMPLE_ARTH",
-                   "VECTOR_SIMPLE_ARTH_NOSHIFT",
-                   "VECTOR_SIMPLE_LOGICAL",
-                   "VECTOR_SIMPLE_LOGICAL_NOSHIFT",
-                   "VECTOR_SIMPLE_CMP",
-                   "VECTOR_SIMPLE_CVT",
-                   "VECTOR_MUL",
-                   "VECTOR_DIV_OR_SQRT",
-                   "LOAD_VECTOR",
-                   "STORE_ADDRESS_VECTOR",
-                   "STORE_DATA_VECTOR",
-                   "STORE_VECTOR",
-                   "SVE",
-                   "SVE_SIMPLE",
-                   "SVE_SIMPLE_ARTH",
-                   "SVE_SIMPLE_ARTH_NOSHIFT",
-                   "SVE_SIMPLE_LOGICAL",
-                   "SVE_SIMPLE_LOGICAL_NOSHIFT",
-                   "SVE_SIMPLE_CMP",
-                   "SVE_SIMPLE_CVT",
-                   "SVE_MUL",
-                   "SVE_DIV_OR_SQRT",
-                   "LOAD_SVE",
-                   "STORE_ADDRESS_SVE",
-                   "STORE_DATA_SVE",
-                   "STORE_SVE",
-                   "PREDICATE",
-                   "LOAD",
-                   "STORE_ADDRESS",
-                   "STORE_DATA",
-                   "STORE",
-                   "BRANCH",
-                   "SME",
-                   "SME_SIMPLE",
-                   "SME_SIMPLE_ARTH",
-                   "SME_SIMPLE_ARTH_NOSHIFT",
-                   "SME_SIMPLE_LOGICAL",
-                   "SME_SIMPLE_LOGICAL_NOSHIFT",
-                   "SME_SIMPLE_CMP",
-                   "SME_SIMPLE_CVT",
-                   "SME_MUL",
-                   "SME_DIV_OR_SQRT",
-                   "LOAD_SME",
-                   "STORE_ADDRESS_SME",
-                   "STORE_DATA_SME",
-                   "STORE_SME"};
-  // AARCH64 instruction group namespace contains a set of contiguous assigned
-  // uint16_t start from 0. Therefore the index of each groupOptions_ entry is
-  // also its aarch64::InstructionGroups value (assuming groupOptions_ is
-  // ordered exactly as aarch64::InstructionGroups is).
+  if (configFile_["Core"]["ISA"].as<std::string>() == "AArch64") {
+    groupOptions_ = {"INT",
+                     "INT_SIMPLE",
+                     "INT_SIMPLE_ARTH",
+                     "INT_SIMPLE_ARTH_NOSHIFT",
+                     "INT_SIMPLE_LOGICAL",
+                     "INT_SIMPLE_LOGICAL_NOSHIFT",
+                     "INT_SIMPLE_CMP",
+                     "INT_SIMPLE_CVT",
+                     "INT_MUL",
+                     "INT_DIV_OR_SQRT",
+                     "LOAD_INT",
+                     "STORE_ADDRESS_INT",
+                     "STORE_DATA_INT",
+                     "STORE_INT",
+                     "FP",
+                     "FP_SIMPLE",
+                     "FP_SIMPLE_ARTH",
+                     "FP_SIMPLE_ARTH_NOSHIFT",
+                     "FP_SIMPLE_LOGICAL",
+                     "FP_SIMPLE_LOGICAL_NOSHIFT",
+                     "FP_SIMPLE_CMP",
+                     "FP_SIMPLE_CVT",
+                     "FP_MUL",
+                     "FP_DIV_OR_SQRT",
+                     "SCALAR",
+                     "SCALAR_SIMPLE",
+                     "SCALAR_SIMPLE_ARTH",
+                     "SCALAR_SIMPLE_ARTH_NOSHIFT",
+                     "SCALAR_SIMPLE_LOGICAL",
+                     "SCALAR_SIMPLE_LOGICAL_NOSHIFT",
+                     "SCALAR_SIMPLE_CMP",
+                     "SCALAR_SIMPLE_CVT",
+                     "SCALAR_MUL",
+                     "SCALAR_DIV_OR_SQRT",
+                     "LOAD_SCALAR",
+                     "STORE_ADDRESS_SCALAR",
+                     "STORE_DATA_SCALAR",
+                     "STORE_SCALAR",
+                     "VECTOR",
+                     "VECTOR_SIMPLE",
+                     "VECTOR_SIMPLE_ARTH",
+                     "VECTOR_SIMPLE_ARTH_NOSHIFT",
+                     "VECTOR_SIMPLE_LOGICAL",
+                     "VECTOR_SIMPLE_LOGICAL_NOSHIFT",
+                     "VECTOR_SIMPLE_CMP",
+                     "VECTOR_SIMPLE_CVT",
+                     "VECTOR_MUL",
+                     "VECTOR_DIV_OR_SQRT",
+                     "LOAD_VECTOR",
+                     "STORE_ADDRESS_VECTOR",
+                     "STORE_DATA_VECTOR",
+                     "STORE_VECTOR",
+                     "SVE",
+                     "SVE_SIMPLE",
+                     "SVE_SIMPLE_ARTH",
+                     "SVE_SIMPLE_ARTH_NOSHIFT",
+                     "SVE_SIMPLE_LOGICAL",
+                     "SVE_SIMPLE_LOGICAL_NOSHIFT",
+                     "SVE_SIMPLE_CMP",
+                     "SVE_SIMPLE_CVT",
+                     "SVE_MUL",
+                     "SVE_DIV_OR_SQRT",
+                     "LOAD_SVE",
+                     "STORE_ADDRESS_SVE",
+                     "STORE_DATA_SVE",
+                     "STORE_SVE",
+                     "PREDICATE",
+                     "LOAD",
+                     "STORE_ADDRESS",
+                     "STORE_DATA",
+                     "STORE",
+                     "BRANCH",
+                     "SME",
+                     "SME_SIMPLE",
+                     "SME_SIMPLE_ARTH",
+                     "SME_SIMPLE_ARTH_NOSHIFT",
+                     "SME_SIMPLE_LOGICAL",
+                     "SME_SIMPLE_LOGICAL_NOSHIFT",
+                     "SME_SIMPLE_CMP",
+                     "SME_SIMPLE_CVT",
+                     "SME_MUL",
+                     "SME_DIV_OR_SQRT",
+                     "LOAD_SME",
+                     "STORE_ADDRESS_SME",
+                     "STORE_DATA_SME",
+                     "STORE_SME"};
+  } else if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
+    groupOptions_ = {"INT",
+                     "INT_SIMPLE",
+                     "INT_SIMPLE_ARTH",
+                     "INT_SIMPLE_CMP",
+                     "INT_SIMPLE_LOGICAL",
+                     "INT_SIMPLE_SHIFT",
+                     "INT_MUL",
+                     "INT_DIV",
+                     "LOAD_INT",
+                     "STORE_INT",
+                     "LOAD",
+                     "STORE",
+                     "BRANCH"};
+  }
+  // ISA instruction group namespaces contain a set of contiguous assigned
+  // uint16_t starting from 0. Therefore, the index of each groupOptions_ entry
+  // is also its <isa>::InstructionGroups value (assuming groupOptions_ is
+  // ordered exactly as <isa>::InstructionGroups is).
   for (int grp = 0; grp < groupOptions_.size(); grp++) {
     groupMapping_[groupOptions_[grp]] = grp;
   }

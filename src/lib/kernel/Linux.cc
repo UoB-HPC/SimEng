@@ -151,18 +151,25 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
 }
 
 int64_t Linux::close(int64_t fd) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
-  if (hfd < 0) {
-    return EBADF;
+  // Don't close STDOUT or STDERR otherwise no SimEng output is given
+  // afterwards. This includes final results given at the end of execution
+  if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
+    assert(fd < processStates_[0].fileDescriptorTable.size());
+    int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+    if (hfd < 0) {
+      return EBADF;
+    }
+
+    // Deallocate the virtual file descriptor
+    assert(processStates_[0].freeFileDescriptors.count(fd) == 0);
+    processStates_[0].freeFileDescriptors.insert(fd);
+    processStates_[0].fileDescriptorTable[fd] = -1;
+
+    return ::close(hfd);
   }
 
-  // Deallocate the virtual file descriptor
-  assert(processStates_[0].freeFileDescriptors.count(fd) == 0);
-  processStates_[0].freeFileDescriptors.insert(fd);
-  processStates_[0].fileDescriptorTable[fd] = -1;
-
-  return ::close(hfd);
+  // Return success if STDOUT or STDERR is closed to allow execution to proceed
+  return 0;
 }
 
 int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
@@ -193,9 +200,24 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
   out.size = statbuf.st_size;
   out.blksize = statbuf.st_blksize;
   out.blocks = statbuf.st_blocks;
-  out.atime = statbuf.st_atime;
-  out.mtime = statbuf.st_mtime;
-  out.ctime = statbuf.st_ctime;
+
+  // Mac and linux systems define the stat buff with the same format but
+  // different names
+#ifdef __MACH__
+  out.atime = statbuf.st_atimespec.tv_sec;
+  out.atimensec = statbuf.st_atimespec.tv_nsec;
+  out.mtime = statbuf.st_mtimespec.tv_sec;
+  out.mtimensec = statbuf.st_mtimespec.tv_nsec;
+  out.ctime = statbuf.st_ctimespec.tv_sec;
+  out.ctimensec = statbuf.st_ctimespec.tv_nsec;
+#else
+  out.atime = statbuf.st_atim.tv_sec;
+  out.atimensec = statbuf.st_atim.tv_nsec;
+  out.mtime = statbuf.st_mtim.tv_sec;
+  out.mtimensec = statbuf.st_mtim.tv_nsec;
+  out.ctime = statbuf.st_ctim.tv_sec;
+  out.ctimensec = statbuf.st_ctim.tv_nsec;
+#endif
 
   return retval;
 }
@@ -279,6 +301,8 @@ int64_t Linux::getuid() const { return 0; }
 int64_t Linux::geteuid() const { return 0; }
 int64_t Linux::getgid() const { return 0; }
 int64_t Linux::getegid() const { return 0; }
+// TODO update for multithreaded processes
+int64_t Linux::gettid() const { return 0; }
 
 int64_t Linux::gettimeofday(uint64_t systemTimer, timeval* tv, timeval* tz) {
   // TODO: Ideally this should get the system timer from the core directly
@@ -401,7 +425,8 @@ uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
         lps->contiguousAllocations.back().vm_next = newAlloc;
       }
     } else if (lps->contiguousAllocations.size() > 0) {
-      // Append allocation to end of list and link first entry to new allocation
+      // Append allocation to end of list and link first entry to new
+      // allocation
       newAlloc->vm_start = lps->contiguousAllocations[0].vm_end;
       lps->contiguousAllocations[0].vm_next = newAlloc;
     } else {

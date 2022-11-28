@@ -41,6 +41,7 @@ test () {
     cd "$SIMENG_BUILD" || exit
     ./test/unit/unittests --gtest_output=xml:unittests.xml || true
     ./test/regression/aarch64/regression-aarch64 --gtest_output=xml:regressiontests.xml || true
+    ./test/regression/riscv/regression-riscv --gtest_output=xml:regressiontests.xml || true
 }
 
 # Run default program with and without specified configuration

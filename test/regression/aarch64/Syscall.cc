@@ -679,7 +679,9 @@ TEST_P(Syscall, stdout) {
 }
 
 TEST_P(Syscall, mprotect) {
+  // Check mprotect returns placeholder value as currently not implemented
   RUN_AARCH64(R"(
+    # mprotect(addr=47472, len=4096, prot=1) = 0
     mov x0, #47472
     mov x1, #4096
     mov x2, #1

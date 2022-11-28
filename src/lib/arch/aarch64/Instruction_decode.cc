@@ -209,7 +209,7 @@ void Instruction::decode() {
     if (op.type == ARM64_OP_REG) {  // Register operand
       if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&
           op.reg != ARM64_REG_XZR) {
-        // Belongs to the predicate group if the detsination register is a
+        // Belongs to the predicate group if the destination register is a
         // predicate
         // Determine the data type the instruction operates on based on the
         // register operand used
@@ -634,15 +634,6 @@ void Instruction::decode() {
       operandsPending--;
     }
   }
-}
-
-void Instruction::nyi() {
-  exceptionEncountered_ = true;
-  exception_ = InstructionException::EncodingNotYetImplemented;
-}
-void Instruction::unallocated() {
-  exceptionEncountered_ = true;
-  exception_ = InstructionException::EncodingUnallocated;
 }
 
 }  // namespace aarch64

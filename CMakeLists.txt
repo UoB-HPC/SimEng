@@ -111,7 +111,6 @@ set(CAPSTONE_EVM_SUPPORT OFF CACHE BOOL "Disable EVM support")
 set(CAPSTONE_MOS65XX_SUPPORT OFF CACHE BOOL "Disable MSO65XX support")
 set(CAPSTONE_WASM_SUPPORT OFF CACHE BOOL "Disable WASM support")
 set(CAPSTONE_BPF_SUPPORT OFF CACHE BOOL "Disable BPF support")
-set(CAPSTONE_RISCV_SUPPORT OFF CACHE BOOL "Disable RISCV support")
 
 FetchContent_MakeAvailable_Args(capstone-lib EXCLUDE_FROM_ALL)
 include_directories("${capstone_BINARY_DIR}/include" "${capstone_SOURCE_DIR}/include")
@@ -165,7 +164,7 @@ if(SIMENG_ENABLE_TESTS)
 
   else()
 
-    set(LLVM_TARGETS_TO_BUILD "AArch64" CACHE INTERNAL "")
+    set(LLVM_TARGETS_TO_BUILD "AArch64;RISCV" CACHE INTERNAL "")
 
     set(LLVM_BUILD_RUNTIME OFF)
 
@@ -198,8 +197,7 @@ if(SIMENG_ENABLE_TESTS)
 
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
     # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
-
-  endif()
+endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")
   message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
@@ -208,6 +206,9 @@ if(SIMENG_ENABLE_TESTS)
   # Check LLVM was built with the correct targets enabled
   if (NOT "AArch64" IN_LIST LLVM_TARGETS_TO_BUILD)
     message(FATAL_ERROR "LLVM was built without AArch64 target")
+  endif()
+  if (NOT "RISCV" IN_LIST LLVM_TARGETS_TO_BUILD)
+      message(FATAL_ERROR "LLVM was built without RISC-V target")
   endif()
 
   ## Setup googletest ##
@@ -218,7 +219,7 @@ if(SIMENG_ENABLE_TESTS)
   # saves us from having to build all targets before running the tests
   add_custom_target(test-all
     COMMAND ${CMAKE_CTEST_COMMAND}
-    DEPENDS unittests regression-aarch64
+    DEPENDS unittests regression-aarch64 regression-riscv
   )
 endif()
 

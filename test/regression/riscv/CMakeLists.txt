@@ -1,0 +1,23 @@
+add_executable(regression-riscv
+            RISCVRegressionTest.cc
+            RISCVRegressionTest.hh
+            LoadStoreQueue.cc
+            SmokeTest.cc
+            Syscall.cc
+            instructions/arithmetic.cc
+            instructions/multiplyDivide.cc
+            instructions/load.cc
+            instructions/store.cc
+            instructions/jump.cc
+            instructions/branch.cc
+            instructions/atomic.cc
+               )
+target_include_directories(regression-riscv PRIVATE
+                           ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(regression-riscv regression-test-base)
+
+# Define a macro so that tests can find data files
+target_compile_definitions(regression-riscv PRIVATE
+  "SIMENG_RISCV_TEST_ROOT=\"${CMAKE_CURRENT_SOURCE_DIR}\"")
+
+add_test(NAME regression-riscv-test COMMAND regression-riscv)

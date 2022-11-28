@@ -1,6 +1,5 @@
 #include <chrono>
 #include <cmath>
-#include <cstring>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -8,7 +7,6 @@
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
-#include "simeng/SpecialFileDirGen.hh"
 #include "simeng/version.hh"
 
 /** Tick the provided core model until it halts. */
@@ -83,7 +81,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<simeng::MemoryInterface> instructionMemory =
       coreInstance->getInstructionMemory();
 
-  // Output general simumlation details
+  // Output general simulation details
   std::cout << "[SimEng] Running in " << coreInstance->getSimulationModeString()
             << " mode" << std::endl;
   std::cout << "[SimEng] Workload: " << executablePath;
