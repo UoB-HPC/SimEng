@@ -95,16 +95,12 @@ Current development team:
 
 - Jack Jones (lead developer) 
 - Finn Wilkinson
+- Rahat Muneeb
+- Dan Weaver
     
 Original SimEng design and implementation:
 - Hal Jones
 - James Price
-
-Current development team:
-- Jack Jones (Lead Developer) 
-- Finn Wilkinson
-- Rahat Muneeb
-- Daniel Weaver
 
 Additional Contributors:
 - Ainsley Rutterford
