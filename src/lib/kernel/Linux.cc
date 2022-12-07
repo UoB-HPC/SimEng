@@ -561,13 +561,10 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
 #else
     result.d_off = next_direct->d_off;
 #endif
+    std::string d_name = next_direct->d_name;
     result.d_type = next_direct->d_type;
-    result.d_namlen = std::string(next_direct->d_name).size();
-    // `+1` for null-terminator in d_name
-    result.d_name = (char*)malloc(result.d_namlen + 1);
-    memcpy(result.d_name, next_direct->d_name, result.d_namlen);
-    // Ensure final char is a null-terminator
-    result.d_name[result.d_namlen] = '\0';
+    result.d_namlen = d_name.size();
+    result.d_name = d_name.data();
     // Get size of struct before alignment
     // 20 = combined size of d_ino, d_off, d_reclen, d_type, and d_name's
     // null-terminator
