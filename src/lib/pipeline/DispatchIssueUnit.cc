@@ -181,7 +181,7 @@ void DispatchIssueUnit::forwardOperands(const span<Register>& registers,
     scoreboard_[reg.type][reg.tag] = true;
 
     // Supply the value to all dependent uops
-    const auto& dependents = dependencyMatrix_[reg.type][reg.tag];
+    auto& dependents = dependencyMatrix_[reg.type][reg.tag];
     for (auto& entry : dependents) {
       entry.uop->supplyOperand(entry.operandIndex, values[i]);
       if (entry.uop->canExecute()) {
