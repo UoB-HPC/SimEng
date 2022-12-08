@@ -29,13 +29,13 @@ class nicAPI : public SST::SubComponent {
   SST_ELI_REGISTER_SUBCOMPONENT_API(SST::SSTSimEng::nicAPI)
 
   nicAPI(SST::ComponentId_t id, SST::Params& params) : SubComponent(id) {}
-  ~nicAPI() {}
+  virtual ~nicAPI() {}
 
   /** SST Init lifecycle method. */
-  virtual void init(unsigned int phase) = 0;
+  virtual void init(unsigned int phase) {}
 
   /** SST Setup lifecycle method. */
-  virtual void setup() = 0;
+  virtual void setup() {}
 
   /** Set the handler which processes notifications from the network interface
    * which denotes a new request had been recieved from the network. */
@@ -73,13 +73,13 @@ class SimEngNIC : public nicAPI {
        "SST::Interfaces::SimpleNetwork"})
 
   SimEngNIC(ComponentId_t id, Params& params);
-  ~SimEngNIC();
+  virtual ~SimEngNIC();
 
   /** SST Init lifecycle method. */
-  void init(unsigned int phase) override;
+  virtual void init(unsigned int phase);
 
   /** SST Setup lifecycle method. */
-  void setup() override;
+  virtual void setup();
 
   /** Set the handler which processes notifications from the network interface
    * which denotes a new request had been recieved from the network. */

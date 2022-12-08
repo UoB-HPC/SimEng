@@ -1,15 +1,9 @@
-// clang-format off
-// DO NOT MOVE FROM TOP OF FILE - https://github.com/sstsimulator/sst-core/issues/865
-#include <sst/core/sst_config.h>
-// clang-format on
-
 #include "SimEngNIC.hh"
 
 using namespace SST;
 using namespace SST::SSTSimEng;
 
-SimEngNIC::SimEngNIC(SST::ComponentId_t id, SST::Params& params)
-    : nicAPI(id, params) {
+SimEngNIC::SimEngNIC(ComponentId_t id, Params& params) : nicAPI(id, params) {
   output_.init("[SSTSimEng:SimEngNIC] " + getName() + ":@p:@l ", 999, 0,
                SST::Output::STDOUT);
   registerClock(
@@ -21,6 +15,8 @@ SimEngNIC::SimEngNIC(SST::ComponentId_t id, SST::Params& params)
   interface_ = loadUserSubComponent<SST::Interfaces::SimpleNetwork>(
       "interface", SST::ComponentInfo::SHARE_NONE, 1);
 }
+
+SimEngNIC::~SimEngNIC() {}
 
 void SimEngNIC::init(unsigned int phase) {}
 
