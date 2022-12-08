@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "SimEngMemInterface.hh"
+#include "SimEngNIC.hh"
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
@@ -136,6 +137,11 @@ class SimEngCoreWrapper : public SST::Component {
        "Value which enables output statistics that can be parsed by the "
        "testing framework. (boolean)",
        "false"})
+
+  SST_ELI_DOCUMENT_PORTS()
+
+  SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS({"nic", "Network interface",
+                                       "SST::SSTSimEng::SimEngNIC"})
 
  private:
   /** Method used to assemble SimEng core. */
