@@ -6,7 +6,7 @@
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
 #include "simeng/arch/riscv/Instruction.hh"
-#include "simeng/kernel/Linux.hh"
+#include "simeng/kernel/SimOS.hh"
 
 using csh = size_t;
 
@@ -17,7 +17,7 @@ namespace riscv {
 /* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-  Architecture(kernel::Linux& kernel, YAML::Node config);
+  Architecture(kernel::SimOS& kernel, YAML::Node config);
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -94,7 +94,7 @@ class Architecture : public arch::Architecture {
   csh capstoneHandle;
 
   /** A reference to a Linux kernel object to forward syscalls to. */
-  kernel::Linux& linux_;
+  kernel::SimOS& linux_;
 };
 
 }  // namespace riscv

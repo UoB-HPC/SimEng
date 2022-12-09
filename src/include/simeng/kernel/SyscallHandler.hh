@@ -1,57 +1,33 @@
 #pragma once
 
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/resource.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+#include <sys/termios.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <cassert>
+#include <cstring>
+#include <iostream>
 #include <memory>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
+#include "simeng/Elf.hh"
 #include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/version.hh"
+#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 namespace kernel {
-
-/** Fixed-width definition of `stat`.
- * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
-struct stat {
-  uint64_t dev;        // offset =   0
-  uint64_t ino;        // offset =   8
-  uint32_t mode;       // offset =  16
-  uint32_t nlink;      // offset =  20
-  uint32_t uid;        // offset =  24
-  uint32_t gid;        // offset =  28
-  uint64_t rdev;       // offset =  32
-  uint64_t padding1;   // offset =  40
-  int64_t size;        // offset =  48
-  int32_t blksize;     // offset =  56
-  uint32_t padding2;   // offset =  60
-  int64_t blocks;      // offset =  64
-  int64_t atime;       // offset =  72
-  uint64_t atimensec;  // offset =  80
-  int64_t mtime;       // offset =  88
-  uint64_t mtimensec;  // offset =  96
-  int64_t ctime;       // offset = 104
-  uint64_t ctimensec;  // offset = 112
-  uint32_t padding3;   // offset = 116
-  uint32_t padding4;   // offset = 124
-};
-
-/** Fixed-width definition of `termios`.
- * Defined by Linux kernel in `include/uapi/asm-generic/termbits.h` */
-struct ktermios {
-  uint32_t c_iflag;  // input mode flags
-  uint32_t c_oflag;  // output mode flags
-  uint32_t c_cflag;  // control mode flags
-  uint32_t c_lflag;  // local mode flags
-  uint8_t c_line;    // line discipline
-  uint8_t c_cc[19];  // control characters
-};
-
-/** Fixed-width definition of `timeval` (from `<sys/time.h>`). */
-struct timeval {
-  int64_t tv_sec;   // seconds
-  int64_t tv_usec;  // microseconds
-};
 
 /** Struct to hold information about a contiguous virtual memory area. */
 struct vm_area_struct {
@@ -95,6 +71,48 @@ struct LinuxProcessState {
   std::set<int64_t> freeFileDescriptors;
 };
 
+/** Fixed-width definition of `stat`.
+ * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
+struct stat {
+  uint64_t dev;        // offset =   0
+  uint64_t ino;        // offset =   8
+  uint32_t mode;       // offset =  16
+  uint32_t nlink;      // offset =  20
+  uint32_t uid;        // offset =  24
+  uint32_t gid;        // offset =  28
+  uint64_t rdev;       // offset =  32
+  uint64_t padding1;   // offset =  40
+  int64_t size;        // offset =  48
+  int32_t blksize;     // offset =  56
+  uint32_t padding2;   // offset =  60
+  int64_t blocks;      // offset =  64
+  int64_t atime;       // offset =  72
+  uint64_t atimensec;  // offset =  80
+  int64_t mtime;       // offset =  88
+  uint64_t mtimensec;  // offset =  96
+  int64_t ctime;       // offset = 104
+  uint64_t ctimensec;  // offset = 112
+  uint32_t padding3;   // offset = 116
+  uint32_t padding4;   // offset = 124
+};
+
+/** Fixed-width definition of `termios`.
+ * Defined by Linux kernel in `include/uapi/asm-generic/termbits.h` */
+struct ktermios {
+  uint32_t c_iflag;  // input mode flags
+  uint32_t c_oflag;  // output mode flags
+  uint32_t c_cflag;  // control mode flags
+  uint32_t c_lflag;  // local mode flags
+  uint8_t c_line;    // line discipline
+  uint8_t c_cc[19];  // control characters
+};
+
+/** Fixed-width definition of `timeval` (from `<sys/time.h>`). */
+struct timeval {
+  int64_t tv_sec;   // seconds
+  int64_t tv_usec;  // microseconds
+};
+
 /** Fixed-width definition of 'rusage' (from <sys/resource.h>). */
 struct rusage {
   struct ::timeval ru_utime;  // user CPU time used
@@ -128,13 +146,10 @@ struct linux_dirent64 {
 
 /** A Linux kernel syscall emulation implementation, which mimics the responses
    to Linux system calls. */
-class Linux {
+class SyscallHandler {
  public:
-  /** Create a new Linux process running above this kernel. */
-  void createProcess(const LinuxProcess& process);
-
-  /** Retrieve the initial stack pointer. */
-  uint64_t getInitialStackPointer() const;
+  /** Create new SyscallHandler object. */
+  SyscallHandler(std::vector<LinuxProcessState>& processStates);
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */
@@ -246,10 +261,7 @@ class Linux {
   std::string getSpecialFile(const std::string filename);
 
   /** The state of the user-space processes running above the kernel. */
-  std::vector<LinuxProcessState> processStates_;
-
-  /** Translation between special files paths and simeng replacement files. */
-  std::unordered_map<std::string, const std::string> specialPathTranslations_;
+  std::vector<LinuxProcessState>& processStates_;
 
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";

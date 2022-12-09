@@ -13,7 +13,7 @@
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
-#include "simeng/kernel/Linux.hh"
+#include "simeng/kernel/SimOS.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
@@ -142,7 +142,7 @@ class CoreInstance {
   std::shared_ptr<char> processMemory_;
 
   /** The SimEng Linux kernel object. */
-  simeng::kernel::Linux kernel_;
+  simeng::kernel::SimOS kernel_;
 
   /** Whether or not the dataMemory_ must be set manually. */
   bool setDataMemory_ = false;
