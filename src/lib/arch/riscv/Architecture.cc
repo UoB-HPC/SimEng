@@ -14,7 +14,7 @@ namespace riscv {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
+Architecture::Architecture(kernel::SimOS& kernel, YAML::Node config)
     : linux_(kernel) {
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
   if (n != CS_ERR_OK) {

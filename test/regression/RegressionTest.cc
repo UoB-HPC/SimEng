@@ -5,8 +5,8 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
-#include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/kernel/SimOS.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
@@ -65,7 +65,7 @@ void RegressionTest::run(const char* source, const char* triple,
   std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
   // Create the OS kernel and the process
-  simeng::kernel::Linux kernel;
+  simeng::kernel::SimOS kernel;
   kernel.createProcess(*process_);
 
   // Populate the heap with initial data (specified by the test being run).

@@ -23,8 +23,8 @@
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
 #include "simeng/arch/Architecture.hh"
-#include "simeng/kernel/Linux.hh"
 #include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/kernel/SimOS.hh"
 #include "simeng/pipeline/PortAllocator.hh"
 #include "simeng/version.hh"
 
@@ -64,7 +64,7 @@ class RegressionTest
 
   /** Create an ISA instance from a kernel. */
   virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      simeng::kernel::Linux& kernel, YAML::Node config) const = 0;
+      simeng::kernel::SimOS& kernel, YAML::Node config) const = 0;
 
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
