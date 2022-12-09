@@ -16,6 +16,7 @@ set(SIMENG_SOURCES
     arch/riscv/InstructionMetadata.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
+    kernel/SimOS.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc
