@@ -3,19 +3,22 @@
 namespace simeng {
 
 CoreInstance::CoreInstance(std::string executablePath,
-                           std::vector<std::string> executableArgs) {
+                           std::vector<std::string> executableArgs)
+    : kernel_(kernel::SimOS()) {
   config_ = YAML::Load(DEFAULT_CONFIG);
   generateCoreModel(executablePath, executableArgs);
 }
 
 CoreInstance::CoreInstance(std::string configPath, std::string executablePath,
-                           std::vector<std::string> executableArgs) {
+                           std::vector<std::string> executableArgs)
+    : kernel_(kernel::SimOS()) {
   config_ = simeng::ModelConfig(configPath).getConfigFile();
   generateCoreModel(executablePath, executableArgs);
 }
 
 CoreInstance::CoreInstance(char* assembledSource, size_t sourceSize,
-                           std::string configPath) {
+                           std::string configPath)
+    : kernel_(kernel::SimOS()) {
   config_ = simeng::ModelConfig(configPath).getConfigFile();
   source_ = assembledSource;
   sourceSize_ = sourceSize;

@@ -31,7 +31,7 @@ YAML::Node RISCVRegressionTest::generateConfig() const {
 }
 
 std::unique_ptr<simeng::arch::Architecture>
-RISCVRegressionTest::createArchitecture(simeng::kernel::Linux& kernel,
+RISCVRegressionTest::createArchitecture(simeng::kernel::SimOS& kernel,
                                         YAML::Node config) const {
   return std::make_unique<Architecture>(kernel, config);
 }

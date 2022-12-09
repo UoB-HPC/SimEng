@@ -11,7 +11,7 @@ std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 uint64_t Architecture::SVCRval_;
 
-Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
+Architecture::Architecture(kernel::SimOS& kernel, YAML::Node config)
     : linux_(kernel),
       microDecoder_(std::make_unique<MicroDecoder>(config)),
       VL_(config["Core"]["Vector-Length"].as<uint64_t>()),
