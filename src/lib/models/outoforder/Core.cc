@@ -16,8 +16,10 @@ namespace outoforder {
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator, YAML::Node config)
+           pipeline::PortAllocator& portAllocator, YAML::Node config,
+           std::shared_ptr<kernel::LinuxProcess> process)
     : isa_(isa),
+      process_(process),
       physicalRegisterStructures_(
           isa.getConfigPhysicalRegisterStructure(config)),
       physicalRegisterQuantities_(
@@ -103,7 +105,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   });
 
   // Query and apply initial state
-  auto state = isa.getInitialState();
+  auto state = isa.getInitialState(process_->getStackPointer());
   applyStateChange(state);
 };
 
