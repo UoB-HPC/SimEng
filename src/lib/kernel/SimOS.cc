@@ -3,28 +3,24 @@
 namespace simeng {
 namespace kernel {
 
-SimOS::SimOS(
-    /*const std::vector<std::string>& commandLine, YAML::Node config*/)
+SimOS::SimOS(int argc, char** argv)
     : syscalls_(SyscallHandler(processStates_)) {
-  // Create the initial Process defined by the command line, or default if no
-  // executable is given.
-
-  // Create SyscallHandler Object
-}
-
-void SimOS::createCores(const uint64_t numCores) {
-  // TODO: Support multi-core
-  if (numCores != 1) {
-    std::cerr << "[SimEng:SimOS] Invalid number of Cores \"" << numCores
-              << "\". Please configure for single core simulation."
-              << std::endl;
-    exit(1);
+  // Determine if a config file has been supplied.
+  if (argc > 1) {
+    configFilePath_ = std::string(argv[1]);
+    // Determine if an executable has been supplied
+    if (argc > 2) {
+      executablePath_ = std::string(argv[2]);
+      // Create a vector of any potential executable arguments from their
+      // relative position within the argv variable
+      int numberofArgs = argc - 3;
+      executableArgs_ =
+          std::vector<std::string>((argv + 3), (argv + 3) + numberofArgs);
+    }
   }
 }
 
-// In place of Simulate in Main - drives whole simulation.
-double SimOS::execute() { return 0.0; }
-
+// UPDATE
 void SimOS::createProcess(const LinuxProcess& process) {
   assert(process.isValid() && "Attempted to use an invalid process");
   assert(processStates_.size() == 0 && "Multiple processes not yet supported");
@@ -40,6 +36,7 @@ void SimOS::createProcess(const LinuxProcess& process) {
   processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
 }
 
+// UPDATE
 uint64_t SimOS::getInitialStackPointer() const {
   assert(processStates_.size() > 0 &&
          "Attempted to retrieve a stack pointer before creating a process");

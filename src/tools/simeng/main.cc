@@ -3,10 +3,12 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <tuple>
 
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
+#include "simeng/kernel/SimOS.hh"
 #include "simeng/version.hh"
 
 /** Tick the provided core model until it halts. */
@@ -41,38 +43,15 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] \tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
   std::cout << std::endl;
 
+  // Create the instance of the OS
+  simeng::kernel::SimOS simOS_kernel = simeng::kernel::SimOS(argc, argv);
+  auto [configFilePath, executablePath, executableArgs] =
+      simOS_kernel.getParsedArgv();
+
   // Create the instance of the core to be simulated
-  std::unique_ptr<simeng::CoreInstance> coreInstance;
-  std::string executablePath = "";
-  std::string configFilePath = "";
-  std::vector<std::string> executableArgs = {};
-
-  // Determine if a config file has been supplied.
-  if (argc > 1) {
-    configFilePath = std::string(argv[1]);
-    // Determine if an executable has been supplied
-    if (argc > 2) {
-      executablePath = std::string(argv[2]);
-      // Create a vector of any potential executable arguments from their
-      // relative position within the argv variable
-      char** startOfArgs = argv + 3;
-      int numberofArgs = argc - 3;
-      executableArgs =
-          std::vector<std::string>(startOfArgs, startOfArgs + numberofArgs);
-    }
-    coreInstance = std::make_unique<simeng::CoreInstance>(
-        configFilePath, executablePath, executableArgs);
-  } else {
-    // Without a config file, no executable can be supplied so pass default
-    // (empty) values for executable information
-    coreInstance =
-        std::make_unique<simeng::CoreInstance>(executablePath, executableArgs);
-    configFilePath = "Default";
-  }
-
-  // Replace empty executablePath string with more useful content for
-  // outputting
-  if (executablePath == "") executablePath = "Default";
+  std::unique_ptr<simeng::CoreInstance> coreInstance =
+      std::make_unique<simeng::CoreInstance>(configFilePath, executablePath,
+                                             executableArgs, simOS_kernel);
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();

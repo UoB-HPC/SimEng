@@ -2,31 +2,29 @@
 
 namespace simeng {
 
-CoreInstance::CoreInstance(std::string executablePath,
-                           std::vector<std::string> executableArgs)
-    : kernel_(kernel::SimOS()) {
-  config_ = YAML::Load(DEFAULT_CONFIG);
-  generateCoreModel(executablePath, executableArgs);
-}
-
 CoreInstance::CoreInstance(std::string configPath, std::string executablePath,
-                           std::vector<std::string> executableArgs)
-    : kernel_(kernel::SimOS()) {
-  config_ = simeng::ModelConfig(configPath).getConfigFile();
+                           std::vector<std::string> executableArgs,
+                           kernel::SimOS kernel)
+    : kernel_(kernel) {
+  if (configPath == DEFAULT_PATH) {
+    config_ = YAML::Load(DEFAULT_CONFIG);
+  } else {
+    config_ = simeng::ModelConfig(configPath).getConfigFile();
+  }
   generateCoreModel(executablePath, executableArgs);
 }
 
-CoreInstance::CoreInstance(char* assembledSource, size_t sourceSize,
-                           std::string configPath)
-    : kernel_(kernel::SimOS()) {
-  config_ = simeng::ModelConfig(configPath).getConfigFile();
-  source_ = assembledSource;
-  sourceSize_ = sourceSize;
-  assembledSource_ = true;
-  // Pass an empty string for executablePath and empty vector of strings for
-  // executableArgs.
-  generateCoreModel("", std::vector<std::string>{});
-}
+// CoreInstance::CoreInstance(char* assembledSource, size_t sourceSize,
+//                            std::string configPath)
+//     : kernel_(kernel::SimOS()) {
+//   config_ = simeng::ModelConfig(configPath).getConfigFile();
+//   source_ = assembledSource;
+//   sourceSize_ = sourceSize;
+//   assembledSource_ = true;
+//   // Pass an DEFAULT_PATH for executablePath and empty vector of strings for
+//   // executableArgs.
+//   generateCoreModel(DEFAULT_PATH, std::vector<std::string>{});
+// }
 
 CoreInstance::~CoreInstance() {
   if (source_) {
@@ -100,7 +98,7 @@ void CoreInstance::setSimulationMode() {
 
 void CoreInstance::createProcess(std::string executablePath,
                                  std::vector<std::string> executableArgs) {
-  if (executablePath.length() > 0) {
+  if (executablePath != DEFAULT_PATH) {
     // Concatenate the command line arguments into a single vector and create
     // the process image
     std::vector<std::string> commandLine = {executablePath};
