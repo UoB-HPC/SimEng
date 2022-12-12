@@ -1,9 +1,12 @@
 #pragma once
 
+#include <string>
+#include <tuple>
 #include <vector>
 
-// #include "simeng/CoreInstance.hh"
 #include "simeng/kernel/SyscallHandler.hh"
+
+#define DEFAULT_PATH "Default"
 
 namespace simeng {
 namespace kernel {
@@ -13,13 +16,13 @@ namespace kernel {
 class SimOS {
  public:
   /** Construct a SimOS object. */
-  SimOS(/*const std::vector<std::string>& commandLine, YAML::Node config*/);
+  SimOS(int argc, char** argv);
 
-  /** Execute the target workload through SimEng. */
-  double execute();
-
-  /** Create the desired amount of Core's. */
-  void createCores(const uint64_t numCores);
+  /** Get user defined config, executable, and executable args. */
+  std::tuple<std::string, std::string, std::vector<std::string>>
+  getParsedArgv() {
+    return {configFilePath_, executablePath_, executableArgs_};
+  };
 
   /** Create a new Linux process running above this kernel. */
   /// EDIT
@@ -36,8 +39,14 @@ class SimOS {
   static const size_t LINUX_PATH_MAX = 4096;
 
  private:
-  /** The list of available CPU cores*/
-  // std::vector<CoreInstance> cores_;
+  /** The path of user defined Config File.*/
+  std::string configFilePath_ = DEFAULT_PATH;
+
+  /** The path of user defined Executable. */
+  std::string executablePath_ = DEFAULT_PATH;
+
+  /** The runtime arguments of the user defined executable. */
+  std::vector<std::string> executableArgs_ = {};
 
   /** The list of active processes. */
   std::vector<std::shared_ptr<LinuxProcess>> processes_;

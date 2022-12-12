@@ -36,21 +36,21 @@ uint32_t hex_[] = {
 
 namespace simeng {
 
+// Forward delare everything needed for SimOS
+namespace kernel {
+class SimOS;
+}  // namespace kernel
+
 /** The available modes of simulation. */
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 
 /** A class to create a SimEng core instance from a supplied config. */
 class CoreInstance {
  public:
-  /** Default constructor with an executable and its arguments but no model
-   * configuration. */
-  CoreInstance(std::string executablePath,
-               std::vector<std::string> executableArgs);
-
   /** Constructor with an executable, its arguments, and a model configuration.
    */
   CoreInstance(std::string configPath, std::string executablePath,
-               std::vector<std::string> executableArgs);
+               std::vector<std::string> executableArgs, kernel::SimOS kernel);
 
   /** CoreInstance with source code assembled by LLVM and a model configuration.
    */
