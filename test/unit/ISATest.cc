@@ -7,7 +7,7 @@ namespace {
 
 // Test that we can create an AArch64 Architecture object
 TEST(ISATest, CreateAArch64) {
-  simeng::kernel::SimOS kernel;
+  simeng::kernel::SimOS kernel = simeng::kernel::SimOS(1, nullptr);
   YAML::Node config = YAML::Load(
       "{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
