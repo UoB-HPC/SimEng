@@ -5,6 +5,7 @@
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
 #include "simeng/FlatMemoryInterface.hh"
+#include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/ExecuteUnit.hh"
 #include "simeng/pipeline/FetchUnit.hh"
@@ -22,7 +23,8 @@ class Core : public simeng::Core {
    * process memory. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        uint64_t processMemorySize, uint64_t entryPoint,
-       const arch::Architecture& isa, BranchPredictor& branchPredictor);
+       const arch::Architecture& isa, BranchPredictor& branchPredictor,
+       std::shared_ptr<kernel::LinuxProcess> process);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -132,6 +134,9 @@ class Core : public simeng::Core {
 
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
+
+  /** Currently executing Process. */
+  std::shared_ptr<kernel::LinuxProcess> process_ = nullptr;
 };
 
 }  // namespace inorder

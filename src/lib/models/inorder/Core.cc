@@ -15,8 +15,10 @@ const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor)
+           const arch::Architecture& isa, BranchPredictor& branchPredictor,
+           std::shared_ptr<kernel::LinuxProcess> process)
     : dataMemory_(dataMemory),
+      process_(process),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
@@ -36,7 +38,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           branchPredictor, false),
       writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}) {
   // Query and apply initial state
-  auto state = isa.getInitialState();
+  auto state = isa.getInitialState(process_->getStackPointer());
   applyStateChange(state);
 };
 

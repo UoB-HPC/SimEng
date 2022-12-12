@@ -90,7 +90,7 @@ class Architecture {
       MemoryInterface& memory) const = 0;
 
   /** Retrieve the initial process state. */
-  virtual ProcessStateChange getInitialState() const = 0;
+  virtual ProcessStateChange getInitialState(uint64_t stackPointer) const = 0;
 
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;

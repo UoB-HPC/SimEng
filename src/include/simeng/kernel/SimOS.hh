@@ -4,7 +4,10 @@
 #include <tuple>
 #include <vector>
 
+#include "simeng/CoreInstance.hh"
+#include "simeng/SpecialFileDirGen.hh"
 #include "simeng/kernel/SyscallHandler.hh"
+#include "simeng/span.hh"
 
 #define DEFAULT_PATH "Default"
 
@@ -18,29 +21,30 @@ class SimOS {
   /** Construct a SimOS object. */
   SimOS(int argc, char** argv);
 
+  /** Create the initial Linux process running above this kernel from command
+   * line arguments.
+   * Empty command line arguments denote the usage of hardcoded instructions
+   * held in the hex_ array.*/
+  void createInitialProcess();
+
+  /** Get pointer to process with specified PID. */
+  std::shared_ptr<LinuxProcess> getProcess();
+
   /** Get user defined config, executable, and executable args. */
-  std::tuple<std::string, std::string, std::vector<std::string>>
+  std::tuple<YAML::Node&, std::string, std::vector<std::string>>
   getParsedArgv() {
-    return {configFilePath_, executablePath_, executableArgs_};
+    return {config_, executablePath_, executableArgs_};
   };
 
-  /** Create a new Linux process running above this kernel. */
-  /// EDIT
-  void createProcess(const LinuxProcess& process);
-
-  /** Retrieve the initial stack pointer. */
-  /// EDIT
-  uint64_t getInitialStackPointer() const;
-
   /** SyscallHandler Object to process all syscalls. */
-  SyscallHandler syscalls_;
-
-  /** The maximum size of a filesystem path. */
-  static const size_t LINUX_PATH_MAX = 4096;
+  SyscallHandler syscallHandler_;
 
  private:
-  /** The path of user defined Config File.*/
-  std::string configFilePath_ = DEFAULT_PATH;
+  /** Construct the special file directory. */
+  void createSpecialFileDirectory();
+
+  /** The user defined Config File describing the modelled core to be created.*/
+  YAML::Node config_;
 
   /** The path of user defined Executable. */
   std::string executablePath_ = DEFAULT_PATH;
@@ -53,6 +57,26 @@ class SimOS {
 
   /** The state of the user-space processes running above the kernel. */
   std::vector<LinuxProcessState> processStates_;
+
+  /** The value of the next PID value to be used when a new process is
+   * created. */
+  int64_t nextPid_ = 0;
+
+  /** The set of deallocated PID values available for reuse. */
+  std::set<int64_t> freePidSet_;
+
+  // Program used when no executable is provided; counts down from
+  // 1024*1024, with an independent `orr` at the start of each branch.
+  uint32_t hex_[8] = {
+      0x320C03E0,  // orr w0, wzr, #1048576
+      0x320003E1,  // orr w0, wzr, #1
+      0x71000400,  // subs w0, w0, #1
+      0x54FFFFC1,  // b.ne -8
+                   // .exit:
+      0xD2800000,  // mov x0, #0
+      0xD2800BC8,  // mov x8, #94
+      0xD4000001,  // svc #0
+  };
 };
 
 }  // namespace kernel
