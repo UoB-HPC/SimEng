@@ -16,6 +16,9 @@ set(SIMENG_SOURCES
     arch/riscv/InstructionMetadata.cc
     kernel/Linux.cc
     kernel/LinuxProcess.cc
+    kernel/MemRegion.cc
+    kernel/Vma.cc
+    memory/SimpleMem.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc
@@ -45,6 +48,7 @@ set(SIMENG_SOURCES
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
+    Backward.cc
 )
 
 configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)

@@ -48,6 +48,9 @@ int main(int argc, char** argv) {
   std::vector<std::string> executableArgs = {};
 
   // Determine if a config file has been supplied.
+  std::shared_ptr<simeng::memory::Mem> memory =
+      std::shared_ptr<simeng::memory::Mem>(
+          new simeng::memory::SimpleMem(2684354560));
   if (argc > 1) {
     configFilePath = std::string(argv[1]);
     // Determine if an executable has been supplied
@@ -61,12 +64,12 @@ int main(int argc, char** argv) {
           std::vector<std::string>(startOfArgs, startOfArgs + numberofArgs);
     }
     coreInstance = std::make_unique<simeng::CoreInstance>(
-        configFilePath, executablePath, executableArgs);
+        configFilePath, executablePath, executableArgs, memory);
   } else {
     // Without a config file, no executable can be supplied so pass default
     // (empty) values for executable information
-    coreInstance =
-        std::make_unique<simeng::CoreInstance>(executablePath, executableArgs);
+    coreInstance = std::make_unique<simeng::CoreInstance>(
+        executablePath, executableArgs, memory);
     configFilePath = "Default";
   }
 

@@ -1,5 +1,7 @@
 #include "simeng/kernel/LinuxProcess.hh"
 
+#include <unistd.h>
+
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -17,10 +19,8 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 }
 
 LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
-                           YAML::Node config)
-    : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
-      HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()),
-      commandLine_(commandLine) {
+                           YAML::Node config, char* memptr, size_t mem_size)
+    : commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
   char* unwrappedProcImgPtr;
@@ -31,19 +31,29 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   isValid_ = true;
 
   entryPoint_ = elf.getEntryPoint();
+  uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
+  uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
 
   // Align heap start to a 32-byte boundary
-  heapStart_ = alignToBoundary(elf.getProcessImageSize(), 32);
+  uint64_t heapStart = alignToBoundary(elf.getProcessImageSize(), 32);
 
   // Set mmap region start to be an equal distance from the stack and heap
   // starts. Additionally, align to the page size (4kb)
-  mmapStart_ =
-      alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
+  uint64_t mmapStart =
+      alignToBoundary(heapStart + (heapSize + stackSize) / 2, pageSize_);
 
   // Calculate process image size, including heap + stack
-  size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
+  uint64_t size = heapStart + heapSize + stackSize;
 
-  char* temp = (char*)realloc(unwrappedProcImgPtr, size_ * sizeof(char));
+  // Check if global memory size is greater than process image size.
+  if (mem_size < size) {
+    std::cerr << "Memory size is less than size of the process image. Please "
+                 "increase memory size"
+              << std::endl;
+    std::exit(1);
+  }
+
+  char* temp = (char*)realloc(unwrappedProcImgPtr, size * sizeof(char));
   if (temp == NULL) {
     free(unwrappedProcImgPtr);
     std::cerr << "[SimEng:LinuxProcess] ProcessImage cannot be constructed "
@@ -53,42 +63,62 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
     exit(EXIT_FAILURE);
   }
   unwrappedProcImgPtr = temp;
+  memRegion_ =
+      MemRegion(stackSize, heapSize, size, 0, heapStart, 4096, mmapStart);
 
   createStack(&unwrappedProcImgPtr);
-  processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
+  // copy process image to global memory.
+  memcpy(memptr, unwrappedProcImgPtr, size);
+  fileDescriptorTable_.push_back(STDIN_FILENO);
+  fileDescriptorTable_.push_back(STDOUT_FILENO);
+  fileDescriptorTable_.push_back(STDERR_FILENO);
+  // free allocated memory after copy.
+  free(unwrappedProcImgPtr);
 }
 
-LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
-    : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
-      HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
+LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config,
+                           char* memptr, size_t mem_size) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 
   isValid_ = true;
+  uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
+  uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
 
   // Align heap start to a 32-byte boundary
-  heapStart_ = alignToBoundary(instructions.size(), 32);
+  uint64_t heapStart = alignToBoundary(instructions.size(), 32);
 
   // Set mmap region start to be an equal distance from the stack and heap
   // starts. Additionally, align to the page size (4kb)
-  mmapStart_ =
-      alignToBoundary(heapStart_ + (HEAP_SIZE + STACK_SIZE) / 2, pageSize_);
+  uint64_t mmapStart =
+      alignToBoundary(heapStart + (heapSize + stackSize) / 2, pageSize_);
 
-  size_ = heapStart_ + HEAP_SIZE + STACK_SIZE;
-  char* unwrappedProcImgPtr = (char*)malloc(size_ * sizeof(char));
+  // Calculate process image size, including heap + stack
+  uint64_t size = heapStart + heapSize + stackSize;
+  // Check if global memory size is greater than process image size.
+  if (mem_size < size) {
+    std::cerr << "Memory size is less than size of the process image. Please "
+                 "increase memory size"
+              << std::endl;
+    std::exit(1);
+  }
+  char* unwrappedProcImgPtr = (char*)malloc(size * sizeof(char));
   std::copy(instructions.begin(), instructions.end(), unwrappedProcImgPtr);
-
+  memRegion_ =
+      MemRegion(stackSize, heapSize, size, 0, heapStart, 4096, mmapStart);
   createStack(&unwrappedProcImgPtr);
-  processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
+  // copy process image to global memory.
+  memcpy(memptr, unwrappedProcImgPtr, size);
+  free(unwrappedProcImgPtr);
 }
 
 LinuxProcess::~LinuxProcess() {}
 
-uint64_t LinuxProcess::getHeapStart() const { return heapStart_; }
+uint64_t LinuxProcess::getHeapStart() const { return memRegion_.getBrkStart(); }
 
-uint64_t LinuxProcess::getStackStart() const { return size_; }
+uint64_t LinuxProcess::getStackStart() const { return memRegion_.getMemSize(); }
 
-uint64_t LinuxProcess::getMmapStart() const { return mmapStart_; }
+uint64_t LinuxProcess::getMmapStart() const { return memRegion_.getBrkStart(); }
 
 uint64_t LinuxProcess::getPageSize() const { return pageSize_; }
 
@@ -96,15 +126,15 @@ std::string LinuxProcess::getPath() const { return commandLine_[0]; }
 
 bool LinuxProcess::isValid() const { return isValid_; }
 
-std::shared_ptr<char> LinuxProcess::getProcessImage() const {
-  return std::shared_ptr<char>(processImage_);
+uint64_t LinuxProcess::getProcessImageSize() const {
+  return memRegion_.getMemSize();
 }
-
-uint64_t LinuxProcess::getProcessImageSize() const { return size_; }
 
 uint64_t LinuxProcess::getEntryPoint() const { return entryPoint_; }
 
-uint64_t LinuxProcess::getStackPointer() const { return stackPointer_; }
+uint64_t LinuxProcess::getStackPointer() const {
+  return memRegion_.getInitialStackStart();
+}
 
 void LinuxProcess::createStack(char** processImage) {
   // Decrement the stack pointer and populate with initial stack state
@@ -113,7 +143,7 @@ void LinuxProcess::createStack(char** processImage) {
   // lower section of the initial stack is populated from the initialStackFrame
   // vector
 
-  stackPointer_ = getStackStart();
+  uint64_t stackPointer = memRegion_.getMemSize();
   std::vector<uint64_t> initialStackFrame;
   // Stack strings are split into bytes to easily support the injection of null
   // bytes dictating the end of a string
@@ -140,20 +170,20 @@ void LinuxProcess::createStack(char** processImage) {
 
   // Store strings and record both argv and environment pointers
   // Block out stack space for strings to be stored in
-  stackPointer_ -= alignToBoundary(stringBytes.size() + 1, 32);
+  stackPointer -= alignToBoundary(stringBytes.size() + 1, 32);
   uint16_t ptrCount = 1;
-  initialStackFrame.push_back(stackPointer_);  // argv[0] ptr
+  initialStackFrame.push_back(stackPointer);  // argv[0] ptr
   for (int i = 0; i < stringBytes.size(); i++) {
     if (ptrCount == commandLine_.size()) {
       // null terminator to seperate argv and env strings
       initialStackFrame.push_back(0);
       ptrCount++;
     }
-    if (i > 0 && stringBytes[i - 1] == 0x0) {            // i - 1 == null
-      initialStackFrame.push_back(stackPointer_ + (i));  // argv/env ptr
+    if (i > 0 && stringBytes[i - 1] == 0x0) {           // i - 1 == null
+      initialStackFrame.push_back(stackPointer + (i));  // argv/env ptr
       ptrCount++;
     }
-    (*processImage)[stackPointer_ + i] = stringBytes[i];
+    (*processImage)[stackPointer + i] = stringBytes[i];
   }
 
   initialStackFrame.push_back(0);  // null terminator
@@ -170,12 +200,14 @@ void LinuxProcess::createStack(char** processImage) {
   // pointer must be aligned to a 32-byte interval on some architectures
   uint64_t stackOffset = alignToBoundary(stackFrameSize, 32);
 
-  stackPointer_ -= stackOffset;
+  stackPointer -= stackOffset;
 
   // Copy initial stack frame to process memory
   char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame.data());
   std::copy(stackFrameBytes, stackFrameBytes + stackFrameSize,
-            (*processImage) + stackPointer_);
+            (*processImage) + stackPointer);
+  // Set inital stack start in MemRegion.
+  memRegion_.setInitialStackStart(stackPointer);
 }
 
 }  // namespace kernel

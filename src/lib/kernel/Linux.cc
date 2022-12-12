@@ -21,18 +21,20 @@ namespace simeng {
 namespace kernel {
 
 void Linux::createProcess(const LinuxProcess& process) {
-  assert(process.isValid() && "Attempted to use an invalid process");
-  assert(processStates_.size() == 0 && "Multiple processes not yet supported");
-  processStates_.push_back({.pid = 0,  // TODO: create unique PIDs
-                            .path = process.getPath(),
-                            .startBrk = process.getHeapStart(),
-                            .currentBrk = process.getHeapStart(),
-                            .initialStackPointer = process.getStackPointer(),
-                            .mmapRegion = process.getMmapStart(),
-                            .pageSize = process.getPageSize()});
-  processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
-  processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
-  processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
+  // assert(process.isValid() && "Attempted to use an invalid process");
+  // assert(processStates_.size() == 0 && "Multiple processes not yet
+  // supported"); processStates_.push_back({.pid = 0,  // TODO: create unique
+  // PIDs
+  //                           .path = process.getPath(),
+  //                           .startBrk = process.getHeapStart(),
+  //                           .currentBrk = process.getHeapStart(),
+  //                           .initialStackPointer = process.getStackPointer(),
+  //                           .mmapRegion = process.getMmapStart(),
+  //                           .pageSize = process.getPageSize()});
+  // processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
+  // processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
+  // processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
+  processes_.push_back(process);
 
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
@@ -42,6 +44,7 @@ void Linux::createProcess(const LinuxProcess& process) {
 }
 
 uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
+  LinuxProcess proc = processes_[0];
   // Resolve absolute path to target file
   char absolutePath[LINUX_PATH_MAX];
   realpath(pathname.c_str(), absolutePath);
@@ -52,8 +55,8 @@ uint64_t Linux::getDirFd(int64_t dfd, std::string pathname) {
     // If absolute path used then dfd is dis-regarded. Otherwise need to see if
     // fd exists for directory referenced
     if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert(dfd < processStates_[0].fileDescriptorTable.size());
-      dfd_temp = processStates_[0].fileDescriptorTable[dfd];
+      assert(dfd < proc.fileDescriptorTable_.size());
+      dfd_temp = proc.fileDescriptorTable_[dfd];
       if (dfd_temp < 0) {
         return -1;
       }
@@ -84,22 +87,22 @@ std::string Linux::getSpecialFile(const std::string filename) {
 }
 
 uint64_t Linux::getInitialStackPointer() const {
-  assert(processStates_.size() > 0 &&
+  LinuxProcess proc = processes_[0];
+
+  assert(processes_.size() > 0 &&
          "Attempted to retrieve a stack pointer before creating a process");
 
-  return processStates_[0].initialStackPointer;
+  return proc.getStackPointer();
 }
 
 int64_t Linux::brk(uint64_t address) {
-  assert(processStates_.size() > 0 &&
+  LinuxProcess proc = processes_[0];
+
+  assert(processes_.size() > 0 &&
          "Attempted to move the program break before creating a process");
 
-  auto& state = processStates_[0];
   // Move the break if it's within the heap region
-  if (address > state.startBrk) {
-    state.currentBrk = address;
-  }
-  return state.currentBrk;
+  return proc.getMemRegion().updateBrkRegion(address);
 }
 
 uint64_t Linux::clockGetTime(uint64_t clkId, uint64_t systemTimer,
@@ -121,8 +124,10 @@ uint64_t Linux::clockGetTime(uint64_t clkId, uint64_t systemTimer,
 }
 
 int64_t Linux::ftruncate(uint64_t fd, uint64_t length) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  LinuxProcess proc = processes_[0];
+
+  assert(fd < proc.fileDescriptorTable_.size());
+  int64_t hfd = proc.fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -151,19 +156,21 @@ int64_t Linux::faccessat(int64_t dfd, const std::string& filename, int64_t mode,
 }
 
 int64_t Linux::close(int64_t fd) {
+  LinuxProcess proc = processes_[0];
+
   // Don't close STDOUT or STDERR otherwise no SimEng output is given
   // afterwards. This includes final results given at the end of execution
   if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-    assert(fd < processStates_[0].fileDescriptorTable.size());
-    int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+    assert(fd < proc.fileDescriptorTable_.size());
+    int64_t hfd = proc.fileDescriptorTable_[fd];
     if (hfd < 0) {
       return EBADF;
     }
 
     // Deallocate the virtual file descriptor
-    assert(processStates_[0].freeFileDescriptors.count(fd) == 0);
-    processStates_[0].freeFileDescriptors.insert(fd);
-    processStates_[0].fileDescriptorTable[fd] = -1;
+    assert(proc.freeFileDescriptors_.count(fd) == 0);
+    proc.freeFileDescriptors_.insert(fd);
+    proc.fileDescriptorTable_[fd] = -1;
 
     return ::close(hfd);
   }
@@ -223,8 +230,10 @@ int64_t Linux::newfstatat(int64_t dfd, const std::string& filename, stat& out,
 }
 
 int64_t Linux::fstat(int64_t fd, stat& out) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  LinuxProcess proc = processes_[0];
+
+  assert(fd < proc.fileDescriptorTable_.size());
+  int64_t hfd = proc.fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -293,8 +302,9 @@ int64_t Linux::getrusage(int64_t who, rusage& out) {
 }
 
 int64_t Linux::getpid() const {
-  assert(processStates_.size() > 0);
-  return processStates_[0].pid;
+  assert(processes_.size() > 0);
+  // Needs to be properly implemented.
+  return 0;
 }
 
 int64_t Linux::getuid() const { return 0; }
@@ -319,8 +329,10 @@ int64_t Linux::gettimeofday(uint64_t systemTimer, timeval* tv, timeval* tz) {
 }
 
 int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  LinuxProcess proc = processes_[0];
+
+  assert(fd < proc.fileDescriptorTable_.size());
+  int64_t hfd = proc.fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -354,8 +366,10 @@ int64_t Linux::ioctl(int64_t fd, uint64_t request, std::vector<char>& out) {
 }
 
 uint64_t Linux::lseek(int64_t fd, uint64_t offset, int64_t whence) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  LinuxProcess proc = processes_[0];
+
+  assert(fd < proc.fileDescriptorTable_.size());
+  int64_t hfd = proc.fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -363,84 +377,16 @@ uint64_t Linux::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 }
 
 int64_t Linux::munmap(uint64_t addr, size_t length) {
-  LinuxProcessState* lps = &processStates_[0];
-  if (addr % lps->pageSize != 0) {
-    // addr must be a multiple of the process page size
-    return -1;
-  }
-  int i;
-  vm_area_struct alloc;
-  // Find addr in allocations
-  for (i = 0; i < lps->contiguousAllocations.size(); i++) {
-    alloc = lps->contiguousAllocations[i];
-    if (alloc.vm_start == addr) {
-      if ((alloc.vm_end - alloc.vm_start) < length) {
-        // length must not be larger than the original allocation
-        return -1;
-      }
-      if (i != 0) {
-        lps->contiguousAllocations[i - 1].vm_next =
-            lps->contiguousAllocations[i].vm_next;
-      }
-      lps->contiguousAllocations.erase(lps->contiguousAllocations.begin() + i);
-      return 0;
-    }
-  }
-
-  for (int i = 0; i < lps->nonContiguousAllocations.size(); i++) {
-    alloc = lps->nonContiguousAllocations[i];
-    if (alloc.vm_start == addr) {
-      if ((alloc.vm_end - alloc.vm_start) < length) {
-        // length must not be larger than the original allocation
-        return -1;
-      }
-      lps->nonContiguousAllocations.erase(
-          lps->nonContiguousAllocations.begin() + i);
-      return 0;
-    }
-  }
+  LinuxProcess proc = processes_[0];
+  proc.getMemRegion().unmapRegion(addr, length, 0, 0, 0);
   // Not an error if the indicated range does no contain any mapped pages
   return 0;
 }
 
 uint64_t Linux::mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
                      off_t offset) {
-  LinuxProcessState* lps = &processStates_[0];
-  std::shared_ptr<struct vm_area_struct> newAlloc(new vm_area_struct);
-  if (addr == 0) {  // Kernel decides allocation
-    if (lps->contiguousAllocations.size() > 1) {
-      // Determine if the new allocation can fit between existing allocations,
-      // append to end of allocations if not
-      for (auto& alloc : lps->contiguousAllocations) {
-        if (alloc.vm_next != NULL &&
-            (alloc.vm_next->vm_start - alloc.vm_end) >= length) {
-          newAlloc->vm_start = alloc.vm_end;
-          // Re-link contiguous allocation to include new allocation
-          newAlloc->vm_next = alloc.vm_next;
-          alloc.vm_next = newAlloc;
-        }
-      }
-      if (newAlloc->vm_start == 0) {
-        newAlloc->vm_start = lps->contiguousAllocations.back().vm_end;
-        lps->contiguousAllocations.back().vm_next = newAlloc;
-      }
-    } else if (lps->contiguousAllocations.size() > 0) {
-      // Append allocation to end of list and link first entry to new
-      // allocation
-      newAlloc->vm_start = lps->contiguousAllocations[0].vm_end;
-      lps->contiguousAllocations[0].vm_next = newAlloc;
-    } else {
-      // If no allocation exists, allocate to start of the mmap region
-      newAlloc->vm_start = lps->mmapRegion;
-    }
-    // The end of the allocation must be rounded up to the nearest page size
-    newAlloc->vm_end =
-        alignToBoundary(newAlloc->vm_start + length, lps->pageSize);
-    lps->contiguousAllocations.push_back(*newAlloc);
-  } else {  // Use hint to provide allocation
-    return 0;
-  }
-  return newAlloc->vm_start;
+  LinuxProcess proc = processes_[0];
+  return proc.getMemRegion().mmapRegion(addr, length, fd, prot, flags);
 }
 
 int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
@@ -499,19 +445,19 @@ int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
     return hfd;
   }
 
-  LinuxProcessState& processState = processStates_[0];
+  LinuxProcess proc = processes_[0];
 
   // Allocate virtual file descriptor and map to host file descriptor
   int64_t vfd;
-  if (!processState.freeFileDescriptors.empty()) {
+  if (!proc.freeFileDescriptors_.empty()) {
     // Take virtual descriptor from free pool
-    auto first = processState.freeFileDescriptors.begin();
-    vfd = processState.freeFileDescriptors.extract(first).value();
-    processState.fileDescriptorTable[vfd] = hfd;
+    auto first = proc.freeFileDescriptors_.begin();
+    vfd = proc.freeFileDescriptors_.extract(first).value();
+    proc.fileDescriptorTable_[vfd] = hfd;
   } else {
     // Extend file descriptor table for a new virtual descriptor
-    vfd = processState.fileDescriptorTable.size();
-    processState.fileDescriptorTable.push_back(hfd);
+    vfd = proc.fileDescriptorTable_.size();
+    proc.fileDescriptorTable_.push_back(hfd);
   }
 
   return vfd;
@@ -519,13 +465,14 @@ int64_t Linux::openat(int64_t dfd, const std::string& filename, int64_t flags,
 
 int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
                           size_t bufsize) const {
-  const auto& processState = processStates_[0];
+  LinuxProcess proc = processes_[0];
+
   if (pathname == "/proc/self/exe") {
     // Copy executable path to buffer
     // TODO: resolve path into canonical path
-    std::strncpy(buf, processState.path.c_str(), bufsize);
+    std::strncpy(buf, proc.getPath().c_str(), bufsize);
 
-    return std::min(processState.path.length(), bufsize);
+    return std::min(proc.getPath().length(), bufsize);
   }
 
   // TODO: resolve symbolic link for other paths
@@ -533,8 +480,9 @@ int64_t Linux::readlinkat(int64_t dirfd, const std::string& pathname, char* buf,
 }
 
 int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  LinuxProcess proc = processes_[0];
+  assert(fd < proc.fileDescriptorTable_.size());
+  int64_t hfd = proc.fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -589,8 +537,9 @@ int64_t Linux::getdents64(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  LinuxProcess proc = processes_[0];
+  assert(fd < proc.fileDescriptorTable_.size());
+  int64_t hfd = proc.fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -598,8 +547,9 @@ int64_t Linux::read(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t Linux::readv(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  LinuxProcess proc = processes_[0];
+  assert(fd < proc.fileDescriptorTable_.size());
+  int64_t hfd = proc.fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -623,14 +573,17 @@ int64_t Linux::schedSetAffinity(pid_t pid, size_t cpusetsize, uint64_t mask) {
   return 0;
 }
 int64_t Linux::setTidAddress(uint64_t tidptr) {
-  assert(processStates_.size() > 0);
-  processStates_[0].clearChildTid = tidptr;
-  return processStates_[0].pid;
+  assert(processes_.size() > 0);
+  LinuxProcess proc = processes_[0];
+  proc.clearChildTid = tidptr;
+  // Support multiple PIDs
+  return 0;
 }
 
 int64_t Linux::write(int64_t fd, const void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  LinuxProcess proc = processes_[0];
+  assert(fd < proc.fileDescriptorTable_.size());
+  int64_t hfd = proc.fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -638,8 +591,9 @@ int64_t Linux::write(int64_t fd, const void* buf, uint64_t count) {
 }
 
 int64_t Linux::writev(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  LinuxProcess proc = processes_[0];
+  assert(fd < proc.fileDescriptorTable_.size());
+  int64_t hfd = proc.fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }

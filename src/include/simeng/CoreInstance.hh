@@ -14,6 +14,7 @@
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/kernel/Linux.hh"
+#include "simeng/memory/SimpleMem.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
@@ -45,17 +46,19 @@ class CoreInstance {
   /** Default constructor with an executable and its arguments but no model
    * configuration. */
   CoreInstance(std::string executablePath,
-               std::vector<std::string> executableArgs);
+               std::vector<std::string> executableArgs,
+               std::shared_ptr<simeng::memory::Mem>& mem);
 
   /** Constructor with an executable, its arguments, and a model configuration.
    */
   CoreInstance(std::string configPath, std::string executablePath,
-               std::vector<std::string> executableArgs);
+               std::vector<std::string> executableArgs,
+               std::shared_ptr<simeng::memory::Mem>& mem);
 
   /** CoreInstance with source code assembled by LLVM and a model configuration.
    */
-  CoreInstance(char* assembledSource, size_t sourceSize,
-               std::string configPath);
+  CoreInstance(char* assembledSource, size_t sourceSize, std::string configPath,
+               std::shared_ptr<simeng::memory::Mem>& mem);
 
   ~CoreInstance();
 
@@ -83,9 +86,6 @@ class CoreInstance {
 
   /** Getter for the create instruction memory object. */
   std::shared_ptr<simeng::MemoryInterface> getInstructionMemory() const;
-
-  /** Getter for a shared pointer to the created process image. */
-  std::shared_ptr<char> getProcessImage() const;
 
   /** Getter for the size of the created process image. */
   const uint64_t getProcessImageSize() const;
@@ -138,9 +138,6 @@ class CoreInstance {
   /** The size of the process memory. */
   uint64_t processMemorySize_;
 
-  /** The process memory space. */
-  std::shared_ptr<char> processMemory_;
-
   /** The SimEng Linux kernel object. */
   simeng::kernel::Linux kernel_;
 
@@ -174,6 +171,9 @@ class CoreInstance {
 
   /** Reference to the SimEng instruction memory object. */
   std::shared_ptr<simeng::MemoryInterface> instructionMemory_ = nullptr;
+
+  /** Reference to the global memory pointer */
+  std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
 };
 
 }  // namespace simeng

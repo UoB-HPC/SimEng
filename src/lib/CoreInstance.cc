@@ -3,19 +3,25 @@
 namespace simeng {
 
 CoreInstance::CoreInstance(std::string executablePath,
-                           std::vector<std::string> executableArgs) {
+                           std::vector<std::string> executableArgs,
+                           std::shared_ptr<simeng::memory::Mem>& mem) {
+  memory_ = mem;
   config_ = YAML::Load(DEFAULT_CONFIG);
   generateCoreModel(executablePath, executableArgs);
 }
 
 CoreInstance::CoreInstance(std::string configPath, std::string executablePath,
-                           std::vector<std::string> executableArgs) {
+                           std::vector<std::string> executableArgs,
+                           std::shared_ptr<simeng::memory::Mem>& mem) {
+  memory_ = mem;
   config_ = simeng::ModelConfig(configPath).getConfigFile();
   generateCoreModel(executablePath, executableArgs);
 }
 
 CoreInstance::CoreInstance(char* assembledSource, size_t sourceSize,
-                           std::string configPath) {
+                           std::string configPath,
+                           std::shared_ptr<simeng::memory::Mem>& mem) {
+  memory_ = mem;
   config_ = simeng::ModelConfig(configPath).getConfigFile();
   source_ = assembledSource;
   sourceSize_ = sourceSize;
@@ -35,12 +41,14 @@ void CoreInstance::generateCoreModel(std::string executablePath,
                                      std::vector<std::string> executableArgs) {
   setSimulationMode();
   createProcess(executablePath, executableArgs);
+
   // Check to see if either of the instruction or data memory interfaces should
   // be created. Don't create the core if either interface is marked as External
   // as they must be set manually prior to the core's creation.
 
   // Convert Data-Memory's Interface-Type value from a string to
   // simeng::MemInterfaceType
+
   std::string dType_string =
       config_["L1-Data-Memory"]["Interface-Type"].as<std::string>();
   simeng::MemInterfaceType dType = simeng::MemInterfaceType::Flat;
@@ -97,14 +105,15 @@ void CoreInstance::setSimulationMode() {
 
 void CoreInstance::createProcess(std::string executablePath,
                                  std::vector<std::string> executableArgs) {
+  auto mem = *(memory_->getMemory());
   if (executablePath.length() > 0) {
     // Concatenate the command line arguments into a single vector and create
     // the process image
     std::vector<std::string> commandLine = {executablePath};
     commandLine.insert(commandLine.end(), executableArgs.begin(),
                        executableArgs.end());
-    process_ =
-        std::make_unique<simeng::kernel::LinuxProcess>(commandLine, config_);
+    process_ = std::make_unique<simeng::kernel::LinuxProcess>(
+        commandLine, config_, mem, memory_->getMemorySize());
 
     // Raise error if created process is not valid
     if (!process_->isValid()) {
@@ -115,7 +124,8 @@ void CoreInstance::createProcess(std::string executablePath,
   } else if (assembledSource_) {
     // Create a process image from the source code assembled by LLVM.
     process_ = std::make_unique<simeng::kernel::LinuxProcess>(
-        simeng::span<char>(source_, sourceSize_), config_);
+        simeng::span<char>(source_, sourceSize_), config_, mem,
+        memory_->getMemorySize());
     // Raise error if created process is not valid
     if (!process_->isValid()) {
       std::cerr << "[SimEng:CoreInstance] Could not create process based on "
@@ -127,7 +137,7 @@ void CoreInstance::createProcess(std::string executablePath,
     // Create a process image from the set of instructions held in hex_
     process_ = std::make_unique<simeng::kernel::LinuxProcess>(
         simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-        config_);
+        config_, mem, memory_->getMemorySize());
 
     // Raise error if created process is not valid
     if (!process_->isValid()) {
@@ -149,7 +159,6 @@ void CoreInstance::createProcess(std::string executablePath,
 
 void CoreInstance::createProcessMemory() {
   // Get the process image and its size
-  processMemory_ = process_->getProcessImage();
   processMemorySize_ = process_->getProcessImageSize();
 
   return;
@@ -157,13 +166,14 @@ void CoreInstance::createProcessMemory() {
 
 void CoreInstance::createL1InstructionMemory(
     const simeng::MemInterfaceType type) {
+  auto mem = *(memory_->getMemory());
   // Create a L1I cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
-    instructionMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
-        processMemory_.get(), processMemorySize_);
+    instructionMemory_ =
+        std::make_shared<simeng::FlatMemoryInterface>(mem, processMemorySize_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
     instructionMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        processMemory_.get(), processMemorySize_,
+        mem, processMemorySize_,
         config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
   } else {
     std::cerr
@@ -188,12 +198,13 @@ void CoreInstance::setL1InstructionMemory(
 
 void CoreInstance::createL1DataMemory(const simeng::MemInterfaceType type) {
   // Create a L1D cache instance based on type supplied
+  auto mem = *(memory_->getMemory());
   if (type == simeng::MemInterfaceType::Flat) {
-    dataMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
-        processMemory_.get(), processMemorySize_);
+    dataMemory_ =
+        std::make_shared<simeng::FlatMemoryInterface>(mem, processMemorySize_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
     dataMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        processMemory_.get(), processMemorySize_,
+        mem, processMemorySize_,
         config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
   } else {
     std::cerr << "[SimEng:CoreInstance] Unsupported memory interface type used "
@@ -328,10 +339,6 @@ std::shared_ptr<simeng::MemoryInterface> CoreInstance::getInstructionMemory()
     exit(1);
   }
   return instructionMemory_;
-}
-
-std::shared_ptr<char> CoreInstance::getProcessImage() const {
-  return processMemory_;
 }
 
 const uint64_t CoreInstance::getProcessImageSize() const {

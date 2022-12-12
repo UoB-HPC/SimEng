@@ -245,8 +245,8 @@ class Linux {
    * to point to the SimEng equivalent. */
   std::string getSpecialFile(const std::string filename);
 
-  /** The state of the user-space processes running above the kernel. */
-  std::vector<LinuxProcessState> processStates_;
+  /** User-space processes running above the kernel. */
+  std::vector<LinuxProcess> processes_;
 
   /** Translation between special files paths and simeng replacement files. */
   std::unordered_map<std::string, const std::string> specialPathTranslations_;

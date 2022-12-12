@@ -24,6 +24,7 @@ bool ExceptionHandler::tick() { return resumeHandling_(); }
 
 bool ExceptionHandler::init() {
   InstructionException exception = instruction_.getException();
+  std::cout << "HELLO" << std::endl;
   const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
 
   if (exception == InstructionException::SupervisorCall) {
