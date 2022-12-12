@@ -14,8 +14,9 @@ namespace riscv {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(kernel::SimOS& kernel, YAML::Node config)
-    : linux_(kernel) {
+Architecture::Architecture(kernel::SyscallHandler& syscallHanlder,
+                           YAML::Node config)
+    : syscallHandler_(syscallHanlder) {
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
   if (n != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle due "
@@ -209,7 +210,8 @@ executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
+  return std::make_shared<ExceptionHandler>(instruction, core, memory,
+                                            syscallHandler_);
 }
 
 std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
@@ -230,12 +232,12 @@ int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   return systemRegisterMap_.at(reg);
 }
 
-ProcessStateChange Architecture::getInitialState() const {
+ProcessStateChange Architecture::getInitialState(uint64_t stackPointer) const {
   ProcessStateChange changes;
   // Set ProcessStateChange type
   changes.type = ChangeType::REPLACEMENT;
 
-  uint64_t stackPointer = linux_.getInitialStackPointer();
+  // uint64_t stackPointer = linux_.getInitialStackPointer();
   // Set the stack pointer register
   changes.modifiedRegisters.push_back({RegisterType::GENERAL, 2});
   changes.modifiedRegisterValues.push_back(stackPointer);

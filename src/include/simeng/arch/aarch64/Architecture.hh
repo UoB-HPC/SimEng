@@ -7,7 +7,7 @@
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 #include "simeng/arch/aarch64/MicroDecoder.hh"
-#include "simeng/kernel/SimOS.hh"
+#include "simeng/kernel/SyscallHandler.hh"
 
 using csh = size_t;
 
@@ -18,7 +18,7 @@ namespace aarch64 {
 /* A basic Armv9.2-a implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-  Architecture(kernel::SimOS& kernel, YAML::Node config);
+  Architecture(kernel::SyscallHandler& syscallHanlder, YAML::Node config);
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -46,7 +46,7 @@ class Architecture : public arch::Architecture {
       MemoryInterface& memory) const override;
 
   /** Retrieve the initial process state. */
-  ProcessStateChange getInitialState() const override;
+  ProcessStateChange getInitialState(uint64_t stackPointer) const override;
 
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
@@ -112,7 +112,7 @@ class Architecture : public arch::Architecture {
   csh capstoneHandle;
 
   /** A reference to a Linux kernel object to forward syscalls to. */
-  kernel::SimOS& linux_;
+  kernel::SyscallHandler& syscallHandler_;
 
   /** A reference to a micro decoder object to split macro operations. */
   std::unique_ptr<MicroDecoder> microDecoder_;

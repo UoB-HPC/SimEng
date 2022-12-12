@@ -44,14 +44,16 @@ int main(int argc, char** argv) {
   std::cout << std::endl;
 
   // Create the instance of the OS
-  simeng::kernel::SimOS simOS_kernel = simeng::kernel::SimOS(argc, argv);
-  auto [configFilePath, executablePath, executableArgs] =
-      simOS_kernel.getParsedArgv();
+  std::shared_ptr<simeng::kernel::SimOS> simOS_kernel =
+      std::make_shared<simeng::kernel::SimOS>(argc, argv);
+  // Get the SimEng runtime args
+  auto [config, executablePath, executableArgs] = simOS_kernel->getParsedArgv();
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =
-      std::make_unique<simeng::CoreInstance>(configFilePath, executablePath,
-                                             executableArgs, simOS_kernel);
+      std::make_unique<simeng::CoreInstance>(
+          config, executablePath, executableArgs, simOS_kernel->getProcess(),
+          simOS_kernel->syscallHandler_);
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();
@@ -66,7 +68,7 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] Workload: " << executablePath;
   for (const auto& arg : executableArgs) std::cout << " " << arg;
   std::cout << std::endl;
-  std::cout << "[SimEng] Config file: " << configFilePath << std::endl;
+  std::cout << "[SimEng] Config file: " << std::string(argv[1]) << std::endl;
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;

@@ -4,7 +4,7 @@
 
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
-#include "simeng/kernel/SimOS.hh"
+#include "simeng/kernel/SyscallHandler.hh"
 
 namespace simeng {
 namespace arch {
@@ -17,7 +17,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
    * the exception, along with the core model object and process memory. */
   ExceptionHandler(const std::shared_ptr<simeng::Instruction>& instruction,
                    const Core& core, MemoryInterface& memory,
-                   kernel::SimOS& linux);
+                   kernel::SyscallHandler& linux);
 
   /** Progress handling of the exception, by calling and returning the result of
    * the handler currently assigned to `resumeHandling_`. Returns `false` if
@@ -81,7 +81,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   MemoryInterface& memory_;
 
   /** The Linux kernel to forward syscalls to. */
-  kernel::SimOS& linux_;
+  kernel::SyscallHandler& linux_;
 
   /** The results of the exception. */
   ExceptionResult result_;

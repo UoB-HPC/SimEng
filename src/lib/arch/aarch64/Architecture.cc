@@ -11,8 +11,9 @@ std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 uint64_t Architecture::SVCRval_;
 
-Architecture::Architecture(kernel::SimOS& kernel, YAML::Node config)
-    : linux_(kernel),
+Architecture::Architecture(kernel::SyscallHandler& syscallHandler,
+                           YAML::Node config)
+    : syscallHandler_(syscallHandler),
       microDecoder_(std::make_unique<MicroDecoder>(config)),
       VL_(config["Core"]["Vector-Length"].as<uint64_t>()),
       SVL_(config["Core"]["Streaming-Vector-Length"].as<uint64_t>()),
@@ -229,7 +230,8 @@ ExecutionInfo Architecture::getExecutionInfo(Instruction& insn) const {
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
+  return std::make_shared<ExceptionHandler>(instruction, core, memory,
+                                            syscallHandler_);
 }
 
 std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
@@ -258,12 +260,12 @@ uint16_t Architecture::getNumSystemRegisters() const {
   return static_cast<uint16_t>(systemRegisterMap_.size());
 }
 
-ProcessStateChange Architecture::getInitialState() const {
+ProcessStateChange Architecture::getInitialState(uint64_t stackPointer) const {
   ProcessStateChange changes;
   // Set ProcessStateChange type
   changes.type = ChangeType::REPLACEMENT;
 
-  uint64_t stackPointer = linux_.getInitialStackPointer();
+  // uint64_t stackPointer = linux_.getInitialStackPointer();
   // Set the stack pointer register
   changes.modifiedRegisters.push_back({RegisterType::GENERAL, 31});
   changes.modifiedRegisterValues.push_back(stackPointer);

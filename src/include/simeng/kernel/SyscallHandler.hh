@@ -26,6 +26,8 @@
 #include "simeng/version.hh"
 #include "yaml-cpp/yaml.h"
 
+#define LINUX_PATH_MAX 4096
+
 namespace simeng {
 namespace kernel {
 
@@ -247,9 +249,6 @@ class SyscallHandler {
 
   /** writev syscall: write buffers to a file. */
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
-
-  /** The maximum size of a filesystem path. */
-  static const size_t LINUX_PATH_MAX = 4096;
 
  private:
   /** Resturn correct Dirfd depending on given pathname abd dirfd given to

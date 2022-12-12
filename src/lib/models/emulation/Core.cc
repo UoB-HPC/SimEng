@@ -13,8 +13,10 @@ const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t entryPoint, uint64_t programByteLength,
-           const arch::Architecture& isa)
+           const arch::Architecture& isa,
+           std::shared_ptr<kernel::LinuxProcess> process)
     : instructionMemory_(instructionMemory),
+      process_(process),
       dataMemory_(dataMemory),
       programByteLength_(programByteLength),
       isa_(isa),
@@ -25,7 +27,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 
   // Query and apply initial state
-  auto state = isa.getInitialState();
+  auto state = isa.getInitialState(process_->getStackPointer());
   applyStateChange(state);
 }
 

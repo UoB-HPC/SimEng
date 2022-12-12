@@ -9,6 +9,7 @@
 #include "simeng/MemoryInterface.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/arch/Architecture.hh"
+#include "simeng/kernel/LinuxProcess.hh"
 #include "simeng/span.hh"
 
 namespace simeng {
@@ -23,7 +24,8 @@ class Core : public simeng::Core {
    * use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        uint64_t entryPoint, uint64_t programByteLength,
-       const arch::Architecture& isa);
+       const arch::Architecture& isa,
+       std::shared_ptr<kernel::LinuxProcess> process);
 
   /** Tick the core. */
   void tick() override;
@@ -105,6 +107,9 @@ class Core : public simeng::Core {
 
   /** The number of branches executed. */
   uint64_t branchesExecuted_ = 0;
+
+  /** Currently executing Process. */
+  std::shared_ptr<kernel::LinuxProcess> process_ = nullptr;
 };
 
 }  // namespace emulation
