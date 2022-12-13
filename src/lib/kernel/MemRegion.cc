@@ -26,19 +26,16 @@ uint64_t MemRegion::getBrkStart() const { return startBrk_; };
 uint64_t MemRegion::getMmapStart() const { return mmapStart_; };
 
 uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
-  // Memory is being return back to the system.
-  if (newBrk < brk_) {
-    brk_ = newBrk;
-    return brk_;
-  }
   if (newBrk > maxHeapAddr_) {
     // This needs to fixed such that more extra memory allocation is mmapd.
-    std::cerr << "[SimEng:MemRegion] Attemped to allocate more memory than is "
-                 "available to the process"
-              << std::endl;
+    std::cerr
+        << "Attemped to allocate more memory than is available to the process "
+        << std::endl;
     std::exit(1);
   }
-  brk_ = newBrk;
+  if (newBrk > brk_) {
+    brk_ = newBrk;
+  }
   return brk_;
 };
 
