@@ -14,15 +14,15 @@ struct VirtMemArea {
   /** The address representing the start of the memory allocation. */
   uint64_t vm_start = 0;
   /** The next allocation in the contiguous list. */
-  VirtMemArea* vm_next = NULL;
+  VirtMemArea* vm_next = nullptr;
   uint64_t length = 0;
 };
 
 /** Class representing VMA linked list*/
 class Vmall {
  private:
-  VirtMemArea* vm_head_ = NULL;
-  VirtMemArea* vm_tail_ = NULL;
+  VirtMemArea* vm_head_ = nullptr;
+  VirtMemArea* vm_tail_ = nullptr;
   size_t vm_size_ = 0;
 
  public:
