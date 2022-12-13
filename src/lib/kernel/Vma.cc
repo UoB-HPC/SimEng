@@ -12,7 +12,7 @@ uint64_t Vmall::addVma(VirtMemArea* vma, uint64_t mmapStart,
   if (vm_size_ > 1) {
     bool allocated = false;
     VirtMemArea* curr = vm_head_;
-    while (curr->vm_next != NULL) {
+    while (curr->vm_next != nullptr) {
       if (curr->vm_next->vm_start - curr->vm_end >= vma->length) {
         vma->vm_start = curr->vm_end;
         vma->vm_next = curr->vm_next;
@@ -50,9 +50,9 @@ void Vmall::removeVma(uint64_t addr, uint64_t length, uint64_t pageSize) {
               << std::endl;
     std::exit(1);
   }
-  VirtMemArea* prev = NULL;
+  VirtMemArea* prev = nullptr;
   VirtMemArea* curr = vm_head_;
-  while (curr != NULL) {
+  while (curr != nullptr) {
     if (curr->vm_start == addr) {
       if (curr->length < length) {
         std::cerr << "Cannot remove Virtual memory area: Specified length ("
@@ -61,16 +61,16 @@ void Vmall::removeVma(uint64_t addr, uint64_t length, uint64_t pageSize) {
         std::exit(1);
       }
       // We are removing the head.
-      if (prev == NULL) {
+      if (prev == nullptr) {
         vm_head_ = vm_head_->vm_next;
-        curr->vm_next = NULL;
+        curr->vm_next = nullptr;
         free(curr);
       } else {
         if (curr == vm_tail_) {
           vm_tail_ = prev;
         }
         prev->vm_next = curr->vm_next;
-        curr->vm_next = NULL;
+        curr->vm_next = nullptr;
         free(curr);
       }
       vm_size_--;
@@ -84,14 +84,14 @@ void Vmall::removeVma(uint64_t addr, uint64_t length, uint64_t pageSize) {
 void Vmall::freeVma() {
   if (vm_size_ == 0) return;
   VirtMemArea* curr = vm_head_;
-  while (curr != NULL) {
+  while (curr != nullptr) {
     VirtMemArea* temp = curr->vm_next;
     free(curr);
     curr = temp;
   }
   vm_size_ = 0;
-  vm_head_ = NULL;
-  vm_tail_ = NULL;
+  vm_head_ = nullptr;
+  vm_tail_ = nullptr;
 }
 
 size_t Vmall::getSize() { return vm_size_; }

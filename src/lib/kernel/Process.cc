@@ -114,7 +114,7 @@ Process::Process(span<char> instructions, YAML::Node config, char* memptr,
   char* unwrappedProcImgPtr = (char*)malloc(size * sizeof(char));
   std::copy(instructions.begin(), instructions.end(), unwrappedProcImgPtr);
   memRegion_ =
-      MemRegion(stackSize, heapSize, size, 0, heapStart, 4096, mmapStart);
+      MemRegion(stackSize, heapSize, size, 0, heapStart, pageSize_, mmapStart);
   createStack(&unwrappedProcImgPtr);
   // processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
   // copy process image to global memory.
