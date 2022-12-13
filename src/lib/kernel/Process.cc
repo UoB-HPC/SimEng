@@ -1,8 +1,8 @@
-#include "simeng/kernel/LinuxProcess.hh"
-
 #include <cassert>
 #include <cstring>
 #include <iostream>
+
+#include "simeng/kernel/Process.hh"
 
 namespace simeng {
 namespace kernel {
@@ -16,8 +16,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
   return value + (boundary - remainder);
 }
 
-LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
-                           YAML::Node config)
+Process::Process(const std::vector<std::string>& commandLine, YAML::Node config)
     : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()),
       commandLine_(commandLine) {
@@ -46,7 +45,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   char* temp = (char*)realloc(unwrappedProcImgPtr, size_ * sizeof(char));
   if (temp == NULL) {
     free(unwrappedProcImgPtr);
-    std::cerr << "[SimEng:LinuxProcess] ProcessImage cannot be constructed "
+    std::cerr << "[SimEng:Process] ProcessImage cannot be constructed "
                  "successfully! "
                  "Reallocation failed."
               << std::endl;
@@ -58,7 +57,7 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
 }
 
-LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
+Process::Process(span<char> instructions, YAML::Node config)
     : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
       HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
   // Leave program command string empty
@@ -82,31 +81,31 @@ LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
   processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
 }
 
-LinuxProcess::~LinuxProcess() {}
+Process::~Process() {}
 
-uint64_t LinuxProcess::getHeapStart() const { return heapStart_; }
+uint64_t Process::getHeapStart() const { return heapStart_; }
 
-uint64_t LinuxProcess::getStackStart() const { return size_; }
+uint64_t Process::getStackStart() const { return size_; }
 
-uint64_t LinuxProcess::getMmapStart() const { return mmapStart_; }
+uint64_t Process::getMmapStart() const { return mmapStart_; }
 
-uint64_t LinuxProcess::getPageSize() const { return pageSize_; }
+uint64_t Process::getPageSize() const { return pageSize_; }
 
-std::string LinuxProcess::getPath() const { return commandLine_[0]; }
+std::string Process::getPath() const { return commandLine_[0]; }
 
-bool LinuxProcess::isValid() const { return isValid_; }
+bool Process::isValid() const { return isValid_; }
 
-std::shared_ptr<char> LinuxProcess::getProcessImage() const {
+std::shared_ptr<char> Process::getProcessImage() const {
   return std::shared_ptr<char>(processImage_);
 }
 
-uint64_t LinuxProcess::getProcessImageSize() const { return size_; }
+uint64_t Process::getProcessImageSize() const { return size_; }
 
-uint64_t LinuxProcess::getEntryPoint() const { return entryPoint_; }
+uint64_t Process::getEntryPoint() const { return entryPoint_; }
 
-uint64_t LinuxProcess::getStackPointer() const { return stackPointer_; }
+uint64_t Process::getStackPointer() const { return stackPointer_; }
 
-void LinuxProcess::createStack(char** processImage) {
+void Process::createStack(char** processImage) {
   // Decrement the stack pointer and populate with initial stack state
   // (https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html)
   // The argv and env strings are added to the top of the stack first and the

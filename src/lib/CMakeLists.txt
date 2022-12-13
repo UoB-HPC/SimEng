@@ -15,7 +15,7 @@ set(SIMENG_SOURCES
     arch/riscv/Instruction_execute.cc
     arch/riscv/InstructionMetadata.cc
     kernel/SyscallHandler.cc
-    kernel/LinuxProcess.cc
+    kernel/Process.cc
     kernel/SimOS.cc
     models/emulation/Core.cc
     models/inorder/Core.cc

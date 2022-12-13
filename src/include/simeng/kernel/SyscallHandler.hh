@@ -22,7 +22,7 @@
 #include <vector>
 
 #include "simeng/Elf.hh"
-#include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/kernel/Process.hh"
 #include "simeng/version.hh"
 #include "yaml-cpp/yaml.h"
 
@@ -41,8 +41,8 @@ struct vm_area_struct {
   std::shared_ptr<struct vm_area_struct> vm_next = NULL;
 };
 
-/** A state container for a Linux process. */
-struct LinuxProcessState {
+/** A state container for a SimOS Process. */
+struct ProcessState {
   /** The process ID. */
   int64_t pid;
   /** The path of the executable that created this process. */
@@ -151,7 +151,7 @@ struct linux_dirent64 {
 class SyscallHandler {
  public:
   /** Create new SyscallHandler object. */
-  SyscallHandler(std::vector<LinuxProcessState>& processStates);
+  SyscallHandler(std::vector<ProcessState>& processStates);
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */
@@ -260,7 +260,7 @@ class SyscallHandler {
   std::string getSpecialFile(const std::string filename);
 
   /** The state of the user-space processes running above the kernel. */
-  std::vector<LinuxProcessState>& processStates_;
+  std::vector<ProcessState>& processStates_;
 
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
