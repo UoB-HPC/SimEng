@@ -38,7 +38,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           branchPredictor, false),
       writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}) {
   // Query and apply initial state
-  auto state = isa.getInitialState(process_->getStackPointer());
+  auto state =
+      isa.getInitialState(process_->getMemRegion().getInitialStackStart());
   applyStateChange(state);
 };
 

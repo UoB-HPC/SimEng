@@ -19,7 +19,7 @@ namespace kernel {
 class SimOS {
  public:
   /** Construct a SimOS object. */
-  SimOS(int argc, char** argv);
+  SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem);
 
   /** Create the initial SimOS Process running above this kernel from command
    * line arguments.
@@ -52,11 +52,14 @@ class SimOS {
   /** The runtime arguments of the user defined executable. */
   std::vector<std::string> executableArgs_ = {};
 
-  /** The list of active processes. */
+  /** The list of user-space processes running above the kernel. */
   std::vector<std::shared_ptr<Process>> processes_;
 
-  /** The state of the user-space processes running above the kernel. */
-  std::vector<ProcessState> processStates_;
+  /** Reference to the global memory pointer */
+  std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
+
+  // /** The state of the user-space processes running above the kernel. */
+  // std::vector<ProcessState> processStates_;
 
   /** The value of the next PID value to be used when a new process is
    * created. */

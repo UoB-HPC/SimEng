@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "simeng/Elf.hh"
+#include "simeng/kernel/MemRegion.hh"
 #include "yaml-cpp/yaml.h"
 
 namespace simeng {
@@ -39,11 +40,13 @@ class Process {
   /** Construct a SimOS Process from a vector of command-line arguments.
    *
    * The first argument is a path to an executable ELF file. */
-  Process(const std::vector<std::string>& commandLine, YAML::Node config);
+  Process(const std::vector<std::string>& commandLine, YAML::Node config,
+          char* memptr, size_t mem_size);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
-  Process(span<char> instructions, YAML::Node config);
+  Process(span<char> instructions, YAML::Node config, char* memptr,
+          size_t mem_size);
 
   ~Process();
 
@@ -59,8 +62,8 @@ class Process {
   /** Get the page size. */
   uint64_t getPageSize() const;
 
-  /** Get a shared_ptr to process image. */
-  std::shared_ptr<char> getProcessImage() const;
+  // /** Get a shared_ptr to process image. */
+  // std::shared_ptr<char> getProcessImage() const;
 
   /** Get the size of the process image. */
   uint64_t getProcessImageSize() const;
@@ -74,15 +77,31 @@ class Process {
   /** Get the path of the executable. */
   std::string getPath() const;
 
+  /** Get the memory region for this process. */
+  MemRegion& getMemRegion() { return memRegion_; }
+
   /** Check whether the process image was created successfully. */
   bool isValid() const;
 
- private:
-  /** The size of the stack, in bytes. */
-  const uint64_t STACK_SIZE;
+  /** The virtual file descriptor mapping table. */
+  std::vector<int64_t> fileDescriptorTable_;
 
-  /** The space to reserve for the heap, in bytes. */
-  const uint64_t HEAP_SIZE;
+  /** Set of deallocated virtual file descriptors available for reuse. */
+  std::set<int64_t> freeFileDescriptors_;
+
+  // Thread state
+  // TODO: Support multiple threads per process
+  /** The clear_child_tid value. */
+  uint64_t clearChildTid = 0;
+
+ private:
+  // /** The size of the stack, in bytes. */
+  // const uint64_t STACK_SIZE;
+
+  // /** The space to reserve for the heap, in bytes. */
+  // const uint64_t HEAP_SIZE;
+
+  MemRegion memRegion_;
 
   /** Create and populate the initial process stack. */
   void createStack(char** processImage);
@@ -90,20 +109,20 @@ class Process {
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
 
-  /** The address of the start of the heap region. */
-  uint64_t heapStart_;
+  // /** The address of the start of the heap region. */
+  // uint64_t heapStart_;
 
-  /** The address of the start of region of memory given to mmap. */
-  uint64_t mmapStart_;
+  // /** The address of the start of region of memory given to mmap. */
+  // uint64_t mmapStart_;
 
   /** The page size of the process memory. */
   const uint64_t pageSize_ = 4096;
 
-  /** The address of the stack pointer. */
-  uint64_t stackPointer_;
+  // /** The address of the stack pointer. */
+  // uint64_t stackPointer_;
 
-  /** The process image size. */
-  uint64_t size_;
+  // /** The process image size. */
+  // uint64_t size_;
 
   /** The process command and its arguments. */
   std::vector<std::string> commandLine_;
@@ -111,8 +130,8 @@ class Process {
   /** Whether the process image was created successfully. */
   bool isValid_ = false;
 
-  /** Shared pointer to processImage. */
-  std::shared_ptr<char> processImage_;
+  // /** Shared pointer to processImage. */
+  // std::shared_ptr<char> processImage_;
 };
 
 }  // namespace kernel

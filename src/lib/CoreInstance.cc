@@ -5,8 +5,12 @@ namespace simeng {
 CoreInstance::CoreInstance(YAML::Node& config, std::string executablePath,
                            std::vector<std::string> executableArgs,
                            std::shared_ptr<kernel::Process> process,
-                           kernel::SyscallHandler& syscallHandler)
-    : config_(config), process_(process), syscallHandler_(syscallHandler) {
+                           kernel::SyscallHandler& syscallHandler,
+                           std::shared_ptr<simeng::memory::Mem> mem)
+    : config_(config),
+      process_(process),
+      syscallHandler_(syscallHandler),
+      memory_(mem) {
   generateCoreModel(executablePath, executableArgs);
 }
 
@@ -96,7 +100,7 @@ void CoreInstance::setSimulationMode() {
 
 void CoreInstance::createProcessMemory() {
   // Get the process image and its size
-  processMemory_ = process_->getProcessImage();
+  // processMemory_ = process_->getProcessImage();
   processMemorySize_ = process_->getProcessImageSize();
 
   return;
@@ -104,13 +108,14 @@ void CoreInstance::createProcessMemory() {
 
 void CoreInstance::createL1InstructionMemory(
     const simeng::MemInterfaceType type) {
+  auto mem = *(memory_->getMemory());
   // Create a L1I cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
-    instructionMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
-        processMemory_.get(), processMemorySize_);
+    instructionMemory_ =
+        std::make_shared<simeng::FlatMemoryInterface>(mem, processMemorySize_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
     instructionMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        processMemory_.get(), processMemorySize_,
+        mem, processMemorySize_,
         config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
   } else {
     std::cerr
@@ -134,13 +139,14 @@ void CoreInstance::setL1InstructionMemory(
 }
 
 void CoreInstance::createL1DataMemory(const simeng::MemInterfaceType type) {
+  auto mem = *(memory_->getMemory());
   // Create a L1D cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
-    dataMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
-        processMemory_.get(), processMemorySize_);
+    dataMemory_ =
+        std::make_shared<simeng::FlatMemoryInterface>(mem, processMemorySize_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
     dataMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        processMemory_.get(), processMemorySize_,
+        mem, processMemorySize_,
         config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
   } else {
     std::cerr << "[SimEng:CoreInstance] Unsupported memory interface type used "
@@ -268,9 +274,9 @@ const kernel::Process& CoreInstance::getProcess() const {
   return *process_.get();
 }
 
-std::shared_ptr<char> CoreInstance::getProcessImage() const {
-  return processMemory_;
-}
+// std::shared_ptr<char> CoreInstance::getProcessImage() const {
+//   return processMemory_;
+// }
 
 const uint64_t CoreInstance::getProcessImageSize() const {
   return processMemorySize_;

@@ -43,9 +43,14 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] \tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
   std::cout << std::endl;
 
+  // Create global memory
+  std::shared_ptr<simeng::memory::Mem> memory =
+      std::shared_ptr<simeng::memory::Mem>(
+          new simeng::memory::SimpleMem(2684354560));
+
   // Create the instance of the OS
   std::shared_ptr<simeng::kernel::SimOS> simOS_kernel =
-      std::make_shared<simeng::kernel::SimOS>(argc, argv);
+      std::make_shared<simeng::kernel::SimOS>(argc, argv, memory);
   // Get the SimEng runtime args
   auto [config, executablePath, executableArgs] = simOS_kernel->getParsedArgv();
 
@@ -53,7 +58,7 @@ int main(int argc, char** argv) {
   std::unique_ptr<simeng::CoreInstance> coreInstance =
       std::make_unique<simeng::CoreInstance>(
           config, executablePath, executableArgs, simOS_kernel->getProcess(),
-          simOS_kernel->syscallHandler_);
+          simOS_kernel->syscallHandler_, memory);
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();
