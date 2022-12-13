@@ -3,8 +3,8 @@
 namespace simeng {
 namespace kernel {
 
-SyscallHandler::SyscallHandler(std::vector<ProcessState>& processStates)
-    : processStates_(processStates) {
+SyscallHandler::SyscallHandler(std::vector<std::shared_ptr<Process>>& processes)
+    : processes_(processes) {
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
       supportedSpecialFiles_.end(),
@@ -12,6 +12,7 @@ SyscallHandler::SyscallHandler(std::vector<ProcessState>& processStates)
        "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
 }
 
+// TODO : update when supporting multi-process/thread
 uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
   // Resolve absolute path to target file
   char absolutePath[LINUX_PATH_MAX];
@@ -23,8 +24,8 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
     // If absolute path used then dfd is dis-regarded. Otherwise need to see if
     // fd exists for directory referenced
     if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert(dfd < processStates_[0].fileDescriptorTable.size());
-      dfd_temp = processStates_[0].fileDescriptorTable[dfd];
+      assert(dfd < processes_[0]->fileDescriptorTable_.size());
+      dfd_temp = processes_[0]->fileDescriptorTable_[dfd];
       if (dfd_temp < 0) {
         return -1;
       }
@@ -55,15 +56,15 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
 }
 
 int64_t SyscallHandler::brk(uint64_t address) {
-  assert(processStates_.size() > 0 &&
+  assert(processes_.size() > 0 &&
          "Attempted to move the program break before creating a process");
-
-  auto& state = processStates_[0];
+  return processes_[0]->getMemRegion().updateBrkRegion(address);
+  // auto& state = processStates_[0];
   // Move the break if it's within the heap region
-  if (address > state.startBrk) {
-    state.currentBrk = address;
-  }
-  return state.currentBrk;
+  // if (address > state.startBrk) {
+  // state.currentBrk = address;
+  // }
+  // return state.currentBrk;
 }
 
 uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
@@ -86,8 +87,8 @@ uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
 }
 
 int64_t SyscallHandler::ftruncate(uint64_t fd, uint64_t length) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  assert(fd < processes_[0]->fileDescriptorTable_.size());
+  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -119,16 +120,16 @@ int64_t SyscallHandler::close(int64_t fd) {
   // Don't close STDOUT or STDERR otherwise no SimEng output is given
   // afterwards. This includes final results given at the end of execution
   if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-    assert(fd < processStates_[0].fileDescriptorTable.size());
-    int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+    assert(fd < processes_[0]->fileDescriptorTable_.size());
+    int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
     if (hfd < 0) {
       return EBADF;
     }
 
     // Deallocate the virtual file descriptor
-    assert(processStates_[0].freeFileDescriptors.count(fd) == 0);
-    processStates_[0].freeFileDescriptors.insert(fd);
-    processStates_[0].fileDescriptorTable[fd] = -1;
+    assert(processes_[0]->freeFileDescriptors_.count(fd) == 0);
+    processes_[0]->freeFileDescriptors_.insert(fd);
+    processes_[0]->fileDescriptorTable_[fd] = -1;
 
     return ::close(hfd);
   }
@@ -188,8 +189,8 @@ int64_t SyscallHandler::newfstatat(int64_t dfd, const std::string& filename,
 }
 
 int64_t SyscallHandler::fstat(int64_t fd, stat& out) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  assert(fd < processes_[0]->fileDescriptorTable_.size());
+  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -258,8 +259,11 @@ int64_t SyscallHandler::getrusage(int64_t who, rusage& out) {
 }
 
 int64_t SyscallHandler::getpid() const {
-  assert(processStates_.size() > 0);
-  return processStates_[0].pid;
+  // assert(processStates_.size() > 0);
+  // return processStates_[0].pid;
+  assert(processes_.size() > 0);
+  // TODO : Needs to be properly implemented once multi-thread supported
+  return 0;
 }
 
 int64_t SyscallHandler::getuid() const { return 0; }
@@ -286,8 +290,8 @@ int64_t SyscallHandler::gettimeofday(uint64_t systemTimer, timeval* tv,
 
 int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
                               std::vector<char>& out) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  assert(fd < processes_[0]->fileDescriptorTable_.size());
+  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -321,8 +325,8 @@ int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
 }
 
 uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  assert(fd < processes_[0]->fileDescriptorTable_.size());
+  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -330,84 +334,88 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 }
 
 int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
-  ProcessState* lps = &processStates_[0];
-  if (addr % lps->pageSize != 0) {
-    // addr must be a multiple of the process page size
-    return -1;
-  }
-  int i;
-  vm_area_struct alloc;
-  // Find addr in allocations
-  for (i = 0; i < lps->contiguousAllocations.size(); i++) {
-    alloc = lps->contiguousAllocations[i];
-    if (alloc.vm_start == addr) {
-      if ((alloc.vm_end - alloc.vm_start) < length) {
-        // length must not be larger than the original allocation
-        return -1;
-      }
-      if (i != 0) {
-        lps->contiguousAllocations[i - 1].vm_next =
-            lps->contiguousAllocations[i].vm_next;
-      }
-      lps->contiguousAllocations.erase(lps->contiguousAllocations.begin() + i);
-      return 0;
-    }
-  }
+  // ProcessState* lps = &processStates_[0];
+  // if (addr % lps->pageSize != 0) {
+  //   // addr must be a multiple of the process page size
+  //   return -1;
+  // }
+  // int i;
+  // vm_area_struct alloc;
+  // // Find addr in allocations
+  // for (i = 0; i < lps->contiguousAllocations.size(); i++) {
+  //   alloc = lps->contiguousAllocations[i];
+  //   if (alloc.vm_start == addr) {
+  //     if ((alloc.vm_end - alloc.vm_start) < length) {
+  //       // length must not be larger than the original allocation
+  //       return -1;
+  //     }
+  //     if (i != 0) {
+  //       lps->contiguousAllocations[i - 1].vm_next =
+  //           lps->contiguousAllocations[i].vm_next;
+  //     }
+  //     lps->contiguousAllocations.erase(lps->contiguousAllocations.begin() +
+  //     i); return 0;
+  //   }
+  // }
 
-  for (int i = 0; i < lps->nonContiguousAllocations.size(); i++) {
-    alloc = lps->nonContiguousAllocations[i];
-    if (alloc.vm_start == addr) {
-      if ((alloc.vm_end - alloc.vm_start) < length) {
-        // length must not be larger than the original allocation
-        return -1;
-      }
-      lps->nonContiguousAllocations.erase(
-          lps->nonContiguousAllocations.begin() + i);
-      return 0;
-    }
-  }
+  // for (int i = 0; i < lps->nonContiguousAllocations.size(); i++) {
+  //   alloc = lps->nonContiguousAllocations[i];
+  //   if (alloc.vm_start == addr) {
+  //     if ((alloc.vm_end - alloc.vm_start) < length) {
+  //       // length must not be larger than the original allocation
+  //       return -1;
+  //     }
+  //     lps->nonContiguousAllocations.erase(
+  //         lps->nonContiguousAllocations.begin() + i);
+  //     return 0;
+  //   }
+  // }
+  processes_[0]->getMemRegion().unmapRegion(addr, length, 0, 0, 0);
   // Not an error if the indicated range does no contain any mapped pages
   return 0;
 }
 
 uint64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                               int fd, off_t offset) {
-  ProcessState* lps = &processStates_[0];
-  std::shared_ptr<struct vm_area_struct> newAlloc(new vm_area_struct);
-  if (addr == 0) {  // Kernel decides allocation
-    if (lps->contiguousAllocations.size() > 1) {
-      // Determine if the new allocation can fit between existing allocations,
-      // append to end of allocations if not
-      for (auto& alloc : lps->contiguousAllocations) {
-        if (alloc.vm_next != NULL &&
-            (alloc.vm_next->vm_start - alloc.vm_end) >= length) {
-          newAlloc->vm_start = alloc.vm_end;
-          // Re-link contiguous allocation to include new allocation
-          newAlloc->vm_next = alloc.vm_next;
-          alloc.vm_next = newAlloc;
-        }
-      }
-      if (newAlloc->vm_start == 0) {
-        newAlloc->vm_start = lps->contiguousAllocations.back().vm_end;
-        lps->contiguousAllocations.back().vm_next = newAlloc;
-      }
-    } else if (lps->contiguousAllocations.size() > 0) {
-      // Append allocation to end of list and link first entry to new
-      // allocation
-      newAlloc->vm_start = lps->contiguousAllocations[0].vm_end;
-      lps->contiguousAllocations[0].vm_next = newAlloc;
-    } else {
-      // If no allocation exists, allocate to start of the mmap region
-      newAlloc->vm_start = lps->mmapRegion;
-    }
-    // The end of the allocation must be rounded up to the nearest page size
-    newAlloc->vm_end =
-        alignToBoundary(newAlloc->vm_start + length, lps->pageSize);
-    lps->contiguousAllocations.push_back(*newAlloc);
-  } else {  // Use hint to provide allocation
-    return 0;
-  }
-  return newAlloc->vm_start;
+  // ProcessState* lps = &processStates_[0];
+  // std::shared_ptr<struct vm_area_struct> newAlloc(new vm_area_struct);
+  // if (addr == 0) {  // Kernel decides allocation
+  //   if (lps->contiguousAllocations.size() > 1) {
+  //     // Determine if the new allocation can fit between existing
+  //     allocations,
+  //     // append to end of allocations if not
+  //     for (auto& alloc : lps->contiguousAllocations) {
+  //       if (alloc.vm_next != NULL &&
+  //           (alloc.vm_next->vm_start - alloc.vm_end) >= length) {
+  //         newAlloc->vm_start = alloc.vm_end;
+  //         // Re-link contiguous allocation to include new allocation
+  //         newAlloc->vm_next = alloc.vm_next;
+  //         alloc.vm_next = newAlloc;
+  //       }
+  //     }
+  //     if (newAlloc->vm_start == 0) {
+  //       newAlloc->vm_start = lps->contiguousAllocations.back().vm_end;
+  //       lps->contiguousAllocations.back().vm_next = newAlloc;
+  //     }
+  //   } else if (lps->contiguousAllocations.size() > 0) {
+  //     // Append allocation to end of list and link first entry to new
+  //     // allocation
+  //     newAlloc->vm_start = lps->contiguousAllocations[0].vm_end;
+  //     lps->contiguousAllocations[0].vm_next = newAlloc;
+  //   } else {
+  //     // If no allocation exists, allocate to start of the mmap region
+  //     newAlloc->vm_start = lps->mmapRegion;
+  //   }
+  //   // The end of the allocation must be rounded up to the nearest page size
+  //   newAlloc->vm_end =
+  //       alignToBoundary(newAlloc->vm_start + length, lps->pageSize);
+  //   lps->contiguousAllocations.push_back(*newAlloc);
+  // } else {  // Use hint to provide allocation
+  //   return 0;
+  // }
+  // return newAlloc->vm_start;
+  return processes_[0]->getMemRegion().mmapRegion(addr, length, fd, prot,
+                                                  flags);
 }
 
 int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
@@ -466,19 +474,19 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
     return hfd;
   }
 
-  ProcessState& processState = processStates_[0];
+  std::shared_ptr<Process> proc = processes_[0];
 
   // Allocate virtual file descriptor and map to host file descriptor
   int64_t vfd;
-  if (!processState.freeFileDescriptors.empty()) {
+  if (!proc->freeFileDescriptors_.empty()) {
     // Take virtual descriptor from free pool
-    auto first = processState.freeFileDescriptors.begin();
-    vfd = processState.freeFileDescriptors.extract(first).value();
-    processState.fileDescriptorTable[vfd] = hfd;
+    auto first = proc->freeFileDescriptors_.begin();
+    vfd = proc->freeFileDescriptors_.extract(first).value();
+    proc->fileDescriptorTable_[vfd] = hfd;
   } else {
     // Extend file descriptor table for a new virtual descriptor
-    vfd = processState.fileDescriptorTable.size();
-    processState.fileDescriptorTable.push_back(hfd);
+    vfd = proc->fileDescriptorTable_.size();
+    proc->fileDescriptorTable_.push_back(hfd);
   }
 
   return vfd;
@@ -486,13 +494,13 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
 
 int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
                                    char* buf, size_t bufsize) const {
-  const auto& processState = processStates_[0];
+  // const auto& processState = processStates_[0];
   if (pathname == "/proc/self/exe") {
     // Copy executable path to buffer
     // TODO: resolve path into canonical path
-    std::strncpy(buf, processState.path.c_str(), bufsize);
+    std::strncpy(buf, processes_[0]->getPath().c_str(), bufsize);
 
-    return std::min(processState.path.length(), bufsize);
+    return std::min(processes_[0]->getPath().length(), bufsize);
   }
 
   // TODO: resolve symbolic link for other paths
@@ -500,8 +508,8 @@ int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
 }
 
 int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  assert(fd < processes_[0]->fileDescriptorTable_.size());
+  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -556,8 +564,8 @@ int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  assert(fd < processes_[0]->fileDescriptorTable_.size());
+  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -565,8 +573,8 @@ int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  assert(fd < processes_[0]->fileDescriptorTable_.size());
+  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -592,14 +600,16 @@ int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
   return 0;
 }
 int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
-  assert(processStates_.size() > 0);
-  processStates_[0].clearChildTid = tidptr;
-  return processStates_[0].pid;
+  assert(processes_.size() > 0);
+  processes_[0]->clearChildTid = tidptr;
+  // return processStates_[0].pid;
+  // Support multiple PIDs
+  return 0;
 }
 
 int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  assert(fd < processes_[0]->fileDescriptorTable_.size());
+  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -607,8 +617,8 @@ int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processStates_[0].fileDescriptorTable.size());
-  int64_t hfd = processStates_[0].fileDescriptorTable[fd];
+  assert(fd < processes_[0]->fileDescriptorTable_.size());
+  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }

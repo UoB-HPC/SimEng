@@ -3,8 +3,9 @@
 namespace simeng {
 namespace kernel {
 
-SimOS::SimOS(int argc, char** argv)
-    : syscallHandler_(SyscallHandler(processStates_)) {
+SimOS::SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem)
+    : syscallHandler_(SyscallHandler(processes_)) {
+  memory_ = mem;
   // Determine if a config file has been supplied.
   if (argc > 1) {
     config_ = simeng::ModelConfig(std::string(argv[1])).getConfigFile();
@@ -26,6 +27,7 @@ SimOS::SimOS(int argc, char** argv)
 
 void SimOS::createInitialProcess() {
   std::shared_ptr<Process> newProcess;
+  auto mem = *(memory_->getMemory());
   if (executablePath_ != DEFAULT_PATH) {
     // Concatenate the command line arguments into a single vector and create
     // the process image
@@ -33,7 +35,8 @@ void SimOS::createInitialProcess() {
     commandLine.insert(commandLine.end(), executableArgs_.begin(),
                        executableArgs_.end());
 
-    newProcess = std::make_shared<Process>(commandLine, config_);
+    newProcess = std::make_shared<Process>(commandLine, config_, mem,
+                                           memory_->getMemorySize());
 
     // Raise error if created process is not valid
     if (!newProcess->isValid()) {
@@ -46,7 +49,7 @@ void SimOS::createInitialProcess() {
     // Create a process image from the set of instructions held in hex_
     newProcess = std::make_shared<Process>(
         simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-        config_);
+        config_, mem, memory_->getMemorySize());
 
     // Raise error if created process is not valid
     if (!newProcess->isValid()) {
@@ -58,20 +61,20 @@ void SimOS::createInitialProcess() {
   }
 
   assert(newProcess.isValid() && "Attempted to use an invalid process");
-  assert(processStates_.size() == 0 && "Multiple processes not yet supported");
-  processStates_.push_back(
-      {.pid = nextPid_,  // TODO: create unique PIDs
-       .path = newProcess->getPath(),
-       .startBrk = newProcess->getHeapStart(),
-       .currentBrk = newProcess->getHeapStart(),
-       .initialStackPointer = newProcess->getStackPointer(),
-       .mmapRegion = newProcess->getMmapStart(),
-       .pageSize = newProcess->getPageSize()});
-  processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
-  processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
-  processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
+  // assert(processStates_.size() == 0 && "Multiple processes not yet
+  // supported"); processStates_.push_back(
+  //     {.pid = nextPid_,  // TODO: create unique PIDs
+  //      .path = newProcess->getPath(),
+  //      .startBrk = newProcess->getHeapStart(),
+  //      .currentBrk = newProcess->getHeapStart(),
+  //      .initialStackPointer = newProcess->getStackPointer(),
+  //      .mmapRegion = newProcess->getMmapStart(),
+  //      .pageSize = newProcess->getPageSize()});
+  // processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
+  // processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
+  // processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
   processes_.emplace_back(newProcess);
-  nextPid_++;
+  // nextPid_++;
 }
 
 std::shared_ptr<Process> SimOS::getProcess() {

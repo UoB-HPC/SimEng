@@ -14,9 +14,12 @@ set(SIMENG_SOURCES
     arch/riscv/Instruction_decode.cc
     arch/riscv/Instruction_execute.cc
     arch/riscv/InstructionMetadata.cc
-    kernel/SyscallHandler.cc
+    kernel/MemRegion.cc
     kernel/Process.cc
     kernel/SimOS.cc
+    kernel/SyscallHandler.cc
+    kernel/Vma.cc
+    memory/SimpleMem.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc
