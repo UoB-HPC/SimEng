@@ -5,9 +5,13 @@ namespace kernel {
 
 SimOS::SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem)
     : syscallHandler_(SyscallHandler(processes_)) {
+  // Initialise global memory pointer
   memory_ = mem;
+
+  // Parse command line args
   // Determine if a config file has been supplied.
   if (argc > 1) {
+    // Config stored here so that only 1 instance of it exists.
     config_ = simeng::ModelConfig(std::string(argv[1])).getConfigFile();
     // Determine if an executable has been supplied
     if (argc > 2) {
@@ -21,13 +25,14 @@ SimOS::SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem)
   } else {
     config_ = YAML::Load(DEFAULT_CONFIG);
   }
+
   createInitialProcess();
   createSpecialFileDirectory();
 }
 
 void SimOS::createInitialProcess() {
   std::shared_ptr<Process> newProcess;
-  auto mem = *(memory_->getMemory());
+  char* mem = *(memory_->getMemory());
   if (executablePath_ != DEFAULT_PATH) {
     // Concatenate the command line arguments into a single vector and create
     // the process image
@@ -59,22 +64,8 @@ void SimOS::createInitialProcess() {
       exit(1);
     }
   }
-
   assert(newProcess.isValid() && "Attempted to use an invalid process");
-  // assert(processStates_.size() == 0 && "Multiple processes not yet
-  // supported"); processStates_.push_back(
-  //     {.pid = nextPid_,  // TODO: create unique PIDs
-  //      .path = newProcess->getPath(),
-  //      .startBrk = newProcess->getHeapStart(),
-  //      .currentBrk = newProcess->getHeapStart(),
-  //      .initialStackPointer = newProcess->getStackPointer(),
-  //      .mmapRegion = newProcess->getMmapStart(),
-  //      .pageSize = newProcess->getPageSize()});
-  // processStates_.back().fileDescriptorTable.push_back(STDIN_FILENO);
-  // processStates_.back().fileDescriptorTable.push_back(STDOUT_FILENO);
-  // processStates_.back().fileDescriptorTable.push_back(STDERR_FILENO);
   processes_.emplace_back(newProcess);
-  // nextPid_++;
 }
 
 std::shared_ptr<Process> SimOS::getProcess() {
@@ -91,7 +82,6 @@ void SimOS::createSpecialFileDirectory() {
     // Create new special files dir
     SFdir.GenerateSFDir();
   }
-
   return;
 }
 

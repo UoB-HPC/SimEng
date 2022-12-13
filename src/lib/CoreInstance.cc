@@ -37,7 +37,6 @@ void CoreInstance::generateCoreModel(std::string executablePath,
   setSimulationMode();
   // Create the process memory space from the generated process image
   createProcessMemory();
-  // createProcess(executablePath, executableArgs);
   // Check to see if either of the instruction or data memory interfaces should
   // be created. Don't create the core if either interface is marked as External
   // as they must be set manually prior to the core's creation.
@@ -100,7 +99,6 @@ void CoreInstance::setSimulationMode() {
 
 void CoreInstance::createProcessMemory() {
   // Get the process image and its size
-  // processMemory_ = process_->getProcessImage();
   processMemorySize_ = process_->getProcessImageSize();
 
   return;
@@ -108,7 +106,7 @@ void CoreInstance::createProcessMemory() {
 
 void CoreInstance::createL1InstructionMemory(
     const simeng::MemInterfaceType type) {
-  auto mem = *(memory_->getMemory());
+  char* mem = *(memory_->getMemory());
   // Create a L1I cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
     instructionMemory_ =
@@ -225,9 +223,6 @@ void CoreInstance::createCore() {
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
         *arch_, *predictor_, *portAllocator_, config_, process_);
   }
-
-  // createSpecialFileDirectory();
-
   return;
 }
 
@@ -273,10 +268,6 @@ std::shared_ptr<simeng::MemoryInterface> CoreInstance::getInstructionMemory()
 const kernel::Process& CoreInstance::getProcess() const {
   return *process_.get();
 }
-
-// std::shared_ptr<char> CoreInstance::getProcessImage() const {
-//   return processMemory_;
-// }
 
 const uint64_t CoreInstance::getProcessImageSize() const {
   return processMemorySize_;

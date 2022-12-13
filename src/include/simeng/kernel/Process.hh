@@ -9,6 +9,9 @@
 namespace simeng {
 namespace kernel {
 
+/** The page size of the process memory. */
+static constexpr uint64_t pageSize_ = 4096;
+
 /** Align `address` to an `alignTo`-byte boundary by rounding up to the nearest
  * multiple. */
 uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
@@ -62,9 +65,6 @@ class Process {
   /** Get the page size. */
   uint64_t getPageSize() const;
 
-  // /** Get a shared_ptr to process image. */
-  // std::shared_ptr<char> getProcessImage() const;
-
   /** Get the size of the process image. */
   uint64_t getProcessImageSize() const;
 
@@ -95,12 +95,6 @@ class Process {
   uint64_t clearChildTid = 0;
 
  private:
-  // /** The size of the stack, in bytes. */
-  // const uint64_t STACK_SIZE;
-
-  // /** The space to reserve for the heap, in bytes. */
-  // const uint64_t HEAP_SIZE;
-
   MemRegion memRegion_;
 
   /** Create and populate the initial process stack. */
@@ -109,29 +103,11 @@ class Process {
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
 
-  // /** The address of the start of the heap region. */
-  // uint64_t heapStart_;
-
-  // /** The address of the start of region of memory given to mmap. */
-  // uint64_t mmapStart_;
-
-  /** The page size of the process memory. */
-  const uint64_t pageSize_ = 4096;
-
-  // /** The address of the stack pointer. */
-  // uint64_t stackPointer_;
-
-  // /** The process image size. */
-  // uint64_t size_;
-
   /** The process command and its arguments. */
   std::vector<std::string> commandLine_;
 
   /** Whether the process image was created successfully. */
   bool isValid_ = false;
-
-  // /** Shared pointer to processImage. */
-  // std::shared_ptr<char> processImage_;
 };
 
 }  // namespace kernel

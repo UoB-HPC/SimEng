@@ -78,9 +78,6 @@ class CoreInstance {
   /** Getter for a reference to the SimOS Process. */
   const kernel::Process& getProcess() const;
 
-  // /** Getter for a shared pointer to the created process image. */
-  // std::shared_ptr<char> getProcessImage() const;
-
   /** Getter for the size of the created process image. */
   const uint64_t getProcessImageSize() const;
 
@@ -124,9 +121,6 @@ class CoreInstance {
 
   /** The size of the process memory. */
   uint64_t processMemorySize_;
-
-  // /** The process memory space. */
-  // std::shared_ptr<char> processMemory_;
 
   /** Whether or not the dataMemory_ must be set manually. */
   bool setDataMemory_ = false;

@@ -59,12 +59,6 @@ int64_t SyscallHandler::brk(uint64_t address) {
   assert(processes_.size() > 0 &&
          "Attempted to move the program break before creating a process");
   return processes_[0]->getMemRegion().updateBrkRegion(address);
-  // auto& state = processStates_[0];
-  // Move the break if it's within the heap region
-  // if (address > state.startBrk) {
-  // state.currentBrk = address;
-  // }
-  // return state.currentBrk;
 }
 
 uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
@@ -259,9 +253,7 @@ int64_t SyscallHandler::getrusage(int64_t who, rusage& out) {
 }
 
 int64_t SyscallHandler::getpid() const {
-  // assert(processStates_.size() > 0);
-  // return processStates_[0].pid;
-  assert(processes_.size() > 0);
+  assert(processes_.size() > 0 "[SimEng:SyscallHanlder] invalid number of active processes - Max limit is 1.");
   // TODO : Needs to be properly implemented once multi-thread supported
   return 0;
 }
@@ -334,42 +326,6 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 }
 
 int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
-  // ProcessState* lps = &processStates_[0];
-  // if (addr % lps->pageSize != 0) {
-  //   // addr must be a multiple of the process page size
-  //   return -1;
-  // }
-  // int i;
-  // vm_area_struct alloc;
-  // // Find addr in allocations
-  // for (i = 0; i < lps->contiguousAllocations.size(); i++) {
-  //   alloc = lps->contiguousAllocations[i];
-  //   if (alloc.vm_start == addr) {
-  //     if ((alloc.vm_end - alloc.vm_start) < length) {
-  //       // length must not be larger than the original allocation
-  //       return -1;
-  //     }
-  //     if (i != 0) {
-  //       lps->contiguousAllocations[i - 1].vm_next =
-  //           lps->contiguousAllocations[i].vm_next;
-  //     }
-  //     lps->contiguousAllocations.erase(lps->contiguousAllocations.begin() +
-  //     i); return 0;
-  //   }
-  // }
-
-  // for (int i = 0; i < lps->nonContiguousAllocations.size(); i++) {
-  //   alloc = lps->nonContiguousAllocations[i];
-  //   if (alloc.vm_start == addr) {
-  //     if ((alloc.vm_end - alloc.vm_start) < length) {
-  //       // length must not be larger than the original allocation
-  //       return -1;
-  //     }
-  //     lps->nonContiguousAllocations.erase(
-  //         lps->nonContiguousAllocations.begin() + i);
-  //     return 0;
-  //   }
-  // }
   processes_[0]->getMemRegion().unmapRegion(addr, length, 0, 0, 0);
   // Not an error if the indicated range does no contain any mapped pages
   return 0;
@@ -377,43 +333,6 @@ int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
 
 uint64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                               int fd, off_t offset) {
-  // ProcessState* lps = &processStates_[0];
-  // std::shared_ptr<struct vm_area_struct> newAlloc(new vm_area_struct);
-  // if (addr == 0) {  // Kernel decides allocation
-  //   if (lps->contiguousAllocations.size() > 1) {
-  //     // Determine if the new allocation can fit between existing
-  //     allocations,
-  //     // append to end of allocations if not
-  //     for (auto& alloc : lps->contiguousAllocations) {
-  //       if (alloc.vm_next != NULL &&
-  //           (alloc.vm_next->vm_start - alloc.vm_end) >= length) {
-  //         newAlloc->vm_start = alloc.vm_end;
-  //         // Re-link contiguous allocation to include new allocation
-  //         newAlloc->vm_next = alloc.vm_next;
-  //         alloc.vm_next = newAlloc;
-  //       }
-  //     }
-  //     if (newAlloc->vm_start == 0) {
-  //       newAlloc->vm_start = lps->contiguousAllocations.back().vm_end;
-  //       lps->contiguousAllocations.back().vm_next = newAlloc;
-  //     }
-  //   } else if (lps->contiguousAllocations.size() > 0) {
-  //     // Append allocation to end of list and link first entry to new
-  //     // allocation
-  //     newAlloc->vm_start = lps->contiguousAllocations[0].vm_end;
-  //     lps->contiguousAllocations[0].vm_next = newAlloc;
-  //   } else {
-  //     // If no allocation exists, allocate to start of the mmap region
-  //     newAlloc->vm_start = lps->mmapRegion;
-  //   }
-  //   // The end of the allocation must be rounded up to the nearest page size
-  //   newAlloc->vm_end =
-  //       alignToBoundary(newAlloc->vm_start + length, lps->pageSize);
-  //   lps->contiguousAllocations.push_back(*newAlloc);
-  // } else {  // Use hint to provide allocation
-  //   return 0;
-  // }
-  // return newAlloc->vm_start;
   return processes_[0]->getMemRegion().mmapRegion(addr, length, fd, prot,
                                                   flags);
 }
@@ -494,7 +413,6 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
 
 int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
                                    char* buf, size_t bufsize) const {
-  // const auto& processState = processStates_[0];
   if (pathname == "/proc/self/exe") {
     // Copy executable path to buffer
     // TODO: resolve path into canonical path
@@ -602,8 +520,7 @@ int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
 int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
   assert(processes_.size() > 0);
   processes_[0]->clearChildTid = tidptr;
-  // return processStates_[0].pid;
-  // Support multiple PIDs
+  // TODO : Support multiple PIDs
   return 0;
 }
 
