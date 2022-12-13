@@ -27,7 +27,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 
   // Query and apply initial state
-  auto state = isa.getInitialState(process_->getStackPointer());
+  auto state =
+      isa.getInitialState(process_->getMemRegion().getInitialStackStart());
   applyStateChange(state);
 }
 
