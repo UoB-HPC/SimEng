@@ -45,8 +45,8 @@ uint64_t Vmall::addVma(VirtMemArea* vma, uint64_t mmapStart,
 
 void Vmall::removeVma(uint64_t addr, uint64_t length, uint64_t pageSize) {
   if (addr % pageSize != 0) {
-    std::cerr << "Cannot remove Virtual memory area: VirtMemArea start address "
-                 "is not page aligned."
+    std::cerr << "[SimEng:Vma] Cannot remove Virtual memory area: VirtMemArea "
+                 "start address is not page aligned."
               << std::endl;
     std::exit(1);
   }
@@ -55,7 +55,8 @@ void Vmall::removeVma(uint64_t addr, uint64_t length, uint64_t pageSize) {
   while (curr != nullptr) {
     if (curr->vm_start == addr) {
       if (curr->length < length) {
-        std::cerr << "Cannot remove Virtual memory area: Specified length ("
+        std::cerr << "[SimEng:Vma] Cannot remove Virtual memory area: "
+                     "Specified length ("
                   << length << ") is greater than VirtMemArea length ("
                   << curr->length << ") is not page aligned." << std::endl;
         std::exit(1);

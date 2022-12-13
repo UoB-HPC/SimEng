@@ -14,6 +14,19 @@
 namespace simeng {
 namespace kernel {
 
+// Program used when no executable is provided; counts down from
+// 1024*1024, with an independent `orr` at the start of each branch.
+static uint32_t hex_[8] = {
+    0x320C03E0,  // orr w0, wzr, #1048576
+    0x320003E1,  // orr w0, wzr, #1
+    0x71000400,  // subs w0, w0, #1
+    0x54FFFFC1,  // b.ne -8
+                 // .exit:
+    0xD2800000,  // mov x0, #0
+    0xD2800BC8,  // mov x8, #94
+    0xD4000001,  // svc #0
+};
+
 /** A simple, lightweight Operating System kernel based on Linux to emulate
  * syscalls and manage process execution. */
 class SimOS {
@@ -57,29 +70,6 @@ class SimOS {
 
   /** Reference to the global memory pointer */
   std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
-
-  // /** The state of the user-space processes running above the kernel. */
-  // std::vector<ProcessState> processStates_;
-
-  /** The value of the next PID value to be used when a new process is
-   * created. */
-  int64_t nextPid_ = 0;
-
-  /** The set of deallocated PID values available for reuse. */
-  std::set<int64_t> freePidSet_;
-
-  // Program used when no executable is provided; counts down from
-  // 1024*1024, with an independent `orr` at the start of each branch.
-  uint32_t hex_[8] = {
-      0x320C03E0,  // orr w0, wzr, #1048576
-      0x320003E1,  // orr w0, wzr, #1
-      0x71000400,  // subs w0, w0, #1
-      0x54FFFFC1,  // b.ne -8
-                   // .exit:
-      0xD2800000,  // mov x0, #0
-      0xD2800BC8,  // mov x8, #94
-      0xD4000001,  // svc #0
-  };
 };
 
 }  // namespace kernel
