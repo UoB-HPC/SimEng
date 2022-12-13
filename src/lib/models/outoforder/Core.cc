@@ -17,7 +17,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator, YAML::Node config,
-           std::shared_ptr<kernel::LinuxProcess> process)
+           std::shared_ptr<kernel::Process> process)
     : isa_(isa),
       process_(process),
       physicalRegisterStructures_(

@@ -23,7 +23,7 @@
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
 #include "simeng/arch/Architecture.hh"
-#include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/kernel/Process.hh"
 #include "simeng/kernel/SimOS.hh"
 #include "simeng/pipeline/PortAllocator.hh"
 #include "simeng/version.hh"
@@ -110,7 +110,7 @@ class RegressionTest
   size_t processMemorySize_ = 0;
 
   /** The process that was executed. */
-  std::unique_ptr<simeng::kernel::LinuxProcess> process_;
+  std::unique_ptr<simeng::kernel::Process> process_;
 
   /** The core that was used. */
   std::unique_ptr<simeng::Core> core_ = nullptr;

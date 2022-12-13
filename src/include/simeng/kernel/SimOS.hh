@@ -21,14 +21,14 @@ class SimOS {
   /** Construct a SimOS object. */
   SimOS(int argc, char** argv);
 
-  /** Create the initial Linux process running above this kernel from command
+  /** Create the initial SimOS Process running above this kernel from command
    * line arguments.
    * Empty command line arguments denote the usage of hardcoded instructions
    * held in the hex_ array.*/
   void createInitialProcess();
 
   /** Get pointer to process with specified PID. */
-  std::shared_ptr<LinuxProcess> getProcess();
+  std::shared_ptr<Process> getProcess();
 
   /** Get user defined config, executable, and executable args. */
   std::tuple<YAML::Node&, std::string, std::vector<std::string>>
@@ -53,10 +53,10 @@ class SimOS {
   std::vector<std::string> executableArgs_ = {};
 
   /** The list of active processes. */
-  std::vector<std::shared_ptr<LinuxProcess>> processes_;
+  std::vector<std::shared_ptr<Process>> processes_;
 
   /** The state of the user-space processes running above the kernel. */
-  std::vector<LinuxProcessState> processStates_;
+  std::vector<ProcessState> processStates_;
 
   /** The value of the next PID value to be used when a new process is
    * created. */

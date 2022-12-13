@@ -14,7 +14,7 @@ const unsigned int clockFrequency = 2.5 * 1e9;
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t entryPoint, uint64_t programByteLength,
            const arch::Architecture& isa,
-           std::shared_ptr<kernel::LinuxProcess> process)
+           std::shared_ptr<kernel::Process> process)
     : instructionMemory_(instructionMemory),
       process_(process),
       dataMemory_(dataMemory),
