@@ -4,7 +4,7 @@ namespace simeng {
 
 CoreInstance::CoreInstance(YAML::Node& config, std::string executablePath,
                            std::vector<std::string> executableArgs,
-                           std::shared_ptr<kernel::LinuxProcess> process,
+                           std::shared_ptr<kernel::Process> process,
                            kernel::SyscallHandler& syscallHandler)
     : config_(config), process_(process), syscallHandler_(syscallHandler) {
   generateCoreModel(executablePath, executableArgs);
@@ -264,7 +264,7 @@ std::shared_ptr<simeng::MemoryInterface> CoreInstance::getInstructionMemory()
   return instructionMemory_;
 }
 
-const kernel::LinuxProcess& CoreInstance::getProcess() const {
+const kernel::Process& CoreInstance::getProcess() const {
   return *process_.get();
 }
 

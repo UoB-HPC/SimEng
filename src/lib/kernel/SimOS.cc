@@ -25,7 +25,7 @@ SimOS::SimOS(int argc, char** argv)
 }
 
 void SimOS::createInitialProcess() {
-  std::shared_ptr<LinuxProcess> newProcess;
+  std::shared_ptr<Process> newProcess;
   if (executablePath_ != DEFAULT_PATH) {
     // Concatenate the command line arguments into a single vector and create
     // the process image
@@ -33,7 +33,7 @@ void SimOS::createInitialProcess() {
     commandLine.insert(commandLine.end(), executableArgs_.begin(),
                        executableArgs_.end());
 
-    newProcess = std::make_shared<LinuxProcess>(commandLine, config_);
+    newProcess = std::make_shared<Process>(commandLine, config_);
 
     // Raise error if created process is not valid
     if (!newProcess->isValid()) {
@@ -44,7 +44,7 @@ void SimOS::createInitialProcess() {
     // IGNORE SST RELATED CASES FOR NOW
   } else {
     // Create a process image from the set of instructions held in hex_
-    newProcess = std::make_shared<LinuxProcess>(
+    newProcess = std::make_shared<Process>(
         simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
         config_);
 
@@ -74,7 +74,7 @@ void SimOS::createInitialProcess() {
   nextPid_++;
 }
 
-std::shared_ptr<LinuxProcess> SimOS::getProcess() {
+std::shared_ptr<Process> SimOS::getProcess() {
   // TODO : update to search through Processes and match PID value
   return processes_[0];
 }

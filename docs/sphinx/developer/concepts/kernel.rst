@@ -3,16 +3,16 @@ Kernel
 
 The Kernel used in SimEng is an emulation of a Linux Kernel. The SimEng Kernel does not seek to provide the full functionality of a Linux Kernel. Instead, it provides the functionality for creating the program memory space and aid the emulation of system calls by maintaining a system and process state.
 
-The SimEng Kernel is split into two classes, ``LinuxProcess`` and ``Linux``.
+The SimEng Kernel is split into two classes, ``Process`` and ``Linux``.
 
-LinuxProcess
+Process
 ------------
 
-The ``LinuxProcess`` class provides the functionality to process the supplied program. It creates the initial process memory space, including the Executable and Linkable Format (ELF) process image and the stack. The process memory space created contains all the data required by the program to run.
+The ``Process`` class provides the functionality to process the supplied program. It creates the initial process memory space, including the Executable and Linkable Format (ELF) process image and the stack. The process memory space created contains all the data required by the program to run.
 
 ELF Parsing
 ~~~~~~~~~~~~
-The ELF binaries have a defined structure for 32-bit and 64-bit architectures, all information regarding parsing ELF binaries has been referenced from the `Linux manual page <https://man7.org/linux/man-pages/man5/elf.5.html>`_. The ELF binary is divided into multiple parts. SimEng stores all relevant parts of the `ELF Binary` in a ``char[] processImage`` array, which is a private member variable of the ``LinuxProcess`` class.
+The ELF binaries have a defined structure for 32-bit and 64-bit architectures, all information regarding parsing ELF binaries has been referenced from the `Linux manual page <https://man7.org/linux/man-pages/man5/elf.5.html>`_. The ELF binary is divided into multiple parts. SimEng stores all relevant parts of the `ELF Binary` in a ``char[] processImage`` array, which is a private member variable of the ``Process`` class.
 
 .. image:: ../../assets/elfstruct.png
   :alt: ELF Structure
@@ -31,18 +31,18 @@ The ELF binaries have a defined structure for 32-bit and 64-bit architectures, a
 
 * The segment referenced by an ELF Program Header has a type attribute which explains its contents and how to interpret it. SimEng, only extracts segments of type ``LOAD`` which specifies a loadable segment. Loadable segments most notably contain the workloads' compiled instructions and initialised data that contributes to the program's memory space. This completes the creation of the ``ElfProcessImage``.
 
-* After the ``ElfProcessImage`` has been created the ``LinuxProcess`` class creates an array ``char[] processImage``. The size of ``processImage`` is much larger than ``ElfProcessImage`` as SimEng adds the ``HEAP_SIZE`` and ``STACK_SIZE`` values specified in the YAML configuration file to the 32-byte aligned value of ``ElfProcessImage`` size. After this, SimEng proceeds to create a process stack around ``processImage``.
+* After the ``ElfProcessImage`` has been created the ``Process`` class creates an array ``char[] processImage``. The size of ``processImage`` is much larger than ``ElfProcessImage`` as SimEng adds the ``HEAP_SIZE`` and ``STACK_SIZE`` values specified in the YAML configuration file to the 32-byte aligned value of ``ElfProcessImage`` size. After this, SimEng proceeds to create a process stack around ``processImage``.
 
 * The population of the initial stack state is based on the information `here <https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html>`_. 
 
 Currently, the only environment variable set is ``OMP_NUM_THREADS=1``, however, functionality to add more is available.
 
-For the supplied program, the ``LinuxProcess`` class supports both statically compiled binaries and raw instructions in a hexadecimal format.
+For the supplied program, the ``Process`` class supports both statically compiled binaries and raw instructions in a hexadecimal format.
 
 Linux
 -----
 
-The ``Linux`` class provides part of the functionality used to emulate system calls by maintaining a system and process state. These states contain information about the ``LinuxProcess`` class created from the supplied program. Such information includes:
+The ``Linux`` class provides part of the functionality used to emulate system calls by maintaining a system and process state. These states contain information about the ``Process`` class created from the supplied program. Such information includes:
 
 - PID
 - Program path

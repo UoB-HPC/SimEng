@@ -37,7 +37,7 @@ class CoreInstance {
    */
   CoreInstance(YAML::Node& config, std::string executablePath,
                std::vector<std::string> executableArgs,
-               std::shared_ptr<kernel::LinuxProcess> process,
+               std::shared_ptr<kernel::Process> process,
                kernel::SyscallHandler& syscallHandler);
 
   // IGNORING SST RELATED CODE FOR NOW
@@ -73,8 +73,8 @@ class CoreInstance {
   /** Getter for the create instruction memory object. */
   std::shared_ptr<simeng::MemoryInterface> getInstructionMemory() const;
 
-  /** Getter for a reference to the Linux process. */
-  const kernel::LinuxProcess& getProcess() const;
+  /** Getter for a reference to the SimOS Process. */
+  const kernel::Process& getProcess() const;
 
   /** Getter for a shared pointer to the created process image. */
   std::shared_ptr<char> getProcessImage() const;
@@ -115,8 +115,8 @@ class CoreInstance {
   /** The config file describing the modelled core to be created. */
   YAML::Node& config_;
 
-  /** Reference to the SimEng linux process object. */
-  std::shared_ptr<simeng::kernel::LinuxProcess> process_ = nullptr;
+  /** Reference to the SimEng SimOS Process object. */
+  std::shared_ptr<simeng::kernel::Process> process_ = nullptr;
 
   kernel::SyscallHandler& syscallHandler_;
 

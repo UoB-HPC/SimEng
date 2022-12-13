@@ -12,7 +12,7 @@ namespace kernel {
  * multiple. */
 uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
 
-/** The initial state of a Linux process, constructed from a binary executable.
+/** The initial state of a SimOS Process, constructed from a binary executable.
  *
  * The constructed process follows a typical layout:
  *
@@ -34,18 +34,18 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
  * |---------------| <- 0x0
  *
  */
-class LinuxProcess {
+class Process {
  public:
-  /** Construct a Linux process from a vector of command-line arguments.
+  /** Construct a SimOS Process from a vector of command-line arguments.
    *
    * The first argument is a path to an executable ELF file. */
-  LinuxProcess(const std::vector<std::string>& commandLine, YAML::Node config);
+  Process(const std::vector<std::string>& commandLine, YAML::Node config);
 
-  /** Construct a Linux process from region of instruction memory, with the
+  /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
-  LinuxProcess(span<char> instructions, YAML::Node config);
+  Process(span<char> instructions, YAML::Node config);
 
-  ~LinuxProcess();
+  ~Process();
 
   /** Get the address of the start of the heap region. */
   uint64_t getHeapStart() const;

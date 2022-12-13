@@ -3,7 +3,7 @@
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
 #include "simeng/MemoryInterface.hh"
-#include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/kernel/Process.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 #include "simeng/pipeline/ExecuteUnit.hh"
@@ -31,7 +31,7 @@ class Core : public simeng::Core {
        uint64_t processMemorySize, uint64_t entryPoint,
        const arch::Architecture& isa, BranchPredictor& branchPredictor,
        pipeline::PortAllocator& portAllocator, YAML::Node config,
-       std::shared_ptr<kernel::LinuxProcess> process);
+       std::shared_ptr<kernel::Process> process);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
@@ -164,7 +164,7 @@ class Core : public simeng::Core {
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 
   /** Currently executing Process. */
-  std::shared_ptr<kernel::LinuxProcess> process_ = nullptr;
+  std::shared_ptr<kernel::Process> process_ = nullptr;
 };
 
 }  // namespace outoforder

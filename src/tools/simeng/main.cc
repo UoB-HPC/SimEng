@@ -68,7 +68,11 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] Workload: " << executablePath;
   for (const auto& arg : executableArgs) std::cout << " " << arg;
   std::cout << std::endl;
-  std::cout << "[SimEng] Config file: " << std::string(argv[1]) << std::endl;
+  if (argc > 1) {
+    std::cout << "[SimEng] Config file: " << std::string(argv[1]) << std::endl;
+  } else {
+    std::cout << "[SimEng] Config file: Default" << std::endl;
+  }
 
   // Run simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;

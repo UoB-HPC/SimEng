@@ -3,7 +3,7 @@
 namespace simeng {
 namespace kernel {
 
-SyscallHandler::SyscallHandler(std::vector<LinuxProcessState>& processStates)
+SyscallHandler::SyscallHandler(std::vector<ProcessState>& processStates)
     : processStates_(processStates) {
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
@@ -330,7 +330,7 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 }
 
 int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
-  LinuxProcessState* lps = &processStates_[0];
+  ProcessState* lps = &processStates_[0];
   if (addr % lps->pageSize != 0) {
     // addr must be a multiple of the process page size
     return -1;
@@ -372,7 +372,7 @@ int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
 
 uint64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                               int fd, off_t offset) {
-  LinuxProcessState* lps = &processStates_[0];
+  ProcessState* lps = &processStates_[0];
   std::shared_ptr<struct vm_area_struct> newAlloc(new vm_area_struct);
   if (addr == 0) {  // Kernel decides allocation
     if (lps->contiguousAllocations.size() > 1) {
@@ -466,7 +466,7 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
     return hfd;
   }
 
-  LinuxProcessState& processState = processStates_[0];
+  ProcessState& processState = processStates_[0];
 
   // Allocate virtual file descriptor and map to host file descriptor
   int64_t vfd;
