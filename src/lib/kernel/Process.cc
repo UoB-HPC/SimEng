@@ -20,8 +20,6 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 
 Process::Process(const std::vector<std::string>& commandLine, YAML::Node config,
                  char* memptr, size_t mem_size)
-    // : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
-    //   HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()),
     : commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
@@ -70,7 +68,6 @@ Process::Process(const std::vector<std::string>& commandLine, YAML::Node config,
       MemRegion(stackSize, heapSize, size, 0, heapStart, pageSize_, mmapStart);
 
   createStack(&unwrappedProcImgPtr);
-  // processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
   // copy process image to global memory.
   memcpy(memptr, unwrappedProcImgPtr, size);
   fileDescriptorTable_.emplace_back(STDIN_FILENO);
@@ -81,10 +78,7 @@ Process::Process(const std::vector<std::string>& commandLine, YAML::Node config,
 }
 
 Process::Process(span<char> instructions, YAML::Node config, char* memptr,
-                 size_t mem_size)
-// : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
-//   HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
-{
+                 size_t mem_size) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 
@@ -116,7 +110,6 @@ Process::Process(span<char> instructions, YAML::Node config, char* memptr,
   memRegion_ =
       MemRegion(stackSize, heapSize, size, 0, heapStart, pageSize_, mmapStart);
   createStack(&unwrappedProcImgPtr);
-  // processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
   // copy process image to global memory.
   memcpy(memptr, unwrappedProcImgPtr, size);
   free(unwrappedProcImgPtr);
@@ -135,10 +128,6 @@ uint64_t Process::getPageSize() const { return pageSize_; }
 std::string Process::getPath() const { return commandLine_[0]; }
 
 bool Process::isValid() const { return isValid_; }
-
-// std::shared_ptr<char> Process::getProcessImage() const {
-//   return std::shared_ptr<char>(processImage_);
-// }
 
 uint64_t Process::getProcessImageSize() const {
   return memRegion_.getMemSize();

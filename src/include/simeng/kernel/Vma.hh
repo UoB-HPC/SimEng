@@ -7,7 +7,7 @@
 namespace simeng {
 namespace kernel {
 
-/** struct representing vm_area_struct in linux. */
+/** struct representing vm_area_struct in linux. (Linked List) */
 struct VirtMemArea {
   /** The address representing the end of the memory allocation. */
   uint64_t vm_end = 0;

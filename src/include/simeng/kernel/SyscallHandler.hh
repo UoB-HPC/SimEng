@@ -31,48 +31,6 @@
 namespace simeng {
 namespace kernel {
 
-// /** Struct to hold information about a contiguous virtual memory area. */
-// struct vm_area_struct {
-//   /** The address representing the end of the memory allocation. */
-//   uint64_t vm_end = 0;
-//   /** The address representing the start of the memory allocation. */
-//   uint64_t vm_start = 0;
-//   /** The next allocation in the contiguous list. */
-//   std::shared_ptr<struct vm_area_struct> vm_next = NULL;
-// };
-
-// /** A state container for a SimOS Process. */
-// struct ProcessState {
-//   /** The process ID. */
-//   int64_t pid;
-//   /** The path of the executable that created this process. */
-//   std::string path;
-//   /** The address of the start of the heap. */
-//   uint64_t startBrk;
-//   /** The address of the current end of heap. */
-//   uint64_t currentBrk;
-//   /** The initial stack pointer. */
-//   uint64_t initialStackPointer;
-//   /** The address of the start of the mmap region. */
-//   uint64_t mmapRegion;
-//   /** The page size of the process memory. */
-//   uint64_t pageSize;
-//   /** Contiguous memory allocations from the mmap system call. */
-//   std::vector<vm_area_struct> contiguousAllocations;
-//   /** Non-Contiguous memory allocations from the mmap system call. */
-//   std::vector<vm_area_struct> nonContiguousAllocations;
-
-//   // Thread state
-//   // TODO: Support multiple threads per process
-//   /** The clear_child_tid value. */
-//   uint64_t clearChildTid = 0;
-
-//   /** The virtual file descriptor mapping table. */
-//   std::vector<int64_t> fileDescriptorTable;
-//   /** Set of deallocated virtual file descriptors available for reuse. */
-//   std::set<int64_t> freeFileDescriptors;
-// };
-
 /** Fixed-width definition of `stat`.
  * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
 struct stat {
