@@ -18,7 +18,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
 
 /** The initial state of a SimOS Process, constructed from a binary executable.
  *
- * The constructed process follows a typical layout:
+ * The constructed process follows a typical layout in memory:
  *
  * |---------------| <- start of stack
  * |     Stack     |    stack grows downwards
@@ -43,12 +43,12 @@ class Process {
   /** Construct a SimOS Process from a vector of command-line arguments.
    *
    * The first argument is a path to an executable ELF file. */
-  Process(const std::vector<std::string>& commandLine, YAML::Node config,
+  Process(const std::vector<std::string>& commandLine, const YAML::Node& config,
           char* memptr, size_t mem_size);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
-  Process(span<char> instructions, YAML::Node config, char* memptr,
+  Process(span<char> instructions, const YAML::Node& config, char* memptr,
           size_t mem_size);
 
   ~Process();

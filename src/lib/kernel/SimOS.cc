@@ -4,9 +4,8 @@ namespace simeng {
 namespace kernel {
 
 SimOS::SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem)
-    : syscallHandler_(SyscallHandler(processes_)) {
+    : syscallHandler_(SyscallHandler(processes_)), memory_(mem) {
   // Initialise global memory pointer
-  memory_ = mem;
 
   // Parse command line args
   // Determine if a config file has been supplied.
