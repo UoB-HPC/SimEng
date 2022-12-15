@@ -307,16 +307,12 @@ std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
   YAML::Node& config = Config::get();
   // Matrix-Count multiplied by (SVL/8) as internal representation of
   // ZA is a block of row-vector-registers. Therefore we need to
-  // convert physical counts from whole-ZA to rows-in-ZA.
   uint16_t matCount =
       config["Register-Set"]["Matrix-Count"].as<uint16_t>() *
       (config["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8);
   return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
-          config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>(),
-          config["Register-Set"]["Predicate-Count"].as<uint16_t>(),
           config["Register-Set"]["Conditional-Count"].as<uint16_t>(),
-          getNumSystemRegisters(),
-          matCount};
+          getNumSystemRegisters(), matCount};
 }
 
 /** The SVCR value is stored in Architecture to allow the value to be
