@@ -16,14 +16,12 @@ namespace outoforder {
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator, YAML::Node config,
-           std::shared_ptr<kernel::Process> process)
+           pipeline::PortAllocator& portAllocator,
+           std::shared_ptr<kernel::Process> process, YAML::Node& config)
     : isa_(isa),
       process_(process),
-      physicalRegisterStructures_(
-          isa.getConfigPhysicalRegisterStructure(config)),
-      physicalRegisterQuantities_(
-          isa.getConfigPhysicalRegisterQuantities(config)),
+      physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
+      physicalRegisterQuantities_(isa.getConfigPhysicalRegisterQuantities()),
       registerFileSet_(physicalRegisterStructures_),
       registerAliasTable_(isa.getRegisterFileStructures(),
                           physicalRegisterQuantities_),
@@ -74,7 +72,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                   reorderBuffer_, registerAliasTable_, loadStoreQueue_,
                   physicalRegisterStructures_.size()),
       dispatchIssueUnit_(renameToDispatchBuffer_, issuePorts_, registerFileSet_,
-                         portAllocator, physicalRegisterQuantities_, config),
+                         portAllocator, physicalRegisterQuantities_),
       writebackUnit_(
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),

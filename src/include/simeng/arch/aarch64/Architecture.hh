@@ -4,6 +4,7 @@
 #include <queue>
 #include <unordered_map>
 
+#include "simeng/Config.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 #include "simeng/arch/aarch64/MicroDecoder.hh"
@@ -18,7 +19,7 @@ namespace aarch64 {
 /* A basic Armv9.2-a implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-  Architecture(kernel::SyscallHandler& syscallHanlder, YAML::Node config);
+  Architecture(kernel::SyscallHandler& syscallHanlder);
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -64,13 +65,12 @@ class Architecture : public arch::Architecture {
 
   /** Returns the physical register structure as defined within the config file
    */
-  std::vector<RegisterFileStructure> getConfigPhysicalRegisterStructure(
-      YAML::Node config) const override;
+  std::vector<RegisterFileStructure> getConfigPhysicalRegisterStructure()
+      const override;
 
   /** Returns the physical register quantities as defined within the config file
    */
-  std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
-      YAML::Node config) const override;
+  std::vector<uint16_t> getConfigPhysicalRegisterQuantities() const override;
 
   /** Retrieve an ExecutionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or

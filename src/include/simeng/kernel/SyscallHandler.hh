@@ -24,7 +24,6 @@
 #include "simeng/Elf.hh"
 #include "simeng/kernel/Process.hh"
 #include "simeng/version.hh"
-#include "yaml-cpp/yaml.h"
 
 #define LINUX_PATH_MAX 4096
 

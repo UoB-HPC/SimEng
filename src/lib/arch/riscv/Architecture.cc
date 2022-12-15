@@ -14,9 +14,9 @@ namespace riscv {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(kernel::SyscallHandler& syscallHanlder,
-                           YAML::Node config)
+Architecture::Architecture(kernel::SyscallHandler& syscallHanlder)
     : syscallHandler_(syscallHanlder) {
+  YAML::Node& config = Config::get();
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
   if (n != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle due "
@@ -248,14 +248,16 @@ ProcessStateChange Architecture::getInitialState(uint64_t stackPointer) const {
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 std::vector<RegisterFileStructure>
-Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
+Architecture::getConfigPhysicalRegisterStructure() const {
+  YAML::Node& config = Config::get();
   return {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
           {8, config["Register-Set"]["FloatingPoint-Count"].as<uint16_t>()},
           {8, getNumSystemRegisters()}};
 }
 
-std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
-    YAML::Node config) const {
+std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
+    const {
+  YAML::Node& config = Config::get();
   return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
           config["Register-Set"]["FloatingPoint-Count"].as<uint16_t>(),
           getNumSystemRegisters()};

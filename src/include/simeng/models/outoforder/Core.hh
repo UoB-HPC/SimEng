@@ -1,6 +1,7 @@
 #pragma once
 
 #include "simeng/ArchitecturalRegisterFileSet.hh"
+#include "simeng/Config.hh"
 #include "simeng/Core.hh"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/kernel/Process.hh"
@@ -30,8 +31,9 @@ class Core : public simeng::Core {
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        uint64_t processMemorySize, uint64_t entryPoint,
        const arch::Architecture& isa, BranchPredictor& branchPredictor,
-       pipeline::PortAllocator& portAllocator, YAML::Node config,
-       std::shared_ptr<kernel::Process> process);
+       pipeline::PortAllocator& portAllocator,
+       std::shared_ptr<kernel::Process> process,
+       YAML::Node& config = Config::get());
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the
