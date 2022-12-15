@@ -11,14 +11,15 @@ std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 uint64_t Architecture::SVCRval_;
 
-Architecture::Architecture(kernel::SyscallHandler& syscallHandler,
-                           YAML::Node config)
+Architecture::Architecture(kernel::SyscallHandler& syscallHandler)
     : syscallHandler_(syscallHandler),
-      microDecoder_(std::make_unique<MicroDecoder>(config)),
-      VL_(config["Core"]["Vector-Length"].as<uint64_t>()),
-      SVL_(config["Core"]["Streaming-Vector-Length"].as<uint64_t>()),
-      vctModulo_((config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
-                 (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6)) {
+      microDecoder_(std::make_unique<MicroDecoder>()) {
+  YAML::Node& config = Config::get();
+  VL_ = config["Core"]["Vector-Length"].as<uint64_t>();
+  SVL_ = config["Core"]["Streaming-Vector-Length"].as<uint64_t>();
+  vctModulo_ = (config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
+               (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6);
+
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle"
               << std::endl;
@@ -298,7 +299,8 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
 }
 
 std::vector<RegisterFileStructure>
-Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
+Architecture::getConfigPhysicalRegisterStructure() const {
+  YAML::Node& config = Config::get();
   // Matrix-Count multiplied by (SVL/8) as internal representation of
   // ZA is a block of row-vector-registers. Therefore we need to
   // convert physical counts from whole-ZA to rows-in-ZA.
@@ -314,8 +316,9 @@ Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
       {256, matCount}};
 }
 
-std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
-    YAML::Node config) const {
+std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
+    const {
+  YAML::Node& config = Config::get();
   // Matrix-Count multiplied by (SVL/8) as internal representation of
   // ZA is a block of row-vector-registers. Therefore we need to
   // convert physical counts from whole-ZA to rows-in-ZA.

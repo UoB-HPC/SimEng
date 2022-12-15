@@ -4,12 +4,11 @@
 #include <tuple>
 #include <vector>
 
+#include "simeng/Config.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/kernel/SyscallHandler.hh"
 #include "simeng/span.hh"
-
-#define DEFAULT_STR "Default"
 
 namespace simeng {
 namespace kernel {
@@ -44,9 +43,8 @@ class SimOS {
   std::shared_ptr<Process> getProcess();
 
   /** Get user defined config, executable, and executable args. */
-  std::tuple<YAML::Node&, std::string, std::vector<std::string>>
-  getParsedArgv() {
-    return {config_, executablePath_, executableArgs_};
+  std::tuple<std::string, std::vector<std::string>> getParsedArgv() {
+    return {executablePath_, executableArgs_};
   };
 
   /** SyscallHandler Object to process all syscalls. */
@@ -55,10 +53,6 @@ class SimOS {
  private:
   /** Construct the special file directory. */
   void createSpecialFileDirectory();
-
-  /** The user defined Config File describing the modelled core to be created.*/
-  // Cannot be shared pointer due to implementation and access of class.
-  YAML::Node config_;
 
   /** The path of user defined Executable. */
   std::string executablePath_ = DEFAULT_STR;

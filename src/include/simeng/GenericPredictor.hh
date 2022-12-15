@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "simeng/BranchPredictor.hh"
-#include "yaml-cpp/yaml.h"
+#include "simeng/Config.hh"
 
 namespace simeng {
 
@@ -23,7 +23,7 @@ namespace simeng {
 class GenericPredictor : public BranchPredictor {
  public:
   /** Initialise predictor models. */
-  GenericPredictor(YAML::Node config);
+  GenericPredictor();
   ~GenericPredictor();
 
   /** Generate a branch prediction for the supplied instruction address, a

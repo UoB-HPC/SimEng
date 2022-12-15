@@ -98,13 +98,12 @@ class Architecture {
   /** Returns the physical register structure as defined within the config
    * file
    */
-  virtual std::vector<RegisterFileStructure> getConfigPhysicalRegisterStructure(
-      YAML::Node config) const = 0;
+  virtual std::vector<RegisterFileStructure>
+  getConfigPhysicalRegisterStructure() const = 0;
 
   /** Returns the physical register quantities as defined within the config file
    */
-  virtual std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
-      YAML::Node config) const = 0;
+  virtual std::vector<uint16_t> getConfigPhysicalRegisterQuantities() const = 0;
 
   /** Updates System registers of any system-based timers. */
   virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
