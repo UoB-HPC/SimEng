@@ -18,8 +18,8 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
   return value + (boundary - remainder);
 }
 
-Process::Process(const std::vector<std::string>& commandLine, YAML::Node config,
-                 char* memptr, size_t mem_size)
+Process::Process(const std::vector<std::string>& commandLine,
+                 const YAML::Node& config, char* memptr, size_t mem_size)
     : commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
@@ -77,8 +77,8 @@ Process::Process(const std::vector<std::string>& commandLine, YAML::Node config,
   free(unwrappedProcImgPtr);
 }
 
-Process::Process(span<char> instructions, YAML::Node config, char* memptr,
-                 size_t mem_size) {
+Process::Process(span<char> instructions, const YAML::Node& config,
+                 char* memptr, size_t mem_size) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 

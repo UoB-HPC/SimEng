@@ -57,6 +57,7 @@ class SimOS {
   void createSpecialFileDirectory();
 
   /** The user defined Config File describing the modelled core to be created.*/
+  // Cannot be shared pointer due to implementation and access of class.
   YAML::Node config_;
 
   /** The path of user defined Executable. */
@@ -66,7 +67,7 @@ class SimOS {
   std::vector<std::string> executableArgs_ = {};
 
   /** The list of user-space processes running above the kernel. */
-  std::vector<std::shared_ptr<Process>> processes_;
+  std::vector<std::shared_ptr<Process>> processes_ = {};
 
   /** Reference to the global memory pointer */
   std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
