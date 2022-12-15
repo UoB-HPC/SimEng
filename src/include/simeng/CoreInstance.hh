@@ -3,12 +3,12 @@
 #include <string>
 
 #include "simeng/AlwaysNotTakenPredictor.hh"
+#include "simeng/Config.hh"
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
-#include "simeng/ModelConfig.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
@@ -19,7 +19,6 @@
 #include "simeng/models/outoforder/Core.hh"
 #include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
-#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 
@@ -36,7 +35,7 @@ class CoreInstance {
  public:
   /** Constructor with an executable, its arguments, and a model configuration.
    */
-  CoreInstance(YAML::Node& config, std::string executablePath,
+  CoreInstance(std::string executablePath,
                std::vector<std::string> executableArgs,
                std::shared_ptr<kernel::Process> process,
                kernel::SyscallHandler& syscallHandler,

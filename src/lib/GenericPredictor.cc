@@ -4,17 +4,18 @@
 
 namespace simeng {
 
-GenericPredictor::GenericPredictor(YAML::Node config)
-    : btbBits_(config["Branch-Predictor"]["BTB-Tag-Bits"].as<uint64_t>()),
-      btb_(1 << btbBits_,
-           {config["Branch-Predictor"]["Fallback-Static-Predictor"]
-                .as<uint16_t>(),
-            0}),
-      satCntBits_(
-          config["Branch-Predictor"]["Saturating-Count-Bits"].as<uint64_t>()),
-      globalHistoryLength_(
-          config["Branch-Predictor"]["Global-History-Length"].as<uint64_t>()),
-      rasSize_(config["Branch-Predictor"]["RAS-entries"].as<uint64_t>()) {
+GenericPredictor::GenericPredictor() {
+  YAML::Node& config = Config::get();
+  btbBits_ = config["Branch-Predictor"]["BTB-Tag-Bits"].as<uint64_t>();
+  btb_ = std::vector<std::pair<uint8_t, uint64_t>>(
+      1 << btbBits_,
+      {config["Branch-Predictor"]["Fallback-Static-Predictor"].as<uint16_t>(),
+       0});
+  satCntBits_ =
+      config["Branch-Predictor"]["Saturating-Count-Bits"].as<uint64_t>();
+  globalHistoryLength_ =
+      config["Branch-Predictor"]["Global-History-Length"].as<uint64_t>();
+  rasSize_ = config["Branch-Predictor"]["RAS-entries"].as<uint64_t>();
   // Alter globalHistoryLength_ value to better suit required format in update()
   globalHistoryLength_ = (1 << globalHistoryLength_) - 1;
 }

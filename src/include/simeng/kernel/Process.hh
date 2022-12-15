@@ -2,9 +2,9 @@
 
 #include <memory>
 
+#include "simeng/Config.hh"
 #include "simeng/Elf.hh"
 #include "simeng/kernel/MemRegion.hh"
-#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 namespace kernel {
@@ -43,13 +43,12 @@ class Process {
   /** Construct a SimOS Process from a vector of command-line arguments.
    *
    * The first argument is a path to an executable ELF file. */
-  Process(const std::vector<std::string>& commandLine, const YAML::Node& config,
-          char* memptr, size_t mem_size);
+  Process(const std::vector<std::string>& commandLine, char* memptr,
+          size_t mem_size);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
-  Process(span<char> instructions, const YAML::Node& config, char* memptr,
-          size_t mem_size);
+  Process(span<char> instructions, char* memptr, size_t mem_size);
 
   ~Process();
 

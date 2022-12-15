@@ -7,10 +7,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "simeng/Config.hh"
 #include "simeng/Instruction.hh"
 #include "simeng/pipeline/PipelineBuffer.hh"
 #include "simeng/pipeline/PortAllocator.hh"
-#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 namespace pipeline {
@@ -59,8 +59,7 @@ class DispatchIssueUnit {
       PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
       std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
       const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
-      const std::vector<uint16_t>& physicalRegisterStructure,
-      YAML::Node config);
+      const std::vector<uint16_t>& physicalRegisterStructure);
 
   /** Ticks the dispatch/issue unit. Reads available input operands for
    * instructions and sets scoreboard flags for destination registers. */

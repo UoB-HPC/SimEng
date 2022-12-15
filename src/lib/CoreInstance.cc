@@ -2,12 +2,12 @@
 
 namespace simeng {
 
-CoreInstance::CoreInstance(YAML::Node& config, std::string executablePath,
+CoreInstance::CoreInstance(std::string executablePath,
                            std::vector<std::string> executableArgs,
                            std::shared_ptr<kernel::Process> process,
                            kernel::SyscallHandler& syscallHandler,
                            std::shared_ptr<simeng::memory::Mem> mem)
-    : config_(config),
+    : config_(Config::get()),
       process_(process),
       syscallHandler_(syscallHandler),
       memory_(mem) {
@@ -185,15 +185,15 @@ void CoreInstance::createCore() {
 
   // Create the architecture, with knowledge of the kernel
   if (config_["Core"]["ISA"].as<std::string>() == "rv64") {
-    arch_ = std::make_unique<simeng::arch::riscv::Architecture>(syscallHandler_,
-                                                                config_);
+    arch_ =
+        std::make_unique<simeng::arch::riscv::Architecture>(syscallHandler_);
   } else if (config_["Core"]["ISA"].as<std::string>() == "AArch64") {
-    arch_ = std::make_unique<simeng::arch::aarch64::Architecture>(
-        syscallHandler_, config_);
+    arch_ =
+        std::make_unique<simeng::arch::aarch64::Architecture>(syscallHandler_);
   }
 
   // Construct branch predictor object
-  predictor_ = std::make_unique<simeng::GenericPredictor>(config_);
+  predictor_ = std::make_unique<simeng::GenericPredictor>();
 
   // Extract port arrangement from config file
   auto config_ports = config_["Ports"];
@@ -221,7 +221,7 @@ void CoreInstance::createCore() {
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
-        *arch_, *predictor_, *portAllocator_, config_, process_);
+        *arch_, *predictor_, *portAllocator_, process_);
   }
   return;
 }

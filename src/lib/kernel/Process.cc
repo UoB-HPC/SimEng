@@ -18,8 +18,8 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
   return value + (boundary - remainder);
 }
 
-Process::Process(const std::vector<std::string>& commandLine,
-                 const YAML::Node& config, char* memptr, size_t mem_size)
+Process::Process(const std::vector<std::string>& commandLine, char* memptr,
+                 size_t mem_size)
     : commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
@@ -31,6 +31,7 @@ Process::Process(const std::vector<std::string>& commandLine,
   isValid_ = true;
 
   entryPoint_ = elf.getEntryPoint();
+  YAML::Node& config = Config::get();
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
 
@@ -77,12 +78,12 @@ Process::Process(const std::vector<std::string>& commandLine,
   free(unwrappedProcImgPtr);
 }
 
-Process::Process(span<char> instructions, const YAML::Node& config,
-                 char* memptr, size_t mem_size) {
+Process::Process(span<char> instructions, char* memptr, size_t mem_size) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 
   isValid_ = true;
+  YAML::Node& config = Config::get();
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
 
