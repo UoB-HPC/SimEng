@@ -7,6 +7,8 @@ SimpleMem::SimpleMem(size_t size) {
   memSize_ = size;
 }
 
+SimpleMem::~SimpleMem(){};
+
 std::shared_ptr<char*> SimpleMem::getMemory() {
   return std::shared_ptr<char*>(memory_);
 };

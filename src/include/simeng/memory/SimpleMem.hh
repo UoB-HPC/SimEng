@@ -14,7 +14,7 @@ namespace memory {
 class SimpleMem : public Mem {
  public:
   SimpleMem(size_t bytes);
-  ~SimpleMem(){};
+  virtual ~SimpleMem() override;
   std::shared_ptr<char*> getMemory() override;
   size_t getMemorySize() override;
 

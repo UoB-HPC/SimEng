@@ -9,7 +9,7 @@
 #include "simeng/kernel/SyscallHandler.hh"
 #include "simeng/span.hh"
 
-#define DEFAULT_PATH "Default"
+#define DEFAULT_STR "Default"
 
 namespace simeng {
 namespace kernel {
@@ -60,7 +60,7 @@ class SimOS {
   YAML::Node config_;
 
   /** The path of user defined Executable. */
-  std::string executablePath_ = DEFAULT_PATH;
+  std::string executablePath_ = DEFAULT_STR;
 
   /** The runtime arguments of the user defined executable. */
   std::vector<std::string> executableArgs_ = {};
