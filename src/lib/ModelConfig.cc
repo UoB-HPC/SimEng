@@ -108,7 +108,7 @@ void ModelConfig::validate() {
       YAML::Node port_node = configFile_[root][i];
       // Get port number into a string format
       char port_msg[10];
-      sprintf(port_msg, "Port %zu ", i);
+      snprintf(port_msg, 10, "Port %zu ", i);
       std::string port_num = std::string(port_msg);
       // Check for existence of Portname field and record name
       if (nodeChecker<std::string>(port_node["Portname"], port_num + "Portname",
@@ -137,7 +137,7 @@ void ModelConfig::validate() {
         YAML::Node group = port_node["Instruction-Support"][j];
         // Get group number into a string format
         char group_msg[10];
-        sprintf(group_msg, "Group %zu ", j);
+        snprintf(group_msg, 10, "Group %zu ", j);
         std::string group_num = std::string(group_msg);
         // Check for existence of instruction group
         if (group.as<std::string>()[0] == '~') {
@@ -191,7 +191,7 @@ void ModelConfig::validate() {
       YAML::Node rs = configFile_[root][i];
       // Get rs number into a string format
       char rs_msg[25];
-      sprintf(rs_msg, "Reservation Station %zu ", i);
+      snprintf(rs_msg, 25, "Reservation Station %zu ", i);
       std::string rs_num = std::string(rs_msg);
       nodeChecker<uint16_t>(rs["Size"], rs_num + "Size",
                             std::make_pair(1, UINT16_MAX),
@@ -208,7 +208,7 @@ void ModelConfig::validate() {
         YAML::Node port_node = rs["Ports"][j];
         // Get port index into a string format
         char port_msg[25];
-        sprintf(port_msg, "Port %zu ", j);
+        snprintf(port_msg, 25, "Port %zu ", j);
         std::string port_num = std::string(port_msg);
         if (nodeChecker<std::string>(port_node, rs_num + port_num + "Portname",
                                      portNames, ExpectedValue::String)) {
@@ -282,7 +282,7 @@ void ModelConfig::validate() {
     }
     for (size_t i = 0; i < num_units; i++) {
       char euNum[50];
-      sprintf(euNum, "Execution Unit %zu ", i);
+      snprintf(euNum, 50, "Execution Unit %zu ", i);
       YAML::Node euNode = configFile_[root][i];
       nodeChecker<bool>(configFile_[root][i][subFields[0]],
                         (std::string(euNum) + subFields[0]),
@@ -293,7 +293,7 @@ void ModelConfig::validate() {
         std::queue<uint16_t> blockingGroups;
         for (size_t j = 0; j < euNode[subFields[1]].size(); j++) {
           char bgNum[50];
-          sprintf(bgNum, "Blocking group %zu", j);
+          snprintf(bgNum, 50, "Blocking group %zu", j);
           if (nodeChecker<std::string>(
                   configFile_[root][i][subFields[1]][j],
                   (std::string(euNum) + std::string(bgNum)), groupOptions_,
@@ -496,7 +496,7 @@ void ModelConfig::validate() {
                "Execution-Throughput"};
   for (size_t i = 0; i < configFile_[root].size(); i++) {
     char latNum[50];
-    sprintf(latNum, "Latency group %zu ", i);
+    snprintf(latNum, 50, "Latency group %zu ", i);
     YAML::Node latNode = configFile_[root][i];
     YAML::Node grpNode = latNode[subFields[0]];
     if (grpNode.IsDefined() && !(grpNode.IsNull())) {
@@ -504,7 +504,7 @@ void ModelConfig::validate() {
       uint16_t opcodeIndex = 0;
       for (size_t j = 0; j < grpNode.size(); j++) {
         char grpNum[50];
-        sprintf(grpNum, "Instruction group %zu ", j);
+        snprintf(grpNum, 50, "Instruction group %zu ", j);
         // Determine whether the value is an opcode or an instruction-group
         // value
         if (grpNode[j].as<std::string>()[0] == '~') {
