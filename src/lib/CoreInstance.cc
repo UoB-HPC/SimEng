@@ -199,8 +199,13 @@ void CoreInstance::createCore() {
         *instructionMemory_, *dataMemory_, *arch_, *predictor_);
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
+<<<<<<< HEAD
         *instructionMemory_, *dataMemory_, *arch_, *predictor_,
         *portAllocator_);
+=======
+        *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
+        *arch_, *predictor_, *portAllocator_, process_);
+>>>>>>> aa1f4efb... Created new class to have a single place where Config file will be instantiated, reducing copying of Config around project.
   }
   return;
 }
