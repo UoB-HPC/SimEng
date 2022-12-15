@@ -33,7 +33,7 @@ SimOS::SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem)
 void SimOS::createInitialProcess() {
   std::shared_ptr<Process> newProcess;
   char* mem = *(memory_->getMemory());
-  if (executablePath_ != DEFAULT_PATH) {
+  if (executablePath_ != DEFAULT_STR) {
     // Concatenate the command line arguments into a single vector and create
     // the process image
     std::vector<std::string> commandLine = {executablePath_};

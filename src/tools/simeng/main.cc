@@ -45,8 +45,7 @@ int main(int argc, char** argv) {
 
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::shared_ptr<simeng::memory::Mem>(
-          new simeng::memory::SimpleMem(2684354560));  // 2.6 GiB
+      std::make_shared<simeng::memory::SimpleMem>(2684354560);  // 2.6 GiB
 
   // Create the instance of the OS
   std::shared_ptr<simeng::kernel::SimOS> simOS_kernel =
