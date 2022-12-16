@@ -285,6 +285,7 @@ int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
                               std::vector<char>& out) {
   assert(fd < processes_[0]->fileDescriptorTable_.size());
   int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
+
   if (hfd < 0) {
     return EBADF;
   }
@@ -327,9 +328,7 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 }
 
 int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
-  processes_[0]->getMemRegion().unmapRegion(addr, length, 0, 0, 0);
-  // Not an error if the indicated range does no contain any mapped pages
-  return 0;
+  return processes_[0]->getMemRegion().unmapRegion(addr, length, 0, 0, 0);
 }
 
 uint64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,

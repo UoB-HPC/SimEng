@@ -50,6 +50,20 @@ class Config {
     path_ = path;
   };
 
+  /** Creates a new config file from ModelConfig using a filepath. */
+  void makeConfig(const char* configStr) {
+    config_ = YAML::Load(configStr);
+    isDefault_ = false;
+    path_ = "Custom Config";
+  };
+
+  /** Creates a new config file from a provided YAML::Node. */
+  void makeConfig(YAML::Node newConfig) {
+    config_ = newConfig;
+    isDefault_ = false;
+    path_ = "Custom Config";
+  };
+
   /** Internal getter of config_. */
   YAML::Node& getYAMLConfig() { return config_; }
 
@@ -77,6 +91,18 @@ class Config {
 
   /** Update the config via a filepath to load from. */
   static void set(std::string path) { getInstance()->makeConfig(path); }
+
+  /** Update the config to a provided YAML::Node.
+   * Primarily used by the test suite. */
+  static void set(YAML::Node newConfig) {
+    getInstance()->makeConfig(newConfig);
+  }
+
+  /** Update the config via a provided char* input.
+   * Primarily used by the test suite. */
+  static void set(const char* configStr) {
+    getInstance()->makeConfig(configStr);
+  }
 
   /** Returns if the DEFAULT_CONFIG is in use. */
   static bool isDefault() { return getInstance()->isDefault_; }

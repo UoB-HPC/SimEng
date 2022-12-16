@@ -10,6 +10,9 @@
 #include "simeng/kernel/SyscallHandler.hh"
 #include "simeng/span.hh"
 
+// Forward declare RegressionTest class so that it can be declared a friend.
+class RegressionTest;
+
 namespace simeng {
 namespace kernel {
 
@@ -44,6 +47,17 @@ class SimOS {
   /** Get shared_ptr to syscallHandler instance. */
   std::shared_ptr<SyscallHandler> getSyscallHandler() const {
     return syscallHandler_;
+  }
+
+  /** Set up friend class with RegressionTest to enable exclusive access to
+   * protected functions. */
+  friend class ::RegressionTest;
+
+ protected:
+  /** Update the initial process to a pre-defined one.
+   * Should be used EXCLUSIVELY by the test suite. */
+  void setInitialProcess(std::shared_ptr<Process> proc) {
+    processes_.emplace(processes_.begin(), proc);
   }
 
  private:
