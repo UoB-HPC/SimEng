@@ -18,16 +18,17 @@ class MemRegion {
   ~MemRegion() { vma_ll.freeVma(); };
 
  private:
-  size_t memSize_;
   /** Size of the process stack region. */
   size_t stackSize_;
   /** Size of the process heap region. */
   size_t heapSize_;
+  /** Size of whole global memory. */
+  size_t memSize_;
   /** initial start address of the process stack. */
   uint64_t initStackStart_;
   /** Start address of the process heap. */
   uint64_t startBrk_;
-  /** Current address of the process heap. */
+  /** Current end address of the process heap. */
   uint64_t brk_;
   /** Page size of the current memory system. */
   uint64_t pageSize_;
@@ -51,7 +52,8 @@ class MemRegion {
   uint64_t updateBrkRegion(uint64_t newBrk);
   uint64_t mmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
                       int flags);
-  void unmapRegion(uint64_t addr, uint64_t length, int fd, int prot, int flags);
+  int64_t unmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
+                      int flags);
   void setInitialStackStart(uint64_t addr);
 };
 
