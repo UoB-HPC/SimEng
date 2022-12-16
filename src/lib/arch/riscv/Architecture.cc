@@ -14,8 +14,9 @@ namespace riscv {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(kernel::SyscallHandler& syscallHanlder)
-    : syscallHandler_(syscallHanlder) {
+Architecture::Architecture(
+    std::shared_ptr<kernel::SyscallHandler> syscallHandler)
+    : syscallHandler_(syscallHandler) {
   YAML::Node& config = Config::get();
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
   if (n != CS_ERR_OK) {

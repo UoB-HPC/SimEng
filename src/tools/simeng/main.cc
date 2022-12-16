@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
   std::unique_ptr<simeng::CoreInstance> coreInstance =
       std::make_unique<simeng::CoreInstance>(
           executablePath, executableArgs, simOS_kernel->getProcess(),
-          simOS_kernel->syscallHandler_, memory);
+          simOS_kernel->getSyscallHandler(), memory);
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();
