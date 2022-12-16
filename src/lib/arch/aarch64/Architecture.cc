@@ -9,17 +9,10 @@ namespace aarch64 {
 
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
-uint64_t Architecture::SVCRval_;
 
 Architecture::Architecture(kernel::SyscallHandler& syscallHandler)
     : syscallHandler_(syscallHandler),
       microDecoder_(std::make_unique<MicroDecoder>()) {
-  YAML::Node& config = Config::get();
-  VL_ = config["Core"]["Vector-Length"].as<uint64_t>();
-  SVL_ = config["Core"]["Streaming-Vector-Length"].as<uint64_t>();
-  vctModulo_ = (config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
-               (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6);
-
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle"
               << std::endl;
@@ -27,6 +20,19 @@ Architecture::Architecture(kernel::SyscallHandler& syscallHandler)
   }
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
+
+  // Initialise SVE and SME vector lengths
+  YAML::Node& config = Config::get();
+  VL_ = config["Core"]["Vector-Length"].as<uint64_t>();
+  SVL_ = config["Core"]["Streaming-Vector-Length"].as<uint64_t>();
+  // Initialise virtual counter timer increment frequency
+  vctModulo_ = (config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
+               (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6);
+
+  // Non-ideal way to hold and update SVCR value in a class where all functions
+  // are const.
+  SVCRval_ = (uint64_t*)malloc(sizeof(uint64_t) * 1);
+  SVCRval_[0] = 0;
 
   // Generate zero-indexed system register map
   systemRegisterMap_[ARM64_SYSREG_DCZID_EL0] = systemRegisterMap_.size();
@@ -142,7 +148,7 @@ Architecture::~Architecture() {
   decodeCache.clear();
   metadataCache.clear();
   groupExecutionInfo_.clear();
-  SVCRval_ = 0;
+  free(SVCRval_);
 }
 
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
@@ -337,10 +343,10 @@ std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
  * retrieved within execution pipeline. This prevents adding an implicit
  * operand to every SME instruction; reducing the amount of complexity when
  * implementing SME execution logic. */
-uint64_t Architecture::getSVCRval() const { return SVCRval_; }
+uint64_t Architecture::getSVCRval() const { return *SVCRval_; }
 
 void Architecture::setSVCRval(const uint64_t newVal) const {
-  SVCRval_ = newVal;
+  SVCRval_[0] = newVal;
 }
 
 }  // namespace aarch64
