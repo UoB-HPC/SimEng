@@ -113,6 +113,9 @@ Process::Process(span<char> instructions, char* memptr, size_t mem_size) {
   createStack(&unwrappedProcImgPtr);
   // copy process image to global memory.
   memcpy(memptr, unwrappedProcImgPtr, size);
+  fileDescriptorTable_.emplace_back(STDIN_FILENO);
+  fileDescriptorTable_.emplace_back(STDOUT_FILENO);
+  fileDescriptorTable_.emplace_back(STDERR_FILENO);
   free(unwrappedProcImgPtr);
 }
 

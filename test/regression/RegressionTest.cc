@@ -29,44 +29,51 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Get pre-defined config file for OoO model
   YAML::Node config = generateConfig();
+  Config::set(config);
 
-  // Create a SimOS Process from the assembled code block.
+  // Initialise the global memory
+  std::shared_ptr<simeng::memory::Mem> memory_ =
+      std::make_shared<simeng::memory::SimpleMem>(300000);
+  processMemory_ = *(memory_->getMemory());
+
+  // Initialise a SimOS kernel
+  simeng::kernel::SimOS simOS_kernel =
+      simeng::kernel::SimOS(1, nullptr, memory_);
+
+  // Reset memory to 0 as SimOS will create an initial process
+  std::memset(processMemory_, 0, memory_->getMemorySize());
+
+  // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place
-  // during SimOS Process creation. The Elf binary is parsed
+  // during Process creation. The Elf binary is parsed
   // and relevant sections are copied to the process image.
   // The process image is finalised by the createStack method
   // which creates and populates the initial process stack.
   // The created process image can be accessed via a shared_ptr
   // returned by the getProcessImage method.
-  process_ = std::make_unique<simeng::kernel::Process>(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), config);
+  process_ = std::make_shared<simeng::kernel::Process>(
+      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_),
+      processMemory_, memory_->getMemorySize());
   ASSERT_TRUE(process_->isValid());
   uint64_t entryPoint = process_->getEntryPoint();
   processMemorySize_ = process_->getProcessImageSize();
-  // This instance of procImgPtr pointer needs to be shared because
-  // getMemoryValue in RegressionTest.hh uses reference to the class
-  // member processMemory_.
-  std::shared_ptr<char> procImgPtr = process_->getProcessImage();
-  processMemory_ = procImgPtr.get();
+
+  // Update the initial process in the kernel
+  simOS_kernel.setInitialProcess(process_);
 
   // Create memory interfaces for instruction and data access.
   // For each memory interface, a dereferenced shared_ptr to the
-  // processImage is passed as argument.
+  // global memory is passed as argument.
   simeng::FlatMemoryInterface instructionMemory(processMemory_,
                                                 processMemorySize_);
-
   std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
       std::make_unique<simeng::FlatMemoryInterface>(processMemory_,
                                                     processMemorySize_);
-
   std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
       std::make_unique<simeng::FixedLatencyMemoryInterface>(
           processMemory_, processMemorySize_, 4);
-  std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
-  // Create the OS kernel and the process
-  simeng::kernel::SimOS kernel = simeng::kernel::SimOS(1, nullptr);
-  kernel.createProcess(*process_);
+  std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
@@ -75,32 +82,32 @@ void RegressionTest::run(const char* source, const char* triple,
             processMemory_ + process_->getHeapStart());
 
   // Create the architecture
-  architecture_ = createArchitecture(kernel, config);
+  architecture_ = createArchitecture(simOS_kernel.getSyscallHandler());
 
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
       createPortAllocator();
 
   // Create a branch predictor for a pipelined core
-  simeng::GenericPredictor predictor(config);
+  simeng::GenericPredictor predictor = simeng::GenericPredictor();
   // Create the core model
   switch (std::get<0>(GetParam())) {
     case EMULATION:
       core_ = std::make_unique<simeng::models::emulation::Core>(
           instructionMemory, *flatDataMemory, entryPoint, processMemorySize_,
-          *architecture_);
+          *architecture_, process_);
       dataMemory = std::move(flatDataMemory);
       break;
     case INORDER:
       core_ = std::make_unique<simeng::models::inorder::Core>(
           instructionMemory, *flatDataMemory, processMemorySize_, entryPoint,
-          *architecture_, predictor);
+          *architecture_, predictor, process_);
       dataMemory = std::move(flatDataMemory);
       break;
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *architecture_, predictor, *portAllocator, config);
+          entryPoint, *architecture_, predictor, *portAllocator, process_);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }

@@ -6,13 +6,12 @@ namespace kernel {
 SimOS::SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem)
     : memory_(mem),
       syscallHandler_(std::make_shared<SyscallHandler>(processes_)) {
-  // Initialise global memory pointer
-
   // Parse command line args
   // Determine if a config file has been supplied.
   if (argc > 1) {
     // Set global config file to one at file path defined
-    Config::set(argv[1]);
+    Config::set(std::string(argv[1]));
+
     // Determine if an executable has been supplied
     if (argc > 2) {
       executablePath_ = std::string(argv[2]);

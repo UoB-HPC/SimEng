@@ -18,17 +18,19 @@ class GenericPredictorTest : public testing::Test {
 // Tests that a GenericPredictor will predict the correct direction on a
 // miss
 TEST_F(GenericPredictorTest, Miss) {
-  auto predictor = simeng::GenericPredictor(YAML::Load(
+  Config::set(
       "{Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, "
       "Global-History-Length: 10, RAS-entries: 5, Fallback-Static-Predictor: "
-      "2}}"));
+      "2}}");
+  auto predictor = simeng::GenericPredictor();
   auto prediction = predictor.predict(0, BranchType::Conditional, 0);
   EXPECT_TRUE(prediction.taken);
 
-  predictor = simeng::GenericPredictor(YAML::Load(
+  Config::set(
       "{Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, "
       "Global-History-Length: 10, RAS-entries: 5, Fallback-Static-Predictor: "
-      "1}}"));
+      "1}}");
+  predictor = simeng::GenericPredictor();
   prediction = predictor.predict(0, BranchType::Conditional, 0);
   EXPECT_FALSE(prediction.taken);
   prediction = predictor.predict(8, BranchType::Unconditional, 0);
@@ -38,10 +40,11 @@ TEST_F(GenericPredictorTest, Miss) {
 // Tests that a GenericPredictor will predict branch-and-link return pairs
 // correctly
 TEST_F(GenericPredictorTest, RAS) {
-  auto predictor = simeng::GenericPredictor(YAML::Load(
+  Config::set(
       "{Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, "
       "Global-History-Length: 10, RAS-entries: 10, Fallback-Static-Predictor: "
-      "2}}"));
+      "2}}");
+  auto predictor = simeng::GenericPredictor();
   auto prediction = predictor.predict(8, BranchType::SubroutineCall, 8);
   EXPECT_TRUE(prediction.taken);
   EXPECT_EQ(prediction.target, 16);
@@ -78,10 +81,11 @@ TEST_F(GenericPredictorTest, RAS) {
 // Tests that a GenericPredictor will predict a previously encountered branch
 // correctly, when no address aliasing has occurred
 TEST_F(GenericPredictorTest, Hit) {
-  auto predictor = simeng::GenericPredictor(YAML::Load(
+  Config::set(
       "{Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, "
       "Global-History-Length: 1, RAS-entries: 5, Fallback-Static-Predictor: "
-      "2}}"));
+      "2}}");
+  auto predictor = simeng::GenericPredictor();
   predictor.update(0, true, 16, BranchType::Conditional);
   predictor.update(0, true, 16, BranchType::Conditional);
   predictor.update(0, true, 16, BranchType::Conditional);
@@ -96,10 +100,11 @@ TEST_F(GenericPredictorTest, Hit) {
 // Tests that a GenericPredictor will predict correctly for two different
 // behaviours of the same branch but in different states of the program
 TEST_F(GenericPredictorTest, GlobalIndexing) {
-  auto predictor = simeng::GenericPredictor(YAML::Load(
+  Config::set(
       "{Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, "
       "Global-History-Length: 5, RAS-entries: 5, Fallback-Static-Predictor: "
-      "1}}"));
+      "1}}");
+  auto predictor = simeng::GenericPredictor();
   // Spool up first global history pattern
   predictor.update(0, true, 4, BranchType::Unconditional);
   predictor.update(0, false, 4, BranchType::Unconditional);

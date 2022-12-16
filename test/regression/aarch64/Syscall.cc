@@ -11,9 +11,6 @@ namespace {
 
 using Syscall = AArch64RegressionTest;
 
-/** The maximum size of a filesystem path. */
-static const size_t LINUX_PATH_MAX = 4096;
-
 TEST_P(Syscall, getrandom) {
   initialHeapData_.resize(24);
   memset(initialHeapData_.data(), -1, 16);
