@@ -265,10 +265,6 @@ std::shared_ptr<simeng::MemoryInterface> CoreInstance::getInstructionMemory()
   return instructionMemory_;
 }
 
-const kernel::Process& CoreInstance::getProcess() const {
-  return *process_.get();
-}
-
 const uint64_t CoreInstance::getProcessImageSize() const {
   return processMemorySize_;
 }
