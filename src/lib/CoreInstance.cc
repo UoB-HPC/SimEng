@@ -2,11 +2,11 @@
 
 namespace simeng {
 
-CoreInstance::CoreInstance(std::string executablePath,
-                           std::vector<std::string> executableArgs,
-                           std::shared_ptr<kernel::Process> process,
-                           kernel::SyscallHandler& syscallHandler,
-                           std::shared_ptr<simeng::memory::Mem> mem)
+CoreInstance::CoreInstance(
+    std::string executablePath, std::vector<std::string> executableArgs,
+    std::shared_ptr<kernel::Process> process,
+    std::shared_ptr<kernel::SyscallHandler> syscallHandler,
+    std::shared_ptr<simeng::memory::Mem> mem)
     : config_(Config::get()),
       process_(process),
       syscallHandler_(syscallHandler),

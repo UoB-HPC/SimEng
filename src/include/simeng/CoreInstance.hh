@@ -38,7 +38,7 @@ class CoreInstance {
   CoreInstance(std::string executablePath,
                std::vector<std::string> executableArgs,
                std::shared_ptr<kernel::Process> process,
-               kernel::SyscallHandler& syscallHandler,
+               std::shared_ptr<kernel::SyscallHandler> syscallHandler,
                std::shared_ptr<simeng::memory::Mem> mem);
 
   // IGNORING SST RELATED CODE FOR NOW
@@ -116,7 +116,7 @@ class CoreInstance {
   /** Reference to the SimEng SimOS Process object. */
   std::shared_ptr<simeng::kernel::Process> process_ = nullptr;
 
-  kernel::SyscallHandler& syscallHandler_;
+  std::shared_ptr<kernel::SyscallHandler> syscallHandler_;
 
   /** The size of the process memory. */
   uint64_t processMemorySize_;

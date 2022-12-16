@@ -4,7 +4,8 @@ namespace simeng {
 namespace kernel {
 
 SimOS::SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem)
-    : syscallHandler_(SyscallHandler(processes_)), memory_(mem) {
+    : memory_(mem),
+      syscallHandler_(std::make_shared<SyscallHandler>(processes_)) {
   // Initialise global memory pointer
 
   // Parse command line args
@@ -24,9 +25,15 @@ SimOS::SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem)
   }
 
   createInitialProcess();
-  // Create the Special Files directory if indicated to do so in Config
+
+  // Create the Special Files directory if indicated to do so in Config file
   if (Config::get()["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true)
     createSpecialFileDirectory();
+}
+
+std::shared_ptr<Process> SimOS::getProcess() const {
+  // TODO : update to search through Processes and match PID value
+  return processes_[0];
 }
 
 void SimOS::createInitialProcess() {
@@ -67,12 +74,7 @@ void SimOS::createInitialProcess() {
   processes_.emplace_back(newProcess);
 }
 
-std::shared_ptr<Process> SimOS::getProcess() {
-  // TODO : update to search through Processes and match PID value
-  return processes_[0];
-}
-
-void SimOS::createSpecialFileDirectory() {
+void SimOS::createSpecialFileDirectory() const {
   simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen();
   // Remove any current special files dir
   SFdir.RemoveExistingSFDir();
