@@ -19,7 +19,7 @@ namespace aarch64 {
 /* A basic Armv9.2-a implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-  Architecture(kernel::SyscallHandler& syscallHanlder);
+  Architecture(std::shared_ptr<kernel::SyscallHandler> syscallHanlder);
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -112,7 +112,7 @@ class Architecture : public arch::Architecture {
   csh capstoneHandle;
 
   /** A reference to a Linux kernel object to forward syscalls to. */
-  kernel::SyscallHandler& syscallHandler_;
+  std::shared_ptr<kernel::SyscallHandler> syscallHandler_;
 
   /** A reference to a micro decoder object to split macro operations. */
   std::unique_ptr<MicroDecoder> microDecoder_;

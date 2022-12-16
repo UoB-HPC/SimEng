@@ -33,26 +33,28 @@ class SimOS {
   /** Construct a SimOS object. */
   SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem);
 
+  /** Get pointer to process with specified PID. */
+  std::shared_ptr<Process> getProcess() const;
+
+  /** Get user defined config, executable, and executable args. */
+  std::tuple<std::string, std::vector<std::string>> getParsedArgv() const {
+    return {executablePath_, executableArgs_};
+  };
+
+  /** Get shared_ptr to syscallHandler instance. */
+  std::shared_ptr<SyscallHandler> getSyscallHandler() const {
+    return syscallHandler_;
+  }
+
+ private:
   /** Create the initial SimOS Process running above this kernel from command
    * line arguments.
    * Empty command line arguments denote the usage of hardcoded instructions
    * held in the hex_ array.*/
   void createInitialProcess();
 
-  /** Get pointer to process with specified PID. */
-  std::shared_ptr<Process> getProcess();
-
-  /** Get user defined config, executable, and executable args. */
-  std::tuple<std::string, std::vector<std::string>> getParsedArgv() {
-    return {executablePath_, executableArgs_};
-  };
-
-  /** SyscallHandler Object to process all syscalls. */
-  SyscallHandler syscallHandler_;
-
- private:
   /** Construct the special file directory. */
-  void createSpecialFileDirectory();
+  void createSpecialFileDirectory() const;
 
   /** The path of user defined Executable. */
   std::string executablePath_ = DEFAULT_STR;
@@ -65,6 +67,9 @@ class SimOS {
 
   /** Reference to the global memory pointer */
   std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
+
+  /** SyscallHandler Object to process all syscalls. */
+  std::shared_ptr<SyscallHandler> syscallHandler_;
 };
 
 }  // namespace kernel

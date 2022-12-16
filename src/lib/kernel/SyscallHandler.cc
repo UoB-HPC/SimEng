@@ -3,7 +3,8 @@
 namespace simeng {
 namespace kernel {
 
-SyscallHandler::SyscallHandler(std::vector<std::shared_ptr<Process>>& processes)
+SyscallHandler::SyscallHandler(
+    const std::vector<std::shared_ptr<Process>>& processes)
     : processes_(processes) {
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
