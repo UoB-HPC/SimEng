@@ -49,16 +49,17 @@ int main(int argc, char** argv) {
       std::make_shared<simeng::memory::SimpleMem>(2684354560);  // 2.6 GiB
 
   // Create the instance of the OS
-  std::shared_ptr<simeng::kernel::SimOS> simOS_kernel =
-      std::make_shared<simeng::kernel::SimOS>(argc, argv, memory);
+  simeng::kernel::SimOS simOS_kernel =
+      simeng::kernel::SimOS(argc, argv, memory);
+
   // Get the SimEng runtime args
-  auto [executablePath, executableArgs] = simOS_kernel->getParsedArgv();
+  auto [executablePath, executableArgs] = simOS_kernel.getParsedArgv();
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =
       std::make_unique<simeng::CoreInstance>(
-          executablePath, executableArgs, simOS_kernel->getProcess(),
-          simOS_kernel->getSyscallHandler(), memory);
+          executablePath, executableArgs, simOS_kernel.getProcess(),
+          simOS_kernel.getSyscallHandler(), memory);
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();
