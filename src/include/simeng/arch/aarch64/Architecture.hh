@@ -95,7 +95,7 @@ class Architecture : public arch::Architecture {
   static std::forward_list<InstructionMetadata> metadataCache;
 
   /** A copy of the value of the SVCR system register. */
-  static uint64_t SVCRval_;
+  uint64_t* SVCRval_;
 
   /** A mapping from system register encoding to a zero-indexed tag. */
   std::unordered_map<uint16_t, uint16_t> systemRegisterMap_;
