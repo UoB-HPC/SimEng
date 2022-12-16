@@ -31,9 +31,9 @@ YAML::Node RISCVRegressionTest::generateConfig() const {
 }
 
 std::unique_ptr<simeng::arch::Architecture>
-RISCVRegressionTest::createArchitecture(simeng::kernel::SimOS& kernel,
-                                        YAML::Node config) const {
-  return std::make_unique<Architecture>(kernel, config);
+RISCVRegressionTest::createArchitecture(
+    std::shared_ptr<simeng::kernel::SyscallHandler> sysHandler) const {
+  return std::make_unique<Architecture>(sysHandler);
 }
 
 std::unique_ptr<simeng::pipeline::PortAllocator>

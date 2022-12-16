@@ -2,20 +2,25 @@
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
+#include "simeng/kernel/Process.hh"
+#include "simeng/kernel/SyscallHandler.hh"
 
 namespace {
 
 // Test that we can create an AArch64 Architecture object
 TEST(ISATest, CreateAArch64) {
-  simeng::kernel::SimOS kernel = simeng::kernel::SimOS(1, nullptr);
-  YAML::Node config = YAML::Load(
+  Config::set(
       "{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
       "Vector-Length: 512, Streaming-Vector-Length: 512}}");
   // Pass a config file with only the options required by the aarch64
   // architecture class to function
+  std::vector<std::shared_ptr<simeng::kernel::Process>> procs = {};
+  std::shared_ptr<simeng::kernel::SyscallHandler> sysHandler =
+      std::make_shared<simeng::kernel::SyscallHandler>(procs);
+
   std::unique_ptr<simeng::arch::Architecture> isa =
-      std::make_unique<simeng::arch::aarch64::Architecture>(kernel, config);
+      std::make_unique<simeng::arch::aarch64::Architecture>(sysHandler);
 
   EXPECT_GT(isa->getRegisterFileStructures().size(), 0);
 }
