@@ -74,9 +74,6 @@ class CoreInstance {
   /** Getter for the create instruction memory object. */
   std::shared_ptr<simeng::MemoryInterface> getInstructionMemory() const;
 
-  /** Getter for a reference to the SimOS Process. */
-  const kernel::Process& getProcess() const;
-
   /** Getter for the size of the created process image. */
   const uint64_t getProcessImageSize() const;
 
@@ -116,6 +113,7 @@ class CoreInstance {
   /** Reference to the SimEng SimOS Process object. */
   std::shared_ptr<simeng::kernel::Process> process_ = nullptr;
 
+  /** Reference to the SyscallHandler object in SimOS instance. */
   std::shared_ptr<kernel::SyscallHandler> syscallHandler_;
 
   /** The size of the process memory. */
