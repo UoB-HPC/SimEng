@@ -1,9 +1,5 @@
 #include "simeng/kernel/Vma.hh"
 
-#include <iostream>
-
-#include "simeng/util/Math.hh"
-
 namespace simeng {
 namespace kernel {
 
@@ -12,7 +8,7 @@ uint64_t Vmall::addVma(VirtMemArea* vma, uint64_t mmapStart,
   if (vm_size_ > 1) {
     bool allocated = false;
     VirtMemArea* curr = vm_head_;
-    while (curr->vm_next != nullptr) {
+    while (curr != vm_tail_) {
       if (curr->vm_next->vm_start - curr->vm_end >= vma->length) {
         vma->vm_start = curr->vm_end;
         vma->vm_next = curr->vm_next;
@@ -28,7 +24,6 @@ uint64_t Vmall::addVma(VirtMemArea* vma, uint64_t mmapStart,
       vm_tail_->vm_next = vma;
       vm_tail_ = vma;
     }
-
   } else if (vm_size_ > 0) {
     vma->vm_start = vm_head_->vm_end;
     vm_head_->vm_next = vma;
@@ -43,33 +38,43 @@ uint64_t Vmall::addVma(VirtMemArea* vma, uint64_t mmapStart,
   return vma->vm_start;
 }
 
-void Vmall::removeVma(uint64_t addr, uint64_t length, uint64_t pageSize) {
+int64_t Vmall::removeVma(uint64_t addr, uint64_t length, uint64_t pageSize) {
   if (addr % pageSize != 0) {
-    std::cerr << "[SimEng:Vma] Cannot remove Virtual memory area: VirtMemArea "
-                 "start address is not page aligned."
-              << std::endl;
-    std::exit(1);
+    // addr must be a multiple of the process page size
+    return -1;
+  }
+  // Exit early if no entries
+  if (vm_size_ == 0) {
+    return 0;
   }
   VirtMemArea* prev = nullptr;
   VirtMemArea* curr = vm_head_;
-  while (curr != nullptr) {
+  while (true) {
     if (curr->vm_start == addr) {
       if (curr->length < length) {
-        std::cerr << "[SimEng:Vma] Cannot remove Virtual memory area: "
-                     "Specified length ("
-                  << length << ") is greater than VirtMemArea length ("
-                  << curr->length << ") is not page aligned." << std::endl;
-        std::exit(1);
+        // length must not be larger than the original allocation
+        return -1;
+      }
+      // Removing only entry in list
+      if (curr == vm_head_ && vm_head_ == vm_tail_) {
+        free(curr);
+        vm_head_ = nullptr;
+        vm_tail_ = nullptr;
+        vm_size_ = 0;
+        break;
+      }
+      // Remove tail
+      else if (curr == vm_tail_) {
+        vm_tail_ = prev;
+        prev->vm_next = nullptr;
+        free(curr);
       }
       // We are removing the head.
-      if (prev == nullptr) {
+      else if (curr == vm_head_) {
         vm_head_ = vm_head_->vm_next;
         curr->vm_next = nullptr;
         free(curr);
       } else {
-        if (curr == vm_tail_) {
-          vm_tail_ = prev;
-        }
         prev->vm_next = curr->vm_next;
         curr->vm_next = nullptr;
         free(curr);
@@ -77,19 +82,27 @@ void Vmall::removeVma(uint64_t addr, uint64_t length, uint64_t pageSize) {
       vm_size_--;
       break;
     }
+    if (curr == vm_tail_) {
+      // Checked all possibly entries
+      break;
+    }
     prev = curr;
     curr = curr->vm_next;
   }
+  // Not an error if the indicated range does no contain any mapped pages
+  return 0;
 }
 
 void Vmall::freeVma() {
   if (vm_size_ == 0) return;
   VirtMemArea* curr = vm_head_;
-  while (curr != nullptr) {
+  while (curr != vm_tail_) {
     VirtMemArea* temp = curr->vm_next;
     free(curr);
     curr = temp;
   }
+  // Free vm_tail on own
+  free(curr);
   vm_size_ = 0;
   vm_head_ = nullptr;
   vm_tail_ = nullptr;

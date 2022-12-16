@@ -3,7 +3,10 @@
 #include <stdint.h>
 
 #include <cstddef>
+#include <iostream>
 #include <memory>
+
+#include "simeng/util/Math.hh"
 namespace simeng {
 namespace kernel {
 
@@ -28,7 +31,7 @@ class Vmall {
  public:
   ~Vmall() {}
   uint64_t addVma(VirtMemArea* vma, uint64_t mmapStart, uint64_t pageSize);
-  void removeVma(uint64_t addr, uint64_t length, uint64_t pageSize);
+  int64_t removeVma(uint64_t addr, uint64_t length, uint64_t pageSize);
   size_t getSize();
   void freeVma();
 };

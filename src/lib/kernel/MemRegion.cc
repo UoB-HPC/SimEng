@@ -13,17 +13,20 @@ MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t memSize,
       memSize_(memSize),
       initStackStart_(stackStart),
       startBrk_(startBrk),
+      brk_(startBrk),
       pageSize_(pageSize),
       mmapStart_(mmapStart),
-      maxHeapAddr_(calculateMaxHeapAddr()) {}
+      maxHeapAddr_(calculateMaxHeapAddr()) {
+  vma_ll = Vmall();
+}
 
 uint64_t MemRegion::calculateMaxHeapAddr() { return startBrk_ + heapSize_; }
-uint64_t MemRegion::getStackSize() const { return stackSize_; };
-uint16_t MemRegion::getHeapSize() const { return heapSize_; };
-uint64_t MemRegion::getInitialStackStart() const { return initStackStart_; };
-uint64_t MemRegion::getBrk() const { return brk_; };
-uint64_t MemRegion::getBrkStart() const { return startBrk_; };
-uint64_t MemRegion::getMmapStart() const { return mmapStart_; };
+uint64_t MemRegion::getStackSize() const { return stackSize_; }
+uint16_t MemRegion::getHeapSize() const { return heapSize_; }
+uint64_t MemRegion::getInitialStackStart() const { return initStackStart_; }
+uint64_t MemRegion::getBrk() const { return brk_; }
+uint64_t MemRegion::getBrkStart() const { return startBrk_; }
+uint64_t MemRegion::getMmapStart() const { return mmapStart_; }
 
 uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
   if (newBrk > maxHeapAddr_) {
@@ -33,23 +36,22 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
         << std::endl;
     std::exit(1);
   }
-  if (newBrk > brk_) {
+  if (newBrk > startBrk_) {
     brk_ = newBrk;
   }
   return brk_;
-};
+}
 
 uint64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
                                int flags) {
   VirtMemArea* new_vma = (VirtMemArea*)malloc(sizeof(VirtMemArea));
-  new_vma->length = length;
+  new_vma->length = roundUpMemAddr(length, pageSize_);
   return vma_ll.addVma(new_vma, mmapStart_, pageSize_);
-};
+}
 
-void MemRegion::unmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
-                            int flags) {
-  vma_ll.removeVma(addr, length, pageSize_);
-  return;
+int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
+                               int flags) {
+  return vma_ll.removeVma(addr, length, pageSize_);
 }
 
 void MemRegion::setInitialStackStart(uint64_t addr) { initStackStart_ = addr; }
