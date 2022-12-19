@@ -12,6 +12,7 @@ set(TEST_SOURCES
     pipeline/WritebackUnitTest.cc
     GenericPredictorTest.cc
     ISATest.cc
+    OSTest.cc
     RegisterValueTest.cc
     PoolTest.cc
     ShiftValueTest.cc
