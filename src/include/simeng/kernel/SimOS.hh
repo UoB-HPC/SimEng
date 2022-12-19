@@ -53,13 +53,6 @@ class SimOS {
    * protected functions. */
   friend class ::RegressionTest;
 
- protected:
-  /** Update the initial process to a pre-defined one.
-   * Should be used EXCLUSIVELY by the test suite. */
-  void setInitialProcess(std::shared_ptr<Process> proc) {
-    processes_.emplace(processes_.begin(), proc);
-  }
-
  private:
   /** Create the initial SimOS Process running above this kernel from command
    * line arguments.
@@ -69,6 +62,12 @@ class SimOS {
 
   /** Construct the special file directory. */
   void createSpecialFileDirectory() const;
+
+  /** Update the initial process to a pre-defined one.
+   * Should be used EXCLUSIVELY by the test suite. */
+  void setInitialProcess(std::shared_ptr<Process> proc) {
+    processes_.emplace(processes_.begin(), proc);
+  }
 
   /** The path of user defined Executable. */
   std::string executablePath_ = DEFAULT_STR;
