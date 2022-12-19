@@ -44,7 +44,8 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
 
 uint64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
                                int flags) {
-  VirtMemArea* new_vma = (VirtMemArea*)malloc(sizeof(VirtMemArea));
+  // Need to deal with addr
+  VirtMemArea* new_vma = new VirtMemArea();
   new_vma->length = roundUpMemAddr(length, pageSize_);
   return vma_ll.addVma(new_vma, mmapStart_, pageSize_);
 }

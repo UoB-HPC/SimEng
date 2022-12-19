@@ -18,6 +18,7 @@ struct VirtMemArea {
   uint64_t vm_start = 0;
   /** The next allocation in the contiguous list. */
   VirtMemArea* vm_next = nullptr;
+  /** The size of the virtual memory area. */
   uint64_t length = 0;
 };
 
@@ -25,7 +26,6 @@ struct VirtMemArea {
 class Vmall {
  private:
   VirtMemArea* vm_head_ = nullptr;
-  VirtMemArea* vm_tail_ = nullptr;
   size_t vm_size_ = 0;
 
  public:
