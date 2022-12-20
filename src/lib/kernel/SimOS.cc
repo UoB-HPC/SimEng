@@ -37,7 +37,7 @@ std::shared_ptr<Process> SimOS::getProcess() const {
 
 void SimOS::createInitialProcess() {
   std::shared_ptr<Process> newProcess;
-  char* mem = *(memory_->getMemory());
+  char* mem = memory_->getMemory().get();
   if (executablePath_ != DEFAULT_STR) {
     // Concatenate the command line arguments into a single vector and create
     // the process image

@@ -6,7 +6,7 @@ namespace memory {
 class Mem {
  public:
   virtual ~Mem() = default;
-  virtual std::shared_ptr<char*> getMemory() = 0;
+  virtual std::shared_ptr<char[]> getMemory() = 0;
   virtual size_t getMemorySize() = 0;
 };
 

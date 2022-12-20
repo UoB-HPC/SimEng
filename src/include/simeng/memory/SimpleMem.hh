@@ -15,11 +15,11 @@ class SimpleMem : public Mem {
  public:
   SimpleMem(size_t bytes);
   virtual ~SimpleMem() override;
-  std::shared_ptr<char*> getMemory() override;
+  std::shared_ptr<char[]> getMemory() override;
   size_t getMemorySize() override;
 
  private:
-  std::shared_ptr<char*> memory_;
+  std::shared_ptr<char[]> memory_;
   size_t memSize_;
 };
 
