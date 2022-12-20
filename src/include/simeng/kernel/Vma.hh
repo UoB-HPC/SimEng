@@ -25,14 +25,24 @@ struct VirtMemArea {
 /** Class representing VMA linked list*/
 class Vmall {
  private:
+  /** Head of the VMA LinkedList. */
   VirtMemArea* vm_head_ = nullptr;
+
+  /** Size of the VMA LinkedList. */
   size_t vm_size_ = 0;
 
  public:
   ~Vmall() {}
+  /** This method adds a new VMA to the linked list.*/
   uint64_t addVma(VirtMemArea* vma, uint64_t mmapStart, uint64_t pageSize);
+
+  /** This method removes a VMA at address "addr" from the linked list.*/
   int64_t removeVma(uint64_t addr, uint64_t length, uint64_t pageSize);
+
+  /** This method returns the size of the linked list.*/
   size_t getSize();
+
+  /** This method deletes the entire linked list. */
   void freeVma();
 };
 
