@@ -65,10 +65,11 @@ Process::Process(const std::vector<std::string>& commandLine, char* memptr,
     exit(EXIT_FAILURE);
   }
   unwrappedProcImgPtr = temp;
-  memRegion_ =
-      MemRegion(stackSize, heapSize, size, 0, heapStart, pageSize_, mmapStart);
 
-  createStack(&unwrappedProcImgPtr);
+  uint64_t stackPtr = createStack(&unwrappedProcImgPtr, size);
+  memRegion_ = MemRegion(stackSize, heapSize, size, stackPtr, heapStart,
+                         pageSize_, mmapStart);
+
   // copy process image to global memory.
   memcpy(memptr, unwrappedProcImgPtr, size);
   fileDescriptorTable_.emplace_back(STDIN_FILENO);
@@ -108,9 +109,10 @@ Process::Process(span<char> instructions, char* memptr, size_t mem_size) {
 
   char* unwrappedProcImgPtr = (char*)malloc(size * sizeof(char));
   std::copy(instructions.begin(), instructions.end(), unwrappedProcImgPtr);
-  memRegion_ =
-      MemRegion(stackSize, heapSize, size, 0, heapStart, pageSize_, mmapStart);
-  createStack(&unwrappedProcImgPtr);
+
+  uint64_t stackPtr = createStack(&unwrappedProcImgPtr, size);
+  memRegion_ = MemRegion(stackSize, heapSize, size, stackPtr, heapStart,
+                         pageSize_, mmapStart);
   // copy process image to global memory.
   memcpy(memptr, unwrappedProcImgPtr, size);
   fileDescriptorTable_.emplace_back(STDIN_FILENO);
@@ -143,14 +145,14 @@ uint64_t Process::getStackPointer() const {
   return memRegion_.getInitialStackStart();
 }
 
-void Process::createStack(char** processImage) {
+uint64_t Process::createStack(char** processImage, uint64_t stackStart) {
   // Decrement the stack pointer and populate with initial stack state
   // (https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html)
   // The argv and env strings are added to the top of the stack first and the
   // lower section of the initial stack is populated from the initialStackFrame
   // vector
 
-  uint64_t stackPointer = memRegion_.getMemSize();
+  uint64_t stackPointer = stackStart;
   std::vector<uint64_t> initialStackFrame;
   // Stack strings are split into bytes to easily support the injection of null
   // bytes dictating the end of a string
@@ -213,7 +215,7 @@ void Process::createStack(char** processImage) {
   char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame.data());
   std::copy(stackFrameBytes, stackFrameBytes + stackFrameSize,
             (*processImage) + stackPointer);
-  memRegion_.setInitialStackStart(stackPointer);
+  return stackPointer;
 }
 
 }  // namespace kernel

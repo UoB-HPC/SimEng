@@ -94,10 +94,14 @@ class Process {
   uint64_t clearChildTid = 0;
 
  private:
+  /** MemRegion of the Process Image. */
   MemRegion memRegion_;
 
-  /** Create and populate the initial process stack. */
-  void createStack(char** processImage);
+  /**
+   * Create and populate the initial process stack and returns the stack
+   * pointer.
+   */
+  uint64_t createStack(char** processImage, uint64_t stackStart);
 
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
