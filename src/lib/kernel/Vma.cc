@@ -5,6 +5,9 @@ namespace kernel {
 
 uint64_t Vmall::addVma(VirtMemArea* vma, uint64_t mmapStart,
                        uint64_t pageSize) {
+  // If linked list contains multiple VMAs then iterate and check if new VMA can
+  // be attached between two existing VMAs. If not append to the tail of the
+  // linked list.
   if (vm_size_ > 1) {
     bool allocated = false;
     VirtMemArea* curr = vm_head_;
@@ -23,6 +26,7 @@ uint64_t Vmall::addVma(VirtMemArea* vma, uint64_t mmapStart,
       vma->vm_start = curr->vm_end;
       curr->vm_next = vma;
     }
+    // If linked list only contains one VMA, then append to the tail.
   } else if (vm_size_ > 0) {
     vma->vm_start = vm_head_->vm_end;
     vm_head_->vm_next = vma;
@@ -30,8 +34,12 @@ uint64_t Vmall::addVma(VirtMemArea* vma, uint64_t mmapStart,
     vma->vm_start = mmapStart;
     vm_head_ = vma;
   }
+  // Round the end address to page size. This is needed for paging in virtual
+  // memory. This mechanism will be more significant when proper implementation
+  // of virtual memory is completed.
   vma->vm_end = roundUpMemAddr(vma->vm_start + vma->length, pageSize);
   vm_size_++;
+  // Return the assigned start address.
   return vma->vm_start;
 }
 
@@ -47,6 +55,7 @@ int64_t Vmall::removeVma(uint64_t addr, uint64_t length, uint64_t pageSize) {
   VirtMemArea* prev = nullptr;
   VirtMemArea* curr = vm_head_;
   while (curr != nullptr) {
+    // If addr matches the start address of VMA.
     if (curr->vm_start == addr) {
       if (curr->length < length) {
         // length must not be larger than the original allocation
