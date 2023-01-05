@@ -6,6 +6,8 @@
 #include <cstring>
 #include <iostream>
 
+#include "simeng/memory/Mem.hh"
+
 namespace simeng {
 namespace kernel {
 
@@ -18,8 +20,8 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
   return value + (boundary - remainder);
 }
 
-Process::Process(const std::vector<std::string>& commandLine, char* memptr,
-                 size_t mem_size)
+Process::Process(const std::vector<std::string>& commandLine,
+                 std::shared_ptr<simeng::memory::Mem> memory)
     : commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
@@ -47,7 +49,8 @@ Process::Process(const std::vector<std::string>& commandLine, char* memptr,
   uint64_t size = heapStart + heapSize + stackSize;
 
   // Check if global memory size is greater than process image size.
-  if (mem_size < size) {
+
+  if (memory->getMemorySize() < size) {
     std::cerr << "[SimEng:Process] Memory size is less than size of the "
                  "process image. Please "
                  "increase memory size"
@@ -71,7 +74,8 @@ Process::Process(const std::vector<std::string>& commandLine, char* memptr,
                          pageSize_, mmapStart);
 
   // copy process image to global memory.
-  memcpy(memptr, unwrappedProcImgPtr, size);
+  // memcpy(memptr, unwrappedProcImgPtr, size);
+  memory->sendUntimedData(unwrappedProcImgPtr, 0, size);
   fileDescriptorTable_.emplace_back(STDIN_FILENO);
   fileDescriptorTable_.emplace_back(STDOUT_FILENO);
   fileDescriptorTable_.emplace_back(STDERR_FILENO);
@@ -79,7 +83,8 @@ Process::Process(const std::vector<std::string>& commandLine, char* memptr,
   free(unwrappedProcImgPtr);
 }
 
-Process::Process(span<char> instructions, char* memptr, size_t mem_size) {
+Process::Process(span<char> instructions,
+                 std::shared_ptr<simeng::memory::Mem> memory) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 
@@ -99,7 +104,7 @@ Process::Process(span<char> instructions, char* memptr, size_t mem_size) {
   // Calculate process image size, including heap + stack
   uint64_t size = heapStart + heapSize + stackSize;
   // Check if global memory size is greater than process image size.
-  if (mem_size < size) {
+  if (memory->getMemorySize() < size) {
     std::cerr << "[SimEng:Process] Memory size is less than size of the "
                  "process image. Please "
                  "increase memory size"
@@ -114,7 +119,7 @@ Process::Process(span<char> instructions, char* memptr, size_t mem_size) {
   memRegion_ = MemRegion(stackSize, heapSize, size, stackPtr, heapStart,
                          pageSize_, mmapStart);
   // copy process image to global memory.
-  memcpy(memptr, unwrappedProcImgPtr, size);
+  memory->sendUntimedData(unwrappedProcImgPtr, 0, size);
   fileDescriptorTable_.emplace_back(STDIN_FILENO);
   fileDescriptorTable_.emplace_back(STDOUT_FILENO);
   fileDescriptorTable_.emplace_back(STDERR_FILENO);

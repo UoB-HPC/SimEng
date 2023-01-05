@@ -26,6 +26,7 @@
 #include "simeng/kernel/Process.hh"
 #include "simeng/kernel/SimOS.hh"
 #include "simeng/kernel/SyscallHandler.hh"
+#include "simeng/memory/Mem.hh"
 #include "simeng/pipeline/PortAllocator.hh"
 #include "simeng/version.hh"
 
@@ -87,8 +88,10 @@ class RegressionTest
   template <typename T>
   T getMemoryValue(uint64_t address) const {
     EXPECT_LE(address + sizeof(T), processMemorySize_);
+    auto mem = memory_->getMemCpy();
     T dest{};
-    std::memcpy(&dest, processMemory_ + address, sizeof(T));
+    std::memcpy(&dest, mem + address, sizeof(T));
+    delete[] mem;
     return dest;
   }
 
@@ -104,8 +107,7 @@ class RegressionTest
   /** The architecture instance. */
   std::unique_ptr<simeng::arch::Architecture> architecture_;
 
-  /** The process memory. */
-  char* processMemory_ = nullptr;
+  std::shared_ptr<simeng::memory::SimpleMem> memory_;
 
   /** The size of the process memory in bytes. */
   size_t processMemorySize_ = 0;

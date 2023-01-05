@@ -4,10 +4,9 @@
 
 namespace simeng {
 
-FixedLatencyMemoryInterface::FixedLatencyMemoryInterface(char* memory,
-                                                         size_t size,
-                                                         uint16_t latency)
-    : memory_(memory), size_(size), latency_(latency) {}
+FixedLatencyMemoryInterface::FixedLatencyMemoryInterface(
+    std::shared_ptr<simeng::memory::Mem> memory, uint16_t latency)
+    : memory_(memory), latency_(latency), size_(memory->getMemorySize()) {}
 
 void FixedLatencyMemoryInterface::tick() {
   tickCounter_++;
@@ -24,12 +23,15 @@ void FixedLatencyMemoryInterface::tick() {
 
     if (request.write) {
       // Write: write data directly to memory
-      assert(target.address + target.size <= size_ &&
+      assert(target.address + target.size <= memory_->getMemorySize() &&
              "Attempted to write beyond memory limit");
 
-      auto ptr = memory_ + target.address;
-      // Copy the data from the RegisterValue to memory
-      memcpy(ptr, request.data.getAsVector<char>(), target.size);
+      simeng::memory::WriteRespPacket* resp =
+          (simeng::memory::WriteRespPacket*)memory_->requestAccess(
+              new simeng::memory::WritePacket{
+                  target.address, target.size,
+                  request.data.getAsVector<char>()});
+      delete resp;
     } else {
       // Read: read data into `completedReads`
       if (target.address + target.size > size_ ||
@@ -37,11 +39,14 @@ void FixedLatencyMemoryInterface::tick() {
         // Read outside of memory; return an invalid value to signal a fault
         completedReads_.push_back({target, RegisterValue(), request.requestId});
       } else {
-        const char* ptr = memory_ + target.address;
-
+        simeng::memory::ReadRespPacket* resp =
+            (simeng::memory::ReadRespPacket*)memory_->requestAccess(
+                new simeng::memory::ReadPacket{target.address, target.size});
         // Copy the data at the requested memory address into a RegisterValue
-        completedReads_.push_back(
-            {target, RegisterValue(ptr, target.size), request.requestId});
+        completedReads_.push_back({target,
+                                   RegisterValue(resp->data, resp->bytesRead),
+                                   request.requestId});
+        delete resp;
       }
     }
 

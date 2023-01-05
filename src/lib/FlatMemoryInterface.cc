@@ -5,8 +5,11 @@
 
 namespace simeng {
 
-FlatMemoryInterface::FlatMemoryInterface(char* memory, size_t size)
-    : memory_(memory), size_(size) {}
+FlatMemoryInterface::FlatMemoryInterface(
+    std::shared_ptr<simeng::memory::Mem> memory) {
+  memory_ = memory;
+  size_ = memory_->getMemorySize();
+}
 
 void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
                                       uint64_t requestId) {
@@ -16,11 +19,14 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
     return;
   }
 
-  const char* ptr = memory_ + target.address;
+  simeng::memory::ReadRespPacket* resp =
+      (simeng::memory::ReadRespPacket*)memory_->requestAccess(
+          new simeng::memory::ReadPacket(target.address, target.size));
 
   // Copy the data at the requested memory address into a RegisterValue
   completedReads_.push_back(
-      {target, RegisterValue(ptr, target.size), requestId});
+      {target, RegisterValue(resp->data, resp->bytesRead), requestId});
+  delete resp;
 }
 
 void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
@@ -28,9 +34,11 @@ void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
   assert(target.address + target.size <= size_ &&
          "Attempted to write beyond memory limit");
 
-  auto ptr = memory_ + target.address;
-  // Copy the data from the RegisterValue to memory
-  memcpy(ptr, data.getAsVector<char>(), target.size);
+  simeng::memory::WriteRespPacket* resp =
+      (simeng::memory::WriteRespPacket*)memory_->requestAccess(
+          new simeng::memory::WritePacket(target.address, target.size,
+                                          data.getAsVector<char>()));
+  delete resp;
 }
 
 const span<MemoryReadResult> FlatMemoryInterface::getCompletedReads() const {

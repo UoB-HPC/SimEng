@@ -106,15 +106,12 @@ void CoreInstance::createProcessMemory() {
 
 void CoreInstance::createL1InstructionMemory(
     const simeng::MemInterfaceType type) {
-  char* mem = *(memory_->getMemory());
   // Create a L1I cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
-    instructionMemory_ =
-        std::make_shared<simeng::FlatMemoryInterface>(mem, processMemorySize_);
+    instructionMemory_ = std::make_shared<simeng::FlatMemoryInterface>(memory_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
     instructionMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        mem, processMemorySize_,
-        config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
+        memory_, config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
   } else {
     std::cerr
         << "[SimEng:CoreInstance] Unsupported memory interface type used in "
@@ -137,15 +134,12 @@ void CoreInstance::setL1InstructionMemory(
 }
 
 void CoreInstance::createL1DataMemory(const simeng::MemInterfaceType type) {
-  auto mem = *(memory_->getMemory());
   // Create a L1D cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
-    dataMemory_ =
-        std::make_shared<simeng::FlatMemoryInterface>(mem, processMemorySize_);
+    dataMemory_ = std::make_shared<simeng::FlatMemoryInterface>(memory_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
     dataMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        mem, processMemorySize_,
-        config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
+        memory_, config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
   } else {
     std::cerr << "[SimEng:CoreInstance] Unsupported memory interface type used "
                  "in createL1DataMemory()."
