@@ -17,6 +17,7 @@ set(TEST_SOURCES
     PoolTest.cc
     ShiftValueTest.cc
     LatencyMemoryInterfaceTest.cc
+    SimpleMem.cc
     )
 
 add_executable(unittests ${TEST_SOURCES})

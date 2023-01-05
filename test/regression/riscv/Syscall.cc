@@ -361,10 +361,12 @@ TEST_P(Syscall, file_read) {
 
   // Check result of read operations
   const char reference[] = "ABCD\0UV\0EFGH\0\0\0\0MNOPQRST";
-  char* data = processMemory_ + process_->getHeapStart();
+  char* mem = memory_->getMemCpy();
+  char* data = mem + process_->getHeapStart();
   for (int i = 0; i < sizeof(reference); i++) {
     EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
   }
+  delete mem;
 }
 
 TEST_P(Syscall, file_write) {

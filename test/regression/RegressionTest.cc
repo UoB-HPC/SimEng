@@ -32,16 +32,11 @@ void RegressionTest::run(const char* source, const char* triple,
   Config::set(config);
 
   // Initialise the global memory
-  std::shared_ptr<simeng::memory::Mem> memory_ =
-      std::make_shared<simeng::memory::SimpleMem>(300000);
-  processMemory_ = *(memory_->getMemory());
+  memory_ = std::make_shared<simeng::memory::SimpleMem>(300000);
 
   // Initialise a SimOS kernel
   simeng::kernel::SimOS simOS_kernel =
       simeng::kernel::SimOS(1, nullptr, memory_);
-
-  // Reset memory to 0 as SimOS will create an initial process
-  std::memset(processMemory_, 0, memory_->getMemorySize());
 
   // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place
@@ -51,9 +46,9 @@ void RegressionTest::run(const char* source, const char* triple,
   // which creates and populates the initial process stack.
   // The created process image can be accessed via a shared_ptr
   // returned by the getProcessImage method.
+
   process_ = std::make_shared<simeng::kernel::Process>(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_),
-      processMemory_, memory_->getMemorySize());
+      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_);
   ASSERT_TRUE(process_->isValid());
   uint64_t entryPoint = process_->getEntryPoint();
   processMemorySize_ = process_->getProcessImageSize();
@@ -64,22 +59,25 @@ void RegressionTest::run(const char* source, const char* triple,
   // Create memory interfaces for instruction and data access.
   // For each memory interface, a dereferenced shared_ptr to the
   // global memory is passed as argument.
-  simeng::FlatMemoryInterface instructionMemory(processMemory_,
-                                                processMemorySize_);
+  simeng::FlatMemoryInterface instructionMemory(memory_);
   std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-      std::make_unique<simeng::FlatMemoryInterface>(processMemory_,
-                                                    processMemorySize_);
+      std::make_unique<simeng::FlatMemoryInterface>(memory_);
   std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
-      std::make_unique<simeng::FixedLatencyMemoryInterface>(
-          processMemory_, processMemorySize_, 4);
+      std::make_unique<simeng::FixedLatencyMemoryInterface>(memory_, 4);
 
   std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
             process_->getStackPointer());
-  std::copy(initialHeapData_.begin(), initialHeapData_.end(),
-            processMemory_ + process_->getHeapStart());
+
+  char* heapData = new char[initialHeapData_.size()];
+  std::copy(initialHeapData_.begin(), initialHeapData_.end(), heapData);
+  memory_->sendUntimedData(heapData, process_->getHeapStart(),
+                           initialHeapData_.size());
+  delete heapData;
+  // std::copy(initialHeapData_.begin(), initialHeapData_.end(),
+  //           processMemory_ + process_->getHeapStart());
 
   // Create the architecture
   architecture_ = createArchitecture(simOS_kernel.getSyscallHandler());

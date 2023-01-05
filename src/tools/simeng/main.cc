@@ -10,6 +10,7 @@
 #include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
 #include "simeng/kernel/SimOS.hh"
+#include "simeng/memory/SimpleMem.hh"
 #include "simeng/version.hh"
 
 /** Tick the provided core model until it halts. */

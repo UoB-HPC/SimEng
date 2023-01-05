@@ -8,6 +8,7 @@
 #include "simeng/CoreInstance.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/kernel/SyscallHandler.hh"
+#include "simeng/memory/SimpleMem.hh"
 #include "simeng/span.hh"
 
 // Forward declare RegressionTest class so that it can be declared a friend.

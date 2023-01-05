@@ -13,7 +13,7 @@
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/kernel/SyscallHandler.hh"
-#include "simeng/memory/SimpleMem.hh"
+#include "simeng/memory/Mem.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
