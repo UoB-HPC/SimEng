@@ -37,7 +37,6 @@ std::shared_ptr<Process> SimOS::getProcess() const {
 
 void SimOS::createInitialProcess() {
   std::shared_ptr<Process> newProcess;
-  char* mem = memory_->getMemory().get();
   if (executablePath_ != DEFAULT_STR) {
     // Concatenate the command line arguments into a single vector and create
     // the process image
@@ -45,8 +44,7 @@ void SimOS::createInitialProcess() {
     commandLine.insert(commandLine.end(), executableArgs_.begin(),
                        executableArgs_.end());
 
-    newProcess =
-        std::make_shared<Process>(commandLine, mem, memory_->getMemorySize());
+    newProcess = std::make_shared<Process>(commandLine, memory_);
 
     // Raise error if created process is not valid
     if (!newProcess->isValid()) {
@@ -58,8 +56,8 @@ void SimOS::createInitialProcess() {
   } else {
     // Create a process image from the set of instructions held in hex_
     newProcess = std::make_shared<Process>(
-        simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)), mem,
-        memory_->getMemorySize());
+        simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
+        memory_);
 
     // Raise error if created process is not valid
     if (!newProcess->isValid()) {

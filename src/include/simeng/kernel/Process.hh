@@ -7,6 +7,12 @@
 #include "simeng/kernel/MemRegion.hh"
 
 namespace simeng {
+
+// Forward declaration of class simeng::memory::Mem;
+namespace memory {
+class Mem;
+};
+
 namespace kernel {
 
 /** The page size of the process memory. */
@@ -43,12 +49,12 @@ class Process {
   /** Construct a SimOS Process from a vector of command-line arguments.
    *
    * The first argument is a path to an executable ELF file. */
-  Process(const std::vector<std::string>& commandLine, char* memptr,
-          size_t mem_size);
+  Process(const std::vector<std::string>& commandLine,
+          std::shared_ptr<simeng::memory::Mem> memory);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
-  Process(span<char> instructions, char* memptr, size_t mem_size);
+  Process(span<char> instructions, std::shared_ptr<simeng::memory::Mem> memory);
 
   ~Process();
 

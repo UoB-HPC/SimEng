@@ -1,14 +1,16 @@
+
 #include "gtest/gtest.h"
 #include "simeng/FixedLatencyMemoryInterface.hh"
+#include "simeng/memory/SimpleMem.hh"
 
 namespace {
 
 // Test that we can write data and it completes after a number of cycles.
 TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
   // Create a memory interface with a two cycle latency
-  uint32_t memoryData = 0;
-  simeng::FixedLatencyMemoryInterface memory(
-      reinterpret_cast<char*>(&memoryData), 4, 2);
+  std::shared_ptr<simeng::memory::Mem> mem =
+      std::make_shared<simeng::memory::SimpleMem>(4);
+  simeng::FixedLatencyMemoryInterface memory(mem, 2);
   EXPECT_FALSE(memory.hasPendingRequests());
 
   // Write a 32-bit value to memory
@@ -25,14 +27,19 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
   // Tick again - request should have completed
   memory.tick();
   EXPECT_FALSE(memory.hasPendingRequests());
-  EXPECT_EQ(memoryData, 0xDEADBEEF);
+
+  auto resp = (simeng::memory::ReadRespPacket*)mem->requestAccess(
+      new simeng::memory::ReadPacket(0, 4));
+  uint32_t castedValue = 0;
+  memcpy(&castedValue, resp->data, 4);
+  EXPECT_EQ(castedValue, 0xDEADBEEF);
 }
 
 // Test that out-of-bounds memory reads are correctly handled.
 TEST(LatencyMemoryInterfaceTest, OutofBoundsRead) {
-  uint32_t memoryData = 0;
-  simeng::FixedLatencyMemoryInterface memory(
-      reinterpret_cast<char*>(&memoryData), 4, 1);
+  std::shared_ptr<simeng::memory::Mem> mem =
+      std::make_shared<simeng::memory::SimpleMem>(4);
+  simeng::FixedLatencyMemoryInterface memory(mem, 1);
 
   // Create a target such that address + size will overflow
   simeng::MemoryAccessTarget overflowTarget = {UINT64_MAX, 4};
