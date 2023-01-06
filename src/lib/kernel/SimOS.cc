@@ -67,7 +67,7 @@ void SimOS::createInitialProcess() {
       exit(1);
     }
   }
-  assert(newProcess.isValid() && "Attempted to use an invalid process");
+  assert(newProcess->isValid() && "Attempted to use an invalid process");
   processes_.emplace_back(newProcess);
 }
 
