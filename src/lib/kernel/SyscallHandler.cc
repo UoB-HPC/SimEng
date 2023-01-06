@@ -254,7 +254,9 @@ int64_t SyscallHandler::getrusage(int64_t who, rusage& out) {
 }
 
 int64_t SyscallHandler::getpid() const {
-  assert(processes_.size() > 0 "[SimEng:SyscallHanlder] invalid number of active processes - Max limit is 1.");
+  assert((processes_.size() > 0) &&
+         "[SimEng:SyscallHanlder] invalid number of active processes - Max "
+         "limit is 1.");
   // TODO : Needs to be properly implemented once multi-thread supported
   return 0;
 }
