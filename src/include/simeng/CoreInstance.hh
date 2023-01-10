@@ -89,9 +89,6 @@ class CoreInstance {
   /** Extract simulation mode from config file. */
   void setSimulationMode();
 
-  /** Construct the process memory from the generated process_ object. */
-  void createProcessMemory();
-
   /** Construct the SimEng L1 instruction cache memory. */
   void createL1InstructionMemory(const simeng::MemInterfaceType type);
 

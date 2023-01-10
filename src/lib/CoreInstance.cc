@@ -35,8 +35,8 @@ CoreInstance::~CoreInstance() {
 void CoreInstance::generateCoreModel(std::string executablePath,
                                      std::vector<std::string> executableArgs) {
   setSimulationMode();
-  // Create the process memory space from the generated process image
-  createProcessMemory();
+  // Get the process image and its size
+  processMemorySize_ = process_->getProcessImageSize();
   // Check to see if either of the instruction or data memory interfaces should
   // be created. Don't create the core if either interface is marked as External
   // as they must be set manually prior to the core's creation.
@@ -93,13 +93,6 @@ void CoreInstance::setSimulationMode() {
     mode_ = SimulationMode::OutOfOrder;
     modeString_ = "Out-of-Order";
   }
-
-  return;
-}
-
-void CoreInstance::createProcessMemory() {
-  // Get the process image and its size
-  processMemorySize_ = process_->getProcessImageSize();
 
   return;
 }
