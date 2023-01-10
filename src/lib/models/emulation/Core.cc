@@ -24,6 +24,7 @@ void Core::tick() {
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
   if (idle_) {
+    idle_ticks_++;
     std::cerr << "I am idle; tick number " << ticks_ << std::endl;
     return;
   }
@@ -295,7 +296,8 @@ uint64_t Core::getSystemTimer() const {
 
 std::map<std::string, std::string> Core::getStats() const {
   return {{"instructions", std::to_string(instructionsExecuted_)},
-          {"branch.executed", std::to_string(branchesExecuted_)}};
+          {"branch.executed", std::to_string(branchesExecuted_)},
+          {"idle.ticks", std::to_string(idle_ticks_)}};
 };
 
 }  // namespace emulation

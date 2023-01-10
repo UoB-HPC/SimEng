@@ -105,6 +105,7 @@ void Core::tick() {
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
   if (idle_) {
+    idle_ticks_++;
     std::cerr << "I am idle; tick number " << ticks_ << std::endl;
     return;
   }
@@ -427,7 +428,8 @@ std::map<std::string, std::string> Core::getStats() const {
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
           {"branch.missrate", branchMissRateStr.str()},
           {"lsq.loadViolations",
-           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
+           std::to_string(reorderBuffer_.getViolatingLoadsCount())},
+          {"idle.ticks", std::to_string(idle_ticks_)}};
 }
 
 }  // namespace outoforder
