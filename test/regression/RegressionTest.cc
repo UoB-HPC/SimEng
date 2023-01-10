@@ -50,8 +50,6 @@ void RegressionTest::run(const char* source, const char* triple,
   process_ = std::make_shared<simeng::kernel::Process>(
       simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_);
   ASSERT_TRUE(process_->isValid());
-  uint64_t entryPoint = process_->getEntryPoint();
-  processMemorySize_ = process_->getProcessImageSize();
 
   // Update the initial process in the kernel
   simOS_kernel.setInitialProcess(process_);
@@ -75,9 +73,7 @@ void RegressionTest::run(const char* source, const char* triple,
   std::copy(initialHeapData_.begin(), initialHeapData_.end(), heapData);
   memory_->sendUntimedData(heapData, process_->getHeapStart(),
                            initialHeapData_.size());
-  delete heapData;
-  // std::copy(initialHeapData_.begin(), initialHeapData_.end(),
-  //           processMemory_ + process_->getHeapStart());
+  delete[] heapData;
 
   // Create the architecture
   architecture_ = createArchitecture(simOS_kernel.getSyscallHandler());

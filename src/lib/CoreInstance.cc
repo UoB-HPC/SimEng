@@ -4,13 +4,9 @@ namespace simeng {
 
 CoreInstance::CoreInstance(
     std::string executablePath, std::vector<std::string> executableArgs,
-    std::shared_ptr<kernel::Process> process,
     std::shared_ptr<kernel::SyscallHandler> syscallHandler,
     std::shared_ptr<simeng::memory::Mem> mem)
-    : config_(Config::get()),
-      process_(process),
-      syscallHandler_(syscallHandler),
-      memory_(mem) {
+    : config_(Config::get()), syscallHandler_(syscallHandler), memory_(mem) {
   generateCoreModel(executablePath, executableArgs);
 }
 
@@ -36,7 +32,7 @@ void CoreInstance::generateCoreModel(std::string executablePath,
                                      std::vector<std::string> executableArgs) {
   setSimulationMode();
   // Get the process image and its size
-  processMemorySize_ = process_->getProcessImageSize();
+  // processMemorySize_ = process_->getProcessImageSize();
 
   // Check to see if either of the instruction or data memory interfaces should
   // be created. Don't create the core if either interface is marked as External
@@ -249,13 +245,5 @@ std::shared_ptr<simeng::MemoryInterface> CoreInstance::getInstructionMemory()
   }
   return instructionMemory_;
 }
-
-const uint64_t CoreInstance::getProcessImageSize() const {
-  return processMemorySize_;
-}
-
-const uint64_t CoreInstance::getHeapStart() const {
-  return process_->getHeapStart();
-};
 
 }  // namespace simeng
