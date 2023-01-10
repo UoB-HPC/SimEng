@@ -233,19 +233,6 @@ int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   return systemRegisterMap_.at(reg);
 }
 
-// ProcessStateChange Architecture::getInitialState(uint64_t stackPointer) const
-// {
-//   ProcessStateChange changes;
-//   // Set ProcessStateChange type
-//   changes.type = ChangeType::REPLACEMENT;
-
-//   // Set the stack pointer register
-//   changes.modifiedRegisters.push_back({RegisterType::GENERAL, 2});
-//   changes.modifiedRegisterValues.push_back(stackPointer);
-
-//   return changes;
-// }
-
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 std::vector<RegisterFileStructure>
