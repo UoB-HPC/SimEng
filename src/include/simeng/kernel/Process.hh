@@ -15,8 +15,19 @@ class Mem;
 
 namespace kernel {
 
+// TODO : Move to more appropriate class (SimOS).
 /** The page size of the process memory. */
 static constexpr uint64_t pageSize_ = 4096;
+
+enum procStatus { waiting, executing, completed };
+
+/** Struct of a CPU context used for context switching. */
+struct cpuContext {
+  uint64_t pc;
+  uint64_t sp;
+  uint64_t progByteLen;
+  std::vector<std::vector<RegisterValue>> regFile;
+};
 
 /** Align `address` to an `alignTo`-byte boundary by rounding up to the nearest
  * multiple. */
@@ -50,11 +61,13 @@ class Process {
    *
    * The first argument is a path to an executable ELF file. */
   Process(const std::vector<std::string>& commandLine,
-          std::shared_ptr<simeng::memory::Mem> memory);
+          std::shared_ptr<simeng::memory::Mem> memory,
+          std::vector<RegisterFileStructure> regFileStructure);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
-  Process(span<char> instructions, std::shared_ptr<simeng::memory::Mem> memory);
+  Process(span<char> instructions, std::shared_ptr<simeng::memory::Mem> memory,
+          std::vector<RegisterFileStructure> regFileStructure);
 
   ~Process();
 
@@ -98,6 +111,11 @@ class Process {
   // TODO: Support multiple threads per process
   /** The clear_child_tid value. */
   uint64_t clearChildTid = 0;
+
+  /** Current status of the process. */
+  procStatus status_ = waiting;
+
+  cpuContext context_;
 
  private:
   /** MemRegion of the Process Image. */

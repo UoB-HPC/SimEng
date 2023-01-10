@@ -21,7 +21,8 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 }
 
 Process::Process(const std::vector<std::string>& commandLine,
-                 std::shared_ptr<simeng::memory::Mem> memory)
+                 std::shared_ptr<simeng::memory::Mem> memory,
+                 std::vector<RegisterFileStructure> regFileStructure)
     : commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
@@ -81,10 +82,20 @@ Process::Process(const std::vector<std::string>& commandLine,
   fileDescriptorTable_.emplace_back(STDERR_FILENO);
   // free allocated memory after copy.
   free(unwrappedProcImgPtr);
+
+  // Initialise context
+  context_.pc = entryPoint_;
+  context_.sp = stackPtr;
+  context_.progByteLen = getProcessImageSize();
+  context_.regFile.resize(regFileStructure.size());
+  for (size_t i = 0; i < regFileStructure.size(); i++) {
+    context_.regFile[i].resize(regFileStructure[i].quantity);
+  }
 }
 
 Process::Process(span<char> instructions,
-                 std::shared_ptr<simeng::memory::Mem> memory) {
+                 std::shared_ptr<simeng::memory::Mem> memory,
+                 std::vector<RegisterFileStructure> regFileStructure) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 
@@ -124,6 +135,15 @@ Process::Process(span<char> instructions,
   fileDescriptorTable_.emplace_back(STDOUT_FILENO);
   fileDescriptorTable_.emplace_back(STDERR_FILENO);
   free(unwrappedProcImgPtr);
+
+  // Initialise context
+  context_.pc = entryPoint_;
+  context_.sp = stackPtr;
+  context_.progByteLen = getProcessImageSize();
+  context_.regFile.resize(regFileStructure.size());
+  for (size_t i = 0; i < regFileStructure.size(); i++) {
+    context_.regFile[i].resize(regFileStructure[i].quantity);
+  }
 }
 
 Process::~Process() {}

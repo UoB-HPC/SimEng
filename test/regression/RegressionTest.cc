@@ -47,8 +47,12 @@ void RegressionTest::run(const char* source, const char* triple,
   // The created process image can be accessed via a shared_ptr
   // returned by the getProcessImage method.
 
+  // Create the architecture
+  architecture_ = createArchitecture(simOS_kernel.getSyscallHandler());
+
   process_ = std::make_shared<simeng::kernel::Process>(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_);
+      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_,
+      architecture_->getRegisterFileStructures());
   ASSERT_TRUE(process_->isValid());
 
   // Update the initial process in the kernel
@@ -74,9 +78,6 @@ void RegressionTest::run(const char* source, const char* triple,
   memory_->sendUntimedData(heapData, process_->getHeapStart(),
                            initialHeapData_.size());
   delete[] heapData;
-
-  // Create the architecture
-  architecture_ = createArchitecture(simOS_kernel.getSyscallHandler());
 
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =

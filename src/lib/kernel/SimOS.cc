@@ -36,6 +36,19 @@ std::shared_ptr<Process> SimOS::getProcess() const {
 }
 
 void SimOS::createInitialProcess() {
+  // Temporarily create the architecture, with knowledge of the kernel
+  std::unique_ptr<simeng::arch::Architecture> arch;
+  if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
+    arch = std::make_unique<simeng::arch::riscv::Architecture>(syscallHandler_);
+  } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
+    arch =
+        std::make_unique<simeng::arch::aarch64::Architecture>(syscallHandler_);
+  }
+
+  // Get structure of Architectural register file
+  std::vector<RegisterFileStructure> regFileStructure =
+      arch->getRegisterFileStructures();
+
   std::shared_ptr<Process> newProcess;
   if (executablePath_ != DEFAULT_STR) {
     // Concatenate the command line arguments into a single vector and create
@@ -44,7 +57,8 @@ void SimOS::createInitialProcess() {
     commandLine.insert(commandLine.end(), executableArgs_.begin(),
                        executableArgs_.end());
 
-    newProcess = std::make_shared<Process>(commandLine, memory_);
+    newProcess =
+        std::make_shared<Process>(commandLine, memory_, regFileStructure);
 
     // Raise error if created process is not valid
     if (!newProcess->isValid()) {
@@ -57,7 +71,7 @@ void SimOS::createInitialProcess() {
     // Create a process image from the set of instructions held in hex_
     newProcess = std::make_shared<Process>(
         simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-        memory_);
+        memory_, regFileStructure);
 
     // Raise error if created process is not valid
     if (!newProcess->isValid()) {
