@@ -43,6 +43,7 @@ Architecture::Architecture(
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_PMCCNTR_EL0] = systemRegisterMap_.size();
+  systemRegisterMap_[ARM64_SYSREG_SVCR] = systemRegisterMap_.size();
 
   // Get Virtual Counter Timer and Processor Cycle Counter system registers.
   VCTreg_ = {
@@ -331,7 +332,7 @@ std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
  * retrieved within execution pipeline. This prevents adding an implicit
  * operand to every SME instruction; reducing the amount of complexity when
  * implementing SME execution logic. */
-uint64_t Architecture::getSVCRval() const { return *SVCRval_; }
+uint64_t Architecture::getSVCRval() const { return SVCRval_[0]; }
 
 void Architecture::setSVCRval(const uint64_t newVal) const {
   SVCRval_[0] = newVal;

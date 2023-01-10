@@ -664,7 +664,6 @@ bool ExceptionHandler::init() {
       // Invalid instruction
       assert("SVCR Instruction invalid - Imm value can only be 0 or 1");
     }
-    instruction_.getArchitecture().setSVCRval(newSVCR);
 
     // Initialise vectors for all registers & values
     std::vector<Register> regs;
@@ -691,6 +690,14 @@ bool ExceptionHandler::init() {
         regValues.push_back(RegisterValue(0, 256));
       }
     }
+    // Update SVCR System Register
+    regs.push_back({RegisterType::SYSTEM,
+                    static_cast<uint16_t>(
+                        instruction_.getArchitecture().getSystemRegisterTag(
+                            ARM64_SYSREG_SVCR))});
+    regValues.push_back(RegisterValue(newSVCR, 8));
+    instruction_.getArchitecture().setSVCRval(newSVCR);
+
     ProcessStateChange stateChange = {ChangeType::REPLACEMENT, regs, regValues};
     return concludeSyscall(stateChange);
   }
