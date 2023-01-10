@@ -65,7 +65,7 @@ class SimOS {
   void createSpecialFileDirectory() const;
 
   /** Update the initial process to a pre-defined one.
-   * Should be used EXCLUSIVELY by the test suite. */
+   * !! Should be used EXCLUSIVELY by the test suite !! */
   void setInitialProcess(std::shared_ptr<Process> proc) {
     processes_.emplace(processes_.begin(), proc);
   }
