@@ -4,6 +4,7 @@
 
 #include "simeng/Config.hh"
 #include "simeng/Elf.hh"
+#include "simeng/kernel/FileDesc.hh"
 #include "simeng/kernel/MemRegion.hh"
 
 namespace simeng {
@@ -111,11 +112,8 @@ class Process {
   /** Get the process' TID. */
   uint64_t getTID() const { return TID_; }
 
-  /** The virtual file descriptor mapping table. */
-  std::vector<int64_t> fileDescriptorTable_;
-
-  /** Set of deallocated virtual file descriptors available for reuse. */
-  std::set<int64_t> freeFileDescriptors_;
+  /** Shared pointer to FileDescArray class.*/
+  std::shared_ptr<FileDescArray> fdArray_;
 
   // Thread state
   // TODO: Support multiple threads per process

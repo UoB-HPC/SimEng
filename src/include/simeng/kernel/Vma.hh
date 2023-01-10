@@ -22,6 +22,18 @@ struct VirtMemArea {
   uint64_t length = 0;
 };
 
+// class VirtualMemoryArea {
+//  private:
+//   /** The address representing the end of the memory allocation. */
+//   uint64_t vm_end = 0;
+//   /** The address representing the start of the memory allocation. */
+//   uint64_t vm_start = 0;
+//   /** The next allocation in the contiguous list. */
+//   VirtualMemoryArea* vm_next = nullptr;
+//   /** The size of the virtual memory area. */
+//   uint64_t length = 0;
+// };
+
 /** Class representing VMA linked list*/
 class Vmall {
  private:

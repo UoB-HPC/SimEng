@@ -25,11 +25,15 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
     // If absolute path used then dfd is dis-regarded. Otherwise need to see if
     // fd exists for directory referenced
     if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert(dfd < processes_[0]->fileDescriptorTable_.size());
-      dfd_temp = processes_[0]->fileDescriptorTable_[dfd];
-      if (dfd_temp < 0) {
+      auto entry = processes_[0]->fdArray_->getFDEntry(dfd);
+      if (entry == nullptr) {
         return -1;
       }
+      dfd_temp = entry->fd_;
+      // dfd_temp = processes_[0]->fileDescriptorTable_[dfd];
+      // if (dfd_temp < 0) {
+      //   return -1;
+      // }
     }
   }
   return dfd_temp;
@@ -82,11 +86,11 @@ uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
 }
 
 int64_t SyscallHandler::ftruncate(uint64_t fd, uint64_t length) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
-  if (hfd < 0) {
+  auto entry = processes_[0]->fdArray_->getFDEntry(fd);
+  if (entry == nullptr) {
     return EBADF;
   }
+  int64_t hfd = entry->fd_;
 
   int64_t retval = ::ftruncate(hfd, length);
   return retval;
@@ -115,18 +119,7 @@ int64_t SyscallHandler::close(int64_t fd) {
   // Don't close STDOUT or STDERR otherwise no SimEng output is given
   // afterwards. This includes final results given at the end of execution
   if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-    assert(fd < processes_[0]->fileDescriptorTable_.size());
-    int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
-    if (hfd < 0) {
-      return EBADF;
-    }
-
-    // Deallocate the virtual file descriptor
-    assert(processes_[0]->freeFileDescriptors_.count(fd) == 0);
-    processes_[0]->freeFileDescriptors_.insert(fd);
-    processes_[0]->fileDescriptorTable_[fd] = -1;
-
-    return ::close(hfd);
+    return processes_[0]->fdArray_->removeFDEntry(fd);
   }
 
   // Return success if STDOUT or STDERR is closed to allow execution to proceed
@@ -184,11 +177,11 @@ int64_t SyscallHandler::newfstatat(int64_t dfd, const std::string& filename,
 }
 
 int64_t SyscallHandler::fstat(int64_t fd, stat& out) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
-  if (hfd < 0) {
+  auto entry = processes_[0]->fdArray_->getFDEntry(fd);
+  if (entry == nullptr) {
     return EBADF;
   }
+  int64_t hfd = entry->fd_;
 
   // Pass call through to host
   struct ::stat statbuf;
@@ -285,12 +278,11 @@ int64_t SyscallHandler::gettimeofday(uint64_t systemTimer, timeval* tv,
 
 int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
                               std::vector<char>& out) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
-
-  if (hfd < 0) {
+  auto entry = processes_[0]->fdArray_->getFDEntry(fd);
+  if (entry == nullptr) {
     return EBADF;
   }
+  int64_t hfd = entry->fd_;
 
   switch (request) {
     case 0x5401: {  // TCGETS
@@ -321,11 +313,11 @@ int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
 }
 
 uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
-  if (hfd < 0) {
+  auto entry = processes_[0]->fdArray_->getFDEntry(fd);
+  if (entry == nullptr) {
     return EBADF;
   }
+  int64_t hfd = entry->fd_;
   return ::lseek(hfd, offset, whence);
 }
 
@@ -389,28 +381,10 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
   int64_t dirfd = SyscallHandler::getDirFd(dfd, filename);
   if (dirfd == -1) return EBADF;
 
-  // Pass call through to host
-  int64_t hfd = ::openat(dirfd, new_pathname.c_str(), newFlags, mode);
-  if (hfd < 0) {
-    return hfd;
-  }
-
   std::shared_ptr<Process> proc = processes_[0];
 
-  // Allocate virtual file descriptor and map to host file descriptor
-  int64_t vfd;
-  if (!proc->freeFileDescriptors_.empty()) {
-    // Take virtual descriptor from free pool
-    auto first = proc->freeFileDescriptors_.begin();
-    vfd = proc->freeFileDescriptors_.extract(first).value();
-    proc->fileDescriptorTable_[vfd] = hfd;
-  } else {
-    // Extend file descriptor table for a new virtual descriptor
-    vfd = proc->fileDescriptorTable_.size();
-    proc->fileDescriptorTable_.push_back(hfd);
-  }
-
-  return vfd;
+  return proc->fdArray_->allocateFDEntry(dirfd, new_pathname.c_str(), newFlags,
+                                         mode);
 }
 
 int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
@@ -428,11 +402,11 @@ int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
 }
 
 int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
-  if (hfd < 0) {
+  auto entry = processes_[0]->fdArray_->getFDEntry(fd);
+  if (entry == nullptr) {
     return EBADF;
   }
+  int64_t hfd = entry->fd_;
 
   // Need alternative implementation as not all systems support the getdents64
   // syscall
@@ -484,20 +458,20 @@ int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
-  if (hfd < 0) {
+  auto entry = processes_[0]->fdArray_->getFDEntry(fd);
+  if (entry == nullptr) {
     return EBADF;
   }
+  int64_t hfd = entry->fd_;
   return ::read(hfd, buf, count);
 }
 
 int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
-  if (hfd < 0) {
+  auto entry = processes_[0]->fdArray_->getFDEntry(fd);
+  if (entry == nullptr) {
     return EBADF;
   }
+  int64_t hfd = entry->fd_;
   return ::readv(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 
@@ -527,20 +501,20 @@ int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
 }
 
 int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
-  if (hfd < 0) {
+  auto entry = processes_[0]->fdArray_->getFDEntry(fd);
+  if (entry == nullptr) {
     return EBADF;
   }
+  int64_t hfd = entry->fd_;
   return ::write(hfd, buf, count);
 }
 
 int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
-  if (hfd < 0) {
+  auto entry = processes_[0]->fdArray_->getFDEntry(fd);
+  if (entry == nullptr) {
     return EBADF;
   }
+  int64_t hfd = entry->fd_;
   return ::writev(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 

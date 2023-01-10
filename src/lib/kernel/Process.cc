@@ -78,9 +78,7 @@ Process::Process(const std::vector<std::string>& commandLine,
   // copy process image to global memory.
   // memcpy(memptr, unwrappedProcImgPtr, size);
   memory->sendUntimedData(unwrappedProcImgPtr, 0, size);
-  fileDescriptorTable_.emplace_back(STDIN_FILENO);
-  fileDescriptorTable_.emplace_back(STDOUT_FILENO);
-  fileDescriptorTable_.emplace_back(STDERR_FILENO);
+  fdArray_ = std::make_shared<FileDescArray>();
   // free allocated memory after copy.
   free(unwrappedProcImgPtr);
 
@@ -141,9 +139,7 @@ Process::Process(span<char> instructions,
                          pageSize_, mmapStart);
   // copy process image to global memory.
   memory->sendUntimedData(unwrappedProcImgPtr, 0, size);
-  fileDescriptorTable_.emplace_back(STDIN_FILENO);
-  fileDescriptorTable_.emplace_back(STDOUT_FILENO);
-  fileDescriptorTable_.emplace_back(STDERR_FILENO);
+  fdArray_ = std::make_shared<FileDescArray>();
   free(unwrappedProcImgPtr);
 
   // Initialise context
