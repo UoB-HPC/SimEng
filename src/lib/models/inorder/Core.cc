@@ -40,6 +40,7 @@ void Core::tick() {
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
   if (idle_) {
+    idle_ticks_++;
     std::cerr << "I am idle; tick number " << ticks_ << std::endl;
     return;
   }
@@ -162,7 +163,8 @@ std::map<std::string, std::string> Core::getStats() const {
           {"flushes", std::to_string(flushes_)},
           {"branch.executed", std::to_string(totalBranchesExecuted)},
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
-          {"branch.missrate", branchMissRateStr.str()}};
+          {"branch.missrate", branchMissRateStr.str()},
+          {"idle.ticks", std::to_string(idle_ticks_)}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {

@@ -165,6 +165,9 @@ class Core : public simeng::Core {
 
   /** Indicated whether the core is in an idle state. */
   bool idle_ = true;
+
+  /** The number of ticks whilst in an idle state. */
+  uint64_t idle_ticks_ = 0;
 };
 
 }  // namespace outoforder
