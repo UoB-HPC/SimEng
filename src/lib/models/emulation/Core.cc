@@ -12,28 +12,21 @@ const uint8_t FETCH_SIZE = 4;
 const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t entryPoint, uint64_t programByteLength,
-           const arch::Architecture& isa,
-           std::shared_ptr<kernel::Process> process)
+           const arch::Architecture& isa)
     : instructionMemory_(instructionMemory),
-      process_(process),
       dataMemory_(dataMemory),
-      programByteLength_(programByteLength),
       isa_(isa),
-      pc_(entryPoint),
       registerFileSet_(isa.getRegisterFileStructures()),
-      architecturalRegisterFileSet_(registerFileSet_) {
-  // Pre-load the first instruction
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
-
-  // Query and apply initial state
-  auto state =
-      isa.getInitialState(process_->getMemRegion().getInitialStackStart());
-  applyStateChange(state);
-}
+      architecturalRegisterFileSet_(registerFileSet_) {}
 
 void Core::tick() {
   ticks_++;
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
+
+  if (idle_) {
+    std::cerr << "I am idle; tick number " << ticks_ << std::endl;
+    return;
+  }
 
   if (hasHalted_) return;
 
@@ -162,7 +155,6 @@ void Core::tick() {
   }
 
   execute(uop);
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {

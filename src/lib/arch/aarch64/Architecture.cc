@@ -268,25 +268,26 @@ uint16_t Architecture::getNumSystemRegisters() const {
   return static_cast<uint16_t>(systemRegisterMap_.size());
 }
 
-ProcessStateChange Architecture::getInitialState(uint64_t stackPointer) const {
-  ProcessStateChange changes;
-  // Set ProcessStateChange type
-  changes.type = ChangeType::REPLACEMENT;
+// ProcessStateChange Architecture::getInitialState(uint64_t stackPointer) const
+// {
+//   ProcessStateChange changes;
+//   // Set ProcessStateChange type
+//   changes.type = ChangeType::REPLACEMENT;
 
-  // Set the stack pointer register
-  changes.modifiedRegisters.push_back({RegisterType::GENERAL, 31});
-  changes.modifiedRegisterValues.push_back(stackPointer);
+//   // Set the stack pointer register
+//   changes.modifiedRegisters.push_back({RegisterType::GENERAL, 31});
+//   changes.modifiedRegisterValues.push_back(stackPointer);
 
-  // Set the system registers
-  // Temporary: state that DCZ can support clearing 64 bytes at a time,
-  // but is disabled due to bit 4 being set
-  changes.modifiedRegisters.push_back(
-      {RegisterType::SYSTEM,
-       static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0))});
-  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
+//   // Set the system registers
+//   // Temporary: state that DCZ can support clearing 64 bytes at a time,
+//   // but is disabled due to bit 4 being set
+//   changes.modifiedRegisters.push_back(
+//       {RegisterType::SYSTEM,
+//        static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0))});
+//   changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
 
-  return changes;
-}
+//   return changes;
+// }
 
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 

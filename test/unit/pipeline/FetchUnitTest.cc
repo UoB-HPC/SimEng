@@ -24,10 +24,12 @@ class PipelineFetchUnitTest : public testing::Test {
       : output(1, {}),
         fetchBuffer({{0, 16}, 0, 0}),
         completedReads(&fetchBuffer, 1),
-        fetchUnit(output, memory, 1024, 0, 16, isa, predictor),
+        fetchUnit(output, memory, 16, isa, predictor),
         uop(new MockInstruction),
         uopPtr(uop) {
     uopPtr->setInstructionAddress(0);
+    fetchUnit.setProgramLength(1024);
+    fetchUnit.updatePC(0);
   }
 
  protected:

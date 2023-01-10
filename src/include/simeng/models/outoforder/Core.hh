@@ -29,10 +29,8 @@ class Core : public simeng::Core {
   /** Construct a core model, providing the process memory, and an ISA, branch
    * predictor, and port allocator to use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       uint64_t processMemorySize, uint64_t entryPoint,
        const arch::Architecture& isa, BranchPredictor& branchPredictor,
        pipeline::PortAllocator& portAllocator,
-       std::shared_ptr<kernel::Process> process,
        YAML::Node& config = Config::get());
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
@@ -165,8 +163,8 @@ class Core : public simeng::Core {
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 
-  /** Currently executing Process. */
-  std::shared_ptr<kernel::Process> process_ = nullptr;
+  /** Indicated whether the core is in an idle state. */
+  bool idle_ = true;
 };
 
 }  // namespace outoforder

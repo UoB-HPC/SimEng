@@ -39,8 +39,8 @@ class FetchUnit {
   /** Construct a fetch unit with a reference to an output buffer, the ISA, and
    * the current branch predictor, and information on the instruction memory. */
   FetchUnit(PipelineBuffer<MacroOp>& output, MemoryInterface& instructionMemory,
-            uint64_t programByteLength, uint64_t entryPoint, uint8_t blockSize,
-            const arch::Architecture& isa, BranchPredictor& branchPredictor);
+            uint8_t blockSize, const arch::Architecture& isa,
+            BranchPredictor& branchPredictor);
 
   ~FetchUnit();
 
@@ -57,6 +57,9 @@ class FetchUnit {
 
   /** Update the program counter to the specified address. */
   void updatePC(uint64_t address);
+
+  /** Update programByteLength_ to the specified value. */
+  void setProgramLength(uint64_t size);
 
   /** Request instructions at the current program counter for a future cycle. */
   void requestFromPC();
@@ -79,7 +82,7 @@ class FetchUnit {
   MemoryInterface& instructionMemory_;
 
   /** The length of the available instruction memory. */
-  uint64_t programByteLength_;
+  uint64_t programByteLength_ = 0;
 
   /** Reference to the currently used ISA. */
   const arch::Architecture& isa_;

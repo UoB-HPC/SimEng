@@ -92,20 +92,18 @@ void RegressionTest::run(const char* source, const char* triple,
   switch (std::get<0>(GetParam())) {
     case EMULATION:
       core_ = std::make_unique<simeng::models::emulation::Core>(
-          instructionMemory, *flatDataMemory, entryPoint, processMemorySize_,
-          *architecture_, process_);
+          instructionMemory, *flatDataMemory, *architecture_);
       dataMemory = std::move(flatDataMemory);
       break;
     case INORDER:
       core_ = std::make_unique<simeng::models::inorder::Core>(
-          instructionMemory, *flatDataMemory, processMemorySize_, entryPoint,
-          *architecture_, predictor, process_);
+          instructionMemory, *flatDataMemory, *architecture_, predictor);
       dataMemory = std::move(flatDataMemory);
       break;
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
-          instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *architecture_, predictor, *portAllocator, process_);
+          instructionMemory, *fixedLatencyDataMemory, *architecture_, predictor,
+          *portAllocator);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }

@@ -23,8 +23,7 @@ class Core : public simeng::Core {
    * instructions and data, along with the instruction entry point and an ISA to
    * use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       uint64_t entryPoint, uint64_t programByteLength,
-       const arch::Architecture& isa, std::shared_ptr<kernel::Process> process);
+       const arch::Architecture& isa);
 
   /** Tick the core. */
   void tick() override;
@@ -68,7 +67,7 @@ class Core : public simeng::Core {
   std::vector<simeng::MemoryAccessTarget> previousAddresses_;
 
   /** The length of the available instruction memory. */
-  uint64_t programByteLength_;
+  uint64_t programByteLength_ = 0;
 
   /** The currently used ISA. */
   const arch::Architecture& isa_;
@@ -107,8 +106,8 @@ class Core : public simeng::Core {
   /** The number of branches executed. */
   uint64_t branchesExecuted_ = 0;
 
-  /** Currently executing Process. */
-  std::shared_ptr<kernel::Process> process_ = nullptr;
+  /** Indicated whether the core is in an idle state. */
+  bool idle_ = true;
 };
 
 }  // namespace emulation

@@ -4,14 +4,11 @@ namespace simeng {
 namespace pipeline {
 
 FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
-                     MemoryInterface& instructionMemory,
-                     uint64_t programByteLength, uint64_t entryPoint,
-                     uint8_t blockSize, const arch::Architecture& isa,
+                     MemoryInterface& instructionMemory, uint8_t blockSize,
+                     const arch::Architecture& isa,
                      BranchPredictor& branchPredictor)
     : output_(output),
-      pc_(entryPoint),
       instructionMemory_(instructionMemory),
-      programByteLength_(programByteLength),
       isa_(isa),
       branchPredictor_(branchPredictor),
       blockSize_(blockSize),
@@ -25,6 +22,13 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
 FetchUnit::~FetchUnit() { delete[] fetchBuffer_; }
 
 void FetchUnit::tick() {
+  if (programByteLength_ == 0) {
+    std::cerr
+        << "[SimEng::FetchUnit] Invalid Program Byte Length of 0. Please "
+           "ensure setProgramLength() is called before calling updatePC().\n";
+    exit(1);
+  }
+
   if (output_.isStalled()) {
     return;
   }
@@ -209,8 +213,16 @@ bool FetchUnit::hasHalted() const { return hasHalted_; }
 void FetchUnit::updatePC(uint64_t address) {
   pc_ = address;
   bufferedBytes_ = 0;
+  if (programByteLength_ == 0) {
+    std::cerr
+        << "[SimEng::FetchUnit] Invalid Program Byte Length of 0. Please "
+           "ensure setProgramLength() is called before calling updatePC().\n";
+    exit(1);
+  }
   hasHalted_ = (pc_ >= programByteLength_);
 }
+
+void FetchUnit::setProgramLength(uint64_t size) { programByteLength_ = size; }
 
 void FetchUnit::requestFromPC() {
   // Do nothing if buffer already contains enough data

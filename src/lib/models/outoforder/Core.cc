@@ -14,12 +14,9 @@ namespace outoforder {
 
 // TODO: System register count has to match number of supported system registers
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t processMemorySize, uint64_t entryPoint,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator,
-           std::shared_ptr<kernel::Process> process, YAML::Node& config)
+           pipeline::PortAllocator& portAllocator, YAML::Node& config)
     : isa_(isa),
-      process_(process),
       physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
       physicalRegisterQuantities_(isa.getConfigPhysicalRegisterQuantities()),
       registerFileSet_(physicalRegisterStructures_),
@@ -55,9 +52,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
               .as<uint16_t>(),
           config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
               .as<uint16_t>()),
-      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
-                 isa, branchPredictor),
+      fetchUnit_(fetchToDecodeBuffer_, instructionMemory,
+                 config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(), isa,
+                 branchPredictor),
       reorderBuffer_(
           config["Queue-Sizes"]["ROB"].as<unsigned int>(), registerAliasTable_,
           loadStoreQueue_,
@@ -101,15 +98,16 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {
     dispatchIssueUnit_.getRSSizes(sizeVec);
   });
-
-  // Query and apply initial state
-  auto state =
-      isa.getInitialState(process_->getMemRegion().getInitialStackStart());
-  applyStateChange(state);
 };
 
 void Core::tick() {
   ticks_++;
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
+
+  if (idle_) {
+    std::cerr << "I am idle; tick number " << ticks_ << std::endl;
+    return;
+  }
 
   if (hasHalted_) return;
 
@@ -164,7 +162,6 @@ void Core::tick() {
 
   flushIfNeeded();
   fetchUnit_.requestFromPC();
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 void Core::flushIfNeeded() {
