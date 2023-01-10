@@ -19,6 +19,7 @@ set(SIMENG_SOURCES
     OS/SimOS.cc
     OS/SyscallHandler.cc
     OS/Vma.cc
+    OS/FileDesc.cc
     memory/SimpleMem.cc
     memory/Mem.cc
     models/emulation/Core.cc
