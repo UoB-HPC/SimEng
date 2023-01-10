@@ -37,6 +37,7 @@ void CoreInstance::generateCoreModel(std::string executablePath,
   setSimulationMode();
   // Get the process image and its size
   processMemorySize_ = process_->getProcessImageSize();
+
   // Check to see if either of the instruction or data memory interfaces should
   // be created. Don't create the core if either interface is marked as External
   // as they must be set manually prior to the core's creation.
@@ -196,19 +197,16 @@ void CoreInstance::createCore() {
       portArrangement);
 
   // Construct the core object based on the defined simulation mode
-  uint64_t entryPoint = process_->getEntryPoint();
   if (mode_ == SimulationMode::Emulation) {
     core_ = std::make_shared<simeng::models::emulation::Core>(
-        *instructionMemory_, *dataMemory_, entryPoint, processMemorySize_,
-        *arch_, process_);
+        *instructionMemory_, *dataMemory_, *arch_);
   } else if (mode_ == SimulationMode::InOrderPipelined) {
     core_ = std::make_shared<simeng::models::inorder::Core>(
-        *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
-        *arch_, *predictor_, process_);
+        *instructionMemory_, *dataMemory_, *arch_, *predictor_);
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
-        *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
-        *arch_, *predictor_, *portAllocator_, process_);
+        *instructionMemory_, *dataMemory_, *arch_, *predictor_,
+        *portAllocator_);
   }
   return;
 }

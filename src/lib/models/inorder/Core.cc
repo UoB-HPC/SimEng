@@ -14,19 +14,16 @@ const unsigned int blockSize = 16;
 const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t processMemorySize, uint64_t entryPoint,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           std::shared_ptr<kernel::Process> process)
+           const arch::Architecture& isa, BranchPredictor& branchPredictor)
     : dataMemory_(dataMemory),
-      process_(process),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
-      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, blockSize, isa, branchPredictor),
+      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, blockSize, isa,
+                 branchPredictor),
       decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
                   branchPredictor),
       executeUnit_(
@@ -36,15 +33,16 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor, false),
-      writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}) {
-  // Query and apply initial state
-  auto state =
-      isa.getInitialState(process_->getMemRegion().getInitialStackStart());
-  applyStateChange(state);
-};
+      writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}){};
 
 void Core::tick() {
   ticks_++;
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
+
+  if (idle_) {
+    std::cerr << "I am idle; tick number " << ticks_ << std::endl;
+    return;
+  }
 
   if (hasHalted_) return;
 
@@ -110,7 +108,6 @@ void Core::tick() {
   }
 
   fetchUnit_.requestFromPC();
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 bool Core::hasHalted() const {

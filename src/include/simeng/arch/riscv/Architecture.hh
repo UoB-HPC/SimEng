@@ -44,9 +44,6 @@ class Architecture : public arch::Architecture {
       const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
       MemoryInterface& memory) const override;
 
-  /** Retrieve the initial process state. */
-  ProcessStateChange getInitialState(uint64_t stackPointer) const override;
-
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
 

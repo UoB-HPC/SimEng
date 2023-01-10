@@ -89,9 +89,6 @@ class Architecture {
       const std::shared_ptr<Instruction>& instruction, const Core& core,
       MemoryInterface& memory) const = 0;
 
-  /** Retrieve the initial process state. */
-  virtual ProcessStateChange getInitialState(uint64_t stackPointer) const = 0;
-
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;
 
