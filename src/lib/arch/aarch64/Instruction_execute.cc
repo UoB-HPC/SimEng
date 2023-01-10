@@ -3540,6 +3540,16 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_MSR: {  // msr (systemreg|Sop0_op1_Cn_Cm_op2), xt
+        // TODO: Suppport reg writes to SVCR
+        // Catch updates to SVCR - Not currently supported
+        if (metadata.operands[0].sys == ARM64_SYSREG_SVCR) {
+          std::cerr << "[SimEng::Instruction_Execute] Register writes to SVCR "
+                       "are not currently supported. Please use one of the "
+                       "following :\n";
+          std::cerr << "[SimEng::Instruction_Execute] \t{SMSTART, SMSTOP, msr "
+                       "svcr<sm|za|smza> #imm}\n";
+          return executionNYI();
+        }
         results[0] = operands[0];
         break;
       }
