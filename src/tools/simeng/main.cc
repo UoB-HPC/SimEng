@@ -14,12 +14,16 @@
 #include "simeng/version.hh"
 
 /** Tick the provided core model until it halts. */
-int simulate(simeng::Core& core, simeng::MemoryInterface& dataMemory,
+int simulate(simeng::kernel::SimOS& simOS, simeng::Core& core,
+             simeng::MemoryInterface& dataMemory,
              simeng::MemoryInterface& instructionMemory) {
   uint64_t iterations = 0;
 
   // Tick the core and memory interfaces until the program has halted
   while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
+    // Tick SimOS
+    if (iterations > 10) simOS.tick();  // TEMP to test scheduling works
+
     // Tick the core
     core.tick();
 
@@ -84,7 +88,7 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] Starting...\n" << std::endl;
   int iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
-  iterations = simulate(*core, *dataMemory, *instructionMemory);
+  iterations = simulate(simOS_kernel, *core, *dataMemory, *instructionMemory);
 
   // Get timing information
   auto endTime = std::chrono::high_resolution_clock::now();

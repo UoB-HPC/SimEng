@@ -42,6 +42,9 @@ class SimOS {
   /** Construct a SimOS object. */
   SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem);
 
+  /** Tick SimOS. */
+  void tick();
+
   // TODO : update to search through Processes and match PID value
   /** Get pointer to process with specified PID. */
   std::shared_ptr<Process> getProcess() const;

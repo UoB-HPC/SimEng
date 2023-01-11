@@ -30,6 +30,37 @@ SimOS::SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem)
     createSpecialFileDirectory();
 }
 
+void SimOS::tick() {
+  // Check for empty processes_ vector
+  if (processes_.size() == 0) {
+    // TODO: Add halt functionality
+  }
+
+  // Check process status
+  auto iter = processes_.begin();
+  while (iter != processes_.end()) {
+    if ((*iter)->status_ == completed) {
+      // Remove finished processes
+      iter = processes_.erase(iter);
+      continue;
+    }
+    if ((*iter)->status_ == waiting) {
+      // Try schedule waiting process
+      for (auto i : cores_) {
+        if (i->isIdle()) {
+          // Schedule process with idle core
+          i->schedule(*iter);
+        } else {
+          // Check how long current process has been executing.
+          // If over threshold, interrupr core
+          // TODO : Set up round robin scheduling.
+        }
+      }
+    }
+    iter++;
+  }
+}
+
 std::shared_ptr<Process> SimOS::getProcess() const {
   // TODO : update to search through Processes and match PID value
   return processes_[0];
