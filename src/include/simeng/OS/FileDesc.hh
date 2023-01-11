@@ -13,12 +13,10 @@ struct FileDescEntry {
   const int vfd_;
   /** Flags used in the openat syscall. */
   const int flags_;
-  /** Mode used in the openat syscall. */
-  const mode_t mode_;
   /** Name of the opened file. */
   const char* filename_;
-  FileDescEntry(int fd, int vfd, int flags, mode_t mode, const char* filename)
-      : fd_(fd), vfd_(vfd), flags_(flags), mode_(mode), filename_(filename) {}
+  FileDescEntry(int fd, int vfd, int flags, const char* filename)
+      : fd_(fd), vfd_(vfd), flags_(flags), filename_(filename) {}
 };
 
 /** This class managed the all host to virtual file descriptor mappings. */
