@@ -82,6 +82,24 @@ void SimOS::createInitialProcess() {
     }
   }
   assert(newProcess->isValid() && "Attempted to use an invalid process");
+
+  // Set Initial state of registers
+  if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
+    newProcess->context_.regFile[arch::riscv::RegisterType::GENERAL][2] =
+        newProcess->context_.sp;
+  } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
+    // Set the stack pointer register
+    newProcess->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] =
+        newProcess->context_.sp;
+    // Set the system registers
+    // Temporary: state that DCZ can support clearing 64 bytes at a time,
+    // but is disabled due to bit 4 being set
+    newProcess->context_
+        .regFile[arch::aarch64::RegisterType::SYSTEM]
+                [arch->getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)] =
+        static_cast<uint64_t>(0b10100);
+  }
+
   processes_.emplace_back(newProcess);
 }
 
