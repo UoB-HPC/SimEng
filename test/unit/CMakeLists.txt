@@ -10,6 +10,7 @@ set(TEST_SOURCES
     pipeline/RegisterAliasTableTest.cc
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
+    FileDescArrayTest.cc
     GenericPredictorTest.cc
     ISATest.cc
     OSTest.cc
@@ -28,3 +29,5 @@ target_link_libraries(unittests libsimeng)
 target_link_libraries(unittests gmock_main)
 
 add_test(NAME unit_tests COMMAND unittests)
+set(SIMENG_UNITTEST_BUILD_DIR "${CMAKE_BINARY_DIR}/test/unit")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${SIMENG_UNITTEST_BUILD_DIR})
