@@ -9,9 +9,10 @@
 
 FileDescArray::FileDescArray() {
   fdarr_.fill(nullptr);
-  fdarr_[0] = new FileDescEntry{STDIN_FILENO, 0, 0, 0, "stdin"};
-  fdarr_[1] = new FileDescEntry{STDOUT_FILENO, 1, 0, 0, "stdout"};
-  fdarr_[2] = new FileDescEntry{STDERR_FILENO, 2, 0, 0, "stderr"};
+  // Value for flags were determined using fstat.
+  fdarr_[0] = new FileDescEntry{STDIN_FILENO, 0, 0, "stdin"};
+  fdarr_[1] = new FileDescEntry{STDOUT_FILENO, 1, 0, "stdout"};
+  fdarr_[2] = new FileDescEntry{STDERR_FILENO, 2, 0, "stderr"};
   numFds_ = 3;
 }
 
@@ -38,7 +39,7 @@ int FileDescArray::allocateFDEntry(int dirfd, const char* filename, int flags,
                   << std::endl;
         return -1;
       }
-      fdarr_[i] = new FileDescEntry{fd, i, flags, mode, filename};
+      fdarr_[i] = new FileDescEntry{fd, i, flags, filename};
       this->numFds_++;
       return i;
     }
