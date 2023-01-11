@@ -55,10 +55,14 @@ class FetchUnit {
    * outside of instruction memory. */
   bool hasHalted() const;
 
-  /** Update the program counter to the specified address. */
+  /** Update the program counter to the specified address.
+   * NOTE: Must set program length before calling when scheduling.
+   */
   void updatePC(uint64_t address);
 
-  /** Update programByteLength_ to the specified value. */
+  /** Update programByteLength_ to the specified value.
+   * NOTE: Must be set before updating PC when scheduling.
+   */
   void setProgramLength(uint64_t size);
 
   /** Request instructions at the current program counter for a future cycle. */

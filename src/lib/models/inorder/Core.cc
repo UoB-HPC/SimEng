@@ -41,7 +41,6 @@ void Core::tick() {
 
   if (idle_) {
     idle_ticks_++;
-    std::cerr << "I am idle; tick number " << ticks_ << std::endl;
     return;
   }
 
@@ -126,6 +125,8 @@ bool Core::hasHalted() const {
   return (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
           !executePending && exceptionHandler_ == nullptr);
 }
+
+bool Core::isIdle() const { return idle_; }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
     const {
@@ -353,6 +354,19 @@ void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
                   instruction->getResults());
   // Manually add the instruction to the writeback input buffer
   completionSlots_[0].getTailSlots()[0] = instruction;
+}
+
+void Core::schedule(std::shared_ptr<simeng::kernel::Process> newProc) {
+  fetchUnit_.setProgramLength(newProc->context_.progByteLen);
+  fetchUnit_.updatePC(newProc->context_.pc);
+  for (size_t type = 0; type < newProc->context_.regFile.size(); type++) {
+    for (size_t tag = 0; tag < newProc->context_.regFile[type].size(); tag++) {
+      registerFileSet_.set({(uint8_t)type, (uint16_t)tag},
+                           newProc->context_.regFile[type][tag]);
+    }
+  }
+  newProc->status_ = kernel::procStatus::executing;
+  idle_ = false;
 }
 
 }  // namespace inorder

@@ -9,7 +9,6 @@
 #include "simeng/MemoryInterface.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/arch/Architecture.hh"
-#include "simeng/kernel/Process.hh"
 #include "simeng/span.hh"
 
 namespace simeng {
@@ -31,6 +30,9 @@ class Core : public simeng::Core {
   /** Check whether the program has halted. */
   bool hasHalted() const override;
 
+  /** Check if the core is in an idle state. */
+  bool isIdle() const override;
+
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const override;
@@ -43,6 +45,9 @@ class Core : public simeng::Core {
 
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
+
+  /** Schedule a new Process. */
+  void schedule(std::shared_ptr<simeng::kernel::Process> newProc) override;
 
  private:
   /** Execute an instruction. */

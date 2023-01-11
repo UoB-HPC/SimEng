@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 
+#include "simeng/kernel/Process.hh"
 #include "yaml-cpp/yaml.h"
 
 namespace simeng {
@@ -21,6 +22,9 @@ class Core {
   /** Check whether the program has halted. */
   virtual bool hasHalted() const = 0;
 
+  /** Check if the core is in an idle state. */
+  virtual bool isIdle() const = 0;
+
   /** Retrieve the architectural register file set. */
   virtual const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const = 0;
@@ -33,6 +37,9 @@ class Core {
 
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;
+
+  /** Schedule a new Process. */
+  virtual void schedule(std::shared_ptr<simeng::kernel::Process> newProc) = 0;
 };
 
 }  // namespace simeng

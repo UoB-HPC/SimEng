@@ -25,7 +25,6 @@ void Core::tick() {
 
   if (idle_) {
     idle_ticks_++;
-    std::cerr << "I am idle; tick number " << ticks_ << std::endl;
     return;
   }
 
@@ -167,8 +166,6 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isStoreData()) {
-    auto results = uop->getResults();
-    auto destinations = uop->getDestinationRegisters();
     auto data = uop->getData();
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
       dataMemory_.requestWrite(previousAddresses_[i], data[i]);
@@ -281,6 +278,8 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
 
 bool Core::hasHalted() const { return hasHalted_; }
 
+bool Core::isIdle() const { return idle_; }
+
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
     const {
   return architecturalRegisterFileSet_;
@@ -298,7 +297,23 @@ std::map<std::string, std::string> Core::getStats() const {
   return {{"instructions", std::to_string(instructionsExecuted_)},
           {"branch.executed", std::to_string(branchesExecuted_)},
           {"idle.ticks", std::to_string(idle_ticks_)}};
-};
+}
+
+void Core::schedule(std::shared_ptr<simeng::kernel::Process> newProc) {
+  programByteLength_ = newProc->context_.progByteLen;
+  pc_ = newProc->context_.pc;
+  for (size_t type = 0; type < newProc->context_.regFile.size(); type++) {
+    for (size_t tag = 0; tag < newProc->context_.regFile[type].size(); tag++) {
+      registerFileSet_.set({(uint8_t)type, (uint16_t)tag},
+                           newProc->context_.regFile[type][tag]);
+    }
+  }
+  newProc->status_ = kernel::procStatus::executing;
+  idle_ = false;
+
+  // Fetch memory for next cycle
+  instructionMemory_.requestRead({pc_, FETCH_SIZE});
+}
 
 }  // namespace emulation
 }  // namespace models
