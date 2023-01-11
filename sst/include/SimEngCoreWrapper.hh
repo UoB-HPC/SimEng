@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "SimEngMemInterface.hh"
-#include "SimEngNIC.hh"
+#include "SimEngNOC.hh"
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
@@ -86,6 +86,11 @@ class SimEngCoreWrapper : public SST::Component {
    */
   void handleMemoryEvent(StandardMem::Request* memEvent);
 
+  /** This handle event method is registered as a callback function with the NOC
+   * subcomponent. This method is called everytime the NOC recieves a request
+   * from the network. */
+  void handleNetworkEvent(SST::Event* netEvent);
+
   /**
    * SST supplied MACRO used to register custom SST:Components with
    * the SST Core.
@@ -121,15 +126,18 @@ class SimEngCoreWrapper : public SST::Component {
       {"cache_line_width",
        "Value which specifies the width of the cache line in bytes. (int)", ""},
       {"source",
-       "Value which specifies the string of instructions to be assembled by "
+       "Value which specifies the string of instructions to be assembled "
+       "by "
        "LLVM and executed by SimEng (if any). (string)",
        ""},
       {"assemble_with_source",
-       "Value which indicates whether to assemble the instructions supplied "
+       "Value which indicates whether to assemble the instructions "
+       "supplied "
        "through the source parameter using LLVM. (boolean)",
        "false"},
       {"heap",
-       "Value which specifies comma separated uint64_t values used to populate "
+       "Value which specifies comma separated uint64_t values used to "
+       "populate "
        "the heap. This parameter will only be used if "
        "assemble_with_source=true. (string)",
        ""},
@@ -140,8 +148,8 @@ class SimEngCoreWrapper : public SST::Component {
 
   SST_ELI_DOCUMENT_PORTS()
 
-  SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS({"nic", "Network interface",
-                                       "SST::SSTSimEng::SimEngNIC"})
+  SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS({"NOC", "Network On Chip (NOC) interface",
+                                       "SST::SSTSimEng::SimEngNOC"})
 
  private:
   /** Method used to assemble SimEng core. */
@@ -182,6 +190,13 @@ class SimEngCoreWrapper : public SST::Component {
    * down the memory heirarchy.
    */
   StandardMem* sstMem_;
+
+  /** SST::SSTSimEng::nocAPI api responsible for interfacing with the
+   * SST::SSTSimEng::SimEngNOC network interface controller SubComponent.
+   * SST::SSTSimEng::simengNetEv network events will be sent through the
+   * SimEngNOC.
+   */
+  nocAPI* sstNoc_;
 
   // SimEng properties
   /** Reference to the CoreInstance class responsible for creating the core to

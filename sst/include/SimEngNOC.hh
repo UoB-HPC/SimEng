@@ -11,25 +11,51 @@
 #include <sst/core/link.h>
 #include <sst/core/timeConverter.h>
 
+#include <queue>
+
 namespace SST {
 
 namespace SSTSimEng {
 
-/** A custom SST::Event to handle the network events to/from the SimEngNIC
+/** A custom SST::Event to handle the network events to/from the SimEngNOC
  * component. */
-class networkEvent : public SST::Event {
+class simengNetEv : public SST::Event {
  public:
-  networkEvent() : Event() {}
+  simengNetEv(std::string name) : Event(), srcDevice(name) {}
+  simengNetEv() : Event() {}
+
+  /** Get the name of the source device. */
+  std::string getSource() { return srcDevice; }
+
+  /** Overrides the base class clone() which clones the event in for the case of
+   * a broadcast. */
+  virtual Event* clone(void) override {
+    simengNetEv* ev = new simengNetEv(*this);
+    return ev;
+  }
+
+  /** Override of base class event serializer. */
+  void serialize_order(SST::Core::Serialization::serializer& ser) override {
+    Event::serialize_order(ser);
+    ser& srcDevice;
+  }
+
+  /** Implements SimEngNOC serialization. */
+  ImplementSerializable(SST::SSTSimEng::simengNetEv);
+
+ private:
+  /** Name of the source device that sent the event. */
+  std::string srcDevice;
 };
 
-/** A custom SST::SubComponent to handle the API for the SimEngNIC component. */
-class nicAPI : public SST::SubComponent {
+/** A custom SST::SubComponent to handle the API for the SimEngNOC component. */
+class nocAPI : public SST::SubComponent {
  public:
-  // Register NIC API SubComponent
-  SST_ELI_REGISTER_SUBCOMPONENT_API(SST::SSTSimEng::nicAPI)
+  // Register NOC API SubComponent
+  SST_ELI_REGISTER_SUBCOMPONENT_API(SST::SSTSimEng::nocAPI)
 
-  nicAPI(SST::ComponentId_t id, SST::Params& params) : SubComponent(id) {}
-  virtual ~nicAPI() {}
+  nocAPI(SST::ComponentId_t id, SST::Params& params) : SubComponent(id) {}
+  virtual ~nocAPI() {}
 
   /** SST Init lifecycle method. */
   virtual void init(unsigned int phase) {}
@@ -41,23 +67,23 @@ class nicAPI : public SST::SubComponent {
    * which denotes a new request had been recieved from the network. */
   virtual void setRecvNotifyHandler(Event::HandlerBase* handler) = 0;
 
-  /** Send a request, of the form networkEvent, into the network targetting the
+  /** Send a request, of the form simengNetEv, into the network targetting the
    * port `dest`. */
-  virtual void send(networkEvent* netEv, int dest) = 0;
+  virtual void send(simengNetEv* netEv, int dest) = 0;
 };
 
 /**
- * A inherritted class of the nicAPI SST::SubComponent that implements the
+ * A inherritted class of the nocAPI SST::SubComponent that implements the
  * on-chip communication between SimEng cores.
  */
-class SimEngNIC : public nicAPI {
+class SimEngNOC : public nocAPI {
  public:
-  /** Register SimEng NIC SubComponent deriving from the nicAPI class. */
+  /** Register SimEng NOC SubComponent deriving from the nocAPI class. */
   SST_ELI_REGISTER_SUBCOMPONENT_DERIVED(
-      SimEngNIC, "sstsimeng", "SimEngNIC", SST_ELI_ELEMENT_VERSION(1, 0, 0),
-      "SimEng NIC for inter-core communication", SST::SSTSimEng::nicAPI)
+      SimEngNOC, "sstsimeng", "SimEngNOC", SST_ELI_ELEMENT_VERSION(1, 0, 0),
+      "SimEng NOC for inter-core communication", SST::SSTSimEng::nocAPI)
 
-  /** Register the parameters of the SimEngNIC SubComponent. */
+  /** Register the parameters of the SimEngNOC SubComponent. */
   SST_ELI_DOCUMENT_PARAMS(
       {"clock", "Value which specifies clock rate of the SST clock. (string)",
        ""})
@@ -65,15 +91,15 @@ class SimEngNIC : public nicAPI {
   /** Register the ports. */
   SST_ELI_DOCUMENT_PORTS({"network",
                           "Port to network",
-                          {"SimEngNIC.networkEvent"}})
+                          {"SimEngNOC.simengNetEv"}})
 
   /** Register the SubComponent slots. */
   SST_ELI_DOCUMENT_SUBCOMPONENT_SLOTS(
       {"interface", "SimpleNetwork interface to the linked network",
        "SST::Interfaces::SimpleNetwork"})
 
-  SimEngNIC(ComponentId_t id, Params& params);
-  virtual ~SimEngNIC();
+  SimEngNOC(ComponentId_t id, Params& params);
+  virtual ~SimEngNOC();
 
   /** SST Init lifecycle method. */
   virtual void init(unsigned int phase);
@@ -85,9 +111,9 @@ class SimEngNIC : public nicAPI {
    * which denotes a new request had been recieved from the network. */
   void setRecvNotifyHandler(Event::HandlerBase* handler) override;
 
-  /** Send a request, of the form networkEvent, into the network targetting the
+  /** Send a request, of the form simengNetEv, into the network targetting the
    * port `dest`. */
-  void send(networkEvent* netEv, int dest) override;
+  void send(simengNetEv* netEv, int dest) override;
 
   /** Callback function for handling the notification from the network that a
    * request is available. The function is passed an int, `virtualNetwork`,
@@ -105,6 +131,16 @@ class SimEngNIC : public nicAPI {
 
   /** SST::SimpleNetwork interface to the linked network. */
   SST::Interfaces::SimpleNetwork* interface_;
+
+  /** Queue to buffer network requests to be sent to the interface_. */
+  std::queue<SST::Interfaces::SimpleNetwork::Request*> sendQueue_;
+
+  /** A callback function to handle signals that a message is
+   * ready to be recieved by the NOC from the network. */
+  SST::Event::HandlerBase* recvNotifyHandler_ = nullptr;
+
+  /** Whether the NIC has sent it's initial broadcast. */
+  bool initBroadcastSent_ = false;
 };
 
 }  // namespace SSTSimEng

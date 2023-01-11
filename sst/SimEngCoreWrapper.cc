@@ -51,6 +51,11 @@ SimEngCoreWrapper::SimEngCoreWrapper(SST::ComponentId_t id, SST::Params& params)
       new StandardMem::Handler<SimEngCoreWrapper>(
           this, &SimEngCoreWrapper::handleMemoryEvent));
 
+  // Instantiate the NOC
+  sstNoc_ = loadUserSubComponent<nocAPI>("noc");
+  sstNoc_->setRecvNotifyHandler(new Event::Handler<SimEngCoreWrapper>(
+      this, &SimEngCoreWrapper::handleNetworkEvent));
+
   dataMemory_ = std::make_shared<SimEngMemInterface>(sstMem_, cacheLineWidth_,
                                                      maxAddrMemory_, debug_);
 
@@ -66,6 +71,8 @@ SimEngCoreWrapper::~SimEngCoreWrapper() {}
 void SimEngCoreWrapper::setup() {
   sstMem_->setup();
   output_.verbose(CALL_INFO, 1, 0, "Memory setup complete\n");
+  sstNoc_->setup();
+  output_.verbose(CALL_INFO, 1, 0, "NOC setup complete\n");
   // Run Simulation
   std::cout << "[SimEng] Starting...\n" << std::endl;
   startTime_ = std::chrono::high_resolution_clock::now();
@@ -73,6 +80,11 @@ void SimEngCoreWrapper::setup() {
 
 void SimEngCoreWrapper::handleMemoryEvent(StandardMem::Request* memEvent) {
   memEvent->handle(handlers_);
+}
+
+void SimEngCoreWrapper::handleNetworkEvent(SST::Event* netEvent) {
+  simengNetEv* event = static_cast<simengNetEv*>(netEvent);
+  delete event;
 }
 
 void SimEngCoreWrapper::finish() {
@@ -102,6 +114,7 @@ void SimEngCoreWrapper::finish() {
 
 void SimEngCoreWrapper::init(unsigned int phase) {
   sstMem_->init(phase);
+  sstNoc_->init(phase);
   // Init can have multiple phases, only fabricate the core once at phase 0
   if (phase == 0) {
     fabricateSimEngCore();
@@ -154,7 +167,7 @@ std::string SimEngCoreWrapper::trimSpaces(std::string strArgs) {
   // The string does not have leading or trailing spaces, return the original
   // string.
   return strArgs;
-};
+}
 
 std::vector<std::string> SimEngCoreWrapper::splitArgs(std::string strArgs) {
   std::string trimmedStrArgs = trimSpaces(strArgs);
