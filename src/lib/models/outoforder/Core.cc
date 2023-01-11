@@ -106,7 +106,6 @@ void Core::tick() {
 
   if (idle_) {
     idle_ticks_++;
-    std::cerr << "I am idle; tick number " << ticks_ << std::endl;
     return;
   }
 
@@ -259,6 +258,8 @@ bool Core::hasHalted() const {
 
   return true;
 }
+
+bool Core::isIdle() const { return idle_; }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
   exceptionGenerated_ = true;
@@ -430,6 +431,19 @@ std::map<std::string, std::string> Core::getStats() const {
           {"lsq.loadViolations",
            std::to_string(reorderBuffer_.getViolatingLoadsCount())},
           {"idle.ticks", std::to_string(idle_ticks_)}};
+}
+
+void Core::schedule(std::shared_ptr<simeng::kernel::Process> newProc) {
+  fetchUnit_.setProgramLength(newProc->context_.progByteLen);
+  fetchUnit_.updatePC(newProc->context_.pc);
+  for (size_t type = 0; type < newProc->context_.regFile.size(); type++) {
+    for (size_t tag = 0; tag < newProc->context_.regFile[type].size(); tag++) {
+      mappedRegisterFileSet_.set({(uint8_t)type, (uint16_t)tag},
+                                 newProc->context_.regFile[type][tag]);
+    }
+  }
+  newProc->status_ = kernel::procStatus::executing;
+  idle_ = false;
 }
 
 }  // namespace outoforder

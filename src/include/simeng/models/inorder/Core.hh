@@ -5,7 +5,6 @@
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
 #include "simeng/FlatMemoryInterface.hh"
-#include "simeng/kernel/Process.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/ExecuteUnit.hh"
 #include "simeng/pipeline/FetchUnit.hh"
@@ -32,6 +31,9 @@ class Core : public simeng::Core {
   /** Check whether the program has halted. */
   bool hasHalted() const override;
 
+  /** Check if the core is in an idle state. */
+  bool isIdle() const override;
+
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const override;
@@ -44,6 +46,9 @@ class Core : public simeng::Core {
 
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
+
+  /** Schedule a new Process. */
+  void schedule(std::shared_ptr<simeng::kernel::Process> newProc) override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */

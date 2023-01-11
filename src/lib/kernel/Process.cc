@@ -91,6 +91,12 @@ Process::Process(const std::vector<std::string>& commandLine,
   for (size_t i = 0; i < regFileStructure.size(); i++) {
     context_.regFile[i].resize(regFileStructure[i].quantity);
   }
+  // Initialise reg values to 0
+  for (size_t type = 0; type < context_.regFile.size(); type++) {
+    for (size_t tag = 0; tag < context_.regFile[type].size(); tag++) {
+      context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
+    }
+  }
 }
 
 Process::Process(span<char> instructions,
@@ -143,6 +149,12 @@ Process::Process(span<char> instructions,
   context_.regFile.resize(regFileStructure.size());
   for (size_t i = 0; i < regFileStructure.size(); i++) {
     context_.regFile[i].resize(regFileStructure[i].quantity);
+  }
+  // Initialise reg values to 0
+  for (size_t type = 0; type < context_.regFile.size(); type++) {
+    for (size_t tag = 0; tag < context_.regFile[type].size(); tag++) {
+      context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
+    }
   }
 }
 
