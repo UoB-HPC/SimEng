@@ -139,7 +139,7 @@ class SimEngNOC : public nocAPI {
    * ready to be recieved by the NOC from the network. */
   SST::Event::HandlerBase* recvNotifyHandler_ = nullptr;
 
-  /** Whether the NIC has sent it's initial broadcast. */
+  /** Whether the NOC has sent its initial broadcast. */
   bool initBroadcastSent_ = false;
 };
 
