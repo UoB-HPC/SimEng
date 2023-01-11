@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "simeng/Config.hh"
-#include "simeng/CoreInstance.hh"
+#include "simeng/Core.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
@@ -56,6 +56,10 @@ class SimOS {
     return syscallHandler_;
   }
 
+  void registerCore(std::shared_ptr<simeng::Core> core) {
+    cores_.emplace_back(core);
+  }
+
   /** Set up friend class with RegressionTest to enable exclusive access to
    * protected functions. */
   friend class ::RegressionTest;
@@ -84,6 +88,9 @@ class SimOS {
 
   /** The list of user-space processes running above the kernel. */
   std::vector<std::shared_ptr<Process>> processes_ = {};
+
+  /** The list of cores. */
+  std::vector<std::shared_ptr<simeng::Core>> cores_ = {};
 
   /** Reference to the global memory pointer */
   std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;

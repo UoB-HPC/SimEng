@@ -69,6 +69,9 @@ int main(int argc, char** argv) {
   std::shared_ptr<simeng::MemoryInterface> instructionMemory =
       coreInstance->getInstructionMemory();
 
+  // Register core with SimOS
+  simOS_kernel.registerCore(core);
+
   // Output general simulation details
   std::cout << "[SimEng] Running in " << coreInstance->getSimulationModeString()
             << " mode" << std::endl;
