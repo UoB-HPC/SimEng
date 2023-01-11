@@ -3536,7 +3536,7 @@ void Instruction::execute() {
       case Opcode::AArch64_MSR: {  // msr (systemreg|Sop0_op1_Cn_Cm_op2), xt
         // TODO: Suppport reg writes to SVCR
         // Catch updates to SVCR - Not currently supported
-        if (metadata.operands[0].sys == ARM64_SYSREG_SVCR) {
+        if ((uint32_t)metadata.operands[0].sys == (uint32_t)ARM64_SYSREG_SVCR) {
           std::cerr << "[SimEng::Instruction_Execute] Register writes to SVCR "
                        "are not currently supported. Please use one of the "
                        "following :\n";
@@ -3559,7 +3559,6 @@ void Instruction::execute() {
         // This instruction is always used by SMSTART and SMSTOP aliases.
         const uint64_t svcrBits =
             static_cast<uint64_t>(metadata.operands[0].svcr);
-        const uint8_t imm = metadata.operands[1].imm;
 
         // Changing value of SM or ZA bits in SVCR zeros out vector, predicate,
         // and ZA registers. Raise an exception to do this.
