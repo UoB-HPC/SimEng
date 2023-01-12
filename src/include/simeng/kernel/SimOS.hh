@@ -64,7 +64,7 @@ class SimOS {
   }
 
   /** Set up friend class with RegressionTest to enable exclusive access to
-   * protected functions. */
+   * private functions. */
   friend class ::RegressionTest;
 
  private:
@@ -76,12 +76,6 @@ class SimOS {
 
   /** Construct the special file directory. */
   void createSpecialFileDirectory() const;
-
-  /** Update the initial process to a pre-defined one.
-   * !! Should be used EXCLUSIVELY by the test suite !! */
-  void setInitialProcess(std::shared_ptr<Process> proc) {
-    processes_.emplace(processes_.begin(), proc);
-  }
 
   /** The path of user defined Executable. */
   std::string executablePath_ = DEFAULT_STR;
@@ -100,6 +94,30 @@ class SimOS {
 
   /** SyscallHandler Object to process all syscalls. */
   std::shared_ptr<SyscallHandler> syscallHandler_;
+
+  /** Update the initial process to a pre-defined one.
+   * !!NOTE: Should be used EXCLUSIVELY by the test suite !! */
+  void setInitialProcess(std::shared_ptr<Process> proc,
+                         const simeng::arch::Architecture& arch) {
+    // Set Initial state of registers
+    if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
+      proc->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
+          proc->context_.sp, 8};
+    } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
+      // Set the stack pointer register
+      proc->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
+          proc->context_.sp, 8};
+      // Set the system registers
+      // Temporary: state that DCZ can support clearing 64 bytes at a time,
+      // but is disabled due to bit 4 being set
+      proc->context_
+          .regFile[arch::aarch64::RegisterType::SYSTEM]
+                  [arch.getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)] = {
+          static_cast<uint64_t>(0b10100), 8};
+    }
+
+    processes_.emplace(processes_.begin(), proc);
+  }
 };
 
 }  // namespace kernel

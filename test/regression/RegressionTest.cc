@@ -54,9 +54,10 @@ void RegressionTest::run(const char* source, const char* triple,
       simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_,
       architecture_->getRegisterFileStructures());
   ASSERT_TRUE(process_->isValid());
+  processMemorySize_ = process_->context_.progByteLen;
 
   // Update the initial process in the kernel
-  simOS_kernel.setInitialProcess(process_);
+  simOS_kernel.setInitialProcess(process_, *architecture_);
 
   // Create memory interfaces for instruction and data access.
   // For each memory interface, a dereferenced shared_ptr to the
@@ -104,6 +105,9 @@ void RegressionTest::run(const char* source, const char* triple,
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }
+
+  // Schedule Process on core
+  core_->schedule(process_);
 
   // Run the core model until the program is complete
   while (!core_->hasHalted() || dataMemory->hasPendingRequests()) {
