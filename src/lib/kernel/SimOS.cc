@@ -39,15 +39,15 @@ void SimOS::tick() {
   // Check process status
   auto iter = processes_.begin();
   while (iter != processes_.end()) {
-    if ((*iter)->status_ == completed) {
+    if ((*iter)->status_ == procStatus::completed) {
       // Remove finished processes
       iter = processes_.erase(iter);
       continue;
     }
-    if ((*iter)->status_ == waiting) {
+    if ((*iter)->status_ == procStatus::waiting) {
       // Try schedule waiting process
       for (auto i : cores_) {
-        if (i->isIdle()) {
+        if (i->getStatus() == CoreStatus::idle) {
           // Schedule process with idle core
           i->schedule(*iter);
         } else {

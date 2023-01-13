@@ -113,7 +113,7 @@ class Process {
   uint64_t clearChildTid = 0;
 
   /** Current status of the process. */
-  procStatus status_ = waiting;
+  procStatus status_ = procStatus::waiting;
 
   cpuContext context_;
 

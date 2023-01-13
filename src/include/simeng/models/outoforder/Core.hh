@@ -37,11 +37,8 @@ class Core : public simeng::Core {
    * end of each cycle. */
   void tick() override;
 
-  /** Check whether the program has halted. */
-  bool hasHalted() const override;
-
-  /** Check if the core is in an idle state. */
-  bool isIdle() const override;
+  /** Check the current status of the core. */
+  CoreStatus getStatus() override;
 
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
@@ -74,6 +71,9 @@ class Core : public simeng::Core {
 
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
+
+  /** The current state the core is in. */
+  CoreStatus status_ = CoreStatus::idle;
 
   const arch::Architecture& isa_;
 
@@ -162,14 +162,8 @@ class Core : public simeng::Core {
   /** A pointer to the instruction responsible for generating the exception. */
   std::shared_ptr<Instruction> exceptionGeneratingInstruction_;
 
-  /** Whether the core has halted. */
-  bool hasHalted_ = false;
-
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
-
-  /** Indicated whether the core is in an idle state. */
-  bool idle_ = true;
 
   /** The number of ticks whilst in an idle state. */
   uint64_t idle_ticks_ = 0;
