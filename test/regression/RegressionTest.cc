@@ -107,9 +107,14 @@ void RegressionTest::run(const char* source, const char* triple,
   }
 
   // Schedule Process on core
+  /** NOTE: Not using SimOS as core_ must be unique_ptr, but SimOS expects
+   * shared_ptr. */
   core_->schedule(process_);
 
   // Run the core model until the program is complete
+  /** NOTE: As we cannot register the core with SimOS, and as such no scheduling
+   * occurs, we do not need to tick SimOS nor check its halted status in the
+   * Regression Test. */
   while (!(core_->getStatus() == simeng::CoreStatus::halted) ||
          dataMemory->hasPendingRequests()) {
     ASSERT_LT(numTicks_, maxTicks_) << "Maximum tick count exceeded.";

@@ -33,29 +33,56 @@ SimOS::SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem)
 void SimOS::tick() {
   // Check for empty processes_ vector
   if (processes_.size() == 0) {
-    // TODO: Add halt functionality
+    halted_ = true;
+    return;
+  }
+
+  // Check if any cores have halted
+  for (auto i : cores_) {
+    if (i->getStatus() == CoreStatus::halted) {
+      // Core has experienced a fatal exception, halt simulation
+      halted_ = true;
+      return;
+    }
   }
 
   // Check process status
   auto iter = processes_.begin();
   while (iter != processes_.end()) {
-    if ((*iter)->status_ == procStatus::completed) {
-      // Remove finished processes
-      iter = processes_.erase(iter);
-      continue;
-    }
-    if ((*iter)->status_ == procStatus::waiting) {
-      // Try schedule waiting process
-      for (auto i : cores_) {
-        if (i->getStatus() == CoreStatus::idle) {
-          // Schedule process with idle core
-          i->schedule(*iter);
-        } else {
-          // Check how long current process has been executing.
-          // If over threshold, interrupr core
-          // TODO : Set up round robin scheduling.
+    switch ((*iter)->status_) {
+      case procStatus::completed:
+        // Remove finished processes
+        iter = processes_.erase(iter);
+        continue;
+      case procStatus::waiting: {
+        // Try schedule waiting process
+        for (auto i : cores_) {
+          switch (i->getStatus()) {
+            case CoreStatus::halted:
+              // Core has experienced a fatal exception, halt simulation
+              halted_ = true;
+              return;
+            case CoreStatus::idle:
+              // Schedule process with idle core
+              i->schedule(*iter);
+              break;
+            case CoreStatus::executing:
+              // Check how long current process has been executing.
+              // If over threshold, interrupr core
+              // TODO : Set up round robin scheduling.
+              break;
+            case CoreStatus::exception:
+              // Exception or Syscall being processed, try again another cycle
+              [[fallthough]];
+            default:
+              break;
+          }
         }
       }
+      case procStatus::executing:
+        [[fallthough]];
+      default:
+        break;
     }
     iter++;
   }

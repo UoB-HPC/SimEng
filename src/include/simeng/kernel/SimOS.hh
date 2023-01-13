@@ -59,9 +59,13 @@ class SimOS {
     return syscallHandler_;
   }
 
+  /** Register a core with the OS to enable process scheduling. */
   void registerCore(std::shared_ptr<simeng::Core> core) {
     cores_.emplace_back(core);
   }
+
+  /** Check if OS has halted. */
+  bool hasHalted() const { return halted_; };
 
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */
@@ -94,6 +98,10 @@ class SimOS {
 
   /** SyscallHandler Object to process all syscalls. */
   std::shared_ptr<SyscallHandler> syscallHandler_;
+
+  /** Indicates if lll processes have completed or a core has halted due to an
+   * exception. */
+  bool halted_ = false;
 
   /** Update the initial process to a pre-defined one.
    * !!NOTE: Should be used EXCLUSIVELY by the test suite !! */
