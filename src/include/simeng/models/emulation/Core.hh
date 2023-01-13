@@ -27,11 +27,8 @@ class Core : public simeng::Core {
   /** Tick the core. */
   void tick() override;
 
-  /** Check whether the program has halted. */
-  bool hasHalted() const override;
-
-  /** Check if the core is in an idle state. */
-  bool isIdle() const override;
+  /** Check the current status of the core. */
+  CoreStatus getStatus() override;
 
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
@@ -62,6 +59,9 @@ class Core : public simeng::Core {
   /** Apply changes to the process state. */
   void applyStateChange(const arch::ProcessStateChange& change);
 
+  /** The current state the core is in. */
+  CoreStatus status_ = CoreStatus::idle;
+
   /** A memory interface to access instructions. */
   MemoryInterface& instructionMemory_;
 
@@ -87,9 +87,6 @@ class Core : public simeng::Core {
    * register file set. */
   ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
 
-  /** Whether or not the core has halted. */
-  bool hasHalted_ = false;
-
   /** A reusable macro-op vector to fill with uops. */
   MacroOp macroOp_;
 
@@ -110,9 +107,6 @@ class Core : public simeng::Core {
 
   /** The number of branches executed. */
   uint64_t branchesExecuted_ = 0;
-
-  /** Indicated whether the core is in an idle state. */
-  bool idle_ = true;
 
   /** The number of ticks whilst in an idle state. */
   uint64_t idle_ticks_ = 0;

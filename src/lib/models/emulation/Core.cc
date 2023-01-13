@@ -23,15 +23,17 @@ void Core::tick() {
   ticks_++;
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
-  if (idle_) {
+  if (status_ == CoreStatus::idle) {
     idle_ticks_++;
     return;
   }
 
-  if (hasHalted_) return;
+  if (status_ == CoreStatus::halted) {
+    return;
+  }
 
   if (pc_ >= programByteLength_) {
-    hasHalted_ = true;
+    status_ = CoreStatus::halted;
     return;
   }
 
@@ -221,7 +223,7 @@ void Core::processExceptionHandler() {
 
   if (result.fatal) {
     pc_ = programByteLength_;
-    hasHalted_ = true;
+    status_ = CoreStatus::halted;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     pc_ = result.instructionAddress;
@@ -276,9 +278,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
   }
 }
 
-bool Core::hasHalted() const { return hasHalted_; }
-
-bool Core::isIdle() const { return idle_; }
+CoreStatus Core::getStatus() { return status_; }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
     const {
@@ -309,7 +309,7 @@ void Core::schedule(std::shared_ptr<simeng::kernel::Process> newProc) {
     }
   }
   newProc->status_ = kernel::procStatus::executing;
-  idle_ = false;
+  status_ = CoreStatus::executing;
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});

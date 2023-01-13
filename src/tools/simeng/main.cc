@@ -20,9 +20,10 @@ int simulate(simeng::kernel::SimOS& simOS, simeng::Core& core,
   uint64_t iterations = 0;
 
   // Tick the core and memory interfaces until the program has halted
-  while (!core.hasHalted() || dataMemory.hasPendingRequests()) {
+  while (!(core.getStatus() == simeng::CoreStatus::halted) ||
+         dataMemory.hasPendingRequests()) {
     // Tick SimOS
-    if (iterations > 10) simOS.tick();  // TEMP to test scheduling works
+    simOS.tick();  // TEMP to test scheduling works
 
     // Tick the core
     core.tick();

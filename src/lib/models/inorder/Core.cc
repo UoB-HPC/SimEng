@@ -39,12 +39,14 @@ void Core::tick() {
   ticks_++;
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
-  if (idle_) {
+  if (status_ == CoreStatus::idle) {
     idle_ticks_++;
     return;
   }
 
-  if (hasHalted_) return;
+  if (status_ == CoreStatus::halted) {
+    return;
+  }
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -110,23 +112,21 @@ void Core::tick() {
   fetchUnit_.requestFromPC();
 }
 
-bool Core::hasHalted() const {
-  if (hasHalted_) {
-    return true;
-  }
-
-  // Core is considered to have halted when the fetch unit has halted, there
-  // are no uops at the head of any buffer, and no exception is currently being
+CoreStatus Core::getStatus() {
+  // Core is considered to have halted when the fetch unit has halted, there are
+  // no uops at the head of any buffer, and no exception is currently being
   // handled.
   bool decodePending = fetchToDecodeBuffer_.getHeadSlots()[0].size() > 0;
   bool executePending = decodeToExecuteBuffer_.getHeadSlots()[0] != nullptr;
   bool writebackPending = completionSlots_[0].getHeadSlots()[0] != nullptr;
 
-  return (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
-          !executePending && exceptionHandler_ == nullptr);
-}
+  if (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
+      !executePending && exceptionHandler_ == nullptr) {
+    status_ = CoreStatus::halted;
+  }
 
-bool Core::isIdle() const { return idle_; }
+  return status_;
+}
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
     const {
@@ -206,7 +206,7 @@ void Core::processExceptionHandler() {
   const auto& result = exceptionHandler_->getResult();
 
   if (result.fatal) {
-    hasHalted_ = true;
+    status_ = CoreStatus::halted;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.flushLoopBuffer();
@@ -366,7 +366,7 @@ void Core::schedule(std::shared_ptr<simeng::kernel::Process> newProc) {
     }
   }
   newProc->status_ = kernel::procStatus::executing;
-  idle_ = false;
+  status_ = CoreStatus::executing;
 }
 
 }  // namespace inorder

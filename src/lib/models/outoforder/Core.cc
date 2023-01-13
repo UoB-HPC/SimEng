@@ -104,12 +104,14 @@ void Core::tick() {
   ticks_++;
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
-  if (idle_) {
+  if (status_ == CoreStatus::idle) {
     idle_ticks_++;
     return;
   }
 
-  if (hasHalted_) return;
+  if (status_ == CoreStatus::halted) {
+    return;
+  }
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -224,42 +226,37 @@ void Core::flushIfNeeded() {
   }
 }
 
-bool Core::hasHalted() const {
-  if (hasHalted_) {
-    return true;
-  }
-
-  // Core is considered to have halted when the fetch unit has halted, there
-  // are no uops at the head of any buffer, and no exception is currently being
+CoreStatus Core::getStatus() {
+  // Core is considered to have halted when the fetch unit has halted, there are
+  // no uops at the head of any buffer, and no exception is currently being
   // handled.
-  if (!fetchUnit_.hasHalted()) {
-    return false;
-  }
-
-  if (reorderBuffer_.size() > 0) {
-    return false;
-  }
-
-  auto decodeSlots = fetchToDecodeBuffer_.getHeadSlots();
-  for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
-    if (decodeSlots[slot].size() > 0) {
-      return false;
+  if (fetchUnit_.hasHalted() && !(reorderBuffer_.size() > 0) &&
+      (exceptionHandler_ == nullptr)) {
+    bool decodeSlotEmpty = true;
+    auto decodeSlots = fetchToDecodeBuffer_.getHeadSlots();
+    for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
+      if (decodeSlots[slot].size() > 0) {
+        decodeSlotEmpty = false;
+        break;
+      }
+    }
+    if (decodeSlotEmpty) {
+      bool renameSlotEmpty = true;
+      auto renameSlots = decodeToRenameBuffer_.getHeadSlots();
+      for (size_t slot = 0; slot < decodeToRenameBuffer_.getWidth(); slot++) {
+        if (renameSlots[slot] != nullptr) {
+          renameSlotEmpty = false;
+          break;
+        }
+      }
+      if (renameSlotEmpty) {
+        status_ = CoreStatus::halted;
+      }
     }
   }
 
-  auto renameSlots = decodeToRenameBuffer_.getHeadSlots();
-  for (size_t slot = 0; slot < decodeToRenameBuffer_.getWidth(); slot++) {
-    if (renameSlots[slot] != nullptr) {
-      return false;
-    }
-  }
-
-  if (exceptionHandler_ != nullptr) return false;
-
-  return true;
+  return status_;
 }
-
-bool Core::isIdle() const { return idle_; }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
   exceptionGenerated_ = true;
@@ -311,7 +308,7 @@ void Core::processExceptionHandler() {
   const auto& result = exceptionHandler_->getResult();
 
   if (result.fatal) {
-    hasHalted_ = true;
+    status_ = CoreStatus::halted;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.flushLoopBuffer();
@@ -443,7 +440,9 @@ void Core::schedule(std::shared_ptr<simeng::kernel::Process> newProc) {
     }
   }
   newProc->status_ = kernel::procStatus::executing;
-  idle_ = false;
+  status_ = CoreStatus::executing;
+
+  // Store processes Globally unique ID (Thread ID?)
 }
 
 }  // namespace outoforder
