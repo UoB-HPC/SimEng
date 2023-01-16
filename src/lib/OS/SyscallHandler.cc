@@ -35,8 +35,8 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
       //   return -1;
       // }
     }
-    return dfd_temp;
   }
+  return dfd_temp;
 }
 
 std::string SyscallHandler::getSpecialFile(const std::string filename) {
@@ -330,9 +330,11 @@ int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
 }
 
 uint64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
-                              int fd, off_t offset) {
-  return processes_.find(0)->second->getMemRegion().mmapRegion(addr, length, fd,
-                                                               prot, flags);
+                              int fd, off_t offset){
+    return processes_.find(0)->second->getMemRegion().mmapRegion(addr, length,
+                                                                 fd, prot,
+                                                                 flags)
+
 }
 
 int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
@@ -386,6 +388,7 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
   if (dirfd == -1) return EBADF;
 
   std::shared_ptr<Process> proc = processes_.find(0)->second;
+
   return proc->fdArray_->allocateFDEntry(dirfd, new_pathname.c_str(), newFlags,
                                          mode);
 }
@@ -470,7 +473,7 @@ int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
-  auto entry = processes_.find(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }
@@ -504,7 +507,7 @@ int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
 }
 
 int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
-  auto entry = processes_.find(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }
@@ -513,7 +516,7 @@ int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
-  auto entry = processes_.find(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }
