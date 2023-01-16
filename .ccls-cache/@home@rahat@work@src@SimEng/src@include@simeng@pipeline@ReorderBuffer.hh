@@ -24,6 +24,7 @@ struct latestBranch {
 };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 /** Check if the instruction ID is less/greater than a given value used by
  *  binary_search. */
 struct idCompare {
@@ -40,6 +41,8 @@ struct idCompare {
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 /** A Reorder Buffer (ROB) implementation. Contains an in-order queue of
  * in-flight instructions. */
 class ReorderBuffer {
@@ -65,12 +68,15 @@ class ReorderBuffer {
   void flush(uint64_t afterSeqId);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /** Flush all instructions from ROB. Intended for use during context switch.
    */
   void flush();
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** Retrieve the current size of the ROB. */
   unsigned int size() const;
 

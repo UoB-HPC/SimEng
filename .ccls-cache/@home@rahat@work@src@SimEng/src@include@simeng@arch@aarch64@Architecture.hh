@@ -5,17 +5,10 @@
 #include <unordered_map>
 
 #include "simeng/Config.hh"
-<<<<<<< HEAD
 #include "simeng/OS/SyscallHandler.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 #include "simeng/arch/aarch64/MicroDecoder.hh"
-=======
-#include "simeng/arch/Architecture.hh"
-#include "simeng/arch/aarch64/ExceptionHandler.hh"
-#include "simeng/arch/aarch64/MicroDecoder.hh"
-#include "simeng/kernel/SyscallHandler.hh"
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
 using csh = size_t;
 
@@ -26,11 +19,7 @@ namespace aarch64 {
 /* A basic Armv9.2-a implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-<<<<<<< HEAD
   Architecture(std::shared_ptr<OS::SyscallHandler> syscallHanlder);
-=======
-  Architecture(std::shared_ptr<kernel::SyscallHandler> syscallHanlder);
->>>>>>> c36c82eb (added PageArameAllocator decl)
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -57,12 +46,6 @@ class Architecture : public arch::Architecture {
       const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
       MemoryInterface& memory) const override;
 
-<<<<<<< HEAD
-=======
-  /** Retrieve the initial process state. */
-  ProcessStateChange getInitialState(uint64_t stackPointer) const override;
-
->>>>>>> c36c82eb (added PageArameAllocator decl)
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
 
@@ -98,13 +81,10 @@ class Architecture : public arch::Architecture {
   /** Update the value of SVCRval_. */
   void setSVCRval(const uint64_t newVal) const;
 
-<<<<<<< HEAD
   /** After a context switch, update any required variables. */
   void updateAfterContextSwitch(
       const simeng::OS::cpuContext& context) const override;
 
-=======
->>>>>>> c36c82eb (added PageArameAllocator decl)
  private:
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to
@@ -132,13 +112,8 @@ class Architecture : public arch::Architecture {
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;
 
-<<<<<<< HEAD
   /** A reference to SyscallHandler object to forward syscalls to. */
   std::shared_ptr<OS::SyscallHandler> syscallHandler_;
-=======
-  /** A reference to a Linux kernel object to forward syscalls to. */
-  std::shared_ptr<kernel::SyscallHandler> syscallHandler_;
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** A reference to a micro decoder object to split macro operations. */
   std::unique_ptr<MicroDecoder> microDecoder_;

@@ -223,6 +223,7 @@ uint64_t ExecuteUnit::getBranchMispredictedCount() const {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 void ExecuteUnit::flush() {
   pipeline_.clear();
   operationsStalled_.clear();
@@ -230,6 +231,8 @@ void ExecuteUnit::flush() {
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 uint64_t ExecuteUnit::getCycles() const { return cycles_; }
 
 }  // namespace pipeline

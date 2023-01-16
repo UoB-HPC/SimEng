@@ -14,18 +14,9 @@ namespace outoforder {
 
 // TODO: System register count has to match number of supported system registers
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-<<<<<<< HEAD
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator, YAML::Node& config)
     : isa_(isa),
-=======
-           uint64_t processMemorySize, uint64_t entryPoint,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator,
-           std::shared_ptr<kernel::Process> process, YAML::Node& config)
-    : isa_(isa),
-      process_(process),
->>>>>>> c36c82eb (added PageArameAllocator decl)
       physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
       physicalRegisterQuantities_(isa.getConfigPhysicalRegisterQuantities()),
       registerFileSet_(physicalRegisterStructures_),
@@ -61,15 +52,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
               .as<uint16_t>(),
           config["LSQ-L1-Interface"]["Permitted-Stores-Per-Cycle"]
               .as<uint16_t>()),
-<<<<<<< HEAD
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory,
                  config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(), isa,
                  branchPredictor),
-=======
-      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
-                 entryPoint, config["Fetch"]["Fetch-Block-Size"].as<uint16_t>(),
-                 isa, branchPredictor),
->>>>>>> c36c82eb (added PageArameAllocator decl)
       reorderBuffer_(
           config["Queue-Sizes"]["ROB"].as<unsigned int>(), registerAliasTable_,
           loadStoreQueue_,
@@ -113,19 +98,10 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {
     dispatchIssueUnit_.getRSSizes(sizeVec);
   });
-<<<<<<< HEAD
-=======
-
-  // Query and apply initial state
-  auto state =
-      isa.getInitialState(process_->getMemRegion().getInitialStackStart());
-  applyStateChange(state);
->>>>>>> c36c82eb (added PageArameAllocator decl)
 };
 
 void Core::tick() {
   ticks_++;
-<<<<<<< HEAD
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
   switch (status_) {
@@ -158,10 +134,6 @@ void Core::tick() {
 
   // Increase tick count for current process execution
   procTicks_++;
-=======
-
-  if (hasHalted_) return;
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -191,13 +163,8 @@ void Core::tick() {
   dispatchIssueUnit_.issue();
 
   // Tick buffers
-<<<<<<< HEAD
   // Each unit must have wiped the entries at the head of the buffer after
   // use, as these will now loop around and become the tail.
-=======
-  // Each unit must have wiped the entries at the head of the buffer after use,
-  // as these will now loop around and become the tail.
->>>>>>> c36c82eb (added PageArameAllocator decl)
   fetchToDecodeBuffer_.tick();
   decodeToRenameBuffer_.tick();
   renameToDispatchBuffer_.tick();
@@ -219,10 +186,6 @@ void Core::tick() {
 
   flushIfNeeded();
   fetchUnit_.requestFromPC();
-<<<<<<< HEAD
-=======
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
->>>>>>> c36c82eb (added PageArameAllocator decl)
 }
 
 void Core::flushIfNeeded() {
@@ -285,7 +248,6 @@ void Core::flushIfNeeded() {
   }
 }
 
-<<<<<<< HEAD
 CoreStatus Core::getStatus() {
   // Core is considered to have halted when the fetch unit has halted, there
   // are no uops at the head of any buffer, and no exception is currently
@@ -316,41 +278,6 @@ CoreStatus Core::getStatus() {
   }
 
   return status_;
-=======
-bool Core::hasHalted() const {
-  if (hasHalted_) {
-    return true;
-  }
-
-  // Core is considered to have halted when the fetch unit has halted, there
-  // are no uops at the head of any buffer, and no exception is currently being
-  // handled.
-  if (!fetchUnit_.hasHalted()) {
-    return false;
-  }
-
-  if (reorderBuffer_.size() > 0) {
-    return false;
-  }
-
-  auto decodeSlots = fetchToDecodeBuffer_.getHeadSlots();
-  for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
-    if (decodeSlots[slot].size() > 0) {
-      return false;
-    }
-  }
-
-  auto renameSlots = decodeToRenameBuffer_.getHeadSlots();
-  for (size_t slot = 0; slot < decodeToRenameBuffer_.getWidth(); slot++) {
-    if (renameSlots[slot] != nullptr) {
-      return false;
-    }
-  }
-
-  if (exceptionHandler_ != nullptr) return false;
-
-  return true;
->>>>>>> c36c82eb (added PageArameAllocator decl)
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
@@ -369,13 +296,8 @@ void Core::handleException() {
   renameToDispatchBuffer_.stall(false);
 
   // Flush everything younger than the exception-generating instruction.
-<<<<<<< HEAD
   // This must happen prior to handling the exception to ensure the commit
   // state is up-to-date with the register mapping table
-=======
-  // This must happen prior to handling the exception to ensure the commit state
-  // is up-to-date with the register mapping table
->>>>>>> c36c82eb (added PageArameAllocator decl)
   reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId());
   decodeUnit_.purgeFlushed();
   dispatchIssueUnit_.purgeFlushed();
@@ -408,11 +330,7 @@ void Core::processExceptionHandler() {
   const auto& result = exceptionHandler_->getResult();
 
   if (result.fatal) {
-<<<<<<< HEAD
     status_ = CoreStatus::halted;
-=======
-    hasHalted_ = true;
->>>>>>> c36c82eb (added PageArameAllocator decl)
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.flushLoopBuffer();
@@ -530,7 +448,6 @@ std::map<std::string, std::string> Core::getStats() const {
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
           {"branch.missrate", branchMissRateStr.str()},
           {"lsq.loadViolations",
-<<<<<<< HEAD
            std::to_string(reorderBuffer_.getViolatingLoadsCount())},
           {"idle.ticks", std::to_string(idle_ticks_)},
           {"context.switches", std::to_string(contextSwitches_)}};
@@ -591,9 +508,6 @@ simeng::OS::cpuContext Core::getPrevContext() const {
   // Do not need to explicitly set newContext.sp as it will be included in
   // regFile
   return newContext;
-=======
-           std::to_string(reorderBuffer_.getViolatingLoadsCount())}};
->>>>>>> c36c82eb (added PageArameAllocator decl)
 }
 
 }  // namespace outoforder

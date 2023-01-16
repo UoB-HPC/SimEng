@@ -31,10 +31,13 @@ namespace simeng {
 namespace kernel {
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 class SimOS;
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 /** Fixed-width definition of `stat`.
  * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
 struct stat {
@@ -114,10 +117,14 @@ class SyscallHandler {
  public:
   /** Create new SyscallHandler object. */
 <<<<<<< HEAD
+<<<<<<< HEAD
   SyscallHandler(SimOS* os);
 =======
   SyscallHandler(const std::vector<std::shared_ptr<Process>>& processes);
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+  SyscallHandler(const std::vector<std::shared_ptr<Process>>& processes);
+>>>>>>> 76a7cd60 (added pfalloc file)
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */
@@ -181,12 +188,17 @@ class SyscallHandler {
 
   /** mmap syscall: map files or devices into memory. */
 <<<<<<< HEAD
+<<<<<<< HEAD
   int64_t mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
                off_t offset);
 =======
   uint64_t mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
                 off_t offset);
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+  uint64_t mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
+                off_t offset);
+>>>>>>> 76a7cd60 (added pfalloc file)
 
   /** openat syscall: open/create a file. */
   int64_t openat(int64_t dirfd, const std::string& path, int64_t flags,
@@ -223,9 +235,12 @@ class SyscallHandler {
 
  private:
 <<<<<<< HEAD
+<<<<<<< HEAD
   SimOS* os_ = nullptr;
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** Resturn correct Dirfd depending on given pathname abd dirfd given to
    * syscall. */
   uint64_t getDirFd(int64_t dfd, std::string pathname);
@@ -235,11 +250,17 @@ class SyscallHandler {
   std::string getSpecialFile(const std::string filename);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   /** The state of the user-space processes running above the kernel. */
   const std::vector<std::shared_ptr<Process>>& processes_;
 
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+  /** The state of the user-space processes running above the kernel. */
+  const std::vector<std::shared_ptr<Process>>& processes_;
+
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
 

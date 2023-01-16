@@ -248,10 +248,14 @@ void ModelConfig::validate() {
       root = "Register-Set";
       subFields = {"GeneralPurpose-Count", "FloatingPoint/SVE-Count",
 <<<<<<< HEAD
+<<<<<<< HEAD
                    "Predicate-Count", "Conditional-Count", "Matrix-Count"};
 =======
                    "Predicate-Count", "Conditional-Count", "MatrixRow-Count"};
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+                   "Predicate-Count", "Conditional-Count", "MatrixRow-Count"};
+>>>>>>> 76a7cd60 (added pfalloc file)
       nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
                             std::make_pair(32, UINT16_MAX),
                             ExpectedValue::UInteger);
@@ -265,17 +269,23 @@ void ModelConfig::validate() {
                             std::make_pair(1, UINT16_MAX),
                             ExpectedValue::UInteger);
 <<<<<<< HEAD
+<<<<<<< HEAD
       nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
                             std::make_pair(1, UINT16_MAX),
                             ExpectedValue::UInteger, 1);
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
       nodeChecker<uint16_t>(
           configFile_[root][subFields[4]], subFields[4],
           std::make_pair(
               configFile_["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8,
               UINT16_MAX),
           ExpectedValue::UInteger, 128);
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
     }
 
     subFields.clear();

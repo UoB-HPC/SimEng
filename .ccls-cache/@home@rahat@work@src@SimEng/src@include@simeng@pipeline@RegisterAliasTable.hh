@@ -47,12 +47,15 @@ class RegisterAliasTable {
   void free(Register physical);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /** Reset the RAT to an initialised state - wipe all mappings.*/
   void reset(const std::vector<RegisterFileStructure>& architecturalStructure,
              const std::vector<uint16_t>& physicalRegisterCounts);
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
  private:
   /** The register mapping tables. Holds a map of architectural -> physical
    * register mappings for each register type. */

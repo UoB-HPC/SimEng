@@ -39,13 +39,8 @@ class FetchUnit {
   /** Construct a fetch unit with a reference to an output buffer, the ISA, and
    * the current branch predictor, and information on the instruction memory. */
   FetchUnit(PipelineBuffer<MacroOp>& output, MemoryInterface& instructionMemory,
-<<<<<<< HEAD
             uint8_t blockSize, const arch::Architecture& isa,
             BranchPredictor& branchPredictor);
-=======
-            uint64_t programByteLength, uint64_t entryPoint, uint8_t blockSize,
-            const arch::Architecture& isa, BranchPredictor& branchPredictor);
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
   ~FetchUnit();
 
@@ -60,7 +55,6 @@ class FetchUnit {
    * outside of instruction memory. */
   bool hasHalted() const;
 
-<<<<<<< HEAD
   /** Update the program counter to the specified address.
    * NOTE: Must set program length before calling when scheduling.
    */
@@ -71,11 +65,6 @@ class FetchUnit {
    */
   void setProgramLength(uint64_t size);
 
-=======
-  /** Update the program counter to the specified address. */
-  void updatePC(uint64_t address);
-
->>>>>>> c36c82eb (added PageArameAllocator decl)
   /** Request instructions at the current program counter for a future cycle. */
   void requestFromPC();
 
@@ -86,7 +75,6 @@ class FetchUnit {
   /** Clear the loop buffer. */
   void flushLoopBuffer();
 
-<<<<<<< HEAD
   /** Temporarily pause the FetchUnit. */
   void pause() {
     paused_ = true;
@@ -103,8 +91,6 @@ class FetchUnit {
   /** Get the current PC value. */
   uint64_t getPC() const { return pc_; };
 
-=======
->>>>>>> c36c82eb (added PageArameAllocator decl)
  private:
   /** An output buffer connecting this unit to the decode unit. */
   PipelineBuffer<MacroOp>& output_;
@@ -116,11 +102,7 @@ class FetchUnit {
   MemoryInterface& instructionMemory_;
 
   /** The length of the available instruction memory. */
-<<<<<<< HEAD
   uint64_t programByteLength_ = 0;
-=======
-  uint64_t programByteLength_;
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** Reference to the currently used ISA. */
   const arch::Architecture& isa_;
@@ -157,15 +139,12 @@ class FetchUnit {
 
   /** The amount of data currently in the fetch buffer. */
   uint8_t bufferedBytes_ = 0;
-<<<<<<< HEAD
 
   /** The Fetch Unit's paused state - when an interupt has been signalled, the
    * Fetch Unit must not fetch / increment the PC until a new process has been
    * scheduled. This ensures the correct architectural state can be captured
    * during a context switch. */
   bool paused_ = false;
-=======
->>>>>>> c36c82eb (added PageArameAllocator decl)
 };
 
 }  // namespace pipeline

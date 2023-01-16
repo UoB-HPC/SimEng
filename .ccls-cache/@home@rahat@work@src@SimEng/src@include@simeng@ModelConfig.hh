@@ -15,7 +15,10 @@
 #include "yaml-cpp/yaml.h"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 #define DEFAULT_CONFIG                                                         \
   ("{Core: {ISA: AArch64, Simulation-Mode: inorderpipelined, "                 \
    "Clock-Frequency: 2.5, Timer-Frequency: 100, Micro-Operations: True, "      \
@@ -46,7 +49,10 @@
    "CPU-Implementer: 0x0, CPU-Architecture: 0, CPU-Variant: 0x0, CPU-Part: "   \
    "0x0, CPU-Revision: 0, Package-Count: 1}}")
 
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 namespace simeng {
 
 namespace ExpectedValue {

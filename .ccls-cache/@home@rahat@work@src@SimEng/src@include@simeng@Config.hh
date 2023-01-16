@@ -18,10 +18,14 @@ class Config {
    "4}, Process-Image: {Heap-Size: 10485760, Stack-Size: 1048576}, "           \
    "Register-Set: {GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "   \
 <<<<<<< HEAD
+<<<<<<< HEAD
    "Predicate-Count: 17, Conditional-Count: 128, Matrix-Count: 2}, "           \
 =======
    "Predicate-Count: 17, Conditional-Count: 128, MatrixRow-Count: 128}, "      \
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+   "Predicate-Count: 17, Conditional-Count: 128, MatrixRow-Count: 128}, "      \
+>>>>>>> 76a7cd60 (added pfalloc file)
    "Pipeline-Widths: {Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "            \
    "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "          \
    "{BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, Global-History-Length: 10, "  \
@@ -97,21 +101,31 @@ class Config {
   static void set(std::string path) { getInstance()->makeConfig(path); }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /** Update the config to a provided YAML::Node. */
 =======
   /** Update the config to a provided YAML::Node.
    * Primarily used by the test suite. */
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+  /** Update the config to a provided YAML::Node.
+   * Primarily used by the test suite. */
+>>>>>>> 76a7cd60 (added pfalloc file)
   static void set(YAML::Node newConfig) {
     getInstance()->makeConfig(newConfig);
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   /** Update the config via a provided char* input. */
 =======
   /** Update the config via a provided char* input.
    * Primarily used by the test suite. */
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+  /** Update the config via a provided char* input.
+   * Primarily used by the test suite. */
+>>>>>>> 76a7cd60 (added pfalloc file)
   static void set(const char* configStr) {
     getInstance()->makeConfig(configStr);
   }

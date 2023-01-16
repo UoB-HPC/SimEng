@@ -1,22 +1,29 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include <errno.h>
 #include <fcntl.h>
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 #include <stdint.h>
 #include <sys/stat.h>
 
 #include <array>
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include <iostream>
 #include <string>
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
 #define MAX_FD_NUM 1024
 
 /** A FileDescEntry represents a host to virtual file descriptor mapping. */
 struct FileDescEntry {
+<<<<<<< HEAD
 <<<<<<< HEAD
  public:
   FileDescEntry(){};
@@ -68,6 +75,8 @@ struct FileDescEntry {
   /** Name of the opened file. */
   std::string filename_;
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** Host file descriptor. */
   const int fd_;
   /** Virtual file descriptor. */
@@ -78,11 +87,15 @@ struct FileDescEntry {
   const char* filename_;
   FileDescEntry(int fd, int vfd, int flags, const char* filename)
       : fd_(fd), vfd_(vfd), flags_(flags), filename_(filename) {}
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 };
 
 /** This class managed the all host to virtual file descriptor mappings. */
 class FileDescArray {
+<<<<<<< HEAD
 <<<<<<< HEAD
  public:
   FileDescArray();
@@ -110,6 +123,8 @@ class FileDescArray {
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
  private:
   /**
    * Maximum number of file descriptors per process, defined by the linux
@@ -119,10 +134,14 @@ class FileDescArray {
 
   /** Array which holds FileDescEntry(s) */
 <<<<<<< HEAD
+<<<<<<< HEAD
   std::array<FileDescEntry, maxFdNum_> fdarr_;
 =======
   std::array<FileDescEntry*, maxFdNum_> fdarr_;
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+  std::array<FileDescEntry*, maxFdNum_> fdarr_;
+>>>>>>> 76a7cd60 (added pfalloc file)
 
   /** Number of FileDescEntry(s) in fdarr_ */
   uint64_t numFds_ = 0;
@@ -133,8 +152,11 @@ class FileDescArray {
    */
   void validate(int vfd = -1);
 <<<<<<< HEAD
+<<<<<<< HEAD
 };
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
  public:
   FileDescArray();
@@ -155,5 +177,9 @@ class FileDescArray {
    * syscall with the fd corresponding to specified vfd.
    */
   int removeFDEntry(int vfd);
+<<<<<<< HEAD
 };
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+};
+>>>>>>> 76a7cd60 (added pfalloc file)

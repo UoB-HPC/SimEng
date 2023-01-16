@@ -1,12 +1,16 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 #pragma once
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 #include <stdint.h>
 
 #include <array>
 #include <climits>
 #include <cstddef>
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 #include "simeng/kernel/Constants.hh"
@@ -46,6 +50,8 @@ class PageFrameAllocator {
   /** Address of the next free page frame address. */
   uint64_t nextFreeAddr_ = 0;
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 namespace simeng {
 namespace kernel {
 
@@ -69,7 +75,10 @@ class PageFrameAllocator {
   PageFrameAllocator();
   ~PageFrameAllocator();
   uint64_t allocatePageFrames(size_t size);
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 };
 
 }  // namespace kernel

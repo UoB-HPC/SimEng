@@ -107,6 +107,7 @@ void RegisterAliasTable::free(Register physical) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 void RegisterAliasTable::reset(
     const std::vector<RegisterFileStructure>& architecturalStructure,
     const std::vector<uint16_t>& physicalRegisterCounts) {
@@ -137,5 +138,7 @@ void RegisterAliasTable::reset(
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 }  // namespace pipeline
 }  // namespace simeng

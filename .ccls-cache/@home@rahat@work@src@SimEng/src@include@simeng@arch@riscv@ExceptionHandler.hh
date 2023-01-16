@@ -2,15 +2,9 @@
 
 #include <functional>
 
-<<<<<<< HEAD
 #include "simeng/OS/SyscallHandler.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
-=======
-#include "simeng/arch/Architecture.hh"
-#include "simeng/arch/riscv/Instruction.hh"
-#include "simeng/kernel/SyscallHandler.hh"
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
 namespace simeng {
 namespace arch {
@@ -23,11 +17,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
    * the exception, along with the core model object and process memory. */
   ExceptionHandler(const std::shared_ptr<simeng::Instruction>& instruction,
                    const Core& core, MemoryInterface& memory,
-<<<<<<< HEAD
                    std::shared_ptr<OS::SyscallHandler> sysHandler);
-=======
-                   std::shared_ptr<kernel::SyscallHandler> linux);
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** Progress handling of the exception, by calling and returning the result of
    * the handler currently assigned to `resumeHandling_`. Returns `false` if
@@ -90,13 +80,8 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   /** The process memory. */
   MemoryInterface& memory_;
 
-<<<<<<< HEAD
   /** The Syscall Handler object to forward syscalls to. */
   std::shared_ptr<OS::SyscallHandler> sysHandler_;
-=======
-  /** The Linux kernel to forward syscalls to. */
-  std::shared_ptr<kernel::SyscallHandler> linux_;
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** The results of the exception. */
   ExceptionResult result_;

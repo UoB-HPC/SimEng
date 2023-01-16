@@ -9,6 +9,7 @@
 #include <vector>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "simeng/kernel/Constants.hh"
 #include "simeng/util/Math.hh"
 
@@ -147,6 +148,8 @@ class HostBackedFileMMaps {
   /** Vector of all host file maps. */
   std::vector<HostFileMMap*> hostvec;
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 #include "simeng/util/Math.hh"
 namespace simeng { 
 namespace kernel {
@@ -215,7 +218,10 @@ class HostBackedFileMMaps {
  public:
   ~HostBackedFileMMaps();
   HostFileMMap* mapfd(int fd, size_t size, off_t offset);
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 };
 
 typedef VirtualMemoryArea VMA;

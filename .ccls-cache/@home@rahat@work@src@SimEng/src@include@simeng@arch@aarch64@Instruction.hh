@@ -242,11 +242,17 @@ class Instruction : public simeng::Instruction {
               InstructionException exception);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   /** Copy Constructor. */
   Instruction(const Instruction& insn);
 
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+  /** Copy Constructor. */
+  Instruction(const Instruction& insn);
+
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** Retrieve the identifier for the first exception that occurred during
    * processing this instruction. */
   virtual InstructionException getException() const;

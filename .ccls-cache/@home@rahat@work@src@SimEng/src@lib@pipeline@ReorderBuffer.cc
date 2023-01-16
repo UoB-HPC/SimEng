@@ -35,6 +35,7 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
 
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
 <<<<<<< HEAD
+<<<<<<< HEAD
   if (!buffer_.empty()) {
     // Do a binary search to find the range of micro-ops that belong to macro-op
     // with ID insnId
@@ -58,6 +59,8 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
     }
   }
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   if (buffer_.size()) {
     size_t index = 0;
     int firstOp = -1;
@@ -92,7 +95,10 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
     }
   }
   return;
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 }
 
 unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
@@ -103,10 +109,14 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
   unsigned int n;
   for (n = 0; n < maxCommits; n++) {
 <<<<<<< HEAD
+<<<<<<< HEAD
     auto& uop = buffer_.front();
 =======
     auto& uop = buffer_[0];
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+    auto& uop = buffer_[0];
+>>>>>>> 76a7cd60 (added pfalloc file)
     if (!uop->canCommit()) {
       break;
     }
@@ -145,6 +155,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
     // Increment or swap out branch counter for loop detection
 <<<<<<< HEAD
+<<<<<<< HEAD
     if (uop->isBranch()) {
       if (!loopDetected_) {
         bool increment = true;
@@ -181,6 +192,8 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
               0};
         }
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
     if (uop->isBranch() && !loopDetected_) {
       bool increment = true;
       if (branchCounter_.first.address != uop->getInstructionAddress()) {
@@ -213,7 +226,10 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
         branchCounter_ = {{uop->getInstructionAddress(),
                            uop->getBranchPrediction(), instructionsCommitted_},
                           0};
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
       }
     }
     buffer_.pop_front();
@@ -252,6 +268,7 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 void ReorderBuffer::flush() {
   buffer_ = std::deque<std::shared_ptr<Instruction>>();
   shouldFlush_ = false;
@@ -262,6 +279,8 @@ void ReorderBuffer::flush() {
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 unsigned int ReorderBuffer::size() const { return buffer_.size(); }
 
 unsigned int ReorderBuffer::getFreeSpace() const {

@@ -1270,7 +1270,6 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(addresses);
         break;
       }
-<<<<<<< HEAD
       case Opcode::AArch64_ST1Fourv2s_POST: {  // st1 {vt.42, vt2.2s, vt3.2s,
                                                // vt4.2s}, [xn|sp], #imm
         const uint64_t base = operands[4].get<uint64_t>();
@@ -1296,9 +1295,6 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case Opcode::AArch64_ST1Twov16b: {  // st1 {vt.16b, vt2.16b}, [xn]
-=======
-      case Opcode::AArch64_ST1Twov16b: {  // st1v {vt.16b, vt2.16b}, [xn]
->>>>>>> c36c82eb (added PageArameAllocator decl)
         const uint64_t base = operands[2].get<uint64_t>();
         std::vector<MemoryAccessTarget> addresses;
         addresses.reserve(32);
@@ -1309,7 +1305,6 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
-<<<<<<< HEAD
       case Opcode::AArch64_ST1Twov4s: {  // st1 {vt.4s, vt2.4s}, [xn]
         const uint64_t base = operands[2].get<uint64_t>();
         std::vector<MemoryAccessTarget> addresses;
@@ -1321,8 +1316,6 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
-=======
->>>>>>> c36c82eb (added PageArameAllocator decl)
       case Opcode::AArch64_ST1i8_POST:
         [[fallthrough]];
       case Opcode::AArch64_ST1i8: {  // st1 {vt.b}[index], [xn]

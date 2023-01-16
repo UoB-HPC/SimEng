@@ -26,11 +26,14 @@ class WritebackUnit {
   uint64_t getInstructionsWrittenCount() const;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /** Removes all Instructions from CompletionSlots_. */
   void flush();
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
  private:
   /** Buffers of completed instructions to process. */
   std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots_;

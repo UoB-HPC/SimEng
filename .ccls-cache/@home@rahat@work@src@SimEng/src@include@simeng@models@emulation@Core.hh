@@ -9,10 +9,6 @@
 #include "simeng/MemoryInterface.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/arch/Architecture.hh"
-<<<<<<< HEAD
-=======
-#include "simeng/kernel/Process.hh"
->>>>>>> c36c82eb (added PageArameAllocator decl)
 #include "simeng/span.hh"
 
 namespace simeng {
@@ -26,23 +22,13 @@ class Core : public simeng::Core {
    * instructions and data, along with the instruction entry point and an ISA to
    * use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-<<<<<<< HEAD
        const arch::Architecture& isa);
-=======
-       uint64_t entryPoint, uint64_t programByteLength,
-       const arch::Architecture& isa, std::shared_ptr<kernel::Process> process);
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** Tick the core. */
   void tick() override;
 
-<<<<<<< HEAD
   /** Check the current status of the core. */
   CoreStatus getStatus() override;
-=======
-  /** Check whether the program has halted. */
-  bool hasHalted() const override;
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
@@ -57,7 +43,6 @@ class Core : public simeng::Core {
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
-<<<<<<< HEAD
   /** Schedule a new Process. */
   void schedule(simeng::OS::cpuContext newContext) override;
 
@@ -75,8 +60,6 @@ class Core : public simeng::Core {
   /** Retrieve the CPU context for the outgoing process. */
   simeng::OS::cpuContext getPrevContext() const override;
 
-=======
->>>>>>> c36c82eb (added PageArameAllocator decl)
  private:
   /** Execute an instruction. */
   void execute(std::shared_ptr<Instruction>& uop);
@@ -90,12 +73,9 @@ class Core : public simeng::Core {
   /** Apply changes to the process state. */
   void applyStateChange(const arch::ProcessStateChange& change);
 
-<<<<<<< HEAD
   /** The current state the core is in. */
   CoreStatus status_ = CoreStatus::idle;
 
-=======
->>>>>>> c36c82eb (added PageArameAllocator decl)
   /** A memory interface to access instructions. */
   MemoryInterface& instructionMemory_;
 
@@ -106,11 +86,7 @@ class Core : public simeng::Core {
   std::vector<simeng::MemoryAccessTarget> previousAddresses_;
 
   /** The length of the available instruction memory. */
-<<<<<<< HEAD
   uint64_t programByteLength_ = 0;
-=======
-  uint64_t programByteLength_;
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** The currently used ISA. */
   const arch::Architecture& isa_;
@@ -125,12 +101,6 @@ class Core : public simeng::Core {
    * register file set. */
   ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
 
-<<<<<<< HEAD
-=======
-  /** Whether or not the core has halted. */
-  bool hasHalted_ = false;
-
->>>>>>> c36c82eb (added PageArameAllocator decl)
   /** A reusable macro-op vector to fill with uops. */
   MacroOp macroOp_;
 
@@ -143,7 +113,6 @@ class Core : public simeng::Core {
   /** Is the core waiting on a data read? */
   unsigned int pendingReads_ = 0;
 
-<<<<<<< HEAD
   /** The total number of times this core has been ticked. */
   uint64_t ticks_ = 0;
 
@@ -151,18 +120,12 @@ class Core : public simeng::Core {
    * process. */
   uint64_t procTicks_ = 0;
 
-=======
-  /** The number of times this core has been ticked. */
-  uint64_t ticks_ = 0;
-
->>>>>>> c36c82eb (added PageArameAllocator decl)
   /** The number of instructions executed. */
   uint64_t instructionsExecuted_ = 0;
 
   /** The number of branches executed. */
   uint64_t branchesExecuted_ = 0;
 
-<<<<<<< HEAD
   /** The number of ticks whilst in an idle state. */
   uint64_t idle_ticks_ = 0;
 
@@ -171,10 +134,6 @@ class Core : public simeng::Core {
 
   /** TID of process core is currently executing. */
   uint64_t currentTID_ = -1;
-=======
-  /** Currently executing Process. */
-  std::shared_ptr<kernel::Process> process_ = nullptr;
->>>>>>> c36c82eb (added PageArameAllocator decl)
 };
 
 }  // namespace emulation

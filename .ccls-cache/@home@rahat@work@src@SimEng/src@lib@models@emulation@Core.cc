@@ -7,7 +7,6 @@ namespace models {
 namespace emulation {
 
 // TODO: Expose as config option
-<<<<<<< HEAD
 const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
@@ -48,40 +47,6 @@ void Core::tick() {
 
   if (pc_ >= programByteLength_) {
     status_ = CoreStatus::halted;
-=======
-/** The number of bytes fetched each cycle. */
-const uint8_t FETCH_SIZE = 4;
-const unsigned int clockFrequency = 2.5 * 1e9;
-
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t entryPoint, uint64_t programByteLength,
-           const arch::Architecture& isa,
-           std::shared_ptr<kernel::Process> process)
-    : instructionMemory_(instructionMemory),
-      process_(process),
-      dataMemory_(dataMemory),
-      programByteLength_(programByteLength),
-      isa_(isa),
-      pc_(entryPoint),
-      registerFileSet_(isa.getRegisterFileStructures()),
-      architecturalRegisterFileSet_(registerFileSet_) {
-  // Pre-load the first instruction
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
-
-  // Query and apply initial state
-  auto state =
-      isa.getInitialState(process_->getMemRegion().getInitialStackStart());
-  applyStateChange(state);
-}
-
-void Core::tick() {
-  ticks_++;
-
-  if (hasHalted_) return;
-
-  if (pc_ >= programByteLength_) {
-    hasHalted_ = true;
->>>>>>> c36c82eb (added PageArameAllocator decl)
     return;
   }
 
@@ -106,25 +71,14 @@ void Core::tick() {
       // Load complete: resume execution
       execute(uop);
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> c36c82eb (added PageArameAllocator decl)
     // More data pending, end cycle early
     return;
   }
 
-<<<<<<< HEAD
   // Determine if new uops are needed to be fetched
   if (microOps_.empty() && (status_ != CoreStatus::switching)) {
     // Fetch
     instructionMemory_.requestRead({pc_, FETCH_SIZE});
-=======
-  // Fetch
-
-  // Determine if new uops are needed to be fetched
-  if (!microOps_.size()) {
->>>>>>> c36c82eb (added PageArameAllocator decl)
     // Find fetched memory that matches the current PC
     const auto& fetched = instructionMemory_.getCompletedReads();
     size_t fetchIndex;
@@ -206,11 +160,6 @@ void Core::tick() {
     if (uop->isStoreData()) {
       execute(uop);
     } else {
-<<<<<<< HEAD
-=======
-      // Fetch memory for next cycle
-      instructionMemory_.requestRead({pc_, FETCH_SIZE});
->>>>>>> c36c82eb (added PageArameAllocator decl)
       microOps_.pop();
     }
 
@@ -218,10 +167,6 @@ void Core::tick() {
   }
 
   execute(uop);
-<<<<<<< HEAD
-=======
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
->>>>>>> c36c82eb (added PageArameAllocator decl)
 }
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
@@ -233,11 +178,6 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isStoreData()) {
-<<<<<<< HEAD
-=======
-    auto results = uop->getResults();
-    auto destinations = uop->getDestinationRegisters();
->>>>>>> c36c82eb (added PageArameAllocator decl)
     auto data = uop->getData();
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
       dataMemory_.requestWrite(previousAddresses_[i], data[i]);
@@ -264,11 +204,6 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
   if (uop->isLastMicroOp()) instructionsExecuted_++;
 
-<<<<<<< HEAD
-=======
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
->>>>>>> c36c82eb (added PageArameAllocator decl)
   microOps_.pop();
 }
 
@@ -296,11 +231,7 @@ void Core::processExceptionHandler() {
 
   if (result.fatal) {
     pc_ = programByteLength_;
-<<<<<<< HEAD
     status_ = CoreStatus::halted;
-=======
-    hasHalted_ = true;
->>>>>>> c36c82eb (added PageArameAllocator decl)
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     pc_ = result.instructionAddress;
@@ -310,11 +241,6 @@ void Core::processExceptionHandler() {
   // Clear the handler
   exceptionHandler_ = nullptr;
 
-<<<<<<< HEAD
-=======
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
->>>>>>> c36c82eb (added PageArameAllocator decl)
   microOps_.pop();
 }
 
@@ -358,11 +284,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
   }
 }
 
-<<<<<<< HEAD
 CoreStatus Core::getStatus() { return status_; }
-=======
-bool Core::hasHalted() const { return hasHalted_; }
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
     const {
@@ -379,7 +301,6 @@ uint64_t Core::getSystemTimer() const {
 
 std::map<std::string, std::string> Core::getStats() const {
   return {{"instructions", std::to_string(instructionsExecuted_)},
-<<<<<<< HEAD
           {"branch.executed", std::to_string(branchesExecuted_)},
           {"idle.ticks", std::to_string(idle_ticks_)},
           {"context.switches", std::to_string(contextSwitches_)}};
@@ -433,10 +354,6 @@ simeng::OS::cpuContext Core::getPrevContext() const {
   // regFile
   return newContext;
 }
-=======
-          {"branch.executed", std::to_string(branchesExecuted_)}};
-};
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
 }  // namespace emulation
 }  // namespace models

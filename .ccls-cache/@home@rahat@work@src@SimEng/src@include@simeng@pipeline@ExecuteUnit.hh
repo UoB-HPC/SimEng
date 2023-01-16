@@ -57,11 +57,14 @@ class ExecuteUnit {
   void purgeFlushed();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /** Flushed EU pipeline of any instructions. */
   void flush();
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** Retrieve the number of branch instructions that have been executed. */
   uint64_t getBranchExecutedCount() const;
 

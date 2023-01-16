@@ -1611,15 +1611,12 @@ void Instruction::execute() {
         results[0] = static_cast<int64_t>(std::trunc(operands[0].get<float>()));
         break;
       }
-<<<<<<< HEAD
       case Opcode::AArch64_FCVTZUv1i64: {  // fcvtzu dd, dn
         // TODO: Handle NaNs, denorms, and saturation
         results[0] = {
             static_cast<uint64_t>(std::trunc(operands[0].get<double>())), 256};
         break;
       }
-=======
->>>>>>> c36c82eb (added PageArameAllocator decl)
       case Opcode::AArch64_FCVT_ZPmZ_DtoS: {  // fcvt zd.s, pg/m, zn.d
         results[0] =
             sveHelp::sveFcvtPredicated<float, double>(operands, VL_bits);
@@ -3543,7 +3540,6 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_MSR: {  // msr (systemreg|Sop0_op1_Cn_Cm_op2), xt
-<<<<<<< HEAD
         // TODO: Suppport reg writes to SVCR
         // Catch updates to SVCR - Not currently supported
         if ((uint32_t)metadata.operands[0].sys == (uint32_t)ARM64_SYSREG_SVCR) {
@@ -3554,8 +3550,6 @@ void Instruction::execute() {
                        "svcr<sm|za|smza> #imm}\n";
           return executionNYI();
         }
-=======
->>>>>>> c36c82eb (added PageArameAllocator decl)
         results[0] = operands[0];
         break;
       }
@@ -3571,10 +3565,6 @@ void Instruction::execute() {
         // This instruction is always used by SMSTART and SMSTOP aliases.
         const uint64_t svcrBits =
             static_cast<uint64_t>(metadata.operands[0].svcr);
-<<<<<<< HEAD
-=======
-        const uint8_t imm = metadata.operands[1].imm;
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
         // Changing value of SM or ZA bits in SVCR zeros out vector, predicate,
         // and ZA registers. Raise an exception to do this.
@@ -3892,14 +3882,11 @@ void Instruction::execute() {
             bitmanipHelp::bfm_2imms<uint64_t>(operands, metadata, true, true);
         break;
       }
-<<<<<<< HEAD
       case Opcode::AArch64_SCVTFSWSri: {  // scvtf sd, wn, #fbits
         results[0] =
             floatHelp::scvtf_FixedPoint<float, int32_t>(operands, metadata);
         break;
       }
-=======
->>>>>>> c36c82eb (added PageArameAllocator decl)
       case Opcode::AArch64_SCVTFSXDri: {  // scvtf dd, xn, #fbits
         results[0] =
             floatHelp::scvtf_FixedPoint<double, int64_t>(operands, metadata);
@@ -4271,7 +4258,6 @@ void Instruction::execute() {
         }
         break;
       }
-<<<<<<< HEAD
       case Opcode::AArch64_ST1Fourv2s_POST: {  // st1 {vt.2s, vt2.2s, vt3.2s,
                                                // vt4.2s}, [xn|sp], <#imm|xm>
         // STORE
@@ -4311,15 +4297,11 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_ST1Twov16b: {  // st1 {vt.16b, vt2.16b}, [xn|sp]
-=======
-      case Opcode::AArch64_ST1Twov16b: {  // st1v {vt.16b, vt2.16b}, [xn]
->>>>>>> c36c82eb (added PageArameAllocator decl)
         // STORE
         const uint8_t* t = operands[0].getAsVector<uint8_t>();
         const uint8_t* t2 = operands[1].getAsVector<uint8_t>();
         for (int i = 0; i < 16; i++) {
           memoryData[i] = t[i];
-<<<<<<< HEAD
           memoryData[i + 16] = t2[i];
         }
         break;
@@ -4331,11 +4313,6 @@ void Instruction::execute() {
         for (int i = 0; i < 4; i++) {
           memoryData[i] = t[i];
           memoryData[i + 4] = t2[i];
-=======
-        }
-        for (int i = 0; i < 16; i++) {
-          memoryData[i + 16] = t2[i];
->>>>>>> c36c82eb (added PageArameAllocator decl)
         }
         break;
       }

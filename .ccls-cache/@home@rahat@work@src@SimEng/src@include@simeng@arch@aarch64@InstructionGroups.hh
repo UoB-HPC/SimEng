@@ -96,11 +96,15 @@ const uint16_t STORE_SME = 85;
 
 /** The number of aarch64 instruction groups. */
 <<<<<<< HEAD
+<<<<<<< HEAD
 static constexpr uint8_t NUM_GROUPS = 86;
 
 =======
 #define NUM_GROUPS 86
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+#define NUM_GROUPS 86
+>>>>>>> 76a7cd60 (added pfalloc file)
 const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
     {InstructionGroups::INT,
      {InstructionGroups::INT_SIMPLE, InstructionGroups::INT_DIV_OR_SQRT,

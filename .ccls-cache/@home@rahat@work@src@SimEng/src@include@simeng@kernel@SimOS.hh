@@ -6,6 +6,7 @@
 
 #include "simeng/Config.hh"
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "simeng/Core.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
@@ -23,6 +24,11 @@
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/kernel/SyscallHandler.hh"
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+#include "simeng/CoreInstance.hh"
+#include "simeng/SpecialFileDirGen.hh"
+#include "simeng/kernel/SyscallHandler.hh"
+>>>>>>> 76a7cd60 (added pfalloc file)
 #include "simeng/memory/SimpleMem.hh"
 #include "simeng/span.hh"
 
@@ -33,10 +39,13 @@ namespace simeng {
 namespace kernel {
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 using namespace simeng::kernel::defaults;
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 // Program used when no executable is provided; counts down from
 // 1024*1024, with an independent `orr` at the start of each branch.
 static uint32_t hex_[8] = {
@@ -56,6 +65,7 @@ class SimOS {
  public:
   /** Construct a SimOS object. */
 <<<<<<< HEAD
+<<<<<<< HEAD
   SimOS(std::string executablePath, std::vector<std::string> executableArgs,
         std::shared_ptr<simeng::memory::Mem> mem, bool setProcess = false);
 
@@ -65,6 +75,8 @@ class SimOS {
   /** Get a process with specified TID. */
   std::shared_ptr<Process> getProcess(uint64_t TID) const;
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem);
 
   /** Get pointer to process with specified PID. */
@@ -74,11 +86,15 @@ class SimOS {
   std::tuple<std::string, std::vector<std::string>> getParsedArgv() const {
     return {executablePath_, executableArgs_};
   };
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
   /** Get shared_ptr to syscallHandler instance. */
   std::shared_ptr<SyscallHandler> getSyscallHandler() const {
     return syscallHandler_;
+<<<<<<< HEAD
 <<<<<<< HEAD
   };
 
@@ -120,6 +136,8 @@ class SimOS {
  private:
   std::function<void(char*, uint64_t, size_t)> sendToMem_;
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   }
 
   /** Set up friend class with RegressionTest to enable exclusive access to
@@ -127,7 +145,10 @@ class SimOS {
   friend class ::RegressionTest;
 
  private:
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** Create the initial SimOS Process running above this kernel from command
    * line arguments.
    * Empty command line arguments denote the usage of hardcoded instructions
@@ -138,14 +159,20 @@ class SimOS {
   void createSpecialFileDirectory() const;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** Update the initial process to a pre-defined one.
    * Should be used EXCLUSIVELY by the test suite. */
   void setInitialProcess(std::shared_ptr<Process> proc) {
     processes_.emplace(processes_.begin(), proc);
   }
 
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** The path of user defined Executable. */
   std::string executablePath_ = DEFAULT_STR;
 
@@ -155,6 +182,7 @@ class SimOS {
   /** The list of user-space processes running above the kernel. */
   std::vector<std::shared_ptr<Process>> processes_ = {};
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   /** Queue of processes waiting to be scheduled. */
   std::queue<std::shared_ptr<Process>> waitingProcs_ = {};
@@ -167,11 +195,14 @@ class SimOS {
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** Reference to the global memory pointer */
   std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
 
   /** SyscallHandler Object to process all syscalls. */
   std::shared_ptr<SyscallHandler> syscallHandler_;
+<<<<<<< HEAD
 <<<<<<< HEAD
 
   /** Indicates if all processes have completed or a core has halted due to an
@@ -213,3 +244,9 @@ class SimOS {
 }  // namespace kernel
 }  // namespace simeng
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+};
+
+}  // namespace kernel
+}  // namespace simeng
+>>>>>>> 76a7cd60 (added pfalloc file)

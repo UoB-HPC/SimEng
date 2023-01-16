@@ -89,12 +89,6 @@ class Architecture {
       const std::shared_ptr<Instruction>& instruction, const Core& core,
       MemoryInterface& memory) const = 0;
 
-<<<<<<< HEAD
-=======
-  /** Retrieve the initial process state. */
-  virtual ProcessStateChange getInitialState(uint64_t stackPointer) const = 0;
-
->>>>>>> c36c82eb (added PageArameAllocator decl)
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;
 
@@ -111,13 +105,10 @@ class Architecture {
   /** Updates System registers of any system-based timers. */
   virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                           const uint64_t iterations) const = 0;
-<<<<<<< HEAD
 
   /** After a context switch, update any required variables. */
   virtual void updateAfterContextSwitch(
       const simeng::OS::cpuContext& context) const = 0;
-=======
->>>>>>> c36c82eb (added PageArameAllocator decl)
 };
 
 }  // namespace arch

@@ -4,17 +4,10 @@
 #include <unordered_map>
 
 #include "simeng/Config.hh"
-<<<<<<< HEAD
 #include "simeng/OS/SyscallHandler.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
 #include "simeng/arch/riscv/Instruction.hh"
-=======
-#include "simeng/arch/Architecture.hh"
-#include "simeng/arch/riscv/ExceptionHandler.hh"
-#include "simeng/arch/riscv/Instruction.hh"
-#include "simeng/kernel/SyscallHandler.hh"
->>>>>>> c36c82eb (added PageArameAllocator decl)
 
 using csh = size_t;
 
@@ -25,11 +18,7 @@ namespace riscv {
 /* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-<<<<<<< HEAD
   Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler);
-=======
-  Architecture(std::shared_ptr<kernel::SyscallHandler> syscallHandler);
->>>>>>> c36c82eb (added PageArameAllocator decl)
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -55,12 +44,6 @@ class Architecture : public arch::Architecture {
       const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
       MemoryInterface& memory) const override;
 
-<<<<<<< HEAD
-=======
-  /** Retrieve the initial process state. */
-  ProcessStateChange getInitialState(uint64_t stackPointer) const override;
-
->>>>>>> c36c82eb (added PageArameAllocator decl)
   /** Returns the maximum size of a valid instruction in bytes. */
   uint8_t getMaxInstructionSize() const override;
 
@@ -77,13 +60,10 @@ class Architecture : public arch::Architecture {
    */
   std::vector<uint16_t> getConfigPhysicalRegisterQuantities() const override;
 
-<<<<<<< HEAD
   /** After a context switch, update any required variables. */
   void updateAfterContextSwitch(
       const simeng::OS::cpuContext& context) const override;
 
-=======
->>>>>>> c36c82eb (added PageArameAllocator decl)
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or
@@ -114,13 +94,8 @@ class Architecture : public arch::Architecture {
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;
 
-<<<<<<< HEAD
   /** A reference to SyscallHandler object to forward syscalls to. */
   std::shared_ptr<OS::SyscallHandler> syscallHandler_;
-=======
-  /** A reference to a Linux kernel object to forward syscalls to. */
-  std::shared_ptr<kernel::SyscallHandler> syscallHandler_;
->>>>>>> c36c82eb (added PageArameAllocator decl)
 };
 
 }  // namespace riscv

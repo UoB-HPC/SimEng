@@ -3,9 +3,13 @@
 #include <cstring>
 #include <fstream>
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 #include <iostream>
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+#include <iostream>
+>>>>>>> 76a7cd60 (added pfalloc file)
 
 namespace simeng {
 
@@ -19,17 +23,23 @@ namespace simeng {
 
 Elf::Elf(std::string path, char** imagePointer) {
 <<<<<<< HEAD
+<<<<<<< HEAD
   std::ifstream file(path, std::ios::binary);
 
   if (!file.is_open()) {
     return;
   }
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   std::ifstream file(path, std::ios::binary); 
   if (!file.is_open()) {
     return;
   }   
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
   /**
    * In the Linux source tree the ELF header
@@ -115,11 +125,16 @@ Elf::Elf(std::string path, char** imagePointer) {
     // and header entry size.
     file.seekg(headerOffset + (i * headerEntrySize));
 <<<<<<< HEAD
+<<<<<<< HEAD
     auto& header = headers_[i];
 =======
     auto header = new ElfHeader();
     headers_[i] = header;
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+    auto header = new ElfHeader();
+    headers_[i] = header;
+>>>>>>> 76a7cd60 (added pfalloc file)
 
     /**
      * Like the ELF Header, the ELF Program header is also defined
@@ -150,6 +165,7 @@ Elf::Elf(std::string path, char** imagePointer) {
     // Each address-related field is 8 bytes in a 64-bit ELF file
     const int fieldBytes = 8;
 <<<<<<< HEAD
+<<<<<<< HEAD
     file.read(reinterpret_cast<char*>(&(header.type)), sizeof(header.type));
     file.seekg(4, std::ios::cur);  // Skip flags
     file.read(reinterpret_cast<char*>(&(header.offset)), fieldBytes);
@@ -158,6 +174,8 @@ Elf::Elf(std::string path, char** imagePointer) {
     file.read(reinterpret_cast<char*>(&(header.fileSize)), fieldBytes);
     file.read(reinterpret_cast<char*>(&(header.memorySize)), fieldBytes);
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
     file.read(reinterpret_cast<char*>(&(header->type)), sizeof(header->type));
     file.seekg(4, std::ios::cur);  // Skip flags
     file.read(reinterpret_cast<char*>(&(header->offset)), fieldBytes);
@@ -165,7 +183,10 @@ Elf::Elf(std::string path, char** imagePointer) {
     file.read(reinterpret_cast<char*>(&(header->physicalAddress)), fieldBytes);
     file.read(reinterpret_cast<char*>(&(header->fileSize)), fieldBytes);
     file.read(reinterpret_cast<char*>(&(header->memorySize)), fieldBytes);
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
     // To construct the process we look for the largest virtual address and
     // add it to the memory size of the header. This way we obtain a very
@@ -173,6 +194,7 @@ Elf::Elf(std::string path, char** imagePointer) {
     // However, this way we end up creating a sparse array, in which most
     // of the entries are unused. Also SimEng internally treats these
     // virtual address as physical addresses to index into this large array.
+<<<<<<< HEAD
 <<<<<<< HEAD
     if (header.virtualAddress + header.memorySize > processImageSize_) {
       processImageSize_ = header.virtualAddress + header.memorySize;
@@ -182,6 +204,11 @@ Elf::Elf(std::string path, char** imagePointer) {
     maxVirtAddr_ = std::max(maxVirtAddr_, addr);
     processImageSize_ = std::max(processImageSize_, addr);
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+    uint64_t addr = header->virtualAddress + header->memorySize;
+    maxVirtAddr_ = std::max(maxVirtAddr_, addr);
+    processImageSize_ = std::max(processImageSize_, addr);
+>>>>>>> 76a7cd60 (added pfalloc file)
   }
 
   *imagePointer = (char*)malloc(processImageSize_ * sizeof(char));
@@ -195,6 +222,7 @@ Elf::Elf(std::string path, char** imagePointer) {
 
   // Process headers; only observe LOAD sections for this basic implementation
 <<<<<<< HEAD
+<<<<<<< HEAD
   for (const auto& header : headers_) {
     if (header.type == 1) {  // LOAD
       file.seekg(header.offset);
@@ -202,6 +230,8 @@ Elf::Elf(std::string path, char** imagePointer) {
       // memory
       file.read(*imagePointer + header.virtualAddress, header.fileSize);
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   for (auto header : headers_) {
     if (header->type == 1) {  // LOAD
 
@@ -216,7 +246,10 @@ Elf::Elf(std::string path, char** imagePointer) {
       file.read(*imagePointer + header->virtualAddress, header->fileSize);
 
       processedHeaders_.push_back(header);
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
     }
   }
 
@@ -225,15 +258,21 @@ Elf::Elf(std::string path, char** imagePointer) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 Elf::~Elf() {}
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 Elf::~Elf() {
   for (auto header : headers_) {
     delete[] header->headerData;
     delete header;
   }
 }
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
 uint64_t Elf::getProcessImageSize() const { return processImageSize_; }
 
@@ -242,12 +281,18 @@ uint64_t Elf::getEntryPoint() const { return entryPoint_; }
 bool Elf::isValid() const { return isValid_; }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 std::vector<ElfHeader*>& Elf::getProcessedHeaders() {
   return processedHeaders_;
 }
 
 uint64_t Elf::getMaxVirtAddr() { return maxVirtAddr_; }
 
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 }  // namespace simeng

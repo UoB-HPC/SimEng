@@ -20,12 +20,16 @@ class PipelineBuffer {
    * `initialValue`. */
   PipelineBuffer(int width, const T& initialValue)
 <<<<<<< HEAD
+<<<<<<< HEAD
       : width(width),
         buffer(width * length, initialValue),
         emptyVal_(initialValue) {}
 =======
       : width(width), buffer(width * length, initialValue) {}
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+      : width(width), buffer(width * length, initialValue) {}
+>>>>>>> 76a7cd60 (added pfalloc file)
 
   /** Tick the buffer and move head/tail pointers, or do nothing if it's
    * stalled. */
@@ -70,6 +74,7 @@ class PipelineBuffer {
   unsigned short getWidth() const { return width; }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /** Query if buffer is empty by checking against a set value which
    * represents an empty entry. */
   bool isEmpty() {
@@ -83,6 +88,8 @@ class PipelineBuffer {
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
  private:
   /** The width of each row of slots. */
   unsigned short width;
@@ -99,12 +106,15 @@ class PipelineBuffer {
   /** The number of stages in the pipeline. */
   static const unsigned int length = 2;
 <<<<<<< HEAD
+<<<<<<< HEAD
 
   /** Holds the value that should be associated as an empty entry in the buffer.
    */
   T emptyVal_;
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 };
 
 }  // namespace pipeline

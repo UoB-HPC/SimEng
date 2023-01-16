@@ -51,24 +51,33 @@ DispatchIssueUnit::DispatchIssueUnit(
   for (uint16_t i = 0; i < reservationStations_.size(); i++)
     flushed_.emplace(i, std::initializer_list<std::shared_ptr<Instruction>>{});
 <<<<<<< HEAD
+<<<<<<< HEAD
 
   dispatches_ = std::make_unique<uint16_t[]>(reservationStations_.size());
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 }
 
 void DispatchIssueUnit::tick() {
   input_.stall(false);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   // Reset the array
   std::fill_n(dispatches_.get(), reservationStations_.size(), 0);
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** Stores the number of instructions dispatched for each
    * reservation station. */
   std::vector<uint16_t> dispatches(
       static_cast<unsigned short>(reservationStations_.size()), 0);
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
   for (size_t slot = 0; slot < input_.getWidth(); slot++) {
     auto& uop = input_.getHeadSlots()[slot];
@@ -94,10 +103,14 @@ void DispatchIssueUnit::tick() {
     // When appropriate, stall uop or input buffer if stall buffer full
     if (rs.currentSize == rs.capacity ||
 <<<<<<< HEAD
+<<<<<<< HEAD
         dispatches_[RS_Index] == rs.dispatchRate) {
 =======
         dispatches[RS_Index] == rs.dispatchRate) {
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+        dispatches[RS_Index] == rs.dispatchRate) {
+>>>>>>> 76a7cd60 (added pfalloc file)
       // Deallocate port given
       portAllocator_.deallocate(port);
       input_.stall(true);
@@ -136,10 +149,14 @@ void DispatchIssueUnit::tick() {
 
     // Increment dispatches made and RS occupied entries size
 <<<<<<< HEAD
+<<<<<<< HEAD
     dispatches_[RS_Index]++;
 =======
     dispatches[RS_Index]++;
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+    dispatches[RS_Index]++;
+>>>>>>> 76a7cd60 (added pfalloc file)
     rs.currentSize++;
 
     if (ready) {
@@ -285,6 +302,7 @@ void DispatchIssueUnit::getRSSizes(std::vector<uint64_t>& sizes) const {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 void DispatchIssueUnit::flush() {
   for (size_t i = 0; i < scoreboard_.size(); i++) {
     for (size_t j = 0; j < scoreboard_[i].size(); j++) {
@@ -301,5 +319,7 @@ void DispatchIssueUnit::flush() {
 
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 }  // namespace pipeline
 }  // namespace simeng

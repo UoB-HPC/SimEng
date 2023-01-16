@@ -1,5 +1,6 @@
 #pragma once
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include <stdint.h>
 
 #include <cstddef>
@@ -8,18 +9,24 @@
 
 #include "simeng/kernel/Constants.hh"
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
 #include <stdint.h>
 
 #include <cstddef>
 #include <memory>
 
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 #include "simeng/kernel/Vma.hh"
 
 namespace simeng {
 namespace kernel {
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 using namespace simeng::kernel::defaults;
 
@@ -115,6 +122,8 @@ class MemRegion {
   /** This method returns the heap size. */
   size_t getHeapSize() const;
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 class Process;
 
 class MemRegion {
@@ -173,17 +182,26 @@ class MemRegion {
 
   /** This method returns the initial stack pointer.*/
   uint64_t getInitialStackStart() const;
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
   /** This method returns the current heap pointer. */
   uint64_t getBrk() const;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
   /** This method returns the initial heap pointer.*/
   uint64_t getBrkStart() const;
 
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+  /** This method returns the initial heap pointer.*/
+  uint64_t getBrkStart() const;
+
+>>>>>>> 76a7cd60 (added pfalloc file)
   /** This method returns the start address of the mmap region.*/
   uint64_t getMmapStart() const;
 
@@ -194,6 +212,7 @@ class MemRegion {
   uint64_t updateBrkRegion(uint64_t newBrk);
 
   /** This method allocates a new mmap region. */
+<<<<<<< HEAD
 <<<<<<< HEAD
   int64_t mmapRegion(uint64_t addr, uint64_t length, int prot, int flags,
                      HostFileMMap* hfmmap);
@@ -219,6 +238,8 @@ class MemRegion {
   size_t getVMASize() { return vm_size_; }
 };
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
   uint64_t mmapRegion(uint64_t addr, uint64_t length, int prot, int flags,
                       HostFileMMap* hfmmap);
   /** This method unmaps a mmaped region. */
@@ -230,7 +251,10 @@ class MemRegion {
   bool overlapsStackVM(uint64_t addr, size_t size);
   bool isPageAligned(uint64_t addr);
   */
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
 }  // namespace kernel
 }  // namespace simeng

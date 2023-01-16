@@ -1,9 +1,12 @@
 #pragma once
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include <functional>
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 #include <memory>
 
 #include "simeng/Config.hh"
@@ -11,9 +14,12 @@
 #include "simeng/kernel/FileDesc.hh"
 #include "simeng/kernel/MemRegion.hh"
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "simeng/kernel/PageTable.hh"
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
 namespace simeng {
 
@@ -24,6 +30,7 @@ class Mem;
 
 namespace kernel {
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 using namespace simeng::kernel::defaults;
 
@@ -48,6 +55,10 @@ struct cpuContext {
 /** The page size of the process memory. */
 static constexpr uint64_t pageSize_ = 4096;
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+/** The page size of the process memory. */
+static constexpr uint64_t pageSize_ = 4096;
+>>>>>>> 76a7cd60 (added pfalloc file)
 
 /** Align `address` to an `alignTo`-byte boundary by rounding up to the nearest
  * multiple. */
@@ -55,6 +66,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
 
 /** The initial state of a SimOS Process, constructed from a binary executable.
  *
+<<<<<<< HEAD
 <<<<<<< HEAD
  * The constructed process follows a typical layout and has the following
  * properties:
@@ -97,6 +109,8 @@ class Process {
   friend class SimOS;
 
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
  * The constructed process follows a typical layout in memory:
  *
  * |---------------| <- start of stack
@@ -118,12 +132,16 @@ class Process {
  *
  */
 class Process {
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
  public:
   /** Construct a SimOS Process from a vector of command-line arguments.
    *
    * The first argument is a path to an executable ELF file. */
   Process(const std::vector<std::string>& commandLine,
+<<<<<<< HEAD
 <<<<<<< HEAD
           std::shared_ptr<simeng::memory::Mem> memory, SimOS* os,
           std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
@@ -135,12 +153,17 @@ class Process {
           SimOS* os, std::vector<RegisterFileStructure> regFileStructure,
           uint64_t TGID, uint64_t TID);
 =======
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
           std::shared_ptr<simeng::memory::Mem> memory);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
   Process(span<char> instructions, std::shared_ptr<simeng::memory::Mem> memory);
+<<<<<<< HEAD
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 
   ~Process();
 
@@ -175,6 +198,7 @@ class Process {
   bool isValid() const;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   /** Get the process' TGID. */
   uint64_t getTGID() const { return TGID_; }
 
@@ -195,12 +219,17 @@ class Process {
   /** Shared pointer to FileDescArray class.*/
   std::shared_ptr<FileDescArray> fdArray_;
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+  /** Shared pointer to FileDescArray class.*/
+  std::shared_ptr<FileDescArray> fdArray_;
+>>>>>>> 76a7cd60 (added pfalloc file)
 
   // Thread state
   // TODO: Support multiple threads per process
   /** The clear_child_tid value. */
   uint64_t clearChildTid = 0;
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   /** Current status of the process. */
   procStatus status_ = procStatus::waiting;
@@ -216,10 +245,16 @@ class Process {
   /** MemRegion of the Process Image. */
   MemRegion memRegion_;
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+ private:
+  /** MemRegion of the Process Image. */
+  MemRegion memRegion_;
+>>>>>>> 76a7cd60 (added pfalloc file)
   /**
    * Create and populate the initial process stack and returns the stack
    * pointer.
    */
+<<<<<<< HEAD
 <<<<<<< HEAD
   uint64_t createStack(uint64_t stackStart,
                        std::shared_ptr<simeng::memory::Mem>& memory);
@@ -228,6 +263,11 @@ class Process {
 
   // void addInitialVMA(VMA* vma);
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+  uint64_t createStack(char** processImage, uint64_t stackStart);
+
+  // void addInitialVMA(VMA* vma);
+>>>>>>> 76a7cd60 (added pfalloc file)
 
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
@@ -237,6 +277,7 @@ class Process {
 
   /** Whether the process image was created successfully. */
   bool isValid_ = false;
+<<<<<<< HEAD
 <<<<<<< HEAD
 
   /** The process' Thread Group ID, exactly equivalent to its Process ID (PID).
@@ -253,6 +294,8 @@ class Process {
   SimOS* os_;
 =======
 >>>>>>> c36c82eb (added PageArameAllocator decl)
+=======
+>>>>>>> 76a7cd60 (added pfalloc file)
 };
 
 }  // namespace kernel
