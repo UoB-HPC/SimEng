@@ -4,7 +4,7 @@
 #include <climits>
 #include <cstddef>
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 struct AllocEntry {
   uint64_t track;
@@ -28,5 +28,5 @@ class PageFrameAllocator {
   uint64_t allocatePageFrames(size_t size);
 };
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng
