@@ -1,7 +1,7 @@
 .clang_complete
 .vscode
 .idea
-.ccls
+.ccls-cache
 .DS_Store
 obj
 build
