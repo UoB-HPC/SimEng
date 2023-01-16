@@ -322,13 +322,19 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 }
 
 int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
-  return processes_[0]->getMemRegion().unmapRegion(addr, length, 0, 0, 0);
+  /*
+return processes_[0]->getMemRegion().unmapRegion(addr, length, 0, 0, 0);
+*/
+  return 0;
 }
 
 uint64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                               int fd, off_t offset) {
-  return processes_[0]->getMemRegion().mmapRegion(addr, length, fd, prot,
-                                                  flags);
+  /*
+return processes_[0]->getMemRegion().mmapRegion(addr, length, fd, prot,
+                                                flags);
+*/
+  return 0;
 }
 
 int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,

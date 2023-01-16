@@ -15,7 +15,7 @@ class MemRegion {
             uint64_t stackStart, uint64_t startBrk, uint64_t pageBytes,
             uint64_t mmapStart);
   MemRegion(){};
-  ~MemRegion() { vma_ll.freeVma(); };
+  ~MemRegion(){};
 
  private:
   /** Size of the process stack region. */
@@ -36,10 +36,21 @@ class MemRegion {
   uint64_t mmapStart_;
   /** Max heap address. */
   uint64_t maxHeapAddr_;
-  /** VirtMemArea linked list. */
-  Vmall vma_ll;
+
+  VirtualMemoryArea* stack_vm_ = NULL;
+  VirtualMemoryArea* heap_vm_ = NULL;
+  VirtualMemoryArea* ptload_vm_ = NULL;
+
+  VirtualMemoryArea* vm_head_;
+  size_t vm_size_ = 0;
+
   /** This method calculates the maximum heap address.*/
   uint64_t calculateMaxHeapAddr();
+
+  uint64_t addMmapVMA(VMA* vma);
+  int64_t removeMmapVMA(uint64_t addr, uint64_t length);
+  void freeVma();
+  void addInitalVMA(char* data, uint64_t startAddr, size_t size, VMAType type);
 
  public:
   /** This method returns the stack size.*/
@@ -67,11 +78,16 @@ class MemRegion {
   uint64_t updateBrkRegion(uint64_t newBrk);
 
   /** This method allocates a new mmap region. */
-  uint64_t mmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
-                      int flags);
+  uint64_t mmapRegion(uint64_t addr, uint64_t length, int prot, int flags,
+                      HostFileMMap* hfmmap);
   /** This method unmaps a mmaped region. */
   int64_t unmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
                       int flags);
+
+  bool isVmMapped(uint64_t startAddr, size_t size);
+  bool overlapsHeapVM(uint64_t addr, size_t size);
+  bool overlapsStackVM(uint64_t addr, size_t size);
+  bool isPageAligned(uint64_t addr);
 };
 
 }  // namespace kernel
