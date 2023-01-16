@@ -104,13 +104,14 @@ void Core::tick() {
   ticks_++;
   isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
-  if (status_ == CoreStatus::idle) {
-    idle_ticks_++;
-    return;
-  }
-
-  if (status_ == CoreStatus::halted) {
-    return;
+  switch (status_) {
+    case CoreStatus::idle:
+      idle_ticks_++;
+      return;
+    case CoreStatus::halted:
+      return;
+    default:
+      break;
   }
 
   if (exceptionHandler_ != nullptr) {
