@@ -4,6 +4,10 @@
 #include "simeng/Config.hh"
 #include "simeng/Core.hh"
 #include "simeng/MemoryInterface.hh"
+<<<<<<< HEAD
+=======
+#include "simeng/kernel/Process.hh"
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 #include "simeng/pipeline/ExecuteUnit.hh"
@@ -28,8 +32,15 @@ class Core : public simeng::Core {
   /** Construct a core model, providing the process memory, and an ISA, branch
    * predictor, and port allocator to use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+<<<<<<< HEAD
        const arch::Architecture& isa, BranchPredictor& branchPredictor,
        pipeline::PortAllocator& portAllocator,
+=======
+       uint64_t processMemorySize, uint64_t entryPoint,
+       const arch::Architecture& isa, BranchPredictor& branchPredictor,
+       pipeline::PortAllocator& portAllocator,
+       std::shared_ptr<kernel::Process> process,
+>>>>>>> c36c82eb (added PageArameAllocator decl)
        YAML::Node& config = Config::get());
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
@@ -37,8 +48,13 @@ class Core : public simeng::Core {
    * end of each cycle. */
   void tick() override;
 
+<<<<<<< HEAD
   /** Check the current status of the core. */
   CoreStatus getStatus() override;
+=======
+  /** Check whether the program has halted. */
+  bool hasHalted() const override;
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
@@ -53,6 +69,7 @@ class Core : public simeng::Core {
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
+<<<<<<< HEAD
   /** Schedule a new Process. */
   void schedule(simeng::OS::cpuContext newContext) override;
 
@@ -70,6 +87,8 @@ class Core : public simeng::Core {
   /** Retrieve the CPU context for the outgoing process. */
   simeng::OS::cpuContext getPrevContext() const override;
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
  private:
   /** Raise an exception to the core, providing the generating instruction. */
   void raiseException(const std::shared_ptr<Instruction>& instruction);
@@ -86,9 +105,12 @@ class Core : public simeng::Core {
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
 
+<<<<<<< HEAD
   /** The current state the core is in. */
   CoreStatus status_ = CoreStatus::idle;
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   const arch::Architecture& isa_;
 
   const std::vector<simeng::RegisterFileStructure> physicalRegisterStructures_;
@@ -167,6 +189,7 @@ class Core : public simeng::Core {
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes_ = 0;
 
+<<<<<<< HEAD
   /** The total number of times this core has been ticked. */
   uint64_t ticks_ = 0;
 
@@ -174,12 +197,18 @@ class Core : public simeng::Core {
    * process. */
   uint64_t procTicks_ = 0;
 
+=======
+  /** The number of times this core has been ticked. */
+  uint64_t ticks_ = 0;
+
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   /** Whether an exception was generated during the cycle. */
   bool exceptionGenerated_ = false;
 
   /** A pointer to the instruction responsible for generating the exception. */
   std::shared_ptr<Instruction> exceptionGeneratingInstruction_;
 
+<<<<<<< HEAD
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
 
@@ -191,6 +220,16 @@ class Core : public simeng::Core {
 
   /** TID of process core is currently executing. */
   uint64_t currentTID_ = -1;
+=======
+  /** Whether the core has halted. */
+  bool hasHalted_ = false;
+
+  /** The active exception handler. */
+  std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
+
+  /** Currently executing Process. */
+  std::shared_ptr<kernel::Process> process_ = nullptr;
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 };
 
 }  // namespace outoforder

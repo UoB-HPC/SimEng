@@ -106,6 +106,7 @@ void RegisterAliasTable::free(Register physical) {
   freeQueues_[physical.type].push(physical.tag);
 }
 
+<<<<<<< HEAD
 void RegisterAliasTable::reset(
     const std::vector<RegisterFileStructure>& architecturalStructure,
     const std::vector<uint16_t>& physicalRegisterCounts) {
@@ -134,5 +135,7 @@ void RegisterAliasTable::reset(
   }
 }
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }  // namespace pipeline
 }  // namespace simeng

@@ -4,11 +4,22 @@ namespace simeng {
 namespace pipeline {
 
 FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
+<<<<<<< HEAD
                      MemoryInterface& instructionMemory, uint8_t blockSize,
                      const arch::Architecture& isa,
                      BranchPredictor& branchPredictor)
     : output_(output),
       instructionMemory_(instructionMemory),
+=======
+                     MemoryInterface& instructionMemory,
+                     uint64_t programByteLength, uint64_t entryPoint,
+                     uint8_t blockSize, const arch::Architecture& isa,
+                     BranchPredictor& branchPredictor)
+    : output_(output),
+      pc_(entryPoint),
+      instructionMemory_(instructionMemory),
+      programByteLength_(programByteLength),
+>>>>>>> c36c82eb (added PageArameAllocator decl)
       isa_(isa),
       branchPredictor_(branchPredictor),
       blockSize_(blockSize),
@@ -22,6 +33,7 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
 FetchUnit::~FetchUnit() { delete[] fetchBuffer_; }
 
 void FetchUnit::tick() {
+<<<<<<< HEAD
   if (programByteLength_ == 0) {
     std::cerr
         << "[SimEng::FetchUnit] Invalid Program Byte Length of 0. Please "
@@ -30,6 +42,13 @@ void FetchUnit::tick() {
   }
 
   if (output_.isStalled() || hasHalted_ || paused_) {
+=======
+  if (output_.isStalled()) {
+    return;
+  }
+
+  if (hasHalted_) {
+>>>>>>> c36c82eb (added PageArameAllocator decl)
     return;
   }
 
@@ -52,9 +71,12 @@ void FetchUnit::tick() {
       // Cycle queue by moving front entry to back
       loopBuffer_.push_back(loopBuffer_.front());
       loopBuffer_.pop_front();
+<<<<<<< HEAD
       // Update PC to address of next instruction in buffer to maintain correct
       // PC value
       pc_ = loopBuffer_.front().address;
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
     }
     return;
   }
@@ -212,6 +234,7 @@ bool FetchUnit::hasHalted() const { return hasHalted_; }
 void FetchUnit::updatePC(uint64_t address) {
   pc_ = address;
   bufferedBytes_ = 0;
+<<<<<<< HEAD
   if (programByteLength_ == 0) {
     std::cerr
         << "[SimEng::FetchUnit] Invalid Program Byte Length of 0. Please "
@@ -227,6 +250,12 @@ void FetchUnit::requestFromPC() {
   // Do nothing if paused
   if (paused_) return;
 
+=======
+  hasHalted_ = (pc_ >= programByteLength_);
+}
+
+void FetchUnit::requestFromPC() {
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   // Do nothing if buffer already contains enough data
   if (bufferedBytes_ >= isa_.getMaxInstructionSize()) return;
 

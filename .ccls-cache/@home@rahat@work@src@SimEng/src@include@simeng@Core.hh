@@ -4,18 +4,24 @@
 #include <map>
 #include <string>
 
+<<<<<<< HEAD
 #include "simeng/OS/Process.hh"
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 #include "yaml-cpp/yaml.h"
 
 namespace simeng {
 
 class ArchitecturalRegisterFileSet;
 
+<<<<<<< HEAD
 enum CoreStatus : uint8_t { halted, idle, executing, switching };
 
 /** The number of bytes fetched each cycle. */
 #define FETCH_SIZE 4
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 /** An abstract core model. */
 class Core {
  public:
@@ -24,8 +30,13 @@ class Core {
   /** Tick the core. */
   virtual void tick() = 0;
 
+<<<<<<< HEAD
   /** Check the current status of the core. */
   virtual CoreStatus getStatus() = 0;
+=======
+  /** Check whether the program has halted. */
+  virtual bool hasHalted() const = 0;
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** Retrieve the architectural register file set. */
   virtual const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
@@ -39,6 +50,7 @@ class Core {
 
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;
+<<<<<<< HEAD
 
   /** Schedule a new Process. */
   virtual void schedule(simeng::OS::cpuContext newContext) = 0;
@@ -56,6 +68,8 @@ class Core {
 
   /** Retrieve the CPU context for the outgoing process. */
   virtual simeng::OS::cpuContext getPrevContext() const = 0;
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 };
 
 }  // namespace simeng

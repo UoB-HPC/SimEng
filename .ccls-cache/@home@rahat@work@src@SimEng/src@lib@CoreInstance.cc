@@ -2,10 +2,23 @@
 
 namespace simeng {
 
+<<<<<<< HEAD
 CoreInstance::CoreInstance(std::shared_ptr<OS::SyscallHandler> syscallHandler,
                            std::shared_ptr<simeng::memory::Mem> mem)
     : config_(Config::get()), syscallHandler_(syscallHandler), memory_(mem) {
   generateCoreModel();
+=======
+CoreInstance::CoreInstance(
+    std::string executablePath, std::vector<std::string> executableArgs,
+    std::shared_ptr<kernel::Process> process,
+    std::shared_ptr<kernel::SyscallHandler> syscallHandler,
+    std::shared_ptr<simeng::memory::Mem> mem)
+    : config_(Config::get()),
+      process_(process),
+      syscallHandler_(syscallHandler),
+      memory_(mem) {
+  generateCoreModel(executablePath, executableArgs);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }
 
 // IGNORING SST RELATED CODE FOR NOW
@@ -26,8 +39,16 @@ CoreInstance::~CoreInstance() {
   }
 }
 
+<<<<<<< HEAD
 void CoreInstance::generateCoreModel() {
   setSimulationMode();
+=======
+void CoreInstance::generateCoreModel(std::string executablePath,
+                                     std::vector<std::string> executableArgs) {
+  setSimulationMode();
+  // Create the process memory space from the generated process image
+  createProcessMemory();
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   // Check to see if either of the instruction or data memory interfaces should
   // be created. Don't create the core if either interface is marked as External
   // as they must be set manually prior to the core's creation.
@@ -88,6 +109,16 @@ void CoreInstance::setSimulationMode() {
   return;
 }
 
+<<<<<<< HEAD
+=======
+void CoreInstance::createProcessMemory() {
+  // Get the process image and its size
+  processMemorySize_ = process_->getProcessImageSize();
+
+  return;
+}
+
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 void CoreInstance::createL1InstructionMemory(
     const simeng::MemInterfaceType type) {
   // Create a L1I cache instance based on type supplied
@@ -161,7 +192,11 @@ void CoreInstance::createCore() {
     exit(1);
   }
 
+<<<<<<< HEAD
   // Create the architecture, with knowledge of the OS
+=======
+  // Create the architecture, with knowledge of the kernel
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   if (config_["Core"]["ISA"].as<std::string>() == "rv64") {
     arch_ =
         std::make_unique<simeng::arch::riscv::Architecture>(syscallHandler_);
@@ -187,6 +222,7 @@ void CoreInstance::createCore() {
       portArrangement);
 
   // Construct the core object based on the defined simulation mode
+<<<<<<< HEAD
   if (mode_ == SimulationMode::Emulation) {
     core_ = std::make_shared<simeng::models::emulation::Core>(
         *instructionMemory_, *dataMemory_, *arch_);
@@ -202,6 +238,21 @@ void CoreInstance::createCore() {
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
         *arch_, *predictor_, *portAllocator_, process_);
 >>>>>>> aa1f4efb... Created new class to have a single place where Config file will be instantiated, reducing copying of Config around project.
+=======
+  uint64_t entryPoint = process_->getEntryPoint();
+  if (mode_ == SimulationMode::Emulation) {
+    core_ = std::make_shared<simeng::models::emulation::Core>(
+        *instructionMemory_, *dataMemory_, entryPoint, processMemorySize_,
+        *arch_, process_);
+  } else if (mode_ == SimulationMode::InOrderPipelined) {
+    core_ = std::make_shared<simeng::models::inorder::Core>(
+        *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
+        *arch_, *predictor_, process_);
+  } else if (mode_ == SimulationMode::OutOfOrder) {
+    core_ = std::make_shared<simeng::models::outoforder::Core>(
+        *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
+        *arch_, *predictor_, *portAllocator_, process_);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   }
   return;
 }
@@ -245,4 +296,15 @@ std::shared_ptr<simeng::MemoryInterface> CoreInstance::getInstructionMemory()
   return instructionMemory_;
 }
 
+<<<<<<< HEAD
+=======
+const uint64_t CoreInstance::getProcessImageSize() const {
+  return processMemorySize_;
+}
+
+const uint64_t CoreInstance::getHeapStart() const {
+  return process_->getHeapStart();
+};
+
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }  // namespace simeng

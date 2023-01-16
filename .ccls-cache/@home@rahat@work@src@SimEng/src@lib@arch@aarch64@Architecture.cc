@@ -10,7 +10,12 @@ namespace aarch64 {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
+<<<<<<< HEAD
 Architecture::Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler)
+=======
+Architecture::Architecture(
+    std::shared_ptr<kernel::SyscallHandler> syscallHandler)
+>>>>>>> c36c82eb (added PageArameAllocator decl)
     : syscallHandler_(syscallHandler),
       microDecoder_(std::make_unique<MicroDecoder>()) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
@@ -42,7 +47,10 @@ Architecture::Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler)
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_PMCCNTR_EL0] = systemRegisterMap_.size();
+<<<<<<< HEAD
   systemRegisterMap_[ARM64_SYSREG_SVCR] = systemRegisterMap_.size();
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   // Get Virtual Counter Timer and Processor Cycle Counter system registers.
   VCTreg_ = {
@@ -268,6 +276,30 @@ uint16_t Architecture::getNumSystemRegisters() const {
   return static_cast<uint16_t>(systemRegisterMap_.size());
 }
 
+<<<<<<< HEAD
+=======
+ProcessStateChange Architecture::getInitialState(uint64_t stackPointer) const {
+  ProcessStateChange changes;
+  // Set ProcessStateChange type
+  changes.type = ChangeType::REPLACEMENT;
+
+  // uint64_t stackPointer = linux_.getInitialStackPointer();
+  // Set the stack pointer register
+  changes.modifiedRegisters.push_back({RegisterType::GENERAL, 31});
+  changes.modifiedRegisterValues.push_back(stackPointer);
+
+  // Set the system registers
+  // Temporary: state that DCZ can support clearing 64 bytes at a time,
+  // but is disabled due to bit 4 being set
+  changes.modifiedRegisters.push_back(
+      {RegisterType::SYSTEM,
+       static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0))});
+  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
+
+  return changes;
+}
+
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 uint64_t Architecture::getVectorLength() const { return VL_; }
@@ -287,24 +319,32 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
 std::vector<RegisterFileStructure>
 Architecture::getConfigPhysicalRegisterStructure() const {
   YAML::Node& config = Config::get();
+<<<<<<< HEAD
   // Matrix-Count multiplied by (SVL/8) as internal representation of
   // ZA is a block of row-vector-registers. Therefore we need to
   // convert physical counts from whole-ZA to rows-in-ZA.
   uint16_t matCount =
       config["Register-Set"]["Matrix-Count"].as<uint16_t>() *
       (config["Core"]["Streaming-Vector-Length"].as<uint16_t>() / 8);
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   return {
       {8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
       {256, config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>()},
       {32, config["Register-Set"]["Predicate-Count"].as<uint16_t>()},
       {1, config["Register-Set"]["Conditional-Count"].as<uint16_t>()},
       {8, getNumSystemRegisters()},
+<<<<<<< HEAD
       {256, matCount}};
+=======
+      {256, config["Register-Set"]["MatrixRow-Count"].as<uint16_t>()}};
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }
 
 std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
     const {
   YAML::Node& config = Config::get();
+<<<<<<< HEAD
   // Matrix-Count multiplied by (SVL/8) as internal representation of
   // ZA is a block of row-vector-registers. Therefore we need to
   uint16_t matCount =
@@ -315,16 +355,30 @@ std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
           getNumSystemRegisters(), matCount};
 }
 
+=======
+  return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
+          config["Register-Set"]["FloatingPoint/SVE-Count"].as<uint16_t>(),
+          config["Register-Set"]["Predicate-Count"].as<uint16_t>(),
+          config["Register-Set"]["Conditional-Count"].as<uint16_t>(),
+          getNumSystemRegisters(),
+          config["Register-Set"]["MatrixRow-Count"].as<uint16_t>()};
+}
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 /** The SVCR value is stored in Architecture to allow the value to be
  * retrieved within execution pipeline. This prevents adding an implicit
  * operand to every SME instruction; reducing the amount of complexity when
  * implementing SME execution logic. */
+<<<<<<< HEAD
 uint64_t Architecture::getSVCRval() const { return SVCRval_[0]; }
+=======
+uint64_t Architecture::getSVCRval() const { return *SVCRval_; }
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
 void Architecture::setSVCRval(const uint64_t newVal) const {
   SVCRval_[0] = newVal;
 }
 
+<<<<<<< HEAD
 void Architecture::updateAfterContextSwitch(
     const simeng::OS::cpuContext& context) const {
   SVCRval_[0] = context
@@ -333,6 +387,8 @@ void Architecture::updateAfterContextSwitch(
                     .get<uint64_t>();
 }
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng

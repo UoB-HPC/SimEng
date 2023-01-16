@@ -14,7 +14,12 @@ namespace riscv {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
+<<<<<<< HEAD
 Architecture::Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler)
+=======
+Architecture::Architecture(
+    std::shared_ptr<kernel::SyscallHandler> syscallHandler)
+>>>>>>> c36c82eb (added PageArameAllocator decl)
     : syscallHandler_(syscallHandler) {
   YAML::Node& config = Config::get();
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
@@ -232,6 +237,22 @@ int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   return systemRegisterMap_.at(reg);
 }
 
+<<<<<<< HEAD
+=======
+ProcessStateChange Architecture::getInitialState(uint64_t stackPointer) const {
+  ProcessStateChange changes;
+  // Set ProcessStateChange type
+  changes.type = ChangeType::REPLACEMENT;
+
+  // uint64_t stackPointer = linux_.getInitialStackPointer();
+  // Set the stack pointer register
+  changes.modifiedRegisters.push_back({RegisterType::GENERAL, 2});
+  changes.modifiedRegisterValues.push_back(stackPointer);
+
+  return changes;
+}
+
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 std::vector<RegisterFileStructure>
@@ -258,10 +279,13 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
 }
 
+<<<<<<< HEAD
 // Left blank as no implementation necessary
 void Architecture::updateAfterContextSwitch(
     const simeng::OS::cpuContext& context) const {}
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }  // namespace riscv
 }  // namespace arch
 }  // namespace simeng

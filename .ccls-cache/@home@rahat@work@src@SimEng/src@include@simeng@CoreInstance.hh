@@ -9,10 +9,17 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
+<<<<<<< HEAD
 #include "simeng/OS/SyscallHandler.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
+=======
+#include "simeng/arch/Architecture.hh"
+#include "simeng/arch/aarch64/Architecture.hh"
+#include "simeng/arch/riscv/Architecture.hh"
+#include "simeng/kernel/SyscallHandler.hh"
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 #include "simeng/memory/Mem.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
@@ -23,9 +30,15 @@
 namespace simeng {
 
 // Forward delare everything needed for SimOS
+<<<<<<< HEAD
 namespace OS {
 class SimOS;
 }  // namespace OS
+=======
+namespace kernel {
+class SimOS;
+}  // namespace kernel
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
 /** The available modes of simulation. */
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
@@ -35,7 +48,14 @@ class CoreInstance {
  public:
   /** Constructor with an executable, its arguments, and a model configuration.
    */
+<<<<<<< HEAD
   CoreInstance(std::shared_ptr<OS::SyscallHandler> syscallHandler,
+=======
+  CoreInstance(std::string executablePath,
+               std::vector<std::string> executableArgs,
+               std::shared_ptr<kernel::Process> process,
+               std::shared_ptr<kernel::SyscallHandler> syscallHandler,
+>>>>>>> c36c82eb (added PageArameAllocator decl)
                std::shared_ptr<simeng::memory::Mem> mem);
 
   // IGNORING SST RELATED CODE FOR NOW
@@ -71,14 +91,34 @@ class CoreInstance {
   /** Getter for the create instruction memory object. */
   std::shared_ptr<simeng::MemoryInterface> getInstructionMemory() const;
 
+<<<<<<< HEAD
  private:
   /** Generate the appropriate simulation objects as parameterised by the
    * configuration.*/
   void generateCoreModel();
+=======
+  /** Getter for the size of the created process image. */
+  const uint64_t getProcessImageSize() const;
+
+  /* Getter for heap start. */
+  const uint64_t getHeapStart() const;
+
+ private:
+  /** Generate the appropriate simulation objects as parameterised by the
+   * configuration.*/
+  void generateCoreModel(std::string executablePath,
+                         std::vector<std::string> executableArgs);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** Extract simulation mode from config file. */
   void setSimulationMode();
 
+<<<<<<< HEAD
+=======
+  /** Construct the process memory from the generated process_ object. */
+  void createProcessMemory();
+
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   /** Construct the SimEng L1 instruction cache memory. */
   void createL1InstructionMemory(const simeng::MemInterfaceType type);
 
@@ -98,10 +138,17 @@ class CoreInstance {
   YAML::Node& config_;
 
   /** Reference to the SimEng SimOS Process object. */
+<<<<<<< HEAD
   std::shared_ptr<simeng::OS::Process> process_ = nullptr;
 
   /** Reference to the SyscallHandler object in SimOS instance. */
   std::shared_ptr<OS::SyscallHandler> syscallHandler_;
+=======
+  std::shared_ptr<simeng::kernel::Process> process_ = nullptr;
+
+  /** Reference to the SyscallHandler object in SimOS instance. */
+  std::shared_ptr<kernel::SyscallHandler> syscallHandler_;
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** The size of the process memory. */
   uint64_t processMemorySize_;

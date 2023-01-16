@@ -4,7 +4,10 @@
 #include <cassert>
 #include <cstring>
 #include <iostream>
+<<<<<<< HEAD
 #include <list>
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
 namespace simeng {
 namespace pipeline {
@@ -105,6 +108,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     // Create a speculative entry for the load
     requestLoadQueue_[tickCounter_ + insn->getLSQLatency()].push_back(
         {{}, insn});
+<<<<<<< HEAD
     // Store a reference to the reqAddresses queue for easy access
     auto& reqAddrQueue = requestLoadQueue_[tickCounter_ + insn->getLSQLatency()]
                              .back()
@@ -114,6 +118,14 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     std::list<simeng::MemoryAccessTarget> temp_load_addr(ld_addresses.begin(),
                                                          ld_addresses.end());
 
+=======
+    // Store load addresses in vector temporarily so that conflictions are
+    // only regsitered once on most recent (program order) store
+    std::vector<simeng::MemoryAccessTarget> temp_load_addr;
+    for (const auto& ld : ld_addresses) {
+      temp_load_addr.push_back(ld);
+    }
+>>>>>>> c36c82eb (added PageArameAllocator decl)
     // Detect reordering conflicts
     if (storeQueue_.size() > 0) {
       uint64_t seqId = insn->getSequenceId();
@@ -138,11 +150,21 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
                 } else {
                   // To ensure load doesn't match on an earlier store, generate
                   // load request for address
+<<<<<<< HEAD
                   reqAddrQueue.push(*itLd);
                 }
                 // Remove from temporary vector so the confliction can't be
                 // registered again
                 itLd = temp_load_addr.erase(itLd);
+=======
+                  requestLoadQueue_[tickCounter_ + insn->getLSQLatency()]
+                      .back()
+                      .reqAddresses.push(*itLd);
+                }
+                // Remove from temporary vector so the confliction can't be
+                // registered again
+                temp_load_addr.erase(itLd);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
               } else {
                 itLd++;
               }
@@ -153,8 +175,18 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     }
     // If addresses remain that had no conflictions, generate those load
     // request(s)
+<<<<<<< HEAD
     for (const auto& ld_addr : temp_load_addr) reqAddrQueue.emplace(ld_addr);
 
+=======
+    if (temp_load_addr.size() > 0) {
+      for (size_t i = 0; i < temp_load_addr.size(); i++) {
+        requestLoadQueue_[tickCounter_ + insn->getLSQLatency()]
+            .back()
+            .reqAddresses.push(temp_load_addr[i]);
+      }
+    }
+>>>>>>> c36c82eb (added PageArameAllocator decl)
     // Register active load
     requestedLoads_.emplace(insn->getSequenceId(), insn);
   }

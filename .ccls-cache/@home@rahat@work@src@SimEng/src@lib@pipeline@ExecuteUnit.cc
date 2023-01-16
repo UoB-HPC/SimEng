@@ -222,11 +222,14 @@ uint64_t ExecuteUnit::getBranchMispredictedCount() const {
   return branchMispredicts_;
 }
 
+<<<<<<< HEAD
 void ExecuteUnit::flush() {
   pipeline_.clear();
   operationsStalled_.clear();
 }
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 uint64_t ExecuteUnit::getCycles() const { return cycles_; }
 
 }  // namespace pipeline

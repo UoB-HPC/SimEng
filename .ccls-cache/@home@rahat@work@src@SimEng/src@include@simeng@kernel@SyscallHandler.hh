@@ -30,8 +30,11 @@
 namespace simeng {
 namespace kernel {
 
+<<<<<<< HEAD
 class SimOS;
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 /** Fixed-width definition of `stat`.
  * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
 struct stat {
@@ -110,7 +113,11 @@ struct linux_dirent64 {
 class SyscallHandler {
  public:
   /** Create new SyscallHandler object. */
+<<<<<<< HEAD
   SyscallHandler(SimOS* os);
+=======
+  SyscallHandler(const std::vector<std::shared_ptr<Process>>& processes);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */
@@ -173,8 +180,13 @@ class SyscallHandler {
   int64_t munmap(uint64_t addr, size_t length);
 
   /** mmap syscall: map files or devices into memory. */
+<<<<<<< HEAD
   int64_t mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
                off_t offset);
+=======
+  uint64_t mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
+                off_t offset);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** openat syscall: open/create a file. */
   int64_t openat(int64_t dirfd, const std::string& path, int64_t flags,
@@ -210,7 +222,10 @@ class SyscallHandler {
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
  private:
+<<<<<<< HEAD
   SimOS* os_ = nullptr;
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   /** Resturn correct Dirfd depending on given pathname abd dirfd given to
    * syscall. */
   uint64_t getDirFd(int64_t dfd, std::string pathname);
@@ -219,6 +234,12 @@ class SyscallHandler {
    * to point to the SimEng equivalent. */
   std::string getSpecialFile(const std::string filename);
 
+<<<<<<< HEAD
+=======
+  /** The state of the user-space processes running above the kernel. */
+  const std::vector<std::shared_ptr<Process>>& processes_;
+
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
 

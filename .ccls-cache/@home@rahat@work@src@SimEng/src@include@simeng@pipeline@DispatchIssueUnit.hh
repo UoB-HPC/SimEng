@@ -80,10 +80,13 @@ class DispatchIssueUnit {
   /** Clear the RS of all flushed instructions. */
   void purgeFlushed();
 
+<<<<<<< HEAD
   /** Flush scoreboard, dependancyMatrix. Primarily used for context
    * switching. */
   void flush();
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   /** Retrieve the number of cycles this unit stalled due to insufficient RS
    * space. */
   uint64_t getRSStalls() const;
@@ -131,10 +134,13 @@ class DispatchIssueUnit {
   std::unordered_map<uint16_t, std::unordered_set<std::shared_ptr<Instruction>>>
       flushed_;
 
+<<<<<<< HEAD
   /** Records the number of instructions dispatched for each reservation station
    * within a cycle. */
   std::unique_ptr<uint16_t[]> dispatches_;
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   /** A reference to the execution port allocator. */
   PortAllocator& portAllocator_;
 

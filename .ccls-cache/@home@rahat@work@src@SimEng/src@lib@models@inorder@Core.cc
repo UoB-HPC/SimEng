@@ -14,16 +14,29 @@ const unsigned int blockSize = 16;
 const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
+<<<<<<< HEAD
            const arch::Architecture& isa, BranchPredictor& branchPredictor)
     : dataMemory_(dataMemory),
+=======
+           uint64_t processMemorySize, uint64_t entryPoint,
+           const arch::Architecture& isa, BranchPredictor& branchPredictor,
+           std::shared_ptr<kernel::Process> process)
+    : dataMemory_(dataMemory),
+      process_(process),
+>>>>>>> c36c82eb (added PageArameAllocator decl)
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),
       completionSlots_(1, {1, nullptr}),
+<<<<<<< HEAD
       fetchUnit_(fetchToDecodeBuffer_, instructionMemory, blockSize, isa,
                  branchPredictor),
+=======
+      fetchUnit_(fetchToDecodeBuffer_, instructionMemory, processMemorySize,
+                 entryPoint, blockSize, isa, branchPredictor),
+>>>>>>> c36c82eb (added PageArameAllocator decl)
       decodeUnit_(fetchToDecodeBuffer_, decodeToExecuteBuffer_,
                   branchPredictor),
       executeUnit_(
@@ -33,6 +46,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor, false),
+<<<<<<< HEAD
       writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}){};
 
 void Core::tick() {
@@ -66,6 +80,19 @@ void Core::tick() {
 
   // Increase tick count for current process execution
   procTicks_++;
+=======
+      writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}) {
+  // Query and apply initial state
+  auto state =
+      isa.getInitialState(process_->getMemRegion().getInitialStackStart());
+  applyStateChange(state);
+};
+
+void Core::tick() {
+  ticks_++;
+
+  if (hasHalted_) return;
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
@@ -129,22 +156,40 @@ void Core::tick() {
   }
 
   fetchUnit_.requestFromPC();
+<<<<<<< HEAD
 }
 
 CoreStatus Core::getStatus() {
   // Core is considered to have halted when the fetch unit has halted, there are
   // no uops at the head of any buffer, and no exception is currently being
+=======
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
+}
+
+bool Core::hasHalted() const {
+  if (hasHalted_) {
+    return true;
+  }
+
+  // Core is considered to have halted when the fetch unit has halted, there
+  // are no uops at the head of any buffer, and no exception is currently being
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   // handled.
   bool decodePending = fetchToDecodeBuffer_.getHeadSlots()[0].size() > 0;
   bool executePending = decodeToExecuteBuffer_.getHeadSlots()[0] != nullptr;
   bool writebackPending = completionSlots_[0].getHeadSlots()[0] != nullptr;
 
+<<<<<<< HEAD
   if (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
       !executePending && exceptionHandler_ == nullptr) {
     status_ = CoreStatus::halted;
   }
 
   return status_;
+=======
+  return (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
+          !executePending && exceptionHandler_ == nullptr);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
@@ -183,9 +228,13 @@ std::map<std::string, std::string> Core::getStats() const {
           {"flushes", std::to_string(flushes_)},
           {"branch.executed", std::to_string(totalBranchesExecuted)},
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
+<<<<<<< HEAD
           {"branch.missrate", branchMissRateStr.str()},
           {"idle.ticks", std::to_string(idle_ticks_)},
           {"context.switches", std::to_string(contextSwitches_)}};
+=======
+          {"branch.missrate", branchMissRateStr.str()}};
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
@@ -226,7 +275,11 @@ void Core::processExceptionHandler() {
   const auto& result = exceptionHandler_->getResult();
 
   if (result.fatal) {
+<<<<<<< HEAD
     status_ = CoreStatus::halted;
+=======
+    hasHalted_ = true;
+>>>>>>> c36c82eb (added PageArameAllocator decl)
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     fetchUnit_.flushLoopBuffer();
@@ -376,6 +429,7 @@ void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
   completionSlots_[0].getTailSlots()[0] = instruction;
 }
 
+<<<<<<< HEAD
 void Core::schedule(simeng::OS::cpuContext newContext) {
   currentTID_ = newContext.TID;
   fetchUnit_.setProgramLength(newContext.progByteLen);
@@ -430,6 +484,8 @@ simeng::OS::cpuContext Core::getPrevContext() const {
   return newContext;
 }
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }  // namespace inorder
 }  // namespace models
 }  // namespace simeng

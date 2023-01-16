@@ -1273,6 +1273,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       }
       break;
     }
+<<<<<<< HEAD
     case Opcode::AArch64_ST1Fourv2s_POST:
       [[fallthrough]];
     case Opcode::AArch64_ST1Fourv4s_POST: {
@@ -1285,6 +1286,8 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       if (operandCount == 6) operands[5].access = CS_AC_READ;
       break;
     }
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
     case Opcode::AArch64_ST1i8_POST:
       [[fallthrough]];
     case Opcode::AArch64_ST1i16_POST:
@@ -1297,8 +1300,11 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
         operands[2].access = CS_AC_READ;
       }
       break;
+<<<<<<< HEAD
     case Opcode::AArch64_ST1Twov4s:
       [[fallthrough]];
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
     case Opcode::AArch64_ST1Twov16b:
       // ST1 incorrectly flags read and write
       operands[1].access = CS_AC_READ;

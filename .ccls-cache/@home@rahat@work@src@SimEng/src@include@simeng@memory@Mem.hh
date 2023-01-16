@@ -2,7 +2,11 @@
 
 #include <memory>
 
+<<<<<<< HEAD
 #include "simeng/OS/Process.hh"
+=======
+#include "simeng/kernel/Process.hh"
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
 namespace simeng {
 namespace memory {

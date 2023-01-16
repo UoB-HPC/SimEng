@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "simeng/Config.hh"
+<<<<<<< HEAD
 #include "simeng/Core.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
@@ -17,6 +18,11 @@
 #include "simeng/kernel/SyscallHandler.hh"
 #include "simeng/kernel/Vma.hh"
 #include "simeng/memory/MMU.hh"
+=======
+#include "simeng/CoreInstance.hh"
+#include "simeng/SpecialFileDirGen.hh"
+#include "simeng/kernel/SyscallHandler.hh"
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 #include "simeng/memory/SimpleMem.hh"
 #include "simeng/span.hh"
 
@@ -26,8 +32,11 @@ class RegressionTest;
 namespace simeng {
 namespace kernel {
 
+<<<<<<< HEAD
 using namespace simeng::kernel::defaults;
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 // Program used when no executable is provided; counts down from
 // 1024*1024, with an independent `orr` at the start of each branch.
 static uint32_t hex_[8] = {
@@ -46,6 +55,7 @@ static uint32_t hex_[8] = {
 class SimOS {
  public:
   /** Construct a SimOS object. */
+<<<<<<< HEAD
   SimOS(std::string executablePath, std::vector<std::string> executableArgs,
         std::shared_ptr<simeng::memory::Mem> mem, bool setProcess = false);
 
@@ -54,10 +64,22 @@ class SimOS {
 
   /** Get a process with specified TID. */
   std::shared_ptr<Process> getProcess(uint64_t TID) const;
+=======
+  SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem);
+
+  /** Get pointer to process with specified PID. */
+  std::shared_ptr<Process> getProcess() const;
+
+  /** Get user defined config, executable, and executable args. */
+  std::tuple<std::string, std::vector<std::string>> getParsedArgv() const {
+    return {executablePath_, executableArgs_};
+  };
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** Get shared_ptr to syscallHandler instance. */
   std::shared_ptr<SyscallHandler> getSyscallHandler() const {
     return syscallHandler_;
+<<<<<<< HEAD
   };
 
   /**
@@ -97,6 +119,15 @@ class SimOS {
 
  private:
   std::function<void(char*, uint64_t, size_t)> sendToMem_;
+=======
+  }
+
+  /** Set up friend class with RegressionTest to enable exclusive access to
+   * protected functions. */
+  friend class ::RegressionTest;
+
+ private:
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   /** Create the initial SimOS Process running above this kernel from command
    * line arguments.
    * Empty command line arguments denote the usage of hardcoded instructions
@@ -106,6 +137,15 @@ class SimOS {
   /** Construct the special file directory. */
   void createSpecialFileDirectory() const;
 
+<<<<<<< HEAD
+=======
+  /** Update the initial process to a pre-defined one.
+   * Should be used EXCLUSIVELY by the test suite. */
+  void setInitialProcess(std::shared_ptr<Process> proc) {
+    processes_.emplace(processes_.begin(), proc);
+  }
+
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   /** The path of user defined Executable. */
   std::string executablePath_ = DEFAULT_STR;
 
@@ -115,6 +155,7 @@ class SimOS {
   /** The list of user-space processes running above the kernel. */
   std::vector<std::shared_ptr<Process>> processes_ = {};
 
+<<<<<<< HEAD
   /** Queue of processes waiting to be scheduled. */
   std::queue<std::shared_ptr<Process>> waitingProcs_ = {};
 
@@ -124,11 +165,14 @@ class SimOS {
   /** The list of cores. */
   std::vector<std::shared_ptr<simeng::Core>> cores_ = {};
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   /** Reference to the global memory pointer */
   std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
 
   /** SyscallHandler Object to process all syscalls. */
   std::shared_ptr<SyscallHandler> syscallHandler_;
+<<<<<<< HEAD
 
   /** Indicates if all processes have completed or a core has halted due to an
    * exception. */
@@ -163,3 +207,9 @@ class SimOS {
 
 }  // namespace kernel
 }  // namespace simeng
+=======
+};
+
+}  // namespace kernel
+}  // namespace simeng
+>>>>>>> c36c82eb (added PageArameAllocator decl)

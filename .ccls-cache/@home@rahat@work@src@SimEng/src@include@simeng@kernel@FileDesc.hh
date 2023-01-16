@@ -1,16 +1,23 @@
+<<<<<<< HEAD
 #include <errno.h>
 #include <fcntl.h>
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 #include <stdint.h>
 #include <sys/stat.h>
 
 #include <array>
+<<<<<<< HEAD
 #include <iostream>
 #include <string>
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
 #define MAX_FD_NUM 1024
 
 /** A FileDescEntry represents a host to virtual file descriptor mapping. */
 struct FileDescEntry {
+<<<<<<< HEAD
  public:
   FileDescEntry(){};
 
@@ -60,10 +67,23 @@ struct FileDescEntry {
 
   /** Name of the opened file. */
   std::string filename_;
+=======
+  /** Host file descriptor. */
+  const int fd_;
+  /** Virtual file descriptor. */
+  const int vfd_;
+  /** Flags used in the openat syscall. */
+  const int flags_;
+  /** Name of the opened file. */
+  const char* filename_;
+  FileDescEntry(int fd, int vfd, int flags, const char* filename)
+      : fd_(fd), vfd_(vfd), flags_(flags), filename_(filename) {}
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 };
 
 /** This class managed the all host to virtual file descriptor mappings. */
 class FileDescArray {
+<<<<<<< HEAD
  public:
   FileDescArray();
 
@@ -88,6 +108,8 @@ class FileDescArray {
    */
   int removeFDEntry(int vfd);
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
  private:
   /**
    * Maximum number of file descriptors per process, defined by the linux
@@ -96,7 +118,11 @@ class FileDescArray {
   static const uint64_t maxFdNum_ = 1024;
 
   /** Array which holds FileDescEntry(s) */
+<<<<<<< HEAD
   std::array<FileDescEntry, maxFdNum_> fdarr_;
+=======
+  std::array<FileDescEntry*, maxFdNum_> fdarr_;
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /** Number of FileDescEntry(s) in fdarr_ */
   uint64_t numFds_ = 0;
@@ -106,4 +132,28 @@ class FileDescArray {
    * (-1) check validates size of fdarr_.
    */
   void validate(int vfd = -1);
+<<<<<<< HEAD
 };
+=======
+
+ public:
+  FileDescArray();
+  ~FileDescArray();
+  /**
+   * This function allocates a new FileDescEntry. It calls the host's openat
+   * syscall with the specified parameters and maintains a host to virtual file
+   * descriptor mapping.
+   */
+  int allocateFDEntry(int dirFD, const char* filename, int flags, int mode);
+  /**
+   * This function returns an allocated FileDescEntry. If none is present
+   * nullptr is returned.
+   */
+  FileDescEntry* getFDEntry(int vfd);
+  /**
+   * This function removes an allocated FileDescEntry. It calls the host's close
+   * syscall with the fd corresponding to specified vfd.
+   */
+  int removeFDEntry(int vfd);
+};
+>>>>>>> c36c82eb (added PageArameAllocator decl)

@@ -12,11 +12,19 @@ namespace riscv {
 
 ExceptionHandler::ExceptionHandler(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
+<<<<<<< HEAD
     MemoryInterface& memory, std::shared_ptr<OS::SyscallHandler> sysHandler)
     : instruction_(*static_cast<Instruction*>(instruction.get())),
       core(core),
       memory_(memory),
       sysHandler_(sysHandler) {
+=======
+    MemoryInterface& memory, std::shared_ptr<kernel::SyscallHandler> linux)
+    : instruction_(*static_cast<Instruction*>(instruction.get())),
+      core(core),
+      memory_(memory),
+      linux_(linux) {
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   resumeHandling_ = [this]() { return init(); };
 }
 
@@ -39,7 +47,11 @@ bool ExceptionHandler::init() {
         uint64_t argp = registerFileSet.get(R2).get<uint64_t>();
 
         std::vector<char> out;
+<<<<<<< HEAD
         int64_t retval = sysHandler_->ioctl(fd, request, out);
+=======
+        int64_t retval = linux_->ioctl(fd, request, out);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
         assert(out.size() < 256 && "large ioctl() output not implemented");
         uint8_t outSize = static_cast<uint8_t>(out.size());
@@ -52,9 +64,14 @@ bool ExceptionHandler::init() {
       case 46: {  // ftruncate
         uint64_t fd = registerFileSet.get(R0).get<uint64_t>();
         uint64_t length = registerFileSet.get(R1).get<uint64_t>();
+<<<<<<< HEAD
         stateChange = {ChangeType::REPLACEMENT,
                        {R0},
                        {sysHandler_->ftruncate(fd, length)}};
+=======
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {linux_->ftruncate(fd, length)}};
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         break;
       }
       case 48: {  // faccessat
@@ -64,12 +81,20 @@ bool ExceptionHandler::init() {
         // flag component not used, although function definition includes it
         int64_t flag = 0;
 
+<<<<<<< HEAD
         char* filename = new char[PATH_MAX_LEN];
         return readStringThen(
             filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
               // Invoke the syscall handler
               int64_t retval =
                   sysHandler_->faccessat(dfd, filename, mode, flag);
+=======
+        char* filename = new char[LINUX_PATH_MAX];
+        return readStringThen(
+            filename, filenamePtr, LINUX_PATH_MAX, [=](auto length) {
+              // Invoke the kernel
+              int64_t retval = linux_->faccessat(dfd, filename, mode, flag);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
               ProcessStateChange stateChange = {
                   ChangeType::REPLACEMENT, {R0}, {retval}};
               delete[] filename;
@@ -83,12 +108,20 @@ bool ExceptionHandler::init() {
         int64_t flags = registerFileSet.get(R2).get<int64_t>();
         uint16_t mode = registerFileSet.get(R3).get<uint16_t>();
 
+<<<<<<< HEAD
         char* pathname = new char[PATH_MAX_LEN];
         return readStringThen(
             pathname, pathnamePtr, PATH_MAX_LEN, [=](auto length) {
               // Invoke the syscall handler
               uint64_t retval =
                   sysHandler_->openat(dirfd, pathname, flags, mode);
+=======
+        char* pathname = new char[LINUX_PATH_MAX];
+        return readStringThen(
+            pathname, pathnamePtr, LINUX_PATH_MAX, [=](auto length) {
+              // Invoke the kernel
+              uint64_t retval = linux_->openat(dirfd, pathname, flags, mode);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
               ProcessStateChange stateChange = {
                   ChangeType::REPLACEMENT, {R0}, {retval}};
               delete[] pathname;
@@ -98,7 +131,11 @@ bool ExceptionHandler::init() {
       }
       case 57: {  // close
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
+<<<<<<< HEAD
         stateChange = {ChangeType::REPLACEMENT, {R0}, {sysHandler_->close(fd)}};
+=======
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->close(fd)}};
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         break;
       }
       case 61: {  // getdents64
@@ -107,8 +144,12 @@ bool ExceptionHandler::init() {
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
 
         return readBufferThen(bufPtr, count, [=]() {
+<<<<<<< HEAD
           int64_t totalRead =
               sysHandler_->getdents64(fd, dataBuffer.data(), count);
+=======
+          int64_t totalRead = linux_->getdents64(fd, dataBuffer.data(), count);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
@@ -141,9 +182,14 @@ bool ExceptionHandler::init() {
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t offset = registerFileSet.get(R1).get<uint64_t>();
         int64_t whence = registerFileSet.get(R2).get<uint64_t>();
+<<<<<<< HEAD
         stateChange = {ChangeType::REPLACEMENT,
                        {R0},
                        {sysHandler_->lseek(fd, offset, whence)}};
+=======
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {linux_->lseek(fd, offset, whence)}};
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         break;
       }
       case 63: {  // read
@@ -151,7 +197,11 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
+<<<<<<< HEAD
           int64_t totalRead = sysHandler_->read(fd, dataBuffer.data(), count);
+=======
+          int64_t totalRead = linux_->read(fd, dataBuffer.data(), count);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
@@ -186,7 +236,11 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
+<<<<<<< HEAD
           int64_t retval = sysHandler_->write(fd, dataBuffer.data(), count);
+=======
+          int64_t retval = linux_->write(fd, dataBuffer.data(), count);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {retval}};
           return concludeSyscall(stateChange);
@@ -203,8 +257,12 @@ bool ExceptionHandler::init() {
         //
         // We're going to queue up two handlers:
         // - First, read the iovec structures that describe each buffer.
+<<<<<<< HEAD
         // - Second, invoke the syscall handler to perform the read operation,
         // and
+=======
+        // - Second, invoke the kernel to perform the read operation, and
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         //   generate memory write requests for each buffer.
 
         // Create the second handler in the chain, which invokes the kernel and
@@ -226,8 +284,13 @@ bool ExceptionHandler::init() {
             iovec[i * 2 + 1] = iovdata[i * 2 + 1];
           }
 
+<<<<<<< HEAD
           // Invoke the syscall handler
           int64_t totalRead = sysHandler_->readv(fd, iovec.data(), iovcnt);
+=======
+          // Invoke the kernel
+          int64_t totalRead = linux_->readv(fd, iovec.data(), iovcnt);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
 
@@ -277,7 +340,11 @@ bool ExceptionHandler::init() {
         // We're going to queue up a chain of handlers:
         // - First, read the iovec structures that describe each buffer.
         // - Next, read the data for each buffer.
+<<<<<<< HEAD
         // - Finally, invoke the syscall handler to perform the write operation.
+=======
+        // - Finally, invoke the kernel to perform the write operation.
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
         // Create the final handler in the chain, which invokes the kernel
         std::function<bool()> last = [=]() {
@@ -292,8 +359,13 @@ bool ExceptionHandler::init() {
             bufferPtr += len;
           }
 
+<<<<<<< HEAD
           // Invoke the syscall handler
           int64_t retval = sysHandler_->writev(fd, dataBuffer.data(), iovcnt);
+=======
+          // Invoke the kernel
+          int64_t retval = linux_->writev(fd, dataBuffer.data(), iovcnt);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {retval}};
           return concludeSyscall(stateChange);
@@ -317,8 +389,13 @@ bool ExceptionHandler::init() {
         const auto pathnameAddress = registerFileSet.get(R1).get<uint64_t>();
 
         // Copy string at `pathnameAddress`
+<<<<<<< HEAD
         auto pathname = new char[PATH_MAX_LEN];
         return readStringThen(pathname, pathnameAddress, PATH_MAX_LEN,
+=======
+        auto pathname = new char[LINUX_PATH_MAX];
+        return readStringThen(pathname, pathnameAddress, LINUX_PATH_MAX,
+>>>>>>> c36c82eb (added PageArameAllocator decl)
                               [this, pathname](auto length) {
                                 // Pass the string `readLinkAt`, then destroy
                                 // the buffer and resolve the handler.
@@ -333,6 +410,7 @@ bool ExceptionHandler::init() {
         uint64_t statbufPtr = registerFileSet.get(R2).get<uint64_t>();
         int64_t flag = registerFileSet.get(R3).get<int64_t>();
 
+<<<<<<< HEAD
         char* filename = new char[PATH_MAX_LEN];
         return readStringThen(
             filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
@@ -340,6 +418,15 @@ bool ExceptionHandler::init() {
               OS::stat statOut;
               uint64_t retval =
                   sysHandler_->newfstatat(dfd, filename, statOut, flag);
+=======
+        char* filename = new char[LINUX_PATH_MAX];
+        return readStringThen(
+            filename, filenamePtr, LINUX_PATH_MAX, [=](auto length) {
+              // Invoke the kernel
+              kernel::stat statOut;
+              uint64_t retval =
+                  linux_->newfstatat(dfd, filename, statOut, flag);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
               ProcessStateChange stateChange = {
                   ChangeType::REPLACEMENT, {R0}, {retval}};
               delete[] filename;
@@ -355,9 +442,15 @@ bool ExceptionHandler::init() {
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t statbufPtr = registerFileSet.get(R1).get<uint64_t>();
 
+<<<<<<< HEAD
         OS::stat statOut;
         stateChange = {
             ChangeType::REPLACEMENT, {R0}, {sysHandler_->fstat(fd, statOut)}};
+=======
+        kernel::stat statOut;
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {linux_->fstat(fd, statOut)}};
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         stateChange.memoryAddresses.push_back({statbufPtr, sizeof(statOut)});
         stateChange.memoryAddressValues.push_back(statOut);
         break;
@@ -379,7 +472,11 @@ bool ExceptionHandler::init() {
       case 96: {  // set_tid_address
         uint64_t ptr = registerFileSet.get(R0).get<uint64_t>();
         stateChange = {
+<<<<<<< HEAD
             ChangeType::REPLACEMENT, {R0}, {sysHandler_->setTidAddress(ptr)}};
+=======
+            ChangeType::REPLACEMENT, {R0}, {linux_->setTidAddress(ptr)}};
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         break;
       }
       case 98: {  // futex
@@ -408,7 +505,11 @@ bool ExceptionHandler::init() {
         uint64_t seconds;
         uint64_t nanoseconds;
         uint64_t retval =
+<<<<<<< HEAD
             sysHandler_->clockGetTime(clkId, systemTimer, seconds, nanoseconds);
+=======
+            linux_->clockGetTime(clkId, systemTimer, seconds, nanoseconds);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
 
         uint64_t timespecPtr = registerFileSet.get(R1).get<uint64_t>();
@@ -423,7 +524,11 @@ bool ExceptionHandler::init() {
         size_t cpusetsize = registerFileSet.get(R1).get<size_t>();
         uint64_t mask = registerFileSet.get(R2).get<uint64_t>();
 
+<<<<<<< HEAD
         int64_t retval = sysHandler_->schedSetAffinity(pid, cpusetsize, mask);
+=======
+        int64_t retval = linux_->schedSetAffinity(pid, cpusetsize, mask);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
         break;
       }
@@ -431,7 +536,11 @@ bool ExceptionHandler::init() {
         pid_t pid = registerFileSet.get(R0).get<pid_t>();
         size_t cpusetsize = registerFileSet.get(R1).get<size_t>();
         uint64_t mask = registerFileSet.get(R2).get<uint64_t>();
+<<<<<<< HEAD
         int64_t bitmask = sysHandler_->schedGetAffinity(pid, cpusetsize, mask);
+=======
+        int64_t bitmask = linux_->schedGetAffinity(pid, cpusetsize, mask);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         // If returned bitmask is 0, assume an error
         if (bitmask > 0) {
           // Currently, only a single CPU bitmask is supported
@@ -498,10 +607,16 @@ bool ExceptionHandler::init() {
         int who = registerFileSet.get(R0).get<int>();
         uint64_t usagePtr = registerFileSet.get(R1).get<uint64_t>();
 
+<<<<<<< HEAD
         OS::rusage usageOut;
         stateChange = {ChangeType::REPLACEMENT,
                        {R0},
                        {sysHandler_->getrusage(who, usageOut)}};
+=======
+        kernel::rusage usageOut;
+        stateChange = {
+            ChangeType::REPLACEMENT, {R0}, {linux_->getrusage(who, usageOut)}};
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         stateChange.memoryAddresses.push_back({usagePtr, sizeof(usageOut)});
         stateChange.memoryAddressValues.push_back(usageOut);
         break;
@@ -511,9 +626,15 @@ bool ExceptionHandler::init() {
         uint64_t tzPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t systemTimer = core.getSystemTimer();
 
+<<<<<<< HEAD
         OS::timeval tv;
         OS::timeval tz;
         int64_t retval = sysHandler_->gettimeofday(
+=======
+        kernel::timeval tv;
+        kernel::timeval tz;
+        int64_t retval = linux_->gettimeofday(
+>>>>>>> c36c82eb (added PageArameAllocator decl)
             systemTimer, tvPtr ? &tv : nullptr, tzPtr ? &tz : nullptr);
         stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
         if (tvPtr) {
@@ -527,6 +648,7 @@ bool ExceptionHandler::init() {
         break;
       }
       case 172:  // getpid
+<<<<<<< HEAD
         stateChange = {ChangeType::REPLACEMENT, {R0}, {sysHandler_->getpid()}};
         break;
       case 174:  // getuid
@@ -543,6 +665,24 @@ bool ExceptionHandler::init() {
         break;
       case 178:  // gettid
         stateChange = {ChangeType::REPLACEMENT, {R0}, {sysHandler_->gettid()}};
+=======
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->getpid()}};
+        break;
+      case 174:  // getuid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->getuid()}};
+        break;
+      case 175:  // geteuid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->geteuid()}};
+        break;
+      case 176:  // getgid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->getgid()}};
+        break;
+      case 177:  // getegid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->getegid()}};
+        break;
+      case 178:  // gettid
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->gettid()}};
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         break;
       case 179:  // sysinfo
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
@@ -556,7 +696,11 @@ bool ExceptionHandler::init() {
         break;
       }
       case 214: {  // brk
+<<<<<<< HEAD
         auto result = sysHandler_->brk(registerFileSet.get(R0).get<uint64_t>());
+=======
+        auto result = linux_->brk(registerFileSet.get(R0).get<uint64_t>());
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         stateChange = {
             ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
         break;
@@ -565,7 +709,11 @@ bool ExceptionHandler::init() {
         uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
         size_t length = registerFileSet.get(R1).get<size_t>();
 
+<<<<<<< HEAD
         int64_t result = sysHandler_->munmap(addr, length);
+=======
+        int64_t result = linux_->munmap(addr, length);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
         stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
         break;
       }
@@ -580,8 +728,12 @@ bool ExceptionHandler::init() {
         // Currently, only support mmap from a malloc() call whose arguments
         // match the first condition
         if (addr == 0 && flags == 34 && fd == -1 && offset == 0) {
+<<<<<<< HEAD
           uint64_t result =
               sysHandler_->mmap(addr, length, prot, flags, fd, offset);
+=======
+          uint64_t result = linux_->mmap(addr, length, prot, flags, fd, offset);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
           // An allocation of 0 signifies a failed allocation, return value from
           // syscall is changed to -1
           if (result == 0) {
@@ -707,9 +859,15 @@ bool ExceptionHandler::readStringThen(char* buffer, uint64_t address,
 }
 
 void ExceptionHandler::readLinkAt(span<char> path) {
+<<<<<<< HEAD
   if (path.size() == PATH_MAX_LEN) {
     // TODO: Handle PATH_MAX_LEN case
     std::cout << "[SimEng:ExceptionHandler] Path exceeds PATH_MAX_LEN"
+=======
+  if (path.size() == LINUX_PATH_MAX) {
+    // TODO: Handle LINUX_PATH_MAX case
+    std::cout << "[SimEng:ExceptionHandler] Path exceeds LINUX_PATH_MAX"
+>>>>>>> c36c82eb (added PageArameAllocator decl)
               << std::endl;
     fatal();
     return;
@@ -720,8 +878,13 @@ void ExceptionHandler::readLinkAt(span<char> path) {
   const auto bufAddress = registerFileSet.get(R2).get<uint64_t>();
   const auto bufSize = registerFileSet.get(R3).get<uint64_t>();
 
+<<<<<<< HEAD
   char buffer[PATH_MAX_LEN];
   auto result = sysHandler_->readlinkat(dirfd, path.data(), buffer, bufSize);
+=======
+  char buffer[LINUX_PATH_MAX];
+  auto result = linux_->readlinkat(dirfd, path.data(), buffer, bufSize);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   if (result < 0) {
     // TODO: Handle error case

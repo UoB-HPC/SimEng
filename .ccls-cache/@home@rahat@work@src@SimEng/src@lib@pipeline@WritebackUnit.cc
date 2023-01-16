@@ -44,6 +44,7 @@ uint64_t WritebackUnit::getInstructionsWrittenCount() const {
   return instructionsWritten_;
 }
 
+<<<<<<< HEAD
 void WritebackUnit::flush() {
   for (size_t i = 0; i < completionSlots_.size(); i++) {
     completionSlots_[i].fill(nullptr);
@@ -51,5 +52,7 @@ void WritebackUnit::flush() {
   }
 }
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }  // namespace pipeline
 }  // namespace simeng

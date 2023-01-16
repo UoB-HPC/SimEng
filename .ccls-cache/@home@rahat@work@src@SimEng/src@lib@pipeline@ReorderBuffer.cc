@@ -34,6 +34,7 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
 }
 
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
+<<<<<<< HEAD
   if (!buffer_.empty()) {
     // Do a binary search to find the range of micro-ops that belong to macro-op
     // with ID insnId
@@ -56,6 +57,42 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
       first++;
     }
   }
+=======
+  if (buffer_.size()) {
+    size_t index = 0;
+    int firstOp = -1;
+    bool validForCommit = false;
+
+    // Find first instance of uop belonging to macro-op instruction
+    for (; index < buffer_.size(); index++) {
+      if (buffer_[index]->getInstructionId() == insnId) {
+        firstOp = index;
+        break;
+      }
+    }
+
+    if (firstOp > -1) {
+      // If found, see if all uops are committable
+      for (; index < buffer_.size(); index++) {
+        if (buffer_[index]->getInstructionId() != insnId) break;
+        if (!buffer_[index]->isWaitingCommit()) {
+          return;
+        } else if (buffer_[index]->isLastMicroOp()) {
+          // all microOps must be in ROB for the commit to be valid
+          validForCommit = true;
+        }
+      }
+      if (!validForCommit) return;
+
+      // No early return thus all uops are committable
+      for (; firstOp < buffer_.size(); firstOp++) {
+        if (buffer_[firstOp]->getInstructionId() != insnId) break;
+        buffer_[firstOp]->setCommitReady();
+      }
+    }
+  }
+  return;
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }
 
 unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
@@ -65,7 +102,11 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
   unsigned int n;
   for (n = 0; n < maxCommits; n++) {
+<<<<<<< HEAD
     auto& uop = buffer_.front();
+=======
+    auto& uop = buffer_[0];
+>>>>>>> c36c82eb (added PageArameAllocator decl)
     if (!uop->canCommit()) {
       break;
     }
@@ -103,6 +144,7 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     // Increment or swap out branch counter for loop detection
+<<<<<<< HEAD
     if (uop->isBranch()) {
       if (!loopDetected_) {
         bool increment = true;
@@ -138,6 +180,40 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
                instructionsCommitted_},
               0};
         }
+=======
+    if (uop->isBranch() && !loopDetected_) {
+      bool increment = true;
+      if (branchCounter_.first.address != uop->getInstructionAddress()) {
+        // Mismatch on instruction address, reset
+        increment = false;
+      } else if (branchCounter_.first.outcome != uop->getBranchPrediction()) {
+        // Mismatch on branch outcome, reset
+        increment = false;
+      } else if ((instructionsCommitted_ - branchCounter_.first.commitNumber) >
+                 loopBufSize_) {
+        // Loop too big to fit in loop buffer, reset
+        increment = false;
+      }
+
+      if (increment) {
+        // Reset commitNumber value
+        branchCounter_.first.commitNumber = instructionsCommitted_;
+        // Increment counter
+        branchCounter_.second++;
+
+        if (branchCounter_.second > loopDetectionThreshold_) {
+          // If the same branch with the same outcome is sequentially retired
+          // more times than the loopDetectionThreshold_ value, identify as a
+          // loop boundary
+          loopDetected_ = true;
+          sendLoopBoundary_(uop->getInstructionAddress());
+        }
+      } else {
+        // Swap out latest branch
+        branchCounter_ = {{uop->getInstructionAddress(),
+                           uop->getBranchPrediction(), instructionsCommitted_},
+                          0};
+>>>>>>> c36c82eb (added PageArameAllocator decl)
       }
     }
     buffer_.pop_front();
@@ -175,6 +251,7 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
   loopDetected_ = false;
 }
 
+<<<<<<< HEAD
 void ReorderBuffer::flush() {
   buffer_ = std::deque<std::shared_ptr<Instruction>>();
   shouldFlush_ = false;
@@ -183,6 +260,8 @@ void ReorderBuffer::flush() {
   loopDetected_ = false;
 }
 
+=======
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 unsigned int ReorderBuffer::size() const { return buffer_.size(); }
 
 unsigned int ReorderBuffer::getFreeSpace() const {

@@ -2,6 +2,10 @@
 
 #include <cstring>
 #include <fstream>
+<<<<<<< HEAD
+=======
+#include <iostream>
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
 namespace simeng {
 
@@ -14,11 +18,18 @@ namespace simeng {
  */
 
 Elf::Elf(std::string path, char** imagePointer) {
+<<<<<<< HEAD
   std::ifstream file(path, std::ios::binary);
 
   if (!file.is_open()) {
     return;
   }
+=======
+  std::ifstream file(path, std::ios::binary); 
+  if (!file.is_open()) {
+    return;
+  }   
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
   /**
    * In the Linux source tree the ELF header
@@ -103,7 +114,12 @@ Elf::Elf(std::string path, char** imagePointer) {
     // We can extract the nth header using the header offset
     // and header entry size.
     file.seekg(headerOffset + (i * headerEntrySize));
+<<<<<<< HEAD
     auto& header = headers_[i];
+=======
+    auto header = new ElfHeader();
+    headers_[i] = header;
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
     /**
      * Like the ELF Header, the ELF Program header is also defined
@@ -133,6 +149,7 @@ Elf::Elf(std::string path, char** imagePointer) {
 
     // Each address-related field is 8 bytes in a 64-bit ELF file
     const int fieldBytes = 8;
+<<<<<<< HEAD
     file.read(reinterpret_cast<char*>(&(header.type)), sizeof(header.type));
     file.seekg(4, std::ios::cur);  // Skip flags
     file.read(reinterpret_cast<char*>(&(header.offset)), fieldBytes);
@@ -140,6 +157,15 @@ Elf::Elf(std::string path, char** imagePointer) {
     file.read(reinterpret_cast<char*>(&(header.physicalAddress)), fieldBytes);
     file.read(reinterpret_cast<char*>(&(header.fileSize)), fieldBytes);
     file.read(reinterpret_cast<char*>(&(header.memorySize)), fieldBytes);
+=======
+    file.read(reinterpret_cast<char*>(&(header->type)), sizeof(header->type));
+    file.seekg(4, std::ios::cur);  // Skip flags
+    file.read(reinterpret_cast<char*>(&(header->offset)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header->virtualAddress)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header->physicalAddress)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header->fileSize)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header->memorySize)), fieldBytes);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
     // To construct the process we look for the largest virtual address and
     // add it to the memory size of the header. This way we obtain a very
@@ -147,9 +173,15 @@ Elf::Elf(std::string path, char** imagePointer) {
     // However, this way we end up creating a sparse array, in which most
     // of the entries are unused. Also SimEng internally treats these
     // virtual address as physical addresses to index into this large array.
+<<<<<<< HEAD
     if (header.virtualAddress + header.memorySize > processImageSize_) {
       processImageSize_ = header.virtualAddress + header.memorySize;
     }
+=======
+    uint64_t addr = header->virtualAddress + header->memorySize;
+    maxVirtAddr_ = std::max(maxVirtAddr_, addr);
+    processImageSize_ = std::max(processImageSize_, addr);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
   }
 
   *imagePointer = (char*)malloc(processImageSize_ * sizeof(char));
@@ -162,12 +194,29 @@ Elf::Elf(std::string path, char** imagePointer) {
    */
 
   // Process headers; only observe LOAD sections for this basic implementation
+<<<<<<< HEAD
   for (const auto& header : headers_) {
     if (header.type == 1) {  // LOAD
       file.seekg(header.offset);
       // Read `fileSize` bytes from `file` into the appropriate place in process
       // memory
       file.read(*imagePointer + header.virtualAddress, header.fileSize);
+=======
+  for (auto header : headers_) {
+    if (header->type == 1) {  // LOAD
+
+      header->headerData = new char[header->fileSize];
+
+      // Read `fileSize` bytes from `file` into the appropriate place in process
+      // memory
+      file.seekg(header->offset);
+      file.read(header->headerData, header->fileSize);
+
+      file.seekg(header->offset);
+      file.read(*imagePointer + header->virtualAddress, header->fileSize);
+
+      processedHeaders_.push_back(header);
+>>>>>>> c36c82eb (added PageArameAllocator decl)
     }
   }
 
@@ -175,7 +224,16 @@ Elf::Elf(std::string path, char** imagePointer) {
   return;
 }
 
+<<<<<<< HEAD
 Elf::~Elf() {}
+=======
+Elf::~Elf() {
+  for (auto header : headers_) {
+    delete[] header->headerData;
+    delete header;
+  }
+}
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 
 uint64_t Elf::getProcessImageSize() const { return processImageSize_; }
 
@@ -183,4 +241,13 @@ uint64_t Elf::getEntryPoint() const { return entryPoint_; }
 
 bool Elf::isValid() const { return isValid_; }
 
+<<<<<<< HEAD
+=======
+std::vector<ElfHeader*>& Elf::getProcessedHeaders() {
+  return processedHeaders_;
+}
+
+uint64_t Elf::getMaxVirtAddr() { return maxVirtAddr_; }
+
+>>>>>>> c36c82eb (added PageArameAllocator decl)
 }  // namespace simeng
