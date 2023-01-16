@@ -1,7 +1,7 @@
 #include <map>
 #include <memory>
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 struct PTEntry {
   uint64_t vaddr;
@@ -23,5 +23,5 @@ class PageTable {
   bool isAddrAllocated(uint64_t addr, uint64_t size);
 };
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng
