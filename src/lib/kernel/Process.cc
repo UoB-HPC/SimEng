@@ -83,7 +83,12 @@ Process::Process(const std::vector<std::string>& commandLine,
   // free allocated memory after copy.
   free(unwrappedProcImgPtr);
 
+  // Set Process' IDs
+  TGID_ = 0;
+  TID_ = 0;
+
   // Initialise context
+  context_.TID = TID_;
   context_.pc = entryPoint_;
   context_.sp = stackPtr;
   context_.progByteLen = getProcessImageSize();
@@ -97,9 +102,6 @@ Process::Process(const std::vector<std::string>& commandLine,
       context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
     }
   }
-  // Set Process' IDs
-  TGID_ = 0;
-  TID_ = 0;
 }
 
 Process::Process(span<char> instructions,
@@ -145,7 +147,12 @@ Process::Process(span<char> instructions,
   fileDescriptorTable_.emplace_back(STDERR_FILENO);
   free(unwrappedProcImgPtr);
 
+  // Set Process' IDs
+  TGID_ = 0;
+  TID_ = 0;
+
   // Initialise context
+  context_.TID = TID_;
   context_.pc = entryPoint_;
   context_.sp = stackPtr;
   context_.progByteLen = getProcessImageSize();
@@ -159,9 +166,6 @@ Process::Process(span<char> instructions,
       context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
     }
   }
-  // Set Process' IDs
-  TGID_ = 0;
-  TID_ = 0;
 }
 
 Process::~Process() {}
