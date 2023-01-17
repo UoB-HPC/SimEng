@@ -18,6 +18,10 @@ TEST(FileDescArrayTest, InitialisesStandardFileDescriptors) {
   ASSERT_EQ(fname, std::string("stderr"));
 }
 
+// This test will only pass if cmake --build build --target install command is
+// execute. Just builiding the test suite and running from the build directory
+// will not include the data folder which is needed for this test case to pass.
+//
 TEST(FileDescArrayTest, AllocatesFileDesc) {
   FileDescArray* fdArr = new FileDescArray();
   std::string build_dir_path(SIMENG_BUILD_DIR);
@@ -33,6 +37,10 @@ TEST(FileDescArrayTest, AllocatesFileDesc) {
   delete[] ftext;
 }
 
+// This test will only pass if cmake --build build --target install command is
+// executed. Just builiding the test suite and running from the build directory
+// will not include the data folder which is needed for this test case to pass.
+//
 TEST(FileDescArrayTest, RemovesFileDesc) {
   FileDescArray* fdArr = new FileDescArray();
   std::string build_dir_path(SIMENG_BUILD_DIR);
