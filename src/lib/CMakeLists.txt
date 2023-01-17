@@ -21,6 +21,7 @@ set(SIMENG_SOURCES
     kernel/Vma.cc
     kernel/FileDesc.cc
     kernel/PageFrameAllocator.cc
+    kernel/PageTable.cc
     memory/SimpleMem.cc
     memory/Mem.cc
     models/emulation/Core.cc
