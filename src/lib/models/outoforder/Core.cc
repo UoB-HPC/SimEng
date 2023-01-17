@@ -436,6 +436,9 @@ std::map<std::string, std::string> Core::getStats() const {
 }
 
 void Core::schedule(simeng::kernel::cpuContext newContext) {
+  // Need to reset mapping in register file
+  registerAliasTable_.reset(isa_.getRegisterFileStructures(),
+                            physicalRegisterQuantities_);
   currentTID_ = newContext.TID;
   fetchUnit_.setProgramLength(newContext.progByteLen);
   fetchUnit_.updatePC(newContext.pc);
@@ -459,6 +462,29 @@ bool Core::interrupt() {
 }
 
 uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
+
+simeng::kernel::cpuContext Core::getPrevContext() const {
+  kernel::cpuContext newContext;
+  newContext.TID = currentTID_;
+  newContext.pc = fetchUnit_.getPC();
+  // progByteLen will not change in process so do not need to set it
+  // Don't need to explicitly save SP as will be in reg file contents
+  auto regFileStruc = isa_.getRegisterFileStructures();
+  newContext.regFile.resize(regFileStruc.size());
+  for (size_t i = 0; i < regFileStruc.size(); i++) {
+    newContext.regFile[i].resize(regFileStruc[i].quantity);
+  }
+  // Set all reg Values
+  for (size_t type = 0; type < newContext.regFile.size(); type++) {
+    for (size_t tag = 0; tag < newContext.regFile[type].size(); tag++) {
+      newContext.regFile[type][tag] =
+          mappedRegisterFileSet_.get({(uint8_t)type, (uint16_t)tag});
+    }
+  }
+  // Do not need to explicitly set newContext.sp as it will be included in
+  // regFile
+  return newContext;
+}
 
 }  // namespace outoforder
 }  // namespace models

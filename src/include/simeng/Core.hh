@@ -50,6 +50,10 @@ class Core {
   /** Retrieve the number of ticks that have elapsed whilst executing the
    * current process. */
   virtual uint64_t getCurrentProcTicks() const = 0;
+
+  /** Retrieve the current CPU context for the currently executing / outgoing
+   * process. */
+  virtual simeng::kernel::cpuContext getPrevContext() const = 0;
 };
 
 }  // namespace simeng

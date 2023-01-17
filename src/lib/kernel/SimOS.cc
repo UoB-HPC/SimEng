@@ -119,6 +119,9 @@ Process SimOS::getProcess(uint64_t TID) const {
 }
 
 void SimOS::createInitialProcess() {
+  // TODO : When supporting multiple processes, need to keep track of next
+  // available TGID and TIDs, and pass these when constructing a Process object
+
   // Temporarily create the architecture, with knowledge of the kernel
   std::unique_ptr<simeng::arch::Architecture> arch;
   if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
@@ -149,7 +152,6 @@ void SimOS::createInitialProcess() {
                 << commandLine[0] << std::endl;
       exit(1);
     }
-    // IGNORE SST RELATED CASES FOR NOW
   } else {
     // Create a process image from the set of instructions held in hex_
     newProcess = std::make_shared<Process>(
@@ -164,7 +166,8 @@ void SimOS::createInitialProcess() {
       exit(1);
     }
   }
-  assert(newProcess->isValid() && "Attempted to use an invalid process");
+  assert(newProcess->isValid() &&
+         "[SimEng:SimOS] Attempted to use an invalid process");
 
   // Set Initial state of registers
   if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {

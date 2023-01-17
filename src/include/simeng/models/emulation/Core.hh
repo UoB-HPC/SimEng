@@ -57,6 +57,10 @@ class Core : public simeng::Core {
    * current process. */
   uint64_t getCurrentProcTicks() const override;
 
+  /** Retrieve the current CPU context for the currently executing / outgoing
+   * process. */
+  simeng::kernel::cpuContext getPrevContext() const override;
+
  private:
   /** Execute an instruction. */
   void execute(std::shared_ptr<Instruction>& uop);
