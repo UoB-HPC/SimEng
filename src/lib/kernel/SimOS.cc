@@ -40,25 +40,16 @@ void SimOS::tick() {
     return;
   }
 
-  // Check if any cores have halted
-  for (auto i : cores_) {
-    if (i->getStatus() == CoreStatus::halted) {
-      // Core has experienced a fatal exception, halt simulation
-      halted_ = true;
-      return;
-    }
-  }
-
   /** Scheduling behaviour :
    * 1. All processes start in a waiting state, and are placed in the
    * 'waitingProc' queue.
    *
    * 2. All cores are looped over, checking their status. If there is a process
    * in the waitingProc queue then currently executing cores will be tested to
-   * see if they should perform a context switch (Each Process is given X cycles
-   * at a time; round-robin style).
+   * see if they should perform a context switch (Each Process is given
+   * execTicks cycles at a time; round-robin style).
    *
-   * 3. If a core is sent an interupt signal, the head of waitingProcs queue is
+   * 3. If a core is sent an interrupt signal, the head of waitingProcs queue is
    * put into scheduled queue.
    *
    * 4. Idle cores can only be scheduled processes from the scheduledProcs
@@ -70,7 +61,7 @@ void SimOS::tick() {
    * 6. When a process goes back into a waiting state (post context switch) it
    * will be pushed to the back of the waitingProcs queue.
    *
-   * This ensures that multiple cores will not be interupted for a single
+   * This ensures that multiple cores will not be interrupted for a single
    * process
    *    - an OoO core may be in the switching state for multiple cycles, in
    *      which time a waitingProc could tell more executing cores to context
@@ -84,20 +75,52 @@ void SimOS::tick() {
         // Core has had fatal fault. Change SimOS status and return
         halted_ = true;
         return;
-      case CoreStatus::idle:
-        // Core is idle, schedule head of waitingProc queue
-        //  - Get prevContext from core and update appropriate proc
-        //  - Schedule waiting process on core
-        //  - Update newly scheduled process' status
-        //  - Remove process from waiting queue
-
-        // TODO: update idle case
-        cores_[cID]->schedule(scheduledProcs_.front()->context_);
-        scheduledProcs_.pop();
-      case CoreStatus::executing:
-        // Core is executing, test if interupt should be made
-        //  - If core has been running current process for X ticks, send
-        //  interupt
+      case CoreStatus::idle: {
+        // Core is idle, schedule head of scheduledProc queue
+        if (!scheduledProcs_.empty()) {
+          // Get prevContext from core and update appropriate process
+          kernel::cpuContext prevContext = cores_[cID]->getPrevContext();
+          for (auto i : processes_) {
+            if (i->getTID() == prevContext.TID) {
+              assert((i->status_ == procStatus::executing) &&
+                     "[SimEng:SimOS] Process updated when not in executing "
+                     "state.");
+              // Only update values which will have changed
+              i->context_.pc = prevContext.pc;
+              i->context_.regFile = prevContext.regFile;
+              // Change status from Executing to Waiting
+              i->status_ = procStatus::waiting;
+              waitingProcs_.push(i);
+              break;
+            }
+          }
+          // Schedule process on core
+          cores_[cID]->schedule(scheduledProcs_.front()->context_);
+          // Update newly scheduled process' status
+          scheduledProcs_.front()->status_ = procStatus::executing;
+          // Remove process from waiting queue
+          scheduledProcs_.pop();
+        }
+        break;
+      }
+      case CoreStatus::executing: {
+        // Core is executing, test if interrupt should be made
+        //  - If core has been running current process for execTicks ticks, send
+        //  interrupt
+        // Enusure there is a waiting process, otherwise let core continue
+        if (!waitingProcs_.empty()) {
+          if (cores_[cID]->getCurrentProcTicks() > execTicks) {
+            if (cores_[cID]->interrupt()) {
+              // interrupt signalled successfully, move waitingProc to
+              // sheduledProcs queue
+              waitingProcs_.front()->status_ = procStatus::scheduled;
+              scheduledProcs_.push(waitingProcs_.front());
+              waitingProcs_.pop();
+            }
+          }
+        }
+        break;
+      }
       case CoreStatus::switching:
         // Core is currently preparing to switch process, do nothing this cycle
         break;
@@ -186,11 +209,11 @@ void SimOS::createInitialProcess() {
         static_cast<uint64_t>(0b10100), 8};
   }
 
-  processes_.emplace_back(newProcess);
   // In a simulation's initial state, all cores will be idle. Only 'scheduled'
   // processes may be sent to a core for execution therefore we must update the
   // initial processes status and push it to the scheduledProcs queue
-  processes_[0]->status_ = procStatus::scheduled;
+  newProcess->status_ = procStatus::scheduled;
+  processes_.emplace_back(newProcess);
   scheduledProcs_.push(processes_[0]);
 }
 
