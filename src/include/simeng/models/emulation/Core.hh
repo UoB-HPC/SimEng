@@ -44,7 +44,18 @@ class Core : public simeng::Core {
   std::map<std::string, std::string> getStats() const override;
 
   /** Schedule a new Process. */
-  void schedule(std::shared_ptr<simeng::kernel::Process> newProc) override;
+  void schedule(simeng::kernel::cpuContext newContext) override;
+
+  /** Signals core to stop executing the current process.
+   * Return Values :
+   *  - True  : if succeeded in signaling interrupt
+   *  - False : interrupt not scheduled due to on-going exception or system call
+   */
+  bool interrupt() override;
+
+  /** Retrieve the number of ticks that have elapsed whilst executing the
+   * current process. */
+  uint64_t getCurrentProcTicks() const override;
 
  private:
   /** Execute an instruction. */
@@ -99,8 +110,12 @@ class Core : public simeng::Core {
   /** Is the core waiting on a data read? */
   unsigned int pendingReads_ = 0;
 
-  /** The number of times this core has been ticked. */
+  /** The total number of times this core has been ticked. */
   uint64_t ticks_ = 0;
+
+  /** The number of times this core has ticked whilst executing the current
+   * process. */
+  uint64_t procTicks_ = 0;
 
   /** The number of instructions executed. */
   uint64_t instructionsExecuted_ = 0;
@@ -110,6 +125,12 @@ class Core : public simeng::Core {
 
   /** The number of ticks whilst in an idle state. */
   uint64_t idle_ticks_ = 0;
+
+  /** Number of times a context switch was performed. */
+  uint64_t contextSwitches_ = 0;
+
+  /** TID of process core is currently executing. */
+  uint64_t currentTID_;
 };
 
 }  // namespace emulation

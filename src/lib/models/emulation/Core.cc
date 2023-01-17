@@ -33,6 +33,9 @@ void Core::tick() {
       break;
   }
 
+  // Increase tick count for current process execution
+  procTicks_++;
+
   if (pc_ >= programByteLength_) {
     status_ = CoreStatus::halted;
     return;
@@ -297,24 +300,36 @@ uint64_t Core::getSystemTimer() const {
 std::map<std::string, std::string> Core::getStats() const {
   return {{"instructions", std::to_string(instructionsExecuted_)},
           {"branch.executed", std::to_string(branchesExecuted_)},
-          {"idle.ticks", std::to_string(idle_ticks_)}};
+          {"idle.ticks", std::to_string(idle_ticks_)},
+          {"context.switches", std::to_string(contextSwitches_)}};
 }
 
-void Core::schedule(std::shared_ptr<simeng::kernel::Process> newProc) {
-  programByteLength_ = newProc->context_.progByteLen;
-  pc_ = newProc->context_.pc;
-  for (size_t type = 0; type < newProc->context_.regFile.size(); type++) {
-    for (size_t tag = 0; tag < newProc->context_.regFile[type].size(); tag++) {
+void Core::schedule(simeng::kernel::cpuContext newContext) {
+  currentTID_ = newContext.TID;
+  programByteLength_ = newContext.progByteLen;
+  pc_ = newContext.pc;
+  for (size_t type = 0; type < newContext.regFile.size(); type++) {
+    for (size_t tag = 0; tag < newContext.regFile[type].size(); tag++) {
       registerFileSet_.set({(uint8_t)type, (uint16_t)tag},
-                           newProc->context_.regFile[type][tag]);
+                           newContext.regFile[type][tag]);
     }
   }
-  newProc->status_ = kernel::procStatus::executing;
   status_ = CoreStatus::executing;
+  procTicks_ = 0;
 
   // Fetch memory for next cycle
   instructionMemory_.requestRead({pc_, FETCH_SIZE});
 }
+
+bool Core::interrupt() {
+  if (exceptionHandler_ == nullptr) {
+    status_ = CoreStatus::switching;
+    return true;
+  }
+  return false;
+}
+
+uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 
 }  // namespace emulation
 }  // namespace models

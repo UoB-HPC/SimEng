@@ -11,7 +11,7 @@ namespace simeng {
 
 class ArchitecturalRegisterFileSet;
 
-enum CoreStatus : uint8_t { halted, idle, executing, exception };
+enum CoreStatus : uint8_t { halted, idle, executing, switching, exception };
 
 /** An abstract core model. */
 class Core {
@@ -38,14 +38,18 @@ class Core {
   virtual std::map<std::string, std::string> getStats() const = 0;
 
   /** Schedule a new Process. */
-  virtual void schedule(std::shared_ptr<simeng::kernel::Process> newProc) = 0;
+  virtual void schedule(simeng::kernel::cpuContext newContext) = 0;
 
   /** Signals core to stop executing the current process.
    * Return Values :
    *  - True  : if succeeded in signaling interrupt
    *  - False : interrupt not scheduled due to on-going exception or system call
    */
-  // virtual bool interrupt() = 0;
+  virtual bool interrupt() = 0;
+
+  /** Retrieve the number of ticks that have elapsed whilst executing the
+   * current process. */
+  virtual uint64_t getCurrentProcTicks() const = 0;
 };
 
 }  // namespace simeng

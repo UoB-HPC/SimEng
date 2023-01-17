@@ -49,6 +49,9 @@ void Core::tick() {
       break;
   }
 
+  // Increase tick count for current process execution
+  procTicks_++;
+
   if (exceptionHandler_ != nullptr) {
     processExceptionHandler();
     return;
@@ -166,7 +169,8 @@ std::map<std::string, std::string> Core::getStats() const {
           {"branch.executed", std::to_string(totalBranchesExecuted)},
           {"branch.mispredict", std::to_string(totalBranchMispredicts)},
           {"branch.missrate", branchMissRateStr.str()},
-          {"idle.ticks", std::to_string(idle_ticks_)}};
+          {"idle.ticks", std::to_string(idle_ticks_)},
+          {"context.switches", std::to_string(contextSwitches_)}};
 }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
@@ -357,18 +361,29 @@ void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
   completionSlots_[0].getTailSlots()[0] = instruction;
 }
 
-void Core::schedule(std::shared_ptr<simeng::kernel::Process> newProc) {
-  fetchUnit_.setProgramLength(newProc->context_.progByteLen);
-  fetchUnit_.updatePC(newProc->context_.pc);
-  for (size_t type = 0; type < newProc->context_.regFile.size(); type++) {
-    for (size_t tag = 0; tag < newProc->context_.regFile[type].size(); tag++) {
+void Core::schedule(simeng::kernel::cpuContext newContext) {
+  currentTID_ = newContext.TID;
+  fetchUnit_.setProgramLength(newContext.progByteLen);
+  fetchUnit_.updatePC(newContext.pc);
+  for (size_t type = 0; type < newContext.regFile.size(); type++) {
+    for (size_t tag = 0; tag < newContext.regFile[type].size(); tag++) {
       registerFileSet_.set({(uint8_t)type, (uint16_t)tag},
-                           newProc->context_.regFile[type][tag]);
+                           newContext.regFile[type][tag]);
     }
   }
-  newProc->status_ = kernel::procStatus::executing;
   status_ = CoreStatus::executing;
+  procTicks_ = 0;
 }
+
+bool Core::interrupt() {
+  if (exceptionHandler_ == nullptr) {
+    status_ = CoreStatus::switching;
+    return true;
+  }
+  return false;
+}
+
+uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 
 }  // namespace inorder
 }  // namespace models

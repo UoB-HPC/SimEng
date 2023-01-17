@@ -45,7 +45,18 @@ class Core : public simeng::Core {
   std::map<std::string, std::string> getStats() const override;
 
   /** Schedule a new Process. */
-  void schedule(std::shared_ptr<simeng::kernel::Process> newProc) override;
+  void schedule(simeng::kernel::cpuContext newContext) override;
+
+  /** Signals core to stop executing the current process.
+   * Return Values :
+   *  - True  : if succeeded in signaling interrupt
+   *  - False : interrupt not scheduled due to on-going exception or system call
+   */
+  bool interrupt() override;
+
+  /** Retrieve the number of ticks that have elapsed whilst executing the
+   * current process. */
+  uint64_t getCurrentProcTicks() const override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
@@ -123,8 +134,12 @@ class Core : public simeng::Core {
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes_ = 0;
 
-  /** The number of times this core has been ticked. */
+  /** The total number of times this core has been ticked. */
   uint64_t ticks_ = 0;
+
+  /** The number of times this core has ticked whilst executing the current
+   * process. */
+  uint64_t procTicks_ = 0;
 
   /** Whether an exception was generated during the cycle. */
   bool exceptionGenerated_ = false;
@@ -137,6 +152,12 @@ class Core : public simeng::Core {
 
   /** The number of ticks whilst in an idle state. */
   uint64_t idle_ticks_ = 0;
+
+  /** Number of times a context switch was performed. */
+  uint64_t contextSwitches_ = 0;
+
+  /** TID of process core is currently executing. */
+  uint64_t currentTID_;
 };
 
 }  // namespace inorder

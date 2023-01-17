@@ -1,5 +1,8 @@
 #include "simeng/kernel/SimOS.hh"
 
+/** The size of each time slice a process has. */
+static constexpr uint64_t execTicks = 30000;
+
 namespace simeng {
 namespace kernel {
 
@@ -46,51 +49,73 @@ void SimOS::tick() {
     }
   }
 
-  // Check process status
-  auto iter = processes_.begin();
-  while (iter != processes_.end()) {
-    switch ((*iter)->status_) {
-      case procStatus::completed:
-        // Remove finished processes
-        iter = processes_.erase(iter);
-        continue;
-      case procStatus::waiting: {
-        // Try schedule waiting process
-        for (auto i : cores_) {
-          switch (i->getStatus()) {
-            case CoreStatus::halted:
-              // Core has experienced a fatal exception, halt simulation
-              halted_ = true;
-              return;
-            case CoreStatus::idle:
-              // Schedule process with idle core
-              i->schedule(*iter);
-              break;
-            case CoreStatus::executing:
-              // Check how long current process has been executing.
-              // If over threshold, interrupr core
-              // TODO : Set up round robin scheduling.
-              break;
-            case CoreStatus::exception:
-              // Exception or Syscall being processed, try again another cycle
-              [[fallthough]];
-            default:
-              break;
-          }
-        }
-      }
-      case procStatus::executing:
-        [[fallthough]];
-      default:
+  /** Scheduling behaviour :
+   * 1. All processes start in a waiting state, and are placed in the
+   * 'waitingProc' queue.
+   *
+   * 2. All cores are looped over, checking their status. If there is a process
+   * in the waitingProc queue then currently executing cores will be tested to
+   * see if they should perform a context switch (Each Process is given X cycles
+   * at a time; round-robin style).
+   *
+   * 3. If a core is sent an interupt signal, the head of waitingProcs queue is
+   * put into scheduled queue.
+   *
+   * 4. Idle cores can only be scheduled processes from the scheduledProcs
+   * queue.
+   *
+   * 5. When a process is successfully scheduled, it is removed from the
+   * scheduledProcs queue.
+   *
+   * 6. When a process goes back into a waiting state (post context switch) it
+   * will be pushed to the back of the waitingProcs queue.
+   *
+   * This ensures that multiple cores will not be interupted for a single
+   * process
+   *    - an OoO core may be in the switching state for multiple cycles, in
+   *      which time a waitingProc could tell more executing cores to context
+   *      switch.
+   */
+
+  // Loop over all cores, apply correct behaviour based on state
+  for (size_t cID = 0; cID < cores_.size(); cID++) {
+    switch (cores_[cID]->getStatus()) {
+      case CoreStatus::halted:
+        // Core has had fatal fault. Change SimOS status and return
+        halted_ = true;
+        return;
+      case CoreStatus::idle:
+        // Core is idle, schedule head of waitingProc queue
+        //  - Get prevContext from core and update appropriate proc
+        //  - Schedule waiting process on core
+        //  - Update newly scheduled process' status
+        //  - Remove process from waiting queue
+
+        // TODO: update idle case
+        cores_[cID]->schedule(scheduledProcs_.front()->context_);
+        scheduledProcs_.pop();
+      case CoreStatus::executing:
+        // Core is executing, test if interupt should be made
+        //  - If core has been running current process for X ticks, send
+        //  interupt
+      case CoreStatus::switching:
+        // Core is currently preparing to switch process, do nothing this cycle
+        break;
+      case CoreStatus::exception:
+        // Core currently processing syscall or exception, do nothing this cycle
         break;
     }
-    iter++;
   }
 }
 
-std::shared_ptr<Process> SimOS::getProcess() const {
-  // TODO : update to search through Processes and match PID value
-  return processes_[0];
+Process SimOS::getProcess(uint64_t TID) const {
+  for (auto i : processes_) {
+    if (i->getTID() == TID) return (*i);
+  }
+  // If TID doesn't exist then hard exit
+  std::cerr << "[SimEng:SimOS] ERROR : Process with TID `" << TID
+            << "` does not exist.\n";
+  exit(1);
 }
 
 void SimOS::createInitialProcess() {
@@ -159,6 +184,11 @@ void SimOS::createInitialProcess() {
   }
 
   processes_.emplace_back(newProcess);
+  // In a simulation's initial state, all cores will be idle. Only 'scheduled'
+  // processes may be sent to a core for execution therefore we must update the
+  // initial processes status and push it to the scheduledProcs queue
+  processes_[0]->status_ = procStatus::scheduled;
+  scheduledProcs_.push(processes_[0]);
 }
 
 void SimOS::createSpecialFileDirectory() const {

@@ -23,6 +23,7 @@ enum procStatus { waiting, executing, completed, scheduled };
 
 /** Struct of a CPU context used for context switching. */
 struct cpuContext {
+  uint64_t TID;
   uint64_t pc;
   uint64_t sp;
   uint64_t progByteLen;
@@ -105,7 +106,7 @@ class Process {
   uint64_t getTGID() const { return TGID_; }
 
   /** Get the process' TID. */
-  uint64_t getTGID() const { return TID_; }
+  uint64_t getTID() const { return TID_; }
 
   /** The virtual file descriptor mapping table. */
   std::vector<int64_t> fileDescriptorTable_;

@@ -109,7 +109,7 @@ void RegressionTest::run(const char* source, const char* triple,
   // Schedule Process on core
   /** NOTE: Not using SimOS as core_ must be unique_ptr, but SimOS expects
    * shared_ptr. */
-  core_->schedule(process_);
+  core_->schedule(process_->context_);
 
   // Run the core model until the program is complete
   /** NOTE: As we cannot register the core with SimOS, and as such no scheduling

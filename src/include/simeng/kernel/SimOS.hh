@@ -45,9 +45,9 @@ class SimOS {
   /** Tick SimOS. */
   void tick();
 
-  // TODO : update to search through Processes and match PID value
-  /** Get pointer to process with specified PID. */
-  std::shared_ptr<Process> getProcess() const;
+  /** Get copy of a process with specified TID.
+   * NOTE: Should really only be used by test suite. */
+  Process getProcess(uint64_t TID) const;
 
   /** Get user defined config, executable, and executable args. */
   std::tuple<std::string, std::vector<std::string>> getParsedArgv() const {
@@ -89,6 +89,12 @@ class SimOS {
 
   /** The list of user-space processes running above the kernel. */
   std::vector<std::shared_ptr<Process>> processes_ = {};
+
+  /** Queue of processes waiting to be scheduled. */
+  std::queue<std::shared_ptr<Process>> waitingProcs_ = {};
+
+  /** Queue of processes which are due to be scheduled */
+  std::queue<std::shared_ptr<Process>> scheduledProcs_ = {};
 
   /** The list of cores. */
   std::vector<std::shared_ptr<simeng::Core>> cores_ = {};
