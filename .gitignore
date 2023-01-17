@@ -2,6 +2,7 @@
 .vscode
 .idea
 compile_commands.json
+build/compile_commands.json
 .ccls-cache
 .DS_Store
 obj
