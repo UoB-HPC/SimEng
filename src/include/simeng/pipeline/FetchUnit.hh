@@ -78,6 +78,18 @@ class FetchUnit {
   /** Get the current value of the pc_. */
   uint64_t getPC() const { return pc_; };
 
+  /** Temporarily pause the FetchUnit. */
+  void pause() {
+    paused_ = true;
+    flushLoopBuffer();
+  };
+
+  /** Unpause the fetch unit. */
+  void unpause() {
+    paused_ = false;
+    requestFromPC();
+  };
+
  private:
   /** An output buffer connecting this unit to the decode unit. */
   PipelineBuffer<MacroOp>& output_;
@@ -126,6 +138,10 @@ class FetchUnit {
 
   /** The amount of data currently in the fetch buffer. */
   uint8_t bufferedBytes_ = 0;
+
+  /** Fetch Unit's paused state - when interrupt has been signalled Fetch Unit
+   * must not fetch / increment PC until a new process has been scheduled. */
+  bool paused_ = false;
 };
 
 }  // namespace pipeline
