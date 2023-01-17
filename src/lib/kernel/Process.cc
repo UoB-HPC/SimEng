@@ -97,6 +97,9 @@ Process::Process(const std::vector<std::string>& commandLine,
       context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
     }
   }
+  // Set Process' IDs
+  TGID_ = 0;
+  TID_ = 0;
 }
 
 Process::Process(span<char> instructions,
@@ -156,6 +159,9 @@ Process::Process(span<char> instructions,
       context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
     }
   }
+  // Set Process' IDs
+  TGID_ = 0;
+  TID_ = 0;
 }
 
 Process::~Process() {}

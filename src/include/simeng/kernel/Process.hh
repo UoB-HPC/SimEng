@@ -19,7 +19,7 @@ namespace kernel {
 /** The page size of the process memory. */
 static constexpr uint64_t pageSize_ = 4096;
 
-enum procStatus { waiting, executing, completed };
+enum procStatus { waiting, executing, completed, scheduled };
 
 /** Struct of a CPU context used for context switching. */
 struct cpuContext {
@@ -101,6 +101,12 @@ class Process {
   /** Check whether the process image was created successfully. */
   bool isValid() const;
 
+  /** Get the process' TGID. */
+  uint64_t getTGID() const { return TGID_; }
+
+  /** Get the process' TID. */
+  uint64_t getTGID() const { return TID_; }
+
   /** The virtual file descriptor mapping table. */
   std::vector<int64_t> fileDescriptorTable_;
 
@@ -121,10 +127,8 @@ class Process {
   /** MemRegion of the Process Image. */
   MemRegion memRegion_;
 
-  /**
-   * Create and populate the initial process stack and returns the stack
-   * pointer.
-   */
+  /** Create and populate the initial process stack and returns the stack
+   * pointer. */
   uint64_t createStack(char** processImage, uint64_t stackStart);
 
   /** The entry point of the process. */
@@ -135,6 +139,14 @@ class Process {
 
   /** Whether the process image was created successfully. */
   bool isValid_ = false;
+
+  /** The process' Thread Group ID, exactly equivalent to its Process ID (PID).
+   */
+  uint64_t TGID_;
+
+  /** The process' Thread ID, its globally unique identifier.
+   * A thread group's leader TID will be equal to the TGID. */
+  uint64_t TID_;
 };
 
 }  // namespace kernel
