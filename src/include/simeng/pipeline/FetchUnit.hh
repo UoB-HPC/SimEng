@@ -75,6 +75,9 @@ class FetchUnit {
   /** Clear the loop buffer. */
   void flushLoopBuffer();
 
+  /** Get the current value of the pc_. */
+  uint64_t getPC() const { return pc_; };
+
  private:
   /** An output buffer connecting this unit to the decode unit. */
   PipelineBuffer<MacroOp>& output_;
