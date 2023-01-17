@@ -20,6 +20,7 @@ set(SIMENG_SOURCES
     kernel/SyscallHandler.cc
     kernel/Vma.cc
     kernel/FileDesc.cc
+    kernel/PageFrameAllocator.cc
     memory/SimpleMem.cc
     memory/Mem.cc
     models/emulation/Core.cc

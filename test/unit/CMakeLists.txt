@@ -19,6 +19,7 @@ set(TEST_SOURCES
     ShiftValueTest.cc
     LatencyMemoryInterfaceTest.cc
     SimpleMem.cc
+    PageFrameAllocatorTest.cc
     )
 
 add_executable(unittests ${TEST_SOURCES})
