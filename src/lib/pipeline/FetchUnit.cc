@@ -29,6 +29,12 @@ void FetchUnit::tick() {
     exit(1);
   }
 
+  if (paused_) {
+    // When in paused state, stop fetching new instructions and do not increment
+    // the PC (unless a branch already in the pipeline is executed)
+    return;
+  }
+
   if (output_.isStalled()) {
     return;
   }
@@ -225,6 +231,9 @@ void FetchUnit::updatePC(uint64_t address) {
 void FetchUnit::setProgramLength(uint64_t size) { programByteLength_ = size; }
 
 void FetchUnit::requestFromPC() {
+  // Do nothing if paused
+  if (paused_) return;
+
   // Do nothing if buffer already contains enough data
   if (bufferedBytes_ >= isa_.getMaxInstructionSize()) return;
 
