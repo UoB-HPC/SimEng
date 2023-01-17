@@ -191,7 +191,7 @@ class Core : public simeng::Core {
   uint64_t contextSwitches_ = 0;
 
   /** TID of process core is currently executing. */
-  uint64_t currentTID_;
+  uint64_t currentTID_ = -1;
 };
 
 }  // namespace outoforder

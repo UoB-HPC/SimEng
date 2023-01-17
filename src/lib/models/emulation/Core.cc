@@ -27,6 +27,11 @@ void Core::tick() {
     case CoreStatus::idle:
       idle_ticks_++;
       return;
+    case CoreStatus::switching:
+      // No work for switching needed with emulation core as all instructions
+      // are atomic
+      status_ = CoreStatus::idle;
+      return;
     case CoreStatus::halted:
       return;
     default:
@@ -324,6 +329,7 @@ void Core::schedule(simeng::kernel::cpuContext newContext) {
 bool Core::interrupt() {
   if (exceptionHandler_ == nullptr) {
     status_ = CoreStatus::switching;
+    contextSwitches_++;
     return true;
   }
   return false;
