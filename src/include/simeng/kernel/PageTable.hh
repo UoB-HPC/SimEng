@@ -1,14 +1,22 @@
+#pragma once
 #include <map>
 #include <memory>
+
+namespace TestFriends {
+class PTFriend;
+}
+
 namespace simeng {
 namespace kernel {
 
 struct PTEntry {
   uint64_t baseVAddr;
   uint64_t basePhyAddr;
+  uint64_t endVAddr;
 };
 
 class PageTable {
+  friend class TestFriends::PTFriend;
   using TableItr = typename std::map<uint64_t, PTEntry*>::iterator;
 
  private:

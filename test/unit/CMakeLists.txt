@@ -11,6 +11,7 @@ set(TEST_SOURCES
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
     FileDescArrayTest.cc
+    PageTableTest.cc
     GenericPredictorTest.cc
     ISATest.cc
     OSTest.cc

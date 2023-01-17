@@ -7,7 +7,10 @@
 namespace simeng {
 namespace kernel {
 
-PageTable::PageTable(){};
+PageTable::PageTable() {
+  table_ = std::shared_ptr<std::map<uint64_t, simeng::kernel::PTEntry*>>(
+      new std::map<uint64_t, simeng::kernel::PTEntry*>);
+};
 
 PageTable::~PageTable(){};
 
@@ -29,7 +32,7 @@ uint64_t PageTable::allocatePTEntry(uint64_t vaddr, uint64_t phyAddr) {
     return mapped->second->baseVAddr;
   };
   uint64_t alignedAddr = roundDownMemAddr(vaddr, pageSize_);
-  PTEntry* entry = new PTEntry{alignedAddr, phyAddr};
+  PTEntry* entry = new PTEntry{alignedAddr, phyAddr, alignedAddr + 4096};
   table_->insert(std::pair<uint64_t, PTEntry*>(alignedAddr, entry));
   return alignedAddr;
 };
@@ -61,6 +64,7 @@ uint64_t PageTable::calculateOffset(uint64_t vaddr) {
 bool PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
                               size_t size) {
   uint64_t addr = vaddr;
+  size = roundUpMemAddr(size, 4096);
   while (size > 0) {
     addr = allocatePTEntry(addr, basePhyAddr);
     if (addr == ~(uint64_t)0) {
@@ -76,6 +80,7 @@ bool PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
 
 bool PageTable::deleteMapping(uint64_t vaddr, size_t size) {
   uint64_t addr = vaddr;
+  size = roundUpMemAddr(size, 4096);
   while (size > 0) {
     addr = deletePTEntry(addr);
     if (addr == ~(uint64_t)0) {
