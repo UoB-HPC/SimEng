@@ -7,17 +7,21 @@
 #include "simeng/Config.hh"
 #include "simeng/Core.hh"
 #include "simeng/SpecialFileDirGen.hh"
+<<<<<<< HEAD
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
+    =======
+#include "simeng/kernel/PageFrameAllocator.hh"
+    >>>>>>> 1f13cd76... First integration of virtmem with runtime
 #include "simeng/kernel/SyscallHandler.hh"
 #include "simeng/memory/SimpleMem.hh"
 #include "simeng/span.hh"
 
-// Forward declare RegressionTest class so that it can be declared a friend.
-class RegressionTest;
+    // Forward declare RegressionTest class so that it can be declared a friend.
+    class RegressionTest;
 
 namespace simeng {
 namespace kernel {
@@ -61,6 +65,7 @@ class SimOS {
 
   /** Check if OS has halted. */
   bool hasHalted() const { return halted_; };
+  uint64_t requestPageFrames(size_t size);
 
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */
@@ -100,6 +105,7 @@ class SimOS {
   /** SyscallHandler Object to process all syscalls. */
   std::shared_ptr<SyscallHandler> syscallHandler_;
 
+<<<<<<< HEAD
   /** Indicates if lll processes have completed or a core has halted due to an
    * exception. */
   bool halted_ = false;
@@ -127,6 +133,10 @@ class SimOS {
 
     processes_[0] = proc;
   }
+=======
+  /** Pointer to the PageFrameAllocator object.  */
+  std::shared_ptr<PageFrameAllocator> pageFrameAllocator_;
+>>>>>>> 1f13cd76... First integration of virtmem with runtime
 };
 
 }  // namespace kernel

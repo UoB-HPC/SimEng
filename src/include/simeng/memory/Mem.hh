@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 
 #include "simeng/kernel/Process.hh"
@@ -68,6 +69,8 @@ class Mem {
   virtual size_t getMemorySize() = 0;
   /** This method write data to memory without incurring any latency. */
   virtual void sendUntimedData(char* data, uint64_t addr, size_t size) = 0;
+  /** This method sets the translator for memory requests. */
+  virtual void setTranslator(std::function<uint64_t(uint64_t)> translator) = 0;
 };
 
 }  // namespace memory

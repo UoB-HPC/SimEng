@@ -20,11 +20,13 @@ class SimpleMem : public Mem {
   size_t getMemorySize() override;
   DataPacket* requestAccess(struct DataPacket* desc) override;
   void sendUntimedData(char* data, uint64_t addr, size_t size) override;
+  void setTranslator(std::function<uint64_t(uint64_t)> translator) override;
 
   /** Returns a copy of internal memory. Used only for testing purposes. */
   char* getMemCpy();
 
  private:
+  std::function<uint64_t(uint64_t)> translator_;
   /** Reference of to internal memory array. */
   char* memRef;
   /** This variables holds a char array, which represent memory in SimEng. */

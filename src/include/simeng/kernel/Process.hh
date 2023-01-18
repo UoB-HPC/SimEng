@@ -1,11 +1,13 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 
 #include "simeng/Config.hh"
 #include "simeng/Elf.hh"
 #include "simeng/kernel/FileDesc.hh"
 #include "simeng/kernel/MemRegion.hh"
+#include "simeng/kernel/PageTable.hh"
 
 namespace simeng {
 
@@ -16,7 +18,10 @@ class Mem;
 
 namespace kernel {
 
-// TODO : Move to more appropriate class (SimOS).
+class SimOS;
+
+typedef std::function<uint64_t(uint64_t)> Translator;
+
 /** The page size of the process memory. */
 static constexpr uint64_t pageSize_ = 4096;
 
@@ -64,17 +69,19 @@ class Process {
    *
    * The first argument is a path to an executable ELF file. */
   Process(const std::vector<std::string>& commandLine,
-          std::shared_ptr<simeng::memory::Mem> memory,
+          std::shared_ptr<simeng::memory::Mem> memory, SimOS* os,
           std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
           uint64_t TID);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
   Process(span<char> instructions, std::shared_ptr<simeng::memory::Mem> memory,
-          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-          uint64_t TID);
+          SimOS* os, std::vector<RegisterFileStructure> regFileStructure,
+          uint64_t TGID, uint64_t TID);
 
   ~Process();
+
+  Translator getTranslator();
 
   /** Get the address of the start of the heap region. */
   uint64_t getHeapStart() const;
@@ -129,9 +136,12 @@ class Process {
   /** MemRegion of the Process Image. */
   MemRegion memRegion_;
 
-  /** Create and populate the initial process stack and returns the stack
-   * pointer. */
-  uint64_t createStack(char** processImage, uint64_t stackStart);
+  /**
+   * Create and populate the initial process stack and returns the stack
+   * pointer.
+   */
+  uint64_t createStack(uint64_t& stackStart,
+                       std::shared_ptr<simeng::memory::Mem>& memory);
 
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
@@ -149,6 +159,11 @@ class Process {
   /** The process' Thread ID, its globally unique identifier.
    * A thread group's leader TID will be equal to the TGID. */
   uint64_t TID_;
+  /** Reference to a page table */
+  std::shared_ptr<PageTable> pageTable_ = nullptr;
+
+  /** Reference to the os. */
+  SimOS* os_;
 };
 
 }  // namespace kernel

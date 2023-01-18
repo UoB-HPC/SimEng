@@ -17,11 +17,15 @@ size_t SimpleMem::getMemorySize() { return memSize_; }
 DataPacket* SimpleMem::requestAccess(struct DataPacket* pkt) {
   if (pkt->type == READ) {
     struct ReadPacket* rreq = (ReadPacket*)pkt;
+    uint64_t paddr = translator_(rreq->address);
+    rreq->address = paddr;
     auto resp = handleReadRequest(rreq);
     delete rreq;
     return resp;
   };
   struct WritePacket* wreq = (WritePacket*)pkt;
+  uint64_t paddr = translator_(wreq->address);
+  wreq->address = paddr;
   auto resp = handleWriteRequest(wreq);
   delete wreq;
   return resp;
@@ -53,6 +57,10 @@ char* SimpleMem::getMemCpy() {
   char* ret = new char[memSize_];
   std::copy(memory_.begin(), memory_.end(), ret);
   return ret;
+}
+
+void SimpleMem::setTranslator(std::function<uint64_t(uint64_t)> translator) {
+  translator_ = translator;
 }
 
 }  // namespace memory

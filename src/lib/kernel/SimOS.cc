@@ -13,6 +13,7 @@ SimOS::SimOS(std::string executablePath,
       executableArgs_(executableArgs),
       memory_(mem),
       syscallHandler_(std::make_shared<SyscallHandler>(processes_)) {
+  pageFrameAllocator_ = std::make_shared<PageFrameAllocator>();
   createInitialProcess();
 
   // Create the Special Files directory if indicated to do so in Config file
@@ -153,8 +154,8 @@ void SimOS::createInitialProcess() {
     commandLine.insert(commandLine.end(), executableArgs_.begin(),
                        executableArgs_.end());
 
-    processes_.emplace_back(std::make_shared<Process>(commandLine, memory_,
-                                                      regFileStructure, 0, 0));
+    processes_.emplace_back(std::make_shared<Process>(
+        commandLine, memory_, this, regFileStructure, 0, 0));
 
     // Raise error if created process is not valid
     if (!processes_[0]->isValid()) {
@@ -166,7 +167,7 @@ void SimOS::createInitialProcess() {
     // Create a process image from the set of instructions held in hex_
     processes_.emplace_back(std::make_shared<Process>(
         simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-        memory_, regFileStructure, 0, 0));
+        memory_, this, regFileStructure, 0, 0));
 
     // Raise error if created process is not valid
     if (!processes_[0]->isValid()) {
@@ -209,6 +210,10 @@ void SimOS::createSpecialFileDirectory() const {
   SFdir.RemoveExistingSFDir();
   // Create new special files dir
   SFdir.GenerateSFDir();
+}
+
+uint64_t SimOS::requestPageFrames(size_t size) {
+  return pageFrameAllocator_->allocate(size);
 }
 
 }  // namespace kernel
