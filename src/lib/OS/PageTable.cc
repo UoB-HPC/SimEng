@@ -99,11 +99,9 @@ uint64_t PageTable::translate(int64_t vaddr) {
     std::cerr << "Mapping doesn't exist for virtual address: " << vaddr
               << std::endl;
     // Signify fault by using 2^64 as the value.
-    return ~0;
+    return 0xFFFFFFFFFFFFFFFF;
   }
   uint64_t addr = entry->second->basePhyAddr + calculateOffset(vaddr);
-  std::cout << "Successful translation - vaddr: " << vaddr << " paddr: " << addr
-            << std::endl;
   return addr;
 };
 

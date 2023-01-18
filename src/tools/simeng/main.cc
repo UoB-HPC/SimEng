@@ -69,7 +69,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  // Create simulation memory
+  // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(2684354560);  // 2.6 GiB
 
