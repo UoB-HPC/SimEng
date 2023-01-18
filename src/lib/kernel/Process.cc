@@ -22,8 +22,9 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 
 Process::Process(const std::vector<std::string>& commandLine,
                  std::shared_ptr<simeng::memory::Mem> memory,
-                 std::vector<RegisterFileStructure> regFileStructure)
-    : commandLine_(commandLine) {
+                 std::vector<RegisterFileStructure> regFileStructure,
+                 uint64_t TGID, uint64_t TID)
+    : commandLine_(commandLine), TGID_(TGID), TID_(TID) {
   // Parse ELF file
   assert(commandLine.size() > 0);
   char* unwrappedProcImgPtr;
@@ -83,10 +84,6 @@ Process::Process(const std::vector<std::string>& commandLine,
   // free allocated memory after copy.
   free(unwrappedProcImgPtr);
 
-  // Set Process' IDs
-  TGID_ = 0;
-  TID_ = 0;
-
   // Initialise context
   context_.TID = TID_;
   context_.pc = entryPoint_;
@@ -106,7 +103,9 @@ Process::Process(const std::vector<std::string>& commandLine,
 
 Process::Process(span<char> instructions,
                  std::shared_ptr<simeng::memory::Mem> memory,
-                 std::vector<RegisterFileStructure> regFileStructure) {
+                 std::vector<RegisterFileStructure> regFileStructure,
+                 uint64_t TGID, uint64_t TID)
+    : TGID_(TGID), TID_(TID) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 
@@ -146,10 +145,6 @@ Process::Process(span<char> instructions,
   fileDescriptorTable_.emplace_back(STDOUT_FILENO);
   fileDescriptorTable_.emplace_back(STDERR_FILENO);
   free(unwrappedProcImgPtr);
-
-  // Set Process' IDs
-  TGID_ = 0;
-  TID_ = 0;
 
   // Initialise context
   context_.TID = TID_;
