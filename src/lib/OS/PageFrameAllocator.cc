@@ -47,20 +47,21 @@ uint64_t PageFrameAllocator::allocatePageFrames(size_t size) {
 };
 
 uint64_t PageFrameAllocator::allocate(size_t size) {
-  uint64_t startAddr = 0;
+  uint64_t startAddr = ~0;
   size = roundUpMemAddr(size, pageSize_);
 
   while (size > maxAllocEntrySize) {
     uint64_t addr = allocatePageFrames(maxAllocEntrySize);
-    if (startAddr == 0) {
+    if (startAddr == ~0) {
       startAddr = addr;
     };
     size -= maxAllocEntrySize;
   }
 
   if (size <= 0) return startAddr;
+
   uint64_t addr = allocatePageFrames(size);
-  if (startAddr == 0) {
+  if (startAddr == ~0) {
     startAddr = addr;
   };
 

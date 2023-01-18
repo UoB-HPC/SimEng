@@ -39,7 +39,7 @@ uint64_t PageTable::allocatePTEntry(uint64_t vaddr, uint64_t phyAddr) {
 
 uint64_t PageTable::deletePTEntry(uint64_t vaddr) {
   TableItr mapped = find(vaddr);
-  if (mapped != table_->end()) {
+  if (mapped == table_->end()) {
     std::cerr << "Mapping does not exist for virtual address: " << vaddr
               << std::endl;
     return ~0;
@@ -95,13 +95,16 @@ bool PageTable::deleteMapping(uint64_t vaddr, size_t size) {
 
 uint64_t PageTable::translate(int64_t vaddr) {
   TableItr entry = find(vaddr);
-  if (entry != table_->end()) {
+  if (entry == table_->end()) {
     std::cerr << "Mapping doesn't exist for virtual address: " << vaddr
               << std::endl;
     // Signify fault by using 2^64 as the value.
     return ~0;
   }
-  return entry->second->basePhyAddr + calculateOffset(vaddr);
+  uint64_t addr = entry->second->basePhyAddr + calculateOffset(vaddr);
+  std::cout << "Successful translation - vaddr: " << vaddr << " paddr: " << addr
+            << std::endl;
+  return addr;
 };
 
 }  // namespace OS

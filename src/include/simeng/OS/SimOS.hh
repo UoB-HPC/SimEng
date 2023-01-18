@@ -7,6 +7,7 @@
 
 #include "simeng/Config.hh"
 #include "simeng/Core.hh"
+#include "simeng/OS/PageFrameAllocator.hh"
 #include "simeng/OS/SyscallHandler.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
@@ -62,6 +63,7 @@ class SimOS {
 
   /** Check if OS has halted. */
   bool hasHalted() const { return halted_; };
+  uint64_t requestPageFrames(size_t size);
 
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */
@@ -131,6 +133,8 @@ class SimOS {
 
     processes_[0] = proc;
   }
+  /** Pointer to the PageFrameAllocator object.  */
+  std::shared_ptr<PageFrameAllocator> pageFrameAllocator_;
 };
 
 }  // namespace OS

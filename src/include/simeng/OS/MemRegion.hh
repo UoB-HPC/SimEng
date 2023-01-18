@@ -12,7 +12,7 @@ namespace OS {
 class MemRegion {
  public:
   MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t memSize,
-            uint64_t stackStart, uint64_t startBrk, uint64_t pageBytes,
+            uint64_t stackPtr, uint64_t heapStart, uint64_t pageSize,
             uint64_t mmapStart);
   MemRegion(){};
   ~MemRegion(){};
@@ -24,7 +24,7 @@ class MemRegion {
   size_t heapSize_;
   /** Size of whole global memory. */
   size_t memSize_;
-  /** initial start address of the process stack. */
+  /** address of the stack pointer after auxiliary vector has been populated. */
   uint64_t initStackStart_;
   /** Start address of the process heap. */
   uint64_t startBrk_;

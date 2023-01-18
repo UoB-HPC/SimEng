@@ -51,7 +51,7 @@ void RegressionTest::run(const char* source, const char* triple,
 
   process_ = std::make_shared<simeng::OS::Process>(
       simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_,
-      architecture_->getRegisterFileStructures(), 0, 0);
+      &simOS_kernel, architecture_->getRegisterFileStructures(), 0, 0);
   ASSERT_TRUE(process_->isValid());
   processMemorySize_ = process_->context_.progByteLen;
 

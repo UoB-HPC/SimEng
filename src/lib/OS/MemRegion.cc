@@ -7,14 +7,14 @@ namespace simeng {
 namespace OS {
 
 MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t memSize,
-                     uint64_t stackStart, uint64_t startBrk, uint64_t pageSize,
+                     uint64_t stackPtr, uint64_t heapStart, uint64_t pageSize,
                      uint64_t mmapStart)
     : stackSize_(stackSize),
       heapSize_(heapSize),
       memSize_(memSize),
-      initStackStart_(stackStart),
-      startBrk_(startBrk),
-      brk_(startBrk),
+      initStackStart_(stackPtr),
+      startBrk_(heapStart),
+      brk_(heapStart),
       pageSize_(pageSize),
       mmapStart_(mmapStart),
       maxHeapAddr_(calculateMaxHeapAddr()) {}
