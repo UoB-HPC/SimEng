@@ -63,12 +63,14 @@ class Process {
    * The first argument is a path to an executable ELF file. */
   Process(const std::vector<std::string>& commandLine,
           std::shared_ptr<simeng::memory::Mem> memory,
-          std::vector<RegisterFileStructure> regFileStructure);
+          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
+          uint64_t TID);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
   Process(span<char> instructions, std::shared_ptr<simeng::memory::Mem> memory,
-          std::vector<RegisterFileStructure> regFileStructure);
+          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
+          uint64_t TID);
 
   ~Process();
 
