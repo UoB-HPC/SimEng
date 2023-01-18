@@ -69,6 +69,7 @@ int main(int argc, char** argv) {
   }
 
   // Create global memory
+  // 62500000
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(2684354560);  // 2.6 GiB
 

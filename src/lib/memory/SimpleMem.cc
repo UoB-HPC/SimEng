@@ -18,7 +18,9 @@ DataPacket* SimpleMem::requestAccess(struct DataPacket* pkt) {
   if (pkt->type == READ) {
     struct ReadPacket* rreq = (ReadPacket*)pkt;
     uint64_t paddr = translator_(rreq->address);
-    rreq->address = paddr;
+    if (paddr != 0xFFFFFFFFFFFFFFFF) {
+      rreq->address = paddr;
+    }
     auto resp = handleReadRequest(rreq);
     delete rreq;
     return resp;
