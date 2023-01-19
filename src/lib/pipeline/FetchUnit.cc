@@ -29,12 +29,6 @@ void FetchUnit::tick() {
     exit(1);
   }
 
-  if (paused_) {
-    // When in paused state, stop fetching new instructions and do not increment
-    // the PC (unless a branch already in the pipeline is executed)
-    return;
-  }
-
   if (output_.isStalled()) {
     return;
   }
