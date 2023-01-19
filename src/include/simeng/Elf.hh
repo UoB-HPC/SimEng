@@ -25,7 +25,7 @@ struct ElfHeader {
 /** A processed Executable and Linkable Format (ELF) file. */
 class Elf {
  public:
-  Elf(std::string path, char** imagePointer);
+  Elf(std::string path);
   ~Elf();
   uint64_t getProcessImageSize() const;
   bool isValid() const;

@@ -20,10 +20,11 @@ enum DataPacketAccessType { READ, WRITE };
  * that future improvements to memory system can be facilitated
  */
 struct DataPacket {
+  uint64_t address;
   static uint64_t pktIdCtr;
   uint64_t id;
   DataPacketAccessType type;
-  DataPacket(DataPacketAccessType accType);
+  DataPacket(DataPacketAccessType accType, uint64_t addr);
 };
 
 /* Response to a read packed. */
@@ -31,12 +32,11 @@ struct ReadRespPacket : public DataPacket {
   uint64_t reqId;
   size_t bytesRead;
   char* data;
-  ReadRespPacket(uint64_t req_id, size_t bytes_read, char* dt);
+  ReadRespPacket(uint64_t req_id, size_t bytes_read, char* dt, uint64_t addr);
 };
 
 /* ReadPacket represents a read access to data packet. */
 struct ReadPacket : public DataPacket {
-  uint64_t address;
   size_t size;
 
   ReadPacket(uint64_t addr, size_t sz);
@@ -47,12 +47,11 @@ struct ReadPacket : public DataPacket {
 struct WriteRespPacket : public DataPacket {
   uint64_t reqId;
   size_t bytesWritten;
-  WriteRespPacket(uint64_t req_id, size_t bytes_written);
+  WriteRespPacket(uint64_t req_id, size_t bytes_written, uint64_t addr);
 };
 
 /* WritePacket represents a write access to a data packet. */
 struct WritePacket : public DataPacket {
-  uint64_t address;
   size_t size;
   const char* data;
 
