@@ -63,6 +63,17 @@ class PipelineBuffer {
   /** Get the width of the buffer slots. */
   unsigned short getWidth() const { return width; }
 
+  /** Check if buffer is empty - provided value which indicates an empty buffer.
+   */
+  bool isEmpty(const T& value) {
+    for (auto i : buffer) {
+      if (i != value) {
+        return false;
+      }
+    }
+    return true;
+  }
+
  private:
   /** The width of each row of slots. */
   unsigned short width;
