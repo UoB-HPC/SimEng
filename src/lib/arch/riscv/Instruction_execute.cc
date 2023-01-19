@@ -1,5 +1,6 @@
 
 #include <cmath>
+#include <iostream>
 #include <tuple>
 
 #include "InstructionMetadata.hh"
@@ -824,6 +825,33 @@ void Instruction::execute() {
         results[0] =
             RegisterValue(static_cast<uint64_t>(signExtendW(rs1 % rs2)), 8);
       }
+      break;
+    }
+
+      // Control and Status Register extension (Zicsr)
+    // Do not read-modify-write ATOMICALLY
+    case Opcode::RISCV_CSRRW: {
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_CSRRWI: {
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_CSRRS: {
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_CSRRSI: {
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_CSRRC: {
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_CSRRCI: {
+      executionNYI();
       break;
     }
 

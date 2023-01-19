@@ -14,6 +14,17 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
+typedef enum riscv_sysreg {
+  RISCV_SYSREG_FFLAGS = 0x001,
+  RISCV_SYSREG_FRM = 0x002,
+  RISCV_SYSREG_FCSR = 0x003,
+
+  RISCV_SYSREG_CYCLE = 0xC00,
+  RISCV_SYSREG_TIME = 0xC01,
+  RISCV_SYSREG_INSTRET = 0xC02,
+
+} riscv_sysreg;
+
 /* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
@@ -51,7 +62,8 @@ class Architecture : public arch::Architecture {
 
   /** Updates System registers of any system-based timers. */
   void updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                  const uint64_t iterations) const override;
+                                  const uint64_t iterations,
+                                  const uint64_t retired) const override;
 
   /** Returns the physical register structure as defined within the config file
    */
@@ -95,6 +107,12 @@ class Architecture : public arch::Architecture {
 
   /** A reference to a Linux kernel object to forward syscalls to. */
   kernel::Linux& linux_;
+
+  /** System Register of Processor Cycle Counter. */
+  simeng::Register cycleSystemReg_;
+
+  /** System Register of Processor Retired Counter. */
+  simeng::Register retiredSystemReg_;
 };
 
 }  // namespace riscv

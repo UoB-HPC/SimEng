@@ -286,7 +286,8 @@ uint64_t Architecture::getVectorLength() const { return VL_; }
 uint64_t Architecture::getStreamingVectorLength() const { return SVL_; }
 
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                              const uint64_t iterations) const {
+                                              const uint64_t iterations,
+                                              const uint64_t retired) const {
   // Update the Processor Cycle Counter to total cycles completed.
   regFile->set(PCCreg_, iterations);
   // Update Virtual Counter Timer at correct frequency.

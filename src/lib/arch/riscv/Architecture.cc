@@ -26,6 +26,23 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
+  // Generate zero-indexed system register map
+  systemRegisterMap_[RISCV_SYSREG_FFLAGS] = systemRegisterMap_.size();
+  systemRegisterMap_[RISCV_SYSREG_FRM] = systemRegisterMap_.size();
+  systemRegisterMap_[RISCV_SYSREG_FCSR] = systemRegisterMap_.size();
+
+  systemRegisterMap_[RISCV_SYSREG_CYCLE] = systemRegisterMap_.size();
+  systemRegisterMap_[RISCV_SYSREG_TIME] = systemRegisterMap_.size();
+  systemRegisterMap_[RISCV_SYSREG_INSTRET] = systemRegisterMap_.size();
+
+  cycleSystemReg_ = {
+      RegisterType::SYSTEM,
+      static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_CYCLE))};
+
+  retiredSystemReg_ = {
+      RegisterType::SYSTEM,
+      static_cast<uint16_t>(getSystemRegisterTag(RISCV_SYSREG_INSTRET))};
+
   // Instantiate an executionInfo entry for each group in the InstructionGroup
   // namespace.
   for (int i = 0; i < NUM_GROUPS; i++) {
@@ -262,9 +279,11 @@ uint16_t Architecture::getNumSystemRegisters() const {
   return static_cast<uint16_t>(systemRegisterMap_.size());
 }
 
-// Left blank as no implementation necessary
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                              const uint64_t iterations) const {
+                                              const uint64_t iterations,
+                                              const uint64_t retired) const {
+  regFile->set(cycleSystemReg_, iterations);
+  regFile->set(retiredSystemReg_, retired);
 }
 
 }  // namespace riscv

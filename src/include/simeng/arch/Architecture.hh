@@ -108,7 +108,8 @@ class Architecture {
 
   /** Updates System registers of any system-based timers. */
   virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
-                                          const uint64_t iterations) const = 0;
+                                          const uint64_t iterations,
+                                          const uint64_t retired) const = 0;
 };
 
 }  // namespace arch

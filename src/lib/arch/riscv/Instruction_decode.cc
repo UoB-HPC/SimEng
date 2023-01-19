@@ -59,6 +59,9 @@ void Instruction::invalidateIfNotImplemented() {
       metadata.opcode <= Opcode::RISCV_XORI)
     return;
   if (metadata.opcode == Opcode::RISCV_FENCE) return;
+  if (metadata.opcode >= Opcode::RISCV_CSRRC &&
+      metadata.opcode <= Opcode::RISCV_CSRRWI)
+    return;
 
   exception_ = InstructionException::EncodingUnallocated;
   exceptionEncountered_ = true;

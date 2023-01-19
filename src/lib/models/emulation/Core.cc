@@ -159,7 +159,7 @@ void Core::tick() {
   }
 
   execute(uop);
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_, ticks_);
 }
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
