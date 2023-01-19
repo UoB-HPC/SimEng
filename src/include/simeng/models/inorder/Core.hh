@@ -106,9 +106,6 @@ class Core : public simeng::Core {
    * register file set. */
   ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
 
-  /** The process memory. */
-  span<char> processMemory;
-
   /** The buffer between fetch and decode. */
   pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
 
