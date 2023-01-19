@@ -43,6 +43,25 @@ void Core::tick() {
     case CoreStatus::idle:
       idle_ticks_++;
       return;
+    case CoreStatus::switching: {
+      if (fetchToDecodeBuffer_.isEmpty({}) &&
+          decodeToExecuteBuffer_.isEmpty(nullptr) &&
+          completionSlots_[0].isEmpty(nullptr) &&
+          (exceptionHandler_ == nullptr)) {
+        // Flush pipeline
+        fetchToDecodeBuffer_.fill({});
+        decodeToExecuteBuffer_.fill(nullptr);
+        completionSlots_[0].fill(nullptr);
+        fetchUnit_.flushLoopBuffer();
+        decodeUnit_.purgeFlushed();
+        // Ensure data memory requests are clear
+        dataMemory_.clearCompletedReads();
+        previousAddresses_ = std::queue<simeng::MemoryAccessTarget>();
+        status_ = CoreStatus::idle;
+        return;
+      }
+      break;
+    }
     case CoreStatus::halted:
       return;
     default:
@@ -373,11 +392,16 @@ void Core::schedule(simeng::kernel::cpuContext newContext) {
   }
   status_ = CoreStatus::executing;
   procTicks_ = 0;
+  // Allow fetch unit to resume fetching instructions & incrementing PC
+  fetchUnit_.unpause();
 }
 
 bool Core::interrupt() {
   if (exceptionHandler_ == nullptr) {
     status_ = CoreStatus::switching;
+    contextSwitches_++;
+    // Stop fetch unit from incrementing PC or fetching next instructions
+    fetchUnit_.pause();
     return true;
   }
   return false;
