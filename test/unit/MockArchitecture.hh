@@ -26,8 +26,9 @@ class MockArchitecture : public arch::Architecture {
                      std::vector<RegisterFileStructure>(YAML::Node config));
   MOCK_CONST_METHOD1(getConfigPhysicalRegisterQuantities,
                      std::vector<uint16_t>(YAML::Node config));
-  MOCK_CONST_METHOD2(updateSystemTimerRegisters,
-                     void(RegisterFileSet* regFile, const uint64_t iterations));
+  MOCK_CONST_METHOD3(updateSystemTimerRegisters,
+                     void(RegisterFileSet* regFile, const uint64_t iterations,
+                          const uint64_t retired));
 };
 
 }  // namespace simeng
