@@ -80,6 +80,12 @@ class RISCVRegressionTest : public RegressionTest {
     return getRegister<T>({simeng::arch::riscv::RegisterType::GENERAL, tag});
   }
 
+  /** Get the value of a floating point purpose register. */
+  template <typename T>
+  T getFPRegister(uint8_t tag) const {
+    return getRegister<T>({simeng::arch::riscv::RegisterType::FLOAT, tag});
+  }
+
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
       const override;

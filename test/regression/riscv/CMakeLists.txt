@@ -12,7 +12,8 @@ add_executable(regression-riscv
             instructions/branch.cc
             instructions/atomic.cc
             instructions/csr.cc
-               )
+            instructions/float.cc
+        )
 target_include_directories(regression-riscv PRIVATE
                            ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(regression-riscv regression-test-base)

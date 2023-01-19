@@ -830,6 +830,8 @@ void Instruction::execute() {
 
       // Control and Status Register extension (Zicsr)
     // Do not read-modify-write ATOMICALLY
+    // Left unimplemented due to Capstone being unable to disassemble CSR
+    // addresses
     case Opcode::RISCV_CSRRW: {
       executionNYI();
       break;
@@ -852,6 +854,25 @@ void Instruction::execute() {
     }
     case Opcode::RISCV_CSRRCI: {
       executionNYI();
+      break;
+    }
+
+      // Single-Precision Floating-Point (F)
+      // Double-Precision Floating-Point (D)
+    case Opcode::RISCV_FADD_D: {  // FADD.D rd,rs1,rs2
+      const double rs1 = operands[0].get<double>();
+      const double rs2 = operands[1].get<double>();
+
+      results[0] = RegisterValue(rs1 + rs2, 8);
+      break;
+    }
+    case Opcode::RISCV_FSD: {  // FSD rs1,rs2,imm
+      memoryData[0] = operands[0];
+      break;
+    }
+    case Opcode::RISCV_FLD: {  // FLD rd,rs1,imm
+      // Note: elements of memory data are RegisterValue's
+      results[0] = memoryData[0].get<double>();
       break;
     }
 
