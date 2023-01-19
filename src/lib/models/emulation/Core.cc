@@ -28,10 +28,21 @@ void Core::tick() {
       idle_ticks_++;
       return;
     case CoreStatus::switching:
-      // No work for switching needed with emulation core as all instructions
-      // are atomic
-      status_ = CoreStatus::idle;
-      return;
+      // Ensure no instructions left to execute, and not mid exception
+      if (microOps_.empty() && (exceptionHandler_ == nullptr)) {
+        // All buffers should be empty, but we clear ensure they are empty
+        macroOp_.clear();
+        microOps_ = std::queue<std::shared_ptr<Instruction>>();
+        // All memories are flat (no latency) so again there should not be any
+        // outstanding reads; cleared to ensure they are empty
+        pendingReads_ = 0;
+        instructionMemory_.clearCompletedReads();
+        dataMemory_.clearCompletedReads();
+        previousAddresses_.clear();
+        status_ = CoreStatus::idle;
+        return;
+      }
+      break;
     case CoreStatus::halted:
       return;
     default:
@@ -67,15 +78,14 @@ void Core::tick() {
       // Load complete: resume execution
       execute(uop);
     }
-
     // More data pending, end cycle early
     return;
   }
 
-  // Fetch
-
   // Determine if new uops are needed to be fetched
-  if (!microOps_.size()) {
+  if (microOps_.empty() && (status_ != CoreStatus::switching)) {
+    // Fetch
+    instructionMemory_.requestRead({pc_, FETCH_SIZE});
     // Find fetched memory that matches the current PC
     const auto& fetched = instructionMemory_.getCompletedReads();
     size_t fetchIndex;
@@ -157,8 +167,6 @@ void Core::tick() {
     if (uop->isStoreData()) {
       execute(uop);
     } else {
-      // Fetch memory for next cycle
-      instructionMemory_.requestRead({pc_, FETCH_SIZE});
       microOps_.pop();
     }
 
@@ -203,8 +211,6 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
   if (uop->isLastMicroOp()) instructionsExecuted_++;
 
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
   microOps_.pop();
 }
 
@@ -242,8 +248,6 @@ void Core::processExceptionHandler() {
   // Clear the handler
   exceptionHandler_ = nullptr;
 
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
   microOps_.pop();
 }
 
@@ -321,9 +325,6 @@ void Core::schedule(simeng::kernel::cpuContext newContext) {
   }
   status_ = CoreStatus::executing;
   procTicks_ = 0;
-
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
 }
 
 bool Core::interrupt() {
