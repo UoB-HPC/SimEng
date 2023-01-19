@@ -11,7 +11,7 @@ namespace simeng {
 
 class ArchitecturalRegisterFileSet;
 
-enum CoreStatus : uint8_t { halted, idle, executing, switching, exception };
+enum CoreStatus : uint8_t { halted, idle, executing, switching };
 
 /** An abstract core model. */
 class Core {

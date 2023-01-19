@@ -25,6 +25,7 @@ enum procStatus { waiting, executing, completed, scheduled };
 struct cpuContext {
   uint64_t TID;
   uint64_t pc;
+  // SP only used in process construction. Actual value lives in regFile
   uint64_t sp;
   uint64_t progByteLen;
   std::vector<std::vector<RegisterValue>> regFile;
