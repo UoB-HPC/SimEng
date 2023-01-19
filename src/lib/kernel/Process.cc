@@ -1,3 +1,4 @@
+
 #include "simeng/kernel/Process.hh"
 
 #include <unistd.h>
@@ -41,62 +42,34 @@ Process::Process(const std::vector<std::string>& commandLine,
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
 
-  // Align heap start to a 32-byte boundary
+  pageTable_ = std::make_shared<PageTable>();
 
-  // uint64_t heapStart = alignToBoundary(elf.getProcessImageSize(), 32);
-
-  // Set mmap region start to be an equal distance from the stack and heap
-  // starts. Additionally, align to the page size (4kb)
-
-  // uint64_t mmapStart =
-  //    alignToBoundary(heapStart + (heapSize + stackSize) / 2, pageSize_);
-
-  // Calculate process image size, including heap + stack
-
-  // uint64_t size = heapStart + heapSize + stackSize;
-
-  // Check if global memory size is greater than process image size.
-
-  /*
-  if (memory->getMemorySize() < size) {
-    std::cerr << "[SimEng:Process] Memory size is less than size of the "
-                 "process image. Please "
-                 "increase memory size"
-              << std::endl;
-    std::exit(1);
+  // Parse the Elf file.
+  assert(commandLine.size() > 0);
+  Elf elf(commandLine[0]);
+  if (!elf.isValid()) {
+    return;
   }
-  */
-
-  /*
-  char* temp = (char*)realloc(unwrappedProcImgPtr, size * sizeof(char));
-  if (temp == NULL) {
-    free(unwrappedProcImgPtr);
-    std::cerr << "[SimEng:Process] ProcessImage cannot be constructed "
-                 "successfully! "
-                 "Reallocation failed."
-              << std::endl;
-    exit(EXIT_FAILURE);
-  }
-  unwrappedProcImgPtr = temp;
-  */
-
-  // uint64_t stackPtr = createStack(&unwrappedProcImgPtr, size);
-  // memRegion_ = MemRegion(stackSize, heapSize, size, stackPtr, heapStart,
-  //                       pageSize_, mmapStart);
-  //
-
+  entryPoint_ = elf.getEntryPoint();
   auto headers = elf.getProcessedHeaders();
-  // Send all our inital to memory
+
+  // Send all our inital data to memory
   uint64_t maxInitDataAddr = 0;
-  std::cout << "Hello1" << std::endl;
   for (auto header : headers) {
+    // Round size to nearest greater pageSize.
     size_t size = roundUpMemAddr(header->memorySize, pageSize_);
     uint64_t vaddr = header->virtualAddress;
+    // Request a page frame from the OS.
     uint64_t paddr = os_->requestPageFrames(size);
+    // Create a virtual memory mapping.
     pageTable_->createMapping(vaddr, paddr, size);
+    // Translate the address of the header virtual address.
     uint64_t translatedAddr = pageTable_->translate(vaddr);
+    // Send data to memory.
     memory->sendUntimedData(header->headerData, translatedAddr,
                             header->memorySize);
+    // Determine maximum address from headers. Will be used later in determining
+    // process layout.
     maxInitDataAddr =
         std::max(maxInitDataAddr, roundUpMemAddr(vaddr + size, pageSize_));
   }
@@ -107,33 +80,31 @@ Process::Process(const std::vector<std::string>& commandLine,
   heapSize = roundUpMemAddr(heapSize, pageSize_);
   uint64_t heapStart = maxInitDataAddr;
   uint64_t heapEnd = heapStart + heapSize;
+
   // Mmap grows upwards towards higher addresses.
   uint64_t mmapStart = heapEnd + pageSize_;
-  uint64_t mmapEnd = mmapStart + pageSize_ * 250;
+  uint64_t mmapSize = pageSize_ * 250 * 1000;
+  uint64_t mmapEnd = mmapStart + mmapSize;
+
   // Stack grows downwards towards lower addresses.
   stackSize = roundUpMemAddr(stackSize, pageSize_);
   uint64_t stackEnd = mmapEnd + pageSize_;
   uint64_t stackStart = stackEnd + stackSize;
   uint64_t size = stackStart;
 
+  // Request Page frames for heap and stack memory.
   uint64_t heapPhyAddr = os_->requestPageFrames(heapEnd - heapStart);
   uint64_t stackPhyAddr = os_->requestPageFrames(stackStart - stackEnd);
 
+  // Create page table mappings for stack and heap virtual address ranges.
   pageTable_->createMapping(stackEnd, stackPhyAddr, stackSize);
   pageTable_->createMapping(heapStart, heapPhyAddr, heapSize);
   uint64_t stackPtr = createStack(stackStart, memory);
 
-  std::cout << "HeapStart: " << heapStart << std::endl;
-  std::cout << "HeapEnd: " << heapEnd << std::endl;
-  memRegion_ = MemRegion(stackSize, heapSize, size, stackPtr, heapStart,
-                         pageSize_, mmapStart);
-  // copy process image to global memory.
-  // memcpy(memptr, unwrappedProcImgPtr, size);
-  // memory->sendUntimedData(unwrappedProcImgPtr, 0, size);
+  memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
+                         stackStart, heapStart, mmapStart, stackPtr);
 
   fdArray_ = std::make_shared<FileDescArray>();
-  // free allocated memory after copy.
-  free(unwrappedProcImgPtr);
 
   // Initialise context
   context_.TID = TID_;
@@ -150,6 +121,10 @@ Process::Process(const std::vector<std::string>& commandLine,
       context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
     }
   }
+
+  // Set the memory translator.
+  memory->setTranslator(getTranslator());
+  isValid_ = true;
 }
 
 Process::Process(span<char> instructions,
@@ -162,7 +137,6 @@ Process::Process(span<char> instructions,
 
   pageTable_ = std::make_shared<PageTable>();
 
-  isValid_ = true;
   YAML::Node& config = Config::get();
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
@@ -190,13 +164,12 @@ Process::Process(span<char> instructions,
   std::copy(instructions.begin(), instructions.end(), unwrappedProcImgPtr);
 
   uint64_t stackPtr = createStack(size, memory);
-  memRegion_ = MemRegion(stackSize, heapSize, size, stackPtr, heapStart,
-                         pageSize_, mmapStart);
+  // memRegion_ = MemRegion(stackSize, heapSize, size, stackPtr, heapStart,
+  //                       pageSize_, mmapStart);
 
   // copy process image to global memory.
   memory->sendUntimedData(unwrappedProcImgPtr, 0, size);
   fdArray_ = std::make_shared<FileDescArray>();
-  free(unwrappedProcImgPtr);
 
   // Initialise context
   context_.TID = TID_;
@@ -213,11 +186,12 @@ Process::Process(span<char> instructions,
       context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
     }
   }
+  isValid_ = true;
 }
 
 Process::~Process() {}
 
-uint64_t Process::getHeapStart() const { return memRegion_.getBrkStart(); }
+uint64_t Process::getHeapStart() const { return memRegion_.getHeapStart(); }
 
 uint64_t Process::getStackStart() const { return memRegion_.getMemSize(); }
 
@@ -236,7 +210,7 @@ uint64_t Process::getProcessImageSize() const {
 uint64_t Process::getEntryPoint() const { return entryPoint_; }
 
 uint64_t Process::getStackPointer() const {
-  return memRegion_.getInitialStackStart();
+  return memRegion_.getInitialStackPtr();
 }
 
 Translator Process::getTranslator() {
@@ -246,7 +220,7 @@ Translator Process::getTranslator() {
   return func;
 }
 
-uint64_t Process::createStack(uint64_t& stackStart,
+uint64_t Process::createStack(uint64_t stackStart,
                               std::shared_ptr<simeng::memory::Mem>& memory) {
   // Decrement the stack pointer and populate with initial stack state
   // (https://www.win.tue.nl/~aeb/linux/hh/stack-layout.html)

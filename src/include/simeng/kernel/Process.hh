@@ -18,6 +18,7 @@ class Mem;
 
 namespace kernel {
 
+// Forward declaration for SimOS.
 class SimOS;
 
 typedef std::function<uint64_t(uint64_t)> Translator;
@@ -64,6 +65,8 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
  *
  */
 class Process {
+  friend class SimOS;
+
  public:
   /** Construct a SimOS Process from a vector of command-line arguments.
    *
@@ -140,7 +143,7 @@ class Process {
    * Create and populate the initial process stack and returns the stack
    * pointer.
    */
-  uint64_t createStack(uint64_t& stackStart,
+  uint64_t createStack(uint64_t stackStart,
                        std::shared_ptr<simeng::memory::Mem>& memory);
 
   /** The entry point of the process. */

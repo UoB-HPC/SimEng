@@ -50,6 +50,7 @@ class VirtualMemoryArea {
 
   bool overlaps(uint64_t startAddr, size_t size);
   bool contains(uint64_t startAddr, size_t size);
+  bool contains(uint64_t startAddr);
   bool containedIn(uint64_t startAddr, size_t size);
   void trimRangeStart(uint64_t addr);
   void trimRangeEnd(uint64_t addr);

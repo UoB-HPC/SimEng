@@ -6,44 +6,55 @@
 namespace simeng {
 namespace kernel {
 
-MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t memSize,
-                     uint64_t stackPtr, uint64_t heapStart, uint64_t pageSize,
-                     uint64_t mmapStart)
-    : stackSize_(stackSize),
-      heapSize_(heapSize),
-      memSize_(memSize),
-      initStackStart_(stackPtr),
-      startBrk_(heapStart),
-      brk_(heapStart),
-      pageSize_(pageSize),
-      mmapStart_(mmapStart),
-      maxHeapAddr_(calculateMaxHeapAddr()) {}
+MemRegion::MemRegion(size_t stackSize, size_t heapSize, size_t mmapSize,
+                     size_t memSize, uint64_t pageSize, uint64_t stackStart,
+                     uint64_t heapStart, uint64_t mmapStart,
+                     uint64_t initStackPtr) {
+  stackSize_ = stackSize;
+  heapSize_ = heapSize;
+  mmapSize_ = mmapSize;
+  memSize_ = memSize;
+  pageSize_ = pageSize;
+  stackStart_ = stackStart;
+  stackEnd_ = stackStart + stackSize;
+  heapStart_ = heapStart;
+  heapEnd_ = heapStart + heapSize;
+  mmapStart_ = mmapStart;
+  mmapEnd_ = mmapStart + mmapSize;
+  initStackPtr_ = initStackPtr;
+  brk_ = heapStart;
+  mmapPtr_ = mmapStart;
+}
 
-uint64_t MemRegion::calculateMaxHeapAddr() { return startBrk_ + heapSize_; }
+uint64_t MemRegion::getStackStart() const { return stackStart_; }
 
-uint64_t MemRegion::getStackSize() const { return stackSize_; }
+uint64_t MemRegion::getStackEnd() const { return stackEnd_; }
 
-uint16_t MemRegion::getHeapSize() const { return heapSize_; }
+size_t MemRegion::getStackSize() const { return stackSize_; }
 
-uint64_t MemRegion::getInitialStackStart() const { return initStackStart_; }
+uint64_t MemRegion::getInitialStackPtr() const { return initStackPtr_; }
+
+uint64_t MemRegion::getHeapStart() const { return heapStart_; }
+
+uint64_t MemRegion::getHeapEnd() const { return heapEnd_; }
+
+size_t MemRegion::getHeapSize() const { return heapSize_; }
 
 uint64_t MemRegion::getBrk() const { return brk_; }
-
-uint64_t MemRegion::getBrkStart() const { return startBrk_; }
 
 uint64_t MemRegion::getMmapStart() const { return mmapStart_; }
 
 uint64_t MemRegion::getMemSize() const { return memSize_; }
 
 uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
-  if (newBrk > maxHeapAddr_) {
+  if (newBrk > heapEnd_) {
     // This needs to fixed such that more extra memory allocation is mmapd.
     std::cerr
         << "Attemped to allocate more memory than is available to the process "
         << std::endl;
     std::exit(1);
   }
-  if (newBrk > startBrk_) {
+  if (newBrk > brk_) {
     brk_ = newBrk;
   }
   return brk_;
@@ -219,46 +230,55 @@ bool MemRegion::isVmMapped(uint64_t addr, size_t size) {
 
 void MemRegion::addInitalVMA(char* data, uint64_t startAddr, size_t size,
                              VMAType type) {
-  // discard char* data for now until we make page trnaslation.
-  if (type == Mmap) {
-    std::cerr << "Mmap VMAs should not be added using the addInitialVMA "
-                 "method. Use the mmap syscall instead."
-              << std::endl;
+  /*
+// discard char* data for now until we make page trnaslation.
+if (type == Mmap) {
+  std::cerr << "Mmap VMAs should not be added using the addInitialVMA "
+               "method. Use the mmap syscall instead."
+            << std::endl;
+  return;
+};
+
+size = roundUpMemAddr(size, pageSize_);
+startAddr = roundDownMemAddr(startAddr, pageSize_);
+uint64_t endAddr = startAddr + size;
+
+VMA* vma = new VMA(-1, 0, 0, 0, size, type);
+vma->vm_start = startAddr;
+vma->vm_end = endAddr;
+
+if (type == PTLoad) {
+  if (ptload_vm_ == NULL) {
+    ptload_vm_ = vma;
     return;
-  };
-
-  size = roundUpMemAddr(size, pageSize_);
-  startAddr = roundDownMemAddr(startAddr, pageSize_);
-  uint64_t endAddr = startAddr + size;
-
-  VMA* vma = new VMA(-1, 0, 0, 0, size, type);
-  vma->vm_start = startAddr;
-  vma->vm_end = endAddr;
-
-  if (type == PTLoad) {
-    if (ptload_vm_ == NULL) {
-      ptload_vm_ = vma;
-      return;
-    }
-    VMA* curr = ptload_vm_;
-    while (curr->vm_next != NULL) {
-      curr = curr->vm_next;
-    }
-    curr->vm_next = vma;
-  } else if (type == Stack) {
-    stack_vm_ = vma;
-  } else {
-    heap_vm_ = vma;
   }
+  VMA* curr = ptload_vm_;
+  while (curr->vm_next != NULL) {
+    curr = curr->vm_next;
+  }
+  curr->vm_next = vma;
+} else if (type == Stack) {
+  stack_vm_ = vma;
+} else {
+  heap_vm_ = vma;
+}
+*/
 }
 
-bool MemRegion::overlapsHeapVM(uint64_t addr, size_t size) {
-  return heap_vm_->overlaps(addr, size);
+VirtualMemoryArea* MemRegion::getVMAFromAddr(uint64_t vaddr) {
+  VirtualMemoryArea* curr = vm_head_;
+  while (curr != NULL) {
+    if (curr->contains(vaddr)) {
+      return curr;
+    }
+    curr = curr->vm_next;
+  };
+  return NULL;
 };
 
-bool MemRegion::overlapsStackVM(uint64_t addr, size_t size) {
-  return stack_vm_->overlaps(addr, size);
-};
+bool MemRegion::overlapsHeapVM(uint64_t addr, size_t size) { return false; };
+
+bool MemRegion::overlapsStackVM(uint64_t addr, size_t size) { return false; };
 
 bool MemRegion::isPageAligned(uint64_t addr) {
   return addr & (pageSize_ - 1) == 0;

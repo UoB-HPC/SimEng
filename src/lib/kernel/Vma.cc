@@ -75,19 +75,24 @@ VirtualMemoryArea::VirtualMemoryArea(VirtualMemoryArea* vma) {
 
 VirtualMemoryArea::~VirtualMemoryArea(){};
 
+// Address ranges are exclusive of the last address i.e [vm_start, vm_end)
 bool VirtualMemoryArea::overlaps(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
-  return (endAddr >= vm_start) && (startAddr <= vm_end - 1);
+  return (endAddr >= vm_start) && (startAddr < vm_end);
 };
 
 bool VirtualMemoryArea::contains(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
-  return (startAddr >= vm_start) && (endAddr <= vm_end - 1);
+  return (startAddr >= vm_start) && (endAddr < vm_end);
 };
+
+bool VirtualMemoryArea::contains(uint64_t vaddr) {
+  return (vaddr >= vm_start) && (vaddr < vm_end);
+}
 
 bool VirtualMemoryArea::containedIn(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
-  return (startAddr <= vm_start) && (endAddr >= vm_end - 1);
+  return (startAddr <= vm_start) && (endAddr > vm_end);
 };
 
 void VirtualMemoryArea::trimRangeEnd(uint64_t addr) {

@@ -5,8 +5,11 @@
 namespace simeng {
 
 FixedLatencyMemoryInterface::FixedLatencyMemoryInterface(
-    std::shared_ptr<simeng::memory::Mem> memory, uint16_t latency)
-    : memory_(memory), latency_(latency), size_(memory->getMemorySize()) {}
+    std::shared_ptr<memory::MMU> mmu, uint16_t latency, size_t memSize) {
+  mmu_ = mmu;
+  latency_ = latency;
+  size_ = memSize;
+}
 
 void FixedLatencyMemoryInterface::tick() {
   tickCounter_++;
@@ -20,18 +23,18 @@ void FixedLatencyMemoryInterface::tick() {
     }
 
     const auto& target = request.target;
+    uint64_t requestId = request.requestId;
 
     if (request.write) {
       // Write: write data directly to memory
       assert(target.address + target.size <= memory_->getMemorySize() &&
              "Attempted to write beyond memory limit");
+      auto fn = [&](memory::DataPacket* dpkt) -> void { delete dpkt; };
 
-      simeng::memory::WriteRespPacket* resp =
-          (simeng::memory::WriteRespPacket*)memory_->requestAccess(
-              new simeng::memory::WritePacket{
-                  target.address, target.size,
-                  request.data.getAsVector<char>()});
-      delete resp;
+      const char* wdata = request.data.getAsVector<char>();
+      mmu_->bufferRequest(
+          new simeng::memory::WritePacket(target.address, target.size, wdata),
+          fn);
     } else {
       // Read: read data into `completedReads`
       if (target.address + target.size > size_ ||
@@ -39,6 +42,18 @@ void FixedLatencyMemoryInterface::tick() {
         // Read outside of memory; return an invalid value to signal a fault
         completedReads_.push_back({target, RegisterValue(), request.requestId});
       } else {
+        auto fn = [&, this](memory::DataPacket* dpkt) -> void {
+          if (dpkt == NULL) return;
+          memory::ReadRespPacket* resp = (memory::ReadRespPacket*)dpkt;
+          this->completedReads_.push_back(
+              {target, RegisterValue(resp->data, resp->bytesRead), requestId});
+          delete resp;
+        };
+
+        mmu_->bufferRequest(new memory::ReadPacket(target.address, target.size),
+                            fn);
+
+        /*
         simeng::memory::ReadRespPacket* resp =
             (simeng::memory::ReadRespPacket*)memory_->requestAccess(
                 new simeng::memory::ReadPacket{target.address, target.size});
@@ -47,6 +62,7 @@ void FixedLatencyMemoryInterface::tick() {
                                    RegisterValue(resp->data, resp->bytesRead),
                                    request.requestId});
         delete resp;
+        */
       }
     }
 

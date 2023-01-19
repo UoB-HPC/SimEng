@@ -24,6 +24,7 @@ set(SIMENG_SOURCES
     kernel/PageTable.cc
     memory/SimpleMem.cc
     memory/Mem.cc
+    memory/MMU.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc

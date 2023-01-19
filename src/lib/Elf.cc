@@ -14,7 +14,7 @@ namespace simeng {
  * https://man7.org/linux/man-pages/man5/elf.5.html
  */
 
-Elf::Elf(std::string path, char** imagePointer) {
+Elf::Elf(std::string path) {
   std::ifstream file(path, std::ios::binary);
   if (!file.is_open()) {
     return;
@@ -153,7 +153,6 @@ Elf::Elf(std::string path, char** imagePointer) {
     processImageSize_ = std::max(processImageSize_, addr);
   }
 
-  *imagePointer = (char*)malloc(processImageSize_ * sizeof(char));
   /**
    * The ELF Program header has a member called `p_type`, which represents
    * the kind of data or memory segments described by the program header.
@@ -172,9 +171,6 @@ Elf::Elf(std::string path, char** imagePointer) {
       // memory
       file.seekg(header->offset);
       file.read(header->headerData, header->fileSize);
-
-      file.seekg(header->offset);
-      file.read(*imagePointer + header->virtualAddress, header->fileSize);
 
       processedHeaders_.push_back(header);
     }

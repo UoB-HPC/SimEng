@@ -42,7 +42,7 @@ static uint32_t hex_[8] = {
 /** A simple, lightweight Operating System kernel based on Linux to emulate
  * syscalls and manage process execution. */
 class SimOS {
- public:
+ public
   /** Construct a SimOS object. */
   SimOS(std::string executablePath, std::vector<std::string> executableArgs,
         std::shared_ptr<simeng::memory::Mem> mem);
