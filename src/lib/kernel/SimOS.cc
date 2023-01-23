@@ -81,47 +81,30 @@ void SimOS::tick() {
         return;
       case CoreStatus::idle: {
         // Core is idle, schedule head of scheduledProc queue
-        // if (!scheduledProcs_.empty()) {
-        // Get prevContext from core and update appropriate process
-        kernel::cpuContext prevContext = cores_[cID]->getPrevContext();
-        for (auto i : processes_) {
-          if (i->getTID() == prevContext.TID) {
-            assert((i->status_ == procStatus::executing) &&
-                   "[SimEng:SimOS] Process updated when not in executing"
-                   "state.");
-            // Only update values which will have changed
-            i->context_.pc = prevContext.pc;
-            i->context_.regFile = prevContext.regFile;
-            // Change status from Executing to Waiting
-            // i->status_ = procStatus::waiting;
-            // std::cerr << "SWITCHED TID " << i->context_.TID
-            //           << ", PC = " << i->context_.pc << ", w0 = "
-            //           << i->context_
-            //                  .regFile[arch::aarch64::RegisterType::GENERAL][0]
-            //                  .get<uint64_t>()
-            //           << std::endl;
-            // waitingProcs_.push(i);
-            i->status_ = procStatus::scheduled;
-            scheduledProcs_.push(i);
-            break;
+        if (!scheduledProcs_.empty()) {
+          // Get prevContext from core and update appropriate process
+          kernel::cpuContext prevContext = cores_[cID]->getPrevContext();
+          for (auto i : processes_) {
+            if (i->getTID() == prevContext.TID) {
+              assert((i->status_ == procStatus::executing) &&
+                     "[SimEng:SimOS] Process updated when not in executing"
+                     "state.");
+              // Only update values which will have changed
+              i->context_.pc = prevContext.pc;
+              i->context_.regFile = prevContext.regFile;
+              // Change status from Executing to Waiting
+              i->status_ = procStatus::waiting;
+              waitingProcs_.push(i);
+              break;
+            }
           }
+          // Schedule process on core
+          cores_[cID]->schedule(scheduledProcs_.front()->context_);
+          // Update newly scheduled process' status
+          scheduledProcs_.front()->status_ = procStatus::executing;
+          // Remove process from waiting queue
+          scheduledProcs_.pop();
         }
-        // Schedule process on core
-        cores_[cID]->schedule(scheduledProcs_.front()->context_);
-        // Update newly scheduled process' status
-        scheduledProcs_.front()->status_ = procStatus::executing;
-        // std::cerr << "SCHEDULED TID " <<
-        // scheduledProcs_.front()->context_.TID
-        //           << ", PC = " << scheduledProcs_.front()->context_.pc
-        //           << ", w0 = "
-        //           << scheduledProcs_.front()
-        //                  ->context_
-        //                  .regFile[arch::aarch64::RegisterType::GENERAL][0]
-        //                  .get<uint64_t>()
-        //           << std::endl;
-        // Remove process from waiting queue
-        scheduledProcs_.pop();
-        // }
         break;
       }
       case CoreStatus::executing: {
@@ -129,17 +112,17 @@ void SimOS::tick() {
         //    - If core has been running current process for execTicks ticks,
         //      send interrupt
         //    - Enusure there is a waiting process, otherwise let core continue
-        // if (!waitingProcs_.empty()) {
-        if (cores_[cID]->getCurrentProcTicks() > execTicks) {
-          if (cores_[cID]->interrupt()) {
-            // Interrupt signalled successfully, move waitingProc to
-            // sheduledProcs queue
-            // waitingProcs_.front()->status_ = procStatus::scheduled;
-            // scheduledProcs_.push(waitingProcs_.front());
-            // waitingProcs_.pop();
+        if (!waitingProcs_.empty()) {
+          if (cores_[cID]->getCurrentProcTicks() > execTicks) {
+            if (cores_[cID]->interrupt()) {
+              // Interrupt signalled successfully, move waitingProc to
+              // sheduledProcs queue
+              waitingProcs_.front()->status_ = procStatus::scheduled;
+              scheduledProcs_.push(waitingProcs_.front());
+              waitingProcs_.pop();
+            }
           }
         }
-        // }
 
         break;
       }
@@ -236,18 +219,6 @@ void SimOS::createInitialProcess() {
   // the initial processes status and push it to the scheduledProcs queue
   processes_[0]->status_ = procStatus::scheduled;
   scheduledProcs_.push(processes_[0]);
-
-  // TEMP create 2 processes with shared stack, but change second stack pointer
-  // processes_.emplace_back(std::make_shared<Process>(
-  //     simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-  //     memory_, regFileStructure, 1, 1));
-  // processes_[1]->context_ = processes_[0]->context_;
-  // processes_[1]->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] =
-  // {
-  //     processes_[0]->context_.sp - 1024, 8};
-  // processes_[1]->status_ = procStatus::waiting;
-  // processes_[1]->context_.TID = 1;
-  // waitingProcs_.push(processes_[1]);
 }
 
 void SimOS::createSpecialFileDirectory() const {
