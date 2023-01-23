@@ -34,6 +34,10 @@ SimOS::SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem)
 }
 
 void SimOS::tick() {
+  // Check if simulation halted
+  if (halted_) {
+    return;
+  }
   // Check for empty processes_ vector
   if (processes_.size() == 0) {
     halted_ = true;
@@ -77,55 +81,71 @@ void SimOS::tick() {
         return;
       case CoreStatus::idle: {
         // Core is idle, schedule head of scheduledProc queue
-        if (!scheduledProcs_.empty()) {
-          // Get prevContext from core and update appropriate process
-          kernel::cpuContext prevContext = cores_[cID]->getPrevContext();
-          for (auto i : processes_) {
-            if (i->getTID() == prevContext.TID) {
-              assert((i->status_ == procStatus::executing) &&
-                     "[SimEng:SimOS] Process updated when not in executing "
-                     "state.");
-              // Only update values which will have changed
-              i->context_.pc = prevContext.pc;
-              i->context_.regFile = prevContext.regFile;
-              // Change status from Executing to Waiting
-              i->status_ = procStatus::waiting;
-              waitingProcs_.push(i);
-              break;
-            }
+        // if (!scheduledProcs_.empty()) {
+        // Get prevContext from core and update appropriate process
+        kernel::cpuContext prevContext = cores_[cID]->getPrevContext();
+        for (auto i : processes_) {
+          if (i->getTID() == prevContext.TID) {
+            assert((i->status_ == procStatus::executing) &&
+                   "[SimEng:SimOS] Process updated when not in executing"
+                   "state.");
+            // Only update values which will have changed
+            i->context_.pc = prevContext.pc;
+            i->context_.regFile = prevContext.regFile;
+            // Change status from Executing to Waiting
+            // i->status_ = procStatus::waiting;
+            // std::cerr << "SWITCHED TID " << i->context_.TID
+            //           << ", PC = " << i->context_.pc << ", w0 = "
+            //           << i->context_
+            //                  .regFile[arch::aarch64::RegisterType::GENERAL][0]
+            //                  .get<uint64_t>()
+            //           << std::endl;
+            // waitingProcs_.push(i);
+            i->status_ = procStatus::scheduled;
+            scheduledProcs_.push(i);
+            break;
           }
-          // Schedule process on core
-          cores_[cID]->schedule(scheduledProcs_.front()->context_);
-          // Update newly scheduled process' status
-          scheduledProcs_.front()->status_ = procStatus::executing;
-          // Remove process from waiting queue
-          scheduledProcs_.pop();
         }
+        // Schedule process on core
+        cores_[cID]->schedule(scheduledProcs_.front()->context_);
+        // Update newly scheduled process' status
+        scheduledProcs_.front()->status_ = procStatus::executing;
+        // std::cerr << "SCHEDULED TID " <<
+        // scheduledProcs_.front()->context_.TID
+        //           << ", PC = " << scheduledProcs_.front()->context_.pc
+        //           << ", w0 = "
+        //           << scheduledProcs_.front()
+        //                  ->context_
+        //                  .regFile[arch::aarch64::RegisterType::GENERAL][0]
+        //                  .get<uint64_t>()
+        //           << std::endl;
+        // Remove process from waiting queue
+        scheduledProcs_.pop();
+        // }
         break;
       }
       case CoreStatus::executing: {
         // Core is executing, test if interrupt should be made
-        //  - If core has been running current process for execTicks ticks, send
-        //  interrupt
-        // Enusure there is a waiting process, otherwise let core continue
-        if (!waitingProcs_.empty()) {
-          if (cores_[cID]->getCurrentProcTicks() > execTicks) {
-            if (cores_[cID]->interrupt()) {
-              // interrupt signalled successfully, move waitingProc to
-              // sheduledProcs queue
-              waitingProcs_.front()->status_ = procStatus::scheduled;
-              scheduledProcs_.push(waitingProcs_.front());
-              waitingProcs_.pop();
-            }
+        //    - If core has been running current process for execTicks ticks,
+        //      send interrupt
+        //    - Enusure there is a waiting process, otherwise let core continue
+        // if (!waitingProcs_.empty()) {
+        if (cores_[cID]->getCurrentProcTicks() > execTicks) {
+          if (cores_[cID]->interrupt()) {
+            // Interrupt signalled successfully, move waitingProc to
+            // sheduledProcs queue
+            // waitingProcs_.front()->status_ = procStatus::scheduled;
+            // scheduledProcs_.push(waitingProcs_.front());
+            // waitingProcs_.pop();
           }
         }
+        // }
+
         break;
       }
       case CoreStatus::switching:
-        // Core is currently preparing to switch process, do nothing this cycle
-        break;
-      case CoreStatus::exception:
-        // Core currently processing syscall or exception, do nothing this cycle
+        // Core is currently preparing to switch process, do nothing this
+        // cycle
         break;
     }
   }
@@ -133,7 +153,9 @@ void SimOS::tick() {
 
 Process SimOS::getProcess(uint64_t TID) const {
   for (auto i : processes_) {
-    if (i->getTID() == TID) return (*i);
+    if (i->getTID() == TID) {
+      return (*i);
+    }
   }
   // If TID doesn't exist then hard exit
   std::cerr << "[SimEng:SimOS] ERROR : Process with TID `" << TID
@@ -143,7 +165,8 @@ Process SimOS::getProcess(uint64_t TID) const {
 
 void SimOS::createInitialProcess() {
   // TODO : When supporting multiple processes, need to keep track of next
-  // available TGID and TIDs, and pass these when constructing a Process object
+  // available TGID and TIDs, and pass these when constructing a Process
+  // object
 
   // Temporarily create the architecture, with knowledge of the kernel
   std::unique_ptr<simeng::arch::Architecture> arch;
@@ -158,7 +181,6 @@ void SimOS::createInitialProcess() {
   std::vector<RegisterFileStructure> regFileStructure =
       arch->getRegisterFileStructures();
 
-  std::shared_ptr<Process> newProcess;
   if (executablePath_ != DEFAULT_STR) {
     // Concatenate the command line arguments into a single vector and create
     // the process image
@@ -166,55 +188,66 @@ void SimOS::createInitialProcess() {
     commandLine.insert(commandLine.end(), executableArgs_.begin(),
                        executableArgs_.end());
 
-    newProcess =
-        std::make_shared<Process>(commandLine, memory_, regFileStructure);
+    processes_.emplace_back(std::make_shared<Process>(commandLine, memory_,
+                                                      regFileStructure, 0, 0));
 
     // Raise error if created process is not valid
-    if (!newProcess->isValid()) {
+    if (!processes_[0]->isValid()) {
       std::cerr << "[SimEng:CoreInstance] Could not read/parse "
                 << commandLine[0] << std::endl;
       exit(1);
     }
   } else {
     // Create a process image from the set of instructions held in hex_
-    newProcess = std::make_shared<Process>(
+    processes_.emplace_back(std::make_shared<Process>(
         simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-        memory_, regFileStructure);
+        memory_, regFileStructure, 0, 0));
 
     // Raise error if created process is not valid
-    if (!newProcess->isValid()) {
+    if (!processes_[0]->isValid()) {
       std::cerr << "[SimEng:SimOS] Could not create initial process based on "
                    "supplied instruction span"
                 << std::endl;
       exit(1);
     }
   }
-  assert(newProcess->isValid() &&
+  assert(processes_[0]->isValid() &&
          "[SimEng:SimOS] Attempted to use an invalid process");
 
   // Set Initial state of registers
   if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
-    newProcess->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
-        newProcess->context_.sp, 8};
+    processes_[0]->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
+        processes_[0]->context_.sp, 8};
   } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
     // Set the stack pointer register
-    newProcess->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
-        newProcess->context_.sp, 8};
+    processes_[0]->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] =
+        {processes_[0]->context_.sp, 8};
     // Set the system registers
     // Temporary: state that DCZ can support clearing 64 bytes at a time,
     // but is disabled due to bit 4 being set
-    newProcess->context_
-        .regFile[arch::aarch64::RegisterType::SYSTEM]
-                [arch->getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)] = {
+    processes_[0]->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
+                                   [arch->getSystemRegisterTag(
+                                       ARM64_SYSREG_DCZID_EL0)] = {
         static_cast<uint64_t>(0b10100), 8};
   }
 
   // In a simulation's initial state, all cores will be idle. Only 'scheduled'
-  // processes may be sent to a core for execution therefore we must update the
-  // initial processes status and push it to the scheduledProcs queue
-  newProcess->status_ = procStatus::scheduled;
-  processes_.emplace_back(newProcess);
+  // processes may be sent to a core for execution therefore we must update
+  // the initial processes status and push it to the scheduledProcs queue
+  processes_[0]->status_ = procStatus::scheduled;
   scheduledProcs_.push(processes_[0]);
+
+  // TEMP create 2 processes with shared stack, but change second stack pointer
+  // processes_.emplace_back(std::make_shared<Process>(
+  //     simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
+  //     memory_, regFileStructure, 1, 1));
+  // processes_[1]->context_ = processes_[0]->context_;
+  // processes_[1]->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] =
+  // {
+  //     processes_[0]->context_.sp - 1024, 8};
+  // processes_[1]->status_ = procStatus::waiting;
+  // processes_[1]->context_.TID = 1;
+  // waitingProcs_.push(processes_[1]);
 }
 
 void SimOS::createSpecialFileDirectory() const {

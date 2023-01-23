@@ -49,13 +49,8 @@ void Core::tick() {
           completionSlots_[0].isEmpty(nullptr) &&
           (exceptionHandler_ == nullptr)) {
         // Flush pipeline
-        fetchToDecodeBuffer_.fill({});
-        decodeToExecuteBuffer_.fill(nullptr);
-        completionSlots_[0].fill(nullptr);
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
-        // Ensure data memory requests are clear
-        dataMemory_.clearCompletedReads();
         previousAddresses_ = std::queue<simeng::MemoryAccessTarget>();
         status_ = CoreStatus::idle;
         return;

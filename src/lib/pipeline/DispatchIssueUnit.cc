@@ -266,5 +266,19 @@ void DispatchIssueUnit::getRSSizes(std::vector<uint64_t>& sizes) const {
   }
 }
 
+void DispatchIssueUnit::flush() {
+  for (size_t i = 0; i < scoreboard_.size(); i++) {
+    for (size_t j = 0; j < scoreboard_[i].size(); j++) {
+      scoreboard_[i][j] = true;
+    }
+  }
+
+  for (size_t i = 0; i < dependencyMatrix_.size(); i++) {
+    for (size_t j = 0; j < dependencyMatrix_[i].size(); j++) {
+      dependencyMatrix_[i][j].clear();
+    }
+  }
+}
+
 }  // namespace pipeline
 }  // namespace simeng

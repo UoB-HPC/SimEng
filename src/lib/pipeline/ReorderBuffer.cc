@@ -184,6 +184,14 @@ void ReorderBuffer::flush(uint64_t afterSeqId) {
   loopDetected_ = false;
 }
 
+void ReorderBuffer::flush() {
+  buffer_ = std::deque<std::shared_ptr<Instruction>>();
+  shouldFlush_ = false;
+  // Reset branch counter and loop detection
+  branchCounter_ = {{0, {false, 0}, 0}, 0};
+  loopDetected_ = false;
+}
+
 unsigned int ReorderBuffer::size() const { return buffer_.size(); }
 
 unsigned int ReorderBuffer::getFreeSpace() const {
