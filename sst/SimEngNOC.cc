@@ -30,7 +30,7 @@ void SimEngNOC::init(unsigned int phase) {
   if (interface_->isNetworkInitialized()) {
     if (!initBroadcastSent_) {
       initBroadcastSent_ = true;
-      simengNetEv* ev = new simengNetEv(getName());
+      emptyEv* ev = new emptyEv(getName());
       // Create a network request for init data
       SST::Interfaces::SimpleNetwork::Request* req =
           new SST::Interfaces::SimpleNetwork::Request();
@@ -48,6 +48,7 @@ void SimEngNOC::init(unsigned int phase) {
     simengNetEv* ev = static_cast<simengNetEv*>(req->takePayload());
     output_.verbose(CALL_INFO, 1, 0, "%s received init msg from %s\n",
                     getName().c_str(), ev->getSource().c_str());
+    numDevices_++;
   }
 }
 
@@ -103,3 +104,5 @@ bool SimEngNOC::clockTick(SST::Cycle_t currentCycle) {
   // Return false to signal the component should continue to be ticked
   return false;
 }
+
+const uint16_t SimEngNOC::getNumDevices() const { return numDevices_; }

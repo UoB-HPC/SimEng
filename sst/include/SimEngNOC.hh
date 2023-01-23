@@ -13,42 +13,175 @@
 
 #include <queue>
 
+#include "simeng/arch/Architecture.hh"
+
 namespace SST {
 
 namespace SSTSimEng {
+enum class PacketType { Empty, Syscall };
 
 /** A custom SST::Event to handle the network events to/from the SimEngNOC
  * component. */
 class simengNetEv : public SST::Event {
  public:
-  simengNetEv(std::string name) : Event(), srcDevice(name) {}
-  simengNetEv() : Event() {}
-
   /** Get the name of the source device. */
-  std::string getSource() { return srcDevice; }
+  std::string getSource() { return srcDevice_; }
 
-  /** Overrides the base class clone() which clones the event in for the case of
-   * a broadcast. */
+  /** Get the type of the network event. */
+  PacketType getType() { return type_; }
+
+  /** Override of base class event serializer. */
+  void serialize_order(SST::Core::Serialization::serializer& ser) override {
+    Event::serialize_order(ser);
+    ser& srcDevice_;
+    ser& type_;
+  }
+
+ protected:
+  simengNetEv(std::string name, PacketType type)
+      : Event(), srcDevice_(name), type_(type) {}
+
+  /** Default constructor needed for serilisation. */
+  simengNetEv() {}
+
+  /** Name of the source device that sent the event. */
+  std::string srcDevice_;
+
+  /** The type of the packet which helps identify what the paylod is. */
+  PacketType type_;
+
+  ImplementSerializable(SST::SSTSimEng::simengNetEv);
+};
+
+/** Class to represent a network event which has no payload. Primarily used to
+ * establish an initial connection between NOC endpoints. */
+class emptyEv : public SST::SSTSimEng::simengNetEv {
+ public:
+  emptyEv(std::string name) : simengNetEv(name, PacketType::Empty) {}
+
+  emptyEv() : simengNetEv() {}
+
+  /** Overrides the base class clone() which clones the event in for the case
+   * of a broadcast. */
   virtual Event* clone(void) override {
-    simengNetEv* ev = new simengNetEv(*this);
+    emptyEv* ev = new emptyEv(*this);
     return ev;
   }
 
   /** Override of base class event serializer. */
   void serialize_order(SST::Core::Serialization::serializer& ser) override {
-    Event::serialize_order(ser);
-    ser& srcDevice;
+    simengNetEv::serialize_order(ser);
   }
 
-  /** Implements SimEngNOC serialization. */
-  ImplementSerializable(SST::SSTSimEng::simengNetEv);
-
  private:
-  /** Name of the source device that sent the event. */
-  std::string srcDevice;
+  ImplementSerializable(SST::SSTSimEng::emptyEv);
 };
 
-/** A custom SST::SubComponent to handle the API for the SimEngNOC component. */
+/** Class to represent a network event which communicates the outcome of a
+ * syscall handled by the SST::SSTSimEng::SimOSWrapper component. */
+class syscallEv : public simengNetEv {
+ public:
+  syscallEv(std::string name) : simengNetEv(name, PacketType::Syscall) {}
+
+  syscallEv() : simengNetEv() {}
+
+  /** Set the payload to be delivered. */
+  void setPayload(simeng::arch::ProcessStateChange stateChange) {
+    changeType_ = stateChange.type;
+    for (size_t i = 0; i < stateChange.modifiedRegisters.size(); i++) {
+      simeng::Register reg = stateChange.modifiedRegisters[i];
+      regTypes_.push_back(reg.type);
+      regTags_.push_back(reg.tag);
+
+      simeng::RegisterValue regVal = stateChange.modifiedRegisterValues[i];
+      regSizes_.push_back(regVal.size());
+      regValues_.push_back({});
+      regValues_[i].assign(regVal.getAsVector<char>(),
+                           regVal.getAsVector<char>() + regVal.size());
+    }
+    for (size_t i = 0; i < stateChange.memoryAddresses.size(); i++) {
+      simeng::MemoryAccessTarget memTarget = stateChange.memoryAddresses[i];
+      memTargetAddrs_.push_back(memTarget.address);
+      memTargetSizes_.push_back(memTarget.size);
+
+      simeng::RegisterValue memVal = stateChange.memoryAddressValues[i];
+      assert(memTargetSizes_[i] == memVal.size() &&
+             "In syscallEv payload, mismatch between a stateChange's "
+             "memoryAddress and memoryAddressValue sizes");
+      memTargetValues_.push_back({});
+      memTargetValues_[i].assign(memVal.getAsVector<char>(),
+                                 memVal.getAsVector<char>() + memVal.size());
+    }
+  }
+
+  /** Get the payload. */
+  simeng::arch::ProcessStateChange getPayload() {
+    simeng::arch::ProcessStateChange stateChange = {
+        changeType_, {}, {}, {}, {}};
+    for (size_t i = 0; i < regTypes_.size(); i++) {
+      stateChange.modifiedRegisters.push_back({regTypes_[i], regTags_[i]});
+      stateChange.modifiedRegisterValues.push_back(
+          {regValues_[i].data(), (uint16_t)regSizes_[i]});
+    }
+    for (size_t i = 0; i < memTargetAddrs_.size(); i++) {
+      stateChange.memoryAddresses.push_back(
+          {memTargetAddrs_[i], (uint8_t)memTargetSizes_[i]});
+      stateChange.memoryAddressValues.push_back(
+          {memTargetValues_[i].data(), (uint16_t)memTargetSizes_[i]});
+    }
+    return stateChange;
+  }
+
+  /** Overrides the base class clone() which clones the event in for the case
+   * of a broadcast. */
+  virtual Event* clone(void) override {
+    syscallEv* ev = new syscallEv(*this);
+    return ev;
+  }
+
+  /** Override of base class event serializer. */
+  void serialize_order(SST::Core::Serialization::serializer& ser) override {
+    simengNetEv::serialize_order(ser);
+    ser& changeType_;
+    ser& regTypes_;
+    ser& regTags_;
+    ser& regSizes_;
+    ser& regValues_;
+    ser& memTargetAddrs_;
+    ser& memTargetSizes_;
+    ser& memTargetValues_;
+  }
+
+ private:
+  /** The state change type. */
+  simeng::arch::ChangeType changeType_;
+
+  /** The types of the registers to be changed. */
+  std::vector<uint8_t> regTypes_;
+
+  /** The tags of the registers to be changed. */
+  std::vector<uint16_t> regTags_;
+
+  /** The sizes, in bytes, of the selected registers. */
+  std::vector<size_t> regSizes_;
+
+  /** The values to change the selected registers with. */
+  std::vector<std::vector<char>> regValues_;
+
+  /** The memory addresses to be changed. */
+  std::vector<uint64_t> memTargetAddrs_;
+
+  /** The sizes, in bytes, of the memory target values. */
+  std::vector<uint8_t> memTargetSizes_;
+
+  /** The values to change the selected memory addresses with. */
+  std::vector<std::vector<char>> memTargetValues_;
+
+  ImplementSerializable(SST::SSTSimEng::syscallEv);
+};
+
+/** A custom SST::SubComponent to handle the API for the SimEngNOC component.
+ */
 class nocAPI : public SST::SubComponent {
  public:
   // Register NOC API SubComponent
@@ -125,6 +258,10 @@ class SimEngNOC : public nocAPI {
    * clock ticks. */
   bool clockTick(SST::Cycle_t currentCycle);
 
+  /** Retrieve the number of devices that can be communicated with over the
+   * network. */
+  const uint16_t getNumDevices() const;
+
  protected:
   /** SST output object. */
   SST::Output output_;
@@ -141,6 +278,10 @@ class SimEngNOC : public nocAPI {
 
   /** Whether the NOC has sent its initial broadcast. */
   bool initBroadcastSent_ = false;
+
+  /** The number of other devices on the network that can be communicated with.
+   */
+  uint16_t numDevices_ = 0;
 };
 
 }  // namespace SSTSimEng
