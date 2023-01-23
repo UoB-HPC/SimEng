@@ -108,9 +108,25 @@ void Core::tick() {
     case CoreStatus::idle:
       idle_ticks_++;
       return;
+    case CoreStatus::switching: {
+      if (fetchToDecodeBuffer_.isEmpty({}) &&
+          decodeToRenameBuffer_.isEmpty(nullptr) &&
+          renameToDispatchBuffer_.isEmpty(nullptr) &&
+          !dataMemory_.hasPendingRequests() && (reorderBuffer_.size() == 0) &&
+          (exceptionHandler_ == nullptr)) {
+        // Flush pipeline
+        fetchUnit_.flushLoopBuffer();
+        decodeUnit_.purgeFlushed();
+        dispatchIssueUnit_.purgeFlushed();
+        dispatchIssueUnit_.flush();
+        status_ = CoreStatus::idle;
+        return;
+      }
+      break;
+    }
     case CoreStatus::halted:
       return;
-    default:
+    case CoreStatus::executing:
       break;
   }
 
@@ -145,8 +161,8 @@ void Core::tick() {
   dispatchIssueUnit_.issue();
 
   // Tick buffers
-  // Each unit must have wiped the entries at the head of the buffer after use,
-  // as these will now loop around and become the tail.
+  // Each unit must have wiped the entries at the head of the buffer after
+  // use, as these will now loop around and become the tail.
   fetchToDecodeBuffer_.tick();
   decodeToRenameBuffer_.tick();
   renameToDispatchBuffer_.tick();
@@ -231,9 +247,9 @@ void Core::flushIfNeeded() {
 }
 
 CoreStatus Core::getStatus() {
-  // Core is considered to have halted when the fetch unit has halted, there are
-  // no uops at the head of any buffer, and no exception is currently being
-  // handled.
+  // Core is considered to have halted when the fetch unit has halted, there
+  // are no uops at the head of any buffer, and no exception is currently
+  // being handled.
   if (fetchUnit_.hasHalted() && !(reorderBuffer_.size() > 0) &&
       (exceptionHandler_ == nullptr)) {
     bool decodeSlotEmpty = true;
@@ -278,8 +294,8 @@ void Core::handleException() {
   renameToDispatchBuffer_.stall(false);
 
   // Flush everything younger than the exception-generating instruction.
-  // This must happen prior to handling the exception to ensure the commit state
-  // is up-to-date with the register mapping table
+  // This must happen prior to handling the exception to ensure the commit
+  // state is up-to-date with the register mapping table
   reorderBuffer_.flush(exceptionGeneratingInstruction_->getInstructionId());
   decodeUnit_.purgeFlushed();
   dispatchIssueUnit_.purgeFlushed();
@@ -450,12 +466,16 @@ void Core::schedule(simeng::kernel::cpuContext newContext) {
   }
   status_ = CoreStatus::executing;
   procTicks_ = 0;
+  // Allow fetch unit to resume fetching instructions & incrementing PC
+  fetchUnit_.unpause();
 }
 
 bool Core::interrupt() {
   if (exceptionHandler_ == nullptr) {
-    // Set FetchUnit to not tick
     status_ = CoreStatus::switching;
+    contextSwitches_++;
+    // Stop fetch unit from incrementing PC or fetching next instructions
+    fetchUnit_.pause();
     return true;
   }
   return false;

@@ -30,14 +30,8 @@ void Core::tick() {
     case CoreStatus::switching:
       // Ensure no instructions left to execute, and not mid exception
       if (microOps_.empty() && (exceptionHandler_ == nullptr)) {
-        // All buffers should be empty, but we clear ensure they are empty
         macroOp_.clear();
-        microOps_ = std::queue<std::shared_ptr<Instruction>>();
-        // All memories are flat (no latency) so again there should not be any
-        // outstanding reads; cleared to ensure they are empty
         pendingReads_ = 0;
-        instructionMemory_.clearCompletedReads();
-        dataMemory_.clearCompletedReads();
         previousAddresses_.clear();
         status_ = CoreStatus::idle;
         return;

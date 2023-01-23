@@ -80,6 +80,10 @@ class DispatchIssueUnit {
   /** Clear the RS of all flushed instructions. */
   void purgeFlushed();
 
+  /** Flush scoreboard, dependancyMatrix. Primarily used for context
+   * switching. */
+  void flush();
+
   /** Retrieve the number of cycles this unit stalled due to insufficient RS
    * space. */
   uint64_t getRSStalls() const;
