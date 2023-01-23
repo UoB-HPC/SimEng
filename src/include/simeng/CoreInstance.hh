@@ -13,6 +13,7 @@
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
+#include "simeng/memory/MMU.hh"
 #include "simeng/memory/Mem.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
@@ -35,8 +36,9 @@ class CoreInstance {
  public:
   /** Constructor with an executable, its arguments, and a model configuration.
    */
-  CoreInstance(std::shared_ptr<OS::SyscallHandler> syscallHandler,
-               std::shared_ptr<simeng::memory::Mem> mem);
+  CoreInstance(std::shared_ptr<kernel::SyscallHandler> syscallHandler,
+               std::shared_ptr<simeng::memory::Mem> mem,
+               std::shared_ptr<memory::MMU> mmu);
 
   // IGNORING SST RELATED CODE FOR NOW
   /** CoreInstance with source code assembled by LLVM and a model configuration.
@@ -139,6 +141,9 @@ class CoreInstance {
 
   /** Reference to the global memory pointer */
   std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
+
+  /** Reference to the MMU */
+  std::shared_ptr<simeng::memory::MMU> mmu_ = nullptr;
 };
 
 }  // namespace simeng

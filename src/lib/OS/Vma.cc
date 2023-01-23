@@ -126,5 +126,9 @@ bool VirtualMemoryArea::hasFile() {
   return filebuf_ != nullptr && fsize_ != 0;
 };
 
+void* VirtualMemoryArea::getFileBuf() { return filebuf_; }
+
+size_t VirtualMemoryArea::getFileSize() { return fsize_; }
+
 }  // namespace OS
 }  // namespace simeng

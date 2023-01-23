@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "simeng/MemoryInterface.hh"
-#include "simeng/memory/MMU.h"
+#include "simeng/memory/MMU.hh"
 #include "simeng/memory/Mem.hh"
 
 namespace simeng {

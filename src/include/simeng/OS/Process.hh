@@ -18,6 +18,8 @@ class Mem;
 
 namespace OS {
 
+typedef std::function<void(char*, uint64_t, size_t)> SendToMemory;
+
 // Forward declaration for SimOS.
 class SimOS;
 
@@ -121,6 +123,7 @@ class Process {
 
   /** Get the process' TID. */
   uint64_t getTID() const { return TID_; }
+  uint64_t handlePageFault(uint64_t vaddr, SendToMemory send);
 
   /** Shared pointer to FileDescArray class.*/
   std::shared_ptr<FileDescArray> fdArray_;
@@ -136,6 +139,7 @@ class Process {
   /** The CPU context associated with this process. Used to enable context
    * switching between multiple processes. */
   cpuContext context_;
+  uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
 
  private:
   /** MemRegion of the Process Image. */

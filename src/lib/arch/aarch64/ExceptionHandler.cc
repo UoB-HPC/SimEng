@@ -35,7 +35,7 @@ bool ExceptionHandler::init() {
         registerFileSet.get({RegisterType::GENERAL, 8}).get<uint64_t>();
 
     ProcessStateChange stateChange;
-    std::cout << "Syscall Id: " << syscallId << std::endl;
+    // std::cout << "Syscall Id: " << syscallId << std::endl;
     switch (syscallId) {
       case 29: {  // ioctl
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
@@ -578,7 +578,7 @@ bool ExceptionHandler::init() {
 
         // Currently, only support mmap from a malloc() call whose arguments
         // match the first condition
-        if (addr == 0 && flags == 34 && fd == -1 && offset == 0) {
+        if (1) {
           uint64_t result =
               sysHandler_->mmap(addr, length, prot, flags, fd, offset);
           // An allocation of 0 signifies a failed allocation, return value from

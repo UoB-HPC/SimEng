@@ -15,6 +15,7 @@
 #include "simeng/arch/aarch64/Instruction.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
+#include "simeng/memory/MMU.hh"
 #include "simeng/memory/SimpleMem.hh"
 #include "simeng/span.hh"
 
@@ -40,10 +41,10 @@ static uint32_t hex_[8] = {
 /** A simple, lightweight Operating System kernel based on Linux to emulate
  * syscalls and manage process execution. */
 class SimOS {
- public
+ public:
   /** Construct a SimOS object. */
   SimOS(std::string executablePath, std::vector<std::string> executableArgs,
-        std::shared_ptr<simeng::memory::Mem> mem);
+        std::shared_ptr<simeng::memory::Mem> mem, bool setProcess = false);
 
   /** Tick SimOS. */
   void tick();
@@ -54,7 +55,9 @@ class SimOS {
   /** Get shared_ptr to syscallHandler instance. */
   std::shared_ptr<SyscallHandler> getSyscallHandler() const {
     return syscallHandler_;
-  }
+  };
+
+  VAddrTranslator getVAddrTranslator();
 
   /** Register a core with the OS to enable process scheduling. */
   void registerCore(std::shared_ptr<simeng::Core> core) {
@@ -65,11 +68,14 @@ class SimOS {
   bool hasHalted() const { return halted_; };
   uint64_t requestPageFrames(size_t size);
 
+  uint64_t handleVAddrTranslation(uint64_t vaddr, uint64_t pid);
+
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */
   friend class ::RegressionTest;
 
  private:
+  std::function<void(char*, uint64_t, size_t)> sendToMem_;
   /** Create the initial SimOS Process running above this kernel from command
    * line arguments.
    * Empty command line arguments denote the usage of hardcoded instructions

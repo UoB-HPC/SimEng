@@ -14,7 +14,7 @@ namespace memory {
 // for instruction and data memory interfaces.
 
 /* Enum for classifying data access. */
-enum DataPacketAccessType { READ, WRITE };
+enum DataPacketAccessType { READ, WRITE, NONE };
 
 /* A data packet represents access to memory. This has named and cnstruct such
  * that future improvements to memory system can be facilitated
@@ -24,7 +24,8 @@ struct DataPacket {
   static uint64_t pktIdCtr;
   uint64_t id;
   DataPacketAccessType type;
-  DataPacket(DataPacketAccessType accType, uint64_t addr);
+  bool infault = false;
+  DataPacket(DataPacketAccessType accType, uint64_t addr, bool fault = false);
 };
 
 /* Response to a read packed. */
@@ -69,7 +70,11 @@ class Mem {
   /** This method write data to memory without incurring any latency. */
   virtual void sendUntimedData(char* data, uint64_t addr, size_t size) = 0;
   /** This method sets the translator for memory requests. */
+  virtual char* getUntimedData(uint64_t paddr, size_t size) = 0;
   virtual void setTranslator(std::function<uint64_t(uint64_t)> translator) = 0;
+
+  virtual DataPacket* handleFaultySpeculationRequest(
+      struct DataPacket* pkt) = 0;
 };
 
 }  // namespace memory

@@ -63,7 +63,6 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
 }
 
 int64_t SyscallHandler::brk(uint64_t address) {
-  std::cout << "Brk syscall address" << address << std::endl;
   assert(processes_.size() > 0 &&
          "Attempted to move the program break before creating a process");
   return processes_.find(0)->second->getMemRegion().updateBrkRegion(address);
@@ -331,11 +330,10 @@ int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
 }
 
 uint64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
-                              int fd, off_t offset){
-    return processes_.find(0)->second->getMemRegion().mmapRegion(addr, length,
-                                                                 fd, prot,
-                                                                 flags)
-
+                              int fd, off_t offset) {
+  uint64_t ret = processes_.find(0)->second->getMemRegion().mmapRegion(
+      addr, length, prot, flags, NULL);
+  return ret;
 }
 
 int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,

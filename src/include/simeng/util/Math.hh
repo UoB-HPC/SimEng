@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 
 template <class T>
 static constexpr bool isPow2(const T& n) {

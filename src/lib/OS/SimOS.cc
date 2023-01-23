@@ -1,5 +1,7 @@
 #include "simeng/OS/SimOS.hh"
 
+#include "simeng/kernel/Masks.hh"
+
 /** The size of each time slice a process has. */
 static constexpr uint64_t execTicks = 30000;
 
@@ -8,13 +10,16 @@ namespace OS {
 
 SimOS::SimOS(std::string executablePath,
              std::vector<std::string> executableArgs,
-             std::shared_ptr<simeng::memory::Mem> mem)
+             std::shared_ptr<simeng::memory::Mem> mem, bool setProcess)
     : executablePath_(executablePath),
       executableArgs_(executableArgs),
       memory_(mem),
       syscallHandler_(std::make_shared<SyscallHandler>(processes_)) {
+  sendToMem_ = [&, this](char* data, uint64_t addr, size_t size) {
+    this->memory_->sendUntimedData(data, addr, size);
+  };
   pageFrameAllocator_ = std::make_shared<PageFrameAllocator>();
-  createInitialProcess();
+  if (!setProcess) createInitialProcess();
 
   // Create the Special Files directory if indicated to do so in Config file
   if (Config::get()["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true)
@@ -225,6 +230,33 @@ void SimOS::createSpecialFileDirectory() const {
 
 uint64_t SimOS::requestPageFrames(size_t size) {
   return pageFrameAllocator_->allocate(size);
+}
+
+uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t pid) {
+  // Since SimEng in single core currently, we don't need to worry about
+  // multiple pprocessses.
+  auto process = processes_[0];
+  uint64_t translation = process->pageTable_->translate(vaddr);
+  uint64_t faultCode = masks::faults::getFaultCode(translation);
+  if (!(faultCode == masks::faults::pagetable::translate)) return translation;
+
+  uint64_t addr = process->handlePageFault(vaddr, sendToMem_);
+  faultCode = masks::faults::getFaultCode(addr);
+
+  if (faultCode == masks::faults::pagetable::map) {
+    std::cerr << "Failed to create mapping during PageFault caused by Vaddr: "
+              << vaddr << "( PID: " << pid << " )" << std::endl;
+    std::exit(1);
+  }
+
+  return addr;
+}
+
+VAddrTranslator SimOS::getVAddrTranslator() {
+  auto fn = [&, this](uint64_t vaddr, uint64_t pid) -> uint64_t {
+    return this->handleVAddrTranslation(vaddr, pid);
+  };
+  return fn;
 }
 
 }  // namespace OS

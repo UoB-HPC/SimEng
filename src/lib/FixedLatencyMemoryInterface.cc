@@ -27,16 +27,19 @@ void FixedLatencyMemoryInterface::tick() {
 
     if (request.write) {
       // Write: write data directly to memory
-      assert(target.address + target.size <= memory_->getMemorySize() &&
+      assert(target.address + target.size <= size_ &&
              "Attempted to write beyond memory limit");
-      auto fn = [&](memory::DataPacket* dpkt) -> void { delete dpkt; };
+      auto fn = [&](memory::DataPacket* dpkt) -> void {
+        if (dpkt == NULL) return;
+        delete dpkt;
+      };
 
       const char* wdata = request.data.getAsVector<char>();
       mmu_->bufferRequest(
           new simeng::memory::WritePacket(target.address, target.size, wdata),
           fn);
     } else {
-      // Read: read data into `completedReads`
+      // Read: read data into `completedReads` ff
       if (target.address + target.size > size_ ||
           unsignedOverflow_(target.address, target.size)) {
         // Read outside of memory; return an invalid value to signal a fault
