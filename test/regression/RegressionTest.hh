@@ -88,9 +88,8 @@ class RegressionTest
   template <typename T>
   T getMemoryValue(uint64_t address) const {
     EXPECT_LE(address + sizeof(T), processMemorySize_);
-    auto mem = memory_->getMemCpy();
-    T dest{};
-    std::memcpy(&dest, mem + address, sizeof(T));
+    auto mem = memory_->getUntimedData(address, sizeof(T));
+    T dest = *(T*)mem;
     delete[] mem;
     return dest;
   }

@@ -4,10 +4,12 @@ namespace simeng {
 namespace memory {
 uint64_t DataPacket::pktIdCtr = 0;
 
-DataPacket::DataPacket(DataPacketAccessType accType, uint64_t addr) {
+DataPacket::DataPacket(DataPacketAccessType accType, uint64_t addr,
+                       bool fault) {
   id = pktIdCtr++;
   type = accType;
   address = addr;
+  infault = fault;
 }
 
 ReadPacket::ReadPacket(uint64_t addr, size_t sz) : DataPacket(READ, addr) {

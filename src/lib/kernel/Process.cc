@@ -53,26 +53,47 @@ Process::Process(const std::vector<std::string>& commandLine,
   entryPoint_ = elf.getEntryPoint();
   auto headers = elf.getProcessedHeaders();
 
+  std::cout << "Entry Vaddr: " << elf.getEntryPoint() << std::endl;
+
   // Send all our inital data to memory
   uint64_t maxInitDataAddr = 0;
+  int count = 0;
+
+  std::cout << std::endl;
   for (auto header : headers) {
     // Round size to nearest greater pageSize.
     size_t size = roundUpMemAddr(header->memorySize, pageSize_);
     uint64_t vaddr = header->virtualAddress;
+
+    uint64_t avaddr = roundDownMemAddr(vaddr, pageSize_);
     // Request a page frame from the OS.
     uint64_t paddr = os_->requestPageFrames(size);
     // Create a virtual memory mapping.
     pageTable_->createMapping(vaddr, paddr, size);
     // Translate the address of the header virtual address.
     uint64_t translatedAddr = pageTable_->translate(vaddr);
+
+    if (((paddr + size) - translatedAddr) < header->memorySize) {
+      paddr = os_->requestPageFrames(pageSize_);
+      pageTable_->createMapping(avaddr + size, paddr, pageSize_);
+      translatedAddr = pageTable_->translate(vaddr);
+    }
     // Send data to memory.
     memory->sendUntimedData(header->headerData, translatedAddr,
                             header->memorySize);
+
+    printf("Header-%d-Min: %llu\n", count, avaddr);
+    printf("Header-%d-Max: %llu\n", count, avaddr + size);
+
+    count++;
     // Determine maximum address from headers. Will be used later in determining
     // process layout.
     maxInitDataAddr =
         std::max(maxInitDataAddr, roundUpMemAddr(vaddr + size, pageSize_));
   }
+
+  std::cout << "Entry PAddr: " << pageTable_->translate(elf.getEntryPoint())
+            << std::endl;
 
   // Add Page Size padding
   maxInitDataAddr += pageSize_;
@@ -100,6 +121,14 @@ Process::Process(const std::vector<std::string>& commandLine,
   pageTable_->createMapping(stackEnd, stackPhyAddr, stackSize);
   pageTable_->createMapping(heapStart, heapPhyAddr, heapSize);
   uint64_t stackPtr = createStack(stackStart, memory);
+
+  std::cout << "StackStart: " << stackStart << std::endl;
+  std::cout << "StackEnd: " << stackEnd << std::endl;
+  std::cout << "HeapStart: " << heapStart << std::endl;
+  std::cout << "HeapEnd: " << heapEnd << std::endl;
+  std::cout << "mmapStart: " << mmapStart << std::endl;
+  std::cout << "mmapEnd: " << mmapEnd << std::endl;
+  std::cout << std::endl;
 
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
                          stackStart, heapStart, mmapStart, stackPtr);
@@ -141,34 +170,52 @@ Process::Process(span<char> instructions,
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
 
-  // Align heap start to a 32-byte boundary
-  uint64_t heapStart = alignToBoundary(instructions.size(), 32);
+  uint64_t instrSize = roundUpMemAddr(instructions.size(), 4096);
+  uint64_t instrEnd = instrSize;
 
-  // Set mmap region start to be an equal distance from the stack and heap
-  // starts. Additionally, align to the page size (4kb)
-  uint64_t mmapStart =
-      alignToBoundary(heapStart + (heapSize + stackSize) / 2, pageSize_);
+  // Heap grows upwards towards higher addresses.
+  heapSize = roundUpMemAddr(heapSize, pageSize_);
+  uint64_t heapStart = instrEnd + 4096;
+  uint64_t heapEnd = heapStart + heapSize;
 
-  // Calculate process image size, including heap + stack
-  uint64_t size = heapStart + heapSize + stackSize;
-  // Check if global memory size is greater than process image size.
-  if (memory->getMemorySize() < size) {
-    std::cerr << "[SimEng:Process] Memory size is less than size of the "
-                 "process image. Please "
-                 "increase memory size"
-              << std::endl;
-    std::exit(1);
-  }
+  // Mmap grows upwards towards higher addresses.
+  uint64_t mmapStart = heapEnd + pageSize_;
+  uint64_t mmapSize = pageSize_ * 250 * 1000;
+  uint64_t mmapEnd = mmapStart + mmapSize;
 
-  char* unwrappedProcImgPtr = (char*)malloc(size * sizeof(char));
-  std::copy(instructions.begin(), instructions.end(), unwrappedProcImgPtr);
+  // Stack grows downwards towards lower addresses.
+  stackSize = roundUpMemAddr(stackSize, pageSize_);
+  uint64_t stackEnd = mmapEnd + pageSize_;
+  uint64_t stackStart = stackEnd + stackSize;
+  uint64_t size = stackStart;
 
-  uint64_t stackPtr = createStack(size, memory);
-  // memRegion_ = MemRegion(stackSize, heapSize, size, stackPtr, heapStart,
-  //                       pageSize_, mmapStart);
+  // Request Page frames for heap and stack memory.
+  uint64_t instrPhyAddr = os_->requestPageFrames(instrSize);
+  uint64_t heapPhyAddr = os_->requestPageFrames(heapSize);
+  uint64_t stackPhyAddr = os_->requestPageFrames(stackSize);
+  /*
+  std::cout << std::endl;
+  std::cout << "StackStart: " << stackStart << std::endl;
+  std::cout << "StackEnd: " << stackEnd << std::endl;
+  std::cout << "HeapStart: " << heapStart << std::endl;
+  std::cout << "HeapEnd: " << heapEnd << std::endl;
+  std::cout << "mmapStart: " << mmapStart << std::endl;
+  std::cout << "mmapEnd: " << mmapEnd << std::endl;
+  std::cout << std::endl;
+ */
+  // Create page table mappings for stack and heap virtual address ranges.
+  pageTable_->createMapping(0, instrPhyAddr, instrSize);
+  pageTable_->createMapping(heapStart, heapPhyAddr, heapSize);
+  pageTable_->createMapping(stackEnd, stackPhyAddr, stackSize);
+  uint64_t stackPtr = createStack(stackStart, memory);
 
-  // copy process image to global memory.
-  memory->sendUntimedData(unwrappedProcImgPtr, 0, size);
+  uint64_t taddr = pageTable_->translate(0);
+
+  memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
+                         stackStart, heapStart, mmapStart, stackPtr);
+
+  memory->sendUntimedData(instructions.begin(), taddr, instructions.size());
+
   fdArray_ = std::make_shared<FileDescArray>();
 
   // Initialise context
@@ -299,6 +346,34 @@ uint64_t Process::createStack(uint64_t stackStart,
   //          (*processImage) + stackPointer);
 
   return stackPointer;
+}
+
+uint64_t Process::handlePageFault(uint64_t vaddr, SendToMemory send) {
+  VirtualMemoryArea* vm = memRegion_.getVMAFromAddr(vaddr);
+  vaddr = roundDownMemAddr(vaddr, pageSize_);
+  // Process VMA doesn't exist. This address is likely due to a speculation.
+  if (vm == NULL)
+    return masks::faults::pagetable::fault |
+           masks::faults::pagetable::speculation;
+
+  bool hasFile = vm->hasFile();
+  // std::cout << "Handling Page Fault" << std::endl;
+  uint64_t paddr = os_->requestPageFrames(pageSize_);
+  uint64_t ret = pageTable_->createMapping(vaddr, paddr, pageSize_);
+  if (ret & masks::faults::pagetable::fault)
+    return masks::faults::pagetable::fault | masks::faults::pagetable::map;
+
+  uint64_t taddr = pageTable_->translate(vaddr);
+  if (!hasFile) return taddr;
+
+  void* filebuf = vm->getFileBuf();
+  uint64_t offset = vaddr - vm->vm_start;
+  size_t writeLen = vm->getFileSize() - offset;
+  writeLen = writeLen > pageSize_ ? pageSize_ : writeLen;
+
+  // send file to memory;
+  send((char*)filebuf + offset, taddr, writeLen);
+  return taddr;
 }
 
 }  // namespace kernel

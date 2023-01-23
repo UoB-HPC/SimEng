@@ -36,7 +36,7 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Initialise a SimOS kernel
   simeng::kernel::SimOS simOS_kernel =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory_);
+      simeng::kernel::SimOS(DEFAULT_STR, {}, memory_, true);
 
   // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place
@@ -49,6 +49,9 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Create the architecture
   architecture_ = createArchitecture(simOS_kernel.getSyscallHandler());
+  std::shared_ptr<simeng::memory::MMU> mmu =
+      std::make_shared<simeng::memory::MMU>(memory_,
+                                            simOS_kernel.getVAddrTranslator());
 
   process_ = std::make_shared<simeng::kernel::Process>(
       simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_,
@@ -62,11 +65,13 @@ void RegressionTest::run(const char* source, const char* triple,
   // Create memory interfaces for instruction and data access.
   // For each memory interface, a dereferenced shared_ptr to the
   // global memory is passed as argument.
-  simeng::FlatMemoryInterface instructionMemory(memory_);
+  simeng::FlatMemoryInterface instructionMemory(mmu, memory_->getMemorySize());
   std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-      std::make_unique<simeng::FlatMemoryInterface>(memory_);
+      std::make_unique<simeng::FlatMemoryInterface>(mmu,
+                                                    memory_->getMemorySize());
   std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
-      std::make_unique<simeng::FixedLatencyMemoryInterface>(memory_, 4);
+      std::make_unique<simeng::FixedLatencyMemoryInterface>(
+          mmu, 4, memory_->getMemorySize());
 
   std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
@@ -76,9 +81,10 @@ void RegressionTest::run(const char* source, const char* triple,
 
   char* heapData = new char[initialHeapData_.size()];
   std::copy(initialHeapData_.begin(), initialHeapData_.end(), heapData);
-  memory_->sendUntimedData(heapData, process_->getHeapStart(),
-                           initialHeapData_.size());
-  delete[] heapData;
+  uint64_t addr = process_->translate(process_->getHeapStart());
+  memory_->sendUntimedData(heapData, addr, initialHeapData_.size());
+
+  delete heapData;
 
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =

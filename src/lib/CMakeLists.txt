@@ -43,7 +43,6 @@ set(SIMENG_SOURCES
     pipeline/WritebackUnit.cc
     AlwaysNotTakenPredictor.cc
     ArchitecturalRegisterFileSet.cc
-    CMakeLists.txt
     CoreInstance.cc
     Elf.cc
     FixedLatencyMemoryInterface.cc
@@ -54,6 +53,7 @@ set(SIMENG_SOURCES
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
+    Backward.cc
 
 )
 
@@ -65,7 +65,7 @@ set_target_properties(libsimeng PROPERTIES OUTPUT_NAME simeng)
 
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(libsimeng PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(libsimeng capstone yaml-cpp)
+target_link_libraries(libsimeng capstone yaml-cpp bfd)
 
 set_target_properties(libsimeng PROPERTIES VERSION ${SimEng_VERSION})
 set_target_properties(libsimeng PROPERTIES SOVERSION ${SimEng_VERSION_MAJOR})

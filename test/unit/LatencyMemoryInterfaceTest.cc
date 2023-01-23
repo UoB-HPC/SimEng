@@ -1,6 +1,7 @@
 
 #include "gtest/gtest.h"
 #include "simeng/FixedLatencyMemoryInterface.hh"
+#include "simeng/memory/MMU.hh"
 #include "simeng/memory/SimpleMem.hh"
 
 namespace {
@@ -10,7 +11,16 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
   // Create a memory interface with a two cycle latency
   std::shared_ptr<simeng::memory::Mem> mem =
       std::make_shared<simeng::memory::SimpleMem>(4);
-  simeng::FixedLatencyMemoryInterface memory(mem, 2);
+
+  VAddrTranslator fn = [](uint64_t addr, uint64_t pid) -> uint64_t {
+    return addr;
+  };
+
+  std::shared_ptr<simeng::memory::MMU> mmu =
+      std::make_shared<simeng::memory::MMU>(mem, fn, 0);
+
+  simeng::FixedLatencyMemoryInterface memory(mmu, 2, mem->getMemorySize());
+
   EXPECT_FALSE(memory.hasPendingRequests());
 
   // Write a 32-bit value to memory
@@ -39,7 +49,15 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
 TEST(LatencyMemoryInterfaceTest, OutofBoundsRead) {
   std::shared_ptr<simeng::memory::Mem> mem =
       std::make_shared<simeng::memory::SimpleMem>(4);
-  simeng::FixedLatencyMemoryInterface memory(mem, 1);
+
+  VAddrTranslator fn = [](uint64_t addr, uint64_t pid) -> uint64_t {
+    return addr;
+  };
+
+  std::shared_ptr<simeng::memory::MMU> mmu =
+      std::make_shared<simeng::memory::MMU>(mem, fn, 0);
+
+  simeng::FixedLatencyMemoryInterface memory(mmu, 1, mem->getMemorySize());
 
   // Create a target such that address + size will overflow
   simeng::MemoryAccessTarget overflowTarget = {UINT64_MAX, 4};

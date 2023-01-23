@@ -164,8 +164,7 @@ Elf::Elf(std::string path) {
   // Process headers; only observe LOAD sections for this basic implementation
   for (auto header : headers_) {
     if (header->type == 1) {  // LOAD
-
-      header->headerData = new char[header->fileSize];
+      header->headerData = new char[header->memorySize];
 
       // Read `fileSize` bytes from `file` into the appropriate place in process
       // memory

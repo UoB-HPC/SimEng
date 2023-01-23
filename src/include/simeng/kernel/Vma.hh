@@ -54,6 +54,8 @@ class VirtualMemoryArea {
   bool containedIn(uint64_t startAddr, size_t size);
   void trimRangeStart(uint64_t addr);
   void trimRangeEnd(uint64_t addr);
+  void* getFileBuf();
+  size_t getFileSize();
 };
 
 class HostFileMMap {

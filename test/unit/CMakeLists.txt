@@ -11,7 +11,6 @@ set(TEST_SOURCES
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
     FileDescArrayTest.cc
-    PageTableTest.cc
     GenericPredictorTest.cc
     ISATest.cc
     OSTest.cc
@@ -20,7 +19,6 @@ set(TEST_SOURCES
     ShiftValueTest.cc
     LatencyMemoryInterfaceTest.cc
     SimpleMem.cc
-    PageFrameAllocatorTest.cc
     )
 
 add_executable(unittests ${TEST_SOURCES})

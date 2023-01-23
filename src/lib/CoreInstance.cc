@@ -4,8 +4,11 @@ namespace simeng {
 
 CoreInstance::CoreInstance(
     std::shared_ptr<kernel::SyscallHandler> syscallHandler,
-    std::shared_ptr<simeng::memory::Mem> mem)
-    : config_(Config::get()), syscallHandler_(syscallHandler), memory_(mem) {
+    std::shared_ptr<simeng::memory::Mem> mem, std::shared_ptr<memory::MMU> mmu)
+    : config_(Config::get()),
+      syscallHandler_(syscallHandler),
+      memory_(mem),
+      mmu_(mmu) {
   generateCoreModel();
 }
 
@@ -96,10 +99,12 @@ void CoreInstance::createL1InstructionMemory(
     const simeng::MemInterfaceType type) {
   // Create a L1I cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
-    instructionMemory_ = std::make_shared<simeng::FlatMemoryInterface>(memory_);
+    instructionMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
+        mmu_, memory_->getMemorySize());
   } else if (type == simeng::MemInterfaceType::Fixed) {
     instructionMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        memory_, config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
+        mmu_, config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>(),
+        memory_->getMemorySize());
   } else {
     std::cerr
         << "[SimEng:CoreInstance] Unsupported memory interface type used in "
@@ -124,10 +129,12 @@ void CoreInstance::setL1InstructionMemory(
 void CoreInstance::createL1DataMemory(const simeng::MemInterfaceType type) {
   // Create a L1D cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
-    dataMemory_ = std::make_shared<simeng::FlatMemoryInterface>(memory_);
+    dataMemory_ = std::make_shared<simeng::FlatMemoryInterface>(
+        mmu_, memory_->getMemorySize());
   } else if (type == simeng::MemInterfaceType::Fixed) {
     dataMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        memory_, config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
+        mmu_, config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>(),
+        memory_->getMemorySize());
   } else {
     std::cerr << "[SimEng:CoreInstance] Unsupported memory interface type used "
                  "in createL1DataMemory()."
@@ -199,13 +206,8 @@ void CoreInstance::createCore() {
         *instructionMemory_, *dataMemory_, *arch_, *predictor_);
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
-<<<<<<< HEAD
         *instructionMemory_, *dataMemory_, *arch_, *predictor_,
         *portAllocator_);
-=======
-        *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
-        *arch_, *predictor_, *portAllocator_, process_);
->>>>>>> aa1f4efb... Created new class to have a single place where Config file will be instantiated, reducing copying of Config around project.
   }
   return;
 }

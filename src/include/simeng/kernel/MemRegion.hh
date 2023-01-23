@@ -53,11 +53,12 @@ class MemRegion {
   VirtualMemoryArea* ptload_vm_ = NULL;
   */
 
-  VirtualMemoryArea* vm_head_;
+  VirtualMemoryArea* vm_head_ = NULL;
   size_t vm_size_ = 0;
 
-  uint64_t addMmapVMA(VMA* vma);
-  int64_t removeMmapVMA(uint64_t addr, uint64_t length);
+  uint64_t addVma(VMA* vma);
+  uint64_t addVma(VMA* vma, uint64_t startAddr);
+  int64_t removeVma(uint64_t addr, uint64_t length);
   void freeVma();
   void addInitalVMA(char* data, uint64_t startAddr, size_t size, VMAType type);
 
@@ -96,15 +97,15 @@ class MemRegion {
   uint64_t updateBrkRegion(uint64_t newBrk);
 
   /** This method allocates a new mmap region. */
-  uint64_t mmapRegion(uint64_t addr, uint64_t length, int prot, int flags,
-                      HostFileMMap* hfmmap);
+  int64_t mmapRegion(uint64_t addr, uint64_t length, int prot, int flags,
+                     HostFileMMap* hfmmap);
   /** This method unmaps a mmaped region. */
   int64_t unmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
                       int flags);
 
   bool isVmMapped(uint64_t startAddr, size_t size);
-  bool overlapsHeapVM(uint64_t addr, size_t size);
-  bool overlapsStackVM(uint64_t addr, size_t size);
+  bool overlapsHeap(uint64_t addr, size_t size);
+  bool overlapsStack(uint64_t addr, size_t size);
   bool isPageAligned(uint64_t addr);
   VirtualMemoryArea* getVMAFromAddr(uint64_t addr);
 };

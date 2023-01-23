@@ -7,6 +7,10 @@ SimpleMem::SimpleMem(size_t size) {
   memRef = new char[size];
   std::memset(memRef, 0, size);
   memory_ = span<char>(memRef, size);
+
+  faultMemory_ = new char[128];
+  std::memset(faultMemory_, 0, 128);
+
   memSize_ = size;
 }
 
@@ -17,17 +21,11 @@ size_t SimpleMem::getMemorySize() { return memSize_; }
 DataPacket* SimpleMem::requestAccess(struct DataPacket* pkt) {
   if (pkt->type == READ) {
     struct ReadPacket* rreq = (ReadPacket*)pkt;
-    uint64_t paddr = translator_(rreq->address);
-    if (paddr != 0xFFFFFFFFFFFFFFFF) {
-      rreq->address = paddr;
-    }
     auto resp = handleReadRequest(rreq);
     delete rreq;
     return resp;
   };
   struct WritePacket* wreq = (WritePacket*)pkt;
-  uint64_t paddr = translator_(wreq->address);
-  wreq->address = paddr;
   auto resp = handleWriteRequest(wreq);
   delete wreq;
   return resp;
@@ -61,8 +59,27 @@ char* SimpleMem::getMemCpy() {
   return ret;
 }
 
+char* SimpleMem::getUntimedData(uint64_t paddr, size_t size) {
+  char* ret = new char[size];
+  std::copy(memory_.begin() + paddr, memory_.begin() + paddr + size, ret);
+  return ret;
+}
+
 void SimpleMem::setTranslator(std::function<uint64_t(uint64_t)> translator) {
   translator_ = translator;
+}
+
+DataPacket* SimpleMem::handleFaultySpeculationRequest(DataPacket* pkt) {
+  if (pkt->type == READ) {
+    struct ReadPacket* rreq = (ReadPacket*)pkt;
+    auto resp = rreq->makeResponse(rreq->size, faultMemory_);
+    delete rreq;
+    return resp;
+  }
+  struct WritePacket* wreq = (WritePacket*)pkt;
+  auto resp = wreq->makeResponse(wreq->size);
+  delete wreq;
+  return resp;
 }
 
 }  // namespace memory

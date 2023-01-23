@@ -20,7 +20,9 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
   }
 
   auto fn = [&, this](memory::DataPacket* dpkt) -> void {
-    if (dpkt == NULL) return;
+    if (dpkt == NULL) {
+      return;
+    }
     memory::ReadRespPacket* resp = (memory::ReadRespPacket*)dpkt;
     this->completedReads_.push_back(
         {target, RegisterValue(resp->data, resp->bytesRead), requestId});
@@ -40,7 +42,10 @@ void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
   assert(target.address + target.size <= size_ &&
          "Attempted to write beyond memory limit");
 
-  auto fn = [&](memory::DataPacket* dpkt) -> void { delete dpkt; };
+  auto fn = [&](memory::DataPacket* dpkt) -> void {
+    if (dpkt == NULL) return;
+    delete dpkt;
+  };
 
   const char* wdata = data.getAsVector<char>();
   mmu_->bufferRequest(

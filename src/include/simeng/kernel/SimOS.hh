@@ -7,21 +7,19 @@
 #include "simeng/Config.hh"
 #include "simeng/Core.hh"
 #include "simeng/SpecialFileDirGen.hh"
-<<<<<<< HEAD
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
-    =======
 #include "simeng/kernel/PageFrameAllocator.hh"
-    >>>>>>> 1f13cd76... First integration of virtmem with runtime
 #include "simeng/kernel/SyscallHandler.hh"
+#include "simeng/memory/MMU.hh"
 #include "simeng/memory/SimpleMem.hh"
 #include "simeng/span.hh"
 
-    // Forward declare RegressionTest class so that it can be declared a friend.
-    class RegressionTest;
+// Forward declare RegressionTest class so that it can be declared a friend.
+class RegressionTest;
 
 namespace simeng {
 namespace kernel {
@@ -42,10 +40,10 @@ static uint32_t hex_[8] = {
 /** A simple, lightweight Operating System kernel based on Linux to emulate
  * syscalls and manage process execution. */
 class SimOS {
- public
+ public:
   /** Construct a SimOS object. */
   SimOS(std::string executablePath, std::vector<std::string> executableArgs,
-        std::shared_ptr<simeng::memory::Mem> mem);
+        std::shared_ptr<simeng::memory::Mem> mem, bool setProcess = false);
 
   /** Tick SimOS. */
   void tick();
@@ -56,7 +54,9 @@ class SimOS {
   /** Get shared_ptr to syscallHandler instance. */
   std::shared_ptr<SyscallHandler> getSyscallHandler() const {
     return syscallHandler_;
-  }
+  };
+
+  VAddrTranslator getVAddrTranslator();
 
   /** Register a core with the OS to enable process scheduling. */
   void registerCore(std::shared_ptr<simeng::Core> core) {
@@ -67,11 +67,14 @@ class SimOS {
   bool hasHalted() const { return halted_; };
   uint64_t requestPageFrames(size_t size);
 
+  uint64_t handleVAddrTranslation(uint64_t vaddr, uint64_t pid);
+
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */
   friend class ::RegressionTest;
 
  private:
+  std::function<void(char*, uint64_t, size_t)> sendToMem_;
   /** Create the initial SimOS Process running above this kernel from command
    * line arguments.
    * Empty command line arguments denote the usage of hardcoded instructions
@@ -105,8 +108,7 @@ class SimOS {
   /** SyscallHandler Object to process all syscalls. */
   std::shared_ptr<SyscallHandler> syscallHandler_;
 
-<<<<<<< HEAD
-  /** Indicates if lll processes have completed or a core has halted due to an
+  /** Indicates if all processes have completed or a core has halted due to an
    * exception. */
   bool halted_ = false;
 
@@ -133,10 +135,8 @@ class SimOS {
 
     processes_[0] = proc;
   }
-=======
   /** Pointer to the PageFrameAllocator object.  */
   std::shared_ptr<PageFrameAllocator> pageFrameAllocator_;
->>>>>>> 1f13cd76... First integration of virtmem with runtime
 };
 
 }  // namespace kernel

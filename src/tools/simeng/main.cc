@@ -77,10 +77,15 @@ int main(int argc, char** argv) {
   simeng::kernel::SimOS simOS_kernel =
       simeng::kernel::SimOS(executablePath, executableArgs, memory);
 
+  VAddrTranslator fn = simOS_kernel.getVAddrTranslator();
+
+  std::shared_ptr<simeng::memory::MMU> mmu =
+      std::make_shared<simeng::memory::MMU>(memory, fn, 0);
+
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =
       std::make_unique<simeng::CoreInstance>(simOS_kernel.getSyscallHandler(),
-                                             memory);
+                                             memory, mmu);
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();
