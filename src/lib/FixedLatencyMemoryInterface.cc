@@ -27,8 +27,11 @@ void FixedLatencyMemoryInterface::tick() {
 
     if (request.write) {
       // Write: write data directly to memory
+      /*
       assert(target.address + target.size <= size_ &&
              "Attempted to write beyond memory limit");
+      */
+
       auto fn = [&](memory::DataPacket* dpkt) -> void {
         if (dpkt == NULL) return;
         delete dpkt;

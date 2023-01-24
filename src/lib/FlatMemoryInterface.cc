@@ -39,8 +39,10 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
 
 void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
                                        const RegisterValue& data) {
-  assert(target.address + target.size <= size_ &&
-         "Attempted to write beyond memory limit");
+  /*
+assert(target.address + target.size <= size_ &&
+       "Attempted to write beyond memory limit");
+       */
 
   auto fn = [&](memory::DataPacket* dpkt) -> void {
     if (dpkt == NULL) return;

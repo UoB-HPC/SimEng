@@ -25,7 +25,7 @@ TEST(FileDescArrayTest, InitialisesStandardFileDescriptors) {
 TEST(FileDescArrayTest, AllocatesFileDesc) {
   FileDescArray* fdArr = new FileDescArray();
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/data/FileDescArrayData.txt";
+  std::string fpath = build_dir_path + "/test/unit/data/Data.txt";
   int vfd = fdArr->allocateFDEntry(-1, fpath.c_str(), O_RDWR, 0666);
   ASSERT_NE(vfd, -1);
   auto entry = fdArr->getFDEntry(vfd);
@@ -44,7 +44,7 @@ TEST(FileDescArrayTest, AllocatesFileDesc) {
 TEST(FileDescArrayTest, RemovesFileDesc) {
   FileDescArray* fdArr = new FileDescArray();
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/data/FileDescArrayData.txt";
+  std::string fpath = build_dir_path + "/test/unit/data/Data.txt";
   int vfd = fdArr->allocateFDEntry(-1, fpath.c_str(), O_RDWR, 0666);
   ASSERT_NE(vfd, -1);
   auto entry = fdArr->getFDEntry(vfd);

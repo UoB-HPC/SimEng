@@ -179,7 +179,7 @@ Process::Process(span<char> instructions,
 
   // Mmap grows upwards towards higher addresses.
   uint64_t mmapStart = heapEnd + pageSize_;
-  uint64_t mmapSize = pageSize_ * 250 * 1000;
+  uint64_t mmapSize = pageSize_ * 250 * 100;
   uint64_t mmapEnd = mmapStart + mmapSize;
 
   // Stack grows downwards towards lower addresses.
@@ -192,7 +192,7 @@ Process::Process(span<char> instructions,
   uint64_t instrPhyAddr = os_->requestPageFrames(instrSize);
   uint64_t heapPhyAddr = os_->requestPageFrames(heapSize);
   uint64_t stackPhyAddr = os_->requestPageFrames(stackSize);
-  /*
+
   std::cout << std::endl;
   std::cout << "StackStart: " << stackStart << std::endl;
   std::cout << "StackEnd: " << stackEnd << std::endl;
@@ -201,7 +201,7 @@ Process::Process(span<char> instructions,
   std::cout << "mmapStart: " << mmapStart << std::endl;
   std::cout << "mmapEnd: " << mmapEnd << std::endl;
   std::cout << std::endl;
- */
+
   // Create page table mappings for stack and heap virtual address ranges.
   pageTable_->createMapping(0, instrPhyAddr, instrSize);
   pageTable_->createMapping(heapStart, heapPhyAddr, heapSize);

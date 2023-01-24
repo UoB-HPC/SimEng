@@ -88,7 +88,8 @@ class RegressionTest
   template <typename T>
   T getMemoryValue(uint64_t address) const {
     EXPECT_LE(address + sizeof(T), processMemorySize_);
-    auto mem = memory_->getUntimedData(address, sizeof(T));
+    uint64_t addr = process_->translate(address);
+    auto mem = memory_->getUntimedData(addr, sizeof(T));
     T dest = *(T*)mem;
     delete[] mem;
     return dest;
