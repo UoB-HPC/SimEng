@@ -76,7 +76,7 @@ uint64_t PageTable::deleteMapping(uint64_t vaddr, size_t size) {
 
   while (size > 0) {
     auto itr = table_.find(addr);
-    if (itr != table_.end()) {
+    if (itr == table_.end()) {
       return masks::faults::pagetable::fault | masks::faults::pagetable::unmap;
     }
     addr += pageSize_;
@@ -88,7 +88,7 @@ uint64_t PageTable::deleteMapping(uint64_t vaddr, size_t size) {
     deletePTEntry(itr);
   };
 
-  return vaddr;
+  return 0;
 };
 
 uint64_t PageTable::translate(int64_t vaddr) {

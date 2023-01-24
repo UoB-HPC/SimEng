@@ -9,6 +9,11 @@
 #include <vector>
 
 #include "simeng/util/Math.hh"
+
+namespace TestFriends {
+class HBFMFriend;
+}
+
 namespace simeng {
 namespace kernel {
 
@@ -72,6 +77,8 @@ class HostFileMMap {
 };
 
 class HostBackedFileMMaps {
+  friend class TestFriends::HBFMFriend;
+
  private:
   std::vector<HostFileMMap*> hostvec;
 

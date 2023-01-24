@@ -10,8 +10,8 @@ namespace kernel {
 HostFileMMap* HostBackedFileMMaps::mapfd(int fd, size_t size, off_t offset) {
   struct stat* statbuf = (struct stat*)malloc(sizeof(struct stat));
   if (fstat(fd, statbuf) < 0) {
-    std::cerr << "(fstat failed): Cannot create host backed file mmap for file "
-                 "descriptor: "
+    std::cerr << "fstat failed: Cannot create host backed file mmap for file "
+                 "descriptor - "
               << fd << std::endl;
     std::exit(1);
   };
@@ -32,6 +32,7 @@ HostFileMMap* HostBackedFileMMaps::mapfd(int fd, size_t size, off_t offset) {
       mmap(NULL, fsize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, offset);
   HostFileMMap* hfmm = new HostFileMMap(fd, filemmap, fsize, offset);
   hostvec.push_back(hfmm);
+  return hfmm;
 };
 
 HostBackedFileMMaps::~HostBackedFileMMaps() {
@@ -92,7 +93,7 @@ bool VirtualMemoryArea::contains(uint64_t vaddr) {
 
 bool VirtualMemoryArea::containedIn(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
-  return (startAddr <= vm_start) && (endAddr > vm_end);
+  return (startAddr <= vm_start) && (endAddr >= vm_end);
 };
 
 void VirtualMemoryArea::trimRangeEnd(uint64_t addr) {
