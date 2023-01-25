@@ -49,16 +49,32 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] \tTest suite: " SIMENG_ENABLE_TESTS << std::endl;
   std::cout << std::endl;
 
+  // Parse command line args
+  std::string executablePath;
+  std::vector<std::string> executableArgs;
+  // Determine if a config file has been supplied.
+  if (argc > 1) {
+    // Set global config file to one at file path defined
+    Config::set(std::string(argv[1]));
+
+    // Determine if an executable has been supplied
+    if (argc > 2) {
+      executablePath = std::string(argv[2]);
+      // Create a vector of any potential executable arguments from their
+      // relative position within the argv variable
+      int numberofArgs = argc - 3;
+      executableArgs =
+          std::vector<std::string>((argv + 3), (argv + 3) + numberofArgs);
+    }
+  }
+
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(2684354560);  // 2.6 GiB
 
   // Create the instance of the OS
   simeng::kernel::SimOS simOS_kernel =
-      simeng::kernel::SimOS(argc, argv, memory);
-
-  // Get the SimEng runtime args
-  auto [executablePath, executableArgs] = simOS_kernel.getParsedArgv();
+      simeng::kernel::SimOS(executablePath, executableArgs, memory);
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =

@@ -19,7 +19,7 @@ TEST(OSTest, CreateSimOS) {
 
   // Create the instance of the OS
   simeng::kernel::SimOS simOS_kernel =
-      simeng::kernel::SimOS(1, nullptr, memory);
+      simeng::kernel::SimOS(DEFAULT_STR, {}, memory);
 
   // Check default process created. Initial process TID = 0
   auto proc = simOS_kernel.getProcess(0);

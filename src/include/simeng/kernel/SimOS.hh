@@ -40,7 +40,8 @@ static uint32_t hex_[8] = {
 class SimOS {
  public:
   /** Construct a SimOS object. */
-  SimOS(int argc, char** argv, std::shared_ptr<simeng::memory::Mem> mem);
+  SimOS(std::string executablePath, std::vector<std::string> executableArgs,
+        std::shared_ptr<simeng::memory::Mem> mem);
 
   /** Tick SimOS. */
   void tick();
@@ -48,11 +49,6 @@ class SimOS {
   /** Get copy of a process with specified TID.
    * NOTE: Should really only be used by test suite. */
   Process getProcess(uint64_t TID) const;
-
-  /** Get user defined config, executable, and executable args. */
-  std::tuple<std::string, std::vector<std::string>> getParsedArgv() const {
-    return {executablePath_, executableArgs_};
-  };
 
   /** Get shared_ptr to syscallHandler instance. */
   std::shared_ptr<SyscallHandler> getSyscallHandler() const {
