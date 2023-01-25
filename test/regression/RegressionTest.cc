@@ -36,7 +36,7 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Initialise a SimOS kernel
   simeng::kernel::SimOS simOS_kernel =
-      simeng::kernel::SimOS(1, nullptr, memory_);
+      simeng::kernel::SimOS(DEFAULT_STR, {}, memory_);
 
   // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place
