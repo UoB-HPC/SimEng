@@ -37,6 +37,10 @@ void FetchUnit::tick() {
     return;
   }
 
+  if (paused_) {
+    return;
+  }
+
   // If loop buffer has been filled, fill buffer to decode
   if (loopBufferState_ == LoopBufferState::SUPPLYING) {
     auto outputSlots = output_.getTailSlots();
