@@ -466,6 +466,7 @@ void Core::schedule(simeng::kernel::cpuContext newContext) {
   }
   status_ = CoreStatus::executing;
   procTicks_ = 0;
+  isa_.updateAfterContextSwitch(newContext);
   // Allow fetch unit to resume fetching instructions & incrementing PC
   fetchUnit_.unpause();
 }
@@ -486,7 +487,7 @@ uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 simeng::kernel::cpuContext Core::getPrevContext() const {
   kernel::cpuContext newContext;
   newContext.TID = currentTID_;
-  newContext.pc = fetchUnit_.getPC();
+  newContext.pc = reorderBuffer_.getNextPC();
   // progByteLen will not change in process so do not need to set it
   // Don't need to explicitly save SP as will be in reg file contents
   auto regFileStruc = isa_.getRegisterFileStructures();
