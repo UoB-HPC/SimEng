@@ -3,11 +3,10 @@
 namespace simeng {
 
 CoreInstance::CoreInstance(
-    std::string executablePath, std::vector<std::string> executableArgs,
     std::shared_ptr<kernel::SyscallHandler> syscallHandler,
     std::shared_ptr<simeng::memory::Mem> mem)
     : config_(Config::get()), syscallHandler_(syscallHandler), memory_(mem) {
-  generateCoreModel(executablePath, executableArgs);
+  generateCoreModel();
 }
 
 // IGNORING SST RELATED CODE FOR NOW
@@ -28,8 +27,7 @@ CoreInstance::~CoreInstance() {
   }
 }
 
-void CoreInstance::generateCoreModel(std::string executablePath,
-                                     std::vector<std::string> executableArgs) {
+void CoreInstance::generateCoreModel() {
   setSimulationMode();
   // Get the process image and its size
   // processMemorySize_ = process_->getProcessImageSize();

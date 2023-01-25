@@ -398,6 +398,7 @@ bool Core::interrupt() {
     status_ = CoreStatus::switching;
     contextSwitches_++;
     // Stop fetch unit from incrementing PC or fetching next instructions
+    // (also flushes loop buffer and any pending completed reads).
     fetchUnit_.pause();
     return true;
   }
