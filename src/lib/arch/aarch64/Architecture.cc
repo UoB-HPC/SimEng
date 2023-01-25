@@ -317,6 +317,14 @@ void Architecture::setSVCRval(const uint64_t newVal) const {
   SVCRval_[0] = newVal;
 }
 
+void Architecture::updateAfterContextSwitch(
+    const simeng::kernel::cpuContext& context) const {
+  SVCRval_[0] = context
+                    .regFile[RegisterType::SYSTEM]
+                            [getSystemRegisterTag(ARM64_SYSREG_SVCR)]
+                    .get<uint64_t>();
+}
+
 }  // namespace aarch64
 }  // namespace arch
 }  // namespace simeng

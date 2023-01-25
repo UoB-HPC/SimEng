@@ -259,6 +259,10 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
 }
 
+// Left blank as no implementation necessary
+void Architecture::updateAfterContextSwitch(
+    const simeng::kernel::cpuContext& context) const {}
+
 }  // namespace riscv
 }  // namespace arch
 }  // namespace simeng
