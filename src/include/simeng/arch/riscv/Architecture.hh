@@ -60,6 +60,10 @@ class Architecture : public arch::Architecture {
    */
   std::vector<uint16_t> getConfigPhysicalRegisterQuantities() const override;
 
+  /** After a context switch, update any required variables. */
+  void updateAfterContextSwitch(
+      const simeng::kernel::cpuContext& context) const override;
+
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a
    * opcode-based override has been defined for the latency and/or

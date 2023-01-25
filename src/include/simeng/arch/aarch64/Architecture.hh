@@ -81,6 +81,10 @@ class Architecture : public arch::Architecture {
   /** Update the value of SVCRval_. */
   void setSVCRval(const uint64_t newVal) const;
 
+  /** After a context switch, update any required variables. */
+  void updateAfterContextSwitch(
+      const simeng::kernel::cpuContext& context) const override;
+
  private:
   /** A decoding cache, mapping an instruction word to a previously decoded
    * instruction. Instructions are added to the cache as they're decoded, to

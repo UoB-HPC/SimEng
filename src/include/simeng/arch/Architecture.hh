@@ -105,6 +105,10 @@ class Architecture {
   /** Updates System registers of any system-based timers. */
   virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                           const uint64_t iterations) const = 0;
+
+  /** After a context switch, update any required variables. */
+  virtual void updateAfterContextSwitch(
+      const simeng::kernel::cpuContext& context) const = 0;
 };
 
 }  // namespace arch

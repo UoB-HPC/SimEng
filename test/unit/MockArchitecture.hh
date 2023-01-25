@@ -29,6 +29,8 @@ class MockArchitecture : public arch::Architecture {
                      std::vector<uint16_t>());
   MOCK_CONST_METHOD2(updateSystemTimerRegisters,
                      void(RegisterFileSet* regFile, const uint64_t iterations));
+  MOCK_CONST_METHOD1(updateAfterContextSwitch,
+                     void(const simeng::kernel::cpuContext& context));
 };
 
 }  // namespace simeng
