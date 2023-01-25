@@ -7,8 +7,6 @@ namespace models {
 namespace emulation {
 
 // TODO: Expose as config option
-/** The number of bytes fetched each cycle. */
-const uint8_t FETCH_SIZE = 4;
 const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
@@ -319,6 +317,7 @@ void Core::schedule(simeng::kernel::cpuContext newContext) {
   }
   status_ = CoreStatus::executing;
   procTicks_ = 0;
+  isa_.updateAfterContextSwitch(newContext);
 }
 
 bool Core::interrupt() {

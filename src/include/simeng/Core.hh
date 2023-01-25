@@ -13,6 +13,7 @@ class ArchitecturalRegisterFileSet;
 
 enum CoreStatus : uint8_t { halted, idle, executing, switching };
 
+/** The number of bytes fetched each cycle. */
 #define FETCH_SIZE 4
 
 /** An abstract core model. */
