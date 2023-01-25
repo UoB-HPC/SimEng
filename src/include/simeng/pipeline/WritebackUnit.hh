@@ -25,6 +25,10 @@ class WritebackUnit {
   /** Retrieve a count of the number of instructions retired. */
   uint64_t getInstructionsWrittenCount() const;
 
+  /** Get the value of the PC that should come after the last committed
+   * instruction. */
+  uint64_t getNextPC() const { return nextPC_; };
+
  private:
   /** Buffers of completed instructions to process. */
   std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots_;
@@ -38,6 +42,10 @@ class WritebackUnit {
 
   /** The number of instructions processed and retired by this stage. */
   uint64_t instructionsWritten_ = 0;
+
+  /** Stores the PC value that should come after the last committed instruction.
+   */
+  uint64_t nextPC_ = 0;
 };
 
 }  // namespace pipeline
