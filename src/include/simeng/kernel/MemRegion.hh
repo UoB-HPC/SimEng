@@ -15,7 +15,10 @@ class MemRegion {
             uint64_t memSize, uint64_t pageSize, uint64_t stackStart,
             uint64_t heapStart, uint64_t mmapStart, uint64_t initStackPtr);
   MemRegion(){};
-  ~MemRegion(){};
+  ~MemRegion() {
+    std::cout << "Destroy" << std::endl;
+    freeVma();
+  };
 
  private:
   /** Start address of the stack. */
@@ -46,12 +49,6 @@ class MemRegion {
   uint64_t mmapPtr_;
   /** Size of the mmap region. */
   size_t mmapSize_;
-
-  /*
-  VirtualMemoryArea* stack_vm_ = NULL;
-  VirtualMemoryArea* heap_vm_ = NULL;
-  VirtualMemoryArea* ptload_vm_ = NULL;
-  */
 
   VirtualMemoryArea* vm_head_ = NULL;
   size_t vm_size_ = 0;
@@ -108,6 +105,8 @@ class MemRegion {
   bool overlapsStack(uint64_t addr, size_t size);
   bool isPageAligned(uint64_t addr);
   VirtualMemoryArea* getVMAFromAddr(uint64_t addr);
+  VirtualMemoryArea* getVMAHead() { return vm_head_; };
+  size_t getVMASize() { return vm_size_; }
 };
 
 }  // namespace kernel

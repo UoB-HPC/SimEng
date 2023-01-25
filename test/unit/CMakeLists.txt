@@ -22,6 +22,7 @@ set(TEST_SOURCES
     PageTableTest.cc
     VmaTest.cc
     HostBackedFileMMapsTest.cc
+    MemRegionTest.cc
     )
 
 add_executable(unittests ${TEST_SOURCES})

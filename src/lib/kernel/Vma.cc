@@ -7,37 +7,44 @@
 namespace simeng {
 namespace kernel {
 
-HostFileMMap* HostBackedFileMMaps::mapfd(int fd, size_t size, off_t offset) {
+HostFileMMap* HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
   struct stat* statbuf = (struct stat*)malloc(sizeof(struct stat));
+  if (offset & (4096 - 1)) {
+    std::cerr
+        << "Failed to create Host backed file mapping. Offset is not aligned "
+           "to page size: "
+        << offset << std::endl;
+    std::exit(1);
+  }
   if (fstat(fd, statbuf) < 0) {
     std::cerr << "fstat failed: Cannot create host backed file mmap for file "
                  "descriptor - "
               << fd << std::endl;
     std::exit(1);
   };
-  if (offset > statbuf->st_size) {
-    std::cerr << "Tried to create host backed file mmap with offset greater "
-                 "than file size."
-              << fd << std::endl;
+  if (offset + len > statbuf->st_size) {
+    std::cerr
+        << "Tried to create host backed file mmap with offset and size greater "
+           "than file size."
+        << std::endl;
     std::exit(1);
   }
-  size_t fsize = statbuf->st_size > size ? size : statbuf->st_size;
-  if (fsize == 0) {
+  if (len == 0) {
     std::cerr << "Cannot create host backed file mmap with size 0 for file "
                  "descriptor: "
               << fd << std::endl;
     std::exit(1);
   }
   void* filemmap =
-      mmap(NULL, fsize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, offset);
-  HostFileMMap* hfmm = new HostFileMMap(fd, filemmap, fsize, offset);
+      mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, offset);
+  HostFileMMap* hfmm = new HostFileMMap(fd, filemmap, len, offset);
   hostvec.push_back(hfmm);
   return hfmm;
 };
 
 HostBackedFileMMaps::~HostBackedFileMMaps() {
   for (auto fmap : hostvec) {
-    if (munmap(fmap->getfaddr(), fmap->fsize_) < 0) {
+    if (munmap(fmap->getfaddr(), fmap->flen_) < 0) {
       std::cerr << "Unable to unmap host backed file mmap associated with file "
                    "descriptor: "
                 << fmap->fd_ << std::endl;
@@ -47,9 +54,8 @@ HostBackedFileMMaps::~HostBackedFileMMaps() {
   }
 };
 
-VirtualMemoryArea::VirtualMemoryArea(int fd, off_t offset, int prot, int flags,
-                                     size_t vsize, VMAType type,
-                                     HostFileMMap* hfmmap) {
+VirtualMemoryArea::VirtualMemoryArea(int prot, int flags, size_t vsize,
+                                     VMAType type, HostFileMMap* hfmmap) {
   size = vsize;
   prot_ = prot;
   flags_ = flags;
@@ -57,7 +63,7 @@ VirtualMemoryArea::VirtualMemoryArea(int fd, off_t offset, int prot, int flags,
   hfmmap_ = hfmmap;
   if (hfmmap != NULL) {
     filebuf_ = hfmmap->getfaddr();
-    fsize_ = hfmmap->fsize_;
+    fsize_ = hfmmap->flen_;
   }
 };
 

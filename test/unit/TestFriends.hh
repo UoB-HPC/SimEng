@@ -17,15 +17,6 @@ return allctr->entries_;
 };
 */
 
-class HBFMFriend {
- public:
-  simeng::kernel::HostBackedFileMMaps* fmap = NULL;
-  HBFMFriend(simeng::kernel::HostBackedFileMMaps* ptr) { fmap = ptr; };
-  std::vector<simeng::kernel::HostFileMMap*> getHostVector() {
-    return fmap->hostvec;
-  };
-};
-
 class PTFriend {
  public:
   simeng::kernel::PageTable* pTable = NULL;

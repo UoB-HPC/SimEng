@@ -332,7 +332,6 @@ uint64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                               int fd, off_t offset) {
   uint64_t ret =
       processes_[0]->getMemRegion().mmapRegion(addr, length, prot, flags, NULL);
-  std::cout << "MMAP ADDRESS: " << ret << std::endl;
   return ret;
 }
 

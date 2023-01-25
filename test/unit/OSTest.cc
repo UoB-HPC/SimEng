@@ -11,11 +11,12 @@ TEST(OSTest, CreateSimOS) {
       "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
       "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
-      "{Heap-Size: 10000, Stack-Size: 10000}, CPU-Info: {Generate-Special-Dir: "
+      "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
+      "{Generate-Special-Dir: "
       "False}}");
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::SimpleMem>(25000);
+      std::make_shared<simeng::memory::SimpleMem>(300000);
 
   // Create the instance of the OS
   simeng::kernel::SimOS simOS_kernel =
