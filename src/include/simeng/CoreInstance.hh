@@ -35,9 +35,7 @@ class CoreInstance {
  public:
   /** Constructor with an executable, its arguments, and a model configuration.
    */
-  CoreInstance(std::string executablePath,
-               std::vector<std::string> executableArgs,
-               std::shared_ptr<kernel::SyscallHandler> syscallHandler,
+  CoreInstance(std::shared_ptr<kernel::SyscallHandler> syscallHandler,
                std::shared_ptr<simeng::memory::Mem> mem);
 
   // IGNORING SST RELATED CODE FOR NOW
@@ -84,8 +82,7 @@ class CoreInstance {
  private:
   /** Generate the appropriate simulation objects as parameterised by the
    * configuration.*/
-  void generateCoreModel(std::string executablePath,
-                         std::vector<std::string> executableArgs);
+  void generateCoreModel();
 
   /** Extract simulation mode from config file. */
   void setSimulationMode();
