@@ -65,10 +65,12 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
   unsigned int n;
   for (n = 0; n < maxCommits; n++) {
-    auto& uop = buffer_[0];
+    auto& uop = buffer_.front();
     if (!uop->canCommit()) {
       break;
     }
+
+    nextPC_ = uop->getInstructionAddress() + 4;
 
     if (uop->isLastMicroOp()) instructionsCommitted_++;
 
@@ -103,38 +105,42 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
     }
 
     // Increment or swap out branch counter for loop detection
-    if (uop->isBranch() && !loopDetected_) {
-      bool increment = true;
-      if (branchCounter_.first.address != uop->getInstructionAddress()) {
-        // Mismatch on instruction address, reset
-        increment = false;
-      } else if (branchCounter_.first.outcome != uop->getBranchPrediction()) {
-        // Mismatch on branch outcome, reset
-        increment = false;
-      } else if ((instructionsCommitted_ - branchCounter_.first.commitNumber) >
-                 loopBufSize_) {
-        // Loop too big to fit in loop buffer, reset
-        increment = false;
-      }
-
-      if (increment) {
-        // Reset commitNumber value
-        branchCounter_.first.commitNumber = instructionsCommitted_;
-        // Increment counter
-        branchCounter_.second++;
-
-        if (branchCounter_.second > loopDetectionThreshold_) {
-          // If the same branch with the same outcome is sequentially retired
-          // more times than the loopDetectionThreshold_ value, identify as a
-          // loop boundary
-          loopDetected_ = true;
-          sendLoopBoundary_(uop->getInstructionAddress());
+    if (uop->isBranch()) {
+      nextPC_ = uop->getBranchAddress();
+      if (!loopDetected_) {
+        bool increment = true;
+        if (branchCounter_.first.address != uop->getInstructionAddress()) {
+          // Mismatch on instruction address, reset
+          increment = false;
+        } else if (branchCounter_.first.outcome != uop->getBranchPrediction()) {
+          // Mismatch on branch outcome, reset
+          increment = false;
+        } else if ((instructionsCommitted_ -
+                    branchCounter_.first.commitNumber) > loopBufSize_) {
+          // Loop too big to fit in loop buffer, reset
+          increment = false;
         }
-      } else {
-        // Swap out latest branch
-        branchCounter_ = {{uop->getInstructionAddress(),
-                           uop->getBranchPrediction(), instructionsCommitted_},
-                          0};
+
+        if (increment) {
+          // Reset commitNumber value
+          branchCounter_.first.commitNumber = instructionsCommitted_;
+          // Increment counter
+          branchCounter_.second++;
+
+          if (branchCounter_.second > loopDetectionThreshold_) {
+            // If the same branch with the same outcome is sequentially retired
+            // more times than the loopDetectionThreshold_ value, identify as a
+            // loop boundary
+            loopDetected_ = true;
+            sendLoopBoundary_(uop->getInstructionAddress());
+          }
+        } else {
+          // Swap out latest branch
+          branchCounter_ = {
+              {uop->getInstructionAddress(), uop->getBranchPrediction(),
+               instructionsCommitted_},
+              0};
+        }
       }
     }
     buffer_.pop_front();
