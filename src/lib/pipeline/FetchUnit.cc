@@ -29,15 +29,7 @@ void FetchUnit::tick() {
     exit(1);
   }
 
-  if (output_.isStalled()) {
-    return;
-  }
-
-  if (hasHalted_) {
-    return;
-  }
-
-  if (paused_) {
+  if (output_.isStalled() || hasHalted_ || paused_) {
     return;
   }
 

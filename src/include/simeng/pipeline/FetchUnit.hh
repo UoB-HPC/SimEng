@@ -78,6 +78,7 @@ class FetchUnit {
   /** Temporarily pause the FetchUnit. */
   void pause() {
     paused_ = true;
+    instructionMemory_.clearCompletedReads();
     flushLoopBuffer();
   };
 
