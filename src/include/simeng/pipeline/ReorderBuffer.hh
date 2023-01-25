@@ -75,6 +75,10 @@ class ReorderBuffer {
   /** Get the number of speculated loads which violated load-store ordering. */
   uint64_t getViolatingLoadsCount() const;
 
+  /** Get the value of the PC that should come after the last committed
+   * instruction. */
+  uint64_t getNextPC() const { return nextPC_; };
+
  private:
   /** A reference to the register alias table. */
   RegisterAliasTable& rat_;
@@ -134,6 +138,10 @@ class ReorderBuffer {
 
   /** The number of speculatived loads which violated load-store ordering. */
   uint64_t loadViolations_ = 0;
+
+  /** Stores the PC value that should come after the last committed instruction.
+   */
+  uint64_t nextPC_ = 0;
 };
 
 }  // namespace pipeline
