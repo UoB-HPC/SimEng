@@ -75,9 +75,6 @@ class FetchUnit {
   /** Clear the loop buffer. */
   void flushLoopBuffer();
 
-  /** Get the current value of the pc_. */
-  uint64_t getPC() const { return pc_; };
-
   /** Temporarily pause the FetchUnit. */
   void pause() {
     paused_ = true;
