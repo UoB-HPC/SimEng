@@ -36,6 +36,12 @@ void WritebackUnit::tick() {
       instructionsWritten_++;
     }
 
+    if (uop->isBranch()) {
+      nextPC_ = uop->getBranchAddress();
+    } else {
+      nextPC_ = uop->getInstructionAddress() + 4;
+    }
+
     completionSlots_[slot].getHeadSlots()[0] = nullptr;
   }
 }
