@@ -76,7 +76,7 @@ uint64_t MemRegion::addVma(VMA* vma) {
     bool allocated = false;
     VMA* curr = vm_head_;
     while (curr->vm_next != nullptr) {
-      if (curr->vm_next->vm_start - curr->vm_end > size) {
+      if (curr->vm_next->vm_start - curr->vm_end >= size) {
         vma->vm_start = curr->vm_end;
         vma->vm_next = curr->vm_next;
         vma->vm_end = curr->vm_end + size;
@@ -99,6 +99,7 @@ uint64_t MemRegion::addVma(VMA* vma) {
     mmapPtr_ += size;
     vma->vm_end = mmapPtr_;
     vm_head_ = vma;
+    vma->vm_next = nullptr;
   }
   vm_size_++;
   // Return the assigned start address.
@@ -128,6 +129,7 @@ uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
     if (!allocated) {
       vma->vm_start = startAddr;
       curr->vm_next = vma;
+      mmapPtr_ = endAddr;
     }
     // If linked list only contains one VMA, then append to the tail.
   } else {
@@ -145,16 +147,15 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
   if (vm_size_ == 0) {
     return 0;
   }
-  size_t size = roundUpMemAddr(length, pageSize_);
   uint64_t startAddr = addr;
-  uint64_t endAddr = addr + size;
+  uint64_t endAddr = addr + length;
 
   VMA* prev = nullptr;
   VMA* curr = vm_head_;
   std::vector<VMA*> removedVMAs;
   while (curr != nullptr) {
     // If addr matches the start address of VMA.
-    if (curr->containedIn(addr, size)) {
+    if (curr->containedIn(addr, length)) {
       if (prev == nullptr) {
         vm_head_ = curr->vm_next;
       } else {
@@ -163,7 +164,7 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
       removedVMAs.push_back(curr);
       continue;
     }
-    if (curr->contains(addr, size)) {
+    if (curr->contains(addr, length)) {
       VMA* newVma = new VMA(curr);
       curr->trimRangeStart(startAddr);
       newVma->trimRangeEnd(endAddr);
@@ -171,8 +172,8 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
       curr->vm_next = newVma;
       break;
     }
-    if (curr->overlaps(addr, size)) {
-      uint64_t endAddr = addr + size;
+    if (curr->overlaps(addr, length)) {
+      uint64_t endAddr = addr + length;
       // Check for overlaps
       if (addr > curr->vm_start && endAddr > curr->vm_end) {
         curr->trimRangeEnd(addr);
@@ -204,10 +205,7 @@ void MemRegion::freeVma() {
 int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
                               int flags, HostFileMMap* hfmmap) {
   uint64_t startAddr = addr;
-  if (startAddr & pageSize_ - 1) {
-    std::cerr << "Provided Hint isn't Page Aligned" << std::endl;
-    return -EINVAL;
-  }
+
   uint64_t foffset = 0;
   int fd = -1;
   if (hfmmap != NULL) {
@@ -228,12 +226,14 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
   // No checks done currently to see if hint addresses lies in Mmap region.
   // We just allocate.
   if (startAddr) {
+    startAddr = roundUpMemAddr(startAddr, 4096);
+    std::cout << startAddr << std::endl;
     if (overlapsHeap(startAddr, size) || overlapsStack(startAddr, size)) {
       std::cerr << "Provided hint overlaps with Stack and Heap region"
                 << std::endl;
       return -EINVAL;
     };
-    if (!((mmapStart_ >= startAddr) & (startAddr + size < mmapEnd_))) {
+    if (!((startAddr >= mmapStart_) && (startAddr + size < mmapEnd_))) {
       std::cout << "Provided address range doesn't exist in the mmap range: "
                 << startAddr << " - " << startAddr + size << std::endl;
       return -EINVAL;
@@ -243,13 +243,13 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
   if (fixed) {
     if (mapped) unmapRegion(addr, size, fd, prot, flags);
 
-    VMA* vma = new VMA(fd, foffset, prot, flags, size, Mmap);
+    VMA* vma = new VMA(prot, flags, size, Mmap);
     addVma(vma);
     return vma->vm_start;
   } else {
     // if not fixed and hint is provided then we need to check if the hint
     // addr is available. If not we allocate new address.
-    VMA* vma = new VMA(fd, foffset, prot, flags, size, Mmap);
+    VMA* vma = new VMA(prot, flags, size, Mmap);
     if (startAddr && !mapped) {
       addVma(vma, startAddr);
     } else {
@@ -267,6 +267,7 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
 int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
                                int flags) {
   uint64_t size = roundUpMemAddr(length, 4096);
+  addr = roundDownMemAddr(addr, 4096);
   uint64_t value = removeVma(addr, size);
 
   // TODO: Unmap pageTable here.
@@ -334,12 +335,12 @@ VirtualMemoryArea* MemRegion::getVMAFromAddr(uint64_t vaddr) {
 
 bool MemRegion::overlapsHeap(uint64_t addr, size_t size) {
   uint64_t endAddr = addr + size;
-  return (addr >= heapStart_) && (endAddr > heapEnd_);
+  return (addr >= heapStart_) && (addr < heapEnd_) && (size != 0);
 };
 
 bool MemRegion::overlapsStack(uint64_t addr, size_t size) {
   uint64_t endAddr = addr + size;
-  return (addr >= stackStart_) && (endAddr > stackEnd_);
+  return (addr >= stackStart_) && (addr < stackEnd_) && (size != 0);
 };
 
 bool MemRegion::isPageAligned(uint64_t addr) {

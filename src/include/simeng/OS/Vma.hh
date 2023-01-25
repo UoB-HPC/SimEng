@@ -10,10 +10,6 @@
 
 #include "simeng/util/Math.hh"
 
-namespace TestFriends {
-class HBFMFriend;
-}
-
 namespace simeng {
 namespace OS {
 
@@ -46,8 +42,8 @@ class VirtualMemoryArea {
 
   VMAType type_;
 
-  VirtualMemoryArea(int fd, off_t offset, int prot, int flags, size_t vsize,
-                    VMAType type, HostFileMMap* hfmmap = nullptr);
+  VirtualMemoryArea(int prot, int flags, size_t vsize, VMAType type,
+                    HostFileMMap* hfmmap = nullptr);
   VirtualMemoryArea(VirtualMemoryArea* vma);
   ~VirtualMemoryArea();
 
@@ -66,10 +62,10 @@ class VirtualMemoryArea {
 class HostFileMMap {
  public:
   const int fd_;
-  const size_t fsize_;
+  const size_t flen_;
   const off_t offset_;
-  HostFileMMap(int fd, void* faddr, size_t fsize, off_t offset)
-      : fd_(fd), faddr_(faddr), fsize_(fsize), offset_(offset) {}
+  HostFileMMap(int fd, void* faddr, size_t flen, off_t offset)
+      : fd_(fd), faddr_(faddr), flen_(flen), offset_(offset) {}
   void* getfaddr() { return faddr_; }
 
  private:
@@ -77,14 +73,12 @@ class HostFileMMap {
 };
 
 class HostBackedFileMMaps {
-  friend class TestFriends::HBFMFriend;
-
  private:
   std::vector<HostFileMMap*> hostvec;
 
  public:
   ~HostBackedFileMMaps();
-  HostFileMMap* mapfd(int fd, size_t size, off_t offset);
+  HostFileMMap* mapfd(int fd, size_t len, off_t offset);
 };
 
 typedef VirtualMemoryArea VMA;
