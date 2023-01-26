@@ -37,4 +37,13 @@ void RegisterFileSet::set(Register reg, const RegisterValue& value) {
   registerFiles[reg.type][reg.tag] = value;
 }
 
+void RegisterFileSet::reset(
+    std::vector<RegisterFileStructure> registerFileStructures) {
+  for (size_t type = 0; type < registerFileStructures.size(); type++) {
+    const auto& structure = registerFileStructures[type];
+    registerFiles[type] = std::vector<RegisterValue>(
+        structure.quantity, RegisterValue(0, structure.bytes));
+  }
+}
+
 }  // namespace simeng
