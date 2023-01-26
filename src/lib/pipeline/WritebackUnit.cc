@@ -50,5 +50,12 @@ uint64_t WritebackUnit::getInstructionsWrittenCount() const {
   return instructionsWritten_;
 }
 
+void WritebackUnit::flush() {
+  for (size_t i = 0; i < completionSlots_.size(); i++) {
+    completionSlots_[i].fill(nullptr);
+    completionSlots_[i].stall(false);
+  }
+}
+
 }  // namespace pipeline
 }  // namespace simeng
