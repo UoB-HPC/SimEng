@@ -29,6 +29,9 @@ class WritebackUnit {
    * instruction. */
   uint64_t getNextPC() const { return nextPC_; };
 
+  /** Removes all Instructions from CompletionSlots_. */
+  void flush();
+
  private:
   /** Buffers of completed instructions to process. */
   std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots_;
