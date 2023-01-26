@@ -137,15 +137,15 @@ TEST(VmaTest, VmaContainsAddrRange) {
   /*
      Case 7 - Contains
      [---------------------------------)
-     [--------------------------------]
+     [---------------------------------]
     */
   ASSERT_EQ(vma->contains(4096, 4095), true);
   /*
-     Case 8 - Doesn't Contain
+     Case 8 - Contains
      [---------------------------------)
-     [---------------------------------]
+     [--------------------------------]
     */
-  ASSERT_EQ(vma->contains(4096, 4096), false);
+  ASSERT_EQ(vma->contains(4096, 4096), true);
   /*
      Case 9 - Contains
      [---------------------------------)

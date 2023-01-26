@@ -9,7 +9,8 @@ namespace OS {
 MemRegion::MemRegion(size_t stackSize, size_t heapSize, size_t mmapSize,
                      size_t memSize, uint64_t pageSize, uint64_t stackStart,
                      uint64_t heapStart, uint64_t mmapStart,
-                     uint64_t initStackPtr) {
+                     uint64_t initStackPtr,
+                     std::function<uint64_t(uint64_t, size_t)> unmapPageTable) {
   stackSize_ = stackSize;
   heapSize_ = heapSize;
   mmapSize_ = mmapSize;
@@ -24,6 +25,7 @@ MemRegion::MemRegion(size_t stackSize, size_t heapSize, size_t mmapSize,
   initStackPtr_ = initStackPtr;
   brk_ = heapStart;
   mmapPtr_ = mmapStart;
+  unmapPageTable_ = unmapPageTable;
 }
 
 uint64_t MemRegion::getStackStart() const { return stackStart_; }
@@ -143,51 +145,59 @@ uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
 }
 
 int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
-  // Exit early if no entries
-  if (vm_size_ == 0) {
-    return 0;
-  }
-  uint64_t startAddr = addr;
   uint64_t endAddr = addr + length;
 
   VMA* prev = nullptr;
   VMA* curr = vm_head_;
+
   std::vector<VMA*> removedVMAs;
+  uint64_t delsize = 0;
+
   while (curr != nullptr) {
     // If addr matches the start address of VMA.
     if (curr->containedIn(addr, length)) {
-      if (prev == nullptr) {
+      if (curr == vm_head_) {
         vm_head_ = curr->vm_next;
       } else {
         prev->vm_next = curr->vm_next;
       }
+      vm_size_--;
       removedVMAs.push_back(curr);
-      continue;
-    }
-    if (curr->contains(addr, length)) {
-      VMA* newVma = new VMA(curr);
-      curr->trimRangeStart(startAddr);
-      newVma->trimRangeEnd(endAddr);
-      newVma->vm_next = curr->vm_next;
-      curr->vm_next = newVma;
-      break;
-    }
-    if (curr->overlaps(addr, length)) {
-      uint64_t endAddr = addr + length;
-      // Check for overlaps
-      if (addr > curr->vm_start && endAddr > curr->vm_end) {
+    } else if (curr->contains(addr, length)) {
+      if (addr == curr->vm_start) {
+        curr->trimRangeStart(endAddr);
+      } else if (endAddr == curr->vm_end) {
         curr->trimRangeEnd(addr);
-        continue;
-      };
+      } else {
+        VMA* newVma = new VMA(curr);
+        curr->trimRangeEnd(addr);
+        newVma->trimRangeStart(endAddr);
+        newVma->vm_next = curr->vm_next;
+        curr->vm_next = newVma;
+        vm_size_++;
+      }
+      delsize += length;
+      break;
+    } else if (curr->overlaps(addr, length)) {
+      if (addr > curr->vm_start && endAddr > curr->vm_end) {
+        delsize += (curr->vm_end - addr);
+        curr->trimRangeEnd(addr);
+        prev = curr;
+      } else {
+        delsize += (endAddr - curr->vm_start);
+        curr->trimRangeStart(endAddr);
+        break;
+      }
+    } else {
+      prev = curr;
     }
-    prev = curr;
     curr = curr->vm_next;
-  }
+  };
   for (auto vma : removedVMAs) {
+    delsize += vma->size;
     delete vma;
   };
-  // Not an error if the indicated range does no contain any mapped pages
-  return 0;
+  return delsize;
 }
 
 void MemRegion::freeVma() {
@@ -241,7 +251,7 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
   }
   bool mapped = isVmMapped(startAddr, size);
   if (fixed) {
-    if (mapped) unmapRegion(addr, size, fd, prot, flags);
+    if (mapped) unmapRegion(addr, size);
 
     VMA* vma = new VMA(prot, flags, size, Mmap);
     addVma(vma);
@@ -264,13 +274,12 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
   return 0;
 }
 
-int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
-                               int flags) {
+int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
   uint64_t size = roundUpMemAddr(length, 4096);
   addr = roundDownMemAddr(addr, 4096);
   uint64_t value = removeVma(addr, size);
 
-  // TODO: Unmap pageTable here.
+  unmapPageTable_(addr, size);
   return value;
 };
 
@@ -325,6 +334,9 @@ if (type == PTLoad) {
 VirtualMemoryArea* MemRegion::getVMAFromAddr(uint64_t vaddr) {
   VirtualMemoryArea* curr = vm_head_;
   while (curr != NULL) {
+    //  std::cout << "Curr start: " << curr->vm_start << std::endl;
+    // std::cout << "Curr end: " << curr->vm_end << std::endl;
+    // std::cout << " ------------------------- " << std::endl;
     if (curr->contains(vaddr)) {
       return curr;
     }

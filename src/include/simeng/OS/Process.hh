@@ -141,6 +141,8 @@ class Process {
   cpuContext context_;
   uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
 
+  std::shared_ptr<PageTable>& getPageTable() { return pageTable_; }
+
  private:
   /** MemRegion of the Process Image. */
   MemRegion memRegion_;
