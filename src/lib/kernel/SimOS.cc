@@ -30,6 +30,10 @@ void SimOS::tick() {
     halted_ = true;
     return;
   }
+  // } else if (processes_.size() == 1) {
+  //   // If only 1 process, don't attempt to context switch as no need
+  //   return;
+  // }
 
   /** Scheduling behaviour :
    * 1. All processes start in a waiting state, and are placed in the
@@ -68,30 +72,32 @@ void SimOS::tick() {
         return;
       case CoreStatus::idle: {
         // Core is idle, schedule head of scheduledProc queue
-        if (!scheduledProcs_.empty()) {
-          // Get prevContext from core and update appropriate process
-          kernel::cpuContext prevContext = cores_[cID]->getPrevContext();
-          for (auto i : processes_) {
-            if (i->getTID() == prevContext.TID) {
-              assert((i->status_ == procStatus::executing) &&
-                     "[SimEng:SimOS] Process updated when not in executing"
-                     "state.");
-              // Only update values which will have changed
-              i->context_.pc = prevContext.pc;
-              i->context_.regFile = prevContext.regFile;
-              // Change status from Executing to Waiting
-              i->status_ = procStatus::waiting;
-              waitingProcs_.push(i);
-              break;
-            }
+        // if (!scheduledProcs_.empty()) {
+        // Get prevContext from core and update appropriate process
+        kernel::cpuContext prevContext = cores_[cID]->getPrevContext();
+        for (auto i : processes_) {
+          if (i->getTID() == prevContext.TID) {
+            assert((i->status_ == procStatus::executing) &&
+                   "[SimEng:SimOS] Process updated when not in executing"
+                   "state.");
+            // Only update values which will have changed
+            i->context_.pc = prevContext.pc;
+            i->context_.regFile = prevContext.regFile;
+            // Change status from Executing to Waiting
+            // i->status_ = procStatus::waiting;
+            // waitingProcs_.push(i);
+            i->status_ = procStatus::scheduled;
+            scheduledProcs_.push(i);
+            break;
           }
-          // Schedule process on core
-          cores_[cID]->schedule(scheduledProcs_.front()->context_);
-          // Update newly scheduled process' status
-          scheduledProcs_.front()->status_ = procStatus::executing;
-          // Remove process from waiting queue
-          scheduledProcs_.pop();
         }
+        // Schedule process on core
+        cores_[cID]->schedule(scheduledProcs_.front()->context_);
+        // Update newly scheduled process' status
+        scheduledProcs_.front()->status_ = procStatus::executing;
+        // Remove process from waiting queue
+        scheduledProcs_.pop();
+        // }
         break;
       }
       case CoreStatus::executing: {
@@ -99,17 +105,17 @@ void SimOS::tick() {
         //    - If core has been running current process for execTicks ticks,
         //      send interrupt
         //    - Enusure there is a waiting process, otherwise let core continue
-        if (!waitingProcs_.empty()) {
-          if (cores_[cID]->getCurrentProcTicks() > execTicks) {
-            if (cores_[cID]->interrupt()) {
-              // Interrupt signalled successfully, move waitingProc to
-              // sheduledProcs queue
-              waitingProcs_.front()->status_ = procStatus::scheduled;
-              scheduledProcs_.push(waitingProcs_.front());
-              waitingProcs_.pop();
-            }
+        // if (!waitingProcs_.empty()) {
+        if (cores_[cID]->getCurrentProcTicks() > execTicks) {
+          if (cores_[cID]->interrupt()) {
+            // Interrupt signalled successfully, move waitingProc to
+            // sheduledProcs queue
+            // waitingProcs_.front()->status_ = procStatus::scheduled;
+            // scheduledProcs_.push(waitingProcs_.front());
+            // waitingProcs_.pop();
           }
         }
+        // }
 
         break;
       }
