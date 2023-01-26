@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
   std::cout << std::endl;
 
   // Parse command line args
-  std::string executablePath;
+  std::string executablePath = DEFAULT_STR;
   std::vector<std::string> executableArgs;
   // Determine if a config file has been supplied.
   if (argc > 1) {

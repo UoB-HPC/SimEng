@@ -169,8 +169,8 @@ void SimOS::createInitialProcess() {
 
     // Raise error if created process is not valid
     if (!processes_[0]->isValid()) {
-      std::cerr << "[SimEng:CoreInstance] Could not read/parse "
-                << commandLine[0] << std::endl;
+      std::cerr << "[SimEng:SimOS] Could not read/parse " << commandLine[0]
+                << std::endl;
       exit(1);
     }
   } else {
