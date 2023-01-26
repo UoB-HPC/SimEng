@@ -46,6 +46,8 @@ class RegisterFileSet {
   /** Set a register as the specified value. */
   void set(Register reg, const RegisterValue& value);
 
+  void reset(std::vector<RegisterFileStructure> registerFileStructures);
+
  private:
   /** The set of register files. Each entry in the outer vector corresponds to a
    * register file, and the inner vectors are the registers. */
