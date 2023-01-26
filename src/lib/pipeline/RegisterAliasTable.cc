@@ -109,29 +109,32 @@ void RegisterAliasTable::free(Register physical) {
 void RegisterAliasTable::reset(
     std::vector<RegisterFileStructure> architecturalStructure,
     std::vector<uint16_t> physicalRegisterCounts) {
-  mappingTable_ =
-      std::vector<std::vector<uint16_t>>(architecturalStructure.size());
-  historyTable_ =
-      std::vector<std::vector<uint16_t>>(architecturalStructure.size());
-  destinationTable_ =
-      std::vector<std::vector<uint16_t>>(architecturalStructure.size());
-  freeQueues_ =
-      std::vector<std::queue<uint16_t>>(architecturalStructure.size());
+  // Get number of register types
+  size_t archStructSize = architecturalStructure.size();
+  // Clear and reset all Tables / Queues
+  mappingTable_.clear();
+  mappingTable_.resize(archStructSize);
+  historyTable_.clear();
+  historyTable_.resize(archStructSize);
+  destinationTable_.clear();
+  destinationTable_.resize(archStructSize);
+  freeQueues_.clear();
+  freeQueues_.resize(archStructSize);
 
-  for (size_t type = 0; type < architecturalStructure.size(); type++) {
-    auto archCount = architecturalStructure[type].quantity;
-    auto physCount = physicalRegisterCounts[type];
+  for (size_t type = 0; type < archStructSize; type++) {
+    uint16_t archCount = architecturalStructure[type].quantity;
+    uint16_t physCount = physicalRegisterCounts[type];
 
     // Set up the initial mapping table state for this register type
     mappingTable_[type].resize(archCount);
 
-    for (size_t tag = 0; tag < archCount; tag++) {
+    for (uint16_t tag = 0; tag < archCount; tag++) {
       // Pre-assign a physical register to each architectural register
       mappingTable_[type][tag] = tag;
     }
 
     // Add remaining physical registers to free queue
-    for (size_t tag = archCount; tag < physCount; tag++) {
+    for (uint16_t tag = archCount; tag < physCount; tag++) {
       freeQueues_[type].push(tag);
     }
 
