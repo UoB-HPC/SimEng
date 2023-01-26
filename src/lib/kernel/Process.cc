@@ -130,8 +130,13 @@ Process::Process(const std::vector<std::string>& commandLine,
   std::cout << "mmapEnd: " << mmapEnd << std::endl;
   std::cout << std::endl;
 
+  std::function<uint64_t(uint64_t, size_t)> unmapFn =
+      [&, this](uint64_t vaddr, size_t size) -> uint64_t {
+    return this->pageTable_->deleteMapping(vaddr, size);
+  };
+
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
-                         stackStart, heapStart, mmapStart, stackPtr);
+                         stackStart, heapStart, mmapStart, stackPtr, unmapFn);
 
   fdArray_ = std::make_shared<FileDescArray>();
 
@@ -211,8 +216,13 @@ Process::Process(span<char> instructions,
 
   uint64_t taddr = pageTable_->translate(0);
 
+  std::function<uint64_t(uint64_t, size_t)> unmapFn =
+      [&, this](uint64_t vaddr, size_t size) -> uint64_t {
+    return this->pageTable_->deleteMapping(vaddr, size);
+  };
+
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
-                         stackStart, heapStart, mmapStart, stackPtr);
+                         stackStart, heapStart, mmapStart, stackPtr, unmapFn);
 
   memory->sendUntimedData(instructions.begin(), taddr, instructions.size());
 

@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 #include <cstddef>
+#include <functional>
 #include <memory>
 
 #include "simeng/kernel/Vma.hh"
@@ -11,14 +12,14 @@ namespace kernel {
 
 class MemRegion {
  public:
-  MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
-            uint64_t memSize, uint64_t pageSize, uint64_t stackStart,
-            uint64_t heapStart, uint64_t mmapStart, uint64_t initStackPtr);
+  MemRegion(
+      uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
+      uint64_t memSize, uint64_t pageSize, uint64_t stackStart,
+      uint64_t heapStart, uint64_t mmapStart, uint64_t initStackPtr,
+      std::function<uint64_t(uint64_t, size_t)> unmapPageTable =
+          [](uint64_t, size_t) -> uint64_t { return 0; });
   MemRegion(){};
-  ~MemRegion() {
-    std::cout << "Destroy" << std::endl;
-    freeVma();
-  };
+  ~MemRegion() { freeVma(); };
 
  private:
   /** Start address of the stack. */
@@ -49,6 +50,8 @@ class MemRegion {
   uint64_t mmapPtr_;
   /** Size of the mmap region. */
   size_t mmapSize_;
+
+  std::function<uint64_t(uint64_t, size_t)> unmapPageTable_;
 
   VirtualMemoryArea* vm_head_ = NULL;
   size_t vm_size_ = 0;
@@ -97,8 +100,7 @@ class MemRegion {
   int64_t mmapRegion(uint64_t addr, uint64_t length, int prot, int flags,
                      HostFileMMap* hfmmap);
   /** This method unmaps a mmaped region. */
-  int64_t unmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
-                      int flags);
+  int64_t unmapRegion(uint64_t addr, uint64_t length);
 
   bool isVmMapped(uint64_t startAddr, size_t size);
   bool overlapsHeap(uint64_t addr, size_t size);

@@ -90,7 +90,7 @@ bool VirtualMemoryArea::overlaps(uint64_t startAddr, size_t size) {
 
 bool VirtualMemoryArea::contains(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
-  return (startAddr >= vm_start) && (endAddr < vm_end);
+  return (startAddr >= vm_start) && (endAddr <= vm_end);
 };
 
 bool VirtualMemoryArea::contains(uint64_t vaddr) {
