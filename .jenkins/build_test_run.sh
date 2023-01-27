@@ -53,7 +53,7 @@ run () {
     cat run
     echo ""
     compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "3145731" "retired instructions"
-    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "3146153" "simulated cycles"
+    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "3145737" "simulated cycles"
     echo ""
 
     ./bin/simeng "$SIMENG_TOP"/configs/tx2.yaml > run
@@ -61,7 +61,7 @@ run () {
     cat run
     echo ""
     compare_outputs "$(grep "retired:" run | rev | cut -d ' ' -f1 | rev)" "3145732" "retired instructions"
-    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "1048827" "simulated cycles"
+    compare_outputs "$(grep "cycles:" run | rev | cut -d ' ' -f1 | rev)" "1048589" "simulated cycles"
     echo ""
 }
 
