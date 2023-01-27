@@ -5,6 +5,7 @@
 #include <string>
 
 #include "simeng/OS/Process.hh"
+#include "simeng/OS/SyscallHandler.hh"
 #include "yaml-cpp/yaml.h"
 
 namespace simeng {
@@ -37,11 +38,15 @@ class Core {
   virtual const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const = 0;
 
+  /** Send a syscall to the system's syscall handler. */
+  virtual void sendSyscall(OS::SyscallInfo) const = 0;
+
+  /** Communicate the result of a syscall to the core's active exception
+   * handler. */
+  virtual void recieveSyscallResult(const OS::SyscallResult result) const = 0;
+
   /** Retrieve the number of instructions retired. */
   virtual uint64_t getInstructionsRetiredCount() const = 0;
-
-  /** Retrieve the simulated nanoseconds elapsed since the core started. */
-  virtual uint64_t getSystemTimer() const = 0;
 
   /** Retrieve a map of statistics to report. */
   virtual std::map<std::string, std::string> getStats() const = 0;
@@ -52,7 +57,8 @@ class Core {
   /** Signals core to stop executing the current process.
    * Return Values :
    *  - True  : if succeeded in signaling interrupt
-   *  - False : interrupt not scheduled due to on-going exception or system call
+   *  - False : interrupt not scheduled due to on-going exception or system
+   * call
    */
   virtual bool interrupt() = 0;
 

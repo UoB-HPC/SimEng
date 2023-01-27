@@ -2,13 +2,13 @@
 
 namespace simeng {
 
-CoreInstance::CoreInstance(std::shared_ptr<OS::SyscallHandler> syscallHandler,
-                           std::shared_ptr<simeng::memory::Mem> mem,
-                           std::shared_ptr<memory::MMU> mmu)
+CoreInstance::CoreInstance(
+    std::shared_ptr<simeng::memory::Mem> mem, std::shared_ptr<memory::MMU> mmu,
+    std::function<void(const simeng::OS::SyscallInfo)> syscallHandle)
     : config_(Config::get()),
-      syscallHandler_(syscallHandler),
       memory_(mem),
-      mmu_(mmu) {
+      mmu_(mmu),
+      syscallHandle_(syscallHandle) {
   generateCoreModel();
 }
 
@@ -167,11 +167,9 @@ void CoreInstance::createCore() {
 
   // Create the architecture, with knowledge of the OS
   if (config_["Core"]["ISA"].as<std::string>() == "rv64") {
-    arch_ =
-        std::make_unique<simeng::arch::riscv::Architecture>(syscallHandler_);
+    arch_ = std::make_unique<simeng::arch::riscv::Architecture>();
   } else if (config_["Core"]["ISA"].as<std::string>() == "AArch64") {
-    arch_ =
-        std::make_unique<simeng::arch::aarch64::Architecture>(syscallHandler_);
+    arch_ = std::make_unique<simeng::arch::aarch64::Architecture>();
   }
 
   // Construct branch predictor object
@@ -193,14 +191,14 @@ void CoreInstance::createCore() {
   // Construct the core object based on the defined simulation mode
   if (mode_ == SimulationMode::Emulation) {
     core_ = std::make_shared<simeng::models::emulation::Core>(
-        *instructionMemory_, *dataMemory_, *arch_);
+        *instructionMemory_, *dataMemory_, *arch_, syscallHandle_);
   } else if (mode_ == SimulationMode::InOrderPipelined) {
     core_ = std::make_shared<simeng::models::inorder::Core>(
-        *instructionMemory_, *dataMemory_, *arch_, *predictor_);
+        *instructionMemory_, *dataMemory_, *arch_, *predictor_, syscallHandle_);
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
-        *instructionMemory_, *dataMemory_, *arch_, *predictor_,
-        *portAllocator_);
+        *instructionMemory_, *dataMemory_, *arch_, *predictor_, *portAllocator_,
+        syscallHandle_);
   }
   return;
 }

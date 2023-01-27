@@ -47,7 +47,7 @@ void RegressionTest::run(const char* source, const char* triple,
   processMemorySize_ = process_->context_.progByteLen;
 
   // Create the architecture
-  architecture_ = createArchitecture(OS.getSyscallHandler());
+  architecture_ = createArchitecture();
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(memory_, OS.getVAddrTranslator(),
                                             procTID);
@@ -78,35 +78,33 @@ void RegressionTest::run(const char* source, const char* triple,
   // Create the core model
   switch (std::get<0>(GetParam())) {
     case EMULATION:
-      core_ = std::make_unique<simeng::models::emulation::Core>(
-          instructionMemory, *flatDataMemory, *architecture_);
+      core_ = std::make_shared<simeng::models::emulation::Core>(
+          instructionMemory, *flatDataMemory, *architecture_, syscallHandle);
       dataMemory = std::move(flatDataMemory);
       break;
     case INORDER:
-      core_ = std::make_unique<simeng::models::inorder::Core>(
-          instructionMemory, *flatDataMemory, *architecture_, predictor);
+      core_ = std::make_shared<simeng::models::inorder::Core>(
+          instructionMemory, *flatDataMemory, *architecture_, predictor,
+          syscallHandle);
       dataMemory = std::move(flatDataMemory);
       break;
     case OUTOFORDER:
-      core_ = std::make_unique<simeng::models::outoforder::Core>(
+      core_ = std::make_shared<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, *architecture_, predictor,
-          *portAllocator);
+          *portAllocator, syscallHandle);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }
 
   // Schedule Process on core
-  /** NOTE: Not using SimOS as core_ must be unique_ptr, but SimOS expects
-   * shared_ptr. */
+  OS.registerCore(core_);
   core_->schedule(process_->context_);
 
-  // Run the core model until the program is complete
-  /** NOTE: As we cannot register the core with SimOS, and as such no scheduling
-   * occurs, we do not need to tick SimOS nor check its halted status in the
-   * Regression Test. */
+  // Run the OS and core model until the program is complete
   while (!(core_->getStatus() == simeng::CoreStatus::halted) ||
          dataMemory->hasPendingRequests()) {
     ASSERT_LT(numTicks_, maxTicks_) << "Maximum tick count exceeded.";
+    OS.tick();
     core_->tick();
     instructionMemory.tick();
     dataMemory->tick();

@@ -10,12 +10,14 @@ namespace emulation {
 const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           const arch::Architecture& isa)
+           const arch::Architecture& isa,
+           std::function<void(const simeng::OS::SyscallInfo)> syscallHandle)
     : instructionMemory_(instructionMemory),
       dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
-      architecturalRegisterFileSet_(registerFileSet_) {}
+      architecturalRegisterFileSet_(registerFileSet_),
+      syscallHandle_(syscallHandle) {}
 
 void Core::tick() {
   ticks_++;
@@ -244,10 +246,10 @@ void Core::processExceptionHandler() {
   microOps_.pop();
 }
 
-void Core::applyStateChange(const arch::ProcessStateChange& change) {
+void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // Update registers in accoradance with the ProcessStateChange type
   switch (change.type) {
-    case arch::ChangeType::INCREMENT: {
+    case OS::ChangeType::INCREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(
             change.modifiedRegisters[i],
@@ -256,7 +258,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    case arch::ChangeType::DECREMENT: {
+    case OS::ChangeType::DECREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(
             change.modifiedRegisters[i],
@@ -265,7 +267,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    default: {  // arch::ChangeType::REPLACEMENT
+    default: {  // OS::ChangeType::REPLACEMENT
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(change.modifiedRegisters[i],
@@ -295,12 +297,18 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
   return architecturalRegisterFileSet_;
 }
 
-uint64_t Core::getInstructionsRetiredCount() const {
-  return instructionsExecuted_;
+void Core::sendSyscall(const OS::SyscallInfo syscallInfo) const {
+  syscallHandle_(syscallInfo);
 }
 
-uint64_t Core::getSystemTimer() const {
-  return ticks_ / (clockFrequency / 1e9);
+void Core::recieveSyscallResult(OS::SyscallResult result) const {
+  if (exceptionHandler_ != nullptr) {
+    exceptionHandler_->processSyscallResult(result);
+  }
+}
+
+uint64_t Core::getInstructionsRetiredCount() const {
+  return instructionsExecuted_;
 }
 
 std::map<std::string, std::string> Core::getStats() const {

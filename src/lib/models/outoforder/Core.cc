@@ -15,7 +15,9 @@ namespace outoforder {
 // TODO: System register count has to match number of supported system registers
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator, YAML::Node& config)
+           pipeline::PortAllocator& portAllocator,
+           std::function<void(const simeng::OS::SyscallInfo)> syscallHandle,
+           YAML::Node& config)
     : isa_(isa),
       physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
       physicalRegisterQuantities_(isa.getConfigPhysicalRegisterQuantities()),
@@ -75,7 +77,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
       clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
-      commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
+      commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()),
+      syscallHandle_(syscallHandle) {
   for (size_t i = 0; i < config["Execution-Units"].size(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
@@ -345,10 +348,10 @@ void Core::processExceptionHandler() {
   exceptionHandler_ = nullptr;
 }
 
-void Core::applyStateChange(const arch::ProcessStateChange& change) {
+void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // Update registers in accoradance with the ProcessStateChange type
   switch (change.type) {
-    case arch::ChangeType::INCREMENT: {
+    case OS::ChangeType::INCREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         mappedRegisterFileSet_.set(
             change.modifiedRegisters[i],
@@ -358,7 +361,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    case arch::ChangeType::DECREMENT: {
+    case OS::ChangeType::DECREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         mappedRegisterFileSet_.set(
             change.modifiedRegisters[i],
@@ -368,7 +371,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    default: {  // arch::ChangeType::REPLACEMENT
+    default: {  // OS::ChangeType::REPLACEMENT
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         mappedRegisterFileSet_.set(change.modifiedRegisters[i],
@@ -392,13 +395,18 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
   return mappedRegisterFileSet_;
 }
 
-uint64_t Core::getInstructionsRetiredCount() const {
-  return reorderBuffer_.getInstructionsCommittedCount();
+void Core::sendSyscall(const OS::SyscallInfo syscallInfo) const {
+  syscallHandle_(syscallInfo);
 }
 
-uint64_t Core::getSystemTimer() const {
-  // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency_ / 1e9);
+void Core::recieveSyscallResult(const OS::SyscallResult result) const {
+  if (exceptionHandler_ != nullptr) {
+    exceptionHandler_->processSyscallResult(result);
+  }
+}
+
+uint64_t Core::getInstructionsRetiredCount() const {
+  return reorderBuffer_.getInstructionsCommittedCount();
 }
 
 std::map<std::string, std::string> Core::getStats() const {

@@ -28,7 +28,7 @@ SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem,
 // The Private constructor
 SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem)
     : memory_(mem),
-      syscallHandler_(std::make_shared<SyscallHandler>(this)),
+      syscallHandler_(std::make_shared<SyscallHandler>(this), mem),
       pageFrameAllocator_(PageFrameAllocator(mem->getMemorySize())) {
   // Create the Special Files directory if indicated to do so in Config file
   if (Config::get()["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true)
@@ -36,11 +36,16 @@ SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem)
 }
 
 void SimOS::tick() {
+  ticks_++;
+
   // Check if simulation halted
   if (halted_) {
     return;
   }
 
+  syscallHandler_->tick();
+
+  // Check for empty processes_ vector
   if (processes_.size() == 0) {
     halted_ = true;
     return;
@@ -169,10 +174,9 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   // Temporarily create the architecture, with knowledge of the OS
   std::unique_ptr<simeng::arch::Architecture> arch;
   if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
-    arch = std::make_unique<simeng::arch::riscv::Architecture>(syscallHandler_);
+    arch = std::make_unique<simeng::arch::riscv::Architecture>();
   } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
-    arch =
-        std::make_unique<simeng::arch::aarch64::Architecture>(syscallHandler_);
+    arch = std::make_unique<simeng::arch::aarch64::Architecture>();
   }
 
   // Get structure of Architectural register file
@@ -344,6 +348,20 @@ void SimOS::terminateThreadHelper(std::shared_ptr<Process> proc) {
   // Set status to complete so it can be removed from the relevant queue in
   // tick()
   proc->status_ = procStatus::completed;
+}
+
+uint64_t SimOS::getSystemTimer() const {
+  // TODO: This will need to be changed if we start supporting DVFS.
+  return ticks_ /
+         ((config_["Core"]["Clock-Frequency"].as<float>() * 1e9) / 1e9);
+}
+
+void SimOS::recieveSyscall(const SyscallInfo syscallInfo) const {
+  syscallHandler_->recordSyscall(syscallInfo);
+};
+
+void SimOS::sendSyscallResult(const SyscallResult result) {
+  cores_[0]->recieveSyscallResult(result);
 }
 
 }  // namespace OS

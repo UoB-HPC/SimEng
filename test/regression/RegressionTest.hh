@@ -64,9 +64,9 @@ class RegressionTest
    * extensions. */
   void run(const char* source, const char* triple, const char* extensions);
 
-  /** Create an ISA instance from a syscall handler. */
-  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      std::shared_ptr<simeng::OS::SyscallHandler> sysHandler) const = 0;
+  /** Create an ISA instance. */
+  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture()
+      const = 0;
 
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
@@ -115,8 +115,8 @@ class RegressionTest
   /** The process that was executed. */
   std::shared_ptr<simeng::OS::Process> process_;
 
-  /** The core that was used. */
-  std::unique_ptr<simeng::Core> core_ = nullptr;
+  /** The core model used to execute the test code. */
+  std::shared_ptr<simeng::Core> core_ = nullptr;
 
   /** The output written to stdout during the test. */
   std::string stdout_;

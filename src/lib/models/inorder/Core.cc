@@ -14,7 +14,8 @@ const unsigned int blockSize = 16;
 const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor)
+           const arch::Architecture& isa, BranchPredictor& branchPredictor,
+           std::function<void(const simeng::OS::SyscallInfo)> syscallHandle)
     : dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
@@ -33,7 +34,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor, false),
-      writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}){};
+      writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}),
+      syscallHandle_(syscallHandle){};
 
 void Core::tick() {
   ticks_++;
@@ -156,13 +158,18 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
   return architecturalRegisterFileSet_;
 }
 
-uint64_t Core::getInstructionsRetiredCount() const {
-  return writebackUnit_.getInstructionsWrittenCount();
+void Core::sendSyscall(const OS::SyscallInfo syscallInfo) const {
+  syscallHandle_(syscallInfo);
 }
 
-uint64_t Core::getSystemTimer() const {
-  // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency / 1e9);
+void Core::recieveSyscallResult(OS::SyscallResult result) const {
+  if (exceptionHandler_ != nullptr) {
+    exceptionHandler_->processSyscallResult(result);
+  }
+}
+
+uint64_t Core::getInstructionsRetiredCount() const {
+  return writebackUnit_.getInstructionsWrittenCount();
 }
 
 std::map<std::string, std::string> Core::getStats() const {
@@ -327,10 +334,10 @@ void Core::readRegisters() {
   }
 }
 
-void Core::applyStateChange(const arch::ProcessStateChange& change) {
+void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // Update registers in accoradance with the ProcessStateChange type
   switch (change.type) {
-    case arch::ChangeType::INCREMENT: {
+    case OS::ChangeType::INCREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(
             change.modifiedRegisters[i],
@@ -339,7 +346,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    case arch::ChangeType::DECREMENT: {
+    case OS::ChangeType::DECREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(
             change.modifiedRegisters[i],
@@ -348,7 +355,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    default: {  // arch::ChangeType::REPLACEMENT
+    default: {  // OS::ChangeType::REPLACEMENT
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(change.modifiedRegisters[i],

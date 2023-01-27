@@ -163,10 +163,11 @@ struct SyscallInfo {
 class SyscallHandler {
  public:
   /** Create new SyscallHandler object. */
-  SyscallHandler(const std::vector<std::shared_ptr<Process>>& processes,
-                 std::shared_ptr<MemoryInterface> memory,
-                 std::function<void(simeng::OS::SyscallResult)> returnSyscall,
-                 std::function<uint64_t()> getSystemTime);
+  SyscallHandler(
+      const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes,
+      std::shared_ptr<MemoryInterface> memory,
+      std::function<void(simeng::OS::SyscallResult)> returnSyscall,
+      std::function<uint64_t()> getSystemTime);
 
   /** Tick the syscall handler to carry out any oustanding syscalls. */
   void tick();
