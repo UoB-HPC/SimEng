@@ -46,9 +46,8 @@ class SimOS {
   /** Tick SimOS. */
   void tick();
 
-  /** Get copy of a process with specified TID.
-   * NOTE: Should really only be used by test suite. */
-  Process getProcess(uint64_t TID) const;
+  /** Get a process with specified TID. */
+  std::shared_ptr<Process> getProcess(uint64_t TID) const;
 
   /** Get shared_ptr to syscallHandler instance. */
   std::shared_ptr<SyscallHandler> getSyscallHandler() const {
@@ -57,7 +56,7 @@ class SimOS {
 
   /** Register a core with the OS to enable process scheduling. */
   void registerCore(std::shared_ptr<simeng::Core> core) {
-    cores_.emplace_back(core);
+    cores_.push_back(core);
   }
 
   /** Check if OS has halted. */
@@ -126,7 +125,7 @@ class SimOS {
           static_cast<uint64_t>(0b10100), 8};
     }
 
-    processes_.emplace(processes_.begin(), proc);
+    processes_[0] = proc;
   }
 };
 
