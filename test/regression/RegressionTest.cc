@@ -34,8 +34,11 @@ void RegressionTest::run(const char* source, const char* triple,
   // Initialise the global memory
   memory_ = std::make_shared<simeng::memory::SimpleMem>(300000);
 
-  // Initialise a SimOS object
+  // Initialise a SimOS kernel and extract callback function for communicating a
+  // syscall to the Syscall Handler
   simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory_);
+  std::function<void(const simeng::OS::SyscallInfo)> syscallHandle =
+      [OS](auto syscallInfo) { return OS.recieveSyscall(syscallInfo); };
 
   // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place
@@ -47,8 +50,9 @@ void RegressionTest::run(const char* source, const char* triple,
   // returned by the getProcessImage method.
 
   // Create the architecture
-  architecture_ = createArchitecture(OS.getSyscallHandler());
+  architecture_ = createArchitecture();
 
+  // Generate initial process
   process_ = std::make_shared<simeng::OS::Process>(
       simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_,
       architecture_->getRegisterFileStructures(), 0, 0);
@@ -88,35 +92,33 @@ void RegressionTest::run(const char* source, const char* triple,
   // Create the core model
   switch (std::get<0>(GetParam())) {
     case EMULATION:
-      core_ = std::make_unique<simeng::models::emulation::Core>(
-          instructionMemory, *flatDataMemory, *architecture_);
+      core_ = std::make_shared<simeng::models::emulation::Core>(
+          instructionMemory, *flatDataMemory, *architecture_, syscallHandle);
       dataMemory = std::move(flatDataMemory);
       break;
     case INORDER:
-      core_ = std::make_unique<simeng::models::inorder::Core>(
-          instructionMemory, *flatDataMemory, *architecture_, predictor);
+      core_ = std::make_shared<simeng::models::inorder::Core>(
+          instructionMemory, *flatDataMemory, *architecture_, predictor,
+          syscallHandle);
       dataMemory = std::move(flatDataMemory);
       break;
     case OUTOFORDER:
-      core_ = std::make_unique<simeng::models::outoforder::Core>(
+      core_ = std::make_shared<simeng::models::outoforder::Core>(
           instructionMemory, *fixedLatencyDataMemory, *architecture_, predictor,
-          *portAllocator);
+          *portAllocator, syscallHandle);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }
 
   // Schedule Process on core
-  /** NOTE: Not using SimOS as core_ must be unique_ptr, but SimOS expects
-   * shared_ptr. */
+  simOSKernel.registerCore(core_);
   core_->schedule(process_->context_);
 
-  // Run the core model until the program is complete
-  /** NOTE: As we cannot register the core with SimOS, and as such no scheduling
-   * occurs, we do not need to tick SimOS nor check its halted status in the
-   * Regression Test. */
+  // Run the OS and core model until the program is complete
   while (!(core_->getStatus() == simeng::CoreStatus::halted) ||
          dataMemory->hasPendingRequests()) {
     ASSERT_LT(numTicks_, maxTicks_) << "Maximum tick count exceeded.";
+    simOSKernel.tick();
     core_->tick();
     instructionMemory.tick();
     dataMemory->tick();

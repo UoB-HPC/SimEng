@@ -11,8 +11,12 @@ SimOS::SimOS(std::string executablePath,
              std::shared_ptr<simeng::memory::Mem> mem)
     : executablePath_(executablePath),
       executableArgs_(executableArgs),
+      config_(Config::get()),
       memory_(mem),
-      syscallHandler_(std::make_shared<SyscallHandler>(processes_)) {
+      syscallHandler_(std::make_shared<SyscallHandler>(
+          processes_, std::make_shared<simeng::FlatMemoryInterface>(mem),
+          [this](auto result) { sendSyscallResult(result); },
+          [this]() { return getSystemTimer(); })) {
   createInitialProcess();
 
   // Create the Special Files directory if indicated to do so in Config file
@@ -21,11 +25,16 @@ SimOS::SimOS(std::string executablePath,
 }
 
 void SimOS::tick() {
+  ticks_++;
+
   // Check if simulation halted
   if (halted_) {
     return;
   }
 
+  syscallHandler_->tick();
+
+  // Check for empty processes_ vector
   if (processes_.size() == 0) {
     halted_ = true;
     return;
@@ -140,6 +149,20 @@ const Process& SimOS::getProcess(uint64_t TID) const {
   return (*proc->second);
 }
 
+uint64_t SimOS::getSystemTimer() const {
+  // TODO: This will need to be changed if we start supporting DVFS.
+  return ticks_ /
+         ((config_["Core"]["Clock-Frequency"].as<float>() * 1e9) / 1e9);
+}
+
+void SimOS::recieveSyscall(const SyscallInfo syscallInfo) const {
+  syscallHandler_->handle(syscallInfo);
+};
+
+void SimOS::sendSyscallResult(const SyscallResult result) {
+  cores_[0]->recieveSyscallResult(result);
+}
+
 void SimOS::createInitialProcess() {
   // TODO : When supporting multiple processes, need to keep track of next
   // available TGID and TIDs, and pass these when constructing a Process
@@ -148,10 +171,9 @@ void SimOS::createInitialProcess() {
   // Temporarily create the architecture, with knowledge of the OS
   std::unique_ptr<simeng::arch::Architecture> arch;
   if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
-    arch = std::make_unique<simeng::arch::riscv::Architecture>(syscallHandler_);
+    arch = std::make_unique<simeng::arch::riscv::Architecture>();
   } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
-    arch =
-        std::make_unique<simeng::arch::aarch64::Architecture>(syscallHandler_);
+    arch = std::make_unique<simeng::arch::aarch64::Architecture>();
   }
 
   // Get structure of Architectural register file

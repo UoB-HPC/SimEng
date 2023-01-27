@@ -73,13 +73,14 @@ int main(int argc, char** argv) {
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(2684354560);  // 2.6 GiB
 
-  // Create the instance of the lightweight Operating system
+  // Create the instance of the OS
   simeng::OS::SimOS OS =
       simeng::OS::SimOS(executablePath, executableArgs, memory);
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =
-      std::make_unique<simeng::CoreInstance>(OS.getSyscallHandler(), memory);
+      std::make_unique<simeng::CoreInstance>(
+          memory, [OS](auto syscallInfo) { OS.recieveSyscall(syscallInfo); });
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();

@@ -36,7 +36,7 @@ TEST(OSTest, CreateSimOS) {
   EXPECT_EQ(proc.status_, simeng::OS::procStatus::scheduled);
 
   // Check syscallHandler created
-  EXPECT_TRUE(OS.getSyscallHandler());
+  EXPECT_TRUE(simOSKernel.getSyscallHandler());
 }
 
 }  // namespace

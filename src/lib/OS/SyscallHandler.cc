@@ -4,7 +4,7 @@ namespace simeng {
 namespace OS {
 
 SyscallHandler::SyscallHandler(
-    const std::vector<std::shared_ptr<Process>>& processes,
+    const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes,
     std::shared_ptr<MemoryInterface> memory,
     std::function<void(simeng::OS::SyscallResult)> returnSyscall,
     std::function<uint64_t()> getSystemTime)
@@ -64,9 +64,9 @@ void SyscallHandler::initSyscall() {
       // flag component not used, although function definition includes it
       int64_t flag = 0;
 
-      char* filename = new char[LINUX_PATH_MAX];
+      char* filename = new char[PATH_MAX_LEN];
       return readStringThen(
-          filename, filenamePtr, LINUX_PATH_MAX, [=](auto length) {
+          filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
             // Invoke the kernel
             int64_t retval = faccessat(dfd, filename, mode, flag);
             ProcessStateChange stateChange = {
@@ -82,9 +82,9 @@ void SyscallHandler::initSyscall() {
       int64_t flags = info.R2.get<int64_t>();
       uint16_t mode = info.R3.get<uint16_t>();
 
-      char* pathname = new char[LINUX_PATH_MAX];
+      char* pathname = new char[PATH_MAX_LEN];
       return readStringThen(
-          pathname, pathnamePtr, LINUX_PATH_MAX, [=](auto length) {
+          pathname, pathnamePtr, PATH_MAX_LEN, [=](auto length) {
             // Invoke the kernel
             uint64_t retval = openat(dirfd, pathname, flags, mode);
             ProcessStateChange stateChange = {
@@ -312,8 +312,8 @@ void SyscallHandler::initSyscall() {
       const auto pathnameAddress = info.R1.get<uint64_t>();
 
       // Copy string at `pathnameAddress`
-      auto pathname = new char[LINUX_PATH_MAX];
-      return readStringThen(pathname, pathnameAddress, LINUX_PATH_MAX,
+      auto pathname = new char[PATH_MAX_LEN];
+      return readStringThen(pathname, pathnameAddress, PATH_MAX_LEN,
                             [this, pathname](auto length) {
                               // Pass the string `readLinkAt`, then destroy
                               // the buffer and resolve the handler.
@@ -328,9 +328,9 @@ void SyscallHandler::initSyscall() {
       uint64_t statbufPtr = info.R2.get<uint64_t>();
       int64_t flag = info.R3.get<int64_t>();
 
-      char* filename = new char[LINUX_PATH_MAX];
+      char* filename = new char[PATH_MAX_LEN];
       return readStringThen(
-          filename, filenamePtr, LINUX_PATH_MAX, [=](auto length) {
+          filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
             // Invoke the kernel
             OS::stat statOut;
             uint64_t retval = newfstatat(dfd, filename, statOut, flag);
@@ -707,9 +707,9 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
 }
 
 void SyscallHandler::readLinkAt(span<char> path) {
-  if (path.size() == LINUX_PATH_MAX) {
-    // TODO: Handle LINUX_PATH_MAX case
-    std::cout << "\n[SimEng:SyscallHandler] Path exceeds LINUX_PATH_MAX"
+  if (path.size() == PATH_MAX_LEN) {
+    // TODO: Handle PATH_MAX_LEN case
+    std::cout << "\n[SimEng:SyscallHandler] Path exceeds PATH_MAX_LEN"
               << std::endl;
     return concludeSyscall({}, true);
   }
@@ -719,7 +719,7 @@ void SyscallHandler::readLinkAt(span<char> path) {
   const uint64_t bufAddress = info.R2.get<uint64_t>();
   const uint64_t bufSize = info.R3.get<uint64_t>();
 
-  char buffer[LINUX_PATH_MAX];
+  char buffer[PATH_MAX_LEN];
   int64_t result = readlinkat(dirfd, path.data(), buffer, bufSize);
 
   if (result < 0) {
