@@ -10,9 +10,7 @@ namespace aarch64 {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler)
-    : syscallHandler_(syscallHandler),
-      microDecoder_(std::make_unique<MicroDecoder>()) {
+Architecture::Architecture() : microDecoder_(std::make_unique<MicroDecoder>()) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle"
               << std::endl;
@@ -232,8 +230,7 @@ ExecutionInfo Architecture::getExecutionInfo(Instruction& insn) const {
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core, memory,
-                                            syscallHandler_);
+  return std::make_shared<ExceptionHandler>(instruction, core);
 }
 
 std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
