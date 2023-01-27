@@ -51,7 +51,6 @@ uint64_t PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
   while (vsize > 0) {
     PageTable::TableItr itr = table_.find(addr);
     if (itr != table_.end()) {
-      std::cout << "Failed to create mapping" << std::endl;
       return masks::faults::pagetable::fault | masks::faults::pagetable::map;
     }
     addr += pageSize_;

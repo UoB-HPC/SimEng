@@ -14,6 +14,7 @@
 #include "simeng/arch/riscv/Instruction.hh"
 #include "simeng/kernel/PageFrameAllocator.hh"
 #include "simeng/kernel/SyscallHandler.hh"
+#include "simeng/kernel/Vma.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/memory/SimpleMem.hh"
 #include "simeng/span.hh"
@@ -68,6 +69,8 @@ class SimOS {
   uint64_t requestPageFrames(size_t size);
 
   uint64_t handleVAddrTranslation(uint64_t vaddr, uint64_t pid);
+
+  HostBackedFileMMaps* hfmmap_ = new HostBackedFileMMaps;
 
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */

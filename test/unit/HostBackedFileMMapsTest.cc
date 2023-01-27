@@ -32,10 +32,12 @@ class HBFMTestEnv : public ::testing::Environment {
 
     std::ofstream fs(fpath);
 
-    for (size_t i = 0; i < 2048; i++) {
-      fs << 4096;
+    for (size_t i = 0; i < 4096; i++) {
+      fs << 1;
     }
-
+    for (size_t i = 0; i < 4096; i++) {
+      fs << 2;
+    }
     fs.close();
   }
 
@@ -153,7 +155,7 @@ TEST(HostBackedFileMMapsTest, ReadHostedFileNonZeroOffset) {
   HostFileMMap* hfmm = hmap->mapfd(fd, 8, 4096);
   ASSERT_LE(hfmm->flen_, 8);
 
-  std::string text = "40964096";
+  std::string text = "22222222";
   char* ftext = new char[9];
   memset(ftext, '\0', 9);
   memcpy(ftext, hfmm->getfaddr(), hfmm->flen_);

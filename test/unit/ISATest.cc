@@ -17,7 +17,7 @@ TEST(ISATest, CreateAArch64) {
   // architecture class to function
   std::vector<std::shared_ptr<simeng::kernel::Process>> procs = {};
   std::shared_ptr<simeng::kernel::SyscallHandler> sysHandler =
-      std::make_shared<simeng::kernel::SyscallHandler>(procs);
+      std::make_shared<simeng::kernel::SyscallHandler>(nullptr);
 
   std::unique_ptr<simeng::arch::Architecture> isa =
       std::make_unique<simeng::arch::aarch64::Architecture>(sysHandler);

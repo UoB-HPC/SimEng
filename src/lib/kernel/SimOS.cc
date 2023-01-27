@@ -12,8 +12,10 @@ SimOS::SimOS(std::string executablePath,
              std::shared_ptr<simeng::memory::Mem> mem, bool setProcess)
     : executablePath_(executablePath),
       executableArgs_(executableArgs),
-      memory_(mem),
-      syscallHandler_(std::make_shared<SyscallHandler>(processes_)) {
+      memory_(mem) {
+  syscallHandler_ = std::make_shared<SyscallHandler>(this);
+  // Parse command line args
+  // Determine if a config file has been supplied.
   sendToMem_ = [&, this](char* data, uint64_t addr, size_t size) {
     this->memory_->sendUntimedData(data, addr, size);
   };
