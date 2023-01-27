@@ -22,19 +22,19 @@ TEST(OSTest, CreateSimOS) {
       simeng::kernel::SimOS(DEFAULT_STR, {}, memory);
 
   // Check default process created. Initial process TID = 0
-  auto proc = simOS_kernel.getProcess(0);
-  EXPECT_GT(proc.getHeapStart(), 0);
-  EXPECT_GT(proc.getMmapStart(), proc.getHeapStart());
-  EXPECT_GT(proc.getStackStart(), proc.getMmapStart());
-  EXPECT_EQ(proc.isValid(), true);
+  std::shared_ptr<simeng::kernel::Process> proc = simOS_kernel.getProcess(0);
+  EXPECT_GT(proc->getHeapStart(), 0);
+  EXPECT_GT(proc->getMmapStart(), proc->getHeapStart());
+  EXPECT_GT(proc->getStackStart(), proc->getMmapStart());
+  EXPECT_EQ(proc->isValid(), true);
   // Check CPU context
   // PC is always 0 for processes assembled by SimEng
-  EXPECT_EQ(proc.context_.pc, 0);
-  EXPECT_GT(proc.context_.progByteLen, 0);
-  EXPECT_GT(proc.context_.sp, 0);
-  EXPECT_GT(proc.context_.regFile.size(), 0);
+  EXPECT_EQ(proc->context_.pc, 0);
+  EXPECT_GT(proc->context_.progByteLen, 0);
+  EXPECT_GT(proc->context_.sp, 0);
+  EXPECT_GT(proc->context_.regFile.size(), 0);
   // Check Initial Process' state
-  EXPECT_EQ(proc.status_, simeng::kernel::procStatus::scheduled);
+  EXPECT_EQ(proc->status_, simeng::kernel::procStatus::scheduled);
 
   // Check syscallHandler created
   EXPECT_TRUE(simOS_kernel.getSyscallHandler());

@@ -116,10 +116,10 @@ void SimOS::tick() {
   }
 }
 
-Process SimOS::getProcess(uint64_t TID) const {
+std::shared_ptr<Process> SimOS::getProcess(uint64_t TID) const {
   for (auto i : processes_) {
     if (i->getTID() == TID) {
-      return (*i);
+      return i;
     }
   }
   // If TID doesn't exist then hard exit
