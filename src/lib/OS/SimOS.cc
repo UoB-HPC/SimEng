@@ -156,7 +156,7 @@ uint64_t SimOS::getSystemTimer() const {
 }
 
 void SimOS::recieveSyscall(const SyscallInfo syscallInfo) const {
-  syscallHandler_->handle(syscallInfo);
+  syscallHandler_->recordSyscall(syscallInfo);
 };
 
 void SimOS::sendSyscallResult(const SyscallResult result) {
