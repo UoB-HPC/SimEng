@@ -31,58 +31,6 @@ Instruction::Instruction(const Architecture& architecture,
   exceptionEncountered_ = true;
 }
 
-Instruction::Instruction(const Instruction& insn)
-    : architecture_(insn.architecture_), metadata(insn.metadata) {
-  // Parent class variables
-  exceptionEncountered_ = insn.exceptionEncountered_;
-  instructionAddress_ = insn.instructionAddress_;
-  executed_ = insn.executed_;
-  canCommit_ = insn.canCommit_;
-  dataPending_ = insn.dataPending_;
-  prediction_ = insn.prediction_;
-  branchAddress_ = insn.branchAddress_;
-  branchTaken_ = insn.branchTaken_;
-  branchType_ = insn.branchType_;
-  knownTarget_ = insn.knownTarget_;
-  sequenceId_ = insn.sequenceId_;
-  flushed_ = insn.flushed_;
-  latency_ = insn.latency_;
-  lsqExecutionLatency_ = insn.lsqExecutionLatency_;
-  stallCycles_ = insn.stallCycles_;
-  supportedPorts_ = insn.supportedPorts_;
-  isMicroOp_ = insn.isMicroOp_;
-  isLastMicroOp_ = insn.isLastMicroOp_;
-  instructionId_ = insn.instructionId_;
-  waitingCommit_ = insn.waitingCommit_;
-  microOpIndex_ = insn.microOpIndex_;
-  // Child class variables
-  sourceRegisters = insn.sourceRegisters;
-  sourceRegisterCount = insn.sourceRegisterCount;
-  destinationRegisters = insn.destinationRegisters;
-  destinationRegisterCount = insn.destinationRegisterCount;
-  operands = insn.operands;
-  results = insn.results;
-  exception_ = insn.exception_;
-  operandsPending = insn.operandsPending;
-  isScalarData_ = insn.isScalarData_;
-  isVectorData_ = insn.isVectorData_;
-  isSVEData_ = insn.isSVEData_;
-  isSMEData_ = insn.isSMEData_;
-  isNoShift_ = insn.isNoShift_;
-  isLogical_ = insn.isLogical_;
-  isCompare_ = insn.isCompare_;
-  isConvert_ = insn.isConvert_;
-  isMultiply_ = insn.isMultiply_;
-  isDivideOrSqrt_ = insn.isDivideOrSqrt_;
-  isPredicate_ = insn.isPredicate_;
-  isLoad_ = insn.isLoad_;
-  isStoreAddress_ = insn.isStoreAddress_;
-  isStoreData_ = insn.isStoreData_;
-  isBranch_ = insn.isBranch_;
-  microOpcode_ = insn.microOpcode_;
-  dataSize_ = insn.dataSize_;
-}
-
 InstructionException Instruction::getException() const { return exception_; }
 
 const span<Register> Instruction::getOperandRegisters() const {
