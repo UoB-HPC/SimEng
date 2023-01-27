@@ -4,13 +4,754 @@ namespace simeng {
 namespace OS {
 
 SyscallHandler::SyscallHandler(
-    const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes)
-    : processes_(processes) {
+    const std::vector<std::shared_ptr<Process>>& processes,
+    std::shared_ptr<MemoryInterface> memory,
+    std::function<void(simeng::OS::SyscallResult)> returnSyscall,
+    std::function<uint64_t()> getSystemTime)
+    : processes_(processes),
+      memory_(memory),
+      returnSyscall_(returnSyscall),
+      getSystemTime_(getSystemTime) {
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
       supportedSpecialFiles_.end(),
       {"/proc/cpuinfo", "proc/stat", "/sys/devices/system/cpu",
        "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
+
+  resumeHandling_ = [this]() { initSyscall(); };
+}
+
+void SyscallHandler::recordSyscall(const SyscallInfo info) {
+  syscallQueue_.push(info);
+}
+
+void SyscallHandler::tick() { resumeHandling_(); }
+
+void SyscallHandler::initSyscall() {
+  if (syscallQueue_.empty()) return;
+
+  SyscallInfo info = syscallQueue_.front();
+  ProcessStateChange stateChange;
+
+  switch (info.syscallId) {
+    case 29: {  // ioctl
+      int64_t fd = info.R0.get<int64_t>();
+      uint64_t request = info.R1.get<uint64_t>();
+      uint64_t argp = info.R2.get<uint64_t>();
+
+      std::vector<char> out;
+      int64_t retval = ioctl(fd, request, out);
+
+      assert(out.size() < 256 && "large ioctl() output not implemented");
+      uint8_t outSize = static_cast<uint8_t>(out.size());
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {retval}};
+      stateChange.memoryAddresses.push_back({argp, outSize});
+      stateChange.memoryAddressValues.push_back(
+          RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
+      break;
+    }
+    case 46: {  // ftruncate
+      uint64_t fd = info.R0.get<uint64_t>();
+      uint64_t length = info.R1.get<uint64_t>();
+      stateChange = {
+          ChangeType::REPLACEMENT, {info.ret}, {ftruncate(fd, length)}};
+      break;
+    }
+    case 48: {  // faccessat
+      int64_t dfd = info.R0.get<int64_t>();
+      uint64_t filenamePtr = info.R1.get<uint64_t>();
+      int64_t mode = info.R2.get<int64_t>();
+      // flag component not used, although function definition includes it
+      int64_t flag = 0;
+
+      char* filename = new char[LINUX_PATH_MAX];
+      return readStringThen(
+          filename, filenamePtr, LINUX_PATH_MAX, [=](auto length) {
+            // Invoke the kernel
+            int64_t retval = faccessat(dfd, filename, mode, flag);
+            ProcessStateChange stateChange = {
+                ChangeType::REPLACEMENT, {info.ret}, {retval}};
+            delete[] filename;
+            concludeSyscall(stateChange);
+          });
+      break;
+    }
+    case 56: {  // openat
+      int64_t dirfd = info.R0.get<int64_t>();
+      uint64_t pathnamePtr = info.R1.get<uint64_t>();
+      int64_t flags = info.R2.get<int64_t>();
+      uint16_t mode = info.R3.get<uint16_t>();
+
+      char* pathname = new char[LINUX_PATH_MAX];
+      return readStringThen(
+          pathname, pathnamePtr, LINUX_PATH_MAX, [=](auto length) {
+            // Invoke the kernel
+            uint64_t retval = openat(dirfd, pathname, flags, mode);
+            ProcessStateChange stateChange = {
+                ChangeType::REPLACEMENT, {info.ret}, {retval}};
+            delete[] pathname;
+            concludeSyscall(stateChange);
+          });
+      break;
+    }
+    case 57: {  // close
+      int64_t fd = info.R0.get<int64_t>();
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {close(fd)}};
+      break;
+    }
+    case 61: {  // getdents64
+      int64_t fd = info.R0.get<int64_t>();
+      uint64_t bufPtr = info.R1.get<uint64_t>();
+      uint64_t count = info.R2.get<uint64_t>();
+
+      return readBufferThen(bufPtr, count, [=]() {
+        int64_t totalRead = getdents64(fd, dataBuffer_.data(), count);
+        ProcessStateChange stateChange = {
+            ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
+        // Check for failure
+        if (totalRead < 0) {
+          return concludeSyscall(stateChange);
+        }
+
+        int64_t bytesRemaining = totalRead;
+        // Get pointer and size of the buffer
+        uint64_t iDst = bufPtr;
+        uint64_t iLength = bytesRemaining;
+        if (iLength > bytesRemaining) {
+          iLength = bytesRemaining;
+        }
+        bytesRemaining -= iLength;
+        // Write data for this buffer in 128-byte chunks
+        auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
+        while (iLength > 0) {
+          uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+          stateChange.memoryAddresses.push_back({iDst, len});
+          stateChange.memoryAddressValues.push_back({iSrc, len});
+          iDst += len;
+          iSrc += len;
+          iLength -= len;
+        }
+        concludeSyscall(stateChange);
+      });
+    }
+    case 62: {  // lseek
+      int64_t fd = info.R0.get<int64_t>();
+      uint64_t offset = info.R1.get<uint64_t>();
+      int64_t whence = info.R2.get<uint64_t>();
+      stateChange = {
+          ChangeType::REPLACEMENT, {info.ret}, {lseek(fd, offset, whence)}};
+      break;
+    }
+    case 63: {  // read
+      int64_t fd = info.R0.get<int64_t>();
+      uint64_t bufPtr = info.R1.get<uint64_t>();
+      uint64_t count = info.R2.get<uint64_t>();
+      return readBufferThen(bufPtr, count, [=]() {
+        int64_t totalRead = read(fd, dataBuffer_.data(), count);
+        ProcessStateChange stateChange = {
+            ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
+        // Check for failure
+        if (totalRead < 0) {
+          return concludeSyscall(stateChange);
+        }
+
+        int64_t bytesRemaining = totalRead;
+        // Get pointer and size of the buffer
+        uint64_t iDst = bufPtr;
+        uint64_t iLength = bytesRemaining;
+        if (iLength > bytesRemaining) {
+          iLength = bytesRemaining;
+        }
+        bytesRemaining -= iLength;
+
+        // Write data for this buffer in 128-byte chunks
+        auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
+        while (iLength > 0) {
+          uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+          stateChange.memoryAddresses.push_back({iDst, len});
+          stateChange.memoryAddressValues.push_back({iSrc, len});
+          iDst += len;
+          iSrc += len;
+          iLength -= len;
+        }
+        concludeSyscall(stateChange);
+      });
+    }
+    case 64: {  // write
+      int64_t fd = info.R0.get<int64_t>();
+      uint64_t bufPtr = info.R1.get<uint64_t>();
+      uint64_t count = info.R2.get<uint64_t>();
+      return readBufferThen(bufPtr, count, [=]() {
+        int64_t retval = write(fd, dataBuffer_.data(), count);
+        ProcessStateChange stateChange = {
+            ChangeType::REPLACEMENT, {info.ret}, {retval}};
+        concludeSyscall(stateChange);
+      });
+    }
+    case 65: {  // readv
+      int64_t fd = info.R0.get<int64_t>();
+      uint64_t iov = info.R1.get<uint64_t>();
+      int64_t iovcnt = info.R2.get<int64_t>();
+
+      // The pointer `iov` points to an array of structures that each contain
+      // a pointer to where the data should be written and the number of
+      // bytes to write.
+      //
+      // We're going to queue up two handlers:
+      // - First, read the iovec structures that describe each buffer.
+      // - Second, invoke the kernel to perform the read operation, and
+      //   generate memory write requests for each buffer.
+
+      // Create the second handler in the chain, which invokes the kernel and
+      // generates the memory write requests.
+      auto invokeKernel = [=]() {
+        // The iov structure has been read into `dataBuffer_`
+        uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
+
+        // Allocate buffers to hold the data read by the kernel
+        std::vector<std::vector<uint8_t>> buffers(iovcnt);
+        for (int64_t i = 0; i < iovcnt; i++) {
+          buffers[i].resize(iovdata[i * 2 + 1]);
+        }
+
+        // Build new iovec structures using pointers to `dataBuffer_` data
+        std::vector<uint64_t> iovec(iovcnt * 2);
+        for (int64_t i = 0; i < iovcnt; i++) {
+          iovec[i * 2 + 0] = reinterpret_cast<uint64_t>(buffers[i].data());
+          iovec[i * 2 + 1] = iovdata[i * 2 + 1];
+        }
+
+        // Invoke the kernel
+        int64_t totalRead = readv(fd, iovec.data(), iovcnt);
+        ProcessStateChange stateChange = {
+            ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
+
+        // Check for failure
+        if (totalRead < 0) {
+          return concludeSyscall(stateChange);
+        }
+
+        // Build list of memory write operations
+        int64_t bytesRemaining = totalRead;
+        for (int64_t i = 0; i < iovcnt; i++) {
+          // Get pointer and size of the buffer
+          uint64_t iDst = iovdata[i * 2 + 0];
+          uint64_t iLength = iovdata[i * 2 + 1];
+          if (iLength > bytesRemaining) {
+            iLength = bytesRemaining;
+          }
+          bytesRemaining -= iLength;
+
+          // Write data for this buffer in 128-byte chunks
+          auto iSrc = reinterpret_cast<const char*>(buffers[i].data());
+          while (iLength > 0) {
+            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+            stateChange.memoryAddresses.push_back({iDst, len});
+            stateChange.memoryAddressValues.push_back({iSrc, len});
+            iDst += len;
+            iSrc += len;
+            iLength -= len;
+          }
+        }
+
+        concludeSyscall(stateChange);
+      };
+
+      // Run the buffer read to load the buffer structures, before invoking
+      // the kernel.
+      return readBufferThen(iov, iovcnt * 16, invokeKernel);
+    }
+    case 66: {  // writev
+      int64_t fd = info.R0.get<int64_t>();
+      uint64_t iov = info.R1.get<uint64_t>();
+      int64_t iovcnt = info.R2.get<int64_t>();
+
+      // The pointer `iov` points to an array of structures that each contain
+      // a pointer to the data and the size of the data as an integer.
+      //
+      // We're going to queue up a chain of handlers:
+      // - First, read the iovec structures that describe each buffer.
+      // - Next, read the data for each buffer.
+      // - Finally, invoke the kernel to perform the write operation.
+
+      // Create the final handler in the chain, which invokes the kernel
+      std::function<void()> last = [=]() {
+        // Rebuild the iovec structures using pointers to `dataBuffer_` data
+        uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
+        uint8_t* bufferPtr = dataBuffer_.data() + iovcnt * 16;
+        for (int64_t i = 0; i < iovcnt; i++) {
+          iovdata[i * 2 + 0] = reinterpret_cast<uint64_t>(bufferPtr);
+
+          // Get the length of this buffer and add it to the current pointer
+          uint64_t len = iovdata[i * 2 + 1];
+          bufferPtr += len;
+        }
+
+        // Invoke the kernel
+        int64_t retval = writev(fd, dataBuffer_.data(), iovcnt);
+        ProcessStateChange stateChange = {
+            ChangeType::REPLACEMENT, {info.ret}, {retval}};
+        concludeSyscall(stateChange);
+      };
+
+      // Build the chain of buffer loads backwards through the iov buffers
+      for (int64_t i = iovcnt - 1; i >= 0; i--) {
+        last = [=]() {
+          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
+          uint64_t ptr = iovdata[i * 2 + 0];
+          uint64_t len = iovdata[i * 2 + 1];
+          return readBufferThen(ptr, len, last);
+        };
+      }
+
+      // Run the first buffer read to load the buffer structures, before
+      // performing each of the buffer loads.
+      return readBufferThen(iov, iovcnt * 16, last);
+    }
+    case 78: {  // readlinkat
+      const auto pathnameAddress = info.R1.get<uint64_t>();
+
+      // Copy string at `pathnameAddress`
+      auto pathname = new char[LINUX_PATH_MAX];
+      return readStringThen(pathname, pathnameAddress, LINUX_PATH_MAX,
+                            [this, pathname](auto length) {
+                              // Pass the string `readLinkAt`, then destroy
+                              // the buffer and resolve the handler.
+                              readLinkAt({pathname, length});
+                              delete[] pathname;
+                              return;
+                            });
+    }
+    case 79: {  // newfstatat AKA fstatat
+      int64_t dfd = info.R0.get<int64_t>();
+      uint64_t filenamePtr = info.R1.get<uint64_t>();
+      uint64_t statbufPtr = info.R2.get<uint64_t>();
+      int64_t flag = info.R3.get<int64_t>();
+
+      char* filename = new char[LINUX_PATH_MAX];
+      return readStringThen(
+          filename, filenamePtr, LINUX_PATH_MAX, [=](auto length) {
+            // Invoke the kernel
+            OS::stat statOut;
+            uint64_t retval = newfstatat(dfd, filename, statOut, flag);
+            ProcessStateChange stateChange = {
+                ChangeType::REPLACEMENT, {info.ret}, {retval}};
+            delete[] filename;
+            stateChange.memoryAddresses.push_back(
+                {statbufPtr, sizeof(statOut)});
+            stateChange.memoryAddressValues.push_back(statOut);
+            concludeSyscall(stateChange);
+          });
+
+      break;
+    }
+    case 80: {  // fstat
+      int64_t fd = info.R0.get<int64_t>();
+      uint64_t statbufPtr = info.R1.get<uint64_t>();
+
+      OS::stat statOut;
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {fstat(fd, statOut)}};
+      stateChange.memoryAddresses.push_back({statbufPtr, sizeof(statOut)});
+      stateChange.memoryAddressValues.push_back(statOut);
+      break;
+    }
+    case 93: {  // exit
+      auto exitCode = info.R0.get<uint64_t>();
+      std::cout << "[SimEng:SyscallHandler] Received exit syscall: "
+                   "terminating with exit code "
+                << exitCode << std::endl;
+      return concludeSyscall({}, true);
+    }
+    case 94: {  // exit_group
+      auto exitCode = info.R0.get<uint64_t>();
+      std::cout << "\n[SimEng:SyscallHandler] Received exit_group syscall: "
+                   "terminating with exit code "
+                << exitCode << std::endl;
+      return concludeSyscall({}, true);
+    }
+    case 96: {  // set_tid_address
+      uint64_t ptr = info.R0.get<uint64_t>();
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {setTidAddress(ptr)}};
+      break;
+    }
+    case 98: {  // futex
+      // TODO: Functionality temporarily omitted as it is unused within
+      // workloads regions of interest and not required for their simulation
+      int op = info.R1.get<int>();
+      if (op != 129) {
+        return concludeSyscall({}, true);
+      }
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {1ull}};
+      break;
+    }
+    case 99: {  // set_robust_list
+      // TODO: Functionality temporarily omitted as it is unused within
+      // workloads regions of interest and not required for their simulation
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {0ull}};
+      break;
+    }
+    case 113: {  // clock_gettime
+      uint64_t clkId = info.R0.get<uint64_t>();
+      uint64_t systemTimer = getSystemTime_();
+
+      uint64_t seconds;
+      uint64_t nanoseconds;
+      uint64_t retval = clockGetTime(clkId, systemTimer, seconds, nanoseconds);
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {retval}};
+
+      uint64_t timespecPtr = info.R1.get<uint64_t>();
+      stateChange.memoryAddresses.push_back({timespecPtr, 8});
+      stateChange.memoryAddressValues.push_back(seconds);
+      stateChange.memoryAddresses.push_back({timespecPtr + 8, 8});
+      stateChange.memoryAddressValues.push_back(nanoseconds);
+      break;
+    }
+    case 122: {  // sched_setaffinity
+      pid_t pid = info.R0.get<pid_t>();
+      size_t cpusetsize = info.R1.get<size_t>();
+      uint64_t mask = info.R2.get<uint64_t>();
+
+      int64_t retval = schedSetAffinity(pid, cpusetsize, mask);
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {retval}};
+      break;
+    }
+    case 123: {  // sched_getaffinity
+      pid_t pid = info.R0.get<pid_t>();
+      size_t cpusetsize = info.R1.get<size_t>();
+      uint64_t mask = info.R2.get<uint64_t>();
+      int64_t bitmask = schedGetAffinity(pid, cpusetsize, mask);
+      // If returned bitmask is 0, assume an error
+      if (bitmask > 0) {
+        // Currently, only a single CPU bitmask is supported
+        if (bitmask != 1) {
+          return concludeSyscall({}, true);
+        }
+        uint64_t retval = (pid == 0) ? 1 : 0;
+        stateChange = {ChangeType::REPLACEMENT, {info.ret}, {retval}};
+        stateChange.memoryAddresses.push_back({mask, 1});
+        stateChange.memoryAddressValues.push_back(bitmask);
+      } else {
+        stateChange = {ChangeType::REPLACEMENT, {info.ret}, {-1ll}};
+      }
+      break;
+    }
+    case 131: {  // tgkill
+      // TODO: Functionality temporarily omitted since simeng only has a
+      // single thread at the moment
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {0ull}};
+      break;
+    }
+    case 134: {  // rt_sigaction
+      // TODO: Implement syscall logic. Ignored for now as it's assumed the
+      // current use of this syscall is to setup error handlers. Simualted
+      // code is expected to work so no need for these handlers.
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {0ull}};
+      break;
+    }
+    case 135: {  // rt_sigprocmask
+      // TODO: Implement syscall logic. Ignored for now as it's assumed the
+      // current use of this syscall is to setup error handlers. Simualted
+      // code is expected to work so no need for these handlers.
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {0ull}};
+      break;
+    }
+    case 165: {  // getrusage
+      int who = info.R0.get<int>();
+      uint64_t usagePtr = info.R1.get<uint64_t>();
+
+      OS::rusage usageOut;
+      stateChange = {
+          ChangeType::REPLACEMENT, {info.ret}, {getrusage(who, usageOut)}};
+      stateChange.memoryAddresses.push_back({usagePtr, sizeof(usageOut)});
+      stateChange.memoryAddressValues.push_back(usageOut);
+      break;
+    }
+    case 169: {  // gettimeofday
+      uint64_t tvPtr = info.R0.get<uint64_t>();
+      uint64_t tzPtr = info.R1.get<uint64_t>();
+      uint64_t systemTimer = getSystemTime_();
+
+      OS::timeval tv;
+      OS::timeval tz;
+      int64_t retval = gettimeofday(systemTimer, tvPtr ? &tv : nullptr,
+                                    tzPtr ? &tz : nullptr);
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {retval}};
+      if (tvPtr) {
+        stateChange.memoryAddresses.push_back({tvPtr, 16});
+        stateChange.memoryAddressValues.push_back(tv);
+      }
+      if (tzPtr) {
+        stateChange.memoryAddresses.push_back({tzPtr, 16});
+        stateChange.memoryAddressValues.push_back(tz);
+      }
+      break;
+    }
+    case 172: {  // getpid
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {getpid()}};
+      break;
+    }
+    case 174: {  // getuid
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {getuid()}};
+      break;
+    }
+    case 175: {  // geteuid
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {geteuid()}};
+      break;
+    }
+    case 176: {  // getgid
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {getgid()}};
+      break;
+    }
+    case 177: {  // getegid
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {getegid()}};
+      break;
+    }
+    case 178: {  // gettid
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {gettid()}};
+      break;
+    }
+    case 179: {  // sysinfo
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {0ull}};
+      break;
+    }
+    case 210: {  // shutdown
+      // TODO: Functionality omitted - returns -38 (errno 38, function not
+      // implemented) is to mimic the behaviour on isambard and avoid an
+      // unrecognised syscall error
+      stateChange = {
+          ChangeType::REPLACEMENT, {info.ret}, {static_cast<int64_t>(-38)}};
+      break;
+    }
+    case 214: {  // brk
+      auto result = brk(info.R0.get<uint64_t>());
+      stateChange = {
+          ChangeType::REPLACEMENT, {info.ret}, {static_cast<uint64_t>(result)}};
+      break;
+    }
+    case 215: {  // munmap
+      uint64_t addr = info.R0.get<uint64_t>();
+      size_t length = info.R1.get<size_t>();
+
+      int64_t result = munmap(addr, length);
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {result}};
+      break;
+    }
+    case 222: {  // mmap
+      uint64_t addr = info.R0.get<uint64_t>();
+      size_t length = info.R1.get<size_t>();
+      int prot = info.R2.get<int>();
+      int flags = info.R3.get<int>();
+      int fd = info.R4.get<int>();
+      off_t offset = info.R5.get<off_t>();
+
+      // Currently, only support mmap from a malloc() call whose arguments
+      // match the first condition
+      if (addr == 0 && flags == 34 && fd == -1 && offset == 0) {
+        uint64_t result = mmap(addr, length, prot, flags, fd, offset);
+        // An allocation of 0 signifies a failed allocation, return value from
+        // syscall is changed to -1
+        if (result == 0) {
+          stateChange = {
+              ChangeType::REPLACEMENT, {info.ret}, {static_cast<int64_t>(-1)}};
+        } else {
+          stateChange = {ChangeType::REPLACEMENT, {info.ret}, {result}};
+        }
+        break;
+      } else {
+        return concludeSyscall({}, true);
+      }
+    }
+    case 226: {  // mprotect
+      // mprotect is not supported
+      // always return zero to indicate success
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {0ull}};
+      break;
+    }
+    case 261: {  // prlimit64
+      // TODO: Functionality temporarily omitted as it is unused within
+      // workloads regions of interest and not required for their simulation
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {0ull}};
+      break;
+    }
+    case 278: {  // getrandom
+      // TODO: support flags argument
+
+      // seed random numbers
+      srand(clock());
+
+      // Write <buflen> random bytes to buf
+      uint64_t bufPtr = info.R0.get<uint64_t>();
+      size_t buflen = info.R1.get<size_t>();
+
+      char buf[buflen];
+      for (size_t i = 0; i < buflen; i++) {
+        buf[i] = (uint8_t)rand();
+      }
+
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {(uint64_t)buflen}};
+
+      stateChange.memoryAddresses.push_back({bufPtr, (uint8_t)buflen});
+      stateChange.memoryAddressValues.push_back(RegisterValue(buf, buflen));
+
+      break;
+    }
+    case 293: {  // rseq
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {0ull}};
+      break;
+    }
+
+    default:
+      break;
+  };
+
+  concludeSyscall(stateChange);
+}
+
+void SyscallHandler::readStringThen(char* buffer, uint64_t address,
+                                    int maxLength,
+                                    std::function<void(size_t length)> then,
+                                    int offset) {
+  if (maxLength <= 0) {
+    return then(offset);
+  }
+
+  if (offset == -1) {
+    // First call; trigger read for address 0
+    memory_->requestRead({address + offset + 1, 1},
+                         syscallQueue_.front().seqId);
+    resumeHandling_ = [=]() {
+      return readStringThen(buffer, address, maxLength, then, offset + 1);
+    };
+    return;
+  }
+
+  // Search completed memory requests for the needed data
+  bool found = false;
+  for (const auto& response : memory_->getCompletedReads()) {
+    if (response.requestId == syscallQueue_.front().seqId) {
+      // TODO: Detect and handle any faults
+      assert(response.data && "Memory read failed");
+      buffer[offset] = response.data.get<char>();
+      found = true;
+      break;
+    }
+  }
+  memory_->clearCompletedReads();
+
+  if (!found) {
+    // Leave this handler in place to call again
+    return;
+  }
+
+  if (buffer[offset] == '\0') {
+    // End of string; call onwards
+    return then(offset);
+  }
+
+  if (offset + 1 == maxLength) {
+    // Reached max length; call onwards
+    return then(maxLength);
+  }
+
+  // Queue up read for next character
+  memory_->requestRead({address + offset + 1, 1}, syscallQueue_.front().seqId);
+  resumeHandling_ = [=]() {
+    return readStringThen(buffer, address, maxLength, then, offset + 1);
+  };
+  return;
+}
+
+void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
+                                    std::function<void()> then,
+                                    bool firstCall) {
+  // If first call, trigger read for first entry and set self as handler
+  if (firstCall) {
+    if (length == 0) {
+      return then();
+    }
+
+    // Request a read of up to 128 bytes
+    uint64_t numBytes = std::min<uint64_t>(length, 128);
+    memory_->requestRead({ptr, static_cast<uint8_t>(numBytes)},
+                         syscallQueue_.front().seqId);
+    resumeHandling_ = [=]() {
+      return readBufferThen(ptr, length, then, false);
+    };
+  }
+
+  // Check whether read has completed
+  auto completedReads = memory_->getCompletedReads();
+  auto response =
+      std::find_if(completedReads.begin(), completedReads.end(),
+                   [&](const MemoryReadResult& response) {
+                     return response.requestId == syscallQueue_.front().seqId;
+                   });
+  if (response == completedReads.end()) {
+    return;
+  }
+
+  // Append data to buffer
+  assert(response->data && "unhandled failed read in exception handler");
+  uint8_t bytesRead = response->target.size;
+  const uint8_t* data = response->data.getAsVector<uint8_t>();
+  dataBuffer_.insert(dataBuffer_.end(), data, data + bytesRead);
+  memory_->clearCompletedReads();
+
+  // If there is more data, rerun this function for next chunk
+  if (bytesRead < length) {
+    return readBufferThen(ptr + bytesRead, length - bytesRead, then, true);
+  }
+
+  // All done - call onwards
+  return then();
+}
+
+void SyscallHandler::readLinkAt(span<char> path) {
+  if (path.size() == LINUX_PATH_MAX) {
+    // TODO: Handle LINUX_PATH_MAX case
+    std::cout << "\n[SimEng:SyscallHandler] Path exceeds LINUX_PATH_MAX"
+              << std::endl;
+    return concludeSyscall({}, true);
+  }
+
+  const SyscallInfo info = syscallQueue_.front();
+  const int64_t dirfd = info.R0.get<int64_t>();
+  const uint64_t bufAddress = info.R2.get<uint64_t>();
+  const uint64_t bufSize = info.R3.get<uint64_t>();
+
+  char buffer[LINUX_PATH_MAX];
+  int64_t result = readlinkat(dirfd, path.data(), buffer, bufSize);
+
+  if (result < 0) {
+    // TODO: Handle error case
+    std::cout << "\n[SimEng:SyscallHandler] Error generated by readlinkat"
+              << std::endl;
+    return concludeSyscall({}, true);
+  }
+
+  uint64_t bytesCopied = static_cast<uint64_t>(result);
+
+  simeng::OS::ProcessStateChange stateChange = {
+      simeng::OS::ChangeType::REPLACEMENT, {info.ret}, {result}};
+
+  // Slice the returned path into <256-byte chunks for writing
+  const char* bufPtr = buffer;
+  for (size_t i = 0; i < bytesCopied; i += 256) {
+    uint8_t size = std::min<uint64_t>(bytesCopied - i, 256ul);
+    stateChange.memoryAddresses.push_back({bufAddress + i, size});
+    stateChange.memoryAddressValues.push_back(RegisterValue(bufPtr, size));
+  }
+
+  concludeSyscall(stateChange);
+}
+
+void SyscallHandler::concludeSyscall(ProcessStateChange change, bool fatal) {
+  returnSyscall_({fatal, syscallQueue_.front().syscallId,
+                  syscallQueue_.front().coreId, change});
+  // Remove syscall from queue and reset handler to default state
+  syscallQueue_.pop();
+  dataBuffer_ = {};
+  resumeHandling_ = [this]() { initSyscall(); };
 }
 
 // TODO : update when supporting multi-process/thread
@@ -256,7 +997,7 @@ int64_t SyscallHandler::getrusage(int64_t who, rusage& out) {
 
 int64_t SyscallHandler::getpid() const {
   assert((processes_.size() > 0) &&
-         "[SimEng:SyscallHanlder] invalid number of active processes - Max "
+         "[SimEng:SyscallHandler] invalid number of active processes - Max "
          "limit is 1.");
   // TODO : Needs to be properly implemented once multi-thread supported
   return 0;

@@ -1,10 +1,7 @@
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 
-#include <sys/syscall.h>
-
 #include <iomanip>
 #include <iostream>
-#include <ostream>
 
 #include "InstructionMetadata.hh"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
@@ -14,12 +11,8 @@ namespace arch {
 namespace aarch64 {
 
 ExceptionHandler::ExceptionHandler(
-    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory, std::shared_ptr<OS::SyscallHandler> sysHandler)
-    : instruction_(*static_cast<Instruction*>(instruction.get())),
-      core(core),
-      memory_(memory),
-      sysHandler_(sysHandler) {
+    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core)
+    : instruction_(*static_cast<Instruction*>(instruction.get())), core_(core) {
   resumeHandling_ = [this]() { return init(); };
 }
 
@@ -27,448 +20,67 @@ bool ExceptionHandler::tick() { return resumeHandling_(); }
 
 bool ExceptionHandler::init() {
   InstructionException exception = instruction_.getException();
-  const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
+  const auto& registerFileSet = core_.getArchitecturalRegisterFileSet();
 
   if (exception == InstructionException::SupervisorCall) {
     // Retrieve syscall ID held in register x8
     auto syscallId =
         registerFileSet.get({RegisterType::GENERAL, 8}).get<uint64_t>();
 
-    ProcessStateChange stateChange;
+    simeng::OS::ProcessStateChange stateChange;
     switch (syscallId) {
-      case 29: {  // ioctl
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t request = registerFileSet.get(R1).get<uint64_t>();
-        uint64_t argp = registerFileSet.get(R2).get<uint64_t>();
-
-        std::vector<char> out;
-        int64_t retval = sysHandler_->ioctl(fd, request, out);
-
-        assert(out.size() < 256 && "large ioctl() output not implemented");
-        uint8_t outSize = static_cast<uint8_t>(out.size());
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
-        stateChange.memoryAddresses.push_back({argp, outSize});
-        stateChange.memoryAddressValues.push_back(
-            RegisterValue(reinterpret_cast<const char*>(out.data()), outSize));
-        break;
-      }
-      case 46: {  // ftruncate
-        uint64_t fd = registerFileSet.get(R0).get<uint64_t>();
-        uint64_t length = registerFileSet.get(R1).get<uint64_t>();
-        stateChange = {ChangeType::REPLACEMENT,
-                       {R0},
-                       {sysHandler_->ftruncate(fd, length)}};
-        break;
-      }
-      case 48: {  // faccessat
-        int64_t dfd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t filenamePtr = registerFileSet.get(R1).get<uint64_t>();
-        int64_t mode = registerFileSet.get(R2).get<int64_t>();
-        // flag component not used, although function definition includes it
-        int64_t flag = 0;
-
-        char* filename = new char[PATH_MAX_LEN];
-        return readStringThen(
-            filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
-              // Invoke the syscall handler
-              int64_t retval =
-                  sysHandler_->faccessat(dfd, filename, mode, flag);
-              ProcessStateChange stateChange = {
-                  ChangeType::REPLACEMENT, {R0}, {retval}};
-              delete[] filename;
-              return concludeSyscall(stateChange);
-            });
-        break;
-      }
-      case 56: {  // openat
-        int64_t dirfd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t pathnamePtr = registerFileSet.get(R1).get<uint64_t>();
-        int64_t flags = registerFileSet.get(R2).get<int64_t>();
-        uint16_t mode = registerFileSet.get(R3).get<uint16_t>();
-
-        char* pathname = new char[PATH_MAX_LEN];
-        return readStringThen(
-            pathname, pathnamePtr, PATH_MAX_LEN, [=](auto length) {
-              // Invoke the syscall handler
-              uint64_t retval =
-                  sysHandler_->openat(dirfd, pathname, flags, mode);
-              ProcessStateChange stateChange = {
-                  ChangeType::REPLACEMENT, {R0}, {retval}};
-              delete[] pathname;
-              return concludeSyscall(stateChange);
-            });
-        break;
-      }
-      case 57: {  // close
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {sysHandler_->close(fd)}};
-        break;
-      }
-      case 61: {  // getdents64
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
-        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
-
-        return readBufferThen(bufPtr, count, [=]() {
-          int64_t totalRead =
-              sysHandler_->getdents64(fd, dataBuffer.data(), count);
-          ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {totalRead}};
-          // Check for failure
-          if (totalRead < 0) {
-            return concludeSyscall(stateChange);
-          }
-
-          int64_t bytesRemaining = totalRead;
-          // Get pointer and size of the buffer
-          uint64_t iDst = bufPtr;
-          uint64_t iLength = bytesRemaining;
-          if (iLength > bytesRemaining) {
-            iLength = bytesRemaining;
-          }
-          bytesRemaining -= iLength;
-          // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
-          while (iLength > 0) {
-            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
-            stateChange.memoryAddresses.push_back({iDst, len});
-            stateChange.memoryAddressValues.push_back({iSrc, len});
-            iDst += len;
-            iSrc += len;
-            iLength -= len;
-          }
-          return concludeSyscall(stateChange);
-        });
-      }
-      case 62: {  // lseek
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t offset = registerFileSet.get(R1).get<uint64_t>();
-        int64_t whence = registerFileSet.get(R2).get<uint64_t>();
-        stateChange = {ChangeType::REPLACEMENT,
-                       {R0},
-                       {sysHandler_->lseek(fd, offset, whence)}};
-        break;
-      }
-      case 63: {  // read
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
-        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
-        return readBufferThen(bufPtr, count, [=]() {
-          int64_t totalRead = sysHandler_->read(fd, dataBuffer.data(), count);
-          ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {totalRead}};
-          // Check for failure
-          if (totalRead < 0) {
-            return concludeSyscall(stateChange);
-          }
-
-          int64_t bytesRemaining = totalRead;
-          // Get pointer and size of the buffer
-          uint64_t iDst = bufPtr;
-          uint64_t iLength = bytesRemaining;
-          if (iLength > bytesRemaining) {
-            iLength = bytesRemaining;
-          }
-          bytesRemaining -= iLength;
-
-          // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const char*>(dataBuffer.data());
-          while (iLength > 0) {
-            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
-            stateChange.memoryAddresses.push_back({iDst, len});
-            stateChange.memoryAddressValues.push_back({iSrc, len});
-            iDst += len;
-            iSrc += len;
-            iLength -= len;
-          }
-          return concludeSyscall(stateChange);
-        });
-      }
-      case 64: {  // write
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
-        uint64_t count = registerFileSet.get(R2).get<uint64_t>();
-        return readBufferThen(bufPtr, count, [=]() {
-          int64_t retval = sysHandler_->write(fd, dataBuffer.data(), count);
-          ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {retval}};
-          return concludeSyscall(stateChange);
-        });
-      }
-      case 65: {  // readv
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
-        int64_t iovcnt = registerFileSet.get(R2).get<int64_t>();
-
-        // The pointer `iov` points to an array of structures that each contain
-        // a pointer to where the data should be written and the number of
-        // bytes to write.
-        //
-        // We're going to queue up two handlers:
-        // - First, read the iovec structures that describe each buffer.
-        // - Second, invoke the syscall handler to perform the read operation,
-        // and
-        //   generate memory write requests for each buffer.
-
-        // Create the second handler in the chain, which invokes the kernel and
-        // generates the memory write requests.
-        auto invokeKernel = [=]() {
-          // The iov structure has been read into `dataBuffer`
-          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
-
-          // Allocate buffers to hold the data read by the kernel
-          std::vector<std::vector<uint8_t>> buffers(iovcnt);
-          for (int64_t i = 0; i < iovcnt; i++) {
-            buffers[i].resize(iovdata[i * 2 + 1]);
-          }
-
-          // Build new iovec structures using pointers to `dataBuffer` data
-          std::vector<uint64_t> iovec(iovcnt * 2);
-          for (int64_t i = 0; i < iovcnt; i++) {
-            iovec[i * 2 + 0] = reinterpret_cast<uint64_t>(buffers[i].data());
-            iovec[i * 2 + 1] = iovdata[i * 2 + 1];
-          }
-
-          // Invoke the syscall handler
-          int64_t totalRead = sysHandler_->readv(fd, iovec.data(), iovcnt);
-          ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {totalRead}};
-
-          // Check for failure
-          if (totalRead < 0) {
-            return concludeSyscall(stateChange);
-          }
-
-          // Build list of memory write operations
-          int64_t bytesRemaining = totalRead;
-          for (int64_t i = 0; i < iovcnt; i++) {
-            // Get pointer and size of the buffer
-            uint64_t iDst = iovdata[i * 2 + 0];
-            uint64_t iLength = iovdata[i * 2 + 1];
-            if (iLength > bytesRemaining) {
-              iLength = bytesRemaining;
-            }
-            bytesRemaining -= iLength;
-
-            // Write data for this buffer in 128-byte chunks
-            auto iSrc = reinterpret_cast<const char*>(buffers[i].data());
-            while (iLength > 0) {
-              uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
-              stateChange.memoryAddresses.push_back({iDst, len});
-              stateChange.memoryAddressValues.push_back({iSrc, len});
-              iDst += len;
-              iSrc += len;
-              iLength -= len;
-            }
-          }
-
-          return concludeSyscall(stateChange);
-        };
-
-        // Run the buffer read to load the buffer structures, before invoking
-        // the kernel.
-        return readBufferThen(iov, iovcnt * 16, invokeKernel);
-      }
-      case 66: {  // writev
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t iov = registerFileSet.get(R1).get<uint64_t>();
-        int64_t iovcnt = registerFileSet.get(R2).get<int64_t>();
-
-        // The pointer `iov` points to an array of structures that each contain
-        // a pointer to the data and the size of the data as an integer.
-        //
-        // We're going to queue up a chain of handlers:
-        // - First, read the iovec structures that describe each buffer.
-        // - Next, read the data for each buffer.
-        // - Finally, invoke the syscall handler to perform the write operation.
-
-        // Create the final handler in the chain, which invokes the kernel
-        std::function<bool()> last = [=]() {
-          // Rebuild the iovec structures using pointers to `dataBuffer` data
-          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
-          uint8_t* bufferPtr = dataBuffer.data() + iovcnt * 16;
-          for (int64_t i = 0; i < iovcnt; i++) {
-            iovdata[i * 2 + 0] = reinterpret_cast<uint64_t>(bufferPtr);
-
-            // Get the length of this buffer and add it to the current pointer
-            uint64_t len = iovdata[i * 2 + 1];
-            bufferPtr += len;
-          }
-
-          // Invoke the syscall handler
-          int64_t retval = sysHandler_->writev(fd, dataBuffer.data(), iovcnt);
-          ProcessStateChange stateChange = {
-              ChangeType::REPLACEMENT, {R0}, {retval}};
-          return concludeSyscall(stateChange);
-        };
-
-        // Build the chain of buffer loads backwards through the iov buffers
-        for (int64_t i = iovcnt - 1; i >= 0; i--) {
-          last = [=]() {
-            uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer.data());
-            uint64_t ptr = iovdata[i * 2 + 0];
-            uint64_t len = iovdata[i * 2 + 1];
-            return readBufferThen(ptr, len, last);
-          };
-        }
-
-        // Run the first buffer read to load the buffer structures, before
-        // performing each of the buffer loads.
-        return readBufferThen(iov, iovcnt * 16, last);
-      }
-      case 78: {  // readlinkat
-        const auto pathnameAddress = registerFileSet.get(R1).get<uint64_t>();
-
-        // Copy string at `pathnameAddress`
-        auto pathname = new char[PATH_MAX_LEN];
-        return readStringThen(pathname, pathnameAddress, PATH_MAX_LEN,
-                              [this, pathname](auto length) {
-                                // Pass the string `readLinkAt`, then destroy
-                                // the buffer and resolve the handler.
-                                readLinkAt({pathname, length});
-                                delete[] pathname;
-                                return true;
-                              });
-      }
-      case 79: {  // newfstatat AKA fstatat
-        int64_t dfd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t filenamePtr = registerFileSet.get(R1).get<uint64_t>();
-        uint64_t statbufPtr = registerFileSet.get(R2).get<uint64_t>();
-        int64_t flag = registerFileSet.get(R3).get<int64_t>();
-
-        char* filename = new char[PATH_MAX_LEN];
-        return readStringThen(
-            filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
-              // Invoke the syscall handler
-              OS::stat statOut;
-              uint64_t retval =
-                  sysHandler_->newfstatat(dfd, filename, statOut, flag);
-              ProcessStateChange stateChange = {
-                  ChangeType::REPLACEMENT, {R0}, {retval}};
-              delete[] filename;
-              stateChange.memoryAddresses.push_back(
-                  {statbufPtr, sizeof(statOut)});
-              stateChange.memoryAddressValues.push_back(statOut);
-              return concludeSyscall(stateChange);
-            });
-
-        break;
-      }
-      case 80: {  // fstat
-        int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        uint64_t statbufPtr = registerFileSet.get(R1).get<uint64_t>();
-
-        OS::stat statOut;
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {sysHandler_->fstat(fd, statOut)}};
-        stateChange.memoryAddresses.push_back({statbufPtr, sizeof(statOut)});
-        stateChange.memoryAddressValues.push_back(statOut);
-        break;
-      }
-      case 94: {  // exit_group
-        auto exitCode = registerFileSet.get(R0).get<uint64_t>();
-        std::cout << "\n[SimEng:ExceptionHandler] Received exit_group syscall: "
-                     "terminating with exit code "
-                  << exitCode << std::endl;
-        return fatal();
-      }
-      case 96: {  // set_tid_address
-        uint64_t ptr = registerFileSet.get(R0).get<uint64_t>();
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {sysHandler_->setTidAddress(ptr)}};
-        break;
-      }
-      case 98: {  // futex
-        // TODO: Functionality temporarily omitted as it is unused within
-        // workloads regions of interest and not required for their simulation
-        int op = registerFileSet.get(R1).get<int>();
-        if (op != 129) {
-          printException(instruction_);
-          std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
-                       "syscall: "
-                    << syscallId << std::endl;
-          return fatal();
-        }
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {1ull}};
-        break;
-      }
-      case 99: {  // set_robust_list
-        // TODO: Functionality temporarily omitted as it is unused within
-        // workloads regions of interest and not required for their simulation
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
-        break;
-      }
-      case 113: {  // clock_gettime
-        uint64_t clkId = registerFileSet.get(R0).get<uint64_t>();
-        uint64_t systemTimer = core.getSystemTimer();
-
-        uint64_t seconds;
-        uint64_t nanoseconds;
-        uint64_t retval =
-            sysHandler_->clockGetTime(clkId, systemTimer, seconds, nanoseconds);
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
-
-        uint64_t timespecPtr = registerFileSet.get(R1).get<uint64_t>();
-        stateChange.memoryAddresses.push_back({timespecPtr, 8});
-        stateChange.memoryAddressValues.push_back(seconds);
-        stateChange.memoryAddresses.push_back({timespecPtr + 8, 8});
-        stateChange.memoryAddressValues.push_back(nanoseconds);
-        break;
-      }
-      case 122: {  // sched_setaffinity
-        pid_t pid = registerFileSet.get(R0).get<pid_t>();
-        size_t cpusetsize = registerFileSet.get(R1).get<size_t>();
-        uint64_t mask = registerFileSet.get(R2).get<uint64_t>();
-
-        int64_t retval = sysHandler_->schedSetAffinity(pid, cpusetsize, mask);
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
-        break;
-      }
-      case 123: {  // sched_getaffinity
-        pid_t pid = registerFileSet.get(R0).get<pid_t>();
-        size_t cpusetsize = registerFileSet.get(R1).get<size_t>();
-        uint64_t mask = registerFileSet.get(R2).get<uint64_t>();
-        int64_t bitmask = sysHandler_->schedGetAffinity(pid, cpusetsize, mask);
-        // If returned bitmask is 0, assume an error
-        if (bitmask > 0) {
-          // Currently, only a single CPU bitmask is supported
-          if (bitmask != 1) {
-            printException(instruction_);
-            std::cout
-                << "Unexpected CPU affinity mask returned in exception handler"
-                << std::endl;
-            return fatal();
-          }
-          uint64_t retval = (pid == 0) ? 1 : 0;
-          stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
-          stateChange.memoryAddresses.push_back({mask, 1});
-          stateChange.memoryAddressValues.push_back(bitmask);
-        } else {
-          stateChange = {ChangeType::REPLACEMENT, {R0}, {-1ll}};
-        }
-        break;
-      }
-      case 131: {  // tgkill
-        // TODO: Functionality temporarily omitted since simeng only has a
-        // single thread at the moment
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
-        break;
-      }
-      case 134: {  // rt_sigaction
-        // TODO: Implement syscall logic. Ignored for now as it's assumed the
-        // current use of this syscall is to setup error handlers. Simualted
-        // code is expected to work so no need for these handlers.
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
-        break;
-      }
-      case 135: {  // rt_sigprocmask
-        // TODO: Implement syscall logic. Ignored for now as it's assumed the
-        // current use of this syscall is to setup error handlers. Simualted
-        // code is expected to work so no need for these handlers.
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
-        break;
+      case 29:     // ioctl
+      case 46:     // ftruncate
+      case 48:     // faccessat
+      case 56:     // openat
+      case 57:     // close
+      case 61:     // getdents64
+      case 62:     // lseek
+      case 63:     // rea
+      case 64:     // write
+      case 65:     // readv
+      case 66:     // writev
+      case 78:     // readlinkat
+      case 79:     // newfstatat AKA fstatat
+      case 80:     // fstat
+      case 94:     // exit_group
+      case 96:     // set_tid_address
+      case 98:     // futex
+      case 99:     // set_robust_list
+      case 113:    // clock_gettime
+      case 122:    // sched_setaffinity
+      case 123:    // sched_getaffinity
+      case 131:    // tgkill
+      case 134:    // rt_sigaction
+      case 135:    // rt_sigprocmask
+      case 165:    // getrusage
+      case 169:    // gettimeofday
+      case 178:    // gettid
+      case 172:    // getpid
+      case 174:    // getuid
+      case 175:    // geteuid
+      case 176:    // getgid
+      case 177:    // getegid
+      case 179:    // sysinfo
+      case 210:    // shutdown
+      case 214:    // brk
+      case 215:    // munmap
+      case 222:    // mmap
+      case 226:    // mprotect
+      case 261:    // prlimit64
+      case 278:    // getrandom
+      case 293: {  // rseq
+        core_.sendSyscall({syscallId, instruction_.getSequenceId(), 0, 0,
+                           registerFileSet.get(R0), registerFileSet.get(R1),
+                           registerFileSet.get(R2), registerFileSet.get(R3),
+                           registerFileSet.get(R4), registerFileSet.get(R5),
+                           R0});
+        resumeHandling_ = [this]() { return concludeSyscall(); };
+        return false;
       }
       case 160: {  // uname
+        // Uname return can be core dependent, thus don;t hand over to more
+        // generic syscall handler.
         const uint64_t base = registerFileSet.get(R0).get<uint64_t>();
         const uint8_t len =
             65;  // Reserved length of each string field in Linux
@@ -478,7 +90,7 @@ bool ExceptionHandler::init() {
         const char version[] = "#1 SimEng Mon Apr 29 16:28:37 UTC 2019";
         const char machine[] = "aarch64";
 
-        stateChange = {ChangeType::REPLACEMENT,
+        stateChange = {simeng::OS::ChangeType::REPLACEMENT,
                        {R0},
                        {0ull},
                        {{base, sizeof(sysname)},
@@ -491,158 +103,6 @@ bool ExceptionHandler::init() {
                         RegisterValue(machine)}};
         break;
       }
-      case 165: {  // getrusage
-        int who = registerFileSet.get(R0).get<int>();
-        uint64_t usagePtr = registerFileSet.get(R1).get<uint64_t>();
-
-        OS::rusage usageOut;
-        stateChange = {ChangeType::REPLACEMENT,
-                       {R0},
-                       {sysHandler_->getrusage(who, usageOut)}};
-        stateChange.memoryAddresses.push_back({usagePtr, sizeof(usageOut)});
-        stateChange.memoryAddressValues.push_back(usageOut);
-        break;
-      }
-      case 169: {  // gettimeofday
-        uint64_t tvPtr = registerFileSet.get(R0).get<uint64_t>();
-        uint64_t tzPtr = registerFileSet.get(R1).get<uint64_t>();
-        uint64_t systemTimer = core.getSystemTimer();
-
-        OS::timeval tv;
-        OS::timeval tz;
-        int64_t retval = sysHandler_->gettimeofday(
-            systemTimer, tvPtr ? &tv : nullptr, tzPtr ? &tz : nullptr);
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
-        if (tvPtr) {
-          stateChange.memoryAddresses.push_back({tvPtr, 16});
-          stateChange.memoryAddressValues.push_back(tv);
-        }
-        if (tzPtr) {
-          stateChange.memoryAddresses.push_back({tzPtr, 16});
-          stateChange.memoryAddressValues.push_back(tz);
-        }
-        break;
-      }
-      // TODO : as SimEng is single threaded, TID is same as PID.
-      // When SimEng becomes multi-threaded this syscall needs
-      // updating.
-      case 178:  // gettid
-      case 172:  // getpid
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {sysHandler_->getpid()}};
-        break;
-      case 174:  // getuid
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {sysHandler_->getuid()}};
-        break;
-      case 175:  // geteuid
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {sysHandler_->geteuid()}};
-        break;
-      case 176:  // getgid
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {sysHandler_->getgid()}};
-        break;
-      case 177:  // getegid
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {sysHandler_->getegid()}};
-        break;
-      case 179:  // sysinfo
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
-        break;
-      case 210: {  // shutdown
-        // TODO: Functionality omitted - returns -38 (errno 38, function not
-        // implemented) is to mimic the behaviour on isambard and avoid an
-        // unrecognised syscall error
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-38)}};
-        break;
-      }
-      case 214: {  // brk
-        auto result = sysHandler_->brk(registerFileSet.get(R0).get<uint64_t>());
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
-        break;
-      }
-      case 215: {  // munmap
-        uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
-        size_t length = registerFileSet.get(R1).get<size_t>();
-
-        int64_t result = sysHandler_->munmap(addr, length);
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
-        break;
-      }
-      case 222: {  // mmap
-        uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
-        size_t length = registerFileSet.get(R1).get<size_t>();
-        int prot = registerFileSet.get(R2).get<int>();
-        int flags = registerFileSet.get(R3).get<int>();
-        int fd = registerFileSet.get(R4).get<int>();
-        off_t offset = registerFileSet.get(R5).get<off_t>();
-
-        // Currently, only support mmap from a malloc() call whose arguments
-        // match the first condition
-        if (addr == 0 && flags == 34 && fd == -1 && offset == 0) {
-          uint64_t result =
-              sysHandler_->mmap(addr, length, prot, flags, fd, offset);
-          // An allocation of 0 signifies a failed allocation, return value from
-          // syscall is changed to -1
-          if (result == 0) {
-            stateChange = {
-                ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-1)}};
-          } else {
-            stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
-          }
-          break;
-        } else {
-          printException(instruction_);
-          std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
-                       "syscall: "
-                    << syscallId << std::endl;
-          return fatal();
-        }
-      }
-      case 226: {  // mprotect
-        // mprotect is not supported
-        // always return zero to indicate success
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
-        break;
-      }
-      case 235: {  // mbind
-        // mbind is not supported due to all binaries being single threaded.
-        // Always return zero to indicate success
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
-        break;
-      }
-      case 261: {  // prlimit64
-        // TODO: Functionality temporarily omitted as it is unused within
-        // workloads regions of interest and not required for their simulation
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
-        break;
-      }
-      case 278: {  // getrandom
-        // TODO: support flags argument
-
-        // seed random numbers
-        srand(clock());
-
-        // Write <buflen> random bytes to buf
-        uint64_t bufPtr = registerFileSet.get(R0).get<uint64_t>();
-        size_t buflen = registerFileSet.get(R1).get<size_t>();
-
-        char buf[buflen];
-        for (size_t i = 0; i < buflen; i++) {
-          buf[i] = (uint8_t)rand();
-        }
-
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {(uint64_t)buflen}};
-
-        stateChange.memoryAddresses.push_back({bufPtr, (uint8_t)buflen});
-        stateChange.memoryAddressValues.push_back(RegisterValue(buf, buflen));
-
-        break;
-      }
-      case 293:  // rseq
-      {
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
-        break;
-      }
-
       default:
         printException(instruction_);
         std::cout << "\n[SimEng:ExceptionHandler] Unrecognised syscall: "
@@ -650,7 +110,8 @@ bool ExceptionHandler::init() {
         return fatal();
     }
 
-    return concludeSyscall(stateChange);
+    processSyscallResult({false, 0, 0, stateChange});
+    return concludeSyscall();
   } else if (exception == InstructionException::StreamingModeUpdate ||
              exception == InstructionException::ZAregisterStatusUpdate ||
              exception == InstructionException::SMZAUpdate) {
@@ -712,155 +173,76 @@ bool ExceptionHandler::init() {
     regValues.push_back(RegisterValue(newSVCR, 8));
     instruction_.getArchitecture().setSVCRval(newSVCR);
 
-    ProcessStateChange stateChange = {ChangeType::REPLACEMENT, regs, regValues};
-    return concludeSyscall(stateChange);
+    simeng::OS::ProcessStateChange stateChange = {
+        simeng::OS::ChangeType::REPLACEMENT, regs, regValues};
+    processSyscallResult({false, 0, 0, stateChange});
+    return concludeSyscall();
   }
 
   printException(instruction_);
   return fatal();
 }
 
-bool ExceptionHandler::readStringThen(char* buffer, uint64_t address,
-                                      int maxLength,
-                                      std::function<bool(size_t length)> then,
-                                      int offset) {
-  if (maxLength <= 0) {
-    return then(offset);
-  }
-
-  if (offset == -1) {
-    // First call; trigger read for address 0
-    memory_.requestRead({address + offset + 1, 1});
-    resumeHandling_ = [=]() {
-      return readStringThen(buffer, address, maxLength, then, offset + 1);
-    };
-    return false;
-  }
-
-  // Search completed memory requests for the needed data
-  bool found = false;
-  for (const auto& response : memory_.getCompletedReads()) {
-    if (response.target.address == address + offset) {
-      // TODO: Detect and handle any faults
-      assert(response.data && "Memory read failed");
-      buffer[offset] = response.data.get<char>();
-      found = true;
-      break;
-    }
-  }
-  memory_.clearCompletedReads();
-
-  if (!found) {
-    // Leave this handler in place to call again
-    return false;
-  }
-
-  if (buffer[offset] == '\0') {
-    // End of string; call onwards
-    return then(offset);
-  }
-
-  if (offset + 1 == maxLength) {
-    // Reached max length; call onwards
-    return then(maxLength);
-  }
-
-  // Queue up read for next character
-  memory_.requestRead({address + offset + 1, 1});
-  resumeHandling_ = [=]() {
-    return readStringThen(buffer, address, maxLength, then, offset + 1);
-  };
-  return false;
+void ExceptionHandler::processSyscallResult(
+    simeng::OS::SyscallResult syscallResult) {
+  syscallResult_ = syscallResult;
+  syscallReturned_ = true;
 }
 
-void ExceptionHandler::readLinkAt(span<char> path) {
-  if (path.size() == PATH_MAX_LEN) {
-    // TODO: Handle PATH_MAX_LEN case
-    std::cout << "\n[SimEng:ExceptionHandler] Path exceeds PATH_MAX_LEN"
+bool ExceptionHandler::concludeSyscall() {
+  if (!syscallReturned_) return false;
+
+  if (syscallResult_.fatal) {
+    // If result was fatal, search through known exceptions to identify errors
+    // or lacking support
+    const auto& registerFileSet = core_.getArchitecturalRegisterFileSet();
+    switch (syscallResult_.syscallId) {
+      case 98: {  // futex
+        // TODO: Functionality temporarily omitted as it is unused within
+        // workloads regions of interest and not required for their simulation
+        int op = registerFileSet.get(R1).get<int>();
+        if (op != 129) {
+          printException(instruction_);
+          std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
+                       "syscall: "
+                    << syscallResult_.syscallId << std::endl;
+        }
+        break;
+      }
+      case 123: {  // sched_getaffinity
+        int64_t bitmask =
+            syscallResult_.stateChange.memoryAddressValues[0].get<int64_t>();
+        // Currently, only a single CPU bitmask is supported
+        if (bitmask != 1) {
+          printException(instruction_);
+          std::cout
+              << "Unexpected CPU affinity mask returned in exception handler"
               << std::endl;
-    fatal();
-    return;
-  }
+        }
+        break;
+      }
+      case 222: {  // mmap
+        uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
+        int flags = registerFileSet.get(R3).get<int>();
+        int fd = registerFileSet.get(R4).get<int>();
+        off_t offset = registerFileSet.get(R5).get<off_t>();
 
-  const auto& registerFileSet = core.getArchitecturalRegisterFileSet();
-  const auto dirfd = registerFileSet.get(R0).get<int64_t>();
-  const auto bufAddress = registerFileSet.get(R2).get<uint64_t>();
-  const auto bufSize = registerFileSet.get(R3).get<uint64_t>();
-
-  char buffer[PATH_MAX_LEN];
-  auto result = sysHandler_->readlinkat(dirfd, path.data(), buffer, bufSize);
-
-  if (result < 0) {
-    // TODO: Handle error case
-    std::cout << "\n[SimEng:ExceptionHandler] Error generated by readlinkat"
-              << std::endl;
-    fatal();
-    return;
-  }
-
-  auto bytesCopied = static_cast<uint64_t>(result);
-
-  ProcessStateChange stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
-
-  // Slice the returned path into <256-byte chunks for writing
-  const char* bufPtr = buffer;
-  for (size_t i = 0; i < bytesCopied; i += 256) {
-    uint8_t size = std::min<uint64_t>(bytesCopied - i, 256ul);
-    stateChange.memoryAddresses.push_back({bufAddress + i, size});
-    stateChange.memoryAddressValues.push_back(RegisterValue(bufPtr, size));
-  }
-
-  concludeSyscall(stateChange);
-}
-
-bool ExceptionHandler::readBufferThen(uint64_t ptr, uint64_t length,
-                                      std::function<bool()> then,
-                                      bool firstCall) {
-  // If first call, trigger read for first entry and set self as handler
-  if (firstCall) {
-    if (length == 0) {
-      return then();
+        // Currently, only support mmap from a malloc() call whose arguments
+        // match the first condition
+        if (addr != 0 || flags != 34 || fd != -1 || offset != 0) {
+          printException(instruction_);
+          std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
+                       "syscall: "
+                    << syscallResult_.syscallId << std::endl;
+        }
+        break;
+      }
     }
-
-    // Request a read of up to 128 bytes
-    uint64_t numBytes = std::min<uint64_t>(length, 128);
-    memory_.requestRead({ptr, static_cast<uint8_t>(numBytes)},
-                        instruction_.getSequenceId());
-    resumeHandling_ = [=]() {
-      return readBufferThen(ptr, length, then, false);
-    };
+    return fatal();
   }
 
-  // Check whether read has completed
-  auto completedReads = memory_.getCompletedReads();
-  auto response =
-      std::find_if(completedReads.begin(), completedReads.end(),
-                   [&](const MemoryReadResult& response) {
-                     return response.requestId == instruction_.getSequenceId();
-                   });
-  if (response == completedReads.end()) {
-    return false;
-  }
-
-  // Append data to buffer
-  assert(response->data && "unhandled failed read in exception handler");
-  uint8_t bytesRead = response->target.size;
-  const uint8_t* data = response->data.getAsVector<uint8_t>();
-  dataBuffer.insert(dataBuffer.end(), data, data + bytesRead);
-  memory_.clearCompletedReads();
-
-  // If there is more data, rerun this function for next chunk
-  if (bytesRead < length) {
-    return readBufferThen(ptr + bytesRead, length - bytesRead, then, true);
-  }
-
-  // All done - call onwards
-  return then();
-}
-
-bool ExceptionHandler::concludeSyscall(ProcessStateChange& stateChange) {
   uint64_t nextInstructionAddress = instruction_.getInstructionAddress() + 4;
-  result_ = {false, nextInstructionAddress, stateChange};
+  result_ = {false, nextInstructionAddress, syscallResult_.stateChange};
   return true;
 }
 

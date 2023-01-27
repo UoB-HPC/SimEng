@@ -20,8 +20,6 @@ class MockArchitecture : public arch::Architecture {
                      std::shared_ptr<arch::ExceptionHandler>(
                          const std::shared_ptr<Instruction>& instruction,
                          const Core& core, MemoryInterface& memory));
-  MOCK_CONST_METHOD1(getInitialState,
-                     arch::ProcessStateChange(uint64_t stackPointer));
   MOCK_CONST_METHOD0(getMaxInstructionSize, uint8_t());
   MOCK_CONST_METHOD0(getConfigPhysicalRegisterStructure,
                      std::vector<RegisterFileStructure>());

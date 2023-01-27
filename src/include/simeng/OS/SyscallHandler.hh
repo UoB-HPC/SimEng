@@ -17,11 +17,13 @@
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <queue>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
 #include "simeng/Elf.hh"
+#include "simeng/MemoryInterface.hh"
 #include "simeng/OS/Process.hh"
 #include "simeng/version.hh"
 
@@ -103,13 +105,103 @@ struct linux_dirent64 {
   char* d_name;       // Filename (null-terminated)
 };
 
-/** A Linux kernel syscall emulation implementation, which mimics the
-   responses to Linux system calls. */
+/** The types of changes that can be made to values within the process state. */
+enum class ChangeType { REPLACEMENT, INCREMENT, DECREMENT };
+
+/** A structure describing a set of changes to the process state. */
+struct ProcessStateChange {
+  /** Type of changes to be made */
+  ChangeType type;
+  /** Registers to modify */
+  std::vector<Register> modifiedRegisters;
+  /** Values to set modified registers to */
+  std::vector<RegisterValue> modifiedRegisterValues;
+  /** Memory address/width pairs to modify */
+  std::vector<MemoryAccessTarget> memoryAddresses;
+  /** Values to write to memory */
+  std::vector<RegisterValue> memoryAddressValues;
+};
+
+/** The result from a handled syscall. */
+struct SyscallResult {
+  /** Whether execution should halt. */
+  bool fatal;
+  /** Id of the syscall to aid exception handler processing. */
+  uint64_t syscallId;
+  // The unique ID of the core associated with the syscall
+  uint64_t coreId;
+  /** Any changes to apply to the process state. */
+  ProcessStateChange stateChange;
+};
+
+/** A struct to hold information used as arguments to a syscall. */
+struct SyscallInfo {
+  // The ID of the syscall
+  uint64_t syscallId;
+  // The unique sequenceID of the instructions triggering the syscall
+  uint64_t seqId;
+  // The unique ID of the core associated with the syscall
+  uint64_t coreId;
+  // The unique ID of the process associated with the syscall
+  uint64_t processId;
+  // The register values used a parameters to the envoked syscall
+  RegisterValue R0;
+  RegisterValue R1;
+  RegisterValue R2;
+  RegisterValue R3;
+  RegisterValue R4;
+  RegisterValue R5;
+  // The register to return the success code to
+  Register ret;
+};
+
+/** A Linux kernel syscall emulation implementation, which mimics the responses
+   to Linux system calls. */
 class SyscallHandler {
  public:
-  /** Create a new SyscallHandler object. */
-  SyscallHandler(
-      const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes);
+  /** Create new SyscallHandler object. */
+  SyscallHandler(const std::vector<std::shared_ptr<Process>>& processes,
+                 std::shared_ptr<MemoryInterface> memory,
+                 std::function<void(simeng::OS::SyscallResult)> returnSyscall,
+                 std::function<uint64_t()> getSystemTime);
+
+  /** Tick the syscall handler to carry out any oustanding syscalls. */
+  void tick();
+
+  /** Initialise a syscall from the front of the syscallQueue_ queue. */
+  void initSyscall();
+
+  /** Records the incoming syscall for later processing. */
+  void recordSyscall(const SyscallInfo info);
+
+  /** Once the syscall is deemed complete, conclude its execution by
+   * constructing a SyscallResult and supplying it to the returnSyscall_
+   * function. */
+  void concludeSyscall(ProcessStateChange change, bool fatal = false);
+
+  /** Attempt to read a string of max length `maxLength` from address `address`
+   * into the supplied buffer, starting from character `offset`. An offset of
+   * `-1` (default) will queue a read operation for the first character.
+   *
+   * This function will repeatedly set itself as the handler for the next cycle
+   * until it either reads a null character or reaches the maximum length, at
+   * which point it will call `then`, supplying the length of the read string.
+   */
+  void readStringThen(char* buffer, uint64_t address, int maxLength,
+                      std::function<void(size_t length)> then, int offset = -1);
+
+  /** Read `length` bytes of data from `ptr`, and then call `then`.
+   *
+   * This function will repeatedly set itself as the handler for the next cycle
+   * until it has read `length` bytes of data. The data may be read in chunks if
+   * it is larger than can be read in a single memory request. The data will be
+   * appended to the member vector `dataBuffer`.
+   */
+  void readBufferThen(uint64_t ptr, uint64_t length, std::function<void()> then,
+                      bool firstCall = true);
+
+  /** Performs a readlinkat syscall using the path supplied. */
+  void readLinkAt(span<char> path);
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */
@@ -221,11 +313,30 @@ class SyscallHandler {
   /** The user-space processes running above the kernel. */
   const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes_;
 
+  /** A memory interface to the system memory. */
+  std::shared_ptr<MemoryInterface> memory_;
+
+  /** A callback function to send a syscall result back to a core through the
+   * SimOS class. */
+  std::function<void(simeng::OS::SyscallResult)> returnSyscall_;
+
+  /** A callback function to get the system time from the SimOS class. */
+  std::function<uint64_t()> getSystemTime_;
+
+  /** A queue to hold all outstanding syscalls. */
+  std::queue<const SyscallInfo> syscallQueue_;
+
+  /** A function to call to resume handling an exception. */
+  std::function<void()> resumeHandling_;
+
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
 
   /** Vector of all currently supported special file paths & files.*/
   std::vector<std::string> supportedSpecialFiles_;
+
+  /** A data buffer used for reading data from memory. */
+  std::vector<uint8_t> dataBuffer_;
 };
 
 }  // namespace OS

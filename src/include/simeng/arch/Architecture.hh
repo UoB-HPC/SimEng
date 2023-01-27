@@ -14,23 +14,6 @@ using MacroOp = std::vector<std::shared_ptr<Instruction>>;
 
 namespace arch {
 
-/** The types of changes that can be made to values within the process state. */
-enum class ChangeType { REPLACEMENT, INCREMENT, DECREMENT };
-
-/** A structure describing a set of changes to the process state. */
-struct ProcessStateChange {
-  /** Type of changes to be made */
-  ChangeType type;
-  /** Registers to modify */
-  std::vector<Register> modifiedRegisters;
-  /** Values to set modified registers to */
-  std::vector<RegisterValue> modifiedRegisterValues;
-  /** Memory address/width pairs to modify */
-  std::vector<MemoryAccessTarget> memoryAddresses;
-  /** Values to write to memory */
-  std::vector<RegisterValue> memoryAddressValues;
-};
-
 /** The result from a handled exception. */
 struct ExceptionResult {
   /** Whether execution should halt. */
@@ -38,7 +21,7 @@ struct ExceptionResult {
   /** The address to resume execution from. */
   uint64_t instructionAddress;
   /** Any changes to apply to the process state. */
-  ProcessStateChange stateChange;
+  simeng::OS::ProcessStateChange stateChange;
 };
 
 /** An abstract multi-cycle exception handler interface. Should be ticked each
@@ -50,6 +33,10 @@ class ExceptionHandler {
    * return `false` if the exception requires further handling, or `true` once
    * complete. */
   virtual bool tick() = 0;
+
+  /** Process the result of a syscall from the SyscallHandler. */
+  virtual void processSyscallResult(
+      simeng::OS::SyscallResult syscallResult) = 0;
 
   /** Retrieve the result of the exception. */
   virtual const ExceptionResult& getResult() const = 0;

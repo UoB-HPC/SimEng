@@ -15,12 +15,8 @@ TEST(ISATest, CreateAArch64) {
       "Vector-Length: 512, Streaming-Vector-Length: 512}}");
   // Pass a config file with only the options required by the aarch64
   // architecture class to function
-  std::unordered_map<uint64_t, std::shared_ptr<simeng::OS::Process>> procs = {};
-  std::shared_ptr<simeng::OS::SyscallHandler> sysHandler =
-      std::make_shared<simeng::OS::SyscallHandler>(procs);
-
   std::unique_ptr<simeng::arch::Architecture> isa =
-      std::make_unique<simeng::arch::aarch64::Architecture>(sysHandler);
+      std::make_unique<simeng::arch::aarch64::Architecture>();
 
   EXPECT_GT(isa->getRegisterFileStructures().size(), 0);
 }
