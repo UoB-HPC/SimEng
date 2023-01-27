@@ -1,11 +1,10 @@
 #include "simeng/OS/SyscallHandler.hh"
 
+#include "simeng/kernel/SimOS.hh"
 namespace simeng {
 namespace OS {
 
-SyscallHandler::SyscallHandler(
-    const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes)
-    : processes_(processes) {
+SyscallHandler::SyscallHandler(SimOS* os) : os_(os) {
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
       supportedSpecialFiles_.end(),
@@ -25,7 +24,7 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
     // If absolute path used then dfd is dis-regarded. Otherwise need to see if
     // fd exists for directory referenced
     if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      auto entry = processes_.find(0)->second->fdArray_->getFDEntry(dfd);
+      auto entry = os_->getProcess()->fdArray_->getFDEntry(dfd);
       if (entry == nullptr) {
         return -1;
       }
@@ -63,9 +62,7 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
 }
 
 int64_t SyscallHandler::brk(uint64_t address) {
-  assert(processes_.size() > 0 &&
-         "Attempted to move the program break before creating a process");
-  return processes_.find(0)->second->getMemRegion().updateBrkRegion(address);
+  return os_->getProcess()->getMemRegion().updateBrkRegion(address);
 }
 
 uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
@@ -88,7 +85,7 @@ uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
 }
 
 int64_t SyscallHandler::ftruncate(uint64_t fd, uint64_t length) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = os_->getProcess()->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }
@@ -121,7 +118,7 @@ int64_t SyscallHandler::close(int64_t fd) {
   // Don't close STDOUT or STDERR otherwise no SimEng output is given
   // afterwards. This includes final results given at the end of execution
   if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-    return processes_.find(0)->second->fdArray_->removeFDEntry(fd);
+    return os_->getProcess()->fdArray_->removeFDEntry(fd);
   }
 
   // Return success if STDOUT or STDERR is closed to allow execution to
@@ -180,7 +177,7 @@ int64_t SyscallHandler::newfstatat(int64_t dfd, const std::string& filename,
 }
 
 int64_t SyscallHandler::fstat(int64_t fd, stat& out) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = os_->getProcess()->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }
@@ -250,9 +247,11 @@ int64_t SyscallHandler::getrusage(int64_t who, rusage& out) {
 }
 
 int64_t SyscallHandler::getpid() const {
-  assert((processes_.size() > 0) &&
-         "[SimEng:SyscallHanlder] invalid number of active processes - Max "
-         "limit is 1.");
+  /*
+assert((processes_.size() > 0) &&
+       "[SimEng:SyscallHanlder] invalid number of active processes - Max "
+       "limit is 1.");
+       */
   // TODO : Needs to be properly implemented once multi-thread supported
   return 0;
 }
@@ -281,7 +280,7 @@ int64_t SyscallHandler::gettimeofday(uint64_t systemTimer, timeval* tv,
 
 int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
                               std::vector<char>& out) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = os_->getProcess()->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }
@@ -316,7 +315,7 @@ int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
 }
 
 uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = os_->getProcess()->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }
@@ -325,14 +324,25 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 }
 
 int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
-  return processes_.find(0)->second->getMemRegion().unmapRegion(addr, length, 0,
-                                                                0, 0);
+  return os->getProcess()->getMemRegion().unmapRegion(addr, length, 0,
 }
 
-uint64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
-                              int fd, off_t offset) {
-  uint64_t ret = processes_.find(0)->second->getMemRegion().mmapRegion(
-      addr, length, prot, flags, NULL);
+int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
+                             int fd, off_t offset) {
+  auto process = os_->getProcess();
+  HostFileMMap* hostfile = NULL;
+
+  if (fd != 0) {
+    auto entry = process->fdArray_->getFDEntry(fd);
+    if (entry == nullptr) {
+      std::cerr << "Invalid virtual file descriptor given to mmap" << std::endl;
+      return -1;
+    };
+
+    hostfile = os_->hfmmap_->mapfd(entry->fd_, length, offset);
+  }
+  uint64_t ret =
+      process->getMemRegion().mmapRegion(addr, length, prot, flags, hostfile);
   return ret;
 }
 
@@ -386,20 +396,19 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
   int64_t dirfd = SyscallHandler::getDirFd(dfd, filename);
   if (dirfd == -1) return EBADF;
 
-  std::shared_ptr<Process> proc = processes_.find(0)->second;
-
+  std::shared_ptr<Process> proc = os_->getProcess();
   return proc->fdArray_->allocateFDEntry(dirfd, new_pathname.c_str(), newFlags,
                                          mode);
 }
 
 int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
                                    char* buf, size_t bufsize) const {
+  auto process = os_->getProcess();
   if (pathname == "/proc/self/exe") {
     // Copy executable path to buffer
     // TODO: resolve path into canonical path
-    std::strncpy(buf, processes_.find(0)->second->getPath().c_str(), bufsize);
-
-    return std::min(processes_.find(0)->second->getPath().length(), bufsize);
+    std::strncpy(buf, process->getPath().c_str(), bufsize);
+    return std::min(process->getPath().length(), bufsize);
   }
 
   // TODO: resolve symbolic link for other paths
@@ -407,7 +416,7 @@ int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
 }
 
 int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = os_->getProcess()->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }
@@ -463,7 +472,7 @@ int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = os_->getProcess()->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }
@@ -472,7 +481,7 @@ int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = os_->getProcess()->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }
@@ -499,14 +508,13 @@ int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
   return 0;
 }
 int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
-  assert(processes_.size() > 0);
-  processes_.find(0)->second->clearChildTid = tidptr;
+  os_->getProcess()->clearChildTid = tidptr;
   // TODO : Support multiple PIDs
   return 0;
 }
 
 int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = os_->getProcess()->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }
@@ -515,7 +523,7 @@ int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = os_->getProcess()->fdArray_->getFDEntry(fd);
   if (entry == nullptr) {
     return EBADF;
   }

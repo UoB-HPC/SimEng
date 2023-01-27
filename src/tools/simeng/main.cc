@@ -77,19 +77,15 @@ int main(int argc, char** argv) {
   simeng::OS::SimOS OS =
       simeng::OS::SimOS(executablePath, executableArgs, memory);
 
-  VAddrTranslator fn = simOS_kernel.getVAddrTranslator();
+  VAddrTranslator fn = OS.getVAddrTranslator();
 
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(memory, fn, 0);
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =
-<<<<<<< HEAD
-      std::make_unique<simeng::CoreInstance>(OS.getSyscallHandler(), memory);
-=======
-      std::make_unique<simeng::CoreInstance>(simOS_kernel.getSyscallHandler(),
-                                             memory, mmu);
->>>>>>> 4d95aaae (Fixed broken Unittests and made progress with regression tests)
+      std::make_unique<simeng::CoreInstance>(OS.getSyscallHandler(), memory,
+                                             mmu);
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();

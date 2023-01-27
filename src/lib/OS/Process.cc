@@ -132,7 +132,14 @@ Process::Process(const std::vector<std::string>& commandLine,
 
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
       [&, this](uint64_t vaddr, size_t size) -> uint64_t {
-    return this->pageTable_->deleteMapping(vaddr, size);
+    uint64_t value = this->pageTable_->deleteMapping(vaddr, size);
+    if (value ==
+        (masks::faults::pagetable::fault | masks::faults::pagetable::unmap)) {
+      std::cerr << "Error occured while unmapping virtual address: " << vaddr
+                << " for size: " << size << std::endl;
+      std::exit(1);
+    }
+    return value;
   };
 
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
@@ -217,7 +224,14 @@ Process::Process(span<char> instructions,
 
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
       [&, this](uint64_t vaddr, size_t size) -> uint64_t {
-    return this->pageTable_->deleteMapping(vaddr, size);
+    uint64_t value = this->pageTable_->deleteMapping(vaddr, size);
+    if (value ==
+        (masks::faults::pagetable::fault | masks::faults::pagetable::unmap)) {
+      std::cerr << "Error occured while unmapping virtual address: " << vaddr
+                << " for size: " << size << std::endl;
+      std::exit(1);
+    }
+    return value;
   };
 
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
@@ -359,16 +373,15 @@ uint64_t Process::createStack(uint64_t stackStart,
 
 uint64_t Process::handlePageFault(uint64_t vaddr, SendToMemory send) {
   VirtualMemoryArea* vm = memRegion_.getVMAFromAddr(vaddr);
-  vaddr = roundDownMemAddr(vaddr, pageSize_);
+  uint64_t alignedVAddr = roundDownMemAddr(vaddr, pageSize_);
   // Process VMA doesn't exist. This address is likely due to a speculation.
   if (vm == NULL)
     return masks::faults::pagetable::fault |
            masks::faults::pagetable::speculation;
 
   bool hasFile = vm->hasFile();
-  // std::cout << "Handling Page Fault" << std::endl;
   uint64_t paddr = os_->requestPageFrames(pageSize_);
-  uint64_t ret = pageTable_->createMapping(vaddr, paddr, pageSize_);
+  uint64_t ret = pageTable_->createMapping(alignedVAddr, paddr, pageSize_);
   if (ret & masks::faults::pagetable::fault)
     return masks::faults::pagetable::fault | masks::faults::pagetable::map;
 
@@ -376,12 +389,13 @@ uint64_t Process::handlePageFault(uint64_t vaddr, SendToMemory send) {
   if (!hasFile) return taddr;
 
   void* filebuf = vm->getFileBuf();
-  uint64_t offset = vaddr - vm->vm_start;
-  size_t writeLen = vm->getFileSize() - offset;
+
+  uint64_t offset = alignedVAddr - vm->vm_start;
+  size_t writeLen = vm->getFileSize() - (offset);
   writeLen = writeLen > pageSize_ ? pageSize_ : writeLen;
 
   // send file to memory;
-  send((char*)filebuf + offset, taddr, writeLen);
+  send((char*)filebuf + offset, paddr, writeLen);
   return taddr;
 }
 

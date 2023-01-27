@@ -9,6 +9,7 @@
 #include "simeng/Core.hh"
 #include "simeng/OS/PageFrameAllocator.hh"
 #include "simeng/OS/SyscallHandler.hh"
+#include "simeng/OS/Vma.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
@@ -69,6 +70,8 @@ class SimOS {
   uint64_t requestPageFrames(size_t size);
 
   uint64_t handleVAddrTranslation(uint64_t vaddr, uint64_t pid);
+
+  HostBackedFileMMaps* hfmmap_ = new HostBackedFileMMaps;
 
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */
