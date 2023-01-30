@@ -34,40 +34,25 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
 }
 
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
-  if (buffer_.size()) {
-    size_t index = 0;
-    int firstOp = -1;
-    bool validForCommit = false;
+  if (!buffer_.empty()) {
+    // Do a binary search to find the range of instructions that matches insnId
+    auto [first, last] =
+        std::equal_range(buffer_.begin(), buffer_.end(), insnId, idCompare{});
 
-    // Find first instance of uop belonging to macro-op instruction
-    for (; index < buffer_.size(); index++) {
-      if (buffer_[index]->getInstructionId() == insnId) {
-        firstOp = index;
-        break;
-      }
+    // Return early if the insn was not found
+    if (first == buffer_.end()) return;
+
+    // Return early if any instruction is not waiting to commit
+    if (std::any_of(first, last, [](const std::shared_ptr<Instruction>& insn) {
+          return !insn->isWaitingCommit();
+        })) {
+      return;
     }
 
-    if (firstOp > -1) {
-      // If found, see if all uops are committable
-      for (; index < buffer_.size(); index++) {
-        if (buffer_[index]->getInstructionId() != insnId) break;
-        if (!buffer_[index]->isWaitingCommit()) {
-          return;
-        } else if (buffer_[index]->isLastMicroOp()) {
-          // all microOps must be in ROB for the commit to be valid
-          validForCommit = true;
-        }
-      }
-      if (!validForCommit) return;
-
-      // No early return thus all uops are committable
-      for (; firstOp < buffer_.size(); firstOp++) {
-        if (buffer_[firstOp]->getInstructionId() != insnId) break;
-        buffer_[firstOp]->setCommitReady();
-      }
-    }
+    std::for_each(first, last, [](std::shared_ptr<Instruction>& insn) {
+      insn->setCommitReady();
+    });
   }
-  return;
 }
 
 unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
