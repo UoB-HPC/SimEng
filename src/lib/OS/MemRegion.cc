@@ -218,7 +218,7 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
 
   uint64_t foffset = 0;
   int fd = -1;
-  if (hfmmap != NULL) {
+  if (hfmmap != nullptr) {
     foffset = hfmmap->offset_;
     fd = hfmmap->fd_;
   }
@@ -253,13 +253,13 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
   if (fixed) {
     if (mapped) unmapRegion(addr, size);
 
-    VMA* vma = new VMA(prot, flags, size, Mmap);
+    VMA* vma = new VMA(prot, flags, size, Mmap, hfmmap);
     addVma(vma);
     return vma->vm_start;
   } else {
     // if not fixed and hint is provided then we need to check if the hint
     // addr is available. If not we allocate new address.
-    VMA* vma = new VMA(prot, flags, size, Mmap);
+    VMA* vma = new VMA(prot, flags, size, Mmap, hfmmap);
     if (startAddr && !mapped) {
       addVma(vma, startAddr);
     } else {

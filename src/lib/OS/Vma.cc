@@ -61,7 +61,7 @@ VirtualMemoryArea::VirtualMemoryArea(int prot, int flags, size_t vsize,
   flags_ = flags;
   type_ = type;
   hfmmap_ = hfmmap;
-  if (hfmmap != NULL) {
+  if (hfmmap != nullptr) {
     filebuf_ = hfmmap->getfaddr();
     fsize_ = hfmmap->flen_;
   }
