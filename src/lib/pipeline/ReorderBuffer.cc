@@ -35,20 +35,22 @@ void ReorderBuffer::reserve(const std::shared_ptr<Instruction>& insn) {
 
 void ReorderBuffer::commitMicroOps(uint64_t insnId) {
   if (!buffer_.empty()) {
-    // Do a binary search to find the range of instructions that matches insnId
+    // Do a binary search to find the range of micro-ops that belong to macro-op
+    // with ID insnId
     auto [first, last] =
         std::equal_range(buffer_.begin(), buffer_.end(), insnId, idCompare{});
 
-    // Return early if the insn was not found
+    // Return early if no micro-op was found
     if (first == buffer_.end()) return;
 
-    // Return early if any instruction is not waiting to commit
+    // Return early if any micro-op is not waiting to commit
     if (std::any_of(first, last, [](const std::shared_ptr<Instruction>& insn) {
           return !insn->isWaitingCommit();
         })) {
       return;
     }
 
+    // No early return thus all micro-ops are committable
     while (first != last) {
       first->get()->setCommitReady();
       first++;
