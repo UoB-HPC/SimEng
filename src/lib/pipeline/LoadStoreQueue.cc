@@ -140,7 +140,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
                 }
                 // Remove from temporary vector so the confliction can't be
                 // registered again
-                temp_load_addr.erase(itLd);
+                itLd = temp_load_addr.erase(itLd);
               } else {
                 itLd++;
               }
