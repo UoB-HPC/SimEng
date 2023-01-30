@@ -49,9 +49,10 @@ void ReorderBuffer::commitMicroOps(uint64_t insnId) {
       return;
     }
 
-    std::for_each(first, last, [](std::shared_ptr<Instruction>& insn) {
-      insn->setCommitReady();
-    });
+    while (first != last) {
+      first->get()->setCommitReady();
+      first++;
+    }
   }
 }
 

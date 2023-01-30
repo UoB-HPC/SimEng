@@ -154,9 +154,10 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
     // If addresses remain that had no conflictions, generate those load
     // request(s)
     for (const auto& ld_addr : temp_load_addr) reqAddrQueue.emplace(ld_addr);
+
+    // Register active load
+    requestedLoads_.emplace(insn->getSequenceId(), insn);
   }
-  // Register active load
-  requestedLoads_.emplace(insn->getSequenceId(), insn);
 }
 
 void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {

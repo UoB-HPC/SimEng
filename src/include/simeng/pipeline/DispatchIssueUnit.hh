@@ -128,8 +128,8 @@ class DispatchIssueUnit {
   std::unordered_map<uint16_t, std::unordered_set<std::shared_ptr<Instruction>>>
       flushed_;
 
-  /** Stores the number of instructions dispatched for each reservation station.
-   */
+  /** Records the number of instructions dispatched for each reservation station
+   * within a cycle. */
   std::unique_ptr<uint16_t[]> dispatches_;
 
   /** A reference to the execution port allocator. */
