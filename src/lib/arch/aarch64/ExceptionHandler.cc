@@ -598,6 +598,12 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
         break;
       }
+      case 235: {  // mbind
+        // mbind is not supported due to all binaries being single threaded.
+        // Always return zero to indicate success
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
+        break;
+      }
       case 261: {  // prlimit64
         // TODO: Functionality temporarily omitted as it is unused within
         // workloads regions of interest and not required for their simulation

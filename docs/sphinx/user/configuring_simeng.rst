@@ -90,8 +90,8 @@ Predicate-Count (Optional)
 Conditional-Count
     The number of physical status/flag/conditional-code registers.
 
-MatrixRow-Count
-    The number of physical rows for SME's ``za`` register. SimEng's implementation of the ``za`` matrix register treats each row as a vector register. Having the MatrixRow-Count equal to the Streaming-Vector-Length/8 will yield a single physical ``za`` register. As such, the MatrixRow-Count must be a minimum of Streaming-Vector-Length/8.
+Matrix-Count
+    The number of physical ``za`` SME registers.
 
 Pipeline-widths
 ---------------
