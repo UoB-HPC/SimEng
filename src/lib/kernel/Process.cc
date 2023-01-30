@@ -396,7 +396,9 @@ uint64_t Process::handlePageFault(uint64_t vaddr, SendToMemory send) {
   writeLen = writeLen > pageSize_ ? pageSize_ : writeLen;
 
   // send file to memory;
-  send((char*)filebuf + offset, paddr, writeLen);
+  if (writeLen > 0) {
+    send((char*)filebuf + offset, paddr, writeLen);
+  };
   return taddr;
 }
 
