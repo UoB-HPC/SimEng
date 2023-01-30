@@ -467,7 +467,7 @@ void Instruction::decode() {
     }
 
     if (isStoreData_) {
-      // Idnetify store instruction group
+      // Identify store instruction group
       if (ARM64_REG_Z0 <= metadata.operands[0].reg &&
           metadata.operands[0].reg <= ARM64_REG_Z31) {
         isSVEData_ = true;
