@@ -62,6 +62,7 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
 int64_t SyscallHandler::brk(uint64_t address) {
   /* assert(processes_.size() > 0 &&
          "Attempted to move the program break before creating a process"); */
+  std::cout << "BRK ADDR: " << address << std::endl;
   return os_->getProcess()->getMemRegion().updateBrkRegion(address);
 }
 
