@@ -48,9 +48,12 @@ void FixedLatencyMemoryInterface::tick() {
       // Read outside of memory; return an invalid value to signal a fault
       // completedReads_.push_back({target, RegisterValue(),
       // request.requestId});
-      // } else {
+      // } else
       auto fn = [&, this](memory::DataPacket* dpkt) -> void {
-        if (dpkt == NULL) return;
+        if (dpkt == NULL) {
+          this->completedReads_.push_back({target, RegisterValue(), requestId});
+          return;
+        }
         memory::ReadRespPacket* resp = (memory::ReadRespPacket*)dpkt;
         this->completedReads_.push_back(
             {target, RegisterValue(resp->data, resp->bytesRead), requestId});

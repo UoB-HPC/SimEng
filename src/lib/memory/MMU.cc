@@ -18,7 +18,9 @@ void MMU::bufferRequest(DataPacket* request,
 
   if (paddr & simeng::kernel::masks::faults::pagetable::speculation) {
     // std::cout << "Speculation Based Fault" << std::endl;
-    callback(memory_->handleFaultySpeculationRequest(request));
+    // callback(memory_->handleFaultySpeculationRequest(request));
+    std::cout << "ADDr: " << request->address << std::endl;
+    callback(NULL);
     return;
   }
 

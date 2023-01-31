@@ -168,10 +168,12 @@ void FetchUnit::tick() {
       pc_ = prediction.target;
     }
 
+    /*
     if (pc_ >= programByteLength_) {
       hasHalted_ = true;
       break;
     }
+    */
 
     if (prediction.taken) {
       if (slot + 1 < output_.getWidth()) {
