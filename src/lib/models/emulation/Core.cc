@@ -172,7 +172,6 @@ void Core::tick() {
 }
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
-  std::cout << "Program Counter: " << std::hex << pc_ - 4 << std::dec;
   uop->execute();
 
   if (uop->exceptionEncountered()) {

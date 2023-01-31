@@ -330,9 +330,9 @@ int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
 int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                              int fd, off_t offset) {
   auto process = os_->getProcess();
-  HostFileMMap* hostfile = nullptr;
+  HostFileMMap* hostfile = NULL;
 
-  if (fd != -1) {
+  if (fd != 0) {
     auto entry = process->fdArray_->getFDEntry(fd);
     if (entry == nullptr) {
       std::cerr << "Invalid virtual file descriptor given to mmap" << std::endl;
@@ -340,9 +340,6 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
     };
 
     hostfile = os_->hfmmap_->mapfd(entry->fd_, length, offset);
-    if (hostfile != nullptr) {
-      std::cout << "Host is not NULL" << std::endl;
-    }
   }
   uint64_t ret =
       process->getMemRegion().mmapRegion(addr, length, prot, flags, hostfile);

@@ -121,7 +121,8 @@ void VirtualMemoryArea::trimRangeStart(uint64_t addr) {
       filebuf_ = NULL;
       fsize_ = 0;
     } else {
-      filebuf_ = (void*)filebuf_ + trimlen;
+      char* ptr = (char*)filebuf_ + trimlen;
+      filebuf_ = (void*)ptr;
       fsize_ -= trimlen;
     }
   }
