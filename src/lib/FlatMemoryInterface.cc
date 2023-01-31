@@ -27,6 +27,7 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
 
   auto fn = [&, this](memory::DataPacket* dpkt) -> void {
     if (dpkt == NULL) {
+      this->completedReads_.push_back({target, RegisterValue(), requestId});
       return;
     }
     memory::ReadRespPacket* resp = (memory::ReadRespPacket*)dpkt;

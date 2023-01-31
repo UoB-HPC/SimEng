@@ -77,6 +77,8 @@ void Instruction::execute() {
   const uint16_t VL_bits = SMenabled ? architecture_.getStreamingVectorLength()
                                      : architecture_.getVectorLength();
   executed_ = true;
+  std::cout << " " << metadata.mnemonic << " " << metadata.operandStr
+            << std::endl;
   if (isMicroOp_) {
     switch (microOpcode_) {
       case MicroOpcode::LDR_ADDR: {

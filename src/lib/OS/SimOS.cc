@@ -240,7 +240,7 @@ uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t pid) {
   auto process = processes_[0];
   uint64_t translation = process->pageTable_->translate(vaddr);
   uint64_t faultCode = masks::faults::getFaultCode(translation);
-  if (!(faultCode == masks::faults::pagetable::translate)) return translation;
+  if (faultCode == masks::faults::pagetable::nofault) return translation;
 
   uint64_t addr = process->handlePageFault(vaddr, sendToMem_);
   faultCode = masks::faults::getFaultCode(addr);

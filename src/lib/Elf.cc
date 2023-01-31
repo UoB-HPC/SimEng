@@ -4,6 +4,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "simeng/util/Math.hh"
+
 namespace simeng {
 
 /**
@@ -151,6 +153,7 @@ Elf::Elf(std::string path) {
     uint64_t addr = header->virtualAddress + header->memorySize;
     maxVirtAddr_ = std::max(maxVirtAddr_, addr);
     processImageSize_ = std::max(processImageSize_, addr);
+    processImageSize_ = roundUpMemAddr(maxVirtAddr_, 4096);
   }
 
   /**
