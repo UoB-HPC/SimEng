@@ -565,6 +565,7 @@ bool ExceptionHandler::init() {
         size_t length = registerFileSet.get(R1).get<size_t>();
 
         int64_t result = sysHandler_->munmap(addr, length);
+        result = result >= 0 ? 0 : result;
         stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
         break;
       }

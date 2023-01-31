@@ -574,7 +574,8 @@ TEST_P(InstLoad, ldrxrow) {
     mov w9, 8
     mov w10, 2
     mov w11, -2
-    mov x6, 96
+    mov x6, x0
+    add x6, x6, #24
     ldr x1, [x0, w9, uxtw #0]
     ldr x2, [x0, w10, uxtw #3]
     ldr x3, [x0, w9, sxtw #0]
@@ -585,7 +586,7 @@ TEST_P(InstLoad, ldrxrow) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(2), 0x12345678);
   EXPECT_EQ(getGeneralRegister<uint64_t>(3), 0xDEADBEEF);
   EXPECT_EQ(getGeneralRegister<uint64_t>(4), 0x12345678);
-  EXPECT_EQ(getGeneralRegister<int64_t>(5), 0x12345678);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0xDEADBEEF);
   // EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0x12345678);
 }
 
