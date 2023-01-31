@@ -218,6 +218,18 @@ Process::Process(span<char> instructions,
     return this->pageTable_->deleteMapping(vaddr, size);
   };
 
+  /*
+  std::cout << std::endl;
+  std::cout << "StackStart: " << stackStart << std::endl;
+  std::cout << "StackEnd: " << stackEnd << std::endl;
+  std::cout << "StackPtr: " << stackPtr << std::endl;
+  std::cout << "HeapStart: " << heapStart << std::endl;
+  std::cout << "HeapEnd: " << heapEnd << std::endl;
+  std::cout << "mmapStart: " << mmapStart << std::endl;
+  std::cout << "mmapEnd: " << mmapEnd << std::endl;
+  std::cout << std::endl;
+  */
+
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
                          stackStart, heapStart, mmapStart, stackPtr, unmapFn);
 

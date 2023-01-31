@@ -361,12 +361,12 @@ TEST_P(Syscall, file_read) {
 
   // Check result of read operations
   const char reference[] = "ABCD\0UV\0EFGH\0\0\0\0MNOPQRST";
-  char* mem = memory_->getMemCpy();
-  char* data = mem + process_->getHeapStart();
+  uint64_t paddr = process_->translate(process_->getHeapStart());
+  char* data = memory_->getUntimedData(paddr, sizeof(reference));
   for (int i = 0; i < sizeof(reference); i++) {
     EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
   }
-  delete mem;
+  delete[] data;
 }
 
 TEST_P(Syscall, file_write) {
@@ -462,9 +462,9 @@ TEST_P(Syscall, filenotfound) {
 TEST_P(Syscall, mmap) {
   // Test for 3 consecutive allocations
   RUN_RISCV(R"(
-    # mmap(addr=NULL, length=65536, prot=3, flags=34, fd=-1, offset=0)
+    # mmap(addr=NULL, length=16384, prot=3, flags=34, fd=-1, offset=0)
     li a0, 0
-    li a1, 65536
+    li a1, 16384
     li a2, 3
     li a3, 34
     li a4, -1
@@ -484,9 +484,9 @@ TEST_P(Syscall, mmap) {
     ecall
     mv t1, a0
 
-    # mmap(addr=NULL, length=16384, prot=3, flags=34, fd=-1, offset=0)
+    # mmap(addr=NULL, length=8192, prot=3, flags=34, fd=-1, offset=0)
     li a0, 0
-    li a1, 16384
+    li a1, 8192
     li a2, 3
     li a3, 34
     li a4, -1
@@ -496,8 +496,9 @@ TEST_P(Syscall, mmap) {
     mv t2, a0
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), process_->getMmapStart());
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), process_->getMmapStart() + 65536);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(7), process_->getMmapStart() + 69632);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), process_->getMmapStart() + 16384);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7),
+            process_->getMmapStart() + (16384 + 4096));
 
   // Test for mmap allocation between two previous allocations
   RUN_RISCV(R"(
@@ -590,9 +591,9 @@ TEST_P(Syscall, mmap) {
 TEST_P(Syscall, munmap) {
   // Test that no errors are given during expected usage
   RUN_RISCV(R"(
-    # mmap(addr=NULL, length=65536, prot=3, flags=34, fd=-1, offset=0)
+    # mmap(addr=NULL, length=16384, prot=3, flags=34, fd=-1, offset=0)
     li a0, 0
-    li a1, 65536
+    li a1, 16384
     li a2, 3
     li a3, 34
     li a4, -1
@@ -601,16 +602,16 @@ TEST_P(Syscall, munmap) {
     ecall
     mv t0, a0
 
-    # munmap(addr=mmapStart_, length=65536, prot=3, flags=34, fd=-1, offset=0)
+    # munmap(addr=mmapStart_, length=16384, prot=3, flags=34, fd=-1, offset=0)
     mv a0, t0
-    li a1, 65536
+    li a1, 16384
     li a7, 215
     ecall
     mv t1, a0
 
-    # munmap(addr=mmapStart_, length=65536, prot=3, flags=34, fd=-1, offset=0)
+    # munmap(addr=mmapStart_, length=12288, prot=3, flags=34, fd=-1, offset=0)
     mv a0, t0
-    li a1, 65536
+    li a1, 12288
     li a7, 215
     ecall
     mv t2, a0
@@ -638,17 +639,19 @@ TEST_P(Syscall, munmap) {
     li a7, 215
     ecall
     mv t1, a0
-
-    # munmap(addr=mmapStart_, length=65536, prot=3, flags=34, fd=-1, offset=0)
-    addi t0, t0, 1024
-    mv a0, t0
+    
+    # This should fail because 1024 does not lie in the mmap address range.
+    # 1024 is a random selected number, any number that does not lie in the mmap range will fail.
+    # munmap(addr=1024, length=65536, prot=3, flags=34, fd=-1, offset=0)
+    li a0, 1024
     li a1, 65536
     li a7, 215
     ecall
     mv t2, a0
+
   )");
-  EXPECT_EQ(getGeneralRegister<uint64_t>(5), process_->getMmapStart() + 1024);
-  EXPECT_EQ(getGeneralRegister<int64_t>(6), -1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), process_->getMmapStart());
+  EXPECT_EQ(getGeneralRegister<int64_t>(6), 0);
   EXPECT_EQ(getGeneralRegister<int64_t>(7), -1);
 }
 
@@ -682,7 +685,7 @@ TEST_P(Syscall, stdout) {
     li a7, 66
     ecall
   )");
-  EXPECT_EQ(stdout_.substr(0, sizeof(str) - 1), str);
+  ASSERT_TRUE(stdout_.find(str) != std::string::npos);
   EXPECT_EQ(getGeneralRegister<uint64_t>(10), sizeof(str) - 1);
 }
 

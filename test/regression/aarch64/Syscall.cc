@@ -363,6 +363,7 @@ TEST_P(Syscall, file_read) {
   for (int i = 0; i < sizeof(reference); i++) {
     EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
   }
+  delete[] data;
 }
 
 TEST_P(Syscall, file_write) {
