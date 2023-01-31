@@ -235,6 +235,9 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
   // Always use pageSize aligned sizes.
   uint64_t size = roundUpMemAddr(length, 4096);
 
+  std::cout << "Start Addr: " << startAddr << std::endl;
+  std::cout << "Size: " << size << std::endl;
+
   // No checks done currently to see if hint addresses lies in Mmap region.
   // We just allocate.
   if (startAddr) {
@@ -264,9 +267,10 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
     // because hfmmaps are shared during unmaps.
     addVma(vma);
   }
+
+  std::cout << "Ret: " << vma->vm_start << std::endl;
+
   return vma->vm_start;
-  // O signifies an error.
-  return 0;
 }
 
 int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {

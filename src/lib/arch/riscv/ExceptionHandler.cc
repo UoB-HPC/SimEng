@@ -559,6 +559,7 @@ bool ExceptionHandler::init() {
         size_t length = registerFileSet.get(R1).get<size_t>();
 
         int64_t result = linux_->munmap(addr, length);
+        result = result > 0 ? 0 : result;
         stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
         break;
       }
@@ -574,6 +575,8 @@ bool ExceptionHandler::init() {
         // match the first condition
         if (addr == 0 && flags == 34 && fd == -1 && offset == 0) {
           uint64_t result = linux_->mmap(addr, length, prot, flags, fd, offset);
+
+          std::cout << "MMAP RESULT: " << result << std::endl;
           // An allocation of 0 signifies a failed allocation, return value from
           // syscall is changed to -1
           if (result == 0) {
