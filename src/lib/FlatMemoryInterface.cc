@@ -14,9 +14,15 @@ FlatMemoryInterface::FlatMemoryInterface(std::shared_ptr<memory::MMU> mmu,
 void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
                                       uint64_t requestId) {
   if (target.address + target.size > size_) {
+    /*
+      std::cout << "----------------------------------" << std::endl;
+    std::cout << "Target Address: " << target.address << std::endl;
+    std::cout << "Size: " << size_ << std::endl;
+    std::cout << "----------------------------------" << std::endl;
+*/
     // Read outside of memory; return an invalid value to signal a fault
-    completedReads_.push_back({target, RegisterValue(), requestId});
-    return;
+    // completedReads_.push_back({target, RegisterValue(), requestId});
+    // return;
   }
 
   auto fn = [&, this](memory::DataPacket* dpkt) -> void {

@@ -124,6 +124,7 @@ Process::Process(const std::vector<std::string>& commandLine,
 
   std::cout << "StackStart: " << stackStart << std::endl;
   std::cout << "StackEnd: " << stackEnd << std::endl;
+  std::cout << "StackPtr: " << stackPtr << std::endl;
   std::cout << "HeapStart: " << heapStart << std::endl;
   std::cout << "HeapEnd: " << heapEnd << std::endl;
   std::cout << "mmapStart: " << mmapStart << std::endl;
@@ -135,9 +136,8 @@ Process::Process(const std::vector<std::string>& commandLine,
     uint64_t value = this->pageTable_->deleteMapping(vaddr, size);
     if (value ==
         (masks::faults::pagetable::fault | masks::faults::pagetable::unmap)) {
-      std::cerr << "Error occured while unmapping virtual address: " << vaddr
-                << " for size: " << size << std::endl;
-      std::exit(1);
+      std::cerr << "Mapping doesn't exist for vaddr: " << vaddr
+                << " and length: " << size << std::endl;
     }
     return value;
   };
@@ -182,7 +182,7 @@ Process::Process(span<char> instructions,
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
 
-  uint64_t instrSize = roundUpMemAddr(instructions.size(), 4096);
+  uint64_t instrSize = roundUpMemAddr(instructions.size(), pageSize_);
   uint64_t instrEnd = instrSize;
 
   // Heap grows upwards towards higher addresses.
@@ -206,15 +206,6 @@ Process::Process(span<char> instructions,
   uint64_t heapPhyAddr = os_->requestPageFrames(heapSize);
   uint64_t stackPhyAddr = os_->requestPageFrames(stackSize);
 
-  std::cout << std::endl;
-  std::cout << "StackStart: " << stackStart << std::endl;
-  std::cout << "StackEnd: " << stackEnd << std::endl;
-  std::cout << "HeapStart: " << heapStart << std::endl;
-  std::cout << "HeapEnd: " << heapEnd << std::endl;
-  std::cout << "mmapStart: " << mmapStart << std::endl;
-  std::cout << "mmapEnd: " << mmapEnd << std::endl;
-  std::cout << std::endl;
-
   // Create page table mappings for stack and heap virtual address ranges.
   pageTable_->createMapping(0, instrPhyAddr, instrSize);
   pageTable_->createMapping(heapStart, heapPhyAddr, heapSize);
@@ -225,14 +216,7 @@ Process::Process(span<char> instructions,
 
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
       [&, this](uint64_t vaddr, size_t size) -> uint64_t {
-    uint64_t value = this->pageTable_->deleteMapping(vaddr, size);
-    if (value ==
-        (masks::faults::pagetable::fault | masks::faults::pagetable::unmap)) {
-      std::cerr << "Error occured while unmapping virtual address: " << vaddr
-                << " for size: " << size << std::endl;
-      std::exit(1);
-    }
-    return value;
+    return this->pageTable_->deleteMapping(vaddr, size);
   };
 
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,

@@ -31,7 +31,8 @@ TEST(FileDescArrayTest, AllocatesFileDesc) {
   auto entry = fdArr->getFDEntry(vfd);
   ASSERT_NE(entry, nullptr);
   std::string text = "FileDescArrayTestData";
-  char* ftext = new char[21];
+  char* ftext = new char[22];
+  memset(ftext, '\0', 22);
   ASSERT_EQ(read(entry->fd_, ftext, 21), 21);
   ASSERT_EQ(text, std::string(ftext));
   delete[] ftext;

@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 
+#include "simeng/kernel/Masks.hh"
+
 namespace simeng {
 namespace kernel {
 
@@ -52,7 +54,7 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
   if (newBrk < heapStart_) {
     return brk_;
   }
-  newBrk = roundUpMemAddr(newBrk, pageSize_);
+  // newBrk = roundUpMemAddr(newBrk, pageSize_);
 
   if (newBrk > heapEnd_) {
     // This needs to fixed such that more extra memory allocation is mmapd.
@@ -243,6 +245,7 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
                 << std::endl;
       return -EINVAL;
     };
+
     if (!((startAddr >= mmapStart_) && (startAddr + size < mmapEnd_))) {
       std::cout << "Provided address range doesn't exist in the mmap range: "
                 << startAddr << " - " << startAddr + size << std::endl;
@@ -250,31 +253,29 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
     };
   }
   bool mapped = isVmMapped(startAddr, size);
-  if (fixed) {
-    if (mapped) unmapRegion(addr, size);
 
-    VMA* vma = new VMA(prot, flags, size, Mmap, hfmmap);
-    addVma(vma);
-    return vma->vm_start;
+  // if not fixed and hint is provided then we need to check if the hint
+  // addr is available. If not we allocate new address.
+  VMA* vma = new VMA(prot, flags, size, Mmap, hfmmap);
+  if (startAddr && !mapped) {
+    addVma(vma, startAddr);
   } else {
-    // if not fixed and hint is provided then we need to check if the hint
-    // addr is available. If not we allocate new address.
-    VMA* vma = new VMA(prot, flags, size, Mmap, hfmmap);
-    if (startAddr && !mapped) {
-      addVma(vma, startAddr);
-    } else {
-      // TODO: Check if offset should be contained in HostBackedFileMMap,
-      // because hfmmaps are shared during unmaps.
-      addVma(vma);
-    }
-    return vma->vm_start;
+    // TODO: Check if offset should be contained in HostBackedFileMMap,
+    // because hfmmaps are shared during unmaps.
+    addVma(vma);
   }
-
+  return vma->vm_start;
   // O signifies an error.
   return 0;
 }
 
 int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
+  if (!((addr >= mmapStart_) && (addr + length < mmapEnd_))) {
+    std::cout << "Provided address range doesn't exist in the mmap range: "
+              << addr << " - " << addr + length << std::endl;
+    return -1;
+  };
+
   uint64_t size = roundUpMemAddr(length, 4096);
   addr = roundDownMemAddr(addr, 4096);
   uint64_t value = removeVma(addr, size);

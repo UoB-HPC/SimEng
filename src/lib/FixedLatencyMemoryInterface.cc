@@ -43,33 +43,34 @@ void FixedLatencyMemoryInterface::tick() {
           fn);
     } else {
       // Read: read data into `completedReads` ff
-      if (target.address + target.size > size_ ||
-          unsignedOverflow_(target.address, target.size)) {
-        // Read outside of memory; return an invalid value to signal a fault
-        completedReads_.push_back({target, RegisterValue(), request.requestId});
-      } else {
-        auto fn = [&, this](memory::DataPacket* dpkt) -> void {
-          if (dpkt == NULL) return;
-          memory::ReadRespPacket* resp = (memory::ReadRespPacket*)dpkt;
-          this->completedReads_.push_back(
-              {target, RegisterValue(resp->data, resp->bytesRead), requestId});
-          delete resp;
-        };
-
-        mmu_->bufferRequest(new memory::ReadPacket(target.address, target.size),
-                            fn);
-
-        /*
-        simeng::memory::ReadRespPacket* resp =
-            (simeng::memory::ReadRespPacket*)memory_->requestAccess(
-                new simeng::memory::ReadPacket{target.address, target.size});
-        // Copy the data at the requested memory address into a RegisterValue
-        completedReads_.push_back({target,
-                                   RegisterValue(resp->data, resp->bytesRead),
-                                   request.requestId});
+      // if (target.address + target.size > size_ ||
+      // unsignedOverflow_(target.address, target.size)) {
+      // Read outside of memory; return an invalid value to signal a fault
+      // completedReads_.push_back({target, RegisterValue(),
+      // request.requestId});
+      // } else {
+      auto fn = [&, this](memory::DataPacket* dpkt) -> void {
+        if (dpkt == NULL) return;
+        memory::ReadRespPacket* resp = (memory::ReadRespPacket*)dpkt;
+        this->completedReads_.push_back(
+            {target, RegisterValue(resp->data, resp->bytesRead), requestId});
         delete resp;
-        */
-      }
+      };
+
+      mmu_->bufferRequest(new memory::ReadPacket(target.address, target.size),
+                          fn);
+
+      /*
+      simeng::memory::ReadRespPacket* resp =
+          (simeng::memory::ReadRespPacket*)memory_->requestAccess(
+              new simeng::memory::ReadPacket{target.address, target.size});
+      // Copy the data at the requested memory address into a RegisterValue
+      completedReads_.push_back({target,
+                                 RegisterValue(resp->data, resp->bytesRead),
+                                 request.requestId});
+      delete resp;
+      */
+      //}
     }
 
     // Remove the request from the queue
