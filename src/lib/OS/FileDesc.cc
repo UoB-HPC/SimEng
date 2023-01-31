@@ -31,7 +31,7 @@ void FileDescArray::validate(int vfd) {
 int FileDescArray::allocateFDEntry(int dirfd, const char* filename, int flags,
                                    int mode) {
   validate();
-  for (size_t i = 0; fdarr_.max_size(); i++) {
+  for (int i = 0; fdarr_.max_size(); i++) {
     if (fdarr_[i] == nullptr) {
       int fd = openat(dirfd, filename, flags, mode);
       if (fd == -1) {
