@@ -10,6 +10,7 @@
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/OS/SimOS.hh"
+#include "simeng/SimInfo.hh"
 #include "simeng/memory/FixedLatencyMemory.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/version.hh"
