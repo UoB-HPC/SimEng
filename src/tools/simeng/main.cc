@@ -7,6 +7,7 @@
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
+#include "simeng/SimInfo.hh"
 #include "simeng/version.hh"
 
 /** Tick the provided core model until it halts. */
