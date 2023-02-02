@@ -300,13 +300,6 @@ void Instruction::execute() {
       case Opcode::AArch64_ADRP: {  // adrp xd, #imm
         // Clear lowest 12 bits of address and add immediate (already shifted by
         // decoder)
-
-        /*
-std::cout << "ADRP IADDR: " << std::hex << instructionAddress_
-<< std::dec << std::endl;
-std::cout << "ADRP IMM: " << std::hex << metadata.operands[1].imm
-<< std::dec << std::endl; */
-
         results[0] =
             (instructionAddress_ & ~(0xFFF)) + metadata.operands[1].imm;
         break;

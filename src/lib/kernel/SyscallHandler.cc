@@ -29,10 +29,6 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
         return -1;
       }
       dfd_temp = entry->fd_;
-      // dfd_temp = processes_[0]->fileDescriptorTable_[dfd];
-      // if (dfd_temp < 0) {
-      //   return -1;
-      // }
     }
   }
   return dfd_temp;
@@ -338,9 +334,6 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
     };
 
     hostfile = os_->hfmmap_->mapfd(entry->fd_, length, offset);
-    if (hostfile != nullptr) {
-      std::cout << "Host is not NULL" << std::endl;
-    }
   }
   uint64_t ret =
       process->getMemRegion().mmapRegion(addr, length, prot, flags, hostfile);
@@ -398,8 +391,6 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
   if (dirfd == -1) return EBADF;
 
   std::shared_ptr<Process> proc = os_->getProcess();
-
-  std::cout << "DirFD: " << dirfd << std::endl;
 
   return proc->fdArray_->allocateFDEntry(dirfd, new_pathname.c_str(), newFlags,
                                          mode);
