@@ -25,7 +25,7 @@ class VirtMemTestEnv : public ::testing::Environment {
   // other mmap will fail.
   void SetUp() override {
     std::string build_dir_path(SIMENG_BUILD_DIR);
-    fpath = build_dir_path + "/test/integration/data/longtext.txt";
+    fpath = build_dir_path + "/test/integration/longtext.txt";
 
     std::ofstream fs(fpath);
 
@@ -55,19 +55,19 @@ testing::Environment* const env =
 
 TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
   Config::set(
-      "{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "
+      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
+      "Vector-Length: 512, Streaming-Vector-Length: 512},"
+      "Process-Image: "
       "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
       "{Generate-Special-Dir: "
       "False}}");
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(300000);
-
   // Create the instance of the OS
   simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, true);
+      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
@@ -85,9 +85,10 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
 
 TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
   Config::set(
-      "{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "
+      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
+      "Vector-Length: 512, Streaming-Vector-Length: 512},"
+      "Process-Image: "
       "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
       "{Generate-Special-Dir: "
       "False}}");
@@ -97,7 +98,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
 
   // Create the instance of the OS
   simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, true);
+      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
@@ -126,9 +127,10 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
 
 TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
   Config::set(
-      "{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "
+      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
+      "Vector-Length: 512, Streaming-Vector-Length: 512},"
+      "Process-Image: "
       "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
       "{Generate-Special-Dir: "
       "False}}");
@@ -138,7 +140,7 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
 
   // Create the instance of the OS
   simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, true);
+      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
   uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
 
   uint64_t retVal =
@@ -168,19 +170,19 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
 
 TEST(VirtMemTest, UnmapSyscall) {
   Config::set(
-      "{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "
+      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
+      "Vector-Length: 512, Streaming-Vector-Length: 512},"
+      "Process-Image: "
       "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
       "{Generate-Special-Dir: "
       "False}}");
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(300000);
-
   // Create the instance of the OS
   simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, true);
+      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
   uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
 
   uint64_t retVal =
@@ -220,9 +222,10 @@ TEST(VirtMemTest, UnmapSyscall) {
 
 TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   Config::set(
-      "{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "
+      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
+      "Vector-Length: 512, Streaming-Vector-Length: 512},"
+      "Process-Image: "
       "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
       "{Generate-Special-Dir: "
       "False}}");
@@ -231,11 +234,11 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
       std::make_shared<simeng::memory::SimpleMem>(300000);
 
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/Data.txt";
+  std::string fpath = build_dir_path + "/test/integration/longtext.txt";
 
   // Create the instance of the OS
   simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, true);
+      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
   uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(0);
@@ -264,8 +267,9 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   ASSERT_NE(paddr, masks::faults::pagetable::fault |
                        masks::faults::pagetable::translate);
 
-  char* data = memory->getUntimedData(paddr, vma->getFileSize());
-  std::string text = "FileDescArrayTestData";
+  char* data = memory->getUntimedData(paddr, vma->getFileSize() + 1);
+  data[21] = '\0';
+  std::string text = "111111111111111111111";
   ASSERT_EQ(text, std::string(data));
 
   delete data;
@@ -273,9 +277,10 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
 
 TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   Config::set(
-      "{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "
+      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
+      "Vector-Length: 512, Streaming-Vector-Length: 512},"
+      "Process-Image: "
       "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
       "{Generate-Special-Dir: "
       "False}}");
@@ -284,11 +289,11 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
       std::make_shared<simeng::memory::SimpleMem>(300000);
 
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/integration/data/longtext.txt";
+  std::string fpath = build_dir_path + "/test/integration/longtext.txt";
 
   // Create the instance of the OS
   simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, true);
+      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
   uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(0);
@@ -318,7 +323,8 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   ASSERT_NE(paddr, masks::faults::pagetable::fault |
                        masks::faults::pagetable::translate);
 
-  char* data = memory->getUntimedData(paddr, vma->getFileSize());
+  char* data = memory->getUntimedData(paddr, vma->getFileSize() + 1);
+  data[4096] = '\0';
   std::string text = "";
   for (int x = 0; x < 4096; x++) text += "2";
   ASSERT_EQ(text, std::string(data));
@@ -328,9 +334,10 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
 
 TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   Config::set(
-      "{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "
+      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
+      "Vector-Length: 512, Streaming-Vector-Length: 512},"
+      "Process-Image: "
       "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
       "{Generate-Special-Dir: "
       "False}}");
@@ -339,11 +346,11 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
       std::make_shared<simeng::memory::SimpleMem>(300000);
 
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/integration/data/longtext.txt";
+  std::string fpath = build_dir_path + "/test/integration/longtext.txt";
 
   // Create the instance of the OS
   simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, true);
+      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
   uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(0);
@@ -373,11 +380,12 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   ASSERT_NE(paddr, masks::faults::pagetable::fault |
                        masks::faults::pagetable::translate);
 
-  char* data = memory->getUntimedData(paddr, 4096);
+  char* data = memory->getUntimedData(paddr, 4096 + 1);
+  data[4096] = '\0';
   std::string text = "";
   for (int x = 0; x < 4096; x++) text += "1";
   ASSERT_EQ(text, std::string(data));
-  delete data;
+  delete[] data;
 
   paddr = simOS.getProcess(0)->translate(mmapStart + 4096);
   ASSERT_EQ(paddr, masks::faults::pagetable::fault |
@@ -388,11 +396,12 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   ASSERT_NE(paddr, masks::faults::pagetable::fault |
                        masks::faults::pagetable::translate);
 
-  data = memory->getUntimedData(paddr, 4096);
+  data = memory->getUntimedData(paddr, 4096 + 1);
+  data[4096] = '\0';
   text = "";
   for (int x = 0; x < 4096; x++) text += "2";
   ASSERT_EQ(text, std::string(data));
-  delete data;
+  delete[] data;
 }
 
 }  // namespace
