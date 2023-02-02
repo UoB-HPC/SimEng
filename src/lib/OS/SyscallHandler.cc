@@ -328,13 +328,12 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
   auto process = os_->getProcess();
   HostFileMMap* hostfile = NULL;
 
-  if (fd != 0) {
+  if (fd > 0) {
     auto entry = process->fdArray_->getFDEntry(fd);
     if (entry == nullptr) {
       std::cerr << "Invalid virtual file descriptor given to mmap" << std::endl;
       return -1;
     };
-
     hostfile = os_->hfmmap_->mapfd(entry->fd_, length, offset);
   }
   uint64_t ret =
