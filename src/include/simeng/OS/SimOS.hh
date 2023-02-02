@@ -155,7 +155,7 @@ class SimOS {
           static_cast<uint64_t>(0b10100), 8};
     }
 
-    processes_[0] = proc;
+    processes_.push_back(proc);
   }
   /** Pointer to the PageFrameAllocator object.  */
   std::shared_ptr<PageFrameAllocator> pageFrameAllocator_;
