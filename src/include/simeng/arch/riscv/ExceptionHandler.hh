@@ -11,17 +11,20 @@ namespace arch {
 namespace riscv {
 
 /** A RISC-V exception handler. */
-class ExceptionHandler : public simeng::arch::ExceptionHandler {
+class ExceptionHandler : public simeng::ExceptionHandler {
  public:
-  /** Create an exception handler with references to the instruction that caused
-   * the exception, along with the core model object and process memory. */
-  ExceptionHandler(const std::shared_ptr<simeng::Instruction>& instruction,
-                   const Core& core);
+  /** Create an exception handler with a reference to the core model object. */
+  ExceptionHandler(const Core& core);
 
   /** Progress handling of the exception, by calling and returning the result of
    * the handler currently assigned to `resumeHandling_`. Returns `false` if
    * further ticks are required, and `true` when completed. */
   bool tick() override;
+
+  /** Register the instruction which contains the exception with the exception
+   * handler. */
+  void registerException(
+      std::shared_ptr<simeng::Instruction> instruction) override;
 
   /** Process the result of a syscall from the SyscallHandler. */
   void processSyscallResult(
@@ -33,12 +36,12 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
  private:
   /** Prints a description of the exception and the instruction that generated
    * it. */
-  void printException(const Instruction& insn) const;
+  void printException() const;
 
   /** The initial handling logic. Returns `true` if no further cycles are
    * required or `false` otherwise, in which case `resumeHandling_` has been set
    * to the next step. */
-  bool init();
+  bool initException();
 
   /** Conclude a syscall, setting the return address and state change in the
    * exception results. */
@@ -48,7 +51,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   bool fatal();
 
   /** The instruction generating an exception. */
-  const Instruction& instruction_;
+  std::shared_ptr<Instruction> instruction_ = nullptr;
 
   /** The core model object. */
   const Core& core_;

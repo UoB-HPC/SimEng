@@ -111,14 +111,14 @@ void RegressionTest::run(const char* source, const char* triple,
   }
 
   // Schedule Process on core
-  simOSKernel.registerCore(core_);
+  OS.registerCore(core_);
   core_->schedule(process_->context_);
 
   // Run the OS and core model until the program is complete
   while (!(core_->getStatus() == simeng::CoreStatus::halted) ||
          dataMemory->hasPendingRequests()) {
     ASSERT_LT(numTicks_, maxTicks_) << "Maximum tick count exceeded.";
-    simOSKernel.tick();
+    OS.tick();
     core_->tick();
     instructionMemory.tick();
     dataMemory->tick();

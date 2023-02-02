@@ -10,16 +10,22 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-ExceptionHandler::ExceptionHandler(
-    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core)
-    : instruction_(*static_cast<Instruction*>(instruction.get())), core_(core) {
-  resumeHandling_ = [this]() { return init(); };
+ExceptionHandler::ExceptionHandler(const Core& core) : core_(core) {
+  resumeHandling_ = [this]() { return initException(); };
 }
 
 bool ExceptionHandler::tick() { return resumeHandling_(); }
 
-bool ExceptionHandler::init() {
-  InstructionException exception = instruction_.getException();
+void ExceptionHandler::registerException(
+    std::shared_ptr<simeng::Instruction> instruction) {
+  instruction_ = std::dynamic_pointer_cast<Instruction>(instruction);
+}
+
+bool ExceptionHandler::initException() {
+  if (instruction_ == nullptr) return false;
+  result_ = {};
+
+  InstructionException exception = instruction_->getException();
   const auto& registerFileSet = core_.getArchitecturalRegisterFileSet();
 
   if (exception == InstructionException::SupervisorCall) {
@@ -70,7 +76,7 @@ bool ExceptionHandler::init() {
       case 261:    // prlimit64
       case 278:    // getrandom
       case 293: {  // rseq
-        core_.sendSyscall({syscallId, instruction_.getSequenceId(), 0, 0,
+        core_.sendSyscall({syscallId, instruction_->getSequenceId(), 0, 0,
                            registerFileSet.get(R0), registerFileSet.get(R1),
                            registerFileSet.get(R2), registerFileSet.get(R3),
                            registerFileSet.get(R4), registerFileSet.get(R5),
@@ -104,7 +110,7 @@ bool ExceptionHandler::init() {
         break;
       }
       default:
-        printException(instruction_);
+        printException();
         std::cout << "\n[SimEng:ExceptionHandler] Unrecognised syscall: "
                   << syscallId << std::endl;
         return fatal();
@@ -117,14 +123,14 @@ bool ExceptionHandler::init() {
              exception == InstructionException::SMZAUpdate) {
     // Retrieve register file structure from architecture
     auto regFileStruct =
-        instruction_.getArchitecture().getRegisterFileStructures();
+        instruction_->getArchitecture().getRegisterFileStructures();
     // Retrieve metadata from architecture
-    auto metadata = instruction_.getMetadata();
+    auto metadata = instruction_->getMetadata();
 
     // Update SVCR value
     const uint64_t svcrBits = static_cast<uint64_t>(metadata.operands[0].svcr);
     const uint8_t imm = metadata.operands[1].imm;
-    const uint64_t currSVCR = instruction_.getArchitecture().getSVCRval();
+    const uint64_t currSVCR = instruction_->getArchitecture().getSVCRval();
     uint64_t newSVCR = 0;
 
     if (imm == 0) {
@@ -168,10 +174,10 @@ bool ExceptionHandler::init() {
     // Update SVCR System Register
     regs.push_back({RegisterType::SYSTEM,
                     static_cast<uint16_t>(
-                        instruction_.getArchitecture().getSystemRegisterTag(
+                        instruction_->getArchitecture().getSystemRegisterTag(
                             ARM64_SYSREG_SVCR))});
     regValues.push_back(RegisterValue(newSVCR, 8));
-    instruction_.getArchitecture().setSVCRval(newSVCR);
+    instruction_->getArchitecture().setSVCRval(newSVCR);
 
     simeng::OS::ProcessStateChange stateChange = {
         simeng::OS::ChangeType::REPLACEMENT, regs, regValues};
@@ -179,7 +185,7 @@ bool ExceptionHandler::init() {
     return concludeSyscall();
   }
 
-  printException(instruction_);
+  printException();
   return fatal();
 }
 
@@ -202,7 +208,7 @@ bool ExceptionHandler::concludeSyscall() {
         // workloads regions of interest and not required for their simulation
         int op = registerFileSet.get(R1).get<int>();
         if (op != 129) {
-          printException(instruction_);
+          printException();
           std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
                        "syscall: "
                     << syscallResult_.syscallId << std::endl;
@@ -214,7 +220,7 @@ bool ExceptionHandler::concludeSyscall() {
             syscallResult_.stateChange.memoryAddressValues[0].get<int64_t>();
         // Currently, only a single CPU bitmask is supported
         if (bitmask != 1) {
-          printException(instruction_);
+          printException();
           std::cout
               << "Unexpected CPU affinity mask returned in exception handler"
               << std::endl;
@@ -230,7 +236,7 @@ bool ExceptionHandler::concludeSyscall() {
         // Currently, only support mmap from a malloc() call whose arguments
         // match the first condition
         if (addr != 0 || flags != 34 || fd != -1 || offset != 0) {
-          printException(instruction_);
+          printException();
           std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
                        "syscall: "
                     << syscallResult_.syscallId << std::endl;
@@ -241,15 +247,20 @@ bool ExceptionHandler::concludeSyscall() {
     return fatal();
   }
 
-  uint64_t nextInstructionAddress = instruction_.getInstructionAddress() + 4;
+  uint64_t nextInstructionAddress = instruction_->getInstructionAddress() + 4;
   result_ = {false, nextInstructionAddress, syscallResult_.stateChange};
+
+  // Reset state of handler
+  instruction_ = nullptr;
+  syscallReturned_ = false;
+  resumeHandling_ = [this]() { return initException(); };
   return true;
 }
 
 const ExceptionResult& ExceptionHandler::getResult() const { return result_; }
 
-void ExceptionHandler::printException(const Instruction& insn) const {
-  auto exception = insn.getException();
+void ExceptionHandler::printException() const {
+  auto exception = instruction_->getException();
   std::cout << std::endl;
   std::cout << "[SimEng:ExceptionHandler] Encountered ";
   switch (exception) {
@@ -305,9 +316,9 @@ void ExceptionHandler::printException(const Instruction& insn) const {
             << std::endl;
   std::cout << "[SimEng:ExceptionHandler]     0x" << std::hex
             << std::setfill('0') << std::setw(16)
-            << insn.getInstructionAddress() << ": ";
+            << instruction_->getInstructionAddress() << ": ";
 
-  auto& metadata = insn.getMetadata();
+  auto& metadata = instruction_->getMetadata();
   for (uint8_t byte : metadata.encoding) {
     std::cout << std::setfill('0') << std::setw(2)
               << static_cast<unsigned int>(byte) << " ";
@@ -325,6 +336,10 @@ void ExceptionHandler::printException(const Instruction& insn) const {
 
 bool ExceptionHandler::fatal() {
   result_ = {true, 0, {}};
+  // Reset state of handler
+  instruction_ = nullptr;
+  syscallReturned_ = false;
+  resumeHandling_ = [this]() { return initException(); };
   return true;
 }
 

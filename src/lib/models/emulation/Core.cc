@@ -11,13 +11,17 @@ const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa,
-           std::function<void(const simeng::OS::SyscallInfo)> syscallHandle)
+           std::function<void(const simeng::OS::SyscallInfo)> syscallHandle,
+           YAML::Node& config)
     : instructionMemory_(instructionMemory),
       dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
-      syscallHandle_(syscallHandle) {}
+      syscallHandle_(syscallHandle) {
+  // Create exception handler based on chosen architecture
+  exceptionHandlerFactory(config["Core"]["ISA"].as<std::string>());
+}
 
 void Core::tick() {
   ticks_++;
@@ -30,7 +34,7 @@ void Core::tick() {
     case CoreStatus::switching:
       // Ensure there are no instructions left to execute and there's no active
       // exception before context switching.
-      if (microOps_.empty() && (exceptionHandler_ == nullptr)) {
+      if (microOps_.empty() && (exceptionGenerated_ == false)) {
         macroOp_.clear();
         pendingReads_ = 0;
         previousAddresses_.clear();
@@ -52,8 +56,8 @@ void Core::tick() {
     return;
   }
 
-  if (exceptionHandler_ != nullptr) {
-    processExceptionHandler();
+  if (exceptionGenerated_) {
+    processException();
     return;
   }
 
@@ -210,13 +214,14 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
-  exceptionHandler_ = isa_.handleException(instruction, *this, dataMemory_);
-  processExceptionHandler();
+  exceptionGenerated_ = true;
+  exceptionHandler_->registerException(instruction);
+  processException();
 }
 
-void Core::processExceptionHandler() {
-  assert(exceptionHandler_ != nullptr &&
-         "Attempted to process an exception handler that wasn't present");
+void Core::processException() {
+  assert(exceptionGenerated_ != false &&
+         "Attempted to process an exception handler that wasn't active");
   if (dataMemory_.hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
@@ -240,8 +245,7 @@ void Core::processExceptionHandler() {
     applyStateChange(result.stateChange);
   }
 
-  // Clear the handler
-  exceptionHandler_ = nullptr;
+  exceptionGenerated_ = false;
 
   microOps_.pop();
 }
@@ -298,9 +302,7 @@ void Core::sendSyscall(const OS::SyscallInfo syscallInfo) const {
 }
 
 void Core::recieveSyscallResult(OS::SyscallResult result) const {
-  if (exceptionHandler_ != nullptr) {
-    exceptionHandler_->processSyscallResult(result);
-  }
+  exceptionHandler_->processSyscallResult(result);
 }
 
 uint64_t Core::getInstructionsRetiredCount() const {
@@ -330,7 +332,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
 }
 
 bool Core::interrupt() {
-  if (exceptionHandler_ == nullptr) {
+  if (exceptionGenerated_ == false) {
     status_ = CoreStatus::switching;
     contextSwitches_++;
     return true;
