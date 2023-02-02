@@ -51,6 +51,7 @@ uint64_t MemRegion::getMmapStart() const { return mmapStart_; }
 uint64_t MemRegion::getMemSize() const { return memSize_; }
 
 uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
+  newBrk = roundUpMemAddr(newBrk, 8);
   if (newBrk < heapStart_) {
     return brk_;
   }

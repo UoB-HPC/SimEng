@@ -22,10 +22,10 @@ TEST(MemRegionTest, UpdateBrkRegion) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
                                   stackStart, heapStart, mmapStart, stackStart);
   ASSERT_EQ(memRegion.getBrk(), 0);
-  ASSERT_EQ(memRegion.updateBrkRegion(1000), 4096);
-  ASSERT_EQ(memRegion.updateBrkRegion(0), 4096);
-  ASSERT_EQ(memRegion.updateBrkRegion(10365), 12288);
-  ASSERT_EQ(memRegion.updateBrkRegion(81910), 81920);
+  ASSERT_EQ(memRegion.updateBrkRegion(1000), 1000);
+  ASSERT_EQ(memRegion.updateBrkRegion(0), 1000);
+  ASSERT_EQ(memRegion.updateBrkRegion(10365), 10368);
+  ASSERT_EQ(memRegion.updateBrkRegion(81910), 81912);
 }
 
 TEST(MemRegionTest, UpdateBrkRegionOnAddrGreaterThanHeapSize) {

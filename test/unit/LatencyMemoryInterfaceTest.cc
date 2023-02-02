@@ -45,11 +45,15 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
 }
 
 // Test that out-of-bounds memory reads are correctly handled.
-TEST(LatencyMemoryInterfaceTest, OutofBoundsRead) {
+TEST(LatencyMemoryInterfaceTest, UnMappedAddrRead) {
   std::shared_ptr<simeng::memory::Mem> mem =
       std::make_shared<simeng::memory::SimpleMem>(4);
 
   VAddrTranslator fn = [](uint64_t addr, uint64_t pid) -> uint64_t {
+    if (!(addr > 0 && addr < 4)) {
+      return simeng::kernel::masks::faults::pagetable::fault |
+             simeng::kernel::masks::faults::pagetable::dataAbort;
+    }
     return addr;
   };
 
