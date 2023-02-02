@@ -3,6 +3,8 @@
 #include <iostream>
 #endif
 
+#include <cmath>
+
 #include "simeng/arch/aarch64/helpers/arithmetic.hh"
 #include "simeng/arch/aarch64/helpers/auxiliaryFunctions.hh"
 #include "simeng/arch/aarch64/helpers/bitmanip.hh"
@@ -1613,8 +1615,9 @@ void Instruction::execute() {
       }
       case Opcode::AArch64_FCVTZUv1i64: {  // fcvtzu dd, dn
         // TODO: Handle NaNs, denorms, and saturation
-        results[0] = {
-            static_cast<uint64_t>(std::trunc(operands[0].get<double>())), 256};
+        double res = std::trunc(operands[0].get<double>());
+        res = (res < 0.0) ? 0.0 : res;
+        results[0] = {static_cast<uint64_t>(res), 256};
         break;
       }
       case Opcode::AArch64_FCVT_ZPmZ_DtoS: {  // fcvt zd.s, pg/m, zn.d
