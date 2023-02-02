@@ -9,12 +9,20 @@ typedef std::function<uint64_t(uint64_t, uint64_t)> VAddrTranslator;
 namespace simeng {
 namespace memory {
 
+/** The MMU class acts as a buffer class defines virtual memory interaction
+ * between (Core) and Memory. It can also invoke the OS for virtual memory
+ * related tasks i.e Page faults  */
 class MMU {
  private:
+  /** Reference to the memory */
   std::shared_ptr<Mem> memory_ = nullptr;
+  /**
+   * Reference to callback function which invokes the OS for translation on TLB
+   * misses
+   */
   VAddrTranslator translate_;
+  /** PID of the process assosciated with this core. */
   uint64_t pid_;
-  uint64_t count_;
 
  public:
   MMU(
@@ -23,9 +31,14 @@ class MMU {
         return addr;
       },
       uint64_t pid = 0);
+  /** Method used to buffer request from memory interface to memory. */
   void bufferRequest(DataPacket* request,
                      std::function<void(DataPacket*)> callback);
+
+  /** Method used to set callback function for consulting page tables. */
   void setTranslator(VAddrTranslator translator);
+
+  /** Method to set PID for the MMU. */
   void setPid(uint64_t pid);
 };
 
