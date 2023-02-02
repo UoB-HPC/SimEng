@@ -53,18 +53,15 @@ Process::Process(const std::vector<std::string>& commandLine,
   entryPoint_ = elf.getEntryPoint();
   auto headers = elf.getProcessedHeaders();
 
-  std::cout << "Entry Vaddr: " << elf.getEntryPoint() << std::endl;
-
-  // Send all our inital data to memory
   uint64_t maxInitDataAddr = 0;
-  int count = 0;
+  uint64_t minHeaderAddr = 0;
 
   std::cout << std::endl;
   for (auto header : headers) {
-    // Round size to nearest greater pageSize.
+    // Round size up to page aligned value.
     size_t size = roundUpMemAddr(header->memorySize, pageSize_);
     uint64_t vaddr = header->virtualAddress;
-
+    // Round vaddr down to page aligned value.
     uint64_t avaddr = roundDownMemAddr(vaddr, pageSize_);
     // Request a page frame from the OS.
     uint64_t paddr = os_->requestPageFrames(size);
@@ -72,29 +69,28 @@ Process::Process(const std::vector<std::string>& commandLine,
     pageTable_->createMapping(vaddr, paddr, size);
     // Translate the address of the header virtual address.
     uint64_t translatedAddr = pageTable_->translate(vaddr);
-
+    // If the translated address + size of data to be allocated is less than
+    // base paddr + size, allocate extra memory.
     if (((paddr + size) - translatedAddr) < header->memorySize) {
       paddr = os_->requestPageFrames(pageSize_);
       pageTable_->createMapping(avaddr + size, paddr, pageSize_);
       translatedAddr = pageTable_->translate(vaddr);
     }
-    // Send data to memory.
+    // Send header data to memory
     memory->sendUntimedData(header->headerData, translatedAddr,
                             header->memorySize);
-
-    printf("Header-%d-Min: %llu\n", count, avaddr);
-    printf("Header-%d-Max: %llu\n", count, avaddr + size);
-
-    count++;
+    // Determine minium header address, address in the ranhge [0, minAddr) will
+    // be ignored during translation and all memory requests corresponding to
+    // these address will be handled naively. This is because libc startup
+    // routine makes load requests to address range below minimum header address
+    // leading to data abort exceptions. A proper fix needs to be investigated.
+    minHeaderAddr = std::min(minHeaderAddr, avaddr);
     // Determine maximum address from headers. Will be used later in determining
     // process layout.
     maxInitDataAddr =
         std::max(maxInitDataAddr, roundUpMemAddr(vaddr + size, pageSize_));
   }
-
-  std::cout << "Entry PAddr: " << pageTable_->translate(elf.getEntryPoint())
-            << std::endl;
-
+  pageTable_->ignoreAddrRange(0, minHeaderAddr);
   // Add Page Size padding
   maxInitDataAddr += pageSize_;
   // Heap grows upwards towards higher addresses.
@@ -131,6 +127,8 @@ Process::Process(const std::vector<std::string>& commandLine,
   std::cout << "mmapEnd: " << mmapEnd << std::endl;
   std::cout << std::endl;
 
+  // Create the callback function which will used by MemRegion to unmap page
+  // table mappings upon VMA deletes.
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
       [&, this](uint64_t vaddr, size_t size) -> uint64_t {
     uint64_t value = this->pageTable_->deleteMapping(vaddr, size);
@@ -211,8 +209,6 @@ Process::Process(span<char> instructions,
   pageTable_->createMapping(stackEnd, stackPhyAddr, stackSize);
   uint64_t stackPtr = createStack(stackStart, memory);
 
-  uint64_t taddr = pageTable_->translate(0);
-
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
       [&, this](uint64_t vaddr, size_t size) -> uint64_t {
     return this->pageTable_->deleteMapping(vaddr, size);
@@ -233,6 +229,7 @@ Process::Process(span<char> instructions,
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
                          stackStart, heapStart, mmapStart, stackPtr, unmapFn);
 
+  uint64_t taddr = pageTable_->translate(0);
   memory->sendUntimedData(instructions.begin(), taddr, instructions.size());
 
   fdArray_ = std::make_shared<FileDescArray>();
@@ -277,13 +274,6 @@ uint64_t Process::getEntryPoint() const { return entryPoint_; }
 
 uint64_t Process::getStackPointer() const {
   return memRegion_.getInitialStackPtr();
-}
-
-Translator Process::getTranslator() {
-  Translator func = [&, this](uint64_t vaddr) -> uint64_t {
-    return this->pageTable_->translate(vaddr);
-  };
-  return func;
 }
 
 uint64_t Process::createStack(uint64_t stackStart,
@@ -337,7 +327,6 @@ uint64_t Process::createStack(uint64_t stackStart,
     uint64_t paddr = pageTable_->translate(stackPointer + i);
     memory->sendUntimedData(reinterpret_cast<char*>(&stringBytes[i]), paddr,
                             sizeof(uint8_t));
-    // (*processImage)[stackPointer + i] = stringBytes[i];
   }
 
   initialStackFrame.push_back(0);  // null terminator
@@ -360,33 +349,37 @@ uint64_t Process::createStack(uint64_t stackStart,
   char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame.data());
   uint64_t paddr = pageTable_->translate(stackPointer);
   memory->sendUntimedData(stackFrameBytes, paddr, stackFrameSize);
-
-  // std::copy(stackFrameBytes, stackFrameBytes + stackFrameSize,
-  //          (*processImage) + stackPointer);
-
   return stackPointer;
 }
 
 uint64_t Process::handlePageFault(uint64_t vaddr, SendToMemory send) {
+  // Retrieve VMA containing the vaddr has raised a page fault.
   VirtualMemoryArea* vm = memRegion_.getVMAFromAddr(vaddr);
-  uint64_t alignedVAddr = roundDownMemAddr(vaddr, pageSize_);
   // Process VMA doesn't exist. This address is likely due to a speculation.
   if (vm == NULL)
     return masks::faults::pagetable::fault |
-           masks::faults::pagetable::speculation;
+           masks::faults::pagetable::dataAbort;
 
-  bool hasFile = vm->hasFile();
+  // Round down the memory address to page aligned value to create
+  // a page mapping.
+  uint64_t alignedVAddr = roundDownMemAddr(vaddr, pageSize_);
+
   uint64_t paddr = os_->requestPageFrames(pageSize_);
   uint64_t ret = pageTable_->createMapping(alignedVAddr, paddr, pageSize_);
   if (ret & masks::faults::pagetable::fault)
     return masks::faults::pagetable::fault | masks::faults::pagetable::map;
-
   uint64_t taddr = pageTable_->translate(vaddr);
+
+  bool hasFile = vm->hasFile();
   if (!hasFile) return taddr;
 
   void* filebuf = vm->getFileBuf();
 
-  uint64_t offset = alignedVAddr - vm->vm_start;
+  // Since pahe fault only allocates a single page it could be possible that a
+  // part of the file assosciate with a vma has already been sent to memory. TO
+  // handle this situation we calculate the offset from VMA start address as
+  // this address is also page size aligned.
+  uint64_t offset = alignedVAddr - vm->vmStart_;
   size_t writeLen = vm->getFileSize() - (offset);
   writeLen = writeLen > pageSize_ ? pageSize_ : writeLen;
 

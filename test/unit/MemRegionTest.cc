@@ -328,7 +328,7 @@ TEST(MemRegionTest, UnmapVmaStartGreaterThanPageSize2) {
   ASSERT_EQ(delSize, 8192);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  ASSERT_EQ(memRegion.getVMAHead()->vm_start, retAddr);
+  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, retAddr);
 }
 
 /*
@@ -367,8 +367,8 @@ TEST(MemRegionTest, UnmapOverlappingVmaStartGreaterThanPageSize) {
   ASSERT_EQ(delSize, 12288);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  ASSERT_EQ(memRegion.getVMAHead()->vm_start, mmapStart + 12288);
-  EXPECT_TRUE(memRegion.getVMAHead()->vm_next == NULL);
+  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart + 12288);
+  EXPECT_TRUE(memRegion.getVMAHead()->vmNext_ == NULL);
 }
 /*
  *          [-addr]
@@ -407,11 +407,11 @@ TEST(MemRegionTest, UnmapContainedInMiddleOfVmaList) {
   ASSERT_EQ(delSize, 4096);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
   ASSERT_EQ(memRegion.getVMASize(), 2);
-  ASSERT_EQ(memRegion.getVMAHead()->vm_start, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
 
-  VMA* tail = memRegion.getVMAHead()->vm_next;
-  ASSERT_EQ(tail->vm_start, mmapStart + 8192);
-  EXPECT_TRUE(tail->vm_next == NULL);
+  VMA* tail = memRegion.getVMAHead()->vmNext_;
+  ASSERT_EQ(tail->vmStart_, mmapStart + 8192);
+  EXPECT_TRUE(tail->vmNext_ == NULL);
 }
 /*
  *          [---addr---]
@@ -449,11 +449,11 @@ TEST(MemRegionTest, UnmapContainedVmaAndOverlapStart) {
   ASSERT_EQ(delSize, 8192);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
   ASSERT_EQ(memRegion.getVMASize(), 2);
-  ASSERT_EQ(memRegion.getVMAHead()->vm_start, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
 
-  VMA* tail = memRegion.getVMAHead()->vm_next;
-  ASSERT_EQ(tail->vm_start, mmapStart + 12288);
-  EXPECT_TRUE(tail->vm_next == NULL);
+  VMA* tail = memRegion.getVMAHead()->vmNext_;
+  ASSERT_EQ(tail->vmStart_, mmapStart + 12288);
+  EXPECT_TRUE(tail->vmNext_ == NULL);
 }
 
 /*
@@ -492,12 +492,12 @@ TEST(MemRegionTest, UnmapOverlapStartAndContained) {
   ASSERT_EQ(delSize, 8192);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
   ASSERT_EQ(memRegion.getVMASize(), 2);
-  ASSERT_EQ(memRegion.getVMAHead()->vm_start, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
 
-  VMA* tail = memRegion.getVMAHead()->vm_next;
-  ASSERT_EQ(tail->vm_start, mmapStart + 4096);
-  ASSERT_EQ(tail->vm_end, mmapStart + 8192);
-  EXPECT_TRUE(tail->vm_next == NULL);
+  VMA* tail = memRegion.getVMAHead()->vmNext_;
+  ASSERT_EQ(tail->vmStart_, mmapStart + 4096);
+  ASSERT_EQ(tail->vmEnd_, mmapStart + 8192);
+  EXPECT_TRUE(tail->vmNext_ == NULL);
 }
 
 /*
@@ -536,12 +536,12 @@ TEST(MemRegionTest, UnmapContained) {
   ASSERT_EQ(delSize, 4096 * 4);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
   ASSERT_EQ(memRegion.getVMASize(), 2);
-  ASSERT_EQ(memRegion.getVMAHead()->vm_start, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
 
-  VMA* tail = memRegion.getVMAHead()->vm_next;
-  ASSERT_EQ(tail->vm_start, mmapStart + (4096 * 5));
-  ASSERT_EQ(tail->vm_end, mmapStart + (4096 * 6));
-  EXPECT_TRUE(tail->vm_next == NULL);
+  VMA* tail = memRegion.getVMAHead()->vmNext_;
+  ASSERT_EQ(tail->vmStart_, mmapStart + (4096 * 5));
+  ASSERT_EQ(tail->vmEnd_, mmapStart + (4096 * 6));
+  EXPECT_TRUE(tail->vmNext_ == NULL);
 }
 
 /*
@@ -580,23 +580,23 @@ TEST(MemRegionTest, UnmapContainsMiddle) {
   ASSERT_EQ(delSize, 4096);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
   ASSERT_EQ(memRegion.getVMASize(), 4);
-  ASSERT_EQ(memRegion.getVMAHead()->vm_start, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
 
   VMA* vma = memRegion.getVMAFromAddr(mmapStart + 4096);
   EXPECT_TRUE(vma != NULL);
-  ASSERT_EQ(vma->size, 4096);
-  ASSERT_EQ(vma->vm_end, mmapStart + 8192);
+  ASSERT_EQ(vma->vmSize_, 4096);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 8192);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 12288);
   EXPECT_TRUE(vma != NULL);
-  ASSERT_EQ(vma->size, 4096);
-  ASSERT_EQ(vma->vm_end, mmapStart + 16384);
+  ASSERT_EQ(vma->vmSize_, 4096);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 16384);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 16384);
   EXPECT_TRUE(vma != NULL);
-  EXPECT_TRUE(vma->vm_next == NULL);
-  ASSERT_EQ(vma->size, 4096);
-  ASSERT_EQ(vma->vm_end, mmapStart + (4096 * 5));
+  EXPECT_TRUE(vma->vmNext_ == NULL);
+  ASSERT_EQ(vma->vmSize_, 4096);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + (4096 * 5));
 }
 
 /*
@@ -635,21 +635,21 @@ TEST(MemRegionTest, UnmapContainsStart) {
   ASSERT_EQ(delSize, 4096);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
   ASSERT_EQ(memRegion.getVMASize(), 3);
-  ASSERT_EQ(memRegion.getVMAHead()->vm_start, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
 
   VMA* vma = memRegion.getVMAFromAddr(mmapStart + 4096);
   EXPECT_TRUE(vma == NULL);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 8192);
   EXPECT_TRUE(vma != NULL);
-  ASSERT_EQ(vma->size, 4096);
-  ASSERT_EQ(vma->vm_end, mmapStart + 12288);
+  ASSERT_EQ(vma->vmSize_, 4096);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 12288);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 12288);
   EXPECT_TRUE(vma != NULL);
-  EXPECT_TRUE(vma->vm_next == NULL);
-  ASSERT_EQ(vma->size, 4096);
-  ASSERT_EQ(vma->vm_end, mmapStart + (4096 * 4));
+  EXPECT_TRUE(vma->vmNext_ == NULL);
+  ASSERT_EQ(vma->vmSize_, 4096);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + (4096 * 4));
 }
 
 /*
@@ -688,21 +688,21 @@ TEST(MemRegionTest, UnmapContainsEnd) {
   ASSERT_EQ(delSize, 4096);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
   ASSERT_EQ(memRegion.getVMASize(), 3);
-  ASSERT_EQ(memRegion.getVMAHead()->vm_start, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
 
   VMA* vma = memRegion.getVMAFromAddr(mmapStart + 8192);
   EXPECT_TRUE(vma == NULL);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 4096);
   EXPECT_TRUE(vma != NULL);
-  ASSERT_EQ(vma->size, 4096);
-  ASSERT_EQ(vma->vm_end, mmapStart + 8192);
+  ASSERT_EQ(vma->vmSize_, 4096);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 8192);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 12288);
   EXPECT_TRUE(vma != NULL);
-  EXPECT_TRUE(vma->vm_next == NULL);
-  ASSERT_EQ(vma->size, 4096);
-  ASSERT_EQ(vma->vm_end, mmapStart + (4096 * 4));
+  EXPECT_TRUE(vma->vmNext_ == NULL);
+  ASSERT_EQ(vma->vmSize_, 4096);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + (4096 * 4));
 }
 
 TEST(MemRegionTest, UnmapOverlaps) {
@@ -737,7 +737,7 @@ TEST(MemRegionTest, UnmapOverlaps) {
   ASSERT_EQ(delSize, 8192);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
   ASSERT_EQ(memRegion.getVMASize(), 3);
-  ASSERT_EQ(memRegion.getVMAHead()->vm_start, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
 
   VMA* vma = memRegion.getVMAFromAddr(mmapStart + 4096);
   EXPECT_TRUE(vma == NULL);
@@ -747,14 +747,14 @@ TEST(MemRegionTest, UnmapOverlaps) {
 
   vma = memRegion.getVMAFromAddr(mmapStart + 12288);
   EXPECT_TRUE(vma != NULL);
-  ASSERT_EQ(vma->size, 4096);
-  ASSERT_EQ(vma->vm_end, mmapStart + 16384);
+  ASSERT_EQ(vma->vmSize_, 4096);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 16384);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 16384);
   EXPECT_TRUE(vma != NULL);
-  EXPECT_TRUE(vma->vm_next == NULL);
-  ASSERT_EQ(vma->size, 4096);
-  ASSERT_EQ(vma->vm_end, mmapStart + (4096 * 5));
+  EXPECT_TRUE(vma->vmNext_ == NULL);
+  ASSERT_EQ(vma->vmSize_, 4096);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + (4096 * 5));
 }
 
 }  // namespace

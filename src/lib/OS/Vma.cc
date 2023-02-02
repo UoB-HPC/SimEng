@@ -55,11 +55,10 @@ HostBackedFileMMaps::~HostBackedFileMMaps() {
 };
 
 VirtualMemoryArea::VirtualMemoryArea(int prot, int flags, size_t vsize,
-                                     VMAType type, HostFileMMap* hfmmap) {
-  size = vsize;
+                                     HostFileMMap* hfmmap) {
+  vmSize_ = vsize;
   prot_ = prot;
   flags_ = flags;
-  type_ = type;
   hfmmap_ = hfmmap;
   if (hfmmap != nullptr) {
     filebuf_ = hfmmap->getfaddr();
@@ -68,66 +67,67 @@ VirtualMemoryArea::VirtualMemoryArea(int prot, int flags, size_t vsize,
 };
 
 VirtualMemoryArea::VirtualMemoryArea(VirtualMemoryArea* vma) {
-  vm_start = vma->vm_start;
-  vm_end = vma->vm_end;
-  vm_next = vma->vm_next;
+  vmStart_ = vma->vmStart_;
+  vmEnd_ = vma->vmEnd_;
+  vmNext_ = vma->vmNext_;
   flags_ = vma->flags_;
   prot_ = vma->prot_;
   hfmmap_ = vma->hfmmap_;
-  size = vma->size;
-  type_ = vma->type_;
+  vmSize_ = vma->vmSize_;
   filebuf_ = vma->filebuf_;
   fsize_ = vma->fsize_;
 };
 
 VirtualMemoryArea::~VirtualMemoryArea(){};
 
-// Address ranges are exclusive of the last address i.e [vm_start, vm_end)
 bool VirtualMemoryArea::overlaps(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
-  return (endAddr >= vm_start) && (startAddr < vm_end);
+  return (endAddr >= vmStart_) && (startAddr < vmEnd_);
 };
 
 bool VirtualMemoryArea::contains(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
-  return (startAddr >= vm_start) && (endAddr <= vm_end);
+  return (startAddr >= vmStart_) && (endAddr <= vmEnd_);
 };
 
 bool VirtualMemoryArea::contains(uint64_t vaddr) {
-  return (vaddr >= vm_start) && (vaddr < vm_end);
+  return (vaddr >= vmStart_) && (vaddr < vmEnd_);
 }
 
 bool VirtualMemoryArea::containedIn(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
-  return (startAddr <= vm_start) && (endAddr >= vm_end);
+  return (startAddr <= vmStart_) && (endAddr >= vmEnd_);
 };
 
 void VirtualMemoryArea::trimRangeEnd(uint64_t addr) {
-  size = addr - vm_start;
-  vm_end = addr;
-  // We dont host munmap here because addr and size have to page aligned, if
-  // they are not we run the risk of unmapping a larger chunk of the file.
-  // so we handle this in the destructor.
-  if (hasFile()) fsize_ = fsize_ < size ? fsize_ : size;
+  vmSize_ = addr - vmStart_;
+  vmEnd_ = addr;
+  // We dont host munmap here because HostBackedFileMMaps is responsible for
+  // managing all host mappings. We only update the file size to the new size
+  // only if it is less than the original size before trim.
+  if (hasFile()) fsize_ = fsize_ < vmSize_ ? fsize_ : vmSize_;
 };
 
 void VirtualMemoryArea::trimRangeStart(uint64_t addr) {
   if (hasFile()) {
-    size_t trimlen = addr - vm_start;
+    size_t trimlen = addr - vmStart_;
     if (trimlen >= fsize_) {
-      // We dont host munmap here because addr and size have to page aligned, if
-      // they are not we run the risk of unmapping a larger chunk of the file.
-      // so we handle this in the destructor.
+      // We dont host munmap here because HostBackedFileMMaps is responsible for
+      // managing all host mappings. If the entire file size is trimmed just
+      // update the filebuf_ and fsize_ variables.
       filebuf_ = NULL;
       fsize_ = 0;
     } else {
+      // If entire file size is not trimmed, update the filebuf pointer with an
+      // offset. Since the start address of the VMA has been changed, the new
+      // start address should point to an offseted position in the file.
       char* ptr = (char*)filebuf_ + trimlen;
       filebuf_ = (void*)ptr;
       fsize_ -= trimlen;
     }
   }
-  size = vm_end - addr;
-  vm_start = addr;
+  vmSize_ = vmEnd_ - addr;
+  vmStart_ = addr;
 };
 
 bool VirtualMemoryArea::hasFile() {

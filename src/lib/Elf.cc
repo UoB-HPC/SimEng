@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "simeng/util/Math.hh"
+#include "simeng/version.hh"
 
 namespace simeng {
 
@@ -165,6 +166,7 @@ Elf::Elf(std::string path) {
    */
 
   // Process headers; only observe LOAD sections for this basic implementation
+  int count = 0;
   for (auto header : headers_) {
     if (header->type == 1) {  // LOAD
       header->headerData = new char[header->memorySize];
@@ -173,7 +175,17 @@ Elf::Elf(std::string path) {
       // memory
       file.seekg(header->offset);
       file.read(header->headerData, header->fileSize);
+      std::string fname = "header_" + std::to_string(count) + "_file.txt";
+      std::string path = std::string(SIMENG_BUILD_DIR) + "/" + fname;
+      std::ofstream output_file(path);
 
+      for (int x = 0; x < header->fileSize; x++) {
+        char data = static_cast<unsigned char>(header->headerData[x]);
+        uint64_t addr = header->virtualAddress + x;
+        output_file << addr << ": " << std::hex << +data << std::endl;
+      }
+      output_file.close();
+      count++;
       processedHeaders_.push_back(header);
     }
   }

@@ -50,17 +50,24 @@ class MemRegion {
   uint64_t mmapPtr_;
   /** Size of the mmap region. */
   size_t mmapSize_;
-
+  /** Function reference to unmap the page table in removeVma. */
   std::function<uint64_t(uint64_t, size_t)> unmapPageTable_;
-
+  /** Head of the VMA list. */
   VirtualMemoryArea* vm_head_ = NULL;
+  /** Size of the VMA list. */
   size_t vm_size_ = 0;
 
+  /** Method to add VMA to the VMA list at the most optimal address. */
   uint64_t addVma(VMA* vma);
+
+  /** Method to add VMA to the VMA list at the specified start address. */
   uint64_t addVma(VMA* vma, uint64_t startAddr);
+
+  /** Method to remove VMAs */
   int64_t removeVma(uint64_t addr, uint64_t length);
+
+  /** Method to remove all unremoved VMAs. */
   void freeVma();
-  void addInitalVMA(char* data, uint64_t startAddr, size_t size, VMAType type);
 
  public:
   /** This method returns the stack start address. */
@@ -102,12 +109,22 @@ class MemRegion {
   /** This method unmaps a mmaped region. */
   int64_t unmapRegion(uint64_t addr, uint64_t length);
 
+  /** This method checks the startAddr is already mapped in a VM. */
   bool isVmMapped(uint64_t startAddr, size_t size);
+
+  /** This method checks if addr overlaps with heap region. */
   bool overlapsHeap(uint64_t addr, size_t size);
+
+  /** This method checks if addr overlaps with stack region. */
   bool overlapsStack(uint64_t addr, size_t size);
-  bool isPageAligned(uint64_t addr);
+
+  /** This method retrieves the VMA containing addr. */
   VirtualMemoryArea* getVMAFromAddr(uint64_t addr);
+
+  /** This methof retrievs the VMA head. */
   VirtualMemoryArea* getVMAHead() { return vm_head_; };
+
+  /** This method gets the VMA size. */
   size_t getVMASize() { return vm_size_; }
 };
 

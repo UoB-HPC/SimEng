@@ -13,19 +13,7 @@ FlatMemoryInterface::FlatMemoryInterface(std::shared_ptr<memory::MMU> mmu,
 
 void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
                                       uint64_t requestId) {
-  if (target.address + target.size > size_) {
-    /*
-      std::cout << "----------------------------------" << std::endl;
-    std::cout << "Target Address: " << target.address << std::endl;
-    std::cout << "Size: " << size_ << std::endl;
-    std::cout << "----------------------------------" << std::endl;
-*/
-    // Read outside of memory; return an invalid value to signal a fault
-    // completedReads_.push_back({target, RegisterValue(), requestId});
-    // return;
-  }
-
-  auto fn = [&, this](memory::DataPacket* dpkt) -> void {
+  auto fn = [&, this](memory::DataPacket* dpkt = NULL) -> void {
     if (dpkt == NULL) {
       this->completedReads_.push_back({target, RegisterValue(), requestId});
       return;
@@ -37,21 +25,11 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
   };
 
   mmu_->bufferRequest(new memory::ReadPacket(target.address, target.size), fn);
-
-  // Copy the data at the requested memory address into a RegisterValue
-  // completedReads_.push_back(
-  // {target, RegisterValue(resp->data, resp->bytesRead), requestId});
-  // delete resp;
 }
 
 void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
                                        const RegisterValue& data) {
-  /*
-assert(target.address + target.size <= size_ &&
-       "Attempted to write beyond memory limit");
-       */
-
-  auto fn = [&](memory::DataPacket* dpkt) -> void {
+  auto fn = [&](memory::DataPacket* dpkt = NULL) -> void {
     if (dpkt == NULL) return;
     delete dpkt;
   };
@@ -59,13 +37,6 @@ assert(target.address + target.size <= size_ &&
   const char* wdata = data.getAsVector<char>();
   mmu_->bufferRequest(
       new simeng::memory::WritePacket(target.address, target.size, wdata), fn);
-  /*
-  simeng::memory::WriteRespPacket* resp =
-      (simeng::memory::WriteRespPacket*)memory_->requestAccess(
-          new simeng::memory::WritePacket(target.address, target.size,
-                                         data.getAsVector<char>()));
-  delete resp;
-  */
 }
 
 const span<MemoryReadResult> FlatMemoryInterface::getCompletedReads() const {

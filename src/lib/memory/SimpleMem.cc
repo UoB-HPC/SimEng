@@ -4,17 +4,19 @@ namespace simeng {
 namespace memory {
 
 SimpleMem::SimpleMem(size_t size) {
-  memRef = new char[size];
-  std::memset(memRef, 0, size);
-  memory_ = span<char>(memRef, size);
+  memRef_ = new char[size];
+  std::memset(memRef_, 0, size);
+  memory_ = span<char>(memRef_, size);
 
   faultMemory_ = new char[128];
   std::memset(faultMemory_, 0, 128);
-
   memSize_ = size;
 }
 
-SimpleMem::~SimpleMem() { delete[] memRef; };
+SimpleMem::~SimpleMem() {
+  delete[] memRef_;
+  delete[] faultMemory_;
+};
 
 size_t SimpleMem::getMemorySize() { return memSize_; }
 
@@ -53,23 +55,13 @@ void SimpleMem::sendUntimedData(char* data, uint64_t addr, size_t size) {
   return;
 }
 
-char* SimpleMem::getMemCpy() {
-  char* ret = new char[memSize_];
-  std::copy(memory_.begin(), memory_.end(), ret);
-  return ret;
-}
-
 char* SimpleMem::getUntimedData(uint64_t paddr, size_t size) {
   char* ret = new char[size];
   std::copy(memory_.begin() + paddr, memory_.begin() + paddr + size, ret);
   return ret;
 }
 
-void SimpleMem::setTranslator(std::function<uint64_t(uint64_t)> translator) {
-  translator_ = translator;
-}
-
-DataPacket* SimpleMem::handleFaultySpeculationRequest(DataPacket* pkt) {
+DataPacket* SimpleMem::handleIgnoredRequest(DataPacket* pkt) {
   if (pkt->type == READ) {
     struct ReadPacket* rreq = (ReadPacket*)pkt;
     auto resp = rreq->makeResponse(rreq->size, faultMemory_);

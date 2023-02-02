@@ -14,6 +14,7 @@ class MMU {
   std::shared_ptr<Mem> memory_ = nullptr;
   VAddrTranslator translate_;
   uint64_t pid_;
+  uint64_t count_;
 
  public:
   MMU(

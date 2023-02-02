@@ -83,7 +83,8 @@ void FetchUnit::tick() {
 
     size_t fetchIndex;
     for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
-      if (fetched[fetchIndex].target.address == blockAddress) {
+      if (fetched[fetchIndex].target.address == blockAddress &&
+          fetched[fetchIndex].data) {
         break;
       }
     }
@@ -171,12 +172,10 @@ void FetchUnit::tick() {
       pc_ = prediction.target;
     }
 
-    /*
     if (pc_ >= programByteLength_) {
       hasHalted_ = true;
       break;
     }
-    */
 
     if (prediction.taken) {
       if (slot + 1 < output_.getWidth()) {

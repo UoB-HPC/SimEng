@@ -43,6 +43,9 @@ static uint32_t hex_[8] = {
  * syscalls and manage process execution. */
 class SimOS {
  public:
+  /** Page size of the System. */
+  const uint64_t pageSize_ = 4096;
+
   /** Construct a SimOS object. */
   SimOS(std::string executablePath, std::vector<std::string> executableArgs,
         std::shared_ptr<simeng::memory::Mem> mem, bool setProcess = false);
@@ -58,6 +61,10 @@ class SimOS {
     return syscallHandler_;
   };
 
+  /**
+   * Method which returns a callback function which is used by the MMU to
+   * translate virtual addresses.
+   */
   VAddrTranslator getVAddrTranslator();
 
   /** Register a core with the OS to enable process scheduling. */
@@ -67,11 +74,19 @@ class SimOS {
 
   /** Check if OS has halted. */
   bool hasHalted() const { return halted_; };
+
+  /** Method which allocates page frames of the specifie size and return the
+   * starting physical address. */
   uint64_t requestPageFrames(size_t size);
 
+  /** Method which handles process specific page table translation. */
   uint64_t handleVAddrTranslation(uint64_t vaddr, uint64_t pid);
 
-  HostBackedFileMMaps* hfmmap_ = new HostBackedFileMMaps;
+  // The pointer is const (not the resource it points to) and will never be
+  // exchanged during its lifetime.
+  /** Unique pointer to host backed file mmap. */
+  std::unique_ptr<HostBackedFileMMaps> const hfmmap_ =
+      std::make_unique<HostBackedFileMMaps>();
 
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */

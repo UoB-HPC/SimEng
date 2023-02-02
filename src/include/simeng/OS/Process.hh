@@ -18,15 +18,11 @@ class Mem;
 
 namespace OS {
 
+// Typedef for callback function used to send data upon handling page fault.
 typedef std::function<void(char*, uint64_t, size_t)> SendToMemory;
 
 // Forward declaration for SimOS.
 class SimOS;
-
-typedef std::function<uint64_t(uint64_t)> Translator;
-
-/** The page size of the process memory. */
-static constexpr uint64_t pageSize_ = 4096;
 
 enum procStatus { waiting, executing, completed, scheduled };
 
@@ -46,27 +42,44 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
 
 /** The initial state of a SimOS Process, constructed from a binary executable.
  *
- * The constructed process follows a typical layout in memory:
+ * The constructed process follows a typical layout and has the following
+ * properties:
  *
- * |---------------| <- start of stack
- * |     Stack     |    stack grows downwards
- * |-v-----------v-|
+ * a) Padding between each region is equal to the page size. (4096 bytes)
+ * b) Each region page size aligned start address, end address and size.
+ * c) The stack grows downwards.
+ * d) The heap grows upwards.
+ * e) The mmap region grows upwards.
+ * f) Region above the stackPtr contains all initial data for the process to
+ *    start i.e argv, env args, auxiliary variables.
+ *
+ * |---------------| <- stackStart (Start of the stack region)
+ * |---------------| <- stackPtr (Highest stack addr available to the program)
+ * |     Stack     |
  * |               |
- * |-^-----------^-|
- * |  mmap region  |    mmap region grows upwards
- * |---------------| <- start of mmap region
+ * |-v-----------v-| <- stackEnd (End of the stack region)
+ * |    Padding    |
+ * |-^-----------^-| <- mmapEnd (End of mmap region)
+ * |  Mmap region  |
  * |               |
- * |-^-----------^-|
- * |     Heap      |    heap grows upwards
- * |---------------| <- start of heap
+ * |---------------| <- mmapstart (Start of mmap region)
+ * |    Padding    |
+ * |-^-----------^-| <- heapEnd (End of the heap region)
+ * |     Heap      |
  * |               |
+ * |---------------| <- heapStart (Start of stack region)
+ * |    Padding    |
+ * |---------------| <- End of the ELF-defined process image
  * |  ELF-defined  |
  * | process image |
  * |               |
- * |---------------| <- 0x0
+ * |---------------| <- Lowest address in the process layout
  *
  */
 class Process {
+  /**
+   * Make SimOS friend class of Process so it can access all private variables.
+   */
   friend class SimOS;
 
  public:
@@ -85,8 +98,6 @@ class Process {
           uint64_t TGID, uint64_t TID);
 
   ~Process();
-
-  Translator getTranslator();
 
   /** Get the address of the start of the heap region. */
   uint64_t getHeapStart() const;
@@ -123,7 +134,14 @@ class Process {
 
   /** Get the process' TID. */
   uint64_t getTID() const { return TID_; }
+  /** Method which handles a page fault. */
   uint64_t handlePageFault(uint64_t vaddr, SendToMemory send);
+
+  /** Method which handles virtual address translation. */
+  uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
+
+  /** Method which return reference to page table shared_ptr. */
+  std::shared_ptr<PageTable>& getPageTable() { return pageTable_; }
 
   /** Shared pointer to FileDescArray class.*/
   std::shared_ptr<FileDescArray> fdArray_;
@@ -139,9 +157,13 @@ class Process {
   /** The CPU context associated with this process. Used to enable context
    * switching between multiple processes. */
   cpuContext context_;
+
   uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
 
   std::shared_ptr<PageTable>& getPageTable() { return pageTable_; }
+
+  /** The page size of the process memory. */
+  const uint64_t pageSize_ = 4096;
 
  private:
   /** MemRegion of the Process Image. */

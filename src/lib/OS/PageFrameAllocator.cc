@@ -6,20 +6,23 @@
 namespace simeng {
 namespace OS {
 
-PageFrameAllocator::PageFrameAllocator(){};
+PageFrameAllocator::PageFrameAllocator(uint64_t maxSize, uint64_t pageSize)
+    : pageSize_(pageSize), maxAllocationSize_(maxSize) {
+  sizeLeft_ = maxSize;
+};
 
 PageFrameAllocator::~PageFrameAllocator(){};
 
 uint64_t PageFrameAllocator::allocate(size_t size) {
   size = roundUpMemAddr(size, pageSize_);
-  if (size > sizeLeft) {
+  if (size > sizeLeft_) {
     std::cerr << "Cannot allocate more page frames! Increase system memory."
               << std::endl;
     std::exit(1);
   }
-  uint64_t paddr = nextFreeAddr;
-  sizeLeft -= size;
-  nextFreeAddr += size;
+  uint64_t paddr = nextFreeAddr_;
+  sizeLeft_ -= size;
+  nextFreeAddr_ += size;
   return paddr;
 };
 
