@@ -89,15 +89,27 @@ class HostFileMMap {
   /** offset of the mapping. */
   const off_t offset_;
 
-  HostFileMMap(int fd, void* faddr, size_t flen, off_t offset)
-      : fd_(fd), faddr_(faddr), flen_(flen), offset_(offset) {}
+  const size_t origLen_;
+
+  HostFileMMap(int fd, void* origPtr, void* faddr, size_t origLen, size_t flen,
+               off_t offset)
+      : fd_(fd),
+        origPtr_(origPtr),
+        faddr_(faddr),
+        origLen_(origLen),
+        flen_(flen),
+        offset_(offset) {}
 
   /** Method which returns the pointer of the mmaped file. */
   void* getfaddr() { return faddr_; }
 
+  void* getOrigPtr() { return origPtr_; }
+
  private:
   /** Pointer assosciated with the file mapping. */
   void* faddr_;
+
+  void* origPtr_;
 };
 
 /**

@@ -29,22 +29,28 @@ HostFileMMap* HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
         << std::endl;
     std::exit(1);
   }
-  if (len == 0) {
+  if (len <= 0) {
     std::cerr << "Cannot create host backed file mmap with size 0 for file "
                  "descriptor: "
               << fd << std::endl;
     std::exit(1);
   }
-  void* filemmap =
-      mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, offset);
-  HostFileMMap* hfmm = new HostFileMMap(fd, filemmap, len, offset);
+  // Always pass offset of 0 as it must be aligned to host page size, which can
+  // differ (i.e. MacOS has page size of 16KiB).
+  void* filemmap = mmap(NULL, (size_t)statbuf->st_size, PROT_READ | PROT_WRITE,
+                        MAP_PRIVATE, fd, 0);
+  // Add offset to pointer manually
+  char* offsettedPtr = (char*)filemmap + offset;
+  void* newPtr = (void*)offsettedPtr;
+  HostFileMMap* hfmm = new HostFileMMap(fd, filemmap, newPtr,
+                                        (size_t)statbuf->st_size, len, offset);
   hostvec.push_back(hfmm);
   return hfmm;
 };
 
 HostBackedFileMMaps::~HostBackedFileMMaps() {
   for (auto fmap : hostvec) {
-    if (munmap(fmap->getfaddr(), fmap->flen_) < 0) {
+    if (munmap(fmap->getOrigPtr(), fmap->origLen_) < 0) {
       std::cerr << "Unable to unmap host backed file mmap associated with file "
                    "descriptor: "
                 << fmap->fd_ << std::endl;

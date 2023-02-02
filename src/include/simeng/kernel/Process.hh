@@ -156,10 +156,6 @@ class Process {
 
   cpuContext context_;
 
-  uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
-
-  std::shared_ptr<PageTable>& getPageTable() { return pageTable_; }
-
   /** The page size of the process memory. */
   const uint64_t pageSize_ = 4096;
 
