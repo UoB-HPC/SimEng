@@ -35,7 +35,6 @@ bool ExceptionHandler::init() {
         registerFileSet.get({RegisterType::GENERAL, 8}).get<uint64_t>();
 
     ProcessStateChange stateChange;
-    // std::cout << "Syscall Id: " << syscallId << std::endl;
     switch (syscallId) {
       case 29: {  // ioctl
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
@@ -576,28 +575,21 @@ bool ExceptionHandler::init() {
         int flags = registerFileSet.get(R3).get<int>();
         int fd = registerFileSet.get(R4).get<int>();
         off_t offset = registerFileSet.get(R5).get<off_t>();
-
-        // Currently, only support mmap from a malloc() call whose arguments
-        // match the first condition
         if (1) {
           uint64_t result =
               sysHandler_->mmap(addr, length, prot, flags, fd, offset);
           // An allocation of 0 signifies a failed allocation, return value from
           // syscall is changed to -1
-          if (result == 0) {
+          if (result <= 0) {
             stateChange = {
                 ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-1)}};
           } else {
             stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
           }
-          break;
         } else {
-          printException(instruction_);
-          std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
-                       "syscall: "
-                    << syscallId << std::endl;
-          return fatal();
+          stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
         }
+        break;
       }
       case 226: {  // mprotect
         // mprotect is not supported

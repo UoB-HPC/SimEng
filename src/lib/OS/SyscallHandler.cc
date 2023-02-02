@@ -29,10 +29,6 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
         return -1;
       }
       dfd_temp = entry->fd_;
-      // dfd_temp = processes_[0]->fileDescriptorTable_[dfd];
-      // if (dfd_temp < 0) {
-      //   return -1;
-      // }
     }
   }
   return dfd_temp;
