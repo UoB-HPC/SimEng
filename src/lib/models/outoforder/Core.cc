@@ -101,7 +101,9 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {
     dispatchIssueUnit_.getRSSizes(sizeVec);
   });
-}
+  // Create exception handler based on chosen architecture
+  exceptionHandlerFactory(config["Core"]["ISA"].as<std::string>());
+};
 
 void Core::tick() {
   ticks_++;
@@ -117,7 +119,7 @@ void Core::tick() {
       if (fetchToDecodeBuffer_.isEmpty() && decodeToRenameBuffer_.isEmpty() &&
           renameToDispatchBuffer_.isEmpty() &&
           !dataMemory_.hasPendingRequests() && (reorderBuffer_.size() == 0) &&
-          (exceptionHandler_ == nullptr)) {
+          (exceptionGenerated_ == false)) {
         // Flush pipeline
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
@@ -138,8 +140,8 @@ void Core::tick() {
   // Increase tick count for current process execution
   procTicks_++;
 
-  if (exceptionHandler_ != nullptr) {
-    processExceptionHandler();
+  if (exceptionGenerated_) {
+    processException();
     return;
   }
 
@@ -256,7 +258,7 @@ CoreStatus Core::getStatus() {
   // are no uops at the head of any buffer, and no exception is currently
   // being handled.
   if (fetchUnit_.hasHalted() && !(reorderBuffer_.size() > 0) &&
-      (exceptionHandler_ == nullptr)) {
+      (exceptionGenerated_ == false)) {
     bool decodeSlotEmpty = true;
     auto decodeSlots = fetchToDecodeBuffer_.getHeadSlots();
     for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
@@ -313,15 +315,13 @@ void Core::handleException() {
     eu.purgeFlushed();
   }
 
-  exceptionGenerated_ = false;
-  exceptionHandler_ =
-      isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
-  processExceptionHandler();
+  exceptionHandler_->registerException(exceptionGeneratingInstruction_);
+  processException();
 }
 
-void Core::processExceptionHandler() {
-  assert(exceptionHandler_ != nullptr &&
-         "Attempted to process an exception handler that wasn't present");
+void Core::processException() {
+  assert(exceptionGenerated_ != false &&
+         "Attempted to process an exception handler that wasn't active");
   if (dataMemory_.hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
@@ -345,7 +345,7 @@ void Core::processExceptionHandler() {
     applyStateChange(result.stateChange);
   }
 
-  exceptionHandler_ = nullptr;
+  exceptionGenerated_ = false;
 }
 
 void Core::applyStateChange(const OS::ProcessStateChange& change) {
@@ -400,9 +400,7 @@ void Core::sendSyscall(const OS::SyscallInfo syscallInfo) const {
 }
 
 void Core::recieveSyscallResult(const OS::SyscallResult result) const {
-  if (exceptionHandler_ != nullptr) {
-    exceptionHandler_->processSyscallResult(result);
-  }
+  exceptionHandler_->processSyscallResult(result);
 }
 
 uint64_t Core::getInstructionsRetiredCount() const {
@@ -487,7 +485,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
 }
 
 bool Core::interrupt() {
-  if (exceptionHandler_ == nullptr) {
+  if (exceptionGenerated_ == false) {
     status_ = CoreStatus::switching;
     contextSwitches_++;
     // Stop fetch unit from incrementing PC or fetching next instructions

@@ -206,12 +206,6 @@ executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
   return exeInfo;
 }
 
-std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
-    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core);
-}
-
 std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
     const {
   uint16_t numSysRegs = static_cast<uint16_t>(systemRegisterMap_.size());

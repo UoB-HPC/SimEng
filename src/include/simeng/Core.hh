@@ -14,6 +14,40 @@ class ArchitecturalRegisterFileSet;
 
 enum CoreStatus : uint8_t { halted, idle, executing, switching };
 
+/** The result from a handled exception. */
+struct ExceptionResult {
+  /** Whether execution should halt. */
+  bool fatal;
+  /** The address to resume execution from. */
+  uint64_t instructionAddress;
+  /** Any changes to apply to the process state. */
+  simeng::OS::ProcessStateChange stateChange;
+};
+
+/** An abstract multi-cycle exception handler interface. Should be ticked each
+ * cycle until complete. */
+class ExceptionHandler {
+ public:
+  virtual ~ExceptionHandler(){};
+
+  /** Tick the exception handler to progress handling of the exception. Should
+   * return `false` if the exception requires further handling, or `true` once
+   * complete. */
+  virtual bool tick() = 0;
+
+  /** Register the instruction which contains the exception with the exception
+   * handler. */
+  virtual void registerException(
+      std::shared_ptr<simeng::Instruction> instruction) = 0;
+
+  /** Process the result of a syscall from the SyscallHandler. */
+  virtual void processSyscallResult(
+      simeng::OS::SyscallResult syscallResult) = 0;
+
+  /** Retrieve the result of the exception. */
+  virtual const ExceptionResult& getResult() const = 0;
+};
+
 /** The number of bytes fetched each cycle. */
 #define FETCH_SIZE 4
 

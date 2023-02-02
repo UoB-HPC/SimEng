@@ -15,7 +15,8 @@ const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           std::function<void(const simeng::OS::SyscallInfo)> syscallHandle)
+           std::function<void(const simeng::OS::SyscallInfo)> syscallHandle,
+           YAML::Node& config)
     : dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
@@ -35,7 +36,10 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor, false),
       writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}),
-      syscallHandle_(syscallHandle){};
+      syscallHandle_(syscallHandle) {
+  // Create exception handler based on chosen architecture
+  exceptionHandlerFactory(config["Core"]["ISA"].as<std::string>());
+};
 
 void Core::tick() {
   ticks_++;
@@ -49,7 +53,7 @@ void Core::tick() {
       // Ensure the pipeline is empty and there's no active exception before
       // context switching.
       if (fetchToDecodeBuffer_.isEmpty() && decodeToExecuteBuffer_.isEmpty() &&
-          completionSlots_[0].isEmpty() && (exceptionHandler_ == nullptr)) {
+          completionSlots_[0].isEmpty() && (exceptionGenerated_ == false)) {
         // Flush pipeline
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
@@ -69,8 +73,8 @@ void Core::tick() {
   // Increase tick count for current process execution
   procTicks_++;
 
-  if (exceptionHandler_ != nullptr) {
-    processExceptionHandler();
+  if (exceptionGenerated_) {
+    processException();
     return;
   }
 
@@ -142,7 +146,7 @@ CoreStatus Core::getStatus() {
   bool writebackPending = completionSlots_[0].getHeadSlots()[0] != nullptr;
 
   if (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
-      !executePending && exceptionHandler_ == nullptr) {
+      !executePending && exceptionGenerated_ == false) {
     status_ = CoreStatus::halted;
   }
 
@@ -163,9 +167,7 @@ void Core::sendSyscall(const OS::SyscallInfo syscallInfo) const {
 }
 
 void Core::recieveSyscallResult(OS::SyscallResult result) const {
-  if (exceptionHandler_ != nullptr) {
-    exceptionHandler_->processSyscallResult(result);
-  }
+  exceptionHandler_->processSyscallResult(result);
 }
 
 uint64_t Core::getInstructionsRetiredCount() const {
@@ -205,12 +207,8 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
-  exceptionGenerated_ = false;
-
-  exceptionHandler_ =
-      isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
-
-  processExceptionHandler();
+  exceptionHandler_->registerException(exceptionGeneratingInstruction_);
+  processException();
 
   // Flush pipeline
   fetchToDecodeBuffer_.fill({});
@@ -219,9 +217,9 @@ void Core::handleException() {
   completionSlots_[0].fill(nullptr);
 }
 
-void Core::processExceptionHandler() {
-  assert(exceptionHandler_ != nullptr &&
-         "Attempted to process an exception handler that wasn't present");
+void Core::processException() {
+  assert(exceptionGenerated_ != false &&
+         "Attempted to process an exception handler that wasn't active");
   if (dataMemory_.hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
@@ -245,7 +243,7 @@ void Core::processExceptionHandler() {
     applyStateChange(result.stateChange);
   }
 
-  exceptionHandler_ = nullptr;
+  exceptionGenerated_ = false;
 }
 
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
@@ -405,7 +403,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
 }
 
 bool Core::interrupt() {
-  if (exceptionHandler_ == nullptr) {
+  if (exceptionGenerated_ == false) {
     status_ = CoreStatus::switching;
     contextSwitches_++;
     // Stop fetch unit from incrementing PC or fetching next instructions
