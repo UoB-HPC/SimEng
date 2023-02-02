@@ -28,16 +28,6 @@ Process::Process(const std::vector<std::string>& commandLine,
                  uint64_t TGID, uint64_t TID)
     : commandLine_(commandLine), os_(os), TGID_(TGID), TID_(TID) {
   // Parse ELF file
-  pageTable_ = std ::make_shared<PageTable>();
-  assert(commandLine.size() > 0);
-  char* unwrappedProcImgPtr;
-  Elf elf(commandLine[0], &unwrappedProcImgPtr);
-  if (!elf.isValid()) {
-    return;
-  }
-  isValid_ = true;
-  std::cout << "Hello" << std::endl;
-  entryPoint_ = elf.getEntryPoint();
   YAML::Node& config = Config::get();
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
@@ -150,8 +140,6 @@ Process::Process(const std::vector<std::string>& commandLine,
     }
   }
 
-  // Set the memory translator.
-  memory->setTranslator(getTranslator());
   isValid_ = true;
 }
 
@@ -203,18 +191,6 @@ Process::Process(span<char> instructions,
       [&, this](uint64_t vaddr, size_t size) -> uint64_t {
     return this->pageTable_->deleteMapping(vaddr, size);
   };
-
-  /*
-  std::cout << std::endl;
-  std::cout << "StackStart: " << stackStart << std::endl;
-  std::cout << "StackEnd: " << stackEnd << std::endl;
-  std::cout << "StackPtr: " << stackPtr << std::endl;
-  std::cout << "HeapStart: " << heapStart << std::endl;
-  std::cout << "HeapEnd: " << heapEnd << std::endl;
-  std::cout << "mmapStart: " << mmapStart << std::endl;
-  std::cout << "mmapEnd: " << mmapEnd << std::endl;
-  std::cout << std::endl;
-  */
 
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
                          stackStart, heapStart, mmapStart, stackPtr, unmapFn);

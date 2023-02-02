@@ -1,7 +1,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <filesystem>>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 
@@ -28,7 +28,7 @@ class HBFMTestEnv : public ::testing::Environment {
   // other mmap will fail.
   void SetUp() override {
     std::string build_dir_path(SIMENG_BUILD_DIR);
-    fpath = build_dir_path + "/test/unit/data/longtext.txt";
+    fpath = build_dir_path + "/test/unit/longtext.txt";
 
     std::ofstream fs(fpath);
 
@@ -69,7 +69,7 @@ TEST(HostBackedFileMMapsTest, ExitOnInvalidFd) {
 
 TEST(HostBackedFileMMapsTest, ExitOnOffsetGreaterThanFileSize) {
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/data/Data.txt";
+  std::string fpath = build_dir_path + "/test/unit/Data.txt";
   HostBackedFileMMaps* hmap = new HostBackedFileMMaps();
 
   int fd = open(fpath.c_str(), O_RDWR);
@@ -86,7 +86,7 @@ TEST(HostBackedFileMMapsTest, ExitOnOffsetGreaterThanFileSize) {
 
 TEST(HostBackedFileMMapsTest, ExitOnSizeEqualsToZero) {
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/data/Data.txt";
+  std::string fpath = build_dir_path + "/test/unit/Data.txt";
   HostBackedFileMMaps* hmap = new HostBackedFileMMaps();
 
   int fd = open(fpath.c_str(), O_RDWR);
@@ -104,7 +104,7 @@ TEST(HostBackedFileMMapsTest, ExitOnSizeEqualsToZero) {
 
 TEST(HostBackedFileMMapsTest, ReadHostedFileZeroOffset) {
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/data/Data.txt";
+  std::string fpath = build_dir_path + "/test/unit/Data.txt";
   HostBackedFileMMaps* hmap = new HostBackedFileMMaps();
 
   int fd = open(fpath.c_str(), O_RDWR);
@@ -125,7 +125,7 @@ TEST(HostBackedFileMMapsTest, ReadHostedFileZeroOffset) {
 
 TEST(HostBackedFileMMapsTest, CreateHostedFileWithUnalignedOffset) {
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/data/Data.txt";
+  std::string fpath = build_dir_path + "/test/unit/Data.txt";
   HostBackedFileMMaps* hmap = new HostBackedFileMMaps();
 
   int fd = open(fpath.c_str(), O_RDWR);
@@ -146,7 +146,7 @@ TEST(HostBackedFileMMapsTest, CreateHostedFileWithUnalignedOffset) {
 
 TEST(HostBackedFileMMapsTest, ReadHostedFileNonZeroOffset) {
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/data/longtext.txt";
+  std::string fpath = build_dir_path + "/test/unit/longtext.txt";
   HostBackedFileMMaps* hmap = new HostBackedFileMMaps();
 
   int fd = open(fpath.c_str(), O_RDWR);
@@ -162,6 +162,7 @@ TEST(HostBackedFileMMapsTest, ReadHostedFileNonZeroOffset) {
   ASSERT_EQ(text, std::string(ftext));
 
   ASSERT_NE(close(fd), -1);
+  delete[] ftext;
   delete hmap;
 }
 
