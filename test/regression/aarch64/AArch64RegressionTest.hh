@@ -8,8 +8,7 @@
   ("{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, " \
    "Timer-Frequency: 100, Micro-Operations: False}, Fetch: "                  \
    "{Fetch-Block-Size: 32, Loop-Buffer-Size: 64, Loop-Detection-Threshold: "  \
-   "4}, Process-Image: {Heap-Size: 100000, Stack-Size: 100000, Mmap-Size: "   \
-   "50000}, "                                                                 \
+   "4}, Process-Image: {Heap-Size: 100000, Stack-Size: 100000}"               \
    "Register-Set: {GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "  \
    "Predicate-Count: 17, Conditional-Count: 128, Matrix-Count: 2}, "          \
    "Pipeline-Widths: { Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "          \
