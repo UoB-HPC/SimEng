@@ -54,9 +54,8 @@ Process::Process(const std::vector<std::string>& commandLine,
   auto headers = elf.getProcessedHeaders();
 
   uint64_t maxInitDataAddr = 0;
-  uint64_t minHeaderAddr = 0;
+  uint64_t minHeaderAddr = ~0;
 
-  std::cout << std::endl;
   for (auto header : headers) {
     // Round size up to page aligned value.
     size_t size = roundUpMemAddr(header->memorySize, pageSize_);
@@ -117,15 +116,6 @@ Process::Process(const std::vector<std::string>& commandLine,
   pageTable_->createMapping(stackEnd, stackPhyAddr, stackSize);
   pageTable_->createMapping(heapStart, heapPhyAddr, heapSize);
   uint64_t stackPtr = createStack(stackStart, memory);
-
-  std::cout << "StackStart: " << stackStart << std::endl;
-  std::cout << "StackEnd: " << stackEnd << std::endl;
-  std::cout << "StackPtr: " << stackPtr << std::endl;
-  std::cout << "HeapStart: " << heapStart << std::endl;
-  std::cout << "HeapEnd: " << heapEnd << std::endl;
-  std::cout << "mmapStart: " << mmapStart << std::endl;
-  std::cout << "mmapEnd: " << mmapEnd << std::endl;
-  std::cout << std::endl;
 
   // Create the callback function which will used by MemRegion to unmap page
   // table mappings upon VMA deletes.
