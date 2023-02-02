@@ -71,10 +71,8 @@ class Mem {
   virtual void sendUntimedData(char* data, uint64_t addr, size_t size) = 0;
   /** This method sets the translator for memory requests. */
   virtual char* getUntimedData(uint64_t paddr, size_t size) = 0;
-  virtual void setTranslator(std::function<uint64_t(uint64_t)> translator) = 0;
 
-  virtual DataPacket* handleFaultySpeculationRequest(
-      struct DataPacket* pkt) = 0;
+  virtual DataPacket* handleIgnoredRequest(struct DataPacket* pkt) = 0;
 };
 
 }  // namespace memory

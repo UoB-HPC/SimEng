@@ -35,7 +35,7 @@ bool ExceptionHandler::init() {
         registerFileSet.get({RegisterType::GENERAL, 8}).get<uint64_t>();
 
     ProcessStateChange stateChange;
-    std::cout << "Syscall Id: " << syscallId << std::endl;
+    // std::cout << "Syscall Id: " << syscallId << std::endl;
     switch (syscallId) {
       case 29: {  // ioctl
         int64_t fd = registerFileSet.get(R0).get<int64_t>();

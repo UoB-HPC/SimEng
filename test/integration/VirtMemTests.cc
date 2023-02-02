@@ -76,9 +76,9 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
   EXPECT_TRUE(vma != NULL);
 
   uint64_t mmapStart = simOS.getProcess()->getMemRegion().getMmapStart();
-  ASSERT_EQ(vma->vm_start, mmapStart);
-  ASSERT_EQ(vma->vm_end, mmapStart + 4096);
-  ASSERT_EQ(vma->size, 4096);
+  ASSERT_EQ(vma->vmStart_, mmapStart);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
+  ASSERT_EQ(vma->vmSize_, 4096);
   ASSERT_EQ(vma->hasFile(), false);
 }
 
@@ -105,9 +105,9 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
   EXPECT_TRUE(vma != NULL);
 
   uint64_t mmapStart = simOS.getProcess()->getMemRegion().getMmapStart();
-  ASSERT_EQ(vma->vm_start, mmapStart);
-  ASSERT_EQ(vma->vm_end, mmapStart + 4096);
-  ASSERT_EQ(vma->size, 4096);
+  ASSERT_EQ(vma->vmStart_, mmapStart);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
+  ASSERT_EQ(vma->vmSize_, 4096);
   ASSERT_EQ(vma->hasFile(), false);
 
   uint64_t paddr = simOS.getProcess()->translate(mmapStart);
@@ -146,9 +146,9 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
   VMA* vma = simOS.getProcess()->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
-  ASSERT_EQ(vma->vm_start, mmapStart + 4096);
-  ASSERT_EQ(vma->vm_end, mmapStart + 8192);
-  ASSERT_EQ(vma->size, 4096);
+  ASSERT_EQ(vma->vmStart_, mmapStart + 4096);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 8192);
+  ASSERT_EQ(vma->vmSize_, 4096);
   ASSERT_EQ(vma->hasFile(), false);
 
   uint64_t paddr = simOS.getProcess()->translate(mmapStart);
@@ -187,9 +187,9 @@ TEST(VirtMemTest, UnmapSyscall) {
   VMA* vma = simOS.getProcess()->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
-  ASSERT_EQ(vma->vm_start, mmapStart);
-  ASSERT_EQ(vma->vm_end, mmapStart + 4096);
-  ASSERT_EQ(vma->size, 4096);
+  ASSERT_EQ(vma->vmStart_, mmapStart);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
+  ASSERT_EQ(vma->vmSize_, 4096);
   ASSERT_EQ(vma->hasFile(), false);
 
   uint64_t paddr = simOS.getProcess()->translate(mmapStart);
@@ -244,9 +244,9 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   VMA* vma = simOS.getProcess()->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
-  ASSERT_EQ(vma->vm_start, mmapStart);
-  ASSERT_EQ(vma->vm_end, mmapStart + 4096);
-  ASSERT_EQ(vma->size, 4096);
+  ASSERT_EQ(vma->vmStart_, mmapStart);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
+  ASSERT_EQ(vma->vmSize_, 4096);
   EXPECT_TRUE(vma->hasFile());
   ASSERT_EQ(vma->getFileSize(), 21);
 
@@ -297,9 +297,9 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   VMA* vma = simOS.getProcess()->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
-  ASSERT_EQ(vma->vm_start, mmapStart);
-  ASSERT_EQ(vma->vm_end, mmapStart + 4096);
-  ASSERT_EQ(vma->size, 4096);
+  ASSERT_EQ(vma->vmStart_, mmapStart);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
+  ASSERT_EQ(vma->vmSize_, 4096);
   EXPECT_TRUE(vma->hasFile());
   ASSERT_EQ(vma->getFileSize(), 4096);
 
@@ -351,9 +351,9 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   VMA* vma = simOS.getProcess()->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
-  ASSERT_EQ(vma->vm_start, mmapStart);
-  ASSERT_EQ(vma->vm_end, mmapStart + 8192);
-  ASSERT_EQ(vma->size, 8192);
+  ASSERT_EQ(vma->vmStart_, mmapStart);
+  ASSERT_EQ(vma->vmEnd_, mmapStart + 8192);
+  ASSERT_EQ(vma->vmSize_, 8192);
   EXPECT_TRUE(vma->hasFile());
   ASSERT_EQ(vma->getFileSize(), 8192);
 

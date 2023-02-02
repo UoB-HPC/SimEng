@@ -15,18 +15,17 @@ void MMU::bufferRequest(DataPacket* request,
   // since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
   uint64_t paddr = translate_(request->address, pid_);
+  uint64_t faultCode = simeng::kernel::masks::faults::getFaultCode(paddr);
 
-  if (paddr & simeng::kernel::masks::faults::pagetable::speculation) {
-    // std::cout << "Speculation Based Fault" << std::endl;
-    // callback(memory_->handleFaultySpeculationRequest(request));
-    std::cout << "ADDr: " << request->address << std::endl;
+  if (faultCode == simeng::kernel::masks::faults::pagetable::dataAbort) {
     callback(NULL);
-    return;
+  } else if (faultCode == simeng::kernel::masks::faults::pagetable::ignored) {
+    callback(memory_->handleIgnoredRequest(request));
+  } else {
+    request->address = paddr;
+    DataPacket* response = memory_->requestAccess(request);
+    callback(response);
   }
-
-  request->address = paddr;
-  DataPacket* response = memory_->requestAccess(request);
-  callback(response);
 };
 
 void MMU::setTranslator(VAddrTranslator translator) { translate_ = translator; }

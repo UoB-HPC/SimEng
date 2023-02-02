@@ -8,21 +8,20 @@ using namespace simeng::kernel;
 
 namespace {
 TEST(VmaTest, VmaCreationWithoutFileBuf) {
-  VirtualMemoryArea* vma = new VirtualMemoryArea(0, 0, 0, VMAType::Mmap, NULL);
+  VirtualMemoryArea* vma = new VirtualMemoryArea(0, 0, 0, NULL);
   ASSERT_EQ(vma->getFileBuf(), nullptr);
   ASSERT_EQ(vma->getFileSize(), 0);
 }
 
 TEST(VmaTest, VmaHasFile) {
-  VirtualMemoryArea* vma = new VirtualMemoryArea(0, 0, 0, VMAType::Mmap, NULL);
+  VirtualMemoryArea* vma = new VirtualMemoryArea(0, 0, 0, NULL);
   ASSERT_EQ(vma->hasFile(), false);
 }
 
 TEST(VmaTest, VmaOverlaps) {
-  VirtualMemoryArea* vma =
-      new VirtualMemoryArea(0, 0, 4096, VMAType::Mmap, NULL);
-  vma->vm_start = 0;
-  vma->vm_end = 4096;
+  VirtualMemoryArea* vma = new VirtualMemoryArea(0, 0, 4096, NULL);
+  vma->vmStart_ = 0;
+  vma->vmEnd_ = 4096;
   ASSERT_EQ(vma->hasFile(), false);
   /*
    Case 1 - Overlap
@@ -49,8 +48,8 @@ TEST(VmaTest, VmaOverlaps) {
   */
   ASSERT_EQ(vma->overlaps(1000, 4096), true);
 
-  vma->vm_start = 4096;
-  vma->vm_end = 8192;
+  vma->vmStart_ = 4096;
+  vma->vmEnd_ = 8192;
   /*
    Case 5 - Overlap
              [---------------------)
@@ -90,10 +89,9 @@ TEST(VmaTest, VmaOverlaps) {
 }
 
 TEST(VmaTest, VmaContainsAddrRange) {
-  VirtualMemoryArea* vma =
-      new VirtualMemoryArea(0, 0, 4096, VMAType::Mmap, NULL);
-  vma->vm_start = 0;
-  vma->vm_end = 4096;
+  VirtualMemoryArea* vma = new VirtualMemoryArea(0, 0, 4096, NULL);
+  vma->vmStart_ = 0;
+  vma->vmEnd_ = 4096;
   ASSERT_EQ(vma->hasFile(), false);
   /*
    Case 1 - Contains
@@ -120,8 +118,8 @@ TEST(VmaTest, VmaContainsAddrRange) {
   */
   ASSERT_EQ(vma->contains(1000, 4096), false);
 
-  vma->vm_start = 4096;
-  vma->vm_end = 8192;
+  vma->vmStart_ = 4096;
+  vma->vmEnd_ = 8192;
   /*
    Case 5 - Doesn't Contain
              [---------------------)
@@ -155,10 +153,9 @@ TEST(VmaTest, VmaContainsAddrRange) {
 }
 
 TEST(VmaTest, VmaContainsAddr) {
-  VirtualMemoryArea* vma =
-      new VirtualMemoryArea(0, 0, 4096, VMAType::Mmap, NULL);
-  vma->vm_start = 4096;
-  vma->vm_end = 8192;
+  VirtualMemoryArea* vma = new VirtualMemoryArea(0, 0, 4096, NULL);
+  vma->vmStart_ = 4096;
+  vma->vmEnd_ = 8192;
 
   ASSERT_EQ(vma->contains(4096), true);
   ASSERT_EQ(vma->contains(8191), true);
@@ -169,10 +166,9 @@ TEST(VmaTest, VmaContainsAddr) {
 }
 
 TEST(VmaTest, VmaContainedInRange) {
-  VirtualMemoryArea* vma =
-      new VirtualMemoryArea(0, 0, 4096, VMAType::Mmap, NULL);
-  vma->vm_start = 4096;
-  vma->vm_end = 8192;
+  VirtualMemoryArea* vma = new VirtualMemoryArea(0, 0, 4096, NULL);
+  vma->vmStart_ = 4096;
+  vma->vmEnd_ = 8192;
   /*
    Case 1 - Not Contained
    [--------]
@@ -225,35 +221,33 @@ TEST(VmaTest, VmaContainedInRange) {
 }
 
 TEST(VmaTest, VmaTrimRangeStart) {
-  VirtualMemoryArea* vma =
-      new VirtualMemoryArea(0, 0, 4096, VMAType::Mmap, NULL);
-  vma->vm_start = 4096;
-  vma->vm_end = 8192;
+  VirtualMemoryArea* vma = new VirtualMemoryArea(0, 0, 4096, NULL);
+  vma->vmStart_ = 4096;
+  vma->vmEnd_ = 8192;
 
   ASSERT_EQ(vma->containedIn(5096, 3096), false);
 
   vma->trimRangeStart(5096);
 
-  ASSERT_EQ(vma->vm_start, 5096);
-  ASSERT_EQ(vma->vm_end, 8192);
-  ASSERT_EQ(vma->size, 3096);
+  ASSERT_EQ(vma->vmStart_, 5096);
+  ASSERT_EQ(vma->vmEnd_, 8192);
+  ASSERT_EQ(vma->vmSize_, 3096);
 
   ASSERT_EQ(vma->containedIn(5096, 3096), true);
 }
 
 TEST(VmaTest, VmaTrimRangeEnd) {
-  VirtualMemoryArea* vma =
-      new VirtualMemoryArea(0, 0, 4096, VMAType::Mmap, NULL);
-  vma->vm_start = 4096;
-  vma->vm_end = 8192;
+  VirtualMemoryArea* vma = new VirtualMemoryArea(0, 0, 4096, NULL);
+  vma->vmStart_ = 4096;
+  vma->vmEnd_ = 8192;
 
   ASSERT_EQ(vma->containedIn(4096, 3096), false);
 
   vma->trimRangeEnd(7192);
 
-  ASSERT_EQ(vma->vm_start, 4096);
-  ASSERT_EQ(vma->vm_end, 7192);
-  ASSERT_EQ(vma->size, 3096);
+  ASSERT_EQ(vma->vmStart_, 4096);
+  ASSERT_EQ(vma->vmEnd_, 7192);
+  ASSERT_EQ(vma->vmSize_, 3096);
 
   ASSERT_EQ(vma->containedIn(4096, 3096), true);
 }
@@ -268,9 +262,9 @@ TEST(VmaTest, CreateVmaWithHostedFileMMap) {
   HostFileMMap* fmap = hbfmmap.mapfd(fd, 21, 0);
   EXPECT_TRUE(fmap != NULL);
 
-  VMA* vma = new VMA(0, 0, 4096, VMAType::Mmap, fmap);
-  vma->vm_start = 4096;
-  vma->vm_end = 8192;
+  VMA* vma = new VMA(0, 0, 4096, fmap);
+  vma->vmStart_ = 4096;
+  vma->vmEnd_ = 8192;
 
   ASSERT_TRUE(vma->hasFile());
   ASSERT_EQ(vma->getFileSize(), 21);
@@ -295,9 +289,9 @@ TEST(VmaTest, VmaTrimRangeStartWithHostBackedFile) {
   HostFileMMap* fmap = hbfmmap.mapfd(fd, 21, 0);
   EXPECT_TRUE(fmap != NULL);
 
-  VMA* vma = new VMA(0, 0, 4096, VMAType::Mmap, fmap);
-  vma->vm_start = 4096;
-  vma->vm_end = 8192;
+  VMA* vma = new VMA(0, 0, 4096, fmap);
+  vma->vmStart_ = 4096;
+  vma->vmEnd_ = 8192;
 
   ASSERT_TRUE(vma->hasFile());
   ASSERT_EQ(vma->getFileSize(), 21);
@@ -331,9 +325,9 @@ TEST(VmaTest, VmaTrimRangeEndWithHostBackedFile) {
   HostFileMMap* fmap = hbfmmap.mapfd(fd, 21, 0);
   EXPECT_TRUE(fmap != NULL);
 
-  VMA* vma = new VMA(0, 0, 4096, VMAType::Mmap, fmap);
-  vma->vm_start = 4096;
-  vma->vm_end = 8192;
+  VMA* vma = new VMA(0, 0, 4096, fmap);
+  vma->vmStart_ = 4096;
+  vma->vmEnd_ = 8192;
 
   ASSERT_TRUE(vma->hasFile());
   ASSERT_EQ(vma->getFileSize(), 21);

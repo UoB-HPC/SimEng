@@ -26,13 +26,7 @@ void FixedLatencyMemoryInterface::tick() {
     uint64_t requestId = request.requestId;
 
     if (request.write) {
-      // Write: write data directly to memory
-      /*
-      assert(target.address + target.size <= size_ &&
-             "Attempted to write beyond memory limit");
-      */
-
-      auto fn = [&](memory::DataPacket* dpkt) -> void {
+      auto fn = [&](memory::DataPacket* dpkt = NULL) -> void {
         if (dpkt == NULL) return;
         delete dpkt;
       };
@@ -42,14 +36,7 @@ void FixedLatencyMemoryInterface::tick() {
           new simeng::memory::WritePacket(target.address, target.size, wdata),
           fn);
     } else {
-      // Read: read data into `completedReads` ff
-      // if (target.address + target.size > size_ ||
-      // unsignedOverflow_(target.address, target.size)) {
-      // Read outside of memory; return an invalid value to signal a fault
-      // completedReads_.push_back({target, RegisterValue(),
-      // request.requestId});
-      // } else
-      auto fn = [&, this](memory::DataPacket* dpkt) -> void {
+      auto fn = [&, this](memory::DataPacket* dpkt = NULL) -> void {
         if (dpkt == NULL) {
           this->completedReads_.push_back({target, RegisterValue(), requestId});
           return;
@@ -62,18 +49,6 @@ void FixedLatencyMemoryInterface::tick() {
 
       mmu_->bufferRequest(new memory::ReadPacket(target.address, target.size),
                           fn);
-
-      /*
-      simeng::memory::ReadRespPacket* resp =
-          (simeng::memory::ReadRespPacket*)memory_->requestAccess(
-              new simeng::memory::ReadPacket{target.address, target.size});
-      // Copy the data at the requested memory address into a RegisterValue
-      completedReads_.push_back({target,
-                                 RegisterValue(resp->data, resp->bytesRead),
-                                 request.requestId});
-      delete resp;
-      */
-      //}
     }
 
     // Remove the request from the queue

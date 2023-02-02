@@ -16,10 +16,15 @@ SimOS::SimOS(std::string executablePath,
   syscallHandler_ = std::make_shared<SyscallHandler>(this);
   // Parse command line args
   // Determine if a config file has been supplied.
+
+  // callback function used to send data to memory on page fault. This was
+  // preferred to a sharing the memory class as this callback can now be
+  // implementation specific.
   sendToMem_ = [&, this](char* data, uint64_t addr, size_t size) {
     this->memory_->sendUntimedData(data, addr, size);
   };
-  pageFrameAllocator_ = std::make_shared<PageFrameAllocator>();
+  pageFrameAllocator_ =
+      std::make_shared<PageFrameAllocator>(mem->getMemorySize(), pageSize_);
   if (!setProcess) createInitialProcess();
 
   // Create the Special Files directory if indicated to do so in Config file
@@ -228,7 +233,10 @@ uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t pid) {
   auto process = processes_[0];
   uint64_t translation = process->pageTable_->translate(vaddr);
   uint64_t faultCode = masks::faults::getFaultCode(translation);
-  if (faultCode == masks::faults::pagetable::nofault) return translation;
+
+  // Return the translation if faultCode is not translate, any other faults
+  // will be handled further. Only page faults will be handled here.
+  if (faultCode != masks::faults::pagetable::translate) return translation;
 
   uint64_t addr = process->handlePageFault(vaddr, sendToMem_);
   faultCode = masks::faults::getFaultCode(addr);
