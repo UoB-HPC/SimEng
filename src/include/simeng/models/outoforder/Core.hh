@@ -57,7 +57,7 @@ class Core : public simeng::Core {
   void sendSyscall(const OS::SyscallInfo syscallInfo) const override;
 
   /** Communicate the result of a syscall to the core's active exception
-   * handler. */
+   * handler for post-processing. */
   void recieveSyscallResult(const OS::SyscallResult result) const override;
 
   /** Retrieve the number of instructions retired. */
@@ -72,7 +72,8 @@ class Core : public simeng::Core {
   /** Signals core to stop executing the current process.
    * Return Values :
    *  - True  : if succeeded in signaling interrupt
-   *  - False : interrupt not scheduled due to on-going exception or system call
+   *  - False : interrupt not scheduled due to on-going exception or system
+   * call
    */
   bool interrupt() override;
 
@@ -182,8 +183,8 @@ class Core : public simeng::Core {
   /** Clock frequency of core */
   unsigned int clockFrequency_ = 2.5 * 1e9;
 
-  /** Core commit width; maximum number of instruction that can be committed per
-   * cycle. */
+  /** Core commit width; maximum number of instruction that can be committed
+   * per cycle. */
   unsigned int commitWidth_ = 6;
 
   /** The number of times the pipeline has been flushed. */
