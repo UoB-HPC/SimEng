@@ -77,6 +77,9 @@ int main(int argc, char** argv) {
   simeng::OS::SimOS OS =
       simeng::OS::SimOS(executablePath, executableArgs, memory);
 
+  // Retrieve the virtual address translation function from SimOS and pass it to
+  // the MMU. This function will be used to handle all virtual address
+  // translations after a TLB miss.
   VAddrTranslator fn = OS.getVAddrTranslator();
 
   std::shared_ptr<simeng::memory::MMU> mmu =

@@ -62,10 +62,14 @@ class SimOS {
   };
 
   /**
-   * Method which returns a callback function which is used by the MMU to
-   * translate virtual addresses.
+   * This method returns a callback function that is passed to the MMU.
+   * The callback function will be used by the MMU to handle TLB misses and
+   * invoke the OS for virtual address translations. This design decision was
+   * made keeping the SST multicore integration in mind. This method can be
+   * overriden by a new implementation to carry to similar functionality in the
+   * SST multicore integration.
    */
-  VAddrTranslator getVAddrTranslator();
+  virtual VAddrTranslator getVAddrTranslator();
 
   /** Register a core with the OS to enable process scheduling. */
   void registerCore(std::shared_ptr<simeng::Core> core) {
