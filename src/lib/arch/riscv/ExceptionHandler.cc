@@ -187,10 +187,7 @@ bool ExceptionHandler::concludeSyscall() {
   uint64_t nextInstructionAddress = instruction_->getInstructionAddress() + 4;
   result_ = {false, nextInstructionAddress, syscallResult_.stateChange};
 
-  // Reset state of handler
-  instruction_ = nullptr;
-  syscallReturned_ = false;
-  resumeHandling_ = [this]() { return initException(); };
+  resetState();
   return true;
 }
 
@@ -254,11 +251,15 @@ void ExceptionHandler::printException() const {
 
 bool ExceptionHandler::fatal() {
   result_ = {true, 0, {}};
+  resetState();
+  return true;
+}
+
+void ExceptionHandler::resetState() {
   // Reset state of handler
   instruction_ = nullptr;
   syscallReturned_ = false;
   resumeHandling_ = [this]() { return initException(); };
-  return true;
 }
 
 }  // namespace riscv

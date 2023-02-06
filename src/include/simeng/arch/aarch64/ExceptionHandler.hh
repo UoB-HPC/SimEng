@@ -50,6 +50,10 @@ class ExceptionHandler : public simeng::ExceptionHandler {
   /** Sets a generic fatal result and returns true. */
   bool fatal();
 
+  /** Resets the state of the exception handler so that it's ready to process
+   * the next instruction. */
+  void resetState();
+
   /** The instruction generating an exception. */
   std::shared_ptr<Instruction> instruction_ = nullptr;
 
