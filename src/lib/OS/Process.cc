@@ -43,7 +43,7 @@ Process::Process(const std::vector<std::string>& commandLine,
   entryPoint_ = elf.getEntryPoint();
   auto headers = elf.getProcessedHeaders();
 
-  uint64_t maxInitDataAddr = 0;
+  uint64_t maxInitDataAddr = roundUpMemAddr(elf.getElfImageSize(), pageSize_);
   uint64_t minHeaderAddr = ~0;
 
   for (auto header : headers) {
@@ -74,11 +74,8 @@ Process::Process(const std::vector<std::string>& commandLine,
     // routine makes load requests to address range below minimum header address
     // leading to data abort exceptions. A proper fix needs to be investigated.
     minHeaderAddr = std::min(minHeaderAddr, avaddr);
-    // Determine maximum address from headers. Will be used later in determining
-    // process layout.
-    maxInitDataAddr =
-        std::max(maxInitDataAddr, roundUpMemAddr(vaddr + size, pageSize_));
   }
+
   pageTable_->ignoreAddrRange(0, minHeaderAddr);
   // Add Page Size padding
   maxInitDataAddr += pageSize_;

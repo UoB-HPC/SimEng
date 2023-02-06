@@ -98,7 +98,7 @@ Elf::Elf(std::string path) {
 
   // Resize the header to equal the number of header entries.
   headers_.resize(headerEntries);
-  processImageSize_ = 0;
+  elfImageSize_ = 0;
 
   // Loop over all headers and extract them.
   for (size_t i = 0; i < headerEntries; i++) {
@@ -145,16 +145,11 @@ Elf::Elf(std::string path) {
     file.read(reinterpret_cast<char*>(&(header->fileSize)), fieldBytes);
     file.read(reinterpret_cast<char*>(&(header->memorySize)), fieldBytes);
 
-    // To construct the process we look for the largest virtual address and
-    // add it to the memory size of the header. This way we obtain a very
-    // large array which can hold data at large virtual address.
-    // However, this way we end up creating a sparse array, in which most
-    // of the entries are unused. Also SimEng internally treats these
-    // virtual address as physical addresses to index into this large array.
+    // Look for the largest virtual address by adding size of the header to its
+    // starting virtual address. This will be used to determine ELF image
+    // image size.
     uint64_t addr = header->virtualAddress + header->memorySize;
-    maxVirtAddr_ = std::max(maxVirtAddr_, addr);
-    processImageSize_ = std::max(processImageSize_, addr);
-    processImageSize_ = roundUpMemAddr(maxVirtAddr_, 4096);
+    elfImageSize_ = std::max(elfImageSize_, addr);
   }
 
   /**
@@ -168,6 +163,8 @@ Elf::Elf(std::string path) {
   // Process headers; only observe LOAD sections for this basic implementation
   for (auto header : headers_) {
     if (header->type == 1) {  // LOAD
+      // Initialise the data array to size of memorySize as memory size can be
+      // bigger than fileSize, due to padding.
       header->headerData = new char[header->memorySize];
 
       // Read `fileSize` bytes from `file` into the appropriate place in process
@@ -190,7 +187,7 @@ Elf::~Elf() {
   }
 }
 
-uint64_t Elf::getProcessImageSize() const { return processImageSize_; }
+uint64_t Elf::getElfImageSize() const { return elfImageSize_; }
 
 uint64_t Elf::getEntryPoint() const { return entryPoint_; }
 
@@ -199,7 +196,4 @@ bool Elf::isValid() const { return isValid_; }
 std::vector<ElfHeader*>& Elf::getProcessedHeaders() {
   return processedHeaders_;
 }
-
-uint64_t Elf::getMaxVirtAddr() { return maxVirtAddr_; }
-
 }  // namespace simeng

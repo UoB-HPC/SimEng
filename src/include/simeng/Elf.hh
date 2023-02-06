@@ -29,7 +29,7 @@ class Elf {
   ~Elf();
 
   /** Method to return ELF process image size. */
-  uint64_t getProcessImageSize() const;
+  uint64_t getElfImageSize() const;
 
   /** Method to return validility of the ELF parsing process. */
   bool isValid() const;
@@ -40,9 +40,6 @@ class Elf {
   /** Method which returns all processed ELF Headers. */
   std::vector<ElfHeader*>& getProcessedHeaders();
 
-  /** Method which return maximum virtual address from the processed headers. */
-  uint64_t getMaxVirtAddr();
-
  private:
   /** Entry point of the ELF. */
   uint64_t entryPoint_;
@@ -51,11 +48,9 @@ class Elf {
   /** Bool which holds if the ELF parsing was done correctly. */
   bool isValid_ = false;
   /** Size of the ELF image. */
-  uint64_t processImageSize_ = 0;
+  uint64_t elfImageSize_ = 0;
   /** Vector which holds all processed ELF headers. */
   std::vector<ElfHeader*> processedHeaders_;
-  /** Max virtual address from ELF headers. */
-  uint64_t maxVirtAddr_ = 0;
 };
 
 }  // namespace simeng
