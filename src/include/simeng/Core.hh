@@ -70,7 +70,7 @@ class Core {
   virtual void sendSyscall(OS::SyscallInfo) const = 0;
 
   /** Communicate the result of a syscall to the core's active exception
-   * handler. */
+   * handler for post-processing. */
   virtual void recieveSyscallResult(const OS::SyscallResult result) const = 0;
 
   /** Retrieve the number of instructions retired. */

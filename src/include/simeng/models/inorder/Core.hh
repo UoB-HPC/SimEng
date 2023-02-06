@@ -43,7 +43,7 @@ class Core : public simeng::Core {
   void sendSyscall(const OS::SyscallInfo syscallInfo) const override;
 
   /** Communicate the result of a syscall to the core's active exception
-   * handler. */
+   * handler for post-processing. */
   void recieveSyscallResult(OS::SyscallResult result) const override;
 
   /** Retrieve the number of instructions retired. */
@@ -58,7 +58,8 @@ class Core : public simeng::Core {
   /** Signals core to stop executing the current process.
    * Return Values :
    *  - True  : if succeeded in signaling interrupt
-   *  - False : interrupt not scheduled due to on-going exception or system call
+   *  - False : interrupt not scheduled due to on-going exception or system
+   * call
    */
   bool interrupt() override;
 
@@ -118,8 +119,8 @@ class Core : public simeng::Core {
   /** The core's register file set. */
   RegisterFileSet registerFileSet_;
 
-  /** An architectural register file set, serving as a simple wrapper around the
-   * register file set. */
+  /** An architectural register file set, serving as a simple wrapper around
+   * the register file set. */
   ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
 
   /** The buffer between fetch and decode. */
