@@ -28,7 +28,6 @@ void MMU::bufferRequest(DataPacket* request,
   }
 };
 
-void MMU::setTranslator(VAddrTranslator translator) { translate_ = translator; }
 void MMU::setPid(uint64_t pid) { pid_ = pid; }
 
 }  // namespace memory

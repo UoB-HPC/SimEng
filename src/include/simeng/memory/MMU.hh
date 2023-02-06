@@ -35,9 +35,6 @@ class MMU {
   void bufferRequest(DataPacket* request,
                      std::function<void(DataPacket*)> callback);
 
-  /** Method used to set callback function for consulting page tables. */
-  void setTranslator(VAddrTranslator translator);
-
   /** Method to set PID for the MMU. */
   void setPid(uint64_t pid);
 };
