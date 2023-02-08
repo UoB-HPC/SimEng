@@ -10,21 +10,37 @@ MMU::MMU(std::shared_ptr<Mem> memory, VAddrTranslator fn, uint64_t pid) {
   pid_ = pid;
 };
 
-void MMU::bufferRequest(DataPacket* request,
-                        std::function<void(DataPacket*)> callback) {
+void MMU::bufferRequest(ReadRequest request,
+                        std::function<void(ReadResponse)> callback) {
   // since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
-  uint64_t paddr = translate_(request->address, pid_);
+  uint64_t paddr = translate_(request.address_, pid_);
   uint64_t faultCode = simeng::kernel::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::kernel::masks::faults::pagetable::dataAbort) {
-    callback(NULL);
+    callback(dataAbortReadRes);
   } else if (faultCode == simeng::kernel::masks::faults::pagetable::ignored) {
     callback(memory_->handleIgnoredRequest(request));
   } else {
-    request->address = paddr;
-    DataPacket* response = memory_->requestAccess(request);
-    callback(response);
+    request.address_ = paddr;
+    callback(memory_->readData(request));
+  }
+};
+
+void MMU::bufferRequest(WriteRequest request,
+                        std::function<void(WriteResponse)> callback) {
+  // since we don't have a TLB yet, treat every memory request as a TLB miss and
+  // consult the page table.
+  uint64_t paddr = translate_(request.address_, pid_);
+  uint64_t faultCode = simeng::kernel::masks::faults::getFaultCode(paddr);
+
+  if (faultCode == simeng::kernel::masks::faults::pagetable::dataAbort) {
+    callback(dataAbortWriteRes);
+  } else if (faultCode == simeng::kernel::masks::faults::pagetable::ignored) {
+    callback(memory_->handleIgnoredRequest(request));
+  } else {
+    request.address_ = paddr;
+    callback(memory_->writeData(request));
   }
 };
 

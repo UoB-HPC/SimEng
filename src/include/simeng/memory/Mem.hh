@@ -1,70 +1,96 @@
 #pragma once
 
+#include <array>
 #include <functional>
+#include <iostream>
 #include <memory>
+#include <type_traits>
+#include <typeinfo>
+#include <utility>
 
 #include "simeng/kernel/Process.hh"
 
 namespace simeng {
 namespace memory {
-// This is a very basic implementation of Memory in SimEng, it has been kept
-// simple just to get dynamic linking and multicore simulation working. It is
-// very similar to the previous implementation but unifies both instruction and
-// data memory. Whereas, previously two different copies of process memory were
-// for instruction and data memory interfaces.
 
-/* Enum for classifying data access. */
-enum DataPacketAccessType { READ, WRITE, NONE };
+template <class...>
+using void_t = void;
 
-/* A data packet represents access to memory. This has named and cnstruct such
- * that future improvements to memory system can be facilitated
- */
-struct DataPacket {
-  uint64_t address;
-  static uint64_t pktIdCtr;
-  uint64_t id;
-  DataPacketAccessType type;
-  bool infault = false;
-  DataPacket(DataPacketAccessType accType, uint64_t addr, bool fault = false);
+template <class B, class = void>
+struct is_valid_data : std::false_type {};
+
+template <class B>
+struct is_valid_data<B, void_t<typename B::value_type>> : std::true_type {};
+
+template <class Data>
+struct PacketInfo : private Data::value_type {
+  using data_type = typename Data::value_type;
+
+  uint64_t address_;
+  size_t size_;
+
+  PacketInfo<Data>(uint64_t addr, size_t size) {
+    address_ = addr;
+    size_ = size;
+    static_assert(is_valid_data<Data>::value,
+                  "template <class Data> does not have a valid type.");
+  };
+  PacketInfo<Data>(uint64_t addr, size_t size,
+                   typename Data::value_type const& pkt)
+      : Data::value_type(pkt) {
+    address_ = addr;
+    size_ = size;
+    static_assert(is_valid_data<Data>::value,
+                  "template <class Data> does not have a valid type.");
+  };
+  typename Data::value_type& data() { return *this; };
+  typename Data::value_type const& data() const { return *this; };
 };
 
-/* Response to a read packed. */
-struct ReadRespPacket : public DataPacket {
-  uint64_t reqId;
-  size_t bytesRead;
-  char* data;
-  ReadRespPacket(uint64_t req_id, size_t bytes_read, char* dt, uint64_t addr);
+template <bool isRequest, class Data>
+struct DataPacket;
+
+template <class Data>
+struct DataPacket<true, Data> : public PacketInfo<Data> {
+  DataPacket<true, Data>(uint64_t addr, size_t size)
+      : PacketInfo<Data>(addr, size){};
+  DataPacket<true, Data>(uint64_t addr, size_t size,
+                         typename Data::value_type const& pktdata)
+      : PacketInfo<Data>(addr, size, pktdata){
+
+        };
 };
 
-/* ReadPacket represents a read access to data packet. */
-struct ReadPacket : public DataPacket {
-  size_t size;
-
-  ReadPacket(uint64_t addr, size_t sz);
-  ReadRespPacket* makeResponse(uint64_t bytesRead, char* data);
+template <class Data>
+struct DataPacket<false, Data> : public PacketInfo<Data> {
+  DataPacket<false, Data>(uint64_t addr, size_t size)
+      : PacketInfo<Data>(addr, size){};
+  DataPacket<false, Data>(uint64_t addr, size_t size,
+                          typename Data::value_type const& pktdata)
+      : PacketInfo<Data>(addr, size, pktdata){};
 };
 
-/* Response to a write packed. */
-struct WriteRespPacket : public DataPacket {
-  uint64_t reqId;
-  size_t bytesWritten;
-  WriteRespPacket(uint64_t req_id, size_t bytes_written, uint64_t addr);
+struct empty_data {
+  struct value_type {};
 };
 
-/* WritePacket represents a write access to a data packet. */
-struct WritePacket : public DataPacket {
-  size_t size;
-  const char* data;
-
-  WritePacket(uint64_t addr, size_t sz, const char* dt);
-  WriteRespPacket* makeResponse(uint64_t bytesReturned);
+struct dword_array_data {
+  using value_type = std::array<char, 64>;
 };
+
+using ReadRequest = DataPacket<true, empty_data>;
+using WriteRequest = DataPacket<true, dword_array_data>;
+
+using ReadResponse = DataPacket<false, dword_array_data>;
+using WriteResponse = DataPacket<false, empty_data>;
 
 class Mem {
  public:
   virtual ~Mem() = default;
   /** This method accesses memory with both Read and Write requests. */
-  virtual DataPacket* requestAccess(struct DataPacket* pkt) = 0;
+  virtual ReadResponse readData(ReadRequest req) = 0;
+  virtual WriteResponse writeData(WriteRequest req) = 0;
+
   /** This method returns the size of memory. */
   virtual size_t getMemorySize() = 0;
   /** This method write data to memory without incurring any latency. */
@@ -72,7 +98,8 @@ class Mem {
   /** This method sets the translator for memory requests. */
   virtual char* getUntimedData(uint64_t paddr, size_t size) = 0;
 
-  virtual DataPacket* handleIgnoredRequest(struct DataPacket* pkt) = 0;
+  virtual ReadResponse handleIgnoredRequest(ReadRequest req) = 0;
+  virtual WriteResponse handleIgnoredRequest(WriteRequest req) = 0;
 };
 
 }  // namespace memory

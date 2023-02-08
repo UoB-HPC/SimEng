@@ -26,29 +26,24 @@ void FixedLatencyMemoryInterface::tick() {
     uint64_t requestId = request.requestId;
 
     if (request.write) {
-      auto fn = [&](memory::DataPacket* dpkt = NULL) -> void {
-        if (dpkt == NULL) return;
-        delete dpkt;
-      };
+      auto fn = [&](memory::WriteResponse dpkt) -> void {};
 
       const char* wdata = request.data.getAsVector<char>();
-      mmu_->bufferRequest(
-          new simeng::memory::WritePacket(target.address, target.size, wdata),
-          fn);
+      memory::WriteRequest req{target.address, target.size};
+      std::copy(wdata, wdata + target.size, req.data().begin());
+      mmu_->bufferRequest(req, fn);
     } else {
-      auto fn = [&, this](memory::DataPacket* dpkt = NULL) -> void {
-        if (dpkt == NULL) {
+      auto fn = [&, this](memory::ReadResponse dpkt) -> void {
+        if (dpkt.address_ == ~(uint64_t)0) {
           this->completedReads_.push_back({target, RegisterValue(), requestId});
           return;
         }
-        memory::ReadRespPacket* resp = (memory::ReadRespPacket*)dpkt;
         this->completedReads_.push_back(
-            {target, RegisterValue(resp->data, resp->bytesRead), requestId});
-        delete resp;
+            {target, RegisterValue(dpkt.data().begin(), dpkt.size_),
+             requestId});
       };
 
-      mmu_->bufferRequest(new memory::ReadPacket(target.address, target.size),
-                          fn);
+      mmu_->bufferRequest(memory::ReadRequest(target.address, target.size), fn);
     }
 
     // Remove the request from the queue

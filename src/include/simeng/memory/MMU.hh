@@ -24,6 +24,9 @@ class MMU {
   /** PID of the process assosciated with this core. */
   uint64_t pid_;
 
+  ReadResponse dataAbortReadRes = ReadResponse{~(uint64_t)0, 0};
+  WriteResponse dataAbortWriteRes = WriteResponse{~(uint64_t)0, 0};
+
  public:
   MMU(
       std::shared_ptr<Mem> memory,
@@ -32,8 +35,10 @@ class MMU {
       },
       uint64_t pid = 0);
   /** Method used to buffer request from memory interface to memory. */
-  void bufferRequest(DataPacket* request,
-                     std::function<void(DataPacket*)> callback);
+  void bufferRequest(ReadRequest request,
+                     std::function<void(ReadResponse res)> callback);
+  void bufferRequest(WriteRequest request,
+                     std::function<void(WriteResponse res)> callback);
 
   /** Method to set PID for the MMU. */
   void setPid(uint64_t pid);

@@ -20,34 +20,20 @@ SimpleMem::~SimpleMem() {
 
 size_t SimpleMem::getMemorySize() { return memSize_; }
 
-DataPacket* SimpleMem::requestAccess(struct DataPacket* pkt) {
-  if (pkt->type == READ) {
-    struct ReadPacket* rreq = (ReadPacket*)pkt;
-    auto resp = handleReadRequest(rreq);
-    delete rreq;
-    return resp;
-  };
-  struct WritePacket* wreq = (WritePacket*)pkt;
-  auto resp = handleWriteRequest(wreq);
-  delete wreq;
-  return resp;
-};
-
-ReadRespPacket* SimpleMem::handleReadRequest(struct ReadPacket* req) {
-  size_t size = req->size;
-  uint64_t addr = req->address;
-  char* data = new char[size];
+ReadResponse SimpleMem::readData(ReadRequest req) {
+  ReadResponse::data_type arr;
+  size_t size = req.size_;
+  uint64_t addr = req.address_;
   char* startAddr = memory_.begin() + addr;
-  std::copy(startAddr, startAddr + size, data);
-  return req->makeResponse(size, data);
+  std::copy(startAddr, startAddr + size, arr.begin());
+  return ReadResponse{req.address_, req.size_, arr};
 };
 
-WriteRespPacket* SimpleMem::handleWriteRequest(struct WritePacket* req) {
-  uint64_t address = req->address;
-  size_t size = req->size;
-  const char* data = req->data;
-  std::copy(data, data + size, memory_.begin() + address);
-  return req->makeResponse(size);
+WriteResponse SimpleMem::writeData(WriteRequest req) {
+  uint64_t address = req.address_;
+  WriteRequest::data_type data = req.data();
+  std::copy(data.begin(), data.end(), memory_.begin() + address);
+  return WriteResponse{req.address_, req.size_};
 };
 
 void SimpleMem::sendUntimedData(char* data, uint64_t addr, size_t size) {
@@ -61,17 +47,14 @@ char* SimpleMem::getUntimedData(uint64_t paddr, size_t size) {
   return ret;
 }
 
-DataPacket* SimpleMem::handleIgnoredRequest(DataPacket* pkt) {
-  if (pkt->type == READ) {
-    struct ReadPacket* rreq = (ReadPacket*)pkt;
-    auto resp = rreq->makeResponse(rreq->size, faultMemory_);
-    delete rreq;
-    return resp;
-  }
-  struct WritePacket* wreq = (WritePacket*)pkt;
-  auto resp = wreq->makeResponse(wreq->size);
-  delete wreq;
-  return resp;
+ReadResponse SimpleMem::handleIgnoredRequest(ReadRequest req) {
+  ReadResponse::data_type arr;
+  std::copy(faultMemory_, faultMemory_ + 16, arr.begin());
+  return ReadResponse{req.address_, 0, arr};
+}
+
+WriteResponse SimpleMem::handleIgnoredRequest(WriteRequest req) {
+  return WriteResponse{req.address_, 0};
 }
 
 }  // namespace memory

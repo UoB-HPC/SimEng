@@ -18,10 +18,13 @@ class SimpleMem : public Mem {
   virtual ~SimpleMem() override;
 
   size_t getMemorySize() override;
-  DataPacket* requestAccess(struct DataPacket* desc) override;
+  ReadResponse readData(ReadRequest req) override;
+  WriteResponse writeData(WriteRequest req) override;
   void sendUntimedData(char* data, uint64_t addr, size_t size) override;
   char* getUntimedData(uint64_t paddr, size_t size) override;
-  DataPacket* handleIgnoredRequest(struct DataPacket* pkt) override;
+
+  ReadResponse handleIgnoredRequest(ReadRequest req) override;
+  WriteResponse handleIgnoredRequest(WriteRequest req) override;
 
  private:
   /** Reference of to internal memory array. */
@@ -31,10 +34,6 @@ class SimpleMem : public Mem {
   char* faultMemory_;
   /** This variable holds the size of the memory array. */
   size_t memSize_;
-  /** This method handles ReadPackets. */
-  ReadRespPacket* handleReadRequest(struct ReadPacket* req);
-  /** This method handles WritePackets. */
-  WriteRespPacket* handleWriteRequest(struct WritePacket* req);
 };
 
 }  // namespace memory
