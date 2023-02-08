@@ -12,11 +12,11 @@ namespace riscv {
 
 ExceptionHandler::ExceptionHandler(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory, std::shared_ptr<kernel::SyscallHandler> linux)
+    MemoryInterface& memory, std::shared_ptr<kernel::SyscallHandler> kernel)
     : instruction_(*static_cast<Instruction*>(instruction.get())),
       core(core),
       memory_(memory),
-      linux_(linux) {
+      kernel_(kernel) {
   resumeHandling_ = [this]() { return init(); };
 }
 
@@ -39,7 +39,7 @@ bool ExceptionHandler::init() {
         uint64_t argp = registerFileSet.get(R2).get<uint64_t>();
 
         std::vector<char> out;
-        int64_t retval = linux_->ioctl(fd, request, out);
+        int64_t retval = kernel_->ioctl(fd, request, out);
 
         assert(out.size() < 256 && "large ioctl() output not implemented");
         uint8_t outSize = static_cast<uint8_t>(out.size());
@@ -53,7 +53,7 @@ bool ExceptionHandler::init() {
         uint64_t fd = registerFileSet.get(R0).get<uint64_t>();
         uint64_t length = registerFileSet.get(R1).get<uint64_t>();
         stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {linux_->ftruncate(fd, length)}};
+            ChangeType::REPLACEMENT, {R0}, {kernel_->ftruncate(fd, length)}};
         break;
       }
       case 48: {  // faccessat
@@ -67,7 +67,7 @@ bool ExceptionHandler::init() {
         return readStringThen(
             filename, filenamePtr, LINUX_PATH_MAX, [=](auto length) {
               // Invoke the kernel
-              int64_t retval = linux_->faccessat(dfd, filename, mode, flag);
+              int64_t retval = kernel_->faccessat(dfd, filename, mode, flag);
               ProcessStateChange stateChange = {
                   ChangeType::REPLACEMENT, {R0}, {retval}};
               delete[] filename;
@@ -85,7 +85,7 @@ bool ExceptionHandler::init() {
         return readStringThen(
             pathname, pathnamePtr, LINUX_PATH_MAX, [=](auto length) {
               // Invoke the kernel
-              uint64_t retval = linux_->openat(dirfd, pathname, flags, mode);
+              uint64_t retval = kernel_->openat(dirfd, pathname, flags, mode);
               ProcessStateChange stateChange = {
                   ChangeType::REPLACEMENT, {R0}, {retval}};
               delete[] pathname;
@@ -95,7 +95,7 @@ bool ExceptionHandler::init() {
       }
       case 57: {  // close
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->close(fd)}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {kernel_->close(fd)}};
         break;
       }
       case 61: {  // getdents64
@@ -104,7 +104,7 @@ bool ExceptionHandler::init() {
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
 
         return readBufferThen(bufPtr, count, [=]() {
-          int64_t totalRead = linux_->getdents64(fd, dataBuffer.data(), count);
+          int64_t totalRead = kernel_->getdents64(fd, dataBuffer.data(), count);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
@@ -137,8 +137,9 @@ bool ExceptionHandler::init() {
         int64_t fd = registerFileSet.get(R0).get<int64_t>();
         uint64_t offset = registerFileSet.get(R1).get<uint64_t>();
         int64_t whence = registerFileSet.get(R2).get<uint64_t>();
-        stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {linux_->lseek(fd, offset, whence)}};
+        stateChange = {ChangeType::REPLACEMENT,
+                       {R0},
+                       {kernel_->lseek(fd, offset, whence)}};
         break;
       }
       case 63: {  // read
@@ -146,7 +147,7 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
-          int64_t totalRead = linux_->read(fd, dataBuffer.data(), count);
+          int64_t totalRead = kernel_->read(fd, dataBuffer.data(), count);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
           // Check for failure
@@ -181,7 +182,7 @@ bool ExceptionHandler::init() {
         uint64_t bufPtr = registerFileSet.get(R1).get<uint64_t>();
         uint64_t count = registerFileSet.get(R2).get<uint64_t>();
         return readBufferThen(bufPtr, count, [=]() {
-          int64_t retval = linux_->write(fd, dataBuffer.data(), count);
+          int64_t retval = kernel_->write(fd, dataBuffer.data(), count);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {retval}};
           return concludeSyscall(stateChange);
@@ -221,7 +222,7 @@ bool ExceptionHandler::init() {
           }
 
           // Invoke the kernel
-          int64_t totalRead = linux_->readv(fd, iovec.data(), iovcnt);
+          int64_t totalRead = kernel_->readv(fd, iovec.data(), iovcnt);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {totalRead}};
 
@@ -287,7 +288,7 @@ bool ExceptionHandler::init() {
           }
 
           // Invoke the kernel
-          int64_t retval = linux_->writev(fd, dataBuffer.data(), iovcnt);
+          int64_t retval = kernel_->writev(fd, dataBuffer.data(), iovcnt);
           ProcessStateChange stateChange = {
               ChangeType::REPLACEMENT, {R0}, {retval}};
           return concludeSyscall(stateChange);
@@ -333,7 +334,7 @@ bool ExceptionHandler::init() {
               // Invoke the kernel
               kernel::stat statOut;
               uint64_t retval =
-                  linux_->newfstatat(dfd, filename, statOut, flag);
+                  kernel_->newfstatat(dfd, filename, statOut, flag);
               ProcessStateChange stateChange = {
                   ChangeType::REPLACEMENT, {R0}, {retval}};
               delete[] filename;
@@ -351,7 +352,7 @@ bool ExceptionHandler::init() {
 
         kernel::stat statOut;
         stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {linux_->fstat(fd, statOut)}};
+            ChangeType::REPLACEMENT, {R0}, {kernel_->fstat(fd, statOut)}};
         stateChange.memoryAddresses.push_back({statbufPtr, sizeof(statOut)});
         stateChange.memoryAddressValues.push_back(statOut);
         break;
@@ -373,7 +374,7 @@ bool ExceptionHandler::init() {
       case 96: {  // set_tid_address
         uint64_t ptr = registerFileSet.get(R0).get<uint64_t>();
         stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {linux_->setTidAddress(ptr)}};
+            ChangeType::REPLACEMENT, {R0}, {kernel_->setTidAddress(ptr)}};
         break;
       }
       case 98: {  // futex
@@ -402,7 +403,7 @@ bool ExceptionHandler::init() {
         uint64_t seconds;
         uint64_t nanoseconds;
         uint64_t retval =
-            linux_->clockGetTime(clkId, systemTimer, seconds, nanoseconds);
+            kernel_->clockGetTime(clkId, systemTimer, seconds, nanoseconds);
         stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
 
         uint64_t timespecPtr = registerFileSet.get(R1).get<uint64_t>();
@@ -417,7 +418,7 @@ bool ExceptionHandler::init() {
         size_t cpusetsize = registerFileSet.get(R1).get<size_t>();
         uint64_t mask = registerFileSet.get(R2).get<uint64_t>();
 
-        int64_t retval = linux_->schedSetAffinity(pid, cpusetsize, mask);
+        int64_t retval = kernel_->schedSetAffinity(pid, cpusetsize, mask);
         stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
         break;
       }
@@ -425,7 +426,7 @@ bool ExceptionHandler::init() {
         pid_t pid = registerFileSet.get(R0).get<pid_t>();
         size_t cpusetsize = registerFileSet.get(R1).get<size_t>();
         uint64_t mask = registerFileSet.get(R2).get<uint64_t>();
-        int64_t bitmask = linux_->schedGetAffinity(pid, cpusetsize, mask);
+        int64_t bitmask = kernel_->schedGetAffinity(pid, cpusetsize, mask);
         // If returned bitmask is 0, assume an error
         if (bitmask > 0) {
           // Currently, only a single CPU bitmask is supported
@@ -494,7 +495,7 @@ bool ExceptionHandler::init() {
 
         kernel::rusage usageOut;
         stateChange = {
-            ChangeType::REPLACEMENT, {R0}, {linux_->getrusage(who, usageOut)}};
+            ChangeType::REPLACEMENT, {R0}, {kernel_->getrusage(who, usageOut)}};
         stateChange.memoryAddresses.push_back({usagePtr, sizeof(usageOut)});
         stateChange.memoryAddressValues.push_back(usageOut);
         break;
@@ -506,7 +507,7 @@ bool ExceptionHandler::init() {
 
         kernel::timeval tv;
         kernel::timeval tz;
-        int64_t retval = linux_->gettimeofday(
+        int64_t retval = kernel_->gettimeofday(
             systemTimer, tvPtr ? &tv : nullptr, tzPtr ? &tz : nullptr);
         stateChange = {ChangeType::REPLACEMENT, {R0}, {retval}};
         if (tvPtr) {
@@ -520,22 +521,22 @@ bool ExceptionHandler::init() {
         break;
       }
       case 172:  // getpid
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->getpid()}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {kernel_->getpid()}};
         break;
       case 174:  // getuid
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->getuid()}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {kernel_->getuid()}};
         break;
       case 175:  // geteuid
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->geteuid()}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {kernel_->geteuid()}};
         break;
       case 176:  // getgid
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->getgid()}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {kernel_->getgid()}};
         break;
       case 177:  // getegid
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->getegid()}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {kernel_->getegid()}};
         break;
       case 178:  // gettid
-        stateChange = {ChangeType::REPLACEMENT, {R0}, {linux_->gettid()}};
+        stateChange = {ChangeType::REPLACEMENT, {R0}, {kernel_->gettid()}};
         break;
       case 179:  // sysinfo
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
@@ -549,7 +550,7 @@ bool ExceptionHandler::init() {
         break;
       }
       case 214: {  // brk
-        auto result = linux_->brk(registerFileSet.get(R0).get<uint64_t>());
+        auto result = kernel_->brk(registerFileSet.get(R0).get<uint64_t>());
         stateChange = {
             ChangeType::REPLACEMENT, {R0}, {static_cast<uint64_t>(result)}};
         break;
@@ -558,7 +559,7 @@ bool ExceptionHandler::init() {
         uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
         size_t length = registerFileSet.get(R1).get<size_t>();
 
-        int64_t result = linux_->munmap(addr, length);
+        int64_t result = kernel_->munmap(addr, length);
         stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
         break;
       }
@@ -573,7 +574,8 @@ bool ExceptionHandler::init() {
         // Currently, only support mmap from a malloc() call whose arguments
         // match the first condition
         if (addr == 0 && flags == 34 && fd == -1 && offset == 0) {
-          uint64_t result = linux_->mmap(addr, length, prot, flags, fd, offset);
+          uint64_t result =
+              kernel_->mmap(addr, length, prot, flags, fd, offset);
           // An allocation of 0 signifies a failed allocation, return value from
           // syscall is changed to -1
           if (result == 0) {
@@ -713,7 +715,7 @@ void ExceptionHandler::readLinkAt(span<char> path) {
   const auto bufSize = registerFileSet.get(R3).get<uint64_t>();
 
   char buffer[LINUX_PATH_MAX];
-  auto result = linux_->readlinkat(dirfd, path.data(), buffer, bufSize);
+  auto result = kernel_->readlinkat(dirfd, path.data(), buffer, bufSize);
 
   if (result < 0) {
     // TODO: Handle error case
