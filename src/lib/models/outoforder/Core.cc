@@ -456,8 +456,6 @@ void Core::schedule(simeng::kernel::cpuContext newContext) {
   // Need to reset mapping in register file
   registerAliasTable_.reset(isa_.getRegisterFileStructures(),
                             physicalRegisterQuantities_);
-  // Zero out all physical registers in underlying registerFileSet
-  registerFileSet_.reset(physicalRegisterStructures_);
 
   currentTID_ = newContext.TID;
   fetchUnit_.setProgramLength(newContext.progByteLen);

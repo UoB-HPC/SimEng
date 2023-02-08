@@ -306,8 +306,6 @@ std::map<std::string, std::string> Core::getStats() const {
 }
 
 void Core::schedule(simeng::kernel::cpuContext newContext) {
-  // Zero out all physical registers in underlying registerFileSet
-  registerFileSet_.reset(isa_.getRegisterFileStructures());
   currentTID_ = newContext.TID;
   programByteLength_ = newContext.progByteLen;
   pc_ = newContext.pc;

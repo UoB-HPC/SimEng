@@ -377,8 +377,6 @@ void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::schedule(simeng::kernel::cpuContext newContext) {
-  // Zero out all physical registers in underlying registerFileSet
-  registerFileSet_.reset(isa_.getRegisterFileStructures());
   currentTID_ = newContext.TID;
   fetchUnit_.setProgramLength(newContext.progByteLen);
   fetchUnit_.updatePC(newContext.pc);
