@@ -1,7 +1,7 @@
 System Calls
 ============
 
-To support the simulation of programs that perform system calls, SimEng implements system call emulation. When a supervisor call exception is raised by the program, the :doc:`exception handler <../arch/abstract>` invokes the emulated operating system :doc:`kernel <kernel>` instance to perform the syscall.
+To support the simulation of programs that perform system calls, SimEng implements system call emulation. When a supervisor call exception is raised by the program, the :doc:`exception handler <../arch/abstract>` invokes the Syscall Handler object held withi the :doc:`SimOS <kernel>` instance to perform the syscall.
 
 Many syscalls are emulated entirely inside SimEng, with some exceptions detailed below.
 

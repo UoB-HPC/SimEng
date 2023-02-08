@@ -1,14 +1,18 @@
 Kernel
 ======
 
-The Kernel used in SimEng is an emulation of a Linux Kernel. The SimEng Kernel does not seek to provide the full functionality of a Linux Kernel. Instead, it provides the functionality for creating the program memory space and aid the emulation of system calls by maintaining a system and process state.
+The Kernel used in SimEng is an emulation of a Linux Kernel, called SimOS. SimOS does not seek to provide the full functionality of a Linux Kernel. Instead, it provides the functionality for scheduling processes to available cores, creating of processes, and aids the emulation of system calls by maintaining process states.
 
-The SimEng Kernel is split into two classes, ``Process`` and ``Linux``.
+Context Switching & Scheduling
+-------------------------------
+Within the ``tick()`` function of SimOS lies the logic for scheduling Processes to cores. The algorithm implemented is a simple Round-Robin aproach where each process gets the same number of cycles per core time slice.
+
+To schedule a new Process, SimOS will send an interupt signal to an available core which begins the process of getting the core into a switchable state. Once the core is idle, the old Core-Context can be saved to the previous process, and the new process can be scheduled onto the core; beginning execution again. Two queues are utilised within the scheduling logic in order to ensure that a single process does not cause multiple interupts to be send to multiple cores. Before triggering an interupt, a process is held in a ``waiting`` queue; and once an interupt has been signaled for a process it is moved into a ``scheduled`` queue. Only processes in the ``waiting`` queue can cause an interupt, and only processes in the ``scheduled`` queue can be scheduled onto an idle core.
 
 Process
 ------------
 
-The ``Process`` class provides the functionality to process the supplied program. It creates the initial process memory space, including the Executable and Linkable Format (ELF) process image and the stack. The process memory space created contains all the data required by the program to run.
+The ``Process`` class provides the functionality to process the supplied program. It creates the Executable and Linkable Format (ELF) process image and initialises a heap and stack region. This is then sent to the memory, creating the process memory space, which contains all the data required by the program to run.
 
 ELF Parsing
 ~~~~~~~~~~~~
@@ -39,16 +43,15 @@ Currently, the only environment variable set is ``OMP_NUM_THREADS=1``, however, 
 
 For the supplied program, the ``Process`` class supports both statically compiled binaries and raw instructions in a hexadecimal format.
 
-Linux
+SyscallHandler
 -----
 
-The ``Linux`` class provides part of the functionality used to emulate system calls by maintaining a system and process state. These states contain information about the ``Process`` class created from the supplied program. Such information includes:
+The ``SyscallHandler`` class provides part of the functionality used to emulate system calls by maintaining the process states. These states contain information about the ``Process`` class created from the supplied program. Such information includes:
 
-- PID
-- Program path
+- TID (or PID) and TGID
 - Start location for brk system calls
 - Current location of the most recent brk system call
 - The initial stack pointer
 - ``fileDescriptorTable`` that tracks the open file descriptors
 
-All system call functionality is invoked within the ``Linux`` class, and any return value associated with the system call is generated here.
+All system call functionality is invoked within the ``SyscallHandler`` class, and any return value associated with the system call is generated here.
