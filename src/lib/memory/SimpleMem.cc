@@ -32,7 +32,7 @@ ReadResponse SimpleMem::readData(ReadRequest req) {
 WriteResponse SimpleMem::writeData(WriteRequest req) {
   uint64_t address = req.address_;
   WriteRequest::data_type data = req.data();
-  std::copy(data.begin(), data.end(), memory_.begin() + address);
+  std::copy(data.begin(), data.begin() + req.size_, memory_.begin() + address);
   return WriteResponse{req.address_, req.size_};
 };
 
@@ -49,12 +49,12 @@ char* SimpleMem::getUntimedData(uint64_t paddr, size_t size) {
 
 ReadResponse SimpleMem::handleIgnoredRequest(ReadRequest req) {
   ReadResponse::data_type arr;
-  std::copy(faultMemory_, faultMemory_ + 16, arr.begin());
-  return ReadResponse{req.address_, 0, arr};
+  std::copy(faultMemory_, faultMemory_ + 32, arr.begin());
+  return ReadResponse{0, req.size_, arr};
 }
 
 WriteResponse SimpleMem::handleIgnoredRequest(WriteRequest req) {
-  return WriteResponse{req.address_, 0};
+  return WriteResponse{0, req.size_};
 }
 
 }  // namespace memory

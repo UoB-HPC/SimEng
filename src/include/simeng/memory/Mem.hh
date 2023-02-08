@@ -75,7 +75,7 @@ struct empty_data {
 };
 
 struct dword_array_data {
-  using value_type = std::array<char, 64>;
+  using value_type = std::array<char, 128>;
 };
 
 using ReadRequest = DataPacket<true, empty_data>;
