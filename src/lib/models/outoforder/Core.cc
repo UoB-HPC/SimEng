@@ -109,9 +109,8 @@ void Core::tick() {
       idle_ticks_++;
       return;
     case CoreStatus::switching: {
-      if (fetchToDecodeBuffer_.isEmpty({}) &&
-          decodeToRenameBuffer_.isEmpty(nullptr) &&
-          renameToDispatchBuffer_.isEmpty(nullptr) &&
+      if (fetchToDecodeBuffer_.isEmpty() && decodeToRenameBuffer_.isEmpty() &&
+          renameToDispatchBuffer_.isEmpty() &&
           !dataMemory_.hasPendingRequests() && (reorderBuffer_.size() == 0) &&
           (exceptionHandler_ == nullptr)) {
         // Flush pipeline

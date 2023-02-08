@@ -44,10 +44,8 @@ void Core::tick() {
       idle_ticks_++;
       return;
     case CoreStatus::switching: {
-      if (fetchToDecodeBuffer_.isEmpty({}) &&
-          decodeToExecuteBuffer_.isEmpty(nullptr) &&
-          completionSlots_[0].isEmpty(nullptr) &&
-          (exceptionHandler_ == nullptr)) {
+      if (fetchToDecodeBuffer_.isEmpty() && decodeToExecuteBuffer_.isEmpty() &&
+          completionSlots_[0].isEmpty() && (exceptionHandler_ == nullptr)) {
         // Flush pipeline
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
