@@ -125,15 +125,17 @@ class Process {
   /** Current status of the process. */
   procStatus status_ = procStatus::waiting;
 
+  /** The CPU context associated with this process. Used to enable context
+   * switching between multiple processes. */
   cpuContext context_;
 
  private:
-  /** MemRegion of the Process Image. */
-  MemRegion memRegion_;
-
   /** Create and populate the initial process stack and returns the stack
    * pointer. */
   uint64_t createStack(char** processImage, uint64_t stackStart);
+
+  /** MemRegion of the Process Image. */
+  MemRegion memRegion_;
 
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
@@ -148,7 +150,7 @@ class Process {
    */
   uint64_t TGID_;
 
-  /** The process' Thread ID, its globally unique identifier.
+  /** The process' Thread ID - a globally unique identifier.
    * A thread group's leader TID will be equal to the TGID. */
   uint64_t TID_;
 };

@@ -29,9 +29,6 @@ CoreInstance::~CoreInstance() {
 
 void CoreInstance::generateCoreModel() {
   setSimulationMode();
-  // Get the process image and its size
-  // processMemorySize_ = process_->getProcessImageSize();
-
   // Check to see if either of the instruction or data memory interfaces should
   // be created. Don't create the core if either interface is marked as External
   // as they must be set manually prior to the core's creation.

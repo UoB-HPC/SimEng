@@ -100,7 +100,7 @@ class SimOS {
   /** SyscallHandler Object to process all syscalls. */
   std::shared_ptr<SyscallHandler> syscallHandler_;
 
-  /** Indicates if lll processes have completed or a core has halted due to an
+  /** Indicates if all processes have completed or a core has halted due to an
    * exception. */
   bool halted_ = false;
 

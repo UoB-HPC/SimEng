@@ -62,23 +62,24 @@ int main(int argc, char** argv) {
       executablePath = std::string(argv[2]);
       // Create a vector of any potential executable arguments from their
       // relative position within the argv variable
+      char** startOfArgs = argv + 3;
       int numberofArgs = argc - 3;
       executableArgs =
-          std::vector<std::string>((argv + 3), (argv + 3) + numberofArgs);
+          std::vector<std::string>(startOfArgs, startOfArgs + numberofArgs);
     }
   }
 
-  // Create global memory
+  // Create simulation memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(2684354560);  // 2.6 GiB
 
   // Create the instance of the OS
-  simeng::kernel::SimOS simOS_kernel =
+  simeng::kernel::SimOS kernel =
       simeng::kernel::SimOS(executablePath, executableArgs, memory);
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =
-      std::make_unique<simeng::CoreInstance>(simOS_kernel.getSyscallHandler(),
+      std::make_unique<simeng::CoreInstance>(kernel.getSyscallHandler(),
                                              memory);
 
   // Get simulation objects needed to forward simulation
@@ -89,7 +90,7 @@ int main(int argc, char** argv) {
       coreInstance->getInstructionMemory();
 
   // Register core with SimOS
-  simOS_kernel.registerCore(core);
+  kernel.registerCore(core);
 
   // Output general simulation details
   std::cout << "[SimEng] Running in " << coreInstance->getSimulationModeString()
@@ -103,7 +104,7 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] Starting...\n" << std::endl;
   int iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
-  iterations = simulate(simOS_kernel, *core, *dataMemory, *instructionMemory);
+  iterations = simulate(kernel, *core, *dataMemory, *instructionMemory);
 
   // Get timing information
   auto endTime = std::chrono::high_resolution_clock::now();

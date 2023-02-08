@@ -107,7 +107,7 @@ struct linux_dirent64 {
    to Linux system calls. */
 class SyscallHandler {
  public:
-  /** Create new SyscallHandler object. */
+  /** Create a new SyscallHandler object. */
   SyscallHandler(const std::vector<std::shared_ptr<Process>>& processes);
 
   /** brk syscall: change data segment size. Sets the program break to
@@ -216,7 +216,7 @@ class SyscallHandler {
    * to point to the SimEng equivalent. */
   std::string getSpecialFile(const std::string filename);
 
-  /** The state of the user-space processes running above the kernel. */
+  /** The user-space processes running above the kernel. */
   const std::vector<std::shared_ptr<Process>>& processes_;
 
   /** Path to the root of the replacement special files. */

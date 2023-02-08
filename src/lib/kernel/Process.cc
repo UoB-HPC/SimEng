@@ -76,7 +76,6 @@ Process::Process(const std::vector<std::string>& commandLine,
                          pageSize_, mmapStart);
 
   // copy process image to global memory.
-  // memcpy(memptr, unwrappedProcImgPtr, size);
   memory->sendUntimedData(unwrappedProcImgPtr, 0, size);
   fileDescriptorTable_.emplace_back(STDIN_FILENO);
   fileDescriptorTable_.emplace_back(STDOUT_FILENO);

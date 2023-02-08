@@ -92,14 +92,12 @@ class Config {
   /** Update the config via a filepath to load from. */
   static void set(std::string path) { getInstance()->makeConfig(path); }
 
-  /** Update the config to a provided YAML::Node.
-   * Primarily used by the test suite. */
+  /** Update the config to a provided YAML::Node. */
   static void set(YAML::Node newConfig) {
     getInstance()->makeConfig(newConfig);
   }
 
-  /** Update the config via a provided char* input.
-   * Primarily used by the test suite. */
+  /** Update the config via a provided char* input. */
   static void set(const char* configStr) {
     getInstance()->makeConfig(configStr);
   }

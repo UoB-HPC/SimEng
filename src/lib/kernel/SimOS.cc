@@ -36,28 +36,37 @@ void SimOS::tick() {
    * 'waitingProc' queue.
    *
    * 2. All cores are looped over, checking their status. If there is a process
-   * in the waitingProc queue then currently executing cores will be tested to
-   * see if they should perform a context switch (Each Process is given
-   * execTicks cycles at a time; round-robin style).
+   * at the front of the waitingProc queue then a currently executing core will
+   * be tested to see if it should perform a context switch to the waiting
+   * process. If the core has been executing for longer than execTicks then an
+   * interupt signal is sent to test if a context switch can be made.
    *
-   * 3. If a core is sent an interrupt signal, the head of waitingProcs queue is
-   * put into scheduled queue.
+   * 3. If the interrupt signal is successful, then the head of waitingProcs
+   * queue is put into scheduled queue.
    *
-   * 4. Idle cores can only be scheduled processes from the scheduledProcs
-   * queue.
+   * 4. In order to schedule a process onto a core, a core must be in an Idle
+   * state. An Idle core can only be scheduled a process from the scheduledProcs
+   * queue, i.e. a process which has previously triggered a successful interupt
+   * signal.
    *
    * 5. When a process is successfully scheduled, it is removed from the
    * scheduledProcs queue.
    *
-   * 6. When a process goes back into a waiting state (post context switch) it
-   * will be pushed to the back of the waitingProcs queue.
+   * 6. When a process is de-scheduled from a core it goes back into a waiting
+   * state and is pushed to the back of the waitingProcs queue.
    *
-   * This ensures that multiple cores will not be interrupted for a single
-   * process
-   *    - an OoO core may be in the switching state for multiple cycles, in
-   *      which time a waitingProc could tell more executing cores to context
-   *      switch.
-   */
+   * By using two queues, we ensure that a single process will not interupt
+   * multiple cores. This is due to :
+   *    a. Only a process in the waitingProc queue can cause an interupt
+   *    b. On a successful interupt, the process that caused it is moved to the
+   * scheduledProc queue
+   *    c. Only processes in the scheduledProc queue can be scheduled onto a
+   * core
+   *
+   * If not for this process, then a waitingProc could tell more executing cores
+   * to context switch given a core is likely to be in a switching state (post
+   * successful interupt, pre Idle state) for multiple cycles.
+   * */
 
   // Loop over all cores, apply correct behaviour based on state
   for (auto core : cores_) {

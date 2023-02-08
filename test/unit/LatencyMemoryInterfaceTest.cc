@@ -1,4 +1,3 @@
-
 #include "gtest/gtest.h"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/memory/SimpleMem.hh"

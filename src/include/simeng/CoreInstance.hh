@@ -71,14 +71,6 @@ class CoreInstance {
   /** Getter for the create instruction memory object. */
   std::shared_ptr<simeng::MemoryInterface> getInstructionMemory() const;
 
-  /** Getter for the size of the created process image.
-   * !! IMPLEMENTATION REMOVED - Process no longer supplied at init !! */
-  const uint64_t getProcessImageSize() const;
-
-  /* Getter for heap start.
-   * !! IMPLEMENTATION REMOVED - Process no longer supplied at init !! */
-  const uint64_t getHeapStart() const;
-
  private:
   /** Generate the appropriate simulation objects as parameterised by the
    * configuration.*/
