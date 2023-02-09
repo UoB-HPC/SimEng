@@ -67,8 +67,7 @@ class Core : public simeng::Core {
    * current process. */
   uint64_t getCurrentProcTicks() const override;
 
-  /** Retrieve the current CPU context for the currently executing / outgoing
-   * process. */
+  /** Retrieve the CPU context for the outgoing process. */
   simeng::OS::cpuContext getPrevContext() const override;
 
  private:

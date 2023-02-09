@@ -137,7 +137,7 @@ class FetchUnit {
   /** The amount of data currently in the fetch buffer. */
   uint8_t bufferedBytes_ = 0;
 
-  /** The Fetch Unit's paused state - when interrupt has been signalled, the
+  /** The Fetch Unit's paused state - when an interupt has been signalled, the
    * Fetch Unit must not fetch / increment the PC until a new process has been
    * scheduled. This ensures the correct architectural state can be captured
    * during a context switch. */

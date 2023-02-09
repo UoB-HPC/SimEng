@@ -110,7 +110,7 @@ void Core::tick() {
       return;
     case CoreStatus::switching: {
       // Ensure that all pipeline buffers and ROB are empty, no data requests
-      // are pending, and no exception is being handles before context switching
+      // are pending, and no exception is being handled before context switching
       if (fetchToDecodeBuffer_.isEmpty() && decodeToRenameBuffer_.isEmpty() &&
           renameToDispatchBuffer_.isEmpty() &&
           !dataMemory_.hasPendingRequests() && (reorderBuffer_.size() == 0) &&

@@ -44,6 +44,8 @@ void Core::tick() {
       idle_ticks_++;
       return;
     case CoreStatus::switching: {
+      // Ensure the pipeline is empty and there's no active exception before
+      // context switching.
       if (fetchToDecodeBuffer_.isEmpty() && decodeToExecuteBuffer_.isEmpty() &&
           completionSlots_[0].isEmpty() && (exceptionHandler_ == nullptr)) {
         // Flush pipeline

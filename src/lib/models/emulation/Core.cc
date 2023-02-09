@@ -26,7 +26,8 @@ void Core::tick() {
       idle_ticks_++;
       return;
     case CoreStatus::switching:
-      // Ensure no instructions left to execute, and not mid exception
+      // Ensure there are no instructions left to execute and there's no active
+      // exception before context switching.
       if (microOps_.empty() && (exceptionHandler_ == nullptr)) {
         macroOp_.clear();
         pendingReads_ = 0;

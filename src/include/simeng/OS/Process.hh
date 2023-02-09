@@ -31,7 +31,7 @@ struct cpuContext {
   std::vector<std::vector<RegisterValue>> regFile;
 };
 
-/** Align `address` to an `alignTo`-byte boundary by rounding up to the nearest
+/** Align `value` to the `boundary`-byte by rounding up to the nearest
  * multiple. */
 uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
 
@@ -130,7 +130,7 @@ class Process {
   cpuContext context_;
 
  private:
-  /** Create and populate the initial process stack and returns the stack
+  /** Create and populate the initial process stack and return the stack
    * pointer. */
   uint64_t createStack(char** processImage, uint64_t stackStart);
 
