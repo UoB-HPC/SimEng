@@ -1,9 +1,9 @@
 #include "gtest/gtest.h"
+#include "simeng/OS/Process.hh"
+#include "simeng/OS/SyscallHandler.hh"
 #include "simeng/RegisterFileSet.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
-#include "simeng/kernel/Process.hh"
-#include "simeng/kernel/SyscallHandler.hh"
 
 namespace {
 
@@ -15,9 +15,9 @@ TEST(ISATest, CreateAArch64) {
       "Vector-Length: 512, Streaming-Vector-Length: 512}}");
   // Pass a config file with only the options required by the aarch64
   // architecture class to function
-  std::vector<std::shared_ptr<simeng::kernel::Process>> procs = {};
-  std::shared_ptr<simeng::kernel::SyscallHandler> sysHandler =
-      std::make_shared<simeng::kernel::SyscallHandler>(procs);
+  std::vector<std::shared_ptr<simeng::OS::Process>> procs = {};
+  std::shared_ptr<simeng::OS::SyscallHandler> sysHandler =
+      std::make_shared<simeng::OS::SyscallHandler>(procs);
 
   std::unique_ptr<simeng::arch::Architecture> isa =
       std::make_unique<simeng::arch::aarch64::Architecture>(sysHandler);

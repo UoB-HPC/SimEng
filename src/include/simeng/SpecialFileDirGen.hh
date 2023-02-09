@@ -13,11 +13,11 @@ class SpecialFileDirGen {
    * running it through checks and formatting. */
   SpecialFileDirGen();
 
-  /** Removes all files inside the '/src.lib/kernel/specialFiles' directory. */
+  /** Removes all files inside the 'simeng/build/specialFiles' directory. */
   void RemoveExistingSFDir();
 
   /** Creates necessary file structure to support needed special files inside
-   * the '/src.lib/kernel/specialFiles' directory. */
+   * the 'simeng/build/specialFiles' directory. */
   void GenerateSFDir();
 
  private:

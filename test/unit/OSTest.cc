@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "simeng/kernel/SimOS.hh"
+#include "simeng/OS/SimOS.hh"
 
 namespace {
 
@@ -18,11 +18,10 @@ TEST(OSTest, CreateSimOS) {
       std::make_shared<simeng::memory::SimpleMem>(25000);
 
   // Create the instance of the OS
-  simeng::kernel::SimOS simOS_kernel =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory);
+  simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
 
   // Check default process created. Initial process TID = 0
-  std::shared_ptr<simeng::kernel::Process> proc = simOS_kernel.getProcess(0);
+  std::shared_ptr<simeng::OS::Process> proc = OS.getProcess(0);
   EXPECT_GT(proc->getHeapStart(), 0);
   EXPECT_GT(proc->getMmapStart(), proc->getHeapStart());
   EXPECT_GT(proc->getStackStart(), proc->getMmapStart());
@@ -34,10 +33,10 @@ TEST(OSTest, CreateSimOS) {
   EXPECT_GT(proc->context_.sp, 0);
   EXPECT_GT(proc->context_.regFile.size(), 0);
   // Check Initial Process' state
-  EXPECT_EQ(proc->status_, simeng::kernel::procStatus::scheduled);
+  EXPECT_EQ(proc->status_, simeng::OS::procStatus::scheduled);
 
   // Check syscallHandler created
-  EXPECT_TRUE(simOS_kernel.getSyscallHandler());
+  EXPECT_TRUE(OS.getSyscallHandler());
 }
 
 }  // namespace

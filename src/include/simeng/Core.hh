@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-#include "simeng/kernel/Process.hh"
+#include "simeng/OS/Process.hh"
 #include "yaml-cpp/yaml.h"
 
 namespace simeng {
@@ -41,7 +41,7 @@ class Core {
   virtual std::map<std::string, std::string> getStats() const = 0;
 
   /** Schedule a new Process. */
-  virtual void schedule(simeng::kernel::cpuContext newContext) = 0;
+  virtual void schedule(simeng::OS::cpuContext newContext) = 0;
 
   /** Signals core to stop executing the current process.
    * Return Values :
@@ -55,7 +55,7 @@ class Core {
   virtual uint64_t getCurrentProcTicks() const = 0;
 
   /** Retrieve the CPU context for the outgoing process. */
-  virtual simeng::kernel::cpuContext getPrevContext() const = 0;
+  virtual simeng::OS::cpuContext getPrevContext() const = 0;
 };
 
 }  // namespace simeng

@@ -1,10 +1,10 @@
-#include "simeng/kernel/SimOS.hh"
+#include "simeng/OS/SimOS.hh"
 
 /** The size of each time slice a process has. */
 static constexpr uint64_t execTicks = 30000;
 
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 SimOS::SimOS(std::string executablePath,
              std::vector<std::string> executableArgs,
@@ -79,7 +79,7 @@ void SimOS::tick() {
       case CoreStatus::idle: {
         // Core is idle, schedule head of scheduledProc queue
         if (!scheduledProcs_.empty()) {
-          kernel::cpuContext prevContext = core->getPrevContext();
+          OS::cpuContext prevContext = core->getPrevContext();
           for (auto proc : processes_) {
             if (proc->getTID() == prevContext.TID) {
               assert((proc->status_ == procStatus::executing) &&
@@ -142,7 +142,7 @@ void SimOS::createInitialProcess() {
   // available TGID and TIDs, and pass these when constructing a Process
   // object
 
-  // Temporarily create the architecture, with knowledge of the kernel
+  // Temporarily create the architecture, with knowledge of the OS
   std::unique_ptr<simeng::arch::Architecture> arch;
   if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
     arch = std::make_unique<simeng::arch::riscv::Architecture>(syscallHandler_);
@@ -220,5 +220,5 @@ void SimOS::createSpecialFileDirectory() const {
   SFdir.GenerateSFDir();
 }
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng

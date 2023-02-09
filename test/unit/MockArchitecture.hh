@@ -30,7 +30,7 @@ class MockArchitecture : public arch::Architecture {
   MOCK_CONST_METHOD2(updateSystemTimerRegisters,
                      void(RegisterFileSet* regFile, const uint64_t iterations));
   MOCK_CONST_METHOD1(updateAfterContextSwitch,
-                     void(const simeng::kernel::cpuContext& context));
+                     void(const simeng::OS::cpuContext& context));
 };
 
 }  // namespace simeng

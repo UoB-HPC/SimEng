@@ -45,7 +45,7 @@ class Core : public simeng::Core {
   std::map<std::string, std::string> getStats() const override;
 
   /** Schedule a new Process. */
-  void schedule(simeng::kernel::cpuContext newContext) override;
+  void schedule(simeng::OS::cpuContext newContext) override;
 
   /** Signals core to stop executing the current process.
    * Return Values :
@@ -60,7 +60,7 @@ class Core : public simeng::Core {
 
   /** Retrieve the current CPU context for the currently executing / outgoing
    * process. */
-  simeng::kernel::cpuContext getPrevContext() const override;
+  simeng::OS::cpuContext getPrevContext() const override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */

@@ -1,4 +1,4 @@
-#include "simeng/kernel/Process.hh"
+#include "simeng/OS/Process.hh"
 
 #include <unistd.h>
 
@@ -9,7 +9,7 @@
 #include "simeng/memory/Mem.hh"
 
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
   auto remainder = value % boundary;
@@ -259,5 +259,5 @@ uint64_t Process::createStack(char** processImage, uint64_t stackStart) {
   return stackPointer;
 }
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng

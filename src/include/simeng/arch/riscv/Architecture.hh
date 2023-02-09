@@ -4,10 +4,10 @@
 #include <unordered_map>
 
 #include "simeng/Config.hh"
+#include "simeng/OS/SyscallHandler.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
 #include "simeng/arch/riscv/Instruction.hh"
-#include "simeng/kernel/SyscallHandler.hh"
 
 using csh = size_t;
 
@@ -18,7 +18,7 @@ namespace riscv {
 /* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-  Architecture(std::shared_ptr<kernel::SyscallHandler> syscallHandler);
+  Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler);
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -62,7 +62,7 @@ class Architecture : public arch::Architecture {
 
   /** After a context switch, update any required variables. */
   void updateAfterContextSwitch(
-      const simeng::kernel::cpuContext& context) const override;
+      const simeng::OS::cpuContext& context) const override;
 
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a
@@ -94,8 +94,8 @@ class Architecture : public arch::Architecture {
   /** A Capstone decoding library handle, for decoding instructions. */
   csh capstoneHandle;
 
-  /** A reference to a Linux kernel object to forward syscalls to. */
-  std::shared_ptr<kernel::SyscallHandler> syscallHandler_;
+  /** A reference to SyscallHandler object to forward syscalls to. */
+  std::shared_ptr<OS::SyscallHandler> syscallHandler_;
 };
 
 }  // namespace riscv

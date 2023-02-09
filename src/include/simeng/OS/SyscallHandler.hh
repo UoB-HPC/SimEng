@@ -22,13 +22,13 @@
 #include <vector>
 
 #include "simeng/Elf.hh"
-#include "simeng/kernel/Process.hh"
+#include "simeng/OS/Process.hh"
 #include "simeng/version.hh"
 
 #define LINUX_PATH_MAX 4096
 
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 /** Fixed-width definition of `stat`.
  * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
@@ -226,5 +226,5 @@ class SyscallHandler {
   std::vector<std::string> supportedSpecialFiles_;
 };
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng

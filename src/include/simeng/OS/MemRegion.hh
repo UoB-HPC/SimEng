@@ -4,10 +4,10 @@
 #include <cstddef>
 #include <memory>
 
-#include "simeng/kernel/Vma.hh"
+#include "simeng/OS/Vma.hh"
 
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 class MemRegion {
  public:
@@ -74,5 +74,5 @@ class MemRegion {
                       int flags);
 };
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng

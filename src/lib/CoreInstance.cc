@@ -2,9 +2,8 @@
 
 namespace simeng {
 
-CoreInstance::CoreInstance(
-    std::shared_ptr<kernel::SyscallHandler> syscallHandler,
-    std::shared_ptr<simeng::memory::Mem> mem)
+CoreInstance::CoreInstance(std::shared_ptr<OS::SyscallHandler> syscallHandler,
+                           std::shared_ptr<simeng::memory::Mem> mem)
     : config_(Config::get()), syscallHandler_(syscallHandler), memory_(mem) {
   generateCoreModel();
 }
@@ -162,7 +161,7 @@ void CoreInstance::createCore() {
     exit(1);
   }
 
-  // Create the architecture, with knowledge of the kernel
+  // Create the architecture, with knowledge of the OS
   if (config_["Core"]["ISA"].as<std::string>() == "rv64") {
     arch_ =
         std::make_unique<simeng::arch::riscv::Architecture>(syscallHandler_);

@@ -1,9 +1,9 @@
-#include "simeng/kernel/MemRegion.hh"
+#include "simeng/OS/MemRegion.hh"
 
 #include <iostream>
 
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t memSize,
                      uint64_t stackStart, uint64_t startBrk, uint64_t pageSize,
@@ -63,5 +63,5 @@ int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length, int fd, int prot,
   return vma_ll.removeVma(addr, length, pageSize_);
 }
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng

@@ -1,7 +1,7 @@
-#include "simeng/kernel/Vma.hh"
+#include "simeng/OS/Vma.hh"
 
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 uint64_t Vmall::addVma(VirtMemArea* vma, uint64_t mmapStart,
                        uint64_t pageSize) {
@@ -95,5 +95,5 @@ void Vmall::freeVma() {
 
 size_t Vmall::getSize() { return vm_size_; }
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng

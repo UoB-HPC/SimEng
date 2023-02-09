@@ -374,7 +374,7 @@ void Core::handleLoad(const std::shared_ptr<Instruction>& instruction) {
   completionSlots_[0].getTailSlots()[0] = instruction;
 }
 
-void Core::schedule(simeng::kernel::cpuContext newContext) {
+void Core::schedule(simeng::OS::cpuContext newContext) {
   currentTID_ = newContext.TID;
   fetchUnit_.setProgramLength(newContext.progByteLen);
   fetchUnit_.updatePC(newContext.pc);
@@ -405,8 +405,8 @@ bool Core::interrupt() {
 
 uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 
-simeng::kernel::cpuContext Core::getPrevContext() const {
-  kernel::cpuContext newContext;
+simeng::OS::cpuContext Core::getPrevContext() const {
+  OS::cpuContext newContext;
   newContext.TID = currentTID_;
   newContext.pc = writebackUnit_.getNextPC();
   // progByteLen will not change in process so do not need to set it

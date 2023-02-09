@@ -10,8 +10,7 @@ namespace aarch64 {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(
-    std::shared_ptr<kernel::SyscallHandler> syscallHandler)
+Architecture::Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler)
     : syscallHandler_(syscallHandler),
       microDecoder_(std::make_unique<MicroDecoder>()) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
@@ -331,7 +330,7 @@ void Architecture::setSVCRval(const uint64_t newVal) const {
 }
 
 void Architecture::updateAfterContextSwitch(
-    const simeng::kernel::cpuContext& context) const {
+    const simeng::OS::cpuContext& context) const {
   SVCRval_[0] = context
                     .regFile[RegisterType::SYSTEM]
                             [getSystemRegisterTag(ARM64_SYSREG_SVCR)]

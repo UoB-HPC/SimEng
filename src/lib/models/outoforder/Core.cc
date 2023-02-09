@@ -453,7 +453,7 @@ std::map<std::string, std::string> Core::getStats() const {
           {"context.switches", std::to_string(contextSwitches_)}};
 }
 
-void Core::schedule(simeng::kernel::cpuContext newContext) {
+void Core::schedule(simeng::OS::cpuContext newContext) {
   // Need to reset mapping in register file
   registerAliasTable_.reset(isa_.getRegisterFileStructures(),
                             physicalRegisterQuantities_);
@@ -487,8 +487,8 @@ bool Core::interrupt() {
 
 uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 
-simeng::kernel::cpuContext Core::getPrevContext() const {
-  kernel::cpuContext newContext;
+simeng::OS::cpuContext Core::getPrevContext() const {
+  OS::cpuContext newContext;
   newContext.TID = currentTID_;
   newContext.pc = reorderBuffer_.getNextPC();
   // progByteLen will not change in process so do not need to set it

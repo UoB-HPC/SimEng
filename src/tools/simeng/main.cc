@@ -9,12 +9,12 @@
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
 #include "simeng/MemoryInterface.hh"
-#include "simeng/kernel/SimOS.hh"
+#include "simeng/OS/SimOS.hh"
 #include "simeng/memory/SimpleMem.hh"
 #include "simeng/version.hh"
 
 /** Tick the provided core model until it halts. */
-int simulate(simeng::kernel::SimOS& simOS, simeng::Core& core,
+int simulate(simeng::OS::SimOS& simOS, simeng::Core& core,
              simeng::MemoryInterface& dataMemory,
              simeng::MemoryInterface& instructionMemory) {
   uint64_t iterations = 0;
@@ -73,14 +73,13 @@ int main(int argc, char** argv) {
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(2684354560);  // 2.6 GiB
 
-  // Create the instance of the OS
-  simeng::kernel::SimOS kernel =
-      simeng::kernel::SimOS(executablePath, executableArgs, memory);
+  // Create the instance of the lightweight Operating system
+  simeng::OS::SimOS OS =
+      simeng::OS::SimOS(executablePath, executableArgs, memory);
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =
-      std::make_unique<simeng::CoreInstance>(kernel.getSyscallHandler(),
-                                             memory);
+      std::make_unique<simeng::CoreInstance>(OS.getSyscallHandler(), memory);
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();
@@ -90,7 +89,7 @@ int main(int argc, char** argv) {
       coreInstance->getInstructionMemory();
 
   // Register core with SimOS
-  kernel.registerCore(core);
+  OS.registerCore(core);
 
   // Output general simulation details
   std::cout << "[SimEng] Running in " << coreInstance->getSimulationModeString()
@@ -104,7 +103,7 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] Starting...\n" << std::endl;
   int iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
-  iterations = simulate(kernel, *core, *dataMemory, *instructionMemory);
+  iterations = simulate(OS, *core, *dataMemory, *instructionMemory);
 
   // Get timing information
   auto endTime = std::chrono::high_resolution_clock::now();

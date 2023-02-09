@@ -6,13 +6,13 @@
 
 #include "simeng/Config.hh"
 #include "simeng/Core.hh"
+#include "simeng/OS/SyscallHandler.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/aarch64/Instruction.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
-#include "simeng/kernel/SyscallHandler.hh"
 #include "simeng/memory/SimpleMem.hh"
 #include "simeng/span.hh"
 
@@ -20,7 +20,7 @@
 class RegressionTest;
 
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 // Program used when no executable is provided; counts down from
 // 1024*1024, with an independent `orr` at the start of each branch.
@@ -82,7 +82,7 @@ class SimOS {
   /** The runtime arguments of the user defined executable. */
   std::vector<std::string> executableArgs_ = {};
 
-  /** The list of user-space processes running above the kernel. */
+  /** The list of user-space processes running above the OS kernel. */
   std::vector<std::shared_ptr<Process>> processes_ = {};
 
   /** Queue of processes waiting to be scheduled. */
@@ -129,5 +129,5 @@ class SimOS {
   }
 };
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng

@@ -1,7 +1,7 @@
-#include "simeng/kernel/SyscallHandler.hh"
+#include "simeng/OS/SyscallHandler.hh"
 
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 SyscallHandler::SyscallHandler(
     const std::vector<std::shared_ptr<Process>>& processes)
@@ -544,5 +544,5 @@ int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
   return ::writev(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng

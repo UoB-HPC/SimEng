@@ -108,7 +108,7 @@ class Architecture {
 
   /** After a context switch, update any required variables. */
   virtual void updateAfterContextSwitch(
-      const simeng::kernel::cpuContext& context) const = 0;
+      const simeng::OS::cpuContext& context) const = 0;
 };
 
 }  // namespace arch

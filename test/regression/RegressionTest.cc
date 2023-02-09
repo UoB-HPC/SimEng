@@ -5,8 +5,8 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
-#include "simeng/kernel/Process.hh"
-#include "simeng/kernel/SimOS.hh"
+#include "simeng/OS/Process.hh"
+#include "simeng/OS/SimOS.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
@@ -34,9 +34,8 @@ void RegressionTest::run(const char* source, const char* triple,
   // Initialise the global memory
   memory_ = std::make_shared<simeng::memory::SimpleMem>(300000);
 
-  // Initialise a SimOS kernel
-  simeng::kernel::SimOS simOS_kernel =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory_);
+  // Initialise a SimOS object
+  simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory_);
 
   // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place
@@ -48,16 +47,16 @@ void RegressionTest::run(const char* source, const char* triple,
   // returned by the getProcessImage method.
 
   // Create the architecture
-  architecture_ = createArchitecture(simOS_kernel.getSyscallHandler());
+  architecture_ = createArchitecture(OS.getSyscallHandler());
 
-  process_ = std::make_shared<simeng::kernel::Process>(
+  process_ = std::make_shared<simeng::OS::Process>(
       simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_,
       architecture_->getRegisterFileStructures(), 0, 0);
   ASSERT_TRUE(process_->isValid());
   processMemorySize_ = process_->context_.progByteLen;
 
-  // Update the initial process in the kernel
-  simOS_kernel.setInitialProcess(process_, *architecture_);
+  // Update the initial process in the OS
+  OS.setInitialProcess(process_, *architecture_);
 
   // Create memory interfaces for instruction and data access.
   // For each memory interface, a dereferenced shared_ptr to the

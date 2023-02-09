@@ -9,10 +9,10 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
+#include "simeng/OS/SyscallHandler.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
-#include "simeng/kernel/SyscallHandler.hh"
 #include "simeng/memory/Mem.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
@@ -23,9 +23,9 @@
 namespace simeng {
 
 // Forward delare everything needed for SimOS
-namespace kernel {
+namespace OS {
 class SimOS;
-}  // namespace kernel
+}  // namespace OS
 
 /** The available modes of simulation. */
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
@@ -35,7 +35,7 @@ class CoreInstance {
  public:
   /** Constructor with an executable, its arguments, and a model configuration.
    */
-  CoreInstance(std::shared_ptr<kernel::SyscallHandler> syscallHandler,
+  CoreInstance(std::shared_ptr<OS::SyscallHandler> syscallHandler,
                std::shared_ptr<simeng::memory::Mem> mem);
 
   // IGNORING SST RELATED CODE FOR NOW
@@ -98,10 +98,10 @@ class CoreInstance {
   YAML::Node& config_;
 
   /** Reference to the SimEng SimOS Process object. */
-  std::shared_ptr<simeng::kernel::Process> process_ = nullptr;
+  std::shared_ptr<simeng::OS::Process> process_ = nullptr;
 
   /** Reference to the SyscallHandler object in SimOS instance. */
-  std::shared_ptr<kernel::SyscallHandler> syscallHandler_;
+  std::shared_ptr<OS::SyscallHandler> syscallHandler_;
 
   /** The size of the process memory. */
   uint64_t processMemorySize_;

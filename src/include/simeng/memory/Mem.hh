@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "simeng/kernel/Process.hh"
+#include "simeng/OS/Process.hh"
 
 namespace simeng {
 namespace memory {

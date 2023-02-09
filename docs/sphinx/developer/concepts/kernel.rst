@@ -1,7 +1,7 @@
-Kernel
+Operating System
 ======
 
-The Kernel used in SimEng is an emulation of a Linux Kernel, called SimOS. SimOS does not seek to provide the full functionality of a Linux Kernel. Instead, it provides the functionality for scheduling processes to available cores, creating of processes, and aids the emulation of system calls by maintaining process states.
+The Operating used in SimEng is an emulation of a light-weight Linux Kernel, called SimOS. SimOS does not seek to provide the full functionality of a Linux Kernel. Instead, it provides the functionality for scheduling processes to available cores, the creation of processes, and aids the emulation of system calls by maintaining process states.
 
 Context Switching & Scheduling
 -------------------------------

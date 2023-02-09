@@ -8,7 +8,7 @@
 
 #include "simeng/util/Math.hh"
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 /** struct representing vm_area_struct in linux. (Linked List) */
 struct VirtMemArea {
@@ -46,5 +46,5 @@ class Vmall {
   void freeVma();
 };
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng

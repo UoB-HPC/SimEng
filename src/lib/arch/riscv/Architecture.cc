@@ -14,8 +14,7 @@ namespace riscv {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(
-    std::shared_ptr<kernel::SyscallHandler> syscallHandler)
+Architecture::Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler)
     : syscallHandler_(syscallHandler) {
   YAML::Node& config = Config::get();
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
@@ -261,7 +260,7 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
 
 // Left blank as no implementation necessary
 void Architecture::updateAfterContextSwitch(
-    const simeng::kernel::cpuContext& context) const {}
+    const simeng::OS::cpuContext& context) const {}
 
 }  // namespace riscv
 }  // namespace arch

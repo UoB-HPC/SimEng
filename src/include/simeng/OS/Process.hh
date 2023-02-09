@@ -4,7 +4,7 @@
 
 #include "simeng/Config.hh"
 #include "simeng/Elf.hh"
-#include "simeng/kernel/MemRegion.hh"
+#include "simeng/OS/MemRegion.hh"
 
 namespace simeng {
 
@@ -13,7 +13,7 @@ namespace memory {
 class Mem;
 };
 
-namespace kernel {
+namespace OS {
 
 // TODO : Move to more appropriate class (SimOS).
 /** The page size of the process memory. */
@@ -155,5 +155,5 @@ class Process {
   uint64_t TID_;
 };
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng
