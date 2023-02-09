@@ -52,7 +52,7 @@ class Core : public simeng::Core {
 
   /** Communicate the result of a syscall to the core's active exception
    * handler for post-processing. */
-  void recieveSyscallResult(const OS::SyscallResult result) const override;
+  void receiveSyscallResult(const OS::SyscallResult result) const override;
 
   /** Retrieve the number of instructions retired. */
   uint64_t getInstructionsRetiredCount() const override;
@@ -88,6 +88,8 @@ class Core : public simeng::Core {
   /** Process the active exception. */
   void processException();
 
+  /** Create an instance of the exception handler based on the chosen
+   * architecture. */
   void exceptionHandlerFactory(std::string isa) {
     if (isa == "AArch64")
       exceptionHandler_ =

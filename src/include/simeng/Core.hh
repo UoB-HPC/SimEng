@@ -71,7 +71,7 @@ class Core {
 
   /** Communicate the result of a syscall to the core's active exception
    * handler for post-processing. */
-  virtual void recieveSyscallResult(const OS::SyscallResult result) const = 0;
+  virtual void receiveSyscallResult(const OS::SyscallResult result) const = 0;
 
   /** Retrieve the number of instructions retired. */
   virtual uint64_t getInstructionsRetiredCount() const = 0;

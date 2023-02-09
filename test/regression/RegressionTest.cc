@@ -38,7 +38,7 @@ void RegressionTest::run(const char* source, const char* triple,
   // syscall to the Syscall Handler
   simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory_);
   std::function<void(const simeng::OS::SyscallInfo)> syscallHandle =
-      [OS](auto syscallInfo) { return OS.recieveSyscall(syscallInfo); };
+      [OS](auto syscallInfo) { return OS.receiveSyscall(syscallInfo); };
 
   // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place

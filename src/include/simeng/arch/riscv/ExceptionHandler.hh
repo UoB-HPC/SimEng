@@ -60,7 +60,7 @@ class ExceptionHandler : public simeng::ExceptionHandler {
   /** The core model object. */
   const Core& core_;
 
-  /** Whether an active syscall result has been recieved. */
+  /** Whether an active syscall result has been received. */
   bool syscallReturned_ = false;
 
   /** The results of a syscall. */
