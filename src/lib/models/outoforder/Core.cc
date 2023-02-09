@@ -399,7 +399,7 @@ void Core::sendSyscall(const OS::SyscallInfo syscallInfo) const {
   syscallHandle_(syscallInfo);
 }
 
-void Core::recieveSyscallResult(const OS::SyscallResult result) const {
+void Core::receiveSyscallResult(const OS::SyscallResult result) const {
   exceptionHandler_->processSyscallResult(result);
 }
 

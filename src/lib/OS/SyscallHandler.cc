@@ -22,7 +22,7 @@ SyscallHandler::SyscallHandler(
   resumeHandling_ = [this]() { initSyscall(); };
 }
 
-void SyscallHandler::recordSyscall(const SyscallInfo info) {
+void SyscallHandler::receiveSyscall(const SyscallInfo info) {
   syscallQueue_.push(info);
 }
 
@@ -393,7 +393,7 @@ void SyscallHandler::initSyscall() {
     }
     case 113: {  // clock_gettime
       uint64_t clkId = info.R0.get<uint64_t>();
-      uint64_t systemTimer = getSystemTime_();
+      uint64_t systemTimer = OS_.getSystemTimer();
 
       uint64_t seconds;
       uint64_t nanoseconds;
@@ -470,7 +470,7 @@ void SyscallHandler::initSyscall() {
     case 169: {  // gettimeofday
       uint64_t tvPtr = info.R0.get<uint64_t>();
       uint64_t tzPtr = info.R1.get<uint64_t>();
-      uint64_t systemTimer = getSystemTime_();
+      uint64_t systemTimer = OS_.getSystemTimer();
 
       OS::timeval tv;
       OS::timeval tz;
@@ -751,8 +751,8 @@ void SyscallHandler::readLinkAt(span<char> path) {
 }
 
 void SyscallHandler::concludeSyscall(ProcessStateChange change, bool fatal) {
-  returnSyscall_({fatal, syscallQueue_.front().syscallId,
-                  syscallQueue_.front().coreId, change});
+  OS_.sendSyscallResult({fatal, syscallQueue_.front().syscallId,
+                         syscallQueue_.front().coreId, change});
   // Remove syscall from queue and reset handler to default state
   syscallQueue_.pop();
   dataBuffer_ = {};

@@ -172,11 +172,13 @@ class SyscallHandler {
   /** Tick the syscall handler to carry out any oustanding syscalls. */
   void tick();
 
-  /** Initialise a syscall from the front of the syscallQueue_ queue. */
+  /** Initialise the processing of the syscall at the front of the syscallQueue_
+   * queue. */
   void initSyscall();
 
-  /** Records the incoming syscall for later processing. */
-  void recordSyscall(const SyscallInfo info);
+  /** Add the incoming syscall to the syscallQueue_ queue for later processing.
+   */
+  void receiveSyscall(const SyscallInfo info);
 
   /** Once the syscall is deemed complete, conclude its execution by
    * constructing a SyscallResult and supplying it to the returnSyscall_

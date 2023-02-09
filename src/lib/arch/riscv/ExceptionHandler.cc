@@ -83,7 +83,7 @@ bool ExceptionHandler::initException() {
         return false;
       }
       case 160: {  // uname
-        // Uname return can be core dependent, thus don;t hand over to more
+        // Uname return can be core dependent, thus don't hand over to more
         // generic syscall handler.
         const uint64_t base = registerFileSet.get(R0).get<uint64_t>();
         const uint8_t len =
