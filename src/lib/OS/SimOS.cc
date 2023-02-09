@@ -15,7 +15,8 @@ SimOS::SimOS(std::string executablePath,
       memory_(mem),
       syscallHandler_(std::make_shared<SyscallHandler>(
           processes_, std::make_shared<simeng::FlatMemoryInterface>(mem),
-          *this)) {
+          [this](auto result) { sendSyscallResult(result); },
+          [this]() { return getSystemTimer(); })) {
   createInitialProcess();
 
   // Create the Special Files directory if indicated to do so in Config file

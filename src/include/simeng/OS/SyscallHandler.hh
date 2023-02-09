@@ -32,9 +32,6 @@ static constexpr uint16_t PATH_MAX_LEN = 4096;
 namespace simeng {
 namespace OS {
 
-// Forward delare everything needed for SimOS
-class SimOS;
-
 /** Fixed-width definition of `stat`.
  * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
 struct stat {
