@@ -1,6 +1,5 @@
 #include "simeng/OS/SyscallHandler.hh"
 
-#include "simeng/OS/SimOS.hh"
 namespace simeng {
 namespace OS {
 
@@ -393,7 +392,7 @@ void SyscallHandler::initSyscall() {
     }
     case 113: {  // clock_gettime
       uint64_t clkId = info.R0.get<uint64_t>();
-      uint64_t systemTimer = OS_.getSystemTimer();
+      uint64_t systemTimer = getSystemTime_();
 
       uint64_t seconds;
       uint64_t nanoseconds;
@@ -470,7 +469,7 @@ void SyscallHandler::initSyscall() {
     case 169: {  // gettimeofday
       uint64_t tvPtr = info.R0.get<uint64_t>();
       uint64_t tzPtr = info.R1.get<uint64_t>();
-      uint64_t systemTimer = OS_.getSystemTimer();
+      uint64_t systemTimer = getSystemTime_();
 
       OS::timeval tv;
       OS::timeval tz;
@@ -540,7 +539,7 @@ void SyscallHandler::initSyscall() {
       // returned by munmap are in accordance with the munmap specification,
       // so in case a negative value is returned it will remain the same.
       result = result >= 0 ? 0 : result;
-      stateChange = {ChangeType::REPLACEMENT, {info.R0}, {result}};
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {result}};
       break;
     }
     case 222: {  // mmap
@@ -554,9 +553,9 @@ void SyscallHandler::initSyscall() {
       uint64_t result = mmap(addr, length, prot, flags, fd, offset);
       if (result <= 0) {
         stateChange = {
-            ChangeType::REPLACEMENT, {info.R0}, {static_cast<int64_t>(-1)}};
+            ChangeType::REPLACEMENT, {info.ret}, {static_cast<int64_t>(-1)}};
       } else {
-        stateChange = {ChangeType::REPLACEMENT, {info.R0}, {result}};
+        stateChange = {ChangeType::REPLACEMENT, {info.ret}, {result}};
       }
       break;
     }
@@ -569,7 +568,7 @@ void SyscallHandler::initSyscall() {
     case 235: {  // mbind
       // mbind is not supported due to all binaries being single threaded.
       // Always return zero to indicate success
-      stateChange = {ChangeType::REPLACEMENT, {info.R0}, {0ull}};
+      stateChange = {ChangeType::REPLACEMENT, {info.ret}, {0ull}};
       break;
     }
     case 261: {  // prlimit64
@@ -751,8 +750,8 @@ void SyscallHandler::readLinkAt(span<char> path) {
 }
 
 void SyscallHandler::concludeSyscall(ProcessStateChange change, bool fatal) {
-  OS_.sendSyscallResult({fatal, syscallQueue_.front().syscallId,
-                         syscallQueue_.front().coreId, change});
+  returnSyscall_({fatal, syscallQueue_.front().syscallId,
+                  syscallQueue_.front().coreId, change});
   // Remove syscall from queue and reset handler to default state
   syscallQueue_.pop();
   dataBuffer_ = {};
@@ -771,7 +770,7 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
     // If absolute path used then dfd is dis-regarded. Otherwise need to see if
     // fd exists for directory referenced
     if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      auto entry = os_->getProcess(0)->fdArray_->getFDEntry(dfd);
+      auto entry = processes_.find(0)->second->fdArray_->getFDEntry(dfd);
       if (!entry.isValid()) {
         return -1;
       }
@@ -805,7 +804,7 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
 }
 
 int64_t SyscallHandler::brk(uint64_t address) {
-  return os_->getProcess(0)->getMemRegion().updateBrkRegion(address);
+  return processes_.find(0)->second->getMemRegion().updateBrkRegion(address);
 }
 
 uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
@@ -828,7 +827,7 @@ uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
 }
 
 int64_t SyscallHandler::ftruncate(uint64_t fd, uint64_t length) {
-  auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -861,7 +860,7 @@ int64_t SyscallHandler::close(int64_t fd) {
   // Don't close STDOUT or STDERR otherwise no SimEng output is given
   // afterwards. This includes final results given at the end of execution
   if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-    return os_->getProcess(0)->fdArray_->removeFDEntry(fd);
+    return processes_.find(0)->second->fdArray_->removeFDEntry(fd);
   }
 
   // Return success if STDOUT or STDERR is closed to allow execution to
@@ -920,7 +919,7 @@ int64_t SyscallHandler::newfstatat(int64_t dfd, const std::string& filename,
 }
 
 int64_t SyscallHandler::fstat(int64_t fd, stat& out) {
-  auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1018,7 +1017,7 @@ int64_t SyscallHandler::gettimeofday(uint64_t systemTimer, timeval* tv,
 
 int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
                               std::vector<char>& out) {
-  auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1053,7 +1052,7 @@ int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
 }
 
 uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
-  auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1062,12 +1061,12 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 }
 
 int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
-  return os_->getProcess(0)->getMemRegion().unmapRegion(addr, length);
+  return processes_.find(0)->second->getMemRegion().unmapRegion(addr, length);
 }
 
 int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                              int fd, off_t offset) {
-  auto process = os_->getProcess(0);
+  auto process = processes_.find(0)->second;
   HostFileMMap hostfile;
 
   if (fd > 0) {
@@ -1135,14 +1134,14 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
   int64_t dirfd = SyscallHandler::getDirFd(dfd, filename);
   if (dirfd == -1) return EBADF;
 
-  auto proc = os_->getProcess(0);
+  auto proc = processes_.find(0)->second;
   return proc->fdArray_->allocateFDEntry(dirfd, new_pathname.c_str(), newFlags,
                                          mode);
 }
 
 int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
                                    char* buf, size_t bufsize) const {
-  auto process = os_->getProcess(0);
+  auto process = processes_.find(0)->second;
   if (pathname == "/proc/self/exe") {
     // Copy executable path to buffer
     // TODO: resolve path into canonical path
@@ -1155,7 +1154,7 @@ int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
 }
 
 int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
-  auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1211,7 +1210,7 @@ int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
-  auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1220,7 +1219,7 @@ int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
-  auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1247,12 +1246,12 @@ int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
   return 0;
 }
 int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
-  os_->getProcess(0)->clearChildTid_ = tidptr;
+  OS_->getProcess(currentInfo_.threadId)->clearChildTid_ = tidptr;
   return 0;
 }
 
 int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
-  auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1261,7 +1260,7 @@ int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
-  auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }

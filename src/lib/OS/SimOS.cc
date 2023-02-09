@@ -356,12 +356,12 @@ uint64_t SimOS::getSystemTimer() const {
          ((config_["Core"]["Clock-Frequency"].as<float>() * 1e9) / 1e9);
 }
 
-void SimOS::recieveSyscall(const SyscallInfo syscallInfo) const {
-  syscallHandler_->recordSyscall(syscallInfo);
+void SimOS::receiveSyscall(const SyscallInfo syscallInfo) const {
+  syscallHandler_->receiveSyscall(syscallInfo);
 };
 
-void SimOS::sendSyscallResult(const SyscallResult result) {
-  cores_[0]->recieveSyscallResult(result);
+void SimOS::sendSyscallResult(SyscallResult result) const {
+  cores_[0]->receiveSyscallResult(result);
 }
 
 }  // namespace OS
