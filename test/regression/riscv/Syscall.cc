@@ -181,7 +181,7 @@ TEST_P(Syscall, faccessat) {
   // Delete output file after running test
   unlink(filepath);
 
-  char abs_filepath[LINUX_PATH_MAX];
+  char abs_filepath[PATH_MAX_LEN];
   realpath(SIMENG_RISCV_TEST_ROOT "/data/input.txt", abs_filepath);
   initialHeapData_.resize(strlen(abs_filepath) + 1);
   // Copy abs_filepath to heap
@@ -207,7 +207,7 @@ TEST_P(Syscall, faccessat) {
 
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
-  char dirPath[LINUX_PATH_MAX];
+  char dirPath[PATH_MAX_LEN];
   realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
 
   initialHeapData_.resize(strlen(dirPath) + strlen(file) + 2);
@@ -746,7 +746,7 @@ TEST_P(Syscall, newfstatat) {
 
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
-  char dirPath[LINUX_PATH_MAX];
+  char dirPath[PATH_MAX_LEN];
   realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
 
   initialHeapData_.resize(128 + strlen(dirPath) + strlen(file) + 2);

@@ -67,9 +67,9 @@ bool ExceptionHandler::init() {
         // flag component not used, although function definition includes it
         int64_t flag = 0;
 
-        char* filename = new char[LINUX_PATH_MAX];
+        char* filename = new char[PATH_MAX_LEN];
         return readStringThen(
-            filename, filenamePtr, LINUX_PATH_MAX, [=](auto length) {
+            filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
               // Invoke the syscall handler
               int64_t retval =
                   sysHandler_->faccessat(dfd, filename, mode, flag);
@@ -86,9 +86,9 @@ bool ExceptionHandler::init() {
         int64_t flags = registerFileSet.get(R2).get<int64_t>();
         uint16_t mode = registerFileSet.get(R3).get<uint16_t>();
 
-        char* pathname = new char[LINUX_PATH_MAX];
+        char* pathname = new char[PATH_MAX_LEN];
         return readStringThen(
-            pathname, pathnamePtr, LINUX_PATH_MAX, [=](auto length) {
+            pathname, pathnamePtr, PATH_MAX_LEN, [=](auto length) {
               // Invoke the syscall handler
               uint64_t retval =
                   sysHandler_->openat(dirfd, pathname, flags, mode);
@@ -320,8 +320,8 @@ bool ExceptionHandler::init() {
         const auto pathnameAddress = registerFileSet.get(R1).get<uint64_t>();
 
         // Copy string at `pathnameAddress`
-        auto pathname = new char[LINUX_PATH_MAX];
-        return readStringThen(pathname, pathnameAddress, LINUX_PATH_MAX,
+        auto pathname = new char[PATH_MAX_LEN];
+        return readStringThen(pathname, pathnameAddress, PATH_MAX_LEN,
                               [this, pathname](auto length) {
                                 // Pass the string `readLinkAt`, then destroy
                                 // the buffer and resolve the handler.
@@ -336,9 +336,9 @@ bool ExceptionHandler::init() {
         uint64_t statbufPtr = registerFileSet.get(R2).get<uint64_t>();
         int64_t flag = registerFileSet.get(R3).get<int64_t>();
 
-        char* filename = new char[LINUX_PATH_MAX];
+        char* filename = new char[PATH_MAX_LEN];
         return readStringThen(
-            filename, filenamePtr, LINUX_PATH_MAX, [=](auto length) {
+            filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
               // Invoke the syscall handler
               OS::stat statOut;
               uint64_t retval =
@@ -774,9 +774,9 @@ bool ExceptionHandler::readStringThen(char* buffer, uint64_t address,
 }
 
 void ExceptionHandler::readLinkAt(span<char> path) {
-  if (path.size() == LINUX_PATH_MAX) {
-    // TODO: Handle LINUX_PATH_MAX case
-    std::cout << "\n[SimEng:ExceptionHandler] Path exceeds LINUX_PATH_MAX"
+  if (path.size() == PATH_MAX_LEN) {
+    // TODO: Handle PATH_MAX_LEN case
+    std::cout << "\n[SimEng:ExceptionHandler] Path exceeds PATH_MAX_LEN"
               << std::endl;
     fatal();
     return;
@@ -787,7 +787,7 @@ void ExceptionHandler::readLinkAt(span<char> path) {
   const auto bufAddress = registerFileSet.get(R2).get<uint64_t>();
   const auto bufSize = registerFileSet.get(R3).get<uint64_t>();
 
-  char buffer[LINUX_PATH_MAX];
+  char buffer[PATH_MAX_LEN];
   auto result = sysHandler_->readlinkat(dirfd, path.data(), buffer, bufSize);
 
   if (result < 0) {

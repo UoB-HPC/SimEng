@@ -25,7 +25,7 @@
 #include "simeng/OS/Process.hh"
 #include "simeng/version.hh"
 
-#define LINUX_PATH_MAX 4096
+static constexpr uint16_t PATH_MAX_LEN = 4096;
 
 namespace simeng {
 namespace OS {
@@ -103,8 +103,8 @@ struct linux_dirent64 {
   char* d_name;       // Filename (null-terminated)
 };
 
-/** A Linux kernel syscall emulation implementation, which mimics the responses
-   to Linux system calls. */
+/** A Linux kernel syscall emulation implementation, which mimics the
+   responses to Linux system calls. */
 class SyscallHandler {
  public:
   /** Create a new SyscallHandler object. */
@@ -124,8 +124,8 @@ class SyscallHandler {
   /** ftruncate syscall: truncate a file to an exact size. */
   int64_t ftruncate(uint64_t fd, uint64_t length);
 
-  /** faccessat syscall: checks whether the calling process can access the file
-   * 'pathname'. */
+  /** faccessat syscall: checks whether the calling process can access the
+   * file 'pathname'. */
   int64_t faccessat(int64_t dfd, const std::string& filename, int64_t mode,
                     int64_t flag);
 
@@ -157,8 +157,8 @@ class SyscallHandler {
 
   /** gettimeofday syscall: get the current time, using the system timer
    * `systemTimer` (with nanosecond accuracy). Returns 0 on success, and puts
-   * the seconds and microsconds elapsed since the Epoch in `tv`, while setting
-   * the elements of `tz` to 0. */
+   * the seconds and microsconds elapsed since the Epoch in `tv`, while
+   * setting the elements of `tz` to 0. */
   int64_t gettimeofday(uint64_t systemTimer, timeval* tv, timeval* tz);
 
   /** ioctl syscall: control device. */
@@ -188,7 +188,8 @@ class SyscallHandler {
   /** set a process's CPU affinity mask. */
   int64_t schedSetAffinity(pid_t pid, size_t cpusetsize, uint64_t mask);
 
-  /** set_tid_address syscall: set clear_child_tid value for calling thread. */
+  /** set_tid_address syscall: set clear_child_tid value for calling thread.
+   */
   int64_t setTidAddress(uint64_t tidptr);
 
   /** getdents64 syscall: read several linux_dirent structures from directory

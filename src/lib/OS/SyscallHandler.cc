@@ -16,7 +16,7 @@ SyscallHandler::SyscallHandler(
 // TODO : update when supporting multi-process/thread
 uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
   // Resolve absolute path to target file
-  char absolutePath[LINUX_PATH_MAX];
+  char absolutePath[PATH_MAX_LEN];
   realpath(pathname.c_str(), absolutePath);
 
   int64_t dfd_temp = AT_FDCWD;
@@ -40,16 +40,17 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
     if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
       for (int i = 0; i < supportedSpecialFiles_.size(); i++) {
         if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
-          std::cerr << "[SimEng:Linux] Using Special File: " << filename.c_str()
-                    << std::endl;
+          std::cerr << "[SimEng:SyscallHandler] Using Special File: "
+                    << filename.c_str() << std::endl;
           return specialFilesDir_ + filename;
         }
       }
-      std::cerr << "[SimEng:Linux] WARNING: unable to open unsupported "
-                   "special file: "
-                << "'" << filename.c_str() << "'" << std::endl
-                << "[SimEng:Linux]           allowing simulation to continue"
-                << std::endl;
+      std::cerr
+          << "[SimEng:SyscallHandler] WARNING: unable to open unsupported "
+             "special file: "
+          << "'" << filename.c_str() << "'" << std::endl
+          << "[SimEng:SyscallHandler]           allowing simulation to continue"
+          << std::endl;
       break;
     }
   }
