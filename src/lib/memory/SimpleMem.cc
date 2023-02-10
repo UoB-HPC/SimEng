@@ -21,18 +21,19 @@ SimpleMem::~SimpleMem() {
 size_t SimpleMem::getMemorySize() { return memSize_; }
 
 ReadResponse SimpleMem::readData(ReadRequest req) {
-  ReadResponse::data_type arr;
+  ReadResponse res{req.address_, req.size_};
+
   size_t size = req.size_;
   uint64_t addr = req.address_;
   char* startAddr = memory_.begin() + addr;
-  std::copy(startAddr, startAddr + size, arr.begin());
-  return ReadResponse{req.address_, req.size_, arr};
+  std::copy(startAddr, startAddr + size, res.data().begin());
+  return res;
 };
 
 WriteResponse SimpleMem::writeData(WriteRequest req) {
   uint64_t address = req.address_;
-  WriteRequest::data_type data = req.data();
-  std::copy(data.begin(), data.begin() + req.size_, memory_.begin() + address);
+  std::copy(req.data().begin(), req.data().begin() + req.size_,
+            memory_.begin() + address);
   return WriteResponse{req.address_, req.size_};
 };
 
@@ -48,9 +49,10 @@ char* SimpleMem::getUntimedData(uint64_t paddr, size_t size) {
 }
 
 ReadResponse SimpleMem::handleIgnoredRequest(ReadRequest req) {
-  ReadResponse::data_type arr;
-  std::copy(faultMemory_, faultMemory_ + 32, arr.begin());
-  return ReadResponse{0, req.size_, arr};
+  ReadResponse res{req.address_, req.size_};
+
+  std::copy(faultMemory_, faultMemory_ + req.size_, res.data().begin());
+  return res;
 }
 
 WriteResponse SimpleMem::handleIgnoredRequest(WriteRequest req) {

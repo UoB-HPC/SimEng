@@ -31,6 +31,7 @@ void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
 
   const char* wdata = data.getAsVector<char>();
   memory::WriteRequest req{target.address, target.size};
+
   std::copy(wdata, wdata + target.size, req.data().begin());
   mmu_->bufferRequest(req, fn);
 }

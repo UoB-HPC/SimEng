@@ -30,6 +30,7 @@ void FixedLatencyMemoryInterface::tick() {
 
       const char* wdata = request.data.getAsVector<char>();
       memory::WriteRequest req{target.address, target.size};
+
       std::copy(wdata, wdata + target.size, req.data().begin());
       mmu_->bufferRequest(req, fn);
     } else {
