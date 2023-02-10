@@ -47,8 +47,8 @@ class RegisterAliasTable {
   void free(Register physical);
 
   /** Reset the RAT to an initialised state - wipe all mappings.*/
-  void reset(std::vector<RegisterFileStructure> architecturalStructure,
-             std::vector<uint16_t> physicalRegisterCounts);
+  void reset(const std::vector<RegisterFileStructure>& architecturalStructure,
+             const std::vector<uint16_t>& physicalRegisterCounts);
 
  private:
   /** The register mapping tables. Holds a map of architectural -> physical
