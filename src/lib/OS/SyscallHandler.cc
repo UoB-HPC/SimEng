@@ -25,10 +25,10 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
     // fd exists for directory referenced
     if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
       auto entry = os_->getProcess(0)->fdArray_->getFDEntry(dfd);
-      if (entry == nullptr) {
+      if (entry.isValid()) {
         return -1;
       }
-      dfd_temp = entry->fd_;
+      dfd_temp = entry.fd();
     }
   }
   return dfd_temp;
@@ -82,10 +82,10 @@ uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
 
 int64_t SyscallHandler::ftruncate(uint64_t fd, uint64_t length) {
   auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
-  if (entry == nullptr) {
+  if (entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry->fd_;
+  int64_t hfd = entry.fd();
 
   int64_t retval = ::ftruncate(hfd, length);
   return retval;
@@ -174,10 +174,10 @@ int64_t SyscallHandler::newfstatat(int64_t dfd, const std::string& filename,
 
 int64_t SyscallHandler::fstat(int64_t fd, stat& out) {
   auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
-  if (entry == nullptr) {
+  if (entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry->fd_;
+  int64_t hfd = entry.fd();
 
   // Pass call through to host
   struct ::stat statbuf;
@@ -277,10 +277,10 @@ int64_t SyscallHandler::gettimeofday(uint64_t systemTimer, timeval* tv,
 int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
                               std::vector<char>& out) {
   auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
-  if (entry == nullptr) {
+  if (entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry->fd_;
+  int64_t hfd = entry.fd();
 
   switch (request) {
     case 0x5401: {  // TCGETS
@@ -311,11 +311,11 @@ int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
 }
 
 uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
-  auto entry = os_->getProcess()->fdArray_->getFDEntry(fd);
-  if (entry == nullptr) {
+  auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
+  if (entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry->fd_;
+  int64_t hfd = entry.fd();
   return ::lseek(hfd, offset, whence);
 }
 
@@ -330,11 +330,11 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
 
   if (fd > 0) {
     auto entry = process->fdArray_->getFDEntry(fd);
-    if (entry == nullptr) {
+    if (entry.isValid()) {
       std::cerr << "Invalid virtual file descriptor given to mmap" << std::endl;
       return -1;
     };
-    hostfile = os_->hfmmap_->mapfd(entry->fd_, length, offset);
+    hostfile = os_->hfmmap_->mapfd(entry.fd(), length, offset);
   }
   uint64_t ret =
       process->getMemRegion().mmapRegion(addr, length, prot, flags, hostfile);
@@ -412,10 +412,10 @@ int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
 
 int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
   auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
-  if (entry == nullptr) {
+  if (entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry->fd_;
+  int64_t hfd = entry.fd();
 
   // Need alternative implementation as not all systems support the getdents64
   // syscall
@@ -468,19 +468,19 @@ int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
 
 int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
   auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
-  if (entry == nullptr) {
+  if (entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry->fd_;
+  int64_t hfd = entry.fd();
   return ::read(hfd, buf, count);
 }
 
 int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
   auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
-  if (entry == nullptr) {
+  if (entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry->fd_;
+  int64_t hfd = entry.fd();
   return ::readv(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 
@@ -509,19 +509,19 @@ int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
 
 int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
   auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
-  if (entry == nullptr) {
+  if (entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry->fd_;
+  int64_t hfd = entry.fd();
   return ::write(hfd, buf, count);
 }
 
 int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
   auto entry = os_->getProcess(0)->fdArray_->getFDEntry(fd);
-  if (entry == nullptr) {
+  if (entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry->fd_;
+  int64_t hfd = entry.fd();
   return ::writev(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 
