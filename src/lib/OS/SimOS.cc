@@ -79,22 +79,25 @@ void SimOS::tick() {
       case CoreStatus::idle: {
         // Core is idle, schedule head of scheduledProc queue
         if (!scheduledProcs_.empty()) {
+          // Get context of process that was executing on core
           OS::cpuContext prevContext = core->getPrevContext();
-          for (auto proc : processes_) {
-            if (proc->getTID() == prevContext.TID) {
-              assert((proc->status_ == procStatus::executing) &&
-                     "[SimEng:SimOS] Process updated when not in executing"
-                     "state.");
-              // Only update values which will have changed
-              proc->context_.pc = prevContext.pc;
-              proc->context_.regFile = prevContext.regFile;
-              // Change status from Executing to Waiting
-              proc->status_ = procStatus::waiting;
-              waitingProcs_.push(proc);
-              break;
-            }
+          // Core's stored TID will equal -1 if no process has been previously
+          // scheduled (i.e. on first tick of simulation)
+          if (prevContext.TID != -1) {
+            // Find the corresponding process in map
+            auto proc = getProcess(prevContext.TID);
+            assert(
+                (proc->second->status_ == procStatus::executing) &&
+                "[SimEng:SimOS] Process updated when not in executing state.");
+            // Only update values which have changed
+            proc->context_.pc = prevContext.pc;
+            proc->context_.regFile = prevContext.regFile;
+            // Change status from Executing to Waiting
+            proc->status_ = procStatus::waiting;
+            waitingProcs_.push(proc);
           }
-          // Schedule process on core
+
+          // Schedule new process on core
           core->schedule(scheduledProcs_.front()->context_);
           // Update newly scheduled process' status
           scheduledProcs_.front()->status_ = procStatus::executing;
@@ -126,15 +129,14 @@ void SimOS::tick() {
 }
 
 std::shared_ptr<Process> SimOS::getProcess(uint64_t TID) const {
-  for (auto i : processes_) {
-    if (i->getTID() == TID) {
-      return i;
-    }
+  auto proc = processes_.find(TID);
+  if (proc == processes_.end()) {
+    // If TID doesn't exist then hard exit
+    std::cerr << "[SimEng:SimOS] ERROR : Process with TID `" << TID
+              << "` does not exist.\n";
+    exit(1);
   }
-  // If TID doesn't exist then hard exit
-  std::cerr << "[SimEng:SimOS] ERROR : Process with TID `" << TID
-            << "` does not exist.\n";
-  exit(1);
+  return proc->second;
 }
 
 void SimOS::createInitialProcess() {
@@ -162,8 +164,8 @@ void SimOS::createInitialProcess() {
     commandLine.insert(commandLine.end(), executableArgs_.begin(),
                        executableArgs_.end());
 
-    processes_.emplace_back(std::make_shared<Process>(commandLine, memory_,
-                                                      regFileStructure, 0, 0));
+    processes_.emplace(0, std::make_shared<Process>(commandLine, memory_,
+                                                    regFileStructure, 0, 0));
 
     // Raise error if created process is not valid
     if (!processes_[0]->isValid()) {
@@ -173,9 +175,10 @@ void SimOS::createInitialProcess() {
     }
   } else {
     // Create a process image from the set of instructions held in hex_
-    processes_.emplace_back(std::make_shared<Process>(
-        simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-        memory_, regFileStructure, 0, 0));
+    processes_.emplace(
+        0, std::make_shared<Process>(
+               simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
+               memory_, regFileStructure, 0, 0));
 
     // Raise error if created process is not valid
     if (!processes_[0]->isValid()) {

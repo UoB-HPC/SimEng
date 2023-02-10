@@ -2,6 +2,7 @@
 
 #include <string>
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 #include "simeng/Config.hh"
@@ -83,7 +84,9 @@ class SimOS {
   std::vector<std::string> executableArgs_ = {};
 
   /** The list of user-space processes running above the OS kernel. */
-  std::vector<std::shared_ptr<Process>> processes_ = {};
+  // std::vector<std::shared_ptr<Process>> processes_ = {};
+
+  std::unordered_map<uint64_t, std::shared_ptr<Process>> processes_ = {};
 
   /** Queue of processes waiting to be scheduled. */
   std::queue<std::shared_ptr<Process>> waitingProcs_ = {};

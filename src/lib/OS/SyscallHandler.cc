@@ -4,7 +4,7 @@ namespace simeng {
 namespace OS {
 
 SyscallHandler::SyscallHandler(
-    const std::vector<std::shared_ptr<Process>>& processes)
+    const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes)
     : processes_(processes) {
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
@@ -25,8 +25,8 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
     // If absolute path used then dfd is dis-regarded. Otherwise need to see if
     // fd exists for directory referenced
     if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      assert(dfd < processes_[0]->fileDescriptorTable_.size());
-      dfd_temp = processes_[0]->fileDescriptorTable_[dfd];
+      assert(dfd < processes_.find(0)->second->fileDescriptorTable_.size());
+      dfd_temp = processes_.find(0)->second->fileDescriptorTable_[dfd];
       if (dfd_temp < 0) {
         return -1;
       }
@@ -60,7 +60,7 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
 int64_t SyscallHandler::brk(uint64_t address) {
   assert(processes_.size() > 0 &&
          "Attempted to move the program break before creating a process");
-  return processes_[0]->getMemRegion().updateBrkRegion(address);
+  return processes_.find(0)->second->getMemRegion().updateBrkRegion(address);
 }
 
 uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
@@ -83,8 +83,8 @@ uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
 }
 
 int64_t SyscallHandler::ftruncate(uint64_t fd, uint64_t length) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
+  assert(fd < processes_.find(0)->second->fileDescriptorTable_.size());
+  int64_t hfd = processes_.find(0)->second->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -116,16 +116,16 @@ int64_t SyscallHandler::close(int64_t fd) {
   // Don't close STDOUT or STDERR otherwise no SimEng output is given
   // afterwards. This includes final results given at the end of execution
   if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-    assert(fd < processes_[0]->fileDescriptorTable_.size());
-    int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
+    assert(fd < processes_.find(0)->second->fileDescriptorTable_.size());
+    int64_t hfd = processes_.find(0)->second->fileDescriptorTable_[fd];
     if (hfd < 0) {
       return EBADF;
     }
 
     // Deallocate the virtual file descriptor
-    assert(processes_[0]->freeFileDescriptors_.count(fd) == 0);
-    processes_[0]->freeFileDescriptors_.insert(fd);
-    processes_[0]->fileDescriptorTable_[fd] = -1;
+    assert(processes_.find(0)->second->freeFileDescriptors_.count(fd) == 0);
+    processes_.find(0)->second->freeFileDescriptors_.insert(fd);
+    processes_.find(0)->second->fileDescriptorTable_[fd] = -1;
 
     return ::close(hfd);
   }
@@ -185,8 +185,8 @@ int64_t SyscallHandler::newfstatat(int64_t dfd, const std::string& filename,
 }
 
 int64_t SyscallHandler::fstat(int64_t fd, stat& out) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
+  assert(fd < processes_.find(0)->second->fileDescriptorTable_.size());
+  int64_t hfd = processes_.find(0)->second->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -286,8 +286,8 @@ int64_t SyscallHandler::gettimeofday(uint64_t systemTimer, timeval* tv,
 
 int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
                               std::vector<char>& out) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
+  assert(fd < processes_.find(0)->second->fileDescriptorTable_.size());
+  int64_t hfd = processes_.find(0)->second->fileDescriptorTable_[fd];
 
   if (hfd < 0) {
     return EBADF;
@@ -322,8 +322,8 @@ int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
 }
 
 uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
+  assert(fd < processes_.find(0)->second->fileDescriptorTable_.size());
+  int64_t hfd = processes_.find(0)->second->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -331,13 +331,14 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 }
 
 int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
-  return processes_[0]->getMemRegion().unmapRegion(addr, length, 0, 0, 0);
+  return processes_.find(0)->second->getMemRegion().unmapRegion(addr, length, 0,
+                                                                0, 0);
 }
 
 uint64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                               int fd, off_t offset) {
-  return processes_[0]->getMemRegion().mmapRegion(addr, length, fd, prot,
-                                                  flags);
+  return processes_.find(0)->second->getMemRegion().mmapRegion(addr, length, fd,
+                                                               prot, flags);
 }
 
 int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
@@ -396,7 +397,7 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
     return hfd;
   }
 
-  std::shared_ptr<Process> proc = processes_[0];
+  std::shared_ptr<Process> proc = processes_.find(0)->second;
 
   // Allocate virtual file descriptor and map to host file descriptor
   int64_t vfd;
@@ -419,9 +420,9 @@ int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
   if (pathname == "/proc/self/exe") {
     // Copy executable path to buffer
     // TODO: resolve path into canonical path
-    std::strncpy(buf, processes_[0]->getPath().c_str(), bufsize);
+    std::strncpy(buf, processes_.find(0)->second->getPath().c_str(), bufsize);
 
-    return std::min(processes_[0]->getPath().length(), bufsize);
+    return std::min(processes_.find(0)->second->getPath().length(), bufsize);
   }
 
   // TODO: resolve symbolic link for other paths
@@ -429,8 +430,8 @@ int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
 }
 
 int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
+  assert(fd < processes_.find(0)->second->fileDescriptorTable_.size());
+  int64_t hfd = processes_.find(0)->second->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -485,8 +486,8 @@ int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
+  assert(fd < processes_.find(0)->second->fileDescriptorTable_.size());
+  int64_t hfd = processes_.find(0)->second->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -494,8 +495,8 @@ int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
+  assert(fd < processes_.find(0)->second->fileDescriptorTable_.size());
+  int64_t hfd = processes_.find(0)->second->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -522,14 +523,14 @@ int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
 }
 int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
   assert(processes_.size() > 0);
-  processes_[0]->clearChildTid = tidptr;
+  processes_.find(0)->second->clearChildTid = tidptr;
   // TODO : Support multiple PIDs
   return 0;
 }
 
 int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
+  assert(fd < processes_.find(0)->second->fileDescriptorTable_.size());
+  int64_t hfd = processes_.find(0)->second->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }
@@ -537,8 +538,8 @@ int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
-  assert(fd < processes_[0]->fileDescriptorTable_.size());
-  int64_t hfd = processes_[0]->fileDescriptorTable_[fd];
+  assert(fd < processes_.find(0)->second->fileDescriptorTable_.size());
+  int64_t hfd = processes_.find(0)->second->fileDescriptorTable_[fd];
   if (hfd < 0) {
     return EBADF;
   }

@@ -108,7 +108,8 @@ struct linux_dirent64 {
 class SyscallHandler {
  public:
   /** Create a new SyscallHandler object. */
-  SyscallHandler(const std::vector<std::shared_ptr<Process>>& processes);
+  SyscallHandler(
+      const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes);
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */
@@ -218,7 +219,7 @@ class SyscallHandler {
   std::string getSpecialFile(const std::string filename);
 
   /** The user-space processes running above the kernel. */
-  const std::vector<std::shared_ptr<Process>>& processes_;
+  const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes_;
 
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
