@@ -27,10 +27,10 @@ class PageTable {
   IgnoredAddrRange ignored_ = std::pair<uint64_t, uint64_t>(0, 0);
 
   /** Method which creates a single page mapping between vaddr and paddr. */
-  uint64_t allocatePTEntry(uint64_t alignedVAddr, uint64_t physAddr);
+  void allocatePTEntry(uint64_t alignedVAddr, uint64_t physAddr);
 
   /** Method which delete a single page mapping. */
-  uint64_t deletePTEntry(PageTable::TableItr itr);
+  void deletePTEntry(PageTable::TableItr itr);
 
   /** Method which calculates the offset for vaddr to be added to base paddr. */
   uint64_t calculateOffset(uint64_t vaddr);

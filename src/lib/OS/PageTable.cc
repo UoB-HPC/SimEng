@@ -25,16 +25,11 @@ void PageTable::ignoreAddrRange(uint64_t startAddr, uint64_t endAddr) {
   return;
 };
 
-uint64_t PageTable::allocatePTEntry(uint64_t alignedVAddr, uint64_t phyAddr) {
+void PageTable::allocatePTEntry(uint64_t alignedVAddr, uint64_t phyAddr) {
   table_.insert(std::pair<uint64_t, uint64_t>(alignedVAddr, phyAddr));
-  return alignedVAddr;
 };
 
-uint64_t PageTable::deletePTEntry(PageTable::TableItr itr) {
-  uint64_t addr = itr->second;
-  table_.erase(itr);
-  return addr;
-};
+void PageTable::deletePTEntry(PageTable::TableItr itr) { table_.erase(itr); };
 
 uint64_t PageTable::calculateOffset(uint64_t vaddr) {
   uint64_t mask = 0xFFF;
@@ -68,7 +63,7 @@ uint64_t PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
 
   addr = vaddr;
   while (size > 0) {
-    addr = allocatePTEntry(addr, basePhyAddr);
+    allocatePTEntry(addr, basePhyAddr);
     addr += pageSize_;
     size -= pageSize_;
     basePhyAddr += pageSize_;
