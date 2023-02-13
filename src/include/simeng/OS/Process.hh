@@ -144,7 +144,7 @@ class Process {
   std::shared_ptr<PageTable>& getPageTable() { return pageTable_; }
 
   /** Shared pointer to FileDescArray class.*/
-  std::shared_ptr<FileDescArray> fdArray_;
+  std::unique_ptr<FileDescArray> fdArray_;
 
   // Thread state
   // TODO: Support multiple threads per process

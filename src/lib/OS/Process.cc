@@ -120,7 +120,7 @@ Process::Process(const std::vector<std::string>& commandLine,
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
                          stackStart, heapStart, mmapStart, stackPtr, unmapFn);
 
-  fdArray_ = std::make_shared<FileDescArray>();
+  fdArray_ = std::make_unique<FileDescArray>();
   // Initialise context
   context_.TID = TID_;
   context_.pc = entryPoint_;
@@ -195,7 +195,7 @@ Process::Process(span<char> instructions,
   uint64_t taddr = pageTable_->translate(0);
   memory->sendUntimedData(instructions.begin(), taddr, instructions.size());
 
-  fdArray_ = std::make_shared<FileDescArray>();
+  fdArray_ = std::make_unique<FileDescArray>();
 
   // Initialise context
   context_.TID = TID_;
