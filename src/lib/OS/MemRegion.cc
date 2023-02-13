@@ -49,7 +49,7 @@ uint64_t MemRegion::getMmapStart() const { return mmapStart_; }
 uint64_t MemRegion::getMemSize() const { return memSize_; }
 
 uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
-  newBrk = roundUpMemAddr(newBrk, 8);
+  newBrk = upAlign(newBrk, 8);
   if (newBrk < heapStart_) {
     return brk_;
   }
@@ -217,13 +217,13 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
     std::exit(1);
   }
   // Always use pageSize aligned sizes.
-  uint64_t size = roundUpMemAddr(length, page_size);
+  uint64_t size = upAlign(length, page_size);
 
   // Check if provided hint address exists in VMA region or overlaps with heap
   // or stack regions.
   bool mapped = false;
   if (startAddr) {
-    startAddr = roundUpMemAddr(startAddr, page_size);
+    startAddr = upAlign(startAddr, page_size);
     if (overlapsHeap(startAddr, size) || overlapsStack(startAddr, size)) {
       std::cerr << "Provided hint overlaps with Stack and Heap region"
                 << std::endl;
@@ -260,8 +260,8 @@ int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
     return -1;
   };
 
-  uint64_t size = roundUpMemAddr(length, page_size);
-  addr = roundDownMemAddr(addr, page_size);
+  uint64_t size = upAlign(length, page_size);
+  addr = downAlign(addr, page_size);
   uint64_t value = removeVma(addr, size);
 
   unmapPageTable_(addr, size);

@@ -43,15 +43,15 @@ Process::Process(const std::vector<std::string>& commandLine,
   entryPoint_ = elf.getEntryPoint();
   auto headers = elf.getProcessedHeaders();
 
-  uint64_t maxInitDataAddr = roundUpMemAddr(elf.getElfImageSize(), page_size);
+  uint64_t maxInitDataAddr = upAlign(elf.getElfImageSize(), page_size);
   uint64_t minHeaderAddr = ~0;
 
   for (auto header : headers) {
     // Round size up to page aligned value.
-    size_t size = roundUpMemAddr(header.memorySize, page_size);
+    size_t size = upAlign(header.memorySize, page_size);
     uint64_t vaddr = header.virtualAddress;
     // Round vaddr down to page aligned value.
-    uint64_t avaddr = roundDownMemAddr(vaddr, page_size);
+    uint64_t avaddr = downAlign(vaddr, page_size);
     // Request a page frame from the OS.
     uint64_t paddr = os_->requestPageFrames(size);
     // Create a virtual memory mapping.
@@ -80,7 +80,7 @@ Process::Process(const std::vector<std::string>& commandLine,
   // Add Page Size padding
   maxInitDataAddr += page_size;
   // Heap grows upwards towards higher addresses.
-  heapSize = roundUpMemAddr(heapSize, page_size);
+  heapSize = upAlign(heapSize, page_size);
   uint64_t heapStart = maxInitDataAddr;
   uint64_t heapEnd = heapStart + heapSize;
 
@@ -90,7 +90,7 @@ Process::Process(const std::vector<std::string>& commandLine,
   uint64_t mmapEnd = mmapStart + mmapSize;
 
   // Stack grows downwards towards lower addresses.
-  stackSize = roundUpMemAddr(stackSize, page_size);
+  stackSize = upAlign(stackSize, page_size);
   uint64_t stackEnd = mmapEnd + page_size;
   uint64_t stackStart = stackEnd + stackSize;
   uint64_t size = stackStart;
@@ -154,11 +154,11 @@ Process::Process(span<char> instructions,
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
 
-  uint64_t instrSize = roundUpMemAddr(instructions.size(), page_size);
+  uint64_t instrSize = upAlign(instructions.size(), page_size);
   uint64_t instrEnd = instrSize;
 
   // Heap grows upwards towards higher addresses.
-  heapSize = roundUpMemAddr(heapSize, page_size);
+  heapSize = upAlign(heapSize, page_size);
   uint64_t heapStart = instrEnd + 4096;
   uint64_t heapEnd = heapStart + heapSize;
 
@@ -168,7 +168,7 @@ Process::Process(span<char> instructions,
   uint64_t mmapEnd = mmapStart + mmapSize;
 
   // Stack grows downwards towards lower addresses.
-  stackSize = roundUpMemAddr(stackSize, page_size);
+  stackSize = upAlign(stackSize, page_size);
   uint64_t stackEnd = mmapEnd + page_size;
   uint64_t stackStart = stackEnd + stackSize;
   uint64_t size = stackStart;
@@ -325,7 +325,7 @@ uint64_t Process::handlePageFault(uint64_t vaddr, SendToMemory send) {
 
   // Round down the memory address to page aligned value to create
   // a page mapping.
-  uint64_t alignedVAddr = roundDownMemAddr(vaddr, page_size);
+  uint64_t alignedVAddr = downAlign(vaddr, page_size);
 
   uint64_t paddr = os_->requestPageFrames(page_size);
   uint64_t ret = pageTable_->createMapping(alignedVAddr, paddr, page_size);
