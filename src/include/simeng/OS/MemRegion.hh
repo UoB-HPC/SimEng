@@ -22,7 +22,7 @@ class MemRegion {
       std::function<uint64_t(uint64_t, size_t)> unmapPageTable =
           [](uint64_t, size_t) -> uint64_t { return 0; });
   MemRegion(){};
-  ~MemRegion() { freeVma(); };
+  ~MemRegion() { removeVmaList(); };
 
  private:
   /** Start address of the stack. */
@@ -67,8 +67,8 @@ class MemRegion {
   /** Method to remove VMAs */
   int64_t removeVma(uint64_t addr, uint64_t length);
 
-  /** Method to remove all unremoved VMAs. */
-  void freeVma();
+  /** Method to remove the entire VmaList. */
+  void removeVmaList();
 
  public:
   /** This method returns the stack start address. */
