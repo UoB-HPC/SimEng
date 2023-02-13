@@ -129,11 +129,6 @@ class Process {
    * switching between multiple processes. */
   cpuContext context_;
 
-  void setIDS(uint64_t ID) {
-    TGID_ = ID;
-    TID_ = ID;
-  };
-
  private:
   /** Create and populate the initial process stack and return the stack
    * pointer. */
