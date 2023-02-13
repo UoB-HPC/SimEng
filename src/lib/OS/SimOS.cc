@@ -25,7 +25,7 @@ SimOS::SimOS(std::string executablePath,
     this->memory_->sendUntimedData(data, addr, size);
   };
   pageFrameAllocator_ =
-      std::make_shared<PageFrameAllocator>(mem->getMemorySize(), pageSize_);
+      std::make_shared<PageFrameAllocator>(mem->getMemorySize());
   if (!setProcess) createInitialProcess();
 
   // Create the Special Files directory if indicated to do so in Config file

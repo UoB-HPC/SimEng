@@ -4,7 +4,7 @@
 #include <variant>
 #include <vector>
 
-#include "simeng/kernel/Masks.hh"
+#include "simeng/kernel/Constants.hh"
 
 namespace TestFriends {
 class PTFriend;
@@ -13,14 +13,14 @@ class PTFriend;
 namespace simeng {
 namespace OS {
 
+using namespace simeng::kernel::defaults;
+
 class PageTable {
   friend class TestFriends::PTFriend;
   using TableItr = typename std::map<uint64_t, uint64_t>::iterator;
   using IgnoredAddrRange = std::pair<uint64_t, uint64_t>;
 
  private:
-  /** Size of each page in memory and page table entry. */
-  const uint32_t pageSize_;
   /** Map used to store virtual to physical address mappings. */
   std::map<uint64_t, uint64_t> table_;
   /** Pair used to store ignored virtual address range. */
@@ -39,7 +39,7 @@ class PageTable {
   TableItr find(uint64_t vaddr);
 
  public:
-  PageTable(uint64_t pageSize = 4096);
+  PageTable();
   ~PageTable();
   /** Method which creates size/pageSize number of mapping for vaddr & paddr. */
   uint64_t createMapping(uint64_t vaddr, uint64_t basePhyAddr, size_t size);

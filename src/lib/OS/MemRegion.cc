@@ -3,21 +3,19 @@
 #include <iostream>
 #include <vector>
 
-#include "simeng/kernel/Masks.hh"
+#include "simeng/kernel/Constants.hh"
 
 namespace simeng {
 namespace OS {
 
 MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
-                     uint64_t memSize, uint64_t pageSize, uint64_t stackStart,
-                     uint64_t heapStart, uint64_t mmapStart,
-                     uint64_t initStackPtr,
+                     uint64_t memSize, uint64_t stackStart, uint64_t heapStart,
+                     uint64_t mmapStart, uint64_t initStackPtr,
                      std::function<uint64_t(uint64_t, size_t)> unmapPageTable) {
   stackSize_ = stackSize;
   heapSize_ = heapSize;
   mmapSize_ = mmapSize;
   memSize_ = memSize;
-  pageSize_ = pageSize;
   stackStart_ = stackStart;
   stackEnd_ = stackStart + stackSize;
   heapStart_ = heapStart;
@@ -240,19 +238,19 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
   // overlaps with Heap or Stack VMA. If not, we still check whether the
   // range overlaps with any allocated VMAs if it does we need to unmap
   // those regions first.
-  uint64_t fixed = flags & MAP_FIXED;
+  uint64_t fixed = flags & syscalls::mmap::flags::map_fixed;
   if (fixed) {
     std::cerr << "MAP_FIXED flag to MMAP calls is not supported yet."
               << std::endl;
     std::exit(1);
   }
   // Always use pageSize aligned sizes.
-  uint64_t size = roundUpMemAddr(length, 4096);
+  uint64_t size = roundUpMemAddr(length, page_size);
 
   // Check if provided hint address exists in VMA region or overlaps with heap
   // or stack regions.
   if (startAddr) {
-    startAddr = roundUpMemAddr(startAddr, 4096);
+    startAddr = roundUpMemAddr(startAddr, page_size);
     if (overlapsHeap(startAddr, size) || overlapsStack(startAddr, size)) {
       std::cerr << "Provided hint overlaps with Stack and Heap region"
                 << std::endl;
@@ -290,8 +288,8 @@ int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
     return -1;
   };
 
-  uint64_t size = roundUpMemAddr(length, 4096);
-  addr = roundDownMemAddr(addr, 4096);
+  uint64_t size = roundUpMemAddr(length, page_size);
+  addr = roundDownMemAddr(addr, page_size);
   uint64_t value = removeVma(addr, size);
 
   unmapPageTable_(addr, size);

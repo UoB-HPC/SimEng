@@ -19,7 +19,7 @@ TEST(MemRegionTest, UpdateBrkRegion) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
   ASSERT_EQ(memRegion.getBrk(), 0);
   ASSERT_EQ(memRegion.updateBrkRegion(1000), 1000);
@@ -40,7 +40,7 @@ TEST(MemRegionTest, UpdateBrkRegionOnAddrGreaterThanHeapSize) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
   EXPECT_EXIT(
       { memRegion.updateBrkRegion(81925); }, ::testing::ExitedWithCode(1),
@@ -59,7 +59,7 @@ TEST(MemRegionTest, MmapRegionNoStartAddr) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -79,7 +79,7 @@ TEST(MemRegionTest, MultipleMmapRegionNoStartAddr) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -115,7 +115,7 @@ TEST(MemRegionTest, MmapRegionStartAddr) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -139,7 +139,7 @@ TEST(MemRegionTest, MmapRegionUnalignedStartAddr) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -163,7 +163,7 @@ TEST(MemRegionTest, MmapRegionAllocatesBetweenVmas) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -201,7 +201,7 @@ TEST(MemRegionTest, MmapRegionCorrectlyAllocatesOverlappingVmas) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -243,7 +243,7 @@ TEST(MemRegionTest, UnmapVmaHead) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -274,7 +274,7 @@ TEST(MemRegionTest, UnmapVmaStartGreaterThanPageSize1) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -308,7 +308,7 @@ TEST(MemRegionTest, UnmapVmaStartGreaterThanPageSize2) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -347,7 +347,7 @@ TEST(MemRegionTest, UnmapOverlappingVmaStartGreaterThanPageSize) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -387,7 +387,7 @@ TEST(MemRegionTest, UnmapContainedInMiddleOfVmaList) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -429,7 +429,7 @@ TEST(MemRegionTest, UnmapContainedVmaAndOverlapStart) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -472,7 +472,7 @@ TEST(MemRegionTest, UnmapOverlapStartAndContained) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -516,7 +516,7 @@ TEST(MemRegionTest, UnmapContained) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
@@ -560,7 +560,7 @@ TEST(MemRegionTest, UnmapContainsMiddle) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -615,7 +615,7 @@ TEST(MemRegionTest, UnmapContainsStart) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -668,7 +668,7 @@ TEST(MemRegionTest, UnmapContainsEnd) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
@@ -717,7 +717,7 @@ TEST(MemRegionTest, UnmapOverlaps) {
   // mmapEnd = 249856;
   // stackEnd = 253952;
 
-  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size, 4096,
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
   uint64_t retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);

@@ -8,14 +8,16 @@
 #include <memory>
 #include <vector>
 
+#include "simeng/kernel/Constants.hh"
 #include "simeng/util/Math.hh"
 
 namespace simeng {
 namespace OS {
 
+using namespace simeng::kernel::defaults;
+
 class HostBackedFileMMaps;
 class HostFileMMap;
-class Vmall;
 
 /**
  * class representing vm_area_struct in linux. Each VMA describes a range of

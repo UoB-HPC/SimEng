@@ -7,6 +7,7 @@
 
 #include "simeng/Config.hh"
 #include "simeng/Core.hh"
+#include "simeng/OS/Constants.hh"
 #include "simeng/OS/PageFrameAllocator.hh"
 #include "simeng/OS/SyscallHandler.hh"
 #include "simeng/OS/Vma.hh"
@@ -26,6 +27,8 @@ class RegressionTest;
 namespace simeng {
 namespace OS {
 
+using namespace simeng::kernel::defaults;
+
 // Program used when no executable is provided; counts down from
 // 1024*1024, with an independent `orr` at the start of each branch.
 static uint32_t hex_[8] = {
@@ -43,9 +46,6 @@ static uint32_t hex_[8] = {
  * syscalls and manage process execution. */
 class SimOS {
  public:
-  /** Page size of the System. */
-  const uint64_t pageSize_ = 4096;
-
   /** Construct a SimOS object. */
   SimOS(std::string executablePath, std::vector<std::string> executableArgs,
         std::shared_ptr<simeng::memory::Mem> mem, bool setProcess = false);

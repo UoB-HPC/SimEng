@@ -8,14 +8,14 @@
 namespace simeng {
 namespace OS {
 
-PageTable::PageTable(uint64_t pageSize) : pageSize_(pageSize){};
+PageTable::PageTable(){};
 
 PageTable::~PageTable(){};
 
 bool PageTable::isMapped(uint64_t vaddr) { return find(vaddr) != table_.end(); }
 
 PageTable::TableItr PageTable::find(uint64_t vaddr) {
-  uint64_t lowestPageStart = roundDownMemAddr(vaddr, pageSize_);
+  uint64_t lowestPageStart = roundDownMemAddr(vaddr, page_size);
   TableItr itr = table_.find(lowestPageStart);
   return itr;
 };
@@ -45,10 +45,10 @@ uint64_t PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
                                   size_t size) {
   // Round the address down to pageSize aligned value so we can map base
   // vaddr to base paddr.
-  vaddr = roundDownMemAddr(vaddr, pageSize_);
+  vaddr = roundDownMemAddr(vaddr, page_size);
   // Round the size up to pageSize aligned value so we can map end vaddr to end
   // paddr.
-  size = roundUpMemAddr(size, pageSize_);
+  size = roundUpMemAddr(size, page_size);
   uint64_t addr = vaddr;
 
   uint64_t vsize = size;
@@ -57,16 +57,16 @@ uint64_t PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
     if (itr != table_.end()) {
       return masks::faults::pagetable::fault | masks::faults::pagetable::map;
     }
-    addr += pageSize_;
-    vsize -= pageSize_;
+    addr += page_size;
+    vsize -= page_size;
   }
 
   addr = vaddr;
   while (size > 0) {
     allocatePTEntry(addr, basePhyAddr);
-    addr += pageSize_;
-    size -= pageSize_;
-    basePhyAddr += pageSize_;
+    addr += page_size;
+    size -= page_size;
+    basePhyAddr += page_size;
   }
   return vaddr;
 };
@@ -74,10 +74,10 @@ uint64_t PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
 uint64_t PageTable::deleteMapping(uint64_t vaddr, size_t size) {
   // Round the address down to pageSize aligned value so we can delete mapping
   // from base vaddr.
-  vaddr = roundDownMemAddr(vaddr, pageSize_);
+  vaddr = roundDownMemAddr(vaddr, page_size);
   // Round the size up to pageSize aligned value so we can delete mapping to end
   // vaddr.
-  size = roundUpMemAddr(size, pageSize_);
+  size = roundUpMemAddr(size, page_size);
   uint64_t addr = vaddr;
   std::vector<PageTable::TableItr> itrs;
 
@@ -86,8 +86,8 @@ uint64_t PageTable::deleteMapping(uint64_t vaddr, size_t size) {
     if (itr == table_.end()) {
       return masks::faults::pagetable::fault | masks::faults::pagetable::unmap;
     }
-    addr += pageSize_;
-    size -= pageSize_;
+    addr += page_size;
+    size -= page_size;
     itrs.push_back(itr);
   }
 

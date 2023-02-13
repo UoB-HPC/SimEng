@@ -1,6 +1,6 @@
 #include "simeng/memory/MMU.hh"
 
-#include "simeng/kernel/Masks.hh"
+#include "simeng/kernel/Constants.hh"
 namespace simeng {
 namespace memory {
 

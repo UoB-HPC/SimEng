@@ -18,6 +18,8 @@ class Mem;
 
 namespace OS {
 
+using namespace simeng::kernel::defaults;
+
 // Typedef for callback function used to send data upon handling page fault.
 typedef std::function<void(char*, uint64_t, size_t)> SendToMemory;
 
@@ -157,9 +159,6 @@ class Process {
   /** The CPU context associated with this process. Used to enable context
    * switching between multiple processes. */
   cpuContext context_;
-
-  /** The page size of the process memory. */
-  const uint64_t pageSize_ = 4096;
 
  private:
   /** MemRegion of the Process Image. */

@@ -5,12 +5,16 @@
 #include <climits>
 #include <cstddef>
 
+#include "simeng/kernel/Constants.hh"
+
 namespace TestFriends {
 class PFAFriend;
 }
 
 namespace simeng {
 namespace OS {
+
+using namespace simeng::kernel::defaults;
 
 class PageFrameAllocator {
   friend class TestFriends::PFAFriend;
@@ -22,12 +26,10 @@ class PageFrameAllocator {
   uint64_t nextFreeAddr_ = 0;
 
  public:
-  /** page frame size, defaults to 4096. */
-  const uint64_t pageSize_ = 4096;
   /** Maximum size that can be allocated to page frames. */
   const uint64_t maxAllocationSize_ = 0;
 
-  PageFrameAllocator(uint64_t maxSize, uint64_t pageSize = 4096);
+  PageFrameAllocator(uint64_t maxSize);
 
   ~PageFrameAllocator();
   /** Public method to allocate page franes, */

@@ -9,7 +9,7 @@ namespace OS {
 
 HostFileMMap* HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
   struct stat* statbuf = (struct stat*)malloc(sizeof(struct stat));
-  if (offset & (4096 - 1)) {
+  if (offset & (page_size - 1)) {
     std::cerr
         << "Failed to create Host backed file mapping. Offset is not aligned "
            "to page size: "

@@ -5,17 +5,20 @@
 #include <functional>
 #include <memory>
 
+#include "simeng/OS/Constants.hh"
 #include "simeng/OS/Vma.hh"
 
 namespace simeng {
 namespace OS {
 
+using namespace simeng::OS::defaults;
+
 class MemRegion {
  public:
   MemRegion(
       uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
-      uint64_t memSize, uint64_t pageSize, uint64_t stackStart,
-      uint64_t heapStart, uint64_t mmapStart, uint64_t initStackPtr,
+      uint64_t memSize, uint64_t stackStart, uint64_t heapStart,
+      uint64_t mmapStart, uint64_t initStackPtr,
       std::function<uint64_t(uint64_t, size_t)> unmapPageTable =
           [](uint64_t, size_t) -> uint64_t { return 0; });
   MemRegion(){};
@@ -40,8 +43,6 @@ class MemRegion {
   uint64_t brk_;
   /** Size of whole global memory. */
   size_t memSize_;
-  /** Page size of the current memory system. */
-  uint64_t pageSize_;
   /** Start of the mmap region. */
   uint64_t mmapStart_;
   /** End of the mmap region. */

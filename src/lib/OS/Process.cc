@@ -43,15 +43,15 @@ Process::Process(const std::vector<std::string>& commandLine,
   entryPoint_ = elf.getEntryPoint();
   auto headers = elf.getProcessedHeaders();
 
-  uint64_t maxInitDataAddr = roundUpMemAddr(elf.getElfImageSize(), pageSize_);
+  uint64_t maxInitDataAddr = roundUpMemAddr(elf.getElfImageSize(), page_size);
   uint64_t minHeaderAddr = ~0;
 
   for (auto header : headers) {
     // Round size up to page aligned value.
-    size_t size = roundUpMemAddr(header.memorySize, pageSize_);
+    size_t size = roundUpMemAddr(header.memorySize, page_size);
     uint64_t vaddr = header.virtualAddress;
     // Round vaddr down to page aligned value.
-    uint64_t avaddr = roundDownMemAddr(vaddr, pageSize_);
+    uint64_t avaddr = roundDownMemAddr(vaddr, page_size);
     // Request a page frame from the OS.
     uint64_t paddr = os_->requestPageFrames(size);
     // Create a virtual memory mapping.
@@ -61,8 +61,8 @@ Process::Process(const std::vector<std::string>& commandLine,
     // If the translated address + size of data to be allocated is less than
     // base paddr + size, allocate extra memory.
     if (((paddr + size) - translatedAddr) < header.memorySize) {
-      paddr = os_->requestPageFrames(pageSize_);
-      pageTable_->createMapping(avaddr + size, paddr, pageSize_);
+      paddr = os_->requestPageFrames(page_size);
+      pageTable_->createMapping(avaddr + size, paddr, page_size);
       translatedAddr = pageTable_->translate(vaddr);
     }
     // Send header data to memory
@@ -78,20 +78,20 @@ Process::Process(const std::vector<std::string>& commandLine,
 
   pageTable_->ignoreAddrRange(0, minHeaderAddr);
   // Add Page Size padding
-  maxInitDataAddr += pageSize_;
+  maxInitDataAddr += page_size;
   // Heap grows upwards towards higher addresses.
-  heapSize = roundUpMemAddr(heapSize, pageSize_);
+  heapSize = roundUpMemAddr(heapSize, page_size);
   uint64_t heapStart = maxInitDataAddr;
   uint64_t heapEnd = heapStart + heapSize;
 
   // Mmap grows upwards towards higher addresses.
-  uint64_t mmapStart = heapEnd + pageSize_;
-  uint64_t mmapSize = pageSize_ * 250 * 1000;
+  uint64_t mmapStart = heapEnd + page_size;
+  uint64_t mmapSize = page_size * 250 * 1000;
   uint64_t mmapEnd = mmapStart + mmapSize;
 
   // Stack grows downwards towards lower addresses.
-  stackSize = roundUpMemAddr(stackSize, pageSize_);
-  uint64_t stackEnd = mmapEnd + pageSize_;
+  stackSize = roundUpMemAddr(stackSize, page_size);
+  uint64_t stackEnd = mmapEnd + page_size;
   uint64_t stackStart = stackEnd + stackSize;
   uint64_t size = stackStart;
 
@@ -117,8 +117,8 @@ Process::Process(const std::vector<std::string>& commandLine,
     return value;
   };
 
-  memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
-                         stackStart, heapStart, mmapStart, stackPtr, unmapFn);
+  memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, stackStart,
+                         heapStart, mmapStart, stackPtr, unmapFn);
 
   fdArray_ = std::make_unique<FileDescArray>();
   // Initialise context
@@ -154,22 +154,22 @@ Process::Process(span<char> instructions,
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
 
-  uint64_t instrSize = roundUpMemAddr(instructions.size(), pageSize_);
+  uint64_t instrSize = roundUpMemAddr(instructions.size(), page_size);
   uint64_t instrEnd = instrSize;
 
   // Heap grows upwards towards higher addresses.
-  heapSize = roundUpMemAddr(heapSize, pageSize_);
+  heapSize = roundUpMemAddr(heapSize, page_size);
   uint64_t heapStart = instrEnd + 4096;
   uint64_t heapEnd = heapStart + heapSize;
 
   // Mmap grows upwards towards higher addresses.
-  uint64_t mmapStart = heapEnd + pageSize_;
-  uint64_t mmapSize = pageSize_ * 250 * 100;
+  uint64_t mmapStart = heapEnd + page_size;
+  uint64_t mmapSize = page_size * 250 * 100;
   uint64_t mmapEnd = mmapStart + mmapSize;
 
   // Stack grows downwards towards lower addresses.
-  stackSize = roundUpMemAddr(stackSize, pageSize_);
-  uint64_t stackEnd = mmapEnd + pageSize_;
+  stackSize = roundUpMemAddr(stackSize, page_size);
+  uint64_t stackEnd = mmapEnd + page_size;
   uint64_t stackStart = stackEnd + stackSize;
   uint64_t size = stackStart;
 
@@ -189,8 +189,8 @@ Process::Process(span<char> instructions,
     return this->pageTable_->deleteMapping(vaddr, size);
   };
 
-  memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, pageSize_,
-                         stackStart, heapStart, mmapStart, stackPtr, unmapFn);
+  memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, stackStart,
+                         heapStart, mmapStart, stackPtr, unmapFn);
 
   uint64_t taddr = pageTable_->translate(0);
   memory->sendUntimedData(instructions.begin(), taddr, instructions.size());
@@ -223,7 +223,7 @@ uint64_t Process::getStackStart() const { return memRegion_.getMemSize(); }
 
 uint64_t Process::getMmapStart() const { return memRegion_.getMmapStart(); }
 
-uint64_t Process::getPageSize() const { return pageSize_; }
+uint64_t Process::getPageSize() const { return page_size; }
 
 std::string Process::getPath() const { return commandLine_[0]; }
 
@@ -297,7 +297,7 @@ uint64_t Process::createStack(uint64_t stackStart,
   // ELF auxillary vector, keys defined in `uapi/linux/auxvec.h`
   // TODO: populate remaining auxillary vector entries
   initialStackFrame.push_back(6);  // AT_PAGESZ
-  initialStackFrame.push_back(pageSize_);
+  initialStackFrame.push_back(page_size);
   initialStackFrame.push_back(0);  // null terminator
 
   size_t stackFrameSize = initialStackFrame.size() * 8;
@@ -325,10 +325,10 @@ uint64_t Process::handlePageFault(uint64_t vaddr, SendToMemory send) {
 
   // Round down the memory address to page aligned value to create
   // a page mapping.
-  uint64_t alignedVAddr = roundDownMemAddr(vaddr, pageSize_);
+  uint64_t alignedVAddr = roundDownMemAddr(vaddr, page_size);
 
-  uint64_t paddr = os_->requestPageFrames(pageSize_);
-  uint64_t ret = pageTable_->createMapping(alignedVAddr, paddr, pageSize_);
+  uint64_t paddr = os_->requestPageFrames(page_size);
+  uint64_t ret = pageTable_->createMapping(alignedVAddr, paddr, page_size);
   if (ret & masks::faults::pagetable::fault)
     return masks::faults::pagetable::fault | masks::faults::pagetable::map;
   uint64_t taddr = pageTable_->translate(vaddr);
@@ -344,7 +344,7 @@ uint64_t Process::handlePageFault(uint64_t vaddr, SendToMemory send) {
   // this address is also page size aligned.
   uint64_t offset = alignedVAddr - vm->vmStart_;
   size_t writeLen = vm->getFileSize() - (offset);
-  writeLen = writeLen > pageSize_ ? pageSize_ : writeLen;
+  writeLen = writeLen > page_size ? page_size : writeLen;
 
   // send file to memory;
   if (writeLen > 0) {
