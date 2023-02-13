@@ -67,82 +67,54 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
   return brk_;
 }
 
-uint64_t MemRegion::addVma(VMA* vma) {
-  // If linked list contains multiple VMAs then iterate
-  // and check if new VMA can
-  // be attached between two existing VMAs. If not append to the tail of the
-  // linked list.
-  size_t size = vma->vmSize_;
-  if (vm_size_ > 0) {
-    bool allocated = false;
-    VMA* curr = vm_head_;
-    while (curr->vmNext_ != nullptr) {
-      // Find an address range between two VMAs that is large enough to hold new
-      // VMA.
-      if (curr->vmNext_->vmStart_ - curr->vmEnd_ >= size) {
-        vma->vmStart_ = curr->vmEnd_;
-        vma->vmNext_ = curr->vmNext_;
-        vma->vmEnd_ = curr->vmEnd_ + size;
-        curr->vmNext_ = vma;
-        allocated = true;
-        break;
-      }
-      curr = curr->vmNext_;
-    }
-    // We are at the tail
-    if (!allocated) {
-      vma->vmStart_ = mmapPtr_;
-      mmapPtr_ += size;
-      vma->vmEnd_ = mmapPtr_;
-      curr->vmNext_ = vma;
-    }
-    // If linked list only contains one VMA, then append to the tail.
-  } else {
-    vma->vmStart_ = mmapPtr_;
-    mmapPtr_ += size;
-    vma->vmEnd_ = mmapPtr_;
-    vm_head_ = vma;
-    vma->vmNext_ = nullptr;
-  }
-  vm_size_++;
-  // Return the assigned start address.
-  return vma->vmStart_;
-}
-
 uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
-  // If linked list contains multiple VMAs then iterate
-  // and check if new VMA can
-  // be attached between two existing VMAs. If not append to the tail of the
-  // linked list.
-  uint64_t endAddr = startAddr + vma->vmSize_;
-  if (vm_size_ > 0) {
-    bool allocated = false;
-    VMA* curr = vm_head_;
+  VMA* curr = vm_head_;
+  size_t size = vma->vmSize_;
+  // If start address is not 0, then look for a vma which has an end address
+  // greater or equal to start address.
+  if (startAddr && vm_size_ > 0) {
     while (curr->vmNext_ != nullptr) {
-      // Find VMA after which the address range containing startAddr exists.
-      if (endAddr <= curr->vmNext_->vmStart_ && curr->vmEnd_ >= startAddr) {
-        vma->vmStart_ = startAddr;
-        vma->vmNext_ = curr->vmNext_;
-        curr->vmNext_ = vma;
-        allocated = true;
+      if (curr->vmEnd_ >= startAddr) {
         break;
       }
       curr = curr->vmNext_;
     }
-    // We are at the tail
-    if (!allocated) {
-      vma->vmStart_ = startAddr;
-      curr->vmNext_ = vma;
-      mmapPtr_ = endAddr;
-    }
-    // If linked list only contains one VMA, then append to the tail.
-  } else {
-    vma->vmStart_ = startAddr;
-    vm_head_ = vma;
   }
-  vma->vmEnd_ = endAddr;
+
+  bool allocated = false;
+  // If VmaList has multiple Vma then starting from curr (VMA) check if the
+  // new VMA can be allocated between two existing ones.
+  while (curr != nullptr && curr->vmNext_ != nullptr) {
+    if (curr->vmNext_->vmStart_ - curr->vmEnd_ >= size) {
+      vma->vmStart_ = curr->vmEnd_;
+      vma->vmNext_ = curr->vmNext_;
+      vma->vmEnd_ = curr->vmEnd_ + size;
+      curr->vmNext_ = vma;
+      allocated = true;
+      break;
+    }
+    curr = curr->vmNext_;
+  }
+  // If VMA has not been allocated it means that it couldn't fit between two
+  // existing VMAs or VmaList is empty. This means that either we are the tail
+  // of the VmaList or we are now allocating the head. If the startAddr is less
+  // than mmap pointer its value will be set to the mmap pointer. However if it
+  // is greater than the mmap pointer it remains the same. Here startAddr is
+  // either mmap pointer or an address greater than mmap pointer.
+  if (!allocated) {
+    startAddr =
+        ((startAddr > 0) && (startAddr >= mmapPtr_)) ? startAddr : mmapPtr_;
+    vma->vmStart_ = startAddr;
+    mmapPtr_ = startAddr + size;
+    vma->vmEnd_ = mmapPtr_;
+    if (vm_size_ == 0) {
+      vm_head_ = vma;
+    } else {
+      curr->vmNext_ = vma;
+    }
+    vma->vmNext_ = nullptr;
+  };
   vm_size_++;
-  // Return the assigned start address.
   return vma->vmStart_;
 }
 
@@ -216,7 +188,7 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
   return delsize;
 }
 
-void MemRegion::freeVma() {
+void MemRegion::removeVmaList() {
   if (vm_size_ == 0) return;
   VMA* curr = vm_head_;
   while (curr != nullptr) {
@@ -249,6 +221,7 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
 
   // Check if provided hint address exists in VMA region or overlaps with heap
   // or stack regions.
+  bool mapped = false;
   if (startAddr) {
     startAddr = roundUpMemAddr(startAddr, page_size);
     if (overlapsHeap(startAddr, size) || overlapsStack(startAddr, size)) {
@@ -262,9 +235,8 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
                 << startAddr << " - " << startAddr + size << std::endl;
       return -EINVAL;
     };
+    mapped = isVmMapped(startAddr, size);
   }
-
-  bool mapped = isVmMapped(startAddr, size);
 
   // if not fixed and hint is provided then we need to check if the hint
   // address is available. If not we allocate vma at the most optimal address

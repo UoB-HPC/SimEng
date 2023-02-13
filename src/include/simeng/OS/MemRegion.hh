@@ -54,15 +54,12 @@ class MemRegion {
   /** Function reference to unmap the page table in removeVma. */
   std::function<uint64_t(uint64_t, size_t)> unmapPageTable_;
   /** Head of the VMA list. */
-  VirtualMemoryArea* vm_head_ = NULL;
+  VirtualMemoryArea* vm_head_ = nullptr;
   /** Size of the VMA list. */
   size_t vm_size_ = 0;
 
-  /** Method to add VMA to the VMA list at the most optimal address. */
-  uint64_t addVma(VMA* vma);
-
   /** Method to add VMA to the VMA list at the specified start address. */
-  uint64_t addVma(VMA* vma, uint64_t startAddr);
+  uint64_t addVma(VMA* vma, uint64_t startAddr = 0);
 
   /** Method to remove VMAs */
   int64_t removeVma(uint64_t addr, uint64_t length);
