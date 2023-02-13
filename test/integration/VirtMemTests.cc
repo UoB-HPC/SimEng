@@ -53,15 +53,17 @@ testing::Environment* const env =
 
 }  // namespace env
 
+const std::string configStr =
+    "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
+    "Timer-Frequency: 100, Micro-Operations: True, "
+    "Vector-Length: 512, Streaming-Vector-Length: 512},"
+    "Process-Image: "
+    "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
+    "{Generate-Special-Dir: "
+    "False}}";
+
 TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
-  Config::set(
-      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
-      "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512},"
-      "Process-Image: "
-      "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
-      "{Generate-Special-Dir: "
-      "False}}");
+  Config::set(configStr.c_str());
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(300000);
@@ -84,14 +86,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
 }
 
 TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
-  Config::set(
-      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
-      "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512},"
-      "Process-Image: "
-      "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
-      "{Generate-Special-Dir: "
-      "False}}");
+  Config::set(configStr.c_str());
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(300000);
@@ -126,14 +121,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
 }
 
 TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
-  Config::set(
-      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
-      "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512},"
-      "Process-Image: "
-      "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
-      "{Generate-Special-Dir: "
-      "False}}");
+  Config::set(configStr.c_str());
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(300000);
@@ -169,14 +157,7 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
 }
 
 TEST(VirtMemTest, UnmapSyscall) {
-  Config::set(
-      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
-      "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512},"
-      "Process-Image: "
-      "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
-      "{Generate-Special-Dir: "
-      "False}}");
+  Config::set(configStr.c_str());
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(300000);
@@ -221,14 +202,7 @@ TEST(VirtMemTest, UnmapSyscall) {
 }
 
 TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
-  Config::set(
-      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
-      "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512},"
-      "Process-Image: "
-      "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
-      "{Generate-Special-Dir: "
-      "False}}");
+  Config::set(configStr.c_str());
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(300000);
@@ -276,14 +250,7 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
 }
 
 TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
-  Config::set(
-      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
-      "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512},"
-      "Process-Image: "
-      "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
-      "{Generate-Special-Dir: "
-      "False}}");
+  Config::set(configStr.c_str());
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(300000);
@@ -333,14 +300,7 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
 }
 
 TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
-  Config::set(
-      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
-      "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512},"
-      "Process-Image: "
-      "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
-      "{Generate-Special-Dir: "
-      "False}}");
+  Config::set(configStr.c_str());
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(300000);
