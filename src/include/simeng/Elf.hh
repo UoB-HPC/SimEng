@@ -38,19 +38,17 @@ class Elf {
   uint64_t getEntryPoint() const;
 
   /** Method which returns all processed ELF Headers. */
-  std::vector<ElfHeader*>& getProcessedHeaders();
+  std::vector<ElfHeader>& getProcessedHeaders();
 
  private:
   /** Entry point of the ELF. */
   uint64_t entryPoint_;
-  /** Vector which holds all ELF headers. */
-  std::vector<ElfHeader*> headers_;
   /** Bool which holds if the ELF parsing was done correctly. */
   bool isValid_ = false;
   /** Size of the ELF image. */
   uint64_t elfImageSize_ = 0;
   /** Vector which holds all processed ELF headers. */
-  std::vector<ElfHeader*> processedHeaders_;
+  std::vector<ElfHeader> processedHeaders_;
 };
 
 }  // namespace simeng

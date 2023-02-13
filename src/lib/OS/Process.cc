@@ -48,8 +48,8 @@ Process::Process(const std::vector<std::string>& commandLine,
 
   for (auto header : headers) {
     // Round size up to page aligned value.
-    size_t size = roundUpMemAddr(header->memorySize, pageSize_);
-    uint64_t vaddr = header->virtualAddress;
+    size_t size = roundUpMemAddr(header.memorySize, pageSize_);
+    uint64_t vaddr = header.virtualAddress;
     // Round vaddr down to page aligned value.
     uint64_t avaddr = roundDownMemAddr(vaddr, pageSize_);
     // Request a page frame from the OS.
@@ -60,14 +60,14 @@ Process::Process(const std::vector<std::string>& commandLine,
     uint64_t translatedAddr = pageTable_->translate(vaddr);
     // If the translated address + size of data to be allocated is less than
     // base paddr + size, allocate extra memory.
-    if (((paddr + size) - translatedAddr) < header->memorySize) {
+    if (((paddr + size) - translatedAddr) < header.memorySize) {
       paddr = os_->requestPageFrames(pageSize_);
       pageTable_->createMapping(avaddr + size, paddr, pageSize_);
       translatedAddr = pageTable_->translate(vaddr);
     }
     // Send header data to memory
-    memory->sendUntimedData(header->headerData, translatedAddr,
-                            header->memorySize);
+    memory->sendUntimedData(header.headerData, translatedAddr,
+                            header.memorySize);
     // Determine minium header address, address in the ranhge [0, minAddr) will
     // be ignored during translation and all memory requests corresponding to
     // these address will be handled naively. This is because libc startup

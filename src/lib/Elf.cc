@@ -97,8 +97,9 @@ Elf::Elf(std::string path) {
   file.read(reinterpret_cast<char*>(&headerEntries), sizeof(headerEntries));
 
   // Resize the header to equal the number of header entries.
-  headers_.resize(headerEntries);
   elfImageSize_ = 0;
+
+  std::vector<ElfHeader> headers;
 
   // Loop over all headers and extract them.
   for (size_t i = 0; i < headerEntries; i++) {
@@ -106,8 +107,7 @@ Elf::Elf(std::string path) {
     // We can extract the nth header using the header offset
     // and header entry size.
     file.seekg(headerOffset + (i * headerEntrySize));
-    auto header = new ElfHeader();
-    headers_[i] = header;
+    auto header = ElfHeader();
 
     /**
      * Like the ELF Header, the ELF Program header is also defined
@@ -137,19 +137,21 @@ Elf::Elf(std::string path) {
 
     // Each address-related field is 8 bytes in a 64-bit ELF file
     const int fieldBytes = 8;
-    file.read(reinterpret_cast<char*>(&(header->type)), sizeof(header->type));
+    file.read(reinterpret_cast<char*>(&(header.type)), sizeof(header.type));
     file.seekg(4, std::ios::cur);  // Skip flags
-    file.read(reinterpret_cast<char*>(&(header->offset)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header->virtualAddress)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header->physicalAddress)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header->fileSize)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header->memorySize)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.offset)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.virtualAddress)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.physicalAddress)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.fileSize)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.memorySize)), fieldBytes);
 
     // Look for the largest virtual address by adding size of the header to its
     // starting virtual address. This will be used to determine ELF image
     // image size.
-    uint64_t addr = header->virtualAddress + header->memorySize;
+    uint64_t addr = header.virtualAddress + header.memorySize;
     elfImageSize_ = std::max(elfImageSize_, addr);
+
+    headers.push_back(header);
   }
 
   /**
@@ -161,16 +163,16 @@ Elf::Elf(std::string path) {
    */
 
   // Process headers; only observe LOAD sections for this basic implementation
-  for (auto header : headers_) {
-    if (header->type == 1) {  // LOAD
+  for (auto header : headers) {
+    if (header.type == 1) {  // LOAD
       // Initialise the data array to size of memorySize as memory size can be
       // bigger than fileSize, due to padding.
-      header->headerData = new char[header->memorySize];
+      header.headerData = new char[header.memorySize];
 
       // Read `fileSize` bytes from `file` into the appropriate place in process
       // memory
-      file.seekg(header->offset);
-      file.read(header->headerData, header->fileSize);
+      file.seekg(header.offset);
+      file.read(header.headerData, header.fileSize);
 
       processedHeaders_.push_back(header);
     }
@@ -181,9 +183,8 @@ Elf::Elf(std::string path) {
 }
 
 Elf::~Elf() {
-  for (auto header : headers_) {
-    delete[] header->headerData;
-    delete header;
+  for (auto header : processedHeaders_) {
+    delete[] header.headerData;
   }
 }
 
@@ -193,7 +194,5 @@ uint64_t Elf::getEntryPoint() const { return entryPoint_; }
 
 bool Elf::isValid() const { return isValid_; }
 
-std::vector<ElfHeader*>& Elf::getProcessedHeaders() {
-  return processedHeaders_;
-}
+std::vector<ElfHeader>& Elf::getProcessedHeaders() { return processedHeaders_; }
 }  // namespace simeng
