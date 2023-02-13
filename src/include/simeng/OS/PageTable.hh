@@ -21,6 +21,8 @@ class PageTable {
   using IgnoredAddrRange = std::pair<uint64_t, uint64_t>;
 
  private:
+  /** Offset mask used to retrive 12 lsb of the virtual address. */
+  const uint64_t translationMask_ = generateOffsetMask(page_size);
   /** Map used to store virtual to physical address mappings. */
   std::map<uint64_t, uint64_t> table_;
   /** Pair used to store ignored virtual address range. */
@@ -37,6 +39,9 @@ class PageTable {
 
   /** Method to find page table entry associated with vaddr. */
   TableItr find(uint64_t vaddr);
+
+  /** This method generates an offset mask based on the page size. */
+  uint64_t generateOffsetMask(uint64_t pageSize);
 
  public:
   PageTable();

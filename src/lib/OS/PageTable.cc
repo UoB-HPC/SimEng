@@ -1,5 +1,6 @@
 #include "simeng/OS/PageTable.hh"
 
+#include <cmath>
 #include <iostream>
 #include <vector>
 
@@ -13,6 +14,18 @@ PageTable::PageTable(){};
 PageTable::~PageTable(){};
 
 bool PageTable::isMapped(uint64_t vaddr) { return find(vaddr) != table_.end(); }
+
+uint64_t PageTable::generateOffsetMask(uint64_t pageSize) {
+  if (!isPow2(page_size)) {
+    std::cerr << "Page size should be aligned to a power of 2." << std::endl;
+    std::exit(1);
+  }
+  uint64_t lval = std::log2(page_size);
+  uint64_t mask = 0;
+  mask = ~mask;
+  mask ^= (mask << lval);
+  return mask;
+}
 
 PageTable::TableItr PageTable::find(uint64_t vaddr) {
   uint64_t lowestPageStart = roundDownMemAddr(vaddr, page_size);
@@ -32,13 +45,12 @@ void PageTable::allocatePTEntry(uint64_t alignedVAddr, uint64_t phyAddr) {
 void PageTable::deletePTEntry(PageTable::TableItr itr) { table_.erase(itr); };
 
 uint64_t PageTable::calculateOffset(uint64_t vaddr) {
-  uint64_t mask = 0xFFF;
   // A mask of 0b0111111111111 to get the lower 12 bits of the vaddr.
   // The lower 12 bits of a vaddr will always be unique within a virtual address
   // because 2^12 = 4096. So we can return them as offsets to be added to a page
   // frame base addr. Page frames are also 4KB i.e 4096 Bytes so uniquess is
   // guarenteed.
-  return vaddr & mask;
+  return vaddr & translationMask_;
 };
 
 uint64_t PageTable::createMapping(uint64_t vaddr, uint64_t basePhyAddr,
