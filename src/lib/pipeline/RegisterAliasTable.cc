@@ -119,9 +119,6 @@ void RegisterAliasTable::reset(
       // Pre-assign a physical register to each architectural register
       mappingTable_[type][tag] = tag;
     }
-    // Reset rest of mappingTable_ to NULL
-    std::fill(mappingTable_[type].begin() + archCount,
-              mappingTable_[type].end(), NULL);
 
     // Delete current freeQueues_
     freeQueues_[type] = std::queue<uint16_t>();

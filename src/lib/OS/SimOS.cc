@@ -87,7 +87,7 @@ void SimOS::tick() {
             // Find the corresponding process in map
             auto proc = getProcess(prevContext.TID);
             assert(
-                (proc->second->status_ == procStatus::executing) &&
+                (proc->status_ == procStatus::executing) &&
                 "[SimEng:SimOS] Process updated when not in executing state.");
             // Only update values which have changed
             proc->context_.pc = prevContext.pc;

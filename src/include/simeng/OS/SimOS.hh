@@ -83,9 +83,10 @@ class SimOS {
   /** The runtime arguments of the user defined executable. */
   std::vector<std::string> executableArgs_ = {};
 
-  /** The list of user-space processes running above the OS kernel. */
-  // std::vector<std::shared_ptr<Process>> processes_ = {};
-
+  /** The map of user-space processes running above the OS kernel.
+   * Key = process' TID
+   * Value = Shared pointer to process object with TID = key
+   */
   std::unordered_map<uint64_t, std::shared_ptr<Process>> processes_ = {};
 
   /** Queue of processes waiting to be scheduled. */

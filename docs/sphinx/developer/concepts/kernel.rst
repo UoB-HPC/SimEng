@@ -1,11 +1,11 @@
 Operating System
-======
+================
 
-The Operating used in SimEng is an emulation of a light-weight Linux Kernel, called SimOS. SimOS does not seek to provide the full functionality of a Linux Kernel. Instead, it provides the functionality for scheduling processes to available cores, the creation of processes, and aids the emulation of system calls by maintaining process states.
+The Operating System used in SimEng is an emulation of a light-weight Linux Kernel, called SimOS. SimOS does not seek to provide the full functionality of a Linux Kernel. Instead, it provides the functionality for scheduling processes to available cores, the creation of processes, and aids the emulation of system calls by maintaining process states.
 
 Context Switching & Scheduling
 -------------------------------
-Within the ``tick()`` function of SimOS lies the logic for scheduling Processes to cores. The algorithm implemented is a simple Round-Robin aproach where each process gets the same number of cycles per core time slice.
+Within the ``tick()`` function of SimOS lies the logic for scheduling Processes to cores. The algorithm implemented is a simple Round-Robin approach where each process gets the same number of cycles per core time slice.
 
 To schedule a new Process, SimOS will send an interupt signal to an available core which begins the process of getting the core into a switchable state. Once the core is idle, the old Core-Context can be saved to the previous process, and the new process can be scheduled onto the core; beginning execution again. Two queues are utilised within the scheduling logic in order to ensure that a single process does not cause multiple interupts to be send to multiple cores. Before triggering an interupt, a process is held in a ``waiting`` queue; and once an interupt has been signaled for a process it is moved into a ``scheduled`` queue. Only processes in the ``waiting`` queue can cause an interupt, and only processes in the ``scheduled`` queue can be scheduled onto an idle core.
 
