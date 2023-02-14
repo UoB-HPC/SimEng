@@ -52,6 +52,9 @@ void FetchUnit::tick() {
       // Cycle queue by moving front entry to back
       loopBuffer_.push_back(loopBuffer_.front());
       loopBuffer_.pop_front();
+      // Update PC to address of next instruction in buffer to maintain correct
+      // PC value
+      pc_ = loopBuffer_.front().address;
     }
     return;
   }

@@ -88,6 +88,9 @@ class FetchUnit {
     requestFromPC();
   };
 
+  /** Get the current PC value. */
+  uint64_t getPC() const { return pc_; };
+
  private:
   /** An output buffer connecting this unit to the decode unit. */
   PipelineBuffer<MacroOp>& output_;

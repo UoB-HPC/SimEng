@@ -70,8 +70,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
       break;
     }
 
-    nextPC_ = uop->getInstructionAddress() + 4;
-
     if (uop->isLastMicroOp()) instructionsCommitted_++;
 
     if (uop->exceptionEncountered()) {
@@ -106,7 +104,6 @@ unsigned int ReorderBuffer::commit(unsigned int maxCommitSize) {
 
     // Increment or swap out branch counter for loop detection
     if (uop->isBranch()) {
-      nextPC_ = uop->getBranchAddress();
       if (!loopDetected_) {
         bool increment = true;
         if (branchCounter_.first.address != uop->getInstructionAddress()) {
