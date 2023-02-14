@@ -634,14 +634,14 @@ TEST_P(Syscall, munmap) {
     mov x10, x0
 
     # munmap(addr=1024, length=65536, prot=3, flags=34, fd=-1, offset=0)
-    mov x9, #1024
-    mov x0, x9
+    mov x13, #1024
+    mov x0, x13
     mov x1, #65536
     mov x8, #215
     svc #0
     mov x11, x0
   )");
-  EXPECT_EQ(getGeneralRegister<uint64_t>(9), 1024);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(9), process_->getMmapStart());
   /* It is not an error if the indicated range does not contain any mapped
    * pages. Source: https://linux.die.net/man/2/munmap
    */

@@ -462,28 +462,6 @@ TEST_P(Syscall, filenotfound) {
 TEST_P(Syscall, mmap) {
   // Test for 3 consecutive allocations
   RUN_RISCV(R"(
-    # mmap(addr=NULL, length=16384, prot=3, flags=34, fd=-1, offset=0)
-    li a0, 0
-    li a1, 16384
-    li a2, 3
-    li a3, 34
-    li a4, -1
-    li a5, 0
-    li a7, 222
-    ecall
-    mv t0, a0
-
-    # mmap(addr=NULL, length=1024, prot=3, flags=34, fd=-1, offset=0)
-    li a0, 0
-    li a1, 1024
-    li a2, 3
-    li a3, 34
-    li a4, -1
-    li a5, 0
-    li a7, 222
-    ecall
-    mv t1, a0
-
     # mmap(addr=NULL, length=8192, prot=3, flags=34, fd=-1, offset=0)
     li a0, 0
     li a1, 8192
@@ -493,19 +471,40 @@ TEST_P(Syscall, mmap) {
     li a5, 0
     li a7, 222
     ecall
+    mv t0, a0
+
+    # mmap(addr=NULL, length=4096, prot=3, flags=34, fd=-1, offset=0)
+    li a0, 0
+    li a1, 4096
+    li a2, 3
+    li a3, 34
+    li a4, -1
+    li a5, 0
+    li a7, 222
+    ecall
+    mv t1, a0
+
+    # mmap(addr=NULL, length=16384, prot=3, flags=34, fd=-1, offset=0)
+    li a0, 0
+    li a1, 16384
+    li a2, 3
+    li a3, 34
+    li a4, -1
+    li a5, 0
+    li a7, 222
+    ecall
     mv t2, a0
   )");
   EXPECT_EQ(getGeneralRegister<uint64_t>(5), process_->getMmapStart());
-  EXPECT_EQ(getGeneralRegister<uint64_t>(6), process_->getMmapStart() + 16384);
-  EXPECT_EQ(getGeneralRegister<uint64_t>(7),
-            process_->getMmapStart() + (16384 + 4096));
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), process_->getMmapStart() + 8192);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), process_->getMmapStart() + 12288);
 
   // Test for mmap allocation between two previous allocations
   RUN_RISCV(R"(
     # Setup 3 contiguous allocations
-    # mmap(addr=NULL, length=1024, prot=3, flags=34, fd=-1, offset=0)
+    # mmap(addr=NULL, length=4096, prot=3, flags=34, fd=-1, offset=0)
     li a0, 0
-    li a1, 1024
+    li a1, 4096
     li a2, 3
     li a3, 34
     li a4, -1
@@ -525,9 +524,9 @@ TEST_P(Syscall, mmap) {
     ecall
     mv t1, a0
 
-    # mmap(addr=NULL, length=1024, prot=3, flags=34, fd=-1, offset=0)
+    # mmap(addr=NULL, length=4096, prot=3, flags=34, fd=-1, offset=0)
     li a0, 0
-    li a1, 1024
+    li a1, 4096
     li a2, 3
     li a3, 34
     li a4, -1
@@ -602,16 +601,16 @@ TEST_P(Syscall, munmap) {
     ecall
     mv t0, a0
 
-    # munmap(addr=mmapStart_, length=16384, prot=3, flags=34, fd=-1, offset=0)
+    # munmap(addr=mmapStart_, length=65536, prot=3, flags=34, fd=-1, offset=0)
     mv a0, t0
-    li a1, 16384
+    li a1, 65536
     li a7, 215
     ecall
     mv t1, a0
 
-    # munmap(addr=mmapStart_, length=12288, prot=3, flags=34, fd=-1, offset=0)
+    # munmap(addr=mmapStart_, length=65536, prot=3, flags=34, fd=-1, offset=0)
     mv a0, t0
-    li a1, 12288
+    li a1, 65536
     li a7, 215
     ecall
     mv t2, a0
@@ -622,9 +621,9 @@ TEST_P(Syscall, munmap) {
 
   // Test that EINVAL error types trigger
   RUN_RISCV(R"(
-    # mmap(addr=NULL, length=1024, prot=3, flags=34, fd=-1, offset=0)
+    # mmap(addr=NULL, length=4096, prot=3, flags=34, fd=-1, offset=0)
     li a0, 0
-    li a1, 1024
+    li a1, 4096
     li a2, 3
     li a3, 34
     li a4, -1
