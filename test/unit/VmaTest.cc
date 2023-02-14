@@ -251,7 +251,7 @@ TEST(VmaTest, VmaTrimRangeEnd) {
 TEST(VmaTest, CreateVmaWithHostedFileMMap) {
   HostBackedFileMMaps hbfmmap;
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/Data.txt";
+  std::string fpath = build_dir_path + "/test/Data.txt";
   int fd = open(fpath.c_str(), O_RDWR);
   ASSERT_NE(fd, -1);
 
@@ -278,7 +278,7 @@ TEST(VmaTest, CreateVmaWithHostedFileMMap) {
 TEST(VmaTest, VmaTrimRangeStartWithHostBackedFile) {
   HostBackedFileMMaps hbfmmap;
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/Data.txt";
+  std::string fpath = build_dir_path + "/test/Data.txt";
   int fd = open(fpath.c_str(), O_RDWR);
   ASSERT_NE(fd, -1);
 
@@ -314,7 +314,7 @@ TEST(VmaTest, VmaTrimRangeStartWithHostBackedFile) {
 TEST(VmaTest, VmaTrimRangeEndWithHostBackedFile) {
   HostBackedFileMMaps hbfmmap;
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/Data.txt";
+  std::string fpath = build_dir_path + "/test/Data.txt";
   int fd = open(fpath.c_str(), O_RDWR);
   ASSERT_NE(fd, -1);
 

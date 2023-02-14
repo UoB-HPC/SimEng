@@ -10,49 +10,6 @@
 using namespace simeng::kernel;
 
 namespace {
-
-namespace env {
-class VirtMemTestEnv : public ::testing::Environment {
- private:
-  std::string fpath;
-
- public:
-  ~VirtMemTestEnv() override {}
-
-  // Override this to define how to set up the environment.
-  // Create a file with size greater than 4096 to test offsets.
-  // This needs to be done because offset has to be a multiple of pageSize,
-  // other mmap will fail.
-  void SetUp() override {
-    std::string build_dir_path(SIMENG_BUILD_DIR);
-    fpath = build_dir_path + "/test/integration/longtext.txt";
-
-    std::ofstream fs(fpath);
-
-    for (size_t i = 0; i < 4096; i++) {
-      fs << 1;
-    }
-    for (size_t i = 0; i < 4096; i++) {
-      fs << 2;
-    }
-    fs.close();
-  }
-
-  // Override this to define how to tear down the environment.
-  // Delete the created longtext.txt file.
-  void TearDown() override {
-    if (!std::filesystem::remove(fpath)) {
-      std::cerr << "Error occured while deleting longtext.txt file at path: "
-                << fpath << std::endl;
-    }
-  }
-};
-
-testing::Environment* const env =
-    testing::AddGlobalTestEnvironment(new VirtMemTestEnv);
-
-}  // namespace env
-
 const std::string configStr =
     "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
     "Timer-Frequency: 100, Micro-Operations: True, "
@@ -208,7 +165,7 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
       std::make_shared<simeng::memory::SimpleMem>(300000);
 
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/integration/longtext.txt";
+  std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
   simeng::kernel::SimOS simOS =
@@ -256,7 +213,7 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
       std::make_shared<simeng::memory::SimpleMem>(300000);
 
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/integration/longtext.txt";
+  std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
   simeng::kernel::SimOS simOS =
@@ -306,7 +263,7 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
       std::make_shared<simeng::memory::SimpleMem>(300000);
 
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/integration/longtext.txt";
+  std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
   simeng::kernel::SimOS simOS =

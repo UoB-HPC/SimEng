@@ -1,5 +1,6 @@
 set(TEST_SOURCES
     VirtMemTests.cc
+    ../testenv/FilesEnv.cc
     )
 
 add_executable(integrationtests ${TEST_SOURCES})

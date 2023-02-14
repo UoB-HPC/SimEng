@@ -9,42 +9,6 @@
 #include "simeng/version.hh"
 
 namespace {
-namespace env {
-
-class DataEnv : public ::testing::Environment {
- private:
-  std::string fpath;
-
- public:
-  ~DataEnv() override {}
-
-  // Override this to define how to set up the environment.
-  // Create a file with size greater than 4096 to test offsets.
-  // This needs to be done because offset has to be a multiple of pageSize,
-  // other mmap will fail.
-  void SetUp() override {
-    std::string build_dir_path(SIMENG_BUILD_DIR);
-    fpath = build_dir_path + "/test/unit/Data.txt";
-
-    std::ofstream fs(fpath);
-
-    fs << "FileDescArrayTestData";
-    fs.close();
-  }
-
-  // Override this to define how to tear down the environment.
-  // Delete the created longtext.txt file.
-  void TearDown() override {
-    if (!std::filesystem::remove(fpath)) {
-      std::cerr << "Error occured while deleting Data.txt file at path: "
-                << fpath << std::endl;
-    }
-  }
-};
-
-testing::Environment* const env =
-    testing::AddGlobalTestEnvironment(new DataEnv);
-}  // namespace env
 
 TEST(FileDescArrayTest, InitialisesStandardFileDescriptors) {
   FileDescArray fdArr = FileDescArray();
@@ -63,7 +27,7 @@ TEST(FileDescArrayTest, InitialisesStandardFileDescriptors) {
 TEST(FileDescArrayTest, AllocatesFileDesc) {
   FileDescArray fdArr = FileDescArray();
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/Data.txt";
+  std::string fpath = build_dir_path + "/test/Data.txt";
   int vfd = fdArr.allocateFDEntry(-1, fpath.c_str(), O_RDWR, 0666);
   ASSERT_NE(vfd, -1);
   auto entry = fdArr.getFDEntry(vfd);
@@ -83,7 +47,7 @@ TEST(FileDescArrayTest, AllocatesFileDesc) {
 TEST(FileDescArrayTest, RemovesFileDesc) {
   FileDescArray fdArr = FileDescArray();
   std::string build_dir_path(SIMENG_BUILD_DIR);
-  std::string fpath = build_dir_path + "/test/unit/Data.txt";
+  std::string fpath = build_dir_path + "/test/Data.txt";
   int vfd = fdArr.allocateFDEntry(-1, fpath.c_str(), O_RDWR, 0666);
   ASSERT_NE(vfd, -1);
   auto entry = fdArr.getFDEntry(vfd);

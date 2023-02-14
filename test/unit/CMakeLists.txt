@@ -24,6 +24,7 @@ set(TEST_SOURCES
     HostBackedFileMMapsTest.cc
     PageFrameAllocatorTest.cc
     MemRegionTest.cc
+    ../testenv/FilesEnv.cc
     )
 
 add_executable(unittests ${TEST_SOURCES})
@@ -34,5 +35,3 @@ target_link_libraries(unittests libsimeng)
 target_link_libraries(unittests gmock_main)
 
 add_test(NAME unit_tests COMMAND unittests)
-set(SIMENG_UNITTEST_BUILD_DIR "${CMAKE_BINARY_DIR}/test/unit")
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${SIMENG_UNITTEST_BUILD_DIR})
