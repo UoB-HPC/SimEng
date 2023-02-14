@@ -85,7 +85,7 @@ void SimOS::tick() {
           // scheduled (i.e. on first tick of simulation)
           if (prevContext.TID != -1) {
             // Find the corresponding process in map
-            auto proc = getProcess(prevContext.TID);
+            auto proc = processes_.find(prevContext.TID)->second;
             assert(
                 (proc->status_ == procStatus::executing) &&
                 "[SimEng:SimOS] Process updated when not in executing state.");
@@ -128,7 +128,7 @@ void SimOS::tick() {
   }
 }
 
-std::shared_ptr<Process> SimOS::getProcess(uint64_t TID) const {
+const Process& SimOS::getProcess(uint64_t TID) const {
   auto proc = processes_.find(TID);
   if (proc == processes_.end()) {
     // If TID doesn't exist then hard exit
@@ -136,7 +136,7 @@ std::shared_ptr<Process> SimOS::getProcess(uint64_t TID) const {
               << "` does not exist.\n";
     exit(1);
   }
-  return proc->second;
+  return (*proc->second);
 }
 
 void SimOS::createInitialProcess() {

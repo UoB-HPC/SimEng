@@ -48,7 +48,7 @@ class SimOS {
   void tick();
 
   /** Get a process with specified TID. */
-  std::shared_ptr<Process> getProcess(uint64_t TID) const;
+  const Process& getProcess(uint64_t TID) const;
 
   /** Get shared_ptr to syscallHandler instance. */
   std::shared_ptr<SyscallHandler> getSyscallHandler() const {
