@@ -90,7 +90,8 @@ class RegressionTest
     EXPECT_LE(address + sizeof(T), processMemorySize_);
     uint64_t addr = process_->translate(address);
     auto mem = memory_->getUntimedData(addr, sizeof(T));
-    T dest = *(T*)mem;
+    T dest{};
+    std::memcpy(&dest, mem, sizeof(T));
     delete[] mem;
     return dest;
   }
