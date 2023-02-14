@@ -6,10 +6,10 @@ namespace memory {
 SimpleMem::SimpleMem(size_t size) {
   memRef_ = new char[size];
   std::memset(memRef_, 0, size);
-  memory_ = span<char>(memRef_, size);
 
-  faultMemory_ = new char[128];
-  std::memset(faultMemory_, 0, 128);
+  faultMemory_ = new char[256];
+  std::memset(faultMemory_, 0, 256);
+
   memSize_ = size;
 }
 
@@ -37,7 +37,7 @@ ReadRespPacket* SimpleMem::handleReadRequest(struct ReadPacket* req) {
   size_t size = req->size;
   uint64_t addr = req->address;
   char* data = new char[size];
-  char* startAddr = memory_.begin() + addr;
+  char* startAddr = memRef_ + addr;
   std::copy(startAddr, startAddr + size, data);
   return req->makeResponse(size, data);
 };
@@ -46,18 +46,18 @@ WriteRespPacket* SimpleMem::handleWriteRequest(struct WritePacket* req) {
   uint64_t address = req->address;
   size_t size = req->size;
   const char* data = req->data;
-  std::copy(data, data + size, memory_.begin() + address);
+  std::copy(data, data + size, memRef_ + address);
   return req->makeResponse(size);
 };
 
 void SimpleMem::sendUntimedData(char* data, uint64_t addr, size_t size) {
-  std::copy(data, data + size, memory_.begin() + addr);
+  std::copy(data, data + size, memRef_ + addr);
   return;
 }
 
 char* SimpleMem::getUntimedData(uint64_t paddr, size_t size) {
   char* ret = new char[size];
-  std::copy(memory_.begin() + paddr, memory_.begin() + paddr + size, ret);
+  std::copy(memRef_ + paddr, memRef_ + paddr + size, ret);
   return ret;
 }
 

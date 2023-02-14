@@ -18,7 +18,7 @@ SimOS::SimOS(std::string executablePath,
   // Parse command line args
   // Determine if a config file has been supplied.
 
-  // callback function used to send data to memory on page fault. This was
+  // Callback function used to send data to memory on page fault. This was
   // preferred to a sharing the memory class as this callback can now be
   // implementation specific.
   sendToMem_ = [&, this](char* data, uint64_t addr, size_t size) {
@@ -254,7 +254,8 @@ uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t pid) {
   faultCode = masks::faults::getFaultCode(addr);
 
   if (faultCode == masks::faults::pagetable::map) {
-    std::cerr << "Failed to create mapping during PageFault caused by Vaddr: "
+    std::cerr << "[SimEng:SimOS] Failed to create mapping during PageFault "
+                 "caused by Vaddr: "
               << vaddr << "( PID: " << pid << " )" << std::endl;
     std::exit(1);
   }

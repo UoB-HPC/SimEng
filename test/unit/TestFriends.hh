@@ -8,6 +8,7 @@ class PTFriend {
  public:
   simeng::kernel::PageTable* pTable = NULL;
   PTFriend(simeng::kernel::PageTable* ptable) { pTable = ptable; };
+  ~PTFriend() { delete pTable; }
   std::map<uint64_t, uint64_t>& getTable() { return pTable->table_; }
 };
 

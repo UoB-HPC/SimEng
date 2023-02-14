@@ -14,47 +14,52 @@ namespace OS {
 using namespace simeng::OS::defaults;
 
 class MemRegion {
- public:
-  MemRegion(
-      uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
-      uint64_t memSize, uint64_t stackStart, uint64_t heapStart,
-      uint64_t mmapStart, uint64_t initStackPtr,
-      std::function<uint64_t(uint64_t, size_t)> unmapPageTable =
-          [](uint64_t, size_t) -> uint64_t { return 0; });
-  MemRegion(){};
-  ~MemRegion() { removeVmaList(); };
-
  private:
   /** Start address of the stack. */
   uint64_t stackStart_;
+
   /** End address of the stack. */
   uint64_t stackEnd_;
+
   /** Size of the process stack region. */
   size_t stackSize_;
+
   /** address of the stack pointer after auxiliary vector has been populated. */
   uint64_t initStackPtr_;
+
   /** Start address of the process heap. */
   uint64_t heapStart_;
+
   /** End address of the process heap. */
   uint64_t heapEnd_;
+
   /** Size of the process heap region. */
   size_t heapSize_;
+
   /** Current end address of the process heap. */
   uint64_t brk_;
+
   /** Size of whole global memory. */
   size_t memSize_;
+
   /** Start of the mmap region. */
   uint64_t mmapStart_;
+
   /** End of the mmap region. */
   uint64_t mmapEnd_;
+
   /** Address of the current mmap region. */
   uint64_t mmapPtr_;
+
   /** Size of the mmap region. */
   size_t mmapSize_;
+
   /** Function reference to unmap the page table in removeVma. */
   std::function<uint64_t(uint64_t, size_t)> unmapPageTable_;
+
   /** Head of the VMA list. */
   VirtualMemoryArea* vm_head_ = nullptr;
+
   /** Size of the VMA list. */
   size_t vm_size_ = 0;
 
@@ -68,6 +73,17 @@ class MemRegion {
   void removeVmaList();
 
  public:
+  MemRegion(
+      uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
+      uint64_t memSize, uint64_t stackStart, uint64_t heapStart,
+      uint64_t mmapStart, uint64_t initStackPtr,
+      std::function<uint64_t(uint64_t, size_t)> unmapPageTable =
+          [](uint64_t, size_t) -> uint64_t { return 0; });
+
+  MemRegion(){};
+
+  ~MemRegion() { removeVmaList(); };
+
   /** This method returns the stack start address. */
   uint64_t getStackStart() const;
 

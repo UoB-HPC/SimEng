@@ -63,15 +63,20 @@ struct WritePacket : public DataPacket {
 class Mem {
  public:
   virtual ~Mem() = default;
+
   /** This method accesses memory with both Read and Write requests. */
   virtual DataPacket* requestAccess(struct DataPacket* pkt) = 0;
+
   /** This method returns the size of memory. */
   virtual size_t getMemorySize() = 0;
+
   /** This method write data to memory without incurring any latency. */
   virtual void sendUntimedData(char* data, uint64_t addr, size_t size) = 0;
+
   /** This method sets the translator for memory requests. */
   virtual char* getUntimedData(uint64_t paddr, size_t size) = 0;
 
+  /** This method handles a  memory request to an ignored address range. */
   virtual DataPacket* handleIgnoredRequest(struct DataPacket* pkt) = 0;
 };
 

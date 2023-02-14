@@ -19,12 +19,6 @@ using namespace simeng::kernel::defaults;
 class PageFrameAllocator {
   friend class TestFriends::PFAFriend;
 
- private:
-  /** Unallocated portion of the memory. */
-  uint64_t sizeLeft_ = 0;
-  /** Address of the next free page frame address. */
-  uint64_t nextFreeAddr_ = 0;
-
  public:
   /** Maximum size that can be allocated to page frames. */
   const uint64_t maxAllocationSize_ = 0;
@@ -40,6 +34,13 @@ class PageFrameAllocator {
 
   /** Method which returns the size left for allocations in memory. */
   uint64_t getSizeLeft() { return sizeLeft_; };
+
+ private:
+  /** Unallocated portion of the memory. */
+  uint64_t sizeLeft_ = 0;
+
+  /** Address of the next free page frame address. */
+  uint64_t nextFreeAddr_ = 0;
 };
 
 }  // namespace OS

@@ -12,6 +12,11 @@
 /** A FileDescEntry represents a host to virtual file descriptor mapping. */
 struct FileDescEntry {
  public:
+  FileDescEntry(){};
+
+  FileDescEntry(int fd, int vfd, int flags, std::string filename)
+      : fd_(fd), vfd_(vfd), flags_(flags), filename_(filename) {}
+
   /** This function returns the host file descriptor. */
   int fd() { return fd_; };
 
@@ -43,17 +48,16 @@ struct FileDescEntry {
   /** This function returns true if FileDescEntry doesn't contain a valid fd. */
   bool isValid() { return (fd_ != -1 && vfd_ != -1 && flags_ != -1); }
 
-  FileDescEntry(){};
-  FileDescEntry(int fd, int vfd, int flags, std::string filename)
-      : fd_(fd), vfd_(vfd), flags_(flags), filename_(filename) {}
-
  private:
   /** Host file descriptor. */
   int fd_ = -1;
+
   /** Virtual file descriptor. */
   int vfd_ = -1;
+
   /** Flags used in the openat syscall. */
   int flags_ = -1;
+
   /** Name of the opened file. */
   std::string filename_;
 };
@@ -62,18 +66,22 @@ struct FileDescEntry {
 class FileDescArray {
  public:
   FileDescArray();
+
   ~FileDescArray();
+
   /**
    * This function allocates a new FileDescEntry. It calls the host's openat
    * syscall with the specified parameters and maintains a host to virtual file
    * descriptor mapping.
    */
   int allocateFDEntry(int dirFD, const char* filename, int flags, int mode);
+
   /**
    * This function returns an allocated FileDescEntry. If none is present
    * nullptr is returned.
    */
   FileDescEntry& getFDEntry(int vfd);
+
   /**
    * This function removes an allocated FileDescEntry. It calls the host's close
    * syscall with the fd corresponding to specified vfd.

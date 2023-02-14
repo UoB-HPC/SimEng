@@ -33,6 +33,7 @@ TEST(SimpleMemTest, UntimedWrite) {
   for (size_t i = 0; i < dataSize; i++) {
     EXPECT_EQ(mem[i], data[i]);
   }
+  delete[] mem;
   delete sMem;
 }
 

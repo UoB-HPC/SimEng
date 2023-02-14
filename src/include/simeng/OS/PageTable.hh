@@ -20,6 +20,26 @@ class PageTable {
   using TableItr = typename std::map<uint64_t, uint64_t>::iterator;
   using IgnoredAddrRange = std::pair<uint64_t, uint64_t>;
 
+ public:
+  PageTable();
+
+  ~PageTable();
+
+  /** Method which creates size/pageSize number of mapping for vaddr & paddr. */
+  uint64_t createMapping(uint64_t vaddr, uint64_t basePhyAddr, size_t size);
+
+  /** Method which deletes size/pageSize number of mappings from vaddr. */
+  uint64_t deleteMapping(uint64_t vaddr, size_t size);
+
+  /** Method which checks if vaddr is mapped. */
+  bool isMapped(uint64_t vaddr);
+
+  /** Method which translates vaddr. */
+  uint64_t translate(uint64_t vaddr);
+
+  /** Method which adds address range to be ignored during translations. */
+  void ignoreAddrRange(uint64_t startAddr, uint64_t endAddr);
+
  private:
   /** Offset mask used to retrive 12 lsb of the virtual address. */
   const uint64_t translationMask_ = generateOffsetMask(page_size);
@@ -42,24 +62,6 @@ class PageTable {
 
   /** This method generates an offset mask based on the page size. */
   uint64_t generateOffsetMask(uint64_t pageSize);
-
- public:
-  PageTable();
-  ~PageTable();
-  /** Method which creates size/pageSize number of mapping for vaddr & paddr. */
-  uint64_t createMapping(uint64_t vaddr, uint64_t basePhyAddr, size_t size);
-
-  /** Method which deletes size/pageSize number of mappings from vaddr. */
-  uint64_t deleteMapping(uint64_t vaddr, size_t size);
-
-  /** Method which checks if vaddr is mapped. */
-  bool isMapped(uint64_t vaddr);
-
-  /** Method which translates vaddr. */
-  uint64_t translate(uint64_t vaddr);
-
-  /** Method which adds address range to be ignored during translations. */
-  void ignoreAddrRange(uint64_t startAddr, uint64_t endAddr);
 };
 
 }  // namespace OS

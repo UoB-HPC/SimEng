@@ -63,11 +63,11 @@ class SimOS {
 
   /**
    * This method returns a callback function that is passed to the MMU.
-   * The callback function will be used by the MMU to handle TLB misses and
-   * invoke the OS for virtual address translations. This design decision was
-   * made keeping the SST multicore integration in mind. This method can be
-   * overriden by a new implementation to carry to similar functionality in the
-   * SST multicore integration.
+   * The callback function will be used by the MMU to handle TLB misses. The
+   * callback invokes SimOS for virtual address translations. This design
+   * decision was made keeping the SST multicore integration in mind. This
+   * method can be overriden by a new implementation to carry to similar
+   * functionality in the SST multicore integration.
    */
   virtual VAddrTranslator getVAddrTranslator();
 

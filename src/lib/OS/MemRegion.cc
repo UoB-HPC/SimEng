@@ -55,9 +55,9 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
   }
   if (newBrk > heapEnd_) {
     // This needs to fixed such that more extra memory allocation is mmapd.
-    std::cerr
-        << "Attemped to allocate more memory than is available to the process "
-        << std::endl;
+    std::cerr << "[SimEng:MemRegion] Attemped to allocate more memory than is "
+                 "available to the process "
+              << std::endl;
     std::exit(1);
   }
 
@@ -212,7 +212,8 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
   // those regions first.
   uint64_t fixed = flags & syscalls::mmap::flags::map_fixed;
   if (fixed) {
-    std::cerr << "MAP_FIXED flag to MMAP calls is not supported yet."
+    std::cerr << "[SimEng:MemRegion] MAP_FIXED flag to MMAP calls is not "
+                 "supported yet."
               << std::endl;
     std::exit(1);
   }
@@ -225,13 +226,15 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
   if (startAddr) {
     startAddr = upAlign(startAddr, page_size);
     if (overlapsHeap(startAddr, size) || overlapsStack(startAddr, size)) {
-      std::cerr << "Provided hint overlaps with Stack and Heap region"
+      std::cerr << "[SimEng:MemRegion] Provided hint overlaps with Stack and "
+                   "Heap region"
                 << std::endl;
       return -EINVAL;
     };
 
     if (!((startAddr >= mmapStart_) && (startAddr + size < mmapEnd_))) {
-      std::cout << "Provided address range doesn't exist in the mmap range: "
+      std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
+                   "the mmap range: "
                 << startAddr << " - " << startAddr + size << std::endl;
       return -EINVAL;
     };
@@ -255,7 +258,8 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
 
 int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
   if (!((addr >= mmapStart_) && (addr + length < mmapEnd_))) {
-    std::cout << "Provided address range doesn't exist in the mmap range: "
+    std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
+                 "the mmap range: "
               << addr << " - " << addr + length << std::endl;
     return -1;
   };

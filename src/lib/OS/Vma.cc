@@ -10,32 +10,34 @@ namespace OS {
 HostFileMMap* HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
   struct stat* statbuf = (struct stat*)malloc(sizeof(struct stat));
   if (offset & (page_size - 1)) {
-    std::cerr
-        << "Failed to create Host backed file mapping. Offset is not aligned "
-           "to page size: "
-        << offset << std::endl;
+    std::cerr << "[SimEng:HostBackedFileMMaps] Failed to create Host backed "
+                 "file mapping. Offset is not aligned "
+                 "to page size: "
+              << offset << std::endl;
     std::exit(1);
   }
   if (fstat(fd, statbuf) < 0) {
-    std::cerr << "fstat failed: Cannot create host backed file mmap for file "
+    std::cerr << "[SimEng:HostBackedFileMMaps] fstat failed: Cannot create "
+                 "host backed file mmap for file "
                  "descriptor - "
               << fd << std::endl;
     std::exit(1);
   };
   if (offset + len > statbuf->st_size) {
-    std::cerr
-        << "Tried to create host backed file mmap with offset and size greater "
-           "than file size."
-        << std::endl;
+    std::cerr << "[SimEng:HostBackedFileMMaps] Tried to create host backed "
+                 "file mmap with offset and size greater "
+                 "than file size."
+              << std::endl;
     std::exit(1);
   }
   if (len <= 0) {
-    std::cerr << "Cannot create host backed file mmap with size 0 for file "
+    std::cerr << "[SimEng:HostBackedFileMMaps] Cannot create host backed file "
+                 "mmap with size 0 for file "
                  "descriptor: "
               << fd << std::endl;
     std::exit(1);
   }
-  // Always pass offset of 0 as it must be aligned to host page size, which can
+  // Always pass offset 0 as it must be aligned to host page size, which can
   // differ (i.e. MacOS has page size of 16KiB).
   void* filemmap = mmap(NULL, (size_t)statbuf->st_size, PROT_READ | PROT_WRITE,
                         MAP_PRIVATE, fd, 0);
@@ -51,7 +53,8 @@ HostFileMMap* HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
 HostBackedFileMMaps::~HostBackedFileMMaps() {
   for (auto fmap : hostvec) {
     if (munmap(fmap->getOrigPtr(), fmap->origLen_) < 0) {
-      std::cerr << "Unable to unmap host backed file mmap associated with file "
+      std::cerr << "[SimEng:HostBackedFileMMaps] Unable to unmap host backed "
+                   "file mmap associated with file "
                    "descriptor: "
                 << fmap->fd_ << std::endl;
       std::exit(1);
@@ -108,9 +111,9 @@ bool VirtualMemoryArea::containedIn(uint64_t startAddr, size_t size) {
 void VirtualMemoryArea::trimRangeEnd(uint64_t addr) {
   vmSize_ = addr - vmStart_;
   vmEnd_ = addr;
-  // We dont host munmap here because HostBackedFileMMaps is responsible for
-  // managing all host mappings. We only update the file size to the new size
-  // only if it is less than the original size before trim.
+  // We dont host munmap here because the class HostBackedFileMMaps is
+  // responsible for managing all host mappings. We only update the file size to
+  // the new size only if it is less than the original size before trim.
   if (hasFile()) fsize_ = fsize_ < vmSize_ ? fsize_ : vmSize_;
 };
 
@@ -118,15 +121,15 @@ void VirtualMemoryArea::trimRangeStart(uint64_t addr) {
   if (hasFile()) {
     size_t trimlen = addr - vmStart_;
     if (trimlen >= fsize_) {
-      // We dont host munmap here because HostBackedFileMMaps is responsible for
-      // managing all host mappings. If the entire file size is trimmed just
-      // update the filebuf_ and fsize_ variables.
-      filebuf_ = NULL;
+      // We dont host munmap here because the class HostBackedFileMMaps is
+      // responsible for managing all host mappings. If the entire file size is
+      // trimmed just update the filebuf_ and fsize_ variables.
+      filebuf_ = nullptr;
       fsize_ = 0;
     } else {
       // If entire file size is not trimmed, update the filebuf pointer with an
       // offset. Since the start address of the VMA has been changed, the new
-      // start address should point to an offseted position in the file.
+      // start address should point to an offsetted position in the file.
       char* ptr = (char*)filebuf_ + trimlen;
       filebuf_ = (void*)ptr;
       fsize_ -= trimlen;

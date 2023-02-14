@@ -111,7 +111,7 @@ Process::Process(const std::vector<std::string>& commandLine,
     uint64_t value = this->pageTable_->deleteMapping(vaddr, size);
     if (value ==
         (masks::faults::pagetable::fault | masks::faults::pagetable::unmap)) {
-      std::cerr << "Mapping doesn't exist for vaddr: " << vaddr
+      std::cerr << "[SimEng:Process] Mapping doesn't exist for vaddr: " << vaddr
                 << " and length: " << size << std::endl;
     }
     return value;

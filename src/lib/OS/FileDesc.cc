@@ -14,12 +14,15 @@ FileDescArray::FileDescArray() {
 
 void FileDescArray::validate(int vfd) {
   if (numFds_ >= maxFdNum_) {
-    std::cerr << "Maximum number of file descriptors allocated." << std::endl;
+    std::cerr
+        << "[FileDescArray]: Maximum number of file descriptors allocated."
+        << std::endl;
     std::exit(1);
   }
   if (vfd == -1) return;
   if (vfd > maxFdNum_) {
-    std::cerr << "Invalid virtual file descriptor: " << vfd << std::endl;
+    std::cerr << "[FileDescArray]: Invalid virtual file descriptor: " << vfd
+              << std::endl;
     std::exit(1);
   }
 }
@@ -31,12 +34,13 @@ int FileDescArray::allocateFDEntry(int dirfd, const char* filename, int flags,
     if (!fdarr_[i].isValid()) {
       int fd = openat(dirfd, filename, flags, mode);
       if (fd == -1) {
-        std::cerr << "Error opening file at pathname: " << filename
-                  << std::endl;
+        std::cerr << "[SimEng:FileDescArray] Error opening file at pathname: "
+                  << filename << std::endl;
         return -1;
       }
       if (!fdarr_[i].reset(i, fd, flags, std::string(filename))) {
-        std::cerr << "Error occured while resetting FileDescEntry."
+        std::cerr << "[SimEng:FileDescArray] Error occured while resetting "
+                     "FileDescEntry."
                   << std::endl;
       };
       this->numFds_++;
@@ -49,7 +53,7 @@ int FileDescArray::allocateFDEntry(int dirfd, const char* filename, int flags,
 FileDescEntry& FileDescArray::getFDEntry(int vfd) {
   validate(vfd);
   if (!fdarr_[vfd].isValid()) {
-    std::cerr << "Virtual file descriptor (" << vfd
+    std::cerr << "[SimEng:FileDescArray] Virtual file descriptor (" << vfd
               << ") does not correspond to a file "
                  "descriptor"
               << std::endl;
@@ -61,19 +65,21 @@ int FileDescArray::removeFDEntry(int vfd) {
   validate(vfd);
   FileDescEntry entry = fdarr_[vfd];
   if (!entry.isValid()) {
-    std::cerr
-        << "Virtual file description does not correspond to a file descriptor. "
-        << vfd << std::endl;
+    std::cerr << "[SimEng:FileDescArray] Virtual file description does not "
+                 "correspond to a file descriptor. "
+              << vfd << std::endl;
     return EBADF;
   }
   if (close(entry.fd()) == -1) {
-    std::cerr << "Error closing file with filename:  " << entry.filename()
-              << std::endl;
+    std::cerr << "[SimEng:FileDescArray] Error closing file with filename:  "
+              << entry.filename() << std::endl;
     return -1;
   };
 
   if (!fdarr_[vfd].reset(-1, -1, -1, "")) {
-    std::cerr << "Error occured while resetting FileDescEntry" << std::endl;
+    std::cerr
+        << "[SimEng:FileDescArray] Error occured while resetting FileDescEntry"
+        << std::endl;
     std::exit(1);
   };
   this->numFds_--;
@@ -85,8 +91,9 @@ FileDescArray::~FileDescArray() {
   for (uint64_t i = 3; i < fdarr_.max_size(); i++) {
     if (fdarr_[i].isValid()) {
       if (close(fdarr_[i].fd()) == -1) {
-        std::cerr << "Error closing file with filename:  "
-                  << fdarr_[i].filename() << std::endl;
+        std::cerr
+            << "[SimEng:FileDescArray] Error closing file with filename:  "
+            << fdarr_[i].filename() << std::endl;
       };
     }
   }

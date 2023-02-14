@@ -17,7 +17,8 @@ PageFrameAllocator::~PageFrameAllocator(){};
 uint64_t PageFrameAllocator::allocate(size_t size) {
   size = upAlign(size, page_size);
   if (size > sizeLeft_) {
-    std::cerr << "Cannot allocate more page frames! Increase system memory."
+    std::cerr << "[SimEng:PageFrameAllocator] Cannot allocate more page "
+                 "frames! Increase system memory."
               << std::endl;
     std::exit(1);
   }

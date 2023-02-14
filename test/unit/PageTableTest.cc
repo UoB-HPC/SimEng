@@ -18,6 +18,8 @@ TEST(PageTableTest, CreateMappingSmallerThanPageSize) {
   ASSERT_EQ(table.size(), 1);
   ASSERT_NE(itr, table.end());
   ASSERT_EQ(itr->second, 0);
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, CreateMappingEqualToPageSize) {
@@ -32,6 +34,8 @@ TEST(PageTableTest, CreateMappingEqualToPageSize) {
   ASSERT_EQ(table.size(), 1);
   ASSERT_NE(itr, table.end());
   ASSERT_EQ(itr->second, 0);
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, CreateMappingGreaterThanPageSize) {
@@ -54,6 +58,8 @@ TEST(PageTableTest, CreateMappingGreaterThanPageSize) {
   itr = table.find(4096 * 2);
   ASSERT_NE(itr, table.end());
   ASSERT_EQ(itr->second, 4096 * 2);
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, CreateMappingOverExistingMapping) {
@@ -82,6 +88,8 @@ TEST(PageTableTest, CreateMappingOverExistingMapping) {
   uint64_t retVal = pTable->createMapping(4096, 8192, 4096);
   ASSERT_EQ(retVal,
             masks::faults::pagetable::fault | masks::faults::pagetable::map);
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, TranslateVaddr) {
@@ -104,6 +112,8 @@ TEST(PageTableTest, TranslateVaddr) {
   pAddrWOffset = pTable->translate(4096);
   ASSERT_EQ(pAddrWOffset, masks::faults::pagetable::fault |
                               masks::faults::pagetable::translate);
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, TranslateOnRangeLargerThanPage) {
@@ -127,6 +137,8 @@ TEST(PageTableTest, TranslateOnRangeLargerThanPage) {
   // to 4096, and we defined a continous range of 3 pages. Then 5183 should live
   // in the second page starting at address 8192. Mask to get the lower 12 bits.
   ASSERT_EQ(pAddrWOffset, 8192 + (5183 & 0xFFF));
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, TranslateVaddrWithSameOffset) {
@@ -158,6 +170,8 @@ TEST(PageTableTest, TranslateVaddrWithSameOffset) {
 
   pAddrWOffset = pTable->translate(vaddr2);
   ASSERT_EQ(pAddrWOffset, 11344);
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, DeleteMapping) {
@@ -184,6 +198,8 @@ TEST(PageTableTest, DeleteMapping) {
   pAddrWOffset = pTable->translate(0);
   ASSERT_EQ(pAddrWOffset, masks::faults::pagetable::fault |
                               masks::faults::pagetable::translate);
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, DeleteMappingGreaterThanExistingMapping) {
@@ -209,6 +225,8 @@ TEST(PageTableTest, DeleteMappingGreaterThanExistingMapping) {
 
   table = pTbfrnd->getTable();
   ASSERT_EQ(table.size(), 3);
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, DeleteMappingAtUnalignedAddr) {
@@ -237,6 +255,8 @@ TEST(PageTableTest, DeleteMappingAtUnalignedAddr) {
 
   table = pTbfrnd->getTable();
   ASSERT_EQ(table.size(), 0);
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, DeleteMappingAtUnalignedSizes) {
@@ -262,6 +282,8 @@ TEST(PageTableTest, DeleteMappingAtUnalignedSizes) {
 
   table = pTbfrnd->getTable();
   ASSERT_EQ(table.size(), 1);
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, DeleteMappingInBetweenTwoPages) {
@@ -293,6 +315,8 @@ TEST(PageTableTest, DeleteMappingInBetweenTwoPages) {
 
   table = pTbfrnd->getTable();
   ASSERT_EQ(table.size(), 2);
+
+  delete pTbfrnd;
 }
 
 TEST(PageTableTest, DeleteNonExistentMapping) {
@@ -319,15 +343,8 @@ TEST(PageTableTest, DeleteNonExistentMapping) {
 
   table = pTbfrnd->getTable();
   ASSERT_EQ(table.size(), 1);
-}
 
-/*
- * Todo:
- * 1) Write more tests for deleting Mappings.
- * 2) Write tests for creating mappings smaller or greater than pageSize but not
- * size aligned. 3) Write tests for deleting mapping smaller or greater than
- * pageSize but not page aligned. 4) Write tests for deleting mappings of size
- * greater than the original mapping.
- */
+  delete pTbfrnd;
+}
 
 }  // namespace

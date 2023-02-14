@@ -17,7 +17,9 @@ bool PageTable::isMapped(uint64_t vaddr) { return find(vaddr) != table_.end(); }
 
 uint64_t PageTable::generateOffsetMask(uint64_t pageSize) {
   if (!isPow2(page_size)) {
-    std::cerr << "Page size should be aligned to a power of 2." << std::endl;
+    std::cerr
+        << "[SimEng:PageTable] Page size should be aligned to a power of 2."
+        << std::endl;
     std::exit(1);
   }
   uint64_t lval = std::log2(page_size);
