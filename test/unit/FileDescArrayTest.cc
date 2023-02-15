@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "gtest/gtest.h"
-#include "simeng/kernel/FileDesc.hh"
+#include "simeng/OS/FileDesc.hh"
 #include "simeng/version.hh"
 
 namespace {

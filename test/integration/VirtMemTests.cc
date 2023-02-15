@@ -1,13 +1,13 @@
 #include <filesystem>
 
 #include "gtest/gtest.h"
-#include "simeng/kernel/MemRegion.hh"
-#include "simeng/kernel/Process.hh"
-#include "simeng/kernel/SimOS.hh"
-#include "simeng/kernel/Vma.hh"
+#include "simeng/OS/MemRegion.hh"
+#include "simeng/OS/Process.hh"
+#include "simeng/OS/SimOS.hh"
+#include "simeng/OS/Vma.hh"
 #include "simeng/version.hh"
 
-using namespace simeng::kernel;
+using namespace simeng::OS;
 
 namespace {
 const std::string configStr =
@@ -25,8 +25,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(300000);
   // Create the instance of the OS
-  simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
@@ -49,8 +48,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
       std::make_shared<simeng::memory::SimpleMem>(300000);
 
   // Create the instance of the OS
-  simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
@@ -84,8 +82,7 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
       std::make_shared<simeng::memory::SimpleMem>(300000);
 
   // Create the instance of the OS
-  simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
   uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
 
   uint64_t retVal =
@@ -119,8 +116,7 @@ TEST(VirtMemTest, UnmapSyscall) {
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(300000);
   // Create the instance of the OS
-  simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
   uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
 
   uint64_t retVal =
@@ -168,8 +164,7 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
-  simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
   uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(0);
@@ -216,8 +211,7 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
-  simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
   uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(0);
@@ -266,8 +260,7 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
-  simeng::kernel::SimOS simOS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory, false);
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
   uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(0);

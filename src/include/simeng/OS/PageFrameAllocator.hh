@@ -5,7 +5,7 @@
 #include <climits>
 #include <cstddef>
 
-#include "simeng/kernel/Constants.hh"
+#include "simeng/OS/Constants.hh"
 
 namespace TestFriends {
 class PFAFriend;
@@ -14,7 +14,7 @@ class PFAFriend;
 namespace simeng {
 namespace OS {
 
-using namespace simeng::kernel::defaults;
+using namespace simeng::OS::defaults;
 
 class PageFrameAllocator {
   friend class TestFriends::PFAFriend;

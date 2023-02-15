@@ -1,9 +1,9 @@
 #include <sys/mman.h>
 
 #include "gtest/gtest.h"
-#include "simeng/kernel/MemRegion.hh"
+#include "simeng/OS/MemRegion.hh"
 
-using namespace simeng::kernel;
+using namespace simeng::OS;
 
 namespace {
 

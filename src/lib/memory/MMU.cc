@@ -1,6 +1,6 @@
 #include "simeng/memory/MMU.hh"
 
-#include "simeng/kernel/Constants.hh"
+#include "simeng/OS/Constants.hh"
 namespace simeng {
 namespace memory {
 
@@ -15,11 +15,11 @@ void MMU::bufferRequest(DataPacket* request,
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
   uint64_t paddr = translate_(request->address, pid_);
-  uint64_t faultCode = simeng::kernel::masks::faults::getFaultCode(paddr);
+  uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
-  if (faultCode == simeng::kernel::masks::faults::pagetable::dataAbort) {
+  if (faultCode == simeng::OS::masks::faults::pagetable::dataAbort) {
     callback(NULL);
-  } else if (faultCode == simeng::kernel::masks::faults::pagetable::ignored) {
+  } else if (faultCode == simeng::OS::masks::faults::pagetable::ignored) {
     callback(memory_->handleIgnoredRequest(request));
   } else {
     request->address = paddr;

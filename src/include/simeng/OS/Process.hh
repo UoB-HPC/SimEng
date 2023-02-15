@@ -18,7 +18,7 @@ class Mem;
 
 namespace OS {
 
-using namespace simeng::kernel::defaults;
+using namespace simeng::OS::defaults;
 
 // Typedef for callback function used to send data upon handling page fault.
 typedef std::function<void(char*, uint64_t, size_t)> SendToMemory;

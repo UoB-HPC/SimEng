@@ -220,12 +220,6 @@ class SyscallHandler {
    * to point to the SimEng equivalent. */
   std::string getSpecialFile(const std::string filename);
 
-<<<<<<< HEAD:src/include/simeng/OS/SyscallHandler.hh
-  /** The user-space processes running above the kernel. */
-  const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes_;
-
-=======
->>>>>>> 051b75a2 (Wrote more integration tests and added SimOS ref to Syscall handler. Fixed bugs in handlePageFault):src/include/simeng/kernel/SyscallHandler.hh
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
 

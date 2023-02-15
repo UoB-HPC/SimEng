@@ -36,7 +36,7 @@ class CoreInstance {
  public:
   /** Constructor with an executable, its arguments, and a model configuration.
    */
-  CoreInstance(std::shared_ptr<kernel::SyscallHandler> syscallHandler,
+  CoreInstance(std::shared_ptr<OS::SyscallHandler> syscallHandler,
                std::shared_ptr<simeng::memory::Mem> mem,
                std::shared_ptr<memory::MMU> mmu);
 

@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-#include "simeng/kernel/Constants.hh"
+#include "simeng/OS/Constants.hh"
 
 namespace simeng {
 namespace OS {

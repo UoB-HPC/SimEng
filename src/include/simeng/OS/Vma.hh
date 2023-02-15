@@ -8,13 +8,13 @@
 #include <memory>
 #include <vector>
 
-#include "simeng/kernel/Constants.hh"
+#include "simeng/OS/Constants.hh"
 #include "simeng/util/Math.hh"
 
 namespace simeng {
 namespace OS {
 
-using namespace simeng::kernel::defaults;
+using namespace simeng::OS::defaults;
 
 class HostBackedFileMMaps;
 class HostFileMMap;

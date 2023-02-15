@@ -1,8 +1,8 @@
 #include "TestFriends.hh"
 #include "gtest/gtest.h"
-#include "simeng/kernel/PageTable.hh"
+#include "simeng/OS/PageTable.hh"
 
-using namespace simeng::kernel;
+using namespace simeng::OS;
 using namespace TestFriends;
 
 namespace {

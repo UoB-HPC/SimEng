@@ -2,9 +2,9 @@
 
 namespace simeng {
 
-CoreInstance::CoreInstance(
-    std::shared_ptr<kernel::SyscallHandler> syscallHandler,
-    std::shared_ptr<simeng::memory::Mem> mem, std::shared_ptr<memory::MMU> mmu)
+CoreInstance::CoreInstance(std::shared_ptr<OS::SyscallHandler> syscallHandler,
+                           std::shared_ptr<simeng::memory::Mem> mem,
+                           std::shared_ptr<memory::MMU> mmu)
     : config_(Config::get()),
       syscallHandler_(syscallHandler),
       memory_(mem),

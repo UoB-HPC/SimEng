@@ -15,8 +15,8 @@ TEST(ISATest, CreateAArch64) {
       "Vector-Length: 512, Streaming-Vector-Length: 512}}");
   // Pass a config file with only the options required by the aarch64
   // architecture class to function
-  std::shared_ptr<simeng::kernel::SyscallHandler> sysHandler =
-      std::make_shared<simeng::kernel::SyscallHandler>(nullptr);
+  std::shared_ptr<simeng::OS::SyscallHandler> sysHandler =
+      std::make_shared<simeng::OS::SyscallHandler>(nullptr);
 
   std::unique_ptr<simeng::arch::Architecture> isa =
       std::make_unique<simeng::arch::aarch64::Architecture>(sysHandler);

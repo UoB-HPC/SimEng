@@ -575,17 +575,11 @@ bool ExceptionHandler::init() {
         int flags = registerFileSet.get(R3).get<int>();
         int fd = registerFileSet.get(R4).get<int>();
         off_t offset = registerFileSet.get(R5).get<off_t>();
-        if (1) {
-          uint64_t result =
-              sysHandler_->mmap(addr, length, prot, flags, fd, offset);
-          // An allocation of 0 signifies a failed allocation, return value from
-          // syscall is changed to -1
-          if (result <= 0) {
-            stateChange = {
-                ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-1)}};
-          } else {
-            stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
-          }
+        uint64_t result =
+            sysHandler_->mmap(addr, length, prot, flags, fd, offset);
+        if (result <= 0) {
+          stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-1)}};
         } else {
           stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
         }

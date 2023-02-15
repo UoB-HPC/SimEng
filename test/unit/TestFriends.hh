@@ -1,13 +1,13 @@
 #pragma once
-#include "simeng/kernel/PageFrameAllocator.hh"
-#include "simeng/kernel/PageTable.hh"
-#include "simeng/kernel/Vma.hh"
+#include "simeng/OS/PageFrameAllocator.hh"
+#include "simeng/OS/PageTable.hh"
+#include "simeng/OS/Vma.hh"
 
 namespace TestFriends {
 class PTFriend {
  public:
-  simeng::kernel::PageTable* pTable = NULL;
-  PTFriend(simeng::kernel::PageTable* ptable) { pTable = ptable; };
+  simeng::OS::PageTable* pTable = NULL;
+  PTFriend(simeng::OS::PageTable* ptable) { pTable = ptable; };
   ~PTFriend() { delete pTable; }
   std::map<uint64_t, uint64_t>& getTable() { return pTable->table_; }
 };

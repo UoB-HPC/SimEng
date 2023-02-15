@@ -1,6 +1,6 @@
 #include "simeng/OS/SimOS.hh"
 
-#include "simeng/kernel/Masks.hh"
+#include "simeng/OS/Constants.hh"
 
 /** The size of each time slice a process has. */
 static constexpr uint64_t execTicks = 30000;
@@ -141,7 +141,7 @@ void SimOS::tick() {
   }
 }
 
-const Process& SimOS::getProcess(uint64_t TID) const {
+std::shared_ptr<Process>& SimOS::getProcess(uint64_t TID) {
   auto proc = processes_.find(TID);
   if (proc == processes_.end()) {
     // If TID doesn't exist then hard exit
@@ -149,7 +149,7 @@ const Process& SimOS::getProcess(uint64_t TID) const {
               << "` does not exist.\n";
     exit(1);
   }
-  return (*proc->second);
+  return proc->second;
 }
 
 void SimOS::createInitialProcess() {
@@ -177,7 +177,7 @@ void SimOS::createInitialProcess() {
     commandLine.insert(commandLine.end(), executableArgs_.begin(),
                        executableArgs_.end());
 
-    processes_.emplace(0, std::make_shared<Process>(commandLine, memory_,
+    processes_.emplace(0, std::make_shared<Process>(commandLine, memory_, this,
                                                     regFileStructure, 0, 0));
 
     // Raise error if created process is not valid
@@ -191,7 +191,7 @@ void SimOS::createInitialProcess() {
     processes_.emplace(
         0, std::make_shared<Process>(
                simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-               memory_, regFileStructure, 0, 0));
+               memory_, this, regFileStructure, 0, 0));
     // Raise error if created process is not valid
     if (!processes_[0]->isValid()) {
       std::cerr << "[SimEng:SimOS] Could not create initial process based on "

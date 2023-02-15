@@ -27,7 +27,7 @@ class RegressionTest;
 namespace simeng {
 namespace OS {
 
-using namespace simeng::kernel::defaults;
+using namespace simeng::OS::defaults;
 
 // Program used when no executable is provided; counts down from
 // 1024*1024, with an independent `orr` at the start of each branch.
@@ -54,7 +54,7 @@ class SimOS {
   void tick();
 
   /** Get a process with specified TID. */
-  const Process& getProcess(uint64_t TID) const;
+  std::shared_ptr<Process>& getProcess(uint64_t TID);
 
   /** Get shared_ptr to syscallHandler instance. */
   std::shared_ptr<SyscallHandler> getSyscallHandler() const {
@@ -159,7 +159,7 @@ class SimOS {
           static_cast<uint64_t>(0b10100), 8};
     }
 
-    processes_.push_back(proc);
+    processes_[0] = proc;
   }
   /** Pointer to the PageFrameAllocator object.  */
   std::shared_ptr<PageFrameAllocator> pageFrameAllocator_;

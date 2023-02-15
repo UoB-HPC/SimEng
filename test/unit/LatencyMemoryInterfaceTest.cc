@@ -51,8 +51,8 @@ TEST(LatencyMemoryInterfaceTest, UnMappedAddrRead) {
 
   VAddrTranslator fn = [](uint64_t addr, uint64_t pid) -> uint64_t {
     if (!(addr > 0 && addr < 4)) {
-      return simeng::kernel::masks::faults::pagetable::fault |
-             simeng::kernel::masks::faults::pagetable::dataAbort;
+      return simeng::OS::masks::faults::pagetable::fault |
+             simeng::OS::masks::faults::pagetable::dataAbort;
     }
     return addr;
   };

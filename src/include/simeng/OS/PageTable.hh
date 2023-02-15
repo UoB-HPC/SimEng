@@ -4,7 +4,7 @@
 #include <variant>
 #include <vector>
 
-#include "simeng/kernel/Constants.hh"
+#include "simeng/OS/Constants.hh"
 
 namespace TestFriends {
 class PTFriend;
@@ -13,7 +13,7 @@ class PTFriend;
 namespace simeng {
 namespace OS {
 
-using namespace simeng::kernel::defaults;
+using namespace simeng::OS::defaults;
 
 class PageTable {
   friend class TestFriends::PTFriend;

@@ -35,8 +35,7 @@ void RegressionTest::run(const char* source, const char* triple,
   memory_ = std::make_shared<simeng::memory::SimpleMem>(300000);
 
   // Initialise a SimOS kernel
-  simeng::kernel::SimOS OS =
-      simeng::kernel::SimOS(DEFAULT_STR, {}, memory_, true);
+  simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory_, true);
 
   // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place

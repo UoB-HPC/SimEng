@@ -1,10 +1,10 @@
 #include <fcntl.h>
 
 #include "gtest/gtest.h"
-#include "simeng/kernel/Vma.hh"
+#include "simeng/OS/Vma.hh"
 #include "simeng/version.hh"
 
-using namespace simeng::kernel;
+using namespace simeng::OS;
 
 namespace {
 TEST(VmaTest, VmaCreationWithoutFileBuf) {

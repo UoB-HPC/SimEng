@@ -1,6 +1,6 @@
 #include "simeng/OS/SyscallHandler.hh"
 
-#include "simeng/kernel/SimOS.hh"
+#include "simeng/OS/SimOS.hh"
 namespace simeng {
 namespace OS {
 
