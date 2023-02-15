@@ -1,5 +1,3 @@
-#include <filesystem>
-
 #include "gtest/gtest.h"
 #include "simeng/OS/MemRegion.hh"
 #include "simeng/OS/Process.hh"
