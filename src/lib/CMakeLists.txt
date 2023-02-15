@@ -53,7 +53,6 @@ set(SIMENG_SOURCES
     RegisterFileSet.cc
     RegisterValue.cc
     SpecialFileDirGen.cc
-    Backward.cc
 )
 
 configure_file(${capstone_SOURCE_DIR}/arch/AArch64/AArch64GenInstrInfo.inc AArch64GenInstrInfo.inc COPYONLY)
