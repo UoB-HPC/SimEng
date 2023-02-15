@@ -1,4 +1,5 @@
-#include <filesystem>
+#include <stdio.h>
+
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -53,7 +54,7 @@ class FilesEnv : public ::testing::Environment {
   void TearDown() override {
     for (auto itr : paths) {
       std::string fpath = itr;
-      if (!std::filesystem::remove(fpath)) {
+      if (remove(fpath.c_str()) != 0) {
         std::cerr << "Error occured while deleting file at path: " << fpath
                   << std::endl;
       }
