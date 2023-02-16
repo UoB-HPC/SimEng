@@ -22,7 +22,7 @@
 
 namespace simeng {
 
-// Forward delare everything needed for SimOS
+// Forward declare everything needed for SimOS
 namespace OS {
 class SimOS;
 }  // namespace OS
