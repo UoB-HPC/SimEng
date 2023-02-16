@@ -85,6 +85,7 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
   bool unsignedOverflow_(uint64_t a, uint64_t b) const {
     return (a + b) < a || (a + b) < b;
   }
+
   /** Shared pointer to the core MMU. */
   std::shared_ptr<memory::MMU> mmu_ = nullptr;
 };
