@@ -19,6 +19,10 @@ namespace riscv {
 Register csRegToRegister(unsigned int reg) {
   // Check from top of the range downwards
 
+  // Metadata could produce either 64-bit floating point register or 32-bit
+  // floating point register. Map both encodings to the same SimEng register.
+  // Only 64-bit registers are supported
+
   // Modulus ensures only 64 bit registers are recognised
   if (RISCV_REG_F31_64 >= reg && reg >= RISCV_REG_F0_64 && reg % 2 == 0) {
     // Register ft0.64 has encoding 34 with subsequent encodings interleaved
@@ -26,14 +30,12 @@ Register csRegToRegister(unsigned int reg) {
     return {RegisterType::FLOAT, static_cast<uint16_t>((reg - 34) / 2)};
   }
 
-  // Only supporting 64 bit floating point registers for now. Commented out to
-  // trip assertion
-  //  // Modulus ensures only 32 bit registers are recognised
-  //  if (RISCV_REG_F31_32 >= reg && reg >= RISCV_REG_F0_32 && reg % 2 == 1) {
-  //    // Register ft0.32 has encoding 33 with subsequent encodings interleaved
-  //    // with 64 bit floating point registers. See riscv.h
-  //    return {RegisterType::FLOAT, static_cast<uint16_t>((reg - 33) / 2)};
-  //  }
+  // Modulus ensures only 32 bit registers are recognised
+  if (RISCV_REG_F31_32 >= reg && reg >= RISCV_REG_F0_32 && reg % 2 == 1) {
+    // Register ft0.32 has encoding 33 with subsequent encodings interleaved
+    // with 64 bit floating point registers. See riscv.h
+    return {RegisterType::FLOAT, static_cast<uint16_t>((reg - 33) / 2)};
+  }
 
   if (RISCV_REG_X31 >= reg && reg >= RISCV_REG_X1) {
     // Capstone produces 1 indexed register operands
@@ -79,8 +81,55 @@ void Instruction::invalidateIfNotImplemented() {
       metadata.opcode <= Opcode::RISCV_CSRRWI)
     return;
   if (metadata.opcode == Opcode::RISCV_FADD_D) return;
+  if (metadata.opcode == Opcode::RISCV_FADD_S) return;
   if (metadata.opcode == Opcode::RISCV_FSD) return;
+  if (metadata.opcode == Opcode::RISCV_FSW) return;
   if (metadata.opcode == Opcode::RISCV_FLD) return;
+  if (metadata.opcode == Opcode::RISCV_FLW) return;
+  if (metadata.opcode == Opcode::RISCV_FSUB_D) return;
+  if (metadata.opcode == Opcode::RISCV_FSUB_S) return;
+  if (metadata.opcode == Opcode::RISCV_FDIV_D) return;
+  if (metadata.opcode == Opcode::RISCV_FDIV_S) return;
+  if (metadata.opcode == Opcode::RISCV_FMUL_D) return;
+  if (metadata.opcode == Opcode::RISCV_FMUL_S) return;
+  if (metadata.opcode == Opcode::RISCV_FSQRT_D) return;
+  if (metadata.opcode == Opcode::RISCV_FSQRT_S) return;
+  if (metadata.opcode == Opcode::RISCV_FMIN_D) return;
+  if (metadata.opcode == Opcode::RISCV_FMIN_S) return;
+  if (metadata.opcode == Opcode::RISCV_FMAX_D) return;
+  if (metadata.opcode == Opcode::RISCV_FMAX_S) return;
+  if (metadata.opcode == Opcode::RISCV_FMADD_D) return;
+  if (metadata.opcode == Opcode::RISCV_FMADD_S) return;
+  //  //  if (metadata.opcode == Opcode::RISCV_FMSUB_D) return;
+  if (metadata.opcode == Opcode::RISCV_FNMSUB_D) return;
+  if (metadata.opcode == Opcode::RISCV_FNMSUB_S) return;
+  if (metadata.opcode == Opcode::RISCV_FMSUB_S) return;
+  if (metadata.opcode == Opcode::RISCV_FCVT_D_L) return;
+  if (metadata.opcode == Opcode::RISCV_FCVT_D_W) return;
+  if (metadata.opcode == Opcode::RISCV_FCVT_S_W) return;
+  if (metadata.opcode == Opcode::RISCV_FCVT_W_D) return;
+  if (metadata.opcode == Opcode::RISCV_FCVT_W_S) return;
+  if (metadata.opcode == Opcode::RISCV_FCVT_D_S) return;
+  if (metadata.opcode == Opcode::RISCV_FCVT_S_D) return;
+  if (metadata.opcode == Opcode::RISCV_FSGNJ_D) return;
+  if (metadata.opcode == Opcode::RISCV_FSGNJ_S) return;
+  if (metadata.opcode == Opcode::RISCV_FSGNJN_S) return;
+  if (metadata.opcode == Opcode::RISCV_FSGNJN_D) return;
+  if (metadata.opcode == Opcode::RISCV_FSGNJX_D) return;
+  if (metadata.opcode == Opcode::RISCV_FSGNJX_S) return;
+  if (metadata.opcode == Opcode::RISCV_FMV_X_D) return;
+  if (metadata.opcode == Opcode::RISCV_FMV_X_W) return;
+  if (metadata.opcode == Opcode::RISCV_FMV_D_X) return;
+  if (metadata.opcode == Opcode::RISCV_FMV_W_X) return;
+  if (metadata.opcode == Opcode::RISCV_FEQ_D) return;
+  if (metadata.opcode == Opcode::RISCV_FEQ_S) return;
+  if (metadata.opcode == Opcode::RISCV_FLT_D) return;
+  if (metadata.opcode == Opcode::RISCV_FLT_S) return;
+  if (metadata.opcode == Opcode::RISCV_FLE_D) return;
+  if (metadata.opcode == Opcode::RISCV_FLE_S) return;
+
+  std::cout << "[SimEng:RISCV:Decode] Insn: " << metadata.mnemonic << " "
+            << metadata.operandStr << std::endl;
 
   exception_ = InstructionException::EncodingUnallocated;
   exceptionEncountered_ = true;

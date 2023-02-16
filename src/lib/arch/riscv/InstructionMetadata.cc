@@ -4,6 +4,8 @@
 #include <cstring>
 #include <iostream>
 
+#include "simeng/arch/riscv/Architecture.hh"
+
 namespace simeng {
 namespace arch {
 namespace riscv {
@@ -249,6 +251,152 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         // bgez Rs, offset is pseudo of BGE Rs, x0, offset
         // BGE Rs, offset, _ -> BGE Rs, x0, offset
         includeZeroRegisterPosOne();
+      }
+      break;
+    }
+
+    case Opcode::RISCV_CSRRS: {
+      if (operandCount == 1 && strcmp(mnemonic, "frflags") == 0) {
+        // frflags Rs is pseudo of CSRRS Rs, fflags, zero (Read FP exception
+        // flags) CSRRS Rs, _, _ -> CSRRS Rs, fflags, zero
+        operands[1].type =
+            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+        operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
+
+        operands[2].type = RISCV_OP_REG;
+        operands[2].reg = 1;
+
+        operandCount = 3;
+      } else if (strcmp(mnemonic, "rdinstret") == 0) {
+        assert(false && "Unimplemented psuedoinstruction rdinstret");
+      } else if (strcmp(mnemonic, "rdcycle") == 0) {
+        assert(false && "Unimplemented psuedoinstruction rdcycle");
+      } else if (strcmp(mnemonic, "rdtime") == 0) {
+        assert(false && "Unimplemented psuedoinstruction rdtime");
+      } else if (strcmp(mnemonic, "csrr") == 0) {
+        assert(false && "Unimplemented psuedoinstruction csrr");
+      } else if (strcmp(mnemonic, "csrs") == 0) {
+        assert(false && "Unimplemented psuedoinstruction csrs");
+      } else if (strcmp(mnemonic, "frcsr") == 0) {
+        assert(false && "Unimplemented psuedoinstruction rdtime");
+      } else if (operandCount == 1 && strcmp(mnemonic, "frrm") == 0) {
+        // frrm Rs is pseudo of CSRRS Rs, frm, zero (Read FP rounding mode)
+        // CSRRS Rs, _, _ -> CSRRS Rs, frm, zero
+        operands[1].type =
+            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+        operands[1].reg = RISCV_SYSREG_FRM;  // frm address
+
+        operands[2].type = RISCV_OP_REG;
+        operands[2].reg = 1;
+
+        operandCount = 3;
+      }
+      break;
+    }
+    case Opcode::RISCV_CSRRW: {
+      if (operandCount == 1 && strcmp(mnemonic, "fsflags") == 0) {
+        // fsflags Rs is pseudo of CSRRW zero, fflags, rs (Write FP exception
+        // flags)
+        // CSRRW Rs, _, _ -> CSRRW zero, fflags, Rs
+        operands[2] = operands[0];
+
+        operands[0].type = RISCV_OP_REG;
+        operands[0].reg = 1;
+
+        operands[1].type =
+            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+        operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
+
+        operandCount = 3;
+      } else if (strcmp(mnemonic, "csrw") == 0) {
+        assert(false && "Unimplemented psuedoinstruction csrw");
+      } else if (strcmp(mnemonic, "fscsr") == 0) {
+        assert(false && "Unimplemented psuedoinstruction fscsr");
+      } else if (strcmp(mnemonic, "fscsr") == 0) {
+        // 2 pseudoinstructions with same name but different number of registers
+        assert(false && "Unimplemented psuedoinstruction fscsr");
+      } else if (operandCount == 1 && strcmp(mnemonic, "fsrm") == 0) {
+        // fsrm Rs is pseudo of CSRRW zero, frm, rs (Write FP rounding mode)
+        // CSRRW Rs, _, _ -> CSRRW zero, frm, Rs
+        operands[2] = operands[0];
+
+        operands[0].type = RISCV_OP_REG;
+        operands[0].reg = 1;
+
+        operands[1].type =
+            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+        operands[1].reg = RISCV_SYSREG_FRM;  // frm address
+
+        operandCount = 3;
+      } else if (strcmp(mnemonic, "fsrm") == 0) {
+        assert(false && "Unimplemented psuedoinstruction fsrm");
+      } else if (strcmp(mnemonic, "fsflags") == 0) {
+        assert(false && "Unimplemented psuedoinstruction fsflags");
+      } else if (strcmp(mnemonic, "fsflags") == 0) {
+        assert(false && "Unimplemented psuedoinstruction fsflags");
+      }
+      break;
+    }
+
+    case Opcode::RISCV_FSGNJ_S: {
+      if (operandCount == 2 && strcmp(mnemonic, "fmv.s") == 0) {
+        // fmv.s rd, rs is pseudo of fsgnj.s rd, rs, rs (Copy single-precision
+        // register)
+        // fsgnj.s Rd, Rs, _ -> fsgnj.s Rd, Rs, Rs
+        operands[2] = operands[1];
+        operandCount = 3;
+      }
+      break;
+    }
+    case Opcode::RISCV_FSGNJX_S: {
+      if (operandCount == 2 && strcmp(mnemonic, "fabs.s") == 0) {
+        // fabs.s rd, rs is pseudo of  fsgnjx.s rd, rs, rs (Single-precision
+        // absolute value)
+        // fsgnjx.s rd, rs, _ -> fsgnjx.s rd, rs, rs
+        operands[2] = operands[1];
+        operandCount = 3;
+      }
+      break;
+    }
+    case Opcode::RISCV_FSGNJN_S: {
+      if (operandCount == 2 && strcmp(mnemonic, "fneg.s") == 0) {
+        // fneg.s rd, rs is pseudo of  fsgnjn.s rd, rs, rs (Single-precision
+        // negate)
+        // fsgnjn.s rd, rs, _ -> fsgnjn.s rd, rs, rs
+        operands[2] = operands[1];
+        operandCount = 3;
+      }
+      break;
+    }
+
+    case Opcode::RISCV_FSGNJ_D: {
+      if (operandCount == 2 && strcmp(mnemonic, "fmv.d") == 0) {
+        // fmv.d rd, rs is pseudo of fsgnj.d rd, rs, rs (Copy double-precision
+        // register)
+        // fsgnj.d Rd, Rs, _ -> fsgnj.d Rd, Rs, Rs
+        operands[2] = operands[1];
+        operandCount = 3;
+      }
+      break;
+    }
+    case Opcode::RISCV_FSGNJX_D: {
+      if (operandCount == 2 && strcmp(mnemonic, "fabs.d") == 0) {
+        // fabs.d rd, rs is pseudo of  fsgnjx.d rd, rs, rs (Double-precision
+        // absolute value)
+        // fsgnjx.d rd, rs, _ -> fsgnjx.d rd, rs, rs
+        operands[2] = operands[1];
+        operandCount = 3;
+      }
+      break;
+    }
+    case Opcode::RISCV_FSGNJN_D: {
+      // fneg.d rd, rs, fsgnjn.d rd, rs, rs, Double-precision negate
+      if (operandCount == 2 && strcmp(mnemonic, "fneg.d") == 0) {
+        // fneg.d rd, rs is pseudo of  fsgnjn.d rd, rs, rs (Double-precision
+        // neagte)
+        // fsgnjn.d rd, rs, _ -> fsgnjn.d rd, rs, rs
+        operands[2] = operands[1];
+        operandCount = 3;
       }
       break;
     }

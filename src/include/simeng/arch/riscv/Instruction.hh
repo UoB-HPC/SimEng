@@ -163,10 +163,13 @@ class Instruction : public simeng::Instruction {
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
 
+  /** Canonical 64-bit NaN defined by IEEE 754*/
+  static const uint64_t UPPER_32_ALL_1 = 0xFFFFFFFF00000000;
+
  private:
   /** The maximum number of source registers any supported RISC-V instruction
    * can have. */
-  static const uint8_t MAX_SOURCE_REGISTERS = 2;
+  static const uint8_t MAX_SOURCE_REGISTERS = 3;
   /** The maximum number of destination registers any supported RISC-V
    * instruction can have. */
   static const uint8_t MAX_DESTINATION_REGISTERS = 1;
