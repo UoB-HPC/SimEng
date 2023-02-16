@@ -194,5 +194,7 @@ uint64_t Elf::getEntryPoint() const { return entryPoint_; }
 
 bool Elf::isValid() const { return isValid_; }
 
-std::vector<ElfHeader>& Elf::getProcessedHeaders() { return processedHeaders_; }
+const std::vector<ElfHeader>& Elf::getProcessedHeaders() const {
+  return processedHeaders_;
+}
 }  // namespace simeng
