@@ -317,7 +317,7 @@ uint64_t Process::createStack(uint64_t stackStart,
   return stackPointer;
 }
 
-uint64_t Process::handlePageFault(uint64_t vaddr, SendToMemory send) {
+uint64_t Process::handlePageFault(uint64_t vaddr, sendToMemory send) {
   // Retrieve VMA containing the vaddr has raised a page fault.
   VirtualMemoryArea* vm = memRegion_.getVMAFromAddr(vaddr);
   // Process VMA doesn't exist. This address is likely due to a speculation.

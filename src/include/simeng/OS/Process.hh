@@ -20,8 +20,9 @@ namespace OS {
 
 using namespace simeng::OS::defaults;
 
-// Typedef for callback function used to send data upon handling page fault.
-typedef std::function<void(char*, uint64_t, size_t)> SendToMemory;
+// Typedef for callback function used to send data to memory upon handling page
+// fault.
+typedef std::function<void(char*, uint64_t, size_t)> sendToMemory;
 
 // Forward declaration for SimOS.
 class SimOS;
@@ -44,15 +45,15 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
 
 /** The initial state of a SimOS Process, constructed from a binary executable.
  *
- * The constructed process follows a typical layout and has the following
- * properties:
+ * The constructed process follows the layout described below and has the
+ * following properties:
  *
  * a) Padding between each region is equal to the page size. (4096 bytes)
- * b) Each region page size aligned start address, end address and size.
+ * b) Each region has a page size aligned start address, end address and size.
  * c) The stack grows downwards.
  * d) The heap grows upwards.
  * e) The mmap region grows upwards.
- * f) Region above the stackPtr contains all initial data for the process to
+ * f) The region above the stackPtr contains all initial data for the process to
  *    start i.e argv, env args, auxiliary variables.
  *
  * |---------------| <- stackStart (Start of the stack region)
@@ -79,15 +80,13 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
  *
  */
 class Process {
-  /**
-   * Make SimOS friend class of Process so it can access all private variables.
-   */
+  /**  Make SimOS friend class of Process so it can access all private
+   * variables. */
   friend class SimOS;
 
  public:
-  /** Construct a SimOS Process from a vector of command-line arguments.
-   *
-   * The first argument is a path to an executable ELF file. */
+  /** Construct a SimOS Process from a vector of command-line arguments. The
+   * first argument is a path to an executable ELF file. */
   Process(const std::vector<std::string>& commandLine,
           std::shared_ptr<simeng::memory::Mem> memory, SimOS* os,
           std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
@@ -136,14 +135,12 @@ class Process {
 
   /** Get the process' TID. */
   uint64_t getTID() const { return TID_; }
+
   /** Method which handles a page fault. */
-  uint64_t handlePageFault(uint64_t vaddr, SendToMemory send);
+  uint64_t handlePageFault(uint64_t vaddr, sendToMemory send);
 
   /** Method which handles virtual address translation. */
   uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
-
-  /** Method which return reference to page table shared_ptr. */
-  std::shared_ptr<PageTable>& getPageTable() { return pageTable_; }
 
   /** Shared pointer to FileDescArray class.*/
   std::unique_ptr<FileDescArray> fdArray_;
@@ -161,14 +158,13 @@ class Process {
   cpuContext context_;
 
  private:
-  /** MemRegion of the Process Image. */
-  MemRegion memRegion_;
-  /**
-   * Create and populate the initial process stack and returns the stack
-   * pointer.
-   */
+  /** Create and populate the initial process stack and returns the stack
+   * pointer. */
   uint64_t createStack(uint64_t stackStart,
                        std::shared_ptr<simeng::memory::Mem>& memory);
+
+  /** MemRegion of the Process Image. */
+  MemRegion memRegion_;
 
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
@@ -186,6 +182,7 @@ class Process {
   /** The process' Thread ID - a globally unique identifier.
    * A thread group's leader TID will be equal to the TGID. */
   uint64_t TID_;
+
   /** Reference to a page table */
   std::shared_ptr<PageTable> pageTable_ = nullptr;
 
