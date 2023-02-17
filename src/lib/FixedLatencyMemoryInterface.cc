@@ -28,6 +28,8 @@ void FixedLatencyMemoryInterface::tick() {
     if (request.write) {
       auto fn = [&](memory::DataPacket* dpkt = NULL) -> void {
         if (dpkt == NULL) return;
+        // If dpkt is not null the response is ignored as it doesn't contain any
+        // information relevant after the write has completed.
         delete dpkt;
       };
 
@@ -38,6 +40,8 @@ void FixedLatencyMemoryInterface::tick() {
     } else {
       auto fn = [&, this](memory::DataPacket* dpkt = NULL) -> void {
         if (dpkt == NULL) {
+          // Sending an empty RegisterValue here signifies a data abort
+          // exception as we haven't recieved a response from memory.
           this->completedReads_.push_back({target, RegisterValue(), requestId});
           return;
         }

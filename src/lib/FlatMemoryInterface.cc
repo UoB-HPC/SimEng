@@ -15,6 +15,8 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
                                       uint64_t requestId) {
   auto fn = [&, this](memory::DataPacket* dpkt = NULL) -> void {
     if (dpkt == NULL) {
+      // Sending an empty RegisterValue here signifies a data abort exception as
+      // a response wasn't recieved from memory.
       this->completedReads_.push_back({target, RegisterValue(), requestId});
       return;
     }
@@ -31,6 +33,8 @@ void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
                                        const RegisterValue& data) {
   auto fn = [&](memory::DataPacket* dpkt = NULL) -> void {
     if (dpkt == NULL) return;
+    // If dpkt is not null the response is ignored as it doesn't contain any
+    // information relevant after the write has completed.
     delete dpkt;
   };
 
