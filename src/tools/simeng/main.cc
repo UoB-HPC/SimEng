@@ -69,9 +69,13 @@ int main(int argc, char** argv) {
     }
   }
 
+  // Get the memory size from the YAML config file.
+  const size_t memorySize =
+      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+
   // Create global memory
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::SimpleMem>(2684354560);  // 2.6 GiB
+      std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the lightweight Operating system
   simeng::OS::SimOS OS =

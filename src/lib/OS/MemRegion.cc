@@ -68,8 +68,10 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
   if (newBrk > heapEnd_) {
     // TODO: This needs to fixed such that more extra memory allocation is
     // mmapd.
-    std::cerr << "[SimEng:MemRegion] Attemped to allocate more memory than is "
-                 "available to the process "
+    std::cerr << "[SimEng:MemRegion] Attemped to allocate more memory on the "
+                 "heap than is available to the process. Please increase the "
+                 "{Process-Image:{Heap-Size: <size>}} parameter in YAML "
+                 "config file used to run this simulation."
               << std::endl;
     std::exit(1);
   }

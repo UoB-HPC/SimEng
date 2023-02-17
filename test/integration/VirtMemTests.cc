@@ -12,16 +12,18 @@ const std::string configStr =
     "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
     "Timer-Frequency: 100, Micro-Operations: True, "
     "Vector-Length: 512, Streaming-Vector-Length: 512},"
-    "Process-Image: "
-    "{Heap-Size: 100000, Stack-Size: 100000}, CPU-Info: "
-    "{Generate-Special-Dir: "
-    "False}}";
+    "Process-Image: {Heap-Size: 100000, Stack-Size: 100000, Mmap-Size: "
+    "200000}, Simulation-Memory: {Size: 500000}, CPU-Info: "
+    "{Generate-Special-Dir: False}}";
 
 TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
   Config::set(configStr.c_str());
+
   // Create global memory
+  const size_t memorySize =
+      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::SimpleMem>(300000);
+      std::make_shared<simeng::memory::SimpleMem>(memorySize);
   // Create the instance of the OS
   simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
 
@@ -42,8 +44,10 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
 TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
   Config::set(configStr.c_str());
   // Create global memory
+  const size_t memorySize =
+      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::SimpleMem>(300000);
+      std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the OS
   simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
@@ -76,8 +80,10 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
 TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
   Config::set(configStr.c_str());
   // Create global memory
+  const size_t memorySize =
+      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::SimpleMem>(300000);
+      std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the OS
   simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
@@ -111,8 +117,10 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
 TEST(VirtMemTest, UnmapSyscall) {
   Config::set(configStr.c_str());
   // Create global memory
+  const size_t memorySize =
+      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::SimpleMem>(300000);
+      std::make_shared<simeng::memory::SimpleMem>(memorySize);
   // Create the instance of the OS
   simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
   uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
@@ -155,8 +163,10 @@ TEST(VirtMemTest, UnmapSyscall) {
 TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   Config::set(configStr.c_str());
   // Create global memory
+  const size_t memorySize =
+      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::SimpleMem>(300000);
+      std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   std::string build_dir_path(SIMENG_BUILD_DIR);
   std::string fpath = build_dir_path + "/test/longtext.txt";
@@ -202,8 +212,10 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
 TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   Config::set(configStr.c_str());
   // Create global memory
+  const size_t memorySize =
+      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::SimpleMem>(300000);
+      std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   std::string build_dir_path(SIMENG_BUILD_DIR);
   std::string fpath = build_dir_path + "/test/longtext.txt";
@@ -251,8 +263,10 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
 TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   Config::set(configStr.c_str());
   // Create global memory
+  const size_t memorySize =
+      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::SimpleMem>(300000);
+      std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   std::string build_dir_path(SIMENG_BUILD_DIR);
   std::string fpath = build_dir_path + "/test/longtext.txt";

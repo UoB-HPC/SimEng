@@ -42,9 +42,12 @@ TEST(MemRegionTest, UpdateBrkRegionOnAddrGreaterThanHeapSize) {
 
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
-  EXPECT_EXIT(
-      { memRegion.updateBrkRegion(81925); }, ::testing::ExitedWithCode(1),
-      "Attemped to allocate more memory than is available to the process.");
+  EXPECT_EXIT({ memRegion.updateBrkRegion(81925); },
+              ::testing::ExitedWithCode(1),
+              "\\[SimEng:MemRegion\\] Attemped to allocate more memory on the "
+              "heap than is available to the process. Please increase the "
+              "\\{Process-Image:\\{Heap-Size: <size>\\}\\} parameter in YAML "
+              "config file used to run this simulation.");
 }
 
 TEST(MemRegionTest, MmapRegionNoStartAddr) {

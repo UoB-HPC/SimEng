@@ -8,7 +8,8 @@
   ("{Core: {ISA: rv64, Simulation-Mode: emulation, Clock-Frequency: 2.5}, "    \
    "Fetch: {Fetch-Block-Size: 32, Loop-Buffer-Size: 64, "                      \
    "Loop-Detection-Threshold: 4}, Process-Image: {Heap-Size: 100000, "         \
-   "Stack-Size: 100000}, Register-Set: {GeneralPurpose-Count: 154, "           \
+   "Stack-Size: 100000, Mmap-Size: 200000}, Simulation-Memory: {Size: "        \
+   "500000}, Register-Set: {GeneralPurpose-Count: 154, "                       \
    "FloatingPoint-Count: 90}, Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, " \
    "FrontEnd: 4, LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, "       \
    "Store: 36}, Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: "  \

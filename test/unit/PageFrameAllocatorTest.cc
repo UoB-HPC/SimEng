@@ -80,8 +80,11 @@ TEST(PFATest, AllocateSizeGreaterThanMaxAllocationSize) {
   uint64_t memSize = 1024000000;
   simeng::OS::PageFrameAllocator allctr =
       simeng::OS::PageFrameAllocator(memSize);
-  EXPECT_EXIT({ allctr.allocate(1025000000); }, ::testing::ExitedWithCode(1),
-              "Cannot allocate more page frames! Increase system memory.");
+  EXPECT_EXIT(
+      { allctr.allocate(1025000000); }, ::testing::ExitedWithCode(1),
+      "\\[SimEng:PageFrameAllocator\\] Cannot allocate more page frames! "
+      "Increase the \\{Simulation-Memory\\:\\{Size:<size>\\}\\} parameter "
+      "in the YAML config file used to run the simulation.");
 };
 
 }  // namespace

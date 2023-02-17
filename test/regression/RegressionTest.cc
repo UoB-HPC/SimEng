@@ -31,8 +31,11 @@ void RegressionTest::run(const char* source, const char* triple,
   YAML::Node config = generateConfig();
   Config::set(config);
 
+  const size_t memorySize =
+      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+
   // Initialise the global memory
-  memory_ = std::make_shared<simeng::memory::SimpleMem>(300000);
+  memory_ = std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Initialise a SimOS kernel
   simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory_, true);

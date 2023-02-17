@@ -17,16 +17,15 @@ namespace OS {
 using namespace simeng::OS::defaults;
 
 class PageFrameAllocator {
-  friend class TestFriends::PFAFriend;
-
  public:
-  /** Maximum size that can be allocated to page frames. */
-  const uint64_t maxAllocationSize_ = 0;
-
   PageFrameAllocator(uint64_t maxSize);
+  ~PageFrameAllocator(){};
 
-  ~PageFrameAllocator();
-  /** Public method to allocate page franes, */
+  /** Maximum size that can be allocated to page frames. */
+  const uint64_t maxAllocationSize_;
+
+  /** This method is used to allocate page frames, it returns the start address
+   * of a newly allocated page frame of fixed size (4096 bytes). */
   uint64_t allocate(size_t size);
 
   /** Method which returns the start address of the next free page frame. */

@@ -31,6 +31,7 @@ Process::Process(const std::vector<std::string>& commandLine,
   YAML::Node& config = Config::get();
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
+  uint64_t mmapSize = config["Process-Image"]["Mmap-Size"].as<uint64_t>();
 
   pageTable_ = std::make_shared<PageTable>();
 
@@ -85,8 +86,8 @@ Process::Process(const std::vector<std::string>& commandLine,
   uint64_t heapEnd = heapStart + heapSize;
 
   // Mmap grows upwards towards higher addresses.
+  mmapSize = upAlign(mmapSize, page_size);
   uint64_t mmapStart = heapEnd + page_size;
-  uint64_t mmapSize = page_size * 250 * 1000;
   uint64_t mmapEnd = mmapStart + mmapSize;
 
   // Stack grows downwards towards lower addresses.
@@ -153,6 +154,7 @@ Process::Process(span<char> instructions,
   YAML::Node& config = Config::get();
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
   uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
+  uint64_t mmapSize = config["Process-Image"]["Mmap-Size"].as<uint64_t>();
 
   uint64_t instrSize = upAlign(instructions.size(), page_size);
   uint64_t instrEnd = instrSize;
@@ -163,8 +165,8 @@ Process::Process(span<char> instructions,
   uint64_t heapEnd = heapStart + heapSize;
 
   // Mmap grows upwards towards higher addresses.
+  mmapSize = upAlign(mmapSize, page_size);
   uint64_t mmapStart = heapEnd + page_size;
-  uint64_t mmapSize = page_size * 250 * 100;
   uint64_t mmapEnd = mmapStart + mmapSize;
 
   // Stack grows downwards towards lower addresses.
