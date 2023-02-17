@@ -4,31 +4,32 @@
 namespace simeng {
 namespace memory {
 
-MMU::MMU(std::shared_ptr<Mem> memory, VAddrTranslator fn, uint64_t pid) {
+MMU::MMU(std::shared_ptr<Mem> memory, VAddrTranslator fn, uint64_t tid) {
   memory_ = memory;
   translate_ = fn;
-  pid_ = pid;
+  tid_ = tid;
 };
 
-void MMU::bufferRequest(DataPacket* request,
-                        std::function<void(DataPacket*)> callback) {
+void MMU::bufferRequest(
+    DataPacket* request,
+    std::function<void(DataPacket*)> sendRespToMemInterface) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
-  uint64_t paddr = translate_(request->address, pid_);
+  uint64_t paddr = translate_(request->address, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::OS::masks::faults::pagetable::dataAbort) {
-    callback(NULL);
+    sendRespToMemInterface(NULL);
   } else if (faultCode == simeng::OS::masks::faults::pagetable::ignored) {
-    callback(memory_->handleIgnoredRequest(request));
+    sendRespToMemInterface(memory_->handleIgnoredRequest(request));
   } else {
     request->address = paddr;
     DataPacket* response = memory_->requestAccess(request);
-    callback(response);
+    sendRespToMemInterface(response);
   }
 };
 
-void MMU::setPid(uint64_t pid) { pid_ = pid; }
+void MMU::setTid(uint64_t tid) { tid_ = tid; }
 
 }  // namespace memory
 }  // namespace simeng

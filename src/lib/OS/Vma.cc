@@ -87,8 +87,6 @@ VirtualMemoryArea::VirtualMemoryArea(VirtualMemoryArea* vma) {
   fsize_ = vma->fsize_;
 };
 
-VirtualMemoryArea::~VirtualMemoryArea(){};
-
 bool VirtualMemoryArea::overlaps(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
   return (endAddr >= vmStart_) && (startAddr < vmEnd_);

@@ -94,6 +94,11 @@ class VirtualMemoryArea {
   VirtualMemoryArea(int prot, int flags, size_t vsize,
                     HostFileMMap* hfmmap = nullptr);
 
+  // Constructor which copies the contents of a VMA pointer into the the current
+  // VMA. This method is used in removeVMA to create a copy of the VMA so that
+  // it can be split into two.
+  VirtualMemoryArea(VirtualMemoryArea* vma);
+
   ~VirtualMemoryArea(){};
 
   /** The address representing the end of the memory allocation. */
