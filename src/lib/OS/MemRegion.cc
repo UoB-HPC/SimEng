@@ -28,6 +28,18 @@ MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
   unmapPageTable_ = unmapPageTable;
 }
 
+MemRegion::~MemRegion() {
+  if (vm_size_ == 0) return;
+  VMA* curr = vm_head_;
+  while (curr != nullptr) {
+    VMA* temp = curr->vmNext_;
+    delete curr;
+    curr = temp;
+  }
+  vm_size_ = 0;
+  vm_head_ = nullptr;
+}
+
 uint64_t MemRegion::getStackStart() const { return stackStart_; }
 
 uint64_t MemRegion::getStackEnd() const { return stackEnd_; }
@@ -54,7 +66,8 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
     return brk_;
   }
   if (newBrk > heapEnd_) {
-    // This needs to fixed such that more extra memory allocation is mmapd.
+    // TODO: This needs to fixed such that more extra memory allocation is
+    // mmapd.
     std::cerr << "[SimEng:MemRegion] Attemped to allocate more memory than is "
                  "available to the process "
               << std::endl;
@@ -113,7 +126,7 @@ uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
       curr->vmNext_ = vma;
     }
     vma->vmNext_ = nullptr;
-  };
+  }
   vm_size_++;
   return vma->vmStart_;
 }
@@ -180,31 +193,17 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
       prev = curr;
     }
     curr = curr->vmNext_;
-  };
+  }
   for (auto vma : removedVMAs) {
     delsize += vma->vmSize_;
     delete vma;
-  };
+  }
   return delsize;
 }
 
-void MemRegion::removeVmaList() {
-  if (vm_size_ == 0) return;
-  VMA* curr = vm_head_;
-  while (curr != nullptr) {
-    VMA* temp = curr->vmNext_;
-    delete curr;
-    curr = temp;
-  }
-  vm_size_ = 0;
-  vm_head_ = nullptr;
-}
-
-int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
+int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
                               int flags, HostFileMMap* hfmmap) {
-  uint64_t startAddr = addr;
-
-  // This is a tricky flag, if specified it means that we HAVE to use the
+  // TODO: This is a tricky flag, if specified it means that we HAVE to use the
   // hint provided by the mmap syscall for VMA allocation. Sufficient care
   // must be taken during this call i.e we have to check whether the addr
   // overlaps with Heap or Stack VMA. If not, we still check whether the
@@ -225,19 +224,25 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
   bool mapped = false;
   if (startAddr) {
     startAddr = upAlign(startAddr, page_size);
-    if (overlapsHeap(startAddr, size) || overlapsStack(startAddr, size)) {
-      std::cerr << "[SimEng:MemRegion] Provided hint overlaps with Stack and "
-                   "Heap region"
-                << std::endl;
-      return -EINVAL;
-    };
+    if (overlapsStack(startAddr, size)) {
+      std::cerr
+          << "[SimEng:MemRegion] Provided hint overlaps with the Stack region"
+          << std::endl;
+      return EINVAL;
+    }
+    if (overlapsHeap(startAddr, size)) {
+      std::cerr
+          << "[SimEng:MemRegion] Provided hint overlaps with the Heap region"
+          << std::endl;
+      return EINVAL;
+    }
 
     if (!((startAddr >= mmapStart_) && (startAddr + size < mmapEnd_))) {
       std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
                    "the mmap range: "
                 << startAddr << " - " << startAddr + size << std::endl;
-      return -EINVAL;
-    };
+      return EINVAL;
+    }
     mapped = isVmMapped(startAddr, size);
   }
 
@@ -245,15 +250,16 @@ int64_t MemRegion::mmapRegion(uint64_t addr, uint64_t length, int prot,
   // address is available. If not we allocate vma at the most optimal address
   // available.
   VMA* vma = new VMA(prot, flags, size, hfmmap);
+  uint64_t returnAddress = 0;
   if (startAddr && !mapped) {
-    addVma(vma, startAddr);
+    returnAddress = addVma(vma, startAddr);
   } else {
     // TODO: Check if offset should be contained in HostBackedFileMMap,
     // because hfmmaps are shared during unmaps.
-    addVma(vma);
+    returnAddress = addVma(vma);
   }
 
-  return vma->vmStart_;
+  return returnAddress;
 }
 
 int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
@@ -262,7 +268,7 @@ int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
                  "the mmap range: "
               << addr << " - " << addr + length << std::endl;
     return -1;
-  };
+  }
 
   uint64_t size = upAlign(length, page_size);
   addr = downAlign(addr, page_size);
@@ -270,7 +276,7 @@ int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
 
   unmapPageTable_(addr, size);
   return value;
-};
+}
 
 bool MemRegion::isVmMapped(uint64_t addr, size_t size) {
   VMA* curr = vm_head_;
@@ -279,9 +285,9 @@ bool MemRegion::isVmMapped(uint64_t addr, size_t size) {
     mapped =
         mapped || (curr->overlaps(addr, size) || curr->contains(addr, size));
     curr = curr->vmNext_;
-  };
+  }
   return mapped;
-};
+}
 
 VirtualMemoryArea* MemRegion::getVMAFromAddr(uint64_t vaddr) {
   VirtualMemoryArea* curr = vm_head_;
@@ -290,17 +296,17 @@ VirtualMemoryArea* MemRegion::getVMAFromAddr(uint64_t vaddr) {
       return curr;
     }
     curr = curr->vmNext_;
-  };
+  }
   return NULL;
-};
+}
 
 bool MemRegion::overlapsHeap(uint64_t addr, size_t size) {
   return (addr >= heapStart_) && (addr < heapEnd_) && (size != 0);
-};
+}
 
 bool MemRegion::overlapsStack(uint64_t addr, size_t size) {
   return (addr >= stackStart_) && (addr < stackEnd_) && (size != 0);
-};
+}
 
 }  // namespace OS
 }  // namespace simeng
