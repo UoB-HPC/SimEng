@@ -18,11 +18,16 @@ using namespace simeng::OS::defaults;
 
 class PageFrameAllocator {
  public:
+  /* Constructor to create an empty PageFrameAllocator */
+  PageFrameAllocator() : maxAllocationSize_(0) {}
+
+  /** Constructor to create a PageFrameAllocator of size 'maxSize'. */
   PageFrameAllocator(uint64_t maxSize);
+
   ~PageFrameAllocator(){};
 
   /** Maximum size that can be allocated to page frames. */
-  const uint64_t maxAllocationSize_;
+  uint64_t maxAllocationSize_;
 
   /** This method is used to allocate page frames, it returns the start address
    * of a newly allocated page frame of fixed size (4096 bytes). */

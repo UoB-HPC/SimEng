@@ -24,8 +24,7 @@ SimOS::SimOS(std::string executablePath,
   sendToMem_ = [&, this](char* data, uint64_t addr, size_t size) {
     this->memory_->sendUntimedData(data, addr, size);
   };
-  pageFrameAllocator_ =
-      std::make_shared<PageFrameAllocator>(mem->getMemorySize());
+  pageFrameAllocator_ = PageFrameAllocator(mem->getMemorySize());
   if (!setProcess) createInitialProcess();
 
   // Create the Special Files directory if indicated to do so in Config file
@@ -141,7 +140,7 @@ void SimOS::tick() {
   }
 }
 
-std::shared_ptr<Process>& SimOS::getProcess(uint64_t TID) {
+const std::shared_ptr<Process>& SimOS::getProcess(uint64_t TID) {
   auto proc = processes_.find(TID);
   if (proc == processes_.end()) {
     // If TID doesn't exist then hard exit
@@ -236,10 +235,10 @@ void SimOS::createSpecialFileDirectory() const {
 }
 
 uint64_t SimOS::requestPageFrames(size_t size) {
-  return pageFrameAllocator_->allocate(size);
+  return pageFrameAllocator_.allocate(size);
 }
 
-uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t pid) {
+uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
   // Since SimEng in single core currently, we don't need to worry about
   // multiple pprocessses.
   auto process = processes_[0];
@@ -256,7 +255,7 @@ uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t pid) {
   if (faultCode == masks::faults::pagetable::map) {
     std::cerr << "[SimEng:SimOS] Failed to create mapping during PageFault "
                  "caused by Vaddr: "
-              << vaddr << "( PID: " << pid << " )" << std::endl;
+              << vaddr << "( TID: " << tid << " )" << std::endl;
     std::exit(1);
   }
 

@@ -54,21 +54,19 @@ class SimOS {
   void tick();
 
   /** Get a process with specified TID. */
-  std::shared_ptr<Process>& getProcess(uint64_t TID);
+  const std::shared_ptr<Process>& getProcess(uint64_t TID);
 
   /** Get shared_ptr to syscallHandler instance. */
   std::shared_ptr<SyscallHandler> getSyscallHandler() const {
     return syscallHandler_;
   };
 
-  /**
-   * This method returns a callback function that is passed to the MMU.
+  /** This method returns a callback function that is passed to the MMU.
    * The callback function will be used by the MMU to handle TLB misses. The
    * callback invokes SimOS for virtual address translations. This design
    * decision was made keeping the SST multicore integration in mind. This
    * method can be overriden by a new implementation to carry to similar
-   * functionality in the SST multicore integration.
-   */
+   * functionality in the SST multicore integration. */
   virtual VAddrTranslator getVAddrTranslator();
 
   /** Register a core with the OS to enable process scheduling. */
@@ -79,12 +77,12 @@ class SimOS {
   /** Check if OS has halted. */
   bool hasHalted() const { return halted_; };
 
-  /** Method which allocates page frames of the specifie size and return the
+  /** Method which allocates page frames of the specific size and returns the
    * starting physical address. */
   uint64_t requestPageFrames(size_t size);
 
   /** Method which handles process specific page table translation. */
-  uint64_t handleVAddrTranslation(uint64_t vaddr, uint64_t pid);
+  uint64_t handleVAddrTranslation(uint64_t vaddr, uint64_t tid);
 
   // The pointer is const (not the resource it points to) and will never be
   // exchanged during its lifetime.
@@ -97,7 +95,11 @@ class SimOS {
   friend class ::RegressionTest;
 
  private:
+  /** Function used to send data to memory without any timing constraints
+   * applied. This function is passed to the PageTable::handlePageFault when a
+   * page fault is encountered. */
   std::function<void(char*, uint64_t, size_t)> sendToMem_;
+
   /** Create the initial SimOS Process running above this kernel from command
    * line arguments.
    * Empty command line arguments denote the usage of hardcoded instructions
@@ -161,8 +163,9 @@ class SimOS {
 
     processes_[0] = proc;
   }
-  /** Pointer to the PageFrameAllocator object.  */
-  std::shared_ptr<PageFrameAllocator> pageFrameAllocator_;
+
+  /** Reference to the PageFrameAllocator object.  */
+  PageFrameAllocator pageFrameAllocator_;
 };
 
 }  // namespace OS
