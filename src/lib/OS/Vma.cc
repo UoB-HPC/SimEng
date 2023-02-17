@@ -70,7 +70,7 @@ VirtualMemoryArea::VirtualMemoryArea(int prot, int flags, size_t vsize,
   flags_ = flags;
   hfmmap_ = hfmmap;
   if (hfmmap != nullptr) {
-    filebuf_ = hfmmap->getfaddr();
+    filebuf_ = hfmmap->getFaddr();
     fsize_ = hfmmap->flen_;
   }
 };

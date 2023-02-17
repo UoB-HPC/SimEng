@@ -73,7 +73,7 @@ TEST(HostBackedFileMMapsTest, ReadHostedFileZeroOffset) {
   std::string text = "FileDescArrayTestData";
   char* ftext = new char[22];
   memset(ftext, '\0', 22);
-  memcpy(ftext, hfmm->getfaddr(), hfmm->flen_);
+  memcpy(ftext, hfmm->getFaddr(), hfmm->flen_);
   ASSERT_EQ(text, std::string(ftext));
 
   ASSERT_NE(close(fd), -1);
@@ -115,7 +115,7 @@ TEST(HostBackedFileMMapsTest, ReadHostedFileNonZeroOffset) {
   std::string text = "22222222";
   char* ftext = new char[9];
   memset(ftext, '\0', 9);
-  memcpy(ftext, hfmm->getfaddr(), hfmm->flen_);
+  memcpy(ftext, hfmm->getFaddr(), hfmm->flen_);
   ASSERT_EQ(text, std::string(ftext));
 
   ASSERT_NE(close(fd), -1);

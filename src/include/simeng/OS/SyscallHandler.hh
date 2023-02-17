@@ -30,6 +30,7 @@ static constexpr uint16_t PATH_MAX_LEN = 4096;
 namespace simeng {
 namespace OS {
 
+// Forward declare SimOS so as to resolve the circular dependency.
 class SimOS;
 
 /** Fixed-width definition of `stat`.
@@ -211,8 +212,10 @@ class SyscallHandler {
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
  private:
+  /** Pointer reference to SimOS object. */
   SimOS* os_ = nullptr;
-  /** Resturn correct Dirfd depending on given pathname abd dirfd given to
+
+  /** Returns the correct Dirfd depending on the pathname and dirfd given to
    * syscall. */
   uint64_t getDirFd(int64_t dfd, std::string pathname);
 
