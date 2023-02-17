@@ -22,7 +22,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 
 Process::Process(const std::vector<std::string>& commandLine,
                  std::shared_ptr<simeng::memory::Mem> memory,
-                 std::vector<RegisterFileStructure> regFileStructure,
+                 const std::vector<RegisterFileStructure>& regFileStructure,
                  uint64_t TGID, uint64_t TID)
     : commandLine_(commandLine), TGID_(TGID), TID_(TID) {
   // Parse ELF file
@@ -84,25 +84,12 @@ Process::Process(const std::vector<std::string>& commandLine,
   free(unwrappedProcImgPtr);
 
   // Initialise context
-  context_.TID = TID_;
-  context_.pc = entryPoint_;
-  context_.sp = stackPtr;
-  context_.progByteLen = getProcessImageSize();
-  context_.regFile.resize(regFileStructure.size());
-  for (size_t i = 0; i < regFileStructure.size(); i++) {
-    context_.regFile[i].resize(regFileStructure[i].quantity);
-  }
-  // Initialise reg values to 0
-  for (size_t type = 0; type < context_.regFile.size(); type++) {
-    for (size_t tag = 0; tag < context_.regFile[type].size(); tag++) {
-      context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
-    }
-  }
+  initContext(stackPtr, regFileStructure);
 }
 
 Process::Process(span<char> instructions,
                  std::shared_ptr<simeng::memory::Mem> memory,
-                 std::vector<RegisterFileStructure> regFileStructure,
+                 const std::vector<RegisterFileStructure>& regFileStructure,
                  uint64_t TGID, uint64_t TID)
     : TGID_(TGID), TID_(TID) {
   // Leave program command string empty
@@ -146,20 +133,7 @@ Process::Process(span<char> instructions,
   free(unwrappedProcImgPtr);
 
   // Initialise context
-  context_.TID = TID_;
-  context_.pc = entryPoint_;
-  context_.sp = stackPtr;
-  context_.progByteLen = getProcessImageSize();
-  context_.regFile.resize(regFileStructure.size());
-  for (size_t i = 0; i < regFileStructure.size(); i++) {
-    context_.regFile[i].resize(regFileStructure[i].quantity);
-  }
-  // Initialise reg values to 0
-  for (size_t type = 0; type < context_.regFile.size(); type++) {
-    for (size_t tag = 0; tag < context_.regFile[type].size(); tag++) {
-      context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
-    }
-  }
+  initContext(stackPtr, regFileStructure);
 }
 
 Process::~Process() {}
@@ -257,6 +231,24 @@ uint64_t Process::createStack(char** processImage, uint64_t stackStart) {
   std::copy(stackFrameBytes, stackFrameBytes + stackFrameSize,
             (*processImage) + stackPointer);
   return stackPointer;
+}
+
+void Process::initContext(
+    const uint64_t stackPtr,
+    const std::vector<RegisterFileStructure>& regFileStructure) {
+  context_.TID = TID_;
+  context_.pc = entryPoint_;
+  context_.sp = stackPtr;
+  context_.progByteLen = getProcessImageSize();
+  // Initialise all registers to 0
+  size_t numTypes = regFileStructure.size();
+  context_.regFile.reserve(numTypes);
+  for (size_t type = 0; type < numTypes; type++) {
+    uint16_t numTags = regFileStructure[type].quantity;
+    uint16_t regBytes = regFileStructure[type].bytes;
+    context_.regFile.push_back(
+        std::vector<RegisterValue>(numTags, {0, regBytes}));
+  }
 }
 
 }  // namespace OS

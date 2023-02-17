@@ -64,14 +64,14 @@ class Process {
    * The first argument is a path to an executable ELF file. */
   Process(const std::vector<std::string>& commandLine,
           std::shared_ptr<simeng::memory::Mem> memory,
-          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-          uint64_t TID);
+          const std::vector<RegisterFileStructure>& regFileStructure,
+          uint64_t TGID, uint64_t TID);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
   Process(span<char> instructions, std::shared_ptr<simeng::memory::Mem> memory,
-          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-          uint64_t TID);
+          const std::vector<RegisterFileStructure>& regFileStructure,
+          uint64_t TGID, uint64_t TID);
 
   ~Process();
 
@@ -133,6 +133,10 @@ class Process {
   /** Create and populate the initial process stack and return the stack
    * pointer. */
   uint64_t createStack(char** processImage, uint64_t stackStart);
+
+  /** Initialises the Process' context_ arguments to the appropriate values. */
+  void initContext(const uint64_t stackPtr,
+                   const std::vector<RegisterFileStructure>& regFileStructure);
 
   /** MemRegion of the Process Image. */
   MemRegion memRegion_;
