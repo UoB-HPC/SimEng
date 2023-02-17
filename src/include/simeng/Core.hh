@@ -54,8 +54,8 @@ class Core {
    * current process. */
   virtual uint64_t getCurrentProcTicks() const = 0;
 
-  /** Retrieve the CPU context for the outgoing process. */
-  virtual simeng::OS::cpuContext getPrevContext() const = 0;
+  /** Retrieve the CPU context for the currently scheduled process. */
+  virtual simeng::OS::cpuContext getCurrentContext() const = 0;
 };
 
 }  // namespace simeng

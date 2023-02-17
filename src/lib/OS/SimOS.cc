@@ -79,22 +79,23 @@ void SimOS::tick() {
       case CoreStatus::idle: {
         // Core is idle, schedule head of scheduledProc queue
         if (!scheduledProcs_.empty()) {
-          // Get context of process that was executing on core
-          OS::cpuContext prevContext = core->getPrevContext();
+          // Get context of process that was executing on core before interrupt
+          // was signalled
+          OS::cpuContext prevContext = core->getCurrentContext();
           // Core's stored TID will equal -1 if no process has been previously
           // scheduled (i.e. on first tick of simulation)
           if (prevContext.TID != -1) {
             // Find the corresponding process in map
-            auto proc = processes_.find(prevContext.TID)->second;
+            auto prevProc = processes_.find(prevContext.TID)->second;
             assert(
-                (proc->status_ == procStatus::executing) &&
+                (prevProc->status_ == procStatus::executing) &&
                 "[SimEng:SimOS] Process updated when not in executing state.");
             // Only update values which have changed
-            proc->context_.pc = prevContext.pc;
-            proc->context_.regFile = prevContext.regFile;
+            prevProc->context_.pc = prevContext.pc;
+            prevProc->context_.regFile = prevContext.regFile;
             // Change status from Executing to Waiting
-            proc->status_ = procStatus::waiting;
-            waitingProcs_.push(proc);
+            prevProc->status_ = procStatus::waiting;
+            waitingProcs_.push(prevProc);
           }
 
           // Schedule new process on core

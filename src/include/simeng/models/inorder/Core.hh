@@ -58,8 +58,8 @@ class Core : public simeng::Core {
    * current process. */
   uint64_t getCurrentProcTicks() const override;
 
-  /** Retrieve the CPU context for the outgoing process. */
-  simeng::OS::cpuContext getPrevContext() const override;
+  /** Retrieve the CPU context for the currently scheduled process. */
+  simeng::OS::cpuContext getCurrentContext() const override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
