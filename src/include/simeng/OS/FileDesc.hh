@@ -1,3 +1,5 @@
+#pragma once
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
@@ -7,30 +9,39 @@
 #include <iostream>
 #include <string>
 
-#define MAX_FD_NUM 1024
+#include "simeng/OS/Constants.hh"
+
+namespace simeng {
+namespace OS {
+
+using namespace OS::defaults;
 
 /** A FileDescEntry represents a host to virtual file descriptor mapping. */
-struct FileDescEntry {
+class FileDescEntry {
  public:
+  /** This constructor creates an empty file descriptor. */
   FileDescEntry(){};
 
+  /** This constructor creates a file descriptor with a valid host fd. */
   FileDescEntry(int fd, int vfd, int flags, std::string filename)
       : fd_(fd), vfd_(vfd), flags_(flags), filename_(filename) {}
 
   /** This function returns the host file descriptor. */
-  int fd() { return fd_; };
+  int getFd() { return fd_; };
 
   /** This function returns the virtual file descriptor. */
-  int vfd() { return vfd_; };
+  int getVfd() { return vfd_; };
 
   /** This functions returns the flags associated with the host fd. */
-  int flags() { return flags_; };
+  int getFlags() { return flags_; };
 
-  /** This function return the filename. */
-  std::string filename() { return filename_; }
+  /** This function returns the filename. */
+  std::string getFilename() { return filename_; }
 
-  /** This function is used to reset all properties of a FileDescEntry. */
-  bool reset(int vfd, int fd, int flags, std::string filename) {
+  /** This function is used to reset all properties of a FileDescEntry. It first
+   * checks the validity of the current host fd, if the fd is still valid no
+   * replacements are made. */
+  bool replaceProps(int vfd, int fd, int flags, std::string filename) {
     if (fcntl(fd_, F_GETFD) != -1) {
       std::cerr
           << "File descriptor (" << fd_ << ") for file: " << filename_
@@ -45,8 +56,8 @@ struct FileDescEntry {
     return true;
   };
 
-  /** This function returns true if FileDescEntry doesn't contain a valid fd. */
-  bool isValid() { return (fd_ != -1 && vfd_ != -1 && flags_ != -1); }
+  /** This function returns the validility of host fd, virtual fd and flags. */
+  bool isValid() const { return (fd_ != -1 && vfd_ != -1 && flags_ != -1); }
 
  private:
   /** Host file descriptor. */
@@ -62,48 +73,36 @@ struct FileDescEntry {
   std::string filename_;
 };
 
-/** This class managed the all host to virtual file descriptor mappings. */
+/** This class manages the all host to virtual file descriptor mappings. */
 class FileDescArray {
  public:
   FileDescArray();
 
   ~FileDescArray();
 
-  /**
-   * This function allocates a new FileDescEntry. It calls the host's openat
+  /** This function allocates a new FileDescEntry. It calls the host's openat
    * syscall with the specified parameters and maintains a host to virtual file
-   * descriptor mapping.
-   */
+   * descriptor mapping. */
   int allocateFDEntry(int dirFD, const char* filename, int flags, int mode);
 
-  /**
-   * This function returns an allocated FileDescEntry. If none is present
-   * nullptr is returned.
-   */
-  FileDescEntry& getFDEntry(int vfd);
+  /** This function returns an allocated FileDescEntry. If none is present
+   * an empty FileDescEntry is returned. */
+  const FileDescEntry& getFDEntry(int vfd) const;
 
-  /**
-   * This function removes an allocated FileDescEntry. It calls the host's close
-   * syscall with the fd corresponding to specified vfd.
-   */
+  /** This function removes an allocated FileDescEntry. It calls the host's
+   * close syscall with the fd corresponding to specified vfd. */
   int removeFDEntry(int vfd);
 
  private:
-  /**
-   * Maximum number of file descriptors per process, defined by the linux
-   * kernel.
-   */
-  static const uint64_t maxFdNum_ = 1024;
-
   /** Array which holds FileDescEntry(s) */
-  std::array<FileDescEntry, maxFdNum_> fdarr_;
+  std::array<FileDescEntry, maxFdNum> fdarr_;
 
   /** Number of FileDescEntry(s) in fdarr_ */
   uint64_t numFds_ = 0;
 
-  /**
-   * Member function which validates virtual file descriptor. Default value
-   * (-1) check validates size of fdarr_.
-   */
-  void validate(int vfd = -1);
+  /** Member function which validates virtual file descriptor. Passing the
+   * default value (-1) validates the size of fdarr_ */
+  void validate(int vfd = -1) const;
 };
+}  // namespace OS
+}  // namespace simeng

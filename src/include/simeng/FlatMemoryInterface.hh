@@ -37,8 +37,10 @@ class FlatMemoryInterface : public MemoryInterface {
  private:
   /** Size of the memory. */
   size_t size_;
+
   /** A vector containing all completed read requests. */
   std::vector<MemoryReadResult> completedReads_;
+
   /**  Shared pointer to the Core MMU */
   std::shared_ptr<simeng::memory::MMU> mmu_;
 };

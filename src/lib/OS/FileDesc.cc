@@ -4,23 +4,26 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+namespace simeng {
+namespace OS {
+
 FileDescArray::FileDescArray() {
   // Value for flags were determined using fstat.
-  fdarr_[0].reset(0, STDIN_FILENO, 0, "stdin");
-  fdarr_[1].reset(1, STDOUT_FILENO, 0, "stdout");
-  fdarr_[2].reset(2, STDERR_FILENO, 0, "stderr");
+  fdarr_[0].replaceProps(0, STDIN_FILENO, 0, "stdin");
+  fdarr_[1].replaceProps(1, STDOUT_FILENO, 0, "stdout");
+  fdarr_[2].replaceProps(2, STDERR_FILENO, 0, "stderr");
   numFds_ = 3;
 }
 
-void FileDescArray::validate(int vfd) {
-  if (numFds_ >= maxFdNum_) {
+void FileDescArray::validate(int vfd) const {
+  if (numFds_ >= maxFdNum) {
     std::cerr
         << "[FileDescArray]: Maximum number of file descriptors allocated."
         << std::endl;
     std::exit(1);
   }
   if (vfd == -1) return;
-  if (vfd > maxFdNum_) {
+  if (vfd > maxFdNum) {
     std::cerr << "[FileDescArray]: Invalid virtual file descriptor: " << vfd
               << std::endl;
     std::exit(1);
@@ -38,10 +41,11 @@ int FileDescArray::allocateFDEntry(int dirfd, const char* filename, int flags,
                   << filename << std::endl;
         return -1;
       }
-      if (!fdarr_[i].reset(i, fd, flags, std::string(filename))) {
-        std::cerr << "[SimEng:FileDescArray] Error occured while resetting "
-                     "FileDescEntry."
-                  << std::endl;
+      if (!fdarr_[i].replaceProps(i, fd, flags, std::string(filename))) {
+        std::cerr
+            << "[SimEng:FileDescArray] Error occured while replacePropsting "
+               "FileDescEntry."
+            << std::endl;
       };
       this->numFds_++;
       return i;
@@ -50,7 +54,7 @@ int FileDescArray::allocateFDEntry(int dirfd, const char* filename, int flags,
   return -1;
 }
 
-FileDescEntry& FileDescArray::getFDEntry(int vfd) {
+const FileDescEntry& FileDescArray::getFDEntry(int vfd) const {
   validate(vfd);
   if (!fdarr_[vfd].isValid()) {
     std::cerr << "[SimEng:FileDescArray] Virtual file descriptor (" << vfd
@@ -70,16 +74,16 @@ int FileDescArray::removeFDEntry(int vfd) {
               << vfd << std::endl;
     return EBADF;
   }
-  if (close(entry.fd()) == -1) {
+  if (close(entry.getFd()) == -1) {
     std::cerr << "[SimEng:FileDescArray] Error closing file with filename:  "
-              << entry.filename() << std::endl;
+              << entry.getFilename() << std::endl;
     return -1;
   };
 
-  if (!fdarr_[vfd].reset(-1, -1, -1, "")) {
-    std::cerr
-        << "[SimEng:FileDescArray] Error occured while resetting FileDescEntry"
-        << std::endl;
+  if (!fdarr_[vfd].replaceProps(-1, -1, -1, "")) {
+    std::cerr << "[SimEng:FileDescArray] Error occured while replacePropsting "
+                 "FileDescEntry"
+              << std::endl;
     std::exit(1);
   };
   this->numFds_--;
@@ -90,11 +94,14 @@ FileDescArray::~FileDescArray() {
   // Close any remaining unclosed file descriptors.
   for (uint64_t i = 3; i < fdarr_.max_size(); i++) {
     if (fdarr_[i].isValid()) {
-      if (close(fdarr_[i].fd()) == -1) {
+      if (close(fdarr_[i].getFd()) == -1) {
         std::cerr
             << "[SimEng:FileDescArray] Error closing file with filename:  "
-            << fdarr_[i].filename() << std::endl;
+            << fdarr_[i].getFilename() << std::endl;
       };
     }
   }
 }
+
+}  // namespace OS
+}  // namespace simeng

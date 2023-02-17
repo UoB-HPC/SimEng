@@ -9,14 +9,16 @@
 
 namespace {
 
+using namespace simeng::OS;
+
 TEST(FileDescArrayTest, InitialisesStandardFileDescriptors) {
   FileDescArray fdArr = FileDescArray();
   auto entry = fdArr.getFDEntry(0);
-  ASSERT_EQ(entry.filename(), std::string("stdin"));
+  ASSERT_EQ(entry.getFilename(), std::string("stdin"));
   entry = fdArr.getFDEntry(1);
-  ASSERT_EQ(entry.filename(), std::string("stdout"));
+  ASSERT_EQ(entry.getFilename(), std::string("stdout"));
   entry = fdArr.getFDEntry(2);
-  ASSERT_EQ(entry.filename(), std::string("stderr"));
+  ASSERT_EQ(entry.getFilename(), std::string("stderr"));
 }
 
 TEST(FileDescArrayTest, AllocatesFileDesc) {
@@ -30,7 +32,7 @@ TEST(FileDescArrayTest, AllocatesFileDesc) {
   std::string text = "FileDescArrayTestData";
   char* ftext = new char[22];
   memset(ftext, '\0', 22);
-  ASSERT_EQ(read(entry.fd(), ftext, 21), 21);
+  ASSERT_EQ(read(entry.getFd(), ftext, 21), 21);
   ASSERT_EQ(text, std::string(ftext));
   delete[] ftext;
 }
@@ -43,7 +45,7 @@ TEST(FileDescArrayTest, RemovesFileDesc) {
   ASSERT_NE(vfd, -1);
   auto entry = fdArr.getFDEntry(vfd);
   ASSERT_TRUE(entry.isValid());
-  int hfd = entry.fd();
+  int hfd = entry.getFd();
   ASSERT_NE(fcntl(hfd, F_GETFD), -1);
   fdArr.removeFDEntry(vfd);
   entry = fdArr.getFDEntry(vfd);

@@ -9,6 +9,10 @@ namespace defaults {
 /** The Default PageSize for SimEng. */
 static constexpr uint64_t page_size = 4096;
 
+/** The maximum number of file descriptors a process can have,as defined by the
+ * linux kernel.*/
+static constexpr uint64_t maxFdNum = 1024;
+
 }  // namespace defaults
 
 /** These syscall constants are mainly used in MemRegion to ensure we are

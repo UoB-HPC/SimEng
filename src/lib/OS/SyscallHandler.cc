@@ -28,7 +28,7 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
       if (!entry.isValid()) {
         return -1;
       }
-      dfd_temp = entry.fd();
+      dfd_temp = entry.getFd();
     }
   }
   return dfd_temp;
@@ -85,7 +85,7 @@ int64_t SyscallHandler::ftruncate(uint64_t fd, uint64_t length) {
   if (!entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry.fd();
+  int64_t hfd = entry.getFd();
 
   int64_t retval = ::ftruncate(hfd, length);
   return retval;
@@ -177,7 +177,7 @@ int64_t SyscallHandler::fstat(int64_t fd, stat& out) {
   if (!entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry.fd();
+  int64_t hfd = entry.getFd();
 
   // Pass call through to host
   struct ::stat statbuf;
@@ -280,7 +280,7 @@ int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
   if (!entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry.fd();
+  int64_t hfd = entry.getFd();
 
   switch (request) {
     case 0x5401: {  // TCGETS
@@ -315,7 +315,7 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
   if (!entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry.fd();
+  int64_t hfd = entry.getFd();
   return ::lseek(hfd, offset, whence);
 }
 
@@ -334,7 +334,7 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
       std::cerr << "Invalid virtual file descriptor given to mmap" << std::endl;
       return -1;
     };
-    hostfile = os_->hfmmap_->mapfd(entry.fd(), length, offset);
+    hostfile = os_->hfmmap_->mapfd(entry.getFd(), length, offset);
   }
   uint64_t ret =
       process->getMemRegion().mmapRegion(addr, length, prot, flags, hostfile);
@@ -415,7 +415,7 @@ int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
   if (!entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry.fd();
+  int64_t hfd = entry.getFd();
 
   // Need alternative implementation as not all systems support the getdents64
   // syscall
@@ -471,7 +471,7 @@ int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
   if (!entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry.fd();
+  int64_t hfd = entry.getFd();
   return ::read(hfd, buf, count);
 }
 
@@ -480,7 +480,7 @@ int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
   if (!entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry.fd();
+  int64_t hfd = entry.getFd();
   return ::readv(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 
@@ -512,7 +512,7 @@ int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
   if (!entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry.fd();
+  int64_t hfd = entry.getFd();
   return ::write(hfd, buf, count);
 }
 
@@ -521,7 +521,7 @@ int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
   if (!entry.isValid()) {
     return EBADF;
   }
-  int64_t hfd = entry.fd();
+  int64_t hfd = entry.getFd();
   return ::writev(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 
