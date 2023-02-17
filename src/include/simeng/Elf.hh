@@ -19,14 +19,15 @@ struct ElfHeader {
   uint64_t physicalAddress;
   uint64_t fileSize;
   uint64_t memorySize;
-  char* headerData = nullptr;
+  std::vector<char> headerData;
 };
 
 /** A processed Executable and Linkable Format (ELF) file. */
 class Elf {
  public:
   Elf(std::string path);
-  ~Elf();
+
+  ~Elf() {}
 
   /** Method to return ELF process image size. */
   uint64_t getElfImageSize() const;

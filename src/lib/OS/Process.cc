@@ -67,7 +67,7 @@ Process::Process(const std::vector<std::string>& commandLine,
       translatedAddr = pageTable_->translate(vaddr);
     }
     // Send header data to memory
-    memory->sendUntimedData(header.headerData, translatedAddr,
+    memory->sendUntimedData(header.headerData.data(), translatedAddr,
                             header.memorySize);
     // Determine minium header address, address in the ranhge [0, minAddr) will
     // be ignored during translation and all memory requests corresponding to
