@@ -37,10 +37,10 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
   memory.tick();
   EXPECT_FALSE(memory.hasPendingRequests());
 
-  auto resp = (simeng::memory::ReadRespPacket*)mem->requestAccess(
-      new simeng::memory::ReadPacket(0, 4));
+  auto resp = mem->requestAccess(
+      simeng::memory::DataPacket(0, 4, simeng::memory::READ_REQUEST, 0, false));
   uint32_t castedValue = 0;
-  memcpy(&castedValue, resp->data, 4);
+  memcpy(&castedValue, resp.data_.data(), 4);
   EXPECT_EQ(castedValue, 0xDEADBEEF);
 }
 

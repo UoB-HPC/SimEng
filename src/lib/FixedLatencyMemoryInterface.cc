@@ -5,11 +5,8 @@
 namespace simeng {
 
 FixedLatencyMemoryInterface::FixedLatencyMemoryInterface(
-    std::shared_ptr<memory::MMU> mmu, uint16_t latency, size_t memSize) {
-  mmu_ = mmu;
-  latency_ = latency;
-  size_ = memSize;
-}
+    std::shared_ptr<memory::MMU> mmu, uint16_t latency, size_t memSize)
+    : mmu_(mmu), latency_(latency), size_(memSize) {}
 
 void FixedLatencyMemoryInterface::tick() {
   tickCounter_++;
@@ -26,32 +23,31 @@ void FixedLatencyMemoryInterface::tick() {
     uint64_t requestId = request.requestId;
 
     if (request.write) {
-      auto fn = [&](memory::DataPacket* dpkt = NULL) -> void {
-        if (dpkt == NULL) return;
-        // If dpkt is not null the response is ignored as it doesn't contain any
-        // information relevant after the write has completed.
-        delete dpkt;
-      };
-
       const char* wdata = request.data.getAsVector<char>();
+      std::vector<char> dt(target.size, '\0');
+      std::copy(wdata, wdata + target.size, dt.data());
+
+      // Responses to write requests are ignored by passing in a nullptr
+      // callback because they don't contain any information relevant to the
+      // simulation.
       mmu_->bufferRequest(
-          new simeng::memory::WritePacket(target.address, target.size, wdata),
-          fn);
+          memory::DataPacket(target.address, target.size, memory::WRITE_REQUEST,
+                             requestId, dt),
+          nullptr);
     } else {
-      auto fn = [&, this](memory::DataPacket* dpkt = NULL) -> void {
-        if (dpkt == NULL) {
-          // Sending an empty RegisterValue here signifies a data abort
-          // exception as we haven't recieved a response from memory.
+      // Instantiate a callback function which will be invoked with the response
+      // to a read request.
+      auto fn = [&, this](struct memory::DataPacket packet) -> void {
+        if (packet.inFault_) {
           this->completedReads_.push_back({target, RegisterValue(), requestId});
           return;
         }
-        memory::ReadRespPacket* resp = (memory::ReadRespPacket*)dpkt;
         this->completedReads_.push_back(
-            {target, RegisterValue(resp->data, resp->bytesRead), requestId});
-        delete resp;
+            {target, RegisterValue(packet.data_.data(), packet.size_),
+             requestId});
       };
-
-      mmu_->bufferRequest(new memory::ReadPacket(target.address, target.size),
+      mmu_->bufferRequest(memory::DataPacket(target.address, target.size,
+                                             memory::READ_REQUEST, requestId),
                           fn);
     }
 

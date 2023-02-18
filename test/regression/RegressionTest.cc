@@ -80,12 +80,8 @@ void RegressionTest::run(const char* source, const char* triple,
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
             process_->getStackPointer());
 
-  char* heapData = new char[initialHeapData_.size()];
-  std::copy(initialHeapData_.begin(), initialHeapData_.end(), heapData);
   uint64_t addr = process_->translate(process_->getHeapStart());
-  memory_->sendUntimedData(heapData, addr, initialHeapData_.size());
-
-  delete[] heapData;
+  memory_->sendUntimedData(initialHeapData_, addr, initialHeapData_.size());
 
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =

@@ -22,7 +22,8 @@ using namespace simeng::OS::defaults;
 
 // Typedef for callback function used to send data to memory upon handling page
 // fault.
-typedef std::function<void(char*, uint64_t, size_t)> sendToMemory;
+typedef std::function<void(std::vector<char> data, uint64_t, size_t)>
+    sendToMemory;
 
 // Forward declaration for SimOS.
 class SimOS;

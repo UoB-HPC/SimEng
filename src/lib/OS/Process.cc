@@ -67,7 +67,7 @@ Process::Process(const std::vector<std::string>& commandLine,
       translatedAddr = pageTable_->translate(vaddr);
     }
     // Send header data to memory
-    memory->sendUntimedData(header.headerData.data(), translatedAddr,
+    memory->sendUntimedData(header.headerData, translatedAddr,
                             header.memorySize);
     // Determine minium header address, address in the ranhge [0, minAddr) will
     // be ignored during translation and all memory requests corresponding to
@@ -195,7 +195,9 @@ Process::Process(span<char> instructions,
                          heapStart, mmapStart, stackPtr, unmapFn);
 
   uint64_t taddr = pageTable_->translate(0);
-  memory->sendUntimedData(instructions.begin(), taddr, instructions.size());
+  memory->sendUntimedData(
+      std::vector<char>(instructions.begin(), instructions.end()), taddr,
+      instructions.size());
 
   fdArray_ = std::make_unique<FileDescArray>();
 
@@ -253,7 +255,7 @@ uint64_t Process::createStack(uint64_t stackStart,
   std::vector<uint64_t> initialStackFrame;
   // Stack strings are split into bytes to easily support the injection of null
   // bytes dictating the end of a string
-  std::vector<uint8_t> stringBytes;
+  std::vector<char> stringBytes;
 
   // Program arguments (argc, argv[])
   initialStackFrame.push_back(commandLine_.size());  // argc
@@ -289,10 +291,9 @@ uint64_t Process::createStack(uint64_t stackStart,
       initialStackFrame.push_back(stackPointer + (i));  // argv/env ptr
       ptrCount++;
     }
-    uint64_t paddr = pageTable_->translate(stackPointer + i);
-    memory->sendUntimedData(reinterpret_cast<char*>(&stringBytes[i]), paddr,
-                            sizeof(uint8_t));
   }
+  uint64_t paddr = pageTable_->translate(stackPointer);
+  memory->sendUntimedData(stringBytes, paddr, stringBytes.size());
 
   initialStackFrame.push_back(0);  // null terminator
 
@@ -312,8 +313,9 @@ uint64_t Process::createStack(uint64_t stackStart,
 
   // Copy initial stack frame to process memory
   char* stackFrameBytes = reinterpret_cast<char*>(initialStackFrame.data());
-  uint64_t paddr = pageTable_->translate(stackPointer);
-  memory->sendUntimedData(stackFrameBytes, paddr, stackFrameSize);
+  std::vector<char> data(stackFrameBytes, stackFrameBytes + stackFrameSize);
+  paddr = pageTable_->translate(stackPointer);
+  memory->sendUntimedData(data, paddr, stackFrameSize);
   return stackPointer;
 }
 
@@ -340,7 +342,7 @@ uint64_t Process::handlePageFault(uint64_t vaddr, sendToMemory send) {
 
   void* filebuf = vm->getFileBuf();
 
-  // Since pahe fault only allocates a single page it could be possible that a
+  // Since page fault only allocates a single page it could be possible that a
   // part of the file assosciate with a vma has already been sent to memory. TO
   // handle this situation we calculate the offset from VMA start address as
   // this address is also page size aligned.
@@ -348,9 +350,12 @@ uint64_t Process::handlePageFault(uint64_t vaddr, sendToMemory send) {
   size_t writeLen = vm->getFileSize() - (offset);
   writeLen = writeLen > page_size ? page_size : writeLen;
 
+  char* castedFileBuf = static_cast<char*>(filebuf);
+  std::vector<char> data(castedFileBuf + offset,
+                         castedFileBuf + offset + writeLen);
   // send file to memory;
   if (writeLen > 0) {
-    send((char*)filebuf + offset, paddr, writeLen);
+    send(data, paddr, writeLen);
   };
   return taddr;
 }

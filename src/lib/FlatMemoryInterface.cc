@@ -6,41 +6,38 @@
 namespace simeng {
 
 FlatMemoryInterface::FlatMemoryInterface(std::shared_ptr<memory::MMU> mmu,
-                                         size_t memSize) {
-  mmu_ = mmu;
-  size_ = memSize;
-}
+                                         size_t memSize)
+    : mmu_(mmu), size_(memSize) {}
 
 void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
                                       uint64_t requestId) {
-  auto fn = [&, this](memory::DataPacket* dpkt = NULL) -> void {
-    if (dpkt == NULL) {
-      // Sending an empty RegisterValue here signifies a data abort exception as
-      // a response wasn't recieved from memory.
+  // Instantiate a callback function which will be invoked with the response
+  // to a read request.
+  auto fn = [&, this](memory::DataPacket dpkt) -> void {
+    if (dpkt.inFault_) {
       this->completedReads_.push_back({target, RegisterValue(), requestId});
       return;
     }
-    memory::ReadRespPacket* resp = (memory::ReadRespPacket*)dpkt;
     this->completedReads_.push_back(
-        {target, RegisterValue(resp->data, resp->bytesRead), requestId});
-    delete resp;
+        {target, RegisterValue(dpkt.data_.data(), dpkt.size_), requestId});
   };
 
-  mmu_->bufferRequest(new memory::ReadPacket(target.address, target.size), fn);
+  mmu_->bufferRequest(memory::DataPacket(target.address, target.size,
+                                         memory::READ_REQUEST, requestId),
+                      fn);
 }
 
 void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
                                        const RegisterValue& data) {
-  auto fn = [&](memory::DataPacket* dpkt = NULL) -> void {
-    if (dpkt == NULL) return;
-    // If dpkt is not null the response is ignored as it doesn't contain any
-    // information relevant after the write has completed.
-    delete dpkt;
-  };
-
   const char* wdata = data.getAsVector<char>();
-  mmu_->bufferRequest(
-      new simeng::memory::WritePacket(target.address, target.size, wdata), fn);
+  std::vector<char> dt(target.size, '\0');
+  std::copy(wdata, wdata + target.size, dt.data());
+  // Responses to write requests are ignored by passing in a nullptr
+  // callback because they don't contain any information relevant to the
+  // simulation.
+  mmu_->bufferRequest(memory::DataPacket(target.address, target.size,
+                                         memory::WRITE_REQUEST, 0, dt),
+                      nullptr);
 }
 
 const span<MemoryReadResult> FlatMemoryInterface::getCompletedReads() const {

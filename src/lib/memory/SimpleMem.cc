@@ -1,77 +1,59 @@
 #include "simeng/memory/SimpleMem.hh"
 
+#include <algorithm>
+
 namespace simeng {
 namespace memory {
 
 SimpleMem::SimpleMem(size_t size) {
-  memRef_ = new char[size];
-  std::memset(memRef_, 0, size);
-
-  faultMemory_ = new char[256];
-  std::memset(faultMemory_, 0, 256);
-
+  memory_ = std::vector<char>(size, '\0');
   memSize_ = size;
 }
 
-SimpleMem::~SimpleMem() {
-  delete[] memRef_;
-  delete[] faultMemory_;
-};
-
 size_t SimpleMem::getMemorySize() { return memSize_; }
 
-DataPacket* SimpleMem::requestAccess(struct DataPacket* pkt) {
-  if (pkt->type == READ) {
-    struct ReadPacket* rreq = (ReadPacket*)pkt;
-    auto resp = handleReadRequest(rreq);
-    delete rreq;
-    return resp;
-  };
-  struct WritePacket* wreq = (WritePacket*)pkt;
-  auto resp = handleWriteRequest(wreq);
-  delete wreq;
-  return resp;
-};
-
-ReadRespPacket* SimpleMem::handleReadRequest(struct ReadPacket* req) {
-  size_t size = req->size;
-  uint64_t addr = req->address;
-  char* data = new char[size];
-  char* startAddr = memRef_ + addr;
-  std::copy(startAddr, startAddr + size, data);
-  return req->makeResponse(size, data);
-};
-
-WriteRespPacket* SimpleMem::handleWriteRequest(struct WritePacket* req) {
-  uint64_t address = req->address;
-  size_t size = req->size;
-  const char* data = req->data;
-  std::copy(data, data + size, memRef_ + address);
-  return req->makeResponse(size);
-};
-
-void SimpleMem::sendUntimedData(char* data, uint64_t addr, size_t size) {
-  std::copy(data, data + size, memRef_ + addr);
-  return;
-}
-
-char* SimpleMem::getUntimedData(uint64_t paddr, size_t size) {
-  char* ret = new char[size];
-  std::copy(memRef_ + paddr, memRef_ + paddr + size, ret);
-  return ret;
-}
-
-DataPacket* SimpleMem::handleIgnoredRequest(DataPacket* pkt) {
-  if (pkt->type == READ) {
-    struct ReadPacket* rreq = (ReadPacket*)pkt;
-    auto resp = rreq->makeResponse(rreq->size, faultMemory_);
-    delete rreq;
-    return resp;
+DataPacket SimpleMem::requestAccess(struct DataPacket pkt) {
+  if (pkt.type_ == READ_REQUEST) {
+    return handleReadRequest(pkt);
+  } else if (pkt.type_ == WRITE_REQUEST) {
+    return handleWriteRequest(pkt);
+  } else {
+    std::cerr << "[SimEng:SimpleMem] Invalid DataPacket type for requesting "
+                 "access to memory. Requests to memory should either be of "
+                 "type READ_REQUEST or WRITE_REQUEST."
+              << std::endl;
+    return DataPacket(true);
   }
-  struct WritePacket* wreq = (WritePacket*)pkt;
-  auto resp = wreq->makeResponse(wreq->size);
-  delete wreq;
-  return resp;
+};
+
+DataPacket SimpleMem::handleReadRequest(struct DataPacket req) {
+  size_t size = req.size_;
+  uint64_t addr = req.address_;
+  std::vector<char> data(memory_.begin() + addr, memory_.begin() + addr + size);
+  return req.makeIntoReadResponse(data);
+};
+
+DataPacket SimpleMem::handleWriteRequest(struct DataPacket req) {
+  uint64_t address = req.address_;
+  std::copy(req.data_.begin(), req.data_.end(), memory_.begin() + address);
+  return req.makeIntoWriteResponse();
+};
+
+void SimpleMem::sendUntimedData(std::vector<char> data, uint64_t addr,
+                                size_t size) {
+  std::copy(data.begin(), data.end(), memory_.begin() + addr);
+}
+
+std::vector<char> SimpleMem::getUntimedData(uint64_t paddr, size_t size) {
+  return std::vector<char>(memory_.begin() + paddr,
+                           memory_.begin() + paddr + size);
+}
+
+DataPacket SimpleMem::handleIgnoredRequest(struct DataPacket pkt) {
+  if (pkt.type_ == READ_REQUEST) {
+    return pkt.makeIntoReadResponse(std::vector<char>(pkt.size_, '\0'));
+  }
+  return pkt.makeIntoWriteResponse();
 }
 
 }  // namespace memory

@@ -7,77 +7,113 @@
 
 namespace simeng {
 namespace memory {
-// This is a very basic implementation of Memory in SimEng, it has been kept
-// simple just to get dynamic linking and multicore simulation working. It is
-// very similar to the previous implementation but unifies both instruction and
-// data memory. Whereas, previously two different copies of process memory were
-// for instruction and data memory interfaces.
+/* Enum for classifying DataPacket type. */
+enum DataPacketType {
+  /** This type signifies a read request to memory. */
+  READ_REQUEST,
 
-/* Enum for classifying data access. */
-enum DataPacketAccessType { READ, WRITE, NONE };
+  /** This type signifies a write request to memory.*/
+  WRITE_REQUEST,
 
-/* A data packet represents access to memory. This has named and cnstruct such
- * that future improvements to memory system can be facilitated
- */
+  /** This type signifies the response to a read request. */
+  READ_RESPONSE,
+
+  /** This type signifies the response to a write request. */
+  WRITE_RESPONSE,
+
+  /** This type signifies a faulty or empty request of no type. */
+  NONE
+};
+
+/* A data packet struct contains information which enables access to the
+ * simulation memory. */
 struct DataPacket {
-  uint64_t address;
-  static uint64_t pktIdCtr;
-  uint64_t id;
-  DataPacketAccessType type;
-  bool infault = false;
-  DataPacket(DataPacketAccessType accType, uint64_t addr, bool fault = false);
+  /** The address at which the memory is to be accessed. */
+  uint64_t address_ = 0;
+
+  /** The size of the memory operation to be performed. */
+  uint64_t size_ = 0;
+
+  /** The type of a DataPacket. */
+  DataPacketType type_ = NONE;
+
+  /** The id of a DataPacket, this is set by the memory interface. For write
+   * requests it is 0 as the memory interface doesn't specify an id for write
+   * requests. */
+  uint64_t id_ = 0;
+
+  /** The data carried by a DataPacket, this is used to deliver and recieve data
+   * to/from the simulation memory. */
+  std::vector<char> data_;
+
+  /** This bool signifies if the memory operation specified by the DataPacket
+   * resulted in a fault. */
+  bool inFault_ = false;
+
+  /** Default constructor for the DataPacket. */
+  DataPacket() {}
+
+  /** Constructor to create a faulty DataPacket. */
+  DataPacket(bool fault) : inFault_(true) {}
+
+  /** Constructor for DataPackets which do not hold any data. */
+  DataPacket(uint64_t address, uint64_t size, DataPacketType type,
+             uint64_t reqId, bool fault = false);
+
+  /** Constructor for DataPackers which hold data. */
+  DataPacket(uint64_t address, uint64_t size, DataPacketType type,
+             uint64_t reqId, std::vector<char> data, bool fault = false);
+
+  /** Copy constructor for DataPacket. */
+  DataPacket(const DataPacket& packet);
+
+  /** Move constructor for DataPacket to enable copy elision whenever it is
+   * possible. */
+  DataPacket(DataPacket&& packet);
+
+  /** Copy assignment operator= for DataPacket. */
+  DataPacket& operator=(const DataPacket& packet);
+
+  /** Move assignment operator= for DataPacket to enable copy elision whenever
+   * it is possible. */
+  DataPacket& operator=(DataPacket&& packet);
+
+  /** Method which converts a DataPacket of type READ_REQUEST to READ_RESPONSE.
+   * Faulty Packet is returned if this method is called on a DataPacket which
+   * does not have a type of READ_REQUEST. */
+  DataPacket makeIntoReadResponse(std::vector<char> data);
+
+  /** Method which converts a DataPacket of type WRITE_REQUEST to
+   * WRITE_RESPONSE. Faulty Packet is returned if this method is called on a
+   * DataPacket which does not have a type of WRITE_REQUEST. */
+  DataPacket makeIntoWriteResponse();
 };
 
-/* Response to a read packed. */
-struct ReadRespPacket : public DataPacket {
-  uint64_t reqId;
-  size_t bytesRead;
-  char* data;
-  ReadRespPacket(uint64_t req_id, size_t bytes_read, char* dt, uint64_t addr);
-};
-
-/* ReadPacket represents a read access to data packet. */
-struct ReadPacket : public DataPacket {
-  size_t size;
-
-  ReadPacket(uint64_t addr, size_t sz);
-  ReadRespPacket* makeResponse(uint64_t bytesRead, char* data);
-};
-
-/* Response to a write packed. */
-struct WriteRespPacket : public DataPacket {
-  uint64_t reqId;
-  size_t bytesWritten;
-  WriteRespPacket(uint64_t req_id, size_t bytes_written, uint64_t addr);
-};
-
-/* WritePacket represents a write access to a data packet. */
-struct WritePacket : public DataPacket {
-  size_t size;
-  const char* data;
-
-  WritePacket(uint64_t addr, size_t sz, const char* dt);
-  WriteRespPacket* makeResponse(uint64_t bytesReturned);
-};
-
+/* This is a very basic implementation of an interface for simulation memory in
+ * SimEng, it has been kept simple just to get dynamic linking and multicore
+ * simulation to work. It is very similar to the previous implementation but
+ * unifies both instruction and data memory. Previously, multiple copies of
+ * process memory were made for instruction and data memory interfaces. */
 class Mem {
  public:
   virtual ~Mem() = default;
 
-  /** This method accesses memory with both Read and Write requests. */
-  virtual DataPacket* requestAccess(struct DataPacket* pkt) = 0;
+  /** This method requests access to simulation memory for read and write
+   * requests. */
+  virtual DataPacket requestAccess(struct DataPacket pkt) = 0;
 
   /** This method returns the size of memory. */
   virtual size_t getMemorySize() = 0;
 
-  /** This method write data to memory without incurring any latency. */
-  virtual void sendUntimedData(char* data, uint64_t addr, size_t size) = 0;
+  /** This method writes data to memory without incurring any latency. */
+  virtual void sendUntimedData(std::vector<char> data, uint64_t addr,
+                               size_t size) = 0;
 
-  /** This method sets the translator for memory requests. */
-  virtual char* getUntimedData(uint64_t paddr, size_t size) = 0;
+  /** This method reads data to memory without incurring any latency. */
+  virtual std::vector<char> getUntimedData(uint64_t paddr, size_t size) = 0;
 
-  /** This method handles a  memory request to an ignored address range. */
-  virtual DataPacket* handleIgnoredRequest(struct DataPacket* pkt) = 0;
+  /** This method handles a memory request to an ignored address range. */
+  virtual DataPacket handleIgnoredRequest(struct DataPacket pkt) = 0;
 };
 
 }  // namespace memory

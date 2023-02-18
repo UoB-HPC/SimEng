@@ -66,6 +66,12 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
   void tick() override;
 
  private:
+  /** Shared pointer to the core MMU. */
+  std::shared_ptr<memory::MMU> mmu_;
+
+  /** The latency all requests are completed after. */
+  uint16_t latency_;
+
   /** Size of the memory. */
   size_t size_;
 
@@ -75,9 +81,6 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
   /** A queue containing all pending memory requests. */
   std::queue<FixedLatencyMemoryInterfaceRequest> pendingRequests_;
 
-  /** The latency all requests are completed after. */
-  uint16_t latency_;
-
   /** The number of times this interface has been ticked. */
   uint64_t tickCounter_ = 0;
 
@@ -85,9 +88,6 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
   bool unsignedOverflow_(uint64_t a, uint64_t b) const {
     return (a + b) < a || (a + b) < b;
   }
-
-  /** Shared pointer to the core MMU. */
-  std::shared_ptr<memory::MMU> mmu_ = nullptr;
 };
 
 }  // namespace simeng

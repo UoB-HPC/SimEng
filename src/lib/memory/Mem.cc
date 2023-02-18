@@ -1,50 +1,88 @@
 #include "simeng/memory/Mem.hh"
 
+#include <utility>
+
 namespace simeng {
 namespace memory {
-uint64_t DataPacket::pktIdCtr = 0;
 
-DataPacket::DataPacket(DataPacketAccessType accType, uint64_t addr,
-                       bool fault) {
-  id = pktIdCtr++;
-  type = accType;
-  address = addr;
-  infault = fault;
+DataPacket::DataPacket(uint64_t address, uint64_t size, DataPacketType type,
+                       uint64_t reqId, bool fault)
+    : address_(address),
+      size_(size),
+      type_(type),
+      id_(reqId),
+      inFault_(fault) {}
+
+DataPacket::DataPacket(uint64_t address, uint64_t size, DataPacketType type,
+                       uint64_t reqId, std::vector<char> data, bool fault)
+    : address_(address),
+      size_(size),
+      type_(type),
+      id_(reqId),
+      data_(data),
+      inFault_(fault) {}
+
+DataPacket::DataPacket(const DataPacket& packet)
+    : address_(packet.address_),
+      size_(packet.size_),
+      type_(packet.type_),
+      id_(packet.id_),
+      data_(packet.data_),
+      inFault_(packet.inFault_) {}
+
+DataPacket::DataPacket(DataPacket&& packet)
+    : address_(std::exchange(packet.address_, 0)),
+      size_(std::exchange(packet.size_, 0)),
+      type_(std::exchange(packet.type_, NONE)),
+      id_(std::exchange(packet.id_, 0)),
+      data_(std::move(packet.data_)),
+      inFault_(std::exchange(packet.inFault_, 0)) {}
+
+DataPacket& DataPacket::operator=(const DataPacket& packet) {
+  address_ = packet.address_;
+  size_ = packet.size_;
+  type_ = packet.type_;
+  id_ = packet.id_;
+  data_ = packet.data_;
+  inFault_ = packet.inFault_;
+  return *this;
 }
 
-ReadPacket::ReadPacket(uint64_t addr, size_t sz) : DataPacket(READ, addr) {
-  address = addr;
-  size = sz;
-};
-
-ReadRespPacket* ReadPacket::makeResponse(uint64_t bytesRead, char* data) {
-  return new ReadRespPacket(this->id, bytesRead, data, this->address);
+DataPacket& DataPacket::operator=(DataPacket&& packet) {
+  address_ = std::exchange(packet.address_, 0);
+  size_ = std::exchange(packet.size_, 0);
+  type_ = std::exchange(packet.type_, NONE);
+  id_ = std::exchange(packet.id_, 0);
+  data_ = std::move(packet.data_);
+  inFault_ = std::exchange(packet.inFault_, 0);
+  return *this;
 }
 
-ReadRespPacket::ReadRespPacket(uint64_t req_id, size_t bytes_read, char* dt,
-                               uint64_t addr)
-    : DataPacket(READ, addr) {
-  reqId = req_id;
-  bytesRead = bytes_read;
-  data = dt;
+DataPacket DataPacket::makeIntoReadResponse(std::vector<char> data) {
+  // If type of DataPacket isn't READ_REQUEST return faulty DataPacket.
+  if (type_ != READ_REQUEST) {
+    std::cerr << "[SimEng::DataPacket] Cannot change DataPacket type to "
+                 "READ_RESPONSE as the request type isn't READ_REQUEST."
+              << std::endl;
+    return DataPacket(true);
+  }
+  type_ = READ_RESPONSE;
+  data_ = data;
+  inFault_ = false;
+  return *this;
 }
 
-WritePacket::WritePacket(uint64_t addr, size_t sz, const char* dt)
-    : DataPacket(WRITE, addr), data(dt) {
-  address = addr;
-  size = sz;
-  data = dt;
-}
-
-WriteRespPacket* WritePacket::makeResponse(uint64_t bytesReturned) {
-  return new WriteRespPacket(this->id, bytesReturned, this->address);
-}
-
-WriteRespPacket::WriteRespPacket(uint64_t req_id, size_t bytes_written,
-                                 uint64_t addr)
-    : DataPacket(WRITE, addr) {
-  reqId = req_id;
-  bytesWritten = bytes_written;
+DataPacket DataPacket::makeIntoWriteResponse() {
+  // If type of DataPacket isn't WRITE_REQUEST return faulty DataPacket.
+  if (type_ != WRITE_REQUEST) {
+    std::cerr << "[SimEng::DataPacket] Cannot change DataPacket type to "
+                 "WRITE_RESPONSE as the request type isn't WRITE_REQUEST."
+              << std::endl;
+    return DataPacket(true);
+  }
+  type_ = WRITE_RESPONSE;
+  inFault_ = false;
+  return *this;
 }
 
 }  // namespace memory

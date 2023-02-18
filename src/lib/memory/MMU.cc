@@ -10,22 +10,23 @@ MMU::MMU(std::shared_ptr<Mem> memory, VAddrTranslator fn, uint64_t tid) {
   tid_ = tid;
 };
 
-void MMU::bufferRequest(
-    DataPacket* request,
-    std::function<void(DataPacket*)> sendRespToMemInterface) {
+void MMU::bufferRequest(DataPacket request, sendResponseToCore sendResponse) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
-  uint64_t paddr = translate_(request->address, tid_);
+  uint64_t paddr = translate_(request.address_, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
+  DataPacket pkt = DataPacket();
 
   if (faultCode == simeng::OS::masks::faults::pagetable::dataAbort) {
-    sendRespToMemInterface(NULL);
+    pkt = DataPacket(true);
   } else if (faultCode == simeng::OS::masks::faults::pagetable::ignored) {
-    sendRespToMemInterface(memory_->handleIgnoredRequest(request));
+    pkt = memory_->handleIgnoredRequest(request);
   } else {
-    request->address = paddr;
-    DataPacket* response = memory_->requestAccess(request);
-    sendRespToMemInterface(response);
+    request.address_ = paddr;
+    pkt = memory_->requestAccess(request);
+  }
+  if (!(sendResponse == nullptr)) {
+    sendResponse(pkt);
   }
 };
 

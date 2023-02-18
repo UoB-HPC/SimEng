@@ -98,7 +98,7 @@ class SimOS {
   /** Function used to send data to memory without any timing constraints
    * applied. This function is passed to the PageTable::handlePageFault when a
    * page fault is encountered. */
-  std::function<void(char*, uint64_t, size_t)> sendToMem_;
+  sendToMemory sendToMem_;
 
   /** Create the initial SimOS Process running above this kernel from command
    * line arguments.

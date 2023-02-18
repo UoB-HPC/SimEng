@@ -21,7 +21,7 @@ SimOS::SimOS(std::string executablePath,
   // Callback function used to send data to memory on page fault. This was
   // preferred to a sharing the memory class as this callback can now be
   // implementation specific.
-  sendToMem_ = [&, this](char* data, uint64_t addr, size_t size) {
+  sendToMem_ = [&, this](std::vector<char> data, uint64_t addr, size_t size) {
     this->memory_->sendUntimedData(data, addr, size);
   };
   pageFrameAllocator_ = PageFrameAllocator(mem->getMemorySize());

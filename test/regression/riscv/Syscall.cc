@@ -362,11 +362,10 @@ TEST_P(Syscall, file_read) {
   // Check result of read operations
   const char reference[] = "ABCD\0UV\0EFGH\0\0\0\0MNOPQRST";
   uint64_t paddr = process_->translate(process_->getHeapStart());
-  char* data = memory_->getUntimedData(paddr, sizeof(reference));
+  auto data = memory_->getUntimedData(paddr, sizeof(reference));
   for (int i = 0; i < sizeof(reference); i++) {
     EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
   }
-  delete[] data;
 }
 
 TEST_P(Syscall, file_write) {

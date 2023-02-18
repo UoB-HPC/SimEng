@@ -201,12 +201,11 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   ASSERT_NE(paddr, masks::faults::pagetable::fault |
                        masks::faults::pagetable::translate);
 
-  char* data = memory->getUntimedData(paddr, vma->getFileSize() + 1);
-  data[21] = '\0';
-  std::string text = "111111111111111111111";
-  ASSERT_EQ(text, std::string(data));
+  auto data = memory->getUntimedData(paddr, vma->getFileSize());
+  data.push_back('\0');
 
-  delete data;
+  std::string text = "111111111111111111111";
+  ASSERT_EQ(text, std::string(data.data()));
 }
 
 TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
@@ -251,13 +250,11 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   ASSERT_NE(paddr, masks::faults::pagetable::fault |
                        masks::faults::pagetable::translate);
 
-  char* data = memory->getUntimedData(paddr, vma->getFileSize() + 1);
-  data[4096] = '\0';
+  auto data = memory->getUntimedData(paddr, vma->getFileSize());
+  data.push_back('\0');
   std::string text = "";
   for (int x = 0; x < 4096; x++) text += "2";
-  ASSERT_EQ(text, std::string(data));
-
-  delete data;
+  ASSERT_EQ(text, std::string(data.data()));
 }
 
 TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
@@ -302,12 +299,11 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   ASSERT_NE(paddr, masks::faults::pagetable::fault |
                        masks::faults::pagetable::translate);
 
-  char* data = memory->getUntimedData(paddr, 4096 + 1);
-  data[4096] = '\0';
+  auto data = memory->getUntimedData(paddr, 4096);
+  data.push_back('\0');
   std::string text = "";
   for (int x = 0; x < 4096; x++) text += "1";
-  ASSERT_EQ(text, std::string(data));
-  delete[] data;
+  ASSERT_EQ(text, std::string(data.data()));
 
   paddr = simOS.getProcess(0)->translate(mmapStart + 4096);
   ASSERT_EQ(paddr, masks::faults::pagetable::fault |
@@ -319,11 +315,11 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
                        masks::faults::pagetable::translate);
 
   data = memory->getUntimedData(paddr, 4096 + 1);
-  data[4096] = '\0';
+  data.push_back('\0');
+
   text = "";
   for (int x = 0; x < 4096; x++) text += "2";
-  ASSERT_EQ(text, std::string(data));
-  delete[] data;
+  ASSERT_EQ(text, std::string(data.data()));
 }
 
 }  // namespace

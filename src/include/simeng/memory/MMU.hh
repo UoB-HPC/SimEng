@@ -9,6 +9,8 @@ typedef std::function<uint64_t(uint64_t, uint64_t)> VAddrTranslator;
 namespace simeng {
 namespace memory {
 
+typedef std::function<void(DataPacket)> sendResponseToCore;
+
 /** The MMU class acts as a buffer class between memory interfaces and memory.
  * It is mainly responsible for invoking virtual address translation mechanisms
  * before the memory request is sent off to main memory. */
@@ -17,8 +19,7 @@ class MMU {
   MMU(std::shared_ptr<Mem> memory, VAddrTranslator fn, uint64_t tid = 0);
 
   /** Method used to buffer requests from memory interface to memory. */
-  void bufferRequest(DataPacket* request,
-                     std::function<void(DataPacket*)> sendRespToMemInterface);
+  void bufferRequest(DataPacket request, sendResponseToCore sendResponse);
 
   /** Method to set TID for the MMU. */
   void setTid(uint64_t tid);
