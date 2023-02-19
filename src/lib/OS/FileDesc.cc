@@ -18,7 +18,7 @@ FileDescArray::FileDescArray() {
 }
 
 void FileDescArray::validate(int vfd) const {
-  if (numFds_ = maxFdNum) {
+  if (numFds_ == maxFdNum) {
     std::cerr << "[SimEng:FileDescArray] Maximum number of file descriptors "
                  "allocated."
               << std::endl;
