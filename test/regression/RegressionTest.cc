@@ -34,7 +34,7 @@ void RegressionTest::run(const char* source, const char* triple,
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
 
-  // Initialise the global memory
+  // Initialise the simulation memory
   memory_ = std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Initialise a SimOS object.
