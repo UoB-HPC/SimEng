@@ -18,7 +18,7 @@ FileDescArray::FileDescArray() {
 }
 
 void FileDescArray::validate(int vfd) const {
-  if (numFds_ >= maxFdNum) {
+  if (numFds_ = maxFdNum) {
     std::cerr << "[SimEng:FileDescArray] Maximum number of file descriptors "
                  "allocated."
               << std::endl;
@@ -53,7 +53,6 @@ int FileDescArray::allocateFDEntry(int dirfd, const char* filename, int flags,
       return i;
     }
   }
-  // Return value -1 signifies failed allocation.
   return -1;
 }
 

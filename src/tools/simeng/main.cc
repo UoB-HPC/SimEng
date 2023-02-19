@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
 
-  // Create global memory
+  // Create the simulation memory.
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 

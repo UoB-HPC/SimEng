@@ -1,10 +1,10 @@
 add_executable(regression-aarch64
                AArch64RegressionTest.cc
                AArch64RegressionTest.hh
+               Exception.cc
                LoadStoreQueue.cc
                MicroOperation.cc
                SmokeTest.cc
-               Exception.cc
                Syscall.cc
                SystemRegisters.cc
                instructions/arithmetic.cc
