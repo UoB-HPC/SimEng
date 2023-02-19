@@ -63,10 +63,7 @@ class SimOS {
 
   /** This method returns a callback function that is passed to the MMU.
    * The callback function will be used by the MMU to handle TLB misses. The
-   * callback invokes SimOS for virtual address translations. This design
-   * decision was made keeping the SST multicore integration in mind. This
-   * method can be overriden by a new implementation to carry to similar
-   * functionality in the SST multicore integration. */
+   * callback invokes SimOS for virtual address translations. */
   virtual VAddrTranslator getVAddrTranslator();
 
   /** Register a core with the OS to enable process scheduling. */
@@ -84,8 +81,6 @@ class SimOS {
   /** Method which handles process specific page table translation. */
   uint64_t handleVAddrTranslation(uint64_t vaddr, uint64_t tid);
 
-  // The pointer is const (not the resource it points to) and will never be
-  // exchanged during its lifetime.
   /** Unique pointer to host backed file mmap. */
   std::unique_ptr<HostBackedFileMMaps> const hfmmap_ =
       std::make_unique<HostBackedFileMMaps>();
@@ -117,8 +112,7 @@ class SimOS {
 
   /** The map of user-space processes running above the OS kernel.
    * Key = process' TID
-   * Value = Shared pointer to process object with TID = key
-   */
+   * Value = Shared pointer to process object with TID = key. */
   std::unordered_map<uint64_t, std::shared_ptr<Process>> processes_ = {};
 
   /** Queue of processes waiting to be scheduled. */

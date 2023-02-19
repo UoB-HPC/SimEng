@@ -15,9 +15,6 @@ SimOS::SimOS(std::string executablePath,
       executableArgs_(executableArgs),
       memory_(mem) {
   syscallHandler_ = std::make_shared<SyscallHandler>(this);
-  // Parse command line args
-  // Determine if a config file has been supplied.
-
   // Callback function used to send data to memory on page fault. This was
   // preferred to a sharing the memory class as this callback can now be
   // implementation specific.
@@ -239,9 +236,7 @@ uint64_t SimOS::requestPageFrames(size_t size) {
 }
 
 uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
-  // Since SimEng in single core currently, we don't need to worry about
-  // multiple pprocessses.
-  auto process = processes_[0];
+  auto process = processes_.find(0)->second;
   uint64_t translation = process->pageTable_->translate(vaddr);
   uint64_t faultCode = masks::faults::getFaultCode(translation);
 

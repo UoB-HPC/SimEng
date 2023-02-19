@@ -44,7 +44,8 @@ class FileDescEntry {
   bool replaceProps(int vfd, int fd, int flags, std::string filename) {
     if (fcntl(fd_, F_GETFD) != -1) {
       std::cerr
-          << "File descriptor (" << fd_ << ") for file: " << filename_
+          << "[SimEng:FileDesc] File descriptor (" << fd_
+          << ") for file: " << filename_
           << "is still valid. Cannot reset FileDescEntry with valid host fd."
           << std::endl;
       return false;

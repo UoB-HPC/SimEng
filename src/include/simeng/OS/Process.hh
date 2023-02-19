@@ -89,14 +89,14 @@ class Process {
   /** Construct a SimOS Process from a vector of command-line arguments. The
    * first argument is a path to an executable ELF file. */
   Process(const std::vector<std::string>& commandLine,
-          std::shared_ptr<simeng::memory::Mem> memory, SimOS* os,
+          std::shared_ptr<simeng::memory::Mem> memory, SimOS* OS,
           std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
           uint64_t TID);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
   Process(span<char> instructions, std::shared_ptr<simeng::memory::Mem> memory,
-          SimOS* os, std::vector<RegisterFileStructure> regFileStructure,
+          SimOS* OS, std::vector<RegisterFileStructure> regFileStructure,
           uint64_t TGID, uint64_t TID);
 
   ~Process();
@@ -143,7 +143,7 @@ class Process {
   /** Method which handles virtual address translation. */
   uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
 
-  /** Shared pointer to FileDescArray class.*/
+  /** Unique pointer to FileDescArray class.*/
   std::unique_ptr<FileDescArray> fdArray_;
 
   // Thread state
@@ -181,14 +181,14 @@ class Process {
   uint64_t TGID_;
 
   /** The process' Thread ID - a globally unique identifier.
-   * A thread group's leader TID will be equal to the TGID. */
+   * A thread group's leader's TID will be equal to the TGID. */
   uint64_t TID_;
 
   /** Reference to a page table */
   std::shared_ptr<PageTable> pageTable_ = nullptr;
 
-  /** Reference to the os. */
-  SimOS* os_;
+  /** Reference to the SimOS object. */
+  SimOS* OS_;
 };
 
 }  // namespace OS

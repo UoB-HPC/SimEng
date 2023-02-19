@@ -243,11 +243,6 @@ int64_t SyscallHandler::getrusage(int64_t who, rusage& out) {
 }
 
 int64_t SyscallHandler::getpid() const {
-  /*
-assert((processes_.size() > 0) &&
-       "[SimEng:SyscallHanlder] invalid number of active processes - Max "
-       "limit is 1.");
-       */
   // TODO : Needs to be properly implemented once multi-thread supported
   return 0;
 }
@@ -331,7 +326,9 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
   if (fd > 0) {
     auto entry = process->fdArray_->getFDEntry(fd);
     if (!entry.isValid()) {
-      std::cerr << "Invalid virtual file descriptor given to mmap" << std::endl;
+      std::cerr << "[SimEng:SyscallHandler] Invalid virtual file descriptor "
+                   "given to mmap"
+                << std::endl;
       return -1;
     };
     hostfile = os_->hfmmap_->mapfd(entry.getFd(), length, offset);

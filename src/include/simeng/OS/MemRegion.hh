@@ -13,6 +13,9 @@ namespace OS {
 
 using namespace simeng::OS::defaults;
 
+/** The MemoryRegion class is assosciated with the Process class and holds
+ * memory related state variables for the process class. It is also responsible
+ * for handling syscalls to heap and mmap memory regions.  */
 class MemRegion {
  public:
   /** This constructor creates a MemRegion with values specified by the owning

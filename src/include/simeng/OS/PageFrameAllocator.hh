@@ -16,6 +16,9 @@ namespace OS {
 
 using namespace simeng::OS::defaults;
 
+/** The PageFrameAllocator class is responsible for keeping track of how much
+ * simulation memory is used and how much is available. It allocates page
+ * frames in simulation memory to be used for virtual address mappings. */
 class PageFrameAllocator {
  public:
   /* Constructor to create an empty PageFrameAllocator */

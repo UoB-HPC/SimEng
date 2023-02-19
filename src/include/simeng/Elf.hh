@@ -32,7 +32,7 @@ class Elf {
   /** Method to return ELF process image size. */
   uint64_t getElfImageSize() const;
 
-  /** Method to return validility of the ELF parsing process. */
+  /** Method to return the validity of the ELF parsing process. */
   bool isValid() const;
 
   /** Method which returns the entry point. */

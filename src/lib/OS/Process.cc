@@ -23,10 +23,10 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 }
 
 Process::Process(const std::vector<std::string>& commandLine,
-                 std::shared_ptr<simeng::memory::Mem> memory, SimOS* os,
+                 std::shared_ptr<simeng::memory::Mem> memory, SimOS* OS,
                  std::vector<RegisterFileStructure> regFileStructure,
                  uint64_t TGID, uint64_t TID)
-    : commandLine_(commandLine), os_(os), TGID_(TGID), TID_(TID) {
+    : commandLine_(commandLine), TGID_(TGID), TID_(TID), OS_(OS) {
   // Parse ELF file
   YAML::Node& config = Config::get();
   uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
@@ -54,7 +54,7 @@ Process::Process(const std::vector<std::string>& commandLine,
     // Round vaddr down to page aligned value.
     uint64_t avaddr = downAlign(vaddr, page_size);
     // Request a page frame from the OS.
-    uint64_t paddr = os_->requestPageFrames(size);
+    uint64_t paddr = OS_->requestPageFrames(size);
     // Create a virtual memory mapping.
     pageTable_->createMapping(vaddr, paddr, size);
     // Translate the address of the header virtual address.
@@ -62,18 +62,18 @@ Process::Process(const std::vector<std::string>& commandLine,
     // If the translated address + size of data to be allocated is less than
     // base paddr + size, allocate extra memory.
     if (((paddr + size) - translatedAddr) < header.memorySize) {
-      paddr = os_->requestPageFrames(page_size);
+      paddr = OS_->requestPageFrames(page_size);
       pageTable_->createMapping(avaddr + size, paddr, page_size);
       translatedAddr = pageTable_->translate(vaddr);
     }
     // Send header data to memory
     memory->sendUntimedData(header.headerData, translatedAddr,
                             header.memorySize);
-    // Determine minium header address, address in the ranhge [0, minAddr) will
+    // Determine minimum header address, address in the range [0, minAddr) will
     // be ignored during translation and all memory requests corresponding to
     // these address will be handled naively. This is because libc startup
     // routine makes load requests to address range below minimum header address
-    // leading to data abort exceptions. A proper fix needs to be investigated.
+    // leading to data abort exceptions.
     minHeaderAddr = std::min(minHeaderAddr, avaddr);
   }
 
@@ -97,15 +97,15 @@ Process::Process(const std::vector<std::string>& commandLine,
   uint64_t size = stackStart;
 
   // Request Page frames for heap and stack memory.
-  uint64_t heapPhyAddr = os_->requestPageFrames(heapEnd - heapStart);
-  uint64_t stackPhyAddr = os_->requestPageFrames(stackStart - stackEnd);
+  uint64_t heapPhyAddr = OS_->requestPageFrames(heapEnd - heapStart);
+  uint64_t stackPhyAddr = OS_->requestPageFrames(stackStart - stackEnd);
 
   // Create page table mappings for stack and heap virtual address ranges.
   pageTable_->createMapping(stackEnd, stackPhyAddr, stackSize);
   pageTable_->createMapping(heapStart, heapPhyAddr, heapSize);
   uint64_t stackPtr = createStack(stackStart, memory);
 
-  // Create the callback function which will used by MemRegion to unmap page
+  // Create the callback function which will be used by MemRegion to unmap page
   // table mappings upon VMA deletes.
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
       [&, this](uint64_t vaddr, size_t size) -> uint64_t {
@@ -142,10 +142,10 @@ Process::Process(const std::vector<std::string>& commandLine,
 }
 
 Process::Process(span<char> instructions,
-                 std::shared_ptr<simeng::memory::Mem> memory, SimOS* os,
+                 std::shared_ptr<simeng::memory::Mem> memory, SimOS* OS,
                  std::vector<RegisterFileStructure> regFileStructure,
                  uint64_t TGID, uint64_t TID)
-    : os_(os), TGID_(TGID), TID_(TID) {
+    : TGID_(TGID), TID_(TID), OS_(OS) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 
@@ -161,7 +161,7 @@ Process::Process(span<char> instructions,
 
   // Heap grows upwards towards higher addresses.
   heapSize = upAlign(heapSize, page_size);
-  uint64_t heapStart = instrEnd + 4096;
+  uint64_t heapStart = instrEnd + page_size;
   uint64_t heapEnd = heapStart + heapSize;
 
   // Mmap grows upwards towards higher addresses.
@@ -176,9 +176,9 @@ Process::Process(span<char> instructions,
   uint64_t size = stackStart;
 
   // Request Page frames for heap and stack memory.
-  uint64_t instrPhyAddr = os_->requestPageFrames(instrSize);
-  uint64_t heapPhyAddr = os_->requestPageFrames(heapSize);
-  uint64_t stackPhyAddr = os_->requestPageFrames(stackSize);
+  uint64_t instrPhyAddr = OS_->requestPageFrames(instrSize);
+  uint64_t heapPhyAddr = OS_->requestPageFrames(heapSize);
+  uint64_t stackPhyAddr = OS_->requestPageFrames(stackSize);
 
   // Create page table mappings for stack and heap virtual address ranges.
   pageTable_->createMapping(0, instrPhyAddr, instrSize);
@@ -186,6 +186,8 @@ Process::Process(span<char> instructions,
   pageTable_->createMapping(stackEnd, stackPhyAddr, stackSize);
   uint64_t stackPtr = createStack(stackStart, memory);
 
+  // Create the callback function which will be used by MemRegion to unmap page
+  // table mappings upon VMA deletes.
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
       [&, this](uint64_t vaddr, size_t size) -> uint64_t {
     return this->pageTable_->deleteMapping(vaddr, size);
@@ -323,7 +325,7 @@ uint64_t Process::handlePageFault(uint64_t vaddr, sendToMemory send) {
   // Retrieve VMA containing the vaddr has raised a page fault.
   VirtualMemoryArea* vm = memRegion_.getVMAFromAddr(vaddr);
   // Process VMA doesn't exist. This address is likely due to a speculation.
-  if (vm == NULL)
+  if (vm == nullptr)
     return masks::faults::pagetable::fault |
            masks::faults::pagetable::dataAbort;
 
@@ -331,7 +333,7 @@ uint64_t Process::handlePageFault(uint64_t vaddr, sendToMemory send) {
   // a page mapping.
   uint64_t alignedVAddr = downAlign(vaddr, page_size);
 
-  uint64_t paddr = os_->requestPageFrames(page_size);
+  uint64_t paddr = OS_->requestPageFrames(page_size);
   uint64_t ret = pageTable_->createMapping(alignedVAddr, paddr, page_size);
   if (ret & masks::faults::pagetable::fault)
     return masks::faults::pagetable::fault | masks::faults::pagetable::map;
@@ -343,7 +345,7 @@ uint64_t Process::handlePageFault(uint64_t vaddr, sendToMemory send) {
   void* filebuf = vm->getFileBuf();
 
   // Since page fault only allocates a single page it could be possible that a
-  // part of the file assosciate with a vma has already been sent to memory. TO
+  // part of the file assosciate with a vma has already been sent to memory. To
   // handle this situation we calculate the offset from VMA start address as
   // this address is also page size aligned.
   uint64_t offset = alignedVAddr - vm->vmStart_;
