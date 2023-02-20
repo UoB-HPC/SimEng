@@ -24,9 +24,7 @@ void FixedLatencyMemoryInterface::tick() {
 
     if (request.write) {
       const char* wdata = request.data.getAsVector<char>();
-      std::vector<char> dt(target.size, '\0');
-      std::copy(wdata, wdata + target.size, dt.data());
-
+      std::vector<char> dt(wdata, wdata + target.size);
       // Responses to write requests are ignored by passing in a nullptr
       // callback because they don't contain any information relevant to the
       // simulation.
@@ -37,12 +35,13 @@ void FixedLatencyMemoryInterface::tick() {
     } else {
       // Instantiate a callback function which will be invoked with the response
       // to a read request.
-      auto fn = [&, this](struct memory::DataPacket packet) -> void {
+      auto fn = [this, target,
+                 requestId](struct memory::DataPacket packet) -> void {
         if (packet.inFault_) {
-          this->completedReads_.push_back({target, RegisterValue(), requestId});
+          completedReads_.push_back({target, RegisterValue(), requestId});
           return;
         }
-        this->completedReads_.push_back(
+        completedReads_.push_back(
             {target, RegisterValue(packet.data_.data(), packet.size_),
              requestId});
       };

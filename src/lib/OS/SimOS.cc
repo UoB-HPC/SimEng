@@ -18,8 +18,8 @@ SimOS::SimOS(std::string executablePath,
   // Callback function used to send data to memory on page fault. This was
   // preferred to a sharing the memory class as this callback can now be
   // implementation specific.
-  sendToMem_ = [&, this](std::vector<char> data, uint64_t addr, size_t size) {
-    this->memory_->sendUntimedData(data, addr, size);
+  sendToMem_ = [this](std::vector<char> data, uint64_t addr, size_t size) {
+    memory_->sendUntimedData(data, addr, size);
   };
   pageFrameAllocator_ = PageFrameAllocator(mem->getMemorySize());
   if (!setProcess) createInitialProcess();
@@ -258,8 +258,8 @@ uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
 }
 
 VAddrTranslator SimOS::getVAddrTranslator() {
-  auto fn = [&, this](uint64_t vaddr, uint64_t pid) -> uint64_t {
-    return this->handleVAddrTranslation(vaddr, pid);
+  auto fn = [this](uint64_t vaddr, uint64_t pid) -> uint64_t {
+    return handleVAddrTranslation(vaddr, pid);
   };
   return fn;
 }

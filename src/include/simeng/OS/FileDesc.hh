@@ -74,7 +74,7 @@ class FileDescEntry {
   std::string filename_;
 };
 
-/** This class manages the all host to virtual file descriptor mappings. */
+/** This class manages all the host to virtual file descriptor mappings. */
 class FileDescArray {
  public:
   FileDescArray();

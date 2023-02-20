@@ -74,8 +74,8 @@ class SimOS {
   /** Check if OS has halted. */
   bool hasHalted() const { return halted_; };
 
-  /** Method which allocates page frames of the specific size and returns the
-   * starting physical address. */
+  /** Method which allocates multiple page frames of size 'PAGE_SIZE' to cover
+   * an address range of 'size' and returns the starting physical address. */
   uint64_t requestPageFrames(size_t size);
 
   /** Method which handles process specific page table translation. */
@@ -91,7 +91,7 @@ class SimOS {
 
  private:
   /** Function used to send data to memory without any timing constraints
-   * applied. This function is passed to the PageTable::handlePageFault when a
+   * applied. This function is passed to the Process::handlePageFault when a
    * page fault is encountered. */
   sendToMemory sendToMem_;
 

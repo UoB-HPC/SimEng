@@ -42,7 +42,7 @@ struct DataPacket {
    * requests. */
   uint64_t id_ = 0;
 
-  /** The data carried by a DataPacket, this is used to deliver and recieve data
+  /** The data carried by a DataPacket, this is used to deliver and receive data
    * to/from the simulation memory. */
   std::vector<char> data_;
 
@@ -64,19 +64,19 @@ struct DataPacket {
   DataPacket(uint64_t address, uint64_t size, DataPacketType type,
              uint64_t reqId, std::vector<char> data, bool fault = false);
 
-  /** Copy constructor for DataPacket. */
-  DataPacket(const DataPacket& packet);
+  /** Default copy constructor for DataPacket. */
+  DataPacket(const DataPacket& packet) = default;
 
-  /** Move constructor for DataPacket to enable copy elision whenever it is
-   * possible. */
-  DataPacket(DataPacket&& packet);
+  /** Default move constructor for DataPacket to enable copy elision whenever it
+   * is possible. */
+  DataPacket(DataPacket&& packet) = default;
 
-  /** Copy assignment operator= for DataPacket. */
-  DataPacket& operator=(const DataPacket& packet);
+  /** Default copy assignment operator for DataPacket. */
+  DataPacket& operator=(const DataPacket& packet) = default;
 
-  /** Move assignment operator= for DataPacket to enable copy elision whenever
-   * it is possible. */
-  DataPacket& operator=(DataPacket&& packet);
+  /** Default move assignment operator for DataPacket to enable copy elision
+   * whenever it is possible. */
+  DataPacket& operator=(DataPacket&& packet) = default;
 
   /** Method which converts a DataPacket of type READ_REQUEST to READ_RESPONSE.
    * Faulty Packet is returned if this method is called on a DataPacket which
@@ -109,7 +109,7 @@ class Mem {
   virtual void sendUntimedData(std::vector<char> data, uint64_t addr,
                                size_t size) = 0;
 
-  /** This method reads data to memory without incurring any latency. */
+  /** This method reads data from memory without incurring any latency. */
   virtual std::vector<char> getUntimedData(uint64_t paddr, size_t size) = 0;
 
   /** This method handles a memory request to an ignored address range. */

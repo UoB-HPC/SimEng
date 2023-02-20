@@ -29,7 +29,7 @@ class PageFrameAllocator {
   uint64_t maxAllocationSize_;
 
   /** This method is used to allocate page frames, it returns the start address
-   * of a newly allocated page frame of fixed size (4096 bytes). */
+   * of a newly allocated page frame of fixed size. */
   uint64_t allocate(size_t size);
 
   /** Method which returns the start address of the next free page frame. */

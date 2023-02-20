@@ -108,8 +108,8 @@ Process::Process(const std::vector<std::string>& commandLine,
   // Create the callback function which will be used by MemRegion to unmap page
   // table mappings upon VMA deletes.
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
-      [&, this](uint64_t vaddr, size_t size) -> uint64_t {
-    uint64_t value = this->pageTable_->deleteMapping(vaddr, size);
+      [this](uint64_t vaddr, size_t size) -> uint64_t {
+    uint64_t value = pageTable_->deleteMapping(vaddr, size);
     if (value ==
         (masks::faults::pagetable::FAULT | masks::faults::pagetable::UNMAP)) {
       std::cerr << "[SimEng:Process] Mapping doesn't exist for vaddr: " << vaddr
@@ -189,8 +189,8 @@ Process::Process(span<char> instructions,
   // Create the callback function which will be used by MemRegion to unmap page
   // table mappings upon VMA deletes.
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
-      [&, this](uint64_t vaddr, size_t size) -> uint64_t {
-    return this->pageTable_->deleteMapping(vaddr, size);
+      [this](uint64_t vaddr, size_t size) -> uint64_t {
+    return pageTable_->deleteMapping(vaddr, size);
   };
 
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, stackStart,

@@ -7,7 +7,6 @@
 namespace simeng {
 namespace OS {
 HostFileMMap HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
-  struct stat* statbuf = (struct stat*)malloc(sizeof(struct stat));
   if (offset & (PAGE_SIZE - 1)) {
     std::cerr << "[SimEng:HostBackedFileMMaps] Failed to create Host backed "
                  "file mapping. Offset is not aligned "
@@ -15,14 +14,19 @@ HostFileMMap HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
               << offset << std::endl;
     std::exit(1);
   }
-  if (fstat(fd, statbuf) < 0) {
+  struct stat* statbuf = (struct stat*)malloc(sizeof(struct stat));
+  int fstatResult = fstat(fd, statbuf);
+  if (fstatResult < 0) {
     std::cerr << "[SimEng:HostBackedFileMMaps] fstat failed: Cannot create "
                  "host backed file mmap for file "
                  "descriptor - "
               << fd << std::endl;
+    free(statbuf);
     std::exit(1);
   }
-  if (offset + len > statbuf->st_size) {
+  off_t fstatFileSize = statbuf->st_size;
+  free(statbuf);
+  if (offset + len > fstatFileSize) {
     std::cerr << "[SimEng:HostBackedFileMMaps] Tried to create host backed "
                  "file mmap with offset and size greater "
                  "than file size."
@@ -45,12 +49,16 @@ HostFileMMap HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
   void* newPtr = (void*)offsettedPtr;
   HostFileMMap hfmm =
       HostFileMMap(fd, filemmap, newPtr, (size_t)statbuf->st_size, len, offset);
-  hostvec.push_back(hfmm);
+  hostVec_.push_back(hfmm);
   return hfmm;
 }
 
 HostBackedFileMMaps::~HostBackedFileMMaps() {
-  for (auto fmap : hostvec) {
+  for (auto fmap : hostVec_) {
+    // Since HostFileMMap contains effective starting address and file length
+    // values calculated after applying the offset specified by mmap. We have to
+    // be cautious and use origPtr_ and orgiLen_ here to unmap the entire file
+    // mapping on host.
     if (munmap(fmap.getOrigPtr(), fmap.getOrigLen()) < 0) {
       std::cerr << "[SimEng:HostBackedFileMMaps] Unable to unmap host backed "
                    "file mmap associated with file "
@@ -73,17 +81,16 @@ VirtualMemoryArea::VirtualMemoryArea(int prot, int flags, size_t vsize,
   }
 }
 
-VirtualMemoryArea::VirtualMemoryArea(VirtualMemoryArea* vma) {
-  vmStart_ = vma->vmStart_;
-  vmEnd_ = vma->vmEnd_;
-  vmNext_ = vma->vmNext_;
-  flags_ = vma->flags_;
-  prot_ = vma->prot_;
-  hfmmap_ = vma->hfmmap_;
-  vmSize_ = vma->vmSize_;
-  filebuf_ = vma->filebuf_;
-  fsize_ = vma->fsize_;
-}
+VirtualMemoryArea::VirtualMemoryArea(VirtualMemoryArea* vma)
+    : vmEnd_(vma->vmEnd_),
+      vmStart_(vma->vmStart_),
+      vmNext_(vma->vmNext_),
+      vmSize_(vma->vmSize_),
+      prot_(vma->prot_),
+      flags_(vma->flags_),
+      filebuf_(vma->filebuf_),
+      fsize_(vma->fsize_),
+      hfmmap_(vma->hfmmap_) {}
 
 bool VirtualMemoryArea::overlaps(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;

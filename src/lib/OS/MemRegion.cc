@@ -70,7 +70,7 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
     // mmapd.
     std::cerr << "[SimEng:MemRegion] Attemped to allocate more memory on the "
                  "heap than is available to the process. Please increase the "
-                 "{Process-Image:{Heap-Size: <size>}} parameter in YAML "
+                 "{Process-Image:{Heap-Size: <size>}} parameter in YAML model "
                  "config file used to run this simulation."
               << std::endl;
     std::exit(1);
@@ -102,7 +102,7 @@ uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
   }
 
   bool allocated = false;
-  // If Vma list has multiple VMAs then starting from curr (VMA) check if the
+  // If VMA list has multiple VMAs then starting from curr (VMA) check if the
   // new VMA can be allocated between two existing ones.
   while (curr != nullptr && curr->vmNext_ != nullptr) {
     if (curr->vmNext_->vmStart_ - curr->vmEnd_ >= size) {
@@ -162,7 +162,7 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
       removedVMAs.push_back(curr);
     }
     // If the address range is within the bounds of the current VMA, split the
-    // VAM into two smaller VMAs and increase the VMA list size by 1
+    // VMA into two smaller VMAs and increase the VMA list size by 1
     //      [---Addr---]
     // [--------VMA --------)
     else if (curr->contains(addr, length)) {

@@ -330,7 +330,7 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                    "given to mmap"
                 << std::endl;
       return -1;
-    };
+    }
     hostfile = os_->hfmmap_->mapfd(entry.getFd(), length, offset);
   }
   uint64_t ret =
@@ -388,7 +388,7 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
   int64_t dirfd = SyscallHandler::getDirFd(dfd, filename);
   if (dirfd == -1) return EBADF;
 
-  std::shared_ptr<Process> proc = os_->getProcess(0);
+  auto proc = os_->getProcess(0);
   return proc->fdArray_->allocateFDEntry(dirfd, new_pathname.c_str(), newFlags,
                                          mode);
 }

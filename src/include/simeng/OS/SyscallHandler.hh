@@ -30,7 +30,7 @@ static constexpr uint16_t PATH_MAX_LEN = 4096;
 namespace simeng {
 namespace OS {
 
-// Forward declare SimOS so as to resolve the circular dependency.
+// Forward declare SimOS to resolve the circular dependency.
 class SimOS;
 
 /** Fixed-width definition of `stat`.

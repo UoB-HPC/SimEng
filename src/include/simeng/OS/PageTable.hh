@@ -54,8 +54,11 @@ class PageTable {
   /** Map used to store virtual to physical address mappings. */
   std::map<uint64_t, uint64_t> table_;
 
-  /** Pair used to store ignored virtual address range. */
-  IgnoredAddrRange ignored_ = std::pair<uint64_t, uint64_t>(0, 0);
+  /** Pair used to store ignored virtual address range. All addressed within
+   * this range will lead to a page fault of type faults::pagetable::INGORED.
+   * Furthermore, in the MMU whenever this specific page fault is encoutered an
+   * an empty register value is sent back as the response. */
+  IgnoredAddrRange ignoredAddrRange_ = std::pair<uint64_t, uint64_t>(0, 0);
 
   /** Method which creates a single page mapping between alignedVAddr and
    * physAddr. */
@@ -69,7 +72,7 @@ class PageTable {
    * mapped to, so as to generate the final translation. */
   uint64_t calculateOffset(uint64_t vaddr);
 
-  /** Method to the find page table entry associated with vaddr. */
+  /** Method to find the page table entry associated with vaddr. */
   TableItr find(uint64_t vaddr);
 
   /** Method to generate a mask based on the page size. This mask will be used

@@ -567,7 +567,7 @@ bool ExceptionHandler::init() {
 
         int64_t result = sysHandler_->munmap(addr, length);
         // If successful, sysHandler_->munmap returns the total number of bytes
-        // unmapped. if the value is greater than 0, 0 is returned as specified
+        // unmapped. If the value is greater than 0, 0 is returned as specified
         // by the actual munmap specification. However, all negative values
         // returned by munmap are in accordance with the munmap specification,
         // so in case a negative value is returned it will remain the same.

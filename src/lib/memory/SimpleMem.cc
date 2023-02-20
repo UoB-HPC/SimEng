@@ -24,24 +24,24 @@ DataPacket SimpleMem::requestAccess(struct DataPacket pkt) {
               << std::endl;
     return DataPacket(true);
   }
-};
+}
 
 DataPacket SimpleMem::handleReadRequest(struct DataPacket req) {
   size_t size = req.size_;
   uint64_t addr = req.address_;
   std::vector<char> data(memory_.begin() + addr, memory_.begin() + addr + size);
   return req.makeIntoReadResponse(data);
-};
+}
 
 DataPacket SimpleMem::handleWriteRequest(struct DataPacket req) {
   uint64_t address = req.address_;
   std::copy(req.data_.begin(), req.data_.end(), memory_.begin() + address);
   return req.makeIntoWriteResponse();
-};
+}
 
 void SimpleMem::sendUntimedData(std::vector<char> data, uint64_t addr,
                                 size_t size) {
-  std::copy(data.begin(), data.end(), memory_.begin() + addr);
+  std::copy(data.begin(), data.begin() + size, memory_.begin() + addr);
 }
 
 std::vector<char> SimpleMem::getUntimedData(uint64_t paddr, size_t size) {

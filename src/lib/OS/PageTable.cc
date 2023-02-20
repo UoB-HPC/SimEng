@@ -1,6 +1,5 @@
 #include "simeng/OS/PageTable.hh"
 
-#include <cmath>
 #include <iostream>
 #include <vector>
 
@@ -12,25 +11,18 @@ namespace OS {
 bool PageTable::isMapped(uint64_t vaddr) { return find(vaddr) != table_.end(); }
 
 uint64_t PageTable::generateOffsetMask(uint64_t pageSize) {
-  if (!isPow2(PAGE_SIZE)) {
+  if (!isPow2(pageSize)) {
     std::cerr
         << "[SimEng:PageTable] Page size should be aligned to a power of 2."
         << std::endl;
     std::exit(1);
   }
-  // The logic below generates a mask with only log2(PAGE_SIZE) number of lowest
-  // significant bits as 1. log2(PAGE_SIZE) gives us the number of bits required
-  // to represent PAGE_SIZE in binary. Once this number is calculated it is used
-  // to perform the logical left shift operation of on ~0, giving us a bit
-  // pattern in which log2(PAGE_SIZE) number of lowest significant bits are 0
-  // and rest are 1. Finally the logical left shifted value is inverted to
-  // retrieve a bit pattern in which log2(PAGE_SIZE) number of lowest
-  // significant bits are 1 and rest are 0.
-  uint64_t lval = std::log2(PAGE_SIZE);
-  uint64_t mask = 0;
-  mask = ~mask;
-  mask = ~(mask << lval);
-  return mask;
+  // Given that pageSize is a power of 2, pageSize - 1 will have log2(pageSize)
+  // number of lowest significant bits as 1. This mask will allow us to extract
+  // log2(pageSize) number of lowest significant bits from a virtual address.
+  // The bits extracted will always be unique within a virtual address range of
+  // 'pageSize' bytes.
+  return pageSize - 1;
 }
 
 PageTable::TableItr PageTable::find(uint64_t vaddr) {
@@ -40,7 +32,7 @@ PageTable::TableItr PageTable::find(uint64_t vaddr) {
 }
 
 void PageTable::ignoreAddrRange(uint64_t startAddr, uint64_t endAddr) {
-  ignored_ = std::pair<uint64_t, uint64_t>(startAddr, endAddr);
+  ignoredAddrRange_ = std::pair<uint64_t, uint64_t>(startAddr, endAddr);
   return;
 }
 
@@ -129,7 +121,7 @@ uint64_t PageTable::deleteMapping(uint64_t vaddr, size_t size) {
 }
 
 uint64_t PageTable::translate(uint64_t vaddr) {
-  if (vaddr >= ignored_.first && vaddr < ignored_.second) {
+  if (vaddr >= ignoredAddrRange_.first && vaddr < ignoredAddrRange_.second) {
     return masks::faults::pagetable::FAULT | masks::faults::pagetable::IGNORED;
   }
   TableItr entry = find(vaddr);

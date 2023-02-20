@@ -34,49 +34,19 @@ class HostFileMMap {
         faddr_(faddr),
         isEmpty_(false) {}
 
-  /** Move constructor for HostFileMMap. */
-  HostFileMMap(HostFileMMap&& hfmmap)
-      : fd_(std::exchange(hfmmap.fd_, 0)),
-        origLen_(std::exchange(hfmmap.origLen_, 0)),
-        flen_(std::exchange(hfmmap.flen_, 0)),
-        offset_(std::exchange(hfmmap.offset_, 0)),
-        origPtr_(std::exchange(hfmmap.origPtr_, nullptr)),
-        faddr_(std::exchange(hfmmap.faddr_, nullptr)),
-        isEmpty_(std::exchange(hfmmap.isEmpty_, true)) {}
+  /** Default move constructor for HostFileMMap to enable copy elision whenever
+   * possible. */
+  HostFileMMap(HostFileMMap&& hfmmap) = default;
 
-  /** Copy constructor for HostFileMMap. */
-  HostFileMMap(const HostFileMMap& hfmmap)
-      : fd_(hfmmap.fd_),
-        origLen_(hfmmap.origLen_),
-        flen_(hfmmap.flen_),
-        offset_(hfmmap.offset_),
-        origPtr_(hfmmap.origPtr_),
-        faddr_(hfmmap.faddr_),
-        isEmpty_(hfmmap.isEmpty_) {}
+  /** Default copy constructor for HostFileMMap. */
+  HostFileMMap(const HostFileMMap& hfmmap) = default;
 
-  /** Copy assignment operator for HostFileMMap. */
-  HostFileMMap& operator=(const HostFileMMap& hfmmap) {
-    fd_ = hfmmap.fd_;
-    origLen_ = hfmmap.origLen_;
-    flen_ = hfmmap.flen_;
-    offset_ = hfmmap.offset_;
-    origPtr_ = hfmmap.origPtr_;
-    faddr_ = hfmmap.faddr_;
-    isEmpty_ = hfmmap.isEmpty_;
-    return *this;
-  }
+  /** Default copy assignment operator for HostFileMMap. */
+  HostFileMMap& operator=(const HostFileMMap& hfmmap) = default;
 
-  /** Move assignment operator for HostFileMMap. */
-  HostFileMMap& operator=(HostFileMMap&& hfmmap) {
-    fd_ = std::exchange(hfmmap.fd_, 0);
-    origLen_ = std::exchange(hfmmap.origLen_, 0);
-    flen_ = std::exchange(hfmmap.flen_, 0);
-    offset_ = std::exchange(hfmmap.offset_, 0);
-    origPtr_ = std::exchange(hfmmap.origPtr_, nullptr);
-    faddr_ = std::exchange(hfmmap.faddr_, nullptr);
-    isEmpty_ = std::exchange(hfmmap.isEmpty_, true);
-    return *this;
-  }
+  /** Default move assignment operator for the HostFileMMap to enable copy
+   * elision whenever possible. */
+  HostFileMMap& operator=(HostFileMMap&& hfmmap) = default;
 
   /** Method which returns the pointer of the mmaped file. */
   void* getFaddr() { return faddr_; }
@@ -106,14 +76,14 @@ class HostFileMMap {
   /** This is the size of the original file mapping without the offset being
    * applied to it. */
   size_t origLen_ = 0;
-
-  /** Length of the file mapping after offset has been applied. When a mmap call
-   * is made it can contain an offset and the offset has to be a multiple of
-   * page size. To ensure SimEng doesn't run into alignment conflicts due to
-   * different page sizes on different systems. Whenever a mmap call is made
-   * with a file descriptor and offset. SimEng mmaps the entire file on the host
-   * system and calculates the effective length given the original file length
-   * and offset i.e original_file_length - offset. */
+  /*
+  Length of the file mapping after offset has been applied. When a mmap call is
+  made, it can contain an offset which has to be a multiple of page size.
+  Whenever a mmap call is made with a file descriptor and offset, SimEng mmaps
+  the entire file on the host system. The effective length given the original
+  file length and offset is then calculated i.e original_file_length - offset.
+  This ensures SimEng doesn't run into alignment conflicts due to different page
+  sizes on different systems. */
   size_t flen_ = 0;
 
   /** This is the offset specified by the mmap syscall. */
@@ -136,8 +106,8 @@ class HostFileMMap {
 
 /** The HostBackedFileMMaps allows us to mmap a host file descriptor so that the
  * mapping can be used in SimEng's VMAs. The HostBackedFileMMaps class is
- * responsible to managing these mmaped files, hence once the class is
- * destroyed, it also unmaps every mappingo on the host. */
+ * responsible for managing these mmaped files, hence once the class is
+ * destroyed, it also unmaps every mapping on the host. */
 class HostBackedFileMMaps {
  public:
   HostBackedFileMMaps() {}
@@ -149,7 +119,7 @@ class HostBackedFileMMaps {
 
  private:
   /** Vector of all host file mappings. */
-  std::vector<HostFileMMap> hostvec;
+  std::vector<HostFileMMap> hostVec_;
 };
 
 /** class representing a vm_area_struct in linux. Each Virtual Memory Area (VMA)
@@ -159,12 +129,12 @@ class HostBackedFileMMaps {
  * exclusive of its end address i.e [vmStart_, vmEnd_). */
 class VirtualMemoryArea {
  public:
-  // Constructor which constructs the VirtualMemoryArea with specific values.
+  /* Constructor which constructs the VirtualMemoryArea with specific values.*/
   VirtualMemoryArea(int prot, int flags, size_t vsize, HostFileMMap hfmmap);
 
-  // Constructor which copies the contents of a VMA pointer into the the current
-  // VMA. This method is used in removeVMA to create a copy of the VMA so that
-  // it can be split into two.
+  /* Constructor which copies the contents of a VMA pointer into the the current
+   * VMA. This method is used in MemRegion::removeVMA to create a copy of the
+   * VMA so that it can be split into two. */
   VirtualMemoryArea(VirtualMemoryArea* vma);
 
   ~VirtualMemoryArea(){};

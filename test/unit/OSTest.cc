@@ -17,7 +17,7 @@ TEST(OSTest, CreateSimOS) {
   // Create the simulation memory
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
-  std::shared_ptr<simeng::memory::Mem> memory =
+  const std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the OS

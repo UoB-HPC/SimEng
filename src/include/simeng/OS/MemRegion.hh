@@ -13,19 +13,17 @@ namespace OS {
 
 using namespace simeng::OS::defaults;
 
-/** The MemoryRegion class is assosciated with the Process class and holds
+/** The MemoryRegion class is associated with the Process class and holds
  * memory related state variables for the process class. It is also responsible
  * for handling syscalls to heap and mmap memory regions.  */
 class MemRegion {
  public:
   /** This constructor creates a MemRegion with values specified by the owning
    * process. */
-  MemRegion(
-      uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
-      uint64_t memSize, uint64_t stackStart, uint64_t heapStart,
-      uint64_t mmapStart, uint64_t initStackPtr,
-      std::function<uint64_t(uint64_t, size_t)> unmapPageTable =
-          [](uint64_t, size_t) -> uint64_t { return 0; });
+  MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
+            uint64_t memSize, uint64_t stackStart, uint64_t heapStart,
+            uint64_t mmapStart, uint64_t initStackPtr,
+            std::function<uint64_t(uint64_t, size_t)> unmapPageTable);
 
   /** This constructor creates am empty MemRegion.*/
   MemRegion(){};
@@ -86,7 +84,7 @@ class MemRegion {
   /** This method retrieves the VMA containing addr. */
   VirtualMemoryArea* getVMAFromAddr(uint64_t addr);
 
-  /** This method retrievs the VMA head. */
+  /** This method retrieves the VMA head. */
   VirtualMemoryArea* getVMAHead() { return vm_head_; };
 
   /** This method gets the VMA size. */

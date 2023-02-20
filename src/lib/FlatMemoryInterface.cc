@@ -13,12 +13,12 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
                                       uint64_t requestId) {
   // Instantiate a callback function which will be invoked with the response
   // to a read request.
-  auto fn = [&, this](memory::DataPacket dpkt) -> void {
+  auto fn = [this, target, requestId](memory::DataPacket dpkt) -> void {
     if (dpkt.inFault_) {
-      this->completedReads_.push_back({target, RegisterValue(), requestId});
+      completedReads_.push_back({target, RegisterValue(), requestId});
       return;
     }
-    this->completedReads_.push_back(
+    completedReads_.push_back(
         {target, RegisterValue(dpkt.data_.data(), dpkt.size_), requestId});
   };
 
@@ -30,8 +30,7 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
 void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
                                        const RegisterValue& data) {
   const char* wdata = data.getAsVector<char>();
-  std::vector<char> dt(target.size, '\0');
-  std::copy(wdata, wdata + target.size, dt.data());
+  std::vector<char> dt(wdata, wdata + target.size);
   // Responses to write requests are ignored by passing in a nullptr
   // callback because they don't contain any information relevant to the
   // simulation.
