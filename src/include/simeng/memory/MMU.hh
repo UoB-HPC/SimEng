@@ -33,7 +33,7 @@ class MMU {
    * TLB misses. */
   VAddrTranslator translate_;
 
-  /** TID of the process assosciated with this core. */
+  /** TID of the process assosciated with this MMU. */
   uint64_t tid_;
 };
 

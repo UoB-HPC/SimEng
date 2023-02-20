@@ -351,7 +351,7 @@ void ModelConfig::validate() {
 
   // Process-Image
   root = "Process-Image";
-  subFields = {"Heap-Size", "Stack-Size"};
+  subFields = {"Heap-Size", "Stack-Size", "MMap-Size"};
   // Default heap size is 1024 * 1024 * 10 = 10MiB
   nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
                         std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
@@ -360,6 +360,21 @@ void ModelConfig::validate() {
   nodeChecker<uint64_t>(configFile_[root][subFields[1]], subFields[1],
                         std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
                         1048576);
+  // Default mmap size is 1024 * 1024 = 1MiB
+  nodeChecker<uint64_t>(configFile_[root][subFields[2]], subFields[2],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
+                        10485760);
+  subFields.clear();
+
+  // Simulation-Memory
+  root = "Simulation-Memory";
+  subFields = {"Size"};
+
+  // Default mmap size is 1024 * 1024 * 10 = 10MiB
+  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
+                        104857600);
+
   subFields.clear();
 
   // Branch-Predictor
