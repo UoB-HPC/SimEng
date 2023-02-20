@@ -10,9 +10,10 @@ namespace {
 // Test that we can create an AArch64 Architecture object
 TEST(ISATest, CreateAArch64) {
   Config::set(
-      "{Core: {Simulation-Mode: emulation, Clock-Frequency: 2.5, "
+      "{Core: {ISA: AArch64, Simulation-Mode: emulation, Clock-Frequency: 2.5, "
       "Timer-Frequency: 100, Micro-Operations: True, "
-      "Vector-Length: 512, Streaming-Vector-Length: 512}}");
+      "Vector-Length: 512, Streaming-Vector-Length: 512}, CPU-Info: "
+      "{Generate-Special-Dir: False}}");
   // Pass a config file with only the options required by the aarch64
   // architecture class to function
   std::unique_ptr<simeng::arch::Architecture> isa =

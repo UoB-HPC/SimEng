@@ -2,6 +2,7 @@
 #include <cassert>
 
 #include "InstructionMetadata.hh"
+#include "simeng/SimInfo.hh"
 
 namespace simeng {
 namespace arch {
@@ -27,16 +28,11 @@ Architecture::Architecture() : microDecoder_(std::make_unique<MicroDecoder>()) {
   vctModulo_ = (config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
                (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6);
 
-  // Initialise systemRegisterMap_ such that relevant values in Capstone's
-  // arm64_sysreg enum are mapped to SimEng's ARM64_SYSREG_TAGS enum.
-  systemRegisterMap_[ARM64_SYSREG_DCZID_EL0] = ARM64_SYSREG_TAGS::DCZID_EL0;
-  systemRegisterMap_[ARM64_SYSREG_FPCR] = ARM64_SYSREG_TAGS::FPCR;
-  systemRegisterMap_[ARM64_SYSREG_FPSR] = ARM64_SYSREG_TAGS::FPSR;
-  systemRegisterMap_[ARM64_SYSREG_TPIDR_EL0] = ARM64_SYSREG_TAGS::TPIDR_EL0;
-  systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = ARM64_SYSREG_TAGS::MIDR_ELI;
-  systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = ARM64_SYSREG_TAGS::CNTVCT_EL0;
-  systemRegisterMap_[ARM64_SYSREG_PMCCNTR_EL0] = ARM64_SYSREG_TAGS::PMCCNTR_EL0;
-  systemRegisterMap_[ARM64_SYSREG_SVCR] = ARM64_SYSREG_TAGS::SVCR;
+  // Generate zero-indexed system register map
+  std::vector<arm64_sysreg> sysRegs = SimInfo::getSysRegVec();
+  for (size_t i = 0; i < sysRegs.size(); i++) {
+    systemRegisterMap_[sysRegs[i]] = systemRegisterMap_.size();
+  }
 
   // Get Virtual Counter Timer and Processor Cycle Counter system registers.
   VCTreg_ = {
