@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "simeng/Config.hh"
 #include "simeng/RegisterFileSet.hh"
 
@@ -15,6 +17,8 @@ class SimInfo {
  public:
   static simMode getSimMode() { return getInstance()->mode_; }
 
+  static std::string getSimModeStr() { return getInstance()->modeStr_; }
+
   static ISA getISA() { return getInstance()->isa_; }
 
   static const std::vector<simeng::RegisterFileStructure>& getArchRegStruct() {
@@ -29,6 +33,9 @@ class SimInfo {
     return getInstance()->genSpecialFiles_;
   }
 
+  // TODO: utilise register structures once code has been re-factored so the
+  // Architecture can be created before a process - in turn, setting these
+  // structures
   static void setArchRegStruct(
       const std::vector<simeng::RegisterFileStructure>& fileStruct) {
     getInstance()->archRegStruct_ = fileStruct;
@@ -52,12 +59,15 @@ class SimInfo {
     // Get Simulation mode
     if (config["Core"]["Simulation-Mode"].as<std::string>() == "emulation") {
       mode_ = simMode::emulation;
+      modeStr_ = "Emulation";
     } else if (config["Core"]["Simulation-Mode"].as<std::string>() ==
                "inorderpipelined") {
       mode_ = simMode::inorder;
+      modeStr_ = "In-Order Pipelined";
     } else if (config["Core"]["Simulation-Mode"].as<std::string>() ==
                "outoforder") {
       mode_ = simMode::outoforder;
+      modeStr_ = "Out-of-Order";
     }
 
     // Initialise architectural and physical reg structures
@@ -79,6 +89,9 @@ class SimInfo {
 
   /** The simulation mode of current execution of SimEng. */
   simMode mode_;
+
+  /** The simulation mode String of current execution of SimEng. */
+  std::string modeStr_;
 
   /** Architecture type of the current execution of SimEng. */
   ISA isa_;
