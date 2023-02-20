@@ -8,7 +8,7 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
-#include "simeng/ModelConfig.hh"
+#include "simeng/SimInfo.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
@@ -69,12 +69,6 @@ class CoreInstance {
    * process and memory interfaces have been instantiated. */
   void createCore();
 
-  /** Getter for the set simulation mode. */
-  const SimulationMode getSimulationMode() const;
-
-  /** Getter for the set simulation mode in a string format. */
-  const std::string getSimulationModeString() const;
-
   /** Getter for the create core object. */
   std::shared_ptr<simeng::Core> getCore() const;
 
@@ -98,9 +92,6 @@ class CoreInstance {
    * configuration.*/
   void generateCoreModel(std::string executablePath,
                          std::vector<std::string> executableArgs);
-
-  /** Extract simulation mode from config file. */
-  void setSimulationMode();
 
   /** Construct the SimEng linux process object from command line arguments.
    * Empty command line arguments denote the usage of hardcoded

@@ -33,7 +33,6 @@ CoreInstance::~CoreInstance() {
 
 void CoreInstance::generateCoreModel(std::string executablePath,
                                      std::vector<std::string> executableArgs) {
-  setSimulationMode();
   createProcess(executablePath, executableArgs);
   // Check to see if either of the instruction or data memory interfaces should
   // be created. Don't create the core if either interface is marked as External
@@ -75,22 +74,6 @@ void CoreInstance::generateCoreModel(std::string executablePath,
 
   // Create the core if neither memory interfaces are externally constructed
   if (!(setDataMemory_ || setInstructionMemory_)) createCore();
-
-  return;
-}
-
-void CoreInstance::setSimulationMode() {
-  // Get the simualtion mode as defined by the set configuration, defaulting to
-  // emulation
-  if (config_["Core"]["Simulation-Mode"].as<std::string>() ==
-      "inorderpipelined") {
-    mode_ = SimulationMode::InOrderPipelined;
-    modeString_ = "In-Order Pipelined";
-  } else if (config_["Core"]["Simulation-Mode"].as<std::string>() ==
-             "outoforder") {
-    mode_ = SimulationMode::OutOfOrder;
-    modeString_ = "Out-of-Order";
-  }
 
   return;
 }
@@ -232,13 +215,11 @@ void CoreInstance::createCore() {
     exit(1);
   }
 
-  // Create the architecture, with knowledge of the kernel
-  if (config_["Core"]["ISA"].as<std::string>() == "rv64") {
-    arch_ =
-        std::make_unique<simeng::arch::riscv::Architecture>(kernel_, config_);
-  } else if (config_["Core"]["ISA"].as<std::string>() == "AArch64") {
-    arch_ =
-        std::make_unique<simeng::arch::aarch64::Architecture>(kernel_, config_);
+  // Create the architecture, with knowledge of the OS
+  if (SimInfo::getISA() == ISA::RV64) {
+    arch_ = std::make_unique<simeng::arch::riscv::Architecture>();
+  } else if (SimInfo::getISA() == ISA::AArch64) {
+    arch_ = std::make_unique<simeng::arch::aarch64::Architecture>();
   }
 
   // Construct branch predictor object
@@ -259,15 +240,15 @@ void CoreInstance::createCore() {
 
   // Construct the core object based on the defined simulation mode
   uint64_t entryPoint = process_->getEntryPoint();
-  if (mode_ == SimulationMode::Emulation) {
+  if (SimInfo::getSimMode() == simMode::emulation) {
     core_ = std::make_shared<simeng::models::emulation::Core>(
         *instructionMemory_, *dataMemory_, entryPoint, processMemorySize_,
         *arch_);
-  } else if (mode_ == SimulationMode::InOrderPipelined) {
+  } else if (SimInfo::getSimMode() == simMode::inorder) {
     core_ = std::make_shared<simeng::models::inorder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
         *arch_, *predictor_);
-  } else if (mode_ == SimulationMode::OutOfOrder) {
+  } else if (SimInfo::getSimMode() == simMode::outoforder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
         *instructionMemory_, *dataMemory_, processMemorySize_, entryPoint,
         *arch_, *predictor_, *portAllocator_, config_);
@@ -289,12 +270,6 @@ void CoreInstance::createSpecialFileDirectory() {
   }
 
   return;
-}
-
-const SimulationMode CoreInstance::getSimulationMode() const { return mode_; }
-
-const std::string CoreInstance::getSimulationModeString() const {
-  return modeString_;
 }
 
 std::shared_ptr<simeng::Core> CoreInstance::getCore() const {
