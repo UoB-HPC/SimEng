@@ -90,7 +90,7 @@ class RegisterValue {
    * the specified datatype. */
   template <class T>
   const T* getAsVector() const {
-    static_assert(alignof(T) <= 8 && "Alignment over 8 bytes not guranteed");
+    static_assert(alignof(T) <= 8 && "Alignment over 8 bytes not guaranteed");
     assert(bytes > 0 && "Attempted to access an uninitialised RegisterValue");
     assert(sizeof(T) <= bytes &&
            "Attempted to access a RegisterValue as a datatype larger than the "

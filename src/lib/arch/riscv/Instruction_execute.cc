@@ -18,12 +18,13 @@ uint64_t NanBox(uint32_t floatAsUint) {
 }
 
 uint64_t NanBoxFloat(float f) {
-  // TODO there must be a better way
-  float* fp = (float*)malloc(sizeof(float));
-  *fp = f;
-  uint64_t boxed = NanBox(*reinterpret_cast<uint32_t*>(fp));
-  free(fp);
-  return boxed;
+  static_assert(sizeof(float) == 4 && "Float not of size 4 bytes");
+
+  uint64_t box{0xffffffff00000000};
+  std::memcpy(reinterpret_cast<char*>(&box), reinterpret_cast<char*>(&f),
+              sizeof(float));
+
+  return box;
 }
 
 /** Multiply unsigned `a` and unsigned `b`, and return the high 64 bits of the
