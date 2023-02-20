@@ -851,7 +851,7 @@ void Instruction::execute() {
       // Do not read-modify-write ATOMICALLY
       // Left unimplemented due to Capstone being unable to disassemble CSR
       // addresses
-    case Opcode::RISCV_CSRRW: {
+    case Opcode::RISCV_CSRRW: {  // CSRRW rd,csr,rs1
       // Do nothing to allow progression
 
       if (metadata.operands[1].reg == 2) {
@@ -892,11 +892,11 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_CSRRWI: {
+    case Opcode::RISCV_CSRRWI: {  // CSRRWI rd,csr,imm
       executionNYI();
       break;
     }
-    case Opcode::RISCV_CSRRS: {
+    case Opcode::RISCV_CSRRS: {  // CSRRS rd,csr,rs1
       // dummy implementation only used by floating point frflags, needs
       // capstone update to recognise system registers. No update of system
       // register as rs1 == zero
@@ -904,15 +904,15 @@ void Instruction::execute() {
       results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
       break;
     }
-    case Opcode::RISCV_CSRRSI: {
+    case Opcode::RISCV_CSRRSI: {  // CSRRSI rd,csr,imm
       executionNYI();
       break;
     }
-    case Opcode::RISCV_CSRRC: {
+    case Opcode::RISCV_CSRRC: {  // CSRRC rd,csr,rs1
       executionNYI();
       break;
     }
-    case Opcode::RISCV_CSRRCI: {
+    case Opcode::RISCV_CSRRCI: {  // CSRRCI rd,csr,imm
       executionNYI();
       break;
     }
@@ -955,58 +955,56 @@ void Instruction::execute() {
       results[0] = RegisterValue(rs1 + rs2, 8);
       break;
     }
-    case Opcode::RISCV_FADD_S: {
+    case Opcode::RISCV_FADD_S: {  // FADD.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(rs1 + rs2), 8);
       break;
     }
-    case Opcode::RISCV_FSUB_D: {
+    case Opcode::RISCV_FSUB_D: {  // FSUB.D rd,rs1,rs2
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
       results[0] = RegisterValue(rs1 - rs2, 8);
       break;
     }
-    case Opcode::RISCV_FSUB_S: {
+    case Opcode::RISCV_FSUB_S: {  // FSUB.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(rs1 - rs2), 8);
       break;
     }
-    case Opcode::RISCV_FDIV_D: {
+    case Opcode::RISCV_FDIV_D: {  // FDIV.D rd,rs1,rs2
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
       results[0] = RegisterValue(rs1 / rs2, 8);
       break;
     }
-    case Opcode::RISCV_FDIV_S: {
+    case Opcode::RISCV_FDIV_S: {  // FDIV.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(rs1 / rs2), 8);
       break;
     }
-
-    case Opcode::RISCV_FMUL_D: {
+    case Opcode::RISCV_FMUL_D: {  // FMUL.D rd,rs1,rs2
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
       results[0] = RegisterValue(rs1 * rs2, 8);
       break;
     }
-    case Opcode::RISCV_FMUL_S: {
+    case Opcode::RISCV_FMUL_S: {  // FMUL.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(rs1 * rs2), 8);
       break;
     }
-
-    case Opcode::RISCV_FSQRT_D: {
+    case Opcode::RISCV_FSQRT_D: {  // FSQRT.D rd,rs1
       const double rs1 = operands[0].get<double>();
 
       const double sqrtAns = sqrt(rs1);
@@ -1018,7 +1016,7 @@ void Instruction::execute() {
       results[0] = RegisterValue(res, 8);
       break;
     }
-    case Opcode::RISCV_FSQRT_S: {
+    case Opcode::RISCV_FSQRT_S: {  // FSQRT.S rd,rs1
       const float rs1 = operands[0].get<float>();
 
       const float sqrtAns = sqrtf(rs1);
@@ -1031,7 +1029,7 @@ void Instruction::execute() {
       break;
     }
 
-    case Opcode::RISCV_FMIN_D: {
+    case Opcode::RISCV_FMIN_D: {  // FMIN.D rd,rs1,rs2
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
@@ -1047,7 +1045,7 @@ void Instruction::execute() {
 
       break;
     }
-    case Opcode::RISCV_FMIN_S: {
+    case Opcode::RISCV_FMIN_S: {  // FMIN.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
@@ -1060,7 +1058,7 @@ void Instruction::execute() {
 
       break;
     }
-    case Opcode::RISCV_FMAX_D: {
+    case Opcode::RISCV_FMAX_D: {  // FMAX.D rd,rs1,rs2
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
@@ -1078,7 +1076,7 @@ void Instruction::execute() {
       results[0] = RegisterValue(res, 8);
       break;
     }
-    case Opcode::RISCV_FMAX_S: {
+    case Opcode::RISCV_FMAX_S: {  // FMAX.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
@@ -1094,7 +1092,7 @@ void Instruction::execute() {
       break;
     }
 
-    case Opcode::RISCV_FMADD_D: {
+    case Opcode::RISCV_FMADD_D: {  // FMADD.D rd,rs1,rs2,rs3
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
       const double rs3 = operands[2].get<double>();
@@ -1102,7 +1100,7 @@ void Instruction::execute() {
       results[0] = RegisterValue(fma(rs1, rs2, rs3), 8);
       break;
     }
-    case Opcode::RISCV_FMADD_S: {
+    case Opcode::RISCV_FMADD_S: {  // FMADD.S rd,rs1,rs2,rs3
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
       const float rs3 = operands[2].get<float>();
@@ -1110,7 +1108,7 @@ void Instruction::execute() {
       results[0] = RegisterValue(NanBoxFloat(fmaf(rs1, rs2, rs3)), 8);
       break;
     }
-    case Opcode::RISCV_FNMSUB_D: {
+    case Opcode::RISCV_FNMSUB_D: {  // FNMSUB.D rd,rs1,rs2,rs3
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
       const double rs3 = operands[2].get<double>();
@@ -1118,7 +1116,7 @@ void Instruction::execute() {
       results[0] = RegisterValue(-(rs1 * rs2) + rs3, 8);
       break;
     }
-    case Opcode::RISCV_FNMSUB_S: {
+    case Opcode::RISCV_FNMSUB_S: {  // FNMSUB.S rd,rs1,rs2,rs3
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
       const float rs3 = operands[2].get<float>();
@@ -1126,15 +1124,7 @@ void Instruction::execute() {
       results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) + rs3), 8);
       break;
     }
-    case Opcode::RISCV_FMSUB_S: {
-      const float rs1 = operands[0].get<float>();
-      const float rs2 = operands[1].get<float>();
-      const float rs3 = operands[2].get<float>();
-
-      results[0] = RegisterValue(NanBoxFloat((rs1 * rs2) - rs3), 8);
-      break;
-    }
-    case Opcode::RISCV_FMSUB_D: {
+    case Opcode::RISCV_FMSUB_D: {  // FMSUB.D rd,rs1,rs2,rs3
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
       const double rs3 = operands[2].get<double>();
@@ -1142,15 +1132,15 @@ void Instruction::execute() {
       results[0] = RegisterValue((rs1 * rs2) - rs3, 8);
       break;
     }
-    case Opcode::RISCV_FNMADD_S: {
+    case Opcode::RISCV_FMSUB_S: {  // FMSUB.S rd,rs1,rs2,rs3
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
       const float rs3 = operands[2].get<float>();
 
-      results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) - rs3), 8);
+      results[0] = RegisterValue(NanBoxFloat((rs1 * rs2) - rs3), 8);
       break;
     }
-    case Opcode::RISCV_FNMADD_D: {
+    case Opcode::RISCV_FNMADD_D: {  // FNMADD.D rd,rs1,rs2,rs3
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
       const double rs3 = operands[2].get<double>();
@@ -1158,32 +1148,40 @@ void Instruction::execute() {
       results[0] = RegisterValue(-(rs1 * rs2) - rs3, 8);
       break;
     }
+    case Opcode::RISCV_FNMADD_S: {  // FNMADD.S rd,rs1,rs2,rs3
+      const float rs1 = operands[0].get<float>();
+      const float rs2 = operands[1].get<float>();
+      const float rs3 = operands[2].get<float>();
 
-    case Opcode::RISCV_FCVT_D_L: {
+      results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) - rs3), 8);
+      break;
+    }
+
+    case Opcode::RISCV_FCVT_D_L: {  // FCVT.D.L rd,rs1
       const int64_t rs1 = operands[0].get<int64_t>();
 
       results[0] = RegisterValue((double)rs1, 8);
       break;
     }
-    case Opcode::RISCV_FCVT_D_W: {
+    case Opcode::RISCV_FCVT_D_W: {  // FCVT.D.W rd,rs1
       const int32_t rs1 = operands[0].get<int32_t>();
 
       results[0] = RegisterValue((double)rs1, 8);
       break;
     }
-    case Opcode::RISCV_FCVT_S_L: {
+    case Opcode::RISCV_FCVT_S_L: {  // FCVT.S.L rd,rs1
       const int64_t rs1 = operands[0].get<int64_t>();
 
       results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
       break;
     }
-    case Opcode::RISCV_FCVT_S_W: {
+    case Opcode::RISCV_FCVT_S_W: {  // FCVT.S.W rd,rs1
       const int32_t rs1 = operands[0].get<int32_t>();
 
       results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
       break;
     }
-    case Opcode::RISCV_FCVT_W_D: {
+    case Opcode::RISCV_FCVT_W_D: {  // FCVT.W.D rd,rs1
       // TODO need to take rounding mode into account,  +- INF
       // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
       //      std::fesetround(FE_TONEAREST);
@@ -1196,7 +1194,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FCVT_W_S: {
+    case Opcode::RISCV_FCVT_W_S: {  // FCVT.W.S rd,rs1
       // TODO need to take rounding mode into account,  +- INF
       // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
       //      std::fesetround(FE_TOWARDZERO);
@@ -1209,7 +1207,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FCVT_L_D: {
+    case Opcode::RISCV_FCVT_L_D: {  // FCVT.L.D rd,rs1
       // TODO need to take rounding mode into account,  +- INF
       // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
       //      std::fesetround(FE_TONEAREST);
@@ -1222,7 +1220,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FCVT_L_S: {
+    case Opcode::RISCV_FCVT_L_S: {  // FCVT.L.S rd,rs1
       // TODO need to take rounding mode into account,  +- INF
       // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
       //      std::fesetround(FE_TOWARDZERO);
@@ -1235,7 +1233,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FCVT_WU_D: {
+    case Opcode::RISCV_FCVT_WU_D: {  // FCVT.WU.D rd,rs1
       // TODO need to take rounding mode into
       // account,  +- INF
       // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
@@ -1254,7 +1252,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FCVT_WU_S: {
+    case Opcode::RISCV_FCVT_WU_S: {  // FCVT.WU.S rd,rs1
       // TODO need to take rounding mode into
       // account,  +- INF
       // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
@@ -1273,7 +1271,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FCVT_LU_D: {
+    case Opcode::RISCV_FCVT_LU_D: {  // FCVT.LU.D rd,rs1
       // TODO need to take rounding mode into account,  +- INF
       // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
       //      std::fesetround(FE_TOWARDZERO);
@@ -1291,7 +1289,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FCVT_LU_S: {
+    case Opcode::RISCV_FCVT_LU_S: {  // FCVT.LU.S rd,rs1
       // TODO need to take rounding mode into account,  +- INF
       // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
       //      std::fesetround(FE_TOWARDZERO);
@@ -1309,59 +1307,59 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FCVT_D_WU: {
-      const uint32_t rs1 = operands[0].get<uint32_t>();
-
-      results[0] = RegisterValue((double)rs1, 8);
-      break;
-    }
-    case Opcode::RISCV_FCVT_S_WU: {
-      const uint32_t rs1 = operands[0].get<uint32_t>();
-
-      results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
-      break;
-    }
-    case Opcode::RISCV_FCVT_D_LU: {
+    case Opcode::RISCV_FCVT_D_LU: {  // FCVT.D.LU rd,rs1
       const uint64_t rs1 = operands[0].get<uint64_t>();
 
       results[0] = RegisterValue((double)rs1, 8);
       break;
     }
-    case Opcode::RISCV_FCVT_S_LU: {
+    case Opcode::RISCV_FCVT_D_WU: {  // FCVT.D.WU rd,rs1
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+
+      results[0] = RegisterValue((double)rs1, 8);
+      break;
+    }
+    case Opcode::RISCV_FCVT_S_LU: {  // FCVT.S.LU rd,rs1
       const uint64_t rs1 = operands[0].get<uint64_t>();
 
       results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
       break;
     }
+    case Opcode::RISCV_FCVT_S_WU: {  // FCVT.S.WU rd,rs1
+      const uint32_t rs1 = operands[0].get<uint32_t>();
 
-    case Opcode::RISCV_FCVT_D_S: {
+      results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      break;
+    }
+
+    case Opcode::RISCV_FCVT_D_S: {  // FCVT.D.S rd,rs1
       const float rs1 = operands[0].get<float>();
 
       results[0] = RegisterValue((double)rs1, 8);
       break;
     }
-    case Opcode::RISCV_FCVT_S_D: {
+    case Opcode::RISCV_FCVT_S_D: {  // FCVT.S.D rd,rs1
       const double rs1 = operands[0].get<double>();
 
       results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
       break;
     }
 
-    case Opcode::RISCV_FSGNJ_D: {
+    case Opcode::RISCV_FSGNJ_D: {  // FSGNJ.D rd,rs1,rs2
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
       results[0] = RegisterValue(std::copysign(rs1, rs2), 8);
       break;
     }
-    case Opcode::RISCV_FSGNJ_S: {
+    case Opcode::RISCV_FSGNJ_S: {  // FSGNJ.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(std::copysign(rs1, rs2)), 8);
       break;
     }
-    case Opcode::RISCV_FSGNJN_D: {
+    case Opcode::RISCV_FSGNJN_D: {  // FSGNJN.D rd,rs1,rs2
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
@@ -1369,14 +1367,14 @@ void Instruction::execute() {
       break;
     }
 
-    case Opcode::RISCV_FSGNJN_S: {
+    case Opcode::RISCV_FSGNJN_S: {  // FSGNJN.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
       results[0] = RegisterValue(std::copysign(rs1, -rs2), 8);
       break;
     }
-    case Opcode::RISCV_FSGNJX_D: {
+    case Opcode::RISCV_FSGNJX_D: {  // FSGNJX.D rd,rs1,rs2
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
@@ -1385,7 +1383,7 @@ void Instruction::execute() {
       results[0] = RegisterValue(std::copysign(rs1, xorSign), 8);
       break;
     }
-    case Opcode::RISCV_FSGNJX_S: {
+    case Opcode::RISCV_FSGNJX_S: {  // FSGNJX.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
@@ -1395,25 +1393,25 @@ void Instruction::execute() {
       break;
     }
 
-    case Opcode::RISCV_FMV_D_X: {
+    case Opcode::RISCV_FMV_D_X: {  // FMV.D.X rd,rs1
       const double rs1 = operands[0].get<double>();
 
       results[0] = RegisterValue(rs1, 8);
       break;
     }
-    case Opcode::RISCV_FMV_X_D: {
+    case Opcode::RISCV_FMV_X_D: {  // FMV.X.D rd,rs1
       const double rs1 = operands[0].get<double>();
 
       results[0] = RegisterValue(rs1, 8);
       break;
     }
-    case Opcode::RISCV_FMV_W_X: {
+    case Opcode::RISCV_FMV_W_X: {  // FMV.W.X rd,rs1
       const float rs1 = operands[0].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(rs1), 8);
       break;
     }
-    case Opcode::RISCV_FMV_X_W: {
+    case Opcode::RISCV_FMV_X_W: {  // FMV.X.W rd,rs1
       const uint64_t rs1 = operands[0].get<uint64_t>();
 
       results[0] = RegisterValue(signExtendW(rs1), 8);
@@ -1426,7 +1424,7 @@ void Instruction::execute() {
       // comparison: it only sets the invalid operation exception flag if either
       // input is a signaling NaN. For all three instructions, the result is 0
       // if either operand is NaN.
-    case Opcode::RISCV_FEQ_D: {
+    case Opcode::RISCV_FEQ_D: {  // FEQ.D rd,rs1,rs2
       // TODO FEQ.S performs a quiet
       // comparison: it only sets the invalid operation exception flag if
       // either input is a signaling NaN. Qemu doesn't seem to set CSR flags
@@ -1441,7 +1439,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FEQ_S: {
+    case Opcode::RISCV_FEQ_S: {  // FEQ.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
@@ -1452,7 +1450,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FLT_D: {
+    case Opcode::RISCV_FLT_D: {  // FLT.D rd,rs1,rs2
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
@@ -1466,7 +1464,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FLT_S: {
+    case Opcode::RISCV_FLT_S: {  // FLT.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
@@ -1480,7 +1478,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FLE_D: {
+    case Opcode::RISCV_FLE_D: {  // FLE.D rd,rs1,rs2
       const double rs1 = operands[0].get<double>();
       const double rs2 = operands[1].get<double>();
 
@@ -1494,7 +1492,7 @@ void Instruction::execute() {
       }
       break;
     }
-    case Opcode::RISCV_FLE_S: {
+    case Opcode::RISCV_FLE_S: {  // FLE.S rd,rs1,rs2
       const float rs1 = operands[0].get<float>();
       const float rs2 = operands[1].get<float>();
 
