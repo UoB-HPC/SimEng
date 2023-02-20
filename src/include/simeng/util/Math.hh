@@ -46,7 +46,7 @@ static constexpr T downAlign(const T& val, const U& align) {
 template <class T, class U>
 static constexpr T upAlign(const T& val, const U& align) {
   if (!isPow2(align)) {
-    std::cerr << "Alignment value is not power of 2" << std::endl;
+    std::cerr << "[SimEng:Math] Alignment value is not power of 2" << std::endl;
     std::exit(1);
   }
   // The operation of upAlign is very similar to the downAlign function however,
