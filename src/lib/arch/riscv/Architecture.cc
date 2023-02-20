@@ -6,6 +6,7 @@
 #include <queue>
 
 #include "InstructionMetadata.hh"
+#include "simeng/SimInfo.hh"
 
 namespace simeng {
 namespace arch {
@@ -25,6 +26,11 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   }
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
+
+  // Generate zero-indexed system register map
+  for (size_t i = 0; i < SimInfo::getSysRegVec().size(); i++) {
+    systemRegisterMap_[SimInfo::getSysRegVec()[i]] = systemRegisterMap_.size();
+  }
 
   // Instantiate an executionInfo entry for each group in the InstructionGroup
   // namespace.
