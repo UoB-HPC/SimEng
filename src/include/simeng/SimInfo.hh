@@ -4,7 +4,10 @@
 #include "simeng/RegisterFileSet.hh"
 
 namespace simeng {
+/** Enum representing the possible simulation modes. */
 enum simMode { emulation, inorder, outoforder };
+
+/** Enum representing the possible ISAs. */
 enum ISA { AArch64, RV64 };
 
 /** A SimInfo class to hold values specific to the current simulation. */
@@ -20,6 +23,10 @@ class SimInfo {
 
   static const std::vector<simeng::RegisterFileStructure>& getPhysRegStruct() {
     return getInstance()->physRegStruct_;
+  }
+
+  static const bool getGenSpecFiles() {
+    return getInstance()->genSpecialFiles_;
   }
 
   static void setArchRegStruct(
@@ -56,7 +63,10 @@ class SimInfo {
     // Initialise architectural and physical reg structures
     archRegStruct_ = {};
     physRegStruct_ = {};
-  };
+
+    // Get if special files directory should be created
+    genSpecialFiles_ = config["CPU-Info"]["Generate-Special-Dir"].as<bool>();
+  }
 
   /** Gets the static instance of the SimInfo class. */
   static std::unique_ptr<SimInfo>& getInstance() {
@@ -78,5 +88,7 @@ class SimInfo {
 
   /** Physical Register Structure of the current execution of SimEng. */
   std::vector<simeng::RegisterFileStructure> physRegStruct_;
+
+  bool genSpecialFiles_;
 };
 }  // namespace simeng
