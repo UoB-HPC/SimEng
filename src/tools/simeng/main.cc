@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
       coreInstance->getInstructionMemory();
 
   // Output general simulation details
-  std::cout << "[SimEng] Running in " << coreInstance->getSimulationModeString()
+  std::cout << "[SimEng] Running in " << simeng::SimInfo::getSimModeStr()
             << " mode" << std::endl;
   std::cout << "[SimEng] Workload: " << executablePath;
   for (const auto& arg : executableArgs) std::cout << " " << arg;
