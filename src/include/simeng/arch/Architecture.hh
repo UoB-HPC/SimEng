@@ -69,11 +69,6 @@ class Architecture {
                             uint64_t instructionAddress,
                             MacroOp& output) const = 0;
 
-  /** Returns a vector of {size, number} pairs describing the available
-   * registers. */
-  virtual std::vector<RegisterFileStructure> getRegisterFileStructures()
-      const = 0;
-
   /** Returns a zero-indexed register tag for a system register encoding. */
   virtual int32_t getSystemRegisterTag(uint16_t reg) const = 0;
 

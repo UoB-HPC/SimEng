@@ -26,9 +26,6 @@ class Architecture : public arch::Architecture {
                     uint64_t instructionAddress,
                     MacroOp& output) const override;
 
-  /** Returns an RISC-V register file structure description. */
-  std::vector<RegisterFileStructure> getRegisterFileStructures() const override;
-
   /** Returns a zero-indexed register tag for a system register encoding. */
   int32_t getSystemRegisterTag(uint16_t reg) const override;
 

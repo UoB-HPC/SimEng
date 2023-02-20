@@ -18,7 +18,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor)
     : dataMemory_(dataMemory),
       isa_(isa),
-      registerFileSet_(isa.getRegisterFileStructures()),
+      registerFileSet_(SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToExecuteBuffer_(1, nullptr),

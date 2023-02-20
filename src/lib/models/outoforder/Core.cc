@@ -23,7 +23,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       physicalRegisterQuantities_(
           isa.getConfigPhysicalRegisterQuantities(config)),
       registerFileSet_(physicalRegisterStructures_),
-      registerAliasTable_(isa.getRegisterFileStructures(),
+      registerAliasTable_(SimInfo::getArchRegStruct(),
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       dataMemory_(dataMemory),

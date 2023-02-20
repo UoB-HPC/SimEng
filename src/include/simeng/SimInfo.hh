@@ -21,12 +21,13 @@ class SimInfo {
 
   static ISA getISA() { return getInstance()->isa_; }
 
+  /** Returns a vector of {size, number} pairs describing the available
+   * architectural registers. */
   static const std::vector<simeng::RegisterFileStructure>& getArchRegStruct() {
+    // Need to call resetArchRegStruct if AArch64 as SME reg will be wrong size
+    // if SVL has changed.
+    if (getISA() == ISA::AArch64) getInstance()->resetArchRegStruct();
     return getInstance()->archRegStruct_;
-  }
-
-  static const std::vector<simeng::RegisterFileStructure>& getPhysRegStruct() {
-    return getInstance()->physRegStruct_;
   }
 
   static const std::vector<arm64_sysreg>& getSysRegVec() {
@@ -36,16 +37,6 @@ class SimInfo {
   static const bool getGenSpecFiles() {
     return getInstance()->genSpecialFiles_;
   }
-
-  // static void setArchRegStruct(
-  //     const std::vector<simeng::RegisterFileStructure>& fileStruct) {
-  //   getInstance()->archRegStruct_ = fileStruct;
-  // }
-
-  // static void setPhysRegStruct(
-  //     const std::vector<simeng::RegisterFileStructure>& fileStruct) {
-  //   getInstance()->physRegStruct_ = fileStruct;
-  // }
 
  private:
   SimInfo() {
@@ -63,16 +54,30 @@ class SimInfo {
                            arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
                            arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
                            arm64_sysreg::ARM64_SYSREG_SVCR};
-      // Initialise architectural and physical reg structures
-      archRegStruct_ = {};
-      physRegStruct_ = {};
+      // Initialise architectural reg structures
+      uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
+      const uint16_t ZAsize = static_cast<uint16_t>(
+          config["Core"]["Streaming-Vector-Length"].as<uint64_t>() /
+          8);  // Convert to bytes
+      archRegStruct_ = {
+          {8, 32},          // General purpose
+          {256, 32},        // Vector
+          {32, 17},         // Predicate
+          {1, 1},           // NZCV
+          {8, numSysRegs},  // System
+          {256, ZAsize},    // Matrix (Each row is a register)
+      };
     } else if (config["Core"]["ISA"].as<std::string>() == "rv64") {
       isa_ = ISA::RV64;
       // Define system registers
       sysRegisterEnums_ = {};
-      // Initialise architectural and physical reg structures
-      archRegStruct_ = {};
-      physRegStruct_ = {};
+      // Initialise architectural reg structures
+      uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
+      archRegStruct_ = {
+          {8, 32},          // General purpose
+          {8, 32},          // Floating Point
+          {8, numSysRegs},  // System
+      };
     }
 
     // Get Simulation mode
@@ -102,6 +107,32 @@ class SimInfo {
     return SimInfoClass;
   }
 
+  /** Function used to reset the architectural register file structure. */
+  void resetArchRegStruct() {
+    YAML::Node& config = Config::get();
+    if (isa_ == ISA::AArch64) {
+      uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
+      const uint16_t ZAsize = static_cast<uint16_t>(
+          config["Core"]["Streaming-Vector-Length"].as<uint64_t>() /
+          8);  // Convert to bytes
+      archRegStruct_ = {
+          {8, 32},          // General purpose
+          {256, 32},        // Vector
+          {32, 17},         // Predicate
+          {1, 1},           // NZCV
+          {8, numSysRegs},  // System
+          {256, ZAsize},    // Matrix (Each row is a register)
+      };
+    } else if (isa_ == ISA::RV64) {
+      uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
+      archRegStruct_ = {
+          {8, 32},          // General purpose
+          {8, 32},          // Floating Point
+          {8, numSysRegs},  // System
+      };
+    }
+  }
+
   /** The simulation mode of current execution of SimEng. */
   simMode mode_;
 
@@ -113,9 +144,6 @@ class SimInfo {
 
   /** Architectural Register Structure of the current execution of SimEng. */
   std::vector<simeng::RegisterFileStructure> archRegStruct_;
-
-  /** Physical Register Structure of the current execution of SimEng. */
-  std::vector<simeng::RegisterFileStructure> physRegStruct_;
 
   /** Vector of all system register Capsone enum values used in Architecture. */
   std::vector<arm64_sysreg> sysRegisterEnums_;
