@@ -24,8 +24,8 @@ TEST(MemRegionTest, UpdateBrkRegion) {
   ASSERT_EQ(memRegion.getBrk(), 0);
   ASSERT_EQ(memRegion.updateBrkRegion(1000), 1000);
   ASSERT_EQ(memRegion.updateBrkRegion(0), 1000);
-  ASSERT_EQ(memRegion.updateBrkRegion(10365), 10368);
-  ASSERT_EQ(memRegion.updateBrkRegion(81910), 81912);
+  ASSERT_EQ(memRegion.updateBrkRegion(10365), 10365);
+  ASSERT_EQ(memRegion.updateBrkRegion(81910), 81910);
 }
 
 TEST(MemRegionTest, UpdateBrkRegionOnAddrGreaterThanHeapSize) {
@@ -65,7 +65,8 @@ TEST(MemRegionTest, MmapRegionNoStartAddr) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart);
 }
@@ -85,21 +86,22 @@ TEST(MemRegionTest, MultipleMmapRegionNoStartAddr) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart);
 
-  retAddr = memRegion.mmapRegion(0, 4000, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4000, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + 4096);
 
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
-  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + (4096 * 2));
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + (4096 * 4));
 
@@ -121,11 +123,13 @@ TEST(MemRegionTest, MmapRegionStartAddr) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart);
 
-  retAddr = memRegion.mmapRegion(mmapStart + 8192, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(mmapStart + 8192, 4096, 0, MAP_PRIVATE,
+                                 HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + 8192);
 }
@@ -145,11 +149,13 @@ TEST(MemRegionTest, MmapRegionUnalignedStartAddr) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart);
 
-  retAddr = memRegion.mmapRegion(mmapStart + 8100, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(mmapStart + 8100, 4096, 0, MAP_PRIVATE,
+                                 HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + 8192);
 }
@@ -169,27 +175,67 @@ TEST(MemRegionTest, MmapRegionAllocatesBetweenVmas) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart);
 
-  retAddr = memRegion.mmapRegion(mmapStart + 12288, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(mmapStart + 12288, 4096, 0, MAP_PRIVATE,
+                                 HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + 12288);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + 4096);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + 8192);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + 12288 + 4096);
 
   ASSERT_EQ(memRegion.getVMASize(), 5);
+}
+
+TEST(MemRegionTest, MmapRegionAllocateVMAWithStartAddrBetweenVmas) {
+  uint64_t heapStart = 0;
+  uint64_t heapSize = 81920;
+  uint64_t mmapStart = 86016;
+  uint64_t mmapSize = 163840;
+  uint64_t stackStart = 294912;
+  uint64_t stackSize = 40960;
+  uint64_t size = stackStart;
+  // heapEnd = 81920;
+  // mmapEnd = 249856;
+  // stackEnd = 253952;
+
+  MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
+                                  stackStart, heapStart, mmapStart, stackStart);
+
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
+  ASSERT_NE(retAddr, 0);
+  ASSERT_EQ(retAddr, mmapStart);
+
+  retAddr = memRegion.mmapRegion(mmapStart + 16384, 4096, 0, MAP_PRIVATE,
+                                 HostFileMMap());
+  ASSERT_NE(retAddr, 0);
+  ASSERT_EQ(retAddr, mmapStart + 16384);
+
+  retAddr = memRegion.mmapRegion(mmapStart + 4096, 4096, 0, MAP_PRIVATE,
+                                 HostFileMMap());
+  ASSERT_NE(retAddr, 0);
+  ASSERT_EQ(retAddr, mmapStart + 4096);
+
+  retAddr = memRegion.mmapRegion(mmapStart + 8192, 4096, 0, MAP_PRIVATE,
+                                 HostFileMMap());
+  ASSERT_NE(retAddr, 0);
+  ASSERT_EQ(retAddr, mmapStart + 8192);
+
+  ASSERT_EQ(memRegion.getVMASize(), 4);
 }
 
 TEST(MemRegionTest, MmapRegionCorrectlyAllocatesOverlappingVmas) {
@@ -207,22 +253,25 @@ TEST(MemRegionTest, MmapRegionCorrectlyAllocatesOverlappingVmas) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart);
 
-  retAddr = memRegion.mmapRegion(mmapStart + 12288, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(mmapStart + 12288, 4096, 0, MAP_PRIVATE,
+                                 HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + 12288);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + 4096);
 
   // Address range mmapStart + 4096, mmapStart + 4096 + 4096) has already been
   // mapped. If hint is provided then allocate at a page aligned address equal
   // or greater than hint.
-  retAddr = memRegion.mmapRegion(mmapStart + 4096, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(mmapStart + 4096, 4096, 0, MAP_PRIVATE,
+                                 HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart + 8192);
   ASSERT_GE(retAddr, mmapStart + 4096);
@@ -249,7 +298,8 @@ TEST(MemRegionTest, UnmapVmaHead) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart);
   ASSERT_EQ(memRegion.getVMASize(), 1);
@@ -280,12 +330,13 @@ TEST(MemRegionTest, UnmapVmaStartGreaterThanPageSize1) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
@@ -314,16 +365,17 @@ TEST(MemRegionTest, UnmapVmaStartGreaterThanPageSize2) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
 
@@ -353,16 +405,17 @@ TEST(MemRegionTest, UnmapOverlappingVmaStartGreaterThanPageSize) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
-  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
 
@@ -393,16 +446,17 @@ TEST(MemRegionTest, UnmapContainedInMiddleOfVmaList) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
 
@@ -435,16 +489,17 @@ TEST(MemRegionTest, UnmapContainedVmaAndOverlapStart) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
-  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
 
@@ -478,16 +533,17 @@ TEST(MemRegionTest, UnmapOverlapStartAndContained) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
 
-  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
 
@@ -522,16 +578,17 @@ TEST(MemRegionTest, UnmapContained) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
 
-  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
-  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
 
@@ -566,16 +623,17 @@ TEST(MemRegionTest, UnmapContainsMiddle) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
 
-  retAddr = memRegion.mmapRegion(0, 12288, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 12288, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
 
@@ -621,16 +679,17 @@ TEST(MemRegionTest, UnmapContainsStart) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
 
-  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
 
@@ -674,16 +733,17 @@ TEST(MemRegionTest, UnmapContainsEnd) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
 
-  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_EQ(retAddr, mmapStart + 4096);
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
 
@@ -723,16 +783,17 @@ TEST(MemRegionTest, UnmapOverlaps) {
   MemRegion memRegion = MemRegion(stackSize, heapSize, mmapSize, size,
                                   stackStart, heapStart, mmapStart, stackStart);
 
-  uint64_t retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
   EXPECT_TRUE(memRegion.getVMAHead() != NULL);
 
-  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
 
-  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, NULL);
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
 

@@ -14,7 +14,7 @@ TEST(OSTest, CreateSimOS) {
       "{Heap-Size: 10000, Stack-Size: 10000, Mmap-Size: 20000}, "
       "Simulation-Memory: {Size: 50000}, CPU-Info: {Generate-Special-Dir: "
       "False}}");
-  // Create global memory
+  // Create the simulation memory
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
@@ -23,14 +23,14 @@ TEST(OSTest, CreateSimOS) {
   // Create the instance of the OS
   simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
 
-  // Check default proc->ss created. Initial proc->ss TID = 0
+  // Check default process created. Initial process TID = 0
   std::shared_ptr<simeng::OS::Process> proc = OS.getProcess(0);
   EXPECT_GT(proc->getHeapStart(), 0);
   EXPECT_GT(proc->getMmapStart(), proc->getHeapStart());
   EXPECT_GT(proc->getStackStart(), proc->getMmapStart());
   EXPECT_EQ(proc->isValid(), true);
   // Check CPU context
-  // PC is always 0 for proc->sses assembled by SimEng
+  // PC is always 0 for processes assembled by SimEng
   EXPECT_EQ(proc->context_.pc, 0);
   EXPECT_GT(proc->context_.progByteLen, 0);
   EXPECT_GT(proc->context_.sp, 0);

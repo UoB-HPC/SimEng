@@ -242,12 +242,12 @@ uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
 
   // Return the translation if faultCode is not translate, any other faults
   // will be handled further. Only page faults will be handled here.
-  if (faultCode != masks::faults::pagetable::translate) return translation;
+  if (faultCode != masks::faults::pagetable::TRANSLATE) return translation;
 
   uint64_t addr = process->handlePageFault(vaddr, sendToMem_);
   faultCode = masks::faults::getFaultCode(addr);
 
-  if (faultCode == masks::faults::pagetable::map) {
+  if (faultCode == masks::faults::pagetable::MAP) {
     std::cerr << "[SimEng:SimOS] Failed to create mapping during PageFault "
                  "caused by Vaddr: "
               << vaddr << "( TID: " << tid << " )" << std::endl;

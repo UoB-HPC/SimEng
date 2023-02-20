@@ -8,14 +8,14 @@ using namespace simeng::OS;
 
 namespace {
 TEST(VmaTest, VmaCreationWithoutFileBuf) {
-  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 0, NULL);
+  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 0, HostFileMMap());
   ASSERT_EQ(vma.getFileBuf(), nullptr);
   ASSERT_EQ(vma.getFileSize(), 0);
   ASSERT_EQ(vma.hasFile(), false);
 }
 
 TEST(VmaTest, VmaOverlaps) {
-  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, NULL);
+  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, HostFileMMap());
   vma.vmStart_ = 0;
   vma.vmEnd_ = 4096;
   ASSERT_EQ(vma.hasFile(), false);
@@ -85,7 +85,7 @@ TEST(VmaTest, VmaOverlaps) {
 }
 
 TEST(VmaTest, VmaContainsAddrRange) {
-  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, NULL);
+  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, HostFileMMap());
   vma.vmStart_ = 0;
   vma.vmEnd_ = 4096;
   ASSERT_EQ(vma.hasFile(), false);
@@ -149,7 +149,7 @@ TEST(VmaTest, VmaContainsAddrRange) {
 }
 
 TEST(VmaTest, VmaContainsAddr) {
-  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, NULL);
+  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, HostFileMMap());
   vma.vmStart_ = 4096;
   vma.vmEnd_ = 8192;
 
@@ -162,7 +162,7 @@ TEST(VmaTest, VmaContainsAddr) {
 }
 
 TEST(VmaTest, VmaContainedInRange) {
-  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, NULL);
+  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, HostFileMMap());
   vma.vmStart_ = 4096;
   vma.vmEnd_ = 8192;
   /*
@@ -217,7 +217,7 @@ TEST(VmaTest, VmaContainedInRange) {
 }
 
 TEST(VmaTest, VmaTrimRangeStart) {
-  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, NULL);
+  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, HostFileMMap());
   vma.vmStart_ = 4096;
   vma.vmEnd_ = 8192;
 
@@ -233,7 +233,7 @@ TEST(VmaTest, VmaTrimRangeStart) {
 }
 
 TEST(VmaTest, VmaTrimRangeEnd) {
-  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, NULL);
+  VirtualMemoryArea vma = VirtualMemoryArea(0, 0, 4096, HostFileMMap());
   vma.vmStart_ = 4096;
   vma.vmEnd_ = 8192;
 
@@ -255,8 +255,8 @@ TEST(VmaTest, CreateVmaWithHostedFileMMap) {
   int fd = open(fpath.c_str(), O_RDWR);
   ASSERT_NE(fd, -1);
 
-  HostFileMMap* fmap = hbfmmap.mapfd(fd, 21, 0);
-  EXPECT_TRUE(fmap != NULL);
+  HostFileMMap fmap = hbfmmap.mapfd(fd, 21, 0);
+  EXPECT_TRUE(!fmap.isEmpty());
 
   VMA vma = VMA(0, 0, 4096, fmap);
   vma.vmStart_ = 4096;
@@ -266,13 +266,12 @@ TEST(VmaTest, CreateVmaWithHostedFileMMap) {
   ASSERT_EQ(vma.getFileSize(), 21);
 
   std::string text = "FileDescArrayTestData";
-  char* ftext = new char[22];
+  char ftext[22];
   memset(ftext, '\0', 22);
   memcpy(ftext, vma.getFileBuf(), vma.getFileSize());
   ASSERT_EQ(text, std::string(ftext));
 
   ASSERT_NE(close(fd), -1);
-  delete[] ftext;
 }
 
 TEST(VmaTest, VmaTrimRangeStartWithHostBackedFile) {
@@ -282,8 +281,8 @@ TEST(VmaTest, VmaTrimRangeStartWithHostBackedFile) {
   int fd = open(fpath.c_str(), O_RDWR);
   ASSERT_NE(fd, -1);
 
-  HostFileMMap* fmap = hbfmmap.mapfd(fd, 21, 0);
-  EXPECT_TRUE(fmap != NULL);
+  HostFileMMap fmap = hbfmmap.mapfd(fd, 21, 0);
+  EXPECT_TRUE(!fmap.isEmpty());
 
   VMA vma = VMA(0, 0, 4096, fmap);
   vma.vmStart_ = 4096;
@@ -293,22 +292,20 @@ TEST(VmaTest, VmaTrimRangeStartWithHostBackedFile) {
   ASSERT_EQ(vma.getFileSize(), 21);
 
   std::string text = "FileDescArrayTestData";
-  char* ftext = new char[22];
+  char ftext[22];
   memset(ftext, '\0', 22);
   memcpy(ftext, vma.getFileBuf(), vma.getFileSize());
   ASSERT_EQ(text, std::string(ftext));
-  delete[] ftext;
 
   vma.trimRangeStart(4096 + 8);
   text = "ArrayTestData";
-  ftext = new char[14];
-  memset(ftext, '\0', 14);
-  memcpy(ftext, vma.getFileBuf(), vma.getFileSize());
+  char ftext2[14];
+  memset(ftext2, '\0', 14);
+  memcpy(ftext2, vma.getFileBuf(), vma.getFileSize());
   ASSERT_EQ(vma.getFileSize(), 13);
-  ASSERT_EQ(text, std::string(ftext));
+  ASSERT_EQ(text, std::string(ftext2));
 
   ASSERT_NE(close(fd), -1);
-  delete[] ftext;
 }
 
 TEST(VmaTest, VmaTrimRangeEndWithHostBackedFile) {
@@ -318,8 +315,8 @@ TEST(VmaTest, VmaTrimRangeEndWithHostBackedFile) {
   int fd = open(fpath.c_str(), O_RDWR);
   ASSERT_NE(fd, -1);
 
-  HostFileMMap* fmap = hbfmmap.mapfd(fd, 21, 0);
-  EXPECT_TRUE(fmap != NULL);
+  HostFileMMap fmap = hbfmmap.mapfd(fd, 21, 0);
+  EXPECT_TRUE(!fmap.isEmpty());
 
   VMA vma = VMA(0, 0, 4096, fmap);
   vma.vmStart_ = 4096;
@@ -329,19 +326,18 @@ TEST(VmaTest, VmaTrimRangeEndWithHostBackedFile) {
   ASSERT_EQ(vma.getFileSize(), 21);
 
   std::string text = "FileDescArrayTestData";
-  char* ftext = new char[22];
+  char ftext[22];
   memset(ftext, '\0', 22);
   memcpy(ftext, vma.getFileBuf(), vma.getFileSize());
   ASSERT_EQ(text, std::string(ftext));
-  delete[] ftext;
 
   vma.trimRangeEnd(4096 + 13);
   text = "FileDescArray";
-  ftext = new char[14];
-  memset(ftext, '\0', 14);
-  memcpy(ftext, vma.getFileBuf(), vma.getFileSize());
+  char ftext2[14];
+  memset(ftext2, '\0', 14);
+  memcpy(ftext2, vma.getFileBuf(), vma.getFileSize());
   ASSERT_EQ(vma.getFileSize(), 13);
-  ASSERT_EQ(text, std::string(ftext));
+  ASSERT_EQ(text, std::string(ftext2));
 
   ASSERT_NE(close(fd), -1);
 }

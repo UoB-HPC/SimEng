@@ -11,6 +11,29 @@
 namespace env {
 
 class FilesEnv : public ::testing::Environment {
+ public:
+  ~FilesEnv() override{};
+
+  // Override this to define how to set up the environment.
+  // Create all files needed by tests.
+  void SetUp() override {
+    createLongtextFile();
+    createDataFile();
+  }
+
+  // Override this to define how to tear down the environment.
+  // Delete all created files.
+  void TearDown() override {
+    for (auto itr : paths) {
+      std::string fpath = itr;
+      if (remove(fpath.c_str()) != 0) {
+        std::cerr
+            << "[SimEng:FilesEnv] Error occured while deleting file at path: "
+            << fpath << std::endl;
+      }
+    }
+  }
+
  private:
   std::vector<std::string> paths;
 
@@ -38,30 +61,9 @@ class FilesEnv : public ::testing::Environment {
     fs << "FileDescArrayTestData";
     fs.close();
   }
-
- public:
-  ~FilesEnv() override{};
-
-  // Override this to define how to set up the environment.
-  // Create all files needed by tests.
-  void SetUp() override {
-    createLongtextFile();
-    createDataFile();
-  }
-
-  // Override this to define how to tear down the environment.
-  // Delete all created files.
-  void TearDown() override {
-    for (auto itr : paths) {
-      std::string fpath = itr;
-      if (remove(fpath.c_str()) != 0) {
-        std::cerr << "Error occured while deleting file at path: " << fpath
-                  << std::endl;
-      }
-    }
-  }
 };
 
+// Register an instance of TestEnv environment class with googletest.
 testing::Environment* const env =
     testing::AddGlobalTestEnvironment(new FilesEnv);
 }  // namespace env

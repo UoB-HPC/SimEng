@@ -88,11 +88,10 @@ void FetchUnit::tick() {
       // instructions. Wrongly speculated branch instructions can sometimes
       // generate addresses that have no mapping in the PageTable. This causes a
       // page table fault which is handled by the OS. Since the address related
-      // to the branch instruction can be garbage address to region of memory
-      // which cannot be mapped, a data abort exception "RegisterValue()" is
-      // thrown. This exception is correctly handled in the ROB for data
-      // load/write requests but for instruction fetch requests a data null
-      // check suffices.
+      // to the branch instruction can be a garbage address to a region of
+      // memory which cannot be mapped, a data abort exception is thrown and an
+      // empty register value is returned as the read payload. A data null check
+      // suffices to catch these data aborts.
       if (fetched[fetchIndex].target.address == blockAddress &&
           fetched[fetchIndex].data) {
         break;

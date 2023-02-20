@@ -13,38 +13,36 @@ using namespace simeng::OS;
 namespace {
 
 TEST(HostBackedFileMMapsTest, ExitOnInvalidFd) {
-  HostBackedFileMMaps* hmap = new HostBackedFileMMaps();
+  HostBackedFileMMaps hmap = HostBackedFileMMaps();
 
-  EXPECT_EXIT({ hmap->mapfd(-1, 0, 0); }, ::testing::ExitedWithCode(1),
+  EXPECT_EXIT({ hmap.mapfd(-1, 0, 0); }, ::testing::ExitedWithCode(1),
               "fstat failed: Cannot create host backed file mmap for file "
               "descriptor - -1");
-  EXPECT_EXIT({ hmap->mapfd(49, 0, 0); }, ::testing::ExitedWithCode(1),
+  EXPECT_EXIT({ hmap.mapfd(49, 0, 0); }, ::testing::ExitedWithCode(1),
               "fstat failed: Cannot create host backed file mmap for file "
               "descriptor - 49");
-  delete hmap;
 }
 
 TEST(HostBackedFileMMapsTest, ExitOnOffsetGreaterThanFileSize) {
   std::string build_dir_path(SIMENG_BUILD_DIR);
   std::string fpath = build_dir_path + "/test/Data.txt";
-  HostBackedFileMMaps* hmap = new HostBackedFileMMaps();
+  HostBackedFileMMaps hmap = HostBackedFileMMaps();
 
   int fd = open(fpath.c_str(), O_RDWR);
   ASSERT_NE(fd, -1);
 
   EXPECT_EXIT(
-      { hmap->mapfd(fd, 0, 4096); }, ::testing::ExitedWithCode(1),
+      { hmap.mapfd(fd, 0, 4096); }, ::testing::ExitedWithCode(1),
       "Tried to create host backed file mmap with offset and size greater "
       "than file size.");
 
   ASSERT_NE(close(fd), -1);
-  delete hmap;
 }
 
 TEST(HostBackedFileMMapsTest, ExitOnSizeEqualsToZero) {
   std::string build_dir_path(SIMENG_BUILD_DIR);
   std::string fpath = build_dir_path + "/test/Data.txt";
-  HostBackedFileMMaps* hmap = new HostBackedFileMMaps();
+  HostBackedFileMMaps hmap = HostBackedFileMMaps();
 
   int fd = open(fpath.c_str(), O_RDWR);
   ASSERT_NE(fd, -1);
@@ -53,37 +51,35 @@ TEST(HostBackedFileMMapsTest, ExitOnSizeEqualsToZero) {
       "Cannot create host backed file mmap with size 0 for file descriptor: " +
       std::to_string(fd);
 
-  EXPECT_EXIT({ hmap->mapfd(fd, 0, 0); }, ::testing::ExitedWithCode(1), errstr);
+  EXPECT_EXIT({ hmap.mapfd(fd, 0, 0); }, ::testing::ExitedWithCode(1), errstr);
 
   ASSERT_NE(close(fd), -1);
-  delete hmap;
 }
 
 TEST(HostBackedFileMMapsTest, ReadHostedFileZeroOffset) {
   std::string build_dir_path(SIMENG_BUILD_DIR);
   std::string fpath = build_dir_path + "/test/Data.txt";
-  HostBackedFileMMaps* hmap = new HostBackedFileMMaps();
+  HostBackedFileMMaps hmap = HostBackedFileMMaps();
 
   int fd = open(fpath.c_str(), O_RDWR);
   ASSERT_NE(fd, -1);
 
-  HostFileMMap* hfmm = hmap->mapfd(fd, 21, 0);
-  ASSERT_LE(hfmm->flen_, 21);
+  HostFileMMap hfmm = hmap.mapfd(fd, 21, 0);
+  ASSERT_LE(hfmm.getLen(), 21);
 
   std::string text = "FileDescArrayTestData";
-  char* ftext = new char[22];
+  char ftext[22];
   memset(ftext, '\0', 22);
-  memcpy(ftext, hfmm->getFaddr(), hfmm->flen_);
+  memcpy(ftext, hfmm.getFaddr(), hfmm.getLen());
   ASSERT_EQ(text, std::string(ftext));
 
   ASSERT_NE(close(fd), -1);
-  delete hmap;
 }
 
 TEST(HostBackedFileMMapsTest, CreateHostedFileWithUnalignedOffset) {
   std::string build_dir_path(SIMENG_BUILD_DIR);
   std::string fpath = build_dir_path + "/test/Data.txt";
-  HostBackedFileMMaps* hmap = new HostBackedFileMMaps();
+  HostBackedFileMMaps hmap = HostBackedFileMMaps();
 
   int fd = open(fpath.c_str(), O_RDWR);
   ASSERT_NE(fd, -1);
@@ -94,33 +90,30 @@ TEST(HostBackedFileMMapsTest, CreateHostedFileWithUnalignedOffset) {
       "to page size: " +
       std::to_string(offset);
 
-  EXPECT_EXIT({ hmap->mapfd(fd, 21, 20); }, ::testing::ExitedWithCode(1),
+  EXPECT_EXIT({ hmap.mapfd(fd, 21, 20); }, ::testing::ExitedWithCode(1),
               errstr);
 
   ASSERT_NE(close(fd), -1);
-  delete hmap;
 }
 
 TEST(HostBackedFileMMapsTest, ReadHostedFileNonZeroOffset) {
   std::string build_dir_path(SIMENG_BUILD_DIR);
   std::string fpath = build_dir_path + "/test/longtext.txt";
-  HostBackedFileMMaps* hmap = new HostBackedFileMMaps();
+  HostBackedFileMMaps hmap = HostBackedFileMMaps();
 
   int fd = open(fpath.c_str(), O_RDWR);
   ASSERT_NE(fd, -1);
 
-  HostFileMMap* hfmm = hmap->mapfd(fd, 8, 4096);
-  ASSERT_LE(hfmm->flen_, 8);
+  HostFileMMap hfmm = hmap.mapfd(fd, 8, 4096);
+  ASSERT_LE(hfmm.getLen(), 8);
 
   std::string text = "22222222";
-  char* ftext = new char[9];
+  char ftext[9];
   memset(ftext, '\0', 9);
-  memcpy(ftext, hfmm->getFaddr(), hfmm->flen_);
+  memcpy(ftext, hfmm.getFaddr(), hfmm.getLen());
   ASSERT_EQ(text, std::string(ftext));
 
   ASSERT_NE(close(fd), -1);
-  delete[] ftext;
-  delete hmap;
 }
 
 }  // namespace

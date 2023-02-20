@@ -321,7 +321,7 @@ int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
 int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                              int fd, off_t offset) {
   auto process = os_->getProcess(0);
-  HostFileMMap* hostfile = nullptr;
+  HostFileMMap hostfile;
 
   if (fd > 0) {
     auto entry = process->fdArray_->getFDEntry(fd);

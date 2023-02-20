@@ -67,7 +67,7 @@ class MemRegion {
 
   /** This method allocates a new mmap region. */
   int64_t mmapRegion(uint64_t addr, uint64_t length, int prot, int flags,
-                     HostFileMMap* hfmmap);
+                     HostFileMMap hfmmap);
 
   /** This method unmaps a mmaped region. */
   int64_t unmapRegion(uint64_t addr, uint64_t length);

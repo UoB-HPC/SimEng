@@ -1,6 +1,5 @@
 #include <iostream>
 
-#include "TestFriends.hh"
 #include "gtest/gtest.h"
 #include "simeng/OS/PageFrameAllocator.hh"
 using namespace simeng::OS;

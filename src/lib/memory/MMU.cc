@@ -17,9 +17,9 @@ void MMU::bufferRequest(DataPacket request, sendResponseToCore sendResponse) {
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
   DataPacket pkt = DataPacket();
 
-  if (faultCode == simeng::OS::masks::faults::pagetable::dataAbort) {
+  if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
     pkt = DataPacket(true);
-  } else if (faultCode == simeng::OS::masks::faults::pagetable::ignored) {
+  } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
     pkt = memory_->handleIgnoredRequest(request);
   } else {
     request.address_ = paddr;

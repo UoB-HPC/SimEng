@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <iostream>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "simeng/OS/Constants.hh"
@@ -19,8 +20,92 @@ using namespace simeng::OS::defaults;
 /** A HostFileMMap is a structure representing a file mmaped on the host. */
 class HostFileMMap {
  public:
+  /** Default constructor for HostFileMMap. */
+  HostFileMMap() {}
+
+  /** Constructor used to construct HostFileMMap with the specific values. */
+  HostFileMMap(int fd, void* origPtr, void* faddr, size_t origLen, size_t flen,
+               off_t offset)
+      : fd_(fd),
+        origLen_(origLen),
+        flen_(flen),
+        offset_(offset),
+        origPtr_(origPtr),
+        faddr_(faddr),
+        isEmpty_(false) {}
+
+  /** Move constructor for HostFileMMap. */
+  HostFileMMap(HostFileMMap&& hfmmap)
+      : fd_(std::exchange(hfmmap.fd_, 0)),
+        origLen_(std::exchange(hfmmap.origLen_, 0)),
+        flen_(std::exchange(hfmmap.flen_, 0)),
+        offset_(std::exchange(hfmmap.offset_, 0)),
+        origPtr_(std::exchange(hfmmap.origPtr_, nullptr)),
+        faddr_(std::exchange(hfmmap.faddr_, nullptr)),
+        isEmpty_(std::exchange(hfmmap.isEmpty_, true)) {}
+
+  /** Copy constructor for HostFileMMap. */
+  HostFileMMap(const HostFileMMap& hfmmap)
+      : fd_(hfmmap.fd_),
+        origLen_(hfmmap.origLen_),
+        flen_(hfmmap.flen_),
+        offset_(hfmmap.offset_),
+        origPtr_(hfmmap.origPtr_),
+        faddr_(hfmmap.faddr_),
+        isEmpty_(hfmmap.isEmpty_) {}
+
+  /** Copy assignment operator for HostFileMMap. */
+  HostFileMMap& operator=(const HostFileMMap& hfmmap) {
+    fd_ = hfmmap.fd_;
+    origLen_ = hfmmap.origLen_;
+    flen_ = hfmmap.flen_;
+    offset_ = hfmmap.offset_;
+    origPtr_ = hfmmap.origPtr_;
+    faddr_ = hfmmap.faddr_;
+    isEmpty_ = hfmmap.isEmpty_;
+    return *this;
+  }
+
+  /** Move assignment operator for HostFileMMap. */
+  HostFileMMap& operator=(HostFileMMap&& hfmmap) {
+    fd_ = std::exchange(hfmmap.fd_, 0);
+    origLen_ = std::exchange(hfmmap.origLen_, 0);
+    flen_ = std::exchange(hfmmap.flen_, 0);
+    offset_ = std::exchange(hfmmap.offset_, 0);
+    origPtr_ = std::exchange(hfmmap.origPtr_, nullptr);
+    faddr_ = std::exchange(hfmmap.faddr_, nullptr);
+    isEmpty_ = std::exchange(hfmmap.isEmpty_, true);
+    return *this;
+  }
+
+  /** Method which returns the pointer of the mmaped file. */
+  void* getFaddr() { return faddr_; }
+
+  /** Method which returns the original starting pointer to the mmaped file.*/
+  void* getOrigPtr() { return origPtr_; }
+
+  /** Returns the fd assosciated with HostFileMMap. */
+  int getFd() { return fd_; }
+
+  /** Returns the offset assosciated with HostFileMMap. */
+  int getOffset() { return offset_; }
+
+  /** Returns the effective length of the of faddr_. */
+  int getLen() { return flen_; }
+
+  /** Returns the length of origPtr_. */
+  int getOrigLen() { return origLen_; }
+
+  /** Method which return if HostFileMMap is empty or not. */
+  bool isEmpty() { return isEmpty_; }
+
+ private:
   /** Host fd of the file mmaped by host. */
-  const int fd_;
+  int fd_ = 0;
+
+  /** This is the size of the original file mapping without the offset being
+   * applied to it. */
+  size_t origLen_ = 0;
 
   /** Length of the file mapping after offset has been applied. When a mmap call
    * is made it can contain an offset and the offset has to be a multiple of
@@ -29,41 +114,24 @@ class HostFileMMap {
    * with a file descriptor and offset. SimEng mmaps the entire file on the host
    * system and calculates the effective length given the original file length
    * and offset i.e original_file_length - offset. */
-  const size_t flen_;
+  size_t flen_ = 0;
 
   /** This is the offset specified by the mmap syscall. */
-  const off_t offset_;
-
-  /** This is the size of the original file mapping without the offset being
-   * applied to it. */
-  const size_t origLen_;
-
-  HostFileMMap(int fd, void* origPtr, void* faddr, size_t origLen, size_t flen,
-               off_t offset)
-      : fd_(fd),
-        origPtr_(origPtr),
-        faddr_(faddr),
-        origLen_(origLen),
-        flen_(flen),
-        offset_(offset) {}
-
-  /** Method which returns the pointer of the mmaped file. */
-  void* getFaddr() { return faddr_; }
-
-  /** Method which returns the original starting pointer to the mmaped file.*/
-  void* getOrigPtr() { return origPtr_; }
-
- private:
-  /** This is the effective starting pointer used during simulation. It is
-   * calculated by doing simple pointer arithmetic i.e faddr_ = (origPtr_ +
-   * offset_). */
-  void* faddr_;
+  off_t offset_ = 0;
 
   /** The starting pointer assosciated with the file mapping. When using host
    * mmap SimEng doesn't specify any offsets to avoid page size alignment
    * conflicts, instead it mmaps the entire file and calculates offsetted values
    * used during the simulation. */
-  void* origPtr_;
+  void* origPtr_ = nullptr;
+
+  /** This is the effective starting pointer used during simulation. It is
+   * calculated by doing simple pointer arithmetic i.e faddr_ = (origPtr_ +
+   * offset_). */
+  void* faddr_ = nullptr;
+
+  /** Boolean used to check if the HostFileMMap is empty or not. */
+  bool isEmpty_ = true;
 };
 
 /** The HostBackedFileMMaps allows us to mmap a host file descriptor so that the
@@ -77,11 +145,11 @@ class HostBackedFileMMaps {
   ~HostBackedFileMMaps();
 
   /** Method used to a mmap a host fd. */
-  HostFileMMap* mapfd(int fd, size_t len, off_t offset);
+  HostFileMMap mapfd(int fd, size_t len, off_t offset);
 
  private:
   /** Vector of all host file mappings. */
-  std::vector<HostFileMMap*> hostvec;
+  std::vector<HostFileMMap> hostvec;
 };
 
 /** class representing a vm_area_struct in linux. Each Virtual Memory Area (VMA)
@@ -91,8 +159,8 @@ class HostBackedFileMMaps {
  * exclusive of its end address i.e [vmStart_, vmEnd_). */
 class VirtualMemoryArea {
  public:
-  VirtualMemoryArea(int prot, int flags, size_t vsize,
-                    HostFileMMap* hfmmap = nullptr);
+  // Constructor which constructs the VirtualMemoryArea with specific values.
+  VirtualMemoryArea(int prot, int flags, size_t vsize, HostFileMMap hfmmap);
 
   // Constructor which copies the contents of a VMA pointer into the the current
   // VMA. This method is used in removeVMA to create a copy of the VMA so that
@@ -154,7 +222,7 @@ class VirtualMemoryArea {
   size_t fsize_ = 0;
 
   /** Reference to the HostFileMMap associated with this VMA. */
-  HostFileMMap* hfmmap_ = nullptr;
+  HostFileMMap hfmmap_;
 };
 
 typedef VirtualMemoryArea VMA;

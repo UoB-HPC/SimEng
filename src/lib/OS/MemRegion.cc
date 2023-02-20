@@ -11,22 +11,23 @@ namespace OS {
 MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
                      uint64_t memSize, uint64_t stackStart, uint64_t heapStart,
                      uint64_t mmapStart, uint64_t initStackPtr,
-                     std::function<uint64_t(uint64_t, size_t)> unmapPageTable) {
-  stackSize_ = stackSize;
-  heapSize_ = heapSize;
-  mmapSize_ = mmapSize;
-  memSize_ = memSize;
-  stackStart_ = stackStart;
-  stackEnd_ = stackStart + stackSize;
-  heapStart_ = heapStart;
-  heapEnd_ = heapStart + heapSize;
-  mmapStart_ = mmapStart;
-  mmapEnd_ = mmapStart + mmapSize;
-  initStackPtr_ = initStackPtr;
-  brk_ = heapStart;
-  mmapPtr_ = mmapStart;
-  unmapPageTable_ = unmapPageTable;
-}
+                     std::function<uint64_t(uint64_t, size_t)> unmapPageTable)
+    : stackStart_(stackStart),
+      stackEnd_(stackStart + stackSize),
+      stackSize_(stackSize),
+      initStackPtr_(initStackPtr),
+      heapStart_(heapStart),
+      heapEnd_(heapStart + heapSize),
+      heapSize_(heapSize),
+      brk_(heapStart),
+      memSize_(memSize),
+      mmapStart_(mmapStart),
+      mmapEnd_(mmapStart + mmapSize),
+      mmapPtr_(mmapStart),
+      mmapSize_(mmapSize),
+      unmapPageTable_(unmapPageTable)
+
+{}
 
 MemRegion::~MemRegion() {
   if (vm_size_ == 0) return;
@@ -61,7 +62,6 @@ uint64_t MemRegion::getMmapStart() const { return mmapStart_; }
 uint64_t MemRegion::getMemSize() const { return memSize_; }
 
 uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
-  newBrk = upAlign(newBrk, 8);
   if (newBrk < heapStart_) {
     return brk_;
   }
@@ -85,11 +85,16 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
 uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
   VMA* curr = vm_head_;
   size_t size = vma->vmSize_;
-  // If start address is not 0, then look for a vma which has an end address
-  // greater or equal to start address.
+  // When starAddr is not 0, search for an available address range
+  // that can hold the new VMA with a starting address that is greater than or
+  // equal to the specified startAddr. The following algorithm retrieves the
+  // last existing VMA object before the address range so that the new VMA can
+  // be linked between two existing VMAs. If no available address range is
+  // found, then the new VMA is allocated at the end of the VMA list.
   if (startAddr && vm_size_ > 0) {
     while (curr->vmNext_ != nullptr) {
-      if (curr->vmEnd_ >= startAddr) {
+      if (curr->vmEnd_ <= startAddr &&
+          curr->vmNext_->vmStart_ >= (startAddr + size)) {
         break;
       }
       curr = curr->vmNext_;
@@ -97,7 +102,7 @@ uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
   }
 
   bool allocated = false;
-  // If VmaList has multiple Vma then starting from curr (VMA) check if the
+  // If Vma list has multiple VMAs then starting from curr (VMA) check if the
   // new VMA can be allocated between two existing ones.
   while (curr != nullptr && curr->vmNext_ != nullptr) {
     if (curr->vmNext_->vmStart_ - curr->vmEnd_ >= size) {
@@ -110,15 +115,15 @@ uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
     }
     curr = curr->vmNext_;
   }
-  // If VMA has not been allocated it means that it couldn't fit between two
-  // existing VMAs or VmaList is empty. This means that either we are the tail
-  // of the VmaList or we are now allocating the head. If the startAddr is less
-  // than mmap pointer its value will be set to the mmap pointer. However if it
-  // is greater than the mmap pointer it remains the same. Here startAddr is
-  // either mmap pointer or an address greater than mmap pointer.
+  // If the new VMA has not been allocated it means that it couldn't fit between
+  // two existing VMAs or he VMA list is empty. This means that either we are
+  // the tail of the VMA list or we are now allocating the head. If the
+  // startAddr is less than mmap pointer its value will be set to the mmap
+  // pointer. However if it is greater than the mmap pointer it remains the
+  // same. Here startAddr is either mmap pointer or an address greater than mmap
+  // pointer.
   if (!allocated) {
-    startAddr =
-        ((startAddr > 0) && (startAddr >= mmapPtr_)) ? startAddr : mmapPtr_;
+    startAddr = startAddr >= mmapPtr_ ? startAddr : mmapPtr_;
     vma->vmStart_ = startAddr;
     mmapPtr_ = startAddr + size;
     vma->vmEnd_ = mmapPtr_;
@@ -143,9 +148,8 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
   uint64_t delsize = 0;
 
   while (curr != nullptr) {
-    // If addr matches the start address of VMA.
-    // if the address range completed contains the current VMA, delete the
-    // entire VMA and decrease vma list size by 1.
+    // If the address range completely contains the current VMA, delete the
+    // entire VMA and decrease VMA list size by 1.
     //  [--------Addr--------]
     //      [----VMA ----)
     if (curr->containedIn(addr, length)) {
@@ -157,8 +161,8 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
       vm_size_--;
       removedVMAs.push_back(curr);
     }
-    // If the current VMA contains the address range split the VMA into two
-    // smaller VMA, increase vma list size by 1.
+    // If the address range is within the bounds of the current VMA, split the
+    // VAM into two smaller VMAs and increase the VMA list size by 1
     //      [---Addr---]
     // [--------VMA --------)
     else if (curr->contains(addr, length)) {
@@ -177,8 +181,8 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
       delsize += length;
       break;
     }
-    // If the current VMA overlaps with the address range split, delete the
-    // overlapping region and VMA list size remains same.
+    // If the current VMA overlaps with the address range delete the
+    // overlapping region of the VMA.
     //          [--------Addr--------]
     //  [--------VMA --------)
     else if (curr->overlaps(addr, length)) {
@@ -204,14 +208,9 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
 }
 
 int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
-                              int flags, HostFileMMap* hfmmap) {
-  // TODO: This is a tricky flag, if specified it means that we HAVE to use the
-  // hint provided by the mmap syscall for VMA allocation. Sufficient care
-  // must be taken during this call i.e we have to check whether the addr
-  // overlaps with Heap or Stack VMA. If not, we still check whether the
-  // range overlaps with any allocated VMAs if it does we need to unmap
-  // those regions first.
-  uint64_t fixed = flags & syscalls::mmap::flags::map_fixed;
+                              int flags, HostFileMMap hfmmap) {
+  // Check if flag contains MAP_FIXED, as it is not supported yet.
+  uint64_t fixed = flags & syscalls::mmap::flags::SIMENG_MAP_FIXED;
   if (fixed) {
     std::cerr << "[SimEng:MemRegion] MAP_FIXED flag to MMAP calls is not "
                  "supported yet."
@@ -219,31 +218,31 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
     std::exit(1);
   }
   // Always use pageSize aligned sizes.
-  uint64_t size = upAlign(length, page_size);
+  uint64_t size = upAlign(length, PAGE_SIZE);
 
   // Check if provided hint address exists in VMA region or overlaps with heap
   // or stack regions.
   bool mapped = false;
   if (startAddr) {
-    startAddr = upAlign(startAddr, page_size);
+    startAddr = upAlign(startAddr, PAGE_SIZE);
     if (overlapsStack(startAddr, size)) {
       std::cerr
           << "[SimEng:MemRegion] Provided hint overlaps with the Stack region"
           << std::endl;
-      return EINVAL;
+      return -1;
     }
     if (overlapsHeap(startAddr, size)) {
       std::cerr
           << "[SimEng:MemRegion] Provided hint overlaps with the Heap region"
           << std::endl;
-      return EINVAL;
+      return -1;
     }
 
     if (!((startAddr >= mmapStart_) && (startAddr + size < mmapEnd_))) {
       std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
                    "the mmap range: "
                 << startAddr << " - " << startAddr + size << std::endl;
-      return EINVAL;
+      return -1;
     }
     mapped = isVmMapped(startAddr, size);
   }
@@ -272,8 +271,8 @@ int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
     return -1;
   }
 
-  uint64_t size = upAlign(length, page_size);
-  addr = downAlign(addr, page_size);
+  uint64_t size = upAlign(length, PAGE_SIZE);
+  addr = downAlign(addr, PAGE_SIZE);
   uint64_t value = removeVma(addr, size);
 
   unmapPageTable_(addr, size);

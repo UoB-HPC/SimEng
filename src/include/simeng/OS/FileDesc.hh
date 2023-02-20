@@ -96,7 +96,7 @@ class FileDescArray {
 
  private:
   /** Array which holds FileDescEntry(s) */
-  std::array<FileDescEntry, maxFdNum> fdarr_;
+  std::array<FileDescEntry, MAX_FD_NUM> fdarr_;
 
   /** Number of FileDescEntry(s) in fdarr_ */
   uint64_t numFds_ = 0;

@@ -30,11 +30,10 @@ TEST(FileDescArrayTest, AllocatesFileDesc) {
   auto entry = fdArr.getFDEntry(vfd);
   ASSERT_TRUE(entry.isValid());
   std::string text = "FileDescArrayTestData";
-  char* ftext = new char[22];
+  char ftext[22];
   memset(ftext, '\0', 22);
   ASSERT_EQ(read(entry.getFd(), ftext, 21), 21);
   ASSERT_EQ(text, std::string(ftext));
-  delete[] ftext;
 }
 
 TEST(FileDescArrayTest, RemovesFileDesc) {

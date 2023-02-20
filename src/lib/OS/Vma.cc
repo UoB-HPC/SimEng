@@ -6,10 +6,9 @@
 
 namespace simeng {
 namespace OS {
-
-HostFileMMap* HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
+HostFileMMap HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
   struct stat* statbuf = (struct stat*)malloc(sizeof(struct stat));
-  if (offset & (page_size - 1)) {
+  if (offset & (PAGE_SIZE - 1)) {
     std::cerr << "[SimEng:HostBackedFileMMaps] Failed to create Host backed "
                  "file mapping. Offset is not aligned "
                  "to page size: "
@@ -22,7 +21,7 @@ HostFileMMap* HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
                  "descriptor - "
               << fd << std::endl;
     std::exit(1);
-  };
+  }
   if (offset + len > statbuf->st_size) {
     std::cerr << "[SimEng:HostBackedFileMMaps] Tried to create host backed "
                  "file mmap with offset and size greater "
@@ -44,36 +43,35 @@ HostFileMMap* HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
   // Add offset to pointer manually
   char* offsettedPtr = (char*)filemmap + offset;
   void* newPtr = (void*)offsettedPtr;
-  HostFileMMap* hfmm = new HostFileMMap(fd, filemmap, newPtr,
-                                        (size_t)statbuf->st_size, len, offset);
+  HostFileMMap hfmm =
+      HostFileMMap(fd, filemmap, newPtr, (size_t)statbuf->st_size, len, offset);
   hostvec.push_back(hfmm);
   return hfmm;
-};
+}
 
 HostBackedFileMMaps::~HostBackedFileMMaps() {
   for (auto fmap : hostvec) {
-    if (munmap(fmap->getOrigPtr(), fmap->origLen_) < 0) {
+    if (munmap(fmap.getOrigPtr(), fmap.getOrigLen()) < 0) {
       std::cerr << "[SimEng:HostBackedFileMMaps] Unable to unmap host backed "
                    "file mmap associated with file "
                    "descriptor: "
-                << fmap->fd_ << std::endl;
+                << fmap.getFd() << std::endl;
       std::exit(1);
     }
-    delete fmap;
   }
-};
+}
 
 VirtualMemoryArea::VirtualMemoryArea(int prot, int flags, size_t vsize,
-                                     HostFileMMap* hfmmap) {
+                                     HostFileMMap hfmmap) {
   vmSize_ = vsize;
   prot_ = prot;
   flags_ = flags;
   hfmmap_ = hfmmap;
-  if (hfmmap != nullptr) {
-    filebuf_ = hfmmap->getFaddr();
-    fsize_ = hfmmap->flen_;
+  if (!hfmmap.isEmpty()) {
+    filebuf_ = hfmmap.getFaddr();
+    fsize_ = hfmmap.getLen();
   }
-};
+}
 
 VirtualMemoryArea::VirtualMemoryArea(VirtualMemoryArea* vma) {
   vmStart_ = vma->vmStart_;
@@ -85,17 +83,17 @@ VirtualMemoryArea::VirtualMemoryArea(VirtualMemoryArea* vma) {
   vmSize_ = vma->vmSize_;
   filebuf_ = vma->filebuf_;
   fsize_ = vma->fsize_;
-};
+}
 
 bool VirtualMemoryArea::overlaps(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
   return (endAddr >= vmStart_) && (startAddr < vmEnd_);
-};
+}
 
 bool VirtualMemoryArea::contains(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
   return (startAddr >= vmStart_) && (endAddr <= vmEnd_);
-};
+}
 
 bool VirtualMemoryArea::contains(uint64_t vaddr) {
   return (vaddr >= vmStart_) && (vaddr < vmEnd_);
@@ -104,7 +102,7 @@ bool VirtualMemoryArea::contains(uint64_t vaddr) {
 bool VirtualMemoryArea::containedIn(uint64_t startAddr, size_t size) {
   uint64_t endAddr = startAddr + size;
   return (startAddr <= vmStart_) && (endAddr >= vmEnd_);
-};
+}
 
 void VirtualMemoryArea::trimRangeEnd(uint64_t addr) {
   vmSize_ = addr - vmStart_;
@@ -112,16 +110,17 @@ void VirtualMemoryArea::trimRangeEnd(uint64_t addr) {
   // We dont host munmap here because the class HostBackedFileMMaps is
   // responsible for managing all host mappings. We only update the file size to
   // the new size only if it is less than the original size before trim.
-  if (hasFile()) fsize_ = fsize_ < vmSize_ ? fsize_ : vmSize_;
-};
+  if (hasFile()) fsize_ = (fsize_ < vmSize_) ? fsize_ : vmSize_;
+}
 
 void VirtualMemoryArea::trimRangeStart(uint64_t addr) {
   if (hasFile()) {
     size_t trimlen = addr - vmStart_;
     if (trimlen >= fsize_) {
-      // We dont host munmap here because the class HostBackedFileMMaps is
-      // responsible for managing all host mappings. If the entire file size is
-      // trimmed just update the filebuf_ and fsize_ variables.
+      // We dont munmap filebuf_ here because the HostBackedFileMMaps class is
+      // responsible for managing all file mappings. If trimLen is greater than
+      // fsize_ just update the filebuf_ and fsize_ variables to signify that no
+      // file exists.
       filebuf_ = nullptr;
       fsize_ = 0;
     } else {
@@ -135,11 +134,9 @@ void VirtualMemoryArea::trimRangeStart(uint64_t addr) {
   }
   vmSize_ = vmEnd_ - addr;
   vmStart_ = addr;
-};
+}
 
-bool VirtualMemoryArea::hasFile() {
-  return filebuf_ != nullptr && fsize_ != 0;
-};
+bool VirtualMemoryArea::hasFile() { return filebuf_ != nullptr && fsize_ != 0; }
 
 void* VirtualMemoryArea::getFileBuf() { return filebuf_; }
 

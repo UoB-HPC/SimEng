@@ -66,12 +66,12 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
   ASSERT_EQ(vma->hasFile(), false);
 
   uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_EQ(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
   simOS.handleVAddrTranslation(mmapStart, 0);
   paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_NE(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   uint64_t paddrWOffset = simOS.getProcess(0)->translate(mmapStart + 20);
   ASSERT_EQ(paddrWOffset, paddr + 20);
@@ -103,12 +103,12 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
   ASSERT_EQ(vma->hasFile(), false);
 
   uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_EQ(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
   simOS.handleVAddrTranslation(mmapStart + 4096, 0);
   paddr = simOS.getProcess(0)->translate(mmapStart + 4096);
-  ASSERT_NE(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   uint64_t paddrWOffset = simOS.getProcess(0)->translate(mmapStart + 4096 + 20);
   ASSERT_EQ(paddrWOffset, paddr + 20);
@@ -139,20 +139,20 @@ TEST(VirtMemTest, UnmapSyscall) {
   ASSERT_EQ(vma->hasFile(), false);
 
   uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_EQ(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   simOS.handleVAddrTranslation(mmapStart, 0);
   paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_NE(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   retVal = simOS.getSyscallHandler()->munmap(mmapStart, 4096);
   ASSERT_EQ(retVal, 4096);
 
   paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_EQ(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   ASSERT_EQ(simOS.getProcess(0)->getMemRegion().getVMASize(), 0);
 
@@ -193,13 +193,13 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   ASSERT_EQ(vma->getFileSize(), 21);
 
   uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_EQ(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   simOS.handleVAddrTranslation(mmapStart, 0);
   paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_NE(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   auto data = memory->getUntimedData(paddr, vma->getFileSize());
   data.push_back('\0');
@@ -242,13 +242,13 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   ASSERT_EQ(vma->getFileSize(), 4096);
 
   uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_EQ(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   simOS.handleVAddrTranslation(mmapStart, 0);
   paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_NE(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   auto data = memory->getUntimedData(paddr, vma->getFileSize());
   data.push_back('\0');
@@ -291,13 +291,13 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   ASSERT_EQ(vma->getFileSize(), 8192);
 
   uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_EQ(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   simOS.handleVAddrTranslation(mmapStart, 0);
   paddr = simOS.getProcess(0)->translate(mmapStart);
-  ASSERT_NE(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   auto data = memory->getUntimedData(paddr, 4096);
   data.push_back('\0');
@@ -306,13 +306,13 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   ASSERT_EQ(text, std::string(data.data()));
 
   paddr = simOS.getProcess(0)->translate(mmapStart + 4096);
-  ASSERT_EQ(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   simOS.handleVAddrTranslation(mmapStart + 4096, 0);
   paddr = simOS.getProcess(0)->translate(mmapStart + 4096);
-  ASSERT_NE(paddr, masks::faults::pagetable::fault |
-                       masks::faults::pagetable::translate);
+  ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
+                       masks::faults::pagetable::TRANSLATE);
 
   data = memory->getUntimedData(paddr, 4096 + 1);
   data.push_back('\0');

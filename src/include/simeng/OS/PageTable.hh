@@ -19,9 +19,6 @@ using namespace simeng::OS::defaults;
  * physical address mappings. It can create and delete virtual to physical
  * address mappings, and is also used for virtual address translation. */
 class PageTable {
-  // Friend class declaration so private members can be accessed in the test
-  // suite.
-  friend class TestFriends::PTFriend;
   using TableItr = typename std::map<uint64_t, uint64_t>::iterator;
   using IgnoredAddrRange = std::pair<uint64_t, uint64_t>;
 
@@ -47,9 +44,13 @@ class PageTable {
   /** Method which adds an address range to be ignored during translations. */
   void ignoreAddrRange(uint64_t startAddr, uint64_t endAddr);
 
+  /** Method which returns a copy of the internal map used to store all page
+   * table mappings. */
+  std::map<uint64_t, uint64_t> getTable();
+
  private:
   /** Offset mask used to retrive 12 lsb of the virtual address. */
-  const uint64_t translationMask_ = generateOffsetMask(page_size);
+  const uint64_t translationMask_ = generateOffsetMask(PAGE_SIZE);
 
   /** Map used to store virtual to physical address mappings. */
   std::map<uint64_t, uint64_t> table_;

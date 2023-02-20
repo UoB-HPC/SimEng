@@ -18,14 +18,14 @@ FileDescArray::FileDescArray() {
 }
 
 void FileDescArray::validate(int vfd) const {
-  if (numFds_ == maxFdNum) {
+  if (numFds_ == MAX_FD_NUM) {
     std::cerr << "[SimEng:FileDescArray] Maximum number of file descriptors "
                  "allocated."
               << std::endl;
     std::exit(1);
   }
   if (vfd == -1) return;
-  if (vfd > maxFdNum) {
+  if (vfd > MAX_FD_NUM) {
     std::cerr << "SimEng:[FileDescArray] Invalid virtual file descriptor: "
               << vfd << std::endl;
     std::exit(1);
