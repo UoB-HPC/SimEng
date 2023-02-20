@@ -24,7 +24,6 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 }
 
 Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
-                 std::vector<RegisterFileStructure> regFileStructure,
                  uint64_t TGID, uint64_t TID, sendToMemory sendToMem,
                  size_t simulationMemSize)
     : commandLine_(commandLine),
@@ -146,7 +145,7 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
 
   fdArray_ = std::make_shared<FileDescArray>();
   // Initialise context
-  initContext(stackPtr, regFileStructure);
+  initContext(stackPtr);
   isValid_ = true;
 
   // Create `proc/tgid/maps`
@@ -171,10 +170,8 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
   tgidMaps_File.close();
 }
 
-Process::Process(span<char> instructions, SimOS* OS,
-                 std::vector<RegisterFileStructure> regFileStructure,
-                 uint64_t TGID, uint64_t TID, sendToMemory sendToMem,
-                 size_t simulationMemSize)
+Process::Process(span<char> instructions, SimOS* OS, uint64_t TGID,
+                 uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize)
     : TGID_(TGID), TID_(TID), OS_(OS), sendToMem_(sendToMem) {
   // Leave program command string empty
   commandLine_.push_back("\0");
@@ -250,7 +247,7 @@ Process::Process(span<char> instructions, SimOS* OS,
 
   fdArray_ = std::make_shared<FileDescArray>();
 
-  initContext(stackPtr, regFileStructure);
+  initContext(stackPtr);
   isValid_ = true;
 }
 
@@ -409,9 +406,9 @@ uint64_t Process::handlePageFault(uint64_t vaddr) {
   return taddr;
 }
 
-void Process::initContext(
-    const uint64_t stackPtr,
-    const std::vector<RegisterFileStructure>& regFileStructure) {
+void Process::initContext(const uint64_t stackPtr) {
+  auto regFileStructure = SimInfo::getArchRegStruct();
+
   context_.TID = TID_;
   context_.pc = entryPoint_;
   context_.sp = stackPtr;

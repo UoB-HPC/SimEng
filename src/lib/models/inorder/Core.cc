@@ -15,7 +15,7 @@ Core::Core(const arch::Architecture& isa, BranchPredictor& branchPredictor,
            arch::sendSyscallToHandler handleSyscall, YAML::Node& config)
     : mmu_(mmu),
       isa_(isa),
-      registerFileSet_(isa.getRegisterFileStructures()),
+      registerFileSet_(SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
       decodeToIssueBuffer_(1, nullptr),
@@ -500,7 +500,7 @@ simeng::OS::cpuContext Core::getCurrentContext() const {
           : fetchUnit_.getPC();
   // progByteLen will not change in process so do not need to set it
   // Don't need to explicitly save SP as will be in reg file contents
-  auto regFileStruc = isa_.getRegisterFileStructures();
+  auto regFileStruc = SimInfo::getArchRegStruct();
   newContext.regFile.resize(regFileStruc.size());
   for (size_t i = 0; i < regFileStruc.size(); i++) {
     newContext.regFile[i].resize(regFileStruc[i].quantity);
