@@ -37,8 +37,7 @@ SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem)
   syscallHandler_ = std::make_shared<SyscallHandler>(this, mem);
 
   // Create the Special Files directory if indicated to do so in Config file
-  if (Config::get()["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true)
-    createSpecialFileDirectory();
+  if (SimInfo::getGenSpecFiles() == true) createSpecialFileDirectory();
 }
 
 void SimOS::tick() {
@@ -188,9 +187,9 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
 
   // Temporarily create the architecture, with knowledge of the OS
   std::unique_ptr<simeng::arch::Architecture> arch;
-  if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
+  if (SimInfo::getISA() == ISA::RV64) {
     arch = std::make_unique<simeng::arch::riscv::Architecture>();
-  } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
+  } else if (SimInfo::getISA() == ISA::AArch64) {
     arch = std::make_unique<simeng::arch::aarch64::Architecture>();
   }
 
@@ -240,11 +239,11 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   }
 
   // Set Initial state of registers
-  if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
+  if (SimInfo::getISA() == ISA::RV64) {
     // Set the stack pointer register
     processes_[tid]->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
         processes_[tid]->context_.sp, 8};
-  } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
+  } else if (SimInfo::getISA() == ISA::AArch64) {
     // Set the stack pointer register
     processes_[tid]->context_.regFile[arch::aarch64::RegisterType::GENERAL]
                                      [31] = {processes_[tid]->context_.sp, 8};
