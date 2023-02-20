@@ -857,12 +857,10 @@ void Instruction::execute() {
       if (metadata.operands[1].reg == 2) {
         // TODO this won't work properly in OoO core as rounding mode could be
         // updated before instructions earlier in program order execute causing
-        // them to be rounded incorrectly
-        // frm
-        std::cerr << "CSRRW: " << metadata.mnemonic << " "
-                  << metadata.operandStr
-                  << ", rs1 = " << operands[0].get<uint64_t>()
-                  << " , rs2 = " << metadata.operands[1].reg << std::endl;
+        // them to be rounded incorrectly. Rounding mode needs to be set on
+        // commit and all subsequent instructions must be performed with updated
+        // mode. e.g. this should be performed atomically
+
         switch (operands[0].get<uint64_t>()) {
           case 0:
             fesetround(FE_TONEAREST);
@@ -884,18 +882,20 @@ void Instruction::execute() {
             // TODO any subsequent attempt to execute a floating-point operation
             // with a dynamic rounding mode will raise an illegal instruction
             // exception.
-            std::cerr << "Invalid rounding mode" << std::endl;
+            std::cerr << "[SimEng:RISC-V:Execute] Invalid rounding mode"
+                      << std::endl;
             break;
         }
       } else {
-        //        std::cerr << "Unknown system register" << std::endl;
+        std::cerr << "[SimEng:RISC-V:Execute] Unknown system register"
+                  << std::endl;
       }
       break;
     }
-      //      //    case Opcode::RISCV_CSRRWI: {
-      //      //      executionNYI();
-      //      //      break;
-      //      //    }
+    case Opcode::RISCV_CSRRWI: {
+      executionNYI();
+      break;
+    }
     case Opcode::RISCV_CSRRS: {
       // dummy implementation only used by floating point frflags, needs
       // capstone update to recognise system registers. No update of system
@@ -904,18 +904,18 @@ void Instruction::execute() {
       results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
       break;
     }
-      //    case Opcode::RISCV_CSRRSI: {
-      //      executionNYI();
-      //      break;
-      //    }
-      //    case Opcode::RISCV_CSRRC: {
-      //      executionNYI();
-      //      break;
-      //    }
-      //    case Opcode::RISCV_CSRRCI: {
-      //      executionNYI();
-      //      break;
-      //    }
+    case Opcode::RISCV_CSRRSI: {
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_CSRRC: {
+      executionNYI();
+      break;
+    }
+    case Opcode::RISCV_CSRRCI: {
+      executionNYI();
+      break;
+    }
 
       // TODO Apart from transfer operations described in the previous
       // paragraph, all other floating-point operations on narrower n-bit
@@ -1134,27 +1134,31 @@ void Instruction::execute() {
       results[0] = RegisterValue(NanBoxFloat((rs1 * rs2) - rs3), 8);
       break;
     }
+    case Opcode::RISCV_FMSUB_D: {
+      const double rs1 = operands[0].get<double>();
+      const double rs2 = operands[1].get<double>();
+      const double rs3 = operands[2].get<double>();
 
-      //      //
-      //      //      //    case Opcode::RISCV_FMSUB_D: {
-      //      //      //      const double rs1 = operands[0].get<double>();
-      //      //      //      const double rs2 = operands[1].get<double>();
-      //      //      //      const double rs3 = operands[2].get<double>();
-      //      //      //
-      //      //      //      results[0] = RegisterValue(fms(rs1, rs2, rs3),
-      //      8);
-      //      //      //      break;
-      //      //      //    }
-      //      //      //    case Opcode::RISCV_FMSUB_S: {
-      //      //      //      const double rs1 = operands[0].get<float>();
-      //      //      //      const double rs2 = operands[1].get<float>();
-      //      //      //      const double rs3 = operands[2].get<float>();
-      //      //      //
-      //      //      //      results[0] = RegisterValue((float)fmsf(rs1, rs2,
-      //      rs3), 4);
-      //      //      //      break;
-      //      //      //    }
-      //      //
+      results[0] = RegisterValue((rs1 * rs2) - rs3, 8);
+      break;
+    }
+    case Opcode::RISCV_FNMADD_S: {
+      const float rs1 = operands[0].get<float>();
+      const float rs2 = operands[1].get<float>();
+      const float rs3 = operands[2].get<float>();
+
+      results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) - rs3), 8);
+      break;
+    }
+    case Opcode::RISCV_FNMADD_D: {
+      const double rs1 = operands[0].get<double>();
+      const double rs2 = operands[1].get<double>();
+      const double rs3 = operands[2].get<double>();
+
+      results[0] = RegisterValue(-(rs1 * rs2) - rs3, 8);
+      break;
+    }
+
     case Opcode::RISCV_FCVT_D_L: {
       const int64_t rs1 = operands[0].get<int64_t>();
 
@@ -1167,6 +1171,12 @@ void Instruction::execute() {
       results[0] = RegisterValue((double)rs1, 8);
       break;
     }
+    case Opcode::RISCV_FCVT_S_L: {
+      const int64_t rs1 = operands[0].get<int64_t>();
+
+      results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      break;
+    }
     case Opcode::RISCV_FCVT_S_W: {
       const int32_t rs1 = operands[0].get<int32_t>();
 
@@ -1177,12 +1187,12 @@ void Instruction::execute() {
       // TODO need to take rounding mode into account,  +- INF
       // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
       //      std::fesetround(FE_TONEAREST);
-      const double rs1 = operands[0].get<double>();
+      const double rs1 = std::rint(operands[0].get<double>());
 
       if (std::isnan(rs1)) {
         results[0] = RegisterValue(0x7FFFFFFF, 8);
       } else {
-        results[0] = RegisterValue(signExtendW((uint64_t)((uint32_t)rs1)), 8);
+        results[0] = RegisterValue(signExtendW((int64_t)((int32_t)rs1)), 8);
       }
       break;
     }
@@ -1195,8 +1205,132 @@ void Instruction::execute() {
       if (std::isnan(rs1)) {
         results[0] = RegisterValue(0x7FFFFFFF, 8);
       } else {
-        results[0] = RegisterValue(signExtendW((uint64_t)((uint32_t)rs1)), 8);
+        results[0] = RegisterValue(signExtendW((int64_t)((int32_t)rs1)), 8);
       }
+      break;
+    }
+    case Opcode::RISCV_FCVT_L_D: {
+      // TODO need to take rounding mode into account,  +- INF
+      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
+      //      std::fesetround(FE_TONEAREST);
+      const double rs1 = std::rint(operands[0].get<double>());
+
+      if (std::isnan(rs1)) {
+        results[0] = RegisterValue(0x7FFFFFFFFFFFFFFF, 8);
+      } else {
+        results[0] = RegisterValue((int64_t)rs1, 8);
+      }
+      break;
+    }
+    case Opcode::RISCV_FCVT_L_S: {
+      // TODO need to take rounding mode into account,  +- INF
+      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
+      //      std::fesetround(FE_TOWARDZERO);
+      const float rs1 = operands[0].get<float>();
+
+      if (std::isnan(rs1)) {
+        results[0] = RegisterValue(0x7FFFFFFFFFFFFFFF, 8);
+      } else {
+        results[0] = RegisterValue((int64_t)rs1, 8);
+      }
+      break;
+    }
+    case Opcode::RISCV_FCVT_WU_D: {
+      // TODO need to take rounding mode into
+      // account,  +- INF
+      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
+      //      std::fesetround(FE_TOWARDZERO);
+      const double rs1 = operands[0].get<double>();
+
+      if (std::isnan(rs1) || rs1 >= pow(2, 32) - 1) {
+        results[0] = RegisterValue(0xFFFFFFFFFFFFFFFF, 8);
+      } else {
+        if (rs1 < 0) {
+          // TODO set CSR flags
+          results[0] = RegisterValue((uint64_t)0, 8);
+        } else {
+          results[0] = RegisterValue(signExtendW((uint64_t)(uint32_t)rs1), 8);
+        }
+      }
+      break;
+    }
+    case Opcode::RISCV_FCVT_WU_S: {
+      // TODO need to take rounding mode into
+      // account,  +- INF
+      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
+      //      std::fesetround(FE_TOWARDZERO);
+      const float rs1 = operands[0].get<float>();
+
+      if (std::isnan(rs1) || rs1 >= pow(2, 32) - 1) {
+        results[0] = RegisterValue(0xFFFFFFFFFFFFFFFF, 8);
+      } else {
+        if (rs1 < 0) {
+          // TODO set CSR flags
+          results[0] = RegisterValue((uint64_t)0, 8);
+        } else {
+          results[0] = RegisterValue(signExtendW((uint64_t)(uint32_t)rs1), 8);
+        }
+      }
+      break;
+    }
+    case Opcode::RISCV_FCVT_LU_D: {
+      // TODO need to take rounding mode into account,  +- INF
+      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
+      //      std::fesetround(FE_TOWARDZERO);
+      const double rs1 = operands[0].get<double>();
+
+      if (std::isnan(rs1) || rs1 >= pow(2, 64) - 1) {
+        results[0] = RegisterValue(0xFFFFFFFFFFFFFFFF, 8);
+      } else {
+        if (rs1 < 0) {
+          // TODO set CSR flags
+          results[0] = RegisterValue((uint64_t)0, 8);
+        } else {
+          results[0] = RegisterValue((uint64_t)rs1, 8);
+        }
+      }
+      break;
+    }
+    case Opcode::RISCV_FCVT_LU_S: {
+      // TODO need to take rounding mode into account,  +- INF
+      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
+      //      std::fesetround(FE_TOWARDZERO);
+      const float rs1 = operands[0].get<float>();
+
+      if (std::isnan(rs1) || rs1 >= pow(2, 64) - 1) {
+        results[0] = RegisterValue(0xFFFFFFFFFFFFFFFF, 8);
+      } else {
+        if (rs1 < 0) {
+          // TODO set CSR flags
+          results[0] = RegisterValue((uint64_t)0, 8);
+        } else {
+          results[0] = RegisterValue((uint64_t)rs1, 8);
+        }
+      }
+      break;
+    }
+    case Opcode::RISCV_FCVT_D_WU: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+
+      results[0] = RegisterValue((double)rs1, 8);
+      break;
+    }
+    case Opcode::RISCV_FCVT_S_WU: {
+      const uint32_t rs1 = operands[0].get<uint32_t>();
+
+      results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
+      break;
+    }
+    case Opcode::RISCV_FCVT_D_LU: {
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+
+      results[0] = RegisterValue((double)rs1, 8);
+      break;
+    }
+    case Opcode::RISCV_FCVT_S_LU: {
+      const uint64_t rs1 = operands[0].get<uint64_t>();
+
+      results[0] = RegisterValue(NanBoxFloat((float)rs1), 8);
       break;
     }
 
@@ -1285,22 +1419,13 @@ void Instruction::execute() {
       results[0] = RegisterValue(signExtendW(rs1), 8);
       break;
     }
-      //      //
-      //      //      // TODO FLT.S and FLE.S perform what the IEEE 754-2008
-      //      standard
-      //      //      refers to
-      //      //      // as signaling comparisons: that is, they set the
-      //      invalid
-      //      //      operation
-      //      //      // exception flag if either input is NaN. FEQ.S performs
-      //      a quiet
-      //      //      // comparison: it only sets the invalid operation
-      //      exception flag
-      //      //      if either
-      //      //      // input is a signaling NaN. For all three instructions,
-      //      the
-      //      //      result is 0
-      //      //      // if either operand is NaN.
+
+      // TODO FLT.S and FLE.S perform what the IEEE 754-2008 standard refers to
+      // as signaling comparisons: that is, they set the invalid operation
+      // exception flag if either input is NaN. FEQ.S performs a quiet
+      // comparison: it only sets the invalid operation exception flag if either
+      // input is a signaling NaN. For all three instructions, the result is 0
+      // if either operand is NaN.
     case Opcode::RISCV_FEQ_D: {
       // TODO FEQ.S performs a quiet
       // comparison: it only sets the invalid operation exception flag if

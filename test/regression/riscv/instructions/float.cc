@@ -300,6 +300,29 @@ TEST_P(InstFloat, FCVT_D_W) {
   EXPECT_EQ(getFPRegister<uint64_t>(2), 0x41AFFFFFFE000000);
 }
 
+TEST_P(InstFloat, FCVT_S_L) {
+  RUN_RISCV(R"(
+    li t0, 23456
+    li t1, -1
+    li t2, 0xFFFFFFFF0FFFFFFF
+
+    fcvt.s.l ft0, t0
+    fcvt.s.l ft1, t1
+    fcvt.s.l ft2, t2
+   )");
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 23456);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), -1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), -4026531841);
+
+  EXPECT_EQ(getFPRegister<float>(0), (float)23456);
+  EXPECT_EQ(getFPRegister<uint64_t>(0), 0xFFFFFFFF46b74000);
+  EXPECT_EQ(getFPRegister<float>(1), (float)-1);
+  EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFFbf800000);
+  EXPECT_EQ(getFPRegister<float>(2), (float)-4026531841);
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0xFFFFFFFFCF700000);
+}
+
 TEST_P(InstFloat, FCVT_S_W) {
   RUN_RISCV(R"(
     li t0, 23456
@@ -404,6 +427,331 @@ TEST_P(InstFloat, FCVT_W_S) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFC);
   EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFD);
   EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x000000007FFFFFFF);
+}
+
+TEST_P(InstFloat, FCVT_L_D) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 999.212341;
+  heap[2] = -3.78900003;
+  heap[3] = std::nan("0");
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0)
+    fld fa5, 8(a0)
+    fld fa4, 16(a0)
+    fld fa6, 24(a0)
+
+    fcvt.l.d t0, fa3      # should convert to 5
+    fcvt.l.d t3, fa3, rtz # should convert to 4
+    fcvt.l.d t1, fa4      # should convert to -4
+    fcvt.l.d t4, fa4, rtz # should convert to -3
+    fcvt.l.d t2, fa6 #Nan converts to 0x7fffffff in integer reg
+   )");
+
+  EXPECT_EQ(getFPRegister<double>(13), (double)4.52432537);
+  EXPECT_EQ(getFPRegister<double>(14), (double)-3.78900003);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0x7FF8000000000000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFC);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFD);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x7FFFFFFFFFFFFFFF);
+}
+
+TEST_P(InstFloat, FCVT_L_S) {
+  // TODO expected to fail as rounding modes not implemented
+  initialHeapData_.resize(32);
+  float* heap = reinterpret_cast<float*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 999.212341;
+  heap[2] = -3.78900003;
+  heap[3] = std::nan("0");
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    flw fa3, 0(a0)
+    flw fa5, 4(a0)
+    flw fa4, 8(a0)
+    flw fa6, 12(a0)
+
+    fcvt.l.s t0, fa3      # should convert to 5
+    fcvt.l.s t3, fa3, rtz # should convert to 4
+    fcvt.l.s t1, fa4      # should convert to -4
+    fcvt.l.s t4, fa4, rtz # should convert to -3
+    fcvt.l.s t2, fa6 #Nan converts to 0x7fffffff in integer reg
+   )");
+
+  EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
+  EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0xFFFFFFFFFFFFFFFC);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0xFFFFFFFFFFFFFFFD);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0x7FFFFFFFFFFFFFFF);
+}
+
+TEST_P(InstFloat, FCVT_LU_D) {
+  // TODO expected to fail as rounding modes not implemented
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 1.8446744073709552e+19;  // 2^64 - 1
+  heap[2] = -3.78900003;
+  heap[3] = std::nan("0");
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0)
+    fld fa5, 8(a0)
+    fld fa4, 16(a0)
+    fld fa6, 24(a0)
+
+    fcvt.lu.d t0, fa3      # should convert to 5
+    fcvt.lu.d t3, fa3, rtz # should convert to 4
+    fcvt.lu.d t1, fa4      # should convert to 0
+    fcvt.lu.d t4, fa4, rtz # should convert to 0
+    fcvt.lu.d t2, fa6 #Nan converts to 0x7fffffff in integer reg
+    fcvt.lu.d t5, fa5
+   )");
+
+  EXPECT_EQ(getFPRegister<double>(13), (double)4.52432537);
+  EXPECT_EQ(getFPRegister<double>(14), (double)-3.78900003);
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0x43F0000000000000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0x7FF8000000000000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFF);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFF);
+}
+
+TEST_P(InstFloat, FCVT_WU_D) {
+  // TODO expected to fail as rounding modes not implemented
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 1.8446744073709552e+19;  // 2^64 - 1
+  heap[2] = -3.78900003;
+  heap[3] = std::nan("0");
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0)
+    fld fa5, 8(a0)
+    fld fa4, 16(a0)
+    fld fa6, 24(a0)
+
+    fcvt.wu.d t0, fa3      # should convert to 5
+    fcvt.wu.d t3, fa3, rtz # should convert to 4
+    fcvt.wu.d t1, fa4      # should convert to 0
+    fcvt.wu.d t4, fa4, rtz # should convert to 0
+    fcvt.wu.d t2, fa6 #Nan converts to 0x7fffffff in integer reg
+    fcvt.wu.d t5, fa5
+   )");
+
+  EXPECT_EQ(getFPRegister<double>(13), (double)4.52432537);
+  EXPECT_EQ(getFPRegister<double>(14), (double)-3.78900003);
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0x43F0000000000000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0x7FF8000000000000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFF);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFF);
+}
+
+TEST_P(InstFloat, FCVT_LU_S) {
+  // TODO expected to fail as rounding modes not implemented
+  initialHeapData_.resize(32);
+  float* heap = reinterpret_cast<float*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 1.8446744073709552e+19;  // 2^64 - 1
+  heap[2] = -3.78900003;
+  heap[3] = std::nan("0");
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    flw fa3, 0(a0)
+    flw fa5, 4(a0)
+    flw fa4, 8(a0)
+    flw fa6, 12(a0)
+
+    fcvt.lu.s t0, fa3      # should convert to 5
+    fcvt.lu.s t3, fa3, rtz # should convert to 4
+    fcvt.lu.s t1, fa4      # should convert to 0
+    fcvt.lu.s t4, fa4, rtz # should convert to 0
+    fcvt.lu.s t2, fa6 #Nan converts to 0x7fffffff in integer reg
+    fcvt.lu.s t5, fa5
+   )");
+
+  EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
+  EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xFFFFFFFF5F800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFF);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFF);
+}
+
+TEST_P(InstFloat, FCVT_WU_S) {
+  // TODO expected to fail as rounding modes not implemented
+  initialHeapData_.resize(32);
+  float* heap = reinterpret_cast<float*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 1.8446744073709552e+19;  // 2^64 - 1
+  heap[2] = -3.78900003;
+  heap[3] = std::nan("0");
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    flw fa3, 0(a0)
+    flw fa5, 4(a0)
+    flw fa4, 8(a0)
+    flw fa6, 12(a0)
+
+    fcvt.wu.s t0, fa3      # should convert to 5
+    fcvt.wu.s t3, fa3, rtz # should convert to 4
+    fcvt.wu.s t1, fa4      # should convert to 0
+    fcvt.wu.s t4, fa4, rtz # should convert to 0
+    fcvt.wu.s t2, fa6 #Nan converts to 0x7fffffff in integer reg
+    fcvt.wu.s t5, fa5
+   )");
+
+  EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
+  EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
+  EXPECT_EQ(getFPRegister<uint64_t>(15), 0xFFFFFFFF5F800000);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF7FC00000);
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 0x5);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0x4);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(29), 0);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), 0xFFFFFFFFFFFFFFFF);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(30), 0xFFFFFFFFFFFFFFFF);
+}
+
+TEST_P(InstFloat, FCVT_D_WU) {
+  RUN_RISCV(R"(
+    li t0, 23456
+    li t1, -1
+    li t2, 0xFFFFFFFF0FFFFFFF
+
+    fcvt.d.wu ft0, t0
+    fcvt.d.wu ft1, t1
+    fcvt.d.wu ft2, t2
+   )");
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 23456);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), -1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), -4026531841);
+
+  EXPECT_EQ(getFPRegister<double>(0), (double)23456);
+  EXPECT_EQ(getFPRegister<uint64_t>(0), 0x40D6E80000000000);
+  EXPECT_EQ(getFPRegister<double>(1), (double)4294967295);
+  EXPECT_EQ(getFPRegister<uint64_t>(1), 0x41EFFFFFFFE00000);
+  EXPECT_EQ(getFPRegister<double>(2), (double)268435455);
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0x41AFFFFFFE000000);
+}
+
+TEST_P(InstFloat, FCVT_S_WU) {
+  RUN_RISCV(R"(
+    li t0, 23456
+    li t1, -1
+    li t2, 0xFFFFFFFF0FFFFFFF
+
+    fcvt.s.wu ft0, t0
+    fcvt.s.wu ft1, t1
+    fcvt.s.wu ft2, t2
+   )");
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 23456);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), -1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), -4026531841);
+
+  EXPECT_EQ(getFPRegister<float>(0), (float)23456);
+  EXPECT_EQ(getFPRegister<uint64_t>(0), 0xFFFFFFFF46b74000);
+  EXPECT_EQ(getFPRegister<float>(1), (float)4294967295);
+  EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFF4F800000);
+  EXPECT_EQ(getFPRegister<float>(2), (float)268435456);
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0xFFFFFFFF4D800000);
+}
+
+TEST_P(InstFloat, FCVT_D_LU) {
+  RUN_RISCV(R"(
+    li t0, 23456
+    li t1, -1
+    li t2, 0xFFFFFFFF0FFFFFFF
+
+    fcvt.d.lu ft0, t0
+    fcvt.d.lu ft1, t1
+    fcvt.d.lu ft2, t2
+   )");
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 23456);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), -1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), -4026531841);
+
+  EXPECT_EQ(getFPRegister<double>(0), (double)23456);
+  EXPECT_EQ(getFPRegister<uint64_t>(0), 0x40D6E80000000000);
+  EXPECT_EQ(getFPRegister<double>(1), (double)1.8446744073709551616e+19);
+  EXPECT_EQ(getFPRegister<uint64_t>(1), 0x43F0000000000000);
+  EXPECT_EQ(getFPRegister<double>(2), (double)1.8446744069683019776e+19);
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0x43EFFFFFFFE20000);
+}
+
+TEST_P(InstFloat, FCVT_S_LU) {
+  RUN_RISCV(R"(
+    li t0, 23456
+    li t1, -1
+    li t2, 0xFFFFFFFF0FFFFFFF
+
+    fcvt.s.lu ft0, t0
+    fcvt.s.lu ft1, t1
+    fcvt.s.lu ft2, t2
+   )");
+
+  EXPECT_EQ(getGeneralRegister<uint64_t>(5), 23456);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), -1);
+  EXPECT_EQ(getGeneralRegister<uint64_t>(7), -4026531841);
+
+  EXPECT_EQ(getFPRegister<float>(0), (float)23456);
+  EXPECT_EQ(getFPRegister<uint64_t>(0), 0xFFFFFFFF46b74000);
+  EXPECT_EQ(getFPRegister<float>(1), (float)1.84467440737e+19);
+  EXPECT_EQ(getFPRegister<uint64_t>(1), 0xFFFFFFFF5F800000);
+  EXPECT_EQ(getFPRegister<float>(2), (float)1.84467440737e+19);
+  EXPECT_EQ(getFPRegister<uint64_t>(2), 0xFFFFFFFF5F800000);
 }
 
 TEST_P(InstFloat, FMADD_D) {
@@ -549,6 +897,101 @@ TEST_P(InstFloat, FMSUB_S) {
   EXPECT_EQ(getFPRegister<float>(16), (float)-3790.54004);
   EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFFC56CE8A4);
   EXPECT_EQ(getFPRegister<uint64_t>(17), 0xFFFFFFFFC47E16B8);
+}
+
+TEST_P(InstFloat, FMSUB_D) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 999.212341;
+  heap[2] = -3.78900003;
+  heap[3] = 123456;
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    fld fa3, 0(a0)
+    fld fa5, 8(a0)
+    fld fa4, 16(a0)
+
+    fmsub.d fa6, fa5, fa4, fa3 # (999.212341 * -3.78900003) - 4.52432537
+    fmsub.d fa7, fa4, fa3, fa5
+   )");
+
+  EXPECT_EQ(getFPRegister<double>(13), (double)4.52432537);
+  EXPECT_EQ(getFPRegister<double>(14), (double)-3.78900003);
+  EXPECT_EQ(getFPRegister<double>(15), (double)999.212341);
+  EXPECT_EQ(getFPRegister<double>(16),
+            ((double)999.212341 * (double)-3.78900003) - (double)4.52432537);
+  EXPECT_EQ(getFPRegister<double>(16),
+            (double)-3790.5399153953703716979362070560455322265625);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xC0AD9D146FCA6B72);
+  EXPECT_EQ(getFPRegister<uint64_t>(17), 0xC08FC2D70F769B06);
+}
+
+TEST_P(InstFloat, FNMADD_S) {
+  initialHeapData_.resize(32);
+  float* heap = reinterpret_cast<float*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 999.212341;
+  heap[2] = -3.78900003;
+  heap[3] = 123456;
+
+  RUN_RISCV(R"(
+    # Get heap address
+    li a7, 214
+    ecall
+
+    flw fa3, 0(a0)
+    flw fa5, 4(a0)
+    flw fa4, 8(a0)
+
+    fnmadd.s fa6, fa5, fa4, fa3 # -(999.212341 * -3.78900003) - 4.52432537
+    fnmadd.s fa7, fa4, fa3, fa5
+   )");
+
+  EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
+  EXPECT_EQ(getFPRegister<float>(14), (float)-3.78900003);
+  EXPECT_EQ(getFPRegister<float>(15), (float)999.212341);
+  EXPECT_EQ(getFPRegister<float>(16),
+            -((float)999.212341 * (float)-3.78900003) - (float)4.52432537);
+  EXPECT_EQ(getFPRegister<float>(16), (float)3781.4912646554);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0xFFFFFFFF456c57dc);
+  EXPECT_EQ(getFPRegister<uint64_t>(17), 0xFFFFFFFFc4758476);
+}
+
+TEST_P(InstFloat, FNMADD_D) {
+  initialHeapData_.resize(32);
+  double* heap = reinterpret_cast<double*>(initialHeapData_.data());
+  heap[0] = 4.52432537;
+  heap[1] = 999.212341;
+  heap[2] = -3.78900003;
+  heap[3] = 123456;
+
+  RUN_RISCV(R"(
+     # Get heap address
+     li a7, 214
+     ecall
+
+     fld fa3, 0(a0)
+     fld fa5, 8(a0)
+     fld fa4, 16(a0)
+
+     fnmadd.d fa6, fa5, fa4, fa3 # -(999.212341 * -3.78900003) - 4.52432537
+     fnmadd.d fa7, fa4, fa3, fa5
+    )");
+
+  EXPECT_EQ(getFPRegister<double>(13), (double)4.52432537);
+  EXPECT_EQ(getFPRegister<double>(14), (double)-3.78900003);
+  EXPECT_EQ(getFPRegister<double>(15), (double)999.212341);
+  EXPECT_EQ(getFPRegister<double>(16),
+            -((double)999.212341 * (double)-3.78900003) - (double)4.52432537);
+  EXPECT_EQ(getFPRegister<double>(16),
+            (double)3781.4912646553702870733104646205902099609375);
+  EXPECT_EQ(getFPRegister<uint64_t>(16), 0x40AD8AFB870A78FE);
+  EXPECT_EQ(getFPRegister<uint64_t>(17), 0xC08EB08EB0368E94);
 }
 
 TEST_P(InstFloat, FCVT_D_S) {
@@ -1616,9 +2059,6 @@ TEST_P(InstFloat, FMAX_S) {
 
     fmax.s ft3, ft1, ft2 # max(+0, -0) = 0
     fmax.s ft4, ft2, ft1 # max(-0, +0) = 0
-
-    li a0, 0b111
-    fsrm a0
   )");
 
   EXPECT_EQ(getFPRegister<float>(13), (float)4.52432537);
@@ -1634,9 +2074,13 @@ TEST_P(InstFloat, FMAX_S) {
   EXPECT_EQ(getFPRegister<uint64_t>(4), 0xffffffff00000000);
 }
 
-INSTANTIATE_TEST_SUITE_P(RISCV, InstFloat,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
-                         paramToString);
+INSTANTIATE_TEST_SUITE_P(
+    RISCV, InstFloat,
+    ::testing::Values(
+        std::make_tuple(EMULATION, YAML::Load("{}"))
+        //                      std::make_tuple(INORDER, YAML::Load("{}")),
+        //                      std::make_tuple(OUTOFORDER, YAML::Load("{}"))
+        ),
+    paramToString);
 
 }  // namespace
