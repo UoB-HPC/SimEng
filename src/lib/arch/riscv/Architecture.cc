@@ -212,16 +212,6 @@ executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
   return exeInfo;
 }
 
-std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
-    const {
-  uint16_t numSysRegs = static_cast<uint16_t>(systemRegisterMap_.size());
-  return {
-      {8, 32},          // General purpose
-      {8, 32},          // Floating Point
-      {8, numSysRegs},  // System
-  };
-}
-
 int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   // Check below is done for speculative instructions that may be passed into
   // the function but will not be executed. If such invalid speculative

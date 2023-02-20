@@ -10,6 +10,7 @@
 #include "simeng/OS/FileDesc.hh"
 #include "simeng/OS/MemRegion.hh"
 #include "simeng/OS/PageTable.hh"
+#include "simeng/SimInfo.hh"
 #include "simeng/SpecialFileDirGen.hh"
 
 namespace simeng {
@@ -23,8 +24,8 @@ namespace OS {
 
 using namespace simeng::OS::defaults;
 
-/** Typedef for callback function used to send data to memory upon handling page
- * fault. */
+/** Typedef for callback function used to send data to memory upon handling
+ * page fault. */
 typedef std::function<void(std::vector<char> data, uint64_t, size_t)>
     sendToMemory;
 
@@ -47,7 +48,8 @@ struct cpuContext {
  * multiple. */
 uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
 
-/** The initial state of a SimOS Process, constructed from a binary executable.
+/** The initial state of a SimOS Process, constructed from a binary
+ * executable.
  *
  * The constructed process follows the layout described below and has the
  * following properties:
@@ -90,19 +92,17 @@ class Process {
 
  public:
   /** Construct a SimOS Process from a vector of command-line arguments. The
-   * first argument is a path to an executable ELF file. Size of the simulation
-   * memory is also passed to check if the process image can fit inside the
-   * simulation memory. */
-  Process(const std::vector<std::string>& commandLine, SimOS* OS,
-          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
+   * first argument is a path to an executable ELF file. Size of the
+   * simulation memory is also passed to check if the process image can fit
+   * inside the simulation memory. */
+  Process(const std::vector<std::string>& commandLine, SimOS* OS, uint64_t TGID,
           uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. Size of the simulation memory is also passed to
    * check if the process image can fit inside the simulation memory.*/
-  Process(span<char> instructions, SimOS* OS,
-          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-          uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
+  Process(span<char> instructions, SimOS* OS, uint64_t TGID, uint64_t TID,
+          sendToMemory sendToMem, size_t simulationMemSize);
 
   /** Default copy constructor for Process class. */
   Process(const Process& proc) = default;
@@ -180,8 +180,8 @@ class Process {
   /** The memory address of where a thread should write 0 to on termination if
    * it shares memory with other processes.
    * Default value is 0.
-   * It can be set using the `clone` syscall if the CLONE_CHILD_CLEARTID flag is
-   * present, or by calling the `set_tid_address` syscall. */
+   * It can be set using the `clone` syscall if the CLONE_CHILD_CLEARTID flag
+   * is present, or by calling the `set_tid_address` syscall. */
   uint64_t clearChildTid_ = 0;
 
   /** The rlimit struct for RLIMIT_STACK. RLIM_INF used to represent
@@ -193,9 +193,9 @@ class Process {
    * pointer. */
   uint64_t createStack(uint64_t stackStart);
 
-  /** Initialises the Process' context_ arguments to the appropriate values. */
-  void initContext(const uint64_t stackPtr,
-                   const std::vector<RegisterFileStructure>& regFileStructure);
+  /** Initialises the Process' context_ arguments to the appropriate values.
+   */
+  void initContext(const uint64_t stackPtr);
 
   /** MemRegion of the Process Image. */
   MemRegion memRegion_;
@@ -209,7 +209,8 @@ class Process {
   /** Whether the process image was created successfully. */
   bool isValid_ = false;
 
-  /** The process' Thread Group ID, exactly equivalent to its Process ID (PID).
+  /** The process' Thread Group ID, exactly equivalent to its Process ID
+   * (PID).
    */
   uint64_t TGID_;
 
@@ -225,9 +226,9 @@ class Process {
 
   /** Callback function used to write data to the simulation memory without
    * incurring any latency. This callback is used to write process
-   * initialisation data during process creation to the simulation memory. It is
-   * also used to write file data (if present) to the simulation memory after
-   * handling a page fault */
+   * initialisation data during process creation to the simulation memory. It
+   * is also used to write file data (if present) to the simulation memory
+   * after handling a page fault */
   sendToMemory sendToMem_;
 };
 

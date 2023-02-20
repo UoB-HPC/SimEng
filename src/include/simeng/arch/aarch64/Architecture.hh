@@ -41,9 +41,6 @@ class Architecture : public arch::Architecture {
                     uint64_t instructionAddress,
                     MacroOp& output) const override;
 
-  /** Returns an Armv9.2-a register file structure description. */
-  std::vector<RegisterFileStructure> getRegisterFileStructures() const override;
-
   /** Returns a zero-indexed register tag for a system register encoding.
    * Returns -1 in the case that the system register has no mapping. */
   int32_t getSystemRegisterTag(uint16_t reg) const override;

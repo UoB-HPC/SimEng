@@ -19,7 +19,7 @@ TEST(ISATest, CreateAArch64) {
   std::unique_ptr<simeng::arch::Architecture> isa =
       std::make_unique<simeng::arch::aarch64::Architecture>();
 
-  EXPECT_GT(isa->getRegisterFileStructures().size(), 0);
+  EXPECT_GT(isa->getNumSystemRegisters(), 0);
 }
 
 // Test that we can set a value in a register file set

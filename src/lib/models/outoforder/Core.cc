@@ -22,7 +22,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
       physicalRegisterQuantities_(isa.getConfigPhysicalRegisterQuantities()),
       registerFileSet_(physicalRegisterStructures_),
-      registerAliasTable_(isa.getRegisterFileStructures(),
+      registerAliasTable_(SimInfo::getArchRegStruct(),
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       dataMemory_(dataMemory),
@@ -446,7 +446,7 @@ std::map<std::string, std::string> Core::getStats() const {
 
 void Core::schedule(simeng::OS::cpuContext newContext) {
   // Need to reset mapping in register file
-  registerAliasTable_.reset(isa_.getRegisterFileStructures(),
+  registerAliasTable_.reset(SimInfo::getArchRegStruct(),
                             physicalRegisterQuantities_);
 
   currentTID_ = newContext.TID;
@@ -488,7 +488,7 @@ simeng::OS::cpuContext Core::getCurrentContext() const {
           : fetchUnit_.getPC();
   // progByteLen will not change in process so do not need to set it
   // Don't need to explicitly save SP as will be in reg file contents
-  auto regFileStruc = isa_.getRegisterFileStructures();
+  auto regFileStruc = SimInfo::getArchRegStruct();
   newContext.regFile.resize(regFileStruc.size());
   for (size_t i = 0; i < regFileStruc.size(); i++) {
     newContext.regFile[i].resize(regFileStruc[i].quantity);
