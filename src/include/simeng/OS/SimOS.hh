@@ -7,12 +7,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "simeng/Config.hh"
 #include "simeng/Core.hh"
 #include "simeng/OS/Constants.hh"
 #include "simeng/OS/PageFrameAllocator.hh"
 #include "simeng/OS/SyscallHandler.hh"
 #include "simeng/OS/Vma.hh"
+#include "simeng/SimInfo.hh"
 #include "simeng/SpecialFileDirGen.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
