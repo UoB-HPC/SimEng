@@ -7,6 +7,32 @@
 
 #define DEFAULT_STR "Default"
 
+/** A Config class to hold a single instance of a global config file. */
+class Config {
+ public:
+  /** Gets the current Config file. */
+  static YAML::Node& get() { return getInstance()->getYAMLConfig(); }
+
+  /** Update the config via a filepath to load from. */
+  static void set(std::string path) { getInstance()->makeConfig(path); }
+
+  /** Update the config to a provided YAML::Node. */
+  static void set(YAML::Node newConfig) {
+    getInstance()->makeConfig(newConfig);
+  }
+
+  /** Update the config via a provided char* input. */
+  static void set(const char* configStr) {
+    getInstance()->makeConfig(configStr);
+  }
+
+  /** Returns if the DEFAULT_CONFIG is in use. */
+  static bool isDefault() { return getInstance()->isDefault_; }
+
+  /** Get the filepath of the config file. */
+  static std::string getPath() { return getInstance()->path_; }
+
+ private:
 #define DEFAULT_CONFIG                                                         \
   ("{Core: {ISA: AArch64, Simulation-Mode: inorderpipelined, "                 \
    "Clock-Frequency: 2.5, Timer-Frequency: 100, Micro-Operations: True, "      \
@@ -38,74 +64,74 @@
    "CPU-Implementer: 0x0, CPU-Architecture: 0, CPU-Variant: 0x0, CPU-Part: "   \
    "0x0, CPU-Revision: 0, Package-Count: 1}}")
 
-/** A Config class to hold a single instance of a global config file. */
-class Config {
- private:
-  /** Constructor of a Config object. */
-  Config() { config_ = YAML::Load(DEFAULT_CONFIG); }
+  /** A Config class to hold a single instance of a global config file. */
+  class Config {
+   private:
+    /** Constructor of a Config object. */
+    Config() { config_ = YAML::Load(DEFAULT_CONFIG); }
 
-  /** Creates a new config file from ModelConfig using a filepath. */
-  void makeConfig(std::string path) {
-    config_ = simeng::ModelConfig(path).getConfigFile();
-    isDefault_ = false;
-    path_ = path;
-  };
+    /** Creates a new config file from ModelConfig using a filepath. */
+    void makeConfig(std::string path) {
+      config_ = simeng::ModelConfig(path).getConfigFile();
+      isDefault_ = false;
+      path_ = path;
+    };
 
-  /** Creates a new config file from ModelConfig using a filepath. */
-  void makeConfig(const char* configStr) {
-    config_ = YAML::Load(configStr);
-    isDefault_ = false;
-    path_ = "Custom Config";
-  };
+    /** Creates a new config file from ModelConfig using a filepath. */
+    void makeConfig(const char* configStr) {
+      config_ = YAML::Load(configStr);
+      isDefault_ = false;
+      path_ = "Custom Config";
+    };
 
-  /** Creates a new config file from a provided YAML::Node. */
-  void makeConfig(YAML::Node newConfig) {
-    config_ = newConfig;
-    isDefault_ = false;
-    path_ = "Custom Config";
-  };
+    /** Creates a new config file from a provided YAML::Node. */
+    void makeConfig(YAML::Node newConfig) {
+      config_ = newConfig;
+      isDefault_ = false;
+      path_ = "Custom Config";
+    };
 
-  /** Internal getter of config_. */
-  YAML::Node& getYAMLConfig() { return config_; }
+    /** Internal getter of config_. */
+    YAML::Node& getYAMLConfig() { return config_; }
 
-  /** Gets the static instance of the Config class. */
-  static std::unique_ptr<Config>& getInstance() {
-    static std::unique_ptr<Config> cfgClass = nullptr;
-    if (cfgClass == nullptr) {
-      cfgClass = std::unique_ptr<Config>(new Config());
+    /** Gets the static instance of the Config class. */
+    static std::unique_ptr<Config>& getInstance() {
+      static std::unique_ptr<Config> cfgClass = nullptr;
+      if (cfgClass == nullptr) {
+        cfgClass = std::unique_ptr<Config>(new Config());
+      }
+      return cfgClass;
     }
-    return cfgClass;
-  }
 
-  /** The global config file for this simulation. */
-  YAML::Node config_;
+    /** The global config file for this simulation. */
+    YAML::Node config_;
 
-  /** The file path of the config file being used. */
-  std::string path_ = DEFAULT_STR;
+    /** The file path of the config file being used. */
+    std::string path_ = DEFAULT_STR;
 
-  /** Bool to hold if DEFAULT_CONFIG is in use. */
-  bool isDefault_ = true;
+    /** Bool to hold if DEFAULT_CONFIG is in use. */
+    bool isDefault_ = true;
 
- public:
-  /** Gets the current Config file. */
-  static YAML::Node& get() { return getInstance()->getYAMLConfig(); }
+   public:
+    /** Gets the current Config file. */
+    static YAML::Node& get() { return getInstance()->getYAMLConfig(); }
 
-  /** Update the config via a filepath to load from. */
-  static void set(std::string path) { getInstance()->makeConfig(path); }
+    /** Update the config via a filepath to load from. */
+    static void set(std::string path) { getInstance()->makeConfig(path); }
 
-  /** Update the config to a provided YAML::Node. */
-  static void set(YAML::Node newConfig) {
-    getInstance()->makeConfig(newConfig);
-  }
+    /** Update the config to a provided YAML::Node. */
+    static void set(YAML::Node newConfig) {
+      getInstance()->makeConfig(newConfig);
+    }
 
-  /** Update the config via a provided char* input. */
-  static void set(const char* configStr) {
-    getInstance()->makeConfig(configStr);
-  }
+    /** Update the config via a provided char* input. */
+    static void set(const char* configStr) {
+      getInstance()->makeConfig(configStr);
+    }
 
-  /** Returns if the DEFAULT_CONFIG is in use. */
-  static bool isDefault() { return getInstance()->isDefault_; }
+    /** Returns if the DEFAULT_CONFIG is in use. */
+    static bool isDefault() { return getInstance()->isDefault_; }
 
-  /** Get the filepath of the config file. */
-  static std::string getPath() { return getInstance()->path_; }
-};
+    /** Get the filepath of the config file. */
+    static std::string getPath() { return getInstance()->path_; }
+  };
