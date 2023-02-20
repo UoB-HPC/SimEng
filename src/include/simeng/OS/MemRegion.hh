@@ -59,7 +59,7 @@ class MemRegion {
   /** This method returns the start address of the mmap region.*/
   uint64_t getMmapStart() const;
 
-  /** This method returns the size of the global memory.*/
+  /** This method returns the size of the simulation memory.*/
   uint64_t getMemSize() const;
 
   /** This method updates the heap pointer with a new value. */
@@ -96,37 +96,39 @@ class MemRegion {
   /** Start address of the stack. */
   uint64_t stackStart_;
 
-  /** End address of the stack. */
+  /** Upper bound of the process stack region. */
   uint64_t stackEnd_;
 
   /** Size of the process stack region. */
   size_t stackSize_;
 
-  /** address of the stack pointer after auxiliary vector has been populated. */
+  /** Address of the stack pointer after auxiliary vector has been populated. */
   uint64_t initStackPtr_;
 
-  /** Start address of the process heap. */
+  /** Start address of the process heap region. */
   uint64_t heapStart_;
 
-  /** End address of the process heap. */
+  /** Upper bound of the process heap region. */
   uint64_t heapEnd_;
 
   /** Size of the process heap region. */
   size_t heapSize_;
 
-  /** Current end address of the process heap. */
+  /** Current end address of the process heap region. This member variable is
+   * incremented after brk syscalls and signifies the amount of process heap
+   * currently in use. */
   uint64_t brk_;
 
-  /** Size of whole global memory. */
+  /** Size of the entire simulation memory. */
   size_t memSize_;
 
-  /** Start of the mmap region. */
+  /** Start of the process mmap region. */
   uint64_t mmapStart_;
 
-  /** End of the mmap region. */
+  /** Upper bound of the process mmap region. */
   uint64_t mmapEnd_;
 
-  /** Address of the current mmap region. */
+  /** Current end address of process mmap region. */
   uint64_t mmapPtr_;
 
   /** Size of the mmap region. */
@@ -141,10 +143,17 @@ class MemRegion {
   /** Size of the VMA list. */
   size_t vm_size_ = 0;
 
-  /** Method to add VMA to the VMA list at the specified start address. */
+  /** Method to add VMA to the VMA list at the specified start address. If the
+   * startAddr is 0 the algorithm will find an optimal address range for the
+   * new VMA and return the start address of that range. It is also possible
+   * that the address range specified by the startAddr does not have enough
+   * space to hold the new VMA, in this case the algorithm will look for a new
+   * address range capable to accomodating the new VMA and return its start
+   * address. */
   uint64_t addVma(VMA* vma, uint64_t startAddr = 0);
 
-  /** Method to remove VMAs */
+  /** Method to remove VMAs. This method returns the combined size of all VMAs
+   * that were removed. A return value of 0 does not signify an error.*/
   int64_t removeVma(uint64_t addr, uint64_t length);
 };
 

@@ -17,15 +17,8 @@ FileDescArray::FileDescArray() {
   numFds_ = 3;
 }
 
-void FileDescArray::validate(int vfd) const {
-  if (numFds_ == MAX_FD_NUM) {
-    std::cerr << "[SimEng:FileDescArray] Maximum number of file descriptors "
-                 "allocated."
-              << std::endl;
-    std::exit(1);
-  }
-  if (vfd == -1) return;
-  if (vfd > MAX_FD_NUM) {
+void FileDescArray::validateVfd(int vfd) const {
+  if (vfd < 0 || vfd > MAX_FD_NUM) {
     std::cerr << "SimEng:[FileDescArray] Invalid virtual file descriptor: "
               << vfd << std::endl;
     std::exit(1);
@@ -34,7 +27,14 @@ void FileDescArray::validate(int vfd) const {
 
 int FileDescArray::allocateFDEntry(int dirfd, const char* filename, int flags,
                                    int mode) {
-  validate();
+  // if numFds_ >= MAX_FD_NUM then there no space left for FileDescEntry(s).
+  if (numFds_ == MAX_FD_NUM) {
+    std::cerr << "[SimEng:FileDescArray] Maximum number of file descriptors "
+                 "allocated."
+              << std::endl;
+    std::exit(1);
+  }
+
   for (int i = 0; fdarr_.max_size(); i++) {
     if (!fdarr_[i].isValid()) {
       int fd = openat(dirfd, filename, flags, mode);
@@ -53,11 +53,18 @@ int FileDescArray::allocateFDEntry(int dirfd, const char* filename, int flags,
       return i;
     }
   }
-  return -1;
+  std::cerr << "[SimEng:FileDescArray] The number of active file descriptors: "
+            << numFds_
+            << " is less than the maximum number of file descriptors allowed: "
+            << MAX_FD_NUM
+            << " However, all the FileDescArray(s) in fdarr_ "
+               "are valid, which prevents allocation of new entry."
+            << std::endl;
+  std::exit(1);
 }
 
 const FileDescEntry& FileDescArray::getFDEntry(int vfd) const {
-  validate(vfd);
+  validateVfd(vfd);
   if (!fdarr_[vfd].isValid()) {
     std::cerr << "[SimEng:FileDescArray] Virtual file descriptor (" << vfd
               << ") does not correspond to a file "
@@ -68,7 +75,7 @@ const FileDescEntry& FileDescArray::getFDEntry(int vfd) const {
 }
 
 int FileDescArray::removeFDEntry(int vfd) {
-  validate(vfd);
+  validateVfd(vfd);
   FileDescEntry entry = fdarr_[vfd];
   if (!entry.isValid()) {
     std::cerr << "[SimEng:FileDescArray] Virtual file descriptor does not "
@@ -82,13 +89,15 @@ int FileDescArray::removeFDEntry(int vfd) {
     return EBADF;
   }
 
+  // Here all properties of the FileDescEntry are reset to default values and
+  // this is considered as a removal.
   if (!fdarr_[vfd].replaceProps(-1, -1, -1, "")) {
     std::cerr << "[SimEng:FileDescArray] Error occured while replacing "
                  "FileDescEntry"
               << std::endl;
     return EBADF;
   }
-  this->numFds_--;
+  numFds_--;
   return 0;
 }
 

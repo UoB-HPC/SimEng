@@ -7,10 +7,6 @@
 
 #include "simeng/OS/Constants.hh"
 
-namespace TestFriends {
-class PFAFriend;
-}
-
 namespace simeng {
 namespace OS {
 

@@ -2,7 +2,6 @@
 #include "simeng/OS/PageTable.hh"
 
 using namespace simeng::OS;
-using namespace TestFriends;
 
 namespace {
 

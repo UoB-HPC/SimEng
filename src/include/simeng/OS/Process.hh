@@ -50,15 +50,15 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
  * following properties:
  *
  * a) Padding between each region is equal to the page size. (4096 bytes)
- * b) Each region has a page size aligned start address, end address and size.
+ * b) Each region's start address, end address and size are page aligned.
  * c) The stack grows downwards.
  * d) The heap grows upwards.
  * e) The mmap region grows upwards.
- * f) The region above the stackPtr contains all initial data for the process to
- *    start i.e argv, env args, auxiliary variables.
+ * f) Region above the initial stack address contains all initial data for the
+ * process to start i.e argv, env args, auxiliary variables.
  *
  * |---------------| <- stackStart (Start of the stack region)
- * |---------------| <- stackPtr (Highest stack addr available to the program)
+ * |---------------| <- initStackPtr (Initial stack address available)
  * |     Stack     |
  * |               |
  * |-v-----------v-| <- stackEnd (End of the stack region)

@@ -6,10 +6,6 @@
 
 #include "simeng/OS/Constants.hh"
 
-namespace TestFriends {
-class PTFriend;
-}
-
 namespace simeng {
 namespace OS {
 
@@ -27,11 +23,12 @@ class PageTable {
 
   ~PageTable(){};
 
-  /** Method which creates size/pageSize number of mappings for vaddr &
-   * basePhyAddr. */
+  /** Method which creates a number of mappings between vaddr and paddr of size
+   * 'size' aligned up to the nearest PAGE_SIZE. */
   uint64_t createMapping(uint64_t vaddr, uint64_t basePhyAddr, size_t size);
 
-  /** Method which deletes size/pageSize number of mappings from vaddr. */
+  /** Method which deletes a number of mappings starting from vaddr of size
+   * 'size' aligned up to the nearest PAGE_SIZE.  */
   uint64_t deleteMapping(uint64_t vaddr, size_t size);
 
   /** Method which checks if vaddr is mapped. */
@@ -49,7 +46,9 @@ class PageTable {
   std::map<uint64_t, uint64_t> getTable();
 
  private:
-  /** Offset mask used to retrive 12 lsb of the virtual address. */
+  /** Offset mask used to retrieve the offset from a virtual address. This
+   * offset is used to determine the final translation i.e the exact physical
+   * address in an address range of PAGE_SIZE bytes 'vaddr' is mapped to. */
   const uint64_t translationMask_ = generateOffsetMask(PAGE_SIZE);
 
   /** Map used to store virtual to physical address mappings. */

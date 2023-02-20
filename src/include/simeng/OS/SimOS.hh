@@ -124,7 +124,7 @@ class SimOS {
   /** The list of cores. */
   std::vector<std::shared_ptr<simeng::Core>> cores_ = {};
 
-  /** Reference to the global memory pointer */
+  /** Reference to the simulation memory shared pointer */
   std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
 
   /** SyscallHandler Object to process all syscalls. */

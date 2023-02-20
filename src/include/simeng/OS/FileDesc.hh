@@ -101,9 +101,8 @@ class FileDescArray {
   /** Number of FileDescEntry(s) in fdarr_ */
   uint64_t numFds_ = 0;
 
-  /** Member function which validates virtual file descriptor. Passing the
-   * default value (-1) validates the size of fdarr_ */
-  void validate(int vfd = -1) const;
+  /** Member function which validates the virtual file descriptor. */
+  void validateVfd(int vfd) const;
 };
 }  // namespace OS
 }  // namespace simeng

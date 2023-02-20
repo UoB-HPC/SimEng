@@ -19,7 +19,7 @@ const std::string configStr =
 TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
   Config::set(configStr.c_str());
 
-  // Create global memory
+  // Create simulation memory.
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
@@ -43,7 +43,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
 
 TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
   Config::set(configStr.c_str());
-  // Create global memory
+  // Create simulation memory.
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
@@ -79,7 +79,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
 
 TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
   Config::set(configStr.c_str());
-  // Create global memory
+  // Create simulation memory.
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
@@ -116,7 +116,7 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
 
 TEST(VirtMemTest, UnmapSyscall) {
   Config::set(configStr.c_str());
-  // Create global memory
+  // Create simulation memory.
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
@@ -162,7 +162,7 @@ TEST(VirtMemTest, UnmapSyscall) {
 
 TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   Config::set(configStr.c_str());
-  // Create global memory
+  // Create simulation memory.
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
@@ -210,7 +210,7 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
 
 TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   Config::set(configStr.c_str());
-  // Create global memory
+  // Create simulation memory.
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =
@@ -259,7 +259,7 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
 
 TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   Config::set(configStr.c_str());
-  // Create global memory
+  // Create simulation memory.
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
   std::shared_ptr<simeng::memory::Mem> memory =

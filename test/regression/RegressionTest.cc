@@ -64,8 +64,7 @@ void RegressionTest::run(const char* source, const char* triple,
   OS.setInitialProcess(process_, *architecture_);
 
   // Create memory interfaces for instruction and data access.
-  // For each memory interface, a dereferenced shared_ptr to the
-  // global memory is passed as argument.
+  // A shared_ptr to the MMU is passed to each interface.
   simeng::FlatMemoryInterface instructionMemory(mmu, memory_->getMemorySize());
   std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
       std::make_unique<simeng::FlatMemoryInterface>(mmu,

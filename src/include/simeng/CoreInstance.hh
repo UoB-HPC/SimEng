@@ -139,7 +139,7 @@ class CoreInstance {
   /** Reference to the SimEng instruction memory object. */
   std::shared_ptr<simeng::MemoryInterface> instructionMemory_ = nullptr;
 
-  /** Reference to the global memory pointer */
+  /** Reference to the simulation memory shared pointer */
   std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
 
   /** Reference to the MMU */
