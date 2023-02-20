@@ -6,6 +6,7 @@
 #include <queue>
 
 #include "InstructionMetadata.hh"
+#include "simeng/SimInfo.hh"
 
 namespace simeng {
 namespace arch {
@@ -31,13 +32,9 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Generate zero-indexed system register map
-  systemRegisterMap_[RISCV_SYSREG_FFLAGS] = systemRegisterMap_.size();
-  systemRegisterMap_[RISCV_SYSREG_FRM] = systemRegisterMap_.size();
-  systemRegisterMap_[RISCV_SYSREG_FCSR] = systemRegisterMap_.size();
-
-  systemRegisterMap_[RISCV_SYSREG_CYCLE] = systemRegisterMap_.size();
-  systemRegisterMap_[RISCV_SYSREG_TIME] = systemRegisterMap_.size();
-  systemRegisterMap_[RISCV_SYSREG_INSTRET] = systemRegisterMap_.size();
+  for (size_t i = 0; i < SimInfo::getSysRegVec().size(); i++) {
+    systemRegisterMap_[SimInfo::getSysRegVec()[i]] = systemRegisterMap_.size();
+  }
 
   cycleSystemReg_ = {
       RegisterType::SYSTEM,

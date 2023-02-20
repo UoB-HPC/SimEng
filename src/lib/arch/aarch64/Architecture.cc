@@ -2,6 +2,7 @@
 #include <cassert>
 
 #include "InstructionMetadata.hh"
+#include "simeng/SimInfo.hh"
 
 namespace simeng {
 namespace arch {
@@ -27,14 +28,10 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
 
   // Generate zero-indexed system register map
-  systemRegisterMap_[ARM64_SYSREG_DCZID_EL0] = systemRegisterMap_.size();
-  systemRegisterMap_[ARM64_SYSREG_FPCR] = systemRegisterMap_.size();
-  systemRegisterMap_[ARM64_SYSREG_FPSR] = systemRegisterMap_.size();
-  systemRegisterMap_[ARM64_SYSREG_TPIDR_EL0] = systemRegisterMap_.size();
-  systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
-  systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
-  systemRegisterMap_[ARM64_SYSREG_PMCCNTR_EL0] = systemRegisterMap_.size();
-  systemRegisterMap_[ARM64_SYSREG_SVCR] = systemRegisterMap_.size();
+  std::vector<arm64_sysreg> sysRegs = SimInfo::getSysRegVec();
+  for (size_t i = 0; i < sysRegs.size(); i++) {
+    systemRegisterMap_[sysRegs[i]] = systemRegisterMap_.size();
+  }
 
   // Get Virtual Counter Timer and Processor Cycle Counter system registers.
   VCTreg_ = {
