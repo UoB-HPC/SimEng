@@ -29,22 +29,23 @@ class SimInfo {
     return getInstance()->physRegStruct_;
   }
 
+  static const std::vector<arm64_sysreg>& getSysRegVec() {
+    return getInstance()->sysRegisterEnums_;
+  }
+
   static const bool getGenSpecFiles() {
     return getInstance()->genSpecialFiles_;
   }
 
-  // TODO: utilise register structures once code has been re-factored so the
-  // Architecture can be created before a process - in turn, setting these
-  // structures
-  static void setArchRegStruct(
-      const std::vector<simeng::RegisterFileStructure>& fileStruct) {
-    getInstance()->archRegStruct_ = fileStruct;
-  }
+  // static void setArchRegStruct(
+  //     const std::vector<simeng::RegisterFileStructure>& fileStruct) {
+  //   getInstance()->archRegStruct_ = fileStruct;
+  // }
 
-  static void setPhysRegStruct(
-      const std::vector<simeng::RegisterFileStructure>& fileStruct) {
-    getInstance()->physRegStruct_ = fileStruct;
-  }
+  // static void setPhysRegStruct(
+  //     const std::vector<simeng::RegisterFileStructure>& fileStruct) {
+  //   getInstance()->physRegStruct_ = fileStruct;
+  // }
 
  private:
   SimInfo() {
@@ -53,9 +54,27 @@ class SimInfo {
     // Get ISA type
     if (config["Core"]["ISA"].as<std::string>() == "AArch64") {
       isa_ = ISA::AArch64;
+      // Define system registers
+      sysRegisterEnums_ = {arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
+                           arm64_sysreg::ARM64_SYSREG_FPCR,
+                           arm64_sysreg::ARM64_SYSREG_FPSR,
+                           arm64_sysreg::ARM64_SYSREG_TPIDR_EL0,
+                           arm64_sysreg::ARM64_SYSREG_MIDR_EL1,
+                           arm64_sysreg::ARM64_SYSREG_CNTVCT_EL0,
+                           arm64_sysreg::ARM64_SYSREG_PMCCNTR_EL0,
+                           arm64_sysreg::ARM64_SYSREG_SVCR};
+      // Initialise architectural and physical reg structures
+      archRegStruct_ = {};
+      physRegStruct_ = {};
     } else if (config["Core"]["ISA"].as<std::string>() == "rv64") {
       isa_ = ISA::RV64;
+      // Define system registers
+      sysRegisterEnums_ = {};
+      // Initialise architectural and physical reg structures
+      archRegStruct_ = {};
+      physRegStruct_ = {};
     }
+
     // Get Simulation mode
     if (config["Core"]["Simulation-Mode"].as<std::string>() == "emulation") {
       mode_ = simMode::emulation;
@@ -69,10 +88,6 @@ class SimInfo {
       mode_ = simMode::outoforder;
       modeStr_ = "Out-of-Order";
     }
-
-    // Initialise architectural and physical reg structures
-    archRegStruct_ = {};
-    physRegStruct_ = {};
 
     // Get if special files directory should be created
     genSpecialFiles_ = config["CPU-Info"]["Generate-Special-Dir"].as<bool>();
@@ -102,6 +117,10 @@ class SimInfo {
   /** Physical Register Structure of the current execution of SimEng. */
   std::vector<simeng::RegisterFileStructure> physRegStruct_;
 
+  /** Vector of all system register Capsone enum values used in Architecture. */
+  std::vector<arm64_sysreg> sysRegisterEnums_;
+
+  /** Bool representing if the special file directory should be created. */
   bool genSpecialFiles_;
 };
 }  // namespace simeng
