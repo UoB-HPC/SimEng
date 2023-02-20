@@ -9,26 +9,11 @@ CoreInstance::CoreInstance(std::shared_ptr<memory::MMU> mmu,
   createCore();
 }
 
-void CoreInstance::setSimulationMode() {
-  // Get the simualtion mode as defined by the set configuration, defaulting to
-  // emulation
-  if (config_["Core"]["Simulation-Mode"].as<std::string>() ==
-      "inorderpipelined") {
-    mode_ = SimulationMode::InOrderPipelined;
-    modeString_ = "In-Order Pipelined";
-  } else if (config_["Core"]["Simulation-Mode"].as<std::string>() ==
-             "outoforder") {
-    mode_ = SimulationMode::OutOfOrder;
-    modeString_ = "Out-of-Order";
-  }
-  return;
-}
-
 void CoreInstance::createCore() {
   // Create the architecture, with knowledge of the OS
-  if (config_["Core"]["ISA"].as<std::string>() == "rv64") {
+  if (SimInfo::getISA() == ISA::RV64) {
     arch_ = std::make_unique<simeng::arch::riscv::Architecture>();
-  } else if (config_["Core"]["ISA"].as<std::string>() == "AArch64") {
+  } else if (SimInfo::getISA() == ISA::AArch64) {
     arch_ = std::make_unique<simeng::arch::aarch64::Architecture>();
   }
 
@@ -49,23 +34,17 @@ void CoreInstance::createCore() {
       portArrangement);
 
   // Construct the core object based on the defined simulation mode
-  if (mode_ == SimulationMode::Emulation) {
+  if (SimInfo::getSimMode() == simMode::emulation) {
     core_ = std::make_shared<simeng::models::emulation::Core>(*arch_, mmu_,
                                                               handleSyscall_);
-  } else if (mode_ == SimulationMode::InOrderPipelined) {
+  } else if (SimInfo::getSimMode() == simMode::inorder) {
     core_ = std::make_shared<simeng::models::inorder::Core>(
         *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_);
-  } else if (mode_ == SimulationMode::OutOfOrder) {
+  } else if (SimInfo::getSimMode() == simMode::outoforder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
         *arch_, *predictor_, mmu_, *portAllocator_, handleSyscall_);
   }
   return;
-}
-
-const SimulationMode CoreInstance::getSimulationMode() const { return mode_; }
-
-const std::string CoreInstance::getSimulationModeString() const {
-  return modeString_;
 }
 
 std::shared_ptr<simeng::Core> CoreInstance::getCore() const {

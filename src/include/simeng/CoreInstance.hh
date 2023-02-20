@@ -8,6 +8,8 @@
 #include "simeng/Elf.hh"
 #include "simeng/GenericPredictor.hh"
 #include "simeng/OS/SyscallHandler.hh"
+#include "simeng/SimInfo.hh"
+#include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/memory/MMU.hh"
@@ -36,12 +38,6 @@ class CoreInstance {
    * process and memory interfaces have been instantiated. */
   void createCore();
 
-  /** Getter for the set simulation mode. */
-  const SimulationMode getSimulationMode() const;
-
-  /** Getter for the set simulation mode in a string format. */
-  const std::string getSimulationModeString() const;
-
   /** Getter for the create core object. */
   std::shared_ptr<simeng::Core> getCore() const;
 
@@ -66,13 +62,6 @@ class CoreInstance {
 
   /** Reference to the SimEng core object. */
   std::shared_ptr<simeng::Core> core_ = nullptr;
-
-  /** The simulation mode in use, defaulting to emulation. */
-  SimulationMode mode_ = SimulationMode::Emulation;
-
-  /** A string format for the simulation mode in use, defaulting to emulation.
-   */
-  std::string modeString_ = "Emulation";
 
   /** Reference to the MMU */
   std::shared_ptr<simeng::memory::MMU> mmu_ = nullptr;
