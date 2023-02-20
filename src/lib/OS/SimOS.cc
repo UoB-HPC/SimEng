@@ -185,18 +185,6 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
     memory_->sendUntimedData(data, addr, size);
   };
 
-  // Temporarily create the architecture, with knowledge of the OS
-  std::unique_ptr<simeng::arch::Architecture> arch;
-  if (SimInfo::getISA() == ISA::RV64) {
-    arch = std::make_unique<simeng::arch::riscv::Architecture>();
-  } else if (SimInfo::getISA() == ISA::AArch64) {
-    arch = std::make_unique<simeng::arch::aarch64::Architecture>();
-  }
-
-  // Get structure of Architectural register file
-  std::vector<RegisterFileStructure> regFileStructure =
-      arch->getRegisterFileStructures();
-
   // Get the tid for new Process
   uint64_t tid = nextFreeTID_;
   nextFreeTID_++;
@@ -204,9 +192,9 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   if (!instructionBytes.empty()) {
     // Construct Process from `instructionBytes`. As this is a new process, the
     // TID = TGID.
-    processes_.emplace(tid, std::make_shared<Process>(
-                                instructionBytes, this, regFileStructure, tid,
-                                tid, sendToMem, memory_->getMemorySize()));
+    processes_.emplace(
+        tid, std::make_shared<Process>(instructionBytes, this, tid, tid,
+                                       sendToMem, memory_->getMemorySize()));
     // Raise error if created process is not valid
     if (!processes_[tid]->isValid()) {
       std::cerr << "[SimEng:SimOS] Could not create process based on "
@@ -226,9 +214,9 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
                        executableArgs_.end());
 
     // Create new Process. As this is a new process, the TID = TGID.
-    processes_.emplace(tid, std::make_shared<Process>(
-                                commandLine, this, regFileStructure, tid, tid,
-                                sendToMem, memory_->getMemorySize()));
+    processes_.emplace(
+        tid, std::make_shared<Process>(commandLine, this, tid, tid, sendToMem,
+                                       memory_->getMemorySize()));
 
     // Raise error if created process is not valid
     if (!processes_[tid]->isValid()) {
@@ -248,11 +236,17 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
     processes_[tid]->context_.regFile[arch::aarch64::RegisterType::GENERAL]
                                      [31] = {processes_[tid]->context_.sp, 8};
     // Set the system registers
+    auto sysRegVec = SimInfo::getSysRegVec();
+    auto dczItr = std::find(sysRegVec.begin(), sysRegVec.end(),
+                            arm64_sysreg::ARM64_SYSREG_DCZID_EL0);
+    assert(
+        dczItr == sysRegVec.end() &&
+        "[SimEng:SimOS] DCZID_EL0 was not defined in the System Register "
+        "Vector. Please ensure it is included in SimInfo::sysRegisterEnums_.");
     // Temporary: state that DCZ can support clearing 64 bytes at a time,
     // but is disabled due to bit 4 being set
-    processes_[tid]
-        ->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
-                          [arch::aarch64::ARM64_SYSREG_TAGS::DCZID_EL0] = {
+    processes_[tid]->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
+                                     [dczItr - sysRegVec.begin()] = {
         static_cast<uint64_t>(0b10100), 8};
   }
 

@@ -148,8 +148,7 @@ bool ExceptionHandler::handleException() {
              exception == InstructionException::ZAregisterStatusUpdate ||
              exception == InstructionException::SMZAUpdate) {
     // Retrieve register file structure from architecture
-    auto regFileStruct =
-        instruction_->getArchitecture().getRegisterFileStructures();
+    auto regFileStruct = SimInfo::getArchRegStruct();
     // Retrieve metadata from architecture
     auto metadata = instruction_->getMetadata();
 
