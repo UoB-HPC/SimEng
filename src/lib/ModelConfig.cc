@@ -351,7 +351,7 @@ void ModelConfig::validate() {
 
   // Process-Image
   root = "Process-Image";
-  subFields = {"Heap-Size", "Stack-Size", "MMap-Size"};
+  subFields = {"Heap-Size", "Stack-Size", "Mmap-Size"};
   // Default heap size is 1024 * 1024 * 10 = 10MiB
   nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
                         std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
