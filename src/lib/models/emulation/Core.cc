@@ -19,7 +19,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
       programByteLength_(programByteLength),
       isa_(isa),
       pc_(entryPoint),
-      registerFileSet_(isa.getRegisterFileStructures()),
+      registerFileSet_(SimInfo::getArchRegStruct()),
       architecturalRegisterFileSet_(registerFileSet_) {
   // Pre-load the first instruction
   instructionMemory_.requestRead({pc_, FETCH_SIZE});

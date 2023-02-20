@@ -229,21 +229,6 @@ std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
     MemoryInterface& memory) const {
   return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
 }
-
-std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
-    const {
-  uint16_t numSysRegs = static_cast<uint16_t>(systemRegisterMap_.size());
-  const uint16_t ZAsize = static_cast<uint16_t>(SVL_ / 8);  // Convert to bytes
-  return {
-      {8, 32},          // General purpose
-      {256, 32},        // Vector
-      {32, 17},         // Predicate
-      {1, 1},           // NZCV
-      {8, numSysRegs},  // System
-      {256, ZAsize},    // Matrix (Each row is a register)
-  };
-}
-
 int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   // Check below is done for speculative instructions that may be passed into
   // the function but will not be executed. If such invalid speculative

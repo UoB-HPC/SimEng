@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 
+#include "simeng/SimInfo.hh"
 #include "yaml-cpp/yaml.h"
 
 namespace simeng {
