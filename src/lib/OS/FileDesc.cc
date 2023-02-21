@@ -19,7 +19,7 @@ FileDescArray::FileDescArray() {
 
 void FileDescArray::validateVfd(int vfd) const {
   if (vfd < 0 || vfd > MAX_FD_NUM) {
-    std::cerr << "SimEng:[FileDescArray] Invalid virtual file descriptor: "
+    std::cerr << "[SimEng:FileDescArray] Invalid virtual file descriptor: "
               << vfd << std::endl;
     std::exit(1);
   }
