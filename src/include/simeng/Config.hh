@@ -15,8 +15,9 @@ class Config {
    "Clock-Frequency: 2.5, Timer-Frequency: 100, Micro-Operations: True, "      \
    "Vector-Length: 512, Streaming-Vector-Length: 512}, Fetch: "                \
    "{Fetch-Block-Size: 32, Loop-Buffer-Size: 64, Loop-Detection-Threshold: "   \
-   "4}, Process-Image: {Heap-Size: 10485760, Stack-Size: 1048576}, "           \
-   "Register-Set: {GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "   \
+   "4}, Process-Image: {Heap-Size: 10485760, Stack-Size: 1048576, Mmap-Size: " \
+   "10485760}, Simulation-Memory: {Size: 104857600}, Register-Set: "           \
+   "{GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "                 \
    "Predicate-Count: 17, Conditional-Count: 128, Matrix-Count: 2}, "           \
    "Pipeline-Widths: {Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "            \
    "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "          \

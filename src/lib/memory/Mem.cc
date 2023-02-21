@@ -1,45 +1,52 @@
 #include "simeng/memory/Mem.hh"
 
+#include <utility>
+
 namespace simeng {
 namespace memory {
-uint64_t DataPacket::pktIdCtr = 0;
 
-DataPacket::DataPacket(DataPacketAccessType accType) {
-  id = pktIdCtr++;
-  type = accType;
+DataPacket::DataPacket(uint64_t address, uint64_t size, DataPacketType type,
+                       uint64_t reqId, bool fault)
+    : address_(address),
+      size_(size),
+      type_(type),
+      id_(reqId),
+      inFault_(fault) {}
+
+DataPacket::DataPacket(uint64_t address, uint64_t size, DataPacketType type,
+                       uint64_t reqId, std::vector<char> data, bool fault)
+    : address_(address),
+      size_(size),
+      type_(type),
+      id_(reqId),
+      data_(data),
+      inFault_(fault) {}
+
+DataPacket DataPacket::makeIntoReadResponse(std::vector<char> data) {
+  // If type of DataPacket isn't READ_REQUEST return faulty DataPacket.
+  if (type_ != READ_REQUEST) {
+    std::cerr << "[SimEng:DataPacket] Cannot change DataPacket type to "
+                 "READ_RESPONSE as the request type isn't READ_REQUEST."
+              << std::endl;
+    return DataPacket(true);
+  }
+  type_ = READ_RESPONSE;
+  data_ = data;
+  inFault_ = false;
+  return *this;
 }
 
-ReadPacket::ReadPacket(uint64_t addr, size_t sz) : DataPacket(READ) {
-  address = addr;
-  size = sz;
-};
-
-ReadRespPacket* ReadPacket::makeResponse(uint64_t bytesRead, char* data) {
-  return new ReadRespPacket(this->id, bytesRead, data);
-}
-
-ReadRespPacket::ReadRespPacket(uint64_t req_id, size_t bytes_read, char* dt)
-    : DataPacket(READ) {
-  reqId = req_id;
-  bytesRead = bytes_read;
-  data = dt;
-}
-
-WritePacket::WritePacket(uint64_t addr, size_t sz, const char* dt)
-    : DataPacket(WRITE), data(dt) {
-  address = addr;
-  size = sz;
-  data = dt;
-}
-
-WriteRespPacket* WritePacket::makeResponse(uint64_t bytesReturned) {
-  return new WriteRespPacket(this->id, bytesReturned);
-}
-
-WriteRespPacket::WriteRespPacket(uint64_t req_id, size_t bytes_written)
-    : DataPacket(WRITE) {
-  reqId = req_id;
-  bytesWritten = bytes_written;
+DataPacket DataPacket::makeIntoWriteResponse() {
+  // If type of DataPacket isn't WRITE_REQUEST return faulty DataPacket.
+  if (type_ != WRITE_REQUEST) {
+    std::cerr << "[SimEng:DataPacket] Cannot change DataPacket type to "
+                 "WRITE_RESPONSE as the request type isn't WRITE_REQUEST."
+              << std::endl;
+    return DataPacket(true);
+  }
+  type_ = WRITE_RESPONSE;
+  inFault_ = false;
+  return *this;
 }
 
 }  // namespace memory

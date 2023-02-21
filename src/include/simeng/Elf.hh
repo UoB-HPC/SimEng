@@ -27,39 +27,44 @@ const char Format64 = 2;
 struct Elf64_Phdr {
   // Indicates what kind of segment this array element describes or
   // how to interpret the array element's information
-  uint32_t p_type;
+  uint32_t p_type = 0;
   // Holds the offset from the beginning of the file at
   // which the first byte of the segment resides
-  uint64_t p_offset;
+  uint64_t p_offset = 0;
   // Holds the virtual address at which the first byte of the
   // segment resides in memory
-  uint64_t p_vaddr;
+  uint64_t p_vaddr = 0;
   // On systems for which physical addressing is relevant, this
   // member is reserved for the segment's physical address
-  uint64_t p_paddr;
+  uint64_t p_paddr = 0;
   // Holds the number of bytes in the file image of
   // the segment.  It may be zero
-  uint64_t p_filesz;
+  uint64_t p_filesz = 0;
   // Holds the number of bytes in the memory image
   // of the segment.  It may be zero
-  uint64_t p_memsz;
+  uint64_t p_memsz = 0;
+  // Holds the header's data.
+  std::vector<char> headerData = {};
 };
 
 /** A processed Executable and Linkable Format (ELF) file. */
 class Elf {
  public:
-  Elf(std::string path, char** imagePointer);
-  ~Elf();
+  Elf(std::string path);
 
-  /** Returns the process image size */
-  uint64_t getProcessImageSize() const;
+  ~Elf() {}
 
-  /** Returns if this ELF is valid */
+  /** Method to return ELF process image size. */
+  uint64_t getElfImageSize() const;
+
+  /** Method to return the validity of the ELF parsing process. */
   bool isValid() const;
 
-  /** Returns the virtual address to which the system first transfers
-   * control */
+  /** Method which returns the entry point. */
   uint64_t getEntryPoint() const;
+
+  /** Method which returns all processed ELF Headers. */
+  const std::vector<Elf64_Phdr>& getProcessedHeaders() const;
 
   /** Returns the virtual address of the program header table */
   uint64_t getPhdrTableAddress() const;
@@ -71,8 +76,14 @@ class Elf {
   uint64_t getNumPhdr() const;
 
  private:
-  /** The entry point of the program */
+  /** Entry point of the ELF. */
   uint64_t entryPoint_;
+
+  /** Bool which holds if the ELF parsing was done correctly. */
+  bool isValid_ = false;
+
+  /** Size of the ELF image. */
+  uint64_t elfImageSize_ = 0;
 
   /** A vector holding each of the program headers extracted from the ELF */
   std::vector<Elf64_Phdr> pheaders_;
@@ -86,12 +97,6 @@ class Elf {
 
   /** Virtual address of the program header table */
   uint64_t phdrTableAddress_ = 0;
-
-  /** Holds whether this ELF is valid for SimEng */
-  bool isValid_ = false;
-
-  /** The size of the process image */
-  uint64_t processImageSize_;
 };
 
 }  // namespace simeng

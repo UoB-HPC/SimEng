@@ -1,99 +1,150 @@
 #include "simeng/OS/Vma.hh"
 
+#include <sys/stat.h>
+
+#include <cstddef>
+
 namespace simeng {
 namespace OS {
-
-uint64_t Vmall::addVma(VirtMemArea* vma, uint64_t mmapStart,
-                       uint64_t pageSize) {
-  // If linked list contains multiple VMAs then iterate and check if new VMA can
-  // be attached between two existing VMAs. If not append to the tail of the
-  // linked list.
-  if (vm_size_ > 1) {
-    bool allocated = false;
-    VirtMemArea* curr = vm_head_;
-    while (curr->vm_next != nullptr) {
-      if (curr->vm_next->vm_start - curr->vm_end >= vma->length) {
-        vma->vm_start = curr->vm_end;
-        vma->vm_next = curr->vm_next;
-        curr->vm_next = vma;
-        allocated = true;
-        break;
-      }
-      curr = curr->vm_next;
-    }
-    // We are at the tail
-    if (!allocated) {
-      vma->vm_start = curr->vm_end;
-      curr->vm_next = vma;
-    }
-    // If linked list only contains one VMA, then append to the tail.
-  } else if (vm_size_ > 0) {
-    vma->vm_start = vm_head_->vm_end;
-    vm_head_->vm_next = vma;
-  } else {
-    vma->vm_start = mmapStart;
-    vm_head_ = vma;
+HostFileMMap HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
+  if (offset & (PAGE_SIZE - 1)) {
+    std::cerr << "[SimEng:HostBackedFileMMaps] Failed to create Host backed "
+                 "file mapping. Offset is not aligned "
+                 "to page size: "
+              << offset << std::endl;
+    std::exit(1);
   }
-  // Round the end address to page size. This is needed for paging in virtual
-  // memory. This mechanism will be more significant when proper implementation
-  // of virtual memory is completed.
-  vma->vm_end = roundUpMemAddr(vma->vm_start + vma->length, pageSize);
-  vm_size_++;
-  // Return the assigned start address.
-  return vma->vm_start;
+  struct stat* statbuf = (struct stat*)malloc(sizeof(struct stat));
+  int fstatResult = fstat(fd, statbuf);
+  if (fstatResult < 0) {
+    std::cerr << "[SimEng:HostBackedFileMMaps] fstat failed: Cannot create "
+                 "host backed file mmap for file "
+                 "descriptor - "
+              << fd << std::endl;
+    free(statbuf);
+    std::exit(1);
+  }
+  off_t fstatFileSize = statbuf->st_size;
+  free(statbuf);
+  if (offset + len > fstatFileSize) {
+    std::cerr << "[SimEng:HostBackedFileMMaps] Tried to create host backed "
+                 "file mmap with offset and size greater "
+                 "than file size."
+              << std::endl;
+    std::exit(1);
+  }
+  if (len <= 0) {
+    std::cerr << "[SimEng:HostBackedFileMMaps] Cannot create host backed file "
+                 "mmap with size 0 for file "
+                 "descriptor: "
+              << fd << std::endl;
+    std::exit(1);
+  }
+  // Always pass offset 0 as it must be aligned to host page size, which can
+  // differ (i.e. MacOS has page size of 16KiB).
+  void* filemmap =
+      mmap(NULL, fstatFileSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
+  // Add offset to pointer manually
+  char* offsettedPtr = (char*)filemmap + offset;
+  void* newPtr = (void*)offsettedPtr;
+  HostFileMMap hfmm =
+      HostFileMMap(fd, filemmap, newPtr, fstatFileSize, len, offset);
+  hostVec_.push_back(hfmm);
+  return hfmm;
 }
 
-int64_t Vmall::removeVma(uint64_t addr, uint64_t length, uint64_t pageSize) {
-  if (addr % pageSize != 0) {
-    // addr must be a multiple of the process page size
-    return -1;
-  }
-  // Exit early if no entries
-  if (vm_size_ == 0) {
-    return 0;
-  }
-  VirtMemArea* prev = nullptr;
-  VirtMemArea* curr = vm_head_;
-  while (curr != nullptr) {
-    // If addr matches the start address of VMA.
-    if (curr->vm_start == addr) {
-      if (curr->length < length) {
-        // length must not be larger than the original allocation
-        return -1;
-      }
-      // Removing the head
-      if (prev == nullptr) {
-        vm_head_ = vm_head_->vm_next;
-        curr->vm_next = nullptr;
-        delete curr;
-      } else {
-        prev->vm_next = curr->vm_next;
-        curr->vm_next = nullptr;
-        delete curr;
-      }
-      vm_size_--;
-      break;
+HostBackedFileMMaps::~HostBackedFileMMaps() {
+  for (auto fmap : hostVec_) {
+    // Since HostFileMMap contains effective starting address and file length
+    // values calculated after applying the offset specified by mmap. We have to
+    // be cautious and use origPtr_ and orgiLen_ here to unmap the entire file
+    // mapping on host.
+    if (munmap(fmap.getOrigPtr(), fmap.getOrigLen()) < 0) {
+      std::cerr << "[SimEng:HostBackedFileMMaps] Unable to unmap host backed "
+                   "file mmap associated with file "
+                   "descriptor: "
+                << fmap.getFd() << std::endl;
+      std::exit(1);
     }
-    prev = curr;
-    curr = curr->vm_next;
   }
-  // Not an error if the indicated range does no contain any mapped pages
-  return 0;
 }
 
-void Vmall::freeVma() {
-  if (vm_size_ == 0) return;
-  VirtMemArea* curr = vm_head_;
-  while (curr != nullptr) {
-    VirtMemArea* temp = curr->vm_next;
-    delete curr;
-    curr = temp;
+VirtualMemoryArea::VirtualMemoryArea(int prot, int flags, size_t vsize,
+                                     HostFileMMap hfmmap)
+    : vmSize_(vsize), prot_(prot), flags_(flags), hfmmap_(hfmmap) {
+  if (!hfmmap.isEmpty()) {
+    filebuf_ = hfmmap.getFaddr();
+    fsize_ = hfmmap.getLen();
   }
-  vm_size_ = 0;
-  vm_head_ = nullptr;
 }
 
-size_t Vmall::getSize() { return vm_size_; }
+VirtualMemoryArea::VirtualMemoryArea(VirtualMemoryArea* vma)
+    : vmEnd_(vma->vmEnd_),
+      vmStart_(vma->vmStart_),
+      vmNext_(vma->vmNext_),
+      vmSize_(vma->vmSize_),
+      prot_(vma->prot_),
+      flags_(vma->flags_),
+      filebuf_(vma->filebuf_),
+      fsize_(vma->fsize_),
+      hfmmap_(vma->hfmmap_) {}
+
+bool VirtualMemoryArea::overlaps(uint64_t startAddr, size_t size) {
+  uint64_t endAddr = startAddr + size;
+  return (endAddr >= vmStart_) && (startAddr < vmEnd_);
+}
+
+bool VirtualMemoryArea::contains(uint64_t startAddr, size_t size) {
+  uint64_t endAddr = startAddr + size;
+  return (startAddr >= vmStart_) && (endAddr <= vmEnd_);
+}
+
+bool VirtualMemoryArea::contains(uint64_t vaddr) {
+  return (vaddr >= vmStart_) && (vaddr < vmEnd_);
+}
+
+bool VirtualMemoryArea::containedIn(uint64_t startAddr, size_t size) {
+  uint64_t endAddr = startAddr + size;
+  return (startAddr <= vmStart_) && (endAddr >= vmEnd_);
+}
+
+void VirtualMemoryArea::trimRangeEnd(uint64_t addr) {
+  vmSize_ = addr - vmStart_;
+  vmEnd_ = addr;
+  // We dont host munmap here because the class HostBackedFileMMaps is
+  // responsible for managing all host mappings. We only update the file size to
+  // the new size only if it is less than the original size before trim.
+  if (hasFile()) fsize_ = (fsize_ < vmSize_) ? fsize_ : vmSize_;
+}
+
+void VirtualMemoryArea::trimRangeStart(uint64_t addr) {
+  if (hasFile()) {
+    size_t trimlen = addr - vmStart_;
+    if (trimlen >= fsize_) {
+      // We dont munmap filebuf_ here because the HostBackedFileMMaps class is
+      // responsible for managing all file mappings. If trimLen is greater than
+      // fsize_ just update the filebuf_ and fsize_ variables to signify that no
+      // file exists.
+      filebuf_ = nullptr;
+      fsize_ = 0;
+    } else {
+      // If entire file size is not trimmed, update the filebuf pointer with an
+      // offset. Since the start address of the VMA has been changed, the new
+      // start address should point to an offsetted position in the file.
+      char* ptr = (char*)filebuf_ + trimlen;
+      filebuf_ = (void*)ptr;
+      fsize_ -= trimlen;
+    }
+  }
+  vmSize_ = vmEnd_ - addr;
+  vmStart_ = addr;
+}
+
+bool VirtualMemoryArea::hasFile() { return filebuf_ != nullptr && fsize_ != 0; }
+
+void* VirtualMemoryArea::getFileBuf() { return filebuf_; }
+
+size_t VirtualMemoryArea::getFileSize() { return fsize_; }
 
 }  // namespace OS
 }  // namespace simeng
