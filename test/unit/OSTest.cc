@@ -24,7 +24,7 @@ TEST(OSTest, CreateSimOS) {
   simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
 
   // Check default process created. Initial process TID = 0
-  std::shared_ptr<simeng::OS::Process> proc = OS.getProcess(0);
+  const std::shared_ptr<simeng::OS::Process> proc = OS.getProcess(0);
   EXPECT_GT(proc->getHeapStart(), 0);
   EXPECT_GT(proc->getMmapStart(), proc->getHeapStart());
   EXPECT_GT(proc->getStackStart(), proc->getMmapStart());

@@ -90,11 +90,6 @@ class SimOS {
   friend class ::RegressionTest;
 
  private:
-  /** Function used to send data to memory without any timing constraints
-   * applied. This function is passed to the Process::handlePageFault when a
-   * page fault is encountered. */
-  sendToMemory sendToMem_;
-
   /** Create the initial SimOS Process running above this kernel from command
    * line arguments.
    * Empty command line arguments denote the usage of hardcoded instructions

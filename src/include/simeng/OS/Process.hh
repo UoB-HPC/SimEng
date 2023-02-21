@@ -88,16 +88,15 @@ class Process {
  public:
   /** Construct a SimOS Process from a vector of command-line arguments. The
    * first argument is a path to an executable ELF file. */
-  Process(const std::vector<std::string>& commandLine,
-          std::shared_ptr<simeng::memory::Mem> memory, SimOS* OS,
+  Process(const std::vector<std::string>& commandLine, SimOS* OS,
           std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-          uint64_t TID);
+          uint64_t TID, sendToMemory sendToMem);
 
   /** Construct a SimOS Process from region of instruction memory, with the
    * entry point fixed at 0. */
-  Process(span<char> instructions, std::shared_ptr<simeng::memory::Mem> memory,
-          SimOS* OS, std::vector<RegisterFileStructure> regFileStructure,
-          uint64_t TGID, uint64_t TID);
+  Process(span<char> instructions, SimOS* OS,
+          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
+          uint64_t TID, sendToMemory sendToMem);
 
   ~Process();
 
@@ -138,7 +137,7 @@ class Process {
   uint64_t getTID() const { return TID_; }
 
   /** Method which handles a page fault. */
-  uint64_t handlePageFault(uint64_t vaddr, sendToMemory send);
+  uint64_t handlePageFault(uint64_t vaddr);
 
   /** Method which handles virtual address translation. */
   uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
@@ -161,8 +160,7 @@ class Process {
  private:
   /** Create and populate the initial process stack and returns the stack
    * pointer. */
-  uint64_t createStack(uint64_t stackStart,
-                       std::shared_ptr<simeng::memory::Mem>& memory);
+  uint64_t createStack(uint64_t stackStart);
 
   /** MemRegion of the Process Image. */
   MemRegion memRegion_;
@@ -189,6 +187,13 @@ class Process {
 
   /** Reference to the SimOS object. */
   SimOS* OS_;
+
+  /** Callback function used to write data to the simulation memory without
+   * incurring any latency. This callback is used to write process
+   * initialisation data during process creation to the simulation memory. It is
+   * also used to write file data (if present) to the simulation memory after
+   * handling a page fault */
+  sendToMemory sendToMem_;
 };
 
 }  // namespace OS

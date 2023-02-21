@@ -70,11 +70,8 @@ HostBackedFileMMaps::~HostBackedFileMMaps() {
 }
 
 VirtualMemoryArea::VirtualMemoryArea(int prot, int flags, size_t vsize,
-                                     HostFileMMap hfmmap) {
-  vmSize_ = vsize;
-  prot_ = prot;
-  flags_ = flags;
-  hfmmap_ = hfmmap;
+                                     HostFileMMap hfmmap)
+    : vmSize_(vsize), prot_(prot), flags_(flags), hfmmap_(hfmmap) {
   if (!hfmmap.isEmpty()) {
     filebuf_ = hfmmap.getFaddr();
     fsize_ = hfmmap.getLen();

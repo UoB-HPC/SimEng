@@ -54,9 +54,16 @@ void RegressionTest::run(const char* source, const char* triple,
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(memory_, OS.getVAddrTranslator());
 
+  // Callback function used to write data to the simulation memory without
+  // incurring any latency. This function will be used to write data to the
+  // simulation memory during process creation and while handling page faults.
+  auto sendToMem = [this](std::vector<char> data, uint64_t addr, size_t size) {
+    memory_->sendUntimedData(data, addr, size);
+  };
+
   process_ = std::make_shared<simeng::OS::Process>(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_,
-      &OS, architecture_->getRegisterFileStructures(), 0, 0);
+      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), &OS,
+      architecture_->getRegisterFileStructures(), 0, 0, sendToMem);
   ASSERT_TRUE(process_->isValid());
   processMemorySize_ = process_->context_.progByteLen;
 

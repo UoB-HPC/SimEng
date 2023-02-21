@@ -18,7 +18,7 @@ class MMU {
  public:
   MMU(std::shared_ptr<Mem> memory, VAddrTranslator fn, uint64_t tid = 0);
 
-  /** Method used to buffer requests from memory interface to memory. */
+  /** Method used to buffer requests from the memory interface to memory. */
   void bufferRequest(DataPacket request,
                      sendResponseToMemInterface sendResponse);
 
