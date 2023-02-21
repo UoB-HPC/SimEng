@@ -15,28 +15,36 @@ enum ISA { AArch64, RV64 };
 /** A SimInfo class to hold values specific to the current simulation. */
 class SimInfo {
  public:
+  /** Returns the simulation mode of the current SimEng instance. */
   static simMode getSimMode() { return getInstance()->mode_; }
 
+  /** Returns the simulation mode of the current SimEng instance as a string. */
   static std::string getSimModeStr() { return getInstance()->modeStr_; }
 
+  /** Returns which ISA the current simulation is using. */
   static ISA getISA() { return getInstance()->isa_; }
 
   /** Returns a vector of {size, number} pairs describing the available
    * architectural registers. */
   static const std::vector<simeng::RegisterFileStructure>& getArchRegStruct() {
-    // Need to call resetArchRegStruct if AArch64 as SME reg will be wrong size
-    // if SVL has changed.
-    if (getISA() == ISA::AArch64) getInstance()->resetArchRegStruct();
     return getInstance()->archRegStruct_;
   }
 
+  /** Returns a vector of Capstone arm64_sysreg enums for all the system
+   * registers that should be utilised in simulation. */
   static const std::vector<arm64_sysreg>& getSysRegVec() {
     return getInstance()->sysRegisterEnums_;
   }
 
+  /** Returns whether or not the special files directories should be generated.
+   */
   static const bool getGenSpecFiles() {
     return getInstance()->genSpecialFiles_;
   }
+
+  /** Public function used to reset the architectural register file structure.
+   */
+  static void resetArchRegs() { getInstance()->resetArchRegStruct(); }
 
  private:
   SimInfo() {
@@ -114,6 +122,10 @@ class SimInfo {
 
   /** Function used to reset the architectural register file structure. */
   void resetArchRegStruct() {
+    // Given some register quantities rely on Config file arguments (SME relies
+    // on SVL), it is possible that if the config was to change the register
+    // quantities would be incorrect. This function provides a way to reset the
+    // Architectural register structure.
     YAML::Node& config = Config::get();
     if (isa_ == ISA::AArch64) {
       uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
