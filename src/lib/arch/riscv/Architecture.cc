@@ -14,8 +14,9 @@ namespace riscv {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
-    : linux_(kernel) {
+Architecture::Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler)
+    : syscallHandler_(syscallHandler) {
+  YAML::Node& config = Config::get();
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
   if (n != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle due "
@@ -209,7 +210,8 @@ executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
+  return std::make_shared<ExceptionHandler>(instruction, core, memory,
+                                            syscallHandler_);
 }
 
 std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
@@ -230,30 +232,19 @@ int32_t Architecture::getSystemRegisterTag(uint16_t reg) const {
   return systemRegisterMap_.at(reg);
 }
 
-ProcessStateChange Architecture::getInitialState() const {
-  ProcessStateChange changes;
-  // Set ProcessStateChange type
-  changes.type = ChangeType::REPLACEMENT;
-
-  uint64_t stackPointer = linux_.getInitialStackPointer();
-  // Set the stack pointer register
-  changes.modifiedRegisters.push_back({RegisterType::GENERAL, 2});
-  changes.modifiedRegisterValues.push_back(stackPointer);
-
-  return changes;
-}
-
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 std::vector<RegisterFileStructure>
-Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
+Architecture::getConfigPhysicalRegisterStructure() const {
+  YAML::Node& config = Config::get();
   return {{8, config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>()},
           {8, config["Register-Set"]["FloatingPoint-Count"].as<uint16_t>()},
           {8, getNumSystemRegisters()}};
 }
 
-std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
-    YAML::Node config) const {
+std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
+    const {
+  YAML::Node& config = Config::get();
   return {config["Register-Set"]["GeneralPurpose-Count"].as<uint16_t>(),
           config["Register-Set"]["FloatingPoint-Count"].as<uint16_t>(),
           getNumSystemRegisters()};
@@ -266,6 +257,10 @@ uint16_t Architecture::getNumSystemRegisters() const {
 void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
                                               const uint64_t iterations) const {
 }
+
+// Left blank as no implementation necessary
+void Architecture::updateAfterContextSwitch(
+    const simeng::OS::cpuContext& context) const {}
 
 }  // namespace riscv
 }  // namespace arch

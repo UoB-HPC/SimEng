@@ -21,7 +21,8 @@
    "Permitted-Loads-Per-Cycle: 2, Permitted-Stores-Per-Cycle: 1}, Ports: "    \
    "{'0': {Portname: Port 0, Instruction-Group-Support: [0, 14, 52, 66, 67, " \
    "70, 71, 72]}}, Reservation-Stations: {'0': {Size: 60, Dispatch-Rate: 4, " \
-   "Ports: [0]}}, Execution-Units: {'0': {Pipelined: true}}}")
+   "Ports: [0]}}, Execution-Units: {'0': {Pipelined: true}}, CPU-Info: "      \
+   "{Generate-Special-Dir: False}}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */
@@ -183,9 +184,9 @@ class AArch64RegressionTest : public RegressionTest {
   /** Generate a default YAML-formatted configuration. */
   YAML::Node generateConfig() const override;
 
-  /** Create an ISA instance from a kernel. */
+  /** Create an ISA instance from a syscall handler. */
   virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      simeng::kernel::Linux& kernel, YAML::Node config) const override;
+      std::shared_ptr<simeng::OS::SyscallHandler> sysHandler) const override;
 
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()

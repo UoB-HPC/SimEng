@@ -22,14 +22,13 @@ class Core : public simeng::Core {
    * instructions and data, along with the instruction entry point and an ISA to
    * use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       uint64_t entryPoint, uint64_t programByteLength,
        const arch::Architecture& isa);
 
   /** Tick the core. */
   void tick() override;
 
-  /** Check whether the program has halted. */
-  bool hasHalted() const override;
+  /** Check the current status of the core. */
+  CoreStatus getStatus() override;
 
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
@@ -44,6 +43,23 @@ class Core : public simeng::Core {
   /** Retrieve a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
 
+  /** Schedule a new Process. */
+  void schedule(simeng::OS::cpuContext newContext) override;
+
+  /** Signals core to stop executing the current process.
+   * Return Values :
+   *  - True  : if succeeded in signaling interrupt
+   *  - False : interrupt not scheduled due to on-going exception or system call
+   */
+  bool interrupt() override;
+
+  /** Retrieve the number of ticks that have elapsed whilst executing the
+   * current process. */
+  uint64_t getCurrentProcTicks() const override;
+
+  /** Retrieve the CPU context for the currently scheduled process. */
+  simeng::OS::cpuContext getCurrentContext() const override;
+
  private:
   /** Execute an instruction. */
   void execute(std::shared_ptr<Instruction>& uop);
@@ -57,6 +73,9 @@ class Core : public simeng::Core {
   /** Apply changes to the process state. */
   void applyStateChange(const arch::ProcessStateChange& change);
 
+  /** The current state the core is in. */
+  CoreStatus status_ = CoreStatus::idle;
+
   /** A memory interface to access instructions. */
   MemoryInterface& instructionMemory_;
 
@@ -67,7 +86,7 @@ class Core : public simeng::Core {
   std::vector<simeng::MemoryAccessTarget> previousAddresses_;
 
   /** The length of the available instruction memory. */
-  uint64_t programByteLength_;
+  uint64_t programByteLength_ = 0;
 
   /** The currently used ISA. */
   const arch::Architecture& isa_;
@@ -82,9 +101,6 @@ class Core : public simeng::Core {
    * register file set. */
   ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
 
-  /** Whether or not the core has halted. */
-  bool hasHalted_ = false;
-
   /** A reusable macro-op vector to fill with uops. */
   MacroOp macroOp_;
 
@@ -97,14 +113,27 @@ class Core : public simeng::Core {
   /** Is the core waiting on a data read? */
   unsigned int pendingReads_ = 0;
 
-  /** The number of times this core has been ticked. */
+  /** The total number of times this core has been ticked. */
   uint64_t ticks_ = 0;
+
+  /** The number of times this core has ticked whilst executing the current
+   * process. */
+  uint64_t procTicks_ = 0;
 
   /** The number of instructions executed. */
   uint64_t instructionsExecuted_ = 0;
 
   /** The number of branches executed. */
   uint64_t branchesExecuted_ = 0;
+
+  /** The number of ticks whilst in an idle state. */
+  uint64_t idle_ticks_ = 0;
+
+  /** Number of times a context switch was performed. */
+  uint64_t contextSwitches_ = 0;
+
+  /** TID of the process currently executing on the core. */
+  uint64_t currentTID_ = -1;
 };
 
 }  // namespace emulation

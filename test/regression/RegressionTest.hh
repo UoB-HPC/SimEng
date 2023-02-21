@@ -22,9 +22,11 @@
 #include "llvm/Support/TargetSelect.h"
 #include "simeng/ArchitecturalRegisterFileSet.hh"
 #include "simeng/Core.hh"
+#include "simeng/OS/Process.hh"
+#include "simeng/OS/SimOS.hh"
+#include "simeng/OS/SyscallHandler.hh"
 #include "simeng/arch/Architecture.hh"
-#include "simeng/kernel/Linux.hh"
-#include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/memory/Mem.hh"
 #include "simeng/pipeline/PortAllocator.hh"
 #include "simeng/version.hh"
 
@@ -62,9 +64,9 @@ class RegressionTest
    * extensions. */
   void run(const char* source, const char* triple, const char* extensions);
 
-  /** Create an ISA instance from a kernel. */
+  /** Create an ISA instance from a syscall handler. */
   virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      simeng::kernel::Linux& kernel, YAML::Node config) const = 0;
+      std::shared_ptr<simeng::OS::SyscallHandler> sysHandler) const = 0;
 
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()
@@ -86,8 +88,10 @@ class RegressionTest
   template <typename T>
   T getMemoryValue(uint64_t address) const {
     EXPECT_LE(address + sizeof(T), processMemorySize_);
+    auto mem = memory_->getMemCpy();
     T dest{};
-    std::memcpy(&dest, processMemory_ + address, sizeof(T));
+    std::memcpy(&dest, mem + address, sizeof(T));
+    delete[] mem;
     return dest;
   }
 
@@ -103,14 +107,13 @@ class RegressionTest
   /** The architecture instance. */
   std::unique_ptr<simeng::arch::Architecture> architecture_;
 
-  /** The process memory. */
-  char* processMemory_ = nullptr;
+  std::shared_ptr<simeng::memory::SimpleMem> memory_;
 
   /** The size of the process memory in bytes. */
   size_t processMemorySize_ = 0;
 
   /** The process that was executed. */
-  std::unique_ptr<simeng::kernel::LinuxProcess> process_;
+  std::shared_ptr<simeng::OS::Process> process_;
 
   /** The core that was used. */
   std::unique_ptr<simeng::Core> core_ = nullptr;

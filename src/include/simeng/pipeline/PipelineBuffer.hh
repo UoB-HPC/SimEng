@@ -19,7 +19,9 @@ class PipelineBuffer {
   /** Construct a pipeline buffer of width `width`, and fill all slots with
    * `initialValue`. */
   PipelineBuffer(int width, const T& initialValue)
-      : width(width), buffer(width * length, initialValue) {}
+      : width(width),
+        buffer(width * length, initialValue),
+        emptyVal_(initialValue) {}
 
   /** Tick the buffer and move head/tail pointers, or do nothing if it's
    * stalled. */
@@ -27,16 +29,6 @@ class PipelineBuffer {
     if (isStalled_) return;
 
     headIsStart = !headIsStart;
-  }
-
-  /** Return the slots waiting to be processed by the next pipeline unit */
-  const T* getPendingSlots() const {
-    // If stalled head and tail slots won't have been swapped
-    if (isStalled_) {
-      return getTailSlots();
-    } else {
-      return getHeadSlots();
-    }
   }
 
   /** Get a tail slots pointer. */
@@ -73,6 +65,17 @@ class PipelineBuffer {
   /** Get the width of the buffer slots. */
   unsigned short getWidth() const { return width; }
 
+  /** Query if buffer is empty by checking against a set value which
+   * represents an empty entry. */
+  bool isEmpty() {
+    for (auto i : buffer) {
+      if (i != emptyVal_) {
+        return false;
+      }
+    }
+    return true;
+  }
+
  private:
   /** The width of each row of slots. */
   unsigned short width;
@@ -88,6 +91,10 @@ class PipelineBuffer {
 
   /** The number of stages in the pipeline. */
   static const unsigned int length = 2;
+
+  /** Holds the value that should be associated as an empty entry in the buffer.
+   */
+  T emptyVal_;
 };
 
 }  // namespace pipeline

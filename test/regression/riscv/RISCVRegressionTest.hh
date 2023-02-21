@@ -21,7 +21,8 @@
    "Instruction-Group-Support: [0, 10, 11, 12 ]}}, Reservation-Stations: "     \
    "{'0': {Size: 60, Dispatch-Rate: 4, Ports: [0]}}, Execution-Units: "        \
    "{'0': {Pipelined: true}}, Latencies: {'0': {Instruction-Group: {0: '7'}, " \
-   "Execution-Latency: 39, Execution-Throughput: 39}}}")
+   "Execution-Latency: 39, Execution-Throughput: 39}}, CPU-Info: "             \
+   "{Generate-Special-Dir: False}}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */
@@ -71,9 +72,9 @@ class RISCVRegressionTest : public RegressionTest {
   /** Generate a default YAML-formatted configuration. */
   YAML::Node generateConfig() const override;
 
-  /** Create an ISA instance from a kernel. */
+  /** Create an ISA instance from a syscall handler. */
   virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      simeng::kernel::Linux& kernel, YAML::Node config) const override;
+      std::shared_ptr<simeng::OS::SyscallHandler> sysHandler) const override;
 
   /** Get the value of a general purpose register. */
   template <typename T>

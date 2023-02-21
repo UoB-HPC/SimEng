@@ -106,5 +106,33 @@ void RegisterAliasTable::free(Register physical) {
   freeQueues_[physical.type].push(physical.tag);
 }
 
+void RegisterAliasTable::reset(
+    const std::vector<RegisterFileStructure>& architecturalStructure,
+    const std::vector<uint16_t>& physicalRegisterCounts) {
+  // Get number of register types
+  size_t archStructSize = architecturalStructure.size();
+  for (size_t type = 0; type < archStructSize; type++) {
+    uint16_t archCount = architecturalStructure[type].quantity;
+    uint16_t physCount = physicalRegisterCounts[type];
+
+    for (uint16_t tag = 0; tag < archCount; tag++) {
+      // Pre-assign a physical register to each architectural register
+      mappingTable_[type][tag] = tag;
+    }
+
+    // Delete current freeQueues_
+    freeQueues_[type] = std::queue<uint16_t>();
+    // Add remaining physical registers to free queue
+    for (uint16_t tag = archCount; tag < physCount; tag++) {
+      freeQueues_[type].push(tag);
+    }
+
+    // Fill history and destination Tables with defualt values
+    std::fill(historyTable_[type].begin(), historyTable_[type].end(), NULL);
+    std::fill(destinationTable_[type].begin(), destinationTable_[type].end(),
+              NULL);
+  }
+}
+
 }  // namespace pipeline
 }  // namespace simeng

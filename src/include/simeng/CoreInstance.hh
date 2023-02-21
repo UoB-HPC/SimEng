@@ -3,38 +3,29 @@
 #include <string>
 
 #include "simeng/AlwaysNotTakenPredictor.hh"
+#include "simeng/Config.hh"
 #include "simeng/Core.hh"
 #include "simeng/Elf.hh"
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
-#include "simeng/ModelConfig.hh"
-#include "simeng/SpecialFileDirGen.hh"
+#include "simeng/OS/SyscallHandler.hh"
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
-#include "simeng/kernel/Linux.hh"
+#include "simeng/memory/Mem.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
 #include "simeng/pipeline/A64FXPortAllocator.hh"
 #include "simeng/pipeline/BalancedPortAllocator.hh"
-#include "yaml-cpp/yaml.h"
-
-// Program used when no executable is provided; counts down from
-// 1024*1024, with an independent `orr` at the start of each branch.
-uint32_t hex_[] = {
-    0x320C03E0,  // orr w0, wzr, #1048576
-    0x320003E1,  // orr w0, wzr, #1
-    0x71000400,  // subs w0, w0, #1
-    0x54FFFFC1,  // b.ne -8
-                 // .exit:
-    0xD2800000,  // mov x0, #0
-    0xD2800BC8,  // mov x8, #94
-    0xD4000001,  // svc #0
-};
 
 namespace simeng {
+
+// Forward declare everything needed for SimOS
+namespace OS {
+class SimOS;
+}  // namespace OS
 
 /** The available modes of simulation. */
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
@@ -42,20 +33,16 @@ enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
 /** A class to create a SimEng core instance from a supplied config. */
 class CoreInstance {
  public:
-  /** Default constructor with an executable and its arguments but no model
-   * configuration. */
-  CoreInstance(std::string executablePath,
-               std::vector<std::string> executableArgs);
-
   /** Constructor with an executable, its arguments, and a model configuration.
    */
-  CoreInstance(std::string configPath, std::string executablePath,
-               std::vector<std::string> executableArgs);
+  CoreInstance(std::shared_ptr<OS::SyscallHandler> syscallHandler,
+               std::shared_ptr<simeng::memory::Mem> mem);
 
+  // IGNORING SST RELATED CODE FOR NOW
   /** CoreInstance with source code assembled by LLVM and a model configuration.
    */
-  CoreInstance(char* assembledSource, size_t sourceSize,
-               std::string configPath);
+  // CoreInstance(char* assembledSource, size_t sourceSize,
+  //              std::string configPath);
 
   ~CoreInstance();
 
@@ -84,41 +71,19 @@ class CoreInstance {
   /** Getter for the create instruction memory object. */
   std::shared_ptr<simeng::MemoryInterface> getInstructionMemory() const;
 
-  /** Getter for a shared pointer to the created process image. */
-  std::shared_ptr<char> getProcessImage() const;
-
-  /** Getter for the size of the created process image. */
-  const uint64_t getProcessImageSize() const;
-
-  /* Getter for heap start. */
-  const uint64_t getHeapStart() const;
-
  private:
   /** Generate the appropriate simulation objects as parameterised by the
    * configuration.*/
-  void generateCoreModel(std::string executablePath,
-                         std::vector<std::string> executableArgs);
+  void generateCoreModel();
 
   /** Extract simulation mode from config file. */
   void setSimulationMode();
-
-  /** Construct the SimEng linux process object from command line arguments.
-   * Empty command line arguments denote the usage of hardcoded
-   * instructions held in the hex_ array. */
-  void createProcess(std::string executablePath,
-                     std::vector<std::string> executableArgs);
-
-  /** Construct the process memory from the generated process_ object. */
-  void createProcessMemory();
 
   /** Construct the SimEng L1 instruction cache memory. */
   void createL1InstructionMemory(const simeng::MemInterfaceType type);
 
   /** Construct the SimEng L1 data cache memory. */
   void createL1DataMemory(const simeng::MemInterfaceType type);
-
-  /** Construct the special file directory. */
-  void createSpecialFileDirectory();
 
   /** Whether or not the source has been assembled by LLVM. */
   bool assembledSource_ = false;
@@ -130,19 +95,16 @@ class CoreInstance {
   size_t sourceSize_ = 0;
 
   /** The config file describing the modelled core to be created. */
-  YAML::Node config_;
+  YAML::Node& config_;
 
-  /** Reference to the SimEng linux process object. */
-  std::unique_ptr<simeng::kernel::LinuxProcess> process_ = nullptr;
+  /** Reference to the SimEng SimOS Process object. */
+  std::shared_ptr<simeng::OS::Process> process_ = nullptr;
+
+  /** Reference to the SyscallHandler object in SimOS instance. */
+  std::shared_ptr<OS::SyscallHandler> syscallHandler_;
 
   /** The size of the process memory. */
   uint64_t processMemorySize_;
-
-  /** The process memory space. */
-  std::shared_ptr<char> processMemory_;
-
-  /** The SimEng Linux kernel object. */
-  simeng::kernel::Linux kernel_;
 
   /** Whether or not the dataMemory_ must be set manually. */
   bool setDataMemory_ = false;
@@ -174,6 +136,9 @@ class CoreInstance {
 
   /** Reference to the SimEng instruction memory object. */
   std::shared_ptr<simeng::MemoryInterface> instructionMemory_ = nullptr;
+
+  /** Reference to the global memory pointer */
+  std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
 };
 
 }  // namespace simeng

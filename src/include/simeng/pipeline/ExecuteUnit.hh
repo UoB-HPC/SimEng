@@ -56,6 +56,9 @@ class ExecuteUnit {
    * stall, if applicable. */
   void purgeFlushed();
 
+  /** Flushed EU pipeline of any instructions. */
+  void flush();
+
   /** Retrieve the number of branch instructions that have been executed. */
   uint64_t getBranchExecutedCount() const;
 

@@ -21,7 +21,6 @@ class Core : public simeng::Core {
    * along with a pointer and size of instruction memory, and a pointer to
    * process memory. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       uint64_t processMemorySize, uint64_t entryPoint,
        const arch::Architecture& isa, BranchPredictor& branchPredictor);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
@@ -29,8 +28,8 @@ class Core : public simeng::Core {
    * end of each cycle. */
   void tick() override;
 
-  /** Check whether the program has halted. */
-  bool hasHalted() const override;
+  /** Check the current status of the core. */
+  CoreStatus getStatus() override;
 
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
@@ -44,6 +43,23 @@ class Core : public simeng::Core {
 
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
+
+  /** Schedule a new Process. */
+  void schedule(simeng::OS::cpuContext newContext) override;
+
+  /** Signals core to stop executing the current process.
+   * Return Values :
+   *  - True  : if succeeded in signaling interrupt
+   *  - False : interrupt not scheduled due to on-going exception or system call
+   */
+  bool interrupt() override;
+
+  /** Retrieve the number of ticks that have elapsed whilst executing the
+   * current process. */
+  uint64_t getCurrentProcTicks() const override;
+
+  /** Retrieve the CPU context for the currently scheduled process. */
+  simeng::OS::cpuContext getCurrentContext() const override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
@@ -73,6 +89,9 @@ class Core : public simeng::Core {
   /** Handle requesting/execution of a load instruction. */
   void handleLoad(const std::shared_ptr<Instruction>& instruction);
 
+  /** The current state the core is in. */
+  CoreStatus status_ = CoreStatus::idle;
+
   /** The process memory. */
   MemoryInterface& dataMemory_;
 
@@ -85,9 +104,6 @@ class Core : public simeng::Core {
   /** An architectural register file set, serving as a simple wrapper around the
    * register file set. */
   ArchitecturalRegisterFileSet architecturalRegisterFileSet_;
-
-  /** The process memory. */
-  span<char> processMemory;
 
   /** The buffer between fetch and decode. */
   pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;
@@ -118,8 +134,12 @@ class Core : public simeng::Core {
   /** The number of times the pipeline has been flushed. */
   uint64_t flushes_ = 0;
 
-  /** The number of times this core has been ticked. */
+  /** The total number of times this core has been ticked. */
   uint64_t ticks_ = 0;
+
+  /** The number of times this core has ticked whilst executing the current
+   * process. */
+  uint64_t procTicks_ = 0;
 
   /** Whether an exception was generated during the cycle. */
   bool exceptionGenerated_ = false;
@@ -127,11 +147,17 @@ class Core : public simeng::Core {
   /** A pointer to the instruction responsible for generating the exception. */
   std::shared_ptr<Instruction> exceptionGeneratingInstruction_;
 
-  /** Whether the core has halted. */
-  bool hasHalted_ = false;
-
   /** The active exception handler. */
   std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
+
+  /** The number of ticks whilst in an idle state. */
+  uint64_t idle_ticks_ = 0;
+
+  /** Number of times a context switch was performed. */
+  uint64_t contextSwitches_ = 0;
+
+  /** TID of the process currently executing on the core. */
+  uint64_t currentTID_ = -1;
 };
 
 }  // namespace inorder

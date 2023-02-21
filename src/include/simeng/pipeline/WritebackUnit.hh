@@ -25,6 +25,9 @@ class WritebackUnit {
   /** Retrieve a count of the number of instructions retired. */
   uint64_t getInstructionsWrittenCount() const;
 
+  /** Removes all Instructions from CompletionSlots_. */
+  void flush();
+
  private:
   /** Buffers of completed instructions to process. */
   std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& completionSlots_;

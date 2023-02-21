@@ -39,8 +39,8 @@ class FetchUnit {
   /** Construct a fetch unit with a reference to an output buffer, the ISA, and
    * the current branch predictor, and information on the instruction memory. */
   FetchUnit(PipelineBuffer<MacroOp>& output, MemoryInterface& instructionMemory,
-            uint64_t programByteLength, uint64_t entryPoint, uint8_t blockSize,
-            const arch::Architecture& isa, BranchPredictor& branchPredictor);
+            uint8_t blockSize, const arch::Architecture& isa,
+            BranchPredictor& branchPredictor);
 
   ~FetchUnit();
 
@@ -55,8 +55,15 @@ class FetchUnit {
    * outside of instruction memory. */
   bool hasHalted() const;
 
-  /** Update the program counter to the specified address. */
+  /** Update the program counter to the specified address.
+   * NOTE: Must set program length before calling when scheduling.
+   */
   void updatePC(uint64_t address);
+
+  /** Update programByteLength_ to the specified value.
+   * NOTE: Must be set before updating PC when scheduling.
+   */
+  void setProgramLength(uint64_t size);
 
   /** Request instructions at the current program counter for a future cycle. */
   void requestFromPC();
@@ -67,6 +74,22 @@ class FetchUnit {
 
   /** Clear the loop buffer. */
   void flushLoopBuffer();
+
+  /** Temporarily pause the FetchUnit. */
+  void pause() {
+    paused_ = true;
+    instructionMemory_.clearCompletedReads();
+    flushLoopBuffer();
+  };
+
+  /** Unpause the fetch unit. */
+  void unpause() {
+    paused_ = false;
+    requestFromPC();
+  };
+
+  /** Get the current PC value. */
+  uint64_t getPC() const { return pc_; };
 
  private:
   /** An output buffer connecting this unit to the decode unit. */
@@ -79,7 +102,7 @@ class FetchUnit {
   MemoryInterface& instructionMemory_;
 
   /** The length of the available instruction memory. */
-  uint64_t programByteLength_;
+  uint64_t programByteLength_ = 0;
 
   /** Reference to the currently used ISA. */
   const arch::Architecture& isa_;
@@ -116,6 +139,12 @@ class FetchUnit {
 
   /** The amount of data currently in the fetch buffer. */
   uint8_t bufferedBytes_ = 0;
+
+  /** The Fetch Unit's paused state - when an interupt has been signalled, the
+   * Fetch Unit must not fetch / increment the PC until a new process has been
+   * scheduled. This ensures the correct architectural state can be captured
+   * during a context switch. */
+  bool paused_ = false;
 };
 
 }  // namespace pipeline
