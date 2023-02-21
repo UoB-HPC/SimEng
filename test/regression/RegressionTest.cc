@@ -7,6 +7,7 @@
 #include "simeng/GenericPredictor.hh"
 #include "simeng/OS/Process.hh"
 #include "simeng/OS/SimOS.hh"
+#include "simeng/SimInfo.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
@@ -30,6 +31,10 @@ void RegressionTest::run(const char* source, const char* triple,
   // Get pre-defined config file for OoO model
   YAML::Node config = generateConfig();
   Config::set(config);
+
+  // Due to SimInfo being static, we need to reset the architectural register
+  // file each time the config file is updated
+  simeng::SimInfo::resetArchRegs();
 
   const size_t memorySize =
       Config::get()["Simulation-Memory"]["Size"].as<size_t>();
