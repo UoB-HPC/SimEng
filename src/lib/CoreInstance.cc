@@ -3,8 +3,12 @@
 namespace simeng {
 
 CoreInstance::CoreInstance(std::shared_ptr<OS::SyscallHandler> syscallHandler,
-                           std::shared_ptr<simeng::memory::Mem> mem)
-    : config_(Config::get()), syscallHandler_(syscallHandler), memory_(mem) {
+                           std::shared_ptr<simeng::memory::Mem> mem,
+                           std::shared_ptr<memory::MMU> mmu)
+    : config_(Config::get()),
+      syscallHandler_(syscallHandler),
+      memory_(mem),
+      mmu_(mmu) {
   generateCoreModel();
 }
 
@@ -92,10 +96,10 @@ void CoreInstance::createL1InstructionMemory(
     const simeng::MemInterfaceType type) {
   // Create a L1I cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
-    instructionMemory_ = std::make_shared<simeng::FlatMemoryInterface>(memory_);
+    instructionMemory_ = std::make_shared<simeng::FlatMemoryInterface>(mmu_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
     instructionMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        memory_, config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
+        mmu_, config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
   } else {
     std::cerr
         << "[SimEng:CoreInstance] Unsupported memory interface type used in "
@@ -120,10 +124,10 @@ void CoreInstance::setL1InstructionMemory(
 void CoreInstance::createL1DataMemory(const simeng::MemInterfaceType type) {
   // Create a L1D cache instance based on type supplied
   if (type == simeng::MemInterfaceType::Flat) {
-    dataMemory_ = std::make_shared<simeng::FlatMemoryInterface>(memory_);
+    dataMemory_ = std::make_shared<simeng::FlatMemoryInterface>(mmu_);
   } else if (type == simeng::MemInterfaceType::Fixed) {
     dataMemory_ = std::make_shared<simeng::FixedLatencyMemoryInterface>(
-        memory_, config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
+        mmu_, config_["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>());
   } else {
     std::cerr << "[SimEng:CoreInstance] Unsupported memory interface type used "
                  "in createL1DataMemory()."

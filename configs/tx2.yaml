@@ -15,8 +15,12 @@ Fetch:
   Loop-Buffer-Size: 64
   Loop-Detection-Threshold: 4
 Process-Image:
+  Mmap-Size: 1073741824
   Heap-Size: 1073741824
   Stack-Size: 1048576
+Simulation-Memory:
+  # 2.6 GiB
+  Size: 2684354560
 Register-Set:
   GeneralPurpose-Count: 154
   FloatingPoint/SVE-Count: 90

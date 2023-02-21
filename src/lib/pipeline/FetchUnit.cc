@@ -83,7 +83,17 @@ void FetchUnit::tick() {
 
     size_t fetchIndex;
     for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
-      if (fetched[fetchIndex].target.address == blockAddress) {
+      // A data null check "fetched[fetchIndex].data" is added to handle empty
+      // fetched instructions that are caused by incorrectly speculated branch
+      // instructions. Wrongly speculated branch instructions can sometimes
+      // generate addresses that have no mapping in the PageTable. This causes a
+      // page table fault which is handled by the OS. Since the address related
+      // to the branch instruction can be a garbage address to a region of
+      // memory which cannot be mapped, a data abort exception is thrown and an
+      // empty register value is returned as the read payload. A data null check
+      // suffices to catch these data aborts.
+      if (fetched[fetchIndex].target.address == blockAddress &&
+          fetched[fetchIndex].data) {
         break;
       }
     }
@@ -93,7 +103,6 @@ void FetchUnit::tick() {
     }
 
     // TODO: Handle memory faults
-    assert(fetched[fetchIndex].data && "Memory read failed");
     const uint8_t* fetchData = fetched[fetchIndex].data.getAsVector<uint8_t>();
 
     // Copy fetched data to fetch buffer after existing data

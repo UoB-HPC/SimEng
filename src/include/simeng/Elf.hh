@@ -19,22 +19,40 @@ struct ElfHeader {
   uint64_t physicalAddress;
   uint64_t fileSize;
   uint64_t memorySize;
+  std::vector<char> headerData;
 };
 
 /** A processed Executable and Linkable Format (ELF) file. */
 class Elf {
  public:
-  Elf(std::string path, char** imagePointer);
-  ~Elf();
-  uint64_t getProcessImageSize() const;
+  Elf(std::string path);
+
+  ~Elf() {}
+
+  /** Method to return ELF process image size. */
+  uint64_t getElfImageSize() const;
+
+  /** Method to return the validity of the ELF parsing process. */
   bool isValid() const;
+
+  /** Method which returns the entry point. */
   uint64_t getEntryPoint() const;
 
+  /** Method which returns all processed ELF Headers. */
+  const std::vector<ElfHeader>& getProcessedHeaders() const;
+
  private:
+  /** Entry point of the ELF. */
   uint64_t entryPoint_;
-  std::vector<ElfHeader> headers_;
+
+  /** Bool which holds if the ELF parsing was done correctly. */
   bool isValid_ = false;
-  uint64_t processImageSize_;
+
+  /** Size of the ELF image. */
+  uint64_t elfImageSize_ = 0;
+
+  /** Vector which holds all processed ELF headers. */
+  std::vector<ElfHeader> processedHeaders_;
 };
 
 }  // namespace simeng

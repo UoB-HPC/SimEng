@@ -1,5 +1,7 @@
 #include "simeng/OS/SimOS.hh"
 
+#include "simeng/OS/Constants.hh"
+
 /** The size of each time slice a process has. */
 static constexpr uint64_t execTicks = 30000;
 
@@ -8,12 +10,14 @@ namespace OS {
 
 SimOS::SimOS(std::string executablePath,
              std::vector<std::string> executableArgs,
-             std::shared_ptr<simeng::memory::Mem> mem)
+             std::shared_ptr<simeng::memory::Mem> mem, bool setProcess)
     : executablePath_(executablePath),
       executableArgs_(executableArgs),
-      memory_(mem),
-      syscallHandler_(std::make_shared<SyscallHandler>(processes_)) {
-  createInitialProcess();
+      memory_(mem) {
+  syscallHandler_ = std::make_shared<SyscallHandler>(this);
+
+  pageFrameAllocator_ = PageFrameAllocator(mem->getMemorySize());
+  if (!setProcess) createInitialProcess();
 
   // Create the Special Files directory if indicated to do so in Config file
   if (Config::get()["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true)
@@ -129,7 +133,7 @@ void SimOS::tick() {
   }
 }
 
-const Process& SimOS::getProcess(uint64_t TID) const {
+const std::shared_ptr<Process>& SimOS::getProcess(uint64_t TID) {
   auto proc = processes_.find(TID);
   if (proc == processes_.end()) {
     // If TID doesn't exist then hard exit
@@ -137,13 +141,20 @@ const Process& SimOS::getProcess(uint64_t TID) const {
               << "` does not exist.\n";
     exit(1);
   }
-  return (*proc->second);
+  return proc->second;
 }
 
 void SimOS::createInitialProcess() {
   // TODO : When supporting multiple processes, need to keep track of next
   // available TGID and TIDs, and pass these when constructing a Process
   // object
+
+  // Callback function used to write data to the simulation memory without
+  // incurring any latency. This function will be used to write data to the
+  // simulation memory during process creation and while handling page faults.
+  auto sendToMem = [this](std::vector<char> data, uint64_t addr, size_t size) {
+    memory_->sendUntimedData(data, addr, size);
+  };
 
   // Temporarily create the architecture, with knowledge of the OS
   std::unique_ptr<simeng::arch::Architecture> arch;
@@ -159,14 +170,15 @@ void SimOS::createInitialProcess() {
       arch->getRegisterFileStructures();
 
   if (executablePath_ != DEFAULT_STR) {
-    // Concatenate the command line arguments into a single vector and create
-    // the process image
+    // Concatenate the command line arguments into a single vector and
+    // create the process image
     std::vector<std::string> commandLine = {executablePath_};
     commandLine.insert(commandLine.end(), executableArgs_.begin(),
                        executableArgs_.end());
 
-    processes_.emplace(0, std::make_shared<Process>(commandLine, memory_,
-                                                    regFileStructure, 0, 0));
+    processes_.emplace(
+        0, std::make_shared<Process>(commandLine, this, regFileStructure, 0, 0,
+                                     sendToMem, memory_->getMemorySize()));
 
     // Raise error if created process is not valid
     if (!processes_[0]->isValid()) {
@@ -177,10 +189,10 @@ void SimOS::createInitialProcess() {
   } else {
     // Create a process image from the set of instructions held in hex_
     processes_.emplace(
-        0, std::make_shared<Process>(
-               simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-               memory_, regFileStructure, 0, 0));
-
+        0,
+        std::make_shared<Process>(
+            simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
+            this, regFileStructure, 0, 0, sendToMem, memory_->getMemorySize()));
     // Raise error if created process is not valid
     if (!processes_[0]->isValid()) {
       std::cerr << "[SimEng:SimOS] Could not create initial process based on "
@@ -209,9 +221,10 @@ void SimOS::createInitialProcess() {
         static_cast<uint64_t>(0b10100), 8};
   }
 
-  // In a simulation's initial state, all cores will be idle. Only 'scheduled'
-  // processes may be sent to a core for execution therefore we must update
-  // the initial processes status and push it to the scheduledProcs queue
+  // In a simulation's initial state, all cores will be idle. Only
+  // 'scheduled' processes may be sent to a core for execution therefore
+  // we must update the initial processes status and push it to the
+  // scheduledProcs queue
   processes_[0]->status_ = procStatus::scheduled;
   scheduledProcs_.push(processes_[0]);
 }
@@ -222,6 +235,39 @@ void SimOS::createSpecialFileDirectory() const {
   SFdir.RemoveExistingSFDir();
   // Create new special files dir
   SFdir.GenerateSFDir();
+}
+
+uint64_t SimOS::requestPageFrames(size_t size) {
+  return pageFrameAllocator_.allocate(size);
+}
+
+uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
+  auto process = processes_.find(0)->second;
+  uint64_t translation = process->pageTable_->translate(vaddr);
+  uint64_t faultCode = masks::faults::getFaultCode(translation);
+
+  // Return the translation if faultCode is not translate, any other faults
+  // will be handled further. Only page faults will be handled here.
+  if (faultCode != masks::faults::pagetable::TRANSLATE) return translation;
+
+  uint64_t addr = process->handlePageFault(vaddr);
+  faultCode = masks::faults::getFaultCode(addr);
+
+  if (faultCode == masks::faults::pagetable::MAP) {
+    std::cerr << "[SimEng:SimOS] Failed to create mapping during PageFault "
+                 "caused by Vaddr: "
+              << vaddr << "( TID: " << tid << " )" << std::endl;
+    std::exit(1);
+  }
+
+  return addr;
+}
+
+VAddrTranslator SimOS::getVAddrTranslator() {
+  auto fn = [this](uint64_t vaddr, uint64_t pid) -> uint64_t {
+    return handleVAddrTranslation(vaddr, pid);
+  };
+  return fn;
 }
 
 }  // namespace OS

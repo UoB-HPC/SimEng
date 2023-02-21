@@ -566,6 +566,12 @@ bool ExceptionHandler::init() {
         size_t length = registerFileSet.get(R1).get<size_t>();
 
         int64_t result = sysHandler_->munmap(addr, length);
+        // If successful, sysHandler_->munmap returns the total number of bytes
+        // unmapped. If the value is greater than 0, 0 is returned as specified
+        // by the actual munmap specification. However, all negative values
+        // returned by munmap are in accordance with the munmap specification,
+        // so in case a negative value is returned it will remain the same.
+        result = result > 0 ? 0 : result;
         stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
         break;
       }
@@ -576,28 +582,15 @@ bool ExceptionHandler::init() {
         int flags = registerFileSet.get(R3).get<int>();
         int fd = registerFileSet.get(R4).get<int>();
         off_t offset = registerFileSet.get(R5).get<off_t>();
-
-        // Currently, only support mmap from a malloc() call whose arguments
-        // match the first condition
-        if (addr == 0 && flags == 34 && fd == -1 && offset == 0) {
-          uint64_t result =
-              sysHandler_->mmap(addr, length, prot, flags, fd, offset);
-          // An allocation of 0 signifies a failed allocation, return value from
-          // syscall is changed to -1
-          if (result == 0) {
-            stateChange = {
-                ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-1)}};
-          } else {
-            stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
-          }
-          break;
+        uint64_t result =
+            sysHandler_->mmap(addr, length, prot, flags, fd, offset);
+        if (result <= 0) {
+          stateChange = {
+              ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-1)}};
         } else {
-          printException(instruction_);
-          std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
-                       "syscall: "
-                    << syscallId << std::endl;
-          return fatal();
+          stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
         }
+        break;
       }
       case 226: {  // mprotect
         // mprotect is not supported

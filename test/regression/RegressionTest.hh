@@ -88,15 +88,15 @@ class RegressionTest
   template <typename T>
   T getMemoryValue(uint64_t address) const {
     EXPECT_LE(address + sizeof(T), processMemorySize_);
-    auto mem = memory_->getMemCpy();
+    uint64_t addr = process_->translate(address);
+    std::vector<char> mem = memory_->getUntimedData(addr, sizeof(T));
     T dest{};
-    std::memcpy(&dest, mem + address, sizeof(T));
-    delete[] mem;
+    std::memcpy(&dest, mem.data(), sizeof(T));
     return dest;
   }
 
   /** The initial data to populate the heap with. */
-  std::vector<uint8_t> initialHeapData_;
+  std::vector<char> initialHeapData_;
 
   /** The maximum number of ticks to run before aborting the test. */
   uint64_t maxTicks_ = UINT64_MAX;

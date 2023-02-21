@@ -4,7 +4,7 @@
 #include <vector>
 
 #include "simeng/MemoryInterface.hh"
-#include "simeng/memory/Mem.hh"
+#include "simeng/memory/MMU.hh"
 
 namespace simeng {
 
@@ -40,7 +40,7 @@ struct FixedLatencyMemoryInterfaceRequest {
 /** A memory interface where all requests respond with a fixed latency. */
 class FixedLatencyMemoryInterface : public MemoryInterface {
  public:
-  FixedLatencyMemoryInterface(std::shared_ptr<simeng::memory::Mem> memory,
+  FixedLatencyMemoryInterface(std::shared_ptr<memory::MMU> mmu,
                               uint16_t latency);
 
   /** Queue a read request from the supplied target location.
@@ -66,20 +66,17 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
   void tick() override;
 
  private:
-  /** Size of the memory. */
-  size_t size_;
+  /** Shared pointer to the core MMU. */
+  std::shared_ptr<memory::MMU> mmu_;
 
-  /** Shared pointer to memory. */
-  std::shared_ptr<simeng::memory::Mem> memory_;
+  /** The latency all requests are completed after. */
+  uint16_t latency_;
 
   /** A vector containing all completed read requests. */
   std::vector<MemoryReadResult> completedReads_;
 
   /** A queue containing all pending memory requests. */
   std::queue<FixedLatencyMemoryInterfaceRequest> pendingRequests_;
-
-  /** The latency all requests are completed after. */
-  uint16_t latency_;
 
   /** The number of times this interface has been ticked. */
   uint64_t tickCounter_ = 0;

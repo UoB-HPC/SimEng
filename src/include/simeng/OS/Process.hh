@@ -1,10 +1,13 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 
 #include "simeng/Config.hh"
 #include "simeng/Elf.hh"
+#include "simeng/OS/FileDesc.hh"
 #include "simeng/OS/MemRegion.hh"
+#include "simeng/OS/PageTable.hh"
 
 namespace simeng {
 
@@ -15,9 +18,15 @@ class Mem;
 
 namespace OS {
 
-// TODO : Move to more appropriate class (SimOS).
-/** The page size of the process memory. */
-static constexpr uint64_t pageSize_ = 4096;
+using namespace simeng::OS::defaults;
+
+/** Typedef for callback function used to send data to memory upon handling page
+ * fault. */
+typedef std::function<void(std::vector<char> data, uint64_t, size_t)>
+    sendToMemory;
+
+// Forward declaration for SimOS.
+class SimOS;
 
 enum procStatus { waiting, executing, completed, scheduled };
 
@@ -37,41 +46,60 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
 
 /** The initial state of a SimOS Process, constructed from a binary executable.
  *
- * The constructed process follows a typical layout in memory:
+ * The constructed process follows the layout described below and has the
+ * following properties:
  *
- * |---------------| <- start of stack
- * |     Stack     |    stack grows downwards
- * |-v-----------v-|
+ * a) Padding between each region is equal to the page size.
+ * b) Each region's start address, end address and size are page aligned.
+ * c) The stack grows downwards.
+ * d) The heap grows upwards.
+ * e) The mmap region grows upwards.
+ * f) Region above the initial stack address contains all initial data for the
+ * process to start i.e argv, env args, auxiliary variables.
+ *
+ * |---------------| <- stackStart (Start of the stack region)
+ * |---------------| <- initStackPtr (Initial stack address available)
+ * |     Stack     |
  * |               |
- * |-^-----------^-|
- * |  mmap region  |    mmap region grows upwards
- * |---------------| <- start of mmap region
+ * |-v-----------v-| <- stackEnd (End of the stack region)
+ * |    Padding    |
+ * |-^-----------^-| <- mmapEnd (End of mmap region)
+ * |  Mmap region  |
  * |               |
- * |-^-----------^-|
- * |     Heap      |    heap grows upwards
- * |---------------| <- start of heap
+ * |---------------| <- mmapstart (Start of mmap region)
+ * |    Padding    |
+ * |-^-----------^-| <- heapEnd (End of the heap region)
+ * |     Heap      |
  * |               |
+ * |---------------| <- heapStart (Start of stack region)
+ * |    Padding    |
+ * |---------------| <- End of the ELF-defined process image
  * |  ELF-defined  |
  * | process image |
  * |               |
- * |---------------| <- 0x0
+ * |---------------| <- Lowest address in the process layout
  *
  */
 class Process {
+  /**  Make SimOS friend class of Process so it can access all private
+   * variables. */
+  friend class SimOS;
+
  public:
-  /** Construct a SimOS Process from a vector of command-line arguments.
-   *
-   * The first argument is a path to an executable ELF file. */
-  Process(const std::vector<std::string>& commandLine,
-          std::shared_ptr<simeng::memory::Mem> memory,
-          const std::vector<RegisterFileStructure>& regFileStructure,
-          uint64_t TGID, uint64_t TID);
+  /** Construct a SimOS Process from a vector of command-line arguments. The
+   * first argument is a path to an executable ELF file. Size of the simulation
+   * memory is also passed to check if the process image can fit inside the
+   * simulation memory. */
+  Process(const std::vector<std::string>& commandLine, SimOS* OS,
+          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
+          uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
 
   /** Construct a SimOS Process from region of instruction memory, with the
-   * entry point fixed at 0. */
-  Process(span<char> instructions, std::shared_ptr<simeng::memory::Mem> memory,
-          const std::vector<RegisterFileStructure>& regFileStructure,
-          uint64_t TGID, uint64_t TID);
+   * entry point fixed at 0. Size of the simulation memory is also passed to
+   * check if the process image can fit inside the simulation memory.*/
+  Process(span<char> instructions, SimOS* OS,
+          std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
+          uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
 
   ~Process();
 
@@ -111,11 +139,14 @@ class Process {
   /** Get the process' TID. */
   uint64_t getTID() const { return TID_; }
 
-  /** The virtual file descriptor mapping table. */
-  std::vector<int64_t> fileDescriptorTable_;
+  /** Method which handles a page fault. */
+  uint64_t handlePageFault(uint64_t vaddr);
 
-  /** Set of deallocated virtual file descriptors available for reuse. */
-  std::set<int64_t> freeFileDescriptors_;
+  /** Method which handles virtual address translation. */
+  uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
+
+  /** Unique pointer to FileDescArray class.*/
+  std::unique_ptr<FileDescArray> fdArray_;
 
   // Thread state
   // TODO: Support multiple threads per process
@@ -130,9 +161,9 @@ class Process {
   cpuContext context_;
 
  private:
-  /** Create and populate the initial process stack and return the stack
+  /** Create and populate the initial process stack and returns the stack
    * pointer. */
-  uint64_t createStack(char** processImage, uint64_t stackStart);
+  uint64_t createStack(uint64_t stackStart);
 
   /** Initialises the Process' context_ arguments to the appropriate values. */
   void initContext(const uint64_t stackPtr,
@@ -155,8 +186,21 @@ class Process {
   uint64_t TGID_;
 
   /** The process' Thread ID - a globally unique identifier.
-   * A thread group's leader TID will be equal to the TGID. */
+   * A thread group's leader's TID will be equal to the TGID. */
   uint64_t TID_;
+
+  /** Reference to a page table */
+  std::shared_ptr<PageTable> pageTable_ = nullptr;
+
+  /** Reference to the SimOS object. */
+  SimOS* OS_;
+
+  /** Callback function used to write data to the simulation memory without
+   * incurring any latency. This callback is used to write process
+   * initialisation data during process creation to the simulation memory. It is
+   * also used to write file data (if present) to the simulation memory after
+   * handling a page fault */
+  sendToMemory sendToMem_;
 };
 
 }  // namespace OS

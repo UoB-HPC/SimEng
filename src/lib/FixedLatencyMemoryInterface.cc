@@ -5,8 +5,8 @@
 namespace simeng {
 
 FixedLatencyMemoryInterface::FixedLatencyMemoryInterface(
-    std::shared_ptr<simeng::memory::Mem> memory, uint16_t latency)
-    : memory_(memory), latency_(latency), size_(memory->getMemorySize()) {}
+    std::shared_ptr<memory::MMU> mmu, uint16_t latency)
+    : mmu_(mmu), latency_(latency) {}
 
 void FixedLatencyMemoryInterface::tick() {
   tickCounter_++;
@@ -20,34 +20,34 @@ void FixedLatencyMemoryInterface::tick() {
     }
 
     const auto& target = request.target;
+    uint64_t requestId = request.requestId;
 
     if (request.write) {
-      // Write: write data directly to memory
-      assert(target.address + target.size <= memory_->getMemorySize() &&
-             "Attempted to write beyond memory limit");
-
-      simeng::memory::WriteRespPacket* resp =
-          (simeng::memory::WriteRespPacket*)memory_->requestAccess(
-              new simeng::memory::WritePacket{
-                  target.address, target.size,
-                  request.data.getAsVector<char>()});
-      delete resp;
+      const char* wdata = request.data.getAsVector<char>();
+      std::vector<char> dt(wdata, wdata + target.size);
+      // Responses to write requests are ignored by passing in a nullptr
+      // callback because they don't contain any information relevant to the
+      // simulation.
+      mmu_->bufferRequest(
+          memory::DataPacket(target.address, target.size, memory::WRITE_REQUEST,
+                             requestId, dt),
+          nullptr);
     } else {
-      // Read: read data into `completedReads`
-      if (target.address + target.size > size_ ||
-          unsignedOverflow_(target.address, target.size)) {
-        // Read outside of memory; return an invalid value to signal a fault
-        completedReads_.push_back({target, RegisterValue(), request.requestId});
-      } else {
-        simeng::memory::ReadRespPacket* resp =
-            (simeng::memory::ReadRespPacket*)memory_->requestAccess(
-                new simeng::memory::ReadPacket{target.address, target.size});
-        // Copy the data at the requested memory address into a RegisterValue
-        completedReads_.push_back({target,
-                                   RegisterValue(resp->data, resp->bytesRead),
-                                   request.requestId});
-        delete resp;
-      }
+      // Instantiate a callback function which will be invoked with the response
+      // to a read request.
+      auto fn = [this, target,
+                 requestId](struct memory::DataPacket packet) -> void {
+        if (packet.inFault_) {
+          completedReads_.push_back({target, RegisterValue(), requestId});
+          return;
+        }
+        completedReads_.push_back(
+            {target, RegisterValue(packet.data_.data(), packet.size_),
+             requestId});
+      };
+      mmu_->bufferRequest(memory::DataPacket(target.address, target.size,
+                                             memory::READ_REQUEST, requestId),
+                          fn);
     }
 
     // Remove the request from the queue

@@ -69,17 +69,30 @@ int main(int argc, char** argv) {
     }
   }
 
-  // Create simulation memory
+  // Get the memory size from the YAML config file.
+  const size_t memorySize =
+      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
+
+  // Create the simulation memory.
   std::shared_ptr<simeng::memory::Mem> memory =
-      std::make_shared<simeng::memory::SimpleMem>(2684354560);  // 2.6 GiB
+      std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the lightweight Operating system
   simeng::OS::SimOS OS =
       simeng::OS::SimOS(executablePath, executableArgs, memory);
 
+  // Retrieve the virtual address translation function from SimOS and pass it to
+  // the MMU. This function will be used to handle all virtual address
+  // translations after a TLB miss.
+  VAddrTranslator fn = OS.getVAddrTranslator();
+
+  std::shared_ptr<simeng::memory::MMU> mmu =
+      std::make_shared<simeng::memory::MMU>(memory, fn, 0);
+
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =
-      std::make_unique<simeng::CoreInstance>(OS.getSyscallHandler(), memory);
+      std::make_unique<simeng::CoreInstance>(OS.getSyscallHandler(), memory,
+                                             mmu);
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();

@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 #include "simeng/FixedLatencyMemoryInterface.hh"
+#include "simeng/memory/MMU.hh"
 #include "simeng/memory/SimpleMem.hh"
 
 namespace {
@@ -9,7 +10,16 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
   // Create a memory interface with a two cycle latency
   std::shared_ptr<simeng::memory::Mem> mem =
       std::make_shared<simeng::memory::SimpleMem>(4);
-  simeng::FixedLatencyMemoryInterface memory(mem, 2);
+
+  VAddrTranslator fn = [](uint64_t addr, uint64_t pid) -> uint64_t {
+    return addr;
+  };
+
+  std::shared_ptr<simeng::memory::MMU> mmu =
+      std::make_shared<simeng::memory::MMU>(mem, fn, 0);
+
+  simeng::FixedLatencyMemoryInterface memory(mmu, 2);
+
   EXPECT_FALSE(memory.hasPendingRequests());
 
   // Write a 32-bit value to memory
@@ -27,18 +37,30 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
   memory.tick();
   EXPECT_FALSE(memory.hasPendingRequests());
 
-  auto resp = (simeng::memory::ReadRespPacket*)mem->requestAccess(
-      new simeng::memory::ReadPacket(0, 4));
+  auto resp = mem->requestAccess(
+      simeng::memory::DataPacket(0, 4, simeng::memory::READ_REQUEST, 0, false));
   uint32_t castedValue = 0;
-  memcpy(&castedValue, resp->data, 4);
+  memcpy(&castedValue, resp.data_.data(), 4);
   EXPECT_EQ(castedValue, 0xDEADBEEF);
 }
 
 // Test that out-of-bounds memory reads are correctly handled.
-TEST(LatencyMemoryInterfaceTest, OutofBoundsRead) {
+TEST(LatencyMemoryInterfaceTest, UnMappedAddrRead) {
   std::shared_ptr<simeng::memory::Mem> mem =
       std::make_shared<simeng::memory::SimpleMem>(4);
-  simeng::FixedLatencyMemoryInterface memory(mem, 1);
+
+  VAddrTranslator fn = [](uint64_t addr, uint64_t pid) -> uint64_t {
+    if (!(addr > 0 && addr < 4)) {
+      return simeng::OS::masks::faults::pagetable::FAULT |
+             simeng::OS::masks::faults::pagetable::DATA_ABORT;
+    }
+    return addr;
+  };
+
+  std::shared_ptr<simeng::memory::MMU> mmu =
+      std::make_shared<simeng::memory::MMU>(mem, fn, 0);
+
+  simeng::FixedLatencyMemoryInterface memory(mmu, 1);
 
   // Create a target such that address + size will overflow
   simeng::MemoryAccessTarget overflowTarget = {UINT64_MAX, 4};
