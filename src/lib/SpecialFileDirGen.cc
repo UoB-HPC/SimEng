@@ -4,7 +4,8 @@
 
 namespace simeng {
 
-SpecialFileDirGen::SpecialFileDirGen(YAML::Node config) {
+SpecialFileDirGen::SpecialFileDirGen() {
+  YAML::Node& config = Config::get();
   // Import all values from config file
   core_count = config["CPU-Info"]["Core-Count"].as<uint64_t>();
   socket_count = config["CPU-Info"]["Socket-Count"].as<uint64_t>();

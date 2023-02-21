@@ -10,13 +10,14 @@ DispatchIssueUnit::DispatchIssueUnit(
     PipelineBuffer<std::shared_ptr<Instruction>>& fromRename,
     std::vector<PipelineBuffer<std::shared_ptr<Instruction>>>& issuePorts,
     const RegisterFileSet& registerFileSet, PortAllocator& portAllocator,
-    const std::vector<uint16_t>& physicalRegisterStructure, YAML::Node config)
+    const std::vector<uint16_t>& physicalRegisterStructure)
     : input_(fromRename),
       issuePorts_(issuePorts),
       registerFileSet_(registerFileSet),
       scoreboard_(physicalRegisterStructure.size()),
       dependencyMatrix_(physicalRegisterStructure.size()),
       portAllocator_(portAllocator) {
+  YAML::Node& config = Config::get();
   // Initialise scoreboard
   for (size_t type = 0; type < physicalRegisterStructure.size(); type++) {
     scoreboard_[type].assign(physicalRegisterStructure[type], true);
@@ -262,6 +263,20 @@ uint64_t DispatchIssueUnit::getPortBusyStalls() const {
 void DispatchIssueUnit::getRSSizes(std::vector<uint64_t>& sizes) const {
   for (auto& rs : reservationStations_) {
     sizes.push_back(rs.capacity - rs.currentSize);
+  }
+}
+
+void DispatchIssueUnit::flush() {
+  for (size_t i = 0; i < scoreboard_.size(); i++) {
+    for (size_t j = 0; j < scoreboard_[i].size(); j++) {
+      scoreboard_[i][j] = true;
+    }
+  }
+
+  for (size_t i = 0; i < dependencyMatrix_.size(); i++) {
+    for (size_t j = 0; j < dependencyMatrix_[i].size(); j++) {
+      dependencyMatrix_[i][j].clear();
+    }
   }
 }
 

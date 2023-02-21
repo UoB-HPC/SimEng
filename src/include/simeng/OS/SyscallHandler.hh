@@ -1,15 +1,34 @@
 #pragma once
 
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/resource.h>
+#include <sys/stat.h>
+#include <sys/syscall.h>
+#include <sys/termios.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <cassert>
+#include <cstring>
+#include <iostream>
 #include <memory>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
-#include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/Elf.hh"
+#include "simeng/OS/Process.hh"
 #include "simeng/version.hh"
 
+static constexpr uint16_t PATH_MAX_LEN = 4096;
+
 namespace simeng {
-namespace kernel {
+namespace OS {
 
 /** Fixed-width definition of `stat`.
  * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
@@ -53,48 +72,6 @@ struct timeval {
   int64_t tv_usec;  // microseconds
 };
 
-/** Struct to hold information about a contiguous virtual memory area. */
-struct vm_area_struct {
-  /** The address representing the end of the memory allocation. */
-  uint64_t vm_end = 0;
-  /** The address representing the start of the memory allocation. */
-  uint64_t vm_start = 0;
-  /** The next allocation in the contiguous list. */
-  std::shared_ptr<struct vm_area_struct> vm_next = NULL;
-};
-
-/** A state container for a Linux process. */
-struct LinuxProcessState {
-  /** The process ID. */
-  int64_t pid;
-  /** The path of the executable that created this process. */
-  std::string path;
-  /** The address of the start of the heap. */
-  uint64_t startBrk;
-  /** The address of the current end of heap. */
-  uint64_t currentBrk;
-  /** The initial stack pointer. */
-  uint64_t initialStackPointer;
-  /** The address of the start of the mmap region. */
-  uint64_t mmapRegion;
-  /** The page size of the process memory. */
-  uint64_t pageSize;
-  /** Contiguous memory allocations from the mmap system call. */
-  std::vector<vm_area_struct> contiguousAllocations;
-  /** Non-Contiguous memory allocations from the mmap system call. */
-  std::vector<vm_area_struct> nonContiguousAllocations;
-
-  // Thread state
-  // TODO: Support multiple threads per process
-  /** The clear_child_tid value. */
-  uint64_t clearChildTid = 0;
-
-  /** The virtual file descriptor mapping table. */
-  std::vector<int64_t> fileDescriptorTable;
-  /** Set of deallocated virtual file descriptors available for reuse. */
-  std::set<int64_t> freeFileDescriptors;
-};
-
 /** Fixed-width definition of 'rusage' (from <sys/resource.h>). */
 struct rusage {
   struct ::timeval ru_utime;  // user CPU time used
@@ -126,15 +103,13 @@ struct linux_dirent64 {
   char* d_name;       // Filename (null-terminated)
 };
 
-/** A Linux kernel syscall emulation implementation, which mimics the responses
-   to Linux system calls. */
-class Linux {
+/** A Linux kernel syscall emulation implementation, which mimics the
+   responses to Linux system calls. */
+class SyscallHandler {
  public:
-  /** Create a new Linux process running above this kernel. */
-  void createProcess(const LinuxProcess& process);
-
-  /** Retrieve the initial stack pointer. */
-  uint64_t getInitialStackPointer() const;
+  /** Create a new SyscallHandler object. */
+  SyscallHandler(
+      const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes);
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */
@@ -150,8 +125,8 @@ class Linux {
   /** ftruncate syscall: truncate a file to an exact size. */
   int64_t ftruncate(uint64_t fd, uint64_t length);
 
-  /** faccessat syscall: checks whether the calling process can access the file
-   * 'pathname'. */
+  /** faccessat syscall: checks whether the calling process can access the
+   * file 'pathname'. */
   int64_t faccessat(int64_t dfd, const std::string& filename, int64_t mode,
                     int64_t flag);
 
@@ -183,8 +158,8 @@ class Linux {
 
   /** gettimeofday syscall: get the current time, using the system timer
    * `systemTimer` (with nanosecond accuracy). Returns 0 on success, and puts
-   * the seconds and microsconds elapsed since the Epoch in `tv`, while setting
-   * the elements of `tz` to 0. */
+   * the seconds and microsconds elapsed since the Epoch in `tv`, while
+   * setting the elements of `tz` to 0. */
   int64_t gettimeofday(uint64_t systemTimer, timeval* tv, timeval* tz);
 
   /** ioctl syscall: control device. */
@@ -214,7 +189,8 @@ class Linux {
   /** set a process's CPU affinity mask. */
   int64_t schedSetAffinity(pid_t pid, size_t cpusetsize, uint64_t mask);
 
-  /** set_tid_address syscall: set clear_child_tid value for calling thread. */
+  /** set_tid_address syscall: set clear_child_tid value for calling thread.
+   */
   int64_t setTidAddress(uint64_t tidptr);
 
   /** getdents64 syscall: read several linux_dirent structures from directory
@@ -233,9 +209,6 @@ class Linux {
   /** writev syscall: write buffers to a file. */
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
-  /** The maximum size of a filesystem path. */
-  static const size_t LINUX_PATH_MAX = 4096;
-
  private:
   /** Resturn correct Dirfd depending on given pathname abd dirfd given to
    * syscall. */
@@ -245,11 +218,8 @@ class Linux {
    * to point to the SimEng equivalent. */
   std::string getSpecialFile(const std::string filename);
 
-  /** The state of the user-space processes running above the kernel. */
-  std::vector<LinuxProcessState> processStates_;
-
-  /** Translation between special files paths and simeng replacement files. */
-  std::unordered_map<std::string, const std::string> specialPathTranslations_;
+  /** The user-space processes running above the kernel. */
+  const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes_;
 
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
@@ -258,5 +228,5 @@ class Linux {
   std::vector<std::string> supportedSpecialFiles_;
 };
 
-}  // namespace kernel
+}  // namespace OS
 }  // namespace simeng

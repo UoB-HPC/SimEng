@@ -9,15 +9,10 @@ namespace aarch64 {
 
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
-uint64_t Architecture::SVCRval_;
 
-Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
-    : linux_(kernel),
-      microDecoder_(std::make_unique<MicroDecoder>(config)),
-      VL_(config["Core"]["Vector-Length"].as<uint64_t>()),
-      SVL_(config["Core"]["Streaming-Vector-Length"].as<uint64_t>()),
-      vctModulo_((config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
-                 (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6)) {
+Architecture::Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler)
+    : syscallHandler_(syscallHandler),
+      microDecoder_(std::make_unique<MicroDecoder>()) {
   if (cs_open(CS_ARCH_ARM64, CS_MODE_ARM, &capstoneHandle) != CS_ERR_OK) {
     std::cerr << "[SimEng:Architecture] Could not create capstone handle"
               << std::endl;
@@ -25,6 +20,14 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   }
 
   cs_option(capstoneHandle, CS_OPT_DETAIL, CS_OPT_ON);
+
+  // Initialise SVE and SME vector lengths
+  YAML::Node& config = Config::get();
+  VL_ = config["Core"]["Vector-Length"].as<uint64_t>();
+  SVL_ = config["Core"]["Streaming-Vector-Length"].as<uint64_t>();
+  // Initialise virtual counter timer increment frequency
+  vctModulo_ = (config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
+               (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6);
 
   // Generate zero-indexed system register map
   systemRegisterMap_[ARM64_SYSREG_DCZID_EL0] = systemRegisterMap_.size();
@@ -34,6 +37,7 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
   systemRegisterMap_[ARM64_SYSREG_MIDR_EL1] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_CNTVCT_EL0] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_PMCCNTR_EL0] = systemRegisterMap_.size();
+  systemRegisterMap_[ARM64_SYSREG_SVCR] = systemRegisterMap_.size();
 
   // Get Virtual Counter Timer and Processor Cycle Counter system registers.
   VCTreg_ = {
@@ -140,7 +144,6 @@ Architecture::~Architecture() {
   decodeCache.clear();
   metadataCache.clear();
   groupExecutionInfo_.clear();
-  SVCRval_ = 0;
 }
 
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
@@ -229,7 +232,8 @@ ExecutionInfo Architecture::getExecutionInfo(Instruction& insn) const {
 std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
     const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
     MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core, memory, linux_);
+  return std::make_shared<ExceptionHandler>(instruction, core, memory,
+                                            syscallHandler_);
 }
 
 std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()
@@ -258,27 +262,6 @@ uint16_t Architecture::getNumSystemRegisters() const {
   return static_cast<uint16_t>(systemRegisterMap_.size());
 }
 
-ProcessStateChange Architecture::getInitialState() const {
-  ProcessStateChange changes;
-  // Set ProcessStateChange type
-  changes.type = ChangeType::REPLACEMENT;
-
-  uint64_t stackPointer = linux_.getInitialStackPointer();
-  // Set the stack pointer register
-  changes.modifiedRegisters.push_back({RegisterType::GENERAL, 31});
-  changes.modifiedRegisterValues.push_back(stackPointer);
-
-  // Set the system registers
-  // Temporary: state that DCZ can support clearing 64 bytes at a time,
-  // but is disabled due to bit 4 being set
-  changes.modifiedRegisters.push_back(
-      {RegisterType::SYSTEM,
-       static_cast<uint16_t>(getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0))});
-  changes.modifiedRegisterValues.push_back(static_cast<uint64_t>(0b10100));
-
-  return changes;
-}
-
 uint8_t Architecture::getMaxInstructionSize() const { return 4; }
 
 uint64_t Architecture::getVectorLength() const { return VL_; }
@@ -296,7 +279,8 @@ void Architecture::updateSystemTimerRegisters(RegisterFileSet* regFile,
 }
 
 std::vector<RegisterFileStructure>
-Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
+Architecture::getConfigPhysicalRegisterStructure() const {
+  YAML::Node& config = Config::get();
   // Matrix-Count multiplied by (SVL/8) as internal representation of
   // ZA is a block of row-vector-registers. Therefore we need to
   // convert physical counts from whole-ZA to rows-in-ZA.
@@ -312,8 +296,9 @@ Architecture::getConfigPhysicalRegisterStructure(YAML::Node config) const {
       {256, matCount}};
 }
 
-std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
-    YAML::Node config) const {
+std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
+    const {
+  YAML::Node& config = Config::get();
   // Matrix-Count multiplied by (SVL/8) as internal representation of
   // ZA is a block of row-vector-registers. Therefore we need to
   // convert physical counts from whole-ZA to rows-in-ZA.
@@ -335,7 +320,17 @@ std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities(
 uint64_t Architecture::getSVCRval() const { return SVCRval_; }
 
 void Architecture::setSVCRval(const uint64_t newVal) const {
+  // As SVCRval_ is mutable, we can change its value in a const function
   SVCRval_ = newVal;
+}
+
+void Architecture::updateAfterContextSwitch(
+    const simeng::OS::cpuContext& context) const {
+  // As SVCRval_ is mutable, we can change its value in a const function
+  SVCRval_ = context
+                 .regFile[RegisterType::SYSTEM]
+                         [getSystemRegisterTag(ARM64_SYSREG_SVCR)]
+                 .get<uint64_t>();
 }
 
 }  // namespace aarch64

@@ -3,13 +3,14 @@
 #include <vector>
 
 #include "simeng/MemoryInterface.hh"
+#include "simeng/memory/Mem.hh"
 
 namespace simeng {
 
 /** A memory interface to a flat memory system. */
 class FlatMemoryInterface : public MemoryInterface {
  public:
-  FlatMemoryInterface(char* memory, size_t size);
+  FlatMemoryInterface(std::shared_ptr<simeng::memory::Mem> memory);
 
   /** Request a read from the supplied target location.
    *
@@ -34,10 +35,10 @@ class FlatMemoryInterface : public MemoryInterface {
   void tick() override;
 
  private:
-  /** The array representing the flat memory system to access. */
-  char* memory_;
-  /** The size of accessible memory. */
+  /** Size of the memory. */
   size_t size_;
+  /** Shared pointer to memory. */
+  std::shared_ptr<simeng::memory::Mem> memory_;
   /** A vector containing all completed read requests. */
   std::vector<MemoryReadResult> completedReads_;
 };

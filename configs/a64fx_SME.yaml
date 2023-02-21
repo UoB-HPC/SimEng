@@ -3,6 +3,7 @@
 # https://github.com/fujitsu/A64FX
 
 Core:
+  ISA: AArch64
   Simulation-Mode: outoforder
   # Clock Frequency is in GHz.
   Clock-Frequency: 1.8
