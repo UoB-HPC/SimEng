@@ -30,6 +30,9 @@ static constexpr uint16_t PATH_MAX_LEN = 4096;
 namespace simeng {
 namespace OS {
 
+// Forward declare SimOS to resolve the circular dependency.
+class SimOS;
+
 /** Fixed-width definition of `stat`.
  * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
 struct stat {
@@ -107,9 +110,8 @@ struct linux_dirent64 {
    responses to Linux system calls. */
 class SyscallHandler {
  public:
-  /** Create a new SyscallHandler object. */
-  SyscallHandler(
-      const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes);
+  /** Create new SyscallHandler object. */
+  SyscallHandler(SimOS* os);
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */
@@ -172,8 +174,8 @@ class SyscallHandler {
   int64_t munmap(uint64_t addr, size_t length);
 
   /** mmap syscall: map files or devices into memory. */
-  uint64_t mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
-                off_t offset);
+  int64_t mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
+               off_t offset);
 
   /** openat syscall: open/create a file. */
   int64_t openat(int64_t dirfd, const std::string& path, int64_t flags,
@@ -210,16 +212,16 @@ class SyscallHandler {
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
  private:
-  /** Resturn correct Dirfd depending on given pathname abd dirfd given to
+  /** Pointer reference to SimOS object. */
+  SimOS* os_ = nullptr;
+
+  /** Returns the correct Dirfd depending on the pathname and dirfd given to
    * syscall. */
   uint64_t getDirFd(int64_t dfd, std::string pathname);
 
   /** If the given filepath points to a special file, the filepath is replaced
    * to point to the SimEng equivalent. */
   std::string getSpecialFile(const std::string filename);
-
-  /** The user-space processes running above the kernel. */
-  const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes_;
 
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";

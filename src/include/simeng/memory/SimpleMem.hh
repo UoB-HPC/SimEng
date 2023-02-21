@@ -10,32 +10,42 @@
 namespace simeng {
 namespace memory {
 
-// Simple memory class this will be replaced by more complex memory models in
-// the future.
+/** The SimpleMem class implements the Mem interface and represents a
+ * simple and untimed model of simulation memory. */
 class SimpleMem : public Mem {
  public:
   SimpleMem(size_t bytes);
-  virtual ~SimpleMem() override;
 
+  virtual ~SimpleMem() override{};
+
+  /** This method requests access to memory for both read and write requests. */
+  DataPacket requestAccess(struct DataPacket pkt) override;
+
+  /** This method returns the size of memory. */
   size_t getMemorySize() override;
-  DataPacket* requestAccess(struct DataPacket* desc) override;
-  void sendUntimedData(char* data, uint64_t addr, size_t size) override;
 
-  /** Returns a copy of internal memory. Used only for testing purposes. */
-  char* getMemCpy();
+  /** This method writes data to memory without incurring any latency.  */
+  void sendUntimedData(std::vector<char> data, uint64_t addr,
+                       size_t size) override;
+
+  /** This method reads data from memory without incurring any latency. */
+  std::vector<char> getUntimedData(uint64_t paddr, size_t size) override;
+
+  /** This method handles a memory request to an ignored address range. */
+  DataPacket handleIgnoredRequest(struct DataPacket pkt) override;
 
  private:
-  /** Reference of to internal memory array. */
-  char* memRef;
-  /** This variables holds a char array, which represent memory in SimEng. */
-  span<char> memory_;
+  /** Vector which represents the internal simulation memory array. */
+  std::vector<char> memory_;
+
   /** This variable holds the size of the memory array. */
   size_t memSize_;
 
-  /** This method handles ReadPackets. */
-  ReadRespPacket* handleReadRequest(struct ReadPacket* req);
-  /** This method handles WritePackets. */
-  WriteRespPacket* handleWriteRequest(struct WritePacket* req);
+  /** This method handles DataPackets of type READ_REQUEST. */
+  DataPacket handleReadRequest(struct DataPacket req);
+
+  /** This method handles DataPackets of type WRITE_REQUEST. */
+  DataPacket handleWriteRequest(struct DataPacket req);
 };
 
 }  // namespace memory

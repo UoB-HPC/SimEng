@@ -31,11 +31,14 @@ void RegressionTest::run(const char* source, const char* triple,
   YAML::Node config = generateConfig();
   Config::set(config);
 
-  // Initialise the global memory
-  memory_ = std::make_shared<simeng::memory::SimpleMem>(300000);
+  const size_t memorySize =
+      Config::get()["Simulation-Memory"]["Size"].as<size_t>();
 
-  // Initialise a SimOS object
-  simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory_);
+  // Initialise the simulation memory
+  memory_ = std::make_shared<simeng::memory::SimpleMem>(memorySize);
+
+  // Initialise a SimOS object.
+  simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory_, true);
 
   // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place
@@ -48,10 +51,20 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Create the architecture
   architecture_ = createArchitecture(OS.getSyscallHandler());
+  std::shared_ptr<simeng::memory::MMU> mmu =
+      std::make_shared<simeng::memory::MMU>(memory_, OS.getVAddrTranslator());
+
+  // Callback function used to write data to the simulation memory without
+  // incurring any latency. This function will be used to write data to the
+  // simulation memory during process creation and while handling page faults.
+  auto sendToMem = [this](std::vector<char> data, uint64_t addr, size_t size) {
+    memory_->sendUntimedData(data, addr, size);
+  };
 
   process_ = std::make_shared<simeng::OS::Process>(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_,
-      architecture_->getRegisterFileStructures(), 0, 0);
+      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), &OS,
+      architecture_->getRegisterFileStructures(), 0, 0, sendToMem,
+      memory_->getMemorySize());
   ASSERT_TRUE(process_->isValid());
   processMemorySize_ = process_->context_.progByteLen;
 
@@ -59,13 +72,12 @@ void RegressionTest::run(const char* source, const char* triple,
   OS.setInitialProcess(process_, *architecture_);
 
   // Create memory interfaces for instruction and data access.
-  // For each memory interface, a dereferenced shared_ptr to the
-  // global memory is passed as argument.
-  simeng::FlatMemoryInterface instructionMemory(memory_);
+  // A shared_ptr to the MMU is passed to each interface.
+  simeng::FlatMemoryInterface instructionMemory(mmu);
   std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-      std::make_unique<simeng::FlatMemoryInterface>(memory_);
+      std::make_unique<simeng::FlatMemoryInterface>(mmu);
   std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
-      std::make_unique<simeng::FixedLatencyMemoryInterface>(memory_, 4);
+      std::make_unique<simeng::FixedLatencyMemoryInterface>(mmu, 4);
 
   std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
@@ -73,11 +85,8 @@ void RegressionTest::run(const char* source, const char* triple,
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
             process_->getStackPointer());
 
-  char* heapData = new char[initialHeapData_.size()];
-  std::copy(initialHeapData_.begin(), initialHeapData_.end(), heapData);
-  memory_->sendUntimedData(heapData, process_->getHeapStart(),
-                           initialHeapData_.size());
-  delete[] heapData;
+  uint64_t addr = process_->translate(process_->getHeapStart());
+  memory_->sendUntimedData(initialHeapData_, addr, initialHeapData_.size());
 
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =

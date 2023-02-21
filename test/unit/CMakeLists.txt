@@ -10,6 +10,7 @@ set(TEST_SOURCES
     pipeline/RegisterAliasTableTest.cc
     pipeline/ReorderBufferTest.cc
     pipeline/WritebackUnitTest.cc
+    FileDescArrayTest.cc
     GenericPredictorTest.cc
     ISATest.cc
     OSTest.cc
@@ -18,6 +19,12 @@ set(TEST_SOURCES
     ShiftValueTest.cc
     LatencyMemoryInterfaceTest.cc
     SimpleMem.cc
+    PageTableTest.cc
+    VmaTest.cc
+    HostBackedFileMMapsTest.cc
+    PageFrameAllocatorTest.cc
+    MemRegionTest.cc
+    ../testenv/FilesEnv.cc
     )
 
 add_executable(unittests ${TEST_SOURCES})
