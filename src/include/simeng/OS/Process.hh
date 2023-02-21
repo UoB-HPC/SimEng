@@ -165,6 +165,10 @@ class Process {
    * pointer. */
   uint64_t createStack(uint64_t stackStart);
 
+  /** Initialises the Process' context_ arguments to the appropriate values. */
+  void initContext(const uint64_t stackPtr,
+                   const std::vector<RegisterFileStructure>& regFileStructure);
+
   /** MemRegion of the Process Image. */
   MemRegion memRegion_;
 

@@ -29,11 +29,6 @@ Architecture::Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler)
   vctModulo_ = (config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
                (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6);
 
-  // Non-ideal way to hold and update SVCR value in a class where all functions
-  // are const.
-  SVCRval_ = (uint64_t*)malloc(sizeof(uint64_t) * 1);
-  SVCRval_[0] = 0;
-
   // Generate zero-indexed system register map
   systemRegisterMap_[ARM64_SYSREG_DCZID_EL0] = systemRegisterMap_.size();
   systemRegisterMap_[ARM64_SYSREG_FPCR] = systemRegisterMap_.size();
@@ -149,7 +144,6 @@ Architecture::~Architecture() {
   decodeCache.clear();
   metadataCache.clear();
   groupExecutionInfo_.clear();
-  free(SVCRval_);
 }
 
 uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
@@ -323,18 +317,20 @@ std::vector<uint16_t> Architecture::getConfigPhysicalRegisterQuantities()
  * retrieved within execution pipeline. This prevents adding an implicit
  * operand to every SME instruction; reducing the amount of complexity when
  * implementing SME execution logic. */
-uint64_t Architecture::getSVCRval() const { return SVCRval_[0]; }
+uint64_t Architecture::getSVCRval() const { return SVCRval_; }
 
 void Architecture::setSVCRval(const uint64_t newVal) const {
-  SVCRval_[0] = newVal;
+  // As SVCRval_ is mutable, we can change its value in a const function
+  SVCRval_ = newVal;
 }
 
 void Architecture::updateAfterContextSwitch(
     const simeng::OS::cpuContext& context) const {
-  SVCRval_[0] = context
-                    .regFile[RegisterType::SYSTEM]
-                            [getSystemRegisterTag(ARM64_SYSREG_SVCR)]
-                    .get<uint64_t>();
+  // As SVCRval_ is mutable, we can change its value in a const function
+  SVCRval_ = context
+                 .regFile[RegisterType::SYSTEM]
+                         [getSystemRegisterTag(ARM64_SYSREG_SVCR)]
+                 .get<uint64_t>();
 }
 
 }  // namespace aarch64

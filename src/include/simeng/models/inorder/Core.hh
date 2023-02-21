@@ -58,8 +58,8 @@ class Core : public simeng::Core {
    * current process. */
   uint64_t getCurrentProcTicks() const override;
 
-  /** Retrieve the CPU context for the outgoing process. */
-  simeng::OS::cpuContext getPrevContext() const override;
+  /** Retrieve the CPU context for the currently scheduled process. */
+  simeng::OS::cpuContext getCurrentContext() const override;
 
  private:
   /** Raise an exception to the core, providing the generating instruction. */
@@ -156,7 +156,7 @@ class Core : public simeng::Core {
   /** Number of times a context switch was performed. */
   uint64_t contextSwitches_ = 0;
 
-  /** TID of process core is currently executing. */
+  /** TID of the process currently executing on the core. */
   uint64_t currentTID_ = -1;
 };
 

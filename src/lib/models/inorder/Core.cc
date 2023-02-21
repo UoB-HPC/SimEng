@@ -407,7 +407,7 @@ bool Core::interrupt() {
 
 uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 
-simeng::OS::cpuContext Core::getPrevContext() const {
+simeng::OS::cpuContext Core::getCurrentContext() const {
   OS::cpuContext newContext;
   newContext.TID = currentTID_;
   newContext.pc = fetchUnit_.getPC();

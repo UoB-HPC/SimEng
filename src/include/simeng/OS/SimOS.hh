@@ -113,7 +113,8 @@ class SimOS {
   /** Queue of processes waiting to be scheduled. */
   std::queue<std::shared_ptr<Process>> waitingProcs_ = {};
 
-  /** Queue of processes which are due to be scheduled */
+  /** Queue of processes that have successfully sent an interrupt signal to a
+   * core and are waiting to be scheduled on it. */
   std::queue<std::shared_ptr<Process>> scheduledProcs_ = {};
 
   /** The list of cores. */

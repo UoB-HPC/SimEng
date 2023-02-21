@@ -140,21 +140,7 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
 
   fdArray_ = std::make_unique<FileDescArray>();
   // Initialise context
-  context_.TID = TID_;
-  context_.pc = entryPoint_;
-  context_.sp = stackPtr;
-  context_.progByteLen = getProcessImageSize();
-  context_.regFile.resize(regFileStructure.size());
-  for (size_t i = 0; i < regFileStructure.size(); i++) {
-    context_.regFile[i].resize(regFileStructure[i].quantity);
-  }
-  // Initialise reg values to 0
-  for (size_t type = 0; type < context_.regFile.size(); type++) {
-    for (size_t tag = 0; tag < context_.regFile[type].size(); tag++) {
-      context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
-    }
-  }
-
+  initContext(stackPtr, regFileStructure);
   isValid_ = true;
 }
 
@@ -237,21 +223,7 @@ Process::Process(span<char> instructions, SimOS* OS,
 
   fdArray_ = std::make_unique<FileDescArray>();
 
-  // Initialise context
-  context_.TID = TID_;
-  context_.pc = entryPoint_;
-  context_.sp = stackPtr;
-  context_.progByteLen = getProcessImageSize();
-  context_.regFile.resize(regFileStructure.size());
-  for (size_t i = 0; i < regFileStructure.size(); i++) {
-    context_.regFile[i].resize(regFileStructure[i].quantity);
-  }
-  // Initialise reg values to 0
-  for (size_t type = 0; type < context_.regFile.size(); type++) {
-    for (size_t tag = 0; tag < context_.regFile[type].size(); tag++) {
-      context_.regFile[type][tag] = {0, regFileStructure[type].bytes};
-    }
-  }
+  initContext(stackPtr, regFileStructure);
   isValid_ = true;
 }
 
@@ -393,6 +365,24 @@ uint64_t Process::handlePageFault(uint64_t vaddr) {
     sendToMem_(data, paddr, writeLen);
   }
   return taddr;
+}
+
+void Process::initContext(
+    const uint64_t stackPtr,
+    const std::vector<RegisterFileStructure>& regFileStructure) {
+  context_.TID = TID_;
+  context_.pc = entryPoint_;
+  context_.sp = stackPtr;
+  context_.progByteLen = getProcessImageSize();
+  // Initialise all registers to 0
+  size_t numTypes = regFileStructure.size();
+  context_.regFile.reserve(numTypes);
+  for (size_t type = 0; type < numTypes; type++) {
+    uint16_t numTags = regFileStructure[type].quantity;
+    uint16_t regBytes = regFileStructure[type].bytes;
+    context_.regFile.push_back(
+        std::vector<RegisterValue>(numTags, {0, regBytes}));
+  }
 }
 
 }  // namespace OS
