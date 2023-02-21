@@ -7,35 +7,46 @@ namespace models {
 namespace emulation {
 
 // TODO: Expose as config option
-/** The number of bytes fetched each cycle. */
-const uint8_t FETCH_SIZE = 4;
 const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           uint64_t entryPoint, uint64_t programByteLength,
            const arch::Architecture& isa)
     : instructionMemory_(instructionMemory),
       dataMemory_(dataMemory),
-      programByteLength_(programByteLength),
       isa_(isa),
-      pc_(entryPoint),
       registerFileSet_(isa.getRegisterFileStructures()),
-      architecturalRegisterFileSet_(registerFileSet_) {
-  // Pre-load the first instruction
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
-
-  // Query and apply initial state
-  auto state = isa.getInitialState();
-  applyStateChange(state);
-}
+      architecturalRegisterFileSet_(registerFileSet_) {}
 
 void Core::tick() {
   ticks_++;
+  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 
-  if (hasHalted_) return;
+  switch (status_) {
+    case CoreStatus::idle:
+      idle_ticks_++;
+      return;
+    case CoreStatus::switching:
+      // Ensure there are no instructions left to execute and there's no active
+      // exception before context switching.
+      if (microOps_.empty() && (exceptionHandler_ == nullptr)) {
+        macroOp_.clear();
+        pendingReads_ = 0;
+        previousAddresses_.clear();
+        status_ = CoreStatus::idle;
+        return;
+      }
+      break;
+    case CoreStatus::halted:
+      return;
+    default:
+      break;
+  }
+
+  // Increase tick count for current process execution
+  procTicks_++;
 
   if (pc_ >= programByteLength_) {
-    hasHalted_ = true;
+    status_ = CoreStatus::halted;
     return;
   }
 
@@ -60,15 +71,14 @@ void Core::tick() {
       // Load complete: resume execution
       execute(uop);
     }
-
     // More data pending, end cycle early
     return;
   }
 
-  // Fetch
-
   // Determine if new uops are needed to be fetched
-  if (!microOps_.size()) {
+  if (microOps_.empty() && (status_ != CoreStatus::switching)) {
+    // Fetch
+    instructionMemory_.requestRead({pc_, FETCH_SIZE});
     // Find fetched memory that matches the current PC
     const auto& fetched = instructionMemory_.getCompletedReads();
     size_t fetchIndex;
@@ -150,8 +160,6 @@ void Core::tick() {
     if (uop->isStoreData()) {
       execute(uop);
     } else {
-      // Fetch memory for next cycle
-      instructionMemory_.requestRead({pc_, FETCH_SIZE});
       microOps_.pop();
     }
 
@@ -159,7 +167,6 @@ void Core::tick() {
   }
 
   execute(uop);
-  isa_.updateSystemTimerRegisters(&registerFileSet_, ticks_);
 }
 
 void Core::execute(std::shared_ptr<Instruction>& uop) {
@@ -171,8 +178,6 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   }
 
   if (uop->isStoreData()) {
-    auto results = uop->getResults();
-    auto destinations = uop->getDestinationRegisters();
     auto data = uop->getData();
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
       dataMemory_.requestWrite(previousAddresses_[i], data[i]);
@@ -199,8 +204,6 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 
   if (uop->isLastMicroOp()) instructionsExecuted_++;
 
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
   microOps_.pop();
 }
 
@@ -228,7 +231,7 @@ void Core::processExceptionHandler() {
 
   if (result.fatal) {
     pc_ = programByteLength_;
-    hasHalted_ = true;
+    status_ = CoreStatus::halted;
     std::cout << "[SimEng:Core] Halting due to fatal exception" << std::endl;
   } else {
     pc_ = result.instructionAddress;
@@ -238,8 +241,6 @@ void Core::processExceptionHandler() {
   // Clear the handler
   exceptionHandler_ = nullptr;
 
-  // Fetch memory for next cycle
-  instructionMemory_.requestRead({pc_, FETCH_SIZE});
   microOps_.pop();
 }
 
@@ -283,7 +284,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
   }
 }
 
-bool Core::hasHalted() const { return hasHalted_; }
+CoreStatus Core::getStatus() { return status_; }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
     const {
@@ -300,8 +301,59 @@ uint64_t Core::getSystemTimer() const {
 
 std::map<std::string, std::string> Core::getStats() const {
   return {{"instructions", std::to_string(instructionsExecuted_)},
-          {"branch.executed", std::to_string(branchesExecuted_)}};
-};
+          {"branch.executed", std::to_string(branchesExecuted_)},
+          {"idle.ticks", std::to_string(idle_ticks_)},
+          {"context.switches", std::to_string(contextSwitches_)}};
+}
+
+void Core::schedule(simeng::OS::cpuContext newContext) {
+  currentTID_ = newContext.TID;
+  programByteLength_ = newContext.progByteLen;
+  pc_ = newContext.pc;
+  for (size_t type = 0; type < newContext.regFile.size(); type++) {
+    for (size_t tag = 0; tag < newContext.regFile[type].size(); tag++) {
+      registerFileSet_.set({(uint8_t)type, (uint16_t)tag},
+                           newContext.regFile[type][tag]);
+    }
+  }
+  status_ = CoreStatus::executing;
+  procTicks_ = 0;
+  isa_.updateAfterContextSwitch(newContext);
+}
+
+bool Core::interrupt() {
+  if (exceptionHandler_ == nullptr) {
+    status_ = CoreStatus::switching;
+    contextSwitches_++;
+    return true;
+  }
+  return false;
+}
+
+uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
+
+simeng::OS::cpuContext Core::getCurrentContext() const {
+  OS::cpuContext newContext;
+  newContext.TID = currentTID_;
+  newContext.pc = pc_;
+  // progByteLen will not change in process so do not need to set it
+  // Don't need to explicitly save SP as will be in reg file contents
+  auto regFileStruc = isa_.getRegisterFileStructures();
+  newContext.regFile.resize(regFileStruc.size());
+  for (size_t i = 0; i < regFileStruc.size(); i++) {
+    newContext.regFile[i].resize(regFileStruc[i].quantity);
+  }
+  // Set all reg Values
+  for (size_t type = 0; type < newContext.regFile.size(); type++) {
+    for (size_t tag = 0; tag < newContext.regFile[type].size(); tag++) {
+      newContext.regFile[type][tag] =
+          registerFileSet_.get({(uint8_t)type, (uint16_t)tag});
+    }
+  }
+  // Do not need to explicitly set newContext.sp as it will be included in
+  // regFile
+  return newContext;
+}
 
 }  // namespace emulation
 }  // namespace models

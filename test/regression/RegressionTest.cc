@@ -5,8 +5,8 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 #include "simeng/FlatMemoryInterface.hh"
 #include "simeng/GenericPredictor.hh"
-#include "simeng/kernel/Linux.hh"
-#include "simeng/kernel/LinuxProcess.hh"
+#include "simeng/OS/Process.hh"
+#include "simeng/OS/SimOS.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
@@ -29,84 +29,93 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Get pre-defined config file for OoO model
   YAML::Node config = generateConfig();
+  Config::set(config);
 
-  // Create a linux process from the assembled code block.
+  // Initialise the global memory
+  memory_ = std::make_shared<simeng::memory::SimpleMem>(300000);
+
+  // Initialise a SimOS object
+  simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory_);
+
+  // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place
-  // during linux process creation. The Elf binary is parsed
+  // during Process creation. The Elf binary is parsed
   // and relevant sections are copied to the process image.
   // The process image is finalised by the createStack method
   // which creates and populates the initial process stack.
   // The created process image can be accessed via a shared_ptr
   // returned by the getProcessImage method.
-  process_ = std::make_unique<simeng::kernel::LinuxProcess>(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), config);
+
+  // Create the architecture
+  architecture_ = createArchitecture(OS.getSyscallHandler());
+
+  process_ = std::make_shared<simeng::OS::Process>(
+      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), memory_,
+      architecture_->getRegisterFileStructures(), 0, 0);
   ASSERT_TRUE(process_->isValid());
-  uint64_t entryPoint = process_->getEntryPoint();
-  processMemorySize_ = process_->getProcessImageSize();
-  // This instance of procImgPtr pointer needs to be shared because
-  // getMemoryValue in RegressionTest.hh uses reference to the class
-  // member processMemory_.
-  std::shared_ptr<char> procImgPtr = process_->getProcessImage();
-  processMemory_ = procImgPtr.get();
+  processMemorySize_ = process_->context_.progByteLen;
+
+  // Update the initial process in the OS
+  OS.setInitialProcess(process_, *architecture_);
 
   // Create memory interfaces for instruction and data access.
   // For each memory interface, a dereferenced shared_ptr to the
-  // processImage is passed as argument.
-  simeng::FlatMemoryInterface instructionMemory(processMemory_,
-                                                processMemorySize_);
-
+  // global memory is passed as argument.
+  simeng::FlatMemoryInterface instructionMemory(memory_);
   std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-      std::make_unique<simeng::FlatMemoryInterface>(processMemory_,
-                                                    processMemorySize_);
-
+      std::make_unique<simeng::FlatMemoryInterface>(memory_);
   std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
-      std::make_unique<simeng::FixedLatencyMemoryInterface>(
-          processMemory_, processMemorySize_, 4);
-  std::unique_ptr<simeng::MemoryInterface> dataMemory;
+      std::make_unique<simeng::FixedLatencyMemoryInterface>(memory_, 4);
 
-  // Create the OS kernel and the process
-  simeng::kernel::Linux kernel;
-  kernel.createProcess(*process_);
+  std::unique_ptr<simeng::MemoryInterface> dataMemory;
 
   // Populate the heap with initial data (specified by the test being run).
   ASSERT_LT(process_->getHeapStart() + initialHeapData_.size(),
             process_->getStackPointer());
-  std::copy(initialHeapData_.begin(), initialHeapData_.end(),
-            processMemory_ + process_->getHeapStart());
 
-  // Create the architecture
-  architecture_ = createArchitecture(kernel, config);
+  char* heapData = new char[initialHeapData_.size()];
+  std::copy(initialHeapData_.begin(), initialHeapData_.end(), heapData);
+  memory_->sendUntimedData(heapData, process_->getHeapStart(),
+                           initialHeapData_.size());
+  delete[] heapData;
 
   // Create a port allocator for an out-of-order core
   std::unique_ptr<simeng::pipeline::PortAllocator> portAllocator =
       createPortAllocator();
 
   // Create a branch predictor for a pipelined core
-  simeng::GenericPredictor predictor(config);
+  simeng::GenericPredictor predictor = simeng::GenericPredictor();
   // Create the core model
   switch (std::get<0>(GetParam())) {
     case EMULATION:
       core_ = std::make_unique<simeng::models::emulation::Core>(
-          instructionMemory, *flatDataMemory, entryPoint, processMemorySize_,
-          *architecture_);
+          instructionMemory, *flatDataMemory, *architecture_);
       dataMemory = std::move(flatDataMemory);
       break;
     case INORDER:
       core_ = std::make_unique<simeng::models::inorder::Core>(
-          instructionMemory, *flatDataMemory, processMemorySize_, entryPoint,
-          *architecture_, predictor);
+          instructionMemory, *flatDataMemory, *architecture_, predictor);
       dataMemory = std::move(flatDataMemory);
       break;
     case OUTOFORDER:
       core_ = std::make_unique<simeng::models::outoforder::Core>(
-          instructionMemory, *fixedLatencyDataMemory, processMemorySize_,
-          entryPoint, *architecture_, predictor, *portAllocator, config);
+          instructionMemory, *fixedLatencyDataMemory, *architecture_, predictor,
+          *portAllocator);
       dataMemory = std::move(fixedLatencyDataMemory);
       break;
   }
 
+  // Schedule Process on core
+  /** NOTE: Not using SimOS as core_ must be unique_ptr, but SimOS expects
+   * shared_ptr. */
+  core_->schedule(process_->context_);
+
   // Run the core model until the program is complete
-  while (!core_->hasHalted() || dataMemory->hasPendingRequests()) {
+  /** NOTE: As we cannot register the core with SimOS, and as such no scheduling
+   * occurs, we do not need to tick SimOS nor check its halted status in the
+   * Regression Test. */
+  while (!(core_->getStatus() == simeng::CoreStatus::halted) ||
+         dataMemory->hasPendingRequests()) {
     ASSERT_LT(numTicks_, maxTicks_) << "Maximum tick count exceeded.";
     core_->tick();
     instructionMemory.tick();

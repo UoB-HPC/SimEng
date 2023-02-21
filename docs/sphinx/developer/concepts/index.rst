@@ -12,4 +12,4 @@ The following information is concerned with those concepts whose interactions fl
    registers
    memory
    syscalls
-   kernel
+   Operating System

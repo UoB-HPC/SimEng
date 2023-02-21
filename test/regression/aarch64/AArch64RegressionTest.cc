@@ -62,9 +62,9 @@ YAML::Node AArch64RegressionTest::generateConfig() const {
 }
 
 std::unique_ptr<simeng::arch::Architecture>
-AArch64RegressionTest::createArchitecture(simeng::kernel::Linux& kernel,
-                                          YAML::Node config) const {
-  return std::make_unique<Architecture>(kernel, config);
+AArch64RegressionTest::createArchitecture(
+    std::shared_ptr<simeng::OS::SyscallHandler> sysHandler) const {
+  return std::make_unique<Architecture>(sysHandler);
 }
 
 std::unique_ptr<simeng::pipeline::PortAllocator>

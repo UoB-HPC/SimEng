@@ -89,26 +89,26 @@ class Architecture {
       const std::shared_ptr<Instruction>& instruction, const Core& core,
       MemoryInterface& memory) const = 0;
 
-  /** Retrieve the initial process state. */
-  virtual ProcessStateChange getInitialState() const = 0;
-
   /** Returns the maximum size of a valid instruction in bytes. */
   virtual uint8_t getMaxInstructionSize() const = 0;
 
   /** Returns the physical register structure as defined within the config
    * file
    */
-  virtual std::vector<RegisterFileStructure> getConfigPhysicalRegisterStructure(
-      YAML::Node config) const = 0;
+  virtual std::vector<RegisterFileStructure>
+  getConfigPhysicalRegisterStructure() const = 0;
 
   /** Returns the physical register quantities as defined within the config file
    */
-  virtual std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
-      YAML::Node config) const = 0;
+  virtual std::vector<uint16_t> getConfigPhysicalRegisterQuantities() const = 0;
 
   /** Updates System registers of any system-based timers. */
   virtual void updateSystemTimerRegisters(RegisterFileSet* regFile,
                                           const uint64_t iterations) const = 0;
+
+  /** After a context switch, update any required variables. */
+  virtual void updateAfterContextSwitch(
+      const simeng::OS::cpuContext& context) const = 0;
 };
 
 }  // namespace arch

@@ -12,9 +12,6 @@ namespace {
 
 using Syscall = RISCVRegressionTest;
 
-/** The maximum size of a filesystem path. */
-static const size_t LINUX_PATH_MAX = 4096;
-
 TEST_P(Syscall, getrandom) {
   initialHeapData_.resize(24);
   memset(initialHeapData_.data(), -1, 16);
@@ -184,7 +181,7 @@ TEST_P(Syscall, faccessat) {
   // Delete output file after running test
   unlink(filepath);
 
-  char abs_filepath[LINUX_PATH_MAX];
+  char abs_filepath[PATH_MAX_LEN];
   realpath(SIMENG_RISCV_TEST_ROOT "/data/input.txt", abs_filepath);
   initialHeapData_.resize(strlen(abs_filepath) + 1);
   // Copy abs_filepath to heap
@@ -210,7 +207,7 @@ TEST_P(Syscall, faccessat) {
 
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
-  char dirPath[LINUX_PATH_MAX];
+  char dirPath[PATH_MAX_LEN];
   realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
 
   initialHeapData_.resize(strlen(dirPath) + strlen(file) + 2);
@@ -364,10 +361,12 @@ TEST_P(Syscall, file_read) {
 
   // Check result of read operations
   const char reference[] = "ABCD\0UV\0EFGH\0\0\0\0MNOPQRST";
-  char* data = processMemory_ + process_->getHeapStart();
+  char* mem = memory_->getMemCpy();
+  char* data = mem + process_->getHeapStart();
   for (int i = 0; i < sizeof(reference); i++) {
     EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
   }
+  delete mem;
 }
 
 TEST_P(Syscall, file_write) {
@@ -747,7 +746,7 @@ TEST_P(Syscall, newfstatat) {
 
   // Check syscall works using dirfd instead of AT_FDCWD
   const char file[] = "input.txt\0";
-  char dirPath[LINUX_PATH_MAX];
+  char dirPath[PATH_MAX_LEN];
   realpath(SIMENG_RISCV_TEST_ROOT "/data/\0", dirPath);
 
   initialHeapData_.resize(128 + strlen(dirPath) + strlen(file) + 2);

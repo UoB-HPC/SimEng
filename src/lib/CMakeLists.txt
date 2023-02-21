@@ -14,8 +14,13 @@ set(SIMENG_SOURCES
     arch/riscv/Instruction_decode.cc
     arch/riscv/Instruction_execute.cc
     arch/riscv/InstructionMetadata.cc
-    kernel/Linux.cc
-    kernel/LinuxProcess.cc
+    OS/MemRegion.cc
+    OS/Process.cc
+    OS/SimOS.cc
+    OS/SyscallHandler.cc
+    OS/Vma.cc
+    memory/SimpleMem.cc
+    memory/Mem.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc

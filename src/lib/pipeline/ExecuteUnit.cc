@@ -222,6 +222,11 @@ uint64_t ExecuteUnit::getBranchMispredictedCount() const {
   return branchMispredicts_;
 }
 
+void ExecuteUnit::flush() {
+  pipeline_.clear();
+  operationsStalled_.clear();
+}
+
 uint64_t ExecuteUnit::getCycles() const { return cycles_; }
 
 bool ExecuteUnit::isEmpty() const {
