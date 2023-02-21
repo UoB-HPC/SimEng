@@ -59,8 +59,8 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
       maxInitDataAddr + heapSize + stackSize + mmapSize;
   if (totalProcLayoutSize > simulationMemSize) {
     std::cerr
-        << "Size of the simulation memory is less than the size of a single "
-           "process image. Please increase the "
+        << "[SimEng:Process] Size of the simulation memory is less than the "
+           "size of a single process image. Please increase the "
            "{Simulation-Memory: {Size: <size>}} parameter in the YAML model "
            "config file used to run the simulation."
         << std::endl;
@@ -169,8 +169,8 @@ Process::Process(span<char> instructions, SimOS* OS,
   size_t totalProcLayoutSize = instrSize + heapSize + stackSize + mmapSize;
   if (totalProcLayoutSize > simulationMemSize) {
     std::cerr
-        << "Size of the simulation memory is less than the size of a single "
-           "process image. Please increase the "
+        << "[SimEng:Process] Size of the simulation memory is less than the "
+           "size of a single process image. Please increase the "
            "{Simulation-Memory: {Size: <size>}} parameter in the YAML model "
            "config file used to run the simulation."
         << std::endl;
