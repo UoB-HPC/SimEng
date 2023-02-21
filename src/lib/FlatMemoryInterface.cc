@@ -5,9 +5,8 @@
 
 namespace simeng {
 
-FlatMemoryInterface::FlatMemoryInterface(std::shared_ptr<memory::MMU> mmu,
-                                         size_t memSize)
-    : mmu_(mmu), size_(memSize) {}
+FlatMemoryInterface::FlatMemoryInterface(std::shared_ptr<memory::MMU> mmu)
+    : mmu_(mmu) {}
 
 void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
                                       uint64_t requestId) {

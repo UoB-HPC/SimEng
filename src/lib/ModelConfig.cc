@@ -364,6 +364,15 @@ void ModelConfig::validate() {
   nodeChecker<uint64_t>(configFile_[root][subFields[2]], subFields[2],
                         std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
                         10485760);
+
+  // Loop over all subFields and add the size of each process region. This is
+  // done to calculate the minimum value allowed for the Simulation-Memory node
+  // check defined below.
+  uint64_t totalProcRegionSize = 0;
+  for (auto field : subFields) {
+    totalProcRegionSize += configFile_[root][field].as<uint64_t>();
+  }
+
   subFields.clear();
 
   // Simulation-Memory
@@ -372,8 +381,8 @@ void ModelConfig::validate() {
 
   // Default simulation memory size is 1024 * 1024 * 10 = 10MiB
   nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
-                        104857600);
+                        std::make_pair(totalProcRegionSize, UINT64_MAX),
+                        ExpectedValue::UInteger, 104857600);
 
   subFields.clear();
 

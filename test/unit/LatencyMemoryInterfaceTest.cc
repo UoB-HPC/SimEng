@@ -18,7 +18,7 @@ TEST(LatencyMemoryInterfaceTest, FixedWriteData) {
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(mem, fn, 0);
 
-  simeng::FixedLatencyMemoryInterface memory(mmu, 2, mem->getMemorySize());
+  simeng::FixedLatencyMemoryInterface memory(mmu, 2);
 
   EXPECT_FALSE(memory.hasPendingRequests());
 
@@ -60,7 +60,7 @@ TEST(LatencyMemoryInterfaceTest, UnMappedAddrRead) {
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(mem, fn, 0);
 
-  simeng::FixedLatencyMemoryInterface memory(mmu, 1, mem->getMemorySize());
+  simeng::FixedLatencyMemoryInterface memory(mmu, 1);
 
   // Create a target such that address + size will overflow
   simeng::MemoryAccessTarget overflowTarget = {UINT64_MAX, 4};

@@ -42,13 +42,13 @@ HostFileMMap HostBackedFileMMaps::mapfd(int fd, size_t len, off_t offset) {
   }
   // Always pass offset 0 as it must be aligned to host page size, which can
   // differ (i.e. MacOS has page size of 16KiB).
-  void* filemmap = mmap(NULL, (size_t)statbuf->st_size, PROT_READ | PROT_WRITE,
-                        MAP_PRIVATE, fd, 0);
+  void* filemmap =
+      mmap(NULL, fstatFileSize, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
   // Add offset to pointer manually
   char* offsettedPtr = (char*)filemmap + offset;
   void* newPtr = (void*)offsettedPtr;
   HostFileMMap hfmm =
-      HostFileMMap(fd, filemmap, newPtr, (size_t)statbuf->st_size, len, offset);
+      HostFileMMap(fd, filemmap, newPtr, fstatFileSize, len, offset);
   hostVec_.push_back(hfmm);
   return hfmm;
 }

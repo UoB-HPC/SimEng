@@ -87,16 +87,19 @@ class Process {
 
  public:
   /** Construct a SimOS Process from a vector of command-line arguments. The
-   * first argument is a path to an executable ELF file. */
+   * first argument is a path to an executable ELF file. Size of the simulation
+   * memory is also passed to check if the process image can fit inside the
+   * simulation memory. */
   Process(const std::vector<std::string>& commandLine, SimOS* OS,
           std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-          uint64_t TID, sendToMemory sendToMem);
+          uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
 
   /** Construct a SimOS Process from region of instruction memory, with the
-   * entry point fixed at 0. */
+   * entry point fixed at 0. Size of the simulation memory is also passed to
+   * check if the process image can fit inside the simulation memory.*/
   Process(span<char> instructions, SimOS* OS,
           std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
-          uint64_t TID, sendToMemory sendToMem);
+          uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
 
   ~Process();
 

@@ -177,7 +177,7 @@ void SimOS::createInitialProcess() {
 
     processes_.emplace(
         0, std::make_shared<Process>(commandLine, this, regFileStructure, 0, 0,
-                                     sendToMem));
+                                     sendToMem, memory_->getMemorySize()));
 
     // Raise error if created process is not valid
     if (!processes_[0]->isValid()) {
@@ -188,9 +188,10 @@ void SimOS::createInitialProcess() {
   } else {
     // Create a process image from the set of instructions held in hex_
     processes_.emplace(
-        0, std::make_shared<Process>(
-               simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-               this, regFileStructure, 0, 0, sendToMem));
+        0,
+        std::make_shared<Process>(
+            simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
+            this, regFileStructure, 0, 0, sendToMem, memory_->getMemorySize()));
     // Raise error if created process is not valid
     if (!processes_[0]->isValid()) {
       std::cerr << "[SimEng:SimOS] Could not create initial process based on "

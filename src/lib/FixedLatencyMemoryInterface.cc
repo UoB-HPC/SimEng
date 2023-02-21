@@ -5,8 +5,8 @@
 namespace simeng {
 
 FixedLatencyMemoryInterface::FixedLatencyMemoryInterface(
-    std::shared_ptr<memory::MMU> mmu, uint16_t latency, size_t memSize)
-    : mmu_(mmu), latency_(latency), size_(memSize) {}
+    std::shared_ptr<memory::MMU> mmu, uint16_t latency)
+    : mmu_(mmu), latency_(latency) {}
 
 void FixedLatencyMemoryInterface::tick() {
   tickCounter_++;

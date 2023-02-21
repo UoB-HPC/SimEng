@@ -63,7 +63,8 @@ void RegressionTest::run(const char* source, const char* triple,
 
   process_ = std::make_shared<simeng::OS::Process>(
       simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), &OS,
-      architecture_->getRegisterFileStructures(), 0, 0, sendToMem);
+      architecture_->getRegisterFileStructures(), 0, 0, sendToMem,
+      memory_->getMemorySize());
   ASSERT_TRUE(process_->isValid());
   processMemorySize_ = process_->context_.progByteLen;
 
@@ -72,13 +73,11 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Create memory interfaces for instruction and data access.
   // A shared_ptr to the MMU is passed to each interface.
-  simeng::FlatMemoryInterface instructionMemory(mmu, memory_->getMemorySize());
+  simeng::FlatMemoryInterface instructionMemory(mmu);
   std::unique_ptr<simeng::FlatMemoryInterface> flatDataMemory =
-      std::make_unique<simeng::FlatMemoryInterface>(mmu,
-                                                    memory_->getMemorySize());
+      std::make_unique<simeng::FlatMemoryInterface>(mmu);
   std::unique_ptr<simeng::FixedLatencyMemoryInterface> fixedLatencyDataMemory =
-      std::make_unique<simeng::FixedLatencyMemoryInterface>(
-          mmu, 4, memory_->getMemorySize());
+      std::make_unique<simeng::FixedLatencyMemoryInterface>(mmu, 4);
 
   std::unique_ptr<simeng::MemoryInterface> dataMemory;
 

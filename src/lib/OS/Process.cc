@@ -24,7 +24,8 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 
 Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
                  std::vector<RegisterFileStructure> regFileStructure,
-                 uint64_t TGID, uint64_t TID, sendToMemory sendToMem)
+                 uint64_t TGID, uint64_t TID, sendToMemory sendToMem,
+                 size_t simulationMemSize)
     : commandLine_(commandLine),
       TGID_(TGID),
       TID_(TID),
@@ -32,9 +33,12 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
       sendToMem_(sendToMem) {
   // Parse ELF file
   YAML::Node& config = Config::get();
-  uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
-  uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
-  uint64_t mmapSize = config["Process-Image"]["Mmap-Size"].as<uint64_t>();
+  uint64_t heapSize =
+      upAlign(config["Process-Image"]["Heap-Size"].as<uint64_t>(), PAGE_SIZE);
+  uint64_t stackSize =
+      upAlign(config["Process-Image"]["Stack-Size"].as<uint64_t>(), PAGE_SIZE);
+  uint64_t mmapSize =
+      upAlign(config["Process-Image"]["Mmap-Size"].as<uint64_t>(), PAGE_SIZE);
 
   pageTable_ = std::make_shared<PageTable>();
 
@@ -49,6 +53,19 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
 
   uint64_t maxInitDataAddr = upAlign(elf.getElfImageSize(), PAGE_SIZE);
   uint64_t minHeaderAddr = ~0;
+
+  // Check if the process image can fit inside the simulation memory.
+  size_t totalProcLayoutSize =
+      maxInitDataAddr + heapSize + stackSize + mmapSize;
+  if (totalProcLayoutSize > simulationMemSize) {
+    std::cerr
+        << "Size of the simulation memory is less than the size of a single "
+           "process image. Please increase the "
+           "{Simulation-Memory: {Size: <size>}} parameter in the YAML model "
+           "config file used to run the simulation."
+        << std::endl;
+    std::exit(1);
+  }
 
   for (auto header : headers) {
     // Round size up to page aligned value.
@@ -84,17 +101,14 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
   // Add Page Size padding
   maxInitDataAddr += PAGE_SIZE;
   // Heap grows upwards towards higher addresses.
-  heapSize = upAlign(heapSize, PAGE_SIZE);
   uint64_t heapStart = maxInitDataAddr;
   uint64_t heapEnd = heapStart + heapSize;
 
   // Mmap grows upwards towards higher addresses.
-  mmapSize = upAlign(mmapSize, PAGE_SIZE);
   uint64_t mmapStart = heapEnd + PAGE_SIZE;
   uint64_t mmapEnd = mmapStart + mmapSize;
 
   // Stack grows downwards towards lower addresses.
-  stackSize = upAlign(stackSize, PAGE_SIZE);
   uint64_t stackEnd = mmapEnd + PAGE_SIZE;
   uint64_t stackStart = stackEnd + stackSize;
   uint64_t size = stackStart;
@@ -146,7 +160,8 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
 
 Process::Process(span<char> instructions, SimOS* OS,
                  std::vector<RegisterFileStructure> regFileStructure,
-                 uint64_t TGID, uint64_t TID, sendToMemory sendToMem)
+                 uint64_t TGID, uint64_t TID, sendToMemory sendToMem,
+                 size_t simulationMemSize)
     : TGID_(TGID), TID_(TID), OS_(OS), sendToMem_(sendToMem) {
   // Leave program command string empty
   commandLine_.push_back("\0");
@@ -154,25 +169,37 @@ Process::Process(span<char> instructions, SimOS* OS,
   pageTable_ = std::make_shared<PageTable>();
 
   YAML::Node& config = Config::get();
-  uint64_t heapSize = config["Process-Image"]["Heap-Size"].as<uint64_t>();
-  uint64_t stackSize = config["Process-Image"]["Stack-Size"].as<uint64_t>();
-  uint64_t mmapSize = config["Process-Image"]["Mmap-Size"].as<uint64_t>();
+  uint64_t heapSize =
+      upAlign(config["Process-Image"]["Heap-Size"].as<uint64_t>(), PAGE_SIZE);
+  uint64_t stackSize =
+      upAlign(config["Process-Image"]["Stack-Size"].as<uint64_t>(), PAGE_SIZE);
+  uint64_t mmapSize =
+      upAlign(config["Process-Image"]["Mmap-Size"].as<uint64_t>(), PAGE_SIZE);
 
   uint64_t instrSize = upAlign(instructions.size(), PAGE_SIZE);
   uint64_t instrEnd = instrSize;
 
+  // Check if the process image can fit inside the simulation memory.
+  size_t totalProcLayoutSize = instrSize + heapSize + stackSize + mmapSize;
+  if (totalProcLayoutSize > simulationMemSize) {
+    std::cerr
+        << "Size of the simulation memory is less than the size of a single "
+           "process image. Please increase the "
+           "{Simulation-Memory: {Size: <size>}} parameter in the YAML model "
+           "config file used to run the simulation."
+        << std::endl;
+    std::exit(1);
+  }
+
   // Heap grows upwards towards higher addresses.
-  heapSize = upAlign(heapSize, PAGE_SIZE);
   uint64_t heapStart = instrEnd + PAGE_SIZE;
   uint64_t heapEnd = heapStart + heapSize;
 
   // Mmap grows upwards towards higher addresses.
-  mmapSize = upAlign(mmapSize, PAGE_SIZE);
   uint64_t mmapStart = heapEnd + PAGE_SIZE;
   uint64_t mmapEnd = mmapStart + mmapSize;
 
   // Stack grows downwards towards lower addresses.
-  stackSize = upAlign(stackSize, PAGE_SIZE);
   uint64_t stackEnd = mmapEnd + PAGE_SIZE;
   uint64_t stackStart = stackEnd + stackSize;
   uint64_t size = stackStart;
@@ -192,7 +219,13 @@ Process::Process(span<char> instructions, SimOS* OS,
   // table mappings upon VMA deletes.
   std::function<uint64_t(uint64_t, size_t)> unmapFn =
       [this](uint64_t vaddr, size_t size) -> uint64_t {
-    return pageTable_->deleteMapping(vaddr, size);
+    uint64_t value = pageTable_->deleteMapping(vaddr, size);
+    if (value ==
+        (masks::faults::pagetable::FAULT | masks::faults::pagetable::UNMAP)) {
+      std::cerr << "[SimEng:Process] Mapping doesn't exist for vaddr: " << vaddr
+                << " and length: " << size << std::endl;
+    }
+    return value;
   };
 
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, stackStart,
@@ -358,7 +391,7 @@ uint64_t Process::handlePageFault(uint64_t vaddr) {
   // send file to memory;
   if (writeLen > 0) {
     sendToMem_(data, paddr, writeLen);
-  };
+  }
   return taddr;
 }
 

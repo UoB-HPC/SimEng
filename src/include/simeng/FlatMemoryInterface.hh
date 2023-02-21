@@ -10,7 +10,7 @@ namespace simeng {
 /** A memory interface to a flat memory system. */
 class FlatMemoryInterface : public MemoryInterface {
  public:
-  FlatMemoryInterface(std::shared_ptr<memory::MMU> mmu, size_t memSize);
+  FlatMemoryInterface(std::shared_ptr<memory::MMU> mmu);
 
   /** Request a read from the supplied target location.
    *
@@ -37,9 +37,6 @@ class FlatMemoryInterface : public MemoryInterface {
  private:
   /**  Shared pointer to the Core MMU */
   std::shared_ptr<simeng::memory::MMU> mmu_;
-
-  /** Size of the memory. */
-  size_t size_;
 
   /** A vector containing all completed read requests. */
   std::vector<MemoryReadResult> completedReads_;

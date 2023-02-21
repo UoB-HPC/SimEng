@@ -41,7 +41,7 @@ struct FixedLatencyMemoryInterfaceRequest {
 class FixedLatencyMemoryInterface : public MemoryInterface {
  public:
   FixedLatencyMemoryInterface(std::shared_ptr<memory::MMU> mmu,
-                              uint16_t latency, size_t memSize);
+                              uint16_t latency);
 
   /** Queue a read request from the supplied target location.
    *
@@ -71,9 +71,6 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
 
   /** The latency all requests are completed after. */
   uint16_t latency_;
-
-  /** Size of the memory. */
-  size_t size_;
 
   /** A vector containing all completed read requests. */
   std::vector<MemoryReadResult> completedReads_;
