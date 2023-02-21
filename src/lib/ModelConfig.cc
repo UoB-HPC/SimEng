@@ -370,7 +370,7 @@ void ModelConfig::validate() {
   root = "Simulation-Memory";
   subFields = {"Size"};
 
-  // Default mmap size is 1024 * 1024 * 10 = 10MiB
+  // Default simulation memory size is 1024 * 1024 * 10 = 10MiB
   nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
                         std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
                         104857600);

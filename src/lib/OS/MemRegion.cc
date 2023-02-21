@@ -68,11 +68,12 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
   if (newBrk > heapEnd_) {
     // TODO: This needs to fixed such that more extra memory allocation is
     // mmapd.
-    std::cerr << "[SimEng:MemRegion] Attemped to allocate more memory on the "
-                 "heap than is available to the process. Please increase the "
-                 "{Process-Image:{Heap-Size: <size>}} parameter in YAML model "
-                 "config file used to run this simulation."
-              << std::endl;
+    std::cerr
+        << "[SimEng:MemRegion] Attemped to allocate more memory on the "
+           "heap than is available to the process. Please increase the "
+           "{Process-Image:{Heap-Size: <size>}} parameter in the YAML model "
+           "config file used to run this simulation."
+        << std::endl;
     std::exit(1);
   }
 
@@ -102,8 +103,8 @@ uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
   }
 
   bool allocated = false;
-  // If VMA list has multiple VMAs then starting from curr (VMA) check if the
-  // new VMA can be allocated between two existing ones.
+  // If the VMA list has multiple VMAs then starting from curr (VMA) check if
+  // the new VMA can be allocated between two existing ones.
   while (curr != nullptr && curr->vmNext_ != nullptr) {
     if (curr->vmNext_->vmStart_ - curr->vmEnd_ >= size) {
       vma->vmStart_ = curr->vmEnd_;
@@ -116,7 +117,7 @@ uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
     curr = curr->vmNext_;
   }
   // If the new VMA has not been allocated it means that it couldn't fit between
-  // two existing VMAs or he VMA list is empty. This means that either we are
+  // two existing VMAs or the VMA list is empty. This means that either we are
   // the tail of the VMA list or we are now allocating the head. If the
   // startAddr is less than mmap pointer its value will be set to the mmap
   // pointer. However if it is greater than the mmap pointer it remains the

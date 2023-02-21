@@ -49,7 +49,7 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
  * The constructed process follows the layout described below and has the
  * following properties:
  *
- * a) Padding between each region is equal to the page size. (4096 bytes)
+ * a) Padding between each region is equal to the page size.
  * b) Each region's start address, end address and size are page aligned.
  * c) The stack grows downwards.
  * d) The heap grows upwards.

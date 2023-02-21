@@ -76,9 +76,9 @@ class HostFileMMap {
   /** This is the size of the original file mapping without the offset being
    * applied to it. */
   size_t origLen_ = 0;
-  /*
-  Length of the file mapping after offset has been applied. When a mmap call is
-  made, it can contain an offset which has to be a multiple of page size.
+
+  /** Length of the file mapping after offset has been applied. When a mmap call
+  is made, it can contain an offset which has to be a multiple of page size.
   Whenever a mmap call is made with a file descriptor and offset, SimEng mmaps
   the entire file on the host system. The effective length given the original
   file length and offset is then calculated i.e original_file_length - offset.

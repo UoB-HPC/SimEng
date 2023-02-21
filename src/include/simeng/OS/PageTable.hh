@@ -56,8 +56,8 @@ class PageTable {
 
   /** Pair used to store ignored virtual address range. All addressed within
    * this range will lead to a page fault of type faults::pagetable::INGORED.
-   * Furthermore, in the MMU whenever this specific page fault is encoutered an
-   * an empty register value is sent back as the response. */
+   * Furthermore, in the MMU, whenever this specific page fault is encountered
+   * an empty register value is sent back as the response.*/
   IgnoredAddrRange ignoredAddrRange_ = std::pair<uint64_t, uint64_t>(0, 0);
 
   /** Method which creates a single page mapping between alignedVAddr and
