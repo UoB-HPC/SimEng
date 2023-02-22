@@ -10,11 +10,23 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
-ExceptionHandler::ExceptionHandler(const Core& core) : core_(core) {
-  resumeHandling_ = [this]() { return initException(); };
-}
+ExceptionHandler::ExceptionHandler(const Core& core) : core_(core) {}
 
-bool ExceptionHandler::tick() { return resumeHandling_(); }
+bool ExceptionHandler::tick() {
+  // If the syscall handler has been envoked, conclude the syscall only once the
+  // result has been returned
+  if (envokingSycallHandler_) {
+    if (!syscallReturned_) return false;
+    return concludeSyscall();
+  }
+
+  // If an instruction ahs been resgitered with an exception, begin its
+  // processing
+  if (instruction_ != nullptr) return handleException();
+
+  // Return false as a default case
+  return false;
+}
 
 void ExceptionHandler::registerException(
     std::shared_ptr<simeng::Instruction> instruction) {
@@ -22,7 +34,7 @@ void ExceptionHandler::registerException(
   instruction_ = std::static_pointer_cast<Instruction>(instruction);
 }
 
-bool ExceptionHandler::initException() {
+bool ExceptionHandler::handleException() {
   if (instruction_ == nullptr) return false;
   result_ = {};
 
@@ -85,7 +97,7 @@ bool ExceptionHandler::initException() {
                             registerFileSet.get(R2), registerFileSet.get(R3),
                             registerFileSet.get(R4), registerFileSet.get(R5)},
                            R0});
-        resumeHandling_ = [this]() { return concludeSyscall(); };
+        envokingSycallHandler_ = true;
         return false;
       }
       case 160: {  // uname
@@ -231,22 +243,6 @@ bool ExceptionHandler::concludeSyscall() {
         }
         break;
       }
-      case 222: {  // mmap
-        uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
-        int flags = registerFileSet.get(R3).get<int>();
-        int fd = registerFileSet.get(R4).get<int>();
-        off_t offset = registerFileSet.get(R5).get<off_t>();
-
-        // Currently, only support mmap from a malloc() call whose arguments
-        // match the first condition
-        if (addr != 0 || flags != 34 || fd != -1 || offset != 0) {
-          printException();
-          std::cout << "\n[SimEng:ExceptionHandler] Unsupported arguments for "
-                       "syscall: "
-                    << syscallResult_.syscallId << std::endl;
-        }
-        break;
-      }
     }
     return fatal();
   }
@@ -345,7 +341,7 @@ void ExceptionHandler::resetState() {
   // Reset state of handler
   instruction_ = nullptr;
   syscallReturned_ = false;
-  resumeHandling_ = [this]() { return initException(); };
+  envokingSycallHandler_ = false;
 }
 
 }  // namespace aarch64

@@ -36,10 +36,9 @@ class CoreInstance {
  public:
   /** Constructor with an executable, its arguments, and a model configuration.
    */
-  CoreInstance(
-      std::shared_ptr<simeng::memory::Mem> mem,
-      std::shared_ptr<memory::MMU> mmu,
-      std::function<void(const simeng::OS::SyscallInfo)> syscallHandle);
+  CoreInstance(std::shared_ptr<simeng::memory::Mem> mem,
+               std::shared_ptr<memory::MMU> mmu,
+               sendSyscallToHandler syscallHandle);
 
   // IGNORING SST RELATED CODE FOR NOW
   /** CoreInstance with source code assembled by LLVM and a model configuration.

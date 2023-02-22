@@ -20,7 +20,7 @@ enum CoreStatus : uint8_t { halted, idle, executing, switching };
 
 /** The result from a handled exception. */
 struct ExceptionResult {
-  /** Whether the outcome of the execution is fatal for the associated core and
+  /** Whether the outcome of the exception is fatal for the associated core and
    * it should therefore halt. */
   bool fatal;
 

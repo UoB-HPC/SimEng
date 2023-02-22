@@ -123,6 +123,11 @@ class SimOS {
    * `hfmmap_` class. */
   HostFileMMap mmapHostFd(int fd, size_t len, off_t offset);
 
+  /** A getter for the receiveSyscall() function. */
+  sendSyscallToHandler getSyscallReceiver() {
+    return [this](auto SyscallInfo) { receiveSyscall(SyscallInfo); };
+  }
+
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */
   friend class ::RegressionTest;

@@ -351,7 +351,8 @@ void SimOS::terminateThreadHelper(std::shared_ptr<Process> proc) {
 }
 
 uint64_t SimOS::getSystemTimer() const {
-  // TODO: This will need to be changed if we start supporting DVFS.
+  // TODO: This will need to be changed if we start supporting DVFS (Dynamic
+  // voltage and frequency scaling).
   return ticks_ /
          ((config_["Core"]["Clock-Frequency"].as<float>() * 1e9) / 1e9);
 }

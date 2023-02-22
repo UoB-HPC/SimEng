@@ -53,11 +53,11 @@ class Core : public simeng::Core {
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const override;
 
-  /** Send a syscall to the system syscall handler. */
+  /** Send a syscall to the simulated Operating System's syscall handler. */
   void sendSyscall(OS::SyscallInfo syscallInfo) const override;
 
-  /** Communicate the result of a syscall to the core's active exception
-   * handler for post-processing. */
+  /** This method receives the result of an initiated syscall and communicates
+   * the result to the exception handler for post-processing. */
   void receiveSyscallResult(const OS::SyscallResult result) const override;
 
   /** Retrieve the number of instructions retired. */

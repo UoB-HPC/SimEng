@@ -16,9 +16,11 @@ class ExceptionHandler : public simeng::ExceptionHandler {
   /** Create an exception handler with a reference to the core model object. */
   ExceptionHandler(const Core& core);
 
-  /** Progress handling of the exception, by calling and returning the result of
-   * the handler currently assigned to `resumeHandling_`. Returns `false` if
-   * further ticks are required, and `true` when completed. */
+  /** Progress handling of the exception. Either this handler will process the
+   * exception alone and instantly complete its processing, or, the simulated
+   * Operating System's syscall handler will be envoked and this handler must
+   * wait for the result. Returns `false` if further ticks are required, and
+   * `true` when completed. */
   bool tick() override;
 
   /** Register the instruction which contains the exception with the exception
@@ -38,10 +40,10 @@ class ExceptionHandler : public simeng::ExceptionHandler {
    * it. */
   void printException() const;
 
-  /** The initial handling logic. Returns `true` if no further cycles are
-   * required or `false` otherwise, in which case `resumeHandling_` has been set
-   * to the next step. */
-  bool initException();
+  /** This function begins the handling of the generated exception passed via
+   * registerException(). Returns `true` if no further cycles are required or
+   * `false` otherwise. */
+  bool handleException();
 
   /** Conclude a syscall, setting the return address and state change in the
    * exception results. */
@@ -60,6 +62,11 @@ class ExceptionHandler : public simeng::ExceptionHandler {
   /** The core model object. */
   const Core& core_;
 
+  /** Whether the generated exception required the use of the syscall handler
+   * and, therefore, the exception handler must wait for the syscall result to
+   * be returned. */
+  bool envokingSycallHandler_ = false;
+
   /** Whether the return value of an active syscall has been received. */
   bool syscallReturned_ = false;
 
@@ -68,9 +75,6 @@ class ExceptionHandler : public simeng::ExceptionHandler {
 
   /** The results of the exception. */
   ExceptionResult result_;
-
-  /** A function to call to resume handling an exception. */
-  std::function<bool()> resumeHandling_;
 
   /** Helper constants for RISC-V general-purpose registers. */
   static constexpr Register R0 = {RegisterType::GENERAL, 10};

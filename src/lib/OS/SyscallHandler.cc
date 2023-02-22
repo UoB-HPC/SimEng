@@ -21,7 +21,7 @@ SyscallHandler::SyscallHandler(
       {"/proc/cpuinfo", "proc/stat", "/sys/devices/system/cpu",
        "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
 
-  resumeHandling_ = [this]() { initSyscall(); };
+  resumeHandling_ = [this]() { handleSyscall(); };
 }
 
 void SyscallHandler::receiveSyscall(SyscallInfo info) {
@@ -30,7 +30,7 @@ void SyscallHandler::receiveSyscall(SyscallInfo info) {
 
 void SyscallHandler::tick() { resumeHandling_(); }
 
-void SyscallHandler::initSyscall() {
+void SyscallHandler::handleSyscall() {
   if (syscallQueue_.empty()) return;
 
   const SyscallInfo info = syscallQueue_.front();
@@ -706,7 +706,7 @@ void SyscallHandler::concludeSyscall(ProcessStateChange change, bool fatal) {
   // Remove syscall from queue and reset handler to default state
   syscallQueue_.pop();
   dataBuffer_ = {};
-  resumeHandling_ = [this]() { initSyscall(); };
+  resumeHandling_ = [this]() { handleSyscall(); };
 }
 
 // TODO : update when supporting multi-process/thread

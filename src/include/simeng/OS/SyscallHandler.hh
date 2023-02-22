@@ -176,9 +176,9 @@ class SyscallHandler {
   /** Tick the syscall handler to carry out any oustanding syscalls. */
   void tick();
 
-  /** Initialise the processing of the syscall at the front of the syscallQueue_
+  /** Function used to process the syscall at the front of the syscallQueue_
    * queue. */
-  void initSyscall();
+  void handleSyscall();
 
   /** This function receives a SyscallInfo struct from the a Core and adds it to
    * syscallQueue_ so it can be processed. */
