@@ -156,16 +156,17 @@ class Process {
   cpuContext context_;
 
   /** Holds the address that the process should write its TID to.
-   * Set using the `clone` syscall given the CLONE_CHILD_SETTID flag. NULL
-   * otherise. When set, the very first thing the new thread does is to write
-   * its TID at this address. */
-  uint64_t setChildTid = NULL;
+   * Set using the `clone` syscall given the CLONE_CHILD_SETTID flag. Zero
+   * otherise.
+   * When set, the very first thing the new thread does is to write its TID at
+   * this address. */
+  uint64_t setChildTid = 0;
 
   /** Holds the address of where a thread should write 0 to on termination if it
    * shared memory with other processes.
    * Set using the `clone` syscall given the CLONE_CHILD_CLEARTID flag, or using
-   * the `set_tid_address` syscall. NULL otherwise. */
-  uint64_t clearChildTid = NULL;
+   * the `set_tid_address` syscall. Zero otherwise. */
+  uint64_t clearChildTid = 0;
 
  private:
   /** Create and populate the initial process stack and returns the stack
