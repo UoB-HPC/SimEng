@@ -12,14 +12,21 @@ namespace simeng {
 
 class ArchitecturalRegisterFileSet;
 
+/** Typedef for callback function used to send a generated syscall to the
+ * simulated Operating System's syscall handler. */
+typedef std::function<void(simeng::OS::SyscallInfo)> sendSyscallToHandler;
+
 enum CoreStatus : uint8_t { halted, idle, executing, switching };
 
 /** The result from a handled exception. */
 struct ExceptionResult {
-  /** Whether execution should halt. */
+  /** Whether the outcome of the execution is fatal for the associated core and
+   * it should therefore halt. */
   bool fatal;
+
   /** The address to resume execution from. */
   uint64_t instructionAddress;
+
   /** Any changes to apply to the process state. */
   simeng::OS::ProcessStateChange stateChange;
 };
@@ -72,11 +79,11 @@ class Core {
   virtual const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const = 0;
 
-  /** Send a syscall to the system's syscall handler. */
+  /** Send a syscall to the simulated Operating System's syscall handler. */
   virtual void sendSyscall(OS::SyscallInfo) const = 0;
 
-  /** Communicate the result of a syscall to the core's active exception
-   * handler for post-processing. */
+  /** This method receives the result of an initiated syscall and communicates
+   * the result to the exception handler for post-processing. */
   virtual void receiveSyscallResult(const OS::SyscallResult result) const = 0;
 
   /** Retrieve the number of instructions retired. */
@@ -92,8 +99,7 @@ class Core {
    * Return Values :
    *  - True  : if succeeded in signaling interrupt
    *  - False : interrupt not scheduled due to on-going exception or system
-   * call
-   */
+   * call */
   virtual bool interrupt() = 0;
 
   /** Retrieve the number of ticks that have elapsed whilst executing the

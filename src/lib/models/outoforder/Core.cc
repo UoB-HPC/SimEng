@@ -76,7 +76,6 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
-      clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()),
       syscallHandle_(syscallHandle) {
   for (size_t i = 0; i < config["Execution-Units"].size(); i++) {
@@ -395,7 +394,7 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
   return mappedRegisterFileSet_;
 }
 
-void Core::sendSyscall(const OS::SyscallInfo syscallInfo) const {
+void Core::sendSyscall(OS::SyscallInfo syscallInfo) const {
   syscallHandle_(syscallInfo);
 }
 

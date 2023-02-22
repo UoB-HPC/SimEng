@@ -356,7 +356,7 @@ uint64_t SimOS::getSystemTimer() const {
          ((config_["Core"]["Clock-Frequency"].as<float>() * 1e9) / 1e9);
 }
 
-void SimOS::receiveSyscall(const SyscallInfo syscallInfo) const {
+void SimOS::receiveSyscall(SyscallInfo syscallInfo) const {
   syscallHandler_->receiveSyscall(syscallInfo);
 };
 

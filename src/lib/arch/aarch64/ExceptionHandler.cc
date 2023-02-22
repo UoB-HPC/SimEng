@@ -76,10 +76,13 @@ bool ExceptionHandler::initException() {
       case 261:    // prlimit64
       case 278:    // getrandom
       case 293: {  // rseq
-        core_.sendSyscall({syscallId, instruction_->getSequenceId(), 0, 0,
-                           registerFileSet.get(R0), registerFileSet.get(R1),
-                           registerFileSet.get(R2), registerFileSet.get(R3),
-                           registerFileSet.get(R4), registerFileSet.get(R5),
+        core_.sendSyscall({syscallId,
+                           instruction_->getSequenceId(),
+                           0,
+                           0,
+                           {registerFileSet.get(R0), registerFileSet.get(R1),
+                            registerFileSet.get(R2), registerFileSet.get(R3),
+                            registerFileSet.get(R4), registerFileSet.get(R5)},
                            R0});
         resumeHandling_ = [this]() { return concludeSyscall(); };
         return false;

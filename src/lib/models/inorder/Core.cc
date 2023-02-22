@@ -11,7 +11,6 @@ namespace inorder {
 
 // TODO: Replace with config options
 const unsigned int blockSize = 16;
-const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
@@ -162,7 +161,7 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
   return architecturalRegisterFileSet_;
 }
 
-void Core::sendSyscall(const OS::SyscallInfo syscallInfo) const {
+void Core::sendSyscall(OS::SyscallInfo syscallInfo) const {
   syscallHandle_(syscallInfo);
 }
 

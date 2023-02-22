@@ -6,13 +6,12 @@ namespace OS {
 SyscallHandler::SyscallHandler(
     const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes,
     std::shared_ptr<simeng::memory::Mem> memory,
-    std::function<void(simeng::OS::SyscallResult)> returnSyscall,
-    std::function<uint64_t()> getSystemTime,
-    std::function<uint64_t(uint64_t, uint64_t)> vAddrTranslation,
-    std::function<HostFileMMap(int, size_t, off_t)> mmapHostFd)
+    std::function<void(simeng::OS::SyscallResult)> returnSyscallResult,
+    std::function<uint64_t()> getSystemTime, VAddrTranslator vAddrTranslation,
+    mmapFileOnHost mmapHostFd)
     : processes_(processes),
       memory_(memory),
-      returnSyscall_(returnSyscall),
+      returnSyscallResult_(returnSyscallResult),
       getSystemTime_(getSystemTime),
       vAddrTranslation_(vAddrTranslation),
       mmapHostFd_(mmapHostFd) {
@@ -25,7 +24,7 @@ SyscallHandler::SyscallHandler(
   resumeHandling_ = [this]() { initSyscall(); };
 }
 
-void SyscallHandler::receiveSyscall(const SyscallInfo info) {
+void SyscallHandler::receiveSyscall(SyscallInfo info) {
   syscallQueue_.push(info);
 }
 
@@ -34,14 +33,14 @@ void SyscallHandler::tick() { resumeHandling_(); }
 void SyscallHandler::initSyscall() {
   if (syscallQueue_.empty()) return;
 
-  SyscallInfo info = syscallQueue_.front();
+  const SyscallInfo info = syscallQueue_.front();
   ProcessStateChange stateChange;
 
   switch (info.syscallId) {
     case 29: {  // ioctl
-      int64_t fd = info.R0.get<int64_t>();
-      uint64_t request = info.R1.get<uint64_t>();
-      uint64_t argp = info.R2.get<uint64_t>();
+      int64_t fd = info.registerArguments[0].get<int64_t>();
+      uint64_t request = info.registerArguments[1].get<uint64_t>();
+      uint64_t argp = info.registerArguments[2].get<uint64_t>();
 
       std::vector<char> out;
       int64_t retval = ioctl(fd, request, out);
@@ -55,16 +54,16 @@ void SyscallHandler::initSyscall() {
       break;
     }
     case 46: {  // ftruncate
-      uint64_t fd = info.R0.get<uint64_t>();
-      uint64_t length = info.R1.get<uint64_t>();
+      uint64_t fd = info.registerArguments[0].get<uint64_t>();
+      uint64_t length = info.registerArguments[1].get<uint64_t>();
       stateChange = {
           ChangeType::REPLACEMENT, {info.ret}, {ftruncate(fd, length)}};
       break;
     }
     case 48: {  // faccessat
-      int64_t dfd = info.R0.get<int64_t>();
-      uint64_t filenamePtr = info.R1.get<uint64_t>();
-      int64_t mode = info.R2.get<int64_t>();
+      int64_t dfd = info.registerArguments[0].get<int64_t>();
+      uint64_t filenamePtr = info.registerArguments[1].get<uint64_t>();
+      int64_t mode = info.registerArguments[2].get<int64_t>();
       // flag component not used, although function definition includes it
       int64_t flag = 0;
 
@@ -82,10 +81,10 @@ void SyscallHandler::initSyscall() {
       break;
     }
     case 56: {  // openat
-      int64_t dirfd = info.R0.get<int64_t>();
-      uint64_t pathnamePtr = info.R1.get<uint64_t>();
-      int64_t flags = info.R2.get<int64_t>();
-      uint16_t mode = info.R3.get<uint16_t>();
+      int64_t dirfd = info.registerArguments[0].get<int64_t>();
+      uint64_t pathnamePtr = info.registerArguments[1].get<uint64_t>();
+      int64_t flags = info.registerArguments[2].get<int64_t>();
+      uint16_t mode = info.registerArguments[3].get<uint16_t>();
 
       char* pathname = new char[PATH_MAX_LEN];
       return readStringThen(
@@ -101,14 +100,14 @@ void SyscallHandler::initSyscall() {
       break;
     }
     case 57: {  // close
-      int64_t fd = info.R0.get<int64_t>();
+      int64_t fd = info.registerArguments[0].get<int64_t>();
       stateChange = {ChangeType::REPLACEMENT, {info.ret}, {close(fd)}};
       break;
     }
     case 61: {  // getdents64
-      int64_t fd = info.R0.get<int64_t>();
-      uint64_t bufPtr = info.R1.get<uint64_t>();
-      uint64_t count = info.R2.get<uint64_t>();
+      int64_t fd = info.registerArguments[0].get<int64_t>();
+      uint64_t bufPtr = info.registerArguments[1].get<uint64_t>();
+      uint64_t count = info.registerArguments[2].get<uint64_t>();
 
       return readBufferThen(
           vAddrTranslation_(bufPtr, info.processId), count, [=]() {
@@ -142,17 +141,17 @@ void SyscallHandler::initSyscall() {
           });
     }
     case 62: {  // lseek
-      int64_t fd = info.R0.get<int64_t>();
-      uint64_t offset = info.R1.get<uint64_t>();
-      int64_t whence = info.R2.get<uint64_t>();
+      int64_t fd = info.registerArguments[0].get<int64_t>();
+      uint64_t offset = info.registerArguments[1].get<uint64_t>();
+      int64_t whence = info.registerArguments[2].get<uint64_t>();
       stateChange = {
           ChangeType::REPLACEMENT, {info.ret}, {lseek(fd, offset, whence)}};
       break;
     }
     case 63: {  // read
-      int64_t fd = info.R0.get<int64_t>();
-      uint64_t bufPtr = info.R1.get<uint64_t>();
-      uint64_t count = info.R2.get<uint64_t>();
+      int64_t fd = info.registerArguments[0].get<int64_t>();
+      uint64_t bufPtr = info.registerArguments[1].get<uint64_t>();
+      uint64_t count = info.registerArguments[2].get<uint64_t>();
       return readBufferThen(
           vAddrTranslation_(bufPtr, info.processId), count, [=]() {
             int64_t totalRead = read(fd, dataBuffer_.data(), count);
@@ -186,9 +185,9 @@ void SyscallHandler::initSyscall() {
           });
     }
     case 64: {  // write
-      int64_t fd = info.R0.get<int64_t>();
-      uint64_t bufPtr = info.R1.get<uint64_t>();
-      uint64_t count = info.R2.get<uint64_t>();
+      int64_t fd = info.registerArguments[0].get<int64_t>();
+      uint64_t bufPtr = info.registerArguments[1].get<uint64_t>();
+      uint64_t count = info.registerArguments[2].get<uint64_t>();
       return readBufferThen(
           vAddrTranslation_(bufPtr, info.processId), count, [=]() {
             int64_t retval = write(fd, dataBuffer_.data(), count);
@@ -198,9 +197,9 @@ void SyscallHandler::initSyscall() {
           });
     }
     case 65: {  // readv
-      int64_t fd = info.R0.get<int64_t>();
-      uint64_t iov = info.R1.get<uint64_t>();
-      int64_t iovcnt = info.R2.get<int64_t>();
+      int64_t fd = info.registerArguments[0].get<int64_t>();
+      uint64_t iov = info.registerArguments[1].get<uint64_t>();
+      int64_t iovcnt = info.registerArguments[2].get<int64_t>();
 
       // The pointer `iov` points to an array of structures that each contain
       // a pointer to where the data should be written and the number of
@@ -272,9 +271,9 @@ void SyscallHandler::initSyscall() {
                             invokeKernel);
     }
     case 66: {  // writev
-      int64_t fd = info.R0.get<int64_t>();
-      uint64_t iov = info.R1.get<uint64_t>();
-      int64_t iovcnt = info.R2.get<int64_t>();
+      int64_t fd = info.registerArguments[0].get<int64_t>();
+      uint64_t iov = info.registerArguments[1].get<uint64_t>();
+      int64_t iovcnt = info.registerArguments[2].get<int64_t>();
 
       // The pointer `iov` points to an array of structures that each contain
       // a pointer to the data and the size of the data as an integer.
@@ -321,7 +320,7 @@ void SyscallHandler::initSyscall() {
                             last);
     }
     case 78: {  // readlinkat
-      const auto pathnameAddress = info.R1.get<uint64_t>();
+      const auto pathnameAddress = info.registerArguments[1].get<uint64_t>();
 
       // Copy string at `pathnameAddress`
       auto pathname = new char[PATH_MAX_LEN];
@@ -336,10 +335,10 @@ void SyscallHandler::initSyscall() {
                             });
     }
     case 79: {  // newfstatat AKA fstatat
-      int64_t dfd = info.R0.get<int64_t>();
-      uint64_t filenamePtr = info.R1.get<uint64_t>();
-      uint64_t statbufPtr = info.R2.get<uint64_t>();
-      int64_t flag = info.R3.get<int64_t>();
+      int64_t dfd = info.registerArguments[0].get<int64_t>();
+      uint64_t filenamePtr = info.registerArguments[1].get<uint64_t>();
+      uint64_t statbufPtr = info.registerArguments[2].get<uint64_t>();
+      int64_t flag = info.registerArguments[3].get<int64_t>();
 
       char* filename = new char[PATH_MAX_LEN];
       return readStringThen(
@@ -360,8 +359,8 @@ void SyscallHandler::initSyscall() {
       break;
     }
     case 80: {  // fstat
-      int64_t fd = info.R0.get<int64_t>();
-      uint64_t statbufPtr = info.R1.get<uint64_t>();
+      int64_t fd = info.registerArguments[0].get<int64_t>();
+      uint64_t statbufPtr = info.registerArguments[1].get<uint64_t>();
 
       OS::stat statOut;
       stateChange = {ChangeType::REPLACEMENT, {info.ret}, {fstat(fd, statOut)}};
@@ -370,28 +369,28 @@ void SyscallHandler::initSyscall() {
       break;
     }
     case 93: {  // exit
-      auto exitCode = info.R0.get<uint64_t>();
+      auto exitCode = info.registerArguments[0].get<uint64_t>();
       std::cout << "[SimEng:SyscallHandler] Received exit syscall: "
                    "terminating with exit code "
                 << exitCode << std::endl;
       return concludeSyscall({}, true);
     }
     case 94: {  // exit_group
-      auto exitCode = info.R0.get<uint64_t>();
+      auto exitCode = info.registerArguments[0].get<uint64_t>();
       std::cout << "\n[SimEng:SyscallHandler] Received exit_group syscall: "
                    "terminating with exit code "
                 << exitCode << std::endl;
       return concludeSyscall({}, true);
     }
     case 96: {  // set_tid_address
-      uint64_t ptr = info.R0.get<uint64_t>();
+      uint64_t ptr = info.registerArguments[0].get<uint64_t>();
       stateChange = {ChangeType::REPLACEMENT, {info.ret}, {setTidAddress(ptr)}};
       break;
     }
     case 98: {  // futex
       // TODO: Functionality temporarily omitted as it is unused within
       // workloads regions of interest and not required for their simulation
-      int op = info.R1.get<int>();
+      int op = info.registerArguments[1].get<int>();
       if (op != 129) {
         return concludeSyscall({}, true);
       }
@@ -405,7 +404,7 @@ void SyscallHandler::initSyscall() {
       break;
     }
     case 113: {  // clock_gettime
-      uint64_t clkId = info.R0.get<uint64_t>();
+      uint64_t clkId = info.registerArguments[0].get<uint64_t>();
       uint64_t systemTimer = getSystemTime_();
 
       uint64_t seconds;
@@ -413,7 +412,7 @@ void SyscallHandler::initSyscall() {
       uint64_t retval = clockGetTime(clkId, systemTimer, seconds, nanoseconds);
       stateChange = {ChangeType::REPLACEMENT, {info.ret}, {retval}};
 
-      uint64_t timespecPtr = info.R1.get<uint64_t>();
+      uint64_t timespecPtr = info.registerArguments[1].get<uint64_t>();
       stateChange.memoryAddresses.push_back({timespecPtr, 8});
       stateChange.memoryAddressValues.push_back(seconds);
       stateChange.memoryAddresses.push_back({timespecPtr + 8, 8});
@@ -421,18 +420,18 @@ void SyscallHandler::initSyscall() {
       break;
     }
     case 122: {  // sched_setaffinity
-      pid_t pid = info.R0.get<pid_t>();
-      size_t cpusetsize = info.R1.get<size_t>();
-      uint64_t mask = info.R2.get<uint64_t>();
+      pid_t pid = info.registerArguments[0].get<pid_t>();
+      size_t cpusetsize = info.registerArguments[1].get<size_t>();
+      uint64_t mask = info.registerArguments[2].get<uint64_t>();
 
       int64_t retval = schedSetAffinity(pid, cpusetsize, mask);
       stateChange = {ChangeType::REPLACEMENT, {info.ret}, {retval}};
       break;
     }
     case 123: {  // sched_getaffinity
-      pid_t pid = info.R0.get<pid_t>();
-      size_t cpusetsize = info.R1.get<size_t>();
-      uint64_t mask = info.R2.get<uint64_t>();
+      pid_t pid = info.registerArguments[0].get<pid_t>();
+      size_t cpusetsize = info.registerArguments[1].get<size_t>();
+      uint64_t mask = info.registerArguments[2].get<uint64_t>();
       int64_t bitmask = schedGetAffinity(pid, cpusetsize, mask);
       // If returned bitmask is 0, assume an error
       if (bitmask > 0) {
@@ -470,8 +469,8 @@ void SyscallHandler::initSyscall() {
       break;
     }
     case 165: {  // getrusage
-      int who = info.R0.get<int>();
-      uint64_t usagePtr = info.R1.get<uint64_t>();
+      int who = info.registerArguments[0].get<int>();
+      uint64_t usagePtr = info.registerArguments[1].get<uint64_t>();
 
       OS::rusage usageOut;
       stateChange = {
@@ -481,8 +480,8 @@ void SyscallHandler::initSyscall() {
       break;
     }
     case 169: {  // gettimeofday
-      uint64_t tvPtr = info.R0.get<uint64_t>();
-      uint64_t tzPtr = info.R1.get<uint64_t>();
+      uint64_t tvPtr = info.registerArguments[0].get<uint64_t>();
+      uint64_t tzPtr = info.registerArguments[1].get<uint64_t>();
       uint64_t systemTimer = getSystemTime_();
 
       OS::timeval tv;
@@ -537,14 +536,14 @@ void SyscallHandler::initSyscall() {
       break;
     }
     case 214: {  // brk
-      auto result = brk(info.R0.get<uint64_t>());
+      auto result = brk(info.registerArguments[0].get<uint64_t>());
       stateChange = {
           ChangeType::REPLACEMENT, {info.ret}, {static_cast<uint64_t>(result)}};
       break;
     }
     case 215: {  // munmap
-      uint64_t addr = info.R0.get<uint64_t>();
-      size_t length = info.R1.get<size_t>();
+      uint64_t addr = info.registerArguments[0].get<uint64_t>();
+      size_t length = info.registerArguments[1].get<size_t>();
 
       int64_t result = munmap(addr, length);
       // If successful, munmap returns the total number of bytes
@@ -557,12 +556,12 @@ void SyscallHandler::initSyscall() {
       break;
     }
     case 222: {  // mmap
-      uint64_t addr = info.R0.get<uint64_t>();
-      size_t length = info.R1.get<size_t>();
-      int prot = info.R2.get<int>();
-      int flags = info.R3.get<int>();
-      int fd = info.R4.get<int>();
-      off_t offset = info.R5.get<off_t>();
+      uint64_t addr = info.registerArguments[0].get<uint64_t>();
+      size_t length = info.registerArguments[1].get<size_t>();
+      int prot = info.registerArguments[2].get<int>();
+      int flags = info.registerArguments[3].get<int>();
+      int fd = info.registerArguments[4].get<int>();
+      off_t offset = info.registerArguments[5].get<off_t>();
 
       uint64_t result = mmap(addr, length, prot, flags, fd, offset);
       if (result <= 0) {
@@ -598,8 +597,8 @@ void SyscallHandler::initSyscall() {
       srand(clock());
 
       // Write <buflen> random bytes to buf
-      uint64_t bufPtr = info.R0.get<uint64_t>();
-      size_t buflen = info.R1.get<size_t>();
+      uint64_t bufPtr = info.registerArguments[0].get<uint64_t>();
+      size_t buflen = info.registerArguments[1].get<size_t>();
 
       char buf[buflen];
       for (size_t i = 0; i < buflen; i++) {
@@ -671,9 +670,9 @@ void SyscallHandler::readLinkAt(span<char> path) {
   }
 
   const SyscallInfo info = syscallQueue_.front();
-  const int64_t dirfd = info.R0.get<int64_t>();
-  const uint64_t bufAddress = info.R2.get<uint64_t>();
-  const uint64_t bufSize = info.R3.get<uint64_t>();
+  const int64_t dirfd = info.registerArguments[0].get<int64_t>();
+  const uint64_t bufAddress = info.registerArguments[2].get<uint64_t>();
+  const uint64_t bufSize = info.registerArguments[3].get<uint64_t>();
 
   char buffer[PATH_MAX_LEN];
   int64_t result = readlinkat(dirfd, path.data(), buffer, bufSize);
@@ -702,8 +701,8 @@ void SyscallHandler::readLinkAt(span<char> path) {
 }
 
 void SyscallHandler::concludeSyscall(ProcessStateChange change, bool fatal) {
-  returnSyscall_({fatal, syscallQueue_.front().syscallId,
-                  syscallQueue_.front().coreId, change});
+  returnSyscallResult_({fatal, syscallQueue_.front().syscallId,
+                        syscallQueue_.front().coreId, change});
   // Remove syscall from queue and reset handler to default state
   syscallQueue_.pop();
   dataBuffer_ = {};

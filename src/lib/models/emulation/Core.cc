@@ -6,9 +6,6 @@ namespace simeng {
 namespace models {
 namespace emulation {
 
-// TODO: Expose as config option
-const unsigned int clockFrequency = 2.5 * 1e9;
-
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa,
            std::function<void(const simeng::OS::SyscallInfo)> syscallHandle,
@@ -301,7 +298,7 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
   return architecturalRegisterFileSet_;
 }
 
-void Core::sendSyscall(const OS::SyscallInfo syscallInfo) const {
+void Core::sendSyscall(OS::SyscallInfo syscallInfo) const {
   syscallHandle_(syscallInfo);
 }
 

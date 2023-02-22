@@ -24,6 +24,7 @@
 
 #include "simeng/Elf.hh"
 #include "simeng/OS/Process.hh"
+#include "simeng/memory/MMU.hh"
 #include "simeng/memory/Mem.hh"
 #include "simeng/version.hh"
 
@@ -122,36 +123,41 @@ struct ProcessStateChange {
   std::vector<RegisterValue> memoryAddressValues;
 };
 
-/** The result from a handled syscall. */
+/** This result from a handled syscall. */
 struct SyscallResult {
-  /** Whether execution should halt. */
+  /** Whether the outcome of the syscall is fatal for the associated core and
+   * it should therefore halt. */
   bool fatal;
+
   /** Id of the syscall to aid exception handler processing. */
   uint64_t syscallId;
+
   // The unique ID of the core associated with the syscall
   uint64_t coreId;
+
   /** Any changes to apply to the process state. */
   ProcessStateChange stateChange;
 };
 
 /** A struct to hold information used as arguments to a syscall. */
 struct SyscallInfo {
-  // The ID of the syscall
+  /** The ID of the syscall. */
   uint64_t syscallId;
-  // The unique sequenceID of the instructions triggering the syscall
+
+  /** The unique sequenceID of the instruction which envoked the syscall. */
   uint64_t seqId;
-  // The unique ID of the core associated with the syscall
+
+  /** The unique ID of the core associated with the syscall. */
   uint64_t coreId;
-  // The unique ID of the process associated with the syscall
+
+  /** The unique ID of the process associated with the syscall. */
   uint64_t processId;
-  // The register values used a parameters to the envoked syscall
-  RegisterValue R0;
-  RegisterValue R1;
-  RegisterValue R2;
-  RegisterValue R3;
-  RegisterValue R4;
-  RegisterValue R5;
-  // The register to return the success code to
+
+  /** The register values used as parameters to the envoked syscall. */
+  std::array<RegisterValue, 6> registerArguments;
+
+  /** The register which will be updated with the return value of the processed
+   * syscall. */
   Register ret;
 };
 
@@ -163,10 +169,9 @@ class SyscallHandler {
   SyscallHandler(
       const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes,
       std::shared_ptr<simeng::memory::Mem> memory,
-      std::function<void(simeng::OS::SyscallResult)> returnSyscall,
-      std::function<uint64_t()> getSystemTime,
-      std::function<uint64_t(uint64_t, uint64_t)> vAddrTranslation,
-      std::function<HostFileMMap(int, size_t, off_t)> mmapHostFd);
+      std::function<void(simeng::OS::SyscallResult)> returnSyscallResult,
+      std::function<uint64_t()> getSystemTime, VAddrTranslator vAddrTranslation,
+      mmapFileOnHost mmapHostFd);
 
   /** Tick the syscall handler to carry out any oustanding syscalls. */
   void tick();
@@ -175,11 +180,11 @@ class SyscallHandler {
    * queue. */
   void initSyscall();
 
-  /** Add the incoming syscall to the syscallQueue_ queue for later processing.
-   */
-  void receiveSyscall(const SyscallInfo info);
+  /** This function receives a SyscallInfo struct from the a Core and adds it to
+   * syscallQueue_ so it can be processed. */
+  void receiveSyscall(SyscallInfo info);
 
-  /** Once the syscall is deemed complete, conclude its execution by
+  /** Once the syscall is complete, conclude its execution by
    * constructing a SyscallResult and supplying it to the returnSyscall_
    * function. */
   void concludeSyscall(ProcessStateChange change, bool fatal = false);
@@ -315,19 +320,19 @@ class SyscallHandler {
   std::shared_ptr<simeng::memory::Mem> memory_;
 
   /** A callback function to send a syscall result back to a core. */
-  std::function<void(simeng::OS::SyscallResult)> returnSyscall_;
+  std::function<void(simeng::OS::SyscallResult)> returnSyscallResult_;
 
   /** A callback function to get the system time. */
   std::function<uint64_t()> getSystemTime_;
 
   /** A callback function to translate a virtual address. */
-  std::function<uint64_t(uint64_t, uint64_t)> vAddrTranslation_;
+  VAddrTranslator vAddrTranslation_;
 
   /** A callback function to a HostBackedFileMMaps instance's mapfd function. */
-  std::function<HostFileMMap(int, size_t, off_t)> mmapHostFd_;
+  mmapFileOnHost mmapHostFd_;
 
   /** A queue to hold all outstanding syscalls. */
-  std::queue<const SyscallInfo> syscallQueue_;
+  std::queue<SyscallInfo> syscallQueue_;
 
   /** A function to call to resume handling an exception. */
   std::function<void()> resumeHandling_;
