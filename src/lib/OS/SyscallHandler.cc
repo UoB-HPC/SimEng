@@ -5,13 +5,17 @@ namespace OS {
 
 SyscallHandler::SyscallHandler(
     const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes,
-    std::shared_ptr<MemoryInterface> memory,
+    std::shared_ptr<simeng::memory::Mem> memory,
     std::function<void(simeng::OS::SyscallResult)> returnSyscall,
-    std::function<uint64_t()> getSystemTime)
+    std::function<uint64_t()> getSystemTime,
+    std::function<uint64_t(uint64_t, uint64_t)> vAddrTranslation,
+    std::function<HostFileMMap(int, size_t, off_t)> mmapHostFd)
     : processes_(processes),
       memory_(memory),
       returnSyscall_(returnSyscall),
-      getSystemTime_(getSystemTime) {
+      getSystemTime_(getSystemTime),
+      vAddrTranslation_(vAddrTranslation),
+      mmapHostFd_(mmapHostFd) {
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
       supportedSpecialFiles_.end(),
@@ -66,7 +70,8 @@ void SyscallHandler::initSyscall() {
 
       char* filename = new char[PATH_MAX_LEN];
       return readStringThen(
-          filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
+          filename, vAddrTranslation_(filenamePtr, info.processId),
+          PATH_MAX_LEN, [=](auto length) {
             // Invoke the kernel
             int64_t retval = faccessat(dfd, filename, mode, flag);
             ProcessStateChange stateChange = {
@@ -84,7 +89,8 @@ void SyscallHandler::initSyscall() {
 
       char* pathname = new char[PATH_MAX_LEN];
       return readStringThen(
-          pathname, pathnamePtr, PATH_MAX_LEN, [=](auto length) {
+          pathname, vAddrTranslation_(pathnamePtr, info.processId),
+          PATH_MAX_LEN, [=](auto length) {
             // Invoke the kernel
             uint64_t retval = openat(dirfd, pathname, flags, mode);
             ProcessStateChange stateChange = {
@@ -104,35 +110,36 @@ void SyscallHandler::initSyscall() {
       uint64_t bufPtr = info.R1.get<uint64_t>();
       uint64_t count = info.R2.get<uint64_t>();
 
-      return readBufferThen(bufPtr, count, [=]() {
-        int64_t totalRead = getdents64(fd, dataBuffer_.data(), count);
-        ProcessStateChange stateChange = {
-            ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
-        // Check for failure
-        if (totalRead < 0) {
-          return concludeSyscall(stateChange);
-        }
+      return readBufferThen(
+          vAddrTranslation_(bufPtr, info.processId), count, [=]() {
+            int64_t totalRead = getdents64(fd, dataBuffer_.data(), count);
+            ProcessStateChange stateChange = {
+                ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
+            // Check for failure
+            if (totalRead < 0) {
+              return concludeSyscall(stateChange);
+            }
 
-        int64_t bytesRemaining = totalRead;
-        // Get pointer and size of the buffer
-        uint64_t iDst = bufPtr;
-        uint64_t iLength = bytesRemaining;
-        if (iLength > bytesRemaining) {
-          iLength = bytesRemaining;
-        }
-        bytesRemaining -= iLength;
-        // Write data for this buffer in 128-byte chunks
-        auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
-        while (iLength > 0) {
-          uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
-          stateChange.memoryAddresses.push_back({iDst, len});
-          stateChange.memoryAddressValues.push_back({iSrc, len});
-          iDst += len;
-          iSrc += len;
-          iLength -= len;
-        }
-        concludeSyscall(stateChange);
-      });
+            int64_t bytesRemaining = totalRead;
+            // Get pointer and size of the buffer
+            uint64_t iDst = bufPtr;
+            uint64_t iLength = bytesRemaining;
+            if (iLength > bytesRemaining) {
+              iLength = bytesRemaining;
+            }
+            bytesRemaining -= iLength;
+            // Write data for this buffer in 128-byte chunks
+            auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
+            while (iLength > 0) {
+              uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+              stateChange.memoryAddresses.push_back({iDst, len});
+              stateChange.memoryAddressValues.push_back({iSrc, len});
+              iDst += len;
+              iSrc += len;
+              iLength -= len;
+            }
+            concludeSyscall(stateChange);
+          });
     }
     case 62: {  // lseek
       int64_t fd = info.R0.get<int64_t>();
@@ -146,47 +153,49 @@ void SyscallHandler::initSyscall() {
       int64_t fd = info.R0.get<int64_t>();
       uint64_t bufPtr = info.R1.get<uint64_t>();
       uint64_t count = info.R2.get<uint64_t>();
-      return readBufferThen(bufPtr, count, [=]() {
-        int64_t totalRead = read(fd, dataBuffer_.data(), count);
-        ProcessStateChange stateChange = {
-            ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
-        // Check for failure
-        if (totalRead < 0) {
-          return concludeSyscall(stateChange);
-        }
+      return readBufferThen(
+          vAddrTranslation_(bufPtr, info.processId), count, [=]() {
+            int64_t totalRead = read(fd, dataBuffer_.data(), count);
+            ProcessStateChange stateChange = {
+                ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
+            // Check for failure
+            if (totalRead < 0) {
+              return concludeSyscall(stateChange);
+            }
 
-        int64_t bytesRemaining = totalRead;
-        // Get pointer and size of the buffer
-        uint64_t iDst = bufPtr;
-        uint64_t iLength = bytesRemaining;
-        if (iLength > bytesRemaining) {
-          iLength = bytesRemaining;
-        }
-        bytesRemaining -= iLength;
+            int64_t bytesRemaining = totalRead;
+            // Get pointer and size of the buffer
+            uint64_t iDst = bufPtr;
+            uint64_t iLength = bytesRemaining;
+            if (iLength > bytesRemaining) {
+              iLength = bytesRemaining;
+            }
+            bytesRemaining -= iLength;
 
-        // Write data for this buffer in 128-byte chunks
-        auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
-        while (iLength > 0) {
-          uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
-          stateChange.memoryAddresses.push_back({iDst, len});
-          stateChange.memoryAddressValues.push_back({iSrc, len});
-          iDst += len;
-          iSrc += len;
-          iLength -= len;
-        }
-        concludeSyscall(stateChange);
-      });
+            // Write data for this buffer in 128-byte chunks
+            auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
+            while (iLength > 0) {
+              uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+              stateChange.memoryAddresses.push_back({iDst, len});
+              stateChange.memoryAddressValues.push_back({iSrc, len});
+              iDst += len;
+              iSrc += len;
+              iLength -= len;
+            }
+            concludeSyscall(stateChange);
+          });
     }
     case 64: {  // write
       int64_t fd = info.R0.get<int64_t>();
       uint64_t bufPtr = info.R1.get<uint64_t>();
       uint64_t count = info.R2.get<uint64_t>();
-      return readBufferThen(bufPtr, count, [=]() {
-        int64_t retval = write(fd, dataBuffer_.data(), count);
-        ProcessStateChange stateChange = {
-            ChangeType::REPLACEMENT, {info.ret}, {retval}};
-        concludeSyscall(stateChange);
-      });
+      return readBufferThen(
+          vAddrTranslation_(bufPtr, info.processId), count, [=]() {
+            int64_t retval = write(fd, dataBuffer_.data(), count);
+            ProcessStateChange stateChange = {
+                ChangeType::REPLACEMENT, {info.ret}, {retval}};
+            concludeSyscall(stateChange);
+          });
     }
     case 65: {  // readv
       int64_t fd = info.R0.get<int64_t>();
@@ -259,7 +268,8 @@ void SyscallHandler::initSyscall() {
 
       // Run the buffer read to load the buffer structures, before invoking
       // the kernel.
-      return readBufferThen(iov, iovcnt * 16, invokeKernel);
+      return readBufferThen(vAddrTranslation_(iov, info.processId), iovcnt * 16,
+                            invokeKernel);
     }
     case 66: {  // writev
       int64_t fd = info.R0.get<int64_t>();
@@ -300,21 +310,24 @@ void SyscallHandler::initSyscall() {
           uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
           uint64_t ptr = iovdata[i * 2 + 0];
           uint64_t len = iovdata[i * 2 + 1];
-          return readBufferThen(ptr, len, last);
+          return readBufferThen(vAddrTranslation_(ptr, info.processId), len,
+                                last);
         };
       }
 
       // Run the first buffer read to load the buffer structures, before
       // performing each of the buffer loads.
-      return readBufferThen(iov, iovcnt * 16, last);
+      return readBufferThen(vAddrTranslation_(iov, info.processId), iovcnt * 16,
+                            last);
     }
     case 78: {  // readlinkat
       const auto pathnameAddress = info.R1.get<uint64_t>();
 
       // Copy string at `pathnameAddress`
       auto pathname = new char[PATH_MAX_LEN];
-      return readStringThen(pathname, pathnameAddress, PATH_MAX_LEN,
-                            [this, pathname](auto length) {
+      return readStringThen(pathname,
+                            vAddrTranslation_(pathnameAddress, info.processId),
+                            PATH_MAX_LEN, [this, pathname](auto length) {
                               // Pass the string `readLinkAt`, then destroy
                               // the buffer and resolve the handler.
                               readLinkAt({pathname, length});
@@ -330,7 +343,8 @@ void SyscallHandler::initSyscall() {
 
       char* filename = new char[PATH_MAX_LEN];
       return readStringThen(
-          filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
+          filename, vAddrTranslation_(filenamePtr, info.processId),
+          PATH_MAX_LEN, [=](auto length) {
             // Invoke the kernel
             OS::stat statOut;
             uint64_t retval = newfstatat(dfd, filename, statOut, flag);
@@ -614,38 +628,16 @@ void SyscallHandler::initSyscall() {
 void SyscallHandler::readStringThen(char* buffer, uint64_t address,
                                     int maxLength,
                                     std::function<void(size_t length)> then,
-                                    int offset) {
-  if (maxLength <= 0) {
-    return then(offset);
-  }
-
-  if (offset == -1) {
-    // First call; trigger read for address 0
-    memory_->requestRead({address + offset + 1, 1},
-                         syscallQueue_.front().seqId);
-    resumeHandling_ = [=]() {
-      return readStringThen(buffer, address, maxLength, then, offset + 1);
-    };
-    return;
-  }
-
-  // Search completed memory requests for the needed data
-  bool found = false;
-  for (const auto& response : memory_->getCompletedReads()) {
-    if (response.requestId == syscallQueue_.front().seqId) {
-      // TODO: Detect and handle any faults
-      assert(response.data && "Memory read failed");
-      buffer[offset] = response.data.get<char>();
-      found = true;
-      break;
+                                    int offset, bool firstCall) {
+  if (firstCall) {
+    if (maxLength <= 0) {
+      return then(offset);
     }
   }
-  memory_->clearCompletedReads();
 
-  if (!found) {
-    // Leave this handler in place to call again
-    return;
-  }
+  // Get a single character from the simulation memory and place at correct
+  // offset within passed buffer
+  buffer[offset] = memory_->getUntimedData(address + offset, 1)[0];
 
   if (buffer[offset] == '\0') {
     // End of string; call onwards
@@ -658,56 +650,30 @@ void SyscallHandler::readStringThen(char* buffer, uint64_t address,
   }
 
   // Queue up read for next character
-  memory_->requestRead({address + offset + 1, 1}, syscallQueue_.front().seqId);
   resumeHandling_ = [=]() {
-    return readStringThen(buffer, address, maxLength, then, offset + 1);
+    return readStringThen(buffer, address, maxLength, then, offset + 1, false);
   };
   return;
 }
 
 void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
-                                    std::function<void()> then,
-                                    bool firstCall) {
-  // If first call, trigger read for first entry and set self as handler
-  if (firstCall) {
-    if (length == 0) {
-      return then();
-    }
-
-    // Request a read of up to 128 bytes
-    uint64_t numBytes = std::min<uint64_t>(length, 128);
-    memory_->requestRead({ptr, static_cast<uint8_t>(numBytes)},
-                         syscallQueue_.front().seqId);
-    resumeHandling_ = [=]() {
-      return readBufferThen(ptr, length, then, false);
-    };
+                                    std::function<void()> then) {
+  // If there's nothing left to read, consider the read to be complete and call
+  // onwards
+  if (length == 0) {
+    return then();
   }
 
-  // Check whether read has completed
-  auto completedReads = memory_->getCompletedReads();
-  auto response =
-      std::find_if(completedReads.begin(), completedReads.end(),
-                   [&](const MemoryReadResult& response) {
-                     return response.requestId == syscallQueue_.front().seqId;
-                   });
-  if (response == completedReads.end()) {
-    return;
-  }
+  // Request a read of up to 128 bytes
+  uint64_t numBytes = std::min<uint64_t>(length, 128);
+  std::vector<char> data = memory_->getUntimedData(ptr, numBytes);
+  dataBuffer_.insert(dataBuffer_.end(), data.begin(), data.begin() + numBytes);
 
-  // Append data to buffer
-  assert(response->data && "unhandled failed read in exception handler");
-  uint8_t bytesRead = response->target.size;
-  const uint8_t* data = response->data.getAsVector<uint8_t>();
-  dataBuffer_.insert(dataBuffer_.end(), data, data + bytesRead);
-  memory_->clearCompletedReads();
-
-  // If there is more data, rerun this function for next chunk
-  if (bytesRead < length) {
-    return readBufferThen(ptr + bytesRead, length - bytesRead, then, true);
-  }
-
-  // All done - call onwards
-  return then();
+  // Queue up read for next block of data
+  resumeHandling_ = [=]() {
+    return readBufferThen(ptr + numBytes, length - numBytes, then);
+  };
+  return;
 }
 
 void SyscallHandler::readLinkAt(span<char> path) {
@@ -1077,7 +1043,7 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                 << std::endl;
       return -1;
     }
-    hostfile = os_->hfmmap_->mapfd(entry.getFd(), length, offset);
+    hostfile = mmapHostFd_(entry.getFd(), length, offset);
   }
   uint64_t ret =
       process->getMemRegion().mmapRegion(addr, length, prot, flags, hostfile);

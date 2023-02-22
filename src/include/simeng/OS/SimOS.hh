@@ -119,6 +119,10 @@ class SimOS {
    * core. */
   void sendSyscallResult(SyscallResult result) const;
 
+  /** Function to expose the mapfd function within the HostBackedFileMMaps
+   * `hfmmap_` class. */
+  HostFileMMap mmapHostFd(int fd, size_t len, off_t offset);
+
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */
   friend class ::RegressionTest;

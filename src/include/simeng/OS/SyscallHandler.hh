@@ -23,8 +23,8 @@
 #include <vector>
 
 #include "simeng/Elf.hh"
-#include "simeng/MemoryInterface.hh"
 #include "simeng/OS/Process.hh"
+#include "simeng/memory/Mem.hh"
 #include "simeng/version.hh"
 
 static constexpr uint16_t PATH_MAX_LEN = 4096;
@@ -162,9 +162,11 @@ class SyscallHandler {
   /** Create new SyscallHandler object. */
   SyscallHandler(
       const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes,
-      std::shared_ptr<MemoryInterface> memory,
+      std::shared_ptr<simeng::memory::Mem> memory,
       std::function<void(simeng::OS::SyscallResult)> returnSyscall,
-      std::function<uint64_t()> getSystemTime);
+      std::function<uint64_t()> getSystemTime,
+      std::function<uint64_t(uint64_t, uint64_t)> vAddrTranslation,
+      std::function<HostFileMMap(int, size_t, off_t)> mmapHostFd);
 
   /** Tick the syscall handler to carry out any oustanding syscalls. */
   void tick();
@@ -183,15 +185,15 @@ class SyscallHandler {
   void concludeSyscall(ProcessStateChange change, bool fatal = false);
 
   /** Attempt to read a string of max length `maxLength` from address `address`
-   * into the supplied buffer, starting from character `offset`. An offset of
-   * `-1` (default) will queue a read operation for the first character.
+   * into the supplied buffer, starting from character `offset`.
    *
    * This function will repeatedly set itself as the handler for the next cycle
    * until it either reads a null character or reaches the maximum length, at
    * which point it will call `then`, supplying the length of the read string.
    */
   void readStringThen(char* buffer, uint64_t address, int maxLength,
-                      std::function<void(size_t length)> then, int offset = -1);
+                      std::function<void(size_t length)> then, int offset = 0,
+                      bool firstCall = true);
 
   /** Read `length` bytes of data from `ptr`, and then call `then`.
    *
@@ -200,8 +202,8 @@ class SyscallHandler {
    * it is larger than can be read in a single memory request. The data will be
    * appended to the member vector `dataBuffer`.
    */
-  void readBufferThen(uint64_t ptr, uint64_t length, std::function<void()> then,
-                      bool firstCall = true);
+  void readBufferThen(uint64_t ptr, uint64_t length,
+                      std::function<void()> then);
 
   /** Performs a readlinkat syscall using the path supplied. */
   void readLinkAt(span<char> path);
@@ -321,15 +323,20 @@ class SyscallHandler {
   /** The user-space processes running above the kernel. */
   const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes_;
 
-  /** A memory interface to the system memory. */
-  std::shared_ptr<MemoryInterface> memory_;
+  /** A shared pointer to the simulation memory. */
+  std::shared_ptr<simeng::memory::Mem> memory_;
 
-  /** A callback function to send a syscall result back to a core through the
-   * SimOS class. */
+  /** A callback function to send a syscall result back to a core. */
   std::function<void(simeng::OS::SyscallResult)> returnSyscall_;
 
-  /** A callback function to get the system time from the SimOS class. */
+  /** A callback function to get the system time. */
   std::function<uint64_t()> getSystemTime_;
+
+  /** A callback function to translate a virtual address. */
+  std::function<uint64_t(uint64_t, uint64_t)> vAddrTranslation_;
+
+  /** A callback function to a HostBackedFileMMaps instance's mapfd function. */
+  std::function<HostFileMMap(int, size_t, off_t)> mmapHostFd_;
 
   /** A queue to hold all outstanding syscalls. */
   std::queue<const SyscallInfo> syscallQueue_;
