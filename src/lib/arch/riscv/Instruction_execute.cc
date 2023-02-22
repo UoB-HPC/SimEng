@@ -13,14 +13,10 @@ namespace riscv {
 
 /** NaN box single precision floating point values as defined in
  * riscv-spec-20191213 page 73 */
-uint64_t NanBox(uint32_t floatAsUint) {
-  return Instruction::UPPER_32_ALL_1 | static_cast<uint64_t>(floatAsUint);
-}
-
 uint64_t NanBoxFloat(float f) {
   static_assert(sizeof(float) == 4 && "Float not of size 4 bytes");
 
-  uint64_t box{0xffffffff00000000};
+  uint64_t box = 0xffffffff00000000;
   std::memcpy(reinterpret_cast<char*>(&box), reinterpret_cast<char*>(&f),
               sizeof(float));
 
@@ -95,7 +91,7 @@ void Instruction::execute() {
   // Implementation of rv64iamfd according to the v. 20191213 unprivileged spec
 
   //  std::cerr << "insn: " << metadata.mnemonic << " " << metadata.operandStr
-  //            << std::endl;
+  //            << ", group: " << getGroup() << std::endl;
 
   executed_ = true;
   switch (metadata.opcode) {
@@ -943,9 +939,9 @@ void Instruction::execute() {
     case Opcode::RISCV_FLW: {  // FLW rd,rs1,imm
       // Note: elements of memory data are RegisterValue's
       // Get as uint32 to allow for NaN boxing
-      const uint32_t memSingle = memoryData[0].get<uint32_t>();
+      const float memSingle = memoryData[0].get<float>();
 
-      results[0] = RegisterValue(NanBox(memSingle), 8);
+      results[0] = RegisterValue(NanBoxFloat(memSingle), 8);
       break;
     }
 

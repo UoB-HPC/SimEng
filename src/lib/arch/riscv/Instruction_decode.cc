@@ -239,8 +239,10 @@ void Instruction::decode() {
       break;
   }
 
-  if (Opcode::RISCV_AMOADD_D <= metadata.opcode &&
-      metadata.opcode <= Opcode::RISCV_AMOXOR_W_RL) {
+  if ((Opcode::RISCV_AMOADD_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_AMOXOR_W_RL) ||
+      (Opcode::RISCV_CSRRC <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_CSRRWI)) {
     // Atomics: both load and store
     isLoad_ = true;
     isStore_ = true;
@@ -349,6 +351,28 @@ void Instruction::decode() {
        metadata.opcode <= Opcode::RISCV_SLTU)) {
     // Compare instructions
     isCompare_ = true;
+  }
+
+  if ((Opcode::RISCV_MUL <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_MULW)) {
+    // Compare instructions
+    isMultiply_ = true;
+  }
+
+  if (((Opcode::RISCV_REM <= metadata.opcode &&
+        metadata.opcode <= Opcode::RISCV_REMW) ||
+       (Opcode::RISCV_DIV <= metadata.opcode &&
+        metadata.opcode <= Opcode::RISCV_DIVW))) {
+    // Compare instructions
+    isDivide_ = true;
+  }
+
+  if ((metadata.opcode >= Opcode::RISCV_FADD_D &&
+       metadata.opcode <= Opcode::RISCV_FDIV_S) ||
+      (metadata.opcode >= Opcode::RISCV_FEQ_D &&
+       metadata.opcode <= Opcode::RISCV_FSW)) {
+    // Floating point operation
+    isFloat_ = true;
   }
 
   // Set branch type

@@ -145,6 +145,9 @@ class Instruction : public simeng::Instruction {
   /** Is this an atomic instruction? */
   bool isAtomic() const;
 
+  /** Is this a floating point operation? */
+  bool isFloat() const;
+
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
@@ -162,9 +165,6 @@ class Instruction : public simeng::Instruction {
    * `setSourceRegisters`/`setDestinationRegisters`, the value will be
    * automatically supplied as zero. */
   static const Register ZERO_REGISTER;
-
-  /** Canonical 64-bit NaN defined by IEEE 754*/
-  static const uint64_t UPPER_32_ALL_1 = 0xFFFFFFFF00000000;
 
  private:
   /** The maximum number of source registers any supported RISC-V instruction
@@ -241,6 +241,8 @@ class Instruction : public simeng::Instruction {
   bool isLogical_ = false;
   /** Is this a compare instruction? */
   bool isCompare_ = false;
+  /** Is this a floating point operation? */
+  bool isFloat_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data
