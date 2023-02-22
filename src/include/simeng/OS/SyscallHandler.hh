@@ -144,9 +144,6 @@ struct SyscallInfo {
   /** The ID of the syscall. */
   uint64_t syscallId;
 
-  /** The unique sequenceID of the instruction which envoked the syscall. */
-  uint64_t seqId;
-
   /** The unique ID of the core associated with the syscall. */
   uint64_t coreId;
 
@@ -161,6 +158,10 @@ struct SyscallInfo {
   Register ret;
 };
 
+/** Typedef for callback function used to send the result of a syscall to an
+ * associated core. */
+typedef std::function<void(simeng::OS::SyscallResult)> returnSyscallResult;
+
 /** A Linux kernel syscall emulation implementation, which mimics the responses
    to Linux system calls. */
 class SyscallHandler {
@@ -169,7 +170,7 @@ class SyscallHandler {
   SyscallHandler(
       const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes,
       std::shared_ptr<simeng::memory::Mem> memory,
-      std::function<void(simeng::OS::SyscallResult)> returnSyscallResult,
+      returnSyscallResult returnSyscall,
       std::function<uint64_t()> getSystemTime, VAddrTranslator vAddrTranslation,
       mmapFileOnHost mmapHostFd);
 
@@ -320,7 +321,7 @@ class SyscallHandler {
   std::shared_ptr<simeng::memory::Mem> memory_;
 
   /** A callback function to send a syscall result back to a core. */
-  std::function<void(simeng::OS::SyscallResult)> returnSyscallResult_;
+  returnSyscallResult returnSyscall_;
 
   /** A callback function to get the system time. */
   std::function<uint64_t()> getSystemTime_;

@@ -90,7 +90,6 @@ bool ExceptionHandler::handleException() {
       case 278:    // getrandom
       case 293: {  // rseq
         core_.sendSyscall({syscallId,
-                           instruction_->getSequenceId(),
                            0,
                            0,
                            {registerFileSet.get(R0), registerFileSet.get(R1),

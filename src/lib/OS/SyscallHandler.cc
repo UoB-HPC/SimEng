@@ -6,12 +6,11 @@ namespace OS {
 SyscallHandler::SyscallHandler(
     const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes,
     std::shared_ptr<simeng::memory::Mem> memory,
-    std::function<void(simeng::OS::SyscallResult)> returnSyscallResult,
-    std::function<uint64_t()> getSystemTime, VAddrTranslator vAddrTranslation,
-    mmapFileOnHost mmapHostFd)
+    returnSyscallResult returnSyscall, std::function<uint64_t()> getSystemTime,
+    VAddrTranslator vAddrTranslation, mmapFileOnHost mmapHostFd)
     : processes_(processes),
       memory_(memory),
-      returnSyscallResult_(returnSyscallResult),
+      returnSyscall_(returnSyscall),
       getSystemTime_(getSystemTime),
       vAddrTranslation_(vAddrTranslation),
       mmapHostFd_(mmapHostFd) {
@@ -701,8 +700,8 @@ void SyscallHandler::readLinkAt(span<char> path) {
 }
 
 void SyscallHandler::concludeSyscall(ProcessStateChange change, bool fatal) {
-  returnSyscallResult_({fatal, syscallQueue_.front().syscallId,
-                        syscallQueue_.front().coreId, change});
+  returnSyscall_({fatal, syscallQueue_.front().syscallId,
+                  syscallQueue_.front().coreId, change});
   // Remove syscall from queue and reset handler to default state
   syscallQueue_.pop();
   dataBuffer_ = {};
