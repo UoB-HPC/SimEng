@@ -38,7 +38,7 @@ void RegressionTest::run(const char* source, const char* triple,
   memory_ = std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Initialise a SimOS object.
-  simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory_, true);
+  simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory_);
 
   // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place
@@ -46,13 +46,17 @@ void RegressionTest::run(const char* source, const char* triple,
   // and relevant sections are copied to the process image.
   // The process image is finalised by the createStack method
   // which creates and populates the initial process stack.
-  // The created process image can be accessed via a shared_ptr
-  // returned by the getProcessImage method.
+  uint64_t procTID = OS.createProcess(
+      {simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_)});
+  process_ = OS.getProcess(procTID);
+  ASSERT_TRUE(process_->isValid());
+  processMemorySize_ = process_->context_.progByteLen;
 
   // Create the architecture
   architecture_ = createArchitecture(OS.getSyscallHandler());
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(memory_, OS.getVAddrTranslator());
+      std::make_shared<simeng::memory::MMU>(memory_, OS.getVAddrTranslator(),
+                                            procTID);
 
   // Callback function used to write data to the simulation memory without
   // incurring any latency. This function will be used to write data to the
@@ -60,16 +64,6 @@ void RegressionTest::run(const char* source, const char* triple,
   auto sendToMem = [this](std::vector<char> data, uint64_t addr, size_t size) {
     memory_->sendUntimedData(data, addr, size);
   };
-
-  process_ = std::make_shared<simeng::OS::Process>(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_), &OS,
-      architecture_->getRegisterFileStructures(), 0, 0, sendToMem,
-      memory_->getMemorySize());
-  ASSERT_TRUE(process_->isValid());
-  processMemorySize_ = process_->context_.progByteLen;
-
-  // Update the initial process in the OS
-  OS.setInitialProcess(process_, *architecture_);
 
   // Create memory interfaces for instruction and data access.
   // A shared_ptr to the MMU is passed to each interface.

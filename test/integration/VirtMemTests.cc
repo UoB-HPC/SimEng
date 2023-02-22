@@ -25,16 +25,18 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
+  uint64_t procTID = simOS.createProcess({simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
-  ASSERT_EQ(simOS.getProcess(0)->getMemRegion().getVMASize(), 1);
+  ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(0)->getMemRegion().getVMAHead();
+  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
-  uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
+  uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
   ASSERT_EQ(vma->vmStart_, mmapStart);
   ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
   ASSERT_EQ(vma->vmSize_, 4096);
@@ -50,30 +52,32 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
+  uint64_t procTID = simOS.createProcess({simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
-  ASSERT_EQ(simOS.getProcess(0)->getMemRegion().getVMASize(), 1);
+  ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(0)->getMemRegion().getVMAHead();
+  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
-  uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
+  uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
   ASSERT_EQ(vma->vmStart_, mmapStart);
   ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
   ASSERT_EQ(vma->vmSize_, 4096);
   ASSERT_EQ(vma->hasFile(), false);
 
-  uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
+  uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
   simOS.handleVAddrTranslation(mmapStart, 0);
-  paddr = simOS.getProcess(0)->translate(mmapStart);
+  paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
-  uint64_t paddrWOffset = simOS.getProcess(0)->translate(mmapStart + 20);
+  uint64_t paddrWOffset = simOS.getProcess(procTID)->translate(mmapStart + 20);
   ASSERT_EQ(paddrWOffset, paddr + 20);
 }
 
@@ -86,15 +90,17 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
-  uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
+  uint64_t procTID = simOS.createProcess({simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   uint64_t retVal =
       simOS.getSyscallHandler()->mmap(mmapStart + 4096, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
-  ASSERT_EQ(simOS.getProcess(0)->getMemRegion().getVMASize(), 1);
+  ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(0)->getMemRegion().getVMAHead();
+  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
   ASSERT_EQ(vma->vmStart_, mmapStart + 4096);
@@ -102,15 +108,16 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
   ASSERT_EQ(vma->vmSize_, 4096);
   ASSERT_EQ(vma->hasFile(), false);
 
-  uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
+  uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
   simOS.handleVAddrTranslation(mmapStart + 4096, 0);
-  paddr = simOS.getProcess(0)->translate(mmapStart + 4096);
+  paddr = simOS.getProcess(procTID)->translate(mmapStart + 4096);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
-  uint64_t paddrWOffset = simOS.getProcess(0)->translate(mmapStart + 4096 + 20);
+  uint64_t paddrWOffset =
+      simOS.getProcess(procTID)->translate(mmapStart + 4096 + 20);
   ASSERT_EQ(paddrWOffset, paddr + 20);
 }
 
@@ -122,15 +129,17 @@ TEST(VirtMemTest, UnmapSyscall) {
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
-  uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
+  uint64_t procTID = simOS.createProcess({simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   uint64_t retVal =
       simOS.getSyscallHandler()->mmap(mmapStart, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
-  ASSERT_EQ(simOS.getProcess(0)->getMemRegion().getVMASize(), 1);
+  ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(0)->getMemRegion().getVMAHead();
+  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
   ASSERT_EQ(vma->vmStart_, mmapStart);
@@ -138,25 +147,25 @@ TEST(VirtMemTest, UnmapSyscall) {
   ASSERT_EQ(vma->vmSize_, 4096);
   ASSERT_EQ(vma->hasFile(), false);
 
-  uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
+  uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
   simOS.handleVAddrTranslation(mmapStart, 0);
-  paddr = simOS.getProcess(0)->translate(mmapStart);
+  paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
   retVal = simOS.getSyscallHandler()->munmap(mmapStart, 4096);
   ASSERT_EQ(retVal, 4096);
 
-  paddr = simOS.getProcess(0)->translate(mmapStart);
+  paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
-  ASSERT_EQ(simOS.getProcess(0)->getMemRegion().getVMASize(), 0);
+  ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 0);
 
-  vma = simOS.getProcess(0)->getMemRegion().getVMAHead();
+  vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma == NULL);
 }
 
@@ -172,18 +181,20 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
-  uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
+  uint64_t procTID = simOS.createProcess({simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
-  auto process = simOS.getProcess(0);
+  auto process = simOS.getProcess(procTID);
   int fd = process->fdArray_->allocateFDEntry(0, fpath.c_str(), O_RDWR, 0666);
   ASSERT_NE(fd, -1);
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(mmapStart, 21, 0, 0, fd, 0);
   ASSERT_NE(retVal, 0);
-  ASSERT_EQ(simOS.getProcess(0)->getMemRegion().getVMASize(), 1);
+  ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(0)->getMemRegion().getVMAHead();
+  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
   ASSERT_EQ(vma->vmStart_, mmapStart);
@@ -192,12 +203,12 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   EXPECT_TRUE(vma->hasFile());
   ASSERT_EQ(vma->getFileSize(), 21);
 
-  uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
+  uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
   simOS.handleVAddrTranslation(mmapStart, 0);
-  paddr = simOS.getProcess(0)->translate(mmapStart);
+  paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
@@ -220,19 +231,21 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
-  uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
+  uint64_t procTID = simOS.createProcess({simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
-  auto process = simOS.getProcess(0);
+  auto process = simOS.getProcess(procTID);
   int fd = process->fdArray_->allocateFDEntry(0, fpath.c_str(), O_RDWR, 0666);
   ASSERT_NE(fd, -1);
 
   uint64_t retVal =
       simOS.getSyscallHandler()->mmap(mmapStart, 4096, 0, 0, fd, 4096);
   ASSERT_NE(retVal, 0);
-  ASSERT_EQ(simOS.getProcess(0)->getMemRegion().getVMASize(), 1);
+  ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(0)->getMemRegion().getVMAHead();
+  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
   ASSERT_EQ(vma->vmStart_, mmapStart);
@@ -241,12 +254,12 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   EXPECT_TRUE(vma->hasFile());
   ASSERT_EQ(vma->getFileSize(), 4096);
 
-  uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
+  uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
   simOS.handleVAddrTranslation(mmapStart, 0);
-  paddr = simOS.getProcess(0)->translate(mmapStart);
+  paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
@@ -269,19 +282,21 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory, false);
-  uint64_t mmapStart = simOS.getProcess(0)->getMemRegion().getMmapStart();
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
+  uint64_t procTID = simOS.createProcess({simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
-  auto process = simOS.getProcess(0);
+  auto process = simOS.getProcess(procTID);
   int fd = process->fdArray_->allocateFDEntry(0, fpath.c_str(), O_RDWR, 0666);
   ASSERT_NE(fd, -1);
 
   uint64_t retVal =
       simOS.getSyscallHandler()->mmap(mmapStart, 8192, 0, 0, fd, 0);
   ASSERT_NE(retVal, 0);
-  ASSERT_EQ(simOS.getProcess(0)->getMemRegion().getVMASize(), 1);
+  ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(0)->getMemRegion().getVMAHead();
+  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
   EXPECT_TRUE(vma != NULL);
 
   ASSERT_EQ(vma->vmStart_, mmapStart);
@@ -290,12 +305,12 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   EXPECT_TRUE(vma->hasFile());
   ASSERT_EQ(vma->getFileSize(), 8192);
 
-  uint64_t paddr = simOS.getProcess(0)->translate(mmapStart);
+  uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
   simOS.handleVAddrTranslation(mmapStart, 0);
-  paddr = simOS.getProcess(0)->translate(mmapStart);
+  paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
@@ -305,12 +320,12 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   for (int x = 0; x < 4096; x++) text += "1";
   ASSERT_EQ(text, std::string(data.data()));
 
-  paddr = simOS.getProcess(0)->translate(mmapStart + 4096);
+  paddr = simOS.getProcess(procTID)->translate(mmapStart + 4096);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
   simOS.handleVAddrTranslation(mmapStart + 4096, 0);
-  paddr = simOS.getProcess(0)->translate(mmapStart + 4096);
+  paddr = simOS.getProcess(procTID)->translate(mmapStart + 4096);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 

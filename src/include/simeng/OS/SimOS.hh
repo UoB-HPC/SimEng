@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -48,10 +49,16 @@ class SimOS {
  public:
   /** Construct a SimOS object. */
   SimOS(std::string executablePath, std::vector<std::string> executableArgs,
-        std::shared_ptr<simeng::memory::Mem> mem, bool setProcess = false);
+        std::shared_ptr<simeng::memory::Mem> mem);
 
   /** Tick SimOS. */
   void tick();
+
+  /** Create a new Process Object.
+   * A span<char> is optionally passed into the function to indicate if the
+   * Process is created via raw bytes or via a compiled binary.
+   * Returns the tid of the process that was created. */
+  uint64_t createProcess(std::optional<span<char>> instructionBytes = {});
 
   /** Get a process with specified TID. */
   const std::shared_ptr<Process>& getProcess(uint64_t TID);
@@ -94,7 +101,7 @@ class SimOS {
    * line arguments.
    * Empty command line arguments denote the usage of hardcoded instructions
    * held in the hex_ array.*/
-  void createInitialProcess();
+  // void createInitialProcess();
 
   /** Construct the special file directory. */
   void createSpecialFileDirectory() const;
@@ -130,29 +137,9 @@ class SimOS {
    * exception. */
   bool halted_ = false;
 
-  /** Update the initial process to a pre-defined one.
-   * !!NOTE: Should be used EXCLUSIVELY by the test suite !! */
-  void setInitialProcess(std::shared_ptr<Process> proc,
-                         const simeng::arch::Architecture& arch) {
-    // Set Initial state of registers
-    if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
-      proc->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
-          proc->context_.sp, 8};
-    } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
-      // Set the stack pointer register
-      proc->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
-          proc->context_.sp, 8};
-      // Set the system registers
-      // Temporary: state that DCZ can support clearing 64 bytes at a time,
-      // but is disabled due to bit 4 being set
-      proc->context_
-          .regFile[arch::aarch64::RegisterType::SYSTEM]
-                  [arch.getSystemRegisterTag(ARM64_SYSREG_DCZID_EL0)] = {
-          static_cast<uint64_t>(0b10100), 8};
-    }
-
-    processes_[0] = proc;
-  }
+  /** The value of the next TID value that should be assigned to a process on
+   * instantiation. */
+  uint64_t nextFreeTID_ = 0;
 
   /** Reference to the PageFrameAllocator object.  */
   PageFrameAllocator pageFrameAllocator_;

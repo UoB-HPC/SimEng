@@ -10,14 +10,13 @@ namespace OS {
 
 SimOS::SimOS(std::string executablePath,
              std::vector<std::string> executableArgs,
-             std::shared_ptr<simeng::memory::Mem> mem, bool setProcess)
+             std::shared_ptr<simeng::memory::Mem> mem)
     : executablePath_(executablePath),
       executableArgs_(executableArgs),
       memory_(mem) {
   syscallHandler_ = std::make_shared<SyscallHandler>(this);
 
   pageFrameAllocator_ = PageFrameAllocator(mem->getMemorySize());
-  if (!setProcess) createInitialProcess();
 
   // Create the Special Files directory if indicated to do so in Config file
   if (Config::get()["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true)
@@ -144,11 +143,7 @@ const std::shared_ptr<Process>& SimOS::getProcess(uint64_t TID) {
   return proc->second;
 }
 
-void SimOS::createInitialProcess() {
-  // TODO : When supporting multiple processes, need to keep track of next
-  // available TGID and TIDs, and pass these when constructing a Process
-  // object
-
+uint64_t SimOS::createProcess(std::optional<span<char>> instructionBytes) {
   // Callback function used to write data to the simulation memory without
   // incurring any latency. This function will be used to write data to the
   // simulation memory during process creation and while handling page faults.
@@ -169,64 +164,78 @@ void SimOS::createInitialProcess() {
   std::vector<RegisterFileStructure> regFileStructure =
       arch->getRegisterFileStructures();
 
-  if (executablePath_ != DEFAULT_STR) {
+  // Get the tid for new Process
+  uint64_t tid = nextFreeTID_;
+  nextFreeTID_++;
+
+  if (instructionBytes.has_value()) {
+    // Construct Process from `instructionBytes`
+    processes_.emplace(
+        tid, std::make_shared<Process>(instructionBytes.value(), this,
+                                       regFileStructure, tid, tid, sendToMem,
+                                       memory_->getMemorySize()));
+    // Raise error if created process is not valid
+    if (!processes_[tid]->isValid()) {
+      std::cerr << "[SimEng:SimOS] Could not create process based on "
+                   "supplied instruction span"
+                << std::endl;
+      exit(1);
+    }
+  } else {
+    // Construct Process from specified binary file
+    assert(executablePath_ == DEFAULT_STR &&
+           "[SimEng:SimOS] Tried to construct a Process without specifying a "
+           "pre-compiled binary or raw assembly byte stream.");
     // Concatenate the command line arguments into a single vector and
     // create the process image
     std::vector<std::string> commandLine = {executablePath_};
     commandLine.insert(commandLine.end(), executableArgs_.begin(),
                        executableArgs_.end());
 
-    processes_.emplace(
-        0, std::make_shared<Process>(commandLine, this, regFileStructure, 0, 0,
-                                     sendToMem, memory_->getMemorySize()));
+    // Create new Process. As this is a new process, the TID = TGID.
+    processes_.emplace(tid, std::make_shared<Process>(
+                                commandLine, this, regFileStructure, tid, tid,
+                                sendToMem, memory_->getMemorySize()));
 
     // Raise error if created process is not valid
-    if (!processes_[0]->isValid()) {
+    if (!processes_[tid]->isValid()) {
       std::cerr << "[SimEng:SimOS] Could not read/parse " << commandLine[0]
                 << std::endl;
       exit(1);
     }
-  } else {
-    // Create a process image from the set of instructions held in hex_
-    processes_.emplace(
-        0,
-        std::make_shared<Process>(
-            simeng::span<char>(reinterpret_cast<char*>(hex_), sizeof(hex_)),
-            this, regFileStructure, 0, 0, sendToMem, memory_->getMemorySize()));
-    // Raise error if created process is not valid
-    if (!processes_[0]->isValid()) {
-      std::cerr << "[SimEng:SimOS] Could not create initial process based on "
-                   "supplied instruction span"
-                << std::endl;
-      exit(1);
-    }
   }
-  assert(processes_[0]->isValid() &&
-         "[SimEng:SimOS] Attempted to use an invalid process");
 
   // Set Initial state of registers
   if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
-    processes_[0]->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
-        processes_[0]->context_.sp, 8};
+    // Set the stack pointer register
+    processes_[tid]->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
+        processes_[tid]->context_.sp, 8};
   } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
     // Set the stack pointer register
-    processes_[0]->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] =
-        {processes_[0]->context_.sp, 8};
+    processes_[tid]->context_.regFile[arch::aarch64::RegisterType::GENERAL]
+                                     [31] = {processes_[tid]->context_.sp, 8};
     // Set the system registers
     // Temporary: state that DCZ can support clearing 64 bytes at a time,
     // but is disabled due to bit 4 being set
-    processes_[0]->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
-                                   [arch->getSystemRegisterTag(
-                                       ARM64_SYSREG_DCZID_EL0)] = {
+    processes_[tid]->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
+                                     [arch->getSystemRegisterTag(
+                                         ARM64_SYSREG_DCZID_EL0)] = {
         static_cast<uint64_t>(0b10100), 8};
   }
 
-  // In a simulation's initial state, all cores will be idle. Only
-  // 'scheduled' processes may be sent to a core for execution therefore
-  // we must update the initial processes status and push it to the
-  // scheduledProcs queue
-  processes_[0]->status_ = procStatus::scheduled;
-  scheduledProcs_.push(processes_[0]);
+  // If this is the initial process (tid = 0) then add to scheduledProcs_ as
+  // only processes in scheduledProcs_ can be scheduled onto an idle core (all
+  // cores begin in an idle state).
+  // Otherwise, add the new process to waitingProcs_.
+  if (tid == 0) {
+    processes_[tid]->status_ = procStatus::scheduled;
+    scheduledProcs_.push(processes_[tid]);
+  } else {
+    processes_[tid]->status_ = procStatus::waiting;
+    waitingProcs_.push(processes_[tid]);
+  }
+
+  return tid;
 }
 
 void SimOS::createSpecialFileDirectory() const {

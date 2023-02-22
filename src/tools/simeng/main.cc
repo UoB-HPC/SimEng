@@ -81,6 +81,15 @@ int main(int argc, char** argv) {
   simeng::OS::SimOS OS =
       simeng::OS::SimOS(executablePath, executableArgs, memory);
 
+  // Create the initial Process
+  if (executablePath == DEFAULT_STR) {
+    // Use default program
+    OS.createProcess({simeng::span<char>(
+        reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  } else {
+    OS.createProcess({});
+  }
+
   // Retrieve the virtual address translation function from SimOS and pass it to
   // the MMU. This function will be used to handle all virtual address
   // translations after a TLB miss.
