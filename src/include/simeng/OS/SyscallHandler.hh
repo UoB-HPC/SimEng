@@ -185,23 +185,11 @@ class SyscallHandler {
   void concludeSyscall(ProcessStateChange change, bool fatal = false);
 
   /** Attempt to read a string of max length `maxLength` from address `address`
-   * into the supplied buffer, starting from character `offset`.
-   *
-   * This function will repeatedly set itself as the handler for the next cycle
-   * until it either reads a null character or reaches the maximum length, at
-   * which point it will call `then`, supplying the length of the read string.
-   */
+   * into the supplied buffer, starting from character `offset`. */
   void readStringThen(char* buffer, uint64_t address, int maxLength,
-                      std::function<void(size_t length)> then, int offset = 0,
-                      bool firstCall = true);
+                      std::function<void(size_t length)> then, int offset = 0);
 
-  /** Read `length` bytes of data from `ptr`, and then call `then`.
-   *
-   * This function will repeatedly set itself as the handler for the next cycle
-   * until it has read `length` bytes of data. The data may be read in chunks if
-   * it is larger than can be read in a single memory request. The data will be
-   * appended to the member vector `dataBuffer`.
-   */
+  /** Read `length` bytes of data from `ptr`, and then call `then`. */
   void readBufferThen(uint64_t ptr, uint64_t length,
                       std::function<void()> then);
 

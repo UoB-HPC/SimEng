@@ -628,52 +628,38 @@ void SyscallHandler::initSyscall() {
 void SyscallHandler::readStringThen(char* buffer, uint64_t address,
                                     int maxLength,
                                     std::function<void(size_t length)> then,
-                                    int offset, bool firstCall) {
-  if (firstCall) {
-    if (maxLength <= 0) {
-      return then(offset);
-    }
-  }
-
-  // Get a single character from the simulation memory and place at correct
-  // offset within passed buffer
-  buffer[offset] = memory_->getUntimedData(address + offset, 1)[0];
-
-  if (buffer[offset] == '\0') {
-    // End of string; call onwards
+                                    int offset) {
+  if (maxLength <= 0) {
     return then(offset);
   }
 
-  if (offset + 1 == maxLength) {
-    // Reached max length; call onwards
-    return then(maxLength);
+  // Get a string from the simulation memory and within the passed buffer
+  std::vector<char> data = memory_->getUntimedData(address + offset, maxLength);
+
+  for (int i = 0; i < data.size(); i++) {
+    buffer[i] = data[i];
+    // End of string; call onwards
+    if (buffer[i] == '\0') return then(i + 1);
   }
 
-  // Queue up read for next character
-  resumeHandling_ = [=]() {
-    return readStringThen(buffer, address, maxLength, then, offset + 1, false);
-  };
-  return;
+  // Reached max length; call onwards
+  return then(maxLength);
 }
 
 void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
                                     std::function<void()> then) {
-  // If there's nothing left to read, consider the read to be complete and call
+  // If there's nothing to read, consider the read to be complete and call
   // onwards
   if (length == 0) {
     return then();
   }
 
-  // Request a read of up to 128 bytes
-  uint64_t numBytes = std::min<uint64_t>(length, 128);
-  std::vector<char> data = memory_->getUntimedData(ptr, numBytes);
-  dataBuffer_.insert(dataBuffer_.end(), data.begin(), data.begin() + numBytes);
+  // Get data from the simulation memory and read into dataBuffer_
+  std::vector<char> data = memory_->getUntimedData(ptr, length);
+  dataBuffer_.insert(dataBuffer_.end(), data.begin(), data.begin() + length);
 
-  // Queue up read for next block of data
-  resumeHandling_ = [=]() {
-    return readBufferThen(ptr + numBytes, length - numBytes, then);
-  };
-  return;
+  // Read in data, call onwards
+  return then();
 }
 
 void SyscallHandler::readLinkAt(span<char> path) {
