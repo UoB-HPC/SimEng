@@ -81,6 +81,10 @@ void SimOS::tick() {
       }
       case CoreStatus::idle: {
         // Core is idle, schedule head of scheduledProc queue
+        // Remove all completed processes from scheduledProcs_ queue
+        while (scheduledProcs_.front()->status_ == procStatus::completed) {
+          scheduledProcs_.pop();
+        }
         if (!scheduledProcs_.empty()) {
           // Get context of process that was executing on core before interrupt
           // was signalled
@@ -89,18 +93,21 @@ void SimOS::tick() {
           // scheduled (i.e. on first tick of simulation)
           if (currContext.TID != -1) {
             // Find the corresponding process in map
-            auto currProc = processes_.find(currContext.TID)->second;
-            assert(
-                (currProc->status_ == procStatus::executing) &&
-                "[SimEng:SimOS] Process updated when not in executing state.");
-            // Only update values which have changed
-            currProc->context_.pc = currContext.pc;
-            currProc->context_.regFile = currContext.regFile;
-            // Change status from Executing to Waiting
-            currProc->status_ = procStatus::waiting;
-            waitingProcs_.push(currProc);
+            auto currProc = processes_.find(currContext.TID);
+            // If proccess can't be found then it has been terminated so no need
+            // to update context.
+            if (currProc != processes_.end()) {
+              assert((currProc->second->status_ == procStatus::executing) &&
+                     "[SimEng:SimOS] Process updated when not in executing "
+                     "state.");
+              // Only update values which have changed
+              currProc->second->context_.pc = currContext.pc;
+              currProc->second->context_.regFile = currContext.regFile;
+              // Change status from Executing to Waiting
+              currProc->second->status_ = procStatus::waiting;
+              waitingProcs_.push(currProc->second);
+            }
           }
-
           // Schedule new process on core
           core->schedule(scheduledProcs_.front()->context_);
           // Update newly scheduled process' status
@@ -112,6 +119,10 @@ void SimOS::tick() {
       }
       case CoreStatus::executing: {
         // Core is executing, test if interrupt should be made
+        // Remove all completed processes from waitingProcs_ queue
+        while (waitingProcs_.front()->status_ == procStatus::completed) {
+          waitingProcs_.pop();
+        }
         bool canSched = !waitingProcs_.empty();
         canSched = canSched && (core->getCurrentProcTicks() > execTicks);
         canSched = canSched && core->interrupt();
@@ -130,17 +141,6 @@ void SimOS::tick() {
       }
     }
   }
-}
-
-const std::shared_ptr<Process>& SimOS::getProcess(uint64_t TID) {
-  auto proc = processes_.find(TID);
-  if (proc == processes_.end()) {
-    // If TID doesn't exist then hard exit
-    std::cerr << "[SimEng:SimOS] ERROR : Process with TID `" << TID
-              << "` does not exist.\n";
-    exit(1);
-  }
-  return proc->second;
 }
 
 uint64_t SimOS::createProcess(std::optional<span<char>> instructionBytes) {
@@ -238,12 +238,50 @@ uint64_t SimOS::createProcess(std::optional<span<char>> instructionBytes) {
   return tid;
 }
 
-void SimOS::createSpecialFileDirectory() const {
-  simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen();
-  // Remove any current special files dir
-  SFdir.RemoveExistingSFDir();
-  // Create new special files dir
-  SFdir.GenerateSFDir();
+const std::shared_ptr<Process>& SimOS::getProcess(uint64_t tid) {
+  auto proc = processes_.find(tid);
+  if (proc == processes_.end()) {
+    // If TID doesn't exist then hard exit
+    std::cerr << "[SimEng:SimOS] ERROR : Process with TID `" << tid
+              << "` does not exist.\n";
+    exit(1);
+  }
+  return proc->second;
+}
+
+void SimOS::terminateThread(uint64_t tid) {
+  auto proc = processes_.find(tid);
+  if (proc == processes_.end()) {
+    // If process with TID doesn't exist, return early
+    return;
+  }
+  switch (proc->second->status_) {
+    case procStatus::executing:
+      // Set core's status to idle
+      for (auto core : cores_) {
+        if (core->getCurrentTID() == tid) {
+          core->setStatus(CoreStatus::idle);
+          break;
+        }
+      }
+      break;
+    case procStatus::scheduled:
+      // Set status to complete so it can be removed from scheduledProcs_
+    case procStatus::waiting:
+      // Set status to complete so it can be removed fromwaitingProcs_
+      proc->second->status_ = procStatus::completed;
+      break;
+  }
+  // Remove from processes_
+  processes_.erase(tid);
+}
+
+void SimOS::terminateThreadGroup(uint64_t tgid) {
+  for (auto proc : processes_) {
+    if (proc.second->TGID_ == tgid) {
+      terminateThread(proc.second->TID_);
+    }
+  }
 }
 
 uint64_t SimOS::requestPageFrames(size_t size) {
@@ -277,6 +315,14 @@ VAddrTranslator SimOS::getVAddrTranslator() {
     return handleVAddrTranslation(vaddr, pid);
   };
   return fn;
+}
+
+void SimOS::createSpecialFileDirectory() const {
+  simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen();
+  // Remove any current special files dir
+  SFdir.RemoveExistingSFDir();
+  // Create new special files dir
+  SFdir.GenerateSFDir();
 }
 
 }  // namespace OS

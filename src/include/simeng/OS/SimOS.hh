@@ -60,18 +60,33 @@ class SimOS {
    * Returns the tid of the process that was created. */
   uint64_t createProcess(std::optional<span<char>> instructionBytes = {});
 
-  /** Get a process with specified TID. */
-  const std::shared_ptr<Process>& getProcess(uint64_t TID);
+  /** Get a process with specified `tid`. */
+  const std::shared_ptr<Process>& getProcess(uint64_t tid);
 
-  /** Get shared_ptr to syscallHandler instance. */
-  std::shared_ptr<SyscallHandler> getSyscallHandler() const {
-    return syscallHandler_;
-  };
+  /** Terminate the process with threadID = `tid`, and set corresponding core
+   * to idle state if applicable. */
+  void terminateThread(uint64_t tid);
+
+  /** Terminate all processes with threadGroupID = `tgid`, and set corresponding
+   * cores to idle state if applicable. */
+  void terminateThreadGroup(uint64_t tgid);
+
+  /** Method which allocates multiple page frames of size 'PAGE_SIZE' to cover
+   * an address range of 'size' and returns the starting physical address. */
+  uint64_t requestPageFrames(size_t size);
+
+  /** Method which handles process specific page table translation. */
+  uint64_t handleVAddrTranslation(uint64_t vaddr, uint64_t tid);
 
   /** This method returns a callback function that is passed to the MMU.
    * The callback function will be used by the MMU to handle TLB misses. The
    * callback invokes SimOS for virtual address translations. */
   virtual VAddrTranslator getVAddrTranslator();
+
+  /** Get shared_ptr to syscallHandler instance. */
+  std::shared_ptr<SyscallHandler> getSyscallHandler() const {
+    return syscallHandler_;
+  }
 
   /** Register a core with the OS to enable process scheduling. */
   void registerCore(std::shared_ptr<simeng::Core> core) {
@@ -80,13 +95,6 @@ class SimOS {
 
   /** Check if OS has halted. */
   bool hasHalted() const { return halted_; };
-
-  /** Method which allocates multiple page frames of size 'PAGE_SIZE' to cover
-   * an address range of 'size' and returns the starting physical address. */
-  uint64_t requestPageFrames(size_t size);
-
-  /** Method which handles process specific page table translation. */
-  uint64_t handleVAddrTranslation(uint64_t vaddr, uint64_t tid);
 
   /** Unique pointer to host backed file mmap. */
   std::unique_ptr<HostBackedFileMMaps> const hfmmap_ =
@@ -97,12 +105,6 @@ class SimOS {
   friend class ::RegressionTest;
 
  private:
-  /** Create the initial SimOS Process running above this kernel from command
-   * line arguments.
-   * Empty command line arguments denote the usage of hardcoded instructions
-   * held in the hex_ array.*/
-  // void createInitialProcess();
-
   /** Construct the special file directory. */
   void createSpecialFileDirectory() const;
 
