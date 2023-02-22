@@ -715,7 +715,7 @@ void ModelConfig::createGroupMapping() {
                      "INT_SIMPLE_LOGICAL",
                      "INT_SIMPLE_SHIFT",
                      "INT_MUL",
-                     "INT_DIV",
+                     "INT_DIV_OR_SQRT",
                      "LOAD_INT",
                      "STORE_INT",
                      "LOAD",

@@ -135,12 +135,16 @@ uint64_t Instruction::getKnownTarget() const { return knownTarget_; }
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;
 
+  if (isFloat()) {
+    base = InstructionGroups::FLOAT;
+  }
+
   if (isBranch()) return InstructionGroups::BRANCH;
   if (isLoad()) return base + 8;
   if (isStoreAddress()) return base + 9;
   if (isDivide_) return base + 7;
   if (isMultiply_) return base + 6;
-  if (isShift_) return base + 5;
+  if (isShift_ || isConvert_) return base + 5;
   if (isLogical_) return base + 4;
   if (isCompare_) return base + 3;
   return base + 2;  // Default return is {Data type}_SIMPLE_ARTH

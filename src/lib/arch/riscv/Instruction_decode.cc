@@ -342,27 +342,45 @@ void Instruction::decode() {
       (Opcode::RISCV_OR <= metadata.opcode &&
        metadata.opcode <= Opcode::RISCV_ORI) ||
       (Opcode::RISCV_AND <= metadata.opcode &&
-       metadata.opcode <= Opcode::RISCV_ANDI)) {
+       metadata.opcode <= Opcode::RISCV_ANDI) ||
+      (Opcode::RISCV_FSGNJN_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FSGNJ_S)) {
     // Logical instructions
     isLogical_ = true;
   }
 
   if ((Opcode::RISCV_SLT <= metadata.opcode &&
-       metadata.opcode <= Opcode::RISCV_SLTU)) {
+       metadata.opcode <= Opcode::RISCV_SLTU) ||
+      (Opcode::RISCV_FEQ_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FEQ_S) ||
+      (Opcode::RISCV_FLE_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FLT_S) ||
+      (Opcode::RISCV_FMAX_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FMIN_S)) {
     // Compare instructions
     isCompare_ = true;
   }
 
   if ((Opcode::RISCV_MUL <= metadata.opcode &&
-       metadata.opcode <= Opcode::RISCV_MULW)) {
+       metadata.opcode <= Opcode::RISCV_MULW) ||
+      (Opcode::RISCV_FMADD_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FMADD_S) ||
+      (Opcode::RISCV_FMSUB_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FMUL_S) ||
+      (Opcode::RISCV_FNMADD_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FNMSUB_S)) {
     // Compare instructions
     isMultiply_ = true;
   }
 
-  if (((Opcode::RISCV_REM <= metadata.opcode &&
-        metadata.opcode <= Opcode::RISCV_REMW) ||
-       (Opcode::RISCV_DIV <= metadata.opcode &&
-        metadata.opcode <= Opcode::RISCV_DIVW))) {
+  if ((Opcode::RISCV_REM <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_REMW) ||
+      (Opcode::RISCV_DIV <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_DIVW) ||
+      (Opcode::RISCV_FDIV_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FDIV_S) ||
+      (Opcode::RISCV_FSQRT_D <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_FSQRT_S)) {
     // Compare instructions
     isDivide_ = true;
   }
@@ -373,6 +391,10 @@ void Instruction::decode() {
        metadata.opcode <= Opcode::RISCV_FSW)) {
     // Floating point operation
     isFloat_ = true;
+    if ((metadata.opcode >= Opcode::RISCV_FCVT_D_L &&
+         metadata.opcode <= Opcode::RISCV_FCVT_W_S)) {
+      isConvert_ = true;
+    }
   }
 
   // Set branch type

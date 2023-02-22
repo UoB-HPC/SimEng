@@ -243,6 +243,8 @@ class Instruction : public simeng::Instruction {
   bool isCompare_ = false;
   /** Is this a floating point operation? */
   bool isFloat_ = false;
+  /** Is this a floating point to integer convert operation? */
+  bool isConvert_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data
