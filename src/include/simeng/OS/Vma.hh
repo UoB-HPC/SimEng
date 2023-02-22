@@ -4,6 +4,7 @@
 #include <sys/mman.h>
 
 #include <cstddef>
+#include <functional>
 #include <iostream>
 #include <memory>
 #include <utility>

@@ -18,7 +18,8 @@ bool ExceptionHandler::tick() { return resumeHandling_(); }
 
 void ExceptionHandler::registerException(
     std::shared_ptr<simeng::Instruction> instruction) {
-  instruction_ = std::dynamic_pointer_cast<Instruction>(instruction);
+  // TODO: look into dynamic_pointer_cast for safer casting
+  instruction_ = std::static_pointer_cast<Instruction>(instruction);
 }
 
 bool ExceptionHandler::initException() {
