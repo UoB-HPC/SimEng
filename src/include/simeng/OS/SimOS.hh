@@ -58,7 +58,7 @@ class SimOS {
    * A span<char> is optionally passed into the function to indicate if the
    * Process is created via raw bytes or via a compiled binary.
    * Returns the tid of the process that was created. */
-  uint64_t createProcess(std::optional<span<char>> instructionBytes = {});
+  uint64_t createProcess(span<char> instructionBytes = span<char>());
 
   /** Get a process with specified `tid`. */
   const std::shared_ptr<Process>& getProcess(uint64_t tid);
@@ -66,12 +66,12 @@ class SimOS {
   /** Get the number of active processes. */
   const size_t getNumProcesses() { return processes_.size(); }
 
-  /** Terminate the process with threadID = `tid`, and set corresponding core
-   * to idle state if applicable. */
+  /** Terminate the process with threadID = `tid`, and set the corresponding
+   * core to an idle state if applicable. */
   void terminateThread(uint64_t tid);
 
   /** Terminate all processes with threadGroupID = `tgid`, and set corresponding
-   * cores to idle state if applicable. */
+   * cores to an idle state if applicable. */
   void terminateThreadGroup(uint64_t tgid);
 
   /** Method which allocates multiple page frames of size 'PAGE_SIZE' to cover

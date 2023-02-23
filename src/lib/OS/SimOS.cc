@@ -94,19 +94,20 @@ void SimOS::tick() {
           // scheduled (i.e. on first tick of simulation)
           if (currContext.TID != -1) {
             // Find the corresponding process in map
-            auto currProc = processes_.find(currContext.TID);
+            auto procItr = processes_.find(currContext.TID);
             // If proccess can't be found then it has been terminated so no need
             // to update context.
-            if (currProc != processes_.end()) {
-              assert((currProc->second->status_ == procStatus::executing) &&
+            if (procItr != processes_.end()) {
+              auto currProc = procItr->second;
+              assert((currProc->status_ == procStatus::executing) &&
                      "[SimEng:SimOS] Process updated when not in executing "
                      "state.");
               // Only update values which have changed
-              currProc->second->context_.pc = currContext.pc;
-              currProc->second->context_.regFile = currContext.regFile;
+              currProc->context_.pc = currContext.pc;
+              currProc->context_.regFile = currContext.regFile;
               // Change status from Executing to Waiting
-              currProc->second->status_ = procStatus::waiting;
-              waitingProcs_.push(currProc->second);
+              currProc->status_ = procStatus::waiting;
+              waitingProcs_.push(currProc);
             }
           }
           // Schedule new process on core
@@ -145,7 +146,7 @@ void SimOS::tick() {
   }
 }
 
-uint64_t SimOS::createProcess(std::optional<span<char>> instructionBytes) {
+uint64_t SimOS::createProcess(span<char> instructionBytes) {
   // Callback function used to write data to the simulation memory without
   // incurring any latency. This function will be used to write data to the
   // simulation memory during process creation and while handling page faults.
@@ -170,12 +171,11 @@ uint64_t SimOS::createProcess(std::optional<span<char>> instructionBytes) {
   uint64_t tid = nextFreeTID_;
   nextFreeTID_++;
 
-  if (instructionBytes.has_value()) {
+  if (!instructionBytes.empty()) {
     // Construct Process from `instructionBytes`
-    processes_.emplace(
-        tid, std::make_shared<Process>(instructionBytes.value(), this,
-                                       regFileStructure, tid, tid, sendToMem,
-                                       memory_->getMemorySize()));
+    processes_.emplace(tid, std::make_shared<Process>(
+                                instructionBytes, this, regFileStructure, tid,
+                                tid, sendToMem, memory_->getMemorySize()));
     // Raise error if created process is not valid
     if (!processes_[tid]->isValid()) {
       std::cerr << "[SimEng:SimOS] Could not create process based on "
@@ -225,10 +225,10 @@ uint64_t SimOS::createProcess(std::optional<span<char>> instructionBytes) {
         static_cast<uint64_t>(0b10100), 8};
   }
 
-  // If this is the initial process (tid = 0) then add to scheduledProcs_ as
-  // only processes in scheduledProcs_ can be scheduled onto an idle core (all
-  // cores begin in an idle state).
-  // Otherwise, add the new process to waitingProcs_.
+  // If this is the initial process (tid = 0) then add to the scheduledProcs_
+  // queue as only processes in scheduledProcs_ can be scheduled onto an idle
+  // core (all cores begin in an idle state).
+  // Otherwise, add the new process to the waitingProcs_ queue.
   if (tid == 0) {
     processes_[tid]->status_ = procStatus::scheduled;
     scheduledProcs_.push(processes_[tid]);
@@ -334,7 +334,8 @@ void SimOS::terminateThreadHelper(const std::shared_ptr<Process>& proc) {
       // tick()
       [[fallthrough]];
     case procStatus::waiting:
-      // Set status to complete so it can be removed fromwaitingProcs_ in tick()
+      // Set status to complete so it can be removed from waitingProcs_ in
+      // tick()
       proc->status_ = procStatus::completed;
       break;
     case procStatus::completed:

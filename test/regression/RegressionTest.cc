@@ -42,12 +42,11 @@ void RegressionTest::run(const char* source, const char* triple,
 
   // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place
-  // during Process creation. The Elf binary is parsed
-  // and relevant sections are copied to the process image.
+  // during Process creation.
   // The process image is finalised by the createStack method
   // which creates and populates the initial process stack.
   uint64_t procTID = OS.createProcess(
-      {simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_)});
+      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_));
   process_ = OS.getProcess(procTID);
   ASSERT_TRUE(process_->isValid());
   processMemorySize_ = process_->context_.progByteLen;

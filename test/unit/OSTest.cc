@@ -24,7 +24,7 @@ TEST(OSTest, CreateSimOS) {
   simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
   simeng::span<char> defaultProg = simeng::span<char>(
       reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
-  uint64_t procTid = OS.createProcess({defaultProg});
+  uint64_t procTid = OS.createProcess(defaultProg);
   // Initial Process TID should be 0
   EXPECT_EQ(procTid, 0);
 
@@ -51,7 +51,7 @@ TEST(OSTest, CreateSimOS) {
   EXPECT_EQ(OS.getNumProcesses(), 0);
 
   // Check terminateThreadGroup
-  procTid = OS.createProcess({defaultProg});
+  procTid = OS.createProcess(defaultProg);
   OS.terminateThreadGroup(procTid);
   EXPECT_EQ(OS.getNumProcesses(), 0);
 }

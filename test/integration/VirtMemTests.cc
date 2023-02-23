@@ -26,8 +26,8 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
   // Create the instance of the OS
   simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess({simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t procTID = simOS.createProcess(simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
@@ -53,8 +53,8 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
 
   // Create the instance of the OS
   simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess({simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t procTID = simOS.createProcess(simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
@@ -91,8 +91,8 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
 
   // Create the instance of the OS
   simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess({simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t procTID = simOS.createProcess(simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   uint64_t retVal =
@@ -130,8 +130,8 @@ TEST(VirtMemTest, UnmapSyscall) {
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
   // Create the instance of the OS
   simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess({simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t procTID = simOS.createProcess(simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   uint64_t retVal =
@@ -182,8 +182,8 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
 
   // Create the instance of the OS
   simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess({simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t procTID = simOS.createProcess(simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(procTID);
@@ -232,8 +232,8 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
 
   // Create the instance of the OS
   simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess({simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t procTID = simOS.createProcess(simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(procTID);
@@ -283,8 +283,8 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
 
   // Create the instance of the OS
   simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess({simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_))});
+  uint64_t procTID = simOS.createProcess(simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(procTID);
