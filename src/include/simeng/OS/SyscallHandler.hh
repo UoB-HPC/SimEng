@@ -168,7 +168,7 @@ struct SyscallInfo {
   /** The unique ID of the process associated with the syscall. */
   uint64_t threadId = 0;
 
-  /** The register values used as parameters to the envoked syscall. */
+  /** The register values used as parameters to the invoked syscall. */
   std::array<RegisterValue, 6> registerArguments = {};
 
   /** The register which will be updated with the return value of the processed

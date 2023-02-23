@@ -16,7 +16,7 @@ bool ExceptionHandler::tick() {
   // If an exception corresponding to a syscall was encountered and passed to
   // the simulated Operating System's syscall handler, conclude the syscall only
   // once the result has been returned
-  if (envokingSycallHandler_) {
+  if (invokingSycallHandler_) {
     if (!syscallReturned_) return false;
     return concludeSyscall();
   }
@@ -95,7 +95,7 @@ bool ExceptionHandler::handleException() {
                             registerFileSet.get(R2), registerFileSet.get(R3),
                             registerFileSet.get(R4), registerFileSet.get(R5)},
                            R0});
-        envokingSycallHandler_ = true;
+        invokingSycallHandler_ = true;
         return false;
       }
       case 160: {  // uname
@@ -337,7 +337,7 @@ void ExceptionHandler::resetState() {
   // Reset state of handler
   instruction_ = nullptr;
   syscallReturned_ = false;
-  envokingSycallHandler_ = false;
+  invokingSycallHandler_ = false;
 }
 
 }  // namespace aarch64

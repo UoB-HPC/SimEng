@@ -362,7 +362,7 @@ void SimOS::receiveSyscall(SyscallInfo syscallInfo) const {
 }
 
 void SimOS::sendSyscallResult(const SyscallResult result) const {
-  cores_[0]->receiveSyscallResult(result);
+  cores_[result.coreId]->receiveSyscallResult(result);
 }
 
 HostFileMMap SimOS::mmapHostFd(int fd, size_t len, off_t offset) {

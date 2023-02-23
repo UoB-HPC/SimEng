@@ -18,7 +18,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
 
   /** Progress handling of the exception. Either this handler will process the
    * exception alone and instantly complete its processing, or, the simulated
-   * Operating System's syscall handler will be envoked and this handler must
+   * Operating System's syscall handler will be invoked and this handler must
    * wait for the result. Returns `false` if further ticks are required, and
    * `true` when completed. */
   bool tick() override;
@@ -65,7 +65,7 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
   /** Indicates whether the generated exception required the use of the syscall
    * handler and, therefore, the exception handler must wait for the syscall
    * result to be returned. */
-  bool envokingSycallHandler_ = false;
+  bool invokingSycallHandler_ = false;
 
   /** Indicates whether the return value of an active syscall has been received.
    */

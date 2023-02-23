@@ -489,7 +489,7 @@ void SyscallHandler::handleSyscall() {
     }
     case 94: {  // exit_group
       auto exitCode = info.registerArguments[0].get<uint64_t>();
-      std::cout << "\n[SimEng:SyscallHandler] Received exit_group syscall: "
+      std::cout << "[SimEng:SyscallHandler] Received exit_group syscall: "
                    "terminating with exit code "
                 << exitCode << std::endl;
       return concludeSyscall({}, true);
@@ -1070,7 +1070,9 @@ int64_t SyscallHandler::getrusage(int64_t who, rusage& out) {
 }
 
 int64_t SyscallHandler::getpid() const {
-  return processes_.find(syscallQueue_.front().threadId)->second->getTID();
+  // Given that the Thread Group ID (TGID) is equivalent to the Process ID
+  // (PID), we can return the TGID instead
+  return processes_.find(syscallQueue_.front().threadId)->second->getTGID();
 }
 
 int64_t SyscallHandler::getuid() const { return 0; }
