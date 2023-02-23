@@ -25,6 +25,16 @@ SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem,
   createProcess();
 }
 
+// The Private constructor
+SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem)
+    : memory_(mem),
+      syscallHandler_(std::make_shared<SyscallHandler>(this)),
+      pageFrameAllocator_(PageFrameAllocator(mem->getMemorySize())) {
+  // Create the Special Files directory if indicated to do so in Config file
+  if (Config::get()["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true)
+    createSpecialFileDirectory();
+}
+
 void SimOS::tick() {
   // Check if simulation halted
   if (halted_) {
@@ -311,16 +321,6 @@ VAddrTranslator SimOS::getVAddrTranslator() {
   return fn;
 }
 
-// The Private constructor
-SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem)
-    : memory_(mem),
-      syscallHandler_(std::make_shared<SyscallHandler>(this)),
-      pageFrameAllocator_(PageFrameAllocator(mem->getMemorySize())) {
-  // Create the Special Files directory if indicated to do so in Config file
-  if (Config::get()["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true)
-    createSpecialFileDirectory();
-}
-
 void SimOS::createSpecialFileDirectory() const {
   simeng::SpecialFileDirGen SFdir = simeng::SpecialFileDirGen();
   // Remove any current special files dir
@@ -329,30 +329,20 @@ void SimOS::createSpecialFileDirectory() const {
   SFdir.GenerateSFDir();
 }
 
-void SimOS::terminateThreadHelper(const std::shared_ptr<Process>& proc) {
+void SimOS::terminateThreadHelper(std::shared_ptr<Process> proc) {
   uint64_t tid = proc->getTID();
-  switch (proc->status_) {
-    case procStatus::executing:
-      // Set core's status to idle, stopping execution immediately
-      for (auto core : cores_) {
-        if (core->getCurrentTID() == tid) {
-          core->setStatus(CoreStatus::idle);
-          break;
-        }
+  if (proc->status_ == procStatus::executing) {
+    // Set core's status to idle, stopping execution immediately
+    for (auto core : cores_) {
+      if (core->getCurrentTID() == tid) {
+        core->setStatus(CoreStatus::idle);
+        break;
       }
-      break;
-    case procStatus::scheduled:
-      // Set status to complete so it can be removed from scheduledProcs_ in
-      // tick()
-      [[fallthrough]];
-    case procStatus::waiting:
-      // Set status to complete so it can be removed from waitingProcs_ in
-      // tick()
-      proc->status_ = procStatus::completed;
-      break;
-    case procStatus::completed:
-      // Process has already been terminated
-      break;
+    }
+  } else {
+    // Set status to complete so it can be removed from the relevant queue in
+    // tick()
+    proc->status_ = procStatus::completed;
   }
 }
 

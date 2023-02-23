@@ -123,7 +123,7 @@ class SimOS {
 
   /** Change the state of a process or a core.
    * Used by the terminateThread & terminateThreadGroup functions. */
-  void terminateThreadHelper(const std::shared_ptr<Process>& proc);
+  void terminateThreadHelper(std::shared_ptr<Process> proc);
 
   /** The path of user defined Executable. */
   std::string executablePath_ = DEFAULT_STR;
