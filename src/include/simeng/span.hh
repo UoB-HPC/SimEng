@@ -27,6 +27,11 @@ class span {
   template <std::size_t N>
   constexpr span(std::array<T, N>& arr) : pointer_(arr.data()), size_(N) {}
 
+  constexpr span(span&& other) = default;                  // Move constructor
+  constexpr span(const span& other) = default;             // Copy constructor
+  constexpr span& operator=(span&& other) = default;       // Move operator
+  constexpr span& operator=(const span& other) = default;  // Copy operator
+
   constexpr index_type size() const { return size_; }
   [[nodiscard]] constexpr bool empty() const noexcept { return size() == 0; }
 
@@ -54,9 +59,7 @@ class span {
   constexpr reference back() const { return pointer_[size_ - 1]; }
   constexpr pointer data() const noexcept { return pointer_; }
 
-  constexpr reference operator[](index_type idx) const {
-    return pointer_[idx];
-  };
+  constexpr reference operator[](index_type idx) const { return pointer_[idx]; }
 
  private:
   T* pointer_;
