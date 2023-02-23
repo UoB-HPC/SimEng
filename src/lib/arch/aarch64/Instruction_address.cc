@@ -482,6 +482,12 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses({{base, 16}, {base + 16, 16}});
         break;
       }
+      case Opcode::AArch64_LDADDALW: {  // ldaddal ws, wt, [xn|sp]
+        setMemoryAddresses({{operands[1].get<uint32_t>(), 4}});
+      }
+      case Opcode::AArch64_LDADDALX: {  // ldaddal xs, xt, [xn|sp]
+        setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+      }
       case Opcode::AArch64_LDADDLW:  // ldaddl ws, wt, [xn]
         [[fallthrough]];
       case Opcode::AArch64_LDADDW: {  // ldadd ws, wt, [xn]
