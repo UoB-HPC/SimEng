@@ -63,6 +63,9 @@ class SimOS {
   /** Get a process with specified `tid`. */
   const std::shared_ptr<Process>& getProcess(uint64_t tid);
 
+  /** Get the number of active processes. */
+  const size_t getNumProcesses() { return processes_.size(); }
+
   /** Terminate the process with threadID = `tid`, and set corresponding core
    * to idle state if applicable. */
   void terminateThread(uint64_t tid);
@@ -107,6 +110,10 @@ class SimOS {
  private:
   /** Construct the special file directory. */
   void createSpecialFileDirectory() const;
+
+  /** Change the state of a process or a core.
+   * Used by the terminateThread & terminateThreadGroup functions. */
+  void terminateThreadHelper(const std::shared_ptr<Process>& proc);
 
   /** The path of user defined Executable. */
   std::string executablePath_ = DEFAULT_STR;

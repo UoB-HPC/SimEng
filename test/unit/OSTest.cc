@@ -12,7 +12,7 @@ TEST(OSTest, CreateSimOS) {
       "Timer-Frequency: 100, Micro-Operations: True, "
       "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
       "{Heap-Size: 10000, Stack-Size: 10000, Mmap-Size: 20000}, "
-      "Simulation-Memory: {Size: 50000}, CPU-Info: {Generate-Special-Dir: "
+      "Simulation-Memory: {Size: 100000}, CPU-Info: {Generate-Special-Dir: "
       "False}}");
   // Create the simulation memory
   const size_t memorySize =
@@ -45,6 +45,15 @@ TEST(OSTest, CreateSimOS) {
 
   // Check syscallHandler created
   EXPECT_TRUE(OS.getSyscallHandler());
+
+  // Check terminateThread
+  OS.terminateThread(procTid);
+  EXPECT_EQ(OS.getNumProcesses(), 0);
+
+  // Check terminateThreadGroup
+  procTid = OS.createProcess({defaultProg});
+  OS.terminateThreadGroup(procTid);
+  EXPECT_EQ(OS.getNumProcesses(), 0);
 }
 
 }  // namespace

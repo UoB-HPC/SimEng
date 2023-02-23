@@ -82,7 +82,8 @@ void SimOS::tick() {
       case CoreStatus::idle: {
         // Core is idle, schedule head of scheduledProc queue
         // Remove all completed processes from scheduledProcs_ queue
-        while (scheduledProcs_.front()->status_ == procStatus::completed) {
+        while (!scheduledProcs_.empty() &&
+               (scheduledProcs_.front()->status_ == procStatus::completed)) {
           scheduledProcs_.pop();
         }
         if (!scheduledProcs_.empty()) {
@@ -120,7 +121,8 @@ void SimOS::tick() {
       case CoreStatus::executing: {
         // Core is executing, test if interrupt should be made
         // Remove all completed processes from waitingProcs_ queue
-        while (waitingProcs_.front()->status_ == procStatus::completed) {
+        while (!waitingProcs_.empty() &&
+               (waitingProcs_.front()->status_ == procStatus::completed)) {
           waitingProcs_.pop();
         }
         bool canSched = !waitingProcs_.empty();
@@ -255,31 +257,21 @@ void SimOS::terminateThread(uint64_t tid) {
     // If process with TID doesn't exist, return early
     return;
   }
-  switch (proc->second->status_) {
-    case procStatus::executing:
-      // Set core's status to idle
-      for (auto core : cores_) {
-        if (core->getCurrentTID() == tid) {
-          core->setStatus(CoreStatus::idle);
-          break;
-        }
-      }
-      break;
-    case procStatus::scheduled:
-      // Set status to complete so it can be removed from scheduledProcs_
-    case procStatus::waiting:
-      // Set status to complete so it can be removed fromwaitingProcs_
-      proc->second->status_ = procStatus::completed;
-      break;
-  }
+  // Update process or Core status
+  terminateThreadHelper(proc->second);
   // Remove from processes_
   processes_.erase(tid);
 }
 
 void SimOS::terminateThreadGroup(uint64_t tgid) {
-  for (auto proc : processes_) {
-    if (proc.second->TGID_ == tgid) {
-      terminateThread(proc.second->TID_);
+  auto proc = processes_.begin();
+  while (proc != processes_.end()) {
+    if (proc->second->getTGID() == tgid) {
+      // Update process or Core status
+      terminateThreadHelper(proc->second);
+      proc = processes_.erase(proc);
+    } else {
+      proc++;
     }
   }
 }
@@ -323,6 +315,32 @@ void SimOS::createSpecialFileDirectory() const {
   SFdir.RemoveExistingSFDir();
   // Create new special files dir
   SFdir.GenerateSFDir();
+}
+
+void SimOS::terminateThreadHelper(const std::shared_ptr<Process>& proc) {
+  uint64_t tid = proc->getTID();
+  switch (proc->status_) {
+    case procStatus::executing:
+      // Set core's status to idle, stopping execution immediately
+      for (auto core : cores_) {
+        if (core->getCurrentTID() == tid) {
+          core->setStatus(CoreStatus::idle);
+          break;
+        }
+      }
+      break;
+    case procStatus::scheduled:
+      // Set status to complete so it can be removed from scheduledProcs_ in
+      // tick()
+      [[fallthrough]];
+    case procStatus::waiting:
+      // Set status to complete so it can be removed fromwaitingProcs_ in tick()
+      proc->status_ = procStatus::completed;
+      break;
+    case procStatus::completed:
+      // Process has already been terminated
+      break;
+  }
 }
 
 }  // namespace OS
