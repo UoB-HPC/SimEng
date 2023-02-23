@@ -47,9 +47,15 @@ static uint32_t hex_[8] = {
  * syscalls and manage process execution. */
 class SimOS {
  public:
-  /** Construct a SimOS object. */
-  SimOS(std::string executablePath, std::vector<std::string> executableArgs,
-        std::shared_ptr<simeng::memory::Mem> mem);
+  /** Construct a SimOS object which creates the initial Process from a byte
+   * stream. */
+  SimOS(std::shared_ptr<simeng::memory::Mem> mem,
+        simeng::span<char> instrBytes);
+
+  /** Construct a SimOS object from a binary file specified via the runtime
+   * arguments of SimEng. */
+  SimOS(std::shared_ptr<simeng::memory::Mem> mem, std::string executablePath,
+        std::vector<std::string> executableArgs);
 
   /** Tick SimOS. */
   void tick();
@@ -108,6 +114,10 @@ class SimOS {
   friend class ::RegressionTest;
 
  private:
+  /** Private constructor, called by all public constructors to perform common
+   * logic. */
+  SimOS(std::shared_ptr<simeng::memory::Mem> mem);
+
   /** Construct the special file directory. */
   void createSpecialFileDirectory() const;
 

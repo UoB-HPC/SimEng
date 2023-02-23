@@ -38,15 +38,15 @@ void RegressionTest::run(const char* source, const char* triple,
   memory_ = std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Initialise a SimOS object.
-  simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory_);
+  simeng::OS::SimOS OS = simeng::OS::SimOS(
+      memory_, simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_));
 
   // Create a Process from the assembled code block.
   // Memory allocation for process images also takes place
   // during Process creation.
   // The process image is finalised by the createStack method
   // which creates and populates the initial process stack.
-  uint64_t procTID = OS.createProcess(
-      simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_));
+  uint64_t procTID = 0;  // Initial process always has TID = 0
   process_ = OS.getProcess(procTID);
   ASSERT_TRUE(process_->isValid());
   processMemorySize_ = process_->context_.progByteLen;

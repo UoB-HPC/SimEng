@@ -21,15 +21,12 @@ TEST(OSTest, CreateSimOS) {
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the OS
-  simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  simeng::span<char> defaultProg = simeng::span<char>(
+  simeng::span<char> defaultPrg = simeng::span<char>(
       reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
-  uint64_t procTid = OS.createProcess(defaultProg);
-  // Initial Process TID should be 0
-  EXPECT_EQ(procTid, 0);
+  simeng::OS::SimOS OS = simeng::OS::SimOS(memory, defaultPrg);
 
   // Check default process created. Initial process TID = 0
-  const std::shared_ptr<simeng::OS::Process> proc = OS.getProcess(procTid);
+  const std::shared_ptr<simeng::OS::Process> proc = OS.getProcess(0);
   EXPECT_GT(proc->getHeapStart(), 0);
   EXPECT_GT(proc->getMmapStart(), proc->getHeapStart());
   EXPECT_GT(proc->getStackStart(), proc->getMmapStart());
@@ -47,11 +44,12 @@ TEST(OSTest, CreateSimOS) {
   EXPECT_TRUE(OS.getSyscallHandler());
 
   // Check terminateThread
-  OS.terminateThread(procTid);
+  OS.terminateThread(0);
   EXPECT_EQ(OS.getNumProcesses(), 0);
 
   // Check terminateThreadGroup
-  procTid = OS.createProcess(defaultProg);
+  uint64_t procTid = OS.createProcess(defaultPrg);
+  EXPECT_EQ(procTid, 1);
   OS.terminateThreadGroup(procTid);
   EXPECT_EQ(OS.getNumProcesses(), 0);
 }

@@ -8,19 +8,21 @@ static constexpr uint64_t execTicks = 30000;
 namespace simeng {
 namespace OS {
 
-SimOS::SimOS(std::string executablePath,
-             std::vector<std::string> executableArgs,
-             std::shared_ptr<simeng::memory::Mem> mem)
-    : executablePath_(executablePath),
-      executableArgs_(executableArgs),
-      memory_(mem) {
-  syscallHandler_ = std::make_shared<SyscallHandler>(this);
+SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem,
+             simeng::span<char> instrBytes)
+    : SimOS(mem) {
+  // Create the initial Process
+  createProcess(instrBytes);
+}
 
-  pageFrameAllocator_ = PageFrameAllocator(mem->getMemorySize());
-
-  // Create the Special Files directory if indicated to do so in Config file
-  if (Config::get()["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true)
-    createSpecialFileDirectory();
+SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem,
+             std::string executablePath,
+             std::vector<std::string> executableArgs)
+    : SimOS(mem) {
+  executablePath_ = executablePath;
+  executableArgs_ = executableArgs;
+  // Create the initial Process
+  createProcess();
 }
 
 void SimOS::tick() {
@@ -307,6 +309,16 @@ VAddrTranslator SimOS::getVAddrTranslator() {
     return handleVAddrTranslation(vaddr, pid);
   };
   return fn;
+}
+
+// The Private constructor
+SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem)
+    : memory_(mem),
+      syscallHandler_(std::make_shared<SyscallHandler>(this)),
+      pageFrameAllocator_(PageFrameAllocator(mem->getMemorySize())) {
+  // Create the Special Files directory if indicated to do so in Config file
+  if (Config::get()["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true)
+    createSpecialFileDirectory();
 }
 
 void SimOS::createSpecialFileDirectory() const {

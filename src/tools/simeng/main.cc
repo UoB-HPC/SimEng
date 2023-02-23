@@ -13,6 +13,20 @@
 #include "simeng/memory/SimpleMem.hh"
 #include "simeng/version.hh"
 
+/** Create a SimOS object depending on whether a binary file was specified. */
+simeng::OS::SimOS simOsFactory(std::shared_ptr<simeng::memory::Mem> memory,
+                               std::string executablePath,
+                               std::vector<std::string> executableArgs) {
+  if (executablePath == DEFAULT_STR) {
+    // Use default program
+    simeng::span<char> defaultPrg = simeng::span<char>(
+        reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
+    return simeng::OS::SimOS(memory, defaultPrg);
+  }
+  // Try to use binary specified in runtime args
+  return simeng::OS::SimOS(memory, executablePath, executableArgs);
+}
+
 /** Tick the provided core model until it halts. */
 int simulate(simeng::OS::SimOS& simOS, simeng::Core& core,
              simeng::MemoryInterface& dataMemory,
@@ -78,18 +92,7 @@ int main(int argc, char** argv) {
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the lightweight Operating system
-  simeng::OS::SimOS OS =
-      simeng::OS::SimOS(executablePath, executableArgs, memory);
-
-  // Create the initial Process
-  if (executablePath == DEFAULT_STR) {
-    // Use default program
-    OS.createProcess(simeng::span<char>(
-        reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
-  } else {
-    // Try use binary specified in runtime args
-    OS.createProcess();
-  }
+  simeng::OS::SimOS OS = simOsFactory(memory, executablePath, executableArgs);
 
   // Retrieve the virtual address translation function from SimOS and pass it to
   // the MMU. This function will be used to handle all virtual address

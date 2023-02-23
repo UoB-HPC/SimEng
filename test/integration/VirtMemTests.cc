@@ -25,9 +25,10 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess(simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
+  simeng::span<char> defaultPrg = simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
+  uint64_t procTID = 0;  // Initial process will always have TID = 0
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
@@ -52,9 +53,10 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess(simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
+  simeng::span<char> defaultPrg = simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
+  uint64_t procTID = 0;  // Initial process will always have TID = 0
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
@@ -90,9 +92,10 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess(simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
+  simeng::span<char> defaultPrg = simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
+  uint64_t procTID = 0;  // Initial process will always have TID = 0
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   uint64_t retVal =
@@ -129,9 +132,10 @@ TEST(VirtMemTest, UnmapSyscall) {
   std::shared_ptr<simeng::memory::Mem> memory =
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess(simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
+  simeng::span<char> defaultPrg = simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
+  uint64_t procTID = 0;  // Initial process will always have TID = 0
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   uint64_t retVal =
@@ -181,9 +185,10 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess(simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
+  simeng::span<char> defaultPrg = simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
+  uint64_t procTID = 0;  // Initial process will always have TID = 0
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(procTID);
@@ -231,9 +236,10 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess(simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
+  simeng::span<char> defaultPrg = simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
+  uint64_t procTID = 0;  // Initial process will always have TID = 0
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(procTID);
@@ -282,9 +288,10 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   std::string fpath = build_dir_path + "/test/longtext.txt";
 
   // Create the instance of the OS
-  simeng::OS::SimOS simOS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
-  uint64_t procTID = simOS.createProcess(simeng::span<char>(
-      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_)));
+  simeng::span<char> defaultPrg = simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
+  simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
+  uint64_t procTID = 0;  // Initial process will always have TID = 0
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(procTID);
