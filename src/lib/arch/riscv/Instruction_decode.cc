@@ -240,9 +240,11 @@ void Instruction::decode() {
   }
 
   if ((Opcode::RISCV_AMOADD_D <= metadata.opcode &&
-       metadata.opcode <= Opcode::RISCV_AMOXOR_W_RL) ||
-      (Opcode::RISCV_CSRRC <= metadata.opcode &&
-       metadata.opcode <= Opcode::RISCV_CSRRWI)) {
+       metadata.opcode <= Opcode::RISCV_AMOXOR_W_RL)
+      //      ||
+      //      (Opcode::RISCV_CSRRC <= metadata.opcode &&
+      //       metadata.opcode <= Opcode::RISCV_CSRRWI)
+  ) {
     // Atomics: both load and store
     isLoad_ = true;
     isStore_ = true;

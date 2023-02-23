@@ -308,6 +308,17 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
 
         operandCount = 3;
+      } else if (operandCount == 2 && strcmp(mnemonic, "fsflags") == 0) {
+        // fsflags R1, R2 is pseudo of CSRRW r1, fflags, rs (Write FP exception
+        // flags)
+        // CSRRW R1, R2, _ -> CSRRW R1, fflags, R2
+        operands[2] = operands[1];
+
+        operands[1].type =
+            RISCV_OP_IMM;  // TODO needs to become reg when CS updated
+        operands[1].reg = RISCV_SYSREG_FFLAGS;  // fflags address
+
+        operandCount = 3;
       } else if (strcmp(mnemonic, "csrw") == 0) {
         assert(false && "Unimplemented psuedoinstruction csrw");
       } else if (strcmp(mnemonic, "fscsr") == 0) {
@@ -330,10 +341,6 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operandCount = 3;
       } else if (strcmp(mnemonic, "fsrm") == 0) {
         assert(false && "Unimplemented psuedoinstruction fsrm");
-      } else if (strcmp(mnemonic, "fsflags") == 0) {
-        assert(false && "Unimplemented psuedoinstruction fsflags");
-      } else if (strcmp(mnemonic, "fsflags") == 0) {
-        assert(false && "Unimplemented psuedoinstruction fsflags");
       }
       break;
     }

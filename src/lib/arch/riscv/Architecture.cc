@@ -105,6 +105,9 @@ Architecture::Architecture(kernel::Linux& kernel, YAML::Node config)
       for (size_t j = 0; j < group_node.size(); j++) {
         uint16_t group = group_node[j].as<uint16_t>();
         uint8_t newPort = static_cast<uint8_t>(i);
+        //        std::cerr << "group: " << group << " port: " << (int)newPort
+        //                  << std::endl;
+
         groupExecutionInfo_[group].ports.push_back(newPort);
         // Add inherited support for those appropriate groups
         std::queue<uint16_t> groups;
