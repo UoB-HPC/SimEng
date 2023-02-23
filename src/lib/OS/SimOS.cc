@@ -183,7 +183,7 @@ uint64_t SimOS::createProcess(std::optional<span<char>> instructionBytes) {
     }
   } else {
     // Construct Process from specified binary file
-    assert(executablePath_ == DEFAULT_STR &&
+    assert(executablePath_ != DEFAULT_STR &&
            "[SimEng:SimOS] Tried to construct a Process without specifying a "
            "pre-compiled binary or raw assembly byte stream.");
     // Concatenate the command line arguments into a single vector and
