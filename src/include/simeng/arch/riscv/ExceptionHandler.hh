@@ -11,7 +11,7 @@ namespace arch {
 namespace riscv {
 
 /** A RISC-V exception handler. */
-class ExceptionHandler : public simeng::ExceptionHandler {
+class ExceptionHandler : public simeng::arch::ExceptionHandler {
  public:
   /** Create an exception handler with a reference to the core model object. */
   ExceptionHandler(const Core& core);
@@ -62,16 +62,17 @@ class ExceptionHandler : public simeng::ExceptionHandler {
   /** The core model object. */
   const Core& core_;
 
-  /** Whether the generated exception required the use of the syscall handler
-   * and, therefore, the exception handler must wait for the syscall result to
-   * be returned. */
+  /** Indicates whether the generated exception required the use of the syscall
+   * handler and, therefore, the exception handler must wait for the syscall
+   * result to be returned. */
   bool envokingSycallHandler_ = false;
 
-  /** Whether the return value of an active syscall has been received. */
+  /** Indicates whether the return value of an active syscall has been received.
+   */
   bool syscallReturned_ = false;
 
   /** The results of a syscall. */
-  simeng::OS::SyscallResult syscallResult_;
+  simeng::OS::SyscallResult syscallResult_ = {false, 0, 0, {}};
 
   /** The results of the exception. */
   ExceptionResult result_;

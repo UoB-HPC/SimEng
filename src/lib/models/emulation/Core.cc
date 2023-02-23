@@ -7,16 +7,16 @@ namespace models {
 namespace emulation {
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           const arch::Architecture& isa, sendSyscallToHandler syscallHandle,
-           YAML::Node& config)
+           const arch::Architecture& isa,
+           arch::sendSyscallToHandler handleSyscall)
     : instructionMemory_(instructionMemory),
       dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
-      syscallHandle_(syscallHandle) {
+      handleSyscall_(handleSyscall) {
   // Create exception handler based on chosen architecture
-  exceptionHandlerFactory(config["Core"]["ISA"].as<std::string>());
+  exceptionHandlerFactory(Config::get()["Core"]["ISA"].as<std::string>());
 }
 
 void Core::tick() {
@@ -217,7 +217,8 @@ void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
 
 void Core::processException() {
   assert(exceptionGenerated_ != false &&
-         "Attempted to process an exception handler that wasn't active");
+         "[SimEng:Core] Attempted to process an exception handler that wasn't "
+         "active");
   if (dataMemory_.hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
@@ -298,10 +299,10 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 }
 
 void Core::sendSyscall(OS::SyscallInfo syscallInfo) const {
-  syscallHandle_(syscallInfo);
+  handleSyscall_(syscallInfo);
 }
 
-void Core::receiveSyscallResult(OS::SyscallResult result) const {
+void Core::receiveSyscallResult(const OS::SyscallResult result) const {
   exceptionHandler_->processSyscallResult(result);
 }
 

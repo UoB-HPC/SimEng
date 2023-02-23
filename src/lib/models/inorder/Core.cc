@@ -14,7 +14,7 @@ const unsigned int blockSize = 16;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           sendSyscallToHandler syscallHandle, YAML::Node& config)
+           arch::sendSyscallToHandler handleSyscall)
     : dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
@@ -34,10 +34,10 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor, false),
       writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}),
-      syscallHandle_(syscallHandle) {
+      handleSyscall_(handleSyscall) {
   // Create exception handler based on chosen architecture
-  exceptionHandlerFactory(config["Core"]["ISA"].as<std::string>());
-};
+  exceptionHandlerFactory(Config::get()["Core"]["ISA"].as<std::string>());
+}
 
 void Core::tick() {
   ticks_++;
@@ -161,10 +161,10 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 }
 
 void Core::sendSyscall(OS::SyscallInfo syscallInfo) const {
-  syscallHandle_(syscallInfo);
+  handleSyscall_(syscallInfo);
 }
 
-void Core::receiveSyscallResult(OS::SyscallResult result) const {
+void Core::receiveSyscallResult(const OS::SyscallResult result) const {
   exceptionHandler_->processSyscallResult(result);
 }
 
@@ -217,7 +217,8 @@ void Core::handleException() {
 
 void Core::processException() {
   assert(exceptionGenerated_ != false &&
-         "Attempted to process an exception handler that wasn't active");
+         "[SimEng:Core] Attempted to process an exception handler that wasn't "
+         "active");
   if (dataMemory_.hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
@@ -257,7 +258,7 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   }
 
   assert(instruction->hasAllData() &&
-         "Load instruction failed to obtain all data this cycle");
+         "[SimEng:Core] Load instruction failed to obtain all data this cycle");
 
   instruction->execute();
 
@@ -285,7 +286,7 @@ void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
 void Core::forwardOperands(const span<Register>& registers,
                            const span<RegisterValue>& values) {
   assert(registers.size() == values.size() &&
-         "Mismatched register and value vector sizes");
+         "[SimEng:Core] Mismatched register and value vector sizes");
 
   const auto& uop = decodeToExecuteBuffer_.getTailSlots()[0];
   if (uop == nullptr) {

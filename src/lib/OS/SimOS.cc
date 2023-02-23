@@ -45,7 +45,7 @@ void SimOS::tick() {
 
   syscallHandler_->tick();
 
-  // Check for empty processes_ vector
+  // Check for empty processes_ unordered_map
   if (processes_.size() == 0) {
     halted_ = true;
     return;
@@ -354,14 +354,14 @@ uint64_t SimOS::getSystemTimer() const {
   // TODO: This will need to be changed if we start supporting DVFS (Dynamic
   // voltage and frequency scaling).
   return ticks_ /
-         ((config_["Core"]["Clock-Frequency"].as<float>() * 1e9) / 1e9);
+         ((Config::get()["Core"]["Clock-Frequency"].as<float>() * 1e9) / 1e9);
 }
 
 void SimOS::receiveSyscall(SyscallInfo syscallInfo) const {
   syscallHandler_->receiveSyscall(syscallInfo);
-};
+}
 
-void SimOS::sendSyscallResult(SyscallResult result) const {
+void SimOS::sendSyscallResult(const SyscallResult result) const {
   cores_[0]->receiveSyscallResult(result);
 }
 

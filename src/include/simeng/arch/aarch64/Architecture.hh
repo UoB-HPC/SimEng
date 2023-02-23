@@ -19,7 +19,9 @@ namespace aarch64 {
 class Architecture : public arch::Architecture {
  public:
   Architecture();
+
   ~Architecture();
+
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
    * and writes into the supplied macro-op vector. */

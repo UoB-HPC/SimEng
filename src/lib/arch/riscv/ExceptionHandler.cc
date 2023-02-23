@@ -140,7 +140,7 @@ bool ExceptionHandler::handleException() {
 }
 
 void ExceptionHandler::processSyscallResult(
-    simeng::OS::SyscallResult syscallResult) {
+    const simeng::OS::SyscallResult syscallResult) {
   syscallResult_ = syscallResult;
   syscallReturned_ = true;
 }

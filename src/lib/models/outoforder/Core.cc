@@ -16,7 +16,7 @@ namespace outoforder {
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator,
-           sendSyscallToHandler syscallHandle, YAML::Node& config)
+           arch::sendSyscallToHandler handleSyscall, YAML::Node& config)
     : isa_(isa),
       physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
       physicalRegisterQuantities_(isa.getConfigPhysicalRegisterQuantities()),
@@ -76,7 +76,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
       commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()),
-      syscallHandle_(syscallHandle) {
+      handleSyscall_(handleSyscall) {
   for (size_t i = 0; i < config["Execution-Units"].size(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
@@ -101,7 +101,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   });
   // Create exception handler based on chosen architecture
   exceptionHandlerFactory(config["Core"]["ISA"].as<std::string>());
-};
+}
 
 void Core::tick() {
   ticks_++;
@@ -319,7 +319,8 @@ void Core::handleException() {
 
 void Core::processException() {
   assert(exceptionGenerated_ != false &&
-         "Attempted to process an exception handler that wasn't active");
+         "[SimEng:Core] Attempted to process an exception handler that wasn't "
+         "active");
   if (dataMemory_.hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
@@ -394,7 +395,7 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
 }
 
 void Core::sendSyscall(OS::SyscallInfo syscallInfo) const {
-  syscallHandle_(syscallInfo);
+  handleSyscall_(syscallInfo);
 }
 
 void Core::receiveSyscallResult(const OS::SyscallResult result) const {

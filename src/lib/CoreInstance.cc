@@ -4,11 +4,11 @@ namespace simeng {
 
 CoreInstance::CoreInstance(std::shared_ptr<simeng::memory::Mem> mem,
                            std::shared_ptr<memory::MMU> mmu,
-                           sendSyscallToHandler syscallHandle)
+                           arch::sendSyscallToHandler handleSyscall)
     : config_(Config::get()),
       memory_(mem),
       mmu_(mmu),
-      syscallHandle_(syscallHandle) {
+      handleSyscall_(handleSyscall) {
   generateCoreModel();
 }
 
@@ -191,14 +191,14 @@ void CoreInstance::createCore() {
   // Construct the core object based on the defined simulation mode
   if (mode_ == SimulationMode::Emulation) {
     core_ = std::make_shared<simeng::models::emulation::Core>(
-        *instructionMemory_, *dataMemory_, *arch_, syscallHandle_);
+        *instructionMemory_, *dataMemory_, *arch_, handleSyscall_);
   } else if (mode_ == SimulationMode::InOrderPipelined) {
     core_ = std::make_shared<simeng::models::inorder::Core>(
-        *instructionMemory_, *dataMemory_, *arch_, *predictor_, syscallHandle_);
+        *instructionMemory_, *dataMemory_, *arch_, *predictor_, handleSyscall_);
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
         *instructionMemory_, *dataMemory_, *arch_, *predictor_, *portAllocator_,
-        syscallHandle_);
+        handleSyscall_);
   }
   return;
 }

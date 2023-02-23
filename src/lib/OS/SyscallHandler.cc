@@ -32,7 +32,7 @@ void SyscallHandler::tick() { resumeHandling_(); }
 void SyscallHandler::handleSyscall() {
   if (syscallQueue_.empty()) return;
 
-  const SyscallInfo info = syscallQueue_.front();
+  const SyscallInfo& info = syscallQueue_.front();
   ProcessStateChange stateChange;
 
   switch (info.syscallId) {
@@ -44,7 +44,8 @@ void SyscallHandler::handleSyscall() {
       std::vector<char> out;
       int64_t retval = ioctl(fd, request, out);
 
-      assert(out.size() < 256 && "large ioctl() output not implemented");
+      assert(out.size() < 256 &&
+             "[SimEng:SyscallHandler] large ioctl() output not implemented");
       uint8_t outSize = static_cast<uint8_t>(out.size());
       stateChange = {ChangeType::REPLACEMENT, {info.ret}, {retval}};
       stateChange.memoryAddresses.push_back({argp, outSize});
@@ -62,7 +63,7 @@ void SyscallHandler::handleSyscall() {
     case 48: {  // faccessat
       int64_t dfd = info.registerArguments[0].get<int64_t>();
       uint64_t filenamePtr = vAddrTranslation_(
-          info.registerArguments[1].get<uint64_t>(), info.processId);
+          info.registerArguments[1].get<uint64_t>(), info.threadId);
       int64_t mode = info.registerArguments[2].get<int64_t>();
       // flag component not used, although function definition includes it
       int64_t flag = 0;
@@ -74,14 +75,15 @@ void SyscallHandler::handleSyscall() {
           faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
         return concludeSyscall({}, true);
       } else {
-        char* filename = new char[PATH_MAX_LEN];
+        std::array<char, PATH_MAX_LEN> filename;
         return readStringThen(
-            filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
+            filename, filenamePtr, PATH_MAX_LEN, [&](auto length) {
               // Invoke the kernel
-              int64_t retval = faccessat(dfd, filename, mode, flag);
+              int64_t retval =
+                  faccessat(dfd, std::string(filename.begin(), filename.end()),
+                            mode, flag);
               ProcessStateChange stateChange = {
                   ChangeType::REPLACEMENT, {info.ret}, {retval}};
-              delete[] filename;
               concludeSyscall(stateChange);
             });
       }
@@ -90,7 +92,7 @@ void SyscallHandler::handleSyscall() {
     case 56: {  // openat
       int64_t dirfd = info.registerArguments[0].get<int64_t>();
       uint64_t pathnamePtr = vAddrTranslation_(
-          info.registerArguments[1].get<uint64_t>(), info.processId);
+          info.registerArguments[1].get<uint64_t>(), info.threadId);
       int64_t flags = info.registerArguments[2].get<int64_t>();
       uint16_t mode = info.registerArguments[3].get<uint16_t>();
 
@@ -101,14 +103,15 @@ void SyscallHandler::handleSyscall() {
           faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
         return concludeSyscall({}, true);
       } else {
-        char* pathname = new char[PATH_MAX_LEN];
+        std::array<char, PATH_MAX_LEN> pathname;
         return readStringThen(
-            pathname, pathnamePtr, PATH_MAX_LEN, [=](auto length) {
+            pathname, pathnamePtr, PATH_MAX_LEN, [&](auto length) {
               // Invoke the kernel
-              uint64_t retval = openat(dirfd, pathname, flags, mode);
+              uint64_t retval =
+                  openat(dirfd, std::string(pathname.begin(), pathname.end()),
+                         flags, mode);
               ProcessStateChange stateChange = {
                   ChangeType::REPLACEMENT, {info.ret}, {retval}};
-              delete[] pathname;
               concludeSyscall(stateChange);
             });
       }
@@ -122,7 +125,7 @@ void SyscallHandler::handleSyscall() {
     case 61: {  // getdents64
       int64_t fd = info.registerArguments[0].get<int64_t>();
       uint64_t bufPtr = vAddrTranslation_(
-          info.registerArguments[1].get<uint64_t>(), info.processId);
+          info.registerArguments[1].get<uint64_t>(), info.threadId);
       uint64_t count = info.registerArguments[2].get<uint64_t>();
 
       // Don't process the syscall if the virtual address translation comes back
@@ -149,7 +152,7 @@ void SyscallHandler::handleSyscall() {
           }
           bytesRemaining -= iLength;
           // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
+          auto iSrc = dataBuffer_.data();
           while (iLength > 0) {
             uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
             stateChange.memoryAddresses.push_back({iDst, len});
@@ -174,7 +177,7 @@ void SyscallHandler::handleSyscall() {
     case 63: {  // read
       int64_t fd = info.registerArguments[0].get<int64_t>();
       uint64_t bufPtr = vAddrTranslation_(
-          info.registerArguments[1].get<uint64_t>(), info.processId);
+          info.registerArguments[1].get<uint64_t>(), info.threadId);
       uint64_t count = info.registerArguments[2].get<uint64_t>();
 
       // Don't process the syscall if the virtual address translation comes back
@@ -202,7 +205,7 @@ void SyscallHandler::handleSyscall() {
           bytesRemaining -= iLength;
 
           // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
+          auto iSrc = dataBuffer_.data();
           while (iLength > 0) {
             uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
             stateChange.memoryAddresses.push_back({iDst, len});
@@ -219,7 +222,7 @@ void SyscallHandler::handleSyscall() {
     case 64: {  // write
       int64_t fd = info.registerArguments[0].get<int64_t>();
       uint64_t bufPtr = vAddrTranslation_(
-          info.registerArguments[1].get<uint64_t>(), info.processId);
+          info.registerArguments[1].get<uint64_t>(), info.threadId);
       uint64_t count = info.registerArguments[2].get<uint64_t>();
 
       // Don't process the syscall if the virtual address translation comes back
@@ -240,7 +243,7 @@ void SyscallHandler::handleSyscall() {
     case 65: {  // readv
       int64_t fd = info.registerArguments[0].get<int64_t>();
       uint64_t iov = vAddrTranslation_(
-          info.registerArguments[1].get<uint64_t>(), info.processId);
+          info.registerArguments[1].get<uint64_t>(), info.threadId);
       int64_t iovcnt = info.registerArguments[2].get<int64_t>();
 
       // Don't process the syscall if the virtual address translation comes back
@@ -322,7 +325,7 @@ void SyscallHandler::handleSyscall() {
     case 66: {  // writev
       int64_t fd = info.registerArguments[0].get<int64_t>();
       uint64_t iov = vAddrTranslation_(
-          info.registerArguments[1].get<uint64_t>(), info.processId);
+          info.registerArguments[1].get<uint64_t>(), info.threadId);
       int64_t iovcnt = info.registerArguments[2].get<int64_t>();
 
       // Don't process the syscall if the virtual address translation comes back
@@ -348,7 +351,7 @@ void SyscallHandler::handleSyscall() {
 
           // Rebuild the iovec structures using pointers to `dataBuffer_` data
           uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
-          uint8_t* bufferPtr = dataBuffer_.data() + iovcnt * 16;
+          char* bufferPtr = dataBuffer_.data() + iovcnt * 16;
           for (int64_t i = 0; i < iovcnt; i++) {
             iovdata[i * 2 + 0] = reinterpret_cast<uint64_t>(bufferPtr);
 
@@ -368,8 +371,7 @@ void SyscallHandler::handleSyscall() {
         for (int64_t i = iovcnt - 1; i >= 0; i--) {
           last = [=]() {
             uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
-            uint64_t ptr =
-                vAddrTranslation_(iovdata[i * 2 + 0], info.processId);
+            uint64_t ptr = vAddrTranslation_(iovdata[i * 2 + 0], info.threadId);
             uint64_t len = iovdata[i * 2 + 1];
 
             // If a virtual address translation comes back wih a DATA_ABORT
@@ -391,7 +393,7 @@ void SyscallHandler::handleSyscall() {
     }
     case 78: {  // readlinkat
       const auto pathnameAddress = vAddrTranslation_(
-          info.registerArguments[1].get<uint64_t>(), info.processId);
+          info.registerArguments[1].get<uint64_t>(), info.threadId);
 
       // Don't process the syscall if the virtual address translation comes
       // back wih a DATA_ABORT or IGNORED fault
@@ -402,15 +404,16 @@ void SyscallHandler::handleSyscall() {
         return concludeSyscall({}, true);
       } else {
         // Copy string at `pathnameAddress`
-        auto pathname = new char[PATH_MAX_LEN];
-        return readStringThen(pathname, pathnameAddress, PATH_MAX_LEN,
-                              [this, pathname](auto length) {
-                                // Pass the string `readLinkAt`, then destroy
-                                // the buffer and resolve the handler.
-                                readLinkAt({pathname, length});
-                                delete[] pathname;
-                                return;
-                              });
+        std::array<char, PATH_MAX_LEN> pathname;
+        return readStringThen(
+            pathname, pathnameAddress, PATH_MAX_LEN,
+            [this, pathname](auto length) {
+              // Pass the string `readLinkAt`, then destroy
+              // the buffer and resolve the handler.
+              readLinkAt(
+                  {std::string(pathname.begin(), pathname.end()), length});
+              return;
+            });
       }
 
       break;
@@ -418,7 +421,7 @@ void SyscallHandler::handleSyscall() {
     case 79: {  // newfstatat AKA fstatat
       int64_t dfd = info.registerArguments[0].get<int64_t>();
       uint64_t filenamePtr = vAddrTranslation_(
-          info.registerArguments[1].get<uint64_t>(), info.processId);
+          info.registerArguments[1].get<uint64_t>(), info.threadId);
       uint64_t statbufPtr = info.registerArguments[2].get<uint64_t>();
       int64_t flag = info.registerArguments[3].get<int64_t>();
 
@@ -429,15 +432,16 @@ void SyscallHandler::handleSyscall() {
           faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
         return concludeSyscall({}, true);
       } else {
-        char* filename = new char[PATH_MAX_LEN];
+        std::array<char, PATH_MAX_LEN> filename;
         return readStringThen(
-            filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
+            filename, filenamePtr, PATH_MAX_LEN, [&](auto length) {
               // Invoke the kernel
               OS::stat statOut;
-              uint64_t retval = newfstatat(dfd, filename, statOut, flag);
+              uint64_t retval =
+                  newfstatat(dfd, std::string(filename.begin(), filename.end()),
+                             statOut, flag);
               ProcessStateChange stateChange = {
                   ChangeType::REPLACEMENT, {info.ret}, {retval}};
-              delete[] filename;
               stateChange.memoryAddresses.push_back(
                   {statbufPtr, sizeof(statOut)});
               stateChange.memoryAddressValues.push_back(statOut);
@@ -708,13 +712,13 @@ void SyscallHandler::handleSyscall() {
 
     default:
       break;
-  };
+  }
 
   concludeSyscall(stateChange);
 }
 
-void SyscallHandler::readStringThen(char* buffer, uint64_t address,
-                                    int maxLength,
+void SyscallHandler::readStringThen(std::array<char, PATH_MAX_LEN>& buffer,
+                                    uint64_t address, int maxLength,
                                     std::function<void(size_t length)> then,
                                     int offset) {
   if (maxLength <= 0) {
@@ -760,10 +764,10 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
   return then();
 }
 
-void SyscallHandler::readLinkAt(span<char> path) {
+void SyscallHandler::readLinkAt(std::string path) {
   if (path.size() == PATH_MAX_LEN) {
     // TODO: Handle PATH_MAX_LEN case
-    std::cout << "\n[SimEng:SyscallHandler] Path exceeds PATH_MAX_LEN"
+    std::cout << "[SimEng:SyscallHandler] Path exceeds PATH_MAX_LEN"
               << std::endl;
     return concludeSyscall({}, true);
   }
@@ -778,7 +782,7 @@ void SyscallHandler::readLinkAt(span<char> path) {
 
   if (result < 0) {
     // TODO: Handle error case
-    std::cout << "\n[SimEng:SyscallHandler] Error generated by readlinkat"
+    std::cout << "[SimEng:SyscallHandler] Error generated by readlinkat"
               << std::endl;
     return concludeSyscall({}, true);
   }
@@ -799,7 +803,8 @@ void SyscallHandler::readLinkAt(span<char> path) {
   concludeSyscall(stateChange);
 }
 
-void SyscallHandler::concludeSyscall(ProcessStateChange change, bool fatal) {
+void SyscallHandler::concludeSyscall(const ProcessStateChange& change,
+                                     bool fatal) {
   returnSyscall_({fatal, syscallQueue_.front().syscallId,
                   syscallQueue_.front().coreId, change});
   // Remove syscall from queue and reset handler to default state
@@ -820,7 +825,8 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
     // If absolute path used then dfd is dis-regarded. Otherwise need to see
     // if fd exists for directory referenced
     if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
-      auto entry = processes_.find(0)->second->fdArray_->getFDEntry(dfd);
+      auto entry = processes_.find(syscallQueue_.front().threadId)
+                       ->second->fdArray_->getFDEntry(dfd);
       if (!entry.isValid()) {
         return -1;
       }
@@ -854,7 +860,9 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
 }
 
 int64_t SyscallHandler::brk(uint64_t address) {
-  return processes_.find(0)->second->getMemRegion().updateBrkRegion(address);
+  return processes_.find(syscallQueue_.front().threadId)
+      ->second->getMemRegion()
+      .updateBrkRegion(address);
 }
 
 uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
@@ -871,13 +879,15 @@ uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
     nanoseconds = systemTimer - (seconds * 1e9);
     return 0;
   } else {
-    assert(false && "Unhandled clk_id in clock_gettime syscall");
+    assert(false &&
+           "[SimEng:SyscallHandler] Unhandled clk_id in clock_gettime syscall");
     return -1;
   }
 }
 
 int64_t SyscallHandler::ftruncate(uint64_t fd, uint64_t length) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(syscallQueue_.front().threadId)
+                   ->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -910,7 +920,8 @@ int64_t SyscallHandler::close(int64_t fd) {
   // Don't close STDOUT or STDERR otherwise no SimEng output is given
   // afterwards. This includes final results given at the end of execution
   if (fd != STDERR_FILENO && fd != STDOUT_FILENO) {
-    return processes_.find(0)->second->fdArray_->removeFDEntry(fd);
+    return processes_.find(syscallQueue_.front().threadId)
+        ->second->fdArray_->removeFDEntry(fd);
   }
 
   // Return success if STDOUT or STDERR is closed to allow execution to
@@ -969,7 +980,8 @@ int64_t SyscallHandler::newfstatat(int64_t dfd, const std::string& filename,
 }
 
 int64_t SyscallHandler::fstat(int64_t fd, stat& out) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(syscallQueue_.front().threadId)
+                   ->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1003,12 +1015,12 @@ int64_t SyscallHandler::getrusage(int64_t who, rusage& out) {
   // MacOS doesn't support the final enum RUSAGE_THREAD
 #ifdef __MACH__
   if (!(who == 0 || who == -1)) {
-    assert(false && "Un-recognised RUSAGE descriptor.");
+    assert(false && "[SimEng:SyscallHandler] Un-recognised RUSAGE descriptor.");
     return -1;
   }
 #else
   if (!(who == 0 || who == -1 || who == 1)) {
-    assert(false && "Un-recognised RUSAGE descriptor.");
+    assert(false && "[SimEng:SyscallHandler] Un-recognised RUSAGE descriptor.");
     return -1;
   }
 #endif
@@ -1039,16 +1051,20 @@ int64_t SyscallHandler::getrusage(int64_t who, rusage& out) {
 }
 
 int64_t SyscallHandler::getpid() const {
-  // TODO : Needs to be properly implemented once multi-thread supported
-  return 0;
+  return processes_.find(syscallQueue_.front().threadId)->second->getTID();
 }
 
 int64_t SyscallHandler::getuid() const { return 0; }
+
 int64_t SyscallHandler::geteuid() const { return 0; }
+
 int64_t SyscallHandler::getgid() const { return 0; }
+
 int64_t SyscallHandler::getegid() const { return 0; }
-// TODO update for multithreaded processes
-int64_t SyscallHandler::gettid() const { return 0; }
+
+int64_t SyscallHandler::gettid() const {
+  return processes_.find(syscallQueue_.front().threadId)->second->getTID();
+}
 
 int64_t SyscallHandler::gettimeofday(uint64_t systemTimer, timeval* tv,
                                      timeval* tz) {
@@ -1067,7 +1083,8 @@ int64_t SyscallHandler::gettimeofday(uint64_t systemTimer, timeval* tv,
 
 int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
                               std::vector<char>& out) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(syscallQueue_.front().threadId)
+                   ->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1096,13 +1113,14 @@ int64_t SyscallHandler::ioctl(int64_t fd, uint64_t request,
       ::ioctl(hfd, TIOCGWINSZ, out.data());
       return 0;
     default:
-      assert(false && "unimplemented ioctl request");
+      assert(false && "[SimEng:SyscallHandler] unimplemented ioctl request");
       return -1;
   }
 }
 
 uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(syscallQueue_.front().threadId)
+                   ->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1111,12 +1129,14 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 }
 
 int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
-  return processes_.find(0)->second->getMemRegion().unmapRegion(addr, length);
+  return processes_.find(syscallQueue_.front().threadId)
+      ->second->getMemRegion()
+      .unmapRegion(addr, length);
 }
 
 int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                              int fd, off_t offset) {
-  auto process = processes_.find(0)->second;
+  auto process = processes_.find(syscallQueue_.front().threadId)->second;
   HostFileMMap hostfile;
 
   if (fd > 0) {
@@ -1184,14 +1204,14 @@ int64_t SyscallHandler::openat(int64_t dfd, const std::string& filename,
   int64_t dirfd = SyscallHandler::getDirFd(dfd, filename);
   if (dirfd == -1) return EBADF;
 
-  auto proc = processes_.find(0)->second;
+  auto proc = processes_.find(syscallQueue_.front().threadId)->second;
   return proc->fdArray_->allocateFDEntry(dirfd, new_pathname.c_str(), newFlags,
                                          mode);
 }
 
 int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
                                    char* buf, size_t bufsize) const {
-  auto process = processes_.find(0)->second;
+  auto process = processes_.find(syscallQueue_.front().threadId)->second;
   if (pathname == "/proc/self/exe") {
     // Copy executable path to buffer
     // TODO: resolve path into canonical path
@@ -1204,7 +1224,8 @@ int64_t SyscallHandler::readlinkat(int64_t dirfd, const std::string& pathname,
 }
 
 int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(syscallQueue_.front().threadId)
+                   ->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1260,7 +1281,8 @@ int64_t SyscallHandler::getdents64(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(syscallQueue_.front().threadId)
+                   ->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1269,7 +1291,8 @@ int64_t SyscallHandler::read(int64_t fd, void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(syscallQueue_.front().threadId)
+                   ->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1295,13 +1318,15 @@ int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
   if (cpusetsize == 0) return -EINVAL;
   return 0;
 }
+
 int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
   OS_->getProcess(currentInfo_.threadId)->clearChildTid_ = tidptr;
   return 0;
 }
 
 int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(syscallQueue_.front().threadId)
+                   ->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
@@ -1310,7 +1335,8 @@ int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
 }
 
 int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
-  auto entry = processes_.find(0)->second->fdArray_->getFDEntry(fd);
+  auto entry = processes_.find(syscallQueue_.front().threadId)
+                   ->second->fdArray_->getFDEntry(fd);
   if (!entry.isValid()) {
     return EBADF;
   }
