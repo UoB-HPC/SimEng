@@ -16,8 +16,7 @@ namespace outoforder {
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
            pipeline::PortAllocator& portAllocator,
-           std::function<void(const simeng::OS::SyscallInfo)> syscallHandle,
-           YAML::Node& config)
+           sendSyscallToHandler syscallHandle, YAML::Node& config)
     : isa_(isa),
       physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
       physicalRegisterQuantities_(isa.getConfigPhysicalRegisterQuantities()),

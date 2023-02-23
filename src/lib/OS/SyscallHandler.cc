@@ -61,41 +61,57 @@ void SyscallHandler::handleSyscall() {
     }
     case 48: {  // faccessat
       int64_t dfd = info.registerArguments[0].get<int64_t>();
-      uint64_t filenamePtr = info.registerArguments[1].get<uint64_t>();
+      uint64_t filenamePtr = vAddrTranslation_(
+          info.registerArguments[1].get<uint64_t>(), info.processId);
       int64_t mode = info.registerArguments[2].get<int64_t>();
       // flag component not used, although function definition includes it
       int64_t flag = 0;
 
-      char* filename = new char[PATH_MAX_LEN];
-      return readStringThen(
-          filename, vAddrTranslation_(filenamePtr, info.processId),
-          PATH_MAX_LEN, [=](auto length) {
-            // Invoke the kernel
-            int64_t retval = faccessat(dfd, filename, mode, flag);
-            ProcessStateChange stateChange = {
-                ChangeType::REPLACEMENT, {info.ret}, {retval}};
-            delete[] filename;
-            concludeSyscall(stateChange);
-          });
+      // Don't process the syscall if the virtual address translation comes back
+      // wih a DATA_ABORT or IGNORED fault
+      uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(filenamePtr);
+      if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT ||
+          faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
+        return concludeSyscall({}, true);
+      } else {
+        char* filename = new char[PATH_MAX_LEN];
+        return readStringThen(
+            filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
+              // Invoke the kernel
+              int64_t retval = faccessat(dfd, filename, mode, flag);
+              ProcessStateChange stateChange = {
+                  ChangeType::REPLACEMENT, {info.ret}, {retval}};
+              delete[] filename;
+              concludeSyscall(stateChange);
+            });
+      }
       break;
     }
     case 56: {  // openat
       int64_t dirfd = info.registerArguments[0].get<int64_t>();
-      uint64_t pathnamePtr = info.registerArguments[1].get<uint64_t>();
+      uint64_t pathnamePtr = vAddrTranslation_(
+          info.registerArguments[1].get<uint64_t>(), info.processId);
       int64_t flags = info.registerArguments[2].get<int64_t>();
       uint16_t mode = info.registerArguments[3].get<uint16_t>();
 
-      char* pathname = new char[PATH_MAX_LEN];
-      return readStringThen(
-          pathname, vAddrTranslation_(pathnamePtr, info.processId),
-          PATH_MAX_LEN, [=](auto length) {
-            // Invoke the kernel
-            uint64_t retval = openat(dirfd, pathname, flags, mode);
-            ProcessStateChange stateChange = {
-                ChangeType::REPLACEMENT, {info.ret}, {retval}};
-            delete[] pathname;
-            concludeSyscall(stateChange);
-          });
+      // Don't process the syscall if the virtual address translation comes back
+      // wih a DATA_ABORT or IGNORED fault
+      uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(pathnamePtr);
+      if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT ||
+          faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
+        return concludeSyscall({}, true);
+      } else {
+        char* pathname = new char[PATH_MAX_LEN];
+        return readStringThen(
+            pathname, pathnamePtr, PATH_MAX_LEN, [=](auto length) {
+              // Invoke the kernel
+              uint64_t retval = openat(dirfd, pathname, flags, mode);
+              ProcessStateChange stateChange = {
+                  ChangeType::REPLACEMENT, {info.ret}, {retval}};
+              delete[] pathname;
+              concludeSyscall(stateChange);
+            });
+      }
       break;
     }
     case 57: {  // close
@@ -105,39 +121,47 @@ void SyscallHandler::handleSyscall() {
     }
     case 61: {  // getdents64
       int64_t fd = info.registerArguments[0].get<int64_t>();
-      uint64_t bufPtr = info.registerArguments[1].get<uint64_t>();
+      uint64_t bufPtr = vAddrTranslation_(
+          info.registerArguments[1].get<uint64_t>(), info.processId);
       uint64_t count = info.registerArguments[2].get<uint64_t>();
 
-      return readBufferThen(
-          vAddrTranslation_(bufPtr, info.processId), count, [=]() {
-            int64_t totalRead = getdents64(fd, dataBuffer_.data(), count);
-            ProcessStateChange stateChange = {
-                ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
-            // Check for failure
-            if (totalRead < 0) {
-              return concludeSyscall(stateChange);
-            }
+      // Don't process the syscall if the virtual address translation comes back
+      // wih a DATA_ABORT fault
+      uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(bufPtr);
+      if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
+        return concludeSyscall({}, true);
+      } else {
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t totalRead = getdents64(fd, dataBuffer_.data(), count);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
+          // Check for failure
+          if (totalRead < 0) {
+            return concludeSyscall(stateChange);
+          }
 
-            int64_t bytesRemaining = totalRead;
-            // Get pointer and size of the buffer
-            uint64_t iDst = bufPtr;
-            uint64_t iLength = bytesRemaining;
-            if (iLength > bytesRemaining) {
-              iLength = bytesRemaining;
-            }
-            bytesRemaining -= iLength;
-            // Write data for this buffer in 128-byte chunks
-            auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
-            while (iLength > 0) {
-              uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
-              stateChange.memoryAddresses.push_back({iDst, len});
-              stateChange.memoryAddressValues.push_back({iSrc, len});
-              iDst += len;
-              iSrc += len;
-              iLength -= len;
-            }
-            concludeSyscall(stateChange);
-          });
+          int64_t bytesRemaining = totalRead;
+          // Get pointer and size of the buffer
+          uint64_t iDst = bufPtr;
+          uint64_t iLength = bytesRemaining;
+          if (iLength > bytesRemaining) {
+            iLength = bytesRemaining;
+          }
+          bytesRemaining -= iLength;
+          // Write data for this buffer in 128-byte chunks
+          auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
+          while (iLength > 0) {
+            uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+            stateChange.memoryAddresses.push_back({iDst, len});
+            stateChange.memoryAddressValues.push_back({iSrc, len});
+            iDst += len;
+            iSrc += len;
+            iLength -= len;
+          }
+          concludeSyscall(stateChange);
+        });
+      }
+      break;
     }
     case 62: {  // lseek
       int64_t fd = info.registerArguments[0].get<int64_t>();
@@ -149,108 +173,36 @@ void SyscallHandler::handleSyscall() {
     }
     case 63: {  // read
       int64_t fd = info.registerArguments[0].get<int64_t>();
-      uint64_t bufPtr = info.registerArguments[1].get<uint64_t>();
+      uint64_t bufPtr = vAddrTranslation_(
+          info.registerArguments[1].get<uint64_t>(), info.processId);
       uint64_t count = info.registerArguments[2].get<uint64_t>();
-      return readBufferThen(
-          vAddrTranslation_(bufPtr, info.processId), count, [=]() {
-            int64_t totalRead = read(fd, dataBuffer_.data(), count);
-            ProcessStateChange stateChange = {
-                ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
-            // Check for failure
-            if (totalRead < 0) {
-              return concludeSyscall(stateChange);
-            }
 
-            int64_t bytesRemaining = totalRead;
-            // Get pointer and size of the buffer
-            uint64_t iDst = bufPtr;
-            uint64_t iLength = bytesRemaining;
-            if (iLength > bytesRemaining) {
-              iLength = bytesRemaining;
-            }
-            bytesRemaining -= iLength;
+      // Don't process the syscall if the virtual address translation comes back
+      // wih a DATA_ABORT fault
+      uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(bufPtr);
+      if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
+        return concludeSyscall({}, true);
+      } else {
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t totalRead = read(fd, dataBuffer_.data(), count);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
+          // Check for failure
+          if (totalRead < 0) {
+            return concludeSyscall(stateChange);
+          }
 
-            // Write data for this buffer in 128-byte chunks
-            auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
-            while (iLength > 0) {
-              uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
-              stateChange.memoryAddresses.push_back({iDst, len});
-              stateChange.memoryAddressValues.push_back({iSrc, len});
-              iDst += len;
-              iSrc += len;
-              iLength -= len;
-            }
-            concludeSyscall(stateChange);
-          });
-    }
-    case 64: {  // write
-      int64_t fd = info.registerArguments[0].get<int64_t>();
-      uint64_t bufPtr = info.registerArguments[1].get<uint64_t>();
-      uint64_t count = info.registerArguments[2].get<uint64_t>();
-      return readBufferThen(
-          vAddrTranslation_(bufPtr, info.processId), count, [=]() {
-            int64_t retval = write(fd, dataBuffer_.data(), count);
-            ProcessStateChange stateChange = {
-                ChangeType::REPLACEMENT, {info.ret}, {retval}};
-            concludeSyscall(stateChange);
-          });
-    }
-    case 65: {  // readv
-      int64_t fd = info.registerArguments[0].get<int64_t>();
-      uint64_t iov = info.registerArguments[1].get<uint64_t>();
-      int64_t iovcnt = info.registerArguments[2].get<int64_t>();
-
-      // The pointer `iov` points to an array of structures that each contain
-      // a pointer to where the data should be written and the number of
-      // bytes to write.
-      //
-      // We're going to queue up two handlers:
-      // - First, read the iovec structures that describe each buffer.
-      // - Second, invoke the kernel to perform the read operation, and
-      //   generate memory write requests for each buffer.
-
-      // Create the second handler in the chain, which invokes the kernel and
-      // generates the memory write requests.
-      auto invokeKernel = [=]() {
-        // The iov structure has been read into `dataBuffer_`
-        uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
-
-        // Allocate buffers to hold the data read by the kernel
-        std::vector<std::vector<uint8_t>> buffers(iovcnt);
-        for (int64_t i = 0; i < iovcnt; i++) {
-          buffers[i].resize(iovdata[i * 2 + 1]);
-        }
-
-        // Build new iovec structures using pointers to `dataBuffer_` data
-        std::vector<uint64_t> iovec(iovcnt * 2);
-        for (int64_t i = 0; i < iovcnt; i++) {
-          iovec[i * 2 + 0] = reinterpret_cast<uint64_t>(buffers[i].data());
-          iovec[i * 2 + 1] = iovdata[i * 2 + 1];
-        }
-
-        // Invoke the kernel
-        int64_t totalRead = readv(fd, iovec.data(), iovcnt);
-        ProcessStateChange stateChange = {
-            ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
-
-        // Check for failure
-        if (totalRead < 0) {
-          return concludeSyscall(stateChange);
-        }
-
-        // Build list of memory write operations
-        int64_t bytesRemaining = totalRead;
-        for (int64_t i = 0; i < iovcnt; i++) {
+          int64_t bytesRemaining = totalRead;
           // Get pointer and size of the buffer
-          uint64_t iDst = iovdata[i * 2 + 0];
-          uint64_t iLength = iovdata[i * 2 + 1];
+          uint64_t iDst = bufPtr;
+          uint64_t iLength = bytesRemaining;
           if (iLength > bytesRemaining) {
             iLength = bytesRemaining;
           }
           bytesRemaining -= iLength;
 
           // Write data for this buffer in 128-byte chunks
-          auto iSrc = reinterpret_cast<const char*>(buffers[i].data());
+          auto iSrc = reinterpret_cast<const char*>(dataBuffer_.data());
           while (iLength > 0) {
             uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
             stateChange.memoryAddresses.push_back({iDst, len});
@@ -259,101 +211,239 @@ void SyscallHandler::handleSyscall() {
             iSrc += len;
             iLength -= len;
           }
-        }
+          concludeSyscall(stateChange);
+        });
+      }
+      break;
+    }
+    case 64: {  // write
+      int64_t fd = info.registerArguments[0].get<int64_t>();
+      uint64_t bufPtr = vAddrTranslation_(
+          info.registerArguments[1].get<uint64_t>(), info.processId);
+      uint64_t count = info.registerArguments[2].get<uint64_t>();
 
-        concludeSyscall(stateChange);
-      };
+      // Don't process the syscall if the virtual address translation comes back
+      // wih a DATA_ABORT fault
+      uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(bufPtr);
+      if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
+        return concludeSyscall({}, true);
+      } else {
+        return readBufferThen(bufPtr, count, [=]() {
+          int64_t retval = write(fd, dataBuffer_.data(), count);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {info.ret}, {retval}};
+          concludeSyscall(stateChange);
+        });
+      }
+      break;
+    }
+    case 65: {  // readv
+      int64_t fd = info.registerArguments[0].get<int64_t>();
+      uint64_t iov = vAddrTranslation_(
+          info.registerArguments[1].get<uint64_t>(), info.processId);
+      int64_t iovcnt = info.registerArguments[2].get<int64_t>();
 
-      // Run the buffer read to load the buffer structures, before invoking
-      // the kernel.
-      return readBufferThen(vAddrTranslation_(iov, info.processId), iovcnt * 16,
-                            invokeKernel);
+      // Don't process the syscall if the virtual address translation comes back
+      // wih a DATA_ABORT fault
+      uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(iov);
+      if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
+        return concludeSyscall({}, true);
+      } else {
+        // The pointer `iov` points to an array of structures that each contain
+        // a pointer to where the data should be written and the number of
+        // bytes to write.
+        //
+        // We're going to queue up two handlers:
+        // - First, read the iovec structures that describe each buffer.
+        // - Second, invoke the kernel to perform the read operation, and
+        //   generate memory write requests for each buffer.
+
+        // Create the second handler in the chain, which invokes the kernel and
+        // generates the memory write requests.
+        auto invokeKernel = [=]() {
+          // The iov structure has been read into `dataBuffer_`
+          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
+
+          // Allocate buffers to hold the data read by the kernel
+          std::vector<std::vector<uint8_t>> buffers(iovcnt);
+          for (int64_t i = 0; i < iovcnt; i++) {
+            buffers[i].resize(iovdata[i * 2 + 1]);
+          }
+
+          // Build new iovec structures using pointers to `dataBuffer_` data
+          std::vector<uint64_t> iovec(iovcnt * 2);
+          for (int64_t i = 0; i < iovcnt; i++) {
+            iovec[i * 2 + 0] = reinterpret_cast<uint64_t>(buffers[i].data());
+            iovec[i * 2 + 1] = iovdata[i * 2 + 1];
+          }
+
+          // Invoke the kernel
+          int64_t totalRead = readv(fd, iovec.data(), iovcnt);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {info.ret}, {totalRead}};
+
+          // Check for failure
+          if (totalRead < 0) {
+            return concludeSyscall(stateChange);
+          }
+
+          // Build list of memory write operations
+          int64_t bytesRemaining = totalRead;
+          for (int64_t i = 0; i < iovcnt; i++) {
+            // Get pointer and size of the buffer
+            uint64_t iDst = iovdata[i * 2 + 0];
+            uint64_t iLength = iovdata[i * 2 + 1];
+            if (iLength > bytesRemaining) {
+              iLength = bytesRemaining;
+            }
+            bytesRemaining -= iLength;
+
+            // Write data for this buffer in 128-byte chunks
+            auto iSrc = reinterpret_cast<const char*>(buffers[i].data());
+            while (iLength > 0) {
+              uint8_t len = iLength > 128 ? 128 : static_cast<uint8_t>(iLength);
+              stateChange.memoryAddresses.push_back({iDst, len});
+              stateChange.memoryAddressValues.push_back({iSrc, len});
+              iDst += len;
+              iSrc += len;
+              iLength -= len;
+            }
+          }
+
+          concludeSyscall(stateChange);
+        };
+
+        // Run the buffer read to load the buffer structures, before invoking
+        // the kernel.
+        return readBufferThen(iov, iovcnt * 16, invokeKernel);
+      }
+      break;
     }
     case 66: {  // writev
       int64_t fd = info.registerArguments[0].get<int64_t>();
-      uint64_t iov = info.registerArguments[1].get<uint64_t>();
+      uint64_t iov = vAddrTranslation_(
+          info.registerArguments[1].get<uint64_t>(), info.processId);
       int64_t iovcnt = info.registerArguments[2].get<int64_t>();
 
-      // The pointer `iov` points to an array of structures that each contain
-      // a pointer to the data and the size of the data as an integer.
-      //
-      // We're going to queue up a chain of handlers:
-      // - First, read the iovec structures that describe each buffer.
-      // - Next, read the data for each buffer.
-      // - Finally, invoke the kernel to perform the write operation.
+      // Don't process the syscall if the virtual address translation comes back
+      // wih a DATA_ABORT fault
+      uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(iov);
+      if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
+        return concludeSyscall({}, true);
+      } else {
+        // The pointer `iov` points to an array of structures that each contain
+        // a pointer to the data and the size of the data as an integer.
+        //
+        // We're going to queue up a chain of handlers:
+        // - First, read the iovec structures that describe each buffer.
+        // - Next, read the data for each buffer.
+        // - Finally, invoke the kernel to perform the write operation.
 
-      // Create the final handler in the chain, which invokes the kernel
-      std::function<void()> last = [=]() {
-        // Rebuild the iovec structures using pointers to `dataBuffer_` data
-        uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
-        uint8_t* bufferPtr = dataBuffer_.data() + iovcnt * 16;
-        for (int64_t i = 0; i < iovcnt; i++) {
-          iovdata[i * 2 + 0] = reinterpret_cast<uint64_t>(bufferPtr);
+        // Create the final handler in the chain, which invokes the kernel
+        std::function<void()> last = [=]() {
+          // Check to see if the dataBuffer_ is empty due to an early conclusion
+          // from a data abort fault on a virtual address translation within the
+          // chain of buffer loads.
+          if (dataBuffer_.size() == 0) return;
 
-          // Get the length of this buffer and add it to the current pointer
-          uint64_t len = iovdata[i * 2 + 1];
-          bufferPtr += len;
+          // Rebuild the iovec structures using pointers to `dataBuffer_` data
+          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
+          uint8_t* bufferPtr = dataBuffer_.data() + iovcnt * 16;
+          for (int64_t i = 0; i < iovcnt; i++) {
+            iovdata[i * 2 + 0] = reinterpret_cast<uint64_t>(bufferPtr);
+
+            // Get the length of this buffer and add it to the current pointer
+            uint64_t len = iovdata[i * 2 + 1];
+            bufferPtr += len;
+          }
+
+          // Invoke the kernel
+          int64_t retval = writev(fd, dataBuffer_.data(), iovcnt);
+          ProcessStateChange stateChange = {
+              ChangeType::REPLACEMENT, {info.ret}, {retval}};
+          concludeSyscall(stateChange);
+        };
+
+        // Build the chain of buffer loads backwards through the iov buffers
+        for (int64_t i = iovcnt - 1; i >= 0; i--) {
+          last = [=]() {
+            uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
+            uint64_t ptr =
+                vAddrTranslation_(iovdata[i * 2 + 0], info.processId);
+            uint64_t len = iovdata[i * 2 + 1];
+
+            // If a virtual address translation comes back wih a DATA_ABORT
+            // fault, break the chain with an early falted concludeSyscall
+            uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(iov);
+            if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
+              return concludeSyscall({}, true);
+            } else {
+              return readBufferThen(ptr, len, last);
+            }
+          };
         }
 
-        // Invoke the kernel
-        int64_t retval = writev(fd, dataBuffer_.data(), iovcnt);
-        ProcessStateChange stateChange = {
-            ChangeType::REPLACEMENT, {info.ret}, {retval}};
-        concludeSyscall(stateChange);
-      };
-
-      // Build the chain of buffer loads backwards through the iov buffers
-      for (int64_t i = iovcnt - 1; i >= 0; i--) {
-        last = [=]() {
-          uint64_t* iovdata = reinterpret_cast<uint64_t*>(dataBuffer_.data());
-          uint64_t ptr = iovdata[i * 2 + 0];
-          uint64_t len = iovdata[i * 2 + 1];
-          return readBufferThen(vAddrTranslation_(ptr, info.processId), len,
-                                last);
-        };
+        // Run the first buffer read to load the buffer structures, before
+        // performing each of the buffer loads.
+        return readBufferThen(iov, iovcnt * 16, last);
       }
-
-      // Run the first buffer read to load the buffer structures, before
-      // performing each of the buffer loads.
-      return readBufferThen(vAddrTranslation_(iov, info.processId), iovcnt * 16,
-                            last);
+      break;
     }
     case 78: {  // readlinkat
-      const auto pathnameAddress = info.registerArguments[1].get<uint64_t>();
+      const auto pathnameAddress = vAddrTranslation_(
+          info.registerArguments[1].get<uint64_t>(), info.processId);
 
-      // Copy string at `pathnameAddress`
-      auto pathname = new char[PATH_MAX_LEN];
-      return readStringThen(pathname,
-                            vAddrTranslation_(pathnameAddress, info.processId),
-                            PATH_MAX_LEN, [this, pathname](auto length) {
-                              // Pass the string `readLinkAt`, then destroy
-                              // the buffer and resolve the handler.
-                              readLinkAt({pathname, length});
-                              delete[] pathname;
-                              return;
-                            });
+      // Don't process the syscall if the virtual address translation comes
+      // back wih a DATA_ABORT or IGNORED fault
+      uint64_t faultCode =
+          simeng::OS::masks::faults::getFaultCode(pathnameAddress);
+      if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT ||
+          faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
+        return concludeSyscall({}, true);
+      } else {
+        // Copy string at `pathnameAddress`
+        auto pathname = new char[PATH_MAX_LEN];
+        return readStringThen(pathname, pathnameAddress, PATH_MAX_LEN,
+                              [this, pathname](auto length) {
+                                // Pass the string `readLinkAt`, then destroy
+                                // the buffer and resolve the handler.
+                                readLinkAt({pathname, length});
+                                delete[] pathname;
+                                return;
+                              });
+      }
+
+      break;
     }
     case 79: {  // newfstatat AKA fstatat
       int64_t dfd = info.registerArguments[0].get<int64_t>();
-      uint64_t filenamePtr = info.registerArguments[1].get<uint64_t>();
+      uint64_t filenamePtr = vAddrTranslation_(
+          info.registerArguments[1].get<uint64_t>(), info.processId);
       uint64_t statbufPtr = info.registerArguments[2].get<uint64_t>();
       int64_t flag = info.registerArguments[3].get<int64_t>();
 
-      char* filename = new char[PATH_MAX_LEN];
-      return readStringThen(
-          filename, vAddrTranslation_(filenamePtr, info.processId),
-          PATH_MAX_LEN, [=](auto length) {
-            // Invoke the kernel
-            OS::stat statOut;
-            uint64_t retval = newfstatat(dfd, filename, statOut, flag);
-            ProcessStateChange stateChange = {
-                ChangeType::REPLACEMENT, {info.ret}, {retval}};
-            delete[] filename;
-            stateChange.memoryAddresses.push_back(
-                {statbufPtr, sizeof(statOut)});
-            stateChange.memoryAddressValues.push_back(statOut);
-            concludeSyscall(stateChange);
-          });
+      // Don't process the syscall if the virtual address translation comes
+      // back wih a DATA_ABORT or IGNORED fault
+      uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(filenamePtr);
+      if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT ||
+          faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
+        return concludeSyscall({}, true);
+      } else {
+        char* filename = new char[PATH_MAX_LEN];
+        return readStringThen(
+            filename, filenamePtr, PATH_MAX_LEN, [=](auto length) {
+              // Invoke the kernel
+              OS::stat statOut;
+              uint64_t retval = newfstatat(dfd, filename, statOut, flag);
+              ProcessStateChange stateChange = {
+                  ChangeType::REPLACEMENT, {info.ret}, {retval}};
+              delete[] filename;
+              stateChange.memoryAddresses.push_back(
+                  {statbufPtr, sizeof(statOut)});
+              stateChange.memoryAddressValues.push_back(statOut);
+              concludeSyscall(stateChange);
+            });
+      }
 
       break;
     }
@@ -652,8 +742,18 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
     return then();
   }
 
-  // Get data from the simulation memory and read into dataBuffer_
-  std::vector<char> data = memory_->getUntimedData(ptr, length);
+  std::vector<char> data;
+
+  // If the translated address lies within the ignored region, read in zero'ed
+  // out data of the correct length
+  uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(ptr);
+  if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
+    data.resize(length);
+    std::fill(data.begin(), data.end(), 0);
+  } else {
+    // Get data from the simulation memory and read into dataBuffer_
+    data = memory_->getUntimedData(ptr, length);
+  }
   dataBuffer_.insert(dataBuffer_.end(), data.begin(), data.begin() + length);
 
   // Read in data, call onwards
@@ -717,8 +817,8 @@ uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
   int64_t dfd_temp = AT_FDCWD;
   if (dfd != -100) {
     dfd_temp = dfd;
-    // If absolute path used then dfd is dis-regarded. Otherwise need to see if
-    // fd exists for directory referenced
+    // If absolute path used then dfd is dis-regarded. Otherwise need to see
+    // if fd exists for directory referenced
     if (strncmp(pathname.c_str(), absolutePath, strlen(absolutePath)) != 0) {
       auto entry = processes_.find(0)->second->fdArray_->getFDEntry(dfd);
       if (!entry.isValid()) {

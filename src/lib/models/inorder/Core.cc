@@ -14,8 +14,7 @@ const unsigned int blockSize = 16;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           std::function<void(const simeng::OS::SyscallInfo)> syscallHandle,
-           YAML::Node& config)
+           sendSyscallToHandler syscallHandle, YAML::Node& config)
     : dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),

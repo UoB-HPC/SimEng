@@ -24,8 +24,7 @@ class Core : public simeng::Core {
    * process memory. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        const arch::Architecture& isa, BranchPredictor& branchPredictor,
-       std::function<void(const simeng::OS::SyscallInfo)> syscallHandle,
-       YAML::Node& config = Config::get());
+       sendSyscallToHandler syscallHandle, YAML::Node& config = Config::get());
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
    * the buffers between them. Checks for and executes pipeline flushes at the

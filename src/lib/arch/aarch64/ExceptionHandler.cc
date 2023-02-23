@@ -13,25 +13,21 @@ namespace aarch64 {
 ExceptionHandler::ExceptionHandler(const Core& core) : core_(core) {}
 
 bool ExceptionHandler::tick() {
-  // If the syscall handler has been envoked, conclude the syscall only once the
-  // result has been returned
+  // If an exception corresponding to a syscall was encountered and passed to
+  // the simulated Operating System's syscall handler, conclude the syscall only
+  // once the result has been returned
   if (envokingSycallHandler_) {
     if (!syscallReturned_) return false;
     return concludeSyscall();
   }
 
-  // If an instruction ahs been resgitered with an exception, begin its
-  // processing
-  if (instruction_ != nullptr) return handleException();
-
-  // Return false as a default case
-  return false;
+  // Handle an excpetion if one has been registered
+  return handleException();
 }
 
 void ExceptionHandler::registerException(
     std::shared_ptr<simeng::Instruction> instruction) {
-  // TODO: look into dynamic_pointer_cast for safer casting
-  instruction_ = std::static_pointer_cast<Instruction>(instruction);
+  instruction_ = std::static_pointer_cast<aarch64::Instruction>(instruction);
 }
 
 bool ExceptionHandler::handleException() {
@@ -211,8 +207,6 @@ void ExceptionHandler::processSyscallResult(
 }
 
 bool ExceptionHandler::concludeSyscall() {
-  if (!syscallReturned_) return false;
-
   if (syscallResult_.fatal) {
     // If result was fatal, search through known exceptions to identify errors
     // or lacking support

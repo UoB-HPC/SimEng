@@ -7,8 +7,7 @@ namespace models {
 namespace emulation {
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           const arch::Architecture& isa,
-           std::function<void(const simeng::OS::SyscallInfo)> syscallHandle,
+           const arch::Architecture& isa, sendSyscallToHandler syscallHandle,
            YAML::Node& config)
     : instructionMemory_(instructionMemory),
       dataMemory_(dataMemory),

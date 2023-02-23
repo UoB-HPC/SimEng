@@ -24,8 +24,7 @@ class Core : public simeng::Core {
    * instructions and data, along with the instruction entry point and an ISA to
    * use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       const arch::Architecture& isa,
-       std::function<void(const simeng::OS::SyscallInfo)> syscallHandle,
+       const arch::Architecture& isa, sendSyscallToHandler syscallHandle,
        YAML::Node& config = Config::get());
 
   /** Tick the core. */
