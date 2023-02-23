@@ -58,13 +58,6 @@ void RegressionTest::run(const char* source, const char* triple,
       std::make_shared<simeng::memory::MMU>(memory_, OS.getVAddrTranslator(),
                                             procTID);
 
-  // Callback function used to write data to the simulation memory without
-  // incurring any latency. This function will be used to write data to the
-  // simulation memory during process creation and while handling page faults.
-  auto sendToMem = [this](std::vector<char> data, uint64_t addr, size_t size) {
-    memory_->sendUntimedData(data, addr, size);
-  };
-
   // Create memory interfaces for instruction and data access.
   // A shared_ptr to the MMU is passed to each interface.
   simeng::FlatMemoryInterface instructionMemory(mmu);
