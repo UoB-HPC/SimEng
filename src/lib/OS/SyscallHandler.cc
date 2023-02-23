@@ -69,7 +69,10 @@ void SyscallHandler::handleSyscall() {
       int64_t flag = 0;
 
       // Don't process the syscall if the virtual address translation comes back
-      // wih a DATA_ABORT or IGNORED fault
+      // wih a DATA_ABORT or IGNORED fault. Given we read in a filename from
+      // `filenamePtr`, both a DATA_ABORT and IGNORED fault will result in a
+      // invalid filename and therefore, we cannot use it in further syscall
+      // logic.
       uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(filenamePtr);
       if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT ||
           faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
@@ -97,7 +100,10 @@ void SyscallHandler::handleSyscall() {
       uint16_t mode = info.registerArguments[3].get<uint16_t>();
 
       // Don't process the syscall if the virtual address translation comes back
-      // wih a DATA_ABORT or IGNORED fault
+      // wih a DATA_ABORT or IGNORED fault. Given we read in a filename from
+      // `pathnamePtr`, both a DATA_ABORT and IGNORED fault will result in a
+      // invalid filename and therefore, we cannot use it in further syscall
+      // logic.
       uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(pathnamePtr);
       if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT ||
           faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
@@ -129,7 +135,8 @@ void SyscallHandler::handleSyscall() {
       uint64_t count = info.registerArguments[2].get<uint64_t>();
 
       // Don't process the syscall if the virtual address translation comes back
-      // wih a DATA_ABORT fault
+      // wih a DATA_ABORT fault. If the address `bufPtr` is not mapped, then we
+      // cannot fill the `dataBuffer_` from it in `readBufferThen(...)`.
       uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(bufPtr);
       if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
         return concludeSyscall({}, true);
@@ -181,7 +188,8 @@ void SyscallHandler::handleSyscall() {
       uint64_t count = info.registerArguments[2].get<uint64_t>();
 
       // Don't process the syscall if the virtual address translation comes back
-      // wih a DATA_ABORT fault
+      // wih a DATA_ABORT fault. If the address `bufPtr` is not mapped, then we
+      // cannot fill the `dataBuffer_` from it in `readBufferThen(...)`.
       uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(bufPtr);
       if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
         return concludeSyscall({}, true);
@@ -226,7 +234,8 @@ void SyscallHandler::handleSyscall() {
       uint64_t count = info.registerArguments[2].get<uint64_t>();
 
       // Don't process the syscall if the virtual address translation comes back
-      // wih a DATA_ABORT fault
+      // wih a DATA_ABORT fault. If the address `bufPtr` is not mapped, then we
+      // cannot fill the `dataBuffer_` from it in `readBufferThen(...)`.
       uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(bufPtr);
       if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
         return concludeSyscall({}, true);
@@ -247,7 +256,8 @@ void SyscallHandler::handleSyscall() {
       int64_t iovcnt = info.registerArguments[2].get<int64_t>();
 
       // Don't process the syscall if the virtual address translation comes back
-      // wih a DATA_ABORT fault
+      // wih a DATA_ABORT fault. If the address `iov` is not mapped, then we
+      // cannot fill the `dataBuffer_` from it in `readBufferThen(...)`.
       uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(iov);
       if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
         return concludeSyscall({}, true);
@@ -329,7 +339,8 @@ void SyscallHandler::handleSyscall() {
       int64_t iovcnt = info.registerArguments[2].get<int64_t>();
 
       // Don't process the syscall if the virtual address translation comes back
-      // wih a DATA_ABORT fault
+      // wih a DATA_ABORT fault. If the address `iov` is not mapped, then we
+      // cannot fill the `dataBuffer_` from it in `readBufferThen(...)`.
       uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(iov);
       if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
         return concludeSyscall({}, true);
@@ -375,7 +386,9 @@ void SyscallHandler::handleSyscall() {
             uint64_t len = iovdata[i * 2 + 1];
 
             // If a virtual address translation comes back wih a DATA_ABORT
-            // fault, break the chain with an early falted concludeSyscall
+            // fault, break the chain with an early falted concludeSyscall. If
+            // the address `iov` is not mapped, then we cannot fill the
+            // `dataBuffer_` from it in `readBufferThen(...)`.
             uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(iov);
             if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
               return concludeSyscall({}, true);
@@ -395,8 +408,11 @@ void SyscallHandler::handleSyscall() {
       const auto pathnameAddress = vAddrTranslation_(
           info.registerArguments[1].get<uint64_t>(), info.threadId);
 
-      // Don't process the syscall if the virtual address translation comes
-      // back wih a DATA_ABORT or IGNORED fault
+      // Don't process the syscall if the virtual address translation comes back
+      // wih a DATA_ABORT or IGNORED fault. Given we read in a filename from
+      // `pathnameAddress`, both a DATA_ABORT and IGNORED fault will result in a
+      // invalid filename and therefore, we cannot use it in further syscall
+      // logic.
       uint64_t faultCode =
           simeng::OS::masks::faults::getFaultCode(pathnameAddress);
       if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT ||
@@ -425,8 +441,11 @@ void SyscallHandler::handleSyscall() {
       uint64_t statbufPtr = info.registerArguments[2].get<uint64_t>();
       int64_t flag = info.registerArguments[3].get<int64_t>();
 
-      // Don't process the syscall if the virtual address translation comes
-      // back wih a DATA_ABORT or IGNORED fault
+      // Don't process the syscall if the virtual address translation comes back
+      // wih a DATA_ABORT or IGNORED fault. Given we read in a filename from
+      // `filenamePtr`, both a DATA_ABORT and IGNORED fault will result in a
+      // invalid filename and therefore, we cannot use it in further syscall
+      // logic.
       uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(filenamePtr);
       if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT ||
           faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
@@ -764,6 +783,16 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
   return then();
 }
 
+void SyscallHandler::concludeSyscall(const ProcessStateChange& change,
+                                     bool fatal) {
+  returnSyscall_({fatal, syscallQueue_.front().syscallId,
+                  syscallQueue_.front().coreId, change});
+  // Remove syscall from queue and reset handler to default state
+  syscallQueue_.pop();
+  dataBuffer_ = {};
+  resumeHandling_ = [this]() { handleSyscall(); };
+}
+
 void SyscallHandler::readLinkAt(std::string path) {
   if (path.size() == PATH_MAX_LEN) {
     // TODO: Handle PATH_MAX_LEN case
@@ -801,16 +830,6 @@ void SyscallHandler::readLinkAt(std::string path) {
   }
 
   concludeSyscall(stateChange);
-}
-
-void SyscallHandler::concludeSyscall(const ProcessStateChange& change,
-                                     bool fatal) {
-  returnSyscall_({fatal, syscallQueue_.front().syscallId,
-                  syscallQueue_.front().coreId, change});
-  // Remove syscall from queue and reset handler to default state
-  syscallQueue_.pop();
-  dataBuffer_ = {};
-  resumeHandling_ = [this]() { handleSyscall(); };
 }
 
 // TODO : update when supporting multi-process/thread

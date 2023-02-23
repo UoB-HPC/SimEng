@@ -21,8 +21,12 @@ bool ExceptionHandler::tick() {
     return concludeSyscall();
   }
 
-  // Handle an excpetion if one has been registered
-  return handleException();
+  // If no instruction with a generated exception has been registered return,
+  // otherwise, handle the registered exception.
+  if (instruction_ == nullptr)
+    return false;
+  else
+    return handleException();
 }
 
 void ExceptionHandler::registerException(
@@ -31,7 +35,6 @@ void ExceptionHandler::registerException(
 }
 
 bool ExceptionHandler::handleException() {
-  if (instruction_ == nullptr) return false;
   result_ = {};
 
   InstructionException exception = instruction_->getException();
