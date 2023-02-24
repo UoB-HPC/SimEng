@@ -15,7 +15,8 @@ namespace outoforder {
 // TODO: System register count has to match number of supported system registers
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
-           pipeline::PortAllocator& portAllocator, YAML::Node& config)
+           pipeline::PortAllocator& portAllocator,
+           arch::sendSyscallToHandler handleSyscall, YAML::Node& config)
     : isa_(isa),
       physicalRegisterStructures_(isa.getConfigPhysicalRegisterStructure()),
       physicalRegisterQuantities_(isa.getConfigPhysicalRegisterQuantities()),
@@ -74,8 +75,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           completionSlots_, registerFileSet_,
           [this](auto insnId) { reorderBuffer_.commitMicroOps(insnId); }),
       portAllocator_(portAllocator),
-      clockFrequency_(config["Core"]["Clock-Frequency"].as<float>() * 1e9),
-      commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()) {
+      commitWidth_(config["Pipeline-Widths"]["Commit"].as<unsigned int>()),
+      handleSyscall_(handleSyscall) {
   for (size_t i = 0; i < config["Execution-Units"].size(); i++) {
     // Create vector of blocking groups
     std::vector<uint16_t> blockingGroups = {};
@@ -98,6 +99,8 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {
     dispatchIssueUnit_.getRSSizes(sizeVec);
   });
+  // Create exception handler based on chosen architecture
+  exceptionHandlerFactory(config["Core"]["ISA"].as<std::string>());
 }
 
 void Core::tick() {
@@ -114,7 +117,7 @@ void Core::tick() {
       if (fetchToDecodeBuffer_.isEmpty() && decodeToRenameBuffer_.isEmpty() &&
           renameToDispatchBuffer_.isEmpty() &&
           !dataMemory_.hasPendingRequests() && (reorderBuffer_.size() == 0) &&
-          (exceptionHandler_ == nullptr)) {
+          (exceptionGenerated_ == false)) {
         // Flush pipeline
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
@@ -135,8 +138,8 @@ void Core::tick() {
   // Increase tick count for current process execution
   procTicks_++;
 
-  if (exceptionHandler_ != nullptr) {
-    processExceptionHandler();
+  if (exceptionGenerated_) {
+    processException();
     return;
   }
 
@@ -253,7 +256,7 @@ CoreStatus Core::getStatus() {
   // are no uops at the head of any buffer, and no exception is currently
   // being handled.
   if (fetchUnit_.hasHalted() && !(reorderBuffer_.size() > 0) &&
-      (exceptionHandler_ == nullptr)) {
+      (exceptionGenerated_ == false)) {
     bool decodeSlotEmpty = true;
     auto decodeSlots = fetchToDecodeBuffer_.getHeadSlots();
     for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
@@ -284,6 +287,8 @@ void Core::setStatus(CoreStatus newStatus) { status_ = newStatus; }
 
 uint64_t Core::getCurrentTID() const { return currentTID_; }
 
+uint64_t Core::getCoreId() const { return coreId_; }
+
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
   exceptionGenerated_ = true;
   exceptionGeneratingInstruction_ = instruction;
@@ -310,15 +315,14 @@ void Core::handleException() {
     eu.purgeFlushed();
   }
 
-  exceptionGenerated_ = false;
-  exceptionHandler_ =
-      isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
-  processExceptionHandler();
+  exceptionHandler_->registerException(exceptionGeneratingInstruction_);
+  processException();
 }
 
-void Core::processExceptionHandler() {
-  assert(exceptionHandler_ != nullptr &&
-         "Attempted to process an exception handler that wasn't present");
+void Core::processException() {
+  assert(exceptionGenerated_ != false &&
+         "[SimEng:Core] Attempted to process an exception handler that wasn't "
+         "active");
   if (dataMemory_.hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
@@ -342,13 +346,13 @@ void Core::processExceptionHandler() {
     applyStateChange(result.stateChange);
   }
 
-  exceptionHandler_ = nullptr;
+  exceptionGenerated_ = false;
 }
 
-void Core::applyStateChange(const arch::ProcessStateChange& change) {
+void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // Update registers in accoradance with the ProcessStateChange type
   switch (change.type) {
-    case arch::ChangeType::INCREMENT: {
+    case OS::ChangeType::INCREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         mappedRegisterFileSet_.set(
             change.modifiedRegisters[i],
@@ -358,7 +362,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    case arch::ChangeType::DECREMENT: {
+    case OS::ChangeType::DECREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         mappedRegisterFileSet_.set(
             change.modifiedRegisters[i],
@@ -368,7 +372,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    default: {  // arch::ChangeType::REPLACEMENT
+    default: {  // OS::ChangeType::REPLACEMENT
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         mappedRegisterFileSet_.set(change.modifiedRegisters[i],
@@ -392,13 +396,16 @@ const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
   return mappedRegisterFileSet_;
 }
 
-uint64_t Core::getInstructionsRetiredCount() const {
-  return reorderBuffer_.getInstructionsCommittedCount();
+void Core::sendSyscall(OS::SyscallInfo syscallInfo) const {
+  handleSyscall_(syscallInfo);
 }
 
-uint64_t Core::getSystemTimer() const {
-  // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency_ / 1e9);
+void Core::receiveSyscallResult(const OS::SyscallResult result) const {
+  exceptionHandler_->processSyscallResult(result);
+}
+
+uint64_t Core::getInstructionsRetiredCount() const {
+  return reorderBuffer_.getInstructionsCommittedCount();
 }
 
 std::map<std::string, std::string> Core::getStats() const {
@@ -479,7 +486,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
 }
 
 bool Core::interrupt() {
-  if (exceptionHandler_ == nullptr) {
+  if (exceptionGenerated_ == false) {
     status_ = CoreStatus::switching;
     contextSwitches_++;
     // Stop fetch unit from incrementing PC or fetching next instructions

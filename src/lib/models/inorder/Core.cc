@@ -11,10 +11,10 @@ namespace inorder {
 
 // TODO: Replace with config options
 const unsigned int blockSize = 16;
-const unsigned int clockFrequency = 2.5 * 1e9;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           const arch::Architecture& isa, BranchPredictor& branchPredictor)
+           const arch::Architecture& isa, BranchPredictor& branchPredictor,
+           arch::sendSyscallToHandler handleSyscall)
     : dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
@@ -33,7 +33,11 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
           [this](auto instruction) { storeData(instruction); },
           [this](auto instruction) { raiseException(instruction); },
           branchPredictor, false),
-      writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}){};
+      writebackUnit_(completionSlots_, registerFileSet_, [](auto insnId) {}),
+      handleSyscall_(handleSyscall) {
+  // Create exception handler based on chosen architecture
+  exceptionHandlerFactory(Config::get()["Core"]["ISA"].as<std::string>());
+}
 
 void Core::tick() {
   ticks_++;
@@ -47,7 +51,7 @@ void Core::tick() {
       // Ensure the pipeline is empty and there's no active exception before
       // context switching.
       if (fetchToDecodeBuffer_.isEmpty() && decodeToExecuteBuffer_.isEmpty() &&
-          completionSlots_[0].isEmpty() && (exceptionHandler_ == nullptr)) {
+          completionSlots_[0].isEmpty() && (exceptionGenerated_ == false)) {
         // Flush pipeline
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
@@ -67,8 +71,8 @@ void Core::tick() {
   // Increase tick count for current process execution
   procTicks_++;
 
-  if (exceptionHandler_ != nullptr) {
-    processExceptionHandler();
+  if (exceptionGenerated_) {
+    processException();
     return;
   }
 
@@ -140,7 +144,7 @@ CoreStatus Core::getStatus() {
 
   if (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
       !executePending && executeUnit_.isEmpty() &&
-      exceptionHandler_ == nullptr) {
+      exceptionGenerated_ == false) {
     status_ = CoreStatus::halted;
   }
 
@@ -151,18 +155,23 @@ void Core::setStatus(CoreStatus newStatus) { status_ = newStatus; }
 
 uint64_t Core::getCurrentTID() const { return currentTID_; }
 
+uint64_t Core::getCoreId() const { return coreId_; }
+
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
     const {
   return architecturalRegisterFileSet_;
 }
 
-uint64_t Core::getInstructionsRetiredCount() const {
-  return writebackUnit_.getInstructionsWrittenCount();
+void Core::sendSyscall(OS::SyscallInfo syscallInfo) const {
+  handleSyscall_(syscallInfo);
 }
 
-uint64_t Core::getSystemTimer() const {
-  // TODO: This will need to be changed if we start supporting DVFS.
-  return ticks_ / (clockFrequency / 1e9);
+void Core::receiveSyscallResult(const OS::SyscallResult result) const {
+  exceptionHandler_->processSyscallResult(result);
+}
+
+uint64_t Core::getInstructionsRetiredCount() const {
+  return writebackUnit_.getInstructionsWrittenCount();
 }
 
 std::map<std::string, std::string> Core::getStats() const {
@@ -198,12 +207,8 @@ void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
 }
 
 void Core::handleException() {
-  exceptionGenerated_ = false;
-
-  exceptionHandler_ =
-      isa_.handleException(exceptionGeneratingInstruction_, *this, dataMemory_);
-
-  processExceptionHandler();
+  exceptionHandler_->registerException(exceptionGeneratingInstruction_);
+  processException();
 
   // Flush pipeline
   fetchToDecodeBuffer_.fill({});
@@ -212,9 +217,10 @@ void Core::handleException() {
   completionSlots_[0].fill(nullptr);
 }
 
-void Core::processExceptionHandler() {
-  assert(exceptionHandler_ != nullptr &&
-         "Attempted to process an exception handler that wasn't present");
+void Core::processException() {
+  assert(exceptionGenerated_ != false &&
+         "[SimEng:Core] Attempted to process an exception handler that wasn't "
+         "active");
   if (dataMemory_.hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
@@ -238,7 +244,7 @@ void Core::processExceptionHandler() {
     applyStateChange(result.stateChange);
   }
 
-  exceptionHandler_ = nullptr;
+  exceptionGenerated_ = false;
 }
 
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
@@ -254,7 +260,7 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
   }
 
   assert(instruction->hasAllData() &&
-         "Load instruction failed to obtain all data this cycle");
+         "[SimEng:Core] Load instruction failed to obtain all data this cycle");
 
   instruction->execute();
 
@@ -282,7 +288,7 @@ void Core::storeData(const std::shared_ptr<Instruction>& instruction) {
 void Core::forwardOperands(const span<Register>& registers,
                            const span<RegisterValue>& values) {
   assert(registers.size() == values.size() &&
-         "Mismatched register and value vector sizes");
+         "[SimEng:Core] Mismatched register and value vector sizes");
 
   const auto& uop = decodeToExecuteBuffer_.getTailSlots()[0];
   if (uop == nullptr) {
@@ -327,10 +333,10 @@ void Core::readRegisters() {
   }
 }
 
-void Core::applyStateChange(const arch::ProcessStateChange& change) {
+void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // Update registers in accoradance with the ProcessStateChange type
   switch (change.type) {
-    case arch::ChangeType::INCREMENT: {
+    case OS::ChangeType::INCREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(
             change.modifiedRegisters[i],
@@ -339,7 +345,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    case arch::ChangeType::DECREMENT: {
+    case OS::ChangeType::DECREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(
             change.modifiedRegisters[i],
@@ -348,7 +354,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    default: {  // arch::ChangeType::REPLACEMENT
+    default: {  // OS::ChangeType::REPLACEMENT
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(change.modifiedRegisters[i],
@@ -398,7 +404,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
 }
 
 bool Core::interrupt() {
-  if (exceptionHandler_ == nullptr) {
+  if (exceptionGenerated_ == false) {
     status_ = CoreStatus::switching;
     contextSwitches_++;
     // Stop fetch unit from incrementing PC or fetching next instructions

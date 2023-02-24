@@ -17,12 +17,15 @@
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <queue>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
 #include "simeng/Elf.hh"
 #include "simeng/OS/Process.hh"
+#include "simeng/memory/MMU.hh"
+#include "simeng/memory/Mem.hh"
 #include "simeng/version.hh"
 
 static constexpr uint16_t PATH_MAX_LEN = 4096;
@@ -106,12 +109,140 @@ struct linux_dirent64 {
   char* d_name;       // Filename (null-terminated)
 };
 
-/** A Linux kernel syscall emulation implementation, which mimics the
-   responses to Linux system calls. */
+/** The types of changes that can be made to values within the process state. */
+enum class ChangeType { REPLACEMENT, INCREMENT, DECREMENT };
+
+/** A structure describing a set of changes to the process state. */
+struct ProcessStateChange {
+  /** Type of changes to be made */
+  ChangeType type;
+
+  /** Registers to modify */
+  std::vector<Register> modifiedRegisters;
+
+  /** Values to set modified registers to */
+  std::vector<RegisterValue> modifiedRegisterValues;
+
+  /** Memory address/width pairs to modify */
+  std::vector<MemoryAccessTarget> memoryAddresses;
+
+  /** Values to write to memory */
+  std::vector<RegisterValue> memoryAddressValues;
+
+  /** Default copy constructor for ProcessStateChange. */
+  ProcessStateChange(const ProcessStateChange& res) = default;
+
+  /** Default move constructor for ProcessStateChange to enable copy elision
+   * whenever it is possible. */
+  ProcessStateChange(ProcessStateChange&& res) = default;
+
+  /** Default copy assignment operator for ProcessStateChange. */
+  ProcessStateChange& operator=(const ProcessStateChange& res) = default;
+
+  /** Default move assignment operator for ProcessStateChange to enable copy
+   * elision whenever it is possible. */
+  ProcessStateChange& operator=(ProcessStateChange&& res) = default;
+};
+
+/** This result from a handled syscall. */
+struct SyscallResult {
+  /** Indicates whether the outcome of the syscall is fatal for the associated
+   * core and it should therefore halt. */
+  bool fatal = false;
+
+  /** Id of the syscall to aid exception handler processing. */
+  uint64_t syscallId = 0;
+
+  /** The unique ID of the core associated with the syscall. */
+  uint64_t coreId = 0;
+
+  /** Any changes to apply to the process state. */
+  ProcessStateChange stateChange = {};
+
+  /** Default copy constructor for SyscallResult. */
+  SyscallResult(const SyscallResult& res) = default;
+
+  /** Default move constructor for SyscallResult to enable copy elision whenever
+   * it is possible. */
+  SyscallResult(SyscallResult&& res) = default;
+
+  /** Default copy assignment operator for SyscallResult. */
+  SyscallResult& operator=(const SyscallResult& res) = default;
+
+  /** Default move assignment operator for SyscallResult to enable copy elision
+   * whenever it is possible. */
+  SyscallResult& operator=(SyscallResult&& res) = default;
+};
+
+/** A struct to hold information used as arguments to a syscall. */
+struct SyscallInfo {
+  /** The ID of the syscall. */
+  uint64_t syscallId = 0;
+
+  /** The unique ID of the core associated with the syscall. */
+  uint64_t coreId = 0;
+
+  /** The unique ID of the process associated with the syscall. */
+  uint64_t threadId = 0;
+
+  /** The register values used as parameters to the invoked syscall. */
+  std::array<RegisterValue, 6> registerArguments = {};
+
+  /** The register which will be updated with the return value of the processed
+   * syscall. */
+  Register ret = {0, 0};
+
+  /** Default copy constructor for SyscallInfo. */
+  SyscallInfo(const SyscallInfo& info) = default;
+
+  /** Default move constructor for SyscallInfo to enable copy elision whenever
+   * it is possible. */
+  SyscallInfo(SyscallInfo&& info) = default;
+
+  /** Default copy assignment operator for SyscallInfo. */
+  SyscallInfo& operator=(const SyscallInfo& info) = default;
+
+  /** Default move assignment operator for SyscallInfo to enable copy elision
+   * whenever it is possible. */
+  SyscallInfo& operator=(SyscallInfo&& info) = default;
+};
+
+/** A Linux kernel syscall emulation implementation, which mimics the responses
+   to Linux system calls. */
 class SyscallHandler {
  public:
   /** Create new SyscallHandler object. */
-  SyscallHandler(SimOS* os);
+  SyscallHandler(SimOS* OS, std::shared_ptr<simeng::memory::Mem> memory);
+
+  /** Tick the syscall handler to carry out any oustanding syscalls. */
+  void tick();
+
+  /** Function used to process the syscall at the front of the syscallQueue_
+   * queue. */
+  void handleSyscall();
+
+  /** This function receives a SyscallInfo struct from the a Core and adds it to
+   * syscallQueue_ so it can be processed. */
+  void receiveSyscall(SyscallInfo info);
+
+  /** Once the syscall is complete, conclude its execution by
+   * constructing a SyscallResult and supplying it to the returnSyscall_
+   * function. */
+  void concludeSyscall(const ProcessStateChange& change, bool fatal = false);
+
+  /** Attempt to read a string of max length `maxLength` from address `address`
+   * into the supplied buffer, starting from character `offset`. */
+  void readStringThen(std::array<char, PATH_MAX_LEN>& buffer, uint64_t address,
+                      int maxLength, std::function<void(size_t length)> then,
+                      int offset = 0);
+
+  /** Read `length` bytes of data from `ptr`, and then call `then`. */
+  void readBufferThen(uint64_t ptr, uint64_t length,
+                      std::function<void()> then);
+
+  /** Performs a readlinkat syscall using the path supplied. The length of the
+   * supplied path is held in the `length` parameter. */
+  void readLinkAt(std::string path, size_t length);
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */
@@ -147,14 +278,19 @@ class SyscallHandler {
 
   /** getpid syscall: get the process owner's process ID. */
   int64_t getpid() const;
+
   /** getuid syscall: get the process owner's user ID. */
   int64_t getuid() const;
+
   /** geteuid syscall: get the process owner's effective user ID. */
   int64_t geteuid() const;
+
   /** getgid syscall: get the process owner's group ID. */
   int64_t getgid() const;
+
   /** getegid syscall: get the process owner's effective group ID. */
   int64_t getegid() const;
+
   /** gettid syscall: get the process owner's thread ID. */
   int64_t gettid() const;
 
@@ -212,10 +348,7 @@ class SyscallHandler {
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
  private:
-  /** Pointer reference to SimOS object. */
-  SimOS* os_ = nullptr;
-
-  /** Returns the correct Dirfd depending on the pathname and dirfd given to
+  /** Returns the correct dirFd depending on the pathname and dirFd given to
    * syscall. */
   uint64_t getDirFd(int64_t dfd, std::string pathname);
 
@@ -223,11 +356,26 @@ class SyscallHandler {
    * to point to the SimEng equivalent. */
   std::string getSpecialFile(const std::string filename);
 
+  /** Pointer reference to SimOS object. */
+  SimOS* OS_ = nullptr;
+
+  /** A shared pointer to the simulation memory. */
+  std::shared_ptr<simeng::memory::Mem> memory_;
+
+  /** A queue to hold all outstanding syscalls. */
+  std::queue<SyscallInfo> syscallQueue_;
+
+  /** The SyscallInfo of the syscall currently being handled. */
+  SyscallInfo currentInfo_ = {};
+
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
 
   /** Vector of all currently supported special file paths & files.*/
   std::vector<std::string> supportedSpecialFiles_;
+
+  /** A data buffer used for reading data from memory. */
+  std::vector<char> dataBuffer_;
 };
 
 }  // namespace OS

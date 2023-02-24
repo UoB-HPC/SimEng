@@ -30,6 +30,9 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
   simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
   uint64_t procTID = 0;  // Initial process will always have TID = 0
 
+  // Inject fake syscall into queue
+  simOS.getSyscallHandler()->receiveSyscall({});
+
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
   ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
@@ -57,6 +60,9 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
       reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
   simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
   uint64_t procTID = 0;  // Initial process will always have TID = 0
+
+  // Inject fake syscall into queue
+  simOS.getSyscallHandler()->receiveSyscall({});
 
   uint64_t retVal = simOS.getSyscallHandler()->mmap(0, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
@@ -98,6 +104,9 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
   uint64_t procTID = 0;  // Initial process will always have TID = 0
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
+  // Inject fake syscall into queue
+  simOS.getSyscallHandler()->receiveSyscall({});
+
   uint64_t retVal =
       simOS.getSyscallHandler()->mmap(mmapStart + 4096, 4096, 0, 0, -1, 0);
   ASSERT_NE(retVal, 0);
@@ -137,6 +146,9 @@ TEST(VirtMemTest, UnmapSyscall) {
   simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
   uint64_t procTID = 0;  // Initial process will always have TID = 0
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
+
+  // Inject fake syscall into queue
+  simOS.getSyscallHandler()->receiveSyscall({});
 
   uint64_t retVal =
       simOS.getSyscallHandler()->mmap(mmapStart, 4096, 0, 0, -1, 0);
@@ -195,6 +207,9 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   int fd = process->fdArray_->allocateFDEntry(0, fpath.c_str(), O_RDWR, 0666);
   ASSERT_NE(fd, -1);
 
+  // Inject fake syscall into queue
+  simOS.getSyscallHandler()->receiveSyscall({});
+
   uint64_t retVal = simOS.getSyscallHandler()->mmap(mmapStart, 21, 0, 0, fd, 0);
   ASSERT_NE(retVal, 0);
   ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
@@ -245,6 +260,9 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   auto process = simOS.getProcess(procTID);
   int fd = process->fdArray_->allocateFDEntry(0, fpath.c_str(), O_RDWR, 0666);
   ASSERT_NE(fd, -1);
+
+  // Inject fake syscall into queue
+  simOS.getSyscallHandler()->receiveSyscall({});
 
   uint64_t retVal =
       simOS.getSyscallHandler()->mmap(mmapStart, 4096, 0, 0, fd, 4096);
@@ -297,6 +315,9 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   auto process = simOS.getProcess(procTID);
   int fd = process->fdArray_->allocateFDEntry(0, fpath.c_str(), O_RDWR, 0666);
   ASSERT_NE(fd, -1);
+
+  // Inject fake syscall into queue
+  simOS.getSyscallHandler()->receiveSyscall({});
 
   uint64_t retVal =
       simOS.getSyscallHandler()->mmap(mmapStart, 8192, 0, 0, fd, 0);

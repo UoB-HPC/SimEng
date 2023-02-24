@@ -16,11 +16,32 @@ struct Register {
    * architectural register, depending on point of usage. */
   uint16_t tag;
 
+  /** Default Constructor. */
+  Register(){};
+
+  /** Constructor for `Register` with a given register file type and register
+   * tag. */
+  Register(uint8_t type, uint16_t tag) : type(type), tag(tag){};
+
   /** Check for equality of two register identifiers. */
   bool operator==(const Register& other) const;
 
   /** Check for inequality of two register identifiers. */
   bool operator!=(const Register& other) const;
+
+  /** Default copy constructor for Register. */
+  Register(const Register& res) = default;
+
+  /** Default move constructor for Register to enable copy elision
+   * whenever it is possible. */
+  Register(Register&& res) = default;
+
+  /** Default copy assignment operator for Register. */
+  Register& operator=(const Register& res) = default;
+
+  /** Default move assignment operator for Register to enable copy
+   * elision whenever it is possible. */
+  Register& operator=(Register&& res) = default;
 };
 std::ostream& operator<<(std::ostream& os, simeng::Register const& reg);
 
