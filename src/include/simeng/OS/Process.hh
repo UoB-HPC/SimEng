@@ -172,17 +172,27 @@ class Process {
   /** Unique pointer to FileDescArray class.*/
   std::unique_ptr<FileDescArray> fdArray_;
 
-  // Thread state
-  // TODO: Support multiple threads per process
-  /** The clear_child_tid value. */
-  uint64_t clearChildTid = 0;
-
   /** Current status of the process. */
   procStatus status_ = procStatus::waiting;
 
   /** The CPU context associated with this process. Used to enable context
    * switching between multiple processes. */
   cpuContext context_;
+
+  /** The memory address at which the process should write its TID to.
+   * Default value is 0.
+   * It can be set using the `clone` syscall if the CLONE_CHILD_SETTID flag is
+   * present.
+   * If updated, the very first thing the new thread does is to write
+   * its TID at this address. */
+  uint64_t setChildTid_ = 0;
+
+  /** The memory address of where a thread should write 0 to on termination if
+   * it shares memory with other processes.
+   * Default value is 0.
+   * It can be set using the `clone` syscall if the CLONE_CHILD_CLEARTID flag is
+   * present, or by calling the `set_tid_address` syscall. */
+  uint64_t clearChildTid_ = 0;
 
  private:
   /** Create and populate the initial process stack and returns the stack

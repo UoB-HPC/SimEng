@@ -98,7 +98,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
   portAllocator.setRSSizeGetter([this](std::vector<uint64_t>& sizeVec) {
     dispatchIssueUnit_.getRSSizes(sizeVec);
   });
-};
+}
 
 void Core::tick() {
   ticks_++;
@@ -279,6 +279,10 @@ CoreStatus Core::getStatus() {
 
   return status_;
 }
+
+void Core::setStatus(CoreStatus newStatus) { status_ = newStatus; }
+
+uint64_t Core::getCurrentTID() const { return currentTID_; }
 
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
   exceptionGenerated_ = true;

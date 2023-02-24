@@ -27,6 +27,12 @@ class Core {
   /** Check the current status of the core. */
   virtual CoreStatus getStatus() = 0;
 
+  /** Update the current status of the core. */
+  virtual void setStatus(CoreStatus newStatus) = 0;
+
+  /** Get the TID of the Process the core is currently executing. */
+  virtual uint64_t getCurrentTID() const = 0;
+
   /** Retrieve the architectural register file set. */
   virtual const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const = 0;
