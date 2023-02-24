@@ -287,6 +287,8 @@ void Core::setStatus(CoreStatus newStatus) { status_ = newStatus; }
 
 uint64_t Core::getCurrentTID() const { return currentTID_; }
 
+uint64_t Core::getCoreId() const { return coreId_; }
+
 void Core::raiseException(const std::shared_ptr<Instruction>& instruction) {
   exceptionGenerated_ = true;
   exceptionGeneratingInstruction_ = instruction;

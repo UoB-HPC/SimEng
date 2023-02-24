@@ -35,6 +35,9 @@ class Core {
   /** Get the TID of the Process the core is currently executing. */
   virtual uint64_t getCurrentTID() const = 0;
 
+  /** Get the unqiue id of the core. */
+  virtual uint64_t getCoreId() const = 0;
+
   /** Retrieve the architectural register file set. */
   virtual const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const = 0;

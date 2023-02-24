@@ -233,8 +233,9 @@ class SyscallHandler {
   void readBufferThen(uint64_t ptr, uint64_t length,
                       std::function<void()> then);
 
-  /** Performs a readlinkat syscall using the path supplied. */
-  void readLinkAt(std::string path);
+  /** Performs a readlinkat syscall using the path supplied. The length of the
+   * supplied path is held in the `length` parameter. */
+  void readLinkAt(std::string path, size_t length);
 
   /** brk syscall: change data segment size. Sets the program break to
    * `addr` if reasonable, and returns the program break. */

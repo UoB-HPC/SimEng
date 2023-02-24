@@ -293,6 +293,8 @@ void Core::setStatus(CoreStatus newStatus) { status_ = newStatus; }
 
 uint64_t Core::getCurrentTID() const { return currentTID_; }
 
+uint64_t Core::getCoreId() const { return coreId_; }
+
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
     const {
   return architecturalRegisterFileSet_;

@@ -38,6 +38,9 @@ class Core : public simeng::Core {
   /** Get the TID of the Process the core is currently executing. */
   uint64_t getCurrentTID() const override;
 
+  /** Get the unqiue id of the core. */
+  uint64_t getCoreId() const override;
+
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const override;
@@ -98,6 +101,11 @@ class Core : public simeng::Core {
 
   /** The current state the core is in. */
   CoreStatus status_ = CoreStatus::idle;
+
+  /** Unique identifier for the core. */
+  // TODO: Unqiue IDs need to be assigned to the cores when we go
+  // multicore
+  uint64_t coreId_ = 0;
 
   /** A memory interface to access instructions. */
   MemoryInterface& instructionMemory_;
