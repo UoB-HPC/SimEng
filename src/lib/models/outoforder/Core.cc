@@ -251,37 +251,7 @@ void Core::flushIfNeeded() {
   }
 }
 
-CoreStatus Core::getStatus() {
-  // Core is considered to be idle when the fetch unit has halted, there
-  // are no uops at the head of any buffer, and no exception is currently
-  // being handled.
-  if (fetchUnit_.hasHalted() && !(reorderBuffer_.size() > 0) &&
-      (exceptionGenerated_ == false)) {
-    bool decodeSlotEmpty = true;
-    auto decodeSlots = fetchToDecodeBuffer_.getHeadSlots();
-    for (size_t slot = 0; slot < fetchToDecodeBuffer_.getWidth(); slot++) {
-      if (decodeSlots[slot].size() > 0) {
-        decodeSlotEmpty = false;
-        break;
-      }
-    }
-    if (decodeSlotEmpty) {
-      bool renameSlotEmpty = true;
-      auto renameSlots = decodeToRenameBuffer_.getHeadSlots();
-      for (size_t slot = 0; slot < decodeToRenameBuffer_.getWidth(); slot++) {
-        if (renameSlots[slot] != nullptr) {
-          renameSlotEmpty = false;
-          break;
-        }
-      }
-      if (renameSlotEmpty) {
-        status_ = CoreStatus::idle;
-      }
-    }
-  }
-
-  return status_;
-}
+CoreStatus Core::getStatus() { return status_; }
 
 void Core::setStatus(CoreStatus newStatus) { status_ = newStatus; }
 
@@ -344,13 +314,12 @@ void Core::processException() {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
+    if (result.idleAfterSyscall) {
+      status_ = CoreStatus::idle;
+    }
   }
 
   exceptionGenerated_ = false;
-
-  if (result.idleAfterSyscall) {
-    status_ = CoreStatus::idle;
-  }
 }
 
 void Core::applyStateChange(const OS::ProcessStateChange& change) {

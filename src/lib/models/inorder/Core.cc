@@ -135,21 +135,7 @@ void Core::tick() {
   fetchUnit_.requestFromPC();
 }
 
-CoreStatus Core::getStatus() {
-  // Core is considered to be idle when the fetch unit has halted, there are
-  // no uops at the head of any buffer, and no exception is currently being
-  // handled.
-  bool decodePending = fetchToDecodeBuffer_.getHeadSlots()[0].size() > 0;
-  bool executePending = decodeToExecuteBuffer_.getHeadSlots()[0] != nullptr;
-  bool writebackPending = completionSlots_[0].getHeadSlots()[0] != nullptr;
-
-  if (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
-      !executePending && exceptionGenerated_ == false) {
-    status_ = CoreStatus::idle;
-  }
-
-  return status_;
-}
+CoreStatus Core::getStatus() { return status_; }
 
 void Core::setStatus(CoreStatus newStatus) { status_ = newStatus; }
 
@@ -242,13 +228,12 @@ void Core::processException() {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
+    if (result.idleAfterSyscall) {
+      status_ = CoreStatus::idle;
+    }
   }
 
   exceptionGenerated_ = false;
-
-  if (result.idleAfterSyscall) {
-    status_ = CoreStatus::idle;
-  }
 }
 
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {

@@ -240,15 +240,14 @@ void Core::processException() {
   } else {
     pc_ = result.instructionAddress;
     applyStateChange(result.stateChange);
+    if (result.idleAfterSyscall) {
+      status_ = CoreStatus::idle;
+    }
   }
 
   exceptionGenerated_ = false;
 
   microOps_.pop();
-
-  if (result.idleAfterSyscall) {
-    status_ = CoreStatus::idle;
-  }
 }
 
 void Core::applyStateChange(const OS::ProcessStateChange& change) {
