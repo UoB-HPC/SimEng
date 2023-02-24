@@ -255,7 +255,7 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   }
 
   processes_[tid]->status_ = procStatus::waiting;
-  waitingProcs_.push(processes_.find(tid)->second);
+  waitingProcs_.push(processes_[tid]);
 
   return tid;
 }
