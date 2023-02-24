@@ -105,36 +105,44 @@ void SimOS::tick() {
                (scheduledProcs_.front()->status_ == procStatus::completed)) {
           scheduledProcs_.pop();
         }
-        if (!scheduledProcs_.empty()) {
-          // Get context of process that was executing on core before interrupt
-          // was signalled
-          OS::cpuContext currContext = core->getCurrentContext();
-          // Core's stored TID will equal -1 if no process has been previously
-          // scheduled (i.e. on first tick of simulation)
-          if (currContext.TID != -1) {
-            // Find the corresponding process in map
-            auto procItr = processes_.find(currContext.TID);
-            // If proccess can't be found then it has been terminated so no need
-            // to update context.
-            if (procItr != processes_.end()) {
-              auto currProc = procItr->second;
-              assert((currProc->status_ == procStatus::executing) &&
-                     "[SimEng:SimOS] Process updated when not in executing "
-                     "state.");
-              // Only update values which have changed
-              currProc->context_.pc = currContext.pc;
-              currProc->context_.regFile = currContext.regFile;
-              // Change status from Executing to Waiting
-              currProc->status_ = procStatus::waiting;
-              waitingProcs_.push(currProc);
-            }
+        // Get context of process that was executing on core before interrupt
+        // was signalled
+        OS::cpuContext currContext = core->getCurrentContext();
+        // Core's stored TID will equal -1 if no process has been previously
+        // scheduled (i.e. on first tick of simulation)
+        if (currContext.TID != -1) {
+          // Find the corresponding process in map
+          auto procItr = processes_.find(currContext.TID);
+          // If proccess can't be found then it has been terminated so no need
+          // to update context.
+          if (procItr != processes_.end()) {
+            auto currProc = procItr->second;
+            assert((currProc->status_ == procStatus::executing) &&
+                   "[SimEng:SimOS] Process updated when not in executing "
+                   "state.");
+            // Only update values which have changed
+            currProc->context_.pc = currContext.pc;
+            currProc->context_.regFile = currContext.regFile;
+            // Change status from Executing to Waiting
+            currProc->status_ = procStatus::waiting;
+            waitingProcs_.push(currProc);
           }
+        }
+        if (!scheduledProcs_.empty()) {
           // Schedule new process on core
           core->schedule(scheduledProcs_.front()->context_);
           // Update newly scheduled process' status
           scheduledProcs_.front()->status_ = procStatus::executing;
           // Remove process from waiting queue
           scheduledProcs_.pop();
+        } else if (!waitingProcs_.empty()) {
+          // If nothing inside scheduledProcs_, check if there are any processes
+          // inside waitingProcs which can jump ahead
+          core->schedule(waitingProcs_.front()->context_);
+          // Update newly scheduled process' status
+          waitingProcs_.front()->status_ = procStatus::executing;
+          // Remove process from waiting queue
+          waitingProcs_.pop();
         }
         break;
       }
@@ -244,17 +252,8 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
         static_cast<uint64_t>(0b10100), 8};
   }
 
-  // If this is the initial process (tid = 0) then add to the scheduledProcs_
-  // queue as only processes in scheduledProcs_ can be scheduled onto an idle
-  // core (all cores begin in an idle state).
-  // Otherwise, add the new process to the waitingProcs_ queue.
-  if (tid == 0) {
-    processes_[tid]->status_ = procStatus::scheduled;
-    scheduledProcs_.push(processes_[tid]);
-  } else {
-    processes_[tid]->status_ = procStatus::waiting;
-    waitingProcs_.push(processes_[tid]);
-  }
+  processes_[tid]->status_ = procStatus::waiting;
+  waitingProcs_.push(processes_.find(tid)->second);
 
   return tid;
 }
