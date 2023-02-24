@@ -28,7 +28,7 @@ typedef std::function<void(std::vector<char> data, uint64_t, size_t)>
 // Forward declaration for SimOS.
 class SimOS;
 
-enum procStatus { waiting, executing, completed, scheduled };
+enum procStatus { waiting, executing, completed, scheduled, sleeping };
 
 /** Struct of a CPU context used for context switching. */
 struct cpuContext {

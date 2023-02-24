@@ -49,6 +49,25 @@ static constexpr int SIMENG_MAP_FIXED = 0x10;
 
 }  // namespace flags
 }  // namespace mmap
+
+namespace futex {
+namespace futexop {
+/***/
+static constexpr int SIMENG_FUTEX_PRIVATE_FLAG = 128;
+
+/***/
+static constexpr int SIMENG_FUTEX_WAIT = 0;
+
+/***/
+static constexpr int SIMENG_FUTEX_WAKE = 1;
+
+/***/
+static constexpr int SIMENG_FUTEX_WAKE_PRIVATE =
+    (SIMENG_FUTEX_WAKE | SIMENG_FUTEX_PRIVATE_FLAG);
+
+}  // namespace futexop
+}  // namespace futex
+
 }  // namespace syscalls
 
 // Currently only the top 4 bits are used to signal a fault with addresses. This

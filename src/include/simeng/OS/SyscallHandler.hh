@@ -3,6 +3,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <linux/futex.h>
 #include <sys/ioctl.h>
 #include <sys/resource.h>
 #include <sys/stat.h>
@@ -14,12 +15,15 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <list>
 #include <memory>
 #include <queue>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "simeng/Elf.hh"
@@ -32,6 +36,28 @@ static constexpr uint16_t PATH_MAX_LEN = 4096;
 
 namespace simeng {
 namespace OS {
+
+/***/
+enum class FutexStatus : uint8_t { FUTEX_SLEEPING, FUTEX_AWAKE };
+
+/***/
+struct FutexInfo {
+  /***/
+  uint32_t faddr = 0;
+
+  /***/
+  std::shared_ptr<Process> process = nullptr;
+
+  /***/
+  FutexStatus status = FutexStatus::FUTEX_SLEEPING;
+
+  /***/
+  FutexInfo() {}
+
+  /***/
+  FutexInfo(uint32_t uaddr, std::shared_ptr<Process> proc, FutexStatus sts)
+      : faddr(uaddr), process(proc), status(sts) {}
+};
 
 // Forward declare SimOS to resolve the circular dependency.
 class SimOS;
@@ -352,6 +378,11 @@ class SyscallHandler {
   /** writev syscall: write buffers to a file. */
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
+  /** futex syscall: mutex like thread scheduling in the kernel space. */
+  int64_t futex(uint32_t uaddr, int futex_op, uint32_t val,
+                const struct timespec* timeout = nullptr, uint32_t uaddr2 = 0,
+                uint32_t val3 = 0);
+
  private:
   /** Returns the correct dirFd depending on the pathname and dirFd given to
    * syscall. */
@@ -381,6 +412,9 @@ class SyscallHandler {
 
   /** A data buffer used for reading data from memory. */
   std::vector<char> dataBuffer_;
+
+  /***/
+  std::unordered_map<uint64_t, std::list<FutexInfo>> futexTable_;
 };
 
 }  // namespace OS

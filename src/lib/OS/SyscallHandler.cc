@@ -1,5 +1,7 @@
 #include "simeng/OS/SyscallHandler.hh"
 
+#include <cstdint>
+
 #include "simeng/OS/SimOS.hh"
 
 namespace simeng {
@@ -1319,6 +1321,72 @@ int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
   }
   int64_t hfd = entry.getFd();
   return ::writev(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
+}
+
+int64_t SyscallHandler::futex(uint32_t uaddr, int futex_op, uint32_t val,
+                              const struct timespec* timeout, uint32_t uaddr2,
+                              uint32_t val3) {
+  int wake = futex_op & syscalls::futex::futexop::SIMENG_FUTEX_WAKE;
+  int wakePrivate =
+      futex_op & syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE;
+  int wait = futex_op & syscalls::futex::futexop::SIMENG_FUTEX_WAIT;
+  // Get the process associated with the thread id.
+  const auto tid = currentInfo_.threadId;
+  auto process = OS_->getProcess(tid);
+  // Find the FutexInfo object associated with the thread group.
+  const auto tgid = process->getTGID();
+  auto ftableItr = futexTable_.find(tgid);
+  if (wait) {
+    // Translate the virtual address of the futex.
+    uint64_t paddr = OS_->handleVAddrTranslation(uaddr, 0);
+    uint64_t faultCode = masks::faults::getFaultCode(paddr);
+    if (faultCode & masks::faults::pagetable::FAULT) {
+      std::cout << "Fault encountered in uaddr translation in futex syscall"
+                << std::endl;
+      std::exit(1);
+    }
+    // Atomically get the value at the address specified by the futex.
+    std::vector<char> data = memory_->getUntimedData(paddr, sizeof(uint32_t));
+    uint32_t futexWord{};
+    std::memcpy(&futexWord, data.data(), sizeof(uint32_t));
+    // As per the linux futex specification, if the value of the futex word is
+    // not equal to the value specified in the arguments, the syscall should
+    // exit with a failure value (-1).
+    // Source: https://man7.org/linux/man-pages/man2/futex.2.html
+    if (val != futexWord) {
+      return -1;
+    }
+    if (ftableItr == futexTable_.end()) {
+      ftableItr = futexTable_.insert({tgid, std::list<FutexInfo>()}).first;
+    }
+    std::list<FutexInfo> list = ftableItr->second;
+    FutexInfo f(uaddr, process, FutexStatus::FUTEX_SLEEPING);
+    list.push_back(f);
+    // TODO: Set the core to CoreStatus::idle so it can context switch to a new
+    // process.
+
+    // Set the process status to procStatus::sleeping so that it isn't
+    // added to the waitingProcs_ queue.
+    process->status_ = procStatus::sleeping;
+  }
+  if (wake || wakePrivate) {
+    if (ftableItr == futexTable_.end()) {
+      // Check correct return value when no threads are woken up.
+      return 0;
+    }
+    std::list<FutexInfo> list = ftableItr->second;
+    // Determine how many processes waiting on a futex should be woken up.
+    int32_t maxItr = val > list.size() ? list.size() : 1;
+    for (int32_t t = 0; t < maxItr; t++) {
+      auto futexInfo = list.front();
+      // Awaken the process by changing the status to procStatus::waiting and
+      // adding it to the waitingProcs_ queue.
+      futexInfo.process->status_ = procStatus::waiting;
+      OS_->addProcessToWaitQueue(futexInfo.process);
+      list.pop_front();
+    }
+  }
+  return 0;
 }
 
 }  // namespace OS
