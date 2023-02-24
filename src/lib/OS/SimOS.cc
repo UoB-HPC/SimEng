@@ -184,7 +184,8 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   nextFreeTID_++;
 
   if (!instructionBytes.empty()) {
-    // Construct Process from `instructionBytes`
+    // Construct Process from `instructionBytes`. As this is a new process, the
+    // TID = TGID.
     processes_.emplace(tid, std::make_shared<Process>(
                                 instructionBytes, this, regFileStructure, tid,
                                 tid, sendToMem, memory_->getMemorySize()));
@@ -339,11 +340,10 @@ void SimOS::terminateThreadHelper(std::shared_ptr<Process> proc) {
         break;
       }
     }
-  } else {
-    // Set status to complete so it can be removed from the relevant queue in
-    // tick()
-    proc->status_ = procStatus::completed;
   }
+  // Set status to complete so it can be removed from the relevant queue in
+  // tick()
+  proc->status_ = procStatus::completed;
 }
 
 }  // namespace OS
