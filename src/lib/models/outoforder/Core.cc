@@ -252,7 +252,7 @@ void Core::flushIfNeeded() {
 }
 
 CoreStatus Core::getStatus() {
-  // Core is considered to have halted when the fetch unit has halted, there
+  // Core is considered to be idle when the fetch unit has halted, there
   // are no uops at the head of any buffer, and no exception is currently
   // being handled.
   if (fetchUnit_.hasHalted() && !(reorderBuffer_.size() > 0) &&
@@ -275,7 +275,7 @@ CoreStatus Core::getStatus() {
         }
       }
       if (renameSlotEmpty) {
-        status_ = CoreStatus::halted;
+        status_ = CoreStatus::idle;
       }
     }
   }

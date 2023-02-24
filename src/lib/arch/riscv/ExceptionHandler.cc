@@ -99,7 +99,7 @@ bool ExceptionHandler::handleException() {
       case 293: {  // rseq
         core_.sendSyscall({syscallId,
                            core_.getCoreId(),
-                           0,
+                           core_.getCurrentTID(),
                            {registerFileSet.get(R0), registerFileSet.get(R1),
                             registerFileSet.get(R2), registerFileSet.get(R3),
                             registerFileSet.get(R4), registerFileSet.get(R5)},

@@ -38,7 +38,7 @@ TEST(OSTest, CreateSimOS) {
   EXPECT_GT(proc->context_.sp, 0);
   EXPECT_GT(proc->context_.regFile.size(), 0);
   // Check Initial Process' state
-  EXPECT_EQ(proc->status_, simeng::OS::procStatus::scheduled);
+  EXPECT_EQ(proc->status_, simeng::OS::procStatus::waiting);
 
   // Check syscallHandler created
   EXPECT_TRUE(OS.getSyscallHandler());

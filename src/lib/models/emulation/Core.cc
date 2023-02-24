@@ -48,7 +48,7 @@ void Core::tick() {
   procTicks_++;
 
   if (pc_ >= programByteLength_) {
-    status_ = CoreStatus::halted;
+    status_ = CoreStatus::idle;
     return;
   }
 

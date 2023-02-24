@@ -69,6 +69,7 @@ bool ExceptionHandler::handleException() {
       case 78:     // readlinkat
       case 79:     // newfstatat AKA fstatat
       case 80:     // fstat
+      case 93:     // exit
       case 94:     // exit_group
       case 96:     // set_tid_address
       case 98:     // futex
@@ -98,7 +99,7 @@ bool ExceptionHandler::handleException() {
       case 293: {  // rseq
         core_.sendSyscall({syscallId,
                            core_.getCoreId(),
-                           0,
+                           core_.getCurrentTID(),
                            {registerFileSet.get(R0), registerFileSet.get(R1),
                             registerFileSet.get(R2), registerFileSet.get(R3),
                             registerFileSet.get(R4), registerFileSet.get(R5)},

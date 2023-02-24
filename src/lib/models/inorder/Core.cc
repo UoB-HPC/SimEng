@@ -136,7 +136,7 @@ void Core::tick() {
 }
 
 CoreStatus Core::getStatus() {
-  // Core is considered to have halted when the fetch unit has halted, there are
+  // Core is considered to be idle when the fetch unit has halted, there are
   // no uops at the head of any buffer, and no exception is currently being
   // handled.
   bool decodePending = fetchToDecodeBuffer_.getHeadSlots()[0].size() > 0;
@@ -145,7 +145,7 @@ CoreStatus Core::getStatus() {
 
   if (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
       !executePending && exceptionGenerated_ == false) {
-    status_ = CoreStatus::halted;
+    status_ = CoreStatus::idle;
   }
 
   return status_;

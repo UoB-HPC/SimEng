@@ -370,17 +370,30 @@ void SyscallHandler::handleSyscall() {
     }
     case 93: {  // exit
       auto exitCode = currentInfo_.registerArguments[0].get<uint64_t>();
-      std::cout << "[SimEng:SyscallHandler] Received exit syscall: "
-                   "terminating with exit code "
-                << exitCode << std::endl;
-      return concludeSyscall({}, true);
+      uint64_t tid = currentInfo_.threadId;
+      // TODO: When `wait` is supported, return exitCode & 0xFF to parent
+      // TODO: Call all functions registered with `atexit` and `on_exit`
+      // TODO: Flush all open `stdio` streams when supported
+      // TODO: Remove files created by `tmpfile` when supported
+      OS_->terminateThread(tid);
+      std::cerr << "[SimEng:SyscallHandler] Received exit syscall on Thread "
+                << tid << ". Terminating with exit code " << exitCode
+                << std::endl;
+      return concludeSyscall({}, false, true);
     }
     case 94: {  // exit_group
       auto exitCode = currentInfo_.registerArguments[0].get<uint64_t>();
-      std::cout << "[SimEng:SyscallHandler] Received exit_group syscall: "
-                   "terminating with exit code "
-                << exitCode << std::endl;
-      return concludeSyscall({}, true);
+      uint64_t tgid = OS_->getProcess(currentInfo_.threadId)->getTGID();
+      // TODO: When `wait` is supported, return exitCode & 0xFF to parent
+      // TODO: Call all functions registered with `atexit` and `on_exit`
+      // TODO: Flush all open `stdio` streams when supported
+      // TODO: Remove files created by `tmpfile` when supported
+      OS_->terminateThreadGroup(tgid);
+      std::cerr << "[SimEng:SyscallHandler] Received exit_group syscall on "
+                   "Thread Group "
+                << tgid << ". Terminating with exit code " << exitCode
+                << std::endl;
+      return concludeSyscall({}, false, true);
     }
     case 96: {  // set_tid_address
       uint64_t ptr = currentInfo_.registerArguments[0].get<uint64_t>();
