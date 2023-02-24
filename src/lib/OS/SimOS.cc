@@ -263,6 +263,29 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   return tid;
 }
 
+int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
+                            uint64_t parentTidPtr, uint64_t tls,
+                            uint64_t childTidPtr, uint64_t tid) {
+  /** Supported Flags :
+   * CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_THREAD | CLONE_SYSVSEM |
+   * CLONE_SETTLS| CLONE_CHILD_CLEARTID | CLONE_SIGHAND | CLONE_PARENT_SETTID */
+
+  // Get TGID of calling process : as we require the CLONE_THREAD flag the new
+  // thread will be in the same thread group
+  uint64_t tgid = processes_[tid]->getTGID();
+
+  // Ignore CLONE_SIGHAND flag
+  /** CREATE NEW CLONE PROCESS AND DO THE STUFF HERE. */
+
+  if (flags && f_CLONE_PARENT_SETTID) {
+    // Store child tid at parentTidPtr
+    std::vector<char> dataVec('\0', sizeof(newChildTid));
+    std::memcpy(dataVec.data(), &newChildTid, sizeof(newChildTid));
+    memory_->sendUntimedData(dataVec, parentTidPtr, dataVec.size());
+  }
+  return -1;
+}
+
 const std::shared_ptr<Process>& SimOS::getProcess(uint64_t tid) {
   auto proc = processes_.find(tid);
   if (proc == processes_.end()) {

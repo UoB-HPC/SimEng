@@ -642,6 +642,19 @@ void SyscallHandler::handleSyscall() {
       stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {result}};
       break;
     }
+    case 220: {  // clone
+      // Given this is the raw system call, the `fn` and `arg` arguments of the
+      // `clone()` wrapper function are omitted
+      uint64_t flags = currentInfo_.registerArguments[0].get<uint64_t>();
+      uint64_t stackPtr = currentInfo_.registerArguments[1].get<uint64_t>();
+      uint64_t parentTidPtr = currentInfo_.registerArguments[2].get<uint64_t>();
+      uint64_t tls = currentInfo_.registerArguments[3].get<uint64_t>();
+      uint64_t childTidPtr = currentInfo_.registerArguments[4].get<uint64_t>();
+
+      int64_t result = clone(flags, stackPtr, parentTidPtr, tls, childTidPtr);
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {result}};
+      break;
+    }
     case 222: {  // mmap
       uint64_t addr = currentInfo_.registerArguments[0].get<uint64_t>();
       size_t length = currentInfo_.registerArguments[1].get<size_t>();
@@ -1149,6 +1162,33 @@ int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
   return OS_->getProcess(currentInfo_.threadId)
       ->getMemRegion()
       .unmapRegion(addr, length);
+}
+
+int64_t SyscallHandler::clone(uint64_t flags, uint64_t stackPtr,
+                              uint64_t parentTidPtr, uint64_t tls,
+                              uint64_t childTidPtr) {
+  // Check that required flags are present, if not trigger fatal error
+  uint64_t reqFlags = f_CLONE_VM | f_CLONE_FS | f_CLONE_FILES | f_CLONE_THREAD |
+                      f_CLONE_SYSVSEM;
+  if (flags && (reqFlags) != reqFlags) {
+    std::cerr << "[SimEng:SyscallHandler] One or more of the following flags "
+                 "required for clone not provided :" std::endl;
+    std::cerr
+        << "\tCLONE_VM | CLONE_FS | CLONE_FILES | CLONE_THREAD | CLONE_SYSVSEM"
+        << std::endl;
+    return -1;
+  }
+  // Must specify a child stack - won't support copy-on-write with parent
+  if (stackPtr == 0) {
+    std::cerr << "[SimEng:SyscallHandler] Must provide a child stack address "
+                 "to clone syscall." std::endl;
+    return -1;
+  }
+
+  int64_t newChildTid = OS_->cloneProcess(flags, parentTidPtr, stackPtr, tls,
+                                          childTidPtr, currentInfo_.threadId);
+
+  return newChildTid;
 }
 
 int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
