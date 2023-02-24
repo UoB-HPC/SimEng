@@ -92,6 +92,7 @@ bool ExceptionHandler::handleException() {
       case 210:    // shutdown
       case 214:    // brk
       case 215:    // munmap
+      case 220:    // clone
       case 222:    // mmap
       case 226:    // mprotect
       case 261:    // prlimit64
@@ -242,11 +243,15 @@ bool ExceptionHandler::concludeSyscall() {
         // Currently, only a single CPU bitmask is supported
         if (bitmask != 1) {
           printException();
-          std::cout
-              << "Unexpected CPU affinity mask returned in exception handler"
-              << std::endl;
+          std::cout << "[SimEng:SyscallHandler] Unexpected CPU affinity mask "
+                       "returned in exception handler"
+                    << std::endl;
         }
         break;
+      }
+      case 220: {
+        std::cout << "[SimEng:SyscallHandler] Unsupported Flags for syscall: "
+                  << syscallResult_.syscallId << std::endl;
       }
     }
     return fatal();
