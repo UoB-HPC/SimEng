@@ -347,6 +347,10 @@ void Core::processException() {
   }
 
   exceptionGenerated_ = false;
+
+  if (result.idleAfterSyscall) {
+    status_ = CoreStatus::idle;
+  }
 }
 
 void Core::applyStateChange(const OS::ProcessStateChange& change) {

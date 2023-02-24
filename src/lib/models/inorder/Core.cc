@@ -245,6 +245,10 @@ void Core::processException() {
   }
 
   exceptionGenerated_ = false;
+
+  if (result.idleAfterSyscall) {
+    status_ = CoreStatus::idle;
+  }
 }
 
 void Core::loadData(const std::shared_ptr<Instruction>& instruction) {

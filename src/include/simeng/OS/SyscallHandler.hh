@@ -150,6 +150,10 @@ struct SyscallResult {
    * core and it should therefore halt. */
   bool fatal = false;
 
+  /** Indicates whether the recieving core should go into an idle state after
+   * the syscall has concluded and all state changes have been processed. */
+  bool idleAfterSyscall = false;
+
   /** Id of the syscall to aid exception handler processing. */
   uint64_t syscallId = 0;
 
@@ -228,7 +232,8 @@ class SyscallHandler {
   /** Once the syscall is complete, conclude its execution by
    * constructing a SyscallResult and supplying it to the returnSyscall_
    * function. */
-  void concludeSyscall(const ProcessStateChange& change, bool fatal = false);
+  void concludeSyscall(const ProcessStateChange& change, bool fatal = false,
+                       bool idleAftersycall = false);
 
   /** Attempt to read a string of max length `maxLength` from address `address`
    * into the supplied buffer, starting from character `offset`. */

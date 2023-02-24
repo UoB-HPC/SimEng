@@ -138,7 +138,7 @@ bool ExceptionHandler::handleException() {
         return fatal();
     }
 
-    processSyscallResult({false, 0, 0, stateChange});
+    processSyscallResult({false, false, 0, 0, stateChange});
     return concludeSyscall();
   } else if (exception == InstructionException::StreamingModeUpdate ||
              exception == InstructionException::ZAregisterStatusUpdate ||
@@ -203,7 +203,7 @@ bool ExceptionHandler::handleException() {
 
     simeng::OS::ProcessStateChange stateChange = {
         simeng::OS::ChangeType::REPLACEMENT, regs, regValues};
-    processSyscallResult({false, 0, 0, stateChange});
+    processSyscallResult({false, false, 0, 0, stateChange});
     return concludeSyscall();
   }
 
@@ -252,7 +252,8 @@ bool ExceptionHandler::concludeSyscall() {
   }
 
   uint64_t nextInstructionAddress = instruction_->getInstructionAddress() + 4;
-  result_ = {false, nextInstructionAddress, syscallResult_.stateChange};
+  result_ = {false, syscallResult_.idleAfterSyscall, nextInstructionAddress,
+             syscallResult_.stateChange};
 
   resetState();
   return true;
@@ -336,7 +337,7 @@ void ExceptionHandler::printException() const {
 }
 
 bool ExceptionHandler::fatal() {
-  result_ = {true, 0, {}};
+  result_ = {true, false, 0, {}};
   resetState();
   return true;
 }

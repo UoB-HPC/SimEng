@@ -245,6 +245,10 @@ void Core::processException() {
   exceptionGenerated_ = false;
 
   microOps_.pop();
+
+  if (result.idleAfterSyscall) {
+    status_ = CoreStatus::idle;
+  }
 }
 
 void Core::applyStateChange(const OS::ProcessStateChange& change) {
