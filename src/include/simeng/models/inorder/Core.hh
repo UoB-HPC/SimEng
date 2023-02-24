@@ -31,6 +31,12 @@ class Core : public simeng::Core {
   /** Check the current status of the core. */
   CoreStatus getStatus() override;
 
+  /** Update the current status of the core. */
+  void setStatus(CoreStatus newStatus) override;
+
+  /** Get the TID of the Process the core is currently executing. */
+  uint64_t getCurrentTID() const override;
+
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const override;

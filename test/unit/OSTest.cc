@@ -12,7 +12,7 @@ TEST(OSTest, CreateSimOS) {
       "Timer-Frequency: 100, Micro-Operations: True, "
       "Vector-Length: 512, Streaming-Vector-Length: 512}, Process-Image: "
       "{Heap-Size: 10000, Stack-Size: 10000, Mmap-Size: 20000}, "
-      "Simulation-Memory: {Size: 50000}, CPU-Info: {Generate-Special-Dir: "
+      "Simulation-Memory: {Size: 100000}, CPU-Info: {Generate-Special-Dir: "
       "False}}");
   // Create the simulation memory
   const size_t memorySize =
@@ -21,7 +21,9 @@ TEST(OSTest, CreateSimOS) {
       std::make_shared<simeng::memory::SimpleMem>(memorySize);
 
   // Create the instance of the OS
-  simeng::OS::SimOS OS = simeng::OS::SimOS(DEFAULT_STR, {}, memory);
+  simeng::span<char> defaultPrg = simeng::span<char>(
+      reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
+  simeng::OS::SimOS OS = simeng::OS::SimOS(memory, defaultPrg);
 
   // Check default process created. Initial process TID = 0
   const std::shared_ptr<simeng::OS::Process> proc = OS.getProcess(0);
@@ -40,6 +42,16 @@ TEST(OSTest, CreateSimOS) {
 
   // Check syscallHandler created
   EXPECT_TRUE(OS.getSyscallHandler());
+
+  // Check terminateThread
+  OS.terminateThread(0);
+  EXPECT_EQ(OS.getNumProcesses(), 0);
+
+  // Check terminateThreadGroup
+  uint64_t procTid = OS.createProcess(defaultPrg);
+  EXPECT_EQ(procTid, 1);
+  OS.terminateThreadGroup(procTid);
+  EXPECT_EQ(OS.getNumProcesses(), 0);
 }
 
 }  // namespace

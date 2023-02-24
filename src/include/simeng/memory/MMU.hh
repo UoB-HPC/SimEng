@@ -16,7 +16,7 @@ typedef std::function<void(DataPacket)> sendResponseToMemInterface;
  * before the memory request is sent off to main memory. */
 class MMU {
  public:
-  MMU(std::shared_ptr<Mem> memory, VAddrTranslator fn, uint64_t tid = 0);
+  MMU(std::shared_ptr<Mem> memory, VAddrTranslator fn, uint64_t tid);
 
   /** Method used to buffer requests from the memory interface to memory. */
   void bufferRequest(DataPacket request,
