@@ -500,7 +500,7 @@ int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
   return 0;
 }
 int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
-  os_->getProcess(0)->clearChildTid = tidptr;
+  os_->getProcess(0)->clearChildTid_ = tidptr;
   return 0;
 }
 
