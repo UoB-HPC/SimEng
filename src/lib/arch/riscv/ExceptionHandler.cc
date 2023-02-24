@@ -10,6 +10,14 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
+/** Helper constants for RISC-V general-purpose registers. */
+static const Register R0 = {RegisterType::GENERAL, 10};
+static const Register R1 = {RegisterType::GENERAL, 11};
+static const Register R2 = {RegisterType::GENERAL, 12};
+static const Register R3 = {RegisterType::GENERAL, 13};
+static const Register R4 = {RegisterType::GENERAL, 14};
+static const Register R5 = {RegisterType::GENERAL, 15};
+
 ExceptionHandler::ExceptionHandler(const Core& core) : core_(core) {}
 
 bool ExceptionHandler::tick() {
@@ -45,7 +53,7 @@ bool ExceptionHandler::handleException() {
     auto syscallId =
         registerFileSet.get({RegisterType::GENERAL, 17}).get<uint64_t>();
 
-    simeng::OS::ProcessStateChange stateChange;
+    simeng::OS::ProcessStateChange stateChange = {};
     switch (syscallId) {
       case 29:     // ioctl
       case 46:     // ftruncate

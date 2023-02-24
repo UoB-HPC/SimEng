@@ -128,6 +128,20 @@ struct ProcessStateChange {
 
   /** Values to write to memory */
   std::vector<RegisterValue> memoryAddressValues;
+
+  /** Default copy constructor for ProcessStateChange. */
+  ProcessStateChange(const ProcessStateChange& res) = default;
+
+  /** Default move constructor for ProcessStateChange to enable copy elision
+   * whenever it is possible. */
+  ProcessStateChange(ProcessStateChange&& res) = default;
+
+  /** Default copy assignment operator for ProcessStateChange. */
+  ProcessStateChange& operator=(const ProcessStateChange& res) = default;
+
+  /** Default move assignment operator for ProcessStateChange to enable copy
+   * elision whenever it is possible. */
+  ProcessStateChange& operator=(ProcessStateChange&& res) = default;
 };
 
 /** This result from a handled syscall. */
@@ -353,9 +367,6 @@ class SyscallHandler {
 
   /** The SyscallInfo of the syscall currently being handled. */
   SyscallInfo currentInfo_ = {};
-
-  /** A function to call to resume handling an exception. */
-  std::function<void()> resumeHandling_;
 
   /** Path to the root of the replacement special files. */
   const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";

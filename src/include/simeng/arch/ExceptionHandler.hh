@@ -21,7 +21,7 @@ struct ExceptionResult {
   uint64_t instructionAddress;
 
   /** Any changes to apply to the process state. */
-  simeng::OS::ProcessStateChange stateChange;
+  simeng::OS::ProcessStateChange stateChange = {};
 };
 
 /** An abstract multi-cycle exception handler interface. Should be ticked each

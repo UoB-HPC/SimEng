@@ -22,11 +22,6 @@ constexpr uint32_t bits(uint32_t value, uint8_t start, uint8_t width) {
   return ((value >> start) & ((1 << width) - 1));
 }
 
-// Generate a general purpose register identifier with tag `tag`
-constexpr Register genReg(uint16_t tag) { return {RegisterType::GENERAL, tag}; }
-// Generate a NZCV register identifier
-constexpr Register nzcvReg() { return {RegisterType::NZCV, 0}; }
-
 // Sign-extend a bitstring of length `currentLength`
 constexpr int32_t signExtend(uint32_t value, int currentLength) {
   uint32_t mask = (0xFFFFFFFF) << currentLength;

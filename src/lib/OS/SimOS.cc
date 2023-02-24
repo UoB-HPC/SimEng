@@ -365,9 +365,5 @@ void SimOS::sendSyscallResult(const SyscallResult result) const {
   cores_[result.coreId]->receiveSyscallResult(result);
 }
 
-HostFileMMap SimOS::mmapHostFd(int fd, size_t len, off_t offset) {
-  return hfmmap_->mapfd(fd, len, offset);
-}
-
 }  // namespace OS
 }  // namespace simeng

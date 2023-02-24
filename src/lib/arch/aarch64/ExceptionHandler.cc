@@ -10,6 +10,14 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
+/** Helper constants for AArch64 general-purpose registers. */
+static const Register R0 = {RegisterType::GENERAL, 0};
+static const Register R1 = {RegisterType::GENERAL, 1};
+static const Register R2 = {RegisterType::GENERAL, 2};
+static const Register R3 = {RegisterType::GENERAL, 3};
+static const Register R4 = {RegisterType::GENERAL, 4};
+static const Register R5 = {RegisterType::GENERAL, 5};
+
 ExceptionHandler::ExceptionHandler(const Core& core) : core_(core) {}
 
 bool ExceptionHandler::tick() {
@@ -45,7 +53,7 @@ bool ExceptionHandler::handleException() {
     auto syscallId =
         registerFileSet.get({RegisterType::GENERAL, 8}).get<uint64_t>();
 
-    simeng::OS::ProcessStateChange stateChange;
+    simeng::OS::ProcessStateChange stateChange = {};
     switch (syscallId) {
       case 29:     // ioctl
       case 46:     // ftruncate

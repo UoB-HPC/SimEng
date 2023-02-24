@@ -76,14 +76,6 @@ class ExceptionHandler : public simeng::arch::ExceptionHandler {
 
   /** The results of the exception. */
   ExceptionResult result_;
-
-  /** Helper constants for RISC-V general-purpose registers. */
-  static constexpr Register R0 = {RegisterType::GENERAL, 10};
-  static constexpr Register R1 = {RegisterType::GENERAL, 11};
-  static constexpr Register R2 = {RegisterType::GENERAL, 12};
-  static constexpr Register R3 = {RegisterType::GENERAL, 13};
-  static constexpr Register R4 = {RegisterType::GENERAL, 14};
-  static constexpr Register R5 = {RegisterType::GENERAL, 15};
 };
 
 }  // namespace riscv

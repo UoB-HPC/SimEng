@@ -118,10 +118,6 @@ class SimOS {
    * core. */
   void sendSyscallResult(const SyscallResult result) const;
 
-  /** Function to expose the mapfd function within the HostBackedFileMMaps
-   * `hfmmap_` class. */
-  HostFileMMap mmapHostFd(int fd, size_t len, off_t offset);
-
   /** A getter for the receiveSyscall() function. */
   arch::sendSyscallToHandler getSyscallReceiver() {
     return [this](auto SyscallInfo) { receiveSyscall(SyscallInfo); };

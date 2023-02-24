@@ -13,22 +13,20 @@ SyscallHandler::SyscallHandler(SimOS* OS,
       supportedSpecialFiles_.end(),
       {"/proc/cpuinfo", "proc/stat", "/sys/devices/system/cpu",
        "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
-
-  resumeHandling_ = [this]() { handleSyscall(); };
 }
 
 void SyscallHandler::receiveSyscall(SyscallInfo info) {
   syscallQueue_.push(info);
 }
 
-void SyscallHandler::tick() { resumeHandling_(); }
+void SyscallHandler::tick() {
+  if (!syscallQueue_.empty()) handleSyscall();
+}
 
 void SyscallHandler::handleSyscall() {
-  if (syscallQueue_.empty()) return;
-
   // Update currentInfo_
   currentInfo_ = syscallQueue_.front();
-  ProcessStateChange stateChange;
+  ProcessStateChange stateChange = {};
 
   switch (currentInfo_.syscallId) {
     case 29: {  // ioctl
@@ -712,7 +710,6 @@ void SyscallHandler::concludeSyscall(const ProcessStateChange& change,
   // Remove syscall from queue and reset handler to default state
   syscallQueue_.pop();
   dataBuffer_ = {};
-  resumeHandling_ = [this]() { handleSyscall(); };
 }
 
 void SyscallHandler::readLinkAt(std::string path, size_t length) {
