@@ -33,6 +33,9 @@ static constexpr uint16_t PATH_MAX_LEN = 4096;
 namespace simeng {
 namespace OS {
 
+// Forward declare SimOS to resolve the circular dependency.
+class SimOS;
+
 /** Fixed-width definition of `stat`.
  * Defined by Linux kernel in include/uapi/asm-generic/stat.h */
 struct stat {
@@ -190,22 +193,12 @@ struct SyscallInfo {
   SyscallInfo& operator=(SyscallInfo&& info) = default;
 };
 
-/** Typedef for callback function used to send the result of a syscall to an
- * associated core. */
-typedef std::function<void(const simeng::OS::SyscallResult)>
-    returnSyscallResult;
-
 /** A Linux kernel syscall emulation implementation, which mimics the responses
    to Linux system calls. */
 class SyscallHandler {
  public:
   /** Create new SyscallHandler object. */
-  SyscallHandler(
-      const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes,
-      std::shared_ptr<simeng::memory::Mem> memory,
-      returnSyscallResult returnSyscall,
-      std::function<uint64_t()> getSystemTime, VAddrTranslator vAddrTranslation,
-      mmapFileOnHost mmapHostFd);
+  SyscallHandler(SimOS* OS, std::shared_ptr<simeng::memory::Mem> memory);
 
   /** Tick the syscall handler to carry out any oustanding syscalls. */
   void tick();
@@ -349,26 +342,17 @@ class SyscallHandler {
    * to point to the SimEng equivalent. */
   std::string getSpecialFile(const std::string filename);
 
-  /** The user-space processes running above the kernel. */
-  const std::unordered_map<uint64_t, std::shared_ptr<Process>>& processes_;
+  /** Pointer reference to SimOS object. */
+  SimOS* OS_ = nullptr;
 
   /** A shared pointer to the simulation memory. */
   std::shared_ptr<simeng::memory::Mem> memory_;
 
-  /** A callback function to send a syscall result back to a core. */
-  returnSyscallResult returnSyscall_;
-
-  /** A callback function to get the system time. */
-  std::function<uint64_t()> getSystemTime_;
-
-  /** A callback function to translate a virtual address. */
-  VAddrTranslator vAddrTranslation_;
-
-  /** A callback function to a HostBackedFileMMaps instance's mapfd function. */
-  mmapFileOnHost mmapHostFd_;
-
   /** A queue to hold all outstanding syscalls. */
   std::queue<SyscallInfo> syscallQueue_;
+
+  /** The SyscallInfo of the syscall currently being handled. */
+  SyscallInfo currentInfo_ = {};
 
   /** A function to call to resume handling an exception. */
   std::function<void()> resumeHandling_;

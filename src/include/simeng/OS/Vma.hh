@@ -123,10 +123,6 @@ class HostBackedFileMMaps {
   std::vector<HostFileMMap> hostVec_;
 };
 
-/** Typedef for callback function used to mmap a file onto the host through the
- * HostBackedFileMMaps::mapfd function. */
-typedef std::function<HostFileMMap(int, size_t, off_t)> mmapFileOnHost;
-
 /** class representing a vm_area_struct in linux. Each Virtual Memory Area (VMA)
  * describes a range of virtual addresses that are mapped to memory. A VMA can
  * also have a file assosciated with it; accessing an address from such a VMA
