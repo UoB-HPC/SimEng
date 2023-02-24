@@ -4,6 +4,8 @@
 #include "simeng/Config.hh"
 #include "simeng/Core.hh"
 #include "simeng/MemoryInterface.hh"
+#include "simeng/arch/aarch64/ExceptionHandler.hh"
+#include "simeng/arch/riscv/ExceptionHandler.hh"
 #include "simeng/pipeline/DecodeUnit.hh"
 #include "simeng/pipeline/DispatchIssueUnit.hh"
 #include "simeng/pipeline/ExecuteUnit.hh"
@@ -30,6 +32,7 @@ class Core : public simeng::Core {
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        const arch::Architecture& isa, BranchPredictor& branchPredictor,
        pipeline::PortAllocator& portAllocator,
+       arch::sendSyscallToHandler handleSyscall,
        YAML::Node& config = Config::get());
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
@@ -46,15 +49,22 @@ class Core : public simeng::Core {
   /** Get the TID of the Process the core is currently executing. */
   uint64_t getCurrentTID() const override;
 
+  /** Get the unqiue id of the core. */
+  uint64_t getCoreId() const override;
+
   /** Retrieve the architectural register file set. */
   const ArchitecturalRegisterFileSet& getArchitecturalRegisterFileSet()
       const override;
 
+  /** Send a syscall to the simulated Operating System's syscall handler. */
+  void sendSyscall(OS::SyscallInfo syscallInfo) const override;
+
+  /** This method receives the result of an initiated syscall and communicates
+   * the result to the exception handler for post-processing. */
+  void receiveSyscallResult(const OS::SyscallResult result) const override;
+
   /** Retrieve the number of instructions retired. */
   uint64_t getInstructionsRetiredCount() const override;
-
-  /** Retrieve the simulated nanoseconds elapsed since the core started. */
-  uint64_t getSystemTimer() const override;
 
   /** Generate a map of statistics to report. */
   std::map<std::string, std::string> getStats() const override;
@@ -65,8 +75,8 @@ class Core : public simeng::Core {
   /** Signals core to stop executing the current process.
    * Return Values :
    *  - True  : if succeeded in signaling interrupt
-   *  - False : interrupt not scheduled due to on-going exception or system call
-   */
+   *  - False : interrupt not scheduled due to on-going exception or system
+   * call */
   bool interrupt() override;
 
   /** Retrieve the number of ticks that have elapsed whilst executing the
@@ -83,11 +93,22 @@ class Core : public simeng::Core {
   /** Handle an exception raised during the cycle. */
   void handleException();
 
-  /** Process the active exception handler. */
-  void processExceptionHandler();
+  /** Process the active exception. */
+  void processException();
+
+  /** Create an instance of the exception handler based on the chosen
+   * architecture. */
+  void exceptionHandlerFactory(std::string isa) {
+    if (isa == "AArch64")
+      exceptionHandler_ =
+          std::make_unique<simeng::arch::aarch64::ExceptionHandler>(*this);
+    else if (isa == "rv64")
+      exceptionHandler_ =
+          std::make_unique<simeng::arch::riscv::ExceptionHandler>(*this);
+  }
 
   /** Apply changes to the process state. */
-  void applyStateChange(const arch::ProcessStateChange& change);
+  void applyStateChange(const OS::ProcessStateChange& change);
 
   /** Inspect units and flush pipelines if required. */
   void flushIfNeeded();
@@ -95,10 +116,18 @@ class Core : public simeng::Core {
   /** The current state the core is in. */
   CoreStatus status_ = CoreStatus::idle;
 
+  /** Unique identifier for the core. */
+  // TODO: Unqiue IDs need to be assigned to the cores when we go
+  // multicore
+  uint64_t coreId_ = 0;
+
+  /** A reference to the core's architecture. */
   const arch::Architecture& isa_;
 
+  /** The layout of the physical register file sets. */
   const std::vector<simeng::RegisterFileStructure> physicalRegisterStructures_;
 
+  /** The size of each regsiter file. */
   const std::vector<uint16_t> physicalRegisterQuantities_;
 
   /** The core's register file set. */
@@ -163,11 +192,8 @@ class Core : public simeng::Core {
    * issued from based on a defined algorithm. */
   pipeline::PortAllocator& portAllocator_;
 
-  /** Clock frequency of core */
-  unsigned int clockFrequency_ = 2.5 * 1e9;
-
-  /** Core commit width; maximum number of instruction that can be committed per
-   * cycle. */
+  /** Core commit width; maximum number of instruction that can be committed
+   * per cycle. */
   unsigned int commitWidth_ = 6;
 
   /** The number of times the pipeline has been flushed. */
@@ -180,14 +206,19 @@ class Core : public simeng::Core {
    * process. */
   uint64_t procTicks_ = 0;
 
-  /** Whether an exception was generated during the cycle. */
+  /** Indicates whether an exception was generated during the cycle. */
   bool exceptionGenerated_ = false;
 
   /** A pointer to the instruction responsible for generating the exception. */
   std::shared_ptr<Instruction> exceptionGeneratingInstruction_;
 
   /** The active exception handler. */
-  std::shared_ptr<arch::ExceptionHandler> exceptionHandler_;
+  std::unique_ptr<arch::ExceptionHandler> exceptionHandler_;
+
+  /** Callback function passed to the Core class to communicate a syscall
+   * generated by the Core's exception handler to the simulated Operating
+   * System's syscall handler. */
+  arch::sendSyscallToHandler handleSyscall_;
 
   /** The number of ticks whilst in an idle state. */
   uint64_t idle_ticks_ = 0;

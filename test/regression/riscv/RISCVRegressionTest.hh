@@ -71,9 +71,9 @@ class RISCVRegressionTest : public RegressionTest {
   /** Generate a default YAML-formatted configuration. */
   YAML::Node generateConfig() const override;
 
-  /** Create an ISA instance from a syscall handler. */
-  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      std::shared_ptr<simeng::OS::SyscallHandler> sysHandler) const override;
+  /** Create an ISA instance. */
+  virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture()
+      const override;
 
   /** Get the value of a general purpose register. */
   template <typename T>

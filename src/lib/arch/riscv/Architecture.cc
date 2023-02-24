@@ -14,8 +14,7 @@ namespace riscv {
 std::unordered_map<uint32_t, Instruction> Architecture::decodeCache;
 std::forward_list<InstructionMetadata> Architecture::metadataCache;
 
-Architecture::Architecture(std::shared_ptr<OS::SyscallHandler> syscallHandler)
-    : syscallHandler_(syscallHandler) {
+Architecture::Architecture() {
   YAML::Node& config = Config::get();
   cs_err n = cs_open(CS_ARCH_RISCV, CS_MODE_RISCV64, &capstoneHandle);
   if (n != CS_ERR_OK) {
@@ -205,13 +204,6 @@ executionInfo Architecture::getExecutionInfo(Instruction& insn) const {
     if (overrideInfo.ports.size()) exeInfo.ports = overrideInfo.ports;
   }
   return exeInfo;
-}
-
-std::shared_ptr<arch::ExceptionHandler> Architecture::handleException(
-    const std::shared_ptr<simeng::Instruction>& instruction, const Core& core,
-    MemoryInterface& memory) const {
-  return std::make_shared<ExceptionHandler>(instruction, core, memory,
-                                            syscallHandler_);
 }
 
 std::vector<RegisterFileStructure> Architecture::getRegisterFileStructures()

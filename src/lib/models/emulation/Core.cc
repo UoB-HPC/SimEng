@@ -6,16 +6,18 @@ namespace simeng {
 namespace models {
 namespace emulation {
 
-// TODO: Expose as config option
-const unsigned int clockFrequency = 2.5 * 1e9;
-
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           const arch::Architecture& isa)
+           const arch::Architecture& isa,
+           arch::sendSyscallToHandler handleSyscall)
     : instructionMemory_(instructionMemory),
       dataMemory_(dataMemory),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
-      architecturalRegisterFileSet_(registerFileSet_) {}
+      architecturalRegisterFileSet_(registerFileSet_),
+      handleSyscall_(handleSyscall) {
+  // Create exception handler based on chosen architecture
+  exceptionHandlerFactory(Config::get()["Core"]["ISA"].as<std::string>());
+}
 
 void Core::tick() {
   ticks_++;
@@ -28,7 +30,7 @@ void Core::tick() {
     case CoreStatus::switching:
       // Ensure there are no instructions left to execute and there's no active
       // exception before context switching.
-      if (microOps_.empty() && (exceptionHandler_ == nullptr)) {
+      if (microOps_.empty() && (exceptionGenerated_ == false)) {
         macroOp_.clear();
         pendingReads_ = 0;
         previousAddresses_.clear();
@@ -50,8 +52,8 @@ void Core::tick() {
     return;
   }
 
-  if (exceptionHandler_ != nullptr) {
-    processExceptionHandler();
+  if (exceptionGenerated_) {
+    processException();
     return;
   }
 
@@ -208,13 +210,15 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
 }
 
 void Core::handleException(const std::shared_ptr<Instruction>& instruction) {
-  exceptionHandler_ = isa_.handleException(instruction, *this, dataMemory_);
-  processExceptionHandler();
+  exceptionGenerated_ = true;
+  exceptionHandler_->registerException(instruction);
+  processException();
 }
 
-void Core::processExceptionHandler() {
-  assert(exceptionHandler_ != nullptr &&
-         "Attempted to process an exception handler that wasn't present");
+void Core::processException() {
+  assert(exceptionGenerated_ != false &&
+         "[SimEng:Core] Attempted to process an exception handler that wasn't "
+         "active");
   if (dataMemory_.hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
@@ -238,16 +242,15 @@ void Core::processExceptionHandler() {
     applyStateChange(result.stateChange);
   }
 
-  // Clear the handler
-  exceptionHandler_ = nullptr;
+  exceptionGenerated_ = false;
 
   microOps_.pop();
 }
 
-void Core::applyStateChange(const arch::ProcessStateChange& change) {
+void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // Update registers in accoradance with the ProcessStateChange type
   switch (change.type) {
-    case arch::ChangeType::INCREMENT: {
+    case OS::ChangeType::INCREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(
             change.modifiedRegisters[i],
@@ -256,7 +259,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    case arch::ChangeType::DECREMENT: {
+    case OS::ChangeType::DECREMENT: {
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(
             change.modifiedRegisters[i],
@@ -265,7 +268,7 @@ void Core::applyStateChange(const arch::ProcessStateChange& change) {
       }
       break;
     }
-    default: {  // arch::ChangeType::REPLACEMENT
+    default: {  // OS::ChangeType::REPLACEMENT
       // If type is ChangeType::REPLACEMENT, set new values
       for (size_t i = 0; i < change.modifiedRegisters.size(); i++) {
         registerFileSet_.set(change.modifiedRegisters[i],
@@ -290,17 +293,23 @@ void Core::setStatus(CoreStatus newStatus) { status_ = newStatus; }
 
 uint64_t Core::getCurrentTID() const { return currentTID_; }
 
+uint64_t Core::getCoreId() const { return coreId_; }
+
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
     const {
   return architecturalRegisterFileSet_;
 }
 
-uint64_t Core::getInstructionsRetiredCount() const {
-  return instructionsExecuted_;
+void Core::sendSyscall(OS::SyscallInfo syscallInfo) const {
+  handleSyscall_(syscallInfo);
 }
 
-uint64_t Core::getSystemTimer() const {
-  return ticks_ / (clockFrequency / 1e9);
+void Core::receiveSyscallResult(const OS::SyscallResult result) const {
+  exceptionHandler_->processSyscallResult(result);
+}
+
+uint64_t Core::getInstructionsRetiredCount() const {
+  return instructionsExecuted_;
 }
 
 std::map<std::string, std::string> Core::getStats() const {
@@ -326,7 +335,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
 }
 
 bool Core::interrupt() {
-  if (exceptionHandler_ == nullptr) {
+  if (exceptionGenerated_ == false) {
     status_ = CoreStatus::switching;
     contextSwitches_++;
     return true;
