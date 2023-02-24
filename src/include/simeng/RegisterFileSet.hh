@@ -19,6 +19,8 @@ struct Register {
   /** Default Constructor. */
   Register(){};
 
+  /** Constructor for `Register` with a given register file type and register
+   * tag. */
   Register(uint8_t type, uint16_t tag) : type(type), tag(tag){};
 
   /** Check for equality of two register identifiers. */

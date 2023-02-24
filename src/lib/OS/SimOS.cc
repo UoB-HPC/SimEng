@@ -28,8 +28,10 @@ SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem,
 // The Private constructor
 SimOS::SimOS(std::shared_ptr<simeng::memory::Mem> mem)
     : memory_(mem),
-      syscallHandler_(std::make_shared<SyscallHandler>(this, mem)),
       pageFrameAllocator_(PageFrameAllocator(mem->getMemorySize())) {
+  // Create tge syscall handler
+  syscallHandler_ = std::make_shared<SyscallHandler>(this, mem);
+
   // Create the Special Files directory if indicated to do so in Config file
   if (Config::get()["CPU-Info"]["Generate-Special-Dir"].as<bool>() == true)
     createSpecialFileDirectory();
