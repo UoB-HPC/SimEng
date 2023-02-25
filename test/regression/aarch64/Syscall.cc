@@ -872,6 +872,50 @@ TEST_P(Syscall, ftruncate) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(23), 0);
 }
 
+TEST_P(Syscall, sysinfo) {
+  RUN_AARCH64(R"(
+    # Get heap address
+    mov x0, 0
+    mov x8, 214
+    svc #0
+    mov x20, x0
+
+    mov x1, #10000
+    mov x2, #10
+    mul x1, x1, x2
+
+    .loop:
+    subs x1, x1, #1
+    b.ne .loop
+
+    # syscall(addr)
+    mov x0, x20
+    mov x8, #179
+    svc #0
+    mov x21, x0
+  )");
+
+  // Check returned 0
+  EXPECT_EQ(getGeneralRegister<uint64_t>(21), 0);
+
+  // Check outputted sysinfo struct
+  uint64_t paddr = process_->translate(process_->getHeapStart());
+  // The size of the sysinfo struct within SimEng is 102 bytes
+  char reference[102] = {0};
+  // Most values in the returned sysinfo struct will be 0, excluding:
+  // - totalram = 500000 (0x07A120)
+  // - procs = 1 (0x01)
+  // Populate reference with those non-zero entries
+  reference[32] = 0x20;
+  reference[33] = 0xA1;
+  reference[34] = 0x07;
+  reference[80] = 0x01;
+  auto data = memory_->getUntimedData(paddr, 102);
+  for (int i = 0; i < 102; i++) {
+    EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
+  }
+}
+
 INSTANTIATE_TEST_SUITE_P(
     AArch64, Syscall,
     ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),

@@ -539,7 +539,41 @@ void SyscallHandler::handleSyscall() {
       break;
     }
     case 179: {  // sysinfo
+      // Sysinfo populates a sysinfo struct containing system information.
+      // Currently, the majority of the sysinfo struct entries will be 0 for
+      // SimEng's emulation of the syscall, therefore, we begin with a zero'ed
+      // out std::array, `sysInfoVals`, to represent this struct. The mapping
+      // between struct and `sysInfoVals` entries is as followed:
+      //
+      // {uptime, loads[0], loads[1], loads[2], totalram,
+      // freeram, sharedram, bufferram, totalswap, freeswap,
+      // procs,totalhigh, freehigh, mem_unit}
+      //
+      // (https://man7.org/linux/man-pages/man2/sysinfo.2.html has been used to
+      // define the entries to be mapped and understand what they equate to.)
+      //
+      // Each entry is represented as an uint64_t value and later narrowed
+      // implicity within the RegisterValue constructor where necessary.
+      // `sysInfoValsSizes` is used to denote the sizes of each entry so that it
+      // occupies the correct amount of memory after the syscall is concluded.
+
+      uint64_t infoPtr = currentInfo_.registerArguments[0].get<uint64_t>();
       stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
+      std::array<uint64_t, 14> sysInfoVals;
+      std::array<uint8_t, 14> sysInfoValsSizes = {8, 8, 8, 8, 8, 8, 8,
+                                                  8, 8, 8, 2, 8, 8, 4};
+      // Populate those entries within the sysinfo struct which are currently
+      // supported within SimEng
+      sysInfoVals[0] = OS_->getSystemTimer() / 1e9;
+      sysInfoVals[4] = memory_->getMemorySize();
+      sysInfoVals[10] = OS_->getNumProcesses();
+      // Add the sysinfo struct entries to stateChange in the correct order
+      for (int val = 0; val < sysInfoVals.size(); val++) {
+        uint8_t valSize = sysInfoValsSizes[val];
+        stateChange.memoryAddresses.push_back({infoPtr, valSize});
+        stateChange.memoryAddressValues.push_back({sysInfoVals[val], valSize});
+        infoPtr += valSize;
+      }
       break;
     }
     case 210: {  // shutdown
