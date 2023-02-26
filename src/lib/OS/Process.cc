@@ -279,10 +279,11 @@ uint64_t Process::createStack(uint64_t stackStart) {
     stringBytes.push_back(0);
   }
   // Environment strings
-  std::vector<std::string> envStrings = {"OMP_NUM_THREADS=1"};
-  for (std::string& env : envStrings) {
-    for (int i = 0; i < env.size(); i++) {
-      stringBytes.push_back(env.c_str()[i]);
+  for (size_t i = 0; i < Config::get()["Environment-Variables"].size(); i++) {
+    std::string envVar =
+        Config::get()["Environment-Variables"][i].as<std::string>();
+    for (int i = 0; i < envVar.size(); i++) {
+      stringBytes.push_back(envVar.c_str()[i]);
     }
     // Null entry to seperate strings
     stringBytes.push_back(0);

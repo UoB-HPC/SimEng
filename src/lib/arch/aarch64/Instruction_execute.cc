@@ -548,6 +548,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_CASALW: {  // casal ws, wt, [xn|sp]
+        // TODO: Load and Store must occur atomically
         // LOAD / STORE
         const uint32_t s = operands[0].get<uint32_t>();
         const uint32_t t = operands[1].get<uint32_t>();
@@ -556,6 +557,7 @@ void Instruction::execute() {
         break;
       }
       case Opcode::AArch64_CASALX: {  // casal xs, xt, [xn|sp]
+        // TODO: Load and Store must occur atomically
         // LOAD / STORE
         const uint64_t s = operands[0].get<uint64_t>();
         const uint64_t t = operands[1].get<uint64_t>();
@@ -3018,11 +3020,29 @@ void Instruction::execute() {
         results[3] = {out4, 256};
         break;
       }
+      case Opcode::AArch64_LDADDALW: {  // ldaddal ws, wt, [xn|sp]
+        // TODO: Load and Store must occur atomically
+        // LOAD / STORE
+        results[0] = memoryData[0].zeroExtend(4, 8);
+        memoryData[0] = RegisterValue(
+            memoryData[0].get<uint32_t>() + operands[0].get<uint32_t>(), 4);
+        break;
+      }
+      case Opcode::AArch64_LDADDALX: {  // ldaddal xs, xt, [xn|sp]
+        // TODO: Load and Store must occur atomically
+        // LOAD / STORE
+        results[0] = memoryData[0].get<uint64_t>();
+        memoryData[0] = RegisterValue(
+            memoryData[0].get<uint32_t>() + operands[0].get<uint32_t>(), 4);
+        break;
+      }
       case Opcode::AArch64_LDADDLW:  // ldaddl ws, wt, [xn]
-        // LOAD
+        // TODO: Load and Store must occur atomically
+        // LOAD / STORE
         [[fallthrough]];
       case Opcode::AArch64_LDADDW: {  // ldadd ws, wt, [xn]
-        // LOAD
+        // TODO: Load and Store must occur atomically
+        // LOAD / STORE
         results[0] = memoryData[0].zeroExtend(4, 8);
         memoryData[0] = RegisterValue(
             memoryData[0].get<uint32_t>() + operands[0].get<uint32_t>(), 4);

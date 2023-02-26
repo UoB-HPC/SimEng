@@ -621,6 +621,15 @@ void ModelConfig::validate() {
   }
   subFields.clear();
 
+  // Environment-Variables
+  root = "Environment-Variables";
+  size_t numEnvVars = configFile_[root].size();
+  for (size_t i = 0; i < numEnvVars; i++) {
+    std::string envVarNum = "Environment-Variable " + std::to_string(i) + " ";
+    nodeChecker<std::string>(configFile_[root][i], envVarNum,
+                             std::vector<std::string>{}, ExpectedValue::String);
+  }
+
   std::string missingStr = missing_.str();
   std::string invalidStr = invalid_.str();
   // Print all missing fields
