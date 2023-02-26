@@ -376,7 +376,7 @@ void SyscallHandler::handleSyscall() {
       // TODO: Flush all open `stdio` streams when supported
       // TODO: Remove files created by `tmpfile` when supported
       OS_->terminateThread(tid);
-      std::cerr << "[SimEng:SyscallHandler] Received exit syscall on Thread "
+      std::cout << "[SimEng:SyscallHandler] Received exit syscall on Thread "
                 << tid << ". Terminating with exit code " << exitCode
                 << std::endl;
       return concludeSyscall({}, false, true);
@@ -389,7 +389,7 @@ void SyscallHandler::handleSyscall() {
       // TODO: Flush all open `stdio` streams when supported
       // TODO: Remove files created by `tmpfile` when supported
       OS_->terminateThreadGroup(tgid);
-      std::cerr << "[SimEng:SyscallHandler] Received exit_group syscall on "
+      std::cout << "[SimEng:SyscallHandler] Received exit_group syscall on "
                    "Thread Group "
                 << tgid << ". Terminating with exit code " << exitCode
                 << std::endl;
@@ -791,12 +791,12 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
     if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
       for (int i = 0; i < supportedSpecialFiles_.size(); i++) {
         if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
-          std::cerr << "[SimEng:SyscallHandler] Using Special File: "
+          std::cout << "[SimEng:SyscallHandler] Using Special File: "
                     << filename.c_str() << std::endl;
           return specialFilesDir_ + filename;
         }
       }
-      std::cerr
+      std::cout
           << "[SimEng:SyscallHandler] WARNING: unable to open unsupported "
              "special file: "
           << "'" << filename.c_str() << "'" << std::endl
@@ -1089,7 +1089,7 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
   if (fd > 0) {
     auto entry = process->fdArray_->getFDEntry(fd);
     if (!entry.isValid()) {
-      std::cerr << "[SimEng:SyscallHandler] Invalid virtual file descriptor "
+      std::cout << "[SimEng:SyscallHandler] Invalid virtual file descriptor "
                    "given to mmap"
                 << std::endl;
       return -1;

@@ -150,7 +150,7 @@ struct SyscallResult {
    * core and it should therefore halt. */
   bool fatal = false;
 
-  /** Indicates whether the recieving core should go into an idle state after
+  /** Indicates whether the receiving core should go into an idle state after
    * the syscall has concluded and all state changes have been processed. */
   bool idleAfterSyscall = false;
 
