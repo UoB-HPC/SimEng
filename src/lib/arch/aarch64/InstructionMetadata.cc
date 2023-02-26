@@ -880,6 +880,10 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_WRITE;
       break;
+    case Opcode::AArch64_LDADDALW:
+      [[fallthrough]];
+    case Opcode::AArch64_LDADDALX:
+      [[fallthrough]];
     case Opcode::AArch64_LDADDLW:
       [[fallthrough]];
     case Opcode::AArch64_LDADDW:

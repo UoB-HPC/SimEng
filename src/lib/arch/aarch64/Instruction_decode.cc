@@ -455,10 +455,16 @@ void Instruction::decode() {
       isLoad_ = true;
     }
 
-    // CASAL* are considered to be both a load and a store
+    // The following are considered to be both a load and a store
     if (metadata.opcode == Opcode::AArch64_CASALW ||
-        metadata.opcode == Opcode::AArch64_CASALX) {
+        metadata.opcode == Opcode::AArch64_CASALX ||
+        metadata.opcode == Opcode::AArch64_LDADDALW ||
+        metadata.opcode == Opcode::AArch64_LDADDALX ||
+        metadata.opcode == Opcode::AArch64_LDADDLW ||
+        metadata.opcode == Opcode::AArch64_LDADDW) {
       isLoad_ = true;
+      isStoreAddress_ = true;
+      isStoreData_ = true;
     }
 
     if (isStoreData_) {
