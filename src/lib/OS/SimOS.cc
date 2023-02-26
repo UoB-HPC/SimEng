@@ -1,6 +1,7 @@
 #include "simeng/OS/SimOS.hh"
 
 #include "simeng/OS/Constants.hh"
+#include "simeng/OS/Process.hh"
 
 /** The size of each time slice a process has. */
 static constexpr uint64_t execTicks = 30000;
@@ -126,8 +127,10 @@ void SimOS::tick() {
             currProc->context_.pc = currContext.pc;
             currProc->context_.regFile = currContext.regFile;
             // Change status from Executing to Waiting
-            currProc->status_ = procStatus::waiting;
-            waitingProcs_.push(currProc);
+            if (currProc->status_ != procStatus::sleeping) {
+              currProc->status_ = procStatus::waiting;
+              waitingProcs_.push(currProc);
+            }
           }
         }
         if (!scheduledProcs_.empty()) {

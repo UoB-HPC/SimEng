@@ -260,7 +260,6 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
     // because hfmmaps are shared during unmaps.
     returnAddress = addVma(vma);
   }
-
   return returnAddress;
 }
 

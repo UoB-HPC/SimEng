@@ -1,8 +1,10 @@
 #include "simeng/OS/SyscallHandler.hh"
 
+#include <algorithm>
 #include <cstdint>
 #include <ctime>
 
+#include "simeng/OS/Constants.hh"
 #include "simeng/OS/SimOS.hh"
 
 namespace simeng {
@@ -412,8 +414,6 @@ void SyscallHandler::handleSyscall() {
       uint32_t val = currentInfo_.registerArguments[2].get<uint32_t>();
       uint64_t timespecPtr = currentInfo_.registerArguments[3].get<uint64_t>();
 
-      std::cout << val << std::endl;
-
       int syscallSupported = false;
       syscallSupported |= (op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE);
       syscallSupported |= (op == syscalls::futex::futexop::SIMENG_FUTEX_WAIT);
@@ -438,13 +438,12 @@ void SyscallHandler::handleSyscall() {
 
       uint64_t paddr = OS_->handleVAddrTranslation(addr, currentInfo_.threadId);
       if (masks::faults::inFault(paddr)) {
-        std::cerr
-            << "Fault occured during uaddr translation in futex syscall (Addr: "
-            << addr << ")" << std::endl;
+        std::cerr << "[SimEng:SyscallHandler] Fault occured during uaddr "
+                     "translation in futex syscall (Addr: "
+                  << addr << ")" << std::endl;
         return concludeSyscall({}, true);
       }
-      std::cout << "Comes here" << std::endl;
-      auto [putCoreToIdle, futexReturnValue] = futex(addr, op, val);
+      auto [putCoreToIdle, futexReturnValue] = futex(paddr, op, val);
       return concludeSyscall(
           {ChangeType::REPLACEMENT, {currentInfo_.ret}, {futexReturnValue}},
           false, putCoreToIdle);
@@ -1363,7 +1362,8 @@ std::pair<bool, long> SyscallHandler::futex(uint32_t uaddr, int futex_op,
                                             uint32_t val,
                                             const struct timespec* timeout,
                                             uint32_t uaddr2, uint32_t val3) {
-  int wake = futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE;
+  int wake = futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE ||
+             futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE;
   int wait = futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAIT;
 
   // Get the process associated with the thread id.
@@ -1376,8 +1376,6 @@ std::pair<bool, long> SyscallHandler::futex(uint32_t uaddr, int futex_op,
   auto ftableItr = futexTable_.find(tgid);
 
   if (wait) {
-    std::cout << "syscall uaddr: " << uaddr << std::endl;
-    std::cout << "Wait" << std::endl;
     // Atomically get the value at the address specified by the futex.
     std::vector<char> data = memory_->getUntimedData(uaddr, sizeof(uint32_t));
     uint32_t futexWord{};
@@ -1404,7 +1402,6 @@ std::pair<bool, long> SyscallHandler::futex(uint32_t uaddr, int futex_op,
     // added to the waitingProcs_ queue.
     process->status_ = procStatus::sleeping;
     // TODO: Check if 0 should be returned if process is set to sleep.
-    std::cout << "Here" << std::endl;
     return {true, 0};
   }
 
@@ -1417,8 +1414,9 @@ std::pair<bool, long> SyscallHandler::futex(uint32_t uaddr, int futex_op,
     }
     std::list<FutexInfo> list = ftableItr->second;
     // Determine how many processes waiting on a futex should be woken up.
-    long maxItr = val > list.size() ? list.size() : 1;
-    for (int32_t t = 0; t < maxItr; t++) {
+    size_t castedVal = static_cast<uint32_t>(val);
+    size_t maxItr = std::min(castedVal, list.size());
+    for (size_t t = 0; t < maxItr; t++) {
       auto futexInfo = list.front();
       // Awaken the process by changing the status to procStatus::waiting and
       // adding it to the waitingProcs_ queue.
