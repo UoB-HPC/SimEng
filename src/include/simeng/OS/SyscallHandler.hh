@@ -15,7 +15,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <list>
@@ -23,7 +22,6 @@
 #include <queue>
 #include <set>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "simeng/Elf.hh"

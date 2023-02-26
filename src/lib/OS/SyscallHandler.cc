@@ -1401,7 +1401,6 @@ std::pair<bool, long> SyscallHandler::futex(uint32_t uaddr, int futex_op,
     // Set the process status to procStatus::sleeping so that it isn't
     // added to the waitingProcs_ queue.
     process->status_ = procStatus::sleeping;
-    // TODO: Check if 0 should be returned if process is set to sleep.
     return {true, 0};
   }
 
@@ -1414,7 +1413,7 @@ std::pair<bool, long> SyscallHandler::futex(uint32_t uaddr, int futex_op,
     }
     std::list<FutexInfo> list = ftableItr->second;
     // Determine how many processes waiting on a futex should be woken up.
-    size_t castedVal = static_cast<uint32_t>(val);
+    size_t castedVal = static_cast<size_t>(val);
     size_t maxItr = std::min(castedVal, list.size());
     for (size_t t = 0; t < maxItr; t++) {
       auto futexInfo = list.front();
