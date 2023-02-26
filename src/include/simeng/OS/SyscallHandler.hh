@@ -37,24 +37,26 @@ static constexpr uint16_t PATH_MAX_LEN = 4096;
 namespace simeng {
 namespace OS {
 
-/***/
+/** Enum representing the status of a process that has invoked the futex
+ * syscall. */
 enum class FutexStatus : uint8_t { FUTEX_SLEEPING, FUTEX_AWAKE };
 
-/***/
+/** This struct stores all information required to perform the futex syscall.*/
 struct FutexInfo {
-  /***/
+  /** This is the address in memory where the futex word is stored. */
   uint32_t faddr = 0;
 
-  /***/
+  /** This is the process which invoked the futex syscall. */
   std::shared_ptr<Process> process = nullptr;
 
-  /***/
+  /** This is the status of the process after a futex syscall has been
+   * performed. */
   FutexStatus status = FutexStatus::FUTEX_SLEEPING;
 
-  /***/
+  /** Default constructor for the FutexInfo struct. */
   FutexInfo() {}
 
-  /***/
+  /** This constructor creates the FutexInfo struct with specific values. */
   FutexInfo(uint32_t uaddr, std::shared_ptr<Process> proc, FutexStatus sts)
       : faddr(uaddr), process(proc), status(sts) {}
 };
@@ -379,9 +381,9 @@ class SyscallHandler {
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
   /** futex syscall: mutex like thread scheduling in the kernel space. */
-  int64_t futex(uint32_t uaddr, int futex_op, uint32_t val,
-                const struct timespec* timeout = nullptr, uint32_t uaddr2 = 0,
-                uint32_t val3 = 0);
+  std::pair<bool, long> futex(uint32_t uaddr, int futex_op, uint32_t val,
+                              const struct timespec* timeout = nullptr,
+                              uint32_t uaddr2 = 0, uint32_t val3 = 0);
 
  private:
   /** Returns the correct dirFd depending on the pathname and dirFd given to
@@ -413,7 +415,7 @@ class SyscallHandler {
   /** A data buffer used for reading data from memory. */
   std::vector<char> dataBuffer_;
 
-  /***/
+  /** Unordered map used to keep track of all processes sleeping on a futex. */
   std::unordered_map<uint64_t, std::list<FutexInfo>> futexTable_;
 };
 

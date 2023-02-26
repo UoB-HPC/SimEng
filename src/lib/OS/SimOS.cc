@@ -105,7 +105,7 @@ void SimOS::tick() {
         // Remove all completed processes from scheduledProcs_ queue
         while (!scheduledProcs_.empty() &&
                (scheduledProcs_.front()->status_ == procStatus::completed)) {
-          scheduledProcs_.pop_front();
+          scheduledProcs_.pop();
         }
         // Get context of process that was executing on core before interrupt
         // was signalled
@@ -153,7 +153,7 @@ void SimOS::tick() {
         // Remove all completed processes from waitingProcs_ queue
         while (!waitingProcs_.empty() &&
                (waitingProcs_.front()->status_ == procStatus::completed)) {
-          waitingProcs_.pop_front();
+          waitingProcs_.pop();
         }
         bool canSched = !waitingProcs_.empty();
         canSched = canSched && (core->getCurrentProcTicks() > execTicks);
@@ -162,8 +162,8 @@ void SimOS::tick() {
           // Interrupt signalled successfully, move waitingProc to sheduledProcs
           // queue
           waitingProcs_.front()->status_ = procStatus::scheduled;
-          scheduledProcs_.push_back(waitingProcs_.front());
-          waitingProcs_.pop_front();
+          scheduledProcs_.push(waitingProcs_.front());
+          waitingProcs_.pop();
         }
         break;
       }

@@ -1,6 +1,8 @@
 #pragma once
 #include <stdint.h>
 
+#include <cstdint>
+
 namespace simeng {
 namespace OS {
 
@@ -52,16 +54,22 @@ static constexpr int SIMENG_MAP_FIXED = 0x10;
 
 namespace futex {
 namespace futexop {
-/***/
+/** This futex flag signifies a private operation. It is OR'ed with other futex
+ * operation flags. */
 static constexpr int SIMENG_FUTEX_PRIVATE_FLAG = 128;
 
-/***/
+/** This futex operation signifies that the invoking process should be put to
+ * sleep. */
 static constexpr int SIMENG_FUTEX_WAIT = 0;
 
-/***/
+/** This futex operation signifies that processes sleeping on a futex should be
+ * awakened. */
 static constexpr int SIMENG_FUTEX_WAKE = 1;
 
-/***/
+/** This futex operation also signifies that processes sleeping on a futex
+ should be awakened. It also tells the kernel that the futex is process-private
+ and not shared with another process (i.e., it is being used for synchronization
+ only between threads of the same process). */
 static constexpr int SIMENG_FUTEX_WAKE_PRIVATE =
     (SIMENG_FUTEX_WAKE | SIMENG_FUTEX_PRIVATE_FLAG);
 
@@ -106,6 +114,11 @@ static constexpr uint64_t UNMAP = 0x1000000000000000;
 static constexpr uint64_t DATA_ABORT = 0x5000000000000000;
 
 }  // namespace pagetable
+
+/** This function returns true if value contains a fault code. */
+static constexpr bool inFault(uint64_t value) {
+  return (pagetable::FAULT & value) == pagetable::FAULT;
+}
 
 /** This function returns the fault code from a given uint64_t value. */
 static constexpr uint64_t getFaultCode(uint64_t value) {

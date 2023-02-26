@@ -123,9 +123,9 @@ class SimOS {
     return [this](auto SyscallInfo) { receiveSyscall(SyscallInfo); };
   }
 
-  /***/
+  /** This public method adds a process to the waitingProcs_ queue. */
   void addProcessToWaitQueue(std::shared_ptr<Process> procPtr) {
-    waitingProcs_.push_back(procPtr);
+    waitingProcs_.push(procPtr);
   };
 
   /** Set up friend class with RegressionTest to enable exclusive access to
@@ -155,11 +155,11 @@ class SimOS {
   std::unordered_map<uint64_t, std::shared_ptr<Process>> processes_ = {};
 
   /** Queue of processes waiting to be scheduled. */
-  std::list<std::shared_ptr<Process>> waitingProcs_ = {};
+  std::queue<std::shared_ptr<Process>> waitingProcs_ = {};
 
   /** Queue of processes that have successfully sent an interrupt signal to a
    * core and are waiting to be scheduled on it. */
-  std::list<std::shared_ptr<Process>> scheduledProcs_ = {};
+  std::queue<std::shared_ptr<Process>> scheduledProcs_ = {};
 
   /** The list of cores. */
   std::vector<std::shared_ptr<simeng::Core>> cores_ = {};
