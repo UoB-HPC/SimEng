@@ -69,6 +69,7 @@ bool ExceptionHandler::handleException() {
       case 78:     // readlinkat
       case 79:     // newfstatat AKA fstatat
       case 80:     // fstat
+      case 93:     // exit
       case 94:     // exit_group
       case 96:     // set_tid_address
       case 98:     // futex
@@ -98,7 +99,7 @@ bool ExceptionHandler::handleException() {
       case 293: {  // rseq
         core_.sendSyscall({syscallId,
                            core_.getCoreId(),
-                           0,
+                           core_.getCurrentTID(),
                            {registerFileSet.get(R0), registerFileSet.get(R1),
                             registerFileSet.get(R2), registerFileSet.get(R3),
                             registerFileSet.get(R4), registerFileSet.get(R5)},
@@ -138,7 +139,7 @@ bool ExceptionHandler::handleException() {
         return fatal();
     }
 
-    processSyscallResult({false, 0, 0, stateChange});
+    processSyscallResult({false, false, 0, 0, stateChange});
     return concludeSyscall();
   } else if (exception == InstructionException::StreamingModeUpdate ||
              exception == InstructionException::ZAregisterStatusUpdate ||
@@ -203,7 +204,7 @@ bool ExceptionHandler::handleException() {
 
     simeng::OS::ProcessStateChange stateChange = {
         simeng::OS::ChangeType::REPLACEMENT, regs, regValues};
-    processSyscallResult({false, 0, 0, stateChange});
+    processSyscallResult({false, false, 0, 0, stateChange});
     return concludeSyscall();
   }
 
@@ -252,7 +253,8 @@ bool ExceptionHandler::concludeSyscall() {
   }
 
   uint64_t nextInstructionAddress = instruction_->getInstructionAddress() + 4;
-  result_ = {false, nextInstructionAddress, syscallResult_.stateChange};
+  result_ = {false, syscallResult_.idleAfterSyscall, nextInstructionAddress,
+             syscallResult_.stateChange};
 
   resetState();
   return true;
@@ -336,7 +338,7 @@ void ExceptionHandler::printException() const {
 }
 
 bool ExceptionHandler::fatal() {
-  result_ = {true, 0, {}};
+  result_ = {true, false, 0, {}};
   resetState();
   return true;
 }

@@ -135,10 +135,6 @@ class SimOS {
   /** Construct the special file directory. */
   void createSpecialFileDirectory() const;
 
-  /** Change the state of a process or a core.
-   * Used by the terminateThread & terminateThreadGroup functions. */
-  void terminateThreadHelper(std::shared_ptr<Process> proc);
-
   /** The total number of times the SimOS class has been ticked. */
   uint64_t ticks_ = 0;
 

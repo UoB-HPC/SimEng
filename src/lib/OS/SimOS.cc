@@ -83,7 +83,9 @@ void SimOS::tick() {
    *    b. On a successful interupt, the process that caused it is moved to the
    * scheduledProc queue
    *    c. Only processes in the scheduledProc queue can be scheduled onto a
-   * core
+   * core, unless the scheduledProc queue is empty and a core is idle. In this
+   * case a process from waitingProcs_ can jump ahead and be scheduled onto the
+   * waiting core
    *
    * If not for this process, then a waitingProc could tell more executing cores
    * to context switch given a core is likely to be in a switching state (post
@@ -105,36 +107,44 @@ void SimOS::tick() {
                (scheduledProcs_.front()->status_ == procStatus::completed)) {
           scheduledProcs_.pop();
         }
-        if (!scheduledProcs_.empty()) {
-          // Get context of process that was executing on core before interrupt
-          // was signalled
-          OS::cpuContext currContext = core->getCurrentContext();
-          // Core's stored TID will equal -1 if no process has been previously
-          // scheduled (i.e. on first tick of simulation)
-          if (currContext.TID != -1) {
-            // Find the corresponding process in map
-            auto procItr = processes_.find(currContext.TID);
-            // If proccess can't be found then it has been terminated so no need
-            // to update context.
-            if (procItr != processes_.end()) {
-              auto currProc = procItr->second;
-              assert((currProc->status_ == procStatus::executing) &&
-                     "[SimEng:SimOS] Process updated when not in executing "
-                     "state.");
-              // Only update values which have changed
-              currProc->context_.pc = currContext.pc;
-              currProc->context_.regFile = currContext.regFile;
-              // Change status from Executing to Waiting
-              currProc->status_ = procStatus::waiting;
-              waitingProcs_.push(currProc);
-            }
+        // Get context of process that was executing on core before interrupt
+        // was signalled
+        OS::cpuContext currContext = core->getCurrentContext();
+        // Core's stored TID will equal -1 if no process has been previously
+        // scheduled (i.e. on first tick of simulation)
+        if (currContext.TID != -1) {
+          // Find the corresponding process in map
+          auto procItr = processes_.find(currContext.TID);
+          // If proccess can't be found then it has been terminated so no need
+          // to update context.
+          if (procItr != processes_.end()) {
+            auto currProc = procItr->second;
+            assert((currProc->status_ == procStatus::executing) &&
+                   "[SimEng:SimOS] Process updated when not in executing "
+                   "state.");
+            // Only update values which have changed
+            currProc->context_.pc = currContext.pc;
+            currProc->context_.regFile = currContext.regFile;
+            // Change status from Executing to Waiting
+            currProc->status_ = procStatus::waiting;
+            waitingProcs_.push(currProc);
           }
+        }
+        if (!scheduledProcs_.empty()) {
           // Schedule new process on core
           core->schedule(scheduledProcs_.front()->context_);
           // Update newly scheduled process' status
           scheduledProcs_.front()->status_ = procStatus::executing;
           // Remove process from waiting queue
           scheduledProcs_.pop();
+        } else if (!waitingProcs_.empty()) {
+          // If nothing inside scheduledProcs_, check if there are any processes
+          // inside waitingProcs which can jump ahead
+          core->schedule(waitingProcs_.front()->context_);
+          // Update newly scheduled process' status
+          waitingProcs_.front()->status_ = procStatus::executing;
+          // Remove process from waiting queue
+          waitingProcs_.pop();
         }
         break;
       }
@@ -244,17 +254,8 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
         static_cast<uint64_t>(0b10100), 8};
   }
 
-  // If this is the initial process (tid = 0) then add to the scheduledProcs_
-  // queue as only processes in scheduledProcs_ can be scheduled onto an idle
-  // core (all cores begin in an idle state).
-  // Otherwise, add the new process to the waitingProcs_ queue.
-  if (tid == 0) {
-    processes_[tid]->status_ = procStatus::scheduled;
-    scheduledProcs_.push(processes_[tid]);
-  } else {
-    processes_[tid]->status_ = procStatus::waiting;
-    waitingProcs_.push(processes_[tid]);
-  }
+  processes_[tid]->status_ = procStatus::waiting;
+  waitingProcs_.push(processes_[tid]);
 
   return tid;
 }
@@ -276,8 +277,16 @@ void SimOS::terminateThread(uint64_t tid) {
     // If process with TID doesn't exist, return early
     return;
   }
-  // Update process or Core status
-  terminateThreadHelper(proc->second);
+  // If clear_chilt_tid is non-zero then write 0 to this address
+  uint64_t addr = proc->second->clearChildTid_;
+  if (addr) {
+    memory_->sendUntimedData({0}, addr, 1);
+    // TODO: When `futex` has been implemented, perform
+    // futex(clear_child_tid, FUTEX_WAKE, 1, NULL, NULL, 0);
+  }
+  // Set status to complete so it can be removed from the relevant queue in
+  // tick()
+  proc->second->status_ = procStatus::completed;
   // Remove from processes_
   processes_.erase(tid);
 }
@@ -286,8 +295,16 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
   auto proc = processes_.begin();
   while (proc != processes_.end()) {
     if (proc->second->getTGID() == tgid) {
-      // Update process or Core status
-      terminateThreadHelper(proc->second);
+      // If clear_chilt_tid is non-zero then write 0 to this address
+      uint64_t addr = proc->second->clearChildTid_;
+      if (addr) {
+        memory_->sendUntimedData({0}, addr, 1);
+        // TODO: When `futex` has been implemented, perform
+        // futex(clear_child_tid, FUTEX_WAKE, 1, NULL, NULL, 0);
+      }
+      // Set status to complete so it can be removed from the relevant queue in
+      // tick()
+      proc->second->status_ = procStatus::completed;
       proc = processes_.erase(proc);
     } else {
       proc++;
@@ -334,22 +351,6 @@ void SimOS::createSpecialFileDirectory() const {
   SFdir.RemoveExistingSFDir();
   // Create new special files dir
   SFdir.GenerateSFDir();
-}
-
-void SimOS::terminateThreadHelper(std::shared_ptr<Process> proc) {
-  uint64_t tid = proc->getTID();
-  if (proc->status_ == procStatus::executing) {
-    // Set core's status to idle, stopping execution immediately
-    for (auto core : cores_) {
-      if (core->getCurrentTID() == tid) {
-        core->setStatus(CoreStatus::idle);
-        break;
-      }
-    }
-  }
-  // Set status to complete so it can be removed from the relevant queue in
-  // tick()
-  proc->status_ = procStatus::completed;
 }
 
 uint64_t SimOS::getSystemTimer() const {
