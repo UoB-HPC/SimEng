@@ -120,9 +120,6 @@ void SimOS::tick() {
           // to update context.
           if (procItr != processes_.end()) {
             auto currProc = procItr->second;
-            assert((currProc->status_ == procStatus::executing) &&
-                   "[SimEng:SimOS] Process updated when not in executing "
-                   "state.");
             // Only update values which have changed
             currProc->context_.pc = currContext.pc;
             currProc->context_.regFile = currContext.regFile;
@@ -265,25 +262,60 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
 
 int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
                             uint64_t parentTidPtr, uint64_t tls,
-                            uint64_t childTidPtr, uint64_t tid) {
+                            uint64_t childTidPtr, uint64_t parentTid,
+                            uint64_t coreID, Register retReg) {
   /** Supported Flags :
    * CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_THREAD | CLONE_SYSVSEM |
    * CLONE_SETTLS| CLONE_CHILD_CLEARTID | CLONE_SIGHAND | CLONE_PARENT_SETTID */
 
   // Get TGID of calling process : as we require the CLONE_THREAD flag the new
-  // thread will be in the same thread group
-  uint64_t tgid = processes_[tid]->getTGID();
+  // thread will be in the same thread group. Given we copy the parent process
+  // object however, the TGID will match to parent implicitly
+  uint64_t newChildTid = nextFreeTID_;
+  nextFreeTID_++;
 
-  // Ignore CLONE_SIGHAND flag
-  /** CREATE NEW CLONE PROCESS AND DO THE STUFF HERE. */
+  // Ignore CLONE_SIGHAND flag for now
+  // Ignore CLONE_SYSVSEM flag for now
+  // Clone from parent Process object
+  std::shared_ptr<Process> newProc =
+      std::make_shared<Process>(*processes_[parentTid]);
 
-  if (flags && f_CLONE_PARENT_SETTID) {
-    // Store child tid at parentTidPtr
+  // Update TID
+  newProc->updateTID(newChildTid);
+
+  // Update childTidPtr value. Defaults to 0 if CLONE_CHILD_CLEARTID is not
+  // present
+  newProc->clearChildTid_ = childTidPtr;
+
+  // Update stackPtr, stackSize and stackEnd
+  newProc->updateStack(stackPtr);
+
+  // TLS (Thread Local Storage) region already mapped
+
+  // Store child tid at parentTidPtr if required
+  if (flags & f_CLONE_PARENT_SETTID) {
     std::vector<char> dataVec('\0', sizeof(newChildTid));
     std::memcpy(dataVec.data(), &newChildTid, sizeof(newChildTid));
-    memory_->sendUntimedData(dataVec, parentTidPtr, dataVec.size());
+    memory_->sendUntimedData(dataVec,
+                             handleVAddrTranslation(parentTidPtr, parentTid),
+                             dataVec.size());
   }
-  return -1;
+
+  // Update context of new child process to match parent process's current state
+  // in the Core, but increment PC by +4 and update TID
+  cpuContext currContext = cores_[coreID]->getCurrentContext();
+  newProc->context_.pc = currContext.pc + 4;
+  newProc->context_.regFile = currContext.regFile;
+  // Update returnRegister value to child TID (what clone returns to calling
+  // process)
+  newProc->context_.regFile[retReg.type][retReg.tag] = {newChildTid, 8};
+  newProc->context_.sp = currContext.sp;
+  newProc->context_.TID = newChildTid;
+  newProc->status_ = procStatus::waiting;
+  processes_.emplace(newChildTid, newProc);
+  waitingProcs_.push(newProc);
+
+  return static_cast<int64_t>(newChildTid);
 }
 
 const std::shared_ptr<Process>& SimOS::getProcess(uint64_t tid) {
@@ -304,7 +336,7 @@ void SimOS::terminateThread(uint64_t tid) {
     return;
   }
   // If clear_chilt_tid is non-zero then write 0 to this address
-  uint64_t addr = proc->second->clearChildTid_;
+  uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_, tid);
   if (addr) {
     memory_->sendUntimedData({0}, addr, 1);
     // TODO: When `futex` has been implemented, perform
@@ -324,7 +356,8 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
   while (proc != processes_.end()) {
     if (proc->second->getTGID() == tgid) {
       // If clear_chilt_tid is non-zero then write 0 to this address
-      uint64_t addr = proc->second->clearChildTid_;
+      uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_,
+                                             proc->second->getTID());
       if (addr) {
         memory_->sendUntimedData({0}, addr, 1);
         // TODO: When `futex` has been implemented, perform
