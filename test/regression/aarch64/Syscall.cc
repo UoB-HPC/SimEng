@@ -880,14 +880,6 @@ TEST_P(Syscall, sysinfo) {
     svc #0
     mov x20, x0
 
-    mov x1, #10000
-    mov x2, #10
-    mul x1, x1, x2
-
-    .loop:
-    subs x1, x1, #1
-    b.ne .loop
-
     # syscall(addr)
     mov x0, x20
     mov x8, #179
