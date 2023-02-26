@@ -229,6 +229,9 @@ void Core::processException() {
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
     if (result.idleAfterSyscall) {
+      // Ensure pipeline is flushed
+      executeUnit_.flush();
+      // Update core status
       status_ = CoreStatus::idle;
       contextSwitches_++;
     }
