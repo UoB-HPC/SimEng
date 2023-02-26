@@ -99,6 +99,9 @@ class MemRegion {
   /** This method gets the VMA size. */
   size_t getVMASize() { return VMAlist_->size(); }
 
+  /** Updates the stack related member variables on the given stackPtr. */
+  void updateStack(const uint64_t stackPtr);
+
  private:
   /** Start address of the stack. */
   uint64_t stackStart_;
