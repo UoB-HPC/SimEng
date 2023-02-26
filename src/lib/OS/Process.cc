@@ -138,7 +138,7 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, stackStart,
                          heapStart, mmapStart, stackPtr, unmapFn);
 
-  fdArray_ = std::make_unique<FileDescArray>();
+  fdArray_ = std::make_shared<FileDescArray>();
   // Initialise context
   initContext(stackPtr, regFileStructure);
   isValid_ = true;
@@ -221,7 +221,7 @@ Process::Process(span<char> instructions, SimOS* OS,
   sendToMem_(std::vector<char>(instructions.begin(), instructions.end()), taddr,
              instructions.size());
 
-  fdArray_ = std::make_unique<FileDescArray>();
+  fdArray_ = std::make_shared<FileDescArray>();
 
   initContext(stackPtr, regFileStructure);
   isValid_ = true;
