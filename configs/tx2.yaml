@@ -188,3 +188,5 @@ CPU-Info:
   # Package-Count is used to generate 
   # /sys/devices/system/cpu/cpu{0..Core-Count}/topology/{physical_package_id, core_id}
   Package-Count: 1
+Environment-Variables:
+  - "OMP_NUM_THREADS=1"
