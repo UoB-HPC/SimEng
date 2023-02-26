@@ -16,8 +16,9 @@ SyscallHandler::SyscallHandler(SimOS* OS,
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
       supportedSpecialFiles_.end(),
-      {"/proc/cpuinfo", "proc/stat", "/sys/devices/system/cpu",
-       "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
+      {"/proc/cpuinfo", "proc/stat", "proc/self/maps",
+       "/sys/devices/system/cpu", "/sys/devices/system/cpu/online", "core_id",
+       "physical_package_id"});
 }
 
 void SyscallHandler::receiveSyscall(SyscallInfo info) {
