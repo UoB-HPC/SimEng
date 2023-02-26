@@ -880,6 +880,35 @@ TEST_P(Syscall, ftruncate) {
   EXPECT_EQ(getGeneralRegister<uint64_t>(28), 0);
 }
 
+TEST_P(Syscall, futex_wake) {
+  // The futex call will wake 0 threads as there are no threads currently
+  // sleeping on the futex.
+  RUN_RISCV(R"(
+    # mmap(addr=NULL, length=4, prot=3, flags=34, fd=-1, offset=0)
+    li a0, 0
+    li a1, 4
+    li a2, 3
+    li a3, 34
+    li a4, -1
+    li a5, 0
+    li a7, 222
+    ecall
+    mv t0, a0
+
+    # futex(uaddr=<Register[t0]>, futex_op=FUTEX_WAKE, val=1, const struct* timespec=NULL)
+    li a0, 0
+    addi a0, a1, 0
+    li a1, 1
+    li a2, 1
+    li a3, 0
+    li a7, 98
+    ecall
+    mv t1, a0
+
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(6), 0);
+}
+
 INSTANTIATE_TEST_SUITE_P(
     RISCV, Syscall,
     ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),

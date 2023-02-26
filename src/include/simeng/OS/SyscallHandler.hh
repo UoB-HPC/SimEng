@@ -56,6 +56,20 @@ struct FutexInfo {
   /** Default constructor for the FutexInfo struct. */
   FutexInfo() {}
 
+  /** Default copy constructor for FutexInfo. */
+  FutexInfo(const FutexInfo& res) = default;
+
+  /** Default move constructor for FutexInfo to enable copy elision
+   * whenever it is possible. */
+  FutexInfo(FutexInfo&& res) = default;
+
+  /** Default copy assignment operator for FutexInfo. */
+  FutexInfo& operator=(const FutexInfo& res) = default;
+
+  /** Default move assignment operator for FutexInfo to enable copy
+   * elision whenever it is possible. */
+  FutexInfo& operator=(FutexInfo&& res) = default;
+
   /** This constructor creates the FutexInfo struct with specific values. */
   FutexInfo(uint32_t uaddr, std::shared_ptr<Process> proc, FutexStatus sts)
       : faddr(uaddr), process(proc), status(sts) {}
@@ -380,7 +394,10 @@ class SyscallHandler {
   /** writev syscall: write buffers to a file. */
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
-  /** futex syscall: mutex like thread scheduling in the kernel space. */
+  /** futex syscall: Mutex like thread scheduling in the user space.
+   * This method returns a pair<bool, long>. The 'bool' signifies whether the
+   * core status should set to idle after the syscall result has been received
+   * by the core and 'long' specifies the syscall return value. */
   std::pair<bool, long> futex(uint32_t uaddr, int futex_op, uint32_t val,
                               const struct timespec* timeout = nullptr,
                               uint32_t uaddr2 = 0, uint32_t val3 = 0);

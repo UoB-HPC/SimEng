@@ -909,6 +909,34 @@ TEST_P(Syscall, sysinfo) {
   }
 }
 
+TEST_P(Syscall, futex_wake) {
+  // The futex call will wake 0 threads as there are no threads currently
+  // sleeping on the futex.
+  RUN_AARCH64(R"(
+    # mmap(addr=NULL, length=4, prot=3, flags=34, fd=-1, offset=0)
+    mov x0, #0
+    mov x1, #4
+    mov x2, #3
+    mov x3, #34
+    mov x4, #-1
+    mov x5, #0
+    mov x8, #222
+    svc #0
+    mov x9, x0
+
+    # futex(uaddr=<Register[x9]>, futex_op=FUTEX_WAKE, val=1, const struct* timespec=NULL)
+    mov x0, x9
+    mov x1, #1
+    mov x2, #1
+    mov x3, #0
+    mov x8, #98
+    svc #0
+        
+    mov x10, x0
+  )");
+  EXPECT_EQ(getGeneralRegister<uint64_t>(10), 0);
+}
+
 INSTANTIATE_TEST_SUITE_P(
     AArch64, Syscall,
     ::testing::Values(std::make_tuple(EMULATION, YAML::Load("{}")),
