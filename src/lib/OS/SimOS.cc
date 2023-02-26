@@ -294,7 +294,7 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
 
   // Store child tid at parentTidPtr if required
   if (flags & f_CLONE_PARENT_SETTID) {
-    std::vector<char> dataVec('\0', sizeof(newChildTid));
+    std::vector<char> dataVec(sizeof(newChildTid), '\0');
     std::memcpy(dataVec.data(), &newChildTid, sizeof(newChildTid));
     memory_->sendUntimedData(dataVec,
                              handleVAddrTranslation(parentTidPtr, parentTid),
