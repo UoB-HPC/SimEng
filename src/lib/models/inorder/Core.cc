@@ -230,6 +230,7 @@ void Core::processException() {
     applyStateChange(result.stateChange);
     if (result.idleAfterSyscall) {
       status_ = CoreStatus::idle;
+      contextSwitches_++;
     }
   }
 
