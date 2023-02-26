@@ -77,6 +77,7 @@ bool ExceptionHandler::handleException() {
       case 113:    // clock_gettime
       case 122:    // sched_setaffinity
       case 123:    // sched_getaffinity
+      case 124:    // sched_yield
       case 131:    // tgkill
       case 134:    // rt_sigaction
       case 135:    // rt_sigprocmask

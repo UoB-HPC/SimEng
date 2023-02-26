@@ -497,6 +497,12 @@ void SyscallHandler::handleSyscall() {
       }
       break;
     }
+    case 124: {  // sched_yield
+      // Non args passed in
+      // Have core go to idle after syscall, forcing the current Process to be
+      // de-scheduled
+      return concludeSyscall({}, false, true);
+    }
     case 131: {  // tgkill
       // TODO: Functionality temporarily omitted since simeng only has a
       // single thread at the moment
@@ -1168,25 +1174,26 @@ int64_t SyscallHandler::clone(uint64_t flags, uint64_t stackPtr,
                               uint64_t parentTidPtr, uint64_t tls,
                               uint64_t childTidPtr) {
   // Check that required flags are present, if not trigger fatal error
-  uint64_t reqFlags = f_CLONE_VM | f_CLONE_FS | f_CLONE_FILES | f_CLONE_THREAD |
-                      f_CLONE_SYSVSEM;
-  if (flags && (reqFlags) != reqFlags) {
-    std::cerr << "[SimEng:SyscallHandler] One or more of the following flags "
-                 "required for clone not provided :" std::endl;
-    std::cerr
-        << "\tCLONE_VM | CLONE_FS | CLONE_FILES | CLONE_THREAD | CLONE_SYSVSEM"
-        << std::endl;
+  uint64_t reqFlags = f_CLONE_VM | f_CLONE_FS | f_CLONE_FILES | f_CLONE_THREAD;
+  if ((flags & reqFlags) != reqFlags) {
+    std::cout << "[SimEng:SyscallHandler] One or more of the following flags "
+                 "required for clone not provided :"
+              << std::endl;
+    std::cout << "\tCLONE_VM | CLONE_FS | CLONE_FILES | CLONE_THREAD"
+              << std::endl;
     return -1;
   }
   // Must specify a child stack - won't support copy-on-write with parent
   if (stackPtr == 0) {
-    std::cerr << "[SimEng:SyscallHandler] Must provide a child stack address "
-                 "to clone syscall." std::endl;
+    std::cout << "[SimEng:SyscallHandler] Must provide a child stack address "
+                 "to clone syscall."
+              << std::endl;
     return -1;
   }
 
-  int64_t newChildTid = OS_->cloneProcess(flags, parentTidPtr, stackPtr, tls,
-                                          childTidPtr, currentInfo_.threadId);
+  int64_t newChildTid = OS_->cloneProcess(
+      flags, parentTidPtr, stackPtr, tls, childTidPtr, currentInfo_.threadId,
+      currentInfo_.coreId, currentInfo_.ret);
 
   return newChildTid;
 }
