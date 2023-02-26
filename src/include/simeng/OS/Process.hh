@@ -101,6 +101,9 @@ class Process {
           std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
           uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
 
+  /** Default copy constructor for Process class. */
+  Process(const Process& proc) = default;
+
   ~Process();
 
   /** Get the address of the start of the heap region. */
@@ -139,14 +142,22 @@ class Process {
   /** Get the process' TID. */
   uint64_t getTID() const { return TID_; }
 
+  /** Updates the Process' TID. */
+  void updateTID(const uint64_t tid) { TID_ = tid; }
+
   /** Method which handles a page fault. */
   uint64_t handlePageFault(uint64_t vaddr);
 
   /** Method which handles virtual address translation. */
   uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
 
+  /** Updates a Processes stack space; utilised after the `clone` syscall. */
+  void updateStack(const uint64_t stackPtr) {
+    memRegion_.updateStack(stackPtr);
+  }
+
   /** Unique pointer to FileDescArray class.*/
-  std::unique_ptr<FileDescArray> fdArray_;
+  std::shared_ptr<FileDescArray> fdArray_;
 
   /** Current status of the process. */
   procStatus status_ = procStatus::waiting;
