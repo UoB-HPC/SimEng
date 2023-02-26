@@ -625,9 +625,8 @@ void ModelConfig::validate() {
   root = "Environment-Variables";
   size_t numEnvVars = configFile_[root].size();
   for (size_t i = 0; i < numEnvVars; i++) {
-    char envVarNum[50];
-    snprintf(envVarNum, 50, "Environment-Variable %zu ", i);
-    nodeChecker<std::string>(configFile_[root][i], std::string(envVarNum),
+    std::string envVarNum = "Environment-Variable " + std::to_string(i) + " ";
+    nodeChecker<std::string>(configFile_[root][i], envVarNum,
                              std::vector<std::string>{}, ExpectedValue::String);
   }
 
