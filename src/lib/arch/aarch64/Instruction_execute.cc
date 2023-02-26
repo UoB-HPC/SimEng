@@ -3017,7 +3017,7 @@ void Instruction::execute() {
         // LOAD / STORE
         results[0] = memoryData[0].get<uint64_t>();
         memoryData[0] = RegisterValue(
-            memoryData[0].get<uint32_t>() + operands[0].get<uint32_t>(), 4);
+            memoryData[0].get<uint64_t>() + operands[0].get<uint64_t>(), 8);
         break;
       }
       case Opcode::AArch64_LDADDLW:  // ldaddl ws, wt, [xn]
