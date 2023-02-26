@@ -901,7 +901,8 @@ TEST_P(Syscall, sysinfo) {
   // Check outputted sysinfo struct
   uint64_t paddr = process_->translate(process_->getHeapStart());
   // The size of the sysinfo struct within SimEng is 102 bytes
-  char reference[102] = {0};
+  std::array<char, 102> reference;
+  std::fill(reference.begin(), reference.end(), 0);
   // Most values in the returned sysinfo struct will be 0, excluding:
   // - totalram = 500000 (0x07A120)
   // - procs = 1 (0x01)
@@ -910,8 +911,8 @@ TEST_P(Syscall, sysinfo) {
   reference[33] = 0xA1;
   reference[34] = 0x07;
   reference[80] = 0x01;
-  auto data = memory_->getUntimedData(paddr, 102);
-  for (int i = 0; i < 102; i++) {
+  auto data = memory_->getUntimedData(paddr, reference.size());
+  for (int i = 0; i < reference.size(); i++) {
     EXPECT_EQ(data[i], reference[i]) << "at index i=" << i << '\n';
   }
 }

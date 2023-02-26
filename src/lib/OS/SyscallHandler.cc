@@ -560,6 +560,7 @@ void SyscallHandler::handleSyscall() {
       uint64_t infoPtr = currentInfo_.registerArguments[0].get<uint64_t>();
       stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
       std::array<uint64_t, 14> sysInfoVals;
+      std::fill(sysInfoVals.begin(), sysInfoVals.end(), 0);
       std::array<uint8_t, 14> sysInfoValsSizes = {8, 8, 8, 8, 8, 8, 8,
                                                   8, 8, 8, 2, 8, 8, 4};
       // Populate those entries within the sysinfo struct which are currently
