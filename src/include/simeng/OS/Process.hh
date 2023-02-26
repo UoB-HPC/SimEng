@@ -131,7 +131,7 @@ class Process {
   std::string getPath() const;
 
   /** Get the memory region for this process. */
-  MemRegion& getMemRegion() { return memRegion_; }
+  const std::shared_ptr<MemRegion>& getMemRegion() { return memRegion_; }
 
   /** Check whether the process image was created successfully. */
   bool isValid() const;
@@ -153,7 +153,7 @@ class Process {
 
   /** Updates a Processes stack space; utilised after the `clone` syscall. */
   void updateStack(const uint64_t stackPtr) {
-    memRegion_.updateStack(stackPtr);
+    memRegion_->updateStack(stackPtr);
   }
 
   /** Unique pointer to FileDescArray class.*/
@@ -191,7 +191,7 @@ class Process {
                    const std::vector<RegisterFileStructure>& regFileStructure);
 
   /** MemRegion of the Process Image. */
-  MemRegion memRegion_;
+  std::shared_ptr<MemRegion> memRegion_;
 
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
