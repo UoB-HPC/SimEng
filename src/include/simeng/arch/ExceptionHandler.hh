@@ -17,6 +17,10 @@ struct ExceptionResult {
    * core and it should therefore halt. */
   bool fatal;
 
+  /** Indicates whether the receiving core should go into an idle state after
+   * the syscall has concluded and all state changes have been processed. */
+  bool idleAfterSyscall = false;
+
   /** The address to resume execution from. */
   uint64_t instructionAddress;
 

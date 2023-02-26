@@ -48,7 +48,7 @@ void Core::tick() {
   procTicks_++;
 
   if (pc_ >= programByteLength_) {
-    status_ = CoreStatus::halted;
+    status_ = CoreStatus::idle;
     return;
   }
 
@@ -240,6 +240,9 @@ void Core::processException() {
   } else {
     pc_ = result.instructionAddress;
     applyStateChange(result.stateChange);
+    if (result.idleAfterSyscall) {
+      status_ = CoreStatus::idle;
+    }
   }
 
   exceptionGenerated_ = false;

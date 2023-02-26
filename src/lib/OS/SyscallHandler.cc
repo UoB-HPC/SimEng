@@ -370,17 +370,30 @@ void SyscallHandler::handleSyscall() {
     }
     case 93: {  // exit
       auto exitCode = currentInfo_.registerArguments[0].get<uint64_t>();
-      std::cout << "[SimEng:SyscallHandler] Received exit syscall: "
-                   "terminating with exit code "
-                << exitCode << std::endl;
-      return concludeSyscall({}, true);
+      uint64_t tid = currentInfo_.threadId;
+      // TODO: When `wait` is supported, return exitCode & 0xFF to parent
+      // TODO: Call all functions registered with `atexit` and `on_exit`
+      // TODO: Flush all open `stdio` streams when supported
+      // TODO: Remove files created by `tmpfile` when supported
+      OS_->terminateThread(tid);
+      std::cout << "[SimEng:SyscallHandler] Received exit syscall on Thread "
+                << tid << ". Terminating with exit code " << exitCode
+                << std::endl;
+      return concludeSyscall({}, false, true);
     }
     case 94: {  // exit_group
       auto exitCode = currentInfo_.registerArguments[0].get<uint64_t>();
-      std::cout << "[SimEng:SyscallHandler] Received exit_group syscall: "
-                   "terminating with exit code "
-                << exitCode << std::endl;
-      return concludeSyscall({}, true);
+      uint64_t tgid = OS_->getProcess(currentInfo_.threadId)->getTGID();
+      // TODO: When `wait` is supported, return exitCode & 0xFF to parent
+      // TODO: Call all functions registered with `atexit` and `on_exit`
+      // TODO: Flush all open `stdio` streams when supported
+      // TODO: Remove files created by `tmpfile` when supported
+      OS_->terminateThreadGroup(tgid);
+      std::cout << "[SimEng:SyscallHandler] Received exit_group syscall on "
+                   "Thread Group "
+                << tgid << ". Terminating with exit code " << exitCode
+                << std::endl;
+      return concludeSyscall({}, false, true);
     }
     case 96: {  // set_tid_address
       uint64_t ptr = currentInfo_.registerArguments[0].get<uint64_t>();
@@ -704,9 +717,9 @@ void SyscallHandler::readBufferThen(uint64_t ptr, uint64_t length,
 }
 
 void SyscallHandler::concludeSyscall(const ProcessStateChange& change,
-                                     bool fatal) {
-  OS_->sendSyscallResult(
-      {fatal, currentInfo_.syscallId, currentInfo_.coreId, change});
+                                     bool fatal, bool idleAftersycall) {
+  OS_->sendSyscallResult({fatal, idleAftersycall, currentInfo_.syscallId,
+                          currentInfo_.coreId, change});
   // Remove syscall from queue and reset handler to default state
   syscallQueue_.pop();
   dataBuffer_ = {};
@@ -778,12 +791,12 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
     if (strncmp(filename.c_str(), prefix, strlen(prefix)) == 0) {
       for (int i = 0; i < supportedSpecialFiles_.size(); i++) {
         if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
-          std::cerr << "[SimEng:SyscallHandler] Using Special File: "
+          std::cout << "[SimEng:SyscallHandler] Using Special File: "
                     << filename.c_str() << std::endl;
           return specialFilesDir_ + filename;
         }
       }
-      std::cerr
+      std::cout
           << "[SimEng:SyscallHandler] WARNING: unable to open unsupported "
              "special file: "
           << "'" << filename.c_str() << "'" << std::endl
@@ -1076,7 +1089,7 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
   if (fd > 0) {
     auto entry = process->fdArray_->getFDEntry(fd);
     if (!entry.isValid()) {
-      std::cerr << "[SimEng:SyscallHandler] Invalid virtual file descriptor "
+      std::cout << "[SimEng:SyscallHandler] Invalid virtual file descriptor "
                    "given to mmap"
                 << std::endl;
       return -1;

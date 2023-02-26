@@ -134,22 +134,7 @@ void Core::tick() {
   fetchUnit_.requestFromPC();
 }
 
-CoreStatus Core::getStatus() {
-  // Core is considered to have halted when the fetch unit has halted, there are
-  // no uops in any buffer, the execute unit is empty, and no exception is
-  // currently being handled.
-  bool decodePending = !fetchToDecodeBuffer_.isEmpty();
-  bool executePending = !decodeToExecuteBuffer_.isEmpty();
-  bool writebackPending = !completionSlots_[0].isEmpty();
-
-  if (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
-      !executePending && executeUnit_.isEmpty() &&
-      exceptionGenerated_ == false) {
-    status_ = CoreStatus::halted;
-  }
-
-  return status_;
-}
+CoreStatus Core::getStatus() { return status_; }
 
 void Core::setStatus(CoreStatus newStatus) { status_ = newStatus; }
 
@@ -242,6 +227,9 @@ void Core::processException() {
     fetchUnit_.flushLoopBuffer();
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
+    if (result.idleAfterSyscall) {
+      status_ = CoreStatus::idle;
+    }
   }
 
   exceptionGenerated_ = false;
