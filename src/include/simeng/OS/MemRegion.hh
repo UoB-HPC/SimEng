@@ -13,6 +13,27 @@ namespace OS {
 
 using namespace simeng::OS::defaults;
 
+/** Struct which represents a VMA LinkedList. */
+struct VMALinkedList {
+  /** Head of the VMA LinkedList. */
+  VMA* vmHead = nullptr;
+  /** Size of the VMA LinkedList. */
+  size_t vmSize = 0;
+
+  /** Destructor which destroys the VMA LinkedList. */
+  ~VMALinkedList() {
+    if (vmSize == 0) return;
+    VMA* curr = vmHead;
+    while (curr != nullptr) {
+      VMA* temp = curr->vmNext_;
+      delete curr;
+      curr = temp;
+    }
+    vmSize = 0;
+    vmHead = nullptr;
+  }
+};
+
 /** The MemoryRegion class is associated with the Process class and holds
  * memory related state variables for the process class. It is also responsible
  * for handling syscalls to heap and mmap memory regions.  */
@@ -85,10 +106,10 @@ class MemRegion {
   VirtualMemoryArea* getVMAFromAddr(uint64_t addr);
 
   /** This method retrieves the VMA head. */
-  VirtualMemoryArea* getVMAHead() { return vm_head_; };
+  VirtualMemoryArea* getVMAHead() { return vmall_->vmHead; };
 
   /** This method gets the VMA size. */
-  size_t getVMASize() { return vm_size_; }
+  size_t getVMASize() { return vmall_->vmSize; }
 
   /** Updates the stack related member variables on the given stackPtr. */
   void updateStack(const uint64_t stackPtr);
@@ -138,11 +159,8 @@ class MemRegion {
   /** Function reference to unmap the page table in removeVma. */
   std::function<uint64_t(uint64_t, size_t)> unmapPageTable_;
 
-  /** Head of the VMA list. */
-  VirtualMemoryArea* vm_head_ = nullptr;
-
-  /** Size of the VMA list. */
-  size_t vm_size_ = 0;
+  /** Shared pointer to the VMA LinkedList. */
+  std::shared_ptr<VMALinkedList> vmall_ = nullptr;
 
   /** Method to add VMA to the VMA list at the specified start address. If the
    * startAddr is 0 the algorithm will find an optimal address range for the

@@ -345,7 +345,7 @@ void SimOS::terminateThread(uint64_t tid) {
   }
   // If clear_chilt_tid is non-zero then write 0 to this address
   uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_, tid);
-  if (addr) {
+  if (!masks::faults::hasFault(addr)) {
     memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
     // TODO: When `futex` has been implemented, perform
     // futex(clear_child_tid, FUTEX_WAKE, 1, NULL, NULL, 0);
@@ -366,7 +366,7 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
       // If clear_chilt_tid is non-zero then write 0 to this address
       uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_,
                                              proc->second->getTID());
-      if (addr) {
+      if (!masks::faults::hasFault(addr)) {
         memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
         // TODO: When `futex` has been implemented, perform
         // futex(clear_child_tid, FUTEX_WAKE, 1, NULL, NULL, 0);
