@@ -505,24 +505,41 @@ void SyscallHandler::handleSyscall() {
       return concludeSyscall({}, false, true);
     }
     case 131: {  // tgkill
-      uint64_t tgid = currentInfo_.registerArguments[0].get<uint64_t>();
-      uint64_t tid = currentInfo_.registerArguments[1].get<uint64_t>();
+      int tgid = currentInfo_.registerArguments[0].get<int>();
+      int tid = currentInfo_.registerArguments[1].get<int>();
       int signal = currentInfo_.registerArguments[2].get<int>();
-
       int64_t retVal = 0;
       bool idleOnComplete = false;
-      auto proc = OS_->getProcess(tid);
-      if (proc->getTGID() == tgid) {
-        if (proc->status_ == procStatus::executing) idleOnComplete = true;
-        OS_->terminateThread(tid);
-        std::cout
-            << "[SimEng:SyscallHandler] Received tgkill syscall on Thread "
-            << tid << " in Thread Group " << tgid
-            << ". Terminating with signal " << signal << std::endl;
-      } else {
-        retVal = -1;
-      }
 
+      // Only support SIGABORT or no signal
+      if (signal != SIGABRT || signal != 0) {
+        retVal = -EINVAL;
+      } else {
+        auto proc = OS_->getProcess(tid);
+        uint64_t procTgid = proc->getTGID();
+        if (tgid == -1) {
+          // Terminate all processes in thread group
+          OS_->terminateThreadGroup(procTgid);
+          std::cout << "[SimEng:SyscallHandler] Received tgkill syscall on "
+                       "Thread Group "
+                    << procTgid << ". Terminating with signal " << signal
+                    << std::endl;
+          idleOnComplete = true;
+        } else {
+          if (proc->getTGID() == tgid) {
+            if (proc->status_ == procStatus::executing) {
+              idleOnComplete = true;
+            }
+            OS_->terminateThread(tid);
+            std::cout
+                << "[SimEng:SyscallHandler] Received tgkill syscall on Thread "
+                << tid << " in Thread Group " << tgid
+                << ". Terminating with signal " << signal << std::endl;
+          } else {
+            retVal = -ESRCH;
+          }
+        }
+      }
       stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retVal}};
       return concludeSyscall(stateChange, false, idleOnComplete);
     }
@@ -1444,6 +1461,8 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
   int wake = futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE ||
              futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE;
   int wait = futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAIT;
+
+  std::cerr << "FUTEX\n";
 
   // Get the process associated with the thread id.
   const auto tid = currentInfo_.threadId;
