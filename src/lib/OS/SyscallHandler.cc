@@ -505,10 +505,18 @@ void SyscallHandler::handleSyscall() {
       return concludeSyscall({}, false, true);
     }
     case 131: {  // tgkill
-      // TODO: Functionality temporarily omitted since simeng only has a
-      // single thread at the moment
+      uint64_t tgid = currentInfo_.registerArguments[0].get<uint64_t>();
+      uint64_t tid = currentInfo_.registerArguments[1].get<uint64_t>();
+      int signal = currentInfo_.registerArguments[2].get<int>();
+      bool idleOnComplete = false;
+      if (OS_->getProcess(tid)->status_ == procStatus::executing)
+        idleOnComplete = true;
+      OS_->terminateThread(tid);
+      std::cout << "[SimEng:SyscallHandler] Received tgkill syscall on Thread "
+                << tid << " in Thread Group " << tgid
+                << ". Terminating with signal " << signal << std::endl;
       stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
-      break;
+      return concludeSyscall(stateChange, false, idleOnComplete);
     }
     case 134: {  // rt_sigaction
       // TODO: Implement syscall logic. Ignored for now as it's assumed the
