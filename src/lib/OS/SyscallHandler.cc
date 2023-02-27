@@ -676,6 +676,16 @@ void SyscallHandler::handleSyscall() {
 
       int64_t result = clone(flags, stackPtr, parentTidPtr, tls, childTidPtr);
       stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {result}};
+      if (result > 0) {
+        std::cout << "[SimEng:SyscallHandler] Clone syscall executed, new "
+                     "thread created : TGID "
+                  << OS_->getProcess(result)->getTGID() << ", TID " << result
+                  << std::endl;
+      } else {
+        std::cout << "[SimEng:SyscallHandler] Error creating new thread via "
+                     "clone syscall."
+                  << std::endl;
+      }
       break;
     }
     case 222: {  // mmap
@@ -925,7 +935,7 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
 int64_t SyscallHandler::brk(uint64_t address) {
   return OS_->getProcess(currentInfo_.threadId)
       ->getMemRegion()
-      ->updateBrkRegion(address);
+      .updateBrkRegion(address);
 }
 
 uint64_t SyscallHandler::clockGetTime(uint64_t clkId, uint64_t systemTimer,
@@ -1191,7 +1201,7 @@ uint64_t SyscallHandler::lseek(int64_t fd, uint64_t offset, int64_t whence) {
 int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
   return OS_->getProcess(currentInfo_.threadId)
       ->getMemRegion()
-      ->unmapRegion(addr, length);
+      .unmapRegion(addr, length);
 }
 
 int64_t SyscallHandler::clone(uint64_t flags, uint64_t stackPtr,
@@ -1238,7 +1248,7 @@ int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
     hostfile = OS_->hfmmap_->mapfd(entry.getFd(), length, offset);
   }
   uint64_t ret =
-      process->getMemRegion()->mmapRegion(addr, length, prot, flags, hostfile);
+      process->getMemRegion().mmapRegion(addr, length, prot, flags, hostfile);
   return ret;
 }
 

@@ -309,7 +309,15 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   // Update returnRegister value to child TID (what clone returns to calling
   // process)
   newProc->context_.regFile[retReg.type][retReg.tag] = {newChildTid, 8};
-  newProc->context_.sp = currContext.sp;
+  // Update stack pointer
+  newProc->context_.sp = stackPtr;
+  if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
+    newProc->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
+        stackPtr, 8};
+  } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
+    newProc->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
+        stackPtr, 8};
+  }
   newProc->context_.TID = newChildTid;
   newProc->status_ = procStatus::waiting;
   processes_.emplace(newChildTid, newProc);
@@ -338,7 +346,7 @@ void SimOS::terminateThread(uint64_t tid) {
   // If clear_chilt_tid is non-zero then write 0 to this address
   uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_, tid);
   if (addr) {
-    memory_->sendUntimedData({0}, addr, 1);
+    memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
     // TODO: When `futex` has been implemented, perform
     // futex(clear_child_tid, FUTEX_WAKE, 1, NULL, NULL, 0);
   }
@@ -359,7 +367,7 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
       uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_,
                                              proc->second->getTID());
       if (addr) {
-        memory_->sendUntimedData({0}, addr, 1);
+        memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
         // TODO: When `futex` has been implemented, perform
         // futex(clear_child_tid, FUTEX_WAKE, 1, NULL, NULL, 0);
       }
