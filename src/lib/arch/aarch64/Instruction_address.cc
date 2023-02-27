@@ -706,6 +706,14 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         setMemoryAddresses(std::move(addresses));
         break;
       }
+      case Opcode::AArch64_LDSETALW: {  // ldsetal ws, wt, [xn|sp]
+        setMemoryAddresses({{operands[1].get<uint32_t>(), 4}});
+        break;
+      }
+      case Opcode::AArch64_LDSETALX: {  // ldsetal xs, xt, [xn|sp]
+        setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
+        break;
+      }
       case Opcode::AArch64_LDNPSi: {  // ldnp st1, st2, [xn, #imm]
         uint64_t base =
             operands[0].get<uint64_t>() + metadata.operands[2].mem.disp;
