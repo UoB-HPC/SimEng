@@ -14,9 +14,11 @@ const unsigned int blockSize = 16;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
+           std::shared_ptr<memory::MMU> mmu,
            arch::sendSyscallToHandler handleSyscall)
     : dataMemory_(dataMemory),
       isa_(isa),
+      mmu_(mmu),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
       fetchToDecodeBuffer_(1, {}),
@@ -231,6 +233,7 @@ void Core::processException() {
     if (result.idleAfterSyscall) {
       // Ensure pipeline is flushed
       executeUnit_.flush();
+      previousAddresses_ = std::queue<simeng::MemoryAccessTarget>();
       // Update core status
       status_ = CoreStatus::idle;
       contextSwitches_++;
@@ -392,6 +395,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   status_ = CoreStatus::executing;
   procTicks_ = 0;
   isa_.updateAfterContextSwitch(newContext);
+  mmu_->setTid(currentTID_);
   // Allow fetch unit to resume fetching instructions & incrementing PC
   fetchUnit_.unpause();
 }

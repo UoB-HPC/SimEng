@@ -7,10 +7,11 @@ namespace models {
 namespace emulation {
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           const arch::Architecture& isa,
+           const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
            arch::sendSyscallToHandler handleSyscall)
     : instructionMemory_(instructionMemory),
       dataMemory_(dataMemory),
+      mmu_(mmu),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
@@ -336,6 +337,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   status_ = CoreStatus::executing;
   procTicks_ = 0;
   isa_.updateAfterContextSwitch(newContext);
+  mmu_->setTid(currentTID_);
 }
 
 bool Core::interrupt() {
