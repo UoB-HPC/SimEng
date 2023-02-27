@@ -15,6 +15,7 @@ namespace outoforder {
 // TODO: System register count has to match number of supported system registers
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
+           std::shared_ptr<memory::MMU> mmu,
            pipeline::PortAllocator& portAllocator,
            arch::sendSyscallToHandler handleSyscall, YAML::Node& config)
     : isa_(isa),
@@ -25,6 +26,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       dataMemory_(dataMemory),
+      mmu_(mmu),
       fetchToDecodeBuffer_(
           config["Pipeline-Widths"]["FrontEnd"].as<unsigned int>(), {}),
       decodeToRenameBuffer_(
@@ -459,6 +461,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   status_ = CoreStatus::executing;
   procTicks_ = 0;
   isa_.updateAfterContextSwitch(newContext);
+  mmu_->setTid(currentTID_);
   // Allow fetch unit to resume fetching instructions & incrementing PC
   fetchUnit_.unpause();
 }

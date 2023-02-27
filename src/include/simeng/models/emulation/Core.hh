@@ -11,6 +11,7 @@
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
+#include "simeng/memory/MMU.hh"
 #include "simeng/span.hh"
 
 namespace simeng {
@@ -24,7 +25,8 @@ class Core : public simeng::Core {
    * instructions and data, along with the instruction entry point and an ISA to
    * use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-       const arch::Architecture& isa, arch::sendSyscallToHandler handleSyscall);
+       const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
+       arch::sendSyscallToHandler handleSyscall);
 
   /** Tick the core. */
   void tick() override;
@@ -112,6 +114,9 @@ class Core : public simeng::Core {
 
   /** A memory interface to access data. */
   MemoryInterface& dataMemory_;
+
+  /** The Core's Memory Management Unit. */
+  std::shared_ptr<memory::MMU> mmu_;
 
   /** The previously generated addresses. */
   std::vector<simeng::MemoryAccessTarget> previousAddresses_;
