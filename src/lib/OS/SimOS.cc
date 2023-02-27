@@ -1,6 +1,7 @@
 #include "simeng/OS/SimOS.hh"
 
 #include "simeng/OS/Constants.hh"
+#include "simeng/OS/Process.hh"
 
 /** The size of each time slice a process has. */
 static constexpr uint64_t execTicks = 30000;
@@ -126,8 +127,10 @@ void SimOS::tick() {
             currProc->context_.pc = currContext.pc;
             currProc->context_.regFile = currContext.regFile;
             // Change status from Executing to Waiting
-            currProc->status_ = procStatus::waiting;
-            waitingProcs_.push(currProc);
+            if (currProc->status_ != procStatus::sleeping) {
+              currProc->status_ = procStatus::waiting;
+              waitingProcs_.push(currProc);
+            }
           }
         }
         if (!scheduledProcs_.empty()) {
@@ -287,6 +290,8 @@ void SimOS::terminateThread(uint64_t tid) {
   // Set status to complete so it can be removed from the relevant queue in
   // tick()
   proc->second->status_ = procStatus::completed;
+  // Remove the FutexInfo struct associated with the process.
+  syscallHandler_->removeFutexInfo(proc->second->getTGID(), tid);
   // Remove from processes_
   processes_.erase(tid);
 }
@@ -310,6 +315,8 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
       proc++;
     }
   }
+  // Remove all FutexInfo structs assosciated with processes with TGID = `tgid`
+  syscallHandler_->removeFutexInfoList(tgid);
 }
 
 uint64_t SimOS::requestPageFrames(size_t size) {
