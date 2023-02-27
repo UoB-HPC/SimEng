@@ -28,7 +28,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
   simeng::span<char> defaultPrg = simeng::span<char>(
       reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
   simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
-  uint64_t procTID = 0;  // Initial process will always have TID = 0
+  uint64_t procTID = 1;  // Initial process will always have TID = 1
 
   // Inject fake syscall into queue
   simOS.getSyscallHandler()->receiveSyscall({});
@@ -59,7 +59,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
   simeng::span<char> defaultPrg = simeng::span<char>(
       reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
   simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
-  uint64_t procTID = 0;  // Initial process will always have TID = 0
+  uint64_t procTID = 1;  // Initial process will always have TID = 1
 
   // Inject fake syscall into queue
   simOS.getSyscallHandler()->receiveSyscall({});
@@ -80,7 +80,7 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
   uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
-  simOS.handleVAddrTranslation(mmapStart, 0);
+  simOS.handleVAddrTranslation(mmapStart, procTID);
   paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
@@ -101,7 +101,7 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
   simeng::span<char> defaultPrg = simeng::span<char>(
       reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
   simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
-  uint64_t procTID = 0;  // Initial process will always have TID = 0
+  uint64_t procTID = 1;  // Initial process will always have TID = 1
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   // Inject fake syscall into queue
@@ -123,7 +123,7 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
   uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
-  simOS.handleVAddrTranslation(mmapStart + 4096, 0);
+  simOS.handleVAddrTranslation(mmapStart + 4096, procTID);
   paddr = simOS.getProcess(procTID)->translate(mmapStart + 4096);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
@@ -144,7 +144,7 @@ TEST(VirtMemTest, UnmapSyscall) {
   simeng::span<char> defaultPrg = simeng::span<char>(
       reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
   simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
-  uint64_t procTID = 0;  // Initial process will always have TID = 0
+  uint64_t procTID = 1;  // Initial process will always have TID = 1
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   // Inject fake syscall into queue
@@ -167,7 +167,7 @@ TEST(VirtMemTest, UnmapSyscall) {
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
-  simOS.handleVAddrTranslation(mmapStart, 0);
+  simOS.handleVAddrTranslation(mmapStart, procTID);
   paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
@@ -200,7 +200,7 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   simeng::span<char> defaultPrg = simeng::span<char>(
       reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
   simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
-  uint64_t procTID = 0;  // Initial process will always have TID = 0
+  uint64_t procTID = 1;  // Initial process will always have TID = 1
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(procTID);
@@ -227,7 +227,7 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
-  simOS.handleVAddrTranslation(mmapStart, 0);
+  simOS.handleVAddrTranslation(mmapStart, procTID);
   paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
@@ -254,7 +254,7 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   simeng::span<char> defaultPrg = simeng::span<char>(
       reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
   simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
-  uint64_t procTID = 0;  // Initial process will always have TID = 0
+  uint64_t procTID = 1;  // Initial process will always have TID = 1
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(procTID);
@@ -282,7 +282,7 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
-  simOS.handleVAddrTranslation(mmapStart, 0);
+  simOS.handleVAddrTranslation(mmapStart, procTID);
   paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
@@ -309,7 +309,7 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   simeng::span<char> defaultPrg = simeng::span<char>(
       reinterpret_cast<char*>(simeng::OS::hex_), sizeof(simeng::OS::hex_));
   simeng::OS::SimOS simOS = simeng::OS::SimOS(memory, defaultPrg);
-  uint64_t procTID = 0;  // Initial process will always have TID = 0
+  uint64_t procTID = 1;  // Initial process will always have TID = 1
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
 
   auto process = simOS.getProcess(procTID);
@@ -337,7 +337,7 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
-  simOS.handleVAddrTranslation(mmapStart, 0);
+  simOS.handleVAddrTranslation(mmapStart, procTID);
   paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
@@ -352,7 +352,7 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
-  simOS.handleVAddrTranslation(mmapStart + 4096, 0);
+  simOS.handleVAddrTranslation(mmapStart + 4096, procTID);
   paddr = simOS.getProcess(procTID)->translate(mmapStart + 4096);
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);

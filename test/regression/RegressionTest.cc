@@ -41,7 +41,7 @@ void RegressionTest::run(const char* source, const char* triple,
   simeng::OS::SimOS OS = simeng::OS::SimOS(
       memory_, simeng::span<char>(reinterpret_cast<char*>(code_), codeSize_));
 
-  uint64_t procTID = 0;  // Initial process always has TID = 0
+  uint64_t procTID = 1;  // Initial process always has TID = 1
   process_ = OS.getProcess(procTID);
   ASSERT_TRUE(process_->isValid());
   processMemorySize_ = process_->context_.progByteLen;

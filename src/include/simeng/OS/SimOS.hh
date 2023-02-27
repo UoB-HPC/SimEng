@@ -182,7 +182,7 @@ class SimOS {
 
   /** The value of the next TID value that should be assigned to a process on
    * instantiation. */
-  uint64_t nextFreeTID_ = 0;
+  uint64_t nextFreeTID_ = 1;
 
   /** Reference to the PageFrameAllocator object.  */
   PageFrameAllocator pageFrameAllocator_;

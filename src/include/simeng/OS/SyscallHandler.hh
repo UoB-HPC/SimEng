@@ -252,8 +252,9 @@ struct SyscallInfo {
   /** The unique ID of the core associated with the syscall. */
   uint64_t coreId = 0;
 
-  /** The unique ID of the process associated with the syscall. */
-  uint64_t threadId = 0;
+  /** The unique ID of the process associated with the syscall. default value of
+   * 1 as this is the lowest TID available. */
+  uint64_t threadId = 1;
 
   /** The register values used as parameters to the invoked syscall. */
   std::array<RegisterValue, 6> registerArguments = {};
