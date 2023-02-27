@@ -85,7 +85,8 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
 
 void MemRegion::updateStack(const uint64_t stackPtr) {
   VirtualMemoryArea* vma = getVMAFromAddr(stackPtr);
-  stackStart_ = stackPtr;
+  // stackStart is vmEnd as stack grows down
+  stackStart_ = vma->vmEnd_;
   stackEnd_ = vma->vmStart_;
   stackSize_ = vma->vmSize_;
   initStackPtr_ = stackPtr;

@@ -135,9 +135,8 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
     return value;
   };
 
-  memRegion_ = std::make_shared<MemRegion>(stackSize, heapSize, mmapSize, size,
-                                           stackStart, heapStart, mmapStart,
-                                           stackPtr, unmapFn);
+  memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, stackStart,
+                         heapStart, mmapStart, stackPtr, unmapFn);
 
   fdArray_ = std::make_shared<FileDescArray>();
   // Initialise context
@@ -232,9 +231,8 @@ Process::Process(span<char> instructions, SimOS* OS,
     return value;
   };
 
-  memRegion_ = std::make_shared<MemRegion>(stackSize, heapSize, mmapSize, size,
-                                           stackStart, heapStart, mmapStart,
-                                           stackPtr, unmapFn);
+  memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, stackStart,
+                         heapStart, mmapStart, stackPtr, unmapFn);
 
   uint64_t taddr = pageTable_->translate(0);
   sendToMem_(std::vector<char>(instructions.begin(), instructions.end()), taddr,
@@ -248,11 +246,11 @@ Process::Process(span<char> instructions, SimOS* OS,
 
 Process::~Process() {}
 
-uint64_t Process::getHeapStart() const { return memRegion_->getHeapStart(); }
+uint64_t Process::getHeapStart() const { return memRegion_.getHeapStart(); }
 
-uint64_t Process::getStackStart() const { return memRegion_->getMemSize(); }
+uint64_t Process::getStackStart() const { return memRegion_.getMemSize(); }
 
-uint64_t Process::getMmapStart() const { return memRegion_->getMmapStart(); }
+uint64_t Process::getMmapStart() const { return memRegion_.getMmapStart(); }
 
 uint64_t Process::getPageSize() const { return PAGE_SIZE; }
 
@@ -261,13 +259,13 @@ std::string Process::getPath() const { return commandLine_[0]; }
 bool Process::isValid() const { return isValid_; }
 
 uint64_t Process::getProcessImageSize() const {
-  return memRegion_->getMemSize();
+  return memRegion_.getMemSize();
 }
 
 uint64_t Process::getEntryPoint() const { return entryPoint_; }
 
 uint64_t Process::getStackPointer() const {
-  return memRegion_->getInitialStackPtr();
+  return memRegion_.getInitialStackPtr();
 }
 
 uint64_t Process::createStack(uint64_t stackStart) {
@@ -348,7 +346,7 @@ uint64_t Process::createStack(uint64_t stackStart) {
 
 uint64_t Process::handlePageFault(uint64_t vaddr) {
   // Retrieve VMA containing the vaddr has raised a page fault.
-  VirtualMemoryArea* vm = memRegion_->getVMAFromAddr(vaddr);
+  VirtualMemoryArea* vm = memRegion_.getVMAFromAddr(vaddr);
   // Process VMA doesn't exist. This address is likely due to a speculation.
   if (vm == nullptr)
     return masks::faults::pagetable::FAULT |
