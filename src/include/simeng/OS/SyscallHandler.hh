@@ -402,6 +402,10 @@ class SyscallHandler {
   /** Method to remove all FutexInfo structs associated with a tgid. */
   void removeFutexInfoList(uint64_t tgid);
 
+  /** Method to remove a FutexInfo struct containing process with TID = 'tid'
+   * and TGID = 'tgid' */
+  void removeFutexInfo(uint64_t tgid, uint64_t tid);
+
  private:
   /** Returns the correct dirFd depending on the pathname and dirFd given to
    * syscall. */

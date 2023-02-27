@@ -436,9 +436,9 @@ void SyscallHandler::handleSyscall() {
 
       uint64_t paddr = OS_->handleVAddrTranslation(addr, currentInfo_.threadId);
       if (masks::faults::hasFault(paddr)) {
-        std::cerr << "[SimEng:SyscallHandler] Fault occured during uaddr "
-                     "translation in futex syscall (Addr: "
-                  << addr << ")" << std::endl;
+        std::cerr << "[SimEng:SyscallHandler] Fatal error occured during "
+                     "virtual address translation in futex syscall: uaddr = "
+                  << addr << std::endl;
         return concludeSyscall({}, true);
       }
       auto [putCoreToIdle, futexReturnValue] = futex(paddr, op, val);
@@ -1430,6 +1430,19 @@ void SyscallHandler::removeFutexInfoList(uint64_t tgid) {
   auto itr = futexTable_.find(tgid);
   if (itr != futexTable_.end()) {
     futexTable_.erase(itr);
+  }
+}
+
+void SyscallHandler::removeFutexInfo(uint64_t tgid, uint64_t tid) {
+  auto tableitr = futexTable_.find(tgid);
+  if (tableitr != futexTable_.end()) {
+    auto list = tableitr->second;
+    for (auto itr = list.begin(); itr != list.end(); itr++) {
+      if (itr->process->getTID() == tid) {
+        list.erase(itr);
+        return;
+      }
+    }
   }
 }
 
