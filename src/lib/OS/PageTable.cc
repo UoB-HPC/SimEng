@@ -100,17 +100,14 @@ uint64_t PageTable::deleteMapping(uint64_t vaddr, size_t size) {
   std::vector<PageTable::TableItr> itrs;
 
   // Increment down aligned vaddr by PAGE_SIZE every loop iteration until
-  // (size / PAGE_SIZE) number of address ranges have been covered. In each loop
-  // iteration check if address range mapping exists, if not return a page
-  // table fault.
+  // (size / PAGE_SIZE) number of address ranges have been covered.
   while (size > 0) {
     auto itr = table_.find(vaddr);
-    if (itr == table_.end()) {
-      return masks::faults::pagetable::FAULT | masks::faults::pagetable::UNMAP;
+    if (itr != table_.end()) {
+      itrs.push_back(itr);
     }
     vaddr += PAGE_SIZE;
     size -= PAGE_SIZE;
-    itrs.push_back(itr);
   }
 
   for (auto itr : itrs) {
