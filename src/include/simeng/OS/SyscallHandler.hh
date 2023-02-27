@@ -41,7 +41,7 @@ enum class FutexStatus : uint8_t { FUTEX_SLEEPING, FUTEX_AWAKE };
 /** This struct stores all information required to perform the futex syscall.*/
 struct FutexInfo {
   /** This is the address in memory where the futex word is stored. */
-  uint32_t faddr = 0;
+  uint64_t faddr = 0;
 
   /** This is the process which invoked the futex syscall. */
   std::shared_ptr<Process> process = nullptr;
@@ -395,9 +395,12 @@ class SyscallHandler {
    * This method returns a pair<bool, long>. The 'bool' signifies whether the
    * core status should set to idle after the syscall result has been received
    * by the core and 'long' specifies the syscall return value. */
-  std::pair<bool, long> futex(uint32_t uaddr, int futex_op, uint32_t val,
+  std::pair<bool, long> futex(uint64_t uaddr, int futex_op, uint32_t val,
                               const struct timespec* timeout = nullptr,
                               uint32_t uaddr2 = 0, uint32_t val3 = 0);
+
+  /** Method to remove all FutexInfo structs associated with a tgid. */
+  void removeFutexInfoList(uint64_t tgid);
 
  private:
   /** Returns the correct dirFd depending on the pathname and dirFd given to

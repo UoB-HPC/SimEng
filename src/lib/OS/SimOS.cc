@@ -291,6 +291,10 @@ void SimOS::terminateThread(uint64_t tid) {
   // tick()
   proc->second->status_ = procStatus::completed;
   // Remove from processes_
+  // There is no need to remove the FutexInfo struct associated with this
+  // process. Since this process is in procStatus::executing state it won't have
+  // an associated FutexInfo struct. When a process is woken up via the
+  // FUTEX_WAKE flag the FutexInfo struct associated with it is destroyed.
   processes_.erase(tid);
 }
 
@@ -313,6 +317,8 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
       proc++;
     }
   }
+  // Remove all FutexInfo structs assosciated with processes with TGID = `tgid`
+  syscallHandler_->removeFutexInfoList(tgid);
 }
 
 uint64_t SimOS::requestPageFrames(size_t size) {

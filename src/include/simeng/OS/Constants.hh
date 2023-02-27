@@ -114,7 +114,7 @@ static constexpr uint64_t DATA_ABORT = 0x5000000000000000;
 }  // namespace pagetable
 
 /** This function returns true if value contains a fault code. */
-static constexpr bool inFault(uint64_t value) {
+static constexpr bool hasFault(uint64_t value) {
   return (pagetable::FAULT & value) == pagetable::FAULT;
 }
 

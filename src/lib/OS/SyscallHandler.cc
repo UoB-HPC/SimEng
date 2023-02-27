@@ -407,9 +407,7 @@ void SyscallHandler::handleSyscall() {
       break;
     }
     case 98: {  // futex
-      // TODO: Functionality temporarily omitted as it is unused within
-      // workloads regions of interest and not required for their simulation
-      uint32_t addr = currentInfo_.registerArguments[0].get<uint32_t>();
+      uint64_t addr = currentInfo_.registerArguments[0].get<uint64_t>();
       int32_t op = currentInfo_.registerArguments[1].get<int32_t>();
       uint32_t val = currentInfo_.registerArguments[2].get<uint32_t>();
       uint64_t timespecPtr = currentInfo_.registerArguments[3].get<uint64_t>();
@@ -437,7 +435,7 @@ void SyscallHandler::handleSyscall() {
       }
 
       uint64_t paddr = OS_->handleVAddrTranslation(addr, currentInfo_.threadId);
-      if (masks::faults::inFault(paddr)) {
+      if (masks::faults::hasFault(paddr)) {
         std::cerr << "[SimEng:SyscallHandler] Fault occured during uaddr "
                      "translation in futex syscall (Addr: "
                   << addr << ")" << std::endl;
@@ -1358,7 +1356,7 @@ int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
   return ::writev(hfd, reinterpret_cast<const struct iovec*>(iovdata), iovcnt);
 }
 
-std::pair<bool, long> SyscallHandler::futex(uint32_t uaddr, int futex_op,
+std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
                                             uint32_t val,
                                             const struct timespec* timeout,
                                             uint32_t uaddr2, uint32_t val3) {
@@ -1407,26 +1405,32 @@ std::pair<bool, long> SyscallHandler::futex(uint32_t uaddr, int futex_op,
   if (wake) {
     long procWokenUp = 0;
     // Variable denoting how many processes were woken up.
-    if (ftableItr == futexTable_.end()) {
-      // Return 0 if no processes were woken up
-      return {false, procWokenUp};
+    if (ftableItr != futexTable_.end()) {
+      std::list<FutexInfo> list = ftableItr->second;
+      // Determine how many processes waiting on a futex should be woken up.
+      size_t castedVal = static_cast<size_t>(val);
+      size_t maxItr = std::min(castedVal, list.size());
+      for (size_t t = 0; t < maxItr; t++) {
+        auto futexInfo = list.front();
+        // Awaken the process by changing the status to procStatus::waiting and
+        // adding it to the waitingProcs_ queue.
+        futexInfo.process->status_ = procStatus::waiting;
+        OS_->addProcessToWaitQueue(futexInfo.process);
+        list.pop_front();
+        procWokenUp++;
+      }
     }
-    std::list<FutexInfo> list = ftableItr->second;
-    // Determine how many processes waiting on a futex should be woken up.
-    size_t castedVal = static_cast<size_t>(val);
-    size_t maxItr = std::min(castedVal, list.size());
-    for (size_t t = 0; t < maxItr; t++) {
-      auto futexInfo = list.front();
-      // Awaken the process by changing the status to procStatus::waiting and
-      // adding it to the waitingProcs_ queue.
-      futexInfo.process->status_ = procStatus::waiting;
-      OS_->addProcessToWaitQueue(futexInfo.process);
-      list.pop_front();
-      procWokenUp++;
-    }
+    // procWokenUp should be be 0 if no processes were woken up.
     return {false, procWokenUp};
   }
   return {false, -1};
+}
+
+void SyscallHandler::removeFutexInfoList(uint64_t tgid) {
+  auto itr = futexTable_.find(tgid);
+  if (itr != futexTable_.end()) {
+    futexTable_.erase(itr);
+  }
 }
 
 }  // namespace OS
