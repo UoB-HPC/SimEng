@@ -508,14 +508,22 @@ void SyscallHandler::handleSyscall() {
       uint64_t tgid = currentInfo_.registerArguments[0].get<uint64_t>();
       uint64_t tid = currentInfo_.registerArguments[1].get<uint64_t>();
       int signal = currentInfo_.registerArguments[2].get<int>();
+
+      int64_t retVal = 0;
       bool idleOnComplete = false;
-      if (OS_->getProcess(tid)->status_ == procStatus::executing)
-        idleOnComplete = true;
-      OS_->terminateThread(tid);
-      std::cout << "[SimEng:SyscallHandler] Received tgkill syscall on Thread "
-                << tid << " in Thread Group " << tgid
-                << ". Terminating with signal " << signal << std::endl;
-      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
+      auto proc = OS_->getProcess(tid);
+      if (proc->getTGID() == tgid) {
+        if (proc->status_ == procStatus::executing) idleOnComplete = true;
+        OS_->terminateThread(tid);
+        std::cout
+            << "[SimEng:SyscallHandler] Received tgkill syscall on Thread "
+            << tid << " in Thread Group " << tgid
+            << ". Terminating with signal " << signal << std::endl;
+      } else {
+        retVal = -1;
+      }
+
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retVal}};
       return concludeSyscall(stateChange, false, idleOnComplete);
     }
     case 134: {  // rt_sigaction
@@ -861,7 +869,6 @@ void SyscallHandler::readLinkAt(std::string path, size_t length) {
   concludeSyscall(stateChange);
 }
 
-// TODO : update when supporting multi-process/thread
 uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
   // Resolve absolute path to target file
   char absolutePath[PATH_MAX_LEN];
