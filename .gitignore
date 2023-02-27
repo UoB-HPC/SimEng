@@ -1,6 +1,8 @@
 .clang_complete
 .vscode
 .idea
+.cache
+.cache/clangd
 compile_commands.json
 build/compile_commands.json
 .ccls-cache

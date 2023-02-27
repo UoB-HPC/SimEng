@@ -123,6 +123,11 @@ class SimOS {
     return [this](auto SyscallInfo) { receiveSyscall(SyscallInfo); };
   }
 
+  /** This public method adds a process to the waitingProcs_ queue. */
+  void addProcessToWaitQueue(std::shared_ptr<Process> procPtr) {
+    waitingProcs_.push(procPtr);
+  };
+
   /** Set up friend class with RegressionTest to enable exclusive access to
    * private functions. */
   friend class ::RegressionTest;

@@ -16,6 +16,7 @@
 #include <cassert>
 #include <cstring>
 #include <iostream>
+#include <list>
 #include <memory>
 #include <queue>
 #include <set>
@@ -32,6 +33,44 @@ static constexpr uint16_t PATH_MAX_LEN = 4096;
 
 namespace simeng {
 namespace OS {
+
+/** Enum representing the status of a process that has invoked the futex
+ * syscall. */
+enum class FutexStatus : uint8_t { FUTEX_SLEEPING, FUTEX_AWAKE };
+
+/** This struct stores all information required to perform the futex syscall.*/
+struct FutexInfo {
+  /** This is the address in memory where the futex word is stored. */
+  uint64_t faddr = 0;
+
+  /** This is the process which invoked the futex syscall. */
+  std::shared_ptr<Process> process = nullptr;
+
+  /** This is the status of the process after a futex syscall has been
+   * performed. */
+  FutexStatus status = FutexStatus::FUTEX_SLEEPING;
+
+  /** Default constructor for the FutexInfo struct. */
+  FutexInfo() {}
+
+  /** Default copy constructor for FutexInfo. */
+  FutexInfo(const FutexInfo& res) = default;
+
+  /** Default move constructor for FutexInfo to enable copy elision
+   * whenever it is possible. */
+  FutexInfo(FutexInfo&& res) = default;
+
+  /** Default copy assignment operator for FutexInfo. */
+  FutexInfo& operator=(const FutexInfo& res) = default;
+
+  /** Default move assignment operator for FutexInfo to enable copy
+   * elision whenever it is possible. */
+  FutexInfo& operator=(FutexInfo&& res) = default;
+
+  /** This constructor creates the FutexInfo struct with specific values. */
+  FutexInfo(uint32_t uaddr, std::shared_ptr<Process> proc, FutexStatus sts)
+      : faddr(uaddr), process(proc), status(sts) {}
+};
 
 // Forward declare SimOS to resolve the circular dependency.
 class SimOS;
@@ -352,6 +391,21 @@ class SyscallHandler {
   /** writev syscall: write buffers to a file. */
   int64_t writev(int64_t fd, const void* iovdata, int iovcnt);
 
+  /** futex syscall: Mutex like thread scheduling in the user space.
+   * This method returns a pair<bool, long>. The 'bool' signifies whether the
+   * core status should set to idle after the syscall result has been received
+   * by the core and 'long' specifies the syscall return value. */
+  std::pair<bool, long> futex(uint64_t uaddr, int futex_op, uint32_t val,
+                              const struct timespec* timeout = nullptr,
+                              uint32_t uaddr2 = 0, uint32_t val3 = 0);
+
+  /** Method to remove all FutexInfo structs associated with a tgid. */
+  void removeFutexInfoList(uint64_t tgid);
+
+  /** Method to remove a FutexInfo struct containing process with TID = 'tid'
+   * and TGID = 'tgid' */
+  void removeFutexInfo(uint64_t tgid, uint64_t tid);
+
  private:
   /** Returns the correct dirFd depending on the pathname and dirFd given to
    * syscall. */
@@ -381,6 +435,9 @@ class SyscallHandler {
 
   /** A data buffer used for reading data from memory. */
   std::vector<char> dataBuffer_;
+
+  /** Unordered map used to keep track of all processes sleeping on a futex. */
+  std::unordered_map<uint64_t, std::list<FutexInfo>> futexTable_;
 };
 
 }  // namespace OS
