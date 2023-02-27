@@ -239,6 +239,20 @@ void Instruction::decode() {
     isCompare_ = true;
   }
 
+  if ((Opcode::RISCV_MUL <= metadata.opcode &&
+       metadata.opcode <= Opcode::RISCV_MULW)) {
+    // Compare instructions
+    isMultiply_ = true;
+  }
+
+  if (((Opcode::RISCV_REM <= metadata.opcode &&
+        metadata.opcode <= Opcode::RISCV_REMW) ||
+       (Opcode::RISCV_DIV <= metadata.opcode &&
+        metadata.opcode <= Opcode::RISCV_DIVW))) {
+    // Compare instructions
+    isDivide_ = true;
+  }
+
   // Set branch type
   switch (metadata.opcode) {
     case Opcode::RISCV_BEQ:
