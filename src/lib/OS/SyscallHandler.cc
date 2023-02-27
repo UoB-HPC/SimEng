@@ -16,7 +16,7 @@ SyscallHandler::SyscallHandler(SimOS* OS,
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
       supportedSpecialFiles_.end(),
-      {"/proc/cpuinfo", "proc/stat", "proc/self/maps",
+      {"/proc/cpuinfo", "proc/stat", "proc/self/maps", "maps",
        "/sys/devices/system/cpu", "/sys/devices/system/cpu/online", "core_id",
        "physical_package_id"});
 }
@@ -898,6 +898,14 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
         if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
           std::cout << "[SimEng:SyscallHandler] Using Special File: "
                     << filename.c_str() << std::endl;
+          // Hijack proc/self/maps and replace self with PID
+          if (filename.find("proc/self/maps") != std::string::npos) {
+            std::string newFileName = filename;
+            std::string tgid = std::to_string(
+                OS_->getProcess(currentInfo_.threadId)->getTGID());
+            newFileName.replace(newFileName.find("self"), 4, tgid);
+            return specialFilesDir_ + newFileName;
+          }
           return specialFilesDir_ + filename;
         }
       }

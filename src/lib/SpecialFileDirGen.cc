@@ -82,12 +82,6 @@ void SpecialFileDirGen::GenerateSFDir() {
   stat_File << "softirq 0 0 0 0 0 0 0 0 0 0 0\n";
   stat_File.close();
 
-  // Create `proc/self/maps`
-  const std::string procSelf_dir = proc_dir + "self/";
-  system(("mkdir " + procSelf_dir).c_str());
-  std::ofstream procSelfMaps_File(procSelf_dir + "maps");
-  procSelfMaps_File.close();
-
   // Create '/sys/devices/system/cpu/online' file.
   std::ofstream online_File(online_dir + "online");
   online_File << "0-" + std::to_string(core_count * socket_count * smt - 1) +

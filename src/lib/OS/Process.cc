@@ -143,6 +143,23 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
   // Initialise context
   initContext(stackPtr, regFileStructure);
   isValid_ = true;
+
+  // Create `proc/tgid/maps`
+  const std::string procTgid_dir =
+      specialFilesDir_ + "/proc/" + std::to_string(TGID) + "/";
+  system(("mkdir " + procTgid_dir).c_str());
+  std::ofstream tgidMaps_File(procTgid_dir + "maps");
+  // Create string for each of the base mappings
+  std::stringstream stackStream;
+  stackStream << std::hex << stackEnd << "-" << stackStart
+              << "\trw-p\t00000000\t00:00\t0\t\t[stack]\012";
+  tgidMaps_File << stackStream.str();
+
+  std::stringstream heapStream;
+  heapStream << std::hex << heapStart << "-" << heapEnd
+             << "\trw-p\t00000000\t00:00\t0\t\t[heap]\012";
+  tgidMaps_File << heapStream.str();
+  tgidMaps_File.close();
 }
 
 Process::Process(span<char> instructions, SimOS* OS,
