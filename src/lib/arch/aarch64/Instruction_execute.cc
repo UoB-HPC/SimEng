@@ -78,8 +78,6 @@ void Instruction::execute() {
   // SVE's VL to SME's SVL.
   const uint16_t VL_bits = SMenabled ? architecture_.getStreamingVectorLength()
                                      : architecture_.getVectorLength();
-  std::cout << "0x" << std::hex << getInstructionAddress() << std::dec << " -- "
-            << metadata.mnemonic << " " << metadata.operandStr << std::endl;
   executed_ = true;
   if (isMicroOp_) {
     switch (microOpcode_) {

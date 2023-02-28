@@ -482,7 +482,10 @@ uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 simeng::OS::cpuContext Core::getCurrentContext() const {
   OS::cpuContext newContext;
   newContext.TID = currentTID_;
-  newContext.pc = fetchUnit_.getPC();
+  newContext.pc =
+      exceptionGenerated_
+          ? exceptionGeneratingInstruction_->getInstructionAddress() + 4
+          : fetchUnit_.getPC();
   // progByteLen will not change in process so do not need to set it
   // Don't need to explicitly save SP as will be in reg file contents
   auto regFileStruc = isa_.getRegisterFileStructures();
