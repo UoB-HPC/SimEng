@@ -71,6 +71,9 @@ static constexpr int SIMENG_FUTEX_WAKE = 1;
 static constexpr int SIMENG_FUTEX_WAKE_PRIVATE =
     (SIMENG_FUTEX_WAKE | SIMENG_FUTEX_PRIVATE_FLAG);
 
+static constexpr int SIMENG_FUTEX_WAIT_PRIVATE =
+    (SIMENG_FUTEX_WAIT | SIMENG_FUTEX_PRIVATE_FLAG);
+
 }  // namespace futexop
 }  // namespace futex
 

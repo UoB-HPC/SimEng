@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <list>
@@ -428,6 +429,7 @@ class SyscallHandler {
    * core status should set to idle after the syscall result has been received
    * by the core and 'long' specifies the syscall return value. */
   std::pair<bool, long> futex(uint64_t uaddr, int futex_op, uint32_t val,
+                              uint64_t tid,
                               const struct timespec* timeout = nullptr,
                               uint32_t uaddr2 = 0, uint32_t val3 = 0);
 
