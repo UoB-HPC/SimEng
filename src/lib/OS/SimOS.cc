@@ -306,8 +306,7 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   cpuContext currContext = cores_[coreID]->getCurrentContext();
   newProc->context_.pc = currContext.pc;
   newProc->context_.regFile = currContext.regFile;
-  // Update returnRegister value to child TID (what clone returns to calling
-  // process)
+  // Update returnRegister value to 0
   newProc->context_.regFile[retReg.type][retReg.tag] = {0, 8};
   // Update stack pointer
   newProc->context_.sp = stackPtr;
