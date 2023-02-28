@@ -490,7 +490,8 @@ void SyscallHandler::handleSyscall() {
           return concludeSyscall({}, true);
         }
         uint64_t retval = static_cast<uint64_t>(bitmask);
-        stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retval}};
+        stateChange = {
+            ChangeType::REPLACEMENT, {currentInfo_.ret}, {sizeof(retval)}};
         stateChange.memoryAddresses.push_back({mask, 8});
         stateChange.memoryAddressValues.push_back(bitmask);
       } else {
@@ -1457,7 +1458,8 @@ int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
 
 int64_t SyscallHandler::schedGetAffinity(pid_t pid, size_t cpusetsize,
                                          uint64_t mask) {
-  if (mask != 0 && pid == 0) {
+  if (mask != 0 &&
+      (pid == 0 || pid == OS_->getProcess(currentInfo_.threadId)->getTGID())) {
     // Always return a bit mask of 1 to represent 1 available CPU
     return 1;
   }
