@@ -49,9 +49,6 @@ void Core::tick() {
   procTicks_++;
 
   if (pc_ >= programByteLength_) {
-    std::cout << "WOOOOOOOOOOOOOPS" << std::endl;
-    std::cout << "TID: " << currentTID_ << "PC VAL: " << pc_
-              << " AT TICK: " << ticks_ << std::endl;
     status_ = CoreStatus::idle;
     return;
   }
@@ -331,8 +328,6 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   currentTID_ = newContext.TID;
   programByteLength_ = newContext.progByteLen;
   pc_ = newContext.pc;
-  std::cout << "TID: " << currentTID_ << " PC TO SCHEDULE " << pc_
-            << " AT TICK: " << ticks_ << std::endl;
   for (size_t type = 0; type < newContext.regFile.size(); type++) {
     for (size_t tag = 0; tag < newContext.regFile[type].size(); tag++) {
       registerFileSet_.set({(uint8_t)type, (uint16_t)tag},

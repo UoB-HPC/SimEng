@@ -127,22 +127,12 @@ void SimOS::tick() {
             currProc->context_.regFile = currContext.regFile;
             // Change status from Executing to Waiting
             if (currProc->status_ != procStatus::sleeping) {
-              std::cout << "PUTTING PROC TO WAIT QUEUE" << currProc->getTID()
-                        << std::endl;
               currProc->status_ = procStatus::waiting;
               waitingProcs_.push(currProc);
-            } else {
-              // std::cout << "CURR PROC SLEEPING: TID: " << currProc->getTID()
-              //       << std::endl;
             }
           }
         }
         if (!scheduledProcs_.empty()) {
-          uint64_t tid = scheduledProcs_.front()->getTID();
-          std::cout << "=============== SCHEDULING TID: " << tid
-                    << " ON CORE FROM "
-                       "scheduledProcs_ ==============="
-                    << std::endl;
           // Schedule new process on core
           core->schedule(scheduledProcs_.front()->context_);
           // Update newly scheduled process' status
@@ -150,11 +140,6 @@ void SimOS::tick() {
           // Remove process from waiting queue
           scheduledProcs_.pop();
         } else if (!waitingProcs_.empty()) {
-          uint64_t tid = waitingProcs_.front()->getTID();
-          std::cout << "=============== SCHEDULING TID: " << tid
-                    << " ON CORE FROM "
-                       "waitingProcs_ ==============="
-                    << std::endl;
           // If nothing inside scheduledProcs_, check if there are any processes
           // inside waitingProcs which can jump ahead
           core->schedule(waitingProcs_.front()->context_);
@@ -178,8 +163,6 @@ void SimOS::tick() {
         if (canSched) {
           // Interrupt signalled successfully, move waitingProc to sheduledProcs
           // queue
-          std::cout << "PUT PROC FROM WAITING TO SCHEDULED PROCS: "
-                    << waitingProcs_.front()->getTID() << std::endl;
           waitingProcs_.front()->status_ = procStatus::scheduled;
           scheduledProcs_.push(waitingProcs_.front());
           waitingProcs_.pop();
@@ -292,10 +275,6 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   // object however, the TGID will match to parent implicitly
   uint64_t newChildTid = nextFreeTID_;
   nextFreeTID_++;
-
-  std::cout << "THREAD TID: " << parentTid << " IS CREATING A CLONE"
-            << std::endl;
-
   // Ignore CLONE_SIGHAND flag for now
   // Ignore CLONE_SYSVSEM flag for now
   // Clone from parent Process object
@@ -330,8 +309,6 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   // Update context of new child process to match parent process's current state
   // in the Core, updating the TID
   cpuContext currContext = cores_[coreID]->getCurrentContext();
-  std::cout << "CURR EXECUTING TID: " << parentTid << " CURR CONTEXT PC: 0x"
-            << std::hex << currContext.pc << std::dec << std::endl;
   newProc->context_.pc = currContext.pc;
   newProc->context_.regFile = currContext.regFile;
   // Update returnRegister value to 0
@@ -375,7 +352,6 @@ void SimOS::terminateThread(uint64_t tid) {
   if (!masks::faults::hasFault(addr)) {
     memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
     // TODO: When `futex` has been implemented, perform
-    std::cout << "FUTEX SYSCALL FROM terminateThread" << std::endl;
     syscallHandler_->futex(
         addr, syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE, 1, tid);
   }
@@ -385,7 +361,6 @@ void SimOS::terminateThread(uint64_t tid) {
   // Remove the FutexInfo struct associated with the process.
   syscallHandler_->removeFutexInfo(proc->second->getTGID(), tid);
   // Remove from processes_
-  std::cout << "terminateThread: " << tid << std::endl;
   processes_.erase(tid);
 }
 
@@ -398,8 +373,6 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
                                              proc->second->getTID());
       if (!masks::faults::hasFault(addr)) {
         memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
-        // TODO: When `futex` has been implemented, perform
-        std::cout << "FUTEX SYSCALL FROM terminateThreadGroup" << std::endl;
         syscallHandler_->futex(
             addr, syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE, 1,
             proc->second->getTID());
@@ -413,8 +386,6 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
       proc++;
     }
   }
-
-  std::cout << "terminateThreadGroup: " << tgid << std::endl;
   // Remove all FutexInfo structs assosciated with processes with TGID = `tgid`
   syscallHandler_->removeFutexInfoList(tgid);
 }

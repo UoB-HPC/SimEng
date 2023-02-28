@@ -36,8 +36,6 @@ void SyscallHandler::handleSyscall() {
   currentInfo_ = syscallQueue_.front();
   ProcessStateChange stateChange = {};
 
-  std::cout << "Syscall Id: " << currentInfo_.syscallId << std::endl;
-
   switch (currentInfo_.syscallId) {
     case 29: {  // ioctl
       int64_t fd = currentInfo_.registerArguments[0].get<int64_t>();
@@ -427,7 +425,6 @@ void SyscallHandler::handleSyscall() {
       // syscallSupported &= (timespecPtr == 0);
 
       if (!syscallSupported) {
-        std::cout << "FUTEX OP: " << op << std::endl;
         std::cerr
             << "[SimEng:SyscallHandler] Arguments supplied to futex syscall "
                "not supported.\n"
@@ -734,6 +731,12 @@ void SyscallHandler::handleSyscall() {
     }
     case 226: {  // mprotect
       // mprotect is not supported
+      // always return zero to indicate success
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
+      break;
+    }
+    case 233: {  // madvise
+      // madvise is not supported
       // always return zero to indicate success
       stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
       break;
@@ -1523,19 +1526,11 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
 
   switch (futex_op) {
     case syscalls::futex::futexop::SIMENG_FUTEX_WAKE:
-      std::cout << "FUTEX_OP: "
-                << "FUTEX_WAKE" << std::endl;
     case syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE:
-      std::cout << "FUTEX_OP: "
-                << "FUTEX_WAKE_PRIVATE" << std::endl;
       wake = 1;
       break;
     case syscalls::futex::futexop::SIMENG_FUTEX_WAIT:
-      std::cout << "FUTEX_OP: "
-                << "FUTEX_WAIT" << std::endl;
     case syscalls::futex::futexop::SIMENG_FUTEX_WAIT_PRIVATE:
-      std::cout << "FUTEX_OP: "
-                << "FUTEX_WAIT_PRIVATE" << std::endl;
       wait = 1;
       break;
   }
@@ -1571,14 +1566,11 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
     ftableItr->second.push_back(f);
     // Set the process status to procStatus::sleeping so that it isn't
     // added to the waitingProcs_ queue.
-    std::cout << "\t Putting to sleep proc: TGID = " << process->getTGID()
-              << " TID = " << process->getTID() << std::endl;
     process->status_ = procStatus::sleeping;
     return {true, 0};
   }
 
   if (wake) {
-    std::cout << "\t TGID: " << tgid << std::endl;
     long procWokenUp = 0;
     // Variable denoting how many processes were woken up.
     if (ftableItr != futexTable_.end()) {
@@ -1589,14 +1581,11 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
         // Awaken the process by changing the status to procStatus::waiting and
         // adding it to the waitingProcs_ queue.
         futexInfo.process->status_ = procStatus::waiting;
-        std::cout << "\t Waking proc: " << futexInfo.process->getTID()
-                  << std::endl;
         OS_->addProcessToWaitQueue(futexInfo.process);
         ftableItr->second.pop_front();
         procWokenUp++;
       }
     }
-    std::cout << "\t Processes woken up: " << procWokenUp << std::endl;
     // procWokenUp should be be 0 if no processes were woken up.
     return {false, procWokenUp};
   }
