@@ -150,13 +150,16 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
   std::ofstream tgidMaps_File(procTgid_dir + "maps");
   // Create string for each of the base mappings
   std::stringstream stackStream;
-  stackStream << std::hex << stackEnd << "-" << stackStart
-              << "\trw-p\t00000000\t00:00\t0\t\t[stack]\012";
+  stackStream << std::setfill('0') << std::hex << std::setw(12) << stackEnd
+              << "-" << std::setfill('0') << std::hex << std::setw(12)
+              << stackStart
+              << " rw-p 00000000 00:00 0                          [stack]\n";
   tgidMaps_File << stackStream.str();
 
   std::stringstream heapStream;
-  heapStream << std::hex << heapStart << "-" << heapEnd
-             << "\trw-p\t00000000\t00:00\t0\t\t[heap]\012";
+  heapStream << std::setfill('0') << std::hex << std::setw(12) << heapStart
+             << "-" << std::setfill('0') << std::hex << std::setw(12) << heapEnd
+             << " rw-p 00000000 00:00 0                          [heap]\n";
   tgidMaps_File << heapStream.str();
   tgidMaps_File.close();
 }
