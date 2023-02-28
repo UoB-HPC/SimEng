@@ -241,7 +241,7 @@ void Instruction::decode() {
 
   if ((Opcode::RISCV_MUL <= metadata.opcode &&
        metadata.opcode <= Opcode::RISCV_MULW)) {
-    // Compare instructions
+    // Multiply instructions
     isMultiply_ = true;
   }
 
@@ -249,7 +249,7 @@ void Instruction::decode() {
         metadata.opcode <= Opcode::RISCV_REMW) ||
        (Opcode::RISCV_DIV <= metadata.opcode &&
         metadata.opcode <= Opcode::RISCV_DIVW))) {
-    // Compare instructions
+    // Divide instructions
     isDivide_ = true;
   }
 
