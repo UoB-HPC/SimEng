@@ -165,8 +165,8 @@ void Instruction::invalidateIfNotImplemented() {
   //  if (metadata.opcode == Opcode::RISCV_FLE_D) return;
   //  if (metadata.opcode == Opcode::RISCV_FLE_S) return;
 
-  std::cout << "[SimEng:RISC-V:Decode] Insn: " << metadata.mnemonic << " "
-            << metadata.operandStr << std::endl;
+  //  std::cout << "[SimEng:RISC-V:Decode] Insn: " << metadata.mnemonic << " "
+  //            << metadata.operandStr << std::endl;
 
   exception_ = InstructionException::EncodingUnallocated;
   exceptionEncountered_ = true;
