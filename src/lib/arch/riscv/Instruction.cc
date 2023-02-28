@@ -129,7 +129,7 @@ std::tuple<bool, uint64_t> Instruction::checkEarlyBranchMisprediction() const {
 
 BranchType Instruction::getBranchType() const { return branchType_; }
 
-uint64_t Instruction::getKnownTarget() const { return knownTarget_; }
+uint64_t Instruction::getKnownTarget() const { return knownOffset_; }
 
 uint16_t Instruction::getGroup() const {
   uint16_t base = InstructionGroups::INT;

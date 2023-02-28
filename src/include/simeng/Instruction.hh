@@ -209,7 +209,7 @@ class Instruction {
   BranchType branchType_ = BranchType::Unknown;
 
   /** If the branch target is known at the time of decode, store it. */
-  uint64_t knownTarget_ = 0;
+  uint64_t knownOffset_ = 0;
 
   // Flushing
   /** This instruction's sequence ID; a higher ID represents a chronologically
