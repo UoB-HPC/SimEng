@@ -1611,6 +1611,12 @@ void Instruction::execute() {
         results[0] = static_cast<int64_t>(std::trunc(operands[0].get<float>()));
         break;
       }
+      case Opcode::AArch64_FCVTZUv1i64: {  // fcvtzu dd, dn
+        // TODO: Handle NaNs, denorms, and saturation
+        results[0] = {
+            static_cast<uint64_t>(std::trunc(operands[0].get<double>())), 256};
+        break;
+      }
       case Opcode::AArch64_FCVT_ZPmZ_DtoS: {  // fcvt zd.s, pg/m, zn.d
         results[0] =
             sveHelp::sveFcvtPredicated<float, double>(operands, VL_bits);
@@ -3549,7 +3555,6 @@ void Instruction::execute() {
         // This instruction is always used by SMSTART and SMSTOP aliases.
         const uint64_t svcrBits =
             static_cast<uint64_t>(metadata.operands[0].svcr);
-        const uint8_t imm = metadata.operands[1].imm;
 
         // Changing value of SM or ZA bits in SVCR zeros out vector, predicate,
         // and ZA registers. Raise an exception to do this.
@@ -3865,6 +3870,11 @@ void Instruction::execute() {
       case Opcode::AArch64_SBFMXri: {  // sbfm xd, xn, #immr, #imms
         results[0] =
             bitmanipHelp::bfm_2imms<uint64_t>(operands, metadata, true, true);
+        break;
+      }
+      case Opcode::AArch64_SCVTFSWSri: {  // scvtf sd, wn, #fbits
+        results[0] =
+            floatHelp::scvtf_FixedPoint<float, int32_t>(operands, metadata);
         break;
       }
       case Opcode::AArch64_SCVTFSXDri: {  // scvtf dd, xn, #fbits
@@ -4238,15 +4248,61 @@ void Instruction::execute() {
         }
         break;
       }
-      case Opcode::AArch64_ST1Twov16b: {  // st1v {vt.16b, vt2.16b}, [xn]
+      case Opcode::AArch64_ST1Fourv2s_POST: {  // st1 {vt.2s, vt2.2s, vt3.2s,
+                                               // vt4.2s}, [xn|sp], <#imm|xm>
+        // STORE
+        const uint32_t* t = operands[0].getAsVector<uint32_t>();
+        const uint32_t* t2 = operands[1].getAsVector<uint32_t>();
+        const uint32_t* t3 = operands[2].getAsVector<uint32_t>();
+        const uint32_t* t4 = operands[3].getAsVector<uint32_t>();
+        for (int i = 0; i < 2; i++) {
+          memoryData[i] = t[i];
+          memoryData[i + 2] = t2[i];
+          memoryData[i + 4] = t3[i];
+          memoryData[i + 6] = t4[i];
+        }
+        // if #imm post-index, value can only be 32
+        const uint64_t postIndex =
+            (metadata.operandCount == 6) ? operands[5].get<uint64_t>() : 32;
+        results[0] = operands[4].get<uint64_t>() + postIndex;
+        break;
+      }
+      case Opcode::AArch64_ST1Fourv4s_POST: {  // st1 {vt.4s, vt2.4s, vt3.4s,
+                                               // vt4.4s}, [xn|sp], <#imm|xm>
+        // STORE
+        const uint32_t* t = operands[0].getAsVector<uint32_t>();
+        const uint32_t* t2 = operands[1].getAsVector<uint32_t>();
+        const uint32_t* t3 = operands[2].getAsVector<uint32_t>();
+        const uint32_t* t4 = operands[3].getAsVector<uint32_t>();
+        for (int i = 0; i < 4; i++) {
+          memoryData[i] = t[i];
+          memoryData[i + 4] = t2[i];
+          memoryData[i + 8] = t3[i];
+          memoryData[i + 12] = t4[i];
+        }
+        // if #imm post-index, value can only be 64
+        const uint64_t postIndex =
+            (metadata.operandCount == 6) ? operands[5].get<uint64_t>() : 64;
+        results[0] = operands[4].get<uint64_t>() + postIndex;
+        break;
+      }
+      case Opcode::AArch64_ST1Twov16b: {  // st1 {vt.16b, vt2.16b}, [xn|sp]
         // STORE
         const uint8_t* t = operands[0].getAsVector<uint8_t>();
         const uint8_t* t2 = operands[1].getAsVector<uint8_t>();
         for (int i = 0; i < 16; i++) {
           memoryData[i] = t[i];
-        }
-        for (int i = 0; i < 16; i++) {
           memoryData[i + 16] = t2[i];
+        }
+        break;
+      }
+      case Opcode::AArch64_ST1Twov4s: {  // st1 {vt.4s, vt2.4s}, [xn|sp]
+        // STORE
+        const uint32_t* t = operands[0].getAsVector<uint32_t>();
+        const uint32_t* t2 = operands[1].getAsVector<uint32_t>();
+        for (int i = 0; i < 4; i++) {
+          memoryData[i] = t[i];
+          memoryData[i + 4] = t2[i];
         }
         break;
       }

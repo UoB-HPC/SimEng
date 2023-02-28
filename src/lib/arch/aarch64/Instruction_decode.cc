@@ -209,10 +209,10 @@ void Instruction::decode() {
     if (op.type == ARM64_OP_REG) {  // Register operand
       if ((op.access & cs_ac_type::CS_AC_WRITE) && op.reg != ARM64_REG_WZR &&
           op.reg != ARM64_REG_XZR) {
-        // Belongs to the predicate group if the destination register is a
-        // predicate
         // Determine the data type the instruction operates on based on the
         // register operand used
+        // Belongs to the predicate group if the detsination register is a
+        // predicate
         if (op.reg >= ARM64_REG_V0) {
           isVectorData_ = true;
         } else if (op.reg >= ARM64_REG_ZAB0 || op.reg == ARM64_REG_ZA) {
@@ -289,6 +289,8 @@ void Instruction::decode() {
       if ((op.sme_index.reg >= ARM64_REG_ZAB0 &&
            op.sme_index.reg < ARM64_REG_V0) ||
           (op.sme_index.reg == ARM64_REG_ZA)) {
+        // Set instruction group
+        isSMEData_ = true;
         regs = getZARowVectors(op.sme_index.reg,
                                architecture_.getStreamingVectorLength());
         // If WRITE, then also need to add to souce registers to maintain
@@ -304,6 +306,8 @@ void Instruction::decode() {
         }
       } else {
         // SME_INDEX can also be for predicate
+        // Set instruction group
+        isPredicate_ = true;
         if (op.access & cs_ac_type::CS_AC_WRITE) {
           destinationRegisters.push_back(csRegToRegister(op.sme_index.reg));
           destinationRegisterCount++;
@@ -364,7 +368,7 @@ void Instruction::decode() {
     switch (metadata.opcode) {
       case Opcode::AArch64_B:  // b label
         branchType_ = BranchType::Unconditional;
-        knownTarget_ = metadata.operands[0].imm;
+        knownOffset_ = metadata.operands[0].imm;
         break;
       case Opcode::AArch64_BR: {  // br xn
         branchType_ = BranchType::Unconditional;
@@ -372,7 +376,7 @@ void Instruction::decode() {
       }
       case Opcode::AArch64_BL:  // bl #imm
         branchType_ = BranchType::SubroutineCall;
-        knownTarget_ = metadata.operands[0].imm;
+        knownOffset_ = metadata.operands[0].imm;
         break;
       case Opcode::AArch64_BLR: {  // blr xn
         branchType_ = BranchType::SubroutineCall;
@@ -383,7 +387,7 @@ void Instruction::decode() {
           branchType_ = BranchType::LoopClosing;
         else
           branchType_ = BranchType::Conditional;
-        knownTarget_ = metadata.operands[0].imm;
+        knownOffset_ = metadata.operands[0].imm;
         break;
       }
       case Opcode::AArch64_CBNZW:  // cbnz wn, #imm
@@ -397,7 +401,7 @@ void Instruction::decode() {
           branchType_ = BranchType::LoopClosing;
         else
           branchType_ = BranchType::Conditional;
-        knownTarget_ = metadata.operands[1].imm;
+        knownOffset_ = metadata.operands[1].imm;
         break;
       }
       case Opcode::AArch64_TBNZW:  // tbnz wn, #imm, label
@@ -411,7 +415,7 @@ void Instruction::decode() {
           branchType_ = BranchType::LoopClosing;
         else
           branchType_ = BranchType::Conditional;
-        knownTarget_ = metadata.operands[2].imm;
+        knownOffset_ = metadata.operands[2].imm;
         break;
       }
       case Opcode::AArch64_RET: {  // ret {xr}
@@ -463,10 +467,21 @@ void Instruction::decode() {
     }
 
     if (isStoreData_) {
-      // Identify whether a store operation uses Z source registers
+      // Identify store instruction group
       if (ARM64_REG_Z0 <= metadata.operands[0].reg &&
           metadata.operands[0].reg <= ARM64_REG_Z31) {
         isSVEData_ = true;
+      } else if ((metadata.operands[0].reg <= ARM64_REG_S31 &&
+                  metadata.operands[0].reg >= ARM64_REG_Q0) ||
+                 (metadata.operands[0].reg <= ARM64_REG_H31 &&
+                  metadata.operands[0].reg >= ARM64_REG_B0)) {
+        isScalarData_ = true;
+      } else if (metadata.operands[0].reg >= ARM64_REG_V0) {
+        isVectorData_ = true;
+      } else if ((metadata.operands[0].reg >= ARM64_REG_ZAB0 &&
+                  metadata.operands[0].reg < ARM64_REG_V0) ||
+                 metadata.operands[0].reg == ARM64_REG_ZA) {
+        isSMEData_ = true;
       }
     }
   } else if (microOpcode_ == MicroOpcode::STR_DATA) {

@@ -65,6 +65,8 @@ class ExecuteUnit {
   /** Retrieve the number of active execution cycles. */
   uint64_t getCycles() const;
 
+  bool isEmpty() const;
+
  private:
   /** Execute the supplied uop, write it into the output buffer, and forward
    * results back to dispatch/issue. */
@@ -133,6 +135,8 @@ class ExecuteUnit {
 
   /** The number of active execution cycles that were observed. */
   uint64_t cycles_ = 0;
+
+  bool empty_ = true;
 };
 
 }  // namespace pipeline

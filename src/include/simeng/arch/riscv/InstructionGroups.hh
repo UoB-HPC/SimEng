@@ -31,7 +31,7 @@ const uint16_t STORE = 21;
 const uint16_t BRANCH = 22;
 }  // namespace InstructionGroups
 
-#define NUM_GROUPS 23
+static constexpr uint8_t NUM_GROUPS = 23;
 
 const std::unordered_map<uint16_t, std::vector<uint16_t>> groupInheritance = {
     {InstructionGroups::INT,

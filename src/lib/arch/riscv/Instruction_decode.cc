@@ -371,7 +371,7 @@ void Instruction::decode() {
        metadata.opcode <= Opcode::RISCV_FMUL_S) ||
       (Opcode::RISCV_FNMADD_D <= metadata.opcode &&
        metadata.opcode <= Opcode::RISCV_FNMSUB_S)) {
-    // Compare instructions
+    // Multiply instructions
     isMultiply_ = true;
   }
 
@@ -383,7 +383,7 @@ void Instruction::decode() {
        metadata.opcode <= Opcode::RISCV_FDIV_S) ||
       (Opcode::RISCV_FSQRT_D <= metadata.opcode &&
        metadata.opcode <= Opcode::RISCV_FSQRT_S)) {
-    // Compare instructions
+    // Divide instructions
     isDivide_ = true;
   }
 
@@ -408,12 +408,12 @@ void Instruction::decode() {
     case Opcode::RISCV_BGE:
     case Opcode::RISCV_BGEU:
       branchType_ = BranchType::Conditional;
-      knownTarget_ = instructionAddress_ + metadata.operands[2].imm;
+      knownOffset_ = metadata.operands[2].imm;
       break;
     case Opcode::RISCV_JAL:
     case Opcode::RISCV_JALR:
       branchType_ = BranchType::Unconditional;
-      knownTarget_ = instructionAddress_ + metadata.operands[1].imm;
+      knownOffset_ = metadata.operands[1].imm;
       break;
   }
 }

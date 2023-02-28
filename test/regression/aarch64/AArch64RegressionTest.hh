@@ -10,7 +10,7 @@
    "{Fetch-Block-Size: 32, Loop-Buffer-Size: 64, Loop-Detection-Threshold: "  \
    "4}, Process-Image: {Heap-Size: 100000, Stack-Size: 100000}, "             \
    "Register-Set: {GeneralPurpose-Count: 154, FloatingPoint/SVE-Count: 90, "  \
-   "Predicate-Count: 17, Conditional-Count: 128, MatrixRow-Count: 256}, "     \
+   "Predicate-Count: 17, Conditional-Count: 128, Matrix-Count: 2}, "          \
    "Pipeline-Widths: { Commit: 4, FrontEnd: 4, LSQ-Completion: 2}, "          \
    "Queue-Sizes: {ROB: 180, Load: 64, Store: 36}, Branch-Predictor: "         \
    "{BTB-Tag-Bits: 11, Saturating-Count-Bits: 2, Global-History-Length: 10, " \
