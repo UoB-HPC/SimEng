@@ -736,9 +736,52 @@ void SyscallHandler::handleSyscall() {
       break;
     }
     case 261: {  // prlimit64
-      // TODO: Functionality temporarily omitted as it is unused within
-      // workloads regions of interest and not required for their simulation
-      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
+      pid_t pid = currentInfo_.registerArguments[0].get<pid_t>();
+      int resource = currentInfo_.registerArguments[1].get<int>();
+      uint64_t newLimit = currentInfo_.registerArguments[2].get<uint64_t>();
+      uint64_t oldLimit = currentInfo_.registerArguments[3].get<uint64_t>();
+      int64_t retVal = 0;
+      if (pid != 0) {
+        // We only support changes to current process
+        retVal = -EPERM;
+      } else {
+        if (resource != RLIMIT_STACK) {
+          std::cout << "[SimEng:SyscallHandler] Un-supported resource used in "
+                       "prlimit64 syscall."
+                    << std::endl;
+          retVal = -EINVAL;
+        } else {
+          if (newLimit) {
+            // Update rlimit for Process
+            uint64_t physAddr =
+                OS_->handleVAddrTranslation(newLimit, currentInfo_.threadId);
+            if (masks::faults::hasFault(physAddr)) {
+              retVal = -EFAULT;
+            } else {
+              rlimit newRlim;
+              std::vector<char> vec =
+                  memory_->getUntimedData(physAddr, sizeof(rlimit));
+              std::memcpy(&newRlim, vec.data(), sizeof(rlimit));
+              OS_->getProcess(currentInfo_.threadId)->stackRlim = newRlim;
+            }
+          }
+          if (oldLimit) {
+            // Update rlimit struct pointed to by oldLimit
+            uint64_t physAddr =
+                OS_->handleVAddrTranslation(oldLimit, currentInfo_.threadId);
+            if (masks::faults::hasFault(physAddr)) {
+              retVal = -EFAULT;
+            } else {
+              rlimit rlim = OS_->getProcess(currentInfo_.threadId)->stackRlim;
+              std::vector<char> vec(sizeof(rlimit), '\0');
+              std::memcpy(vec.data(), &rlim, sizeof(rlimit));
+              memory_->sendUntimedData(vec, physAddr, sizeof(rlimit));
+            }
+          }
+        }
+      }
+
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retVal}};
       break;
     }
     case 278: {  // getrandom

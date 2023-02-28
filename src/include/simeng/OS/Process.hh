@@ -182,6 +182,9 @@ class Process {
    * present, or by calling the `set_tid_address` syscall. */
   uint64_t clearChildTid_ = 0;
 
+  /** The rlimit struct for RLIMIT_STACK. */
+  rlimit stackRlim = {RLIM_INFINITY, RLIM_INFINITY};
+
  private:
   /** Create and populate the initial process stack and returns the stack
    * pointer. */
