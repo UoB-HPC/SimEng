@@ -1,5 +1,7 @@
 #include "simeng/OS/SimOS.hh"
 
+#include <cstdint>
+
 #include "simeng/OS/Constants.hh"
 #include "simeng/OS/Process.hh"
 
@@ -273,7 +275,6 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   // object however, the TGID will match to parent implicitly
   uint64_t newChildTid = nextFreeTID_;
   nextFreeTID_++;
-
   // Ignore CLONE_SIGHAND flag for now
   // Ignore CLONE_SYSVSEM flag for now
   // Clone from parent Process object
@@ -293,12 +294,16 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   // TLS (Thread Local Storage) region already mapped
 
   // Store child tid at parentTidPtr if required
+  uint64_t paddr = handleVAddrTranslation(parentTidPtr, parentTid);
+  if (masks::faults::hasFault(paddr)) {
+    std::cout << "Fault in parentTidPtr translation in cloneProcess"
+              << std::endl;
+    std::exit(1);
+  }
   if (flags & f_CLONE_PARENT_SETTID) {
     std::vector<char> dataVec(sizeof(newChildTid), '\0');
     std::memcpy(dataVec.data(), &newChildTid, sizeof(newChildTid));
-    memory_->sendUntimedData(dataVec,
-                             handleVAddrTranslation(parentTidPtr, parentTid),
-                             dataVec.size());
+    memory_->sendUntimedData(dataVec, paddr, sizeof(newChildTid));
   }
 
   // Update context of new child process to match parent process's current state
@@ -347,7 +352,8 @@ void SimOS::terminateThread(uint64_t tid) {
   if (!masks::faults::hasFault(addr)) {
     memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
     // TODO: When `futex` has been implemented, perform
-    // futex(clear_child_tid, FUTEX_WAKE, 1, NULL, NULL, 0);
+    syscallHandler_->futex(
+        addr, syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE, 1, tid);
   }
   // Set status to complete so it can be removed from the relevant queue in
   // tick()
@@ -367,7 +373,9 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
                                              proc->second->getTID());
       if (!masks::faults::hasFault(addr)) {
         memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
-        // TODO: When `futex` has been implemented, perform
+        syscallHandler_->futex(
+            addr, syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE, 1,
+            proc->second->getTID());
         // futex(clear_child_tid, FUTEX_WAKE, 1, NULL, NULL, 0);
       }
       // Set status to complete so it can be removed from the relevant queue in
