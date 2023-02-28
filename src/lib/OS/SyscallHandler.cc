@@ -1,5 +1,7 @@
 #include "simeng/OS/SyscallHandler.hh"
 
+#include <signal.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <ctime>
@@ -33,6 +35,8 @@ void SyscallHandler::handleSyscall() {
   // Update currentInfo_
   currentInfo_ = syscallQueue_.front();
   ProcessStateChange stateChange = {};
+
+  std::cout << "Syscall Id: " << currentInfo_.syscallId << std::endl;
 
   switch (currentInfo_.syscallId) {
     case 29: {  // ioctl
@@ -418,9 +422,12 @@ void SyscallHandler::handleSyscall() {
       syscallSupported |= (op == syscalls::futex::futexop::SIMENG_FUTEX_WAIT);
       syscallSupported |=
           (op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE);
-      syscallSupported &= (timespecPtr == 0);
+      syscallSupported |=
+          (op == syscalls::futex::futexop::SIMENG_FUTEX_WAIT_PRIVATE);
+      // syscallSupported &= (timespecPtr == 0);
 
       if (!syscallSupported) {
+        std::cout << "FUTEX OP: " << op << std::endl;
         std::cerr
             << "[SimEng:SyscallHandler] Arguments supplied to futex syscall "
                "not supported.\n"
@@ -442,7 +449,8 @@ void SyscallHandler::handleSyscall() {
                   << addr << std::endl;
         return concludeSyscall({}, true);
       }
-      auto [putCoreToIdle, futexReturnValue] = futex(paddr, op, val);
+      auto [putCoreToIdle, futexReturnValue] =
+          futex(paddr, op, val, currentInfo_.threadId);
       return concludeSyscall(
           {ChangeType::REPLACEMENT, {currentInfo_.ret}, {futexReturnValue}},
           false, putCoreToIdle);
@@ -1507,21 +1515,35 @@ int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
 }
 
 std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
-                                            uint32_t val,
+                                            uint32_t val, uint64_t tid,
                                             const struct timespec* timeout,
                                             uint32_t uaddr2, uint32_t val3) {
-  int wake = futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE ||
-             futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE;
-  int wait = futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAIT;
+  int wait = 0;
+  int wake = 0;
 
-  std::cerr << "FUTEX\n";
+  switch (futex_op) {
+    case syscalls::futex::futexop::SIMENG_FUTEX_WAKE:
+      std::cout << "FUTEX_OP: "
+                << "FUTEX_WAKE" << std::endl;
+    case syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE:
+      std::cout << "FUTEX_OP: "
+                << "FUTEX_WAKE_PRIVATE" << std::endl;
+      wake = 1;
+      break;
+    case syscalls::futex::futexop::SIMENG_FUTEX_WAIT:
+      std::cout << "FUTEX_OP: "
+                << "FUTEX_WAIT" << std::endl;
+    case syscalls::futex::futexop::SIMENG_FUTEX_WAIT_PRIVATE:
+      std::cout << "FUTEX_OP: "
+                << "FUTEX_WAIT_PRIVATE" << std::endl;
+      wait = 1;
+      break;
+  }
 
   // Get the process associated with the thread id.
-  const auto tid = currentInfo_.threadId;
   auto process = OS_->getProcess(tid);
+  uint64_t tgid = process->getTGID();
 
-  // Find the FutexInfo object associated with the thread group.
-  const auto tgid = process->getTGID();
   // Iterator of the FutexInfo entry.
   auto ftableItr = futexTable_.find(tgid);
 
@@ -1545,33 +1567,36 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
     if (ftableItr == futexTable_.end()) {
       ftableItr = futexTable_.insert({tgid, std::list<FutexInfo>()}).first;
     }
-    std::list<FutexInfo> list = ftableItr->second;
     FutexInfo f(uaddr, process, FutexStatus::FUTEX_SLEEPING);
-    list.push_back(f);
+    ftableItr->second.push_back(f);
     // Set the process status to procStatus::sleeping so that it isn't
     // added to the waitingProcs_ queue.
+    std::cout << "\t Putting to sleep proc: TGID = " << process->getTGID()
+              << " TID = " << process->getTID() << std::endl;
     process->status_ = procStatus::sleeping;
     return {true, 0};
   }
 
   if (wake) {
+    std::cout << "\t TGID: " << tgid << std::endl;
     long procWokenUp = 0;
     // Variable denoting how many processes were woken up.
     if (ftableItr != futexTable_.end()) {
-      std::list<FutexInfo> list = ftableItr->second;
-      // Determine how many processes waiting on a futex should be woken up.
       size_t castedVal = static_cast<size_t>(val);
-      size_t maxItr = std::min(castedVal, list.size());
+      size_t maxItr = std::min(castedVal, ftableItr->second.size());
       for (size_t t = 0; t < maxItr; t++) {
-        auto futexInfo = list.front();
+        auto futexInfo = ftableItr->second.front();
         // Awaken the process by changing the status to procStatus::waiting and
         // adding it to the waitingProcs_ queue.
         futexInfo.process->status_ = procStatus::waiting;
+        std::cout << "\t Waking proc: " << futexInfo.process->getTID()
+                  << std::endl;
         OS_->addProcessToWaitQueue(futexInfo.process);
-        list.pop_front();
+        ftableItr->second.pop_front();
         procWokenUp++;
       }
     }
+    std::cout << "\t Processes woken up: " << procWokenUp << std::endl;
     // procWokenUp should be be 0 if no processes were woken up.
     return {false, procWokenUp};
   }
