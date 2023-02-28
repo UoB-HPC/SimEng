@@ -71,9 +71,8 @@ void Core::tick() {
   // as these will now loop around and become the tail.
   fetchToDecodeBuffer_.tick();
   decodeToExecuteBuffer_.tick();
-  for (auto& buffer : completionSlots_) {
-    buffer.tick();
-  }
+  // Only ever 1 completion slot
+  completionSlots_[0].tick();
 
   if (exceptionGenerated_) {
     handleException();
@@ -116,14 +115,31 @@ bool Core::hasHalted() const {
   }
 
   // Core is considered to have halted when the fetch unit has halted, there
-  // are no uops at the head of any buffer, and no exception is currently being
-  // handled.
-  bool decodePending = fetchToDecodeBuffer_.getHeadSlots()[0].size() > 0;
-  bool executePending = decodeToExecuteBuffer_.getHeadSlots()[0] != nullptr;
-  bool writebackPending = completionSlots_[0].getHeadSlots()[0] != nullptr;
+  // are no uops pending in any buffer, the execute unit is not currently
+  // processing an instructions and no exception is currently being handled.
+
+  // Units place uops in buffer tail, but if buffer is stalled, uops do not
+  // move to head slots and so remain in tail slots. Buffer head appears
+  // empty. Check emptiness accordingly
+  auto decSlots = fetchToDecodeBuffer_.isStalled()
+                      ? fetchToDecodeBuffer_.getTailSlots()[0]
+                      : fetchToDecodeBuffer_.getHeadSlots()[0];
+  bool decodePending = decSlots.size() > 0;
+
+  auto exeSlots = decodeToExecuteBuffer_.isStalled()
+                      ? decodeToExecuteBuffer_.getTailSlots()[0]
+                      : decodeToExecuteBuffer_.getHeadSlots()[0];
+  bool executePending = exeSlots != nullptr;
+
+  auto writeSlots = completionSlots_[0].isStalled()
+                        ? completionSlots_[0].getTailSlots()[0]
+                        : completionSlots_[0].getHeadSlots()[0];
+
+  bool writebackPending = writeSlots != nullptr;
 
   return (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
-          !executePending && exceptionHandler_ == nullptr);
+          !executePending && executeUnit_.isEmpty() &&
+          exceptionHandler_ == nullptr);
 }
 
 const ArchitecturalRegisterFileSet& Core::getArchitecturalRegisterFileSet()
@@ -220,8 +236,8 @@ void Core::loadData(const std::shared_ptr<Instruction>& instruction) {
     dataMemory_.requestRead(target);
   }
 
-  // NOTE: This model only supports zero-cycle data memory models, and will not
-  // work unless data requests are handled synchronously.
+  // NOTE: This model only supports zero-cycle data memory models, and will
+  // not work unless data requests are handled synchronously.
   for (const auto& response : dataMemory_.getCompletedReads()) {
     instruction->supplyData(response.target.address, response.data);
   }
