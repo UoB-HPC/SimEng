@@ -302,13 +302,13 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   }
 
   // Update context of new child process to match parent process's current state
-  // in the Core, but increment PC by +4 and update TID
+  // in the Core, updating the TID
   cpuContext currContext = cores_[coreID]->getCurrentContext();
-  newProc->context_.pc = currContext.pc + 4;
+  newProc->context_.pc = currContext.pc;
   newProc->context_.regFile = currContext.regFile;
   // Update returnRegister value to child TID (what clone returns to calling
   // process)
-  newProc->context_.regFile[retReg.type][retReg.tag] = {newChildTid, 8};
+  newProc->context_.regFile[retReg.type][retReg.tag] = {0, 8};
   // Update stack pointer
   newProc->context_.sp = stackPtr;
   if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {

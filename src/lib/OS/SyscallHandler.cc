@@ -489,9 +489,9 @@ void SyscallHandler::handleSyscall() {
         if (bitmask != 1) {
           return concludeSyscall({}, true);
         }
-        uint64_t retval = (pid == 0) ? 1 : 0;
+        uint64_t retval = static_cast<uint64_t>(bitmask);
         stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retval}};
-        stateChange.memoryAddresses.push_back({mask, 1});
+        stateChange.memoryAddresses.push_back({mask, 8});
         stateChange.memoryAddressValues.push_back(bitmask);
       } else {
         stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {-1ll}};
@@ -1426,6 +1426,13 @@ int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
   // Currently, the bit mask can only be 1 so capture any error which would
   // occur but otherwise omit functionality
   if (mask == 0) return -EFAULT;
+  uint64_t translatedAddr =
+      OS_->handleVAddrTranslation(mask, currentInfo_.threadId);
+  uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(translatedAddr);
+  if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT ||
+      faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
+    return -EFAULT;
+  }
   if (pid != 0) return -ESRCH;
   if (cpusetsize == 0) return -EINVAL;
   return 0;
@@ -1433,7 +1440,7 @@ int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
 
 int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
   OS_->getProcess(currentInfo_.threadId)->clearChildTid_ = tidptr;
-  return 0;
+  return currentInfo_.threadId;
 }
 
 int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
