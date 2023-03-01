@@ -193,7 +193,6 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   // Writeback
   auto results = uop->getResults();
   auto destinations = uop->getDestinationRegisters();
-
   if (uop->isStoreData()) {
     for (size_t i = 0; i < results.size(); i++) {
       auto reg = destinations[i];
