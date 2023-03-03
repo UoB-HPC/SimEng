@@ -27,7 +27,7 @@ Architecture::Architecture() : microDecoder_(std::make_unique<MicroDecoder>()) {
   vctModulo_ = (config["Core"]["Clock-Frequency"].as<float>() * 1e9) /
                (config["Core"]["Timer-Frequency"].as<uint32_t>() * 1e6);
 
-  // Initialise systemRegisterMap_ such that relevant values in capstone's
+  // Initialise systemRegisterMap_ such that relevant values in Capstone's
   // arm64_sysreg enum are mapped to SimEng's ARM64_SYSREG_TAGS enum.
   systemRegisterMap_[ARM64_SYSREG_DCZID_EL0] = ARM64_SYSREG_TAGS::DCZID_EL0;
   systemRegisterMap_[ARM64_SYSREG_FPCR] = ARM64_SYSREG_TAGS::FPCR;
