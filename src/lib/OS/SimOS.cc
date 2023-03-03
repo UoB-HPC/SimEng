@@ -322,8 +322,8 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
     newProc->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
         stackPtr, 8};
     newProc->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
-                             [arch::aarch64::ARM64_SYSREG_TAGS::TPIDR_EL0] =
-        tls;
+                             [arch::aarch64::ARM64_SYSREG_TAGS::TPIDR_EL0] = {
+        tls, 8};
   }
   newProc->context_.TID = newChildTid;
   newProc->status_ = procStatus::waiting;
