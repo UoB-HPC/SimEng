@@ -250,9 +250,9 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
     // Set the system registers
     // Temporary: state that DCZ can support clearing 64 bytes at a time,
     // but is disabled due to bit 4 being set
-    processes_[tid]->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
-                                     [arch->getSystemRegisterTag(
-                                         ARM64_SYSREG_DCZID_EL0)] = {
+    processes_[tid]
+        ->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
+                          [arch::aarch64::ARM64_SYSREG_TAGS::DCZID_EL0] = {
         static_cast<uint64_t>(0b10100), 8};
   }
 
@@ -321,6 +321,9 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
     newProc->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
         stackPtr, 8};
+    newProc->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
+                             [arch::aarch64::ARM64_SYSREG_TAGS::TPIDR_EL0] = {
+        tls, 8};
   }
   newProc->context_.TID = newChildTid;
   newProc->status_ = procStatus::waiting;
