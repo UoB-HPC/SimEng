@@ -13,49 +13,47 @@ MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
                      uint64_t memSize, uint64_t stackStart, uint64_t heapStart,
                      uint64_t mmapStart, uint64_t initStackPtr,
                      std::function<uint64_t(uint64_t, size_t)> unmapPageTable)
-    : stackStart_(stackStart),
-      stackEnd_(stackStart + stackSize),
-      stackSize_(stackSize),
-      initStackPtr_(initStackPtr),
-      heapStart_(heapStart),
-      heapEnd_(heapStart + heapSize),
-      heapSize_(heapSize),
-      brk_(heapStart),
+
+    : stackReg_(StackRegion(stackStart, stackSize, initStackPtr)),
+      heapReg_(std::make_shared<HeapRegion>(heapStart, heapSize)),
+      mmapReg_(std::make_shared<MmapRegion>(mmapStart, mmapSize)),
       memSize_(memSize),
-      mmapStart_(mmapStart),
-      mmapEnd_(mmapStart + mmapSize),
-      mmapPtr_(mmapStart),
-      mmapSize_(mmapSize),
       unmapPageTable_(unmapPageTable),
       vmall_(std::make_shared<VMALinkedList>()) {}
 
 MemRegion::~MemRegion() {}
 
-uint64_t MemRegion::getStackStart() const { return stackStart_; }
+uint64_t MemRegion::getStackStart() const { return stackReg_.stackStart; }
 
-uint64_t MemRegion::getStackEnd() const { return stackEnd_; }
+uint64_t MemRegion::getStackEnd() const {
+  // Since the stack grows down towards lower addresses, the stack end
+  // address is the lowest address in the stack address range.
+  return stackReg_.start;
+}
 
-size_t MemRegion::getStackSize() const { return stackSize_; }
+size_t MemRegion::getStackSize() const { return stackReg_.size; }
 
-uint64_t MemRegion::getInitialStackPtr() const { return initStackPtr_; }
+uint64_t MemRegion::getInitialStackPtr() const {
+  return stackReg_.initialStackPtr;
+}
 
-uint64_t MemRegion::getHeapStart() const { return heapStart_; }
+uint64_t MemRegion::getHeapStart() const { return heapReg_->start; }
 
-uint64_t MemRegion::getHeapEnd() const { return heapEnd_; }
+uint64_t MemRegion::getHeapEnd() const { return heapReg_->end; }
 
-size_t MemRegion::getHeapSize() const { return heapSize_; }
+size_t MemRegion::getHeapSize() const { return heapReg_->size; }
 
-uint64_t MemRegion::getBrk() const { return brk_; }
+uint64_t MemRegion::getBrk() const { return heapReg_->brk; }
 
-uint64_t MemRegion::getMmapStart() const { return mmapStart_; }
+uint64_t MemRegion::getMmapStart() const { return mmapReg_->start; }
 
 uint64_t MemRegion::getMemSize() const { return memSize_; }
 
 uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
-  if (newBrk < heapStart_) {
-    return brk_;
+  if (newBrk < heapReg_->start) {
+    return heapReg_->brk;
   }
-  if (newBrk > heapEnd_) {
+  if (newBrk > heapReg_->end) {
     // TODO: This needs to fixed such that more extra memory allocation is
     // mmapd.
     std::cerr
@@ -67,19 +65,16 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
     std::exit(1);
   }
 
-  if (newBrk > brk_) {
-    brk_ = newBrk;
+  if (newBrk > heapReg_->brk) {
+    heapReg_->brk = newBrk;
   }
-  return brk_;
+  return heapReg_->brk;
 }
 
 void MemRegion::updateStack(const uint64_t stackPtr) {
   VirtualMemoryArea* vma = getVMAFromAddr(stackPtr);
-  // stackStart is vmEnd as stack grows down
-  stackStart_ = vma->vmEnd_;
-  stackEnd_ = vma->vmStart_;
-  stackSize_ = vma->vmSize_;
-  initStackPtr_ = stackPtr;
+  // stackStart is vmEnd as stack grows down.
+  stackReg_ = StackRegion(vma->vmEnd_, vma->vmSize_, stackPtr);
 }
 
 uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
@@ -123,10 +118,10 @@ uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
   // same. Here startAddr is either mmap pointer or an address greater than mmap
   // pointer.
   if (!allocated) {
-    startAddr = startAddr >= mmapPtr_ ? startAddr : mmapPtr_;
+    startAddr = startAddr >= mmapReg_->mmapPtr ? startAddr : mmapReg_->mmapPtr;
     vma->vmStart_ = startAddr;
-    mmapPtr_ = startAddr + size;
-    vma->vmEnd_ = mmapPtr_;
+    mmapReg_->mmapPtr = startAddr + size;
+    vma->vmEnd_ = mmapReg_->mmapPtr;
     if (vmall_->vmSize == 0) {
       vmall_->vmHead = vma;
     } else {
@@ -238,7 +233,8 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
       return -1;
     }
 
-    if (!((startAddr >= mmapStart_) && (startAddr + size < mmapEnd_))) {
+    if (!((startAddr >= mmapReg_->start) &&
+          (startAddr + size < mmapReg_->end))) {
       std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
                    "the mmap range: "
                 << startAddr << " - " << startAddr + size << std::endl;
@@ -264,7 +260,7 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
 }
 
 int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
-  if (!((addr >= mmapStart_) && (addr + length < mmapEnd_))) {
+  if (!((addr >= mmapReg_->start) && (addr + length < mmapReg_->end))) {
     std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
                  "the mmap range: "
               << addr << " - " << addr + length << std::endl;
@@ -302,11 +298,11 @@ VirtualMemoryArea* MemRegion::getVMAFromAddr(uint64_t vaddr) {
 }
 
 bool MemRegion::overlapsHeap(uint64_t addr, size_t size) {
-  return (addr >= heapStart_) && (addr < heapEnd_) && (size != 0);
+  return heapReg_->overlaps(addr, size);
 }
 
 bool MemRegion::overlapsStack(uint64_t addr, size_t size) {
-  return (addr >= stackStart_) && (addr < stackEnd_) && (size != 0);
+  return stackReg_.overlaps(addr, size);
 }
 
 }  // namespace OS

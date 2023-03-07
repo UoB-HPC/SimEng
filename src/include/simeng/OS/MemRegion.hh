@@ -2,11 +2,13 @@
 #include <stdint.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <memory>
 
 #include "simeng/OS/Constants.hh"
 #include "simeng/OS/Vma.hh"
+#include "simeng/Range.hh"
 
 namespace simeng {
 namespace OS {
@@ -34,6 +36,84 @@ struct VMALinkedList {
   }
 };
 
+/** Enum class which describes different types of memory regions present in a
+ * process. */
+enum class ProcessRegionType : uint8_t { Stack, Heap, Mmap };
+
+/** Template declaration for the ProcessRegion struct. */
+template <ProcessRegionType type>
+struct ProcessRegion;
+
+using StackRegion = ProcessRegion<ProcessRegionType::Stack>;
+using HeapRegion = ProcessRegion<ProcessRegionType::Heap>;
+using MmapRegion = ProcessRegion<ProcessRegionType::Mmap>;
+
+// Forward declare empty template for explicit template specialisation.
+template <>
+/** Explicit template specialisation of the ProcessRegion template to
+ * define the Stack ProcessRegion. The Stack ProcessRegion holds the address
+ * bounds of the process stack. */
+struct ProcessRegion<ProcessRegionType::Stack> : public Range<uint64_t> {
+  /** Address of the stack pointer after auxiliary vector has been populated. */
+  uint64_t initialStackPtr;
+
+  /** The highest address of the stack region. Since the stack grows downwards
+   * towards lower addresses, stackStart is the highest address of the stack
+   * region. */
+  uint64_t stackStart;
+
+  /** Empty constructor for the Stack ProcessRegion. */
+  ProcessRegion<ProcessRegionType::Stack>() : Range(), initialStackPtr(0) {}
+
+  /** Constructor which initialises the Stack ProcessRegion with specific
+   * values. Since the stack grows down from higher addresses towards lower
+   * addresses, an additional member variable "stackStart" which represents the
+   * same. */
+  ProcessRegion<ProcessRegionType::Stack>(uint64_t stackStartAddr,
+                                          uint64_t size, uint64_t initStackPtr)
+      : Range(stackStartAddr - size, stackStartAddr, size),
+        initialStackPtr(initStackPtr),
+        stackStart(stackStartAddr) {}
+};
+
+// Forward declare empty template for explicit template specialisation.
+template <>
+/** Explicit template specialisation of the ProcessRegion template to
+ * define the Heap ProcessRegion. The Heao ProcessRegion holds the address
+ * bounds of the process heap. */
+struct ProcessRegion<ProcessRegionType::Heap> : public Range<uint64_t> {
+  /** Current end address of the process heap region. This member variable is
+   * incremented after brk syscalls and signifies the amount of process heap
+   * currently in use. */
+  uint64_t brk;
+
+  /** Empty constructor for the Heap ProcessRegion. */
+  ProcessRegion<ProcessRegionType::Heap>() : Range(), brk(0) {}
+
+  /** Constructor which initialises the Heap ProcessRegion with specific
+   * values. */
+  ProcessRegion<ProcessRegionType::Heap>(uint64_t start, uint64_t size)
+      : Range(start, start + size, size), brk(start) {}
+};
+
+// Forward declare empty template for explicit template specialisation.
+template <>
+/** Explicit template specialisation of the ProcessRegion template to
+ * define the Mmap ProcessRegion. The Heao ProcessRegion holds the address
+ * bounds of the process mmap region. */
+struct ProcessRegion<ProcessRegionType::Mmap> : public Range<uint64_t> {
+  /** Current end address of process mmap region. */
+  uint64_t mmapPtr;
+
+  /** Empty constructor for the Mmap ProcessRegion. */
+  ProcessRegion<ProcessRegionType::Mmap>() : Range(), mmapPtr(0) {}
+
+  /** Constructor which initialises the Mmap ProcessRegion with specific
+   * values. */
+  ProcessRegion<ProcessRegionType::Mmap>(uint64_t start, uint64_t size)
+      : Range(start, start + size, size), mmapPtr(start) {}
+};
+
 /** The MemoryRegion class is associated with the Process class and holds
  * memory related state variables for the process class. It is also responsible
  * for handling syscalls to heap and mmap memory regions.  */
@@ -48,6 +128,8 @@ class MemRegion {
 
   /** This constructor creates am empty MemRegion.*/
   MemRegion(){};
+
+  MemRegion(const MemRegion&) = default;
 
   ~MemRegion();
 
@@ -115,46 +197,19 @@ class MemRegion {
   void updateStack(const uint64_t stackPtr);
 
  private:
-  /** Start address of the stack. */
-  uint64_t stackStart_;
+  /** The Stack ProcessRegion struct. */
+  StackRegion stackReg_;
 
-  /** Upper bound of the process stack region. */
-  uint64_t stackEnd_;
+  /** Shared pointer to the Heap ProcessRegion, so that it can be shared with
+   * threads belonging to the same thread group. */
+  std::shared_ptr<HeapRegion> heapReg_ = nullptr;
 
-  /** Size of the process stack region. */
-  size_t stackSize_;
-
-  /** Address of the stack pointer after auxiliary vector has been populated. */
-  uint64_t initStackPtr_;
-
-  /** Start address of the process heap region. */
-  uint64_t heapStart_;
-
-  /** Upper bound of the process heap region. */
-  uint64_t heapEnd_;
-
-  /** Size of the process heap region. */
-  size_t heapSize_;
-
-  /** Current end address of the process heap region. This member variable is
-   * incremented after brk syscalls and signifies the amount of process heap
-   * currently in use. */
-  uint64_t brk_;
+  /** Shared pointer to the Mmap ProcessRegion, so that it can be shared with
+   * threads belonging to the same thread group. */
+  std::shared_ptr<MmapRegion> mmapReg_ = nullptr;
 
   /** Size of the entire simulation memory. */
-  size_t memSize_;
-
-  /** Start of the process mmap region. */
-  uint64_t mmapStart_;
-
-  /** Upper bound of the process mmap region. */
-  uint64_t mmapEnd_;
-
-  /** Current end address of process mmap region. */
-  uint64_t mmapPtr_;
-
-  /** Size of the mmap region. */
-  size_t mmapSize_;
+  uint64_t memSize_;
 
   /** Function reference to unmap the page table in removeVma. */
   std::function<uint64_t(uint64_t, size_t)> unmapPageTable_;
