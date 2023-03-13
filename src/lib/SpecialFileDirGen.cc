@@ -111,7 +111,7 @@ void SpecialFileDirGen::GenerateSFDir() {
             std::to_string(c + (t * core_count) + (s * smt * core_count)) +
             "/topology/core_id");
         core_id_file << (c % cores_per_package) +
-                            (s * core_count * socket_count * smt);
+                            (s * core_count * socket_count * smt)
                      << "\n";
         core_id_file.close();
 
