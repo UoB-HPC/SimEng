@@ -53,7 +53,8 @@ void Core::tick() {
       // Ensure the pipeline is empty and there's no active exception before
       // context switching.
       if (fetchToDecodeBuffer_.isEmpty() && decodeToExecuteBuffer_.isEmpty() &&
-          completionSlots_[0].isEmpty() && (exceptionGenerated_ == false)) {
+          executeUnit_.isEmpty() && completionSlots_[0].isEmpty() &&
+          (exceptionGenerated_ == false)) {
         // Flush pipeline
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
