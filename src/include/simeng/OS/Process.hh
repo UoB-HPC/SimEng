@@ -14,6 +14,8 @@
 
 namespace simeng {
 
+static constexpr uint64_t RLIM_INF = 0xffffffffffffffff;
+
 // Forward declaration of class simeng::memory::Mem;
 namespace memory {
 class Mem;
@@ -184,9 +186,9 @@ class Process {
    * present, or by calling the `set_tid_address` syscall. */
   uint64_t clearChildTid_ = 0;
 
-  /** The rlimit struct for RLIMIT_STACK. 0xffffffffffffffff used to represent
+  /** The rlimit struct for RLIMIT_STACK. RLIM_INF used to represent
    * RLIM_INFINITY in Linux. */
-  rlimit stackRlim = {0xffffffffffffffff, 0xffffffffffffffff};
+  rlimit stackRlim = {RLIM_INF, RLIM_INF};
 
  private:
   /** Create and populate the initial process stack and returns the stack
