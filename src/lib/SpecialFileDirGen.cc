@@ -111,7 +111,8 @@ void SpecialFileDirGen::GenerateSFDir() {
             std::to_string(c + (t * core_count) + (s * smt * core_count)) +
             "/topology/core_id");
         core_id_file << (c % cores_per_package) +
-                            (s * core_count * socket_count * smt);
+                            (s * core_count * socket_count * smt)
+                     << "\n";
         core_id_file.close();
 
         // physical_package_id File generation
@@ -119,7 +120,7 @@ void SpecialFileDirGen::GenerateSFDir() {
             cpu_base_dir +
             std::to_string(c + (t * core_count) + (s * smt * core_count)) +
             "/topology/physical_package_id");
-        phys_package_id_file << current_package_id;
+        phys_package_id_file << current_package_id << "\n";
         phys_package_id_file.close();
       }
     }
