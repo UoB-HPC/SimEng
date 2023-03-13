@@ -19,6 +19,11 @@ static constexpr uint64_t MAX_FD_NUM = 1024;
  * consistently using the Linux specific definitions of certain syscall
  * arguments, regardless of the host Operating System SimEng is being run on. */
 namespace syscalls {
+namespace prlimit {
+/** Value denoting an infinite limit on an associated attribute.*/
+static constexpr uint64_t RLIM_INF = 0xffffffffffffffff;
+}  // namespace prlimit
+
 namespace mmap {
 namespace prot {
 
