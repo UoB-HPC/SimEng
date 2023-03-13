@@ -56,6 +56,10 @@ class ExecuteUnit {
    * stall, if applicable. */
   void purgeFlushed();
 
+  /** Query whether the execution unit is empty and not currently processing any
+   * instructions. */
+  bool isEmpty();
+
   /** Flushed EU pipeline of any instructions. */
   void flush();
 
