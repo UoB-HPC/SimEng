@@ -115,13 +115,13 @@ class LinuxProcess {
   uint64_t entryPoint_ = 0;
 
   /** Program header table address */
-  uint64_t phdrTableAddress_;
+  uint64_t progHeaderTableAddress_ = 0;
 
   /** Number of program headers */
-  uint64_t phnum_;
+  uint64_t numProgHeaders_ = 0;
 
   /** Size of program header entry */
-  uint64_t phent_;
+  uint64_t progHeaderEntSize_ = 0;
 
   /** The address of the start of the heap region. */
   uint64_t heapStart_;

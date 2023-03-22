@@ -77,6 +77,8 @@ Elf::Elf(std::string path, char** imagePointer) {
    */
 
   // Seek to the byte representing the start of the header offset table.
+  // Holds the program header table's file offset in bytes.  If the file has no
+  // program header table, this member holds zero
   uint64_t e_phoff;
   file.read(reinterpret_cast<char*>(&e_phoff), sizeof(e_phoff));
 
