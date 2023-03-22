@@ -175,7 +175,12 @@ void LinuxProcess::createStack(char** processImage) {
 
   initialStackFrame.push_back(auxVec::AT_PAGESZ);  // AT_PAGESZ
   initialStackFrame.push_back(pageSize_);
-  initialStackFrame.push_back(0);  // null terminator
+
+  initialStackFrame.push_back(auxVec::AT_ENTRY);  // AT_ENTRY
+  initialStackFrame.push_back(entryPoint_);
+
+  initialStackFrame.push_back(auxVec::AT_NULL);  // null terminator
+  initialStackFrame.push_back(0);
 
   size_t stackFrameSize = initialStackFrame.size() * 8;
 
