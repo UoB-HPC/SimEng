@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <fstream>
+#include <iostream>
 
 namespace simeng {
 
@@ -36,6 +37,7 @@ Elf::Elf(std::string path, char** imagePointer) {
   char fileMagic[4];
   file.read(fileMagic, 4);
   if (std::memcmp(elfMagic, fileMagic, sizeof(elfMagic))) {
+    std::cout << "[SimEng:Elf]   Elf magic does not match" << std::endl;
     return;
   }
 
@@ -48,6 +50,8 @@ Elf::Elf(std::string path, char** imagePointer) {
   char bitFormat;
   file.read(&bitFormat, sizeof(bitFormat));
   if (bitFormat != ElfBitFormat::Format64) {
+    std::cout << "[SimEng:Elf]   Unsupported architecture detected in Elf"
+              << std::endl;
     return;
   }
 
@@ -73,37 +77,36 @@ Elf::Elf(std::string path, char** imagePointer) {
    */
 
   // Seek to the byte representing the start of the header offset table.
-  uint64_t headerOffset;
-  file.read(reinterpret_cast<char*>(&headerOffset), sizeof(headerOffset));
+  uint64_t e_phoff;
+  file.read(reinterpret_cast<char*>(&e_phoff), sizeof(e_phoff));
 
   /**
-   * Starting 54th byte of the ELF Header a 16-bit value indicates
-   * the size of each entry in the ELF Program header. In the `elf64_hdr`
-   * struct this value maps to the member `Elf64_Half e_phentsize`. All
-   * header entries have the same size.
+   * Starting from the 54th byte of the ELF Header a 16-bit value indicates
+   * the the size in bytes of one entry in the
+   * file's program header table; all entries are the same
+   * size. In the `elf64_hdr`
+   * struct this value maps to the member `Elf64_Half e_phentsize`.
    * Starting from the 56th byte a 16-bit value represents the number
-   * of header entries in the ELF Program header. In the `elf64_hdr`
+   * of program header entries in the ELF Program header. In the `elf64_hdr`
    * struct this value maps to `Elf64_Half e_phnum`.
    */
 
   // Seek to the byte representing header entry size.
   file.seekg(0x36);
-  uint16_t headerEntrySize;
-  file.read(reinterpret_cast<char*>(&headerEntrySize), sizeof(headerEntrySize));
-  uint16_t headerEntries;
-  file.read(reinterpret_cast<char*>(&headerEntries), sizeof(headerEntries));
+  file.read(reinterpret_cast<char*>(&e_phentsize), sizeof(e_phentsize));
+  file.read(reinterpret_cast<char*>(&e_phnum), sizeof(e_phnum));
 
   // Resize the header to equal the number of header entries.
-  headers_.resize(headerEntries);
+  pheaders_.resize(e_phnum);
   processImageSize_ = 0;
 
   // Loop over all headers and extract them.
-  for (size_t i = 0; i < headerEntries; i++) {
+  for (size_t i = 0; i < e_phnum; i++) {
     // Since all headers entries have the same size.
     // We can extract the nth header using the header offset
     // and header entry size.
-    file.seekg(headerOffset + (i * headerEntrySize));
-    auto& header = headers_[i];
+    file.seekg(e_phoff + (i * e_phentsize));
+    auto& header = pheaders_[i];
 
     /**
      * Like the ELF Header, the ELF Program header is also defined
@@ -133,22 +136,29 @@ Elf::Elf(std::string path, char** imagePointer) {
 
     // Each address-related field is 8 bytes in a 64-bit ELF file
     const int fieldBytes = 8;
-    file.read(reinterpret_cast<char*>(&(header.type)), sizeof(header.type));
+    file.read(reinterpret_cast<char*>(&(header.p_type)), sizeof(header.p_type));
     file.seekg(4, std::ios::cur);  // Skip flags
-    file.read(reinterpret_cast<char*>(&(header.offset)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.virtualAddress)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.physicalAddress)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.fileSize)), fieldBytes);
-    file.read(reinterpret_cast<char*>(&(header.memorySize)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.p_offset)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.p_vaddr)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.p_paddr)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.p_filesz)), fieldBytes);
+    file.read(reinterpret_cast<char*>(&(header.p_memsz)), fieldBytes);
+    // Skip p_align
 
     // To construct the process we look for the largest virtual address and
     // add it to the memory size of the header. This way we obtain a very
     // large array which can hold data at large virtual address.
     // However, this way we end up creating a sparse array, in which most
-    // of the entries are unused. Also SimEng internally treats these
+    // of the entries are unused. Also, SimEng internally treats these
     // virtual address as physical addresses to index into this large array.
-    if (header.virtualAddress + header.memorySize > processImageSize_) {
-      processImageSize_ = header.virtualAddress + header.memorySize;
+    if (header.p_vaddr + header.p_memsz > processImageSize_) {
+      processImageSize_ = header.p_vaddr + header.p_memsz;
+    }
+
+    // Find the table address used to populate the auxvec
+    if (header.p_offset <= e_phoff &&
+        e_phoff < header.p_offset + header.p_filesz) {
+      phdrTableAddress_ = header.p_vaddr + (e_phoff - header.p_offset);
     }
   }
 
@@ -162,12 +172,12 @@ Elf::Elf(std::string path, char** imagePointer) {
    */
 
   // Process headers; only observe LOAD sections for this basic implementation
-  for (const auto& header : headers_) {
-    if (header.type == 1) {  // LOAD
-      file.seekg(header.offset);
-      // Read `fileSize` bytes from `file` into the appropriate place in process
+  for (const auto& header : pheaders_) {
+    if (header.p_type == 1) {  // LOAD
+      file.seekg(header.p_offset);
+      // Read `p_filesz` bytes from `file` into the appropriate place in process
       // memory
-      file.read(*imagePointer + header.virtualAddress, header.fileSize);
+      file.read(*imagePointer + header.p_vaddr, header.p_filesz);
     }
   }
 
@@ -182,5 +192,11 @@ uint64_t Elf::getProcessImageSize() const { return processImageSize_; }
 uint64_t Elf::getEntryPoint() const { return entryPoint_; }
 
 bool Elf::isValid() const { return isValid_; }
+
+uint64_t Elf::getPhdrTableAddress() const { return phdrTableAddress_; }
+
+uint64_t Elf::getPHENT() const { return e_phentsize; }
+
+uint64_t Elf::getPHNUM() const { return e_phnum; }
 
 }  // namespace simeng
