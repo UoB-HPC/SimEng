@@ -471,6 +471,30 @@ void Instruction::decode() {
       isStoreData_ = true;
     }
 
+    // The following instructions are considered to be atomic
+    if (metadata.opcode == Opcode::AArch64_CASALW ||
+        metadata.opcode == Opcode::AArch64_CASALX ||
+        metadata.opcode == Opcode::AArch64_LDADDALW ||
+        metadata.opcode == Opcode::AArch64_LDADDALX ||
+        metadata.opcode == Opcode::AArch64_LDADDLW ||
+        metadata.opcode == Opcode::AArch64_LDADDW ||
+        metadata.opcode == Opcode::AArch64_LDARB ||
+        metadata.opcode == Opcode::AArch64_LDARW ||
+        metadata.opcode == Opcode::AArch64_LDARX ||
+        metadata.opcode == Opcode::AArch64_LDAXRW ||
+        metadata.opcode == Opcode::AArch64_LDAXRX ||
+        metadata.opcode == Opcode::AArch64_LDCLRALW ||
+        metadata.opcode == Opcode::AArch64_LDCLRALX ||
+        metadata.opcode == Opcode::AArch64_LDSETALW ||
+        metadata.opcode == Opcode::AArch64_LDSETALX ||
+        metadata.opcode == Opcode::AArch64_STLRB ||
+        metadata.opcode == Opcode::AArch64_STLRW ||
+        metadata.opcode == Opcode::AArch64_STLRX ||
+        metadata.opcode == Opcode::AArch64_STLXRW ||
+        metadata.opcode == Opcode::AArch64_STLXRX) {
+      isAtomic_ = true;
+    }
+
     if (isStoreData_) {
       // Identify store instruction group
       if (ARM64_REG_Z0 <= metadata.operands[0].reg &&
