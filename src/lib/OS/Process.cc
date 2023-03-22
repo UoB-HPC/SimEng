@@ -329,9 +329,9 @@ uint64_t Process::createStack(uint64_t stackStart) {
 
 uint64_t Process::handlePageFault(uint64_t vaddr) {
   // Retrieve VMA containing the vaddr has raised a page fault.
-  VirtualMemoryArea* vm = memRegion_.getVMAFromAddr(vaddr);
+  VirtualMemoryArea vm = memRegion_.getVMAFromAddr(vaddr);
   // Process VMA doesn't exist. This address is likely due to a speculation.
-  if (vm == nullptr)
+  if (vm.vmSize_ == 0)
     return masks::faults::pagetable::FAULT |
            masks::faults::pagetable::DATA_ABORT;
 
@@ -345,17 +345,17 @@ uint64_t Process::handlePageFault(uint64_t vaddr) {
     return masks::faults::pagetable::FAULT | masks::faults::pagetable::MAP;
   uint64_t taddr = pageTable_->translate(vaddr);
 
-  bool hasFile = vm->hasFile();
+  bool hasFile = vm.hasFile();
   if (!hasFile) return taddr;
 
-  void* filebuf = vm->getFileBuf();
+  void* filebuf = vm.getFileBuf();
 
   // Since page fault only allocates a single page it could be possible that a
   // part of the file assosciate with a vma has already been sent to memory. To
   // handle this situation we calculate the offset from VMA start address as
   // this address is also page size aligned.
-  uint64_t offset = alignedVAddr - vm->vmStart_;
-  size_t writeLen = vm->getFileSize() - (offset);
+  uint64_t offset = alignedVAddr - vm.vmStart_;
+  size_t writeLen = vm.getFileSize() - (offset);
   writeLen = writeLen > PAGE_SIZE ? PAGE_SIZE : writeLen;
 
   char* castedFileBuf = static_cast<char*>(filebuf);

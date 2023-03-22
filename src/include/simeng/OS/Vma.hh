@@ -137,6 +137,10 @@ class VirtualMemoryArea {
    * VMA so that it can be split into two. */
   VirtualMemoryArea(VirtualMemoryArea* vma);
 
+  VirtualMemoryArea(const VirtualMemoryArea& vma) = default;
+
+  VirtualMemoryArea(){};
+
   ~VirtualMemoryArea(){};
 
   /** The address representing the end of the memory allocation. */
