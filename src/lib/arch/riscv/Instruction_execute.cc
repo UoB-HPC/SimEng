@@ -90,9 +90,6 @@ void Instruction::execute() {
 
   // Implementation of rv64iamfd according to the v. 20191213 unprivileged spec
 
-  //  std::cerr << "insn: " << metadata.mnemonic << " " << metadata.operandStr
-  //            << ", group: " << getGroup() << std::endl;
-
   executed_ = true;
   switch (metadata.opcode) {
     case Opcode::RISCV_LB: {  // LB rd,rs1,imm
@@ -126,7 +123,7 @@ void Instruction::execute() {
     }
     case Opcode::RISCV_LD: {  // LD rd,rs1,imm
       // Note: elements of memory data are RegisterValue's
-      results[0] = memoryData[0];
+      results[0] = RegisterValue(memoryData[0].get<uint64_t>(), 8);
       break;
     }
     case Opcode::RISCV_SB:  // SB rs1,rs2,imm
@@ -884,8 +881,9 @@ void Instruction::execute() {
             break;
         }
       } else {
-        std::cerr << "[SimEng:RISC-V:Execute] Unknown system register"
-                  << std::endl;
+        //        std::cerr << "[SimEng:RISC-V:Execute] Unknown system register:
+        //        "
+        //                  << metadata.operands[1].reg << std::endl;
       }
       break;
     }

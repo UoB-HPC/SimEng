@@ -565,7 +565,7 @@ TEST_P(InstFloat, FCVT_WU_D) {
     fcvt.wu.d t3, fa3, rtz # should convert to 4
     fcvt.wu.d t1, fa4      # should convert to 0
     fcvt.wu.d t4, fa4, rtz # should convert to 0
-    fcvt.wu.d t2, fa6 #Nan converts to 0x7fffffff in integer reg
+    fcvt.wu.d t2, fa6 #Nan converts to 0xffffffffffffffff in integer reg
     fcvt.wu.d t5, fa5
    )");
 
