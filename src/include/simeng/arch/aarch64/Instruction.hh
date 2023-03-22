@@ -314,6 +314,9 @@ class Instruction : public simeng::Instruction {
   /** Is this a branch operation? */
   bool isBranch() const override;
 
+  /** Is this an atomic operation? */
+  bool isAtomic() const override;
+
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
@@ -441,6 +444,8 @@ class Instruction : public simeng::Instruction {
   bool isStoreData_ = false;
   /** Is a branch operation. */
   bool isBranch_ = false;
+  /** Is an atomic operation. */
+  bool isAtomic_ = false;
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t microOpcode_ = MicroOpcode::INVALID;
   /** Is the micro-operation opcode of the instruction, where appropriate. */

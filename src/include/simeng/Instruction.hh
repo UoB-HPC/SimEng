@@ -117,6 +117,9 @@ class Instruction {
   /** Is this a branch operation? */
   virtual bool isBranch() const = 0;
 
+  /** Is this an atomic operation? */
+  virtual bool isAtomic() const = 0;
+
   /** Set this instruction's instruction memory address. */
   void setInstructionAddress(uint64_t address);
 

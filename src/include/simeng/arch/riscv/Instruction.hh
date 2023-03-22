@@ -143,7 +143,7 @@ class Instruction : public simeng::Instruction {
   bool isBranch() const override;
 
   /** Is this an atomic instruction? */
-  bool isAtomic() const;
+  bool isAtomic() const override;
 
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
