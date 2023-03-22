@@ -33,8 +33,8 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   entryPoint_ = elf.getEntryPoint();
 
   phdrTableAddress_ = elf.getPhdrTableAddress();
-  phent_ = elf.getPHENT();
-  phnum_ = elf.getPHNUM();
+  phent_ = elf.getPhdrEntrySize();
+  phnum_ = elf.getNumPhdr();
 
   // Align heap start to a 32-byte boundary
   heapStart_ = alignToBoundary(elf.getProcessImageSize(), 32);

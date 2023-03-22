@@ -37,7 +37,7 @@ Elf::Elf(std::string path, char** imagePointer) {
   char fileMagic[4];
   file.read(fileMagic, 4);
   if (std::memcmp(elfMagic, fileMagic, sizeof(elfMagic))) {
-    std::cout << "[SimEng:Elf]   Elf magic does not match" << std::endl;
+    std::cout << "[SimEng:Elf]  Elf magic does not match" << std::endl;
     return;
   }
 
@@ -50,7 +50,7 @@ Elf::Elf(std::string path, char** imagePointer) {
   char bitFormat;
   file.read(&bitFormat, sizeof(bitFormat));
   if (bitFormat != ElfBitFormat::Format64) {
-    std::cout << "[SimEng:Elf]   Unsupported architecture detected in Elf"
+    std::cout << "[SimEng:Elf]  Unsupported architecture detected in Elf"
               << std::endl;
     return;
   }
@@ -87,8 +87,8 @@ Elf::Elf(std::string path, char** imagePointer) {
    * size. In the `elf64_hdr`
    * struct this value maps to the member `Elf64_Half e_phentsize`.
    * Starting from the 56th byte a 16-bit value represents the number
-   * of program header entries in the ELF Program header. In the `elf64_hdr`
-   * struct this value maps to `Elf64_Half e_phnum`.
+   * of program header entries in the ELF Program header table. In the
+   * `elf64_hdr` struct this value maps to `Elf64_Half e_phnum`.
    */
 
   // Seek to the byte representing header entry size.
@@ -195,8 +195,8 @@ bool Elf::isValid() const { return isValid_; }
 
 uint64_t Elf::getPhdrTableAddress() const { return phdrTableAddress_; }
 
-uint64_t Elf::getPHENT() const { return e_phentsize; }
+uint64_t Elf::getPhdrEntrySize() const { return e_phentsize; }
 
-uint64_t Elf::getPHNUM() const { return e_phnum; }
+uint64_t Elf::getNumPhdr() const { return e_phnum; }
 
 }  // namespace simeng
