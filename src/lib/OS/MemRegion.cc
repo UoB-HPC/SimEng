@@ -14,9 +14,9 @@ MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
                      uint64_t mmapStart, uint64_t initStackPtr,
                      std::function<uint64_t(uint64_t, size_t)> unmapPageTable)
 
-    : stackReg_(StackRegion(stackStart, stackSize, initStackPtr)),
-      heapReg_(std::make_shared<HeapRegion>(heapStart, heapSize)),
-      mmapReg_(std::make_shared<MmapRegion>(mmapStart, mmapSize)),
+    : stackReg_(ProcessStackRegion(stackStart, stackSize, initStackPtr)),
+      heapReg_(std::make_shared<ProcessHeapRegion>(heapStart, heapSize)),
+      mmapReg_(std::make_shared<ProcessMmapRegion>(mmapStart, mmapSize)),
       memSize_(memSize),
       unmapPageTable_(unmapPageTable),
       vmall_(std::make_shared<VMALinkedList>()) {}
@@ -74,7 +74,7 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
 void MemRegion::updateStack(const uint64_t stackPtr) {
   VirtualMemoryArea* vma = getVMAFromAddr(stackPtr);
   // stackStart is vmEnd as stack grows down.
-  stackReg_ = StackRegion(vma->vmEnd_, vma->vmSize_, stackPtr);
+  stackReg_ = ProcessStackRegion(vma->vmEnd_, vma->vmSize_, stackPtr);
 }
 
 uint64_t MemRegion::addVma(VMA* vma, uint64_t startAddr) {
