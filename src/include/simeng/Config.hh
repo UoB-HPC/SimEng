@@ -111,27 +111,4 @@ class Config {
 
     /** Bool to hold if DEFAULT_CONFIG is in use. */
     bool isDefault_ = true;
-
-   public:
-    /** Gets the current Config file. */
-    static YAML::Node& get() { return getInstance()->getYAMLConfig(); }
-
-    /** Update the config via a filepath to load from. */
-    static void set(std::string path) { getInstance()->makeConfig(path); }
-
-    /** Update the config to a provided YAML::Node. */
-    static void set(YAML::Node newConfig) {
-      getInstance()->makeConfig(newConfig);
-    }
-
-    /** Update the config via a provided char* input. */
-    static void set(const char* configStr) {
-      getInstance()->makeConfig(configStr);
-    }
-
-    /** Returns if the DEFAULT_CONFIG is in use. */
-    static bool isDefault() { return getInstance()->isDefault_; }
-
-    /** Get the filepath of the config file. */
-    static std::string getPath() { return getInstance()->path_; }
   };

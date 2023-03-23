@@ -240,7 +240,7 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
     auto dczItr = std::find(sysRegVec.begin(), sysRegVec.end(),
                             arm64_sysreg::ARM64_SYSREG_DCZID_EL0);
     assert(
-        dczItr == sysRegVec.end() &&
+        dczItr != sysRegVec.end() &&
         "[SimEng:SimOS] DCZID_EL0 was not defined in the System Register "
         "Vector. Please ensure it is included in SimInfo::sysRegisterEnums_.");
     // Temporary: state that DCZ can support clearing 64 bytes at a time,
