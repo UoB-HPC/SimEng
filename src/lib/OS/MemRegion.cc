@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <iterator>
+#include <memory>
 #include <vector>
 
 #include "simeng/OS/Constants.hh"
@@ -27,22 +28,12 @@ MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
       mmapEnd_(mmapStart + mmapSize),
       mmapPtr_(mmapStart),
       mmapSize_(mmapSize),
-      unmapPageTable_(unmapPageTable)
+      unmapPageTable_(unmapPageTable),
+      VMAlist_(std::make_shared<std::list<VirtualMemoryArea>>())
 
 {}
 
-MemRegion::~MemRegion() {
-  /* if (vm_size_ == 0) return;
-  VMA* curr = vm_head_;
-  while (curr != nullptr) {
-    VMA* temp = curr->vmNext_;
-    delete curr;
-    curr = temp;
-  }
-  vm_size_ = 0;
-  vm_head_ = nullptr;
-  */
-}
+MemRegion::~MemRegion() {}
 
 uint64_t MemRegion::getStackStart() const { return stackStart_; }
 
@@ -88,16 +79,16 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
 
 uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
   size_t size = vma.vmSize_;
-  auto last = std::prev(VMAlist.end(), 1);
+  auto last = std::prev(VMAlist_->end(), 1);
   // When starAddr is not 0, search for an available address range
   // that can hold the new VMA with a starting address that is greater than or
   // equal to the specified startAddr. The following algorithm retrieves the
   // last existing VMA object before the address range so that the new VMA can
   // be linked between two existing VMAs. If no available address range is
   // found, then the new VMA is allocated at the end of the VMA list.
-  auto itr = VMAlist.begin();
-  if (startAddr && vm_size_ > 0) {
-    for (itr = VMAlist.begin(); itr != last; itr++) {
+  auto itr = VMAlist_->begin();
+  if (startAddr && VMAlist_->size() > 0) {
+    for (itr = VMAlist_->begin(); itr != last; itr++) {
       auto next = std::next(itr, 1);
       if (itr->vmEnd_ <= startAddr && next->vmStart_ >= (startAddr + size)) {
         break;
@@ -108,13 +99,14 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
   bool allocated = false;
   // If the VMA list has multiple VMAs then starting from curr (VMA) check if
   // the new VMA can be allocated between two existing ones.
-  while (itr != VMAlist.end() && itr != last) {
+  while (itr != VMAlist_->end() && itr != last) {
     auto next = std::next(itr, 1);
     if (next->vmStart_ - itr->vmEnd_ >= size) {
       vma.vmStart_ = itr->vmEnd_;
-      vma.vmNext_ = itr->vmNext_;
       vma.vmEnd_ = itr->vmEnd_ + size;
-      VMAlist.insert(itr, vma);
+      // std::list::insert inserts elements before the position specified by the
+      // iterator, hence why next is used instead of itr.
+      VMAlist_->insert(next, vma);
       allocated = true;
       break;
     }
@@ -132,9 +124,8 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
     vma.vmStart_ = startAddr;
     mmapPtr_ = startAddr + size;
     vma.vmEnd_ = mmapPtr_;
-    VMAlist.push_back(vma);
+    VMAlist_->push_back(vma);
   }
-  vm_size_++;
   return vma.vmStart_;
 }
 
@@ -142,16 +133,15 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
   uint64_t endAddr = addr + length;
   uint64_t delsize = 0;
 
-  auto itr = VMAlist.begin();
-  for (itr = VMAlist.begin(); itr != VMAlist.end();) {
+  auto itr = VMAlist_->begin();
+  for (itr = VMAlist_->begin(); itr != VMAlist_->end();) {
     // If the address range completely contains the current VMA, delete the
     // entire VMA and decrease VMA list size by 1.
     //  [--------Addr--------]
     //      [----VMA ----)
     if (itr->containedIn(addr, length)) {
-      vm_size_--;
       delsize += itr->vmSize_;
-      itr = VMAlist.erase(itr);
+      itr = VMAlist_->erase(itr);
     }
     // If the address range is within the bounds of the current VMA, split the
     // VMA into two smaller VMAs and increase the VMA list size by 1
@@ -166,8 +156,7 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
         VMA newVma = VMA(*itr);
         itr->trimRangeEnd(addr);
         newVma.trimRangeStart(endAddr);
-        VMAlist.insert(itr, newVma);
-        vm_size_++;
+        VMAlist_->insert(std::next(itr, 1), newVma);
       }
       delsize += length;
       break;
@@ -185,6 +174,8 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
         itr->trimRangeStart(endAddr);
         break;
       }
+      itr++;
+    } else {
       itr++;
     }
   }
@@ -266,19 +257,23 @@ int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
 
 bool MemRegion::isVmMapped(uint64_t addr, size_t size) {
   bool mapped = false;
-  for (auto itr = VMAlist.begin(); itr != VMAlist.end(); itr++) {
+  for (auto itr = VMAlist_->begin(); itr != VMAlist_->end(); itr++) {
     mapped = mapped || itr->contains(addr, size) || itr->overlaps(addr, size);
   }
   return mapped;
 }
 
 VirtualMemoryArea MemRegion::getVMAFromAddr(uint64_t vaddr) {
-  for (auto itr = VMAlist.begin(); itr != VMAlist.end(); itr++) {
+  for (auto itr = VMAlist_->begin(); itr != VMAlist_->end(); itr++) {
     if (itr->contains(vaddr)) {
       return *itr;
     }
   }
   return VirtualMemoryArea{};
+}
+
+std::shared_ptr<std::list<VirtualMemoryArea>> MemRegion::getVmaList() {
+  return VMAlist_;
 }
 
 bool MemRegion::overlapsHeap(uint64_t addr, size_t size) {

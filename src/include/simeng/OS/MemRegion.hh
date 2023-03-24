@@ -85,16 +85,19 @@ class MemRegion {
   /** This method retrieves the VMA containing addr. */
   VirtualMemoryArea getVMAFromAddr(uint64_t addr);
 
+  /** This method returns the shared_ptr to the VMAlist. */
+  std::shared_ptr<std::list<VirtualMemoryArea>> getVmaList();
+
   /** This method retrieves the VMA head. */
   VirtualMemoryArea getVMAHead() {
-    if (vm_size_ == 0) {
+    if (!VMAlist_->size()) {
       return VirtualMemoryArea{};
     }
-    return VMAlist.front();
+    return VMAlist_->front();
   };
 
   /** This method gets the VMA size. */
-  size_t getVMASize() { return vm_size_; }
+  size_t getVMASize() { return VMAlist_->size(); }
 
  private:
   /** Start address of the stack. */
@@ -144,10 +147,7 @@ class MemRegion {
   /** Head of the VMA list. */
   // VirtualMemoryArea* vm_head_ = nullptr;
 
-  std::list<VirtualMemoryArea> VMAlist;
-
-  /** Size of the VMA list. */
-  size_t vm_size_ = 0;
+  std::shared_ptr<std::list<VirtualMemoryArea>> VMAlist_ = nullptr;
 
   /** Method to add VMA to the VMA list at the specified start address. If the
    * startAddr is 0 the algorithm will find an optimal address range for the

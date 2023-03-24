@@ -1,5 +1,7 @@
 #include <sys/mman.h>
 
+#include <iterator>
+
 #include "gtest/gtest.h"
 #include "simeng/OS/MemRegion.hh"
 
@@ -323,11 +325,11 @@ TEST(MemRegionTest, UnmapVmaHead) {
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(retAddr, mmapStart);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  EXPECT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   uint64_t delSize = memRegion.unmapRegion(mmapStart, 4096);
   ASSERT_EQ(delSize, 4096);
-  EXPECT_TRUE(memRegion.getVMAHead() == NULL);
+  ASSERT_EQ(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 0);
 }
 
@@ -356,7 +358,7 @@ TEST(MemRegionTest, UnmapVmaStartGreaterThanPageSize1) {
       memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  EXPECT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
@@ -364,7 +366,7 @@ TEST(MemRegionTest, UnmapVmaStartGreaterThanPageSize1) {
 
   uint64_t delSize = memRegion.unmapRegion(mmapStart, 8192);
   ASSERT_EQ(delSize, 8192);
-  EXPECT_TRUE(memRegion.getVMAHead() == NULL);
+  ASSERT_EQ(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 0);
 }
 /*
@@ -393,7 +395,7 @@ TEST(MemRegionTest, UnmapVmaStartGreaterThanPageSize2) {
       memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  EXPECT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
@@ -405,9 +407,9 @@ TEST(MemRegionTest, UnmapVmaStartGreaterThanPageSize2) {
 
   uint64_t delSize = memRegion.unmapRegion(mmapStart, 8192);
   ASSERT_EQ(delSize, 8192);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  EXPECT_NE(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, retAddr);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, retAddr);
 }
 
 /*
@@ -435,7 +437,7 @@ TEST(MemRegionTest, UnmapOverlappingVmaStartGreaterThanPageSize) {
       memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  EXPECT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
@@ -447,10 +449,9 @@ TEST(MemRegionTest, UnmapOverlappingVmaStartGreaterThanPageSize) {
 
   uint64_t delSize = memRegion.unmapRegion(mmapStart, 12288);
   ASSERT_EQ(delSize, 12288);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  EXPECT_NE(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart + 12288);
-  EXPECT_TRUE(memRegion.getVMAHead()->vmNext_ == NULL);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart + 12288);
 }
 /*
  *          [-addr]
@@ -478,7 +479,7 @@ TEST(MemRegionTest, UnmapContainedInMiddleOfVmaList) {
       memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  EXPECT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
@@ -487,16 +488,18 @@ TEST(MemRegionTest, UnmapContainedInMiddleOfVmaList) {
   retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
-
+  std::cout << "Hello" << std::endl;
   uint64_t delSize = memRegion.unmapRegion(mmapStart + 4096, 4096);
+  std::cout << "Yolo" << std::endl;
   ASSERT_EQ(delSize, 4096);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  EXPECT_NE(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
-  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
 
-  VMA* tail = memRegion.getVMAHead()->vmNext_;
+  auto list = memRegion.getVmaList();
+  auto tail = std::next(list->begin(), 1);
   ASSERT_EQ(tail->vmStart_, mmapStart + 8192);
-  EXPECT_TRUE(tail->vmNext_ == NULL);
+  ASSERT_EQ(std::next(tail, 1), list->end());
 }
 /*
  *          [---addr---]
@@ -523,7 +526,7 @@ TEST(MemRegionTest, UnmapContainedVmaAndOverlapStart) {
       memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
@@ -535,13 +538,14 @@ TEST(MemRegionTest, UnmapContainedVmaAndOverlapStart) {
 
   uint64_t delSize = memRegion.unmapRegion(mmapStart + 4096, 8192);
   ASSERT_EQ(delSize, 8192);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
-  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
 
-  VMA* tail = memRegion.getVMAHead()->vmNext_;
+  auto list = memRegion.getVmaList();
+  auto tail = std::next(list->begin(), 1);
   ASSERT_EQ(tail->vmStart_, mmapStart + 12288);
-  EXPECT_TRUE(tail->vmNext_ == NULL);
+  ASSERT_EQ(std::next(tail, 1), list->end());
 }
 
 /*
@@ -569,7 +573,7 @@ TEST(MemRegionTest, UnmapOverlapStartAndContained) {
       memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
@@ -581,14 +585,15 @@ TEST(MemRegionTest, UnmapOverlapStartAndContained) {
 
   uint64_t delSize = memRegion.unmapRegion(mmapStart + 8192, 8192);
   ASSERT_EQ(delSize, 8192);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
-  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
 
-  VMA* tail = memRegion.getVMAHead()->vmNext_;
+  auto list = memRegion.getVmaList();
+  auto tail = std::next(list->begin(), 1);
   ASSERT_EQ(tail->vmStart_, mmapStart + 4096);
   ASSERT_EQ(tail->vmEnd_, mmapStart + 8192);
-  EXPECT_TRUE(tail->vmNext_ == NULL);
+  ASSERT_EQ(std::next(tail, 1), list->end());
 }
 
 /*
@@ -616,7 +621,7 @@ TEST(MemRegionTest, UnmapContained) {
       memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
@@ -628,14 +633,15 @@ TEST(MemRegionTest, UnmapContained) {
 
   uint64_t delSize = memRegion.unmapRegion(mmapStart + 4096, 4096 * 4);
   ASSERT_EQ(delSize, 4096 * 4);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
-  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
 
-  VMA* tail = memRegion.getVMAHead()->vmNext_;
+  auto list = memRegion.getVmaList();
+  auto tail = std::next(list->begin(), 1);
   ASSERT_EQ(tail->vmStart_, mmapStart + (4096 * 5));
   ASSERT_EQ(tail->vmEnd_, mmapStart + (4096 * 6));
-  EXPECT_TRUE(tail->vmNext_ == NULL);
+  ASSERT_EQ(std::next(tail, 1), list->end());
 }
 
 /*
@@ -663,7 +669,7 @@ TEST(MemRegionTest, UnmapContainsMiddle) {
       memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   retAddr = memRegion.mmapRegion(0, 12288, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
@@ -675,25 +681,24 @@ TEST(MemRegionTest, UnmapContainsMiddle) {
 
   uint64_t delSize = memRegion.unmapRegion(mmapStart + 8192, 4096);
   ASSERT_EQ(delSize, 4096);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 4);
-  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
 
-  VMA* vma = memRegion.getVMAFromAddr(mmapStart + 4096);
-  EXPECT_TRUE(vma != NULL);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 8192);
+  VMA vma = memRegion.getVMAFromAddr(mmapStart + 4096);
+  ASSERT_NE(vma.vmSize_, 0);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 8192);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 12288);
-  EXPECT_TRUE(vma != NULL);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 16384);
+  ASSERT_NE(vma.vmSize_, 0);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 16384);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 16384);
-  EXPECT_TRUE(vma != NULL);
-  EXPECT_TRUE(vma->vmNext_ == NULL);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + (4096 * 5));
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + (4096 * 5));
 }
 
 /*
@@ -721,7 +726,7 @@ TEST(MemRegionTest, UnmapContainsStart) {
       memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
@@ -733,23 +738,22 @@ TEST(MemRegionTest, UnmapContainsStart) {
 
   uint64_t delSize = memRegion.unmapRegion(mmapStart + 4096, 4096);
   ASSERT_EQ(delSize, 4096);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
-  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
 
-  VMA* vma = memRegion.getVMAFromAddr(mmapStart + 4096);
-  EXPECT_TRUE(vma == NULL);
+  VMA vma = memRegion.getVMAFromAddr(mmapStart + 4096);
+  ASSERT_NE(vma.vmSize_, 0);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 8192);
-  EXPECT_TRUE(vma != NULL);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 12288);
+  ASSERT_NE(vma.vmSize_, 0);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 12288);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 12288);
-  EXPECT_TRUE(vma != NULL);
-  EXPECT_TRUE(vma->vmNext_ == NULL);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + (4096 * 4));
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + (4096 * 4));
 }
 
 /*
@@ -777,7 +781,7 @@ TEST(MemRegionTest, UnmapContainsEnd) {
       memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_EQ(retAddr, mmapStart + 4096);
@@ -789,23 +793,22 @@ TEST(MemRegionTest, UnmapContainsEnd) {
 
   uint64_t delSize = memRegion.unmapRegion(mmapStart + 8192, 4096);
   ASSERT_EQ(delSize, 4096);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
-  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
 
-  VMA* vma = memRegion.getVMAFromAddr(mmapStart + 8192);
-  EXPECT_TRUE(vma == NULL);
+  VMA vma = memRegion.getVMAFromAddr(mmapStart + 8192);
+  ASSERT_NE(vma.vmSize_, 0);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 4096);
-  EXPECT_TRUE(vma != NULL);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 8192);
+  ASSERT_NE(vma.vmSize_, 0);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 8192);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 12288);
-  EXPECT_TRUE(vma != NULL);
-  EXPECT_TRUE(vma->vmNext_ == NULL);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + (4096 * 4));
+  ASSERT_NE(vma.vmSize_, 0);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + (4096 * 4));
 }
 
 TEST(MemRegionTest, UnmapOverlaps) {
@@ -829,7 +832,7 @@ TEST(MemRegionTest, UnmapOverlaps) {
       memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 1);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
 
   retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
@@ -841,26 +844,23 @@ TEST(MemRegionTest, UnmapOverlaps) {
 
   uint64_t delSize = memRegion.unmapRegion(mmapStart + 4096, 8192);
   ASSERT_EQ(delSize, 8192);
-  EXPECT_TRUE(memRegion.getVMAHead() != NULL);
+  ASSERT_NE(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
-  ASSERT_EQ(memRegion.getVMAHead()->vmStart_, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
 
-  VMA* vma = memRegion.getVMAFromAddr(mmapStart + 4096);
-  EXPECT_TRUE(vma == NULL);
+  VMA vma = memRegion.getVMAFromAddr(mmapStart + 4096);
+  ASSERT_NE(vma.vmSize_, 0);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 8192);
-  EXPECT_TRUE(vma == NULL);
+  ASSERT_NE(vma.vmSize_, 0);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 12288);
-  EXPECT_TRUE(vma != NULL);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 16384);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 16384);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 16384);
-  EXPECT_TRUE(vma != NULL);
-  EXPECT_TRUE(vma->vmNext_ == NULL);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + (4096 * 5));
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + (4096 * 5));
 }
 
 }  // namespace

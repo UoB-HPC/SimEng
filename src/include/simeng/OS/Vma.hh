@@ -149,9 +149,6 @@ class VirtualMemoryArea {
   /** The address representing the start of the memory allocation. */
   uint64_t vmStart_ = 0;
 
-  /** The next allocation in the contiguous list. */
-  VirtualMemoryArea* vmNext_ = nullptr;
-
   /** The size of the virtual memory area. */
   size_t vmSize_ = 0;
 
