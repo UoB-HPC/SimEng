@@ -100,6 +100,7 @@ bool Instruction::isStoreData() const { return isStore_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
 bool Instruction::isAtomic() const { return isAtomic_; }
+bool Instruction::isExclusive() const { return isExclusive_; }
 bool Instruction::isAcquire() const { return isAcquire_; }
 bool Instruction::isRelease() const { return isRelease_; }
 
