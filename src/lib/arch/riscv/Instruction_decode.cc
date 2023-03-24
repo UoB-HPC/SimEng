@@ -98,7 +98,10 @@ void Instruction::decode() {
     case Opcode::RISCV_LR_W_AQ:
     case Opcode::RISCV_LR_W_RL:
     case Opcode::RISCV_LR_W_AQ_RL:
-      isAtomic_ = true;
+      // These instructions are considered to be exclusive Loads
+      // (i.e. will begin an exculsivity monitor on a memory region to
+      // detect any changes)
+      isExclusive_ = true;
       [[fallthrough]];
     case Opcode::RISCV_LB:
     case Opcode::RISCV_LBU:
@@ -117,7 +120,10 @@ void Instruction::decode() {
     case Opcode::RISCV_SC_W_AQ:
     case Opcode::RISCV_SC_W_RL:
     case Opcode::RISCV_SC_W_AQ_RL:
-      isAtomic_ = true;
+      // These instructions are considered to be exclusive (conditional) Stores
+      // (i.e. will conditionally update memory if it is permitted to do so and
+      // end monitoring, else its result will indicate the failure to do so)
+      isExclusive_ = true;
       [[fallthrough]];
     case Opcode::RISCV_SB:
     case Opcode::RISCV_SW:
@@ -127,6 +133,108 @@ void Instruction::decode() {
       break;
   }
 
+  // Add acquire (i.e. No memory operations on this thread which come after this
+  // instruction in program order can take place before the acquire memory
+  // operation)
+  // & release (i.e. All memory operations on this thread which precede this
+  // instruction in program order must complete before this release memory
+  // operation) semantics
+  if (metadata.opcode == Opcode::RISCV_AMOADD_D_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOADD_W_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOAND_D_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOAND_W_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOMAXU_D_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOMAXU_W_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOMAX_D_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOMAX_W_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOMINU_D_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOMINU_W_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOMIN_D_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOMIN_W_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOOR_D_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOOR_W_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOSWAP_D_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOSWAP_W_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOXOR_D_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOXOR_W_AQ ||
+      metadata.opcode == Opcode::RISCV_AMOADD_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOADD_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOAND_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOAND_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAXU_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAXU_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAX_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAX_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMINU_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMINU_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMIN_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMIN_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOOR_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOOR_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOSWAP_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOSWAP_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOXOR_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOXOR_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_LR_D_AQ ||
+      metadata.opcode == Opcode::RISCV_LR_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_LR_W_AQ ||
+      metadata.opcode == Opcode::RISCV_LR_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_SC_D_AQ ||
+      metadata.opcode == Opcode::RISCV_SC_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_SC_W_AQ ||
+      metadata.opcode == Opcode::RISCV_SC_W_AQ_RL) {
+    isAcquire_ = true;
+  }
+  if (metadata.opcode == Opcode::RISCV_AMOADD_D_RL ||
+      metadata.opcode == Opcode::RISCV_AMOADD_W_RL ||
+      metadata.opcode == Opcode::RISCV_AMOAND_D_RL ||
+      metadata.opcode == Opcode::RISCV_AMOAND_W_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAXU_D_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAXU_W_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAX_D_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAX_W_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMINU_D_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMINU_W_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMIN_D_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMIN_W_RL ||
+      metadata.opcode == Opcode::RISCV_AMOOR_D_RL ||
+      metadata.opcode == Opcode::RISCV_AMOOR_W_RL ||
+      metadata.opcode == Opcode::RISCV_AMOSWAP_D_RL ||
+      metadata.opcode == Opcode::RISCV_AMOSWAP_W_RL ||
+      metadata.opcode == Opcode::RISCV_AMOXOR_D_RL ||
+      metadata.opcode == Opcode::RISCV_AMOXOR_W_RL ||
+      metadata.opcode == Opcode::RISCV_AMOADD_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOADD_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOAND_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOAND_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAXU_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAXU_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAX_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMAX_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMINU_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMINU_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMIN_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOMIN_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOOR_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOOR_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOSWAP_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOSWAP_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOXOR_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_AMOXOR_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_LR_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_LR_D_RL ||
+      metadata.opcode == Opcode::RISCV_LR_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_LR_W_RL ||
+      metadata.opcode == Opcode::RISCV_SC_D_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_SC_D_RL ||
+      metadata.opcode == Opcode::RISCV_SC_W_AQ_RL ||
+      metadata.opcode == Opcode::RISCV_SC_W_RL) {
+    isRelease_ = true;
+  }
+
+  // The following instructions are considered to be atomic
+  // (i.e. load from memory, perform an operation, and then store to
+  // memory atomically)
   if (Opcode::RISCV_AMOADD_D <= metadata.opcode &&
       metadata.opcode <= Opcode::RISCV_AMOXOR_W_RL) {
     // Atomics: both load and store
