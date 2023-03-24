@@ -17,13 +17,13 @@ struct Range {
   T size;
 
   /** Constructor which creates the Range struct with specific values. */
-  Range(T s, T e, T sz) {
+  Range(T range_start, T range_end, T range_size) {
     // Static assert which checks if the template type is an arithmetic type.
     static_assert(std::is_arithmetic_v<T>,
                   "Range should be declared with an arithmetic type");
-    start = s;
-    end = e;
-    size = sz;
+    start = range_start;
+    end = range_end;
+    size = range_size;
   }
 
   /** Empty constructor for the Range struct. */
@@ -39,11 +39,11 @@ struct Range {
     return (start <= range.start) && (end > range.end);
   }
 
-  /** This function checks if the range specified by start (s) and size (sz) is
-   * contained inside the range of the Range struct. */
-  virtual bool contains(T s, T sz) {
-    T e = s + sz;
-    return (start <= s) && (end > e);
+  /** This function checks if the range specified by start (range_start) and
+   * size (range_size) is contained inside the range of the Range struct. */
+  virtual bool contains(T range_start, T range_size) {
+    T rend = range_start + range_size;
+    return (start <= range_start) && (end > rend);
   }
 
   /** This function checks if Range overlaps with another Range. */
@@ -51,11 +51,11 @@ struct Range {
     return (start < range.end) && (end >= range.start) && (range.size != 0);
   }
 
-  /** This function checks if the range specified by start (s) and size (sz)
-   * overlaps with the range of the Range struct. */
-  virtual bool overlaps(T s, T sz) {
-    T e = s + sz;
-    return (start < e) && (end >= s) && (sz != 0);
+  /** This function checks if the range specified by start (range_start) and
+   * size (range_size) overlaps with the range of the Range struct. */
+  virtual bool overlaps(T range_start, T range_size) {
+    T rend = range_start + range_size;
+    return (start < rend) && (end >= range_start) && (range_size != 0);
   }
 };
 

@@ -50,10 +50,8 @@ struct ProcessStackRegion : public Range<uint64_t> {
   /** Empty constructor for the Stack ProcessRegion. */
   ProcessStackRegion() : Range(), initialStackPtr(0) {}
 
-  /** Constructor which initialises the ProcessStackRegion with specific
-   * values. Since the stack grows down from higher addresses towards lower
-   * addresses, an additional member variable "stackStart" is used which
-   * represents the same. */
+  /** Constructor which initialises the ProcessStackRegion with specific values.
+   */
   ProcessStackRegion(uint64_t stackStartAddr, uint64_t size,
                      uint64_t initStackPtr)
       : Range(stackStartAddr - size, stackStartAddr, size),
@@ -101,13 +99,14 @@ class MemRegion {
   /** This constructor creates a MemRegion with values specified by the owning
    * process. */
   MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
-            uint64_t memSize, uint64_t stackStart, uint64_t heapStart,
+            uint64_t procImgSize, uint64_t stackStart, uint64_t heapStart,
             uint64_t mmapStart, uint64_t initStackPtr,
             std::function<uint64_t(uint64_t, size_t)> unmapPageTable);
 
   /** This constructor creates am empty MemRegion.*/
   MemRegion(){};
 
+  /** Explicit declaration of the default copy constructor. */
   MemRegion(const MemRegion&) = default;
 
   ~MemRegion();
@@ -139,8 +138,8 @@ class MemRegion {
   /** This method returns the start address of the mmap region.*/
   uint64_t getMmapStart() const;
 
-  /** This method returns the size of the simulation memory.*/
-  uint64_t getMemSize() const;
+  /** This method returns the size of the process image.*/
+  uint64_t getProcImgSize() const;
 
   /** This method updates the heap pointer with a new value. */
   uint64_t updateBrkRegion(uint64_t newBrk);
@@ -177,18 +176,18 @@ class MemRegion {
 
  private:
   /** The ProcessStackRegion struct. */
-  ProcessStackRegion stackReg_;
+  ProcessStackRegion stackRegion_;
 
   /** Shared pointer to the ProcessHeapRegion, so that it can be shared with
    * threads belonging to the same thread group. */
-  std::shared_ptr<ProcessHeapRegion> heapReg_ = nullptr;
+  std::shared_ptr<ProcessHeapRegion> heapRegion_ = nullptr;
 
   /** Shared pointer to the ProcessMmapRegion, so that it can be shared with
    * threads belonging to the same thread group. */
-  std::shared_ptr<ProcessMmapRegion> mmapReg_ = nullptr;
+  std::shared_ptr<ProcessMmapRegion> mmapRegion_ = nullptr;
 
-  /** Size of the entire simulation memory. */
-  uint64_t memSize_;
+  /** Size of the process image. */
+  uint64_t procImgSize_;
 
   /** Function reference to unmap the page table in removeVma. */
   std::function<uint64_t(uint64_t, size_t)> unmapPageTable_;

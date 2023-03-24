@@ -1,7 +1,6 @@
 #include "simeng/OS/SimOS.hh"
 
 #include <cstdint>
-#include <iomanip>
 
 #include "simeng/OS/Constants.hh"
 #include "simeng/OS/Process.hh"
