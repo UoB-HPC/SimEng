@@ -137,8 +137,10 @@ class VirtualMemoryArea {
    * VMA so that it can be split into two. */
   VirtualMemoryArea(VirtualMemoryArea* vma);
 
+  /** Explicit declaration of the default copy constructor. */
   VirtualMemoryArea(const VirtualMemoryArea& vma) = default;
 
+  /** Default empty constructor to create an empty VirtualMemoryArea. */
   VirtualMemoryArea(){};
 
   ~VirtualMemoryArea(){};

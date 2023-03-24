@@ -144,9 +144,8 @@ class MemRegion {
   /** Function reference to unmap the page table in removeVma. */
   std::function<uint64_t(uint64_t, size_t)> unmapPageTable_;
 
-  /** Head of the VMA list. */
-  // VirtualMemoryArea* vm_head_ = nullptr;
-
+  /** Shared_ptr to VMA linked list which contains all mmaped virtual memory
+   * areas. */
   std::shared_ptr<std::list<VirtualMemoryArea>> VMAlist_ = nullptr;
 
   /** Method to add VMA to the VMA list at the specified start address. If the
