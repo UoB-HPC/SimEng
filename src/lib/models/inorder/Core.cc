@@ -121,20 +121,13 @@ bool Core::hasHalted() const {
   // Units place uops in buffer tail, but if buffer is stalled, uops do not
   // move to head slots and so remain in tail slots. Buffer head appears
   // empty. Check emptiness accordingly
-  auto decSlots = fetchToDecodeBuffer_.isStalled()
-                      ? fetchToDecodeBuffer_.getTailSlots()[0]
-                      : fetchToDecodeBuffer_.getHeadSlots()[0];
+  auto decSlots = fetchToDecodeBuffer_.getPendingSlots()[0];
   bool decodePending = decSlots.size() > 0;
 
-  auto exeSlots = decodeToExecuteBuffer_.isStalled()
-                      ? decodeToExecuteBuffer_.getTailSlots()[0]
-                      : decodeToExecuteBuffer_.getHeadSlots()[0];
+  auto exeSlots = decodeToExecuteBuffer_.getPendingSlots()[0];
   bool executePending = exeSlots != nullptr;
 
-  auto writeSlots = completionSlots_[0].isStalled()
-                        ? completionSlots_[0].getTailSlots()[0]
-                        : completionSlots_[0].getHeadSlots()[0];
-
+  auto writeSlots = completionSlots_[0].getPendingSlots()[0];
   bool writebackPending = writeSlots != nullptr;
 
   return (fetchUnit_.hasHalted() && !decodePending && !writebackPending &&
