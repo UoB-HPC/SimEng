@@ -472,17 +472,61 @@ void Instruction::decode() {
     }
 
     // The following instructions are considered to be atomic
+    // (i.e. load from memory, perform an operation, and then store to
+    // memory atomically)
     if (metadata.opcode == Opcode::AArch64_CASALW ||
         metadata.opcode == Opcode::AArch64_CASALX ||
         metadata.opcode == Opcode::AArch64_LDADDALW ||
         metadata.opcode == Opcode::AArch64_LDADDALX ||
         metadata.opcode == Opcode::AArch64_LDADDLW ||
         metadata.opcode == Opcode::AArch64_LDADDW ||
+        metadata.opcode == Opcode::AArch64_LDCLRALW ||
+        metadata.opcode == Opcode::AArch64_LDCLRALX ||
+        metadata.opcode == Opcode::AArch64_LDSETALW ||
+        metadata.opcode == Opcode::AArch64_LDSETALX) {
+      isAtomic_ = true;
+    }
+
+    // The following instructions are considered to be exclusive memory accesses
+    // (i.e. a load will begin an exculsivity monitor on a memory region to
+    // detect any changes, a store will conditionally update memory if it is
+    // permitted to do so and end monitoring, else its result will indicate the
+    // failure to do so)
+    if (metadata.opcode == Opcode::AArch64_LDAXRW ||
+        metadata.opcode == Opcode::AArch64_LDAXRX ||
+        metadata.opcode == Opcode::AArch64_STLXRW ||
+        metadata.opcode == Opcode::AArch64_STLXRX) {
+      isExclusive_ = true;
+    }
+
+    // The following instructions enforce acquire memory semantics
+    // (i.e. No memory operations on this thread which come after this
+    // instruction in program order can take place before the acquire memory
+    // operation)
+    if (metadata.opcode == Opcode::AArch64_CASALW ||
+        metadata.opcode == Opcode::AArch64_CASALX ||
+        metadata.opcode == Opcode::AArch64_LDADDALW ||
+        metadata.opcode == Opcode::AArch64_LDADDALX ||
         metadata.opcode == Opcode::AArch64_LDARB ||
         metadata.opcode == Opcode::AArch64_LDARW ||
         metadata.opcode == Opcode::AArch64_LDARX ||
         metadata.opcode == Opcode::AArch64_LDAXRW ||
         metadata.opcode == Opcode::AArch64_LDAXRX ||
+        metadata.opcode == Opcode::AArch64_LDCLRALW ||
+        metadata.opcode == Opcode::AArch64_LDCLRALX ||
+        metadata.opcode == Opcode::AArch64_LDSETALW ||
+        metadata.opcode == Opcode::AArch64_LDSETALX) {
+      isAcquire_ = true;
+    }
+
+    // The following instructions enforce release memory semantics
+    // (i.e. All memory operations on this thread which precede this instruction
+    // in program order must complete before this release memory operation)
+    if (metadata.opcode == Opcode::AArch64_CASALW ||
+        metadata.opcode == Opcode::AArch64_CASALX ||
+        metadata.opcode == Opcode::AArch64_LDADDALW ||
+        metadata.opcode == Opcode::AArch64_LDADDALX ||
+        metadata.opcode == Opcode::AArch64_LDADDLW ||
         metadata.opcode == Opcode::AArch64_LDCLRALW ||
         metadata.opcode == Opcode::AArch64_LDCLRALX ||
         metadata.opcode == Opcode::AArch64_LDSETALW ||
@@ -492,7 +536,7 @@ void Instruction::decode() {
         metadata.opcode == Opcode::AArch64_STLRX ||
         metadata.opcode == Opcode::AArch64_STLXRW ||
         metadata.opcode == Opcode::AArch64_STLXRX) {
-      isAtomic_ = true;
+      isRelease_ = true;
     }
 
     if (isStoreData_) {
