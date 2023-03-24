@@ -374,7 +374,7 @@ void LoadStoreQueue::tick() {
   // requests per cycle
   // Index 0: loads, index 1: stores
   std::array<uint16_t, 2> reqCounts = {0, 0};
-  std::array<uint64_t, 2> dataTransfered = {0, 0};
+  std::array<uint64_t, 2> dataTransferred = {0, 0};
   std::array<bool, 2> exceededLimits = {false, false};
   auto itLoad = requestLoadQueue_.begin();
   auto itStore = requestStoreQueue_.begin();
@@ -449,8 +449,8 @@ void LoadStoreQueue::tick() {
             assert(req.size <= bandwidth &&
                    "Individual memory request from LoadStoreQueue exceeds L1 "
                    "bandwidth set and thus will never be submitted");
-            dataTransfered[isStore] += req.size;
-            if (dataTransfered[isStore] > bandwidth) {
+            dataTransferred[isStore] += req.size;
+            if (dataTransferred[isStore] > bandwidth) {
               // No more requests can be scheduled this cycle
               exceededLimits[isStore] = true;
               itInsn = itReq->second.end();
