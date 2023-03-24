@@ -100,6 +100,8 @@ bool Instruction::isStoreData() const { return isStore_; }
 bool Instruction::isLoad() const { return isLoad_; }
 bool Instruction::isBranch() const { return isBranch_; }
 bool Instruction::isAtomic() const { return isAtomic_; }
+bool Instruction::isAcquire() const { return isAcquire_; }
+bool Instruction::isRelease() const { return isRelease_; }
 
 void Instruction::setMemoryAddresses(
     const std::vector<memory::MemoryAccessTarget>& addresses) {

@@ -120,6 +120,12 @@ class Instruction {
   /** Is this an atomic operation? */
   virtual bool isAtomic() const = 0;
 
+  /** Does this instruction enforce acquire semantics? */
+  virtual bool isAcquire() const = 0;
+
+  /** Does this instruction enforce release semantics? */
+  virtual bool isRelease() const = 0;
+
   /** Set this instruction's instruction memory address. */
   void setInstructionAddress(uint64_t address);
 

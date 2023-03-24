@@ -34,6 +34,8 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(isLoad, bool());
   MOCK_CONST_METHOD0(isBranch, bool());
   MOCK_CONST_METHOD0(isAtomic, bool());
+  MOCK_CONST_METHOD0(isAcquire, bool());
+  MOCK_CONST_METHOD0(isRelease, bool());
   MOCK_CONST_METHOD0(isPredicate, bool());
   MOCK_CONST_METHOD0(getGroup, uint16_t());
 
