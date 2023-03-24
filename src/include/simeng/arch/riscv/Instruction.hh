@@ -145,6 +145,12 @@ class Instruction : public simeng::Instruction {
   /** Is this an atomic instruction? */
   bool isAtomic() const override;
 
+  /** Does this instruction enforce acquire semantics? */
+  bool isAcquire() const override;
+
+  /** Does this instruction enforce release semantics? */
+  bool isRelease() const override;
+
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
@@ -238,6 +244,10 @@ class Instruction : public simeng::Instruction {
   bool isLogical_ = false;
   /** Is this a compare instruction? */
   bool isCompare_ = false;
+  /** Enforces acquire semantics. */
+  bool isAcquire_ = false;
+  /** Enforces release semantics. */
+  bool isRelease_ = false;
 
   // Memory
   /** Set the accessed memory addresses, and create a corresponding memory data

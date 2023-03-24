@@ -317,6 +317,12 @@ class Instruction : public simeng::Instruction {
   /** Is this an atomic operation? */
   bool isAtomic() const override;
 
+  /** Does this instruction enforce acquire semantics? */
+  bool isAcquire() const override;
+
+  /** Does this instruction enforce release semantics? */
+  bool isRelease() const override;
+
   /** Retrieve the instruction group this instruction belongs to. */
   uint16_t getGroup() const override;
 
@@ -446,6 +452,10 @@ class Instruction : public simeng::Instruction {
   bool isBranch_ = false;
   /** Is an atomic operation. */
   bool isAtomic_ = false;
+  /** Enforces acquire semantics. */
+  bool isAcquire_ = false;
+  /** Enforces release semantics. */
+  bool isRelease_ = false;
   /** Is the micro-operation opcode of the instruction, where appropriate. */
   uint8_t microOpcode_ = MicroOpcode::INVALID;
   /** Is the micro-operation opcode of the instruction, where appropriate. */
