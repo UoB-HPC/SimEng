@@ -9,26 +9,26 @@ namespace simeng {
 namespace kernel {
 
 namespace auxVec {
-/** Labels for the entries in the auxiliary vector. */
+// Labels for the entries in the auxiliary vector
 enum labels {
-  AT_NULL = 0,      /* end of vector */
-  AT_IGNORE = 1,    /* entry should be ignored */
-  AT_EXECFD = 2,    /* file descriptor of program */
-  AT_PHDR = 3,      /* program headers for program */
-  AT_PHENT = 4,     /* size of program header entry */
-  AT_PHNUM = 5,     /* number of program headers */
-  AT_PAGESZ = 6,    /* system page size */
-  AT_BASE = 7,      /* base address of interpreter */
-  AT_FLAGS = 8,     /* flags */
-  AT_ENTRY = 9,     /* entry point of program */
-  AT_NOTELF = 10,   /* program is not ELF */
-  AT_UID = 11,      /* real uid */
-  AT_EUID = 12,     /* effective uid */
-  AT_GID = 13,      /* real gid */
-  AT_EGID = 14,     /* effective gid */
-  AT_PLATFORM = 15, /* string identifying CPU for optimizations */
-  AT_HWCAP = 16,    /* arch dependent hints at CPU capabilities */
-  AT_CLKTCK = 17    /* frequency at which times() increments */
+  AT_NULL = 0,       // End of vector
+  AT_IGNORE = 1,     // Entry should be ignored
+  AT_EXECFD = 2,     // File descriptor of program
+  AT_PHDR = 3,       // Program headers for program
+  AT_PHENT = 4,      // Size of program header entry
+  AT_PHNUM = 5,      // Number of program headers
+  AT_PAGESZ = 6,     // System page size
+  AT_BASE = 7,       // Base address of interpreter
+  AT_FLAGS = 8,      // Flags
+  AT_ENTRY = 9,      // Entry point of program
+  AT_NOTELF = 10,    // Program is not ELF
+  AT_UID = 11,       // Real uid
+  AT_EUID = 12,      // Effective uid
+  AT_GID = 13,       // Real gid
+  AT_EGID = 14,      // Effective gid
+  AT_PLATFORM = 15,  // String identifying CPU for optimizations
+  AT_HWCAP = 16,     // Arch dependent hints at CPU capabilities
+  AT_CLKTCK = 17     // Frequency at which times() increments
 };
 }  // namespace auxVec
 
@@ -114,7 +114,7 @@ class LinuxProcess {
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
 
-  /** Program header table address */
+  /** Program header table virtual address */
   uint64_t progHeaderTableAddress_ = 0;
 
   /** Number of program headers */

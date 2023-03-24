@@ -20,8 +20,9 @@ const char Format64 = 2;
 // to prepare the program for execution.  An object file segment contains one or
 // more sections. Program headers are meaningful only for executable and shared
 // object files.  A file specifies its own program header size with the ELF
-// header's e_phentsize and e_phnum members.  The ELF program header is
-// described by the type Elf32_Phdr or Elf64_Phdr depending on the architecture
+// header's e_phentsize and the number of headers with e_phnum members.  The ELF
+// program header is described by the type Elf32_Phdr or Elf64_Phdr depending on
+// the architecture
 
 struct Elf64_Phdr {
   // Indicates what kind of segment this array element describes or
@@ -56,10 +57,11 @@ class Elf {
   /** Returns if this ELF is valid */
   bool isValid() const;
 
-  /** Returns the entry point of the program */
+  /** Returns the virtual address to which the system first transfers
+   * control */
   uint64_t getEntryPoint() const;
 
-  /** Returns the address of the program header table */
+  /** Returns the virtual address of the program header table */
   uint64_t getPhdrTableAddress() const;
 
   /** Returns the size of a program header entry */
@@ -76,13 +78,13 @@ class Elf {
   std::vector<Elf64_Phdr> pheaders_;
 
   /** The program header entry size stored in the ELF header */
-  uint16_t e_phentsize;
+  uint16_t e_phentsize_;
 
   /** The number of entries in the program header table stored in the ELF header
    */
-  uint16_t e_phnum;
+  uint16_t e_phnum_;
 
-  /** Address of the program header table */
+  /** Virtual address of the program header table */
   uint64_t phdrTableAddress_ = 0;
 
   /** Holds whether this ELF is valid for SimEng */

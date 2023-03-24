@@ -79,35 +79,35 @@ Elf::Elf(std::string path, char** imagePointer) {
   // Seek to the byte representing the start of the header offset table.
   // Holds the program header table's file offset in bytes.  If the file has no
   // program header table, this member holds zero
-  uint64_t e_phoff;
+  uint64_t e_phoff = 0;
   file.read(reinterpret_cast<char*>(&e_phoff), sizeof(e_phoff));
 
   /**
-   * Starting from the 54th byte of the ELF Header a 16-bit value indicates
-   * the the size in bytes of one entry in the
-   * file's program header table; all entries are the same
-   * size. In the `elf64_hdr`
-   * struct this value maps to the member `Elf64_Half e_phentsize`.
-   * Starting from the 56th byte a 16-bit value represents the number
+   * Starting from the 54th byte of the ELF Header a 16-bit value indicates the
+   * size in bytes of one entry in the file's program header table; all entries
+   * are the same size. In the `elf64_hdr` struct this value maps to the member
+   * `Elf64_Half e_phentsize`.
+   */
+  // Seek to the byte representing header entry size.
+  file.seekg(0x36);
+  file.read(reinterpret_cast<char*>(&e_phentsize_), sizeof(e_phentsize_));
+
+  /** Starting from the 56th byte a 16-bit value represents the number
    * of program header entries in the ELF Program header table. In the
    * `elf64_hdr` struct this value maps to `Elf64_Half e_phnum`.
    */
-
-  // Seek to the byte representing header entry size.
-  file.seekg(0x36);
-  file.read(reinterpret_cast<char*>(&e_phentsize), sizeof(e_phentsize));
-  file.read(reinterpret_cast<char*>(&e_phnum), sizeof(e_phnum));
+  file.read(reinterpret_cast<char*>(&e_phnum_), sizeof(e_phnum_));
 
   // Resize the header to equal the number of header entries.
-  pheaders_.resize(e_phnum);
+  pheaders_.resize(e_phnum_);
   processImageSize_ = 0;
 
   // Loop over all headers and extract them.
-  for (size_t i = 0; i < e_phnum; i++) {
+  for (size_t i = 0; i < e_phnum_; i++) {
     // Since all headers entries have the same size.
     // We can extract the nth header using the header offset
     // and header entry size.
-    file.seekg(e_phoff + (i * e_phentsize));
+    file.seekg(e_phoff + (i * e_phentsize_));
     auto& header = pheaders_[i];
 
     /**
@@ -157,7 +157,8 @@ Elf::Elf(std::string path, char** imagePointer) {
       processImageSize_ = header.p_vaddr + header.p_memsz;
     }
 
-    // Find the table address used to populate the auxvec
+    // Determine the virtual address of the header table in memory from
+    // individual program headers. Used to populate the auxvec
     if (header.p_offset <= e_phoff &&
         e_phoff < header.p_offset + header.p_filesz) {
       phdrTableAddress_ = header.p_vaddr + (e_phoff - header.p_offset);
@@ -197,8 +198,8 @@ bool Elf::isValid() const { return isValid_; }
 
 uint64_t Elf::getPhdrTableAddress() const { return phdrTableAddress_; }
 
-uint64_t Elf::getPhdrEntrySize() const { return e_phentsize; }
+uint64_t Elf::getPhdrEntrySize() const { return e_phentsize_; }
 
-uint64_t Elf::getNumPhdr() const { return e_phnum; }
+uint64_t Elf::getNumPhdr() const { return e_phnum_; }
 
 }  // namespace simeng
