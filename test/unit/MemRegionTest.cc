@@ -743,7 +743,7 @@ TEST(MemRegionTest, UnmapContainsStart) {
   ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
 
   VMA vma = memRegion.getVMAFromAddr(mmapStart + 4096);
-  ASSERT_NE(vma.vmSize_, 0);
+  ASSERT_EQ(vma.vmSize_, 0);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 8192);
   ASSERT_NE(vma.vmSize_, 0);
@@ -798,7 +798,7 @@ TEST(MemRegionTest, UnmapContainsEnd) {
   ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
 
   VMA vma = memRegion.getVMAFromAddr(mmapStart + 8192);
-  ASSERT_NE(vma.vmSize_, 0);
+  ASSERT_EQ(vma.vmSize_, 0);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 4096);
   ASSERT_NE(vma.vmSize_, 0);
@@ -849,10 +849,10 @@ TEST(MemRegionTest, UnmapOverlaps) {
   ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
 
   VMA vma = memRegion.getVMAFromAddr(mmapStart + 4096);
-  ASSERT_NE(vma.vmSize_, 0);
+  ASSERT_EQ(vma.vmSize_, 0);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 8192);
-  ASSERT_NE(vma.vmSize_, 0);
+  ASSERT_EQ(vma.vmSize_, 0);
 
   vma = memRegion.getVMAFromAddr(mmapStart + 12288);
   ASSERT_EQ(vma.vmSize_, 4096);

@@ -156,6 +156,9 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
         VMA newVma = VMA(*itr);
         itr->trimRangeEnd(addr);
         newVma.trimRangeStart(endAddr);
+        // std::list::insert inserts element before the position specified by
+        // the iterator. Hence std::next is used to advance the iterator so that
+        // the new VMA can be inserted at the correct place.
         VMAlist_->insert(std::next(itr, 1), newVma);
       }
       delsize += length;
@@ -169,12 +172,12 @@ int64_t MemRegion::removeVma(uint64_t addr, uint64_t length) {
       if (addr > itr->vmStart_ && endAddr > itr->vmEnd_) {
         delsize += (itr->vmEnd_ - addr);
         itr->trimRangeEnd(addr);
+        itr++;
       } else {
         delsize += (endAddr - itr->vmStart_);
         itr->trimRangeStart(endAddr);
         break;
       }
-      itr++;
     } else {
       itr++;
     }
