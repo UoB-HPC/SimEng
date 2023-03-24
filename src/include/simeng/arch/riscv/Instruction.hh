@@ -145,6 +145,9 @@ class Instruction : public simeng::Instruction {
   /** Is this an atomic instruction? */
   bool isAtomic() const override;
 
+  /** Is this an exclusive memory operation? */
+  bool isExclusive() const override;
+
   /** Does this instruction enforce acquire semantics? */
   bool isAcquire() const override;
 
@@ -240,6 +243,8 @@ class Instruction : public simeng::Instruction {
   bool isShift_ = false;
   /** Is this an atomic instruction? */
   bool isAtomic_ = false;
+  /** Is an exclusive memory operation. */
+  bool isExclusive_ = false;
   /** Is this a logical instruction? */
   bool isLogical_ = false;
   /** Is this a compare instruction? */

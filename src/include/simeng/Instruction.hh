@@ -120,6 +120,9 @@ class Instruction {
   /** Is this an atomic operation? */
   virtual bool isAtomic() const = 0;
 
+  /** Is this an exclusive memory operation? */
+  virtual bool isExclusive() const = 0;
+
   /** Does this instruction enforce acquire semantics? */
   virtual bool isAcquire() const = 0;
 

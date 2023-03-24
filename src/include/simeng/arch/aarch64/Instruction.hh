@@ -317,6 +317,9 @@ class Instruction : public simeng::Instruction {
   /** Is this an atomic operation? */
   bool isAtomic() const override;
 
+  /** Is this an exclusive memory operation? */
+  bool isExclusive() const override;
+
   /** Does this instruction enforce acquire semantics? */
   bool isAcquire() const override;
 
@@ -452,6 +455,8 @@ class Instruction : public simeng::Instruction {
   bool isBranch_ = false;
   /** Is an atomic operation. */
   bool isAtomic_ = false;
+  /** Is an exclusive memory operation. */
+  bool isExclusive_ = false;
   /** Enforces acquire semantics. */
   bool isAcquire_ = false;
   /** Enforces release semantics. */
