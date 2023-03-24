@@ -37,7 +37,7 @@ Elf::Elf(std::string path, char** imagePointer) {
   char fileMagic[4];
   file.read(fileMagic, 4);
   if (std::memcmp(elfMagic, fileMagic, sizeof(elfMagic))) {
-    std::cout << "[SimEng:Elf]  Elf magic does not match" << std::endl;
+    std::cout << "[SimEng:Elf] Elf magic does not match" << std::endl;
     return;
   }
 
@@ -50,7 +50,7 @@ Elf::Elf(std::string path, char** imagePointer) {
   char bitFormat;
   file.read(&bitFormat, sizeof(bitFormat));
   if (bitFormat != ElfBitFormat::Format64) {
-    std::cout << "[SimEng:Elf]  Unsupported architecture detected in Elf"
+    std::cout << "[SimEng:Elf] Unsupported architecture detected in Elf"
               << std::endl;
     return;
   }
