@@ -110,7 +110,7 @@ void LoadStoreQueue::startLoad(const std::shared_ptr<Instruction>& insn) {
                              .back()
                              .reqAddresses;
     // Store load addresses temporarily so that conflictions are
-    // only regsitered once on most recent (program order) store
+    // only registered once on most recent (program order) store
     std::list<simeng::MemoryAccessTarget> temp_load_addr(ld_addresses.begin(),
                                                          ld_addresses.end());
 
@@ -174,7 +174,7 @@ void LoadStoreQueue::supplyStoreData(const std::shared_ptr<Instruction>& insn) {
   while (itSt != storeQueue_.end()) {
     auto& entry = itSt->first;
     // Pair entry and incoming store data operation with macroOp identifier and
-    // microOp index value pre-detemined in microDecoder
+    // microOp index value pre-determined in microDecoder
     if (entry->getInstructionId() == macroOpNum &&
         entry->getMicroOpIndex() == microOpNum) {
       // Supply data to be stored by operations
@@ -435,7 +435,7 @@ void LoadStoreQueue::tick() {
           // No more requests of this type can be scheduled this cycle
           exceededLimits[isStore] = true;
           // Remove speculative increment to ensure it doesn't count for
-          // comparisons aginast the totalLimit_
+          // comparisons against the totalLimit_
           reqCounts[isStore]--;
           break;
         } else {
@@ -445,7 +445,7 @@ void LoadStoreQueue::tick() {
           while (addressQueue.size()) {
             const simeng::MemoryAccessTarget req = addressQueue.front();
 
-            // Ensure the limit on the data transfered per cycle is adhered to
+            // Ensure the limit on the data transferred per cycle is adhered to
             assert(req.size <= bandwidth &&
                    "Individual memory request from LoadStoreQueue exceeds L1 "
                    "bandwidth set and thus will never be submitted");

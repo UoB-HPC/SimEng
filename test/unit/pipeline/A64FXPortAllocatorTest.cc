@@ -257,7 +257,7 @@ TEST(A64FXPortAllocator, dispatchSlots) {
   rsFreeEntries = {10, 10, 10, 10, 19};
 
   // With less than 4 instructions dispatched in a cycle, the next cycle should
-  // reset the displatchSlot to 0 and start the allocation logic at the
+  // reset the dispatchSlot to 0 and start the allocation logic at the
   // appropriate place in the mechanism
   portAllocator.tick();
   EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
@@ -273,7 +273,7 @@ TEST(A64FXPortAllocator, dispatchSlots) {
   EXPECT_EQ(portAllocator.allocate({2, 4, 5, 6}), 2);
   rsFreeEntries[0]--;
 
-  // Dispatch slot values should be shared amoungst all instruction attribute
+  // Dispatch slot values should be shared amongst all instruction attribute
   // dispatch mechanisms
   rsFreeEntries = {10, 10, 10, 10, 19};
   portAllocator.tick();

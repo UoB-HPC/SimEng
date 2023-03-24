@@ -5,7 +5,7 @@
 
 Core:
   ISA: rv64
-  Simulation-Mode: inorderpipelined
+  Simulation-Mode: outoforder
   Clock-Frequency: 2.5
   # Timer-Frequency is in MHz.
   Timer-Frequency: 200
@@ -34,7 +34,7 @@ Branch-Predictor:
   RAS-entries: 5
   Fallback-Static-Predictor: "Always-Taken"
 L1-Data-Memory:
-  Interface-Type: Flat
+  Interface-Type: Fixed
 L1-Instruction-Memory:
   Interface-Type: Flat
 LSQ-L1-Interface:
@@ -146,7 +146,7 @@ CPU-Info:
   Core-Count: 1
   # Socket-Count MUST be 1 as multi-socket simulations are not supported at this time. (TX2 true value is 2)
   Socket-Count: 1
-  # SMT MUST be 1 as Simultanious-Multi-Threading is not supported at this time. (TX2 true value is 4)
+  # SMT MUST be 1 as Simultaneous-Multi-Threading is not supported at this time. (TX2 true value is 4)
   SMT: 1
   # Below are the values needed to generate /proc/cpuinfo
   BogoMIPS: 400.00

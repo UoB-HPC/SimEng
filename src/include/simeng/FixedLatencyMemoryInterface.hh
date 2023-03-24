@@ -57,7 +57,7 @@ class FixedLatencyMemoryInterface : public MemoryInterface {
   /** Clear the completed reads. */
   void clearCompletedReads() override;
 
-  /** Returns true if there are any oustanding memory requests in-flight. */
+  /** Returns true if there are any outstanding memory requests in-flight. */
   bool hasPendingRequests() const override;
 
   /** Tick the memory model to process the request queue. */

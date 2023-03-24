@@ -24,7 +24,7 @@ TEST_P(Syscall, getrandom) {
       mov x8, 214
       svc #0
 
-      # store inital heap address
+      # store initial heap address
       mov x10, x0
 
       # Save 8 random bytes to the heap
@@ -51,7 +51,7 @@ TEST_P(Syscall, getrandom) {
            getMemoryValue<uint8_t>(heapStart + 8 + i));
   }
 
-  // check that the retuned bytes arent all equal to -1.
+  // check that the returned bytes aren't all equal to -1.
   // heap was initialised to -1 so check bytes have changed
   bool allUnchanged = true;
   for (size_t i = 0; i < 16; i++) {
@@ -62,8 +62,8 @@ TEST_P(Syscall, getrandom) {
   }
   EXPECT_EQ(allUnchanged, false);
 
-  // Check that the returned bytes from the two syscalls dont all match.
-  // If they do then the returned bytes surely werent random
+  // Check that the returned bytes from the two syscalls don't all match.
+  // If they do then the returned bytes surely weren't random
   bool allMatch = true;
   for (char i = 0; i < 8; i++) {
     if (getMemoryValue<uint8_t>(heapStart + i) !=

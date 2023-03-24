@@ -758,7 +758,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
           operands[2].mem.disp =
               std::stoi(operandStr.substr(startPos, immSize));
         } else {
-          // double or tripple digit immediates are converted to hex, and so
+          // double or triple digit immediates are converted to hex, and so
           // require a different conversion to uint
           operands[2].mem.disp =
               std::stoul(operandStr.substr(startPos, immSize), nullptr, 16);
@@ -824,7 +824,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operandCount = 3;
       operands[2].type = ARM64_OP_IMM;
       operands[2].access = CS_AC_READ;
-      // For vector arrangment of 16-bit, post_index immediate is 2
+      // For vector arrangement of 16-bit, post_index immediate is 2
       operands[2].imm = 2;
       break;
     case Opcode::AArch64_LD1Rv1d_POST:
@@ -836,7 +836,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operandCount = 3;
       operands[2].type = ARM64_OP_IMM;
       operands[2].access = CS_AC_READ;
-      // For vector arrangment of 64-bit, post_index immediate is 8
+      // For vector arrangement of 64-bit, post_index immediate is 8
       operands[2].imm = 8;
       break;
     case Opcode::AArch64_LD1Rv16b_POST:
@@ -849,7 +849,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operandCount = 3;
       operands[2].type = ARM64_OP_IMM;
       operands[2].access = CS_AC_READ;
-      // For vector arrangment of 8-bit, post_index immediate is 1
+      // For vector arrangement of 8-bit, post_index immediate is 1
       operands[2].imm = 1;
       break;
     case Opcode::AArch64_LD1Rv2s_POST:
@@ -862,7 +862,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       operandCount = 3;
       operands[2].type = ARM64_OP_IMM;
       operands[2].access = CS_AC_READ;
-      // For vector arrangment of 32-bit, post_index immediate is 4
+      // For vector arrangement of 32-bit, post_index immediate is 4
       operands[2].imm = 4;
       break;
     case Opcode::AArch64_LD1Onev16b:
@@ -1265,7 +1265,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
           operands[2].mem.disp =
               std::stoi(operandStr.substr(startPos, immSize));
         } else {
-          // double or tripple digit immediates are converted to hex, and so
+          // double or triple digit immediates are converted to hex, and so
           // require a different conversion to uint
           operands[2].mem.disp =
               std::stoul(operandStr.substr(startPos, immSize), nullptr, 16);
@@ -1307,7 +1307,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // ST2 post incorrectly flags read and write
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ | CS_AC_WRITE;
-      // Another incorrect acess flag for register offset operand
+      // Another incorrect access flag for register offset operand
       if (operandCount == 4) {
         operands[3].access = CS_AC_READ;
       }
@@ -1539,7 +1539,7 @@ InstructionMetadata::InstructionMetadata(const cs_insn& insn)
       // Need to add access specifiers
       // although operands[0] should be READ | WRITE, due to the implemented
       // decode logic for SME tile destinations, the register will be added as
-      // both source and distination with just WRITE access.
+      // both source and destination with just WRITE access.
       operands[0].access = CS_AC_WRITE;
       operands[1].access = CS_AC_READ;
       operands[2].access = CS_AC_READ;
@@ -2064,7 +2064,7 @@ void InstructionMetadata::revertAliasing() {
         // mov Zd.T, Pg/M, Zn.T; alias for: sel Zd.T, Pg, Zn.T, Zd.T
         if (mnemonic[0] == 'm') {
           // SEL instructions id sometimes set as ARM64_INS_MOV even if
-          // aliasing hasn't occured so double check mnemoic is MOV alias
+          // aliasing hasn't occurred so double check mnemonic is MOV alias
           operandCount = 4;
           operands[3] = operands[0];
           operands[3].access = CS_AC_READ;

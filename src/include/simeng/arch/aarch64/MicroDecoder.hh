@@ -20,7 +20,7 @@ struct OpType {
  */
 class MicroDecoder {
  public:
-  /** Construct a micro decoder for splitting relevant instructons. */
+  /** Construct a micro decoder for splitting relevant instructions. */
   MicroDecoder(YAML::Node config);
   ~MicroDecoder();
 
@@ -67,7 +67,7 @@ class MicroDecoder {
 
   /** A micro-decoding cache, mapping an instruction word to a previously split
    * instruction. Instructions are added to the cache as they're split into
-   * their repsective micro-operations, to reduce the overhead of future
+   * their respective micro-operations, to reduce the overhead of future
    * splitting. */
   static std::unordered_map<uint32_t, std::vector<Instruction>>
       microDecodeCache;

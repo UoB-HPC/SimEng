@@ -80,7 +80,7 @@ void CoreInstance::generateCoreModel(std::string executablePath,
 }
 
 void CoreInstance::setSimulationMode() {
-  // Get the simualtion mode as defined by the set configuration, defaulting to
+  // Get the simulation mode as defined by the set configuration, defaulting to
   // emulation
   if (config_["Core"]["Simulation-Mode"].as<std::string>() ==
       "inorderpipelined") {

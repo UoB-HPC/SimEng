@@ -196,7 +196,7 @@ if(SIMENG_ENABLE_TESTS)
                  PATHS "${llvm_BINARY_DIR}/lib/cmake/llvm")
 
     # NOTE: we don't do the usual version checks here because it needs vars exported in find_LLVM
-    # we just assume it's good beacuse it must be whitelisted in FetchContent_Declare
+    # we just assume it's good because it must be whitelisted in FetchContent_Declare
 endif()
 
   set(SIMENG_LLVM_VERSION ${LLVM_VERSION_MAJOR} CACHE INTERNAL "LLVM major version number used.")

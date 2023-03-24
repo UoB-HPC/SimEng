@@ -25,7 +25,7 @@ TEST_P(Syscall, getrandom) {
       li a7, 214
       ecall
 
-      # store inital heap address
+      # store initial heap address
       mv t0, a0
 
       # Save 8 random bytes to the heap
@@ -63,7 +63,7 @@ TEST_P(Syscall, getrandom) {
   EXPECT_EQ(allUnchanged, false);
 
   // Check that the returned bytes from the two syscalls dont all match.
-  // If they do then the returned bytes surely werent random
+  // If they do then the returned bytes surely weren't random
   bool allMatch = true;
   for (char i = 0; i < 8; i++) {
     if (getMemoryValue<uint8_t>(heapStart + i) !=

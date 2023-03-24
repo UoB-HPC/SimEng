@@ -39,7 +39,7 @@ BranchPrediction GenericPredictor::predict(uint64_t address, BranchType type,
       (knownTarget != 0) ? address + knownTarget : btb_[hashedIndex].second;
   BranchPrediction prediction = {direction, target};
 
-  // Ammend prediction based on branch type
+  // Amend prediction based on branch type
   if (type == BranchType::Unconditional) {
     prediction.taken = true;
   } else if (type == BranchType::Return) {

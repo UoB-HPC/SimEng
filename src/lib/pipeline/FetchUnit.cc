@@ -124,7 +124,7 @@ void FetchUnit::tick() {
       break;
     }
 
-    // Create branch prediction after identifing instruction type
+    // Create branch prediction after identifying instruction type
     // (e.g. RET, BL, etc).
     BranchPrediction prediction = {false, 0};
     if (macroOp[0]->isBranch()) {

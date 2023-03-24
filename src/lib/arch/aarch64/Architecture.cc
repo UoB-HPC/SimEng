@@ -211,7 +211,7 @@ uint8_t Architecture::predecode(const void* ptr, uint8_t bytesAvailable,
 }
 
 ExecutionInfo Architecture::getExecutionInfo(Instruction& insn) const {
-  // Asusme no opcode-based override
+  // Assume no opcode-based override
   ExecutionInfo exeInfo = groupExecutionInfo_.at(insn.getGroup());
   if (opcodeExecutionInfo_.find(insn.getMetadata().opcode) !=
       opcodeExecutionInfo_.end()) {
