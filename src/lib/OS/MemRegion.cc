@@ -93,10 +93,7 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
     // VMA list.
     if (startAddr) {
       uint64_t space = itr->vmStart_ - startAddr;
-      // Check if the result of subtraction is negative, resulting in a wrapped
-      // unsigned positive value.
-      bool negativeWrapAround = itr->vmStart_ < startAddr;
-      if (!negativeWrapAround && space >= size) {
+      if ((itr->vmStart_ > startAddr) && (space >= size)) {
         vma.vmStart_ = startAddr;
         vma.vmEnd_ = startAddr + size;
         VMAlist_->insert(VMAlist_->begin(), vma);
@@ -122,7 +119,7 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
 
     // If the VMA list has multiple VMAs then starting from curr (VMA) check if
     // the new VMA can be allocated between two existing ones.
-    while (itr != VMAlist_->end() && itr != last) {
+    while (itr != last) {
       auto next = std::next(itr, 1);
       if (next->vmStart_ - itr->vmEnd_ >= size) {
         vma.vmStart_ = itr->vmEnd_;
@@ -283,11 +280,12 @@ int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
 }
 
 bool MemRegion::isVmMapped(uint64_t addr, size_t size) {
-  bool mapped = false;
   for (auto itr = VMAlist_->begin(); itr != VMAlist_->end(); itr++) {
-    mapped = mapped || itr->contains(addr, size) || itr->overlaps(addr, size);
+    if (itr->contains(addr, size) || itr->overlaps(addr, size)) {
+      return true;
+    }
   }
-  return mapped;
+  return false;
 }
 
 VirtualMemoryArea MemRegion::getVMAFromAddr(uint64_t vaddr) {
