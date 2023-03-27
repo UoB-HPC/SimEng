@@ -565,32 +565,6 @@ bool ExceptionHandler::init() {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
         break;
       }
-      case 216: {  // mremap
-        uint64_t old_address = registerFileSet.get(R0).get<uint64_t>();
-        size_t old_size = registerFileSet.get(R1).get<size_t>();
-        size_t new_size = registerFileSet.get(R2).get<size_t>();
-        int flags = registerFileSet.get(R3).get<int>();
-        uint64_t new_address = registerFileSet.get(R4).get<uint64_t>();
-
-        // Currently only MAYMOVE supported
-        if (flags == 1) {
-          uint64_t result = linux_.mremap(old_address, old_size, new_size,
-                                          flags, new_address);
-          if (result == -1) {
-            stateChange = {
-                ChangeType::REPLACEMENT, {R0}, {static_cast<int64_t>(-1)}};
-          } else {
-            stateChange = {ChangeType::REPLACEMENT, {R0}, {result}};
-          }
-        } else {
-          printException(instruction_);
-          std::cout << "Unsupported arguments for syscall: " << syscallId
-                    << std::endl;
-          return fatal();
-        }
-
-        break;
-      }
       case 222: {  // mmap
         uint64_t addr = registerFileSet.get(R0).get<uint64_t>();
         size_t length = registerFileSet.get(R1).get<size_t>();
@@ -657,10 +631,6 @@ bool ExceptionHandler::init() {
       case 293:  // rseq
       {
         stateChange = {ChangeType::REPLACEMENT, {R0}, {0ull}};
-        break;
-      }
-      case 1024: {
-        std::cout << "SIMENG: BROKEN SYSCALL 1024" << std::endl;
         break;
       }
       default:

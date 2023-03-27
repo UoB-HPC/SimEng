@@ -196,10 +196,6 @@ class Linux {
   /** munmap syscall: deletes the mappings for the specified address range. */
   int64_t munmap(uint64_t addr, size_t length);
 
-  /** mremap syscall: expand memory mapping */
-  uint64_t mremap(uint64_t oid_address, size_t old_size, size_t new_size,
-                  int flags, uint64_t new_address);
-
   /** mmap syscall: map files or devices into memory. */
   uint64_t mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
                 off_t offset);
