@@ -87,12 +87,21 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
   // be linked between two existing VMAs. If no available address range is
   // found, then the new VMA is allocated at the end of the VMA list.
   auto itr = VMAlist_->begin();
-  if (startAddr && VMAlist_->size() > 0) {
-    for (itr = VMAlist_->begin(); itr != last; itr++) {
-      auto next = std::next(itr, 1);
-      if (itr->vmEnd_ <= startAddr && next->vmStart_ >= (startAddr + size)) {
-        break;
+  if (VMAlist_->size() > 0) {
+    if (startAddr) {
+      for (itr = VMAlist_->begin(); itr != last; itr++) {
+        auto next = std::next(itr, 1);
+        if (itr->vmEnd_ <= startAddr && next->vmStart_ >= (startAddr + size)) {
+          break;
+        }
       }
+      // If enough space is available between mmapStart and head of VMA list,
+      // allocate the new VMA as the new head of the list.
+    } else if (VMAlist_->front().vmStart_ - mmapStart_ >= size) {
+      vma.vmStart_ = mmapStart_;
+      vma.vmEnd_ = mmapStart_ + size;
+      VMAlist_->insert(VMAlist_->begin(), vma);
+      return mmapStart_;
     }
   }
 

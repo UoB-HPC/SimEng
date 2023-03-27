@@ -863,4 +863,44 @@ TEST(MemRegionTest, UnmapOverlaps) {
   ASSERT_EQ(vma.vmEnd_, mmapStart + (4096 * 5));
 }
 
+TEST(MemRegionTest, CorrectlyMmapFromMmapStart) {
+  uint64_t heapStart = 0;
+  uint64_t heapSize = 81920;
+  uint64_t mmapStart = 86016;
+  uint64_t mmapSize = 163840;
+  uint64_t stackStart = 294912;
+  uint64_t stackSize = 40960;
+  uint64_t size = stackStart;
+  // heapEnd = 81920;
+  // mmapEnd = 249856;
+  // stackEnd = 253952;
+
+  auto fn = [](uint64_t vaddr, size_t size) -> uint64_t { return 0; };
+  MemRegion memRegion =
+      MemRegion(stackSize, heapSize, mmapSize, size, stackStart, heapStart,
+                mmapStart, stackStart, fn);
+
+  uint64_t retAddr =
+      memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
+  ASSERT_NE(retAddr, 0);
+  ASSERT_EQ(retAddr, mmapStart);
+  ASSERT_EQ(memRegion.getVMASize(), 1);
+  ASSERT_EQ(memRegion.getVMAHead().vmSize_, 4096);
+
+  retAddr = memRegion.mmapRegion(0, 8192, 0, MAP_PRIVATE, HostFileMMap());
+  ASSERT_EQ(retAddr, mmapStart + 4096);
+  ASSERT_EQ(memRegion.getVMASize(), 2);
+
+  uint64_t delSize = memRegion.unmapRegion(mmapStart, 4096);
+  ASSERT_EQ(delSize, 4096);
+  ASSERT_EQ(memRegion.getVMASize(), 1);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart + 4096);
+
+  retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
+  ASSERT_EQ(retAddr, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead().vmStart_, mmapStart);
+  ASSERT_EQ(memRegion.getVMAHead().vmEnd_, mmapStart + 4096);
+  ASSERT_EQ(memRegion.getVMASize(), 2);
+}
+
 }  // namespace
