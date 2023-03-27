@@ -103,7 +103,7 @@ class MemRegion {
             uint64_t mmapStart, uint64_t initStackPtr,
             std::function<uint64_t(uint64_t, size_t)> unmapPageTable);
 
-  /** This constructor creates am empty MemRegion.*/
+  /** This constructor creates an empty MemRegion.*/
   MemRegion(){};
 
   /** Explicit declaration of the default copy constructor. */
