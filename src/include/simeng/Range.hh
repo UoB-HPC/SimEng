@@ -19,8 +19,9 @@ struct Range {
   /** Constructor which creates the Range struct with specific values. */
   Range(T range_start, T range_end, T range_size) {
     // Static assert which checks if the template type is an arithmetic type.
-    static_assert(std::is_arithmetic_v<T>,
-                  "Range should be declared with an arithmetic type");
+    static_assert(
+        std::is_arithmetic_v<T>,
+        "[SimEng:Range] Range should be declared with an arithmetic type");
     start = range_start;
     end = range_end;
     size = range_size;
