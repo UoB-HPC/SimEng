@@ -88,6 +88,275 @@ void ModelConfig::validate() {
                         ExpectedValue::UInteger, 512);
   subFields.clear();
 
+  // Fetch
+  root = "Fetch";
+  subFields = {"Fetch-Block-Size", "Loop-Buffer-Size",
+               "Loop-Detection-Threshold"};
+  if (nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
+                            std::make_pair(4, UINT16_MAX),
+                            ExpectedValue::UInteger)) {
+    uint16_t block_size = configFile_[root][subFields[0]].as<uint16_t>();
+    // Ensure fetch block size is a power of 2
+    if ((block_size & (block_size - 1)) == 0) {
+      uint8_t alignment_bits = log2(block_size);
+      configFile_[root]["Fetch-Block-Alignment-Bits"] =
+          unsigned(alignment_bits);
+    } else {
+      invalid_ << "\t- Fetch-Block-Size must be a power of 2\n";
+    }
+  }
+  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
+                        std::make_pair(0, UINT16_MAX), ExpectedValue::UInteger);
+  nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
+                        std::make_pair(0, UINT16_MAX), ExpectedValue::UInteger);
+  subFields.clear();
+
+  // Process-Image
+  root = "Process-Image";
+  subFields = {"Heap-Size", "Stack-Size", "Mmap-Size"};
+  // Default heap size is 1024 * 1024 * 10 = 10MiB
+  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
+                        10485760);
+  // Default stack size is 1024 * 1024 = 1MiB
+  nodeChecker<uint64_t>(configFile_[root][subFields[1]], subFields[1],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
+                        1048576);
+  // Default mmap size is 1024 * 1024 = 1MiB
+  nodeChecker<uint64_t>(configFile_[root][subFields[2]], subFields[2],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
+                        10485760);
+
+  // Loop over all subFields and add the size of each process region. This is
+  // done to calculate the minimum value allowed for the Simulation-Memory node
+  // check defined below.
+  uint64_t totalProcRegionSize = 0;
+  for (auto field : subFields) {
+    totalProcRegionSize += configFile_[root][field].as<uint64_t>();
+  }
+
+  subFields.clear();
+
+  // Register-Set
+  root = "Register-Set";
+
+  // TODO make as many subfields as possible generic to avoid repeated code
+  // e.g. AArch64 FloatingPoint/SVE-Count -> FloatingPoint-Count
+  if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
+    subFields = {"GeneralPurpose-Count", "FloatingPoint-Count"};
+    nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
+                          std::make_pair(32, UINT16_MAX),
+                          ExpectedValue::UInteger);
+    nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
+                          std::make_pair(32, UINT16_MAX),
+                          ExpectedValue::UInteger);
+  } else if (configFile_["Core"]["ISA"].as<std::string>() == "AArch64") {
+    subFields = {"GeneralPurpose-Count", "FloatingPoint/SVE-Count",
+                 "Predicate-Count", "Conditional-Count", "Matrix-Count"};
+    nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
+                          std::make_pair(32, UINT16_MAX),
+                          ExpectedValue::UInteger);
+    nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
+                          std::make_pair(32, UINT16_MAX),
+                          ExpectedValue::UInteger);
+    nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
+                          std::make_pair(17, UINT16_MAX),
+                          ExpectedValue::UInteger, 17);
+    nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
+                          std::make_pair(1, UINT16_MAX),
+                          ExpectedValue::UInteger);
+    nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
+                          std::make_pair(1, UINT16_MAX),
+                          ExpectedValue::UInteger, 1);
+  }
+
+  subFields.clear();
+
+  // Pipeline-Widths
+  root = "Pipeline-Widths";
+  subFields = {"Commit", "FrontEnd", "LSQ-Completion"};
+  nodeChecker<unsigned int>(configFile_[root][subFields[0]], subFields[0],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger);
+  nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger);
+  nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger);
+  subFields.clear();
+
+  // Queue-Sizes
+  root = "Queue-Sizes";
+  subFields = {"ROB", "Load", "Store"};
+  nodeChecker<unsigned int>(configFile_[root][subFields[0]], subFields[0],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger);
+  nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger);
+  nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger);
+  subFields.clear();
+
+  // Branch-Predictor
+  root = "Branch-Predictor";
+  subFields = {"BTB-Tag-Bits", "Saturating-Count-Bits", "Global-History-Length",
+               "RAS-entries", "Fallback-Static-Predictor"};
+  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
+  nodeChecker<uint64_t>(configFile_[root][subFields[2]], subFields[2],
+                        std::make_pair(0, 64), ExpectedValue::UInteger);
+  nodeChecker<uint64_t>(configFile_[root][subFields[3]], subFields[3],
+                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
+  if (nodeChecker<std::string>(
+          configFile_[root][subFields[4]], subFields[4],
+          std::vector<std::string>{"Always-Taken", "Always-Not-Taken"},
+          ExpectedValue::String)) {
+    // If the Saturating-Count-Bits option is valid, set fallback static
+    // prediction to weakest value of the specific direction (i.e weakly taken
+    // or weakly not-taken)
+    if (nodeChecker<uint64_t>(configFile_[root][subFields[1]], subFields[1],
+                              std::make_pair(1, UINT64_MAX),
+                              ExpectedValue::UInteger)) {
+      // Calculate saturation counter boundary between weakly taken and
+      // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
+      // value
+      uint16_t weaklyTaken =
+          std::pow(2, (configFile_[root][subFields[1]].as<uint64_t>() - 1));
+      // Swap Fallback-Static-Predictor scheme out for equivalent saturating
+      // counter value
+      configFile_[root][subFields[4]] =
+          (configFile_[root][subFields[4]].as<std::string>() == "Always-Taken")
+              ? weaklyTaken
+              : (weaklyTaken - 1);
+    }
+  }
+  subFields.clear();
+
+  // Memory-Hierarchy
+  root = "Memory-Hierarchy";
+  subFields = {"Cache-Line-Width", "L1-Data", "DRAM"};
+  std::vector<std::string> subSubFields = {"Access-Latency", "Size"};
+  nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        64);
+  nodeChecker<uint16_t>(configFile_[root][subFields[1]][subSubFields[0]],
+                        subSubFields[0], std::make_pair(1, UINT16_MAX),
+                        ExpectedValue::UInteger, 1);
+  // Default L1-Data size is 1024 * 32 = 32 KiB
+  uint16_t cacheLineLen = configFile_[root][subFields[0]].as<uint16_t>();
+  nodeChecker<uint64_t>(
+      configFile_[root][subFields[1]][subSubFields[1]], subSubFields[1],
+      std::make_pair(cacheLineLen, UINT64_MAX), ExpectedValue::UInteger, 32768);
+  nodeChecker<uint16_t>(configFile_[root][subFields[2]][subSubFields[0]],
+                        subSubFields[0], std::make_pair(1, UINT16_MAX),
+                        ExpectedValue::UInteger, 1);
+  // Default DRAM size is 1024 * 1024 * 10 = 10MiB
+  nodeChecker<uint64_t>(configFile_[root][subFields[2]][subSubFields[1]],
+                        subSubFields[1],
+                        std::make_pair(totalProcRegionSize, UINT64_MAX),
+                        ExpectedValue::UInteger, 104857600);
+  subFields.clear();
+
+  // LSQ-Memory-Interface
+  root = "LSQ-Memory-Interface";
+  subFields = {"Exclusive",
+               "Load-Bandwidth",
+               "Store-Bandwidth",
+               "Permitted-Requests-Per-Cycle",
+               "Permitted-Loads-Per-Cycle",
+               "Permitted-Stores-Per-Cycle"};
+  nodeChecker<bool>(configFile_[root][subFields[0]], subFields[0],
+                    std::vector<bool>{true, false}, ExpectedValue::Bool, false);
+  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
+  nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
+  nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
+  nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
+  nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
+                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
+                        UINT16_MAX);
+  subFields.clear();
+
+  // CPU-Info
+  root = "CPU-Info";
+  subFields = {"Generate-Special-Dir",
+               "Core-Count",
+               "Socket-Count",
+               "SMT",
+               "BogoMIPS",
+               "Features",
+               "CPU-Implementer",
+               "CPU-Architecture",
+               "CPU-Variant",
+               "CPU-Part",
+               "CPU-Revision",
+               "Package-Count"};
+  nodeChecker<bool>(configFile_[root][subFields[0]], subFields[0],
+                    std::vector<bool>{false, true}, ExpectedValue::Bool, false);
+  nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger, 1);
+  nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger, 1);
+  nodeChecker<unsigned int>(configFile_[root][subFields[3]], subFields[3],
+                            std::make_pair(1, UINT_MAX),
+                            ExpectedValue::UInteger, 1);
+  nodeChecker<float>(configFile_[root][subFields[4]], subFields[4],
+                     std::make_pair(0.0f, std::numeric_limits<float>::max()),
+                     ExpectedValue::Float, 0.0f);
+  nodeChecker<std::string>(configFile_[root][subFields[5]], subFields[5],
+                           std::vector<std::string>(), ExpectedValue::String,
+                           "");
+  nodeChecker<std::string>(configFile_[root][subFields[6]], subFields[6],  //
+                           std::vector<std::string>(), ExpectedValue::String,
+                           "0x0");
+  nodeChecker<unsigned int>(configFile_[root][subFields[7]], subFields[7],
+                            std::make_pair(0, UINT_MAX),
+                            ExpectedValue::UInteger, 0);
+  nodeChecker<std::string>(configFile_[root][subFields[8]], subFields[8],  //
+                           std::vector<std::string>(), ExpectedValue::String,
+                           "0x0");
+  nodeChecker<std::string>(configFile_[root][subFields[9]], subFields[9],  //
+                           std::vector<std::string>(), ExpectedValue::String,
+                           "0x0");
+  nodeChecker<unsigned int>(configFile_[root][subFields[10]], subFields[10],
+                            std::make_pair(0, UINT_MAX),
+                            ExpectedValue::UInteger, 0x0);
+  if (nodeChecker<unsigned int>(configFile_[root][subFields[11]], subFields[11],
+                                std::make_pair(1, UINT_MAX),
+                                ExpectedValue::UInteger, 1)) {
+    uint64_t package_count = configFile_[root][subFields[11]].as<uint64_t>();
+    uint64_t core_count = configFile_[root][subFields[1]].as<uint64_t>();
+    // Ensure package_count size is a less than or equal to the core count, and
+    // that the core count can be divided by the package count
+    if (!((package_count <= core_count) && (core_count % package_count == 0))) {
+      invalid_
+          << "\t- Package-Count must be a Less-than or equal to Core-Count, "
+             "and Core-Count must be divisible by Package-Count.";
+    }
+  }
+  subFields.clear();
+
+  // Environment-Variables
+  root = "Environment-Variables";
+  size_t numEnvVars = configFile_[root].size();
+  for (size_t i = 0; i < numEnvVars; i++) {
+    std::string envVarNum = "Environment-Variable " + std::to_string(i) + " ";
+    nodeChecker<std::string>(configFile_[root][i], envVarNum,
+                             std::vector<std::string>{}, ExpectedValue::String);
+  }
+
   // First check that the ISA config option is valid, this protects reads from
   // the ISA config option as well as everything that depends on them. This
   // includes uses of groupOptions_ and groupMapping_ as these are dependent on
@@ -231,42 +500,6 @@ void ModelConfig::validate() {
       }
     }
 
-    // TODO make as many subfields as possible generic to avoid repeated code
-    // e.g. AArch64 FloatingPoint/SVE-Count -> FloatingPoint-Count
-    if (configFile_["Core"]["ISA"].as<std::string>() == "rv64") {
-      // Register-Set
-      root = "Register-Set";
-      subFields = {"GeneralPurpose-Count", "FloatingPoint-Count"};
-      nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                            std::make_pair(32, UINT16_MAX),
-                            ExpectedValue::UInteger);
-      nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
-                            std::make_pair(32, UINT16_MAX),
-                            ExpectedValue::UInteger);
-    } else if (configFile_["Core"]["ISA"].as<std::string>() == "AArch64") {
-      // Register-Set
-      root = "Register-Set";
-      subFields = {"GeneralPurpose-Count", "FloatingPoint/SVE-Count",
-                   "Predicate-Count", "Conditional-Count", "Matrix-Count"};
-      nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                            std::make_pair(32, UINT16_MAX),
-                            ExpectedValue::UInteger);
-      nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
-                            std::make_pair(32, UINT16_MAX),
-                            ExpectedValue::UInteger);
-      nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
-                            std::make_pair(17, UINT16_MAX),
-                            ExpectedValue::UInteger, 17);
-      nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
-                            std::make_pair(1, UINT16_MAX),
-                            ExpectedValue::UInteger);
-      nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
-                            std::make_pair(1, UINT16_MAX),
-                            ExpectedValue::UInteger, 1);
-    }
-
-    subFields.clear();
-
     // Execution-Units
     root = "Execution-Units";
     subFields = {"Pipelined", "Blocking-Groups"};
@@ -332,170 +565,6 @@ void ModelConfig::validate() {
     subFields.clear();
   }
 
-  // Fetch
-  root = "Fetch";
-  subFields = {"Fetch-Block-Size", "Loop-Buffer-Size",
-               "Loop-Detection-Threshold"};
-  if (nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                            std::make_pair(4, UINT16_MAX),
-                            ExpectedValue::UInteger)) {
-    uint16_t block_size = configFile_[root][subFields[0]].as<uint16_t>();
-    // Ensure fetch block size is a power of 2
-    if ((block_size & (block_size - 1)) == 0) {
-      uint8_t alignment_bits = log2(block_size);
-      configFile_[root]["Fetch-Block-Alignment-Bits"] =
-          unsigned(alignment_bits);
-    } else {
-      invalid_ << "\t- Fetch-Block-Size must be a power of 2\n";
-    }
-  }
-  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
-                        std::make_pair(0, UINT16_MAX), ExpectedValue::UInteger);
-  nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(0, UINT16_MAX), ExpectedValue::UInteger);
-  subFields.clear();
-
-  // Process-Image
-  root = "Process-Image";
-  subFields = {"Heap-Size", "Stack-Size", "Mmap-Size"};
-  // Default heap size is 1024 * 1024 * 10 = 10MiB
-  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
-                        10485760);
-  // Default stack size is 1024 * 1024 = 1MiB
-  nodeChecker<uint64_t>(configFile_[root][subFields[1]], subFields[1],
-                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
-                        1048576);
-  // Default mmap size is 1024 * 1024 = 1MiB
-  nodeChecker<uint64_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger,
-                        10485760);
-
-  // Loop over all subFields and add the size of each process region. This is
-  // done to calculate the minimum value allowed for the Simulation-Memory node
-  // check defined below.
-  uint64_t totalProcRegionSize = 0;
-  for (auto field : subFields) {
-    totalProcRegionSize += configFile_[root][field].as<uint64_t>();
-  }
-
-  subFields.clear();
-
-  // Branch-Predictor
-  root = "Branch-Predictor";
-  subFields = {"BTB-Tag-Bits", "Saturating-Count-Bits", "Global-History-Length",
-               "RAS-entries", "Fallback-Static-Predictor"};
-  nodeChecker<uint64_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
-  nodeChecker<uint64_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(0, 64), ExpectedValue::UInteger);
-  nodeChecker<uint64_t>(configFile_[root][subFields[3]], subFields[3],
-                        std::make_pair(1, UINT64_MAX), ExpectedValue::UInteger);
-  if (nodeChecker<std::string>(
-          configFile_[root][subFields[4]], subFields[4],
-          std::vector<std::string>{"Always-Taken", "Always-Not-Taken"},
-          ExpectedValue::String)) {
-    // If the Saturating-Count-Bits option is valid, set fallback static
-    // prediction to weakest value of the specific direction (i.e weakly taken
-    // or weakly not-taken)
-    if (nodeChecker<uint64_t>(configFile_[root][subFields[1]], subFields[1],
-                              std::make_pair(1, UINT64_MAX),
-                              ExpectedValue::UInteger)) {
-      // Calculate saturation counter boundary between weakly taken and
-      // not-taken. `(2 ^ num_sat_cnt_bits) / 2` gives the weakly taken state
-      // value
-      uint16_t weaklyTaken =
-          std::pow(2, (configFile_[root][subFields[1]].as<uint64_t>() - 1));
-      // Swap Fallback-Static-Predictor scheme out for equivalent saturating
-      // counter value
-      configFile_[root][subFields[4]] =
-          (configFile_[root][subFields[4]].as<std::string>() == "Always-Taken")
-              ? weaklyTaken
-              : (weaklyTaken - 1);
-    }
-  }
-  subFields.clear();
-
-  // Memory-Hierarchy
-  root = "Memory-Hierarchy";
-  subFields = {"Cache-Line-Width", "L1-Data", "DRAM"};
-  std::vector<std::string> subSubFields = {"Access-Latency", "Size"};
-  nodeChecker<uint16_t>(configFile_[root][subFields[0]], subFields[0],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        64);
-  nodeChecker<uint16_t>(configFile_[root][subFields[1]][subSubFields[0]],
-                        subSubFields[0], std::make_pair(1, UINT16_MAX),
-                        ExpectedValue::UInteger, 1);
-  // Default L1-Data size is 1024 * 32 = 32 KiB
-  uint16_t cacheLineLen = configFile_[root][subFields[0]].as<uint16_t>();
-  nodeChecker<uint64_t>(
-      configFile_[root][subFields[1]][subSubFields[1]], subSubFields[1],
-      std::make_pair(cacheLineLen, UINT64_MAX), ExpectedValue::UInteger, 32768);
-  nodeChecker<uint16_t>(configFile_[root][subFields[2]][subSubFields[0]],
-                        subSubFields[0], std::make_pair(1, UINT16_MAX),
-                        ExpectedValue::UInteger, 1);
-  // Default DRAM size is 1024 * 1024 * 10 = 10MiB
-  nodeChecker<uint64_t>(configFile_[root][subFields[2]][subSubFields[1]],
-                        subSubFields[1],
-                        std::make_pair(totalProcRegionSize, UINT64_MAX),
-                        ExpectedValue::UInteger, 104857600);
-  subFields.clear();
-
-  // LSQ-Memory-Interface
-  root = "LSQ-Memory-Interface";
-  subFields = {"Exclusive",
-               "Load-Bandwidth",
-               "Store-Bandwidth",
-               "Permitted-Requests-Per-Cycle",
-               "Permitted-Loads-Per-Cycle",
-               "Permitted-Stores-Per-Cycle"};
-  nodeChecker<bool>(configFile_[root][subFields[0]], subFields[0],
-                    std::vector<bool>{true, false}, ExpectedValue::Bool, false);
-  nodeChecker<uint16_t>(configFile_[root][subFields[1]], subFields[1],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        UINT16_MAX);
-  nodeChecker<uint16_t>(configFile_[root][subFields[2]], subFields[2],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        UINT16_MAX);
-  nodeChecker<uint16_t>(configFile_[root][subFields[3]], subFields[3],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        UINT16_MAX);
-  nodeChecker<uint16_t>(configFile_[root][subFields[4]], subFields[4],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        UINT16_MAX);
-  nodeChecker<uint16_t>(configFile_[root][subFields[5]], subFields[5],
-                        std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger,
-                        UINT16_MAX);
-  subFields.clear();
-
-  // Queue-Sizes
-  root = "Queue-Sizes";
-  subFields = {"ROB", "Load", "Store"};
-  nodeChecker<unsigned int>(configFile_[root][subFields[0]], subFields[0],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  subFields.clear();
-
-  // Pipeline-Widths
-  root = "Pipeline-Widths";
-  subFields = {"Commit", "FrontEnd", "LSQ-Completion"};
-  nodeChecker<unsigned int>(configFile_[root][subFields[0]], subFields[0],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger);
-  subFields.clear();
-
   // Latencies
   root = "Latencies";
   subFields = {"Instruction-Groups", "Execution-Latency",
@@ -544,76 +613,6 @@ void ModelConfig::validate() {
         std::make_pair(1, UINT16_MAX), ExpectedValue::UInteger);
   }
   subFields.clear();
-
-  // CPU-Info
-  root = "CPU-Info";
-  subFields = {"Generate-Special-Dir",
-               "Core-Count",
-               "Socket-Count",
-               "SMT",
-               "BogoMIPS",
-               "Features",
-               "CPU-Implementer",
-               "CPU-Architecture",
-               "CPU-Variant",
-               "CPU-Part",
-               "CPU-Revision",
-               "Package-Count"};
-  nodeChecker<bool>(configFile_[root][subFields[0]], subFields[0],
-                    std::vector<bool>{false, true}, ExpectedValue::Bool, false);
-  nodeChecker<unsigned int>(configFile_[root][subFields[1]], subFields[1],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger, 1);
-  nodeChecker<unsigned int>(configFile_[root][subFields[2]], subFields[2],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger, 1);
-  nodeChecker<unsigned int>(configFile_[root][subFields[3]], subFields[3],
-                            std::make_pair(1, UINT_MAX),
-                            ExpectedValue::UInteger, 1);
-  nodeChecker<float>(configFile_[root][subFields[4]], subFields[4],
-                     std::make_pair(0.0f, std::numeric_limits<float>::max()),
-                     ExpectedValue::Float, 0.0f);
-  nodeChecker<std::string>(configFile_[root][subFields[5]], subFields[5],
-                           std::vector<std::string>(), ExpectedValue::String,
-                           "");
-  nodeChecker<std::string>(configFile_[root][subFields[6]], subFields[6],  //
-                           std::vector<std::string>(), ExpectedValue::String,
-                           "0x0");
-  nodeChecker<unsigned int>(configFile_[root][subFields[7]], subFields[7],
-                            std::make_pair(0, UINT_MAX),
-                            ExpectedValue::UInteger, 0);
-  nodeChecker<std::string>(configFile_[root][subFields[8]], subFields[8],  //
-                           std::vector<std::string>(), ExpectedValue::String,
-                           "0x0");
-  nodeChecker<std::string>(configFile_[root][subFields[9]], subFields[9],  //
-                           std::vector<std::string>(), ExpectedValue::String,
-                           "0x0");
-  nodeChecker<unsigned int>(configFile_[root][subFields[10]], subFields[10],
-                            std::make_pair(0, UINT_MAX),
-                            ExpectedValue::UInteger, 0x0);
-  if (nodeChecker<unsigned int>(configFile_[root][subFields[11]], subFields[11],
-                                std::make_pair(1, UINT_MAX),
-                                ExpectedValue::UInteger, 1)) {
-    uint64_t package_count = configFile_[root][subFields[11]].as<uint64_t>();
-    uint64_t core_count = configFile_[root][subFields[1]].as<uint64_t>();
-    // Ensure package_count size is a less than or equal to the core count, and
-    // that the core count can be divided by the package count
-    if (!((package_count <= core_count) && (core_count % package_count == 0))) {
-      invalid_
-          << "\t- Package-Count must be a Less-than or equal to Core-Count, "
-             "and Core-Count must be divisible by Package-Count.";
-    }
-  }
-  subFields.clear();
-
-  // Environment-Variables
-  root = "Environment-Variables";
-  size_t numEnvVars = configFile_[root].size();
-  for (size_t i = 0; i < numEnvVars; i++) {
-    std::string envVarNum = "Environment-Variable " + std::to_string(i) + " ";
-    nodeChecker<std::string>(configFile_[root][i], envVarNum,
-                             std::vector<std::string>{}, ExpectedValue::String);
-  }
 
   std::string missingStr = missing_.str();
   std::string invalidStr = invalid_.str();
