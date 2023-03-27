@@ -842,7 +842,7 @@ void Instruction::execute() {
     }
 
       // Control and Status Register extension (Zicsr)
-      // Do not read-modify-write ATOMICALLY
+      // Currently do not read-modify-write ATOMICALLY
       // Left unimplemented due to Capstone being unable to disassemble CSR
       // addresses
     case Opcode::RISCV_CSRRW: {  // CSRRW rd,csr,rs1
@@ -892,9 +892,8 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_CSRRS: {  // CSRRS rd,csr,rs1
-      // dummy implementation only used by floating point frflags, needs
-      // capstone update to recognise system registers. No update of system
-      // register as rs1 == zero
+      // dummy implementation needs capstone update to recognise system
+      // registers
 
       results[0] = RegisterValue(static_cast<uint64_t>(0), 8);
       break;
@@ -912,12 +911,15 @@ void Instruction::execute() {
       break;
     }
 
-      // TODO Apart from transfer operations described in the previous
-      // paragraph, all other floating-point operations on narrower n-bit
-      // operations, n < FLEN, check if the input operands are correctly
-      // NaN-boxed, i.e., all upper FLEN−n bits are 1. If so, the n
-      // least-significant bits of the input are used as the input value,
-      // otherwise the input value is treated as an n-bit canonical NaN.
+      // TODO "Apart from transfer operations ... all other floating-point
+      // operations on narrower n-bit operations, n < FLEN, check if the input
+      // operands are correctly NaN-boxed, i.e., all upper FLEN−n bits are 1. If
+      // so, the n least-significant bits of the input are used as the input
+      // value, otherwise the input value is treated as an n-bit canonical NaN."
+
+      // TODO need to take rounding mode into account as these can be set per
+      // instruction https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
+      //      std::fesetround(FE_TONEAREST);
 
       // Single-Precision Floating-Point (F)
       // Double-Precision Floating-Point (D)
@@ -936,7 +938,6 @@ void Instruction::execute() {
     }
     case Opcode::RISCV_FLW: {  // FLW rd,rs1,imm
       // Note: elements of memory data are RegisterValue's
-      // Get as uint32 to allow for NaN boxing
       const float memSingle = memoryData[0].get<float>();
 
       results[0] = RegisterValue(NanBoxFloat(memSingle), 8);
@@ -1151,7 +1152,6 @@ void Instruction::execute() {
       results[0] = RegisterValue(NanBoxFloat(-(rs1 * rs2) - rs3), 8);
       break;
     }
-
     case Opcode::RISCV_FCVT_D_L: {  // FCVT.D.L rd,rs1
       const int64_t rs1 = operands[0].get<int64_t>();
 
@@ -1177,9 +1177,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FCVT_W_D: {  // FCVT.W.D rd,rs1
-      // TODO need to take rounding mode into account,  +- INF
-      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
-      //      std::fesetround(FE_TONEAREST);
       const double rs1 = std::rint(operands[0].get<double>());
 
       if (std::isnan(rs1)) {
@@ -1190,9 +1187,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FCVT_W_S: {  // FCVT.W.S rd,rs1
-      // TODO need to take rounding mode into account,  +- INF
-      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
-      //      std::fesetround(FE_TOWARDZERO);
       const float rs1 = operands[0].get<float>();
 
       if (std::isnan(rs1)) {
@@ -1203,9 +1197,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FCVT_L_D: {  // FCVT.L.D rd,rs1
-      // TODO need to take rounding mode into account,  +- INF
-      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
-      //      std::fesetround(FE_TONEAREST);
       const double rs1 = std::rint(operands[0].get<double>());
 
       if (std::isnan(rs1)) {
@@ -1216,9 +1207,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FCVT_L_S: {  // FCVT.L.S rd,rs1
-      // TODO need to take rounding mode into account,  +- INF
-      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
-      //      std::fesetround(FE_TOWARDZERO);
       const float rs1 = operands[0].get<float>();
 
       if (std::isnan(rs1)) {
@@ -1229,10 +1217,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FCVT_WU_D: {  // FCVT.WU.D rd,rs1
-      // TODO need to take rounding mode into
-      // account,  +- INF
-      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
-      //      std::fesetround(FE_TOWARDZERO);
       const double rs1 = operands[0].get<double>();
 
       if (std::isnan(rs1) || rs1 >= pow(2, 32) - 1) {
@@ -1248,10 +1232,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FCVT_WU_S: {  // FCVT.WU.S rd,rs1
-      // TODO need to take rounding mode into
-      // account,  +- INF
-      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
-      //      std::fesetround(FE_TOWARDZERO);
       const float rs1 = operands[0].get<float>();
 
       if (std::isnan(rs1) || rs1 >= pow(2, 32) - 1) {
@@ -1267,9 +1247,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FCVT_LU_D: {  // FCVT.LU.D rd,rs1
-      // TODO need to take rounding mode into account,  +- INF
-      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
-      //      std::fesetround(FE_TOWARDZERO);
       const double rs1 = operands[0].get<double>();
 
       if (std::isnan(rs1) || rs1 >= pow(2, 64) - 1) {
@@ -1285,9 +1262,6 @@ void Instruction::execute() {
       break;
     }
     case Opcode::RISCV_FCVT_LU_S: {  // FCVT.LU.S rd,rs1
-      // TODO need to take rounding mode into account,  +- INF
-      // https://en.cppreference.com/w/cpp/numeric/fenv/FE_round
-      //      std::fesetround(FE_TOWARDZERO);
       const float rs1 = operands[0].get<float>();
 
       if (std::isnan(rs1) || rs1 >= pow(2, 64) - 1) {

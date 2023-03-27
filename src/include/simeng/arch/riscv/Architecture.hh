@@ -14,6 +14,8 @@ namespace simeng {
 namespace arch {
 namespace riscv {
 
+// A temporary enum to hold system register addresses
+// TODO this should be removed upon relevant capstone updates
 typedef enum riscv_sysreg {
   RISCV_SYSREG_FFLAGS = 0x001,
   RISCV_SYSREG_FRM = 0x002,

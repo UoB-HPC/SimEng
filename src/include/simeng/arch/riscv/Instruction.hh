@@ -243,7 +243,7 @@ class Instruction : public simeng::Instruction {
   bool isCompare_ = false;
   /** Is this a floating point operation? */
   bool isFloat_ = false;
-  /** Is this a floating point to integer convert operation? */
+  /** Is this a floating point <-> integer convert operation? */
   bool isConvert_ = false;
 
   // Memory

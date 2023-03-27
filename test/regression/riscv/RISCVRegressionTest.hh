@@ -81,7 +81,7 @@ class RISCVRegressionTest : public RegressionTest {
     return getRegister<T>({simeng::arch::riscv::RegisterType::GENERAL, tag});
   }
 
-  /** Get the value of a floating point purpose register. */
+  /** Get the value of a floating point register. */
   template <typename T>
   T getFPRegister(uint8_t tag) const {
     return getRegister<T>({simeng::arch::riscv::RegisterType::FLOAT, tag});
