@@ -808,7 +808,10 @@ TEST(MemRegionTest, UnmapContainsEnd) {
   ASSERT_EQ(vma.vmSize_, 4096);
   ASSERT_EQ(vma.vmEnd_, mmapStart + (4096 * 4));
 }
-
+/*
+ *       [--addr--]
+ * [--vma--)->[--vma--)->[--vma--)
+ */
 TEST(MemRegionTest, UnmapOverlaps) {
   uint64_t heapStart = 0;
   uint64_t heapSize = 81920;
