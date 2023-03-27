@@ -81,14 +81,16 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
   size_t size = vma.vmSize_;
   auto last = std::prev(VMAlist_->end(), 1);
   bool allocated = false;
-  // When starAddr is not 0, search for an available address range
-  // that can hold the new VMA with a starting address that is greater than or
-  // equal to the specified startAddr. The following algorithm retrieves the
-  // last existing VMA object before the address range so that the new VMA can
-  // be linked between two existing VMAs. If no available address range is
-  // found, then the new VMA is allocated at the end of the VMA list.
+
   auto itr = VMAlist_->begin();
   if (VMAlist_->size() > 0) {
+    // When starAddr is not 0, search for an available address range
+    // that can hold the new VMA with a starting address that is greater than or
+    // equal to the specified startAddr. The following logic retrieves the list
+    // iterator to the last existing VMA object before the address range so that
+    // the new VMA can be linked between two existing VMAs. If no available
+    // address range is found, then the new VMA is allocated at the end of the
+    // VMA list.
     if (startAddr) {
       uint64_t space = itr->vmStart_ - startAddr;
       // Check if the result of subtraction is negative, resulting in a wrapped
@@ -100,6 +102,8 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
         VMAlist_->insert(VMAlist_->begin(), vma);
         return vma.vmStart_;
       }
+      // This loop advances the list iterator to find an address range that can
+      // hold the new VMA with a starting address greater or equal to startAddr.
       for (itr = VMAlist_->begin(); itr != last; itr++) {
         auto next = std::next(itr, 1);
         if (itr->vmEnd_ <= startAddr && next->vmStart_ >= (startAddr + size)) {
