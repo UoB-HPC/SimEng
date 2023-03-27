@@ -30,6 +30,8 @@ struct Range {
   /** Empty constructor for the Range struct. */
   Range() : start(0), end(0), size(0) {}
 
+  virtual ~Range(){};
+
   /** operator== overload which compares two Range structs. */
   virtual bool operator==(const Range& range) {
     return (start == range.start) && (end == range.end);
