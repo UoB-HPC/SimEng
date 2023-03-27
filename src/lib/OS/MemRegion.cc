@@ -1,6 +1,5 @@
 #include "simeng/OS/MemRegion.hh"
 
-#include <cstdint>
 #include <iostream>
 #include <iterator>
 #include <memory>
