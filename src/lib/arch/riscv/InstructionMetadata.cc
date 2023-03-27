@@ -339,8 +339,15 @@ void InstructionMetadata::alterPseudoInstructions(const cs_insn& insn) {
         operands[1].reg = RISCV_SYSREG_FRM;  // frm address
 
         operandCount = 3;
-      } else if (strcmp(mnemonic, "fsrm") == 0) {
-        assert(false && "Unimplemented psuedoinstruction fsrm");
+      } else if (operandCount == 2 && strcmp(mnemonic, "fsrm") == 0) {
+        // fsrm R1, R2 is pseudo of CSRRW R1, frm, R2 (Write FP rounding mode)
+        // CSRRW R1, R2, _ -> CSRRW R1, frm, R2
+        operands[2] = operands[1];
+
+        operands[1].type = RISCV_OP_IMM;
+        operands[1].reg = RISCV_SYSREG_FRM;
+
+        operandCount = 3;
       }
       break;
     }

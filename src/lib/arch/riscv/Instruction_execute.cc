@@ -885,6 +885,7 @@ void Instruction::execute() {
         //        "
         //                  << metadata.operands[1].reg << std::endl;
       }
+      results[0] = RegisterValue(0, 8);
       break;
     }
     case Opcode::RISCV_CSRRWI: {  // CSRRWI rd,csr,imm

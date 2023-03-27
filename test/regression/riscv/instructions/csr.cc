@@ -4,9 +4,9 @@ namespace {
 
 using InstCsr = RISCVRegressionTest;
 
-TEST_P(InstCsr, jalr) {
+TEST_P(InstCsr, cycle) {
   RUN_RISCV(R"(
-     #csrrw t1, cycle, t1
+     csrrw t1, frm, t1
    )");
 }
 
