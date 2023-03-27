@@ -488,9 +488,7 @@ TEST(MemRegionTest, UnmapContainedInMiddleOfVmaList) {
   retAddr = memRegion.mmapRegion(0, 4096, 0, MAP_PRIVATE, HostFileMMap());
   ASSERT_NE(retAddr, 0);
   ASSERT_EQ(memRegion.getVMASize(), 3);
-  std::cout << "Hello" << std::endl;
   uint64_t delSize = memRegion.unmapRegion(mmapStart + 4096, 4096);
-  std::cout << "Yolo" << std::endl;
   ASSERT_EQ(delSize, 4096);
   EXPECT_NE(memRegion.getVMAHead().vmSize_, 0);
   ASSERT_EQ(memRegion.getVMASize(), 2);
