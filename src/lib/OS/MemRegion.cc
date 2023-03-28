@@ -84,44 +84,33 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
 
   auto itr = VMAlist_->begin();
   if (VMAlist_->size() > 0) {
-    // When starAddr is not 0, search for an available address range
-    // that can hold the new VMA with a starting address that is greater than or
-    // equal to the specified startAddr. The following logic retrieves the list
-    // iterator to the last existing VMA object before the address range so that
-    // the new VMA can be linked between two existing VMAs. If no available
-    // address range is found, then the new VMA is allocated at the end of the
-    // VMA list.
-    if (startAddr) {
-      uint64_t space = itr->vmStart_ - startAddr;
-      if ((itr->vmStart_ > startAddr) && (space >= size)) {
-        vma.vmStart_ = startAddr;
-        vma.vmEnd_ = startAddr + size;
-        VMAlist_->insert(VMAlist_->begin(), vma);
-        return vma.vmStart_;
-      }
-      // This loop advances the list iterator to find an address range that can
-      // hold the new VMA with a starting address greater or equal to startAddr.
-      for (itr = VMAlist_->begin(); itr != last; itr++) {
-        auto next = std::next(itr, 1);
-        if (itr->vmEnd_ <= startAddr && next->vmStart_ >= (startAddr + size)) {
-          break;
-        }
-      }
+    // Check if the new VMA can be allocated between mmapStart and the first VMA
+    // in the VMA list.
+    uint64_t effectiveMmapStart = startAddr ? startAddr : mmapStart_;
+    uint64_t space = itr->vmStart_ - effectiveMmapStart;
+    if (effectiveMmapStart < itr->vmStart_ && space >= size) {
+      vma.vmStart_ = effectiveMmapStart;
+      vma.vmEnd_ = effectiveMmapStart + size;
+      VMAlist_->insert(itr, vma);
+      return vma.vmStart_;
     }
-    // If enough space is available between mmapStart and head of VMA list,
-    // allocate the new VMA as the new head of the list.
-    else if (VMAlist_->front().vmStart_ - mmapStart_ >= size) {
-      vma.vmStart_ = mmapStart_;
-      vma.vmEnd_ = mmapStart_ + size;
-      VMAlist_->insert(VMAlist_->begin(), vma);
-      return mmapStart_;
-    }
-
-    // If the VMA list has multiple VMAs then starting from curr (VMA) check if
-    // the new VMA can be allocated between two existing ones.
+    // If the VMA list has multiple VMAs then starting from the beginning of the
+    // VMA list check if the new VMA can be allocated between two existing ones.
+    // If startAddr is 0 check all address ranges between existing VMAs.
+    // However, if startAddr is non-zero then only search for an available
+    // address range with a starting address greater than startAddr. If no
+    // address range is found, then the new VMA is allocated at the end of VMA
+    // list.
     while (itr != last) {
       auto next = std::next(itr, 1);
-      if (next->vmStart_ - itr->vmEnd_ >= size) {
+      bool currRangeSuceedsStartAddr = true;
+      uint64_t rangeSpace = next->vmStart_ - itr->vmEnd_;
+      if (startAddr) {
+        currRangeSuceedsStartAddr =
+            next->vmStart_ > startAddr && itr->vmEnd_ <= startAddr;
+        rangeSpace = next->vmStart_ - startAddr;
+      }
+      if (currRangeSuceedsStartAddr && rangeSpace >= size) {
         vma.vmStart_ = itr->vmEnd_;
         vma.vmEnd_ = itr->vmEnd_ + size;
         // std::list::insert inserts elements before the position specified by
