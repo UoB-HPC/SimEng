@@ -1,5 +1,6 @@
 #include "simeng/OS/MemRegion.hh"
 
+#include <cstdint>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -96,21 +97,22 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
     // VMA list check if the new VMA can be allocated between two existing ones.
     // If startAddr is 0 check all address ranges between existing VMAs.
     // However, if startAddr is non-zero then only search for an available
-    // address range with a starting address greater than startAddr. If no
-    // address range is found, then the new VMA is allocated at the end of VMA
-    // list.
+    // address range which either contains startAddr or has a starting address
+    // greater than startAddr. If no address range is found, then the new VMA is
+    // allocated at the end of VMA list.
     while (itr != last) {
       auto next = std::next(itr, 1);
-      bool currRangeSuceedsStartAddr = true;
+      bool rangeSuceedsOrContainsSAddr = true;
       uint64_t rangeSpace = next->vmStart_ - itr->vmEnd_;
+      uint64_t vmaStart = itr->vmEnd_;
       if (startAddr) {
-        currRangeSuceedsStartAddr =
-            next->vmStart_ > startAddr && itr->vmEnd_ <= startAddr;
-        rangeSpace = next->vmStart_ - startAddr;
+        rangeSuceedsOrContainsSAddr = next->vmStart_ > startAddr;
+        vmaStart = itr->vmEnd_ <= startAddr ? startAddr : itr->vmEnd_;
+        rangeSpace = next->vmStart_ - vmaStart;
       }
-      if (currRangeSuceedsStartAddr && rangeSpace >= size) {
-        vma.vmStart_ = itr->vmEnd_;
-        vma.vmEnd_ = itr->vmEnd_ + size;
+      if (rangeSuceedsOrContainsSAddr && rangeSpace >= size) {
+        vma.vmStart_ = vmaStart;
+        vma.vmEnd_ = vmaStart + size;
         // std::list::insert inserts elements before the position specified by
         // the iterator, hence why next is used instead of itr.
         VMAlist_->insert(next, vma);
@@ -207,9 +209,11 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
   // Always use pageSize aligned sizes.
   uint64_t size = upAlign(length, PAGE_SIZE);
 
+  VMA vma = VMA(prot, flags, size, hfmmap);
+  uint64_t returnAddress = 0;
+
   // Check if provided hint address exists in VMA region or overlaps with heap
   // or stack regions.
-  bool mapped = false;
   if (startAddr) {
     startAddr = upAlign(startAddr, PAGE_SIZE);
     if (overlapsStack(startAddr, size)) {
@@ -224,29 +228,18 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
           << std::endl;
       return -1;
     }
-
     if (!((startAddr >= mmapStart_) && (startAddr + size < mmapEnd_))) {
       std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
                    "the mmap range: "
                 << startAddr << " - " << startAddr + size << std::endl;
       return -1;
     }
-    mapped = isVmMapped(startAddr, size);
-  }
-
-  // if not fixed and hint is provided then we need to check if the hint
-  // address is available. If not we allocate vma at the most optimal address
-  // available.
-  VMA vma = VMA(prot, flags, size, hfmmap);
-  uint64_t returnAddress = 0;
-  if (startAddr && !mapped) {
     returnAddress = addVma(vma, startAddr);
   } else {
     // TODO: Check if offset should be contained in HostBackedFileMMap,
     // because hfmmaps are shared during unmaps.
     returnAddress = addVma(vma);
   }
-
   return returnAddress;
 }
 
