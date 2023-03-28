@@ -29,9 +29,7 @@ MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
       mmapPtr_(mmapStart),
       mmapSize_(mmapSize),
       unmapPageTable_(unmapPageTable),
-      VMAlist_(std::make_shared<std::list<VirtualMemoryArea>>())
-
-{}
+      VMAlist_(std::make_shared<std::list<VirtualMemoryArea>>()) {}
 
 MemRegion::~MemRegion() {}
 

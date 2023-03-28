@@ -94,7 +94,7 @@ class MemRegion {
       return VirtualMemoryArea{};
     }
     return VMAlist_->front();
-  };
+  }
 
   /** This method gets the VMA size. */
   size_t getVMASize() { return VMAlist_->size(); }
