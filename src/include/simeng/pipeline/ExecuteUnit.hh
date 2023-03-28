@@ -65,6 +65,8 @@ class ExecuteUnit {
   /** Retrieve the number of active execution cycles. */
   uint64_t getCycles() const;
 
+  /** Query whether the execution unit is empty and not currently processing any
+   * instructions. */
   bool isEmpty() const;
 
  private:
@@ -135,8 +137,6 @@ class ExecuteUnit {
 
   /** The number of active execution cycles that were observed. */
   uint64_t cycles_ = 0;
-
-  bool empty_ = true;
 };
 
 }  // namespace pipeline

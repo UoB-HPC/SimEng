@@ -28,7 +28,6 @@ ExecuteUnit::ExecuteUnit(
 void ExecuteUnit::tick() {
   tickCounter_++;
   shouldFlush_ = false;
-  empty_ = false;
 
   if (stallUntil_ <= tickCounter_) {
     input_.stall(false);
@@ -162,7 +161,6 @@ void ExecuteUnit::execute(std::shared_ptr<Instruction>& uop) {
   forwardOperands_(uop->getDestinationRegisters(), uop->getResults());
 
   output_.getTailSlots()[0] = std::move(uop);
-  empty_ = true;
 }
 
 bool ExecuteUnit::shouldFlush() const { return shouldFlush_; }
@@ -225,7 +223,15 @@ uint64_t ExecuteUnit::getBranchMispredictedCount() const {
 }
 
 uint64_t ExecuteUnit::getCycles() const { return cycles_; }
-bool ExecuteUnit::isEmpty() const { return empty_; }
+
+bool ExecuteUnit::isEmpty() const {
+  // Execution unit is considered empty if no instructions are present in the
+  // pipeline_ and operationsStalled_ queues
+  if (pipeline_.size() != 0 || operationsStalled_.size() != 0) {
+    return false;
+  }
+  return true;
+}
 
 }  // namespace pipeline
 }  // namespace simeng
