@@ -102,14 +102,9 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
     // allocated at the end of VMA list.
     while (itr != last) {
       auto next = std::next(itr, 1);
-      bool rangeSuceedsOrContainsSAddr = true;
-      uint64_t rangeSpace = next->vmStart_ - itr->vmEnd_;
-      uint64_t vmaStart = itr->vmEnd_;
-      if (startAddr) {
-        rangeSuceedsOrContainsSAddr = next->vmStart_ > startAddr;
-        vmaStart = itr->vmEnd_ <= startAddr ? startAddr : itr->vmEnd_;
-        rangeSpace = next->vmStart_ - vmaStart;
-      }
+      bool rangeSuceedsOrContainsSAddr = next->vmStart_ > startAddr;
+      uint64_t vmaStart = itr->vmEnd_ <= startAddr ? startAddr : itr->vmEnd_;
+      uint64_t rangeSpace = next->vmStart_ - vmaStart;
       if (rangeSuceedsOrContainsSAddr && rangeSpace >= size) {
         vma.vmStart_ = vmaStart;
         vma.vmEnd_ = vmaStart + size;
