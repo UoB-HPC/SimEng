@@ -252,7 +252,7 @@ Process::~Process() {}
 
 uint64_t Process::getHeapStart() const { return memRegion_.getHeapStart(); }
 
-uint64_t Process::getStackStart() const { return memRegion_.getMemSize(); }
+uint64_t Process::getStackStart() const { return memRegion_.getProcImgSize(); }
 
 uint64_t Process::getMmapStart() const { return memRegion_.getMmapStart(); }
 
@@ -263,7 +263,7 @@ std::string Process::getPath() const { return commandLine_[0]; }
 bool Process::isValid() const { return isValid_; }
 
 uint64_t Process::getProcessImageSize() const {
-  return memRegion_.getMemSize();
+  return memRegion_.getProcImgSize();
 }
 
 uint64_t Process::getEntryPoint() const { return entryPoint_; }
