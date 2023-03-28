@@ -8,6 +8,30 @@
 namespace simeng {
 namespace kernel {
 
+namespace auxVec {
+// Labels for the entries in the auxiliary vector
+enum labels {
+  AT_NULL = 0,       // End of vector
+  AT_IGNORE = 1,     // Entry should be ignored
+  AT_EXECFD = 2,     // File descriptor of program
+  AT_PHDR = 3,       // Program headers for program
+  AT_PHENT = 4,      // Size of program header entry
+  AT_PHNUM = 5,      // Number of program headers
+  AT_PAGESZ = 6,     // System page size
+  AT_BASE = 7,       // Base address of interpreter
+  AT_FLAGS = 8,      // Flags
+  AT_ENTRY = 9,      // Entry point of program
+  AT_NOTELF = 10,    // Program is not ELF
+  AT_UID = 11,       // Real uid
+  AT_EUID = 12,      // Effective uid
+  AT_GID = 13,       // Real gid
+  AT_EGID = 14,      // Effective gid
+  AT_PLATFORM = 15,  // String identifying CPU for optimizations
+  AT_HWCAP = 16,     // Arch dependent hints at CPU capabilities
+  AT_CLKTCK = 17     // Frequency at which times() increments
+};
+}  // namespace auxVec
+
 /** Align `address` to an `alignTo`-byte boundary by rounding up to the nearest
  * multiple. */
 uint64_t alignToBoundary(uint64_t value, uint64_t boundary);
@@ -89,6 +113,15 @@ class LinuxProcess {
 
   /** The entry point of the process. */
   uint64_t entryPoint_ = 0;
+
+  /** Program header table virtual address */
+  uint64_t progHeaderTableAddress_ = 0;
+
+  /** Number of program headers */
+  uint64_t numProgHeaders_ = 0;
+
+  /** Size of program header entry */
+  uint64_t progHeaderEntSize_ = 0;
 
   /** The address of the start of the heap region. */
   uint64_t heapStart_;

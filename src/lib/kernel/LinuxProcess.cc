@@ -32,6 +32,10 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
 
   entryPoint_ = elf.getEntryPoint();
 
+  progHeaderTableAddress_ = elf.getPhdrTableAddress();
+  progHeaderEntSize_ = elf.getPhdrEntrySize();
+  numProgHeaders_ = elf.getNumPhdr();
+
   // Align heap start to a 32-byte boundary
   heapStart_ = alignToBoundary(elf.getProcessImageSize(), 32);
 
@@ -160,9 +164,23 @@ void LinuxProcess::createStack(char** processImage) {
 
   // ELF auxillary vector, keys defined in `uapi/linux/auxvec.h`
   // TODO: populate remaining auxillary vector entries
-  initialStackFrame.push_back(6);  // AT_PAGESZ
+  initialStackFrame.push_back(auxVec::AT_PHDR);  // AT_PHDR
+  initialStackFrame.push_back(progHeaderTableAddress_);
+
+  initialStackFrame.push_back(auxVec::AT_PHENT);  // AT_PHENT
+  initialStackFrame.push_back(progHeaderEntSize_);
+
+  initialStackFrame.push_back(auxVec::AT_PHNUM);  // AT_PHNUM
+  initialStackFrame.push_back(numProgHeaders_);
+
+  initialStackFrame.push_back(auxVec::AT_PAGESZ);  // AT_PAGESZ
   initialStackFrame.push_back(pageSize_);
-  initialStackFrame.push_back(0);  // null terminator
+
+  initialStackFrame.push_back(auxVec::AT_ENTRY);  // AT_ENTRY
+  initialStackFrame.push_back(entryPoint_);
+
+  initialStackFrame.push_back(auxVec::AT_NULL);  // null terminator
+  initialStackFrame.push_back(0);
 
   size_t stackFrameSize = initialStackFrame.size() * 8;
 
