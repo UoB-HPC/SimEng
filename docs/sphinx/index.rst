@@ -25,6 +25,15 @@ The Simulation Engine - SimEng
    user/configuring_simeng
    user/creating_binaries
 
+.. toctree::
+   :maxdepth: 1
+   :caption: SST Documentation
+   :hidden:
+
+   sst/index
+   sst/building_simeng_with_sst
+   sst/running_simeng_with_sst
+
 SimEng is a framework for building modern, cycle-accurate processor simulators. Its goals are to be:
 
 - Fast, typically 4-5X faster than gem5
