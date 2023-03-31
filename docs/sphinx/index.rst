@@ -26,7 +26,7 @@ The Simulation Engine - SimEng
    user/creating_binaries
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: SST Documentation
    :hidden:
 
