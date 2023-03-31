@@ -141,12 +141,21 @@ void FetchUnit::tick() {
           {encoding, bytesRead, pc_, macroOp[0]->getBranchPrediction()});
 
       if (pc_ == loopBoundaryAddress_) {
-        // loopBoundaryAddress_ has been fetched whilst filling the loop buffer.
-        // Stop filling as loop body has been recorded and begin to supply
-        // decode unit with instructions from the loop buffer
-        loopBufferState_ = LoopBufferState::SUPPLYING;
-        bufferedBytes_ = 0;
-        break;
+        if (macroOp[0]->isBranch() &&
+            !macroOp[0]->getBranchPrediction().taken) {
+          // loopBoundaryAddress_ has been fetched whilst filling the loop
+          // buffer BUT this is a branch, predicted to branch out of the loop
+          // being buffered. Stop filling the loop buffer and don't supply to
+          // decode
+          loopBufferState_ = LoopBufferState::IDLE;
+        } else {
+          // loopBoundaryAddress_ has been fetched whilst filling the loop
+          // buffer. Stop filling as loop body has been recorded and begin to
+          // supply decode unit with instructions from the loop buffer
+          loopBufferState_ = LoopBufferState::SUPPLYING;
+          bufferedBytes_ = 0;
+          break;
+        }
       }
     } else if (loopBufferState_ == LoopBufferState::WAITING &&
                pc_ == loopBoundaryAddress_) {
