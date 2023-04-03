@@ -100,7 +100,7 @@ class Instruction {
   virtual BranchType getBranchType() const = 0;
 
   /** Retrieve a branch target from the instruction's metadata if known. */
-  virtual uint64_t getKnownTarget() const = 0;
+  virtual int64_t getKnownOffset() const = 0;
 
   /** Is this a store address operation (a subcategory of store operations which
    * deal with the generation of store addresses to store data at)? */
@@ -209,7 +209,7 @@ class Instruction {
   BranchType branchType_ = BranchType::Unknown;
 
   /** If the branch target is known at the time of decode, store it. */
-  uint64_t knownOffset_ = 0;
+  int64_t knownOffset_ = 0;
 
   // Flushing
   /** This instruction's sequence ID; a higher ID represents a chronologically

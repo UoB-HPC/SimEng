@@ -30,7 +30,7 @@ class GenericPredictor : public BranchPredictor {
    * branch type, and a known target if not 0. Returns a branch direction and
    * branch target address. */
   BranchPrediction predict(uint64_t address, BranchType type,
-                           uint64_t knownTarget) override;
+                           int64_t knownOffset) override;
 
   /** Updates appropriate predictor model objects based on the address and
    * outcome of the branch instruction. */

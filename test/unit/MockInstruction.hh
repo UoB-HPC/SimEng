@@ -26,7 +26,7 @@ class MockInstruction : public Instruction {
   MOCK_CONST_METHOD0(checkEarlyBranchMisprediction,
                      std::tuple<bool, uint64_t>());
   MOCK_CONST_METHOD0(getBranchType, BranchType());
-  MOCK_CONST_METHOD0(getKnownTarget, uint64_t());
+  MOCK_CONST_METHOD0(getKnownOffset, uint64_t()) int64_t;
 
   MOCK_CONST_METHOD0(isStoreAddress, bool());
   MOCK_CONST_METHOD0(isStoreData, bool());
