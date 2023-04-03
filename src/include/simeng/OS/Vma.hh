@@ -137,6 +137,12 @@ class VirtualMemoryArea {
    * VMA so that it can be split into two. */
   VirtualMemoryArea(VirtualMemoryArea* vma);
 
+  /** Explicit declaration of the default copy constructor. */
+  VirtualMemoryArea(const VirtualMemoryArea& vma) = default;
+
+  /** Default empty constructor to create an empty VirtualMemoryArea. */
+  VirtualMemoryArea(){};
+
   ~VirtualMemoryArea(){};
 
   /** The address representing the end of the memory allocation. */
@@ -144,9 +150,6 @@ class VirtualMemoryArea {
 
   /** The address representing the start of the memory allocation. */
   uint64_t vmStart_ = 0;
-
-  /** The next allocation in the contiguous list. */
-  VirtualMemoryArea* vmNext_ = nullptr;
 
   /** The size of the virtual memory area. */
   size_t vmSize_ = 0;

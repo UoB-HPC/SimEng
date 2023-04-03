@@ -81,7 +81,6 @@ VirtualMemoryArea::VirtualMemoryArea(int prot, int flags, size_t vsize,
 VirtualMemoryArea::VirtualMemoryArea(VirtualMemoryArea* vma)
     : vmEnd_(vma->vmEnd_),
       vmStart_(vma->vmStart_),
-      vmNext_(vma->vmNext_),
       vmSize_(vma->vmSize_),
       prot_(vma->prot_),
       flags_(vma->flags_),
