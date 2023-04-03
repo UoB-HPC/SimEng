@@ -9,8 +9,7 @@ namespace simeng {
 class MockBranchPredictor : public BranchPredictor {
  public:
   MOCK_METHOD3(predict, BranchPrediction(uint64_t address, BranchType type,
-                                         uint64_t knownTarget))
-  int64_t;
+                                         int64_t knownTarget));
   MOCK_METHOD4(update, void(uint64_t address, bool taken,
                             uint64_t targetAddress, BranchType type));
   MOCK_METHOD1(flush, void(uint64_t address));
