@@ -101,7 +101,7 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
       VMAlist_->insert(itr, vma);
       return vma.vmStart_;
     }
-    // As per the mmap specification, If the VMA list has multiple VMAs then
+    // As per the mmap specification, if the VMA list has multiple VMAs then
     // starting from the beginning of the VMA list check if the new VMA can be
     // allocated between two existing ones. If startAddr is 0 check all address
     // ranges between existing VMAs. However, if startAddr is non-zero then only
