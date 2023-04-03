@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <list>
 #include <memory>
 
 #include "simeng/OS/Constants.hh"
@@ -82,13 +83,21 @@ class MemRegion {
   bool overlapsStack(uint64_t addr, size_t size);
 
   /** This method retrieves the VMA containing addr. */
-  VirtualMemoryArea* getVMAFromAddr(uint64_t addr);
+  VirtualMemoryArea getVMAFromAddr(uint64_t addr);
+
+  /** This method returns the shared_ptr to the VMAlist. */
+  std::shared_ptr<std::list<VirtualMemoryArea>> getVmaList();
 
   /** This method retrieves the VMA head. */
-  VirtualMemoryArea* getVMAHead() { return vm_head_; };
+  VirtualMemoryArea getVMAHead() {
+    if (!VMAlist_->size()) {
+      return VirtualMemoryArea{};
+    }
+    return VMAlist_->front();
+  }
 
   /** This method gets the VMA size. */
-  size_t getVMASize() { return vm_size_; }
+  size_t getVMASize() { return VMAlist_->size(); }
 
  private:
   /** Start address of the stack. */
@@ -135,11 +144,9 @@ class MemRegion {
   /** Function reference to unmap the page table in removeVma. */
   std::function<uint64_t(uint64_t, size_t)> unmapPageTable_;
 
-  /** Head of the VMA list. */
-  VirtualMemoryArea* vm_head_ = nullptr;
-
-  /** Size of the VMA list. */
-  size_t vm_size_ = 0;
+  /** Shared_ptr to VMA linked list which contains all mmaped virtual memory
+   * areas. */
+  std::shared_ptr<std::list<VirtualMemoryArea>> VMAlist_ = nullptr;
 
   /** Method to add VMA to the VMA list at the specified start address. If the
    * startAddr is 0 the algorithm will find an optimal address range for the
@@ -148,7 +155,7 @@ class MemRegion {
    * space to hold the new VMA, in this case the algorithm will look for a new
    * address range capable to accomodating the new VMA and return its start
    * address. */
-  uint64_t addVma(VMA* vma, uint64_t startAddr = 0);
+  uint64_t addVma(VMA vma, uint64_t startAddr = 0);
 
   /** Method to remove VMAs. This method returns the combined size of all VMAs
    * that were removed. A return value of 0 does not signify an error.*/
