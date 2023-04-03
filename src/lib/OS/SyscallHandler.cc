@@ -413,7 +413,8 @@ void SyscallHandler::handleSyscall() {
       uint64_t addr = currentInfo_.registerArguments[0].get<uint64_t>();
       int32_t op = currentInfo_.registerArguments[1].get<int32_t>();
       uint32_t val = currentInfo_.registerArguments[2].get<uint32_t>();
-      uint64_t timespecPtr = currentInfo_.registerArguments[3].get<uint64_t>();
+      // TODO: Investigate values of the timespecPtr (4th arg) and usage with
+      // current implementation of futex syscall.
 
       int syscallSupported = false;
       syscallSupported |= (op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE);
@@ -422,7 +423,6 @@ void SyscallHandler::handleSyscall() {
           (op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE);
       syscallSupported |=
           (op == syscalls::futex::futexop::SIMENG_FUTEX_WAIT_PRIVATE);
-      // syscallSupported &= (timespecPtr == 0);
 
       if (!syscallSupported) {
         std::cerr

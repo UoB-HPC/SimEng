@@ -435,9 +435,6 @@ class SyscallHandler {
   /** The SyscallInfo of the syscall currently being handled. */
   SyscallInfo currentInfo_ = {};
 
-  /** Path to the root of the replacement special files. */
-  // const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
-
   /** Vector of all currently supported special file paths & files.*/
   std::vector<std::string> supportedSpecialFiles_;
 
