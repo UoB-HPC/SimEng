@@ -292,8 +292,6 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   // Update stackPtr, stackSize and stackEnd
   newProc->updateStack(stackPtr);
 
-  // TLS (Thread Local Storage) region already mapped
-
   // Store child tid at parentTidPtr if required
   uint64_t paddr = handleVAddrTranslation(parentTidPtr, parentTid);
   if (masks::faults::hasFault(paddr)) {
@@ -323,6 +321,7 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
     newProc->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
         stackPtr, 8};
+    // Set appropriate system register to TLS value.
     newProc->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
                              [arch::aarch64::ARM64_SYSREG_TAGS::TPIDR_EL0] = {
         tls, 8};

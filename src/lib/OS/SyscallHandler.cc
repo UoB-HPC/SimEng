@@ -773,7 +773,7 @@ void SyscallHandler::handleSyscall() {
               std::vector<char> vec =
                   memory_->getUntimedData(physAddr, sizeof(rlimit));
               std::memcpy(&newRlim, vec.data(), sizeof(rlimit));
-              OS_->getProcess(currentInfo_.threadId)->stackRlim = newRlim;
+              OS_->getProcess(currentInfo_.threadId)->stackRlim_ = newRlim;
             }
           }
           if (oldLimit) {
@@ -783,7 +783,7 @@ void SyscallHandler::handleSyscall() {
             if (masks::faults::hasFault(physAddr)) {
               retVal = -EFAULT;
             } else {
-              rlimit rlim = OS_->getProcess(currentInfo_.threadId)->stackRlim;
+              rlimit rlim = OS_->getProcess(currentInfo_.threadId)->stackRlim_;
               std::vector<char> vec(sizeof(rlimit), '\0');
               std::memcpy(vec.data(), &rlim, sizeof(rlimit));
               memory_->sendUntimedData(vec, physAddr, sizeof(rlimit));

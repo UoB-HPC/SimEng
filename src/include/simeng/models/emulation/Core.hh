@@ -11,7 +11,7 @@
 #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/ExceptionHandler.hh"
 #include "simeng/arch/riscv/ExceptionHandler.hh"
-#include "simeng/memory/MMU.hh"
+// #include "simeng/memory/MMU.hh"
 #include "simeng/span.hh"
 
 namespace simeng {
