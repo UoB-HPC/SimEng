@@ -154,7 +154,7 @@ class Process {
   /** Method which handles virtual address translation. */
   uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
 
-  /** Updates a Processes stack space; utilised after the `clone` syscall. */
+  /** Updates a Processes stack space. */
   void updateStack(const uint64_t stackPtr) {
     memRegion_.updateStack(stackPtr);
   }

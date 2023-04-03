@@ -508,7 +508,8 @@ void SyscallHandler::handleSyscall() {
       // Non args passed in
       // Have core go to idle after syscall, forcing the current Process to be
       // de-scheduled
-      return concludeSyscall({}, false, true);
+      return concludeSyscall(
+          {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}}, false, true);
     }
     case 131: {  // tgkill
       int tgid = currentInfo_.registerArguments[0].get<int>();

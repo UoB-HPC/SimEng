@@ -26,6 +26,7 @@
 
 #include "simeng/Elf.hh"
 #include "simeng/OS/Process.hh"
+#include "simeng/SpecialFileDirGen.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/memory/Mem.hh"
 #include "simeng/version.hh"
@@ -253,7 +254,7 @@ struct SyscallInfo {
   /** The unique ID of the core associated with the syscall. */
   uint64_t coreId = 0;
 
-  /** The unique ID of the process associated with the syscall. default value of
+  /** The unique ID of the process associated with the syscall. Default value is
    * 1 as this is the lowest TID available. */
   uint64_t threadId = 1;
 
@@ -462,7 +463,7 @@ class SyscallHandler {
   SyscallInfo currentInfo_ = {};
 
   /** Path to the root of the replacement special files. */
-  const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
+  // const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
 
   /** Vector of all currently supported special file paths & files.*/
   std::vector<std::string> supportedSpecialFiles_;
