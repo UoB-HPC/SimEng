@@ -333,15 +333,15 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   waitingProcs_.push(newProc);
 
   // Add stack to `proc/tgid/maps`
-  VMA* vma = newProc->getMemRegion().getVMAFromAddr(stackPtr);
+  VMA vma = newProc->getMemRegion().getVMAFromAddr(stackPtr);
   const std::string procTgid_filename = specialFilesDir_ + "/proc/" +
                                         std::to_string(newProc->getTGID()) +
                                         "/maps";
   std::ofstream tgidMaps_File(procTgid_filename, std::ios_base::app);
   std::stringstream stackStream;
-  stackStream << std::setfill('0') << std::hex << std::setw(12) << vma->vmStart_
+  stackStream << std::setfill('0') << std::hex << std::setw(12) << vma.vmStart_
               << "-" << std::setfill('0') << std::hex << std::setw(12)
-              << vma->vmEnd_
+              << vma.vmEnd_
               << " rw-p 00000000 00:00 0                           \n";
   tgidMaps_File << stackStream.str();
   tgidMaps_File.close();

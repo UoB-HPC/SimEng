@@ -100,8 +100,8 @@ void MemRegion::updateStack(const uint64_t stackPtr) {
 }
 
 uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
-  bool isStartAddrValid =
-      (startAddr >= mmapStart_) && (startAddr + vma.vmSize_ < mmapEnd_);
+  bool isStartAddrValid = (startAddr >= mmapRegion_->start) &&
+                          (startAddr + vma.vmSize_ < mmapRegion_->end);
   if (startAddr != 0 && !isStartAddrValid) {
     std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
                  "the mmap range: "
@@ -116,7 +116,7 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
   if (VMAlist_->size() > 0) {
     // Check if the new VMA can be allocated between mmapStart and the first VMA
     // in the VMA list.
-    uint64_t effectiveMmapStart = startAddr ? startAddr : mmapStart_;
+    uint64_t effectiveMmapStart = startAddr ? startAddr : mmapRegion_->start;
     uint64_t space = itr->vmStart_ - effectiveMmapStart;
     if (effectiveMmapStart < itr->vmStart_ && space >= size) {
       vma.vmStart_ = effectiveMmapStart;
@@ -156,10 +156,11 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
   // same. Here startAddr is either mmap pointer or an address greater than mmap
   // pointer.
   if (!allocated) {
-    startAddr = startAddr >= mmapPtr_ ? startAddr : mmapPtr_;
+    startAddr =
+        startAddr >= mmapRegion_->mmapPtr ? startAddr : mmapRegion_->mmapPtr;
     vma.vmStart_ = startAddr;
-    mmapPtr_ = startAddr + size;
-    vma.vmEnd_ = mmapPtr_;
+    mmapRegion_->mmapPtr = startAddr + size;
+    vma.vmEnd_ = mmapRegion_->mmapPtr;
     VMAlist_->push_back(vma);
   }
   return vma.vmStart_;
