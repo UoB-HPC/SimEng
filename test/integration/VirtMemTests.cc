@@ -37,14 +37,14 @@ TEST(VirtMemTest, MmapSysCallNoAddressNoFile) {
   ASSERT_NE(retVal, 0);
   ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
-  EXPECT_TRUE(vma != NULL);
+  VMA vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
+  ASSERT_NE(vma.vmSize_, 0);
 
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
-  ASSERT_EQ(vma->vmStart_, mmapStart);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->hasFile(), false);
+  ASSERT_EQ(vma.vmStart_, mmapStart);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 4096);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.hasFile(), false);
 }
 
 TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
@@ -68,14 +68,14 @@ TEST(VirtMemTest, MmapSysCallNoAddressPageFault) {
   ASSERT_NE(retVal, 0);
   ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
-  EXPECT_TRUE(vma != NULL);
+  VMA vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
+  EXPECT_TRUE(vma.vmSize_ != 0);
 
   uint64_t mmapStart = simOS.getProcess(procTID)->getMemRegion().getMmapStart();
-  ASSERT_EQ(vma->vmStart_, mmapStart);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->hasFile(), false);
+  ASSERT_EQ(vma.vmStart_, mmapStart);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 4096);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.hasFile(), false);
 
   uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
@@ -112,13 +112,13 @@ TEST(VirtMemTest, MmapSysCallOnAddressAndPageFault) {
   ASSERT_NE(retVal, 0);
   ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
-  EXPECT_TRUE(vma != NULL);
+  VMA vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
+  ASSERT_NE(vma.vmSize_, 0);
 
-  ASSERT_EQ(vma->vmStart_, mmapStart + 4096);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 8192);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->hasFile(), false);
+  ASSERT_EQ(vma.vmStart_, mmapStart + 4096);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 8192);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.hasFile(), false);
 
   uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
@@ -155,13 +155,13 @@ TEST(VirtMemTest, UnmapSyscall) {
   ASSERT_NE(retVal, 0);
   ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
-  EXPECT_TRUE(vma != NULL);
+  VMA vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
+  ASSERT_NE(vma.vmSize_, 0);
 
-  ASSERT_EQ(vma->vmStart_, mmapStart);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  ASSERT_EQ(vma->hasFile(), false);
+  ASSERT_EQ(vma.vmStart_, mmapStart);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 4096);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  ASSERT_EQ(vma.hasFile(), false);
 
   uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
@@ -182,7 +182,8 @@ TEST(VirtMemTest, UnmapSyscall) {
   ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 0);
 
   vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
-  EXPECT_TRUE(vma == NULL);
+  ASSERT_EQ(vma.vmSize_, 0);
+  ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 0);
 }
 
 TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
@@ -214,14 +215,14 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   ASSERT_NE(retVal, 0);
   ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
-  EXPECT_TRUE(vma != NULL);
+  VMA vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
+  ASSERT_NE(vma.vmSize_, 0);
 
-  ASSERT_EQ(vma->vmStart_, mmapStart);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  EXPECT_TRUE(vma->hasFile());
-  ASSERT_EQ(vma->getFileSize(), 21);
+  ASSERT_EQ(vma.vmStart_, mmapStart);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 4096);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  EXPECT_TRUE(vma.hasFile());
+  ASSERT_EQ(vma.getFileSize(), 21);
 
   uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
@@ -232,7 +233,7 @@ TEST(VirtMemTest, MmapSyscallWithFileNoOffset) {
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
-  auto data = memory->getUntimedData(paddr, vma->getFileSize());
+  auto data = memory->getUntimedData(paddr, vma.getFileSize());
   data.push_back('\0');
 
   std::string text = "111111111111111111111";
@@ -269,14 +270,14 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   ASSERT_NE(retVal, 0);
   ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
-  EXPECT_TRUE(vma != NULL);
+  VMA vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
+  ASSERT_NE(vma.vmSize_, 0);
 
-  ASSERT_EQ(vma->vmStart_, mmapStart);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 4096);
-  ASSERT_EQ(vma->vmSize_, 4096);
-  EXPECT_TRUE(vma->hasFile());
-  ASSERT_EQ(vma->getFileSize(), 4096);
+  ASSERT_EQ(vma.vmStart_, mmapStart);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 4096);
+  ASSERT_EQ(vma.vmSize_, 4096);
+  EXPECT_TRUE(vma.hasFile());
+  ASSERT_EQ(vma.getFileSize(), 4096);
 
   uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
@@ -287,7 +288,7 @@ TEST(VirtMemTest, MmapSyscallWithFileAndOffset) {
   ASSERT_NE(paddr, masks::faults::pagetable::FAULT |
                        masks::faults::pagetable::TRANSLATE);
 
-  auto data = memory->getUntimedData(paddr, vma->getFileSize());
+  auto data = memory->getUntimedData(paddr, vma.getFileSize());
   data.push_back('\0');
   std::string text = "";
   for (int x = 0; x < 4096; x++) text += "2";
@@ -324,14 +325,14 @@ TEST(VirtMemTest, MultiplePageFaultMmapSyscallWithFileAndOffset) {
   ASSERT_NE(retVal, 0);
   ASSERT_EQ(simOS.getProcess(procTID)->getMemRegion().getVMASize(), 1);
 
-  VMA* vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
-  EXPECT_TRUE(vma != NULL);
+  VMA vma = simOS.getProcess(procTID)->getMemRegion().getVMAHead();
+  ASSERT_NE(vma.vmSize_, 0);
 
-  ASSERT_EQ(vma->vmStart_, mmapStart);
-  ASSERT_EQ(vma->vmEnd_, mmapStart + 8192);
-  ASSERT_EQ(vma->vmSize_, 8192);
-  EXPECT_TRUE(vma->hasFile());
-  ASSERT_EQ(vma->getFileSize(), 8192);
+  ASSERT_EQ(vma.vmStart_, mmapStart);
+  ASSERT_EQ(vma.vmEnd_, mmapStart + 8192);
+  ASSERT_EQ(vma.vmSize_, 8192);
+  EXPECT_TRUE(vma.hasFile());
+  ASSERT_EQ(vma.getFileSize(), 8192);
 
   uint64_t paddr = simOS.getProcess(procTID)->translate(mmapStart);
   ASSERT_EQ(paddr, masks::faults::pagetable::FAULT |
