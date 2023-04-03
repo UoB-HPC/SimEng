@@ -4,7 +4,7 @@ namespace {
 
 using inorderPipeline = RISCVRegressionTest;
 
-TEST_P(inorderPipeline, halt) {
+TEST_P(inorderPipeline, prematureMulticycleHalting) {
   RUN_RISCV(R"(
     li a1, 2
     li a2, 1
