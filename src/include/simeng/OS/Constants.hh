@@ -1,8 +1,6 @@
 #pragma once
-#include <stdint.h>
 
-#include <iostream>
-#include <string>
+#include <stdint.h>
 
 namespace simeng {
 namespace OS {
@@ -229,35 +227,33 @@ static constexpr uint64_t getFaultCode(uint64_t value) {
 }
 
 /** Function to print the fault code in a human friendly manner. */
-static constexpr void printFault(uint64_t value, char* prefix) {
-  std::cout << prefix << " Fault ";
+static constexpr char* printFault(uint64_t value) {
   switch (getFaultCode(value)) {
     case masks::faults::pagetable::NO_FAULT:
-      std::cout << "NO_FAULT : No Fault has occured." << std::endl;
+      return const_cast<char*>("NO_FAULT : No Fault has occured.");
       break;
     case masks::faults::pagetable::IGNORED:
-      std::cout << "IGNORED : Address should be ignored." << std::endl;
+      return const_cast<char*>("IGNORED : Address should be ignored.");
       break;
     case masks::faults::pagetable::TRANSLATE:
-      std::cout << "TRANSLATE : The virtual address translation does not exist "
-                   "in the page table."
-                << std::endl;
+      return const_cast<char*>(
+          "TRANSLATE : The virtual address translation does not exist "
+          "in the page table.");
       break;
     case masks::faults::pagetable::MAP:
-      std::cout << "MAP : The virtual address mapping was not successful."
-                << std::endl;
+      return const_cast<char*>(
+          "MAP : The virtual address mapping was not successful.");
       break;
     case masks::faults::pagetable::UNMAP:
-      std::cout << "UNMAP : The virtual address unmapping was not successful."
-                << std::endl;
+      return const_cast<char*>(
+          "UNMAP : The virtual address unmapping was not successful.");
       break;
     case masks::faults::pagetable::DATA_ABORT:
-      std::cout << "DATA_ABORT : Address not in valid address range."
-                << std::endl;
+      return const_cast<char*>(
+          "DATA_ABORT : Address not in valid address range.");
       break;
-
     default:
-      std::cout << "UNKNOWN." << std::endl;
+      return const_cast<char*>("UNKNOWN.");
       break;
   }
 }
