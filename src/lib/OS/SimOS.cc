@@ -296,8 +296,9 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
   // Store child tid at parentTidPtr if required
   uint64_t paddr = handleVAddrTranslation(parentTidPtr, parentTid);
   if (masks::faults::hasFault(paddr)) {
-    std::cout << "Fault in parentTidPtr translation in cloneProcess"
-              << std::endl;
+    masks::faults::printFault(
+        paddr,
+        "[SimEng:SimOS] Fault in parentTidPtr translation in cloneProcess.");
     std::exit(1);
   }
   if (flags & f_CLONE_PARENT_SETTID) {

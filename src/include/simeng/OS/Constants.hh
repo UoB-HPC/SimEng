@@ -1,6 +1,9 @@
 #pragma once
 #include <stdint.h>
 
+#include <iostream>
+#include <string>
+
 namespace simeng {
 namespace OS {
 
@@ -115,8 +118,8 @@ static constexpr uint64_t MAP = 0x2000000000000000;
  */
 static constexpr uint64_t UNMAP = 0x1000000000000000;
 
-/** This mask signifies that page table could not handle the page fault due the
- * virtual address not being in a valid address range. */
+/** This mask signifies that the page table could not handle the page fault due
+ * the virtual address not being in a valid address range. */
 static constexpr uint64_t DATA_ABORT = 0x5000000000000000;
 
 }  // namespace pagetable
@@ -130,8 +133,42 @@ static constexpr bool hasFault(uint64_t value) {
 static constexpr uint64_t getFaultCode(uint64_t value) {
   if ((value & masks::faults::pagetable::FAULT) != pagetable::FAULT)
     return masks::faults::pagetable::NO_FAULT;
-  return (0x7000000000000000 & value) & 0xF000000000000000;
-};
+  return (0x7000000000000000 & value);
+}
+
+/** Function to print the fault code in a human friendly manner. */
+static constexpr void printFault(uint64_t value, char* prefix) {
+  std::cout << prefix << " Fault ";
+  switch (getFaultCode(value)) {
+    case masks::faults::pagetable::NO_FAULT:
+      std::cout << "NO_FAULT : No Fault has occured." << std::endl;
+      break;
+    case masks::faults::pagetable::IGNORED:
+      std::cout << "IGNORED : Address should be ignored." << std::endl;
+      break;
+    case masks::faults::pagetable::TRANSLATE:
+      std::cout << "TRANSLATE : The virtual address translation does not exist "
+                   "in the page table."
+                << std::endl;
+      break;
+    case masks::faults::pagetable::MAP:
+      std::cout << "MAP : The virtual address mapping was not successful."
+                << std::endl;
+      break;
+    case masks::faults::pagetable::UNMAP:
+      std::cout << "UNMAP : The virtual address unmapping was not successful."
+                << std::endl;
+      break;
+    case masks::faults::pagetable::DATA_ABORT:
+      std::cout << "DATA_ABORT : Address not in valid address range."
+                << std::endl;
+      break;
+
+    default:
+      std::cout << "UNKNOWN." << std::endl;
+      break;
+  }
+}
 
 }  // namespace faults
 }  // namespace masks
