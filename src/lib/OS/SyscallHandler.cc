@@ -534,9 +534,7 @@ void SyscallHandler::handleSyscall() {
           idleOnComplete = true;
         } else {
           if (proc->getTGID() == tgid) {
-            if (proc->status_ == procStatus::executing) {
-              idleOnComplete = true;
-            }
+            idleOnComplete = (proc->status_ == procStatus::executing);
             OS_->terminateThread(tid);
             std::cout
                 << "[SimEng:SyscallHandler] Received tgkill syscall on Thread "
@@ -1281,7 +1279,10 @@ int64_t SyscallHandler::clone(uint64_t flags, uint64_t stackPtr,
                               uint64_t parentTidPtr, uint64_t tls,
                               uint64_t childTidPtr) {
   // Check that required flags are present, if not trigger fatal error
-  uint64_t reqFlags = f_CLONE_VM | f_CLONE_FS | f_CLONE_FILES | f_CLONE_THREAD;
+  uint64_t reqFlags = syscalls::clone::flags::f_CLONE_VM |
+                      syscalls::clone::flags::f_CLONE_FS |
+                      syscalls::clone::flags::f_CLONE_FILES |
+                      syscalls::clone::flags::f_CLONE_THREAD;
   if ((flags & reqFlags) != reqFlags) {
     std::cout << "[SimEng:SyscallHandler] One or more of the following flags "
                  "required for clone not provided :"

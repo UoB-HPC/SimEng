@@ -147,7 +147,8 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
   // Create `proc/tgid/maps`
   const std::string procTgid_dir =
       specialFilesDir_ + "/proc/" + std::to_string(TGID) + "/";
-  system(("mkdir " + procTgid_dir).c_str());
+  mkdir(procTgid_dir.c_str(), 0777);
+
   std::ofstream tgidMaps_File(procTgid_dir + "maps");
   // Create string for each of the base mappings
   std::stringstream stackStream;

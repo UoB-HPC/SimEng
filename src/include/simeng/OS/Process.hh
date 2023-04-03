@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sys/resource.h>
-
 #include <functional>
 #include <memory>
 

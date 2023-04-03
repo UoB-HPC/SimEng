@@ -301,7 +301,7 @@ int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
     masks::faults::printFault(paddr, printPrefix);
     std::exit(1);
   }
-  if (flags & f_CLONE_PARENT_SETTID) {
+  if (flags & syscalls::clone::flags::f_CLONE_PARENT_SETTID) {
     std::vector<char> dataVec(sizeof(newChildTid), '\0');
     std::memcpy(dataVec.data(), &newChildTid, sizeof(newChildTid));
     memory_->sendUntimedData(dataVec, paddr, sizeof(newChildTid));
