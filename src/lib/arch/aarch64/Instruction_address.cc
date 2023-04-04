@@ -483,7 +483,7 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         break;
       }
       case Opcode::AArch64_LDADDALW: {  // ldaddal ws, wt, [xn|sp]
-        setMemoryAddresses({{operands[1].get<uint32_t>(), 4}});
+        setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
         break;
       }
       case Opcode::AArch64_LDADDALX: {  // ldaddal xs, xt, [xn|sp]
@@ -514,6 +514,14 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
       }
       case Opcode::AArch64_LDAXRX: {  // ldaxr xd, [xn]
         setMemoryAddresses({{operands[0].get<uint64_t>(), 8}});
+        break;
+      }
+      case Opcode::AArch64_LDCLRALW: {  // ldclral ws, wt, [xn|sp]
+        setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
+        break;
+      }
+      case Opcode::AArch64_LDCLRALX: {  // ldclral xs, xt, [xn|sp]
+        setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
         break;
       }
       case Opcode::AArch64_LDRBBpost: {  // ldrb wt, [xn], #imm
@@ -704,6 +712,14 @@ span<const MemoryAccessTarget> Instruction::generateAddresses() {
         }
 
         setMemoryAddresses(std::move(addresses));
+        break;
+      }
+      case Opcode::AArch64_LDSETALW: {  // ldsetal ws, wt, [xn|sp]
+        setMemoryAddresses({{operands[1].get<uint64_t>(), 4}});
+        break;
+      }
+      case Opcode::AArch64_LDSETALX: {  // ldsetal xs, xt, [xn|sp]
+        setMemoryAddresses({{operands[1].get<uint64_t>(), 8}});
         break;
       }
       case Opcode::AArch64_LDNPSi: {  // ldnp st1, st2, [xn, #imm]

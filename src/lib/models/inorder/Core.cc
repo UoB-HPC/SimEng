@@ -14,8 +14,10 @@ const unsigned int blockSize = 16;
 
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
+           std::shared_ptr<memory::MMU> mmu,
            arch::sendSyscallToHandler handleSyscall)
     : dataMemory_(dataMemory),
+      mmu_(mmu),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
@@ -51,7 +53,8 @@ void Core::tick() {
       // Ensure the pipeline is empty and there's no active exception before
       // context switching.
       if (fetchToDecodeBuffer_.isEmpty() && decodeToExecuteBuffer_.isEmpty() &&
-          completionSlots_[0].isEmpty() && (exceptionGenerated_ == false)) {
+          executeUnit_.isEmpty() && completionSlots_[0].isEmpty() &&
+          (exceptionGenerated_ == false)) {
         // Flush pipeline
         fetchUnit_.flushLoopBuffer();
         decodeUnit_.purgeFlushed();
@@ -229,7 +232,12 @@ void Core::processException() {
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
     if (result.idleAfterSyscall) {
+      // Ensure pipeline is flushed
+      executeUnit_.flush();
+      previousAddresses_ = std::queue<simeng::MemoryAccessTarget>();
+      // Update core status
       status_ = CoreStatus::idle;
+      contextSwitches_++;
     }
   }
 
@@ -388,6 +396,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   status_ = CoreStatus::executing;
   procTicks_ = 0;
   isa_.updateAfterContextSwitch(newContext);
+  mmu_->setTid(currentTID_);
   // Allow fetch unit to resume fetching instructions & incrementing PC
   fetchUnit_.unpause();
 }
@@ -409,7 +418,10 @@ uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 simeng::OS::cpuContext Core::getCurrentContext() const {
   OS::cpuContext newContext;
   newContext.TID = currentTID_;
-  newContext.pc = fetchUnit_.getPC();
+  newContext.pc =
+      exceptionGenerated_
+          ? exceptionGeneratingInstruction_->getInstructionAddress() + 4
+          : fetchUnit_.getPC();
   // progByteLen will not change in process so do not need to set it
   // Don't need to explicitly save SP as will be in reg file contents
   auto regFileStruc = isa_.getRegisterFileStructures();

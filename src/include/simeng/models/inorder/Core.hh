@@ -24,6 +24,7 @@ class Core : public simeng::Core {
    * process memory. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        const arch::Architecture& isa, BranchPredictor& branchPredictor,
+       std::shared_ptr<memory::MMU> mmu,
        arch::sendSyscallToHandler handleSyscall);
 
   /** Tick the core. Ticks each of the pipeline stages sequentially, then ticks
@@ -126,6 +127,9 @@ class Core : public simeng::Core {
 
   /** The process memory. */
   MemoryInterface& dataMemory_;
+
+  /** The Core's Memory Management Unit. */
+  std::shared_ptr<memory::MMU> mmu_;
 
   /** A reference to the core's architecture. */
   const arch::Architecture& isa_;

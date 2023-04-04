@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <cstring>
+#include <iomanip>
 #include <iostream>
 
 #include "simeng/Elf.hh"
@@ -138,10 +139,31 @@ Process::Process(const std::vector<std::string>& commandLine, SimOS* OS,
   memRegion_ = MemRegion(stackSize, heapSize, mmapSize, size, stackStart,
                          heapStart, mmapStart, stackPtr, unmapFn);
 
-  fdArray_ = std::make_unique<FileDescArray>();
+  fdArray_ = std::make_shared<FileDescArray>();
   // Initialise context
   initContext(stackPtr, regFileStructure);
   isValid_ = true;
+
+  // Create `proc/tgid/maps`
+  const std::string procTgid_dir =
+      specialFilesDir_ + "/proc/" + std::to_string(TGID) + "/";
+  mkdir(procTgid_dir.c_str(), 0777);
+
+  std::ofstream tgidMaps_File(procTgid_dir + "maps");
+  // Create string for each of the base mappings
+  std::stringstream stackStream;
+  stackStream << std::setfill('0') << std::hex << std::setw(12) << stackEnd
+              << "-" << std::setfill('0') << std::hex << std::setw(12)
+              << stackStart
+              << " rw-p 00000000 00:00 0                          [stack]\n";
+  tgidMaps_File << stackStream.str();
+
+  std::stringstream heapStream;
+  heapStream << std::setfill('0') << std::hex << std::setw(12) << heapStart
+             << "-" << std::setfill('0') << std::hex << std::setw(12) << heapEnd
+             << " rw-p 00000000 00:00 0                          [heap]\n";
+  tgidMaps_File << heapStream.str();
+  tgidMaps_File.close();
 }
 
 Process::Process(span<char> instructions, SimOS* OS,
@@ -221,7 +243,7 @@ Process::Process(span<char> instructions, SimOS* OS,
   sendToMem_(std::vector<char>(instructions.begin(), instructions.end()), taddr,
              instructions.size());
 
-  fdArray_ = std::make_unique<FileDescArray>();
+  fdArray_ = std::make_shared<FileDescArray>();
 
   initContext(stackPtr, regFileStructure);
   isValid_ = true;
@@ -231,7 +253,7 @@ Process::~Process() {}
 
 uint64_t Process::getHeapStart() const { return memRegion_.getHeapStart(); }
 
-uint64_t Process::getStackStart() const { return memRegion_.getMemSize(); }
+uint64_t Process::getStackStart() const { return memRegion_.getProcImgSize(); }
 
 uint64_t Process::getMmapStart() const { return memRegion_.getMmapStart(); }
 
@@ -242,7 +264,7 @@ std::string Process::getPath() const { return commandLine_[0]; }
 bool Process::isValid() const { return isValid_; }
 
 uint64_t Process::getProcessImageSize() const {
-  return memRegion_.getMemSize();
+  return memRegion_.getProcImgSize();
 }
 
 uint64_t Process::getEntryPoint() const { return entryPoint_; }

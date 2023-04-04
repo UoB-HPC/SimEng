@@ -3073,6 +3073,22 @@ void Instruction::execute() {
         results[0] = memoryData[0];
         break;
       }
+      case Opcode::AArch64_LDCLRALW: {  // ldclral ws, wt, [xn|sp]
+        // TODO: Load and Store must occur atomically
+        // LOAD / STORE
+        results[0] = memoryData[0].zeroExtend(4, 8);
+        memoryData[0] = RegisterValue(
+            memoryData[0].get<uint32_t>() & (~operands[0].get<uint32_t>()), 4);
+        break;
+      }
+      case Opcode::AArch64_LDCLRALX: {  // ldclral xs, xt, [xn|sp]
+        // TODO: Load and Store must occur atomically
+        // LOAD / STORE
+        results[0] = memoryData[0].zeroExtend(8, 8);
+        memoryData[0] = RegisterValue(
+            memoryData[0].get<uint64_t>() & (~operands[0].get<uint64_t>()), 8);
+        break;
+      }
       case Opcode::AArch64_LDNPSi: {  // ldnp st1, st2, [xn, #imm]
         // LOAD
         results[0] = memoryData[0].zeroExtend(4, 256);
@@ -3374,6 +3390,22 @@ void Instruction::execute() {
           out[i] = memoryData[i].get<uint8_t>();
         }
         results[0] = {out, 256};
+        break;
+      }
+      case Opcode::AArch64_LDSETALW: {  // ldsetal ws, wt, [xn|sp]
+        // TODO: Load and Store must occur atomically
+        // LOAD / STORE
+        results[0] = memoryData[0].zeroExtend(4, 8);
+        memoryData[0] = RegisterValue(
+            memoryData[0].get<uint32_t>() | operands[0].get<uint32_t>(), 4);
+        break;
+      }
+      case Opcode::AArch64_LDSETALX: {  // ldsetal xs, xt, [xn|sp]
+        // TODO: Load and Store must occur atomically
+        // LOAD / STORE
+        results[0] = memoryData[0].zeroExtend(8, 8);
+        memoryData[0] = RegisterValue(
+            memoryData[0].get<uint64_t>() | operands[0].get<uint64_t>(), 8);
         break;
       }
       case Opcode::AArch64_LDTRSBXi: {  // ldtrsb xt, [xn, #imm]

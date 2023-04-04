@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sys/resource.h>
+
 #include <functional>
 #include <memory>
 
@@ -8,6 +10,7 @@
 #include "simeng/OS/FileDesc.hh"
 #include "simeng/OS/MemRegion.hh"
 #include "simeng/OS/PageTable.hh"
+#include "simeng/SpecialFileDirGen.hh"
 
 namespace simeng {
 
@@ -101,6 +104,9 @@ class Process {
           std::vector<RegisterFileStructure> regFileStructure, uint64_t TGID,
           uint64_t TID, sendToMemory sendToMem, size_t simulationMemSize);
 
+  /** Default copy constructor for Process class. */
+  Process(const Process& proc) = default;
+
   ~Process();
 
   /** Get the address of the start of the heap region. */
@@ -139,14 +145,22 @@ class Process {
   /** Get the process' TID. */
   uint64_t getTID() const { return TID_; }
 
+  /** Updates the Process' TID. */
+  void updateTID(const uint64_t tid) { TID_ = tid; }
+
   /** Method which handles a page fault. */
   uint64_t handlePageFault(uint64_t vaddr);
 
   /** Method which handles virtual address translation. */
   uint64_t translate(uint64_t vaddr) { return pageTable_->translate(vaddr); }
 
+  /** Updates a Processes stack space. */
+  void updateStack(const uint64_t stackPtr) {
+    memRegion_.updateStack(stackPtr);
+  }
+
   /** Unique pointer to FileDescArray class.*/
-  std::unique_ptr<FileDescArray> fdArray_;
+  std::shared_ptr<FileDescArray> fdArray_;
 
   /** Current status of the process. */
   procStatus status_ = procStatus::waiting;
@@ -169,6 +183,11 @@ class Process {
    * It can be set using the `clone` syscall if the CLONE_CHILD_CLEARTID flag is
    * present, or by calling the `set_tid_address` syscall. */
   uint64_t clearChildTid_ = 0;
+
+  /** The rlimit struct for RLIMIT_STACK. RLIM_INF used to represent
+   * RLIM_INFINITY in Linux. */
+  rlimit stackRlim_ = {syscalls::prlimit::RLIM_INF,
+                       syscalls::prlimit::RLIM_INF};
 
  private:
   /** Create and populate the initial process stack and returns the stack
