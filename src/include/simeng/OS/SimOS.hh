@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -64,6 +65,12 @@ class SimOS {
    * Process is created via raw bytes or via a compiled binary.
    * Returns the tid of the process that was created. */
   uint64_t createProcess(span<char> instructionBytes = span<char>());
+
+  /** Creates a new Process object that is a thread of the calling process.
+   * `parentTid` is that of the parent (or calling process). */
+  int64_t cloneProcess(uint64_t flags, uint64_t stackPtr, uint64_t parentTidPtr,
+                       uint64_t tls, uint64_t childTidPtr, uint64_t parentTid,
+                       uint64_t coreID, Register retReg);
 
   /** Get a process with specified `tid`. */
   const std::shared_ptr<Process>& getProcess(uint64_t tid);
@@ -176,7 +183,7 @@ class SimOS {
 
   /** The value of the next TID value that should be assigned to a process on
    * instantiation. */
-  uint64_t nextFreeTID_ = 0;
+  uint64_t nextFreeTID_ = 1;
 
   /** Reference to the PageFrameAllocator object.  */
   PageFrameAllocator pageFrameAllocator_;

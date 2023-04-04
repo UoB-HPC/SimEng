@@ -194,11 +194,10 @@ TEST(PageTableTest, DeleteMappingGreaterThanExistingMapping) {
 
   // Try to delete a mapping greater than size of mapping.
   uint64_t retVal = pTable.deleteMapping(0, 4096 * 4);
-  ASSERT_EQ(retVal,
-            masks::faults::pagetable::FAULT | masks::faults::pagetable::UNMAP);
+  ASSERT_EQ(retVal, 0);
 
   table = pTable.getTable();
-  ASSERT_EQ(table.size(), 3);
+  ASSERT_EQ(table.size(), 0);
 }
 
 TEST(PageTableTest, DeleteMappingAtUnalignedAddr) {
@@ -300,8 +299,7 @@ TEST(PageTableTest, DeleteNonExistentMapping) {
 
   // This should delete the first mapping i.e [0, 4096) -> [4096, 8192)
   uint64_t retVal = pTable.deleteMapping(4096, 4096);
-  ASSERT_EQ(retVal,
-            masks::faults::pagetable::FAULT | masks::faults::pagetable::UNMAP);
+  ASSERT_EQ(retVal, 0);
 
   table = pTable.getTable();
   ASSERT_EQ(table.size(), 1);

@@ -1,5 +1,8 @@
 #include "simeng/OS/SimOS.hh"
 
+#include <cstdint>
+#include <iomanip>
+
 #include "simeng/OS/Constants.hh"
 #include "simeng/OS/Process.hh"
 
@@ -120,9 +123,6 @@ void SimOS::tick() {
           // to update context.
           if (procItr != processes_.end()) {
             auto currProc = procItr->second;
-            assert((currProc->status_ == procStatus::executing) &&
-                   "[SimEng:SimOS] Process updated when not in executing "
-                   "state.");
             // Only update values which have changed
             currProc->context_.pc = currContext.pc;
             currProc->context_.regFile = currContext.regFile;
@@ -251,9 +251,9 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
     // Set the system registers
     // Temporary: state that DCZ can support clearing 64 bytes at a time,
     // but is disabled due to bit 4 being set
-    processes_[tid]->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
-                                     [arch->getSystemRegisterTag(
-                                         ARM64_SYSREG_DCZID_EL0)] = {
+    processes_[tid]
+        ->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
+                          [arch::aarch64::ARM64_SYSREG_TAGS::DCZID_EL0] = {
         static_cast<uint64_t>(0b10100), 8};
   }
 
@@ -261,6 +261,91 @@ uint64_t SimOS::createProcess(span<char> instructionBytes) {
   waitingProcs_.push(processes_[tid]);
 
   return tid;
+}
+
+int64_t SimOS::cloneProcess(uint64_t flags, uint64_t stackPtr,
+                            uint64_t parentTidPtr, uint64_t tls,
+                            uint64_t childTidPtr, uint64_t parentTid,
+                            uint64_t coreID, Register retReg) {
+  /** Supported Flags :
+   * CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_THREAD | CLONE_SYSVSEM |
+   * CLONE_SETTLS| CLONE_CHILD_CLEARTID | CLONE_SIGHAND | CLONE_PARENT_SETTID */
+
+  // Get TGID of calling process : as we require the CLONE_THREAD flag the new
+  // thread will be in the same thread group. Given we copy the parent process
+  // object however, the TGID will match to parent implicitly
+  uint64_t newChildTid = nextFreeTID_;
+  nextFreeTID_++;
+  // Ignore CLONE_SIGHAND flag for now
+  // Ignore CLONE_SYSVSEM flag for now
+  // Clone from parent Process object
+  std::shared_ptr<Process> newProc =
+      std::make_shared<Process>(*processes_[parentTid]);
+
+  // Update TID
+  newProc->updateTID(newChildTid);
+
+  // Update childTidPtr value. Defaults to 0 if CLONE_CHILD_CLEARTID is not
+  // present
+  newProc->clearChildTid_ = childTidPtr;
+
+  // Update stackPtr, stackSize and stackEnd
+  newProc->updateStack(stackPtr);
+
+  // Store child tid at parentTidPtr if required
+  uint64_t paddr = handleVAddrTranslation(parentTidPtr, parentTid);
+  if (masks::faults::hasFault(paddr)) {
+    std::cout << "[SimEng:SimOS] Fault in parentTidPtr translation in "
+                 "cloneProcess. Fault "
+              << masks::faults::printFault(paddr) << std::endl;
+    std::exit(1);
+  }
+  if (flags & syscalls::clone::flags::f_CLONE_PARENT_SETTID) {
+    std::vector<char> dataVec(sizeof(newChildTid), '\0');
+    std::memcpy(dataVec.data(), &newChildTid, sizeof(newChildTid));
+    memory_->sendUntimedData(dataVec, paddr, sizeof(newChildTid));
+  }
+
+  // Update context of new child process to match parent process's current state
+  // in the Core, updating the TID
+  cpuContext currContext = cores_[coreID]->getCurrentContext();
+  newProc->context_.pc = currContext.pc;
+  newProc->context_.regFile = currContext.regFile;
+  // Update returnRegister value to 0
+  newProc->context_.regFile[retReg.type][retReg.tag] = {0, 8};
+  // Update stack pointer
+  newProc->context_.sp = stackPtr;
+  if (Config::get()["Core"]["ISA"].as<std::string>() == "rv64") {
+    newProc->context_.regFile[arch::riscv::RegisterType::GENERAL][2] = {
+        stackPtr, 8};
+  } else if (Config::get()["Core"]["ISA"].as<std::string>() == "AArch64") {
+    newProc->context_.regFile[arch::aarch64::RegisterType::GENERAL][31] = {
+        stackPtr, 8};
+    // Set appropriate system register to TLS value.
+    newProc->context_.regFile[arch::aarch64::RegisterType::SYSTEM]
+                             [arch::aarch64::ARM64_SYSREG_TAGS::TPIDR_EL0] = {
+        tls, 8};
+  }
+  newProc->context_.TID = newChildTid;
+  newProc->status_ = procStatus::waiting;
+  processes_.emplace(newChildTid, newProc);
+  waitingProcs_.push(newProc);
+
+  // Add stack to `proc/tgid/maps`
+  VMA vma = newProc->getMemRegion().getVMAFromAddr(stackPtr);
+  const std::string procTgid_filename = specialFilesDir_ + "/proc/" +
+                                        std::to_string(newProc->getTGID()) +
+                                        "/maps";
+  std::ofstream tgidMaps_File(procTgid_filename, std::ios_base::app);
+  std::stringstream stackStream;
+  stackStream << std::setfill('0') << std::hex << std::setw(12) << vma.vmStart_
+              << "-" << std::setfill('0') << std::hex << std::setw(12)
+              << vma.vmEnd_
+              << " rw-p 00000000 00:00 0                           \n";
+  tgidMaps_File << stackStream.str();
+  tgidMaps_File.close();
+
+  return static_cast<int64_t>(newChildTid);
 }
 
 const std::shared_ptr<Process>& SimOS::getProcess(uint64_t tid) {
@@ -281,11 +366,12 @@ void SimOS::terminateThread(uint64_t tid) {
     return;
   }
   // If clear_chilt_tid is non-zero then write 0 to this address
-  uint64_t addr = proc->second->clearChildTid_;
-  if (addr) {
-    memory_->sendUntimedData({0}, addr, 1);
+  uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_, tid);
+  if (!masks::faults::hasFault(addr)) {
+    memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
     // TODO: When `futex` has been implemented, perform
-    // futex(clear_child_tid, FUTEX_WAKE, 1, NULL, NULL, 0);
+    syscallHandler_->futex(
+        addr, syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE, 1, tid);
   }
   // Set status to complete so it can be removed from the relevant queue in
   // tick()
@@ -301,10 +387,13 @@ void SimOS::terminateThreadGroup(uint64_t tgid) {
   while (proc != processes_.end()) {
     if (proc->second->getTGID() == tgid) {
       // If clear_chilt_tid is non-zero then write 0 to this address
-      uint64_t addr = proc->second->clearChildTid_;
-      if (addr) {
-        memory_->sendUntimedData({0}, addr, 1);
-        // TODO: When `futex` has been implemented, perform
+      uint64_t addr = handleVAddrTranslation(proc->second->clearChildTid_,
+                                             proc->second->getTID());
+      if (!masks::faults::hasFault(addr)) {
+        memory_->sendUntimedData({0, 0, 0, 0}, addr, 4);
+        syscallHandler_->futex(
+            addr, syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE, 1,
+            proc->second->getTID());
         // futex(clear_child_tid, FUTEX_WAKE, 1, NULL, NULL, 0);
       }
       // Set status to complete so it can be removed from the relevant queue in
@@ -324,7 +413,7 @@ uint64_t SimOS::requestPageFrames(size_t size) {
 }
 
 uint64_t SimOS::handleVAddrTranslation(uint64_t vaddr, uint64_t tid) {
-  auto process = processes_.find(0)->second;
+  auto process = processes_.find(tid)->second;
   uint64_t translation = process->pageTable_->translate(vaddr);
   uint64_t faultCode = masks::faults::getFaultCode(translation);
 

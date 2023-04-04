@@ -31,7 +31,7 @@ class Core : public simeng::Core {
    * predictor, and port allocator to use. */
   Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
        const arch::Architecture& isa, BranchPredictor& branchPredictor,
-       pipeline::PortAllocator& portAllocator,
+       std::shared_ptr<memory::MMU> mmu, pipeline::PortAllocator& portAllocator,
        arch::sendSyscallToHandler handleSyscall,
        YAML::Node& config = Config::get());
 
@@ -141,6 +141,9 @@ class Core : public simeng::Core {
 
   /** The process memory. */
   MemoryInterface& dataMemory_;
+
+  /** The Core's Memory Management Unit. */
+  std::shared_ptr<memory::MMU> mmu_;
 
   /** The buffer between fetch and decode. */
   pipeline::PipelineBuffer<MacroOp> fetchToDecodeBuffer_;

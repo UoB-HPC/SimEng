@@ -7,6 +7,9 @@
 #include "simeng/version.hh"
 
 namespace simeng {
+
+/** Path to the root of the SimEng special files directory. */
+static const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
 class SpecialFileDirGen {
  public:
   /** Construct a SpecialFileDirGen class by reading in the YAML file and
@@ -21,9 +24,6 @@ class SpecialFileDirGen {
   void GenerateSFDir();
 
  private:
-  /** Path to the root of the SimEng special files directory. */
-  const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
-
   /** Values declared in YAML config file needed to create the Special Files
    * Directory tree. */
   uint64_t core_count;

@@ -461,7 +461,11 @@ void Instruction::decode() {
         metadata.opcode == Opcode::AArch64_LDADDALW ||
         metadata.opcode == Opcode::AArch64_LDADDALX ||
         metadata.opcode == Opcode::AArch64_LDADDLW ||
-        metadata.opcode == Opcode::AArch64_LDADDW) {
+        metadata.opcode == Opcode::AArch64_LDADDW ||
+        metadata.opcode == Opcode::AArch64_LDSETALW ||
+        metadata.opcode == Opcode::AArch64_LDSETALX ||
+        metadata.opcode == Opcode::AArch64_LDCLRALW ||
+        metadata.opcode == Opcode::AArch64_LDCLRALX) {
       isLoad_ = true;
       isStoreAddress_ = true;
       isStoreData_ = true;

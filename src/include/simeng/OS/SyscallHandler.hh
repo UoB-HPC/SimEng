@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <list>
@@ -25,6 +26,7 @@
 
 #include "simeng/Elf.hh"
 #include "simeng/OS/Process.hh"
+#include "simeng/SpecialFileDirGen.hh"
 #include "simeng/memory/MMU.hh"
 #include "simeng/memory/Mem.hh"
 #include "simeng/version.hh"
@@ -225,8 +227,9 @@ struct SyscallInfo {
   /** The unique ID of the core associated with the syscall. */
   uint64_t coreId = 0;
 
-  /** The unique ID of the process associated with the syscall. */
-  uint64_t threadId = 0;
+  /** The unique ID of the process associated with the syscall. Default value is
+   * 1 as this is the lowest TID available. */
+  uint64_t threadId = 1;
 
   /** The register values used as parameters to the invoked syscall. */
   std::array<RegisterValue, 6> registerArguments = {};
@@ -353,6 +356,10 @@ class SyscallHandler {
   /** munmap syscall: deletes the mappings for the specified address range. */
   int64_t munmap(uint64_t addr, size_t length);
 
+  /** clone syscall: creates a new thread of the calling process. */
+  int64_t clone(uint64_t flags, uint64_t stackPtr, uint64_t parentTidPtr,
+                uint64_t tls, uint64_t childTidPtr);
+
   /** mmap syscall: map files or devices into memory. */
   int64_t mmap(uint64_t addr, size_t length, int prot, int flags, int fd,
                off_t offset);
@@ -396,6 +403,7 @@ class SyscallHandler {
    * core status should set to idle after the syscall result has been received
    * by the core and 'long' specifies the syscall return value. */
   std::pair<bool, long> futex(uint64_t uaddr, int futex_op, uint32_t val,
+                              uint64_t tid,
                               const struct timespec* timeout = nullptr,
                               uint32_t uaddr2 = 0, uint32_t val3 = 0);
 
@@ -426,9 +434,6 @@ class SyscallHandler {
 
   /** The SyscallInfo of the syscall currently being handled. */
   SyscallInfo currentInfo_ = {};
-
-  /** Path to the root of the replacement special files. */
-  const std::string specialFilesDir_ = SIMENG_BUILD_DIR "/specialFiles";
 
   /** Vector of all currently supported special file paths & files.*/
   std::vector<std::string> supportedSpecialFiles_;

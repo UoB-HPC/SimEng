@@ -15,6 +15,18 @@ namespace simeng {
 namespace arch {
 namespace aarch64 {
 
+/** Enum which holds AArch64 System register tags used by SimEng. */
+enum ARM64_SYSREG_TAGS : uint16_t {
+  DCZID_EL0,
+  FPCR,
+  FPSR,
+  TPIDR_EL0,
+  MIDR_ELI,
+  CNTVCT_EL0,
+  PMCCNTR_EL0,
+  SVCR
+};
+
 /* A basic Armv9.2-a implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:

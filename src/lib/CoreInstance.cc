@@ -191,14 +191,15 @@ void CoreInstance::createCore() {
   // Construct the core object based on the defined simulation mode
   if (mode_ == SimulationMode::Emulation) {
     core_ = std::make_shared<simeng::models::emulation::Core>(
-        *instructionMemory_, *dataMemory_, *arch_, handleSyscall_);
+        *instructionMemory_, *dataMemory_, *arch_, mmu_, handleSyscall_);
   } else if (mode_ == SimulationMode::InOrderPipelined) {
     core_ = std::make_shared<simeng::models::inorder::Core>(
-        *instructionMemory_, *dataMemory_, *arch_, *predictor_, handleSyscall_);
+        *instructionMemory_, *dataMemory_, *arch_, *predictor_, mmu_,
+        handleSyscall_);
   } else if (mode_ == SimulationMode::OutOfOrder) {
     core_ = std::make_shared<simeng::models::outoforder::Core>(
-        *instructionMemory_, *dataMemory_, *arch_, *predictor_, *portAllocator_,
-        handleSyscall_);
+        *instructionMemory_, *dataMemory_, *arch_, *predictor_, mmu_,
+        *portAllocator_, handleSyscall_);
   }
   return;
 }
