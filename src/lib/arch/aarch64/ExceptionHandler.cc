@@ -77,6 +77,7 @@ bool ExceptionHandler::handleException() {
       case 113:    // clock_gettime
       case 122:    // sched_setaffinity
       case 123:    // sched_getaffinity
+      case 124:    // sched_yield
       case 131:    // tgkill
       case 134:    // rt_sigaction
       case 135:    // rt_sigprocmask
@@ -92,8 +93,10 @@ bool ExceptionHandler::handleException() {
       case 210:    // shutdown
       case 214:    // brk
       case 215:    // munmap
+      case 220:    // clone
       case 222:    // mmap
       case 226:    // mprotect
+      case 233:    // madvise
       case 261:    // prlimit64
       case 278:    // getrandom
       case 293: {  // rseq
@@ -242,11 +245,15 @@ bool ExceptionHandler::concludeSyscall() {
         // Currently, only a single CPU bitmask is supported
         if (bitmask != 1) {
           printException();
-          std::cout
-              << "Unexpected CPU affinity mask returned in exception handler"
-              << std::endl;
+          std::cout << "[SimEng:SyscallHandler] Unexpected CPU affinity mask "
+                       "returned in exception handler"
+                    << std::endl;
         }
         break;
+      }
+      case 220: {
+        std::cout << "[SimEng:SyscallHandler] Unsupported Flags for syscall: "
+                  << syscallResult_.syscallId << std::endl;
       }
     }
     return fatal();

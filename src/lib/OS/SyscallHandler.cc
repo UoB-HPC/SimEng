@@ -1,5 +1,7 @@
 #include "simeng/OS/SyscallHandler.hh"
 
+#include <signal.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <ctime>
@@ -16,8 +18,9 @@ SyscallHandler::SyscallHandler(SimOS* OS,
   // Define vector of all currently supported special file paths & files.
   supportedSpecialFiles_.insert(
       supportedSpecialFiles_.end(),
-      {"/proc/cpuinfo", "proc/stat", "/sys/devices/system/cpu",
-       "/sys/devices/system/cpu/online", "core_id", "physical_package_id"});
+      {"/proc/cpuinfo", "proc/stat", "proc/self/maps", "maps",
+       "/sys/devices/system/cpu", "/sys/devices/system/cpu/online", "core_id",
+       "physical_package_id"});
 }
 
 void SyscallHandler::receiveSyscall(SyscallInfo info) {
@@ -410,14 +413,16 @@ void SyscallHandler::handleSyscall() {
       uint64_t addr = currentInfo_.registerArguments[0].get<uint64_t>();
       int32_t op = currentInfo_.registerArguments[1].get<int32_t>();
       uint32_t val = currentInfo_.registerArguments[2].get<uint32_t>();
-      uint64_t timespecPtr = currentInfo_.registerArguments[3].get<uint64_t>();
+      // TODO: Investigate values of the timespecPtr (4th arg) and usage with
+      // current implementation of futex syscall.
 
       int syscallSupported = false;
       syscallSupported |= (op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE);
       syscallSupported |= (op == syscalls::futex::futexop::SIMENG_FUTEX_WAIT);
       syscallSupported |=
           (op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE);
-      syscallSupported &= (timespecPtr == 0);
+      syscallSupported |=
+          (op == syscalls::futex::futexop::SIMENG_FUTEX_WAIT_PRIVATE);
 
       if (!syscallSupported) {
         std::cerr
@@ -441,7 +446,8 @@ void SyscallHandler::handleSyscall() {
                   << addr << std::endl;
         return concludeSyscall({}, true);
       }
-      auto [putCoreToIdle, futexReturnValue] = futex(paddr, op, val);
+      auto [putCoreToIdle, futexReturnValue] =
+          futex(paddr, op, val, currentInfo_.threadId);
       return concludeSyscall(
           {ChangeType::REPLACEMENT, {currentInfo_.ret}, {futexReturnValue}},
           false, putCoreToIdle);
@@ -488,20 +494,59 @@ void SyscallHandler::handleSyscall() {
         if (bitmask != 1) {
           return concludeSyscall({}, true);
         }
-        uint64_t retval = (pid == 0) ? 1 : 0;
-        stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retval}};
-        stateChange.memoryAddresses.push_back({mask, 1});
+        uint64_t retval = static_cast<uint64_t>(bitmask);
+        stateChange = {
+            ChangeType::REPLACEMENT, {currentInfo_.ret}, {sizeof(retval)}};
+        stateChange.memoryAddresses.push_back({mask, 8});
         stateChange.memoryAddressValues.push_back(bitmask);
       } else {
         stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {-1ll}};
       }
       break;
     }
+    case 124: {  // sched_yield
+      // Non args passed in
+      // Have core go to idle after syscall, forcing the current Process to be
+      // de-scheduled
+      return concludeSyscall(
+          {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}}, false, true);
+    }
     case 131: {  // tgkill
-      // TODO: Functionality temporarily omitted since simeng only has a
-      // single thread at the moment
-      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
-      break;
+      int tgid = currentInfo_.registerArguments[0].get<int>();
+      int tid = currentInfo_.registerArguments[1].get<int>();
+      int signal = currentInfo_.registerArguments[2].get<int>();
+      int64_t retVal = 0;
+      bool idleOnComplete = false;
+
+      // Only support SIGABORT or no signal
+      if (signal != SIGABRT || signal != 0) {
+        retVal = -EINVAL;
+      } else {
+        auto proc = OS_->getProcess(tid);
+        uint64_t procTgid = proc->getTGID();
+        if (tgid == -1) {
+          // Terminate all processes in thread group
+          OS_->terminateThreadGroup(procTgid);
+          std::cout << "[SimEng:SyscallHandler] Received tgkill syscall on "
+                       "Thread Group "
+                    << procTgid << ". Terminating with signal " << signal
+                    << std::endl;
+          idleOnComplete = true;
+        } else {
+          if (proc->getTGID() == tgid) {
+            idleOnComplete = (proc->status_ == procStatus::executing);
+            OS_->terminateThread(tid);
+            std::cout
+                << "[SimEng:SyscallHandler] Received tgkill syscall on Thread "
+                << tid << " in Thread Group " << tgid
+                << ". Terminating with signal " << signal << std::endl;
+          } else {
+            retVal = -ESRCH;
+          }
+        }
+      }
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retVal}};
+      return concludeSyscall(stateChange, false, idleOnComplete);
     }
     case 134: {  // rt_sigaction
       // TODO: Implement syscall logic. Ignored for now as it's assumed the
@@ -642,6 +687,29 @@ void SyscallHandler::handleSyscall() {
       stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {result}};
       break;
     }
+    case 220: {  // clone
+      // Given this is the raw system call, the `fn` and `arg` arguments of the
+      // `clone()` wrapper function are omitted
+      uint64_t flags = currentInfo_.registerArguments[0].get<uint64_t>();
+      uint64_t stackPtr = currentInfo_.registerArguments[1].get<uint64_t>();
+      uint64_t parentTidPtr = currentInfo_.registerArguments[2].get<uint64_t>();
+      uint64_t tls = currentInfo_.registerArguments[3].get<uint64_t>();
+      uint64_t childTidPtr = currentInfo_.registerArguments[4].get<uint64_t>();
+
+      int64_t result = clone(flags, stackPtr, parentTidPtr, tls, childTidPtr);
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {result}};
+      if (result > 0) {
+        std::cout << "[SimEng:SyscallHandler] Clone syscall executed, new "
+                     "thread created : TGID "
+                  << OS_->getProcess(result)->getTGID() << ", TID " << result
+                  << std::endl;
+      } else {
+        std::cout << "[SimEng:SyscallHandler] Error creating new thread via "
+                     "clone syscall."
+                  << std::endl;
+      }
+      break;
+    }
     case 222: {  // mmap
       uint64_t addr = currentInfo_.registerArguments[0].get<uint64_t>();
       size_t length = currentInfo_.registerArguments[1].get<size_t>();
@@ -666,6 +734,12 @@ void SyscallHandler::handleSyscall() {
       stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
       break;
     }
+    case 233: {  // madvise
+      // madvise is not supported
+      // always return zero to indicate success
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
+      break;
+    }
     case 235: {  // mbind
       // mbind is not supported due to all binaries being single threaded.
       // Always return zero to indicate success
@@ -673,9 +747,52 @@ void SyscallHandler::handleSyscall() {
       break;
     }
     case 261: {  // prlimit64
-      // TODO: Functionality temporarily omitted as it is unused within
-      // workloads regions of interest and not required for their simulation
-      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {0ull}};
+      pid_t pid = currentInfo_.registerArguments[0].get<pid_t>();
+      int resource = currentInfo_.registerArguments[1].get<int>();
+      uint64_t newLimit = currentInfo_.registerArguments[2].get<uint64_t>();
+      uint64_t oldLimit = currentInfo_.registerArguments[3].get<uint64_t>();
+      int64_t retVal = 0;
+      if (pid != 0) {
+        // We only support changes to current process
+        retVal = -EPERM;
+      } else {
+        if (resource != RLIMIT_STACK) {
+          std::cout << "[SimEng:SyscallHandler] Un-supported resource used in "
+                       "prlimit64 syscall."
+                    << std::endl;
+          retVal = -EINVAL;
+        } else {
+          if (newLimit) {
+            // Update rlimit for Process
+            uint64_t physAddr =
+                OS_->handleVAddrTranslation(newLimit, currentInfo_.threadId);
+            if (masks::faults::hasFault(physAddr)) {
+              retVal = -EFAULT;
+            } else {
+              rlimit newRlim;
+              std::vector<char> vec =
+                  memory_->getUntimedData(physAddr, sizeof(rlimit));
+              std::memcpy(&newRlim, vec.data(), sizeof(rlimit));
+              OS_->getProcess(currentInfo_.threadId)->stackRlim_ = newRlim;
+            }
+          }
+          if (oldLimit) {
+            // Update rlimit struct pointed to by oldLimit
+            uint64_t physAddr =
+                OS_->handleVAddrTranslation(oldLimit, currentInfo_.threadId);
+            if (masks::faults::hasFault(physAddr)) {
+              retVal = -EFAULT;
+            } else {
+              rlimit rlim = OS_->getProcess(currentInfo_.threadId)->stackRlim_;
+              std::vector<char> vec(sizeof(rlimit), '\0');
+              std::memcpy(vec.data(), &rlim, sizeof(rlimit));
+              memory_->sendUntimedData(vec, physAddr, sizeof(rlimit));
+            }
+          }
+        }
+      }
+
+      stateChange = {ChangeType::REPLACEMENT, {currentInfo_.ret}, {retVal}};
       break;
     }
     case 278: {  // getrandom
@@ -833,7 +950,6 @@ void SyscallHandler::readLinkAt(std::string path, size_t length) {
   concludeSyscall(stateChange);
 }
 
-// TODO : update when supporting multi-process/thread
 uint64_t SyscallHandler::getDirFd(int64_t dfd, std::string pathname) {
   // Resolve absolute path to target file
   char absolutePath[PATH_MAX_LEN];
@@ -863,6 +979,14 @@ std::string SyscallHandler::getSpecialFile(const std::string filename) {
         if (filename.find(supportedSpecialFiles_[i]) != std::string::npos) {
           std::cout << "[SimEng:SyscallHandler] Using Special File: "
                     << filename.c_str() << std::endl;
+          // Hijack proc/self/maps and replace self with PID
+          if (filename.find("proc/self/maps") != std::string::npos) {
+            std::string newFileName = filename;
+            std::string tgid = std::to_string(
+                OS_->getProcess(currentInfo_.threadId)->getTGID());
+            newFileName.replace(newFileName.find("self"), 4, tgid);
+            return specialFilesDir_ + newFileName;
+          }
           return specialFilesDir_ + filename;
         }
       }
@@ -1151,6 +1275,37 @@ int64_t SyscallHandler::munmap(uint64_t addr, size_t length) {
       .unmapRegion(addr, length);
 }
 
+int64_t SyscallHandler::clone(uint64_t flags, uint64_t stackPtr,
+                              uint64_t parentTidPtr, uint64_t tls,
+                              uint64_t childTidPtr) {
+  // Check that required flags are present, if not trigger fatal error
+  uint64_t reqFlags = syscalls::clone::flags::f_CLONE_VM |
+                      syscalls::clone::flags::f_CLONE_FS |
+                      syscalls::clone::flags::f_CLONE_FILES |
+                      syscalls::clone::flags::f_CLONE_THREAD;
+  if ((flags & reqFlags) != reqFlags) {
+    std::cout << "[SimEng:SyscallHandler] One or more of the following flags "
+                 "required for clone not provided :"
+              << std::endl;
+    std::cout << "\tCLONE_VM | CLONE_FS | CLONE_FILES | CLONE_THREAD"
+              << std::endl;
+    return -1;
+  }
+  // Must specify a child stack - won't support copy-on-write with parent
+  if (stackPtr == 0) {
+    std::cout << "[SimEng:SyscallHandler] Must provide a child stack address "
+                 "to clone syscall."
+              << std::endl;
+    return -1;
+  }
+
+  int64_t newChildTid = OS_->cloneProcess(
+      flags, parentTidPtr, stackPtr, tls, childTidPtr, currentInfo_.threadId,
+      currentInfo_.coreId, currentInfo_.ret);
+
+  return newChildTid;
+}
+
 int64_t SyscallHandler::mmap(uint64_t addr, size_t length, int prot, int flags,
                              int fd, off_t offset) {
   auto process = OS_->getProcess(currentInfo_.threadId);
@@ -1316,7 +1471,8 @@ int64_t SyscallHandler::readv(int64_t fd, const void* iovdata, int iovcnt) {
 
 int64_t SyscallHandler::schedGetAffinity(pid_t pid, size_t cpusetsize,
                                          uint64_t mask) {
-  if (mask != 0 && pid == 0) {
+  if (mask != 0 &&
+      (pid == 0 || pid == OS_->getProcess(currentInfo_.threadId)->getTGID())) {
     // Always return a bit mask of 1 to represent 1 available CPU
     return 1;
   }
@@ -1328,6 +1484,13 @@ int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
   // Currently, the bit mask can only be 1 so capture any error which would
   // occur but otherwise omit functionality
   if (mask == 0) return -EFAULT;
+  uint64_t translatedAddr =
+      OS_->handleVAddrTranslation(mask, currentInfo_.threadId);
+  uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(translatedAddr);
+  if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT ||
+      faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
+    return -EFAULT;
+  }
   if (pid != 0) return -ESRCH;
   if (cpusetsize == 0) return -EINVAL;
   return 0;
@@ -1335,7 +1498,7 @@ int64_t SyscallHandler::schedSetAffinity(pid_t pid, size_t cpusetsize,
 
 int64_t SyscallHandler::setTidAddress(uint64_t tidptr) {
   OS_->getProcess(currentInfo_.threadId)->clearChildTid_ = tidptr;
-  return 0;
+  return currentInfo_.threadId;
 }
 
 int64_t SyscallHandler::write(int64_t fd, const void* buf, uint64_t count) {
@@ -1357,19 +1520,27 @@ int64_t SyscallHandler::writev(int64_t fd, const void* iovdata, int iovcnt) {
 }
 
 std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
-                                            uint32_t val,
+                                            uint32_t val, uint64_t tid,
                                             const struct timespec* timeout,
                                             uint32_t uaddr2, uint32_t val3) {
-  int wake = futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE ||
-             futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE;
-  int wait = futex_op == syscalls::futex::futexop::SIMENG_FUTEX_WAIT;
+  int wait = 0;
+  int wake = 0;
+
+  switch (futex_op) {
+    case syscalls::futex::futexop::SIMENG_FUTEX_WAKE:
+    case syscalls::futex::futexop::SIMENG_FUTEX_WAKE_PRIVATE:
+      wake = 1;
+      break;
+    case syscalls::futex::futexop::SIMENG_FUTEX_WAIT:
+    case syscalls::futex::futexop::SIMENG_FUTEX_WAIT_PRIVATE:
+      wait = 1;
+      break;
+  }
 
   // Get the process associated with the thread id.
-  const auto tid = currentInfo_.threadId;
   auto process = OS_->getProcess(tid);
+  uint64_t tgid = process->getTGID();
 
-  // Find the FutexInfo object associated with the thread group.
-  const auto tgid = process->getTGID();
   // Iterator of the FutexInfo entry.
   auto ftableItr = futexTable_.find(tgid);
 
@@ -1393,9 +1564,8 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
     if (ftableItr == futexTable_.end()) {
       ftableItr = futexTable_.insert({tgid, std::list<FutexInfo>()}).first;
     }
-    std::list<FutexInfo> list = ftableItr->second;
     FutexInfo f(uaddr, process, FutexStatus::FUTEX_SLEEPING);
-    list.push_back(f);
+    ftableItr->second.push_back(f);
     // Set the process status to procStatus::sleeping so that it isn't
     // added to the waitingProcs_ queue.
     process->status_ = procStatus::sleeping;
@@ -1406,17 +1576,15 @@ std::pair<bool, long> SyscallHandler::futex(uint64_t uaddr, int futex_op,
     long procWokenUp = 0;
     // Variable denoting how many processes were woken up.
     if (ftableItr != futexTable_.end()) {
-      std::list<FutexInfo> list = ftableItr->second;
-      // Determine how many processes waiting on a futex should be woken up.
       size_t castedVal = static_cast<size_t>(val);
-      size_t maxItr = std::min(castedVal, list.size());
+      size_t maxItr = std::min(castedVal, ftableItr->second.size());
       for (size_t t = 0; t < maxItr; t++) {
-        auto futexInfo = list.front();
+        auto futexInfo = ftableItr->second.front();
         // Awaken the process by changing the status to procStatus::waiting and
         // adding it to the waitingProcs_ queue.
         futexInfo.process->status_ = procStatus::waiting;
         OS_->addProcessToWaitQueue(futexInfo.process);
-        list.pop_front();
+        ftableItr->second.pop_front();
         procWokenUp++;
       }
     }

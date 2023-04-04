@@ -15,6 +15,7 @@ namespace outoforder {
 // TODO: System register count has to match number of supported system registers
 Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
            const arch::Architecture& isa, BranchPredictor& branchPredictor,
+           std::shared_ptr<memory::MMU> mmu,
            pipeline::PortAllocator& portAllocator,
            arch::sendSyscallToHandler handleSyscall, YAML::Node& config)
     : isa_(isa),
@@ -25,6 +26,7 @@ Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
                           physicalRegisterQuantities_),
       mappedRegisterFileSet_(registerFileSet_, registerAliasTable_),
       dataMemory_(dataMemory),
+      mmu_(mmu),
       fetchToDecodeBuffer_(
           config["Pipeline-Widths"]["FrontEnd"].as<unsigned int>(), {}),
       decodeToRenameBuffer_(
@@ -315,7 +317,12 @@ void Core::processException() {
     fetchUnit_.updatePC(result.instructionAddress);
     applyStateChange(result.stateChange);
     if (result.idleAfterSyscall) {
+      // Enusre all pipeline stages are flushed
+      dispatchIssueUnit_.flush();
+      writebackUnit_.flush();
+      // Update core status
       status_ = CoreStatus::idle;
+      contextSwitches_++;
     }
   }
 
@@ -454,6 +461,7 @@ void Core::schedule(simeng::OS::cpuContext newContext) {
   status_ = CoreStatus::executing;
   procTicks_ = 0;
   isa_.updateAfterContextSwitch(newContext);
+  mmu_->setTid(currentTID_);
   // Allow fetch unit to resume fetching instructions & incrementing PC
   fetchUnit_.unpause();
 }
@@ -474,7 +482,10 @@ uint64_t Core::getCurrentProcTicks() const { return procTicks_; }
 simeng::OS::cpuContext Core::getCurrentContext() const {
   OS::cpuContext newContext;
   newContext.TID = currentTID_;
-  newContext.pc = fetchUnit_.getPC();
+  newContext.pc =
+      exceptionGenerated_
+          ? exceptionGeneratingInstruction_->getInstructionAddress() + 4
+          : fetchUnit_.getPC();
   // progByteLen will not change in process so do not need to set it
   // Don't need to explicitly save SP as will be in reg file contents
   auto regFileStruc = isa_.getRegisterFileStructures();

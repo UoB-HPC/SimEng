@@ -222,6 +222,12 @@ uint64_t ExecuteUnit::getBranchMispredictedCount() const {
   return branchMispredicts_;
 }
 
+bool ExecuteUnit::isEmpty() {
+  // Execution unit is considered empty if no instructions are present in the
+  // pipeline_ and operationsStalled_ queues
+  return !(pipeline_.size() != 0 || operationsStalled_.size() != 0);
+}
+
 void ExecuteUnit::flush() {
   pipeline_.clear();
   operationsStalled_.clear();

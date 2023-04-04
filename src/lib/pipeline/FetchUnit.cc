@@ -16,7 +16,6 @@ FetchUnit::FetchUnit(PipelineBuffer<MacroOp>& output,
   assert(blockSize_ >= isa_.getMaxInstructionSize() &&
          "fetch block size must be larger than the largest instruction");
   fetchBuffer_ = new uint8_t[2 * blockSize_];
-  requestFromPC();
 }
 
 FetchUnit::~FetchUnit() { delete[] fetchBuffer_; }

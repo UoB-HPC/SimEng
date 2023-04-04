@@ -13,52 +13,69 @@ namespace simeng {
 namespace OS {
 
 MemRegion::MemRegion(uint64_t stackSize, uint64_t heapSize, uint64_t mmapSize,
-                     uint64_t memSize, uint64_t stackStart, uint64_t heapStart,
-                     uint64_t mmapStart, uint64_t initStackPtr,
+                     uint64_t procImgSize, uint64_t stackStart,
+                     uint64_t heapStart, uint64_t mmapStart,
+                     uint64_t initStackPtr,
                      std::function<uint64_t(uint64_t, size_t)> unmapPageTable)
-    : stackStart_(stackStart),
-      stackEnd_(stackStart + stackSize),
-      stackSize_(stackSize),
-      initStackPtr_(initStackPtr),
-      heapStart_(heapStart),
-      heapEnd_(heapStart + heapSize),
-      heapSize_(heapSize),
-      brk_(heapStart),
-      memSize_(memSize),
-      mmapStart_(mmapStart),
-      mmapEnd_(mmapStart + mmapSize),
-      mmapPtr_(mmapStart),
-      mmapSize_(mmapSize),
+
+    : stackRegion_(ProcessStackRegion(stackStart, stackSize, initStackPtr)),
+      heapRegion_(std::make_shared<ProcessHeapRegion>(heapStart, heapSize)),
+      mmapRegion_(std::make_shared<ProcessMmapRegion>(mmapStart, mmapSize)),
+      procImgSize_(procImgSize),
       unmapPageTable_(unmapPageTable),
       VMAlist_(std::make_shared<std::list<VirtualMemoryArea>>()) {}
 
 MemRegion::~MemRegion() {}
 
-uint64_t MemRegion::getStackStart() const { return stackStart_; }
+uint64_t MemRegion::getStackStart() const { return stackRegion_.stackStart; }
 
-uint64_t MemRegion::getStackEnd() const { return stackEnd_; }
+uint64_t MemRegion::getStackEnd() const {
+  // Since the stack grows down towards lower addresses, the stack end
+  // address is the lowest address in the stack address range. Here
+  // stackRegion_.start represents the start of the range, not the actual
+  // starting address (topmost address) of the stack.
+  return stackRegion_.start;
+}
 
-size_t MemRegion::getStackSize() const { return stackSize_; }
+size_t MemRegion::getStackSize() const { return stackRegion_.size; }
 
-uint64_t MemRegion::getInitialStackPtr() const { return initStackPtr_; }
+uint64_t MemRegion::getInitialStackPtr() const {
+  return stackRegion_.initialStackPtr;
+}
 
-uint64_t MemRegion::getHeapStart() const { return heapStart_; }
+uint64_t MemRegion::getHeapStart() const { return heapRegion_->start; }
 
-uint64_t MemRegion::getHeapEnd() const { return heapEnd_; }
+uint64_t MemRegion::getHeapEnd() const { return heapRegion_->end; }
 
-size_t MemRegion::getHeapSize() const { return heapSize_; }
+size_t MemRegion::getHeapSize() const { return heapRegion_->size; }
 
-uint64_t MemRegion::getBrk() const { return brk_; }
+uint64_t MemRegion::getBrk() const { return heapRegion_->brk; }
 
-uint64_t MemRegion::getMmapStart() const { return mmapStart_; }
+uint64_t MemRegion::getMmapStart() const { return mmapRegion_->start; }
 
-uint64_t MemRegion::getMemSize() const { return memSize_; }
+uint64_t MemRegion::getProcImgSize() const { return procImgSize_; }
 
 uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
-  if (newBrk < heapStart_) {
-    return brk_;
+  if (newBrk == 0 || newBrk == heapRegion_->brk) {
+    return heapRegion_->brk;
   }
-  if (newBrk > heapEnd_) {
+  // We have to make sure that the binary under simulation isn't trying to
+  // deallocate more memory than is present in the process heap region.
+  if (newBrk < heapRegion_->start) {
+    std::cerr << "[SimEng:MemRegion] Attemped to deallocate more memory than "
+                 "is available to the process heap region."
+              << std::endl;
+    std::exit(1);
+  }
+  // For simplicity we update only the brk point when the binary under
+  // simulation is giving memory back to the system. We do not delete any page
+  // table mappings or page frames assosciated with the deallocated memory
+  // region.
+  if (newBrk < heapRegion_->brk) {
+    heapRegion_->brk = newBrk;
+    return heapRegion_->brk;
+  }
+  if (newBrk > heapRegion_->end) {
     // TODO: This needs to fixed such that more extra memory allocation is
     // mmapd.
     std::cerr
@@ -70,15 +87,21 @@ uint64_t MemRegion::updateBrkRegion(uint64_t newBrk) {
     std::exit(1);
   }
 
-  if (newBrk > brk_) {
-    brk_ = newBrk;
+  if (newBrk > heapRegion_->brk) {
+    heapRegion_->brk = newBrk;
   }
-  return brk_;
+  return heapRegion_->brk;
+}
+
+void MemRegion::updateStack(const uint64_t stackPtr) {
+  VirtualMemoryArea vma = getVMAFromAddr(stackPtr);
+  // stackStart is vmEnd as stack grows down.
+  stackRegion_ = ProcessStackRegion(vma.vmEnd_, vma.vmSize_, stackPtr);
 }
 
 uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
-  bool isStartAddrValid =
-      (startAddr >= mmapStart_) && (startAddr + vma.vmSize_ < mmapEnd_);
+  bool isStartAddrValid = (startAddr >= mmapRegion_->start) &&
+                          (startAddr + vma.vmSize_ < mmapRegion_->end);
   if (startAddr != 0 && !isStartAddrValid) {
     std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
                  "the mmap range: "
@@ -93,7 +116,7 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
   if (VMAlist_->size() > 0) {
     // Check if the new VMA can be allocated between mmapStart and the first VMA
     // in the VMA list.
-    uint64_t effectiveMmapStart = startAddr ? startAddr : mmapStart_;
+    uint64_t effectiveMmapStart = startAddr ? startAddr : mmapRegion_->start;
     uint64_t space = itr->vmStart_ - effectiveMmapStart;
     if (effectiveMmapStart < itr->vmStart_ && space >= size) {
       vma.vmStart_ = effectiveMmapStart;
@@ -133,10 +156,11 @@ uint64_t MemRegion::addVma(VMA vma, uint64_t startAddr) {
   // same. Here startAddr is either mmap pointer or an address greater than mmap
   // pointer.
   if (!allocated) {
-    startAddr = startAddr >= mmapPtr_ ? startAddr : mmapPtr_;
+    startAddr =
+        startAddr >= mmapRegion_->mmapPtr ? startAddr : mmapRegion_->mmapPtr;
     vma.vmStart_ = startAddr;
-    mmapPtr_ = startAddr + size;
-    vma.vmEnd_ = mmapPtr_;
+    mmapRegion_->mmapPtr = startAddr + size;
+    vma.vmEnd_ = mmapRegion_->mmapPtr;
     VMAlist_->push_back(vma);
   }
   return vma.vmStart_;
@@ -236,7 +260,7 @@ int64_t MemRegion::mmapRegion(uint64_t startAddr, uint64_t length, int prot,
 }
 
 int64_t MemRegion::unmapRegion(uint64_t addr, uint64_t length) {
-  if (!((addr >= mmapStart_) && (addr + length < mmapEnd_))) {
+  if (!((addr >= mmapRegion_->start) && (addr + length < mmapRegion_->end))) {
     std::cout << "[SimEng:MemRegion] Provided address range doesn't exist in "
                  "the mmap range: "
               << addr << " - " << addr + length << std::endl;
@@ -274,11 +298,11 @@ std::shared_ptr<std::list<VirtualMemoryArea>> MemRegion::getVmaList() {
 }
 
 bool MemRegion::overlapsHeap(uint64_t addr, size_t size) {
-  return (addr >= heapStart_) && (addr < heapEnd_) && (size != 0);
+  return heapRegion_->overlaps(addr, size);
 }
 
 bool MemRegion::overlapsStack(uint64_t addr, size_t size) {
-  return (addr >= stackStart_) && (addr < stackEnd_) && (size != 0);
+  return stackRegion_.overlaps(addr, size);
 }
 
 }  // namespace OS
