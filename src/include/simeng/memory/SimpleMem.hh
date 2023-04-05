@@ -19,7 +19,8 @@ class SimpleMem : public Mem {
   virtual ~SimpleMem() override{};
 
   /** This method requests access to memory for both read and write requests. */
-  DataPacket requestAccess(struct DataPacket pkt) override;
+  std::unique_ptr<MemPacket> requestAccess(
+      std::unique_ptr<MemPacket> pkt) override;
 
   /** This method returns the size of memory. */
   size_t getMemorySize() override;
@@ -32,7 +33,15 @@ class SimpleMem : public Mem {
   std::vector<char> getUntimedData(uint64_t paddr, size_t size) override;
 
   /** This method handles a memory request to an ignored address range. */
-  DataPacket handleIgnoredRequest(struct DataPacket pkt) override;
+  std::unique_ptr<MemPacket> handleIgnoredRequest(
+      std::unique_ptr<MemPacket> pkt) override;
+
+  void subscribe(
+      std::shared_ptr<SubscriberInterface<std::unique_ptr<MemPacket>>> data)
+      override;
+  void notify(std::unique_ptr<MemPacket> data) override;
+
+  void update(std::unique_ptr<MemPacket> packet) override;
 
  private:
   /** Vector which represents the internal simulation memory array. */
@@ -42,10 +51,10 @@ class SimpleMem : public Mem {
   size_t memSize_;
 
   /** This method handles DataPackets of type READ_REQUEST. */
-  DataPacket handleReadRequest(struct DataPacket req);
+  std::unique_ptr<MemPacket> handleReadRequest(std::unique_ptr<MemPacket> req);
 
   /** This method handles DataPackets of type WRITE_REQUEST. */
-  DataPacket handleWriteRequest(struct DataPacket req);
+  std::unique_ptr<MemPacket> handleWriteRequest(std::unique_ptr<MemPacket> req);
 };
 
 }  // namespace memory

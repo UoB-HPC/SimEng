@@ -100,7 +100,10 @@ int main(int argc, char** argv) {
   VAddrTranslator fn = OS.getVAddrTranslator();
 
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(memory, fn, 0);
+      std::make_shared<simeng::memory::MMU>(fn, 0);
+
+  mmu->subscribe(memory);
+  memory->subscribe(mmu);
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =

@@ -12,18 +12,21 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
                                       uint64_t requestId) {
   // Instantiate a callback function which will be invoked with the response
   // to a read request.
-  auto fn = [this, target, requestId](memory::DataPacket dpkt) -> void {
-    if (dpkt.inFault_) {
+  auto fn = [this, target,
+             requestId](std::unique_ptr<memory::MemPacket> packet) -> void {
+    if (packet->isFaulty()) {
       completedReads_.push_back({target, RegisterValue(), requestId});
       return;
     }
     completedReads_.push_back(
-        {target, RegisterValue(dpkt.data_.data(), dpkt.size_), requestId});
+        {target, RegisterValue(packet->data().data(), packet->size_),
+         requestId});
   };
 
-  mmu_->bufferRequest(memory::DataPacket(target.address, target.size,
-                                         memory::READ_REQUEST, requestId),
-                      fn);
+  mmu_->bufferRequest(
+      std::unique_ptr<memory::MemPacket>(memory::MemPacket::createReadRequest(
+          target.address, target.size, requestId)),
+      fn);
 }
 
 void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
@@ -33,9 +36,10 @@ void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
   // Responses to write requests are ignored by passing in a nullptr
   // callback because they don't contain any information relevant to the
   // simulation.
-  mmu_->bufferRequest(memory::DataPacket(target.address, target.size,
-                                         memory::WRITE_REQUEST, 0, dt),
-                      nullptr);
+  mmu_->bufferRequest(
+      std::unique_ptr<memory::MemPacket>(memory::MemPacket::createWriteRequest(
+          target.address, target.size, 0, dt)),
+      nullptr);
 }
 
 const span<MemoryReadResult> FlatMemoryInterface::getCompletedReads() const {

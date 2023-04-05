@@ -1,6 +1,7 @@
 #include "simeng/FixedLatencyMemoryInterface.hh"
 
 #include <cassert>
+#include <memory>
 
 namespace simeng {
 
@@ -28,25 +29,26 @@ void FixedLatencyMemoryInterface::tick() {
       // Responses to write requests are ignored by passing in a nullptr
       // callback because they don't contain any information relevant to the
       // simulation.
-      mmu_->bufferRequest(
-          memory::DataPacket(target.address, target.size, memory::WRITE_REQUEST,
-                             requestId, dt),
-          nullptr);
+      mmu_->bufferRequest(std::unique_ptr<memory::MemPacket>(
+                              memory::MemPacket::createWriteRequest(
+                                  target.address, target.size, requestId, dt)),
+                          nullptr);
     } else {
       // Instantiate a callback function which will be invoked with the response
       // to a read request.
       auto fn = [this, target,
-                 requestId](struct memory::DataPacket packet) -> void {
-        if (packet.inFault_) {
+                 requestId](std::unique_ptr<memory::MemPacket> packet) -> void {
+        if (packet->isFaulty()) {
           completedReads_.push_back({target, RegisterValue(), requestId});
           return;
         }
         completedReads_.push_back(
-            {target, RegisterValue(packet.data_.data(), packet.size_),
+            {target, RegisterValue(packet->data().data(), packet->size_),
              requestId});
       };
-      mmu_->bufferRequest(memory::DataPacket(target.address, target.size,
-                                             memory::READ_REQUEST, requestId),
+      mmu_->bufferRequest(std::unique_ptr<memory::MemPacket>(
+                              memory::MemPacket::createReadRequest(
+                                  target.address, target.size, requestId)),
                           fn);
     }
 

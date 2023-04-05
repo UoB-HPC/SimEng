@@ -23,7 +23,7 @@ set(SIMENG_SOURCES
     OS/PageFrameAllocator.cc
     OS/PageTable.cc
     memory/SimpleMem.cc
-    memory/Mem.cc
+    memory/MemPacket.cc
     memory/MMU.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
