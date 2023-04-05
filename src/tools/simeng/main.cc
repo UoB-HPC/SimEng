@@ -8,8 +8,8 @@
 #include "simeng/Config.hh"
 #include "simeng/Core.hh"
 #include "simeng/CoreInstance.hh"
-#include "simeng/MemoryInterface.hh"
 #include "simeng/OS/SimOS.hh"
+#include "simeng/memory/MMU.hh"
 #include "simeng/memory/SimpleMem.hh"
 #include "simeng/version.hh"
 
@@ -29,21 +29,19 @@ simeng::OS::SimOS simOsFactory(std::shared_ptr<simeng::memory::Mem> memory,
 
 /** Tick the provided core model until it halts. */
 int simulate(simeng::OS::SimOS& simOS, simeng::Core& core,
-             simeng::MemoryInterface& dataMemory,
-             simeng::MemoryInterface& instructionMemory) {
+             simeng::memory::MMU& mmu) {
   uint64_t iterations = 0;
 
   // Tick the core and memory interfaces until the program has halted
-  while (!simOS.hasHalted() || dataMemory.hasPendingRequests()) {
+  while (!simOS.hasHalted() || mmu.hasPendingRequests()) {
     // Tick SimOS
-    simOS.tick();  // TEMP to test scheduling works
+    simOS.tick();
 
     // Tick the core
     core.tick();
 
     // Tick memory
-    instructionMemory.tick();
-    dataMemory.tick();
+    mmu.tick();
 
     iterations++;
   }
@@ -100,19 +98,17 @@ int main(int argc, char** argv) {
   VAddrTranslator fn = OS.getVAddrTranslator();
 
   std::shared_ptr<simeng::memory::MMU> mmu =
-      std::make_shared<simeng::memory::MMU>(memory, fn, 0);
+      std::make_shared<simeng::memory::MMU>(
+          memory,
+          Config::get()["LSQ-L1-Interface"]["Access-Latency"].as<uint16_t>(),
+          fn, 0);
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =
-      std::make_unique<simeng::CoreInstance>(memory, mmu,
-                                             OS.getSyscallReceiver());
+      std::make_unique<simeng::CoreInstance>(mmu, OS.getSyscallReceiver());
 
   // Get simulation objects needed to forward simulation
   std::shared_ptr<simeng::Core> core = coreInstance->getCore();
-  std::shared_ptr<simeng::MemoryInterface> dataMemory =
-      coreInstance->getDataMemory();
-  std::shared_ptr<simeng::MemoryInterface> instructionMemory =
-      coreInstance->getInstructionMemory();
 
   // Register core with SimOS
   OS.registerCore(core);
@@ -129,7 +125,7 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] Starting...\n" << std::endl;
   int iterations = 0;
   auto startTime = std::chrono::high_resolution_clock::now();
-  iterations = simulate(OS, *core, *dataMemory, *instructionMemory);
+  iterations = simulate(OS, *core, *mmu);
 
   // Get timing information
   auto endTime = std::chrono::high_resolution_clock::now();

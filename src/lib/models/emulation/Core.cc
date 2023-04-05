@@ -6,12 +6,9 @@ namespace simeng {
 namespace models {
 namespace emulation {
 
-Core::Core(MemoryInterface& instructionMemory, MemoryInterface& dataMemory,
-           const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
+Core::Core(const arch::Architecture& isa, std::shared_ptr<memory::MMU> mmu,
            arch::sendSyscallToHandler handleSyscall)
-    : instructionMemory_(instructionMemory),
-      dataMemory_(dataMemory),
-      mmu_(mmu),
+    : mmu_(mmu),
       isa_(isa),
       registerFileSet_(isa.getRegisterFileStructures()),
       architecturalRegisterFileSet_(registerFileSet_),
@@ -62,13 +59,13 @@ void Core::tick() {
     // Handle pending reads to a uop
     auto& uop = microOps_.front();
 
-    const auto& completedReads = dataMemory_.getCompletedReads();
+    const auto& completedReads = mmu_->getCompletedReads();
     for (const auto& response : completedReads) {
       assert(pendingReads_ > 0);
       uop->supplyData(response.target.address, response.data);
       pendingReads_--;
     }
-    dataMemory_.clearCompletedReads();
+    mmu_->clearCompletedReads();
 
     if (pendingReads_ == 0) {
       // Load complete: resume execution
@@ -81,9 +78,9 @@ void Core::tick() {
   // Determine if new uops are needed to be fetched
   if (microOps_.empty() && (status_ != CoreStatus::switching)) {
     // Fetch
-    instructionMemory_.requestRead({pc_, FETCH_SIZE});
+    mmu_->requestInstrRead({pc_, FETCH_SIZE});
     // Find fetched memory that matches the current PC
-    const auto& fetched = instructionMemory_.getCompletedReads();
+    const auto& fetched = mmu_->getCompletedInstrReads();
     size_t fetchIndex;
     for (fetchIndex = 0; fetchIndex < fetched.size(); fetchIndex++) {
       if (fetched[fetchIndex].target.address == pc_) {
@@ -100,7 +97,7 @@ void Core::tick() {
                                     FETCH_SIZE, pc_, macroOp_);
 
     // Clear the fetched data
-    instructionMemory_.clearCompletedReads();
+    mmu_->clearCompletedIntrReads();
 
     pc_ += bytesRead;
 
@@ -138,7 +135,7 @@ void Core::tick() {
       // Memory reads are required; request them, set `pendingReads_`
       // accordingly, and end the cycle early
       for (auto const& target : addresses) {
-        dataMemory_.requestRead(target);
+        mmu_->requestRead(target);
         // Store addresses for use by next store data operation
         previousAddresses_.push_back(target);
       }
@@ -183,7 +180,7 @@ void Core::execute(std::shared_ptr<Instruction>& uop) {
   if (uop->isStoreData()) {
     auto data = uop->getData();
     for (size_t i = 0; i < previousAddresses_.size(); i++) {
-      dataMemory_.requestWrite(previousAddresses_[i], data[i]);
+      mmu_->requestWrite(previousAddresses_[i], data[i]);
     }
   } else if (uop->isBranch()) {
     pc_ = uop->getBranchAddress();
@@ -220,7 +217,7 @@ void Core::processException() {
   assert(exceptionGenerated_ != false &&
          "[SimEng:Core] Attempted to process an exception handler that wasn't "
          "active");
-  if (dataMemory_.hasPendingRequests()) {
+  if (mmu_->hasPendingRequests()) {
     // Must wait for all memory requests to complete before processing the
     // exception
     return;
@@ -287,8 +284,8 @@ void Core::applyStateChange(const OS::ProcessStateChange& change) {
   // TODO: Analyse if ChangeType::INCREMENT or ChangeType::DECREMENT case is
   // required for memory changes
   for (size_t i = 0; i < change.memoryAddresses.size(); i++) {
-    dataMemory_.requestWrite(change.memoryAddresses[i],
-                             change.memoryAddressValues[i]);
+    mmu_->requestWrite(change.memoryAddresses[i],
+                       change.memoryAddressValues[i]);
   }
 }
 
