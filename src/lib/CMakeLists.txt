@@ -45,8 +45,6 @@ set(SIMENG_SOURCES
     ArchitecturalRegisterFileSet.cc
     CoreInstance.cc
     Elf.cc
-    FixedLatencyMemoryInterface.cc
-    FlatMemoryInterface.cc
     GenericPredictor.cc
     Instruction.cc
     ModelConfig.cc
