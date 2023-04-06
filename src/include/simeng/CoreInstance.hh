@@ -8,11 +8,9 @@
 #include "simeng/Elf.hh"
 #include "simeng/GenericPredictor.hh"
 #include "simeng/OS/SyscallHandler.hh"
-// #include "simeng/arch/Architecture.hh"
 #include "simeng/arch/aarch64/Architecture.hh"
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/memory/MMU.hh"
-// #include "simeng/memory/Mem.hh"
 #include "simeng/models/emulation/Core.hh"
 #include "simeng/models/inorder/Core.hh"
 #include "simeng/models/outoforder/Core.hh"
@@ -20,11 +18,6 @@
 #include "simeng/pipeline/BalancedPortAllocator.hh"
 
 namespace simeng {
-
-// Forward declare everything needed for SimOS
-namespace OS {
-class SimOS;
-}  // namespace OS
 
 /** The available modes of simulation. */
 enum class SimulationMode { Emulation, InOrderPipelined, OutOfOrder };
@@ -37,20 +30,7 @@ class CoreInstance {
   CoreInstance(std::shared_ptr<memory::MMU> mmu,
                arch::sendSyscallToHandler handleSyscall);
 
-  // IGNORING SST RELATED CODE FOR NOW
-  /** CoreInstance with source code assembled by LLVM and a model configuration.
-   */
-  // CoreInstance(char* assembledSource, size_t sourceSize,
-  //              std::string configPath);
-
-  ~CoreInstance();
-
-  // /** Set the SimEng L1 instruction cache memory. */
-  // void setL1InstructionMemory(std::shared_ptr<simeng::MemoryInterface>
-  // memRef);
-
-  // /** Set the SimEng L1 data cache memory. */
-  // void setL1DataMemory(std::shared_ptr<simeng::MemoryInterface> memRef);
+  ~CoreInstance(){};
 
   /** Construct the core and all its associated simulation objects after the
    * process and memory interfaces have been instantiated. */
@@ -65,49 +45,15 @@ class CoreInstance {
   /** Getter for the create core object. */
   std::shared_ptr<simeng::Core> getCore() const;
 
-  // /** Getter for the create data memory object. */
-  // std::shared_ptr<simeng::MemoryInterface> getDataMemory() const;
-
-  // /** Getter for the create instruction memory object. */
-  // std::shared_ptr<simeng::MemoryInterface> getInstructionMemory() const;
-
  private:
-  /** Generate the appropriate simulation objects as parameterised by the
-   * configuration.*/
-  // void generateCoreModel();
-
   /** Extract simulation mode from config file. */
   void setSimulationMode();
-
-  // /** Construct the SimEng L1 instruction cache memory. */
-  // void createL1InstructionMemory(const simeng::MemInterfaceType type);
-
-  // /** Construct the SimEng L1 data cache memory. */
-  // void createL1DataMemory(const simeng::MemInterfaceType type);
-
-  /** Indicates whether or not the source has been assembled by LLVM. */
-  // bool assembledSource_ = false;
-
-  /** Reference to source assembled by LLVM. */
-  // char* source_ = nullptr;
-
-  /** Size of the source code assembled by LLVM. */
-  // size_t sourceSize_ = 0;
 
   /** The config file describing the modelled core to be created. */
   YAML::Node& config_;
 
   /** Reference to the SimEng SimOS Process object. */
   std::shared_ptr<simeng::OS::Process> process_ = nullptr;
-
-  /** The size of the process memory. */
-  uint64_t processMemorySize_;
-
-  // /** Indicates whether or not the dataMemory_ must be set manually. */
-  // bool setDataMemory_ = false;
-
-  // /** Indicates whether or not the instructionMemory_ must be set manually.
-  // */ bool setInstructionMemory_ = false;
 
   /** Reference to the SimEng architecture object. */
   std::unique_ptr<simeng::arch::Architecture> arch_ = nullptr;
@@ -127,15 +73,6 @@ class CoreInstance {
   /** A string format for the simulation mode in use, defaulting to emulation.
    */
   std::string modeString_ = "Emulation";
-
-  // /** Reference to the SimEng data memory object. */
-  // std::shared_ptr<simeng::MemoryInterface> dataMemory_ = nullptr;
-
-  // /** Reference to the SimEng instruction memory object. */
-  // std::shared_ptr<simeng::MemoryInterface> instructionMemory_ = nullptr;
-
-  /** Reference to the simulation memory shared pointer */
-  // std::shared_ptr<simeng::memory::Mem> memory_ = nullptr;
 
   /** Reference to the MMU */
   std::shared_ptr<simeng::memory::MMU> mmu_ = nullptr;
