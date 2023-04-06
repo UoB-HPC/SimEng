@@ -82,21 +82,12 @@ class MemPacket {
   /** Method which converts a DataPacket of type READ_REQUEST to READ_RESPONSE.
    * Faulty Packet is returned if this method is called on a DataPacket which
    * does not have a type of READ_REQUEST. */
-  std::unique_ptr<MemPacket> makeIntoReadResponse(std::vector<char> data);
+  // std::unique_ptr<MemPacket> makeIntoReadResponse(std::vector<char> data);
 
   /** Method which converts a DataPacket of type WRITE_REQUEST to
    * WRITE_RESPONSE. Faulty Packet is returned if this method is called on a
    * DataPacket which does not have a type of WRITE_REQUEST. */
-  std::unique_ptr<MemPacket> makeIntoWriteResponse();
-
- protected:
-  uint8_t metadata_ = 0;
-
-  MemPacket() {}
-
-  /** Constructor for DataPackets which do not hold any data. */
-  MemPacket(uint64_t address, uint64_t size, MemPacketType type,
-            uint64_t reqId);
+  // std::unique_ptr<MemPacket> makeIntoWriteResponse();
 
   static std::unique_ptr<MemPacket> createReadResponse(uint64_t address,
                                                        uint64_t size,
@@ -106,6 +97,15 @@ class MemPacket {
   static std::unique_ptr<MemPacket> createWriteResponse(uint64_t address,
                                                         uint64_t size,
                                                         uint64_t reqId);
+
+ protected:
+  uint8_t metadata_ = 0;
+
+  MemPacket() {}
+
+  /** Constructor for DataPackets which do not hold any data. */
+  MemPacket(uint64_t address, uint64_t size, MemPacketType type,
+            uint64_t reqId);
 };
 
 class DataPacket : public MemPacket {

@@ -24,7 +24,6 @@ std::unique_ptr<MemPacket> SimpleMem::requestAccess(
   if (pkt->isRequest() && pkt->isWrite()) {
     return handleWriteRequest(std::move(pkt));
   }
-  pkt->printMetadata();
   std::cerr
       << "[SimEng:SimpleMem] Invalid MemPacket type for "
          "requesting access to memory. Requests to memory should either be of "
@@ -38,14 +37,14 @@ std::unique_ptr<MemPacket> SimpleMem::handleReadRequest(
   size_t size = req->size_;
   uint64_t addr = req->address_;
   std::vector<char> data(memory_.begin() + addr, memory_.begin() + addr + size);
-  return req->makeIntoReadResponse(data);
+  return MemPacket::createReadResponse(addr, size, req->id_, data);
 }
 
 std::unique_ptr<MemPacket> SimpleMem::handleWriteRequest(
     std::unique_ptr<MemPacket> req) {
   uint64_t address = req->address_;
   std::copy(req->data().begin(), req->data().end(), memory_.begin() + address);
-  return req->makeIntoWriteResponse();
+  return MemPacket::createWriteResponse(address, req->size_, req->id_);
 }
 
 void SimpleMem::sendUntimedData(std::vector<char> data, uint64_t addr,
@@ -61,9 +60,10 @@ std::vector<char> SimpleMem::getUntimedData(uint64_t paddr, size_t size) {
 std::unique_ptr<MemPacket> SimpleMem::handleIgnoredRequest(
     std::unique_ptr<MemPacket> pkt) {
   if (pkt->isRead() && pkt->isRequest()) {
-    return pkt->makeIntoReadResponse(std::vector<char>(pkt->size_, '\0'));
+    return MemPacket::createReadResponse(pkt->address_, pkt->size_, pkt->id_,
+                                         std::vector<char>(pkt->size_, '\0'));
   }
-  return pkt->makeIntoWriteResponse();
+  return MemPacket::createWriteResponse(pkt->address_, pkt->size_, pkt->id_);
 }
 
 Port<std::unique_ptr<MemPacket>>* SimpleMem::initPort() {
