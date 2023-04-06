@@ -12,6 +12,7 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request,
                         sendResponseToMemInterface sendResponse) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
+
   sendResponse_ = sendResponse;
   uint64_t paddr = translate_(request->address_, tid_);
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);

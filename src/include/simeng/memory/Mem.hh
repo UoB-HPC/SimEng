@@ -8,7 +8,6 @@
 
 #include "simeng/OS/Process.hh"
 #include "simeng/Port.hh"
-#include "simeng/PubSub.hh"
 #include "simeng/memory/MemPacket.hh"
 
 namespace simeng {
@@ -43,6 +42,8 @@ class Mem {
   virtual std::unique_ptr<MemPacket> handleIgnoredRequest(
       std::unique_ptr<MemPacket> pkt) = 0;
 
+  /** This method is initialises a Port for establishing bidirectional
+   * communication with other classes. */
   virtual Port<std::unique_ptr<MemPacket>>* initPort() = 0;
 };
 

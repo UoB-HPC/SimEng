@@ -36,6 +36,7 @@ class SimpleMem : public Mem {
   std::unique_ptr<MemPacket> handleIgnoredRequest(
       std::unique_ptr<MemPacket> pkt) override;
 
+  /** Function used to initialise a Port used for bidirection communication. */
   Port<std::unique_ptr<MemPacket>>* initPort() override;
 
  private:
@@ -51,6 +52,7 @@ class SimpleMem : public Mem {
   /** This method handles DataPackets of type WRITE_REQUEST. */
   std::unique_ptr<MemPacket> handleWriteRequest(std::unique_ptr<MemPacket> req);
 
+  /** Port used for communication with other classes. */
   Port<std::unique_ptr<MemPacket>>* port_ = nullptr;
 };
 

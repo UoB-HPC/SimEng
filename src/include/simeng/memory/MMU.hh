@@ -3,7 +3,6 @@
 #include <memory>
 
 #include "simeng/Port.hh"
-#include "simeng/PubSub.hh"
 #include "simeng/memory/MemPacket.hh"
 
 typedef std::function<uint64_t(uint64_t, uint64_t)> VAddrTranslator;
@@ -28,6 +27,7 @@ class MMU {
   /** Method to set the TID for the MMU. */
   void setTid(uint64_t tid);
 
+  /** Function used to initialise a Port used for bidirection communication. */
   Port<std::unique_ptr<MemPacket>>* initPort();
 
   ~MMU() { delete port_; }
@@ -40,8 +40,10 @@ class MMU {
   /** TID of the process assosciated with this MMU. */
   uint64_t tid_;
 
+  /** Callback function used to send responses back to memory interface. */
   sendResponseToMemInterface sendResponse_ = nullptr;
 
+  /** Port used for communication with other classes. */
   Port<std::unique_ptr<MemPacket>>* port_ = nullptr;
 };
 

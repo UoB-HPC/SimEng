@@ -46,17 +46,6 @@ std::unique_ptr<MemPacket> MemPacket::createFaultyMemPacket() {
   return std::unique_ptr<MemPacket>(pkt);
 }
 
-/*
-std::unique_ptr<MemPacket> MemPacket::makeIntoReadResponse(
-    std::vector<char> data) {
-  return MemPacket::createReadResponse(address_, size_, id_, data);
-}
-
-std::unique_ptr<MemPacket> MemPacket::makeIntoWriteResponse() {
-  return MemPacket::createWriteResponse(address_, size_, id_);
-}
-*/
-
 DataPacket::DataPacket(uint64_t address, uint64_t size, MemPacketType type,
                        uint64_t reqId, std::vector<char> data)
     : MemPacket(address, size, type, reqId) {
