@@ -17,7 +17,7 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request,
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
-    port_->send(MemPacket::createFaultyMemPacket());
+    sendResponse_(MemPacket::createFaultyMemPacket());
     return;
   } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
     request->setIgnored();
