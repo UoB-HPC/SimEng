@@ -2,6 +2,7 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <tuple>
 
@@ -102,8 +103,13 @@ int main(int argc, char** argv) {
   std::shared_ptr<simeng::memory::MMU> mmu =
       std::make_shared<simeng::memory::MMU>(fn, 0);
 
-  mmu->subscribe(memory);
-  memory->subscribe(mmu);
+  simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>* connection =
+      new simeng::PortMediator<std::unique_ptr<simeng::memory::MemPacket>>();
+
+  auto prt1 = mmu->initPort();
+  auto prt2 = memory->initPort();
+
+  connection->connect(prt1, prt2);
 
   // Create the instance of the core to be simulated
   std::unique_ptr<simeng::CoreInstance> coreInstance =
@@ -153,6 +159,8 @@ int main(int argc, char** argv) {
   std::cout << "[SimEng] Finished " << iterations << " ticks in " << duration
             << "ms (" << std::round(khz) << " kHz, " << std::setprecision(2)
             << mips << " MIPS)" << std::endl;
+
+  delete connection;
 
 // Print build metadata and core statistics in YAML format
 // to facilitate parsing. Print "YAML-SEQ" to indicate beginning

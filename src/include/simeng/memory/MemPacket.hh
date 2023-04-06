@@ -1,10 +1,15 @@
+#pragma once
+
 #include <bitset>
 #include <cstdint>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 namespace simeng {
 namespace memory {
+
+class Mem;
 
 enum MemPacketType : uint8_t {
   READ_REQUEST = 0b11000000,
@@ -20,6 +25,8 @@ static constexpr uint8_t IgnoreMask = 0b00010000;
 static constexpr uint8_t PayloadMask = 0b00001000;
 
 class MemPacket {
+  friend class SimpleMem;
+
  public:
   /** The address at which the memory is to be accessed. */
   uint64_t address_ = 0;
@@ -31,16 +38,6 @@ class MemPacket {
    * requests it is 0 as the memory interface doesn't specify an id for write
    * requests. */
   uint64_t id_ = 0;
-
-  /** Method which converts a DataPacket of type READ_REQUEST to READ_RESPONSE.
-   * Faulty Packet is returned if this method is called on a DataPacket which
-   * does not have a type of READ_REQUEST. */
-  virtual MemPacket* makeIntoReadResponse(std::vector<char> data);
-
-  /** Method which converts a DataPacket of type WRITE_REQUEST to
-   * WRITE_RESPONSE. Faulty Packet is returned if this method is called on a
-   * DataPacket which does not have a type of WRITE_REQUEST. */
-  virtual MemPacket* makeIntoWriteResponse();
 
   inline bool isRequest() const { return metadata_ & PacketTypeMask; }
 
@@ -67,13 +64,30 @@ class MemPacket {
     std::exit(1);
   }
 
-  static MemPacket* createReadRequest(uint64_t address, uint64_t size,
-                                      uint64_t reqId);
+  void printMetadata() {
+    std::cout << "Req metadata: " << std::bitset<8>(metadata_) << std::endl;
+  }
 
-  static MemPacket* createWriteRequest(uint64_t address, uint64_t size,
-                                       uint64_t reqId, std::vector<char> data);
+  static std::unique_ptr<MemPacket> createReadRequest(uint64_t address,
+                                                      uint64_t size,
+                                                      uint64_t reqId);
 
-  static MemPacket* createFaultyMemPacket();
+  static std::unique_ptr<MemPacket> createWriteRequest(uint64_t address,
+                                                       uint64_t size,
+                                                       uint64_t reqId,
+                                                       std::vector<char> data);
+
+  static std::unique_ptr<MemPacket> createFaultyMemPacket();
+
+  /** Method which converts a DataPacket of type READ_REQUEST to READ_RESPONSE.
+   * Faulty Packet is returned if this method is called on a DataPacket which
+   * does not have a type of READ_REQUEST. */
+  std::unique_ptr<MemPacket> makeIntoReadResponse(std::vector<char> data);
+
+  /** Method which converts a DataPacket of type WRITE_REQUEST to
+   * WRITE_RESPONSE. Faulty Packet is returned if this method is called on a
+   * DataPacket which does not have a type of WRITE_REQUEST. */
+  std::unique_ptr<MemPacket> makeIntoWriteResponse();
 
  protected:
   uint8_t metadata_ = 0;
@@ -84,11 +98,14 @@ class MemPacket {
   MemPacket(uint64_t address, uint64_t size, MemPacketType type,
             uint64_t reqId);
 
-  static MemPacket* createReadResponse(uint64_t address, uint64_t size,
-                                       uint64_t reqId, std::vector<char> data);
+  static std::unique_ptr<MemPacket> createReadResponse(uint64_t address,
+                                                       uint64_t size,
+                                                       uint64_t reqId,
+                                                       std::vector<char> data);
 
-  static MemPacket* createWriteResponse(uint64_t address, uint64_t size,
-                                        uint64_t reqId);
+  static std::unique_ptr<MemPacket> createWriteResponse(uint64_t address,
+                                                        uint64_t size,
+                                                        uint64_t reqId);
 };
 
 class DataPacket : public MemPacket {
@@ -96,8 +113,6 @@ class DataPacket : public MemPacket {
 
  public:
   std::vector<char>& data() override { return data_; }
-  MemPacket* makeIntoWriteResponse() override;
-  MemPacket* makeIntoReadResponse(std::vector<char> data) override;
 
  private:
   DataPacket(uint64_t address, uint64_t size, MemPacketType type,

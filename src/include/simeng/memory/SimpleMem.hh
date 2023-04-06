@@ -16,7 +16,7 @@ class SimpleMem : public Mem {
  public:
   SimpleMem(size_t bytes);
 
-  virtual ~SimpleMem() override{};
+  virtual ~SimpleMem() override { delete port_; };
 
   /** This method requests access to memory for both read and write requests. */
   std::unique_ptr<MemPacket> requestAccess(
@@ -36,12 +36,7 @@ class SimpleMem : public Mem {
   std::unique_ptr<MemPacket> handleIgnoredRequest(
       std::unique_ptr<MemPacket> pkt) override;
 
-  void subscribe(
-      std::shared_ptr<SubscriberInterface<std::unique_ptr<MemPacket>>> data)
-      override;
-  void notify(std::unique_ptr<MemPacket> data) override;
-
-  void update(std::unique_ptr<MemPacket> packet) override;
+  Port<std::unique_ptr<MemPacket>>* initPort() override;
 
  private:
   /** Vector which represents the internal simulation memory array. */
@@ -55,6 +50,8 @@ class SimpleMem : public Mem {
 
   /** This method handles DataPackets of type WRITE_REQUEST. */
   std::unique_ptr<MemPacket> handleWriteRequest(std::unique_ptr<MemPacket> req);
+
+  Port<std::unique_ptr<MemPacket>>* port_ = nullptr;
 };
 
 }  // namespace memory

@@ -23,10 +23,9 @@ void FlatMemoryInterface::requestRead(const MemoryAccessTarget& target,
          requestId});
   };
 
-  mmu_->bufferRequest(
-      std::unique_ptr<memory::MemPacket>(memory::MemPacket::createReadRequest(
-          target.address, target.size, requestId)),
-      fn);
+  mmu_->bufferRequest(memory::MemPacket::createReadRequest(
+                          target.address, target.size, requestId),
+                      fn);
 }
 
 void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
@@ -37,8 +36,7 @@ void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
   // callback because they don't contain any information relevant to the
   // simulation.
   mmu_->bufferRequest(
-      std::unique_ptr<memory::MemPacket>(memory::MemPacket::createWriteRequest(
-          target.address, target.size, 0, dt)),
+      memory::MemPacket::createWriteRequest(target.address, target.size, 0, dt),
       nullptr);
 }
 

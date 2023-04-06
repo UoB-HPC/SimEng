@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "simeng/OS/Process.hh"
+#include "simeng/Port.hh"
 #include "simeng/PubSub.hh"
 #include "simeng/memory/MemPacket.hh"
 
@@ -19,8 +20,7 @@ namespace memory {
  * implementation but unifies both instruction and data memory. Previously,
  * multiple copies of process memory were made for instruction and data
  * memory interfaces. */
-class Mem : public SubscriberInterface<std::unique_ptr<MemPacket>>,
-            public SoloPublisher<std::unique_ptr<MemPacket>> {
+class Mem {
  public:
   virtual ~Mem() = default;
 
@@ -43,11 +43,7 @@ class Mem : public SubscriberInterface<std::unique_ptr<MemPacket>>,
   virtual std::unique_ptr<MemPacket> handleIgnoredRequest(
       std::unique_ptr<MemPacket> pkt) = 0;
 
-  virtual void subscribe(
-      std::shared_ptr<SubscriberInterface<std::unique_ptr<MemPacket>>>
-          data) = 0;
-  virtual void notify(std::unique_ptr<MemPacket> data) = 0;
-  virtual void update(std::unique_ptr<MemPacket> packet) = 0;
+  virtual Port<std::unique_ptr<MemPacket>>* initPort() = 0;
 };
 
 }  // namespace memory

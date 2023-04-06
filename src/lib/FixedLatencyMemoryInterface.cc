@@ -29,9 +29,8 @@ void FixedLatencyMemoryInterface::tick() {
       // Responses to write requests are ignored by passing in a nullptr
       // callback because they don't contain any information relevant to the
       // simulation.
-      mmu_->bufferRequest(std::unique_ptr<memory::MemPacket>(
-                              memory::MemPacket::createWriteRequest(
-                                  target.address, target.size, requestId, dt)),
+      mmu_->bufferRequest(memory::MemPacket::createWriteRequest(
+                              target.address, target.size, requestId, dt),
                           nullptr);
     } else {
       // Instantiate a callback function which will be invoked with the response
@@ -46,9 +45,8 @@ void FixedLatencyMemoryInterface::tick() {
             {target, RegisterValue(packet->data().data(), packet->size_),
              requestId});
       };
-      mmu_->bufferRequest(std::unique_ptr<memory::MemPacket>(
-                              memory::MemPacket::createReadRequest(
-                                  target.address, target.size, requestId)),
+      mmu_->bufferRequest(memory::MemPacket::createReadRequest(
+                              target.address, target.size, requestId),
                           fn);
     }
 
