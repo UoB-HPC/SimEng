@@ -63,12 +63,37 @@ void MMU::requestWrite(const MemoryAccessTarget& target,
   pendingRequests_.push({target, data, tickCounter_ + latency_});
 }
 
+void MMU::requestInstrRead(const MemoryAccessTarget& target,
+                           uint64_t requestId) {
+  // Instantiate a callback function which will be invoked with the response
+  // to a read request.
+  auto fn = [this, target, requestId](memory::DataPacket dpkt) -> void {
+    if (dpkt.inFault_) {
+      completedInstrReads_.push_back({target, RegisterValue(), requestId});
+      return;
+    }
+    completedInstrReads_.push_back(
+        {target, RegisterValue(dpkt.data_.data(), dpkt.size_), requestId});
+  };
+
+  bufferRequest(memory::DataPacket(target.address, target.size,
+                                   memory::READ_REQUEST, requestId),
+                fn);
+}
+
 const span<MemoryReadResult> MMU::getCompletedReads() const {
   return {const_cast<MemoryReadResult*>(completedReads_.data()),
           completedReads_.size()};
 }
 
+const span<MemoryReadResult> MMU::getCompletedInstrReads() const {
+  return {const_cast<MemoryReadResult*>(completedInstrReads_.data()),
+          completedInstrReads_.size()};
+}
+
 void MMU::clearCompletedReads() { completedReads_.clear(); }
+
+void MMU::clearCompletedIntrReads() { completedInstrReads_.clear(); }
 
 bool MMU::hasPendingRequests() const { return !pendingRequests_.empty(); }
 
@@ -94,31 +119,6 @@ void MMU::bufferRequest(DataPacket request,
 }
 
 void MMU::setTid(uint64_t tid) { tid_ = tid; }
-
-void MMU::requestInstrRead(const MemoryAccessTarget& target,
-                           uint64_t requestId) {
-  // Instantiate a callback function which will be invoked with the response
-  // to a read request.
-  auto fn = [this, target, requestId](memory::DataPacket dpkt) -> void {
-    if (dpkt.inFault_) {
-      completedInstrReads_.push_back({target, RegisterValue(), requestId});
-      return;
-    }
-    completedInstrReads_.push_back(
-        {target, RegisterValue(dpkt.data_.data(), dpkt.size_), requestId});
-  };
-
-  bufferRequest(memory::DataPacket(target.address, target.size,
-                                   memory::READ_REQUEST, requestId),
-                fn);
-}
-
-const span<MemoryReadResult> MMU::getCompletedInstrReads() const {
-  return {const_cast<MemoryReadResult*>(completedInstrReads_.data()),
-          completedInstrReads_.size()};
-}
-
-void MMU::clearCompletedIntrReads() { completedInstrReads_.clear(); }
 
 }  // namespace memory
 }  // namespace simeng
