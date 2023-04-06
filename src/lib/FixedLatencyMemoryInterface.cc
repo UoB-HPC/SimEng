@@ -31,7 +31,7 @@ void FixedLatencyMemoryInterface::tick() {
       // simulation.
       mmu_->bufferRequest(memory::MemPacket::createWriteRequest(
                               target.address, target.size, requestId, dt),
-                          nullptr);
+                          [](std::unique_ptr<memory::MemPacket> packet) {});
     } else {
       // Instantiate a callback function which will be invoked with the response
       // to a read request.

@@ -17,7 +17,7 @@ void MMU::bufferRequest(std::unique_ptr<MemPacket> request,
   uint64_t faultCode = simeng::OS::masks::faults::getFaultCode(paddr);
 
   if (faultCode == simeng::OS::masks::faults::pagetable::DATA_ABORT) {
-    this->sendResponse_(MemPacket::createFaultyMemPacket());
+    sendResponse(MemPacket::createFaultyMemPacket());
     return;
   } else if (faultCode == simeng::OS::masks::faults::pagetable::IGNORED) {
     request->setIgnored();
@@ -32,9 +32,7 @@ void MMU::setTid(uint64_t tid) { tid_ = tid; }
 Port<std::unique_ptr<MemPacket>>* MMU::initPort() {
   port_ = new Port<std::unique_ptr<MemPacket>>();
   auto fn = [this](std::unique_ptr<MemPacket> packet) -> void {
-    if (this->sendResponse_ != nullptr) {
-      this->sendResponse_(std::move(packet));
-    }
+    this->sendResponse_(std::move(packet));
     return;
   };
   port_->registerReceiver(fn);

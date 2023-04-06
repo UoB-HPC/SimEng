@@ -37,7 +37,7 @@ void FlatMemoryInterface::requestWrite(const MemoryAccessTarget& target,
   // simulation.
   mmu_->bufferRequest(
       memory::MemPacket::createWriteRequest(target.address, target.size, 0, dt),
-      nullptr);
+      [](std::unique_ptr<memory::MemPacket> packet) {});
 }
 
 const span<MemoryReadResult> FlatMemoryInterface::getCompletedReads() const {
