@@ -58,9 +58,8 @@ class MMU {
   /** Returns true if there are any oustanding memory requests in-flight. */
   bool hasPendingRequests() const;
 
-  /** Method used to buffer requests from the memory interface to memory. */
-  void bufferRequest(DataPacket request,
-                     sendResponseToMemInterface sendResponse);
+  /** Method used to buffer requests to memory. */
+  DataPacket bufferRequest(DataPacket request);
 
   /** Method to set the TID for the MMU. */
   void setTid(uint64_t tid);

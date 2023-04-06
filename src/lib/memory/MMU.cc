@@ -25,28 +25,23 @@ void MMU::tick() {
     if (request.write) {
       const char* wdata = request.data.getAsVector<char>();
       std::vector<char> dt(wdata, wdata + target.size);
-      // Responses to write requests are ignored by passing in a nullptr
-      // callback because they don't contain any information relevant to the
-      // simulation.
+      // Responses to write requests are ignored because they don't contain any
+      // information relevant to the simulation.
       bufferRequest(memory::DataPacket(target.address, target.size,
-                                       memory::WRITE_REQUEST, requestId, dt),
-                    nullptr);
+                                       memory::WRITE_REQUEST, requestId, dt));
     } else {
-      // Instantiate a callback function which will be invoked with the response
-      // to a read request.
-      auto fn = [this, target,
-                 requestId](struct memory::DataPacket packet) -> void {
-        if (packet.inFault_) {
-          completedReads_.push_back({target, RegisterValue(), requestId});
-          return;
-        }
-        completedReads_.push_back(
-            {target, RegisterValue(packet.data_.data(), packet.size_),
-             requestId});
-      };
-      bufferRequest(memory::DataPacket(target.address, target.size,
-                                       memory::READ_REQUEST, requestId),
-                    fn);
+      DataPacket req(target.address, target.size, memory::READ_REQUEST,
+                     requestId);
+      DataPacket resp = bufferRequest(req);
+
+      RegisterValue retData;
+      if (resp.inFault_) {
+        retData = RegisterValue();
+      } else {
+        retData = RegisterValue(resp.data_.data(), resp.size_);
+      }
+
+      completedReads_.push_back({target, retData, requestId});
     }
 
     // Remove the request from the queue
@@ -65,20 +60,17 @@ void MMU::requestWrite(const MemoryAccessTarget& target,
 
 void MMU::requestInstrRead(const MemoryAccessTarget& target,
                            uint64_t requestId) {
-  // Instantiate a callback function which will be invoked with the response
-  // to a read request.
-  auto fn = [this, target, requestId](memory::DataPacket dpkt) -> void {
-    if (dpkt.inFault_) {
-      completedInstrReads_.push_back({target, RegisterValue(), requestId});
-      return;
-    }
-    completedInstrReads_.push_back(
-        {target, RegisterValue(dpkt.data_.data(), dpkt.size_), requestId});
-  };
+  DataPacket req(target.address, target.size, memory::READ_REQUEST, requestId);
+  DataPacket resp = bufferRequest(req);
 
-  bufferRequest(memory::DataPacket(target.address, target.size,
-                                   memory::READ_REQUEST, requestId),
-                fn);
+  RegisterValue retData;
+  if (resp.inFault_) {
+    retData = RegisterValue();
+  } else {
+    retData = RegisterValue(resp.data_.data(), resp.size_);
+  }
+
+  completedInstrReads_.push_back({target, retData, requestId});
 }
 
 const span<MemoryReadResult> MMU::getCompletedReads() const {
@@ -97,8 +89,7 @@ void MMU::clearCompletedIntrReads() { completedInstrReads_.clear(); }
 
 bool MMU::hasPendingRequests() const { return !pendingRequests_.empty(); }
 
-void MMU::bufferRequest(DataPacket request,
-                        sendResponseToMemInterface sendResponse) {
+DataPacket MMU::bufferRequest(DataPacket request) {
   // Since we don't have a TLB yet, treat every memory request as a TLB miss and
   // consult the page table.
   uint64_t paddr = translate_(request.address_, tid_);
@@ -113,9 +104,7 @@ void MMU::bufferRequest(DataPacket request,
     request.address_ = paddr;
     pkt = memory_->requestAccess(request);
   }
-  if (!(sendResponse == nullptr)) {
-    sendResponse(pkt);
-  }
+  return pkt;
 }
 
 void MMU::setTid(uint64_t tid) { tid_ = tid; }
