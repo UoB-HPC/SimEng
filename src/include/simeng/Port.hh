@@ -26,14 +26,14 @@ struct Port {
  public:
   const uint64_t id_;
 
-  void connect(PortMediator<T>* mediator, uint8_t order) {
+  void inline connect(PortMediator<T>* mediator, uint8_t order) {
     conn_ = mediator;
     order_ = order;
   };
 
-  void registerReceiver(InFnType fn) { reciever_ = fn; };
+  void inline registerReceiver(InFnType fn) { reciever_ = fn; };
 
-  void send(T data) {
+  void inline send(T data) {
     if constexpr (is_unique_ptr<T>::value) {
       conn_->send(std::move(data), order_);
     } else {
@@ -41,7 +41,7 @@ struct Port {
     }
   }
 
-  void recieve(T data) {
+  void inline recieve(T data) {
     if constexpr (is_unique_ptr<T>::value) {
       reciever_(std::move(data));
     } else {
@@ -61,19 +61,19 @@ struct Port {
 
 template <typename T>
 class PortMediator {
-  std::array<Port<T>*, 2> ports_;
+  // std::array<Port<T>*, 2> ports_;
   std::array<Port<T>*, 2> dests_;
 
  public:
   void connect(Port<T>* p1, Port<T>* p2) {
     p1->connect(this, 0);
     p2->connect(this, 1);
-    ports_[0] = p1;
-    ports_[1] = p2;
+    // ports_[0] = p1;
+    // ports_[1] = p2;
     dests_[0] = p2;
     dests_[1] = p1;
   }
-  void send(T data, uint64_t port_order) {
+  void inline send(T data, uint64_t port_order) {
     Port<T>* dest = dests_[port_order];
     if constexpr (is_unique_ptr<T>::value) {
       dest->recieve(std::move(data));
