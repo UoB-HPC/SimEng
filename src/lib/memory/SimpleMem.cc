@@ -16,19 +16,20 @@ size_t SimpleMem::getMemorySize() { return memSize_; }
 void SimpleMem::requestAccess(std::unique_ptr<MemPacket> pkt) {
   if (pkt->ignore()) {
     port_->send(handleIgnoredRequest(std::move(pkt)));
-  }
-  if (pkt->isRequest() && pkt->isRead()) {
+  } else if (pkt->isRequest() && pkt->isRead()) {
     port_->send(handleReadRequest(std::move(pkt)));
-  }
-  if (pkt->isRequest() && pkt->isWrite()) {
+    return;
+  } else if (pkt->isRequest() && pkt->isWrite()) {
     port_->send(handleWriteRequest(std::move(pkt)));
+    return;
+  } else {
+    std::cerr << "[SimEng:SimpleMem] Invalid MemPacket type for "
+                 "requesting access to memory. Requests to memory should "
+                 "either be of "
+                 "type READ_REQUEST or WRITE_REQUEST."
+              << std::endl;
+    port_->send(MemPacket::createFaultyMemPacket());
   }
-  std::cerr
-      << "[SimEng:SimpleMem] Invalid MemPacket type for "
-         "requesting access to memory. Requests to memory should either be of "
-         "type READ_REQUEST or WRITE_REQUEST."
-      << std::endl;
-  port_->send(MemPacket::createFaultyMemPacket());
 }
 
 std::unique_ptr<MemPacket> SimpleMem::handleReadRequest(
