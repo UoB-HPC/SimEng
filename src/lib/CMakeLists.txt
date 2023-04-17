@@ -25,6 +25,7 @@ set(SIMENG_SOURCES
     memory/SimpleMem.cc
     memory/MemPacket.cc
     memory/MMU.cc
+    memory/FixedLatencyMemory.cc
     models/emulation/Core.cc
     models/inorder/Core.cc
     models/outoforder/Core.cc

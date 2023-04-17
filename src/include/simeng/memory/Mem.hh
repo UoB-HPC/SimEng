@@ -25,8 +25,7 @@ class Mem {
 
   /** This method requests access to simulation memory for read and write
    * requests. */
-  virtual std::unique_ptr<MemPacket> requestAccess(
-      std::unique_ptr<MemPacket> pkt) = 0;
+  virtual void requestAccess(std::unique_ptr<MemPacket> pkt) = 0;
 
   /** This method returns the size of memory. */
   virtual size_t getMemorySize() = 0;
@@ -45,6 +44,9 @@ class Mem {
   /** This method is initialises a Port for establishing bidirectional
    * communication with other classes. */
   virtual Port<std::unique_ptr<MemPacket>>* initPort() = 0;
+
+  /** Method to tick the memory. */
+  virtual void tick() = 0;
 };
 
 }  // namespace memory

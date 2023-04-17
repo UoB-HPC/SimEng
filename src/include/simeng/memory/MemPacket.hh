@@ -68,13 +68,8 @@ class MemPacket {
   /** Function used to mark a MemPacket as faulty. */
   inline void setFault() { metadata_ = metadata_ | FaultMask; }
 
-  /** Virtual function used to return the payload of a MemPacket. */
-  virtual std::vector<char>& data() {
-    std::cerr << "[SimEng:MemPacket] MemPacket cannot contain a payload, "
-                 "please use DataPacket instead."
-              << std::endl;
-    std::exit(1);
-  }
+  /** Function to return the data assosciated with a MemPacket. */
+  std::vector<char>& data() { return data_; }
 
   /** Function used to print the metadata assosciated with a MemPacket. */
   void printMetadata() {
@@ -93,19 +88,14 @@ class MemPacket {
                                                        uint64_t reqId,
                                                        std::vector<char> data);
 
-  /** Static function used to create a response to a read request. */
-  static std::unique_ptr<MemPacket> createReadResponse(uint64_t address,
-                                                       uint64_t size,
-                                                       uint64_t reqId,
-                                                       std::vector<char> data);
-
-  /** Static function used to create a response to a write request. */
-  static std::unique_ptr<MemPacket> createWriteResponse(uint64_t address,
-                                                        uint64_t size,
-                                                        uint64_t reqId);
-
   /** Static function used to create a faulty MemPacket. */
   static std::unique_ptr<MemPacket> createFaultyMemPacket();
+
+  /** Function to change a Read MemPacket into a Response. */
+  void turnIntoReadResponse(std::vector<char> data);
+
+  /** Function to change a Write MemPacket into a Response. */
+  void turnIntoWriteResponse();
 
  protected:
   /** Metadata data associated with a MemPacket.
@@ -117,33 +107,19 @@ class MemPacket {
    * 5th bit indicates whether a MemPacket contains a payload (1) or not (0). */
   uint8_t metadata_ = 0;
 
+  /** Data assosciate with a MemPacket. */
+  std::vector<char> data_;
+
   /** Default constructor of a MemPacket. */
   MemPacket() {}
 
-  /** Constructor for DataPackets which do not hold any data. */
+  /** Constructor for MemPackets which do not hold any data. */
   MemPacket(uint64_t address, uint64_t size, MemPacketType type,
             uint64_t reqId);
-};
 
-/** A DataPacket class inherits the MemPacket class and represents a MemPacket
- * which contains some data. A DataPacket is used represent write requests and
- * read responses as the both of these packet types contain some data. */
-class DataPacket : public MemPacket {
-  // MemPacket is declared as a friend class because the creational static
-  // function is MemPacket require access to the DataPacket constructor.
-  friend class MemPacket;
-
- public:
-  /** Function used to print the metadata assosciated with a DataPacket. */
-  std::vector<char>& data() override { return data_; }
-
- private:
-  /** Constructor of a DataPacket. */
-  DataPacket(uint64_t address, uint64_t size, MemPacketType type,
-             uint64_t reqId, std::vector<char> data);
-
-  /** Payload vector used to store data assosciate with a DataPacket. */
-  std::vector<char> data_;
+  /** Constructor for MemPackets which hold any data. */
+  MemPacket(uint64_t address, uint64_t size, MemPacketType type, uint64_t reqId,
+            std::vector<char> data);
 };
 
 }  // namespace memory
