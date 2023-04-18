@@ -28,16 +28,16 @@ void FixedLatencyMemory::tick() {
     auto req = std::move(reqQueue_.front().req);
     if (req->isRequest() && req->isRead()) {
       port_->send(handleReadRequest(std::move(req)));
-    }
-    if (req->isRequest() && req->isWrite()) {
+    } else if (req->isRequest() && req->isWrite()) {
       port_->send(handleWriteRequest(std::move(req)));
+    } else {
+      std::cerr << "[SimEng:FixedLatencyMemory] Invalid MemPacket type for "
+                   "requesting access to memory. Requests to memory should "
+                   "either be of "
+                   "type READ_REQUEST or WRITE_REQUEST."
+                << std::endl;
+      port_->send(MemPacket::createFaultyMemPacket());
     }
-    std::cerr << "[SimEng:FixedLatencyMemory] Invalid MemPacket type for "
-                 "requesting access to memory. Requests to memory should "
-                 "either be of "
-                 "type READ_REQUEST or WRITE_REQUEST."
-              << std::endl;
-    port_->send(MemPacket::createFaultyMemPacket());
     reqQueue_.pop();
   }
   ticks_++;
