@@ -45,68 +45,68 @@ LSQ-L1-Interface:
 Ports:
   0:
     Portname: INT1
-    Instruction-Support:
+    Instruction-Group-Support:
       - INT_SIMPLE
       - BRANCH
   1:
     Portname: INT2
-    Instruction-Support:
+    Instruction-Group-Support:
       - INT_SIMPLE
       - BRANCH
   2:
     Portname: INT3
-    Instruction-Support:
+    Instruction-Group-Support:
       - INT_SIMPLE
   3:
     Portname: INT4
-    Instruction-Support:
+    Instruction-Group-Support:
       - INT_SIMPLE
   4:
     Portname: INT5
-    Instruction-Support:
+    Instruction-Group-Support:
       - INT_SIMPLE
       - INT_MUL
       - INT_DIV_OR_SQRT
   5:
     Portname: INT6
-    Instruction-Support:
+    Instruction-Group-Support:
       - INT_SIMPLE
       - INT_MUL
   6:
     Portname: LS1
-    Instruction-Support:
+    Instruction-Group-Support:
       - STORE
   7:
     Portname: LS2
-    Instruction-Support:
+    Instruction-Group-Support:
       - LOAD
       - STORE
   8:
     Portname: LS3
-    Instruction-Support:
+    Instruction-Group-Support:
       - LOAD
   9:
     Portname: LS4
-    Instruction-Support:
+    Instruction-Group-Support:
       - LOAD
   10:
     Portname: FP_SIMD1
-    Instruction-Support:
+    Instruction-Group-Support:
       - FP
       - VECTOR
   11:
     Portname: FP_SIMD2
-    Instruction-Support:
+    Instruction-Group-Support:
       - FP
       - VECTOR
   12:
     Portname: FP_SIMD3
-    Instruction-Support:
+    Instruction-Group-Support:
       - FP
       - VECTOR
   13:
     Portname: FP_SIMD4
-    Instruction-Support:
+    Instruction-Group-Support:
       - FP
       - VECTOR
 Reservation-Stations:

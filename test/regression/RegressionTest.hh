@@ -49,14 +49,14 @@ enum CoreType { EMULATION, INORDER, OUTOFORDER };
  * execution has completed.
  */
 class RegressionTest
-    : public ::testing::TestWithParam<std::tuple<CoreType, YAML::Node>> {
+    : public ::testing::TestWithParam<std::tuple<CoreType, std::string>> {
  protected:
   virtual ~RegressionTest();
 
   virtual void TearDown() override;
 
   /** Generate a default YAML-formatted configuration. */
-  virtual YAML::Node generateConfig() const = 0;
+  virtual void generateConfig() const = 0;
 
   /** Run the assembly in `source`, building it for the target `triple` and ISA
    * extensions. */
@@ -64,7 +64,7 @@ class RegressionTest
 
   /** Create an ISA instance from a kernel. */
   virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      simeng::kernel::Linux& kernel, YAML::Node config) const = 0;
+      simeng::kernel::Linux& kernel) const = 0;
 
   /** Create a port allocator for an out-of-order core model. */
   virtual std::unique_ptr<simeng::pipeline::PortAllocator> createPortAllocator()

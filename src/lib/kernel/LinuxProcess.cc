@@ -17,9 +17,11 @@ uint64_t alignToBoundary(uint64_t value, uint64_t boundary) {
 }
 
 LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
-                           YAML::Node config)
-    : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
-      HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()),
+                           ryml::Tree config)
+    : STACK_SIZE(
+          SimInfo::getValue<uint64_t>(config["Process-Image"]["Stack-Size"])),
+      HEAP_SIZE(
+          SimInfo::getValue<uint64_t>(config["Process-Image"]["Heap-Size"])),
       commandLine_(commandLine) {
   // Parse ELF file
   assert(commandLine.size() > 0);
@@ -62,9 +64,11 @@ LinuxProcess::LinuxProcess(const std::vector<std::string>& commandLine,
   processImage_ = std::shared_ptr<char>(unwrappedProcImgPtr, free);
 }
 
-LinuxProcess::LinuxProcess(span<char> instructions, YAML::Node config)
-    : STACK_SIZE(config["Process-Image"]["Stack-Size"].as<uint64_t>()),
-      HEAP_SIZE(config["Process-Image"]["Heap-Size"].as<uint64_t>()) {
+LinuxProcess::LinuxProcess(span<char> instructions, ryml::Tree config)
+    : STACK_SIZE(
+          SimInfo::getValue<uint64_t>(config["Process-Image"]["Stack-Size"])),
+      HEAP_SIZE(
+          SimInfo::getValue<uint64_t>(config["Process-Image"]["Heap-Size"])) {
   // Leave program command string empty
   commandLine_.push_back("\0");
 

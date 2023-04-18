@@ -3,7 +3,6 @@
 #include <string>
 
 #include "simeng/ModelConfig.hh"
-#include "yaml-cpp/yaml.h"
 
 #define DEFAULT_STR "Default"
 

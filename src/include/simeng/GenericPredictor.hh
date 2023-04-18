@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "simeng/BranchPredictor.hh"
-#include "yaml-cpp/yaml.h"
+#include "simeng/SimInfo.hh"
 
 namespace simeng {
 
@@ -23,7 +23,7 @@ namespace simeng {
 class GenericPredictor : public BranchPredictor {
  public:
   /** Initialise predictor models. */
-  GenericPredictor(YAML::Node config);
+  GenericPredictor();
   ~GenericPredictor();
 
   /** Generate a branch prediction for the supplied instruction address, a
@@ -46,7 +46,7 @@ class GenericPredictor : public BranchPredictor {
 
   /** A 2^bits length vector of pairs containing a satCntBits_-bit saturating
    * counter and a branch target. */
-  std::vector<std::pair<uint8_t, uint64_t>> btb_;
+  std::vector<std::pair<uint16_t, uint64_t>> btb_;
 
   /** The previous BTB index calculated for an address. */
   std::map<uint64_t, uint64_t> btbHistory_;

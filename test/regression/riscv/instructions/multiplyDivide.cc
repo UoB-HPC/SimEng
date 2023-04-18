@@ -408,8 +408,7 @@ TEST_P(InstMulDiv, remuw) {
 }
 
 INSTANTIATE_TEST_SUITE_P(RISCV, InstMulDiv,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

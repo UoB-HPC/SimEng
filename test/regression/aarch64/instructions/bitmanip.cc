@@ -291,8 +291,7 @@ TEST_P(InstBitmanip, ubfm) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstBitmanip,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

@@ -3,7 +3,7 @@
 #include <memory>
 
 #include "simeng/Elf.hh"
-#include "yaml-cpp/yaml.h"
+#include "simeng/SimInfo.hh"
 
 namespace simeng {
 namespace kernel {
@@ -63,11 +63,13 @@ class LinuxProcess {
   /** Construct a Linux process from a vector of command-line arguments.
    *
    * The first argument is a path to an executable ELF file. */
-  LinuxProcess(const std::vector<std::string>& commandLine, YAML::Node config);
+  LinuxProcess(const std::vector<std::string>& commandLine,
+               ryml::Tree config = SimInfo::getConfig());
 
   /** Construct a Linux process from region of instruction memory, with the
    * entry point fixed at 0. */
-  LinuxProcess(span<char> instructions, YAML::Node config);
+  LinuxProcess(span<char> instructions,
+               ryml::Tree config = SimInfo::getConfig());
 
   ~LinuxProcess();
 

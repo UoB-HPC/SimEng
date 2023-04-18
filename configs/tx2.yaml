@@ -50,34 +50,34 @@ LSQ-L1-Interface:
 Ports:
   0:
     Portname: Port 0
-    Instruction-Support:
+    Instruction-Group-Support:
     - INT_SIMPLE
     - INT_MUL
     - FP
   1:
     Portname: Port 1
-    Instruction-Support:
+    Instruction-Group-Support:
     - INT
     - FP
   2:
     Portname: Port 2
-    Instruction-Support:
+    Instruction-Group-Support:
     - INT_SIMPLE
     - INT_MUL
     - BRANCH
   3:
     Portname: Port 4
-    Instruction-Support:
+    Instruction-Group-Support:
     - LOAD
     - STORE_ADDRESS
   4:
     Portname: Port 5
-    Instruction-Support:
+    Instruction-Group-Support:
     - LOAD
     - STORE_ADDRESS
   5:
     Portname: Port 3
-    Instruction-Support:
+    Instruction-Group-Support:
     - STORE_DATA
 Reservation-Stations:
   0:

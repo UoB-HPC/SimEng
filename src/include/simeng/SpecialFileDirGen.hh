@@ -3,15 +3,15 @@
 #include <fstream>
 #include <string>
 
+#include "simeng/SimInfo.hh"
 #include "simeng/version.hh"
-#include "yaml-cpp/yaml.h"
 
 namespace simeng {
 class SpecialFileDirGen {
  public:
   /** Construct a SpecialFileDirGen class by reading in the YAML file and
    * running it through checks and formatting. */
-  SpecialFileDirGen(YAML::Node config);
+  SpecialFileDirGen();
 
   /** Removes all files inside the '/src.lib/kernel/specialFiles' directory. */
   void RemoveExistingSFDir();

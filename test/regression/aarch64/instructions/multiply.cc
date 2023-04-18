@@ -96,8 +96,7 @@ TEST_P(InstMul, umaddl) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AArch64, InstMul,
-                         ::testing::Values(std::make_tuple(EMULATION,
-                                                           YAML::Load("{}"))),
+                         ::testing::Values(std::make_tuple(EMULATION, "{}")),
                          paramToString);
 
 }  // namespace

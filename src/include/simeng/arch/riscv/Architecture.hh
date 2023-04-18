@@ -30,7 +30,7 @@ typedef enum riscv_sysreg {
 /* A basic RISC-V implementation of the `Architecture` interface. */
 class Architecture : public arch::Architecture {
  public:
-  Architecture(kernel::Linux& kernel, YAML::Node config);
+  Architecture(kernel::Linux& kernel);
   ~Architecture();
   /** Pre-decode instruction memory into a macro-op of `Instruction`
    * instances. Returns the number of bytes consumed to produce it (always 4),
@@ -65,13 +65,12 @@ class Architecture : public arch::Architecture {
 
   /** Returns the physical register structure as defined within the config file
    */
-  std::vector<RegisterFileStructure> getConfigPhysicalRegisterStructure(
-      YAML::Node config) const override;
+  std::vector<RegisterFileStructure> getConfigPhysicalRegisterStructure()
+      const override;
 
   /** Returns the physical register quantities as defined within the config file
    */
-  std::vector<uint16_t> getConfigPhysicalRegisterQuantities(
-      YAML::Node config) const override;
+  std::vector<uint16_t> getConfigPhysicalRegisterQuantities() const override;
 
  private:
   /** Retrieve an executionInfo object for the requested instruction. If a

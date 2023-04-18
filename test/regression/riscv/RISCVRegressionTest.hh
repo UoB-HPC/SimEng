@@ -4,31 +4,16 @@
 #include "simeng/arch/riscv/Architecture.hh"
 #include "simeng/arch/riscv/Instruction.hh"
 
-#define RISCV_CONFIG                                                           \
-  ("{Core: {ISA: rv64, Simulation-Mode: emulation, Clock-Frequency: 2.5}, "    \
-   "Fetch: {Fetch-Block-Size: 32, Loop-Buffer-Size: 64, "                      \
-   "Loop-Detection-Threshold: 4}, Process-Image: {Heap-Size: 100000, "         \
-   "Stack-Size: 100000}, Register-Set: {GeneralPurpose-Count: 154, "           \
-   "FloatingPoint-Count: 90}, Pipeline-Widths: {Commit: 4, Dispatch-Rate: 4, " \
-   "FrontEnd: 4, LSQ-Completion: 2}, Queue-Sizes: {ROB: 180, Load: 64, "       \
-   "Store: 36}, Branch-Predictor: {BTB-Tag-Bits: 11, Saturating-Count-Bits: "  \
-   "2, Global-History-Length: 10, RAS-entries: 5, Fallback-Static-Predictor: " \
-   "2}, L1-Data-Memory: {Interface-Type: Fixed}, L1-Instruction-Memory: "      \
-   "{Interface-Type: Flat}, LSQ-L1-Interface: {Access-Latency: 4, Exclusive: " \
-   "False, Load-Bandwidth: 32, Store-Bandwidth: 16, "                          \
-   "Permitted-Requests-Per-Cycle: 2, Permitted-Loads-Per-Cycle: 2, "           \
-   "Permitted-Stores-Per-Cycle: 1}, Ports: {'0': {Portname: Port 0, "          \
-   "Instruction-Group-Support: [0, 10, 20, 21, 22]}}, Reservation-Stations: "  \
-   "{'0': {Size: 60, Dispatch-Rate: 4, Ports: [0]}}, Execution-Units: {'0': "  \
-   "{Pipelined: true}}, Latencies: {'0': {Instruction-Group: {0: '7'}, "       \
-   "Execution-Latency: 39, Execution-Throughput: 39}}}")
+#define RISCV_ADDITIONAL_CONFIG                                                \
+  ("{Core: {Clock-Frequency: 2.5}, Register-Set: {GeneralPurpose-Count: 154, " \
+   "Floating-Point-Count: 90}, L1-Data-Memory: {Interface-Type: Fixed}, "      \
+   "L1-Instruction-Memory: {Interface-Type: Flat}, Ports: {'0': {Portname: "   \
+   "Port 0, Instruction-Group-Support: [INT, FLOAT, LOAD, STORE, BRANCH]}}}")
 
 /** A helper function to convert the supplied parameters of
  * INSTANTIATE_TEST_SUITE_P into test name. */
 inline std::string paramToString(
-    const testing::TestParamInfo<std::tuple<CoreType, YAML::Node>> val) {
-  YAML::Node config = YAML::Load(RISCV_CONFIG);
-
+    const testing::TestParamInfo<std::tuple<CoreType, std::string>> val) {
   // Get core type as string
   std::string coreString = "";
   switch (std::get<0>(val.param)) {
@@ -69,11 +54,11 @@ class RISCVRegressionTest : public RegressionTest {
   void run(const char* source);
 
   /** Generate a default YAML-formatted configuration. */
-  YAML::Node generateConfig() const override;
+  void generateConfig() const override;
 
   /** Create an ISA instance from a kernel. */
   virtual std::unique_ptr<simeng::arch::Architecture> createArchitecture(
-      simeng::kernel::Linux& kernel, YAML::Node config) const override;
+      simeng::kernel::Linux& kernel) const override;
 
   /** Get the value of a general purpose register. */
   template <typename T>

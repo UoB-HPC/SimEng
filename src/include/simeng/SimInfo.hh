@@ -1,57 +1,140 @@
 #pragma once
 
+#include <iostream>
 #include <string>
 
-#include "simeng/Config.hh"
+#include "simeng/Instruction.hh"
+#include "simeng/ModelConfig.hh"
 #include "simeng/RegisterFileSet.hh"
+#include "simeng/ryml.hh"
 
 namespace simeng {
+
+#define DEFAULT_STR "Default"
+
 /** Enum representing the possible simulation modes. */
 enum simMode { emulation, inorder, outoforder };
 
 /** Enum representing the possible ISAs. */
 enum ISA { AArch64, RV64 };
 
-/** A SimInfo class to hold values specific to the current simulation. */
+/** A SimInfo class to hold values, specified by the constructed ryml::Tree
+ * object in the ModelConfig class and manually, used after the instantiation of
+ * the current simulation and its objects. */
 class SimInfo {
  public:
-  /** Returns the simulation mode of the current SimEng instance. */
+  /** A getter function to retrieve the ryml::Tree representing the underlying
+   * model config file. */
+  static ryml::Tree getConfig() { return getInstance()->validatedConfig_; }
+
+  /** A setter function to set the model config file from a path to a YAML file.
+   */
+  static void setConfig(std::string path) { getInstance()->makeConfig(path); }
+
+  /** A function to add additional config values to the model config file. */
+  static void addToConfig(std::string configAdditions) {
+    getInstance()->mdlCnf_.addConfigOptions(configAdditions);
+    // Replace the validated config with new instance with the supplied
+    // additional values
+    getInstance()->validatedConfig_ = getInstance()->mdlCnf_.getConfig();
+  }
+
+  /** A function to generate a default config file based on a passed ISA. */
+  static void generateDefault(ISA isa) {
+    if (isa == ISA::AArch64)
+      getInstance()->mdlCnf_.reGenerateDefault("AArch64");
+    else if (isa == ISA::RV64)
+      getInstance()->mdlCnf_.reGenerateDefault("rv64");
+
+    // Replace the validated config with the new default config
+    getInstance()->validatedConfig_ = getInstance()->mdlCnf_.getConfig();
+    // Update previoulsy extracted values from the config file
+    getInstance()->extractValues();
+  }
+
+  /** A utility function to get a value, of a specified type, from a config
+   * option. */
+  template <typename T>
+  static T getValue(ryml::NodeRef node) {
+    T val;
+    node >> val;
+    return val;
+  }
+
+  /** A getter function to retrieve the config file path. */
+  static std::string getConfigPath() { return getInstance()->configFilePath_; }
+
+  /** A getter function to retrieve the simulation mode of the current SimEng
+   * instance. */
   static simMode getSimMode() { return getInstance()->mode_; }
 
-  /** Returns the simulation mode of the current SimEng instance as a string. */
+  /** A getter function to retrieve the simulation mode of the current SimEng
+   * instance as a string. */
   static std::string getSimModeStr() { return getInstance()->modeStr_; }
 
-  /** Returns which ISA the current simulation is using. */
+  /** A getter function to retrieve which ISA the current simulation is using.
+   */
   static ISA getISA() { return getInstance()->isa_; }
 
-  /** Returns a vector of {size, number} pairs describing the available
-   * architectural registers. */
+  /** A getter function to retrieve a vector of {size, number} pairs describing
+   * the available architectural registers. */
   static const std::vector<simeng::RegisterFileStructure>& getArchRegStruct() {
     return getInstance()->archRegStruct_;
   }
 
-  /** Returns a vector of Capstone arm64_sysreg enums for all the system
-   * registers that should be utilised in simulation. */
+  /** A getter function to retrieve a vector of Capstone arm64_sysreg enums for
+   * all the system registers that should be utilised in simulation. */
   static const std::vector<arm64_sysreg>& getSysRegVec() {
     return getInstance()->sysRegisterEnums_;
   }
 
-  /** Returns whether or not the special files directories should be generated.
-   */
+  /** A getter function to retrieve whether or not the special files directories
+   * should be generated. */
   static const bool getGenSpecFiles() {
     return getInstance()->genSpecialFiles_;
   }
 
-  /** Public function used to reset the architectural register file structure.
-   */
+  /** A function used to reset the architectural register file structure. */
   static void resetArchRegs() { getInstance()->resetArchRegStruct(); }
+
+  static void printConfig() {
+    getInstance()->mdlCnf_.recursivePrint(
+        getInstance()->validatedConfig_.rootref());
+  }
 
  private:
   SimInfo() {
-    // Get Config File
-    YAML::Node& config = Config::get();
-    // Get ISA type
-    if (config["Core"]["ISA"].as<std::string>() == "AArch64") {
+    // Set the validated config file to be the current default config generated
+    // by the default constructor of ModelConfig
+    validatedConfig_ = mdlCnf_.getConfig();
+    extractValues();
+  }
+
+  /** Gets the static instance of the SimInfo class. */
+  static std::unique_ptr<SimInfo>& getInstance() {
+    static std::unique_ptr<SimInfo> SimInfoClass = nullptr;
+    if (SimInfoClass == nullptr) {
+      SimInfoClass = std::unique_ptr<SimInfo>(new SimInfo());
+    }
+    return SimInfoClass;
+  }
+
+  /** Create a model config from a passed YAML file path. */
+  void makeConfig(std::string path) {
+    // Recreate the model config instance from the YAML file path
+    mdlCnf_ = simeng::ModelConfig(path);
+    // Update the validated config file
+    validatedConfig_ = mdlCnf_.getConfig();
+    extractValues();
+  }
+
+  /** A function to extract various values from the generated config file to
+   * populate frequently queried model config values. */
+  void extractValues() {
+    // Get ISA type and set the corresponding architectural fileset
+    std::string isa;
+    validatedConfig_["Core"]["ISA"] >> isa;
+    if (isa == "AArch64") {
       isa_ = ISA::AArch64;
       // Define system registers
       sysRegisterEnums_ = {arm64_sysreg::ARM64_SYSREG_DCZID_EL0,
@@ -64,9 +147,10 @@ class SimInfo {
                            arm64_sysreg::ARM64_SYSREG_SVCR};
       // Initialise architectural reg structures
       uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
-      const uint16_t ZAsize = static_cast<uint16_t>(
-          config["Core"]["Streaming-Vector-Length"].as<uint64_t>() /
-          8);  // Convert to bytes
+      // Set the size of SME ZA in bytes by dividing the SVL by 8
+      uint16_t ZAbits;
+      validatedConfig_["Core"]["Streaming-Vector-Length"] >> ZAbits;
+      const uint16_t ZAsize = ZAbits / 8;
       archRegStruct_ = {
           {8, 32},          // General purpose
           {256, 32},        // Vector
@@ -75,7 +159,7 @@ class SimInfo {
           {8, numSysRegs},  // System
           {256, ZAsize},    // Matrix (Each row is a register)
       };
-    } else if (config["Core"]["ISA"].as<std::string>() == "rv64") {
+    } else if (isa == "rv64") {
       isa_ = ISA::RV64;
       // Define system registers
       sysRegisterEnums_ = {arch::riscv::riscv_sysreg::RISCV_SYSREG_FFLAGS,
@@ -94,44 +178,35 @@ class SimInfo {
     }
 
     // Get Simulation mode
-    if (config["Core"]["Simulation-Mode"].as<std::string>() == "emulation") {
+    std::string mode;
+    validatedConfig_["Core"]["Simulation-Mode"] >> mode;
+    if (mode == "emulation") {
       mode_ = simMode::emulation;
       modeStr_ = "Emulation";
-    } else if (config["Core"]["Simulation-Mode"].as<std::string>() ==
-               "inorderpipelined") {
+    } else if (mode == "inorderpipelined") {
       mode_ = simMode::inorder;
       modeStr_ = "In-Order Pipelined";
-    } else if (config["Core"]["Simulation-Mode"].as<std::string>() ==
-               "outoforder") {
+    } else if (mode == "outoforder") {
       mode_ = simMode::outoforder;
       modeStr_ = "Out-of-Order";
     }
 
-    // Get if special files directory should be created
-    genSpecialFiles_ = config["CPU-Info"]["Generate-Special-Dir"].as<bool>();
-  }
-
-  /** Gets the static instance of the SimInfo class. */
-  static std::unique_ptr<SimInfo>& getInstance() {
-    static std::unique_ptr<SimInfo> SimInfoClass = nullptr;
-    if (SimInfoClass == nullptr) {
-      SimInfoClass = std::unique_ptr<SimInfo>(new SimInfo());
-    }
-    return SimInfoClass;
+    // Get if the special files directory should be created
+    validatedConfig_["CPU-Info"]["Generate-Special-Dir"] >> genSpecialFiles_;
   }
 
   /** Function used to reset the architectural register file structure. */
   void resetArchRegStruct() {
-    // Given some register quantities rely on Config file arguments (SME relies
-    // on SVL), it is possible that if the config was to change the register
-    // quantities would be incorrect. This function provides a way to reset the
-    // Architectural register structure.
-    YAML::Node& config = Config::get();
+    // Given some register quantities rely on Config file arguments (SME
+    // relies on SVL), it is possible that if the config was to change the
+    // register quantities would be incorrect. This function provides a way to
+    // reset the Architectural register structure.
     if (isa_ == ISA::AArch64) {
       uint16_t numSysRegs = static_cast<uint16_t>(sysRegisterEnums_.size());
-      const uint16_t ZAsize = static_cast<uint16_t>(
-          config["Core"]["Streaming-Vector-Length"].as<uint64_t>() /
-          8);  // Convert to bytes
+      // Set the size of SME ZA in bytes by dividing the SVL by 8
+      uint16_t ZAbits;
+      validatedConfig_["Core"]["Streaming-Vector-Length"] >> ZAbits;
+      const uint16_t ZAsize = ZAbits / 8;
       archRegStruct_ = {
           {8, 32},          // General purpose
           {256, 32},        // Vector
@@ -150,22 +225,34 @@ class SimInfo {
     }
   }
 
-  /** The simulation mode of current execution of SimEng. */
+  /** The validated model config file represented as a ryml:Tree. */
+  ryml::Tree validatedConfig_;
+
+  /** The ModelConfig instance used to create and maintain the model config
+   * file. */
+  simeng::ModelConfig mdlCnf_;
+
+  /** The path of the model config file. Defaults to "Default". */
+  std::string configFilePath_ = "Default";
+
+  /** The simulation mode of the current execution of SimEng. */
   simMode mode_;
 
-  /** The simulation mode String of current execution of SimEng. */
+  /** The simulation mode string of the current execution of SimEng. */
   std::string modeStr_;
 
-  /** Architecture type of the current execution of SimEng. */
+  /** The instruction set architecture of the current execution of SimEng. */
   ISA isa_;
 
-  /** Architectural Register Structure of the current execution of SimEng. */
+  /** The architectural register structure of the current execution of SimEng.
+   */
   std::vector<simeng::RegisterFileStructure> archRegStruct_;
 
-  /** Vector of all system register Capsone enum values used in Architecture. */
+  /** The vector of all system register Capstone enum values used in the
+   * associated Architecture class. */
   std::vector<arm64_sysreg> sysRegisterEnums_;
 
-  /** Bool representing if the special file directory should be created. */
+  /** A bool representing if the special file directory should be created. */
   bool genSpecialFiles_;
 };
 }  // namespace simeng
